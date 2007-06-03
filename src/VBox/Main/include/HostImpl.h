@@ -104,11 +104,9 @@ public:
     HRESULT loadSettings (CFGNODE aGlobal);
     HRESULT saveSettings (CFGNODE aGlobal);
 
-    HRESULT captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId,
-                              IUSBDevice **aHostDevice);
+    HRESULT captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId);
     HRESULT releaseUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId);
-    HRESULT autoCaptureUSBDevices (SessionMachine *aMachine,
-                                   IUSBDeviceCollection **aHostDevices);
+    HRESULT autoCaptureUSBDevices (SessionMachine *aMachine);
     HRESULT releaseAllUSBDevices (SessionMachine *aMachine);
 
     void onUSBDeviceAttached (HostUSBDevice *aDevice);
@@ -148,9 +146,9 @@ private:
                      : NULL;
     }
 
-    HRESULT applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
-                                SessionMachine *aMachine = NULL);
-    void applyMachineUSBFilters (SessionMachine *aMachine,
+    HRESULT applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice);
+
+    bool applyMachineUSBFilters (SessionMachine *aMachine,
                                  ComObjPtr <HostUSBDevice> &aDevice);
 
 #ifdef __WIN__

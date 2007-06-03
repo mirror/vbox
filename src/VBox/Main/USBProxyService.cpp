@@ -35,7 +35,7 @@
 USBProxyService::USBProxyService (Host *aHost)
     : mHost (aHost), mThread (NIL_RTTHREAD), mTerminate (false), mDevices (), mLastError (VINF_SUCCESS)
 {
-    LogFlowMember (("USBProxyService::USBProxyService: aHost=%p\n", aHost));
+    LogFlowThisFunc (("aHost=%p\n", aHost));
 }
 
 
@@ -44,7 +44,7 @@ USBProxyService::USBProxyService (Host *aHost)
  */
 USBProxyService::~USBProxyService()
 {
-    LogFlowMember (("USBProxyService::~USBProxyService: \n"));
+    LogFlowThisFunc (("\n"));
     Assert (mThread == NIL_RTTHREAD);
     mDevices.clear();
     mTerminate = true;
@@ -83,7 +83,7 @@ int USBProxyService::start (void)
                              0, RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "USBPROXY");
         AssertRC (rc);
         if (VBOX_SUCCESS (rc))
-            LogFlow (("USBProxyService::start: started mThread=%RTthrd\n", mThread));
+            LogFlowThisFunc (("started mThread=%RTthrd\n", mThread));
         else
         {
             mThread = NIL_RTTHREAD;
@@ -91,7 +91,7 @@ int USBProxyService::start (void)
         }
     }
     else
-        LogFlow (("USBProxyService::start: already running, mThread=%RTthrd\n", mThread));
+        LogFlowThisFunc (("already running, mThread=%RTthrd\n", mThread));
     return rc;
 }
 
@@ -116,7 +116,7 @@ int USBProxyService::stop (void)
             rc = VINF_SUCCESS;
         if (VBOX_SUCCESS (rc))
         {
-            LogFlowMember (("USBProxyService::stop: stopped mThread=%RTthrd\n", mThread));
+            LogFlowThisFunc (("stopped mThread=%RTthrd\n", mThread));
             mThread = NIL_RTTHREAD;
             mTerminate = false;
         }
@@ -127,7 +127,7 @@ int USBProxyService::stop (void)
         }
     }
     else
-        LogFlowMember (("USBProxyService::stop: not active\n"));
+        LogFlowThisFunc (("not active\n"));
 
     return rc;
 }
@@ -185,7 +185,7 @@ static PUSBDEVICE sortDevices (PUSBDEVICE pDevices)
 
 void USBProxyService::processChanges (void)
 {
-    LogFlowMember (("USBProxyService::processChanges: \n"));
+    LogFlowThisFunc (("\n"));
 
     /*
      * Get the sorted list of USB devices.
@@ -195,6 +195,15 @@ void USBProxyService::processChanges (void)
     {
         pDevices = sortDevices (pDevices);
 
+        /* we need to lock the host object for writing because
+         * a) the subsequent code may call Host methods that require a write
+         *    lock
+         * b) we will lock HostUSBDevice objects below and want to make sure
+         *    the lock order is always the same (Host, HostUSBDevice, as
+         *    expected by Host) to avoid cross-deadlocks */
+
+        AutoLock hostLock (mHost);
+
         /*
          * Compare previous list with the previous list of devices
          * and merge in any changes while notifying Host.
@@ -203,16 +212,28 @@ void USBProxyService::processChanges (void)
         while (     It != mDevices.end()
                ||   pDevices)
         {
+            ComObjPtr <HostUSBDevice> DevPtr;
+
+            if (It != mDevices.end())
+                DevPtr = *It;
+
+            /// @todo we want to AddCaller here to make sure the device hasn't
+            //  been uninitialized (needs support for the no-op AddCaller when
+            //  its argument is NULL)
+
+            /* Lock the device object since we will read/write it's
+             * properties. All Host callbacks also imply the object is
+             * locked. */
+            AutoLock devLock (DevPtr.isNull() ? NULL : DevPtr);
+
             /*
              * Compare.
              */
-            ComObjPtr <HostUSBDevice> DevPtr;
             int iDiff;
-            if (It == mDevices.end())
+            if (DevPtr.isNull())
                 iDiff = 1;
             else
             {
-                DevPtr = *It;
                 if (!pDevices)
                     iDiff = -1;
                 else
@@ -247,6 +268,10 @@ void USBProxyService::processChanges (void)
                     Log (("USBProxyService::processChanges: attached %p/%p:{.idVendor=%#06x, .idProduct=%#06x, .pszProduct=\"%s\", .pszManufacturer=\"%s\"}\n",
                           (HostUSBDevice *)NewObj, pNew, pNew->idVendor, pNew->idProduct, pNew->pszProduct, pNew->pszManufacturer));
 
+                    /* not really necessary to lock here, but make Assert
+                     * checks happy */
+                    AutoLock newDevLock (NewObj);
+                    
                     mDevices.insert (It, NewObj);
                     mHost->onUSBDeviceAttached (NewObj);
                 }
@@ -256,24 +281,41 @@ void USBProxyService::processChanges (void)
                      * DevPtr was detached, unless there is a pending async request.
                      */
                     /** @todo add a timeout here. */
-                    if (!DevPtr->isStatePendingUnlocked())
+                    if (!DevPtr->isStatePending())
                     {
                         It = mDevices.erase (It);
                         mHost->onUSBDeviceDetached (DevPtr);
                         Log (("USBProxyService::processChanges: detached %p\n", (HostUSBDevice *)DevPtr)); /** @todo add details .*/
                     }
-                    /* else: operation pending */
+                    else
+                    {
+                        /* a state change (re-cycle) request is pending, go
+                         * to the next device */
+                        It++;
+                    }
                 }
             }
         } /* while */
     }
     else
     {
+        /* we need to lock the host object for writing because
+         * a) the subsequent code may call Host methods that require a write
+         *    lock
+         * b) we will lock HostUSBDevice objects below and want to make sure
+         *    the lock order is always the same (Host, HostUSBDevice, as
+         *    expected by Host) to avoid cross-deadlocks */
+
+        AutoLock hostLock (mHost);
+
         /* All devices were detached */
         HostUSBDeviceList::iterator It = this->mDevices.begin();
         while (It != mDevices.end())
         {
             ComObjPtr <HostUSBDevice> DevPtr = *It;
+            
+            AutoLock devLock (DevPtr);
+
             /*
              * DevPtr was detached.
              */
@@ -283,14 +325,14 @@ void USBProxyService::processChanges (void)
         }
     }
 
-    LogFlowMember (("USBProxyService::processChanges: returns void\n"));
+    LogFlowThisFunc (("returns void\n"));
 }
 
 
 /*static*/ DECLCALLBACK (int) USBProxyService::serviceThread (RTTHREAD Thread, void *pvUser)
 {
     USBProxyService *pThis = (USBProxyService *)pvUser;
-    LogFlow (("USBProxyService::serviceThread: pThis=%p\n", pThis));
+    LogFlowFunc (("pThis=%p\n", pThis));
     pThis->serviceThreadInit();
 
     /*
@@ -305,7 +347,7 @@ void USBProxyService::processChanges (void)
     }
 
     pThis->serviceThreadTerm();
-    LogFlow (("USBProxyService::serviceThread: returns VINF_SUCCESS\n"));
+    LogFlowFunc (("returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
@@ -377,17 +419,23 @@ void USBProxyService::processChanges (void)
 
 bool USBProxyService::updateDeviceStateFake (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice)
 {
-    if (aDevice->isStatePendingUnlocked())
+    AssertReturn (aDevice, false);
+    AssertReturn (aDevice->isLockedOnCurrentThread(), false);
+
+    if (aDevice->isStatePending())
     {
-        switch (aDevice->pendingStateUnlocked())
+        switch (aDevice->pendingState())
         {
-            case USBDeviceState_USBDeviceCaptured:      aUSBDevice->enmState = USBDEVICESTATE_USED_BY_GUEST; break;
+            /* @todo USBDEVICESTATE_USED_BY_GUEST seems not to be used anywhere in the proxy code; it's
+             * quite logical because the proxy doesn't know anything about guest VMs. We use HELD_BY_PROXY
+             * instead -- it is sufficient and is what Main expects. */
+            case USBDeviceState_USBDeviceCaptured:      aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
             case USBDeviceState_USBDeviceHeld:          aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
             case USBDeviceState_USBDeviceAvailable:     aUSBDevice->enmState = USBDEVICESTATE_UNUSED; break;
             case USBDeviceState_USBDeviceUnavailable:   aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST; break;
             case USBDeviceState_USBDeviceBusy:          aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE; break;
             default:
-                AssertMsgFailed(("%d\n", aDevice->pendingStateUnlocked()));
+                AssertMsgFailed(("%d\n", aDevice->pendingState()));
                 break;
         }
     }
@@ -470,6 +518,9 @@ int USBProxyService::resetDevice (HostUSBDevice *pDevice)
 
 bool USBProxyService::updateDeviceState (HostUSBDevice *pDevice, PUSBDEVICE pUSBDevice)
 {
+    AssertReturn (pDevice, false);
+    AssertReturn (pDevice->isLockedOnCurrentThread(), false);
+
     return pDevice->updateState (pUSBDevice);
 }
 

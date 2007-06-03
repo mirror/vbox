@@ -561,7 +561,8 @@ STDMETHODIMP Session::OnUSBControllerChange()
     return mConsole->onUSBControllerChange();
 }
 
-STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice)
+STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
+                                         IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));
 
@@ -572,10 +573,11 @@ STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice)
     AssertReturn (mState == SessionState_SessionOpen &&
                   mType == SessionType_DirectSession, E_FAIL);
 
-    return mConsole->onUSBDeviceAttach (aDevice);
+    return mConsole->onUSBDeviceAttach (aDevice, aError);
 }
 
-STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId)
+STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId,
+                                         IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));
 
@@ -586,7 +588,7 @@ STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId)
     AssertReturn (mState == SessionState_SessionOpen &&
                   mType == SessionType_DirectSession, E_FAIL);
 
-    return mConsole->onUSBDeviceDetach (aId);
+    return mConsole->onUSBDeviceDetach (aId, aError);
 }
 
 STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)

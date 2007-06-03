@@ -726,9 +726,9 @@ public:
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
     STDMETHOD(RunUSBDeviceFilters) (IUSBDevice *aUSBDevice, BOOL *aMatched);
-    STDMETHOD(CaptureUSBDevice) (INPTR GUIDPARAM aId, IUSBDevice **aHostDevice);
+    STDMETHOD(CaptureUSBDevice) (INPTR GUIDPARAM aId);
     STDMETHOD(ReleaseUSBDevice) (INPTR GUIDPARAM aId);
-    STDMETHOD(AutoCaptureUSBDevices) (IUSBDeviceCollection **aHostDevices);
+    STDMETHOD(AutoCaptureUSBDevices)();
     STDMETHOD(ReleaseAllUSBDevices)();
     STDMETHOD(OnSessionEnd)(ISession *aSession, IProgress **aProgress);
     STDMETHOD(BeginSavingState) (IProgress *aProgress, BSTR *aStateFilePath);
@@ -757,8 +757,10 @@ public:
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
-    HRESULT onUSBDeviceAttach (IUSBDevice *aDevice);
-    HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId);
+    HRESULT onUSBDeviceAttach (IUSBDevice *aDevice,
+                               IVirtualBoxErrorInfo *aError);
+    HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId,
+                               IVirtualBoxErrorInfo *aError);
 
 private:
 

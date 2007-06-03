@@ -1010,6 +1010,10 @@ bool USBController::hasMatchingFilter (ComObjPtr <HostUSBDevice> &aDevice)
 
     AutoReaderLock alock (this);
 
+    /* Disabled USB controllers cannot actually work with USB devices */
+    if (!mData->mEnabled)
+        return false;
+
     bool match = false;
 
     /* apply self filters */
@@ -1044,6 +1048,10 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
     AssertComRCReturn (autoCaller.rc(), false);
 
     AutoReaderLock alock (this);
+
+    /* Disabled USB controllers cannot actually work with USB devices */
+    if (!mData->mEnabled)
+        return false;
 
     HRESULT rc = S_OK;
 

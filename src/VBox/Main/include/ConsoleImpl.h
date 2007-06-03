@@ -173,8 +173,8 @@ public:
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
-    HRESULT onUSBDeviceAttach(IUSBDevice *aDevice);
-    HRESULT onUSBDeviceDetach(INPTR GUIDPARAM aId);
+    HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError);
+    HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
 
     VMMDev *getVMMDev() { return mVMMDev; }
     AudioSniffer *getAudioSniffer () { return mAudioSniffer; }
@@ -197,6 +197,8 @@ public:
     void onAdditionsStateChange();
     void onAdditionsOutdated();
     void onKeyboardLedsChange (bool fNumLock, bool fCapsLock, bool fScrollLock);
+    void onUSBDeviceStateChange (IUSBDevice *aDevice, bool aAttached,
+                                 IVirtualBoxErrorInfo *aError);
     void onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMessage);
     HRESULT onShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
 
@@ -368,8 +370,7 @@ private:
                                           DriveState_T eState, DriveState_T *peState,
                                           const char *pszPath, bool fPassthrough);
 
-    HRESULT attachUSBDevice (IUSBDevice *aHostDevice, bool aManual,
-                             PVUSBIRHCONFIG aConfig);
+    HRESULT attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig);
 
     static DECLCALLBACK(int)
     usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
@@ -377,7 +378,7 @@ private:
                        const char *aAddress, void *aRemoteBackend);
     static DECLCALLBACK(int)
     usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
-                       bool aManual, PVUSBIRHCONFIG aConfig, PCRTUUID aUuid);
+                       PVUSBIRHCONFIG aConfig, PCRTUUID aUuid);
 
     static DECLCALLBACK (int)
     stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser);

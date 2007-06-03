@@ -385,6 +385,18 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *device, BOOL attached,
+                                      IVirtualBoxErrorInfo *error)
+    {
+        Q_UNUSED (device);
+        Q_UNUSED (attached);
+        Q_UNUSED (error);
+
+        /// @todo update menu entries
+
+        return S_OK;
+    }
+
     STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTRPARAM id, IN_BSTRPARAM message)
     {
         QApplication::postEvent (mView,

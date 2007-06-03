@@ -99,8 +99,8 @@ public:
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter);
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnUSBControllerChange)();
-    STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice);
-    STDMETHOD(OnUSBDeviceDetach) (INPTR GUIDPARAM aId);
+    STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError);
+    STDMETHOD(OnUSBDeviceDetach) (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
     STDMETHOD(OnShowWindow) (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
 
     // for VirtualBoxSupportErrorInfoImpl

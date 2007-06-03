@@ -102,6 +102,12 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *device, BOOL attached,
+                                      IVirtualBoxErrorInfo *message)
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnRuntimeError)(BOOL fatal, INPTR BSTR id, INPTR BSTR message)
     {
         return S_OK;

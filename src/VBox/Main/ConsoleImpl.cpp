@@ -1945,24 +1945,11 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
         return setError (E_FAIL,
             tr ("The virtual machine does not have a USB controller"));
 
-    PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
-        pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-    ComAssertRet (pRhConfig, E_FAIL);
+    /* Request the device capture */
+    HRESULT rc = mControl->CaptureUSBDevice (aId);
+    CheckComRCReturnRC (rc);
 
-    /// @todo (dmik) REMOTE_USB
-    //  when remote USB devices are ready, first search for a device with the
-    //  given UUID in mRemoteUSBDevices. If found, request a capture from
-    //  a remote client. If not found, search it on the local host as done below
-
-    /*
-     *  Try attach the given host USB device (a proper errror message should
-     *  be returned in case of error).
-     */
-    ComPtr <IUSBDevice> hostDevice;
-    HRESULT hrc = mControl->CaptureUSBDevice (aId, hostDevice.asOutParam());
-    CheckComRCReturnRC (hrc);
-
-    return attachUSBDevice (hostDevice, true /* aManual */, pRhConfig);
+    return rc;
 }
 
 STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice)
@@ -1990,47 +1977,14 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 
     if (!device)
         return setError (E_INVALIDARG,
-            tr ("Cannot detach the USB device (UUID: %s) as it is not attached here."),
-            Guid (aId).toString().raw());
+            tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
+            Guid (aId).raw());
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC (autoVMCaller.rc());
+    /* Request the device release */
+    HRESULT rc = mControl->ReleaseUSBDevice (aId);
+    CheckComRCReturnRC (rc);
 
-    PPDMIBASE pBase = NULL;
-    int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
-
-    /* if the device is attached, then there must be a USB controller */
-    ComAssertRCRet (vrc, E_FAIL);
-
-    PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
-        pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-    ComAssertRet (pRhConfig, E_FAIL);
-
-    Guid Uuid(aId);
-
-    LogFlowThisFunc (("Detaching USB proxy device {%Vuuid}...\n", Uuid.raw()));
-
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
-    alock.leave();
-
-    PVMREQ pReq = NULL;
-    vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
-                       (PFNRT) usbDetachCallback, 5,
-                       this, &it, true /* aManual */, pRhConfig, Uuid.raw());
-    if (VBOX_SUCCESS (vrc))
-        vrc = pReq->iStatus;
-    VMR3ReqFree (pReq);
-
-    HRESULT hrc = S_OK;
-
-    if (VBOX_SUCCESS (vrc))
-        device.queryInterfaceTo (aDevice);
-    else
-        hrc = setError (E_FAIL,
-            tr ("Error detaching the USB device.  (Failed to destroy the USB proxy device: %Vrc)"), vrc);
-
-    return hrc;
+    return rc;
 }
 
 STDMETHODIMP
@@ -3220,9 +3174,9 @@ HRESULT Console::onUSBControllerChange()
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice)
+HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError)
 {
-    LogFlowThisFunc (("aDevice=%p\n", aDevice));
+    LogFlowThisFunc (("aDevice=%p aError=%p\n", aDevice, aError));
 
     AutoCaller autoCaller (this);
     ComAssertComRCRetRC (autoCaller.rc());
@@ -3235,6 +3189,13 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice)
         LogFlowThisFunc (("Attach request ignored (mMachineState=%d).\n",
                           mMachineState));
         return E_FAIL;
+    }
+
+    if (aError != NULL)
+    {
+        /* notify callback about an error */
+        onUSBDeviceStateChange (aDevice, true /* aAttached */, aError);
+        return S_OK;
     }
 
     /* protect mpVM */
@@ -3254,7 +3215,8 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice)
         pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
     ComAssertRet (pRhConfig, E_FAIL);
 
-    return attachUSBDevice (aDevice, false /* aManual */, pRhConfig);
+    /// @todo notify listeners of IConsoleCallback in case of error
+    return attachUSBDevice (aDevice, pRhConfig);
 }
 
 /**
@@ -3263,10 +3225,11 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice)
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId)
+HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
+                                    IVirtualBoxErrorInfo *aError)
 {
     Guid Uuid (aId);
-    LogFlowThisFunc (("aId={%Vuuid}\n", Uuid.raw()));
+    LogFlowThisFunc (("aId={%Vuuid} aError=%p\n", Uuid.raw(), aError));
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -3301,6 +3264,13 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId)
         AssertFailedReturn (E_FAIL);
     }
 
+    if (aError != NULL)
+    {
+        /* notify callback about an error */
+        onUSBDeviceStateChange (device, false /* aAttached */, aError);
+        return S_OK;
+    }
+
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
@@ -3323,13 +3293,14 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId)
     PVMREQ pReq;
     vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
                        (PFNRT) usbDetachCallback, 5,
-                       this, &it, false /* aManual */, pRhConfig, Uuid.raw());
+                       this, &it, pRhConfig, Uuid.raw());
     if (VBOX_SUCCESS (vrc))
         vrc = pReq->iStatus;
     VMR3ReqFree (pReq);
 
     AssertRC (vrc);
 
+    /// @todo notify listeners of IConsoleCallback in case of error
     return VBOX_SUCCESS (vrc) ? S_OK : E_FAIL;
 }
 
@@ -3519,6 +3490,22 @@ void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLo
     CallbackList::iterator it = mCallbacks.begin();
     while (it != mCallbacks.end())
         (*it++)->OnKeyboardLedsChange(fNumLock, fCapsLock, fScrollLock);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+void Console::onUSBDeviceStateChange (IUSBDevice *aDevice, bool aAttached,
+                                      IVirtualBoxErrorInfo *aError)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    CallbackList::iterator it = mCallbacks.begin();
+    while (it != mCallbacks.end())
+        (*it++)->OnUSBDeviceStateChange (aDevice, aAttached, aError);
 }
 
 /**
@@ -4187,17 +4174,12 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
  *  After this method succeeds, the attached device will appear in the
  *  mUSBDevices collection.
  *
- *  If \a aManual is true and a failure occures, the given device
- *  will be returned back to the USB proxy manager.
- *
  *  @param aHostDevice  device to attach
- *  @param aManual      true if device is being manually attached
  *
  *  @note Locks this object for writing.
  *  @note Synchronously calls EMT.
  */
-HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, bool aManual,
-                                  PVUSBIRHCONFIG aConfig)
+HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig)
 {
     AssertReturn (aHostDevice && aConfig, E_FAIL);
 
@@ -4261,17 +4243,6 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, bool aManual,
     {
         LogWarningThisFunc (("Failed to create proxy device for '%s' {%Vuuid} (%Vrc)\n",
                              Address.raw(), Uuid.ptr(), vrc));
-
-        if (aManual)
-        {
-            /*
-             *  Neither SessionMachine::ReleaseUSBDevice() nor Host::releaseUSBDevice()
-             *  should call the Console back, so keep the lock to provide atomicity
-             *  (to protect Host reapplying USB filters)
-             */
-            hrc = mControl->ReleaseUSBDevice (Uuid);
-            AssertComRC (hrc);
-        }
 
         switch (vrc)
         {
@@ -4347,6 +4318,9 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
         AutoLock alock (that);
         that->mUSBDevices.push_back (device);
         LogFlowFunc (("Attached device {%Vuuid}\n", device->id().raw()));
+
+        /* notify callbacks */
+        that->onUSBDeviceStateChange (device, true /* aAttached */, NULL);
     }
 
     LogFlowFunc (("vrc=%Vrc\n", vrc));
@@ -4366,7 +4340,7 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
 //static
 DECLCALLBACK(int)
 Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
-                            bool aManual, PVUSBIRHCONFIG aConfig, PCRTUUID aUuid)
+                            PVUSBIRHCONFIG aConfig, PCRTUUID aUuid)
 {
     LogFlowFuncEnter();
     LogFlowFunc (("that={%p}\n", that));
@@ -4400,23 +4374,8 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
         that->mUSBDevices.erase (*aIt);
         LogFlowFunc (("Detached device {%Vuuid}\n", (**aIt)->id().raw()));
 
-        /// @todo (dmik) REMOTE_USB
-        //  if the device is remote, notify a remote client that we have
-        //  detached the device
-
-        /* If it's a manual detach, give it back to the USB Proxy */
-        if (aManual)
-        {
-            /*
-             *  Neither SessionMachine::ReleaseUSBDevice() nor Host::releaseUSBDevice()
-             *  should call the Console back, so keep the lock to provide atomicity
-             *  (to protect Host reapplying USB filters)
-             */
-            LogFlowFunc (("Giving it back it to USB proxy...\n"));
-            HRESULT hrc = that->mControl->ReleaseUSBDevice (Guid (*aUuid));
-            AssertComRC (hrc);
-            vrc = SUCCEEDED (hrc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
-        }
+        /* notify callbacks */
+        that->onUSBDeviceStateChange (**aIt, false /* aAttached */, NULL);
     }
 
     LogFlowFunc (("vrc=%Vrc\n", vrc));
@@ -6205,7 +6164,8 @@ Console::setVMRuntimeErrorCallback (PVM pVM, void *pvUser, bool fFatal,
 }
 
 /**
- *  Captures and attaches USB devices to a newly created VM.
+ *  Captures USB devices that match filters of the VM.
+ *  Called at VM startup.
  *
  *  @param   pVM     The VM handle.
  *
@@ -6218,47 +6178,14 @@ HRESULT Console::captureUSBDevices (PVM pVM)
     /* sanity check */
     ComAssertRet (isLockedOnCurrentThread(), E_FAIL);
 
-    /*
-     *  If the machine has an USB controller, capture devices and attach
-     *  them to it.
-     */
+    /* If the machine has an USB controller, ask the USB proxy service to
+     * capture devices */
     PPDMIBASE pBase;
     int vrc = PDMR3QueryLun (pVM, "usb-ohci", 0, 0, &pBase);
     if (VBOX_SUCCESS (vrc))
     {
-        PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
-            pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-        ComAssertRet (pRhConfig, E_FAIL);
-
-        /*
-         *  Get the list of USB devices that should be captured and attached to
-         *  the newly created machine.
-         */
-        ComPtr <IUSBDeviceCollection> coll;
-        HRESULT hrc = mControl->AutoCaptureUSBDevices (coll.asOutParam());
+        HRESULT hrc = mControl->AutoCaptureUSBDevices();
         ComAssertComRCRetRC (hrc);
-
-        /*
-         *  Enumerate the devices and attach them.
-         *  Failing to attach an device is currently ignored and the device
-         *  released.
-         */
-        ComPtr <IUSBDeviceEnumerator> en;
-        hrc = coll->Enumerate (en.asOutParam());
-        ComAssertComRCRetRC (hrc);
-
-        BOOL hasMore = FALSE;
-        while (SUCCEEDED (en->HasMore (&hasMore)) && hasMore)
-        {
-            ComPtr <IUSBDevice> hostDevice;
-            hrc = en->GetNext (hostDevice.asOutParam());
-            ComAssertComRCRetRC (hrc);
-            ComAssertRet (!hostDevice.isNull(), E_FAIL);
-
-            hrc = attachUSBDevice (hostDevice, true /* aManual */, pRhConfig);
-
-            /// @todo (r=dmik) warning reporting subsystem
-        }
     }
     else if (   vrc == VERR_PDM_DEVICE_NOT_FOUND
              || vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
@@ -6390,7 +6317,7 @@ void Console::processRemoteUSBDevices (VRDPUSBDEVICEDESC *pDevList, uint32_t cbD
 
             if (fMatched)
             {
-                hrc = onUSBDeviceAttach(device);
+                hrc = onUSBDeviceAttach (device, NULL);
 
                 /// @todo (r=dmik) warning reporting subsystem
 
@@ -6456,7 +6383,7 @@ void Console::processRemoteUSBDevices (VRDPUSBDEVICEDESC *pDevList, uint32_t cbD
         {
             Guid uuid;
             device->COMGETTER (Id) (uuid.asOutParam());
-            onUSBDeviceDetach (uuid);
+            onUSBDeviceDetach (uuid, NULL);
         }
 
         /* And remove it from the list. */
