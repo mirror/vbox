@@ -90,60 +90,29 @@ public:
     /* @note Must be called from under the object read lock. */
     USBDeviceState_T state() const { return mState; }
 
-    /** Same as state() except you don't need to lock any thing. */
-    USBDeviceState_T stateUnlocked() const
-    {
-        AutoReaderLock (this);
-        return state();
-    }
-
     /* @note Must be called from under the object read lock. */
     USBDeviceState_T pendingState() const { return mPendingState; }
-
-    /** Same as pendingState() except you don't need to lock any thing. */
-    USBDeviceState_T pendingStateUnlocked() const
-    {
-        AutoReaderLock (this);
-        return pendingState();
-    }
 
     /* @note Must be called from under the object read lock. */
     ComObjPtr <SessionMachine, ComWeakRef> &machine() { return mMachine; }
 
-/// @todo remove
-#if 0
-    /* @note Must be called from under the object read lock. */
-    bool isIgnored() { return mIgnored; }
-#endif
-
     /* @note Must be called from under the object read lock. */
     bool isStatePending() const { return mIsStatePending; }
-
-    /** Same as isStatePending() except you don't need to lock any thing. */
-    bool isStatePendingUnlocked() const
-    {
-        AutoReaderLock (this);
-        return isStatePending();
-    }
 
     /* @note Must be called from under the object read lock. */
     PCUSBDEVICE usbData() const { return mUsb; }
 
     Utf8Str name();
 
-/// @todo remove
-#if 0
-    void setIgnored();
-#endif
+    bool requestCapture (SessionMachine *aMachine);
+    void requestRelease();
+    void requestHold();
 
-    bool setCaptured (SessionMachine *aMachine);
-    int  setHostDriven();
-    int  reset();
+    void setHeld();
+    void reset();
 
-/// @todo remove
-#if 0
-    void setHostState (USBDeviceState_T aState);
-#endif
+    void handlePendingStateChange();
+    void cancelPendingState();
 
     bool isMatch (const USBDeviceFilter::Data &aData);
 
@@ -162,10 +131,6 @@ private:
     USBDeviceState_T mPendingState;
     ComObjPtr <SessionMachine, ComWeakRef> mMachine;
     bool mIsStatePending : 1;
-/// @todo remove
-#if 0
-    bool mIgnored : 1;
-#endif
 
     /** Pointer to the USB Proxy Service instance. */
     USBProxyService *mUSBProxyService;

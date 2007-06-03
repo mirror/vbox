@@ -7708,19 +7708,15 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
 /**
  *  @note Locks the same as Host::captureUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId,
-                                               IUSBDevice **aHostDevice)
+STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
 {
     LogFlowThisFunc (("\n"));
-
-    if (!aHostDevice)
-        return E_POINTER;
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     // if cautureUSBDevice() fails, it must have set extended error info
-    return mParent->host()->captureUSBDevice (this, aId, aHostDevice);
+    return mParent->host()->captureUSBDevice (this, aId);
 }
 
 /**
@@ -7744,7 +7740,7 @@ STDMETHODIMP SessionMachine::ReleaseUSBDevice (INPTR GUIDPARAM aId)
  *
  *  @note Locks what called methods lock.
  */
-STDMETHODIMP SessionMachine::AutoCaptureUSBDevices (IUSBDeviceCollection **aHostDevices)
+STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
 {
     LogFlowThisFunc (("\n"));
 
@@ -7755,7 +7751,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices (IUSBDeviceCollection **aHost
     AssertComRC (rc);
     NOREF (rc);
 
-    return mParent->host()->autoCaptureUSBDevices (this, aHostDevices);
+    return mParent->host()->autoCaptureUSBDevices (this);
 }
 
 /**
@@ -8583,7 +8579,8 @@ HRESULT SessionMachine::onUSBControllerChange()
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice)
+HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
+                                           IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8600,13 +8597,14 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnUSBDeviceAttach (aDevice);
+    return directControl->OnUSBDeviceAttach (aDevice, aError);
 }
 
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId)
+HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId,
+                                           IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8623,7 +8621,7 @@ HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnUSBDeviceDetach (aId);
+    return directControl->OnUSBDeviceDetach (aId, aError);
 }
 
 // protected methods

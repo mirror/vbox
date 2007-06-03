@@ -1599,7 +1599,7 @@
 
     <interface
         name="IInternalMachineControl" extends="$unknown"
-        uuid="e780b585-585d-47e2-ab53-e94dc552353c"
+        uuid="67ef427d-5f01-4791-a45e-ae5e646ed7c6"
         internal="yes"
         wsmap="suppress"
     >
@@ -1636,28 +1636,24 @@
 
         <method name="captureUSBDevice">
             <desc>
-                Requests a capture of the given host USB device, and returns
-                the captured device (as IUSBDevice) to the caller.
-                <note>
-                    The server must mark the device as USBDeviceCaptured
-                    during this call.
-
-                    This method must return extended error info in case of any
-                    eroror (<link to="IConsole::detachUSBDevice()"/>) relies
-                    on this.
-                </note>
+                Requests a capture of the given host USB device.
+                When the request is completed, the VM process will
+                get a <link to="IInternalSessionControl::onUSBDeviceAttach"/>
+                notification.
             </desc>
             <param name="id" type="uuid" dir="in"/>
-            <param name="hostDevice" type="IUSBDevice" dir="return"/>
         </method>
 
         <method name="releaseUSBDevice">
             <desc>
-                Releases the given USB device.
+                Requests to release the given USB device.
+                When the request is completed, the VM process will
+                get a <link to="IInternalSessionControl::onUSBDeviceDetach"/>
+                notification.
                 <note>
                     The server must run its own filters and filters of all VMs
-                    but this one on the given device as if it were just attached
-                    to the host computer.
+                    but this one on all released devices as if they were just
+                    attached to the host computer.
                 </note>
             </desc>
             <param name="id" type="uuid" dir="in"/>
@@ -1665,15 +1661,11 @@
 
         <method name="autoCaptureUSBDevices">
             <desc>
-                Queries the list of available devices that must be auto-captured
-                according to this VM's filters. Devices returned as IUSBDevice
-                instances.
-                <note>
-                    The server must mark all returned devices as USBDeviceCaptured
-                    during this call.
-                </note>
+                Requests a capture all matching USB devices attached to the host.
+                When the request is completed, the VM process will
+                get a <link to="IInternalSessionControl::onUSBDeviceAttach"/>
+                notification per every captured device.
             </desc>
-            <param name="hostDevices" type="IUSBDeviceCollection" dir="return"/>
         </method>
 
         <method name="releaseAllUSBDevices">
@@ -2646,7 +2638,7 @@
 
     <interface
         name="IConsoleCallback" extends="$unknown"
-        uuid="a56eff10-6db9-4985-a12a-039b604b491b"
+        uuid="ebd0c5f2-7b11-4508-803f-012099caee03"
         wsmap="suppress"
     >
 
@@ -2747,6 +2739,44 @@
                 Interested callees should query IGuest's properties to
                 find out what has changed.
             </desc>
+        </method>
+
+        <method name="onUSBDeviceStateChange">
+            <desc>
+                Notification when a USB device is attached to or detached from
+                the virtual USB controller.
+
+                This notification is sent as a result of the indirect
+                request to attach the device because it matches one of the
+                machine USB filters, or as a result of the direct request
+                issued by <link to="IConsole::attachUSBDevice"/> or
+                <link to="IConsole::detachUSBDevice"/>.
+
+                This notification is sent in case of both a succeeded and a
+                failed request completion. When the request succeeds, the @a
+                error parameter is @c null, and the given device has been
+                already added to (when @a attached is @c true) or removed from
+                (when @a attached is @c false) the collection represented by
+                <link to="IConsole::USBDevices"/>. On failure, the collection
+                doesn't change and the @a error perameter represents the error
+                message describing the failure.
+
+            </desc>
+            <param name="device" type="IUSBDevice" dir="in">
+                <desc>Device that is subject to state change.</desc>
+            </param>
+            <param name="attached" type="boolean" dir="in">
+                <desc>
+                    <tt>true</tt> if the device was attached
+                    and <tt>false</tt> otherwise.
+                </desc>
+            </param>
+            <param name="error" type="IVirtualBoxErrorInfo" dir="in">
+                <desc>
+                   <tt>null</tt> on success or an error message object on
+                   failure.
+                </desc>
+            </param>
         </method>
 
         <method name="onRuntimeError">
@@ -7410,7 +7440,7 @@
 
     <interface
         name="IInternalSessionControl" extends="$unknown"
-        uuid="9c6bec01-4135-40a0-b9d3-ab119a9c5412"
+        uuid="80a9b698-cc60-48cf-ab88-a7c2ea4013a6"
         internal="yes"
         wsmap="suppress"
     >
@@ -7498,19 +7528,25 @@
 
         <method name="onUSBDeviceAttach">
             <desc>
-                Triggered when a USB device has just been attached to the host
-                computer and is to be auto-captured by the machine according
-                to its USB filters.
+                Triggered when a request to capture a USB device (as a result
+                of matched USB filters or direct call to
+                <link to="IConsole::attachUSBDevice"/>) has completed.
+                A @c null @a error object means success, otherwise it
+                describes a failure.
             </desc>
             <param name="device" type="IUSBDevice" dir="in"/>
+            <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
         </method>
 
         <method name="onUSBDeviceDetach">
             <desc>
-                Triggered when a USB device has just been detached from the host
-                computer and needs to be detached from the machine.
+                Triggered when a request to release the USB device (as a result
+                of machine termination or direct call to
+                <link to="IConsole::detachUSBDevice"/>) has completed.
+                A @c null @a error object means success, otherwise it
             </desc>
             <param name="id" type="uuid" dir="in"/>
+            <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
         </method>
 
         <method name="onShowWindow">
