@@ -1946,6 +1946,10 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
         return setError (E_FAIL,
             tr ("The virtual machine does not have a USB controller"));
 
+    /* leave the lock because the USB Proxy service may call us back
+     * (via onUSBDeviceAttach()) */
+    alock.leave();
+
     /* Request the device capture */
     HRESULT rc = mControl->CaptureUSBDevice (aId);
     CheckComRCReturnRC (rc);
@@ -1981,9 +1985,19 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
             Guid (aId).raw());
 
-    /* Request the device release */
-    HRESULT rc = mControl->ReleaseUSBDevice (aId);
-    CheckComRCReturnRC (rc);
+    /* First, request VMM to detach the device */
+    HRESULT rc = detachUSBDevice (it);
+
+    if (SUCCEEDED (rc))
+    {
+        /* leave the lock since we don't need it any more (note though that
+         * the USB Proxy service must not call us back here) */
+        alock.leave();
+
+        /* Request the device release. Even if it fails, the device will
+         * remain as held by proxy, which is OK for us (the VM process). */
+        rc = mControl->ReleaseUSBDevice (aId);
+    }
 
     return rc;
 }
@@ -3216,8 +3230,10 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
         pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
     ComAssertRet (pRhConfig, E_FAIL);
 
+    HRESULT rc = attachUSBDevice (aDevice, pRhConfig);
+
     /// @todo notify listeners of IConsoleCallback in case of error
-    return attachUSBDevice (aDevice, pRhConfig);
+    return rc;
 }
 
 /**
@@ -3272,37 +3288,10 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
         return S_OK;
     }
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC (autoVMCaller.rc());
-
-    PPDMIBASE pBase = NULL;
-    int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
-
-    /* if the device is attached, then there must be a USB controller */
-    AssertRCReturn (vrc, E_FAIL);
-
-    PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
-        pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-    AssertReturn (pRhConfig, E_FAIL);
-
-    LogFlowThisFunc (("Detaching USB proxy device {%Vuuid}...\n", Uuid.raw()));
-
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
-    alock.leave();
-
-    PVMREQ pReq;
-    vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
-                       (PFNRT) usbDetachCallback, 5,
-                       this, &it, pRhConfig, Uuid.raw());
-    if (VBOX_SUCCESS (vrc))
-        vrc = pReq->iStatus;
-    VMR3ReqFree (pReq);
-
-    AssertRC (vrc);
+    HRESULT rc = detachUSBDevice (it);
 
     /// @todo notify listeners of IConsoleCallback in case of error
-    return VBOX_SUCCESS (vrc) ? S_OK : E_FAIL;
+    return rc;
 }
 
 /**
@@ -4177,13 +4166,16 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
  *
  *  @param aHostDevice  device to attach
  *
- *  @note Locks this object for writing.
  *  @note Synchronously calls EMT.
+ *  @note Must be called from under this object's lock.
  */
 HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig)
 {
     AssertReturn (aHostDevice && aConfig, E_FAIL);
 
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    /* still want a lock object because we need to leave it */
     AutoLock alock (this);
 
     HRESULT hrc;
@@ -4327,6 +4319,56 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
     LogFlowFunc (("vrc=%Vrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
+}
+
+/**
+ *  Sends a request to VMM to detach the given host device.  After this method
+ *  succeeds, the detached device will disappear from the mUSBDevices
+ *  collection.
+ *
+ *  @param aIt  Iterator pointing to the device to detach.
+ *
+ *  @note Synchronously calls EMT.
+ *  @note Must be called from under this object's lock.
+ */
+HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
+{
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    /* still want a lock object because we need to leave it */
+    AutoLock alock (this);
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    PPDMIBASE pBase = NULL;
+    int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
+
+    /* if the device is attached, then there must be a USB controller */
+    AssertRCReturn (vrc, E_FAIL);
+
+    PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
+        pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
+    AssertReturn (pRhConfig, E_FAIL);
+
+    LogFlowThisFunc (("Detaching USB proxy device {%Vuuid}...\n",
+                      (*aIt)->id().raw()));
+
+    /* leave the lock before a VMR3* call (EMT will call us back)! */
+    alock.leave();
+
+    PVMREQ pReq;
+    vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
+                       (PFNRT) usbDetachCallback, 5,
+                       this, &aIt, pRhConfig, (*aIt)->id().raw());
+    if (VBOX_SUCCESS (vrc))
+        vrc = pReq->iStatus;
+    VMR3ReqFree (pReq);
+
+    ComAssertRCRet (vrc, E_FAIL);
+
+    return S_OK;
 }
 
 /**

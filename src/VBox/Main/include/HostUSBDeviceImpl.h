@@ -94,7 +94,7 @@ public:
     USBDeviceState_T pendingState() const { return mPendingState; }
 
     /* @note Must be called from under the object read lock. */
-    ComObjPtr <SessionMachine, ComWeakRef> &machine() { return mMachine; }
+    ComObjPtr <SessionMachine> &machine() { return mMachine; }
 
     /* @note Must be called from under the object read lock. */
     bool isStatePending() const { return mIsStatePending; }
@@ -116,8 +116,9 @@ public:
 
     bool isMatch (const USBDeviceFilter::Data &aData);
 
-    int compare (PCUSBDEVICE pDev2);
-    static int compare (PCUSBDEVICE pDev1, PCUSBDEVICE pDev2);
+    int compare (PCUSBDEVICE aDev2);
+    static int compare (PCUSBDEVICE aDev1, PCUSBDEVICE aDev2,
+                        bool aIsStrict = true);
 
     bool updateState (PCUSBDEVICE aDev);
 
@@ -129,7 +130,7 @@ private:
     const Guid mId;
     USBDeviceState_T mState;
     USBDeviceState_T mPendingState;
-    ComObjPtr <SessionMachine, ComWeakRef> mMachine;
+    ComObjPtr <SessionMachine> mMachine;
     bool mIsStatePending : 1;
 
     /** Pointer to the USB Proxy Service instance. */

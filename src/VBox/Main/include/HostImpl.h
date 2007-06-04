@@ -146,7 +146,8 @@ private:
                      : NULL;
     }
 
-    HRESULT applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice);
+    HRESULT applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
+                                SessionMachine *aMachine = NULL);
 
     bool applyMachineUSBFilters (SessionMachine *aMachine,
                                  ComObjPtr <HostUSBDevice> &aDevice);

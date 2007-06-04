@@ -217,9 +217,10 @@ void USBProxyService::processChanges (void)
             if (It != mDevices.end())
                 DevPtr = *It;
 
-            /// @todo we want to AddCaller here to make sure the device hasn't
-            //  been uninitialized (needs support for the no-op AddCaller when
-            //  its argument is NULL)
+            /* assert that the object is still alive (we still reference it in
+             * the collection and we're the only one who calls uninit() on it */
+            HostUSBDevice::AutoCaller devCaller (DevPtr.isNull() ? NULL : DevPtr);
+            AssertComRC (devCaller.rc());
 
             /* Lock the device object since we will read/write it's
              * properties. All Host callbacks also imply the object is
@@ -289,7 +290,13 @@ void USBProxyService::processChanges (void)
                     {
                         It = mDevices.erase (It);
                         mHost->onUSBDeviceDetached (DevPtr);
-                        Log (("USBProxyService::processChanges: detached %p\n", (HostUSBDevice *)DevPtr)); /** @todo add details .*/
+                        Log (("USBProxyService::processChanges: detached %p\n",
+                              (HostUSBDevice *)DevPtr)); /** @todo add details .*/
+
+                        /* from now on, the object is no more valid,
+                         * uninitialize to avoid abuse */
+                        devCaller.release();
+                        DevPtr->uninit();
                     }
                     else
                     {
@@ -320,6 +327,11 @@ void USBProxyService::processChanges (void)
         {
             ComObjPtr <HostUSBDevice> DevPtr = *It;
 
+            /* assert that the object is still alive (we still reference it in
+             * the collection and we're the only one who calls uninit() on it */
+            HostUSBDevice::AutoCaller devCaller (DevPtr);
+            AssertComRC (devCaller.rc());
+
             AutoLock devLock (DevPtr);
 
             /*
@@ -327,7 +339,13 @@ void USBProxyService::processChanges (void)
              */
             It = mDevices.erase (It);
             mHost->onUSBDeviceDetached (DevPtr);
-            Log (("USBProxyService::processChanges: detached %p\n", (HostUSBDevice *)DevPtr)); /** @todo add details .*/
+            Log (("USBProxyService::processChanges: detached %p\n",
+                  (HostUSBDevice *)DevPtr)); /** @todo add details .*/
+
+            /* from now on, the object is no more valid,
+             * uninitialize to avoid abuse */
+            devCaller.release();
+            DevPtr->uninit();
         }
     }
 

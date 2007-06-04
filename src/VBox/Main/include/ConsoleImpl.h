@@ -371,6 +371,7 @@ private:
                                           const char *pszPath, bool fPassthrough);
 
     HRESULT attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig);
+    HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
 
     static DECLCALLBACK(int)
     usbAttachCallback (Console *that, IUSBDevice *aHostDevice,

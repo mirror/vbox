@@ -7714,9 +7714,9 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
     LogFlowThisFunc (("\n"));
 
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC (autoCaller.rc());
 
-    // if cautureUSBDevice() fails, it must have set extended error info
+    /* if cautureUSBDevice() fails, it must have set extended error info */
     return mParent->host()->captureUSBDevice (this, aId);
 }
 
@@ -8586,7 +8586,10 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
     LogFlowThisFunc (("\n"));
 
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    /* This notification may happen after the machine object has been
+     * uninitialized (the session was closed), so don't assert. */
+    CheckComRCReturnRC (autoCaller.rc());
 
     ComPtr <IInternalSessionControl> directControl;
     {
@@ -8594,9 +8597,10 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
         directControl = mData->mSession.mDirectControl;
     }
 
-    /* ignore notifications sent after #OnSessionEnd() is called */
+    /* fail on notifications sent after #OnSessionEnd() is called, it is
+     * expected by the caller */
     if (!directControl)
-        return S_OK;
+        return E_FAIL;
 
     return directControl->OnUSBDeviceAttach (aDevice, aError);
 }
@@ -8610,7 +8614,10 @@ HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId,
     LogFlowThisFunc (("\n"));
 
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    /* This notification may happen after the machine object has been
+     * uninitialized (the session was closed), so don't assert. */
+    CheckComRCReturnRC (autoCaller.rc());
 
     ComPtr <IInternalSessionControl> directControl;
     {
@@ -8618,9 +8625,10 @@ HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId,
         directControl = mData->mSession.mDirectControl;
     }
 
-    /* ignore notifications sent after #OnSessionEnd() is called */
+    /* fail on notifications sent after #OnSessionEnd() is called, it is
+     * expected by the caller */
     if (!directControl)
-        return S_OK;
+        return E_FAIL;
 
     return directControl->OnUSBDeviceDetach (aId, aError);
 }
