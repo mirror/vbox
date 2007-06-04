@@ -245,7 +245,11 @@ void USBProxyService::processChanges (void)
                  * Device still there, update the state and move on.
                  */
                 if (updateDeviceState (DevPtr, pDevices))
+                {
+                    Log (("USBProxyService::processChanges: state change %p:{.idVendor=%#06x, .idProduct=%#06x, .pszProduct=\"%s\", .pszManufacturer=\"%s\"} state=%d%s\n",
+                          (HostUSBDevice *)DevPtr, pDevices->idVendor, pDevices->idProduct, pDevices->pszProduct, pDevices->pszManufacturer, DevPtr->state(), DevPtr->isStatePending() ? " (pending async op)" : ""));
                     mHost->onUSBDeviceStateChanged (DevPtr);
+                }
                 It++;
                 PUSBDEVICE pFree = pDevices;
                 pDevices = pDevices->pNext; /* treated as singly linked */
@@ -271,7 +275,7 @@ void USBProxyService::processChanges (void)
                     /* not really necessary to lock here, but make Assert
                      * checks happy */
                     AutoLock newDevLock (NewObj);
-                    
+
                     mDevices.insert (It, NewObj);
                     mHost->onUSBDeviceAttached (NewObj);
                 }
@@ -292,6 +296,8 @@ void USBProxyService::processChanges (void)
                         /* a state change (re-cycle) request is pending, go
                          * to the next device */
                         It++;
+                        Log (("USBProxyService::processChanges: detached but pending %d %p\n",
+                              DevPtr->pendingState(), (HostUSBDevice *)DevPtr));
                     }
                 }
             }
@@ -313,7 +319,7 @@ void USBProxyService::processChanges (void)
         while (It != mDevices.end())
         {
             ComObjPtr <HostUSBDevice> DevPtr = *It;
-            
+
             AutoLock devLock (DevPtr);
 
             /*
