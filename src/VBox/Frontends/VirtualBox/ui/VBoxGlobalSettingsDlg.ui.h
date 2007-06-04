@@ -586,11 +586,13 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
     /// QueryInterface on CUSBDeviceFilter doesn't return CHostUSBDeviceFilter
     /// for host filters (most likely, our XPCOM/IPC/DCONNECT bug).
 
+#ifdef DEBUG_dmik
 #ifdef Q_OS_WIN32
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
     if (coll.isNull())
     {
+#endif
 #endif
         /* disable the USB host filters category if the USB is
          * not available (i.e. in VirtualBox OSE) */
@@ -602,6 +604,7 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         /* disable validators if any */
         pageUSB->setEnabled (false);
 
+#ifdef DEBUG_dmik
 #ifdef Q_OS_WIN32
         /* Show an error message (if there is any).
          * This message box may be suppressed if the user wishes so. */
@@ -619,6 +622,7 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
         lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
     }
+#endif
 #endif
 
     /* language properties */
@@ -1015,11 +1019,13 @@ void VBoxGlobalSettingsDlg::fixLanguageChange()
     /// QueryInterface on CUSBDeviceFilter doesn't return CHostUSBDeviceFilter
     /// for host filters (most likely, our XPCOM/IPC/DCONNECT bug).
 
+#ifdef DEBUG_dmik
 #ifdef Q_OS_WIN32
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
     if (coll.isNull())
     {
+#endif
 #endif
         /* disable the USB host filters category if the USB is
          * not available (i.e. in VirtualBox OSE) */
@@ -1031,7 +1037,9 @@ void VBoxGlobalSettingsDlg::fixLanguageChange()
         /* disable validators if any */
         pageUSB->setEnabled (false);
 
+#ifdef DEBUG_dmik
 #ifdef Q_OS_WIN32
     }
+#endif
 #endif
 }
