@@ -366,7 +366,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 
 #ifdef DEBUG
     if (pRegFrame->eflags.Bits.u1VM)
-        Log(("TRPMForwardTrap-VM: eip=%04X:%04X iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));    
+        Log(("TRPMForwardTrap-VM: eip=%04X:%04X iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
     else
         Log(("TRPMForwardTrap: eip=%04X:%VGv iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
 
@@ -477,9 +477,9 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
            )
         {
             RTGCPTR   pHandler, dummy;
-            GCPTRTYPE(uint32_t *)pTrapStackGC;
+            GCPTRTYPE(uint32_t *) pTrapStackGC;
 #ifndef IN_GC
-            HCPTRTYPE(uint32_t *)pTrapStackHC;
+            HCPTRTYPE(uint32_t *) pTrapStackHC;
 #endif
 
             pHandler = (RTGCPTR)((GuestIdte.Gen.u16OffsetHigh << 16) | GuestIdte.Gen.u16OffsetLow);
@@ -489,7 +489,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 
             /* Note: don't use current eflags as we might be in V86 mode and the IDT always contains protected mode selectors */
             X86EFLAGS fakeflags;
-            fakeflags.u32 = 0;    
+            fakeflags.u32 = 0;
 
             rc = SELMValidateAndConvertCSAddr(pVM, fakeflags, 0, GuestIdte.Gen.u16SegSel, NULL, pHandler, &dummy);
             if (rc == VINF_SUCCESS)
