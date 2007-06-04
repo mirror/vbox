@@ -31,6 +31,213 @@ __BEGIN_DECLS
  * @ingroup grp_rt
  * @{
  */
+
+/** @defgroup grp_rt_err_hlp        Status Code Helpers
+ * @ingroup grp_rt_err
+ * @{
+ */
+
+/** @def RT_SUCCESS
+ * Check for success. We expect success in normal cases, that is the code path depending on
+ * this check is normally taken. To prevent any prediction use RT_SUCCESS_NP instead.
+ *
+ * @returns true if rc indicates success.
+ * @returns false if rc indicates failure.
+ *
+ * @param   rc  The iprt status code to test.
+ */
+#define RT_SUCCESS(rc)      ( RT_LIKELY((int)(rc) >= VINF_SUCCESS) )
+
+/** @def RT_SUCCESS_NP
+ * Check for success. Don't predict the result.
+ *
+ * @returns true if rc indicates success.
+ * @returns false if rc indicates failure.
+ *
+ * @param   rc  The iprt status code to test.
+ */
+#define RT_SUCCESS_NP(rc)   ( (int)(rc) >= VINF_SUCCESS )
+
+/** @def RT_FAILURE
+ * Check for failure. We don't expect in normal cases, that is the code path depending on
+ * this check is normally NOT taken. To prevent any prediction use RT_FAILURE_NP instead.
+ *
+ * @returns true if rc indicates failure.
+ * @returns false if rc indicates success.
+ *
+ * @param   rc  The iprt status code to test.
+ */
+#define RT_FAILURE(rc)      ( RT_UNLIKELY(!RT_SUCCESS_NP(rc)) )
+
+/** @def RT_FAILURE_NP
+ * Check for failure. Don't predict the result.
+ *
+ * @returns true if rc indicates failure.
+ * @returns false if rc indicates success.
+ *
+ * @param   rc  The iprt status code to test.
+ */
+#define RT_FAILURE_NP(rc)   ( !RT_SUCCESS_NP(rc) )
+
+/**
+ * Converts a Darwin HRESULT error to an iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   iNativeCode    errno code.
+ * @remark  Darwin only.
+ */
+RTDECL(int)  RTErrConvertFromDarwinCOM(int32_t iNativeCode);
+
+/**
+ * Converts a Darwin IOReturn error to an iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   iNativeCode    errno code.
+ * @remark  Darwin only.
+ */
+RTDECL(int)  RTErrConvertFromDarwinIO(int iNativeCode);
+
+/**
+ * Converts a Darwin kern_return_t error to an iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   iNativeCode    errno code.
+ * @remark  Darwin only.
+ */
+RTDECL(int)  RTErrConvertFromDarwinKern(int iNativeCode);
+
+/**
+ * Converts errno to iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   uNativeCode    errno code.
+ */
+RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode);
+
+/**
+ * Converts a L4 errno to a iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   uNativeCode l4 errno.
+ * @remark  L4 only.
+ */
+RTDECL(int)  RTErrConvertFromL4Errno(unsigned uNativeCode);
+
+/**
+ * Converts NT status code to iprt status code.
+ *
+ * Needless to say, this is only available on NT and winXX targets.
+ *
+ * @returns iprt status code.
+ * @param   lNativeCode    NT status code.
+ * @remark  Windows only.
+ */
+RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode);
+
+/**
+ * Converts OS/2 error code to iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   uNativeCode    OS/2 error code.
+ * @remark  OS/2 only.
+ */
+RTDECL(int)  RTErrConvertFromOS2(unsigned uNativeCode);
+
+/**
+ * Converts Win32 error code to iprt status code.
+ *
+ * @returns iprt status code.
+ * @param   uNativeCode    Win32 error code.
+ * @remark  Windows only.
+ */
+RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
+
+
+#ifdef IN_RING3
+
+/**
+ * iprt status code message.
+ */
+typedef struct RTSTATUSMSG
+{
+    /** Pointer to the short message string. */
+    const char *pszMsgShort;
+    /** Pointer to the full message string. */
+    const char *pszMsgFull;
+    /** Pointer to the define string. */
+    const char *pszDefine;
+    /** Status code number. */
+    int         iCode;
+} RTSTATUSMSG;
+/** Pointer to iprt status code message. */
+typedef RTSTATUSMSG *PRTSTATUSMSG;
+/** Pointer to const iprt status code message. */
+typedef const RTSTATUSMSG *PCRTSTATUSMSG;
+
+/**
+ * Get the message structure corresponding to a given iprt status code.
+ *
+ * @returns Pointer to read-only message description.
+ * @param   rc      The status code.
+ */
+RTDECL(PCRTSTATUSMSG) RTErrGet(int rc);
+
+/**
+ * Get the define corresponding to a given iprt status code.
+ *
+ * @returns Pointer to read-only string with the \#define identifier.
+ * @param   rc      The status code.
+ */
+#define RTErrGetDefine(rc)      (RTErrGet(rc)->pszDefine)
+
+/**
+ * Get the short description corresponding to a given iprt status code.
+ *
+ * @returns Pointer to read-only string with the description.
+ * @param   rc      The status code.
+ */
+#define RTErrGetShort(rc)       (RTErrGet(rc)->pszMsgShort)
+
+/**
+ * Get the full description corresponding to a given iprt status code.
+ *
+ * @returns Pointer to read-only string with the description.
+ * @param   rc      The status code.
+ */
+#define RTErrGetFull(rc)        (RTErrGet(rc)->pszMsgFull)
+
+#ifdef __WIN__
+/**
+ * Windows error code message.
+ */
+typedef struct RTWINERRMSG
+{
+    /** Pointer to the full message string. */
+    const char *pszMsgFull;
+    /** Pointer to the define string. */
+    const char *pszDefine;
+    /** Error code number. */
+    long        iCode;
+} RTWINERRMSG;
+/** Pointer to Windows error code message. */
+typedef RTWINERRMSG *PRTWINERRMSG;
+/** Pointer to const Windows error code message. */
+typedef const RTWINERRMSG *PCRTWINERRMSG;
+
+/**
+ * Get the message structure corresponding to a given Windows error code.
+ *
+ * @returns Pointer to read-only message description.
+ * @param   rc      The status code.
+ */
+RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
+#endif /* __WIN__ */
+
+#endif /* IN_RING3 */
+
+/** @} */
+
+
 /* SED-START */
 
 /** @name Misc. Status Codes
@@ -615,212 +822,6 @@ __BEGIN_DECLS
 /** @} */
 
 /* SED-END */
-
-
-/** @defgroup grp_rt_err_hlp        Status Code Helpers
- * @ingroup grp_rt_err
- * @{
- */
-
-/** @def RT_SUCCESS
- * Check for success. We expect success in normal cases, that is the code path depending on
- * this check is normally taken. To prevent any prediction use RT_SUCCESS_NP instead.
- *
- * @returns true if rc indicates success.
- * @returns false if rc indicates failure.
- *
- * @param   rc  The iprt status code to test.
- */
-#define RT_SUCCESS(rc)      ( RT_LIKELY((int)(rc) >= VINF_SUCCESS) )
-
-/** @def RT_SUCCESS_NP
- * Check for success. Don't predict the result.
- *
- * @returns true if rc indicates success.
- * @returns false if rc indicates failure.
- *
- * @param   rc  The iprt status code to test.
- */
-#define RT_SUCCESS_NP(rc)   ( (int)(rc) >= VINF_SUCCESS )
-
-/** @def RT_FAILURE
- * Check for failure. We don't expect in normal cases, that is the code path depending on
- * this check is normally NOT taken. To prevent any prediction use RT_FAILURE_NP instead.
- *
- * @returns true if rc indicates failure.
- * @returns false if rc indicates success.
- *
- * @param   rc  The iprt status code to test.
- */
-#define RT_FAILURE(rc)      ( RT_UNLIKELY(!RT_SUCCESS_NP(rc)) )
-
-/** @def RT_FAILURE_NP
- * Check for failure. Don't predict the result.
- *
- * @returns true if rc indicates failure.
- * @returns false if rc indicates success.
- *
- * @param   rc  The iprt status code to test.
- */
-#define RT_FAILURE_NP(rc)   ( !RT_SUCCESS_NP(rc) )
-
-/**
- * Converts a Darwin HRESULT error to an iprt status code.
- *
- * @returns iprt status code.
- * @param   iNativeCode    errno code.
- * @remark  Darwin only.
- */
-RTDECL(int)  RTErrConvertFromDarwinCOM(int32_t iNativeCode);
-
-/**
- * Converts a Darwin IOReturn error to an iprt status code.
- *
- * @returns iprt status code.
- * @param   iNativeCode    errno code.
- * @remark  Darwin only.
- */
-RTDECL(int)  RTErrConvertFromDarwinIO(int iNativeCode);
-
-/**
- * Converts a Darwin kern_return_t error to an iprt status code.
- *
- * @returns iprt status code.
- * @param   iNativeCode    errno code.
- * @remark  Darwin only.
- */
-RTDECL(int)  RTErrConvertFromDarwinKern(int iNativeCode);
-
-/**
- * Converts errno to iprt status code.
- *
- * @returns iprt status code.
- * @param   uNativeCode    errno code.
- */
-RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode);
-
-/**
- * Converts a L4 errno to a iprt status code.
- *
- * @returns iprt status code.
- * @param   uNativeCode l4 errno.
- * @remark  L4 only.
- */
-RTDECL(int)  RTErrConvertFromL4Errno(unsigned uNativeCode);
-
-/**
- * Converts NT status code to iprt status code.
- *
- * Needless to say, this is only available on NT and winXX targets.
- *
- * @returns iprt status code.
- * @param   lNativeCode    NT status code.
- * @remark  Windows only.
- */
-RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode);
-
-/**
- * Converts OS/2 error code to iprt status code.
- *
- * @returns iprt status code.
- * @param   uNativeCode    OS/2 error code.
- * @remark  OS/2 only.
- */
-RTDECL(int)  RTErrConvertFromOS2(unsigned uNativeCode);
-
-/**
- * Converts Win32 error code to iprt status code.
- *
- * @returns iprt status code.
- * @param   uNativeCode    Win32 error code.
- * @remark  Windows only.
- */
-RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
-
-
-#ifdef IN_RING3
-
-/**
- * iprt status code message.
- */
-typedef struct RTSTATUSMSG
-{
-    /** Pointer to the short message string. */
-    const char *pszMsgShort;
-    /** Pointer to the full message string. */
-    const char *pszMsgFull;
-    /** Pointer to the define string. */
-    const char *pszDefine;
-    /** Status code number. */
-    int         iCode;
-} RTSTATUSMSG;
-/** Pointer to iprt status code message. */
-typedef RTSTATUSMSG *PRTSTATUSMSG;
-/** Pointer to const iprt status code message. */
-typedef const RTSTATUSMSG *PCRTSTATUSMSG;
-
-/**
- * Get the message structure corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only message description.
- * @param   rc      The status code.
- */
-RTDECL(PCRTSTATUSMSG) RTErrGet(int rc);
-
-/**
- * Get the define corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only string with the \#define identifier.
- * @param   rc      The status code.
- */
-#define RTErrGetDefine(rc)      (RTErrGet(rc)->pszDefine)
-
-/**
- * Get the short description corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only string with the description.
- * @param   rc      The status code.
- */
-#define RTErrGetShort(rc)       (RTErrGet(rc)->pszMsgShort)
-
-/**
- * Get the full description corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only string with the description.
- * @param   rc      The status code.
- */
-#define RTErrGetFull(rc)        (RTErrGet(rc)->pszMsgFull)
-
-#ifdef __WIN__
-/**
- * Windows error code message.
- */
-typedef struct RTWINERRMSG
-{
-    /** Pointer to the full message string. */
-    const char *pszMsgFull;
-    /** Pointer to the define string. */
-    const char *pszDefine;
-    /** Error code number. */
-    long        iCode;
-} RTWINERRMSG;
-/** Pointer to Windows error code message. */
-typedef RTWINERRMSG *PRTWINERRMSG;
-/** Pointer to const Windows error code message. */
-typedef const RTWINERRMSG *PCRTWINERRMSG;
-
-/**
- * Get the message structure corresponding to a given Windows error code.
- *
- * @returns Pointer to read-only message description.
- * @param   rc      The status code.
- */
-RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
-#endif /* __WIN__ */
-
-#endif /* IN_RING3 */
-
-/** @} */
 
 /** @} */
 
