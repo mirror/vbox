@@ -976,10 +976,10 @@ PATMR3DECL(int) PATMR3IsEnabled(PVM pVM)
  * @returns             Host context pointer or NULL in case of an error
  *
  */
-HCPTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pGCPtr)
+HCPTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pGCPtr)
 {
     int rc;
-    HCPTRTYPE(uint8_t *)pHCPtr;
+    HCPTRTYPE(uint8_t *) pHCPtr;
     uint32_t offset;
 
     if (PATMIsPatchGCAddr(pVM, pGCPtr))
@@ -1027,8 +1027,8 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
      */
     while (true)
     {
-        GCPTRTYPE(uint8_t *)pInstrGC;
-        GCPTRTYPE(uint8_t *)pBranchTargetGC = 0;
+        GCPTRTYPE(uint8_t *) pInstrGC;
+        GCPTRTYPE(uint8_t *) pBranchTargetGC = 0;
 
         pRec = (PJUMPREC)RTAvlPVRemoveBestFit(&pPatch->JumpTree, 0, true);
         if (pRec == 0)
@@ -1604,7 +1604,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
         && (pCpu->pCurInstr->opcode != OP_CALL || (pPatch->flags & PATMFL_SUPPORT_CALLS))
         && (OP_PARM_VTYPE(pCpu->pCurInstr->param1) == OP_PARM_J))
     {
-        GCPTRTYPE(uint8_t *)pTargetGC = PATMResolveBranch(pCpu, pCurInstrGC);
+        GCPTRTYPE(uint8_t *) pTargetGC = PATMResolveBranch(pCpu, pCurInstrGC);
         if (pTargetGC == 0)
         {
             Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.flags));
@@ -2084,7 +2084,7 @@ int patmr3DisasmCode(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
     int rc = VWRN_CONTINUE_ANALYSIS;
     uint32_t opsize, delta;
-    HCPTRTYPE(uint8_t *)pCurInstrHC = 0;
+    HCPTRTYPE(uint8_t *) pCurInstrHC = 0;
     bool disret;
     char szOutput[256];
 
@@ -2255,7 +2255,7 @@ static int patmRecompileCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTR
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
     int rc = VWRN_CONTINUE_ANALYSIS;
     uint32_t opsize;
-    HCPTRTYPE(uint8_t *)pCurInstrHC = 0;
+    HCPTRTYPE(uint8_t *) pCurInstrHC = 0;
     bool disret;
 #ifdef LOG_ENABLED
     char szOutput[256];
@@ -2367,7 +2367,7 @@ static int patmRecompileCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTR
             &&  cpu.pCurInstr->opcode != OP_CALL /* complete functions are replaced; don't bother here. */
            )
         {
-            GCPTRTYPE(uint8_t *)addr = PATMResolveBranch(&cpu, pCurInstrGC);
+            GCPTRTYPE(uint8_t *) addr = PATMResolveBranch(&cpu, pCurInstrGC);
             if (addr == 0)
             {
                 Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.flags));
@@ -5626,7 +5626,7 @@ RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
  */
-PATMR3DECL(RTGCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, GCPTRTYPE(uint8_t*)pInstrGC)
+PATMR3DECL(RTGCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, GCPTRTYPE(uint8_t*) pInstrGC)
 {
     PPATMPATCHREC pPatchRec = (PPATMPATCHREC)RTAvloGCPtrGetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC, false);
     if (pPatchRec && pPatchRec->patch.uState == PATCH_ENABLED && pInstrGC >= pPatchRec->patch.pPrivInstrGC)
