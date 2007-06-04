@@ -246,7 +246,8 @@ IMAGES	= images/tpixel.png \
 	images/vdm_remove_22px.png \
 	images/vdm_remove_disabled_22px.png \
 	images/welcome.png \
-	images/about_600px.png \
+	images/about.png \
+	images/about_tile.png \
 	images/dock_0.png \
 	images/dock_1.png \
     images/dock_128x128_transparent.png
