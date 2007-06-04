@@ -97,9 +97,6 @@ VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
 VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 
-##VBOX_SIGNING_MODE=release
-VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign
-
 
 # Delete targets on failure.
 .DELETE_ON_ERROR:
@@ -170,11 +167,11 @@ VBOX_WITH_VRDP_MC = 1
 VBOX_WITH_VRDP_AUTHMOD = 1
 # build enhanced version of rdesktop
 VBOX_WITH_VRDP_RDESKTOP = 1
-##ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 win.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
+ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 win.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
 # build the support driver & library without IDT patching.
 ## @todo invert this!
 VBOX_WITHOUT_IDT_PATCHING = 1
-##endif
+endif
 # The kernel driver/module and related runtime libraries.
 VBOX_WITH_VBOXDRV = 1
 # build with secure label support
@@ -241,7 +238,7 @@ ifdef VBOX_QUICK
  VBOX_WITH_DOCS =
 endif # VBOX_QUICK
 
-# l4 has to skip a few things.
+# l4 have to skip a few things.
 ifeq ($(BUILD_TARGET),l4)
  VBOX_WITH_VBOXDRV=
  VBOX_WITH_VRDP=
@@ -253,7 +250,7 @@ ifeq ($(BUILD_TARGET),l4)
  VBOX_WITH_INTERNAL_NETWORKING=
 endif
 
-# Darwin has to skip a few things at present.
+# Darwin have to skip a few things at present.
 ifeq ($(BUILD_TARGET),darwin)
  # Internal networking requires testing and possibly proper ring-3/ring0 separation.
  VBOX_WITH_INTERNAL_NETWORKING=
