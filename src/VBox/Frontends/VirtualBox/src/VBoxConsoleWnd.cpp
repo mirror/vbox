@@ -2086,7 +2086,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
-#if defined (DEBUG)
+#if defined (DEBUG_dmik) /* subscribe yourself here if you care for this behavior. */
     QString src1 = qApp->applicationDirPath() + "/../../release/bin/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/../../release/bin/additions/VBoxGuestAdditions.iso";
 #else
