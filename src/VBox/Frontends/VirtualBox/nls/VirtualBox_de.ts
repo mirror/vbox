@@ -80,7 +80,7 @@
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Unsch Rechts</translation>
+        <translation>Umsch Rechts</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
