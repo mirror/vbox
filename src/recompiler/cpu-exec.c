@@ -510,17 +510,11 @@ int cpu_exec(CPUState *env1)
                     Log(("EMRM: %04X:%08X SS:ESP=%04X:%08X IF=%d TF=%d CPL=%d PE=%d PG=%d\n", env->segs[R_CS].selector, env->eip, env->segs[R_SS].selector, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0] & X86_CR0_PE, env->cr[0] & X86_CR0_PG));
                 }
 #endif /* !DEBUG_bird */
-//{
-//static int blaat = 0;
-
-//if (env->eip == 0xc03f3c27 && ++blaat == 2)
-//    env->state |= CPU_EMULATE_SINGLE_STEP;
-//}
                 if(env->state & CPU_EMULATE_SINGLE_STEP)
                 {
 #ifdef DEBUG_bird
                     static int s_cTimes = 0;
-                    if (s_cTimes++ > 10000)
+                    if (s_cTimes++ > 1000000)
                     {
                         RTLogPrintf("Enough stepping!\n");
                         #if 0
