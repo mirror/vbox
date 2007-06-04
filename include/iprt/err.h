@@ -785,7 +785,9 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 /** The ELF loader encountered an invalid symbol name offset. */
 #define VERR_LDRELF_INVALID_SYMBOL_NAME_OFFSET  (-638)
 /** The ELF loader encountered an invalid relocation offset. */
-#define VERR_ELFLDR_INVALID_RELOCATION_OFFSET   (-639)
+#define VERR_LDRELF_INVALID_RELOCATION_OFFSET   (-639)
+/** The ELF loader didn't find the symbol/string table for the image. */
+#define VERR_LDRELF_NO_SYMBOL_OR_NO_STRING_TABS (-640)
 /** @}*/
 
 /** @name Debug Info Reader Status Codes.

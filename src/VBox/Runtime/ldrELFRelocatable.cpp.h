@@ -282,7 +282,7 @@ static int RTLDRELF_NAME(RelocateSection)(PRTLDRMODELF pModElf, Elf_Addr BaseAdd
         /*
          * Apply the fixup.
          */
-        AssertMsgReturn(paRels[iRel].r_offset < cbSec, (FMT_ELF_ADDR " " FMT_ELF_SIZE "\n", paRels[iRel].r_offset, cbSec), VERR_ELFLDR_INVALID_RELOCATION_OFFSET);
+        AssertMsgReturn(paRels[iRel].r_offset < cbSec, (FMT_ELF_ADDR " " FMT_ELF_SIZE "\n", paRels[iRel].r_offset, cbSec), VERR_LDRELF_INVALID_RELOCATION_OFFSET);
 #if   ELF_MODE == 32
         const Elf_Addr *pAddrR = (const Elf_Addr *)(pu8SecBaseR + paRels[iRel].r_offset);    /* Where to read the addend. */
 #endif
@@ -1069,7 +1069,11 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, PRTLDRMOD phLdrMod)
 
                 /*
                  * Are the section headers fine?
+                 * We require there to be symbol & string tables (at least for the time being).
                  */
+                if (    pModElf->iSymSh == ~0U
+                    ||  pModElf->iStrSh == ~0U)
+                    rc = VERR_LDRELF_NO_SYMBOL_OR_NO_STRING_TABS;
                 if (RT_SUCCESS(rc))
                 {
                     pModElf->Core.pOps      = &RTLDRELF_MID(s_rtldrElf,Ops);
