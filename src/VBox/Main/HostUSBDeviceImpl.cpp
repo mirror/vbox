@@ -669,7 +669,9 @@ void HostUSBDevice::handlePendingStateChange()
         HRESULT rc = mMachine->onUSBDeviceAttach (d, error);
         /// @todo we will probably want to re-run all filters on failure
         //  instead of asserting
-        AssertComRC (rc);
+        /*AssertComRC (rc); - actually we shall not assert on fully legal error coditions because it
+                              crashes VBoxSVC and upsets everything. Asserts are for preconditions
+                              violations not for runtime errors like incorrect usbfs permission. */
 
         LogFlowThisFunc (("Done machine->onUSBDeviceAttach()=%08X\n", rc));
 
