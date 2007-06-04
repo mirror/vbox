@@ -443,7 +443,7 @@ extern "C" int main(void)
 #endif
 }
 ' > .tmp_src.cc
-    if test_compile "$LIBXALAN ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
+    if test_compile "$LIBXALAN $LIBPTHREAD ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
       if test_execute; then
         cnf_append "SDK_VBOX_XALAN_LIBS" "`echo $LIBXALAN|sed 's+-l++g'`"
         cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
@@ -478,7 +478,7 @@ extern "C" int main(void)
 #endif
 }
 ' > .tmp_src.cc
-    if test_compile "$LIBXERCES ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
+    if test_compile "$LIBXERCES $LIBPTHREAD ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
       if test_execute; then
         cnf_append "SDK_VBOX_XERCES_LIBS" "`echo $LIBXERCES|sed 's+-l++g'`"
         cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
@@ -1249,11 +1249,11 @@ check_gcc
 (($OSE==0)) && check_mkisofs
 
 # the libraries
+[ "$OS" != "darwin" ] && check_pthread
 (($WITH_XPCOM==1))    && check_xalan
 (($WITH_XPCOM==1))    && check_xerces
 (($WITH_LIBIDL==1))   && check_libidl
 (($OSE==0))           && check_ssl
-[ "$OS" != "darwin" ] && check_pthread
 [ "$OS" != "darwin" ] && check_z
 (($OSE==0)) && check_png
 (($OSE==0)) && [ "$OS" = "linux" ] && check_pam
