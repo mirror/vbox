@@ -3966,7 +3966,7 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         /// @todo make PVBOXHDD a member variable and init/destroy it upon
         /// image creation/deletion instead of doing that here every time.
 
-        vrc = VDCreate ("VMDK", err, NULL, &hdd);
+        vrc = VDCreate ("VMDK", VDError, NULL, &hdd);
         if (VBOX_FAILURE (vrc))
             break;
 
