@@ -1704,9 +1704,6 @@ REMR3DECL(int) REMR3State(PVM pVM)
      */
     pVM->rem.s.Env.hflags      &= ~HF_HALTED_MASK;
 
-    /* Set current CPL */
-    cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)));
-
     /*
      * Replay invlpg?
      */
@@ -1831,6 +1828,9 @@ REMR3DECL(int) REMR3State(PVM pVM)
         /* The hidden selector registers are valid in the CPU context. */
         /** @note QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
 
+        /* Set current CPL */
+        cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)));
+
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_CS, pCtx->cs, pCtx->csHid.u32Base, pCtx->csHid.u32Limit, (pCtx->csHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss, pCtx->ssHid.u32Base, pCtx->ssHid.u32Limit, (pCtx->ssHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_DS, pCtx->ds, pCtx->dsHid.u32Base, pCtx->dsHid.u32Limit, (pCtx->dsHid.Attr.u << 8) & 0xFFFFFF);
@@ -1845,6 +1845,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
         {
             Log2(("REMR3State: SS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_SS].selector, pCtx->ss));
 
+            cpu_x86_set_cpl(&pVM->rem.s.Env, (pCtx->eflags.Bits.u1VM) ? 3 : (pCtx->ss & 3));
             sync_seg(&pVM->rem.s.Env, R_SS, pCtx->ss);
 #ifdef VBOX_WITH_STATISTICS
             if (pVM->rem.s.Env.segs[R_SS].newselector)
