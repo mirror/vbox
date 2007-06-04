@@ -529,7 +529,7 @@ PATMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTGCPTR pJumpTableGC, RTGCPTR 
  * @param   opcode      DIS instruction opcode
  * @param   fPatchFlags Patch flags
  */
-PATMDECL(const char *)patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags)
+PATMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags)
 {
     const char *pszInstr = NULL;
 

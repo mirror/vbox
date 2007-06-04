@@ -30,10 +30,10 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR p
 int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu);
 int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu);
 int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pCurInstrGC);
-int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pTargetGC, uint32_t opcode, bool fSizeOverride);
-int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pTargetGC, uint32_t opcode, bool fSizeOverride);
+int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride);
+int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride);
 int patmPatchGenPushf(PVM pVM, PPATCHINFO pPatch, bool fSizeOverride);
-int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pReturnAddrGC, bool fSizeOverride, bool fGenJumpBack);
+int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pReturnAddrGC, bool fSizeOverride, bool fGenJumpBack);
 int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, RTGCPTR pNextInstrGC);
 
 int patmPatchGenCli(PVM pVM, PPATCHINFO pPatch);
@@ -46,7 +46,7 @@ int patmPatchGenStats(PVM pVM, PPATCHINFO pPatch, RTGCPTR pInstrGC);
 int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR pInstrGC, RTGCPTR pTargetGC, bool fIndirect);
 int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pCurInstrGC);
 
-int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, GCPTRTYPE(uint8_t *)pPatchAddrGC, bool fAddLookupRecord = true);
+int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC, GCPTRTYPE(uint8_t *) pPatchAddrGC, bool fAddLookupRecord = true);
 
 /**
  * Generate indirect jump to unknown destination
@@ -88,7 +88,7 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTGCPTR pIntHandlerGC);
  * @param   pTargetGC   Guest target jump
  * @param   fClearInhibitIRQs   Clear inhibit irq flag
  */
-int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *)pReturnAddrGC, bool fClearInhibitIRQs = false);
+int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pReturnAddrGC, bool fClearInhibitIRQs = false);
 
 /**
  * Generate illegal instruction (int 3)
