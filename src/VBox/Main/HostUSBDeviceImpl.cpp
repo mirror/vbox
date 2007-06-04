@@ -667,9 +667,11 @@ void HostUSBDevice::handlePendingStateChange()
         LogFlowThisFunc (("Calling machine->onUSBDeviceAttach()...\n"));
 
         HRESULT rc = mMachine->onUSBDeviceAttach (d, error);
-        /// @todo we will probably want to re-run all filters on failure
+
         /* The VM process has a legal reason to fail (for example, incorrect
          * usbfs permissions or out of virtual USB ports), so don't assert */
+
+        /// @todo we will probably want to re-run all filters on failure
 
         LogFlowThisFunc (("Done machine->onUSBDeviceAttach()=%08X\n", rc));
 
@@ -681,6 +683,10 @@ void HostUSBDevice::handlePendingStateChange()
             mState = mPendingState = USBDeviceState_USBDeviceCaptured;
             return;
         }
+
+        /* on failure, either from the proxy or from the VM process,
+         * deassociate from the machine */
+        mMachine.setNull();
     }
     else if (wasRelease)
     {
