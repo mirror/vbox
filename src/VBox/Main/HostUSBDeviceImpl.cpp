@@ -900,6 +900,10 @@ int HostUSBDevice::compare (PCUSBDEVICE aDev1, PCUSBDEVICE aDev2,
  *  is "minor": it doesn't require any further action other than update the
  *  mState field with the actual state value.
  *
+ *  Regardless of the return value, this method always takes ownership of the
+ *  new USBDEVICE structure passed in and updates the pNext and pPrev fiends in
+ *  it using the values of the old structure.
+ *
  *  @param   aDev    The current device state as seen by the proxy backend.
  *
  *  @note Locks this object for writing.
@@ -915,6 +919,15 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
 
     AutoLock alock (this);
 
+    /* Replace the existing structure by the new one */
+    if (mUsb != aDev)
+    {
+        aDev->pNext = mUsb->pNext;
+        aDev->pPrev = mUsb->pPrev;
+        USBProxyService::freeDevice (mUsb);
+        mUsb = aDev;
+    }
+
     bool isImportant = false;
 
     /*
@@ -928,6 +941,9 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
      * change it later and, e.g. re-run all USB filters when the device goes from
      * from Busy to Available).
      */
+
+    LogFlowThisFunc (("aDev->enmState=%d mState=%d mPendingState=%d\n",
+                      aDev->enmState, mState, mPendingState));
 
     switch (aDev->enmState)
     {
