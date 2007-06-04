@@ -3444,7 +3444,7 @@ value.&lt;/qt&gt;</source>
         <translation>TAPインターフェース名を表示します、</translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation>TAPインターフェース設定時に実行するコマンドを表示します。</translation>
     </message>
     <message>

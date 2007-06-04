@@ -3468,7 +3468,7 @@ value.&lt;/qt&gt;</source>
         <translation>Показывает имя TAP-интерфейса.</translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation>Показывает команду (приложение или скрипт), выполяемую для создания и настройки TAP-интерфейса.</translation>
     </message>
     <message>

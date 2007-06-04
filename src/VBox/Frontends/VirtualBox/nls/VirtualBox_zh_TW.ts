@@ -4253,7 +4253,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Displays the
                                                         command executed to
-                                                        setup the TAP
+                                                        set up the TAP
                                                         interface.</source>
         <translation type="obsolete">顯示設定
                                                         TAP 介面
@@ -4350,7 +4350,7 @@ value.&lt;/qt&gt;</source>
         <translation>顯示 TAP 介面名稱。</translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation>顯示為了設定 TAP 介面而執行的命令。</translation>
     </message>
     <message>

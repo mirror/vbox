@@ -3373,7 +3373,7 @@ value.&lt;/qt&gt;</source>
         <translation>Zeigt den Namen des TAP-Interfaces.</translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation>Zeigt das Kommando, das für die Einrichtung des TAP-Interfaces ausgeführt wird.</translation>
     </message>
     <message>

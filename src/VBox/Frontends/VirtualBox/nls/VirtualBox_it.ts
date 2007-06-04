@@ -3681,7 +3681,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     <message>
         <source>Displays the
                                                         command executed to
-                                                        setup the TAP
+                                                        set up the TAP
                                                         interface.</source>
         <translation type="obsolete">Visualizza il
                                                         comando eseguito per
@@ -3779,7 +3779,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation>Visualizza il nome dell&apos;interfaccia TAP.</translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation>Visualizza il comando lanciato per impostare l&apos;interfaccia TAP.</translation>
     </message>
     <message>
