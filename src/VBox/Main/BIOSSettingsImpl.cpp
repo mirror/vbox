@@ -22,6 +22,7 @@
 #include "BIOSSettingsImpl.h"
 #include "MachineImpl.h"
 #include "Logging.h"
+#include <iprt/cpputils.h>
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////

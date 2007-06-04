@@ -20,6 +20,7 @@
  */
 
 #include "HostFloppyDriveImpl.h"
+#include <iprt/cpputils.h>
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////

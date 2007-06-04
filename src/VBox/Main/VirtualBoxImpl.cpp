@@ -47,6 +47,7 @@
 #include <iprt/uuid.h>
 #include <iprt/thread.h>
 #include <iprt/process.h>
+#include <iprt/cpputils.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>

@@ -57,6 +57,7 @@
 #include <iprt/dir.h>
 #include <iprt/asm.h>
 #include <iprt/process.h>
+#include <iprt/cpputils.h>
 #include <VBox/param.h>
 
 #include <algorithm>
