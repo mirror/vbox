@@ -4269,7 +4269,8 @@ void sync_seg(CPUX86State *env1, int seg_reg, int selector)
     CPUX86State *savedenv = env;
     env = env1;
 
-    if (env->eflags & X86_EFL_VM)
+    if (    env->eflags & X86_EFL_VM
+        ||  !(env->cr[0] & X86_CR0_PE))
     {
         load_seg_vm(seg_reg, selector);
 
