@@ -110,6 +110,16 @@ function cnf_append()
   printf "%-30s := %s\n" "$1" "$2" >> $CNF
 }
 
+function strip_l()
+{
+  echo "$1"|sed 's|-l\([^ ]\+\)|\1|g'
+}
+
+function strip_L()
+{
+  echo "$1"|sed 's|-L\([^ ]\+\)|\1|g'
+}
+
 # Wrapper for ancient /usr/bin/which on darwin that always returns 0
 function which_wrapper()
 {
@@ -445,7 +455,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
     if test_compile "$LIBXALAN $LIBPTHREAD ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XALAN_LIBS" "`echo $LIBXALAN|sed 's+-l++g'`"
+        cnf_append "SDK_VBOX_XALAN_LIBS" "`strip_l $LIBXALAN`"
         cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
       fi
     fi
@@ -480,7 +490,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
     if test_compile "$LIBXERCES $LIBPTHREAD ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XERCES_LIBS" "`echo $LIBXERCES|sed 's+-l++g'`"
+        cnf_append "SDK_VBOX_XERCES_LIBS" "`strip_l $LIBXERCES`"
         cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
       fi
     fi
@@ -543,7 +553,7 @@ extern "C" int main(void)
   if test_compile $LIBCRYPTO libcrypto openssl; then
     if test_execute nofatal; then
       cnf_append "SDK_VBOX_OPENSSL_INCS" ""
-      cnf_append "SDK_VBOX_OPENSSL_LIBS" "`echo $LIBCRYPTO|sed 's+-l++g'`"
+      cnf_append "SDK_VBOX_OPENSSL_LIBS" "`strip_l $LIBCRYPTO`"
     fi
   fi
 }
@@ -577,7 +587,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile $LIBPTHREAD pthread pthread; then
     if test_execute; then
-      cnf_append "LIB_PTHREAD" "`echo $LIBPTHREAD|sed 's+-l++g'`"
+      cnf_append "LIB_PTHREAD" "`strip_l $LIBPTHREAD`"
     fi
   fi
 }
@@ -605,7 +615,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBZ ${INCZ:+-I$INCZ}" zlib zlib; then
     if test_execute; then
-      cnf_append "SDK_VBOX_ZLIB_LIBS" "`echo $LIBZ|sed 's+-l++g'`"
+      cnf_append "SDK_VBOX_ZLIB_LIBS" "`strip_l $LIBZ`"
       cnf_append "SDK_VBOX_ZLIB_INCS" "$INCZ"
     fi
   fi
@@ -634,7 +644,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBPNG ${INCPNG:+-I$INCPNG}" libpng libpng nofatal; then
     if test_execute nofatal; then
-      cnf_append "SDK_VBOX_LIBPNG_LIBS" "`echo $LIBPNG|sed 's+-l++g'`"
+      cnf_append "SDK_VBOX_LIBPNG_LIBS" "`strip_l $LIBPNG`"
       cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
     fi
   fi
@@ -722,8 +732,8 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBSDL $LIBSDLMAIN ${INCSDL:+-I$INCSDL}" SDL SDL; then
     if test_execute; then
-      cnf_append "LIB_SDK_LIBSDL_SDL"     "`echo $LIBSDL|sed 's+-l++g'`"
-      cnf_append "LIB_SDK_LIBSDL_SDLMAIN" "`echo $LIBSDLMAIN|sed 's+-l++g'`"
+      cnf_append "LIB_SDK_LIBSDL_SDL"     "`strip_l $LIBSDL`"
+      cnf_append "LIB_SDK_LIBSDL_SDLMAIN" "`strip_l $LIBSDLMAIN`"
       [ -n "$INCSDL" ] && cnf_append "SDK_LIBSDL_INCS" "$INCSDL"
     fi
   fi
@@ -806,7 +816,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBX11 $LIBXCURSOR" Xcursor Xcursor; then
     log_success "found"
-    cnf_append "LIB_XCURSOR" "`echo $LIBXCURSOR|sed 's+-l++g'`"
+    cnf_append "LIB_XCURSOR" "`strip_l $LIBXCURSOR`"
   fi
 }
 
@@ -1039,8 +1049,8 @@ extern "C" int main(void)
   if test_compile "$CFLAGSHAL $LIBPATHHAL $LIBHAL" libhal libhal; then
     log_success "found version $pc_verhal"
     cnf_append "LIB_HAL_CFLAGS"   "$CFLAGSHAL"
-    cnf_append "LIB_HAL_LIBS"     "`echo $LIBHAL | sed 's+-l++g'`"
-    cnf_append "LIB_HAL_LIBPATH"  "`echo $LIBPATHHAL | sed 's+-L++g'`"
+    cnf_append "LIB_HAL_LIBS"     "`strip_l $LIBHAL`"
+    cnf_append "LIB_HAL_LIBPATH"  "`strip_L $LIBPATHHAL`"
     cnf_append "VBOX_WITH_LIBHAL" "1"
   fi
 }
