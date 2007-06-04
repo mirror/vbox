@@ -3553,7 +3553,7 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

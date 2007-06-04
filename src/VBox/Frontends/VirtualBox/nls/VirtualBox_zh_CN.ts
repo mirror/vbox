@@ -3517,7 +3517,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Displays the
                                                         command executed to
-                                                        setup the TAP
+                                                        set up the TAP
                                                         interface.</source>
         <translation type="obsolete">显示用于设置TAP主机网络界面的命令.</translation>
     </message>
@@ -3608,7 +3608,7 @@ value.&lt;/qt&gt;</source>
         <translation>显示主机上的TAP网络界面名称.</translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation>显示用于设置TAP主机网络界面的命令.</translation>
     </message>
     <message>

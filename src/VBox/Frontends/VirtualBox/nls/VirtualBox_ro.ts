@@ -3685,7 +3685,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Displays the
                                                         command executed to
-                                                        setup the TAP
+                                                        set up the TAP
                                                         interface.</source>
         <translation type="obsolete">Afişează comanda executată pentru a instala interfaţa TAP.</translation>
     </message>
@@ -3772,7 +3772,7 @@ value.&lt;/qt&gt;</source>
         <translation>Afişează numele TAP al interfeţei.</translation>
     </message>
     <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation>Afişează comanda executată pentru configurarea interfeţei TAP.</translation>
     </message>
     <message>
