@@ -243,8 +243,13 @@ void USBProxyService::processChanges (void)
             if (!iDiff)
             {
                 /*
-                 * Device still there, update the state and move on.
+                 * Device still there, update the state and move on.  Note
+                 * that pDevices will be always adopted by the HostUSBDevice
+                 * object (whose updateState() method must be always called by
+                 * updateDeviceState()) and therefore there is no reason to
+                 * free pDevices here.
                  */
+                PUSBDEVICE pNext = pDevices->pNext; /* treated as singly linked */
                 if (updateDeviceState (DevPtr, pDevices))
                 {
                     Log (("USBProxyService::processChanges: state change %p:{.idVendor=%#06x, .idProduct=%#06x, .pszProduct=\"%s\", .pszManufacturer=\"%s\"} state=%d%s\n",
@@ -252,9 +257,7 @@ void USBProxyService::processChanges (void)
                     mHost->onUSBDeviceStateChanged (DevPtr);
                 }
                 It++;
-                PUSBDEVICE pFree = pDevices;
-                pDevices = pDevices->pNext; /* treated as singly linked */
-                freeDevice (pFree);
+                pDevices = pNext;
             }
             else
             {
