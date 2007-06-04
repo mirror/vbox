@@ -445,7 +445,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
     if test_compile "$LIBXALAN ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XALAN_LIBS" "`echo $LIBXALAN|sed 's+-l++'`"
+        cnf_append "SDK_VBOX_XALAN_LIBS" "`echo $LIBXALAN|sed 's+-l++g'`"
         cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
       fi
     fi
@@ -480,7 +480,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
     if test_compile "$LIBXERCES ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XERCES_LIBS" "`echo $LIBXERCES|sed 's+-l++'`"
+        cnf_append "SDK_VBOX_XERCES_LIBS" "`echo $LIBXERCES|sed 's+-l++g'`"
         cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
       fi
     fi
@@ -543,7 +543,7 @@ extern "C" int main(void)
   if test_compile $LIBCRYPTO libcrypto openssl; then
     if test_execute nofatal; then
       cnf_append "SDK_VBOX_OPENSSL_INCS" ""
-      cnf_append "SDK_VBOX_OPENSSL_LIBS" "`echo $LIBCRYPTO|sed 's+-l++'`"
+      cnf_append "SDK_VBOX_OPENSSL_LIBS" "`echo $LIBCRYPTO|sed 's+-l++g'`"
     fi
   fi
 }
@@ -577,7 +577,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile $LIBPTHREAD pthread pthread; then
     if test_execute; then
-      cnf_append "LIB_PTHREAD" "`echo $LIBPTHREAD|sed 's+-l++'`"
+      cnf_append "LIB_PTHREAD" "`echo $LIBPTHREAD|sed 's+-l++g'`"
     fi
   fi
 }
@@ -605,7 +605,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBZ ${INCZ:+-I$INCZ}" zlib zlib; then
     if test_execute; then
-      cnf_append "SDK_VBOX_ZLIB_LIBS" "`echo $LIBZ|sed 's+-l++'`"
+      cnf_append "SDK_VBOX_ZLIB_LIBS" "`echo $LIBZ|sed 's+-l++g'`"
       cnf_append "SDK_VBOX_ZLIB_INCS" "$INCZ"
     fi
   fi
@@ -634,7 +634,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBPNG ${INCPNG:+-I$INCPNG}" libpng libpng nofatal; then
     if test_execute nofatal; then
-      cnf_append "SDK_VBOX_LIBPNG_LIBS" "`echo $LIBPNG|sed 's+-l++'`"
+      cnf_append "SDK_VBOX_LIBPNG_LIBS" "`echo $LIBPNG|sed 's+-l++g'`"
       cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
     fi
   fi
@@ -722,8 +722,8 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBSDL $LIBSDLMAIN ${INCSDL:+-I$INCSDL}" SDL SDL; then
     if test_execute; then
-      cnf_append "LIB_SDK_LIBSDL_SDL"     "`echo $LIBSDL|sed 's+-l++'`"
-      cnf_append "LIB_SDK_LIBSDL_SDLMAIN" "`echo $LIBSDLMAIN|sed 's+-l++'`"
+      cnf_append "LIB_SDK_LIBSDL_SDL"     "`echo $LIBSDL|sed 's+-l++g'`"
+      cnf_append "LIB_SDK_LIBSDL_SDLMAIN" "`echo $LIBSDLMAIN|sed 's+-l++g'`"
       [ -n "$INCSDL" ] && cnf_append "SDK_LIBSDL_INCS" "$INCSDL"
     fi
   fi
@@ -806,7 +806,7 @@ extern "C" int main(void)
 ' > .tmp_src.cc
   if test_compile "$LIBX11 $LIBXCURSOR" Xcursor Xcursor; then
     log_success "found"
-    cnf_append "LIB_XCURSOR" "`echo $LIBXCURSOR|sed 's+-l++'`"
+    cnf_append "LIB_XCURSOR" "`echo $LIBXCURSOR|sed 's+-l++g'`"
   fi
 }
 
