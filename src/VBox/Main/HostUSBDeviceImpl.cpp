@@ -331,10 +331,10 @@ Utf8Str HostUSBDevice::name()
     if (haveManufacturer && haveProduct)
         name = Utf8StrFmt ("%s %s", mUsb->pszManufacturer,
                                      mUsb->pszProduct);
-    else if(haveManufacturer)
+    else if (haveManufacturer)
         name = Utf8StrFmt ("%s", mUsb->pszManufacturer);
-    else if(haveProduct)
-        name = Utf8StrFmt ("%s", mUsb->pszManufacturer);
+    else if (haveProduct)
+        name = Utf8StrFmt ("%s", mUsb->pszProduct);
     else
         name = "<unknown>";
 
@@ -388,6 +388,12 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine)
         LogFlowThisFunc (("Calling machine->onUSBDeviceAttach()...\n"));
 
         HRESULT rc = aMachine->onUSBDeviceAttach (d, NULL);
+
+        /* The VM process has a legal reason to fail (for example, incorrect
+         * usbfs permissions or out of virtual USB ports). More over, the VM
+         * process might have been accidentially crashed and not accessible
+         * any more (so that calling an uninitialized SessionMachine returns a
+         * failure). So don't assert. */
 
         LogFlowThisFunc (("Done machine->onUSBDeviceAttach()=%08X\n", rc));
 
@@ -480,7 +486,7 @@ void HostUSBDevice::requestHold()
 }
 
 /**
- *  Sets the device state from Captured to Held and preserves the machine
+ *  Sets the device state from Captured to Held and resets the machine
  *  association (if any). Usually called before applying filters.
  *
  *  @note Must be called from under the object write lock.
@@ -496,6 +502,7 @@ void HostUSBDevice::setHeld()
     AssertReturnVoid (mIsStatePending == false);
 
     mState = USBDeviceState_USBDeviceHeld;
+    mMachine.setNull();
 }
 
 /**
@@ -524,14 +531,26 @@ void HostUSBDevice::reset()
         LogFlowThisFunc (("Calling machine->onUSBDeviceDetach()...\n"));
 
         HRESULT rc = mMachine->onUSBDeviceDetach (mId, NULL);
-        AssertComRC (rc);
+
+        /* This call may expectedly fail with rc = NS_ERROR_FAILURE (on XPCOM)
+         * if the VM process requests device release right before termination
+         * and then terminates before onUSBDeviceDetach() reached
+         * it. Therefore, we don't assert here. On MS COM, there should be
+         * something similar (with the different error code). More over, the
+         * VM process might have been accidentially crashed and not accessible
+         * any more (so that calling an uninitialized SessionMachine returns a
+         * failure). So don't assert. */
 
         LogFlowThisFunc (("Done machine->onUSBDeviceDetach()=%08X\n", rc));
 
         alock.enter();
 
+        /* Reset all fields. Tthe object should have been
+         * uninitialized after this method returns, so it doesn't really
+         * matter what state we put it in. */
         mIsStatePending = false;
         mState = mPendingState = USBDeviceState_USBDeviceNotSupported;
+        mMachine.setNull();
     }
 }
 
@@ -551,7 +570,6 @@ void HostUSBDevice::handlePendingStateChange()
     AssertReturnVoid (mState != USBDeviceState_USBDeviceCaptured);
 
     bool wasCapture = false;
-    bool wasRelease = false;
 
     HRESULT requestRC = S_OK;
     Bstr errorText;
@@ -593,35 +611,19 @@ void HostUSBDevice::handlePendingStateChange()
         }
         case USBDeviceState_USBDeviceAvailable:
         {
+            Assert (mMachine.isNull());
+
             if (mState == USBDeviceState_USBDeviceHeld)
             {
-                /* couldn't release the device */
-                wasRelease = true;
-
-                Assert (!mMachine.isNull());
-
-                /* return the captured state back */
-                mState = USBDeviceState_USBDeviceCaptured;
-
-                /// @todo more detailed error message depending on the state?
-                //  probably need some error code/string from the USB proxy itself
-
-                requestRC = E_FAIL;
-                errorText = Utf8StrFmt (
-                    tr ("USB device '%s' with UUID {%Vuuid} is being accessed by the guest "
-                        "computer and cannot be attached from the virtual machine."
-                        "Please try later"),
-                    name().raw(), id().raw());
+                /* couldn't release the device (give it back to the host).
+                 * there is nobody to report an error to (the machine has
+                 * already been deassociated because VMM has already detached
+                 * the device before requesting a release). */
             }
             else
             {
-                if (!mMachine.isNull())
-                    wasRelease = true;
-                else
-                {
-                    /* it is a canceled release request. Leave at the host */
-                    /// @todo we may want to re-run all filters in this case
-                }
+                /* it is a canceled release request. Leave at the host */
+                /// @todo we may want to re-run all filters in this case
             }
             break;
         }
@@ -629,6 +631,8 @@ void HostUSBDevice::handlePendingStateChange()
         {
             if (mState == USBDeviceState_USBDeviceHeld)
             {
+                /* All right, the device is now held (due to some global
+                 * filter). */
                 break;
             }
             else
@@ -669,7 +673,10 @@ void HostUSBDevice::handlePendingStateChange()
         HRESULT rc = mMachine->onUSBDeviceAttach (d, error);
 
         /* The VM process has a legal reason to fail (for example, incorrect
-         * usbfs permissions or out of virtual USB ports), so don't assert */
+         * usbfs permissions or out of virtual USB ports). More over, the VM
+         * process might have been accidentially crashed and not accessible
+         * any more (so that calling an uninitialized SessionMachine returns a
+         * failure). So don't assert. */
 
         /// @todo we will probably want to re-run all filters on failure
 
@@ -687,34 +694,6 @@ void HostUSBDevice::handlePendingStateChange()
         /* on failure, either from the proxy or from the VM process,
          * deassociate from the machine */
         mMachine.setNull();
-    }
-    else if (wasRelease)
-    {
-        /* inform the VM process */
-
-        /* the VM process will query the object, so leave the lock */
-        AutoLock alock (this);
-        alock.leave();
-
-        LogFlowThisFunc (("Calling machine->onUSBDeviceDetach()...\n"));
-
-        HRESULT rc = mMachine->onUSBDeviceDetach (mId, error);
-
-        /* This call may expectedly fail with rc = NS_ERROR_FAILURE (on XPCOM)
-         * if the VM process requests device release right before termination
-         * and then terminates before onUSBDeviceDetach() is reached
-         * it. Therefore, we don't assert here. On MS COM, there should be
-         * something similar (with the different error code). */
-
-        LogFlowThisFunc (("Done machine->onUSBDeviceDetach()=%08X\n", rc));
-
-        alock.enter();
-
-        if (SUCCEEDED (requestRC))
-        {
-            /* deassociate from the machine */
-            mMachine.setNull();
-        }
     }
 
     mIsStatePending = false;
@@ -738,13 +717,6 @@ void HostUSBDevice::cancelPendingState()
     switch (mPendingState)
     {
         case USBDeviceState_USBDeviceCaptured:
-        {
-            /* reset mMachine to deassociate it from the filter and tell
-             * handlePendingStateChange() what to do */
-            mMachine.setNull();
-            break;
-        }
-        case USBDeviceState_USBDeviceAvailable:
         {
             /* reset mMachine to deassociate it from the filter and tell
              * handlePendingStateChange() what to do */
@@ -858,44 +830,63 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
 /**
  *  Compares this device with a USBDEVICE and decides which comes first.
  *
- *  @return < 0 if this should come before pDev2.
- *  @return   0 if this and pDev2 are equal.
- *  @return > 0 if this should come after pDev2.
+ *  If the device has a pending state request, a non-strict comparison is made
+ *  (to properly detect a re-attached device). Otherwise, a strict comparison
+ *  is performed.
  *
- *  @param   pDev2   Device 2.
+ *  @param   aDev2   Device 2.
+ *
+ *  @return < 0 if this should come before aDev2.
+ *  @return   0 if this and aDev2 are equal.
+ *  @return > 0 if this should come after aDev2.
  *
  *  @note Must be called from under the object write lock.
  */
-int HostUSBDevice::compare (PCUSBDEVICE pDev2)
+int HostUSBDevice::compare (PCUSBDEVICE aDev2)
 {
     AssertReturn (isLockedOnCurrentThread(), -1);
 
-    return compare (mUsb, pDev2);
+    return compare (mUsb, aDev2, !isStatePending());
 }
-
 
 /**
  *  Compares two USB devices and decides which comes first.
+ * 
+ *  If @a aIsStrict is @c true then the comparison will indicate a difference
+ *  even if the same physical device (represented by @a aDev1) has been just
+ *  re-attached to the host computer (represented by @a aDev2) and got a
+ *  different address from the host OS, etc.
  *
- *  @return < 0 if pDev1 should come before pDev2.
- *  @return   0 if pDev1 and pDev2 are equal.
- *  @return > 0 if pDev1 should come after pDev2.
+ *  If @a aIsStrict is @c false, then such a re-attached device will be
+ *  considered equal to the previous device definition and this function will
+ *  retrun 0.
  *
- *  @param   pDev1   Device 1.
- *  @param   pDev2   Device 2.
+ *  @param   aDev1      Device 1.
+ *  @param   aDev2      Device 2.
+ *  @param   aIsStrict  @c true to do a strict check and @c false otherwise.
+
+ *  @return < 0 if aDev1 should come before aDev2.
+ *  @return   0 if aDev1 and aDev2 are equal.
+ *  @return > 0 if aDev1 should come after aDev2.
  */
-/*static*/ int HostUSBDevice::compare (PCUSBDEVICE pDev1, PCUSBDEVICE pDev2)
+/*static*/
+int HostUSBDevice::compare (PCUSBDEVICE aDev1, PCUSBDEVICE aDev2,
+                            bool aIsStrict /* = true */)
 {
-    int iDiff = pDev1->idVendor - pDev2->idVendor;
+    int iDiff = aDev1->idVendor - aDev2->idVendor;
     if (iDiff)
         return iDiff;
 
-    iDiff = pDev1->idProduct - pDev2->idProduct;
+    iDiff = aDev1->idProduct - aDev2->idProduct;
     if (iDiff)
         return iDiff;
 
-    /** @todo Sander, will this work on windows as well? Linux won't reuse an address for quite a while. */
-    return strcmp(pDev1->pszAddress, pDev2->pszAddress);
+    if (!aIsStrict)
+        return 0;
+
+    /* The rest is considered as a strict check. */
+
+    return strcmp (aDev1->pszAddress, aDev2->pszAddress);
 }
 
 /**
@@ -955,6 +946,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceBusy:
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
+                    break;
                 default:
                     isImportant = true;
             }
@@ -972,6 +964,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceUnavailable:
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
+                    break;
                 default:
                     isImportant = true;
             }
@@ -996,6 +989,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceUnavailable:
                 case USBDeviceState_USBDeviceBusy:
                     isImportant = false;
+                    break;
                 default:
                     isImportant = true;
             }

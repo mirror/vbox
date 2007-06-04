@@ -1314,7 +1314,7 @@ HRESULT Host::releaseUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
 
     /* re-apply filters on the device before giving it back to the host */
     device->setHeld();
-    HRESULT rc = applyAllUSBFilters (device);
+    HRESULT rc = applyAllUSBFilters (device, aMachine);
     ComAssertComRC (rc);
 
     return rc;
@@ -1396,7 +1396,7 @@ HRESULT Host::releaseAllUSBDevices (SessionMachine *aMachine)
                 /* re-apply filters on the device before giving it back to the
                  * host */
                 device->setHeld();
-                HRESULT rc = applyAllUSBFilters (device);
+                HRESULT rc = applyAllUSBFilters (device, aMachine);
                 AssertComRC (rc);
             }
             else
@@ -1844,11 +1844,13 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
  *  the device.
  *
  *  @param aDevice  USB device to apply filters to.
+ *  @param aMachine Machine the device was released by or @c NULL.
  *
  *  @note the method must be called from under this object's write lock and
  *  from the aDevice's write lock.
  */
-HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice)
+HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
+                                  SessionMachine *aMachine /* = NULL */)
 {
     LogFlowThisFunc (("\n"));
 
@@ -1900,7 +1902,7 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice)
     for (; i < machines.size(); ++ i)
     {
         /* skip the machine the device was just detached from */
-        if (aDevice->machine() && machines [i] == aDevice->machine())
+        if (aMachine && machines [i] == aMachine)
             continue;
 
         if (applyMachineUSBFilters (machines [i], aDevice))
@@ -2050,7 +2052,7 @@ void Host::onUSBDeviceDetached (HostUSBDevice *aDevice)
     /* remove from the collecion */
     mUSBDevices.erase (it);
 
-    /* reset all data */
+    /* reset all data and uninitialize the device object */
     device->reset();
 }
 
