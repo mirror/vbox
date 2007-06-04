@@ -338,12 +338,11 @@ QTextBrowser* VBoxVMLogViewer::createLogPage (const QString &aName)
 void VBoxVMLogViewer::save()
 {
     /* prepare "save as" dialog */
-    QDate fullDate = QDate::currentDate();
-    QTime fullTime = QTime::currentTime();
-    QString date = fullDate.toString ("yyyy-MM-dd");
-    QString time = fullTime.toString ("hh-mm-ss");
-    QString defaultFileName = QString ("%1-%2-%3.log")
-        .arg (mMachine.GetName()).arg (date).arg (time);
+    QFileInfo fileInfo (mLogFilesList [mLogList->currentPageIndex()]);
+    QDateTime dtInfo = fileInfo.lastModified();
+    QString dtString = dtInfo.toString ("yyyy-MM-dd-hh-mm-ss");
+    QString defaultFileName = QString ("%1-%2.log")
+        .arg (mMachine.GetName()).arg (dtString);
     QString defaultFullName = QDir::convertSeparators (QDir::home().absPath() +
                                                        "/" + defaultFileName);
 
