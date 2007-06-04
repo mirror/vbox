@@ -161,7 +161,8 @@
     <forward>class QTextBrowser</forward>
 </forwards>
 <variables>
-    <variable access="private">static VBoxVMLogViewer *mSelf;</variable>
+    <variable access="private">typedef QMap &lt;QString, VBoxVMLogViewer*&gt; LogViewersMap;</variable>
+    <variable access="private">static LogViewersMap mSelfArray;</variable>
     <variable access="private">bool mFirstRun;</variable>
     <variable access="private">bool mIsPolished;</variable>
     <variable access="private">QSizeGrip *mSizeGrip;</variable>
