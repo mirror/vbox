@@ -1368,10 +1368,12 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 /**
  *  Initializes the VDI hard disk object using the given image file name.
  *
- *  @param aFilePath    path to the image file (can be NULL to create an
- *                      imageless object)
- *  @param aRegistered  whether to mark this disk as registered or not
- *                      (ignored when \a aFilePath is NULL, assuming FALSE)
+ *  @param aVirtualBox  VirtualBox parent.
+ *  @param aParent      Parent hard disk.
+ *  @param aFilePath    Path to the image file, or @c NULL to create an
+ *                      image-less object.
+ *  @param aRegistered  Whether to mark this disk as registered or not
+ *                      (ignored when @a aFilePath is @c NULL, assuming @c FALSE)
  */
 HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                                 const BSTR aFilePath, BOOL aRegistered /* = FALSE */)
@@ -3392,11 +3394,11 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
  *  Initializes the VMDK hard disk object using the given image file name.
  *
  *  @param aVirtualBox  VirtualBox parent.
- *  @param aParent      Currently, must always be NULL.
- *  @param aFilePath    path to the image file (can be NULL to create an
- *                      imageless object)
- *  @param aRegistered  whether to mark this disk as registered or not
- *                      (ignored when \a aFilePath is NULL, assuming FALSE)
+ *  @param aParent      Currently, must always be @c NULL.
+ *  @param aFilePath    Path to the image file, or @c NULL to create an
+ *                      image-less object.
+ *  @param aRegistered  Whether to mark this disk as registered or not
+ *                      (ignored when @a aFilePath is @c NULL, assuming @c FALSE)
  */
 HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                           const BSTR aFilePath, BOOL aRegistered /* = FALSE */)
@@ -3910,6 +3912,12 @@ HRESULT HVMDKImage::setFilePath (const BSTR aFilePath)
     return S_OK;
 }
 
+DECLCALLBACK(void) VDError (void *pvUser, int rc, RT_SRC_POS_DECL,
+                            const char *pszFormat, va_list va)
+{
+    /// @todo pass the error message to the operation initiator
+}
+
 /**
  *  Helper to query information about the VDI hard disk.
  *
@@ -3949,100 +3957,102 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
     Utf8Str filePath = mFilePathFull;
     Bstr errMsg;
 
+    PVBOXHDD hdd = NULL;
+
     do
     {
-        /// @todo remove when the code below is implemented
-        if (mId.isEmpty())
-            mId.create();
+        Guid id, parentId;
 
-/// @todo  implement
-//
-//         /* check the image file */
-//         Guid id, parentId;
-//         vrc = VDICheckImage (filePath, NULL, NULL, NULL,
-//                              id.ptr(), parentId.ptr(), NULL, 0);
-//
-//         if (VBOX_FAILURE (vrc))
-//             break;
-//
-//         if (!mId.isEmpty())
-//         {
-//             /* check that the actual UUID of the image matches the stored UUID */
-//             if (mId != id)
-//             {
-//                 errMsg = Utf8StrFmt (
-//                     tr ("Actual UUID {%Vuuid} of the hard disk image '%s' doesn't "
-//                         "match UUID {%Vuuid} stored in the registry"),
-//                     id.ptr(), filePath.raw(), mId.ptr());
-//                 break;
-//             }
-//         }
-//         else
-//         {
-//             /* assgn an UUID read from the image file */
-//             mId = id;
-//         }
-//
-//         if (mParent)
-//         {
-//             /* check parent UUID */
-//             AutoLock parentLock (mParent);
-//             if (mParent->id() != parentId)
-//             {
-//                 errMsg = Utf8StrFmt (
-//                     tr ("UUID {%Vuuid} of the parent image '%ls' stored in "
-//                         "the hard disk image file '%s' doesn't match "
-//                         "UUID {%Vuuid} stored in the registry"),
-//                     parentId.raw(), mParent->toString().raw(),
-//                     filePath.raw(), mParent->id().raw());
-//                 break;
-//             }
-//         }
-//         else if (!parentId.isEmpty())
-//         {
-//             errMsg = Utf8StrFmt (
-//                 tr ("Hard disk image '%s' is a differencing image that is linked "
-//                     "to a hard disk with UUID {%Vuuid} and cannot be used "
-//                     "directly as a base hard disk"),
-//                 filePath.raw(), parentId.raw());
-//             break;
-//         }
-//
-//         {
-//             RTFILE file = NIL_RTFILE;
-//             vrc = RTFileOpen (&file, filePath, RTFILE_O_READ);
-//             if (VBOX_SUCCESS (vrc))
-//             {
-//                 uint64_t size = 0;
-//                 vrc = RTFileGetSize (file, &size);
-//                 if (VBOX_SUCCESS (vrc))
-//                     mActualSize = size;
-//                 RTFileClose (file);
-//             }
-//             if (VBOX_FAILURE (vrc))
-//                 break;
-//         }
-//
-//         if (!mParent)
-//         {
-//             /* query logical size only for non-differencing images */
-//
-//             PVDIDISK disk = VDIDiskCreate();
-//             vrc = VDIDiskOpenImage (disk, Utf8Str (mFilePathFull),
-//                                     VDI_OPEN_FLAGS_READONLY);
-//             if (VBOX_SUCCESS (vrc))
-//             {
-//                 uint64_t size = VDIDiskGetSize (disk);
-//                 /* convert to MBytes */
-//                 mSize = size / 1024 / 1024;
-//             }
-//
-//             VDIDiskDestroy (disk);
-//             if (VBOX_FAILURE (vrc))
-//                 break;
-//         }
+        /// @todo make PVBOXHDD a member variable and init/destroy it upon
+        /// image creation/deletion instead of doing that here every time.
+
+        vrc = VDCreate ("VMDK", err, NULL, &hdd);
+        if (VBOX_FAILURE (vrc))
+            break;
+
+        vrc = VDOpen (hdd, filePath, VD_OPEN_FLAGS_READONLY);
+        if (VBOX_FAILURE (vrc))
+            break;
+
+        vrc = VDGetUuid (hdd, 0, id.ptr());
+        if (VBOX_FAILURE (vrc))
+            break;
+        vrc = VDGetParentUuid (hdd, 0, parentId.ptr());
+        if (VBOX_FAILURE (vrc))
+            break;
+
+        if (!mId.isEmpty())
+        {
+            /* check that the actual UUID of the image matches the stored UUID */
+            if (mId != id)
+            {
+                errMsg = Utf8StrFmt (
+                    tr ("Actual UUID {%Vuuid} of the hard disk image '%s' doesn't "
+                        "match UUID {%Vuuid} stored in the registry"),
+                    id.ptr(), filePath.raw(), mId.ptr());
+                break;
+            }
+        }
+        else
+        {
+            /* assgn an UUID read from the image file */
+            mId = id;
+        }
+
+        if (mParent)
+        {
+            /* check parent UUID */
+            AutoLock parentLock (mParent);
+            if (mParent->id() != parentId)
+            {
+                errMsg = Utf8StrFmt (
+                    tr ("UUID {%Vuuid} of the parent image '%ls' stored in "
+                        "the hard disk image file '%s' doesn't match "
+                        "UUID {%Vuuid} stored in the registry"),
+                    parentId.raw(), mParent->toString().raw(),
+                    filePath.raw(), mParent->id().raw());
+                break;
+            }
+        }
+        else if (!parentId.isEmpty())
+        {
+            errMsg = Utf8StrFmt (
+                tr ("Hard disk image '%s' is a differencing image that is linked "
+                    "to a hard disk with UUID {%Vuuid} and cannot be used "
+                    "directly as a base hard disk"),
+                filePath.raw(), parentId.raw());
+            break;
+        }
+
+        /* get actual file size */
+        /// @todo is there a direct method in RT?
+        {
+            RTFILE file = NIL_RTFILE;
+            vrc = RTFileOpen (&file, filePath, RTFILE_O_READ);
+            if (VBOX_SUCCESS (vrc))
+            {
+                uint64_t size = 0;
+                vrc = RTFileGetSize (file, &size);
+                if (VBOX_SUCCESS (vrc))
+                    mActualSize = size;
+                RTFileClose (file);
+            }
+            if (VBOX_FAILURE (vrc))
+                break;
+        }
+
+        /* query logical size only for non-differencing images */
+        if (!mParent)
+        {
+            uint64_t size = VDGetSize (hdd);
+            /* convert to MBytes */
+            mSize = size / 1024 / 1024;
+        }
     }
     while (0);
+
+    if (hdd)
+        VDDestroy (hdd);
 
     /* enter the lock again */
     alock.enter();
