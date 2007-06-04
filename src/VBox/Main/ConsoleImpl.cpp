@@ -3271,7 +3271,8 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
     if (device.isNull())
     {
         LogFlowThisFunc (("Device not found.\n"));
-        if (mMachineState < MachineState_Running)
+        if (mMachineState < MachineState_Running ||
+            mMachineState == MachineState_Stopping)
         {
             LogFlowThisFunc (("Detach request ignored (mMachineState=%d).\n",
                               mMachineState));
