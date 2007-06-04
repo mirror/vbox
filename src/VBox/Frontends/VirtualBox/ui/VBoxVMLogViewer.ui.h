@@ -30,26 +30,23 @@
 *****************************************************************************/
 
 
-VBoxVMLogViewer *VBoxVMLogViewer::mSelf = 0;
+VBoxVMLogViewer::LogViewersMap VBoxVMLogViewer::mSelfArray = LogViewersMap();
+
 void VBoxVMLogViewer::createLogViewer (CMachine &aMachine)
 {
-    if (!mSelf)
+    if (mSelfArray.find (aMachine.GetName()) == mSelfArray.end())
     {
         /* creating new log viewer if there is no one existing */
-        mSelf = new VBoxVMLogViewer (0, "VBoxVMLogViewer",
-                                     WType_TopLevel | WDestructiveClose);
+        mSelfArray [aMachine.GetName()] = new VBoxVMLogViewer (0,
+            "VBoxVMLogViewer", WType_TopLevel | WDestructiveClose);
+        /* read new machine data for this log viewer */
+        mSelfArray [aMachine.GetName()]->setup (aMachine);
     }
 
-    if (mSelf->machine() != aMachine)
-    {
-        /* re-read new machine data if the machine was changed or
-         * the log-viewer is opened for the first time */
-        mSelf->setup (aMachine);
-    }
-
-    mSelf->show();
-    mSelf->setWindowState (mSelf->windowState() & ~WindowMinimized);
-    mSelf->setActiveWindow();
+    VBoxVMLogViewer *viewer = mSelfArray [aMachine.GetName()];
+    viewer->show();
+    viewer->setWindowState (viewer->windowState() & ~WindowMinimized);
+    viewer->setActiveWindow();
 }
 
 
@@ -88,7 +85,7 @@ void VBoxVMLogViewer::init()
 
 void VBoxVMLogViewer::destroy()
 {
-    mSelf = 0;
+    mSelfArray.erase (mMachine.GetName());
 }
 
 
