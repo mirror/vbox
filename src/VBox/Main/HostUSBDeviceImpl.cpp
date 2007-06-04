@@ -985,6 +985,13 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             {
                 case USBDeviceState_USBDeviceAvailable:
                     return false;
+#ifdef __LINUX__ /* hack for /proc/bus/usb/devices not putting up a driver any longer. */
+                case USBDeviceState_USBDeviceCaptured:
+                    if (!mIsStatePending)
+                        return false;
+                    isImportant = true;
+                    break;
+#endif
                 /* the following state changes don't require any action for now */
                 case USBDeviceState_USBDeviceUnavailable:
                 case USBDeviceState_USBDeviceBusy:
