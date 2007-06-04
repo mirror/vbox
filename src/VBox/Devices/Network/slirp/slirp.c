@@ -47,12 +47,13 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
     inet_aton(pIPAddr->IpAddress.String, &tmp_addr);
     *pdns_addr = tmp_addr;
     Log(("nat: DNS Servers:\n"));
-    Log(("nat: DNS Addr:%s\n", pIPAddr->IpAddress.String));
+    LogRel(("NAT: DNS address: %s\n", pIPAddr->IpAddress.String));
 
     pIPAddr = FixedInfo -> DnsServerList.Next;
-    while ( pIPAddr ) {
-            Log(("nat: DNS Addr:%s\n", pIPAddr ->IpAddress.String));
-            pIPAddr = pIPAddr ->Next;
+    while ( pIPAddr )
+    {
+        LogRel(("NAT: ignored DNS address: %s\n", pIPAddr ->IpAddress.String));
+        pIPAddr = pIPAddr ->Next;
     }
     if (FixedInfo) {
         GlobalFree(FixedInfo);
@@ -124,7 +125,7 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
         return -1;
 
     *ppszDomain = NULL;
-    Log(("nat: IP address of your DNS(s): \n"));
+    Log(("nat: DNS Servers:\n"));
     while (fgets(buff, 512, f) != NULL) {
         if (sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1) {
             if (!inet_aton(buff2, &tmp_addr))
@@ -133,12 +134,13 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
                 tmp_addr = our_addr;
             /* If it's the first one, set it to dns_addr */
             if (!found)
+            {
                 *pdns_addr = tmp_addr;
-            if (++found > 3) {
-                Log(("nat: (more)\n"));
-                break;
-            } else
-                Log(("nat: %s\n", inet_ntoa(tmp_addr)));
+                LogRel(("NAT: DNS address: %s\n", buff2));
+            }
+            else
+                LogRel(("NAT: ignored DNS address: %s\n", buff2));
+            found++;
         }
         if (!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6))
         {
