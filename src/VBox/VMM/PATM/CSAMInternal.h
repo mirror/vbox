@@ -251,7 +251,7 @@ typedef int (VBOXCALL *PFN_CSAMR3ANALYSE)(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(
  * @returns             true if patched
  *
  */
-bool csamCheckGuestSpecificPatch(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)pInstrHC, uint32_t opcode);
+bool csamCheckGuestSpecificPatch(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC, uint32_t opcode);
 
 /**
  * Calculate the branch destination
