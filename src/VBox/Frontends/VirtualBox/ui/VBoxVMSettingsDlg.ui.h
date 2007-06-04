@@ -72,6 +72,17 @@ public:
         buttonLayout->addItem (spacer);
         buttonLayout->addWidget (btCancel);
 
+        /* resize to fit the aIfaceName in one string */
+        int requiredWidth = mLeName->fontMetrics().width (aIfaceName) +
+                            mLeName->frameWidth() * 2 +
+                            mLeName->lineWidth() * 2 +
+                            inputLayout->spacing() +
+                            lbName->fontMetrics().width (lbName->text()) +
+                            lbName->frameWidth() * 2 +
+                            lbName->lineWidth() * 2 +
+                            mainLayout->margin() * 2;
+        resize (requiredWidth, minimumHeight());
+
         /* Validate interface name field */
         validate();
     }
