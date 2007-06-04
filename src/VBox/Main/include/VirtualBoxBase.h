@@ -455,11 +455,19 @@ public:
         /**
          *  Increases the number of callers of the given object
          *  by calling VirtualBoxBase::addCaller().
+         *
+         *  @param aObj     Object to add a caller to. If NULL, this
+         *                  instance is effectively turned to no-op (where
+         *                  rc() will return S_OK and state() will be
+         *                  NotReady).
          */
-        AutoCallerBase (VirtualBoxBaseNEXT_base *aObj) : mObj (aObj)
+        AutoCallerBase (VirtualBoxBaseNEXT_base *aObj)
+            : mObj (aObj)
+            , mRC (S_OK)
+            , mState (NotReady)
         {
-            Assert (aObj);
-            mRC = mObj->addCaller (&mState, aLimited);
+            if (mObj)
+                mRC =  mObj->addCaller (&mState, aLimited);
         }
 
         /**
@@ -469,7 +477,7 @@ public:
          */
         ~AutoCallerBase()
         {
-            if (SUCCEEDED (mRC))
+            if (mObj && SUCCEEDED (mRC))
                 mObj->releaseCaller();
         }
 
@@ -502,7 +510,8 @@ public:
             Assert (SUCCEEDED (mRC));
             if (SUCCEEDED (mRC))
             {
-                mObj->releaseCaller();
+                if (mObj)
+                    mObj->releaseCaller();
                 mRC = E_FAIL;
             }
         }
@@ -514,7 +523,7 @@ public:
         void add()
         {
             Assert (!SUCCEEDED (mRC));
-            if (!SUCCEEDED (mRC))
+            if (mObj && !SUCCEEDED (mRC))
                 mRC = mObj->addCaller (&mState, aLimited);
         }
 
