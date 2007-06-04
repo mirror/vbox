@@ -27,6 +27,7 @@
 #include "Logging.h"
 
 #include <VBox/err.h>
+#include <iprt/cpputils.h>
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -313,7 +314,7 @@ STDMETHODIMP HostUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  * @note Locks this object for reading.
  */
 Utf8Str HostUSBDevice::name()
@@ -446,7 +447,7 @@ void HostUSBDevice::requestRelease()
 
 /**
  *  Requests the USB proxy service to release the device, sets the pending
- *  state to Held and removes the machine association if any. 
+ *  state to Held and removes the machine association if any.
  *
  *  If the state change may be performed immediately (for example, the current
  *  state is already Held), this method does nothing but removes the machine
@@ -577,10 +578,10 @@ void HostUSBDevice::handlePendingStateChange()
                 wasCapture = true;
 
                 Assert (!mMachine.isNull());
-                
+
                 /// @todo more detailed error message depending on the state?
                 //  probably need some error code/string from the USB proxy itself
-                
+
                 requestRC = E_FAIL;
                 errorText = Utf8StrFmt (
                     tr ("USB device '%s' with UUID {%Vuuid} is being accessed by the host "
@@ -604,7 +605,7 @@ void HostUSBDevice::handlePendingStateChange()
 
                 /// @todo more detailed error message depending on the state?
                 //  probably need some error code/string from the USB proxy itself
-                
+
                 requestRC = E_FAIL;
                 errorText = Utf8StrFmt (
                     tr ("USB device '%s' with UUID {%Vuuid} is being accessed by the guest "

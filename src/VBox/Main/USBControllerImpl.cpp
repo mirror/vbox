@@ -32,6 +32,7 @@
 #include "USBProxyService.h"
 
 #include <iprt/string.h>
+#include <iprt/cpputils.h>
 #include <VBox/err.h>
 
 #include <algorithm>
@@ -1189,7 +1190,7 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
         ++ it;
     }
 
-    return S_OK; 
+    return S_OK;
 }
 
 // private methods

@@ -28,6 +28,7 @@
 
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/cpputils.h>
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -138,7 +139,7 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildren *aParent,
 
     Utf8Str hostPath = Utf8Str (aHostPath);
     size_t hostPathLen = hostPath.length();
-    
+
     /* Remove the trailng slash unless it's a root directory
      * (otherwise the comparison with the RTPathAbs() result will fail at least
      * on Linux). Note that this isn't really necessary for the shared folder
@@ -156,7 +157,7 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildren *aParent,
 #endif
     else
         RTPathStripTrailingSlash (hostPath.mutableRaw());
-    
+
     /* Check whether the path is full (absolute) */
     char hostPathFull [RTPATH_MAX];
     int vrc = RTPathAbsEx (NULL, hostPath,

@@ -30,6 +30,7 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
+#include <iprt/cpputils.h>
 #include <VBox/VBoxHDD.h>
 #include <VBox/VBoxHDD-new.h>
 #include <VBox/err.h>

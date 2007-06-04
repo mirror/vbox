@@ -1303,36 +1303,6 @@
     inline static void *operator new (size_t); \
     inline static void operator delete (void *);
 
-
-/**
- * Shortcut to |const_cast<C &>()| that automatically derives the correct
- * type (class) for the const_cast template's argument from its own argument.
- * Can be used to temporarily cancel the |const| modifier on the left-hand side
- * of assignment expressions, like this:
- * @code
- *      const Class that;
- *      ...
- *      unconst (that) = some_value;
- * @endcode
- */
-template <class C>
-inline C &unconst (const C &that) { return const_cast <C &> (that); }
-
-
-/**
- * Shortcut to |const_cast<C *>()| that automatically derives the correct
- * type (class) for the const_cast template's argument from its own argument.
- * Can be used to temporarily cancel the |const| modifier on the left-hand side
- * of assignment expressions, like this:
- * @code
- *      const Class *that;
- *      ...
- *      unconst (that) = some_value;
- * @endcode
- */
-template <class C>
-inline C *unconst (const C *that) { return const_cast <C *> (that); }
-
 #endif /* defined(__cplusplus) */
 
 /** @} */

@@ -59,6 +59,7 @@
 #include <iprt/dir.h>
 #include <iprt/process.h>
 #include <iprt/ldr.h>
+#include <iprt/cpputils.h>
 
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
