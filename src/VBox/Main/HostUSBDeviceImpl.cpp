@@ -1038,6 +1038,12 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             {
                 case USBDeviceState_USBDeviceHeld:
                     return false;
+#ifdef __WIN__
+                case USBDeviceState_USBDeviceCaptured:
+                    if (!mIsStatePending)
+                        return false;
+                    /* no break */
+#endif
                 default:
                     LogFlowThisFunc (("%d -> %d\n",
                                       mState, USBDeviceState_USBDeviceHeld));
