@@ -188,7 +188,11 @@ public:
 #endif
 
     void cannotAttachUSBDevice (const CConsole &console, const QString &device);
+    void cannotAttachUSBDevice (const CConsole &console, const QString &device,
+                                const CVirtualBoxErrorInfo &error);
     void cannotDetachUSBDevice (const CConsole &console, const QString &device);
+    void cannotDetachUSBDevice (const CConsole &console, const QString &device,
+                                const CVirtualBoxErrorInfo &error);
 
     void cannotCreateSharedFolder (QWidget *, const CMachine &,
                                    const QString &, const QString &);

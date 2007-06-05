@@ -277,7 +277,7 @@ private:
 class ModifierKeyChangeEvent : public QEvent
 {
 public:
-    ModifierKeyChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock) :
+    ModifierKeyChangeEvent (bool fNumLock, bool fCapsLock, bool fScrollLock) :
         QEvent ((QEvent::Type) VBoxDefs::ModifierKeyChangeEventType),
         mfNumLock (fNumLock), mfCapsLock (fCapsLock), mfScrollLock (fScrollLock) {}
     bool numLock()    const { return mfNumLock; }
@@ -285,6 +285,23 @@ public:
     bool scrollLock() const { return mfScrollLock; }
 private:
     bool mfNumLock, mfCapsLock, mfScrollLock;
+};
+
+/** USB device state change event */
+class USBDeviceStateChangeEvent : public QEvent
+{
+public:
+    USBDeviceStateChangeEvent (const CUSBDevice &aDevice, bool aAttached,
+                               const CVirtualBoxErrorInfo &aError) :
+        QEvent ((QEvent::Type) VBoxDefs::USBDeviceStateChangeEventType),
+        mDevice (aDevice), mAttached (aAttached), mError (aError) {}
+    CUSBDevice device() const { return mDevice; }
+    bool attached() const { return mAttached; }
+    CVirtualBoxErrorInfo error() const { return mError; }
+private:
+    CUSBDevice mDevice;
+    bool mAttached;
+    CVirtualBoxErrorInfo mError;
 };
 
 //
@@ -388,12 +405,11 @@ public:
     STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *device, BOOL attached,
                                       IVirtualBoxErrorInfo *error)
     {
-        Q_UNUSED (device);
-        Q_UNUSED (attached);
-        Q_UNUSED (error);
-
-        /// @todo update menu entries
-
+        QApplication::postEvent (mView,
+                                 new USBDeviceStateChangeEvent (
+                                     CUSBDevice (device),
+                                     bool (attached),
+                                     CVirtualBoxErrorInfo (error)));
         return S_OK;
     }
 
@@ -991,6 +1007,24 @@ bool VBoxConsoleView::event (QEvent *e)
                 delete list;
                 if (!destroyed && mainwnd->statusBar())
                     mainwnd->statusBar()->clear();
+
+                return true;
+            }
+
+            case VBoxDefs::USBDeviceStateChangeEventType:
+            {
+                USBDeviceStateChangeEvent *ue = (USBDeviceStateChangeEvent *)e;
+
+                if (ue->attached())
+                    vboxProblem().cannotAttachUSBDevice (
+                        cconsole,
+                        vboxGlobal().details (ue->device()), ue->error());
+                else
+                    vboxProblem().cannotDetachUSBDevice (
+                        cconsole,
+                        vboxGlobal().details (ue->device()), ue->error());
+
+                /// @todo update menu entries
 
                 return true;
             }

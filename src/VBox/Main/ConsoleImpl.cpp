@@ -3199,7 +3199,8 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
     AutoLock alock (this);
 
     /* VM might have been stopped when this message arrives */
-    if (mMachineState < MachineState_Running)
+    if (mMachineState < MachineState_Running ||
+        mMachineState == MachineState_Stopping)
     {
         LogFlowThisFunc (("Attach request ignored (mMachineState=%d).\n",
                           mMachineState));
@@ -3208,7 +3209,7 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
 
     if (aError != NULL)
     {
-        /* notify callback about an error */
+        /* notify callbacks about the error */
         onUSBDeviceStateChange (aDevice, true /* aAttached */, aError);
         return S_OK;
     }
@@ -3232,7 +3233,20 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
 
     HRESULT rc = attachUSBDevice (aDevice, pRhConfig);
 
-    /// @todo notify listeners of IConsoleCallback in case of error
+    if (FAILED (rc))
+    {
+        /* take the current error info */
+        com::ErrorInfoKeeper eik;
+        /* the error must be a VirtualBoxErrorInfo instance */
+        ComPtr <IVirtualBoxErrorInfo> error = eik.takeError();
+        Assert (!error.isNull());
+        if (!error.isNull())
+        {
+            /* notify callbacks about the error */
+            onUSBDeviceStateChange (aDevice, true /* aAttached */, error);
+        }
+    }
+
     return rc;
 }
 
@@ -3291,7 +3305,20 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
 
     HRESULT rc = detachUSBDevice (it);
 
-    /// @todo notify listeners of IConsoleCallback in case of error
+    if (FAILED (rc))
+    {
+        /* take the current error info */
+        com::ErrorInfoKeeper eik;
+        /* the error must be a VirtualBoxErrorInfo instance */
+        ComPtr <IVirtualBoxErrorInfo> error = eik.takeError();
+        Assert (!error.isNull());
+        if (!error.isNull())
+        {
+            /* notify callbacks about the error */
+            onUSBDeviceStateChange (device, false /* aAttached */, error);
+        }
+    }
+
     return rc;
 }
 
