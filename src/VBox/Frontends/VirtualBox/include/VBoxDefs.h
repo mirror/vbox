@@ -132,6 +132,7 @@ struct VBoxDefs
         MachineRegisteredEventType,
         SessionStateChangeEventType,
         SnapshotEventType,
+        USBDeviceStateChangeEventType,
         RuntimeErrorEventType,
         ModifierKeyChangeEventType,
         EnumerateMediaEventType = QEvent::User + 100,

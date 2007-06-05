@@ -1151,6 +1151,18 @@ void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
         formatErrorInfo (res));
 }
 
+void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
+                                                 const QString &device,
+                                                 const CVirtualBoxErrorInfo &error)
+{
+    message (&vboxGlobal().consoleWnd(), Error,
+        tr ("Failed to attach the USB device <b>%1</b> "
+            "to the virtual machine <b>%2</b>.")
+            .arg (device)
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (error));
+}
+
 void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
                                                  const QString &device)
 {
@@ -1163,6 +1175,18 @@ void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
             .arg (device)
             .arg (console.GetMachine().GetName()),
         formatErrorInfo (res));
+}
+
+void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
+                                                 const QString &device,
+                                                 const CVirtualBoxErrorInfo &error)
+{
+    message (&vboxGlobal().consoleWnd(), Error,
+        tr ("Failed to detach the USB device <b>%1</b> "
+            "from the virtual machine <b>%2</b>.")
+            .arg (device)
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (error));
 }
 
 void VBoxProblemReporter::cannotCreateSharedFolder (QWidget        *aParent,

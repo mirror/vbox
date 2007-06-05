@@ -76,55 +76,55 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Левый Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Правый Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Левый Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Правый Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Левый Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Правый Alt</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation type="unfinished"></translation>
+        <translation>Левая Win-клавиша</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation type="unfinished"></translation>
+        <translation>Правая Win-клавиша</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation type="unfinished"></translation>
+        <translation>Клавиша Menu</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt Gr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Caps Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Scroll Lock</translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;клавиша_%1&gt;</translation>
     </message>
 </context>
 <context>
@@ -960,11 +960,11 @@
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Образы CD/DVD-ROM (*.iso);;Все файлы (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Образы дискет (*.img);;Все файлы (*)</translation>
     </message>
 </context>
 <context>
@@ -2420,15 +2420,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;В гостевой ОС обнаружен слишком старый пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2. Некоторые возможности, требующие Дополнений гостевой ОС (интеграция мыши, авто-размер экрана гостевой ОС), скорее всего, перестанут функционировать.&lt;/p&gt;&lt;p&gt;Пожалуйста, обновите Дополнения гостевой ОС до текущей версии, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;В гостевой ОС обнаружен устаревший пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2. Некоторые возможности, требующие Дополнений гостевой ОС (интеграция мыши, авто-размер экрана гостевой ОС) могут перестать функционировать.&lt;/p&gt;&lt;p&gt;Рекомендуется обновить Дополнения гостевой ОС до текущей версии, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;В гостевой ОС обнаружен слишком новый пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2.&lt;/p&gt;&lt;p&gt;Использованее более новой версии Дополнений с более старой версией VirtualBox не поддерживается. Пожалуйста, установите подходящую версию Дополнений гостевой ОС, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2659,11 +2659,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Показать &amp;лог...</translation>
     </message>
     <message>
         <source>Show Log...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Показать лог...</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
@@ -2671,7 +2671,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Показать лог-файлы выбранной виртуальной машины</translation>
     </message>
 </context>
 <context>
