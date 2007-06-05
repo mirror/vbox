@@ -233,7 +233,7 @@ public:
     NS_PRECONDITION(0 != mRefCnt, "dup release");
     count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
     if (0 == count) {
-      mRefCnt = 1; /* stabilize */
+//      mRefCnt = 1; /* stabilize */
       // ipcDConnectService is guaranteed to still exist here
       // (DConnectInstance lifetime is bound to ipcDConnectService)
       nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
@@ -1675,7 +1675,7 @@ DConnectStub::Release()
   }
   
   if (0 == count) {
-    mRefCnt = 1; /* stabilize */
+//    mRefCnt = 1; /* stabilize */
     delete this;
     return 0;
   }
