@@ -1200,7 +1200,7 @@ la
     </message>
     <message>
         <source>Preference</source>
-        <translation>Preferinţa</translation>
+        <translation>Preferinţă</translation>
     </message>
     <message>
         <source>Options</source>
