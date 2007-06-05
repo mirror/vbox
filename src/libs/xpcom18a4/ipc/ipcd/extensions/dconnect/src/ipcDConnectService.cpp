@@ -233,7 +233,7 @@ public:
     NS_PRECONDITION(0 != mRefCnt, "dup release");
     count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
     if (0 == count) {
-//      mRefCnt = 1; /* stabilize */
+      mRefCnt = 1; /* stabilize */
       // ipcDConnectService is guaranteed to still exist here
       // (DConnectInstance lifetime is bound to ipcDConnectService)
       nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
@@ -246,31 +246,9 @@ public:
     }
     return count;
   }
-
-  // this gets called after calling AddRef() on an instance passed to the
-  // client over IPC in order to have a count of IPC client-related references
-  // separately from the overall reference count
-  NS_IMETHODIMP_(nsrefcnt) AddRefIPC(void)
-  {
-    NS_PRECONDITION(PRInt32(mRefCntIPC) >= 0, "illegal refcnt");
-    nsrefcnt count;
-    count = PR_AtomicIncrement((PRInt32*)&mRefCntIPC);
-    return count;
-  }
-
-  // this gets called before calling Release() when DCON_OP_RELEASE is
-  // received from the IPC client
-  NS_IMETHODIMP_(nsrefcnt) ReleaseIPC(void)
-  {
-    NS_PRECONDITION(0 != mRefCntIPC, "dup release");
-    nsrefcnt count;
-    count = PR_AtomicDecrement((PRInt32 *)&mRefCntIPC);
-    return count;
-  }
   
 private:
   nsAutoRefCnt               mRefCnt;
-  nsAutoRefCnt               mRefCntIPC;
   PRUint32                   mPeer;  // peer process "owning" this instance
   nsCOMPtr<nsIInterfaceInfo> mIInfo;
   nsCOMPtr<nsISupports>      mInstance;
@@ -280,10 +258,7 @@ void
 ipcDConnectService::ReleaseWrappers(nsVoidArray &wrappers)
 {
   for (PRInt32 i=0; i<wrappers.Count(); ++i)
-  {
-    ((DConnectInstance *) wrappers[i])->ReleaseIPC();
     ((DConnectInstance *) wrappers[i])->Release();
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1130,9 +1105,7 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
       }
 
       // wrapper remains referenced when passing it to the client
-      // (will be released upon DCON_OP_RELEASE). increase the
-      // second, IPC-only, reference counter
-      wrapper->AddRefIPC();
+      // (will be released upon DCON_OP_RELEASE)
       
       // send address of the instance wrapper, and set the low bit
       // to indicate that this is an instance wrapper.
@@ -1399,10 +1372,8 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
         }
 
         // wrapper remains referenced when passing it to the client
-        // (will be released upon DCON_OP_RELEASE). increase the
-        // second, IPC-only, reference counter
-        wrapper->AddRefIPC();
-
+        // (will be released upon DCON_OP_RELEASE)
+      
         // send address of the instance wrapper, and set the low bit
         // to indicate that this is an instance wrapper.
         PtrBits bits = ((PtrBits) wrapper) | 0x1;
@@ -1675,7 +1646,7 @@ DConnectStub::Release()
   }
   
   if (0 == count) {
-//    mRefCnt = 1; /* stabilize */
+    mRefCnt = 1; /* stabilize */
     delete this;
     return 0;
   }
@@ -2702,24 +2673,8 @@ PruneInstanceMapForPeer (const DConnectInstanceKey::Key &aKey,
 
   if (args && args->clientID == aData->Peer())
   {
-    // add a fake reference to hold the wrapper alive
-    nsrefcnt count = aData->AddRef();
-
-    // release all IPC references for this wrapper, the client is now
-    // officially dead (and thus cannot call AddRefIPC in the middle)
-    nsrefcnt countIPC = aData->AddRefIPC();
-    countIPC = aData->ReleaseIPC();
-
-    LOG(("ipcDConnectService::PruneInstanceMapForPeer: "
-         "instance=%p: %d IPC refs to release (total refcnt=%d)\n",
-         aData, countIPC, count));
-
-    while (countIPC)
-    {
-      countIPC = aData->ReleaseIPC();
-      aData->Release();
-    }
-
+    // ignore the reference counter: the client is officially dead
+    args->that->DeleteInstance(aData, PR_TRUE /* locked */);
     // collect the instance for future destruction
     if (!args->wrappers.AppendElement(aData))
     {
@@ -2761,16 +2716,10 @@ ipcDConnectService::OnClientStateChange(PRUint32 aClientID,
         mInstances.EnumerateRead(PruneInstanceMapForPeer, (void *)&args);
       }
 
-      LOG(("ipcDConnectService::OnClientStateChange: "
-           "%d lost instances (should be 0 unless the peer has "
-           "crashed)\n", wrappers.Count()));
-
-      // release all fake references we've added in PruneInstanceMapForPeer().
-      // this may call wrapper destructors so it's important to do that
-      // outside the lock because destructors will release the real
-      // objects which may need to make asynchronous use our service
+      // destruct all instances outside the lock because it will release
+      // the real objects which may need to make asynchronous use our service
       for (PRInt32 i = 0; i < wrappers.Count(); ++i)
-        ((DConnectInstance *) wrappers[i])->Release();
+        delete ((DConnectInstance *) wrappers[i]);
     }
   }
 
@@ -2926,9 +2875,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
       }
 
       // wrapper remains referenced when passing it to the client
-      // (will be released upon DCON_OP_RELEASE). increase the
-      // second, IPC-only, reference counter
-      wrapper->AddRefIPC();
+      // (will be released upon DCON_OP_RELEASE)
     }
   }
 
@@ -2999,32 +2946,17 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
   // make sure we've been sent a valid wrapper
   if (mInstanceSet.Contains(wrapper))
   {
-    // add a fake reference to hold the wrapper alive
     nsrefcnt count = wrapper->AddRef();
-
-    // release references
-    nsrefcnt countIPC = wrapper->ReleaseIPC();
     count = wrapper->Release();
-
-    NS_ASSERTION(count > 0, "unbalanced AddRef()/Release()");
-
     if (count == 1)
     {
-      NS_ASSERTION(countIPC == 0, "unbalanced AddRefIPC()/ReleaseIPC()");
-
       // we are the last one who holds a (fake) reference, remove the
       // instace from instance maps while still under the lock
       DeleteInstance(wrapper, PR_TRUE /* locked */);
-
       // leave the lock before calling the destructor because it will release
       // the real object which may need to make asynchronous use our service
       lock.unlock();
       delete wrapper;
-    }
-    else
-    {
-      // release the fake reference
-      wrapper->Release();
     }
   }
   else
