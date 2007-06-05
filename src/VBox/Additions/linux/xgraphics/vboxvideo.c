@@ -377,7 +377,9 @@ static void
 VBOXFreeRec(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
+#if 0
     xfree(pVBox->vbeInfo);
+#endif
     xfree(pVBox->savedPal);
     xfree(pVBox->fonts);
     xfree(pScrn->driverPrivate);
@@ -733,7 +735,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     flags = CMAP_RELOAD_ON_MODE_SWITCH;
 
     if(!xf86HandleColormaps(pScreen, 256,
-        pVBox->vbeInfo->Capabilities[0] & 0x01 ? 8 : 6,
+        8 /* DAC is switchable to 8 bits per primary color */,
         VBOXLoadPalette, NULL, flags))
         return (FALSE);
 
