@@ -199,9 +199,9 @@ static DECLCALLBACK(int) hgcmWorkerThreadFunc (RTTHREAD ThreadSelf, void *pvUser
 
     pThread->m_fu32ThreadFlags |= HGCMMSG_TF_TERMINATED;
 
-    pThread->m_thread = NIL_RTTHREAD;
-
     hgcmObjDeleteHandle (pThread->Handle ());
+
+    pThread->m_thread = NIL_RTTHREAD;
 
     LogFlow(("MAIN::hgcmWorkerThreadFunc: completed HGCM thread %p\n", pThread));
 
@@ -234,7 +234,7 @@ HGCMThread::~HGCMThread ()
      * Free resources allocated for the thread.
      */
 
-    Assert(m_thread == NIL_RTTHREAD);
+    Assert(m_fu32ThreadFlags & HGCMMSG_TF_TERMINATED);
 
     if (RTCritSectIsInitialized (&m_critsect))
     {
