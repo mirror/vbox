@@ -970,7 +970,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
                     break;
-#ifndef __WIN__ /* Only windows really knows whether the device is busy or used captured. */
+#ifndef __WIN__ /* Only windows really knows whether the device is unavailable or captured. */
                 case USBDeviceState_USBDeviceCaptured:
                     if (!mIsStatePending)
                         return false;
@@ -994,7 +994,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
                     break;
-#ifndef __WIN__ /* Only Windows really knows whether the device is busy or used captured. */
+#ifndef __WIN__ /* Only Windows really knows whether the device is busy or captured. */
                 case USBDeviceState_USBDeviceCaptured:
                     if (!mIsStatePending)
                         return false;
