@@ -846,12 +846,19 @@ int HostUSBDevice::compare (PCUSBDEVICE aDev2)
 {
     AssertReturn (isLockedOnCurrentThread(), -1);
 
+#ifdef __WIN__
     return compare (mUsb, aDev2, !isStatePending());
+#else
+    /* Since we fake the requests anyway, there is no need to unnecessarily
+       expose ourselves to trouble the non-strict compare may cause on
+       release/capture/unplug/plug/similar-devices. */
+    return compare (mUsb, aDev2, true /* strict */);
+#endif
 }
 
 /**
  *  Compares two USB devices and decides which comes first.
- * 
+ *
  *  If @a aIsStrict is @c true then the comparison will indicate a difference
  *  even if the same physical device (represented by @a aDev1) has been just
  *  re-attached to the host computer (represented by @a aDev2) and got a
@@ -963,6 +970,12 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
                     break;
+#ifndef __WIN__ /* Only windows really knows whether the device is busy or used captured. */
+                case USBDeviceState_USBDeviceCaptured:
+                    if (!mIsStatePending)
+                        return false;
+                    /* fall thru */
+#endif
                 default:
                     isImportant = true;
             }
@@ -981,6 +994,12 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
                     break;
+#ifndef __WIN__ /* Only Windows really knows whether the device is busy or used captured. */
+                case USBDeviceState_USBDeviceCaptured:
+                    if (!mIsStatePending)
+                        return false;
+                    /* fall thru */
+#endif
                 default:
                     isImportant = true;
             }
@@ -994,7 +1013,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             {
                 case USBDeviceState_USBDeviceAvailable:
                     return false;
-#ifdef __LINUX__ /* hack for /proc/bus/usb/devices not putting up a driver any longer. */
+#ifdef __LINUX__ /* Hack for /proc/bus/usb/devices not necessarily putting up a driver. */
                 case USBDeviceState_USBDeviceCaptured:
                     if (!mIsStatePending)
                         return false;
