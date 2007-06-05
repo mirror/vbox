@@ -424,13 +424,22 @@ void
 GRE_AddGREToEnvironment()
 {
   const char* grePath = GRE_GetGREPath();
+  char szPath[MAXPATHLEN];
   if (!grePath)
     return;
 
   const char* path = PR_GetEnv(XPCOM_SEARCH_KEY);
-  if (!path) {
+  if (!path)
     path = "";
+#ifdef VBOX
+  else
+  {
+      /* sEnvString is part of the environment because of putenv().
+       * path is only temporarily used and not argument of putenv() itself */
+      snprintf(szPath, sizeof(szPath), "%s", path);
+      path = szPath;
   }
+#endif
 
   if (spEnvString) PR_smprintf_free(spEnvString);
 
