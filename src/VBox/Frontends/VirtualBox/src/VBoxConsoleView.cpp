@@ -1015,14 +1015,19 @@ bool VBoxConsoleView::event (QEvent *e)
             {
                 USBDeviceStateChangeEvent *ue = (USBDeviceStateChangeEvent *)e;
 
-                if (ue->attached())
-                    vboxProblem().cannotAttachUSBDevice (
-                        cconsole,
-                        vboxGlobal().details (ue->device()), ue->error());
-                else
-                    vboxProblem().cannotDetachUSBDevice (
-                        cconsole,
-                        vboxGlobal().details (ue->device()), ue->error());
+                bool success = ue->error().isNull();
+
+                if (!success)
+                {
+                    if (ue->attached())
+                        vboxProblem().cannotAttachUSBDevice (
+                            cconsole,
+                            vboxGlobal().details (ue->device()), ue->error());
+                    else
+                        vboxProblem().cannotDetachUSBDevice (
+                            cconsole,
+                            vboxGlobal().details (ue->device()), ue->error());
+                }
 
                 /// @todo update menu entries
 
