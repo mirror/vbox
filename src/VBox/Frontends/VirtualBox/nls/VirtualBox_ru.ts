@@ -309,7 +309,7 @@
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;not attached&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;nobr&gt;[&lt;b&gt;не присоединено&lt;/b&gt;]&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;[&lt;b&gt;не присоединены&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;USB Controller is disabled&lt;/b&gt;]&lt;/nobr&gt;</source>
@@ -582,7 +582,7 @@
     <message>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;[&lt;b&gt;не присоединен&lt;/b&gt;]</translation>
+        <translation>&lt;br&gt;[&lt;b&gt;не присоединены&lt;/b&gt;]</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
@@ -923,16 +923,8 @@
         <translation>Выберите файл образа жесткого диска</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso)</source>
-        <translation type="obsolete">Образы CD/DVD-ROM (*.iso)</translation>
-    </message>
-    <message>
         <source>Select a CD/DVD-ROM disk image file</source>
         <translation>Выберите файл образа диска CD/DVD-ROM</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img)</source>
-        <translation type="obsolete">Образы дискет (*.img)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -1047,7 +1039,7 @@
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation>Не присоединен</translation>
+        <translation>Не присоединены</translation>
     </message>
     <message>
         <source>Hard Disks</source>
@@ -2420,15 +2412,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;В гостевой ОС обнаружен слишком старый пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2. Некоторые возможности, требующие Дополнений гостевой ОС (интеграция мыши, авто-размер экрана гостевой ОС), скорее всего, перестанут функционировать.&lt;/p&gt;&lt;p&gt;Пожалуйста, обновите Дополнения гостевой ОС до текущей версии, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;В гостевой ОС обнаружен слишком старый пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2. Некоторые возможности, требующие Дополнений гостевой ОС (интеграция мыши, авто-размер экрана гостевой ОС), скорее всего, перестанут функционировать.&lt;/p&gt;&lt;p&gt;Пожалуйста, обновите Дополнения гостевой ОС до текущей версии, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;В гостевой ОС обнаружен устаревший пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2. Некоторые возможности, требующие Дополнений гостевой ОС (интеграция мыши, авто-размер экрана гостевой ОС) могут перестать функционировать.&lt;/p&gt;&lt;p&gt;Рекомендуется обновить Дополнения гостевой ОС до текущей версии, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;В гостевой ОС обнаружен устаревший пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2. Некоторые возможности, требующие Дополнений гостевой ОС (интеграция мыши, авто-размер экрана гостевой ОС), могут перестать функционировать.&lt;/p&gt;&lt;p&gt;Рекомендуется обновить Дополнения гостевой ОС до текущей версии, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;В гостевой ОС обнаружен слишком новый пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2.&lt;/p&gt;&lt;p&gt;Использованее более новой версии Дополнений с более старой версией VirtualBox не поддерживается. Пожалуйста, установите подходящую версию Дополнений гостевой ОС, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;В гостевой ОС обнаружен слишком новый пакет Дополнений гостевой ОС: установлена версия %1, ожидается версия %2.&lt;/p&gt;&lt;p&gt;Использованее более новой версии Дополнений с более старой версией VirtualBox не поддерживается. Пожалуйста, установите подходящую версию Дополнений гостевой ОС, выбрав пункт &lt;b&gt;Установить Дополнения гостевой ОС&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2659,19 +2651,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation type="unfinished">Показать &amp;лог...</translation>
+        <translation>Показать &amp;лог...</translation>
     </message>
     <message>
         <source>Show Log...</source>
-        <translation type="unfinished">Показать лог...</translation>
+        <translation>Показать лог...</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
-        <translation type="unfinished">Ctrl+L</translation>
+        <translation>Ctrl+L</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished">Показать лог-файлы выбранной виртуальной машины</translation>
+        <translation>Показать лог-файлы выбранной виртуальной машины</translation>
     </message>
 </context>
 <context>
@@ -3186,99 +3178,99 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Мастер первого запуска</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы запустили новую виртуальную машину в первый раз. Этот мастер поможет Вам выполнить шаги, необходимые для установки операционной системы на данную виртуальную машину.&lt;/p&gt;&lt;p&gt;Нажмите кнопку &lt;b&gt;Далее&lt;/b&gt;, чтобы перейти к следующей странице мастера, или кнопку &lt;b&gt;Назад&lt;/b&gt; для возврата на предыдущую страницу. Нажмите кнопку &lt;b&gt;Отмена&lt;/b&gt;, если вы хотите отменить выполнение этого мастера.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Мастер первого запуска</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выберите тип носителя, который Вы бы хотели использовать для установки операционной системы.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип носителя</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Привод CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+п</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;ривод гибких дисков</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation type="unfinished">Alt+ф</translation>
+        <translation>Alt+р</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выберите носитель, который содержит программу установки операционной системы, которую Вы хотите установить. Этот носитель должен быть загрузочным, иначе программа установки не сможет начать работу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Носитель</translation>
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Физический привод </translation>
     </message>
     <message>
         <source>Alt+H</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+ф</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished">Ф&amp;айл образа</translation>
+        <translation>Ф&amp;айл образа</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation type="unfinished">Alt+а</translation>
+        <translation>Alt+а</translation>
     </message>
     <message>
         <source>VDM</source>
-        <translation type="unfinished"></translation>
+        <translation>МВД</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите установочный носитель</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы выбрали следующий носитель для загрузки виртуальной машины:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. После этого, указанный носитель будет временно подключен к виртуальной машине, и машина начнет загрузку с этого носителя.&lt;/p&gt;&lt;p&gt;Обратите внимание, что после выключения виртуальной машины, указанный носитель будет автоматически отключен и машина будет переключена на загрузку с первого жесткого диска.&lt;/p&gt;&lt;p&gt;В зависимости от типа программы установки, Вам может потребоваться вручную отключить указанный носитель после того, как программа установки перезагрузит виртуальную машину, для предотвращения повторного запуска процесса установки. Это можно сделать, выбрав соответствующий пункт &lt;b&gt;Отключить...&lt;/b&gt; в меню &lt;b&gt;Устройстка&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Итог</translation>
+        <translation>Итог</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Привод CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Привод гибких дисков</translation>
     </message>
     <message>
         <source>Host Drive %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Физический привод %1</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Тип:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Носитель:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -3302,43 +3294,43 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Просмотр лог-файлов</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Сохранить</translation>
     </message>
     <message>
         <source>Alt+S</source>
-        <translation type="unfinished">Alt+С</translation>
+        <translation>Alt+с</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">О&amp;бновить</translation>
+        <translation>О&amp;бновить</translation>
     </message>
     <message>
         <source>Alt+R</source>
-        <translation type="unfinished">Alt+Е</translation>
+        <translation>Alt+б</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Закрыть</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+з</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Просмотр лог-файлов VirtualBox</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Лог-файлы не найдены. Нажмите кнопку &lt;b&gt;Обновить&lt;/b&gt; для того, чтобы перечитать содержимое лог-папки &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить лог VirtualBox как</translation>
     </message>
 </context>
 <context>
@@ -3404,36 +3396,12 @@ value.&lt;/qt&gt;</source>
         <translation>Генерирует новый случайный MAC-адрес.</translation>
     </message>
     <message>
-        <source>Adds a new host interface.</source>
-        <translation type="obsolete">Добавляет новый хост-интерфейс.</translation>
-    </message>
-    <message>
-        <source>&lt;No suitable interfaces&gt;</source>
-        <translation type="obsolete">&lt;Нет подходящих интерфейсов&gt;</translation>
-    </message>
-    <message>
-        <source>Add</source>
-        <translation type="obsolete">Добавить</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="obsolete">Удалить</translation>
-    </message>
-    <message>
         <source>Select TAP setup application</source>
         <translation>Выберите программу настройки TAP-интерфейса</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
         <translation>Выберите программу удаления TAP-интерфейса</translation>
-    </message>
-    <message>
-        <source>VirtualBox Host Interface %1</source>
-        <translation type="obsolete">Хост-интерфейс VirtualBox %1</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Хотите ли Вы удалить выбранный хост-интерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Этот интерфейс может использоваться другими сетевыми адаптерами этой или другой ВМ. После его удаления такие адаптеры не будут работать, пока Вы не исправите их настройки выбором другого хост-интерфейса или изменением типа присоединения адаптера.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -3454,14 +3422,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
         <translation>Показывает имя хост-интерфейса, выбранного для этого адаптера.</translation>
-    </message>
-    <message>
-        <source>Lists all available host interfaces.</source>
-        <translation type="obsolete">Перечисляет все имеющиеся хост-интерфейсы.</translation>
-    </message>
-    <message>
-        <source>Removes the selected host interface.</source>
-        <translation type="obsolete">Удаляет выбранный хост-интерфейс.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
@@ -4105,39 +4065,39 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост &amp;интерфейсы</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">Перечисляет все имеющиеся хост-интерфейсы.</translation>
+        <translation>Перечисляет все имеющиеся хост-интерфейсы.</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">Добавляет новый хост-интерфейс.</translation>
+        <translation>Добавляет новый хост-интерфейс.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">Удаляет выбранный хост-интерфейс.</translation>
+        <translation>Удаляет выбранный хост-интерфейс.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
-        <translation type="unfinished">&lt;Нет подходящих интерфейсов&gt;</translation>
+        <translation>&lt;Нет подходящих интерфейсов&gt;</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Добавить</translation>
+        <translation>Добавить</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">Удалить</translation>
+        <translation>Удалить</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">Хост-интерфейс VirtualBox %1</translation>
+        <translation>Хост-интерфейс VirtualBox %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Хотите ли Вы удалить выбранный хост-интерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Этот интерфейс может использоваться другими сетевыми адаптерами этой или другой ВМ. После его удаления такие адаптеры не будут работать, пока Вы не исправите их настройки выбором другого хост-интерфейса или изменением типа присоединения адаптера.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить выбранный хост-интерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Этот интерфейс может использоваться другими сетевыми адаптерами этой или другой ВМ. После его удаления такие адаптеры не будут работать, пока Вы не исправите их настройки выбором другого хост-интерфейса или изменением типа присоединения адаптера.&lt;/p&gt;</translation>
     </message>
 </context>
 </TS>
