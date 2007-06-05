@@ -3970,7 +3970,12 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         if (VBOX_FAILURE (vrc))
             break;
 
-        vrc = VDOpen (hdd, filePath, VD_OPEN_FLAGS_READONLY);
+        /// @todo changed from VD_OPEN_FLAGS_READONLY to VD_OPEN_FLAGS_NORMAL,
+        /// because otherwise registering a VMDK which so far has no UUID will
+        /// yield a null UUID. It cannot be added to a VMDK opened readonly,
+        /// obviously. This of course changes locking behavior, but for now
+        /// this is acceptable. A better solution needs to be found later.
+        vrc = VDOpen (hdd, filePath, VD_OPEN_FLAGS_NORMAL);
         if (VBOX_FAILURE (vrc))
             break;
 
