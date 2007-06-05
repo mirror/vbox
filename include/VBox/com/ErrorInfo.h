@@ -302,6 +302,9 @@ public:
  *  method wants to return error information set by other call as its own
  *  error information while it still needs to make another call before return.
  *
+ *  Instead of calling #restore() explicitly you may let the object destructor
+ *  do it for you, if you correctly limit the object's lifeime.
+ *
  *  The usage pattern is:
  *  <code>
  *      rc = foo->method();
@@ -312,8 +315,9 @@ public:
  *           // bar may return error info as well
  *           bar->method();
  *           ...
- *           // restore error info from foo to return it to the caller
- *           eik.restore();
+ *           // no need to call #restore() explicitly here because the eik's
+ *           // destructor will restore error info fetched after the failed
+ *           // call to foo before returning to the caller
  *           return rc;
  *      }
  *  </code>
@@ -328,7 +332,7 @@ public:
 
     /**
      *  Destroys this instance and automatically calls #restore() which will
-     *  either restorr error info fetched by the constructor or do nothing
+     *  either restore error info fetched by the constructor or do nothing
      *  if #forget() was called before destruction. */
     ~ErrorInfoKeeper() { if (!mForgot) restore(); }
 
@@ -341,10 +345,17 @@ public:
     HRESULT restore();
 
     /**
-     *  Forgets error info fetched by the constructor which prevents it from
+     *  Forgets error info fetched by the constructor to prevent it from
      *  being restored by #restore() or by the destructor.
      */
     void forget() { mForgot = 0; }
+
+    /**
+     *  Forgets error info fetched by the constructor to prevent it from
+     *  being restored by #restore() or by the destructor, and returns the
+     *  stored error info object to the caller.
+     */
+    ComPtr <IUnknown> takeError() { mForgot = 0; return mErrorInfo; }
 
 private:
 
