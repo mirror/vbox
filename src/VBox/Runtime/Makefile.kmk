@@ -919,6 +919,14 @@ linux/errmsglinux.cpp_INCS = $(PATH_TARGET)
 include $(PATH_KBUILD)/footer.kmk
 
 
+ifneq ($(wildcard /usr/bin/chcon),)
+# this is needed for testcases executed at build time
+$(PATH_BIN)/VBoxRT.so:
+	$(INSTALL) $(out) $@
+	chcon -t texrel_shlib_t $@ || true
+endif
+
+
 #
 # Generate the status code data.
 #
