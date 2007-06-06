@@ -339,6 +339,7 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
             pIrp->IoStatus.Status = STATUS_UNSUCCESSFUL;
             IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+            rc = STATUS_UNSUCCESSFUL;
 #else
             pIrp->IoStatus.Status = STATUS_SUCCESS;
             if (pDevExt->devState == WORKING)
