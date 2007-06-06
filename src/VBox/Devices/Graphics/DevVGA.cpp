@@ -1485,7 +1485,7 @@ static int vga_draw_text(VGAState *s, int full_update)
 #ifndef VBOX
     s1 = s->vram_ptr + (s->start_addr * 4);
 #else /* VBOX */
-    s1 = s->CTXSUFF(vram_ptr) + (s->start_addr * 4);
+    s1 = s->CTXSUFF(vram_ptr) + (s->start_addr * 8);
 #endif /* VBOX */
 
     /* total width & height */
