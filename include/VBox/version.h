@@ -21,6 +21,7 @@
 #ifndef __VBox_version_h__
 #define __VBox_version_h__
 
+#ifndef RC_INVOKED
 #include <version-generated.h>
 
 /** Combined version number. */
@@ -29,17 +30,16 @@
 #define VBOX_GET_VERSION_MINOR(uVer)    (uVer & 0xffff)
 /** Get major version from combined version. */
 #define VBOX_GET_VERSION_MAJOR(uVer)    (uVer >> 16)
+#endif
+
 /** Vendor name */
 #define VBOX_VENDOR                     "innotek GmbH"
-
 
 /** Prefined strings for Windows resource files */
 #define VBOX_RC_COMPANY_NAME            VBOX_VENDOR
 #define VBOX_RC_LEGAL_COPYRIGHT         "Copyright (C) 2004-2007 innotek GmbH\0"
-#define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , 0
-#define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , 0
-#define VBOX_RC_PRODUCT_VERSION_STR     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
-#define VBOX_RC_FILE_VERSION_STR        VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "\0"
+#define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
+#define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
 
 #endif
 
