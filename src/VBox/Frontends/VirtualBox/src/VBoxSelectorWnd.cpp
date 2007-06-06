@@ -1210,6 +1210,9 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
 
         /* disable Refresh for accessible machines */
         vmRefreshAction->setEnabled (false);
+
+        /* enable the show log item for the selected vm */
+        vmShowLogsAction->setEnabled (true);
     }
     else
     {
@@ -1268,6 +1271,9 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         vmStartAction->setStatusTip (
             tr ("Start the selected virtual machine"));
         vmStartAction->setEnabled (false);
+
+        /* disable the show log item for the selected vm */
+        vmShowLogsAction->setEnabled (false);
     }
 }
 
