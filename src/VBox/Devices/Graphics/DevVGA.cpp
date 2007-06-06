@@ -3048,7 +3048,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
             {
                 unsigned plane = (pData->gr[4] & 2) | (GCPhysAddr & 1);
                 if (pData->sr[2] & (1 << plane)) {
-                    RTGCPHYS PhysAddr2 = ((GCPhysAddr & ~1) << 1) | plane;
+                    RTGCPHYS PhysAddr2 = ((GCPhysAddr & ~1) << 2) | plane;
                     CTXSUFF(pData->vram_ptr)[PhysAddr2] = aVal[i];
                     vga_set_dirty(pData, PhysAddr2);
                 }
