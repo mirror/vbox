@@ -182,7 +182,7 @@ Machine::HWData::HWData()
     for (size_t i = 3; i < ELEMENTS (mBootOrder); i++)
         mBootOrder [i] = DeviceType_NoDevice;
 
-    mClipboardMode = ClipboardMode_ClipDisabled;
+    mClipboardMode = ClipboardMode_ClipBidirectional;
 }
 
 Machine::HWData::~HWData()
