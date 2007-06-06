@@ -32,7 +32,9 @@ VBoxMouse_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxMouse_CXXFLAGS    = -Od
 VBoxMouse_CFLAGS      = -Od
 VBoxMouse_LDFLAGS     = -Entry:DriverEntry@8
-VBoxMouse_SOURCES     = VBoxMouse.cpp
+VBoxMouse_SOURCES     = VBoxMouse.cpp \
+                        VBoxMouse.rc
+
 VBoxMouse_LIBS        = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \

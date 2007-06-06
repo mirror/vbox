@@ -15,13 +15,21 @@
  */
 
 #include <windows.h>
-
 #include <ntverp.h>
+#include <VBox/version.h>
 
-#define	VER_FILETYPE	VFT_DRV
-#define	VER_FILESUBTYPE	VFT2_DRV_SYSTEM
-#define VER_FILEDESCRIPTION_STR     "VirtualBox Mouse Filter"
-#define VER_INTERNALNAME_STR        "VBoxMouse.sys"
+#define VER_FILETYPE                 VFT_DRV
+#define VER_FILESUBTYPE              VFT2_DRV_SYSTEM
+#define VER_FILEDESCRIPTION_STR      "VirtualBox Mouse Filter"
+#define VER_INTERNALNAME_STR         "VBoxMouse.sys"
+#define VER_ORIGINALFILENAME_STR     "VBoxMouse.sys"
+#define VER_LEGALCOPYRIGHT_STR       VBOX_RC_LEGAL_COPYRIGHT
+#define VER_PRODUCTNAME_STR          "VirtualBox Guest Additions"
+#define VER_PRODUCTVERSION_STR       VBOX_RC_PRODUCT_VERSION_STR
+#define VER_FILEVERSION_STR          VBOX_RC_FILE_VERSION_STR
+#define VER_PRODUCTVERSION           VBOX_RC_PRODUCT_VERSION
+#define VER_FILEVERSION              VBOX_RC_FILE_VERSION
+#define VER_COMPANYNAME_STR          VBOX_RC_COMPANY_NAME
 
 #include "common.ver"
 
