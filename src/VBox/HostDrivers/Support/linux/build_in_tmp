@@ -47,7 +47,9 @@ fi
 
 # copy
 cp -a ${0%/*}/* $tmpdir/
-cp $USE_MOD_SYMVERS $tmpdir/Module.symvers
+if [ -n "$USE_MOD_SYMVERS" ]; then
+  cp $USE_MOD_SYMVERS $tmpdir/Module.symvers
+fi
 
 # make, cleanup if success
 cd "$tmpdir"
