@@ -891,7 +891,8 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
 #ifndef VBOX
         ret = s->vram_ptr[((addr & ~1) << 1) | plane];
 #else /* VBOX */
-        ret = s->CTXSUFF(vram_ptr)[((addr & ~1) << 1) | plane];
+        /* See the comment for a similar line in vga_mem_writeb. */
+        ret = s->CTXSUFF(vram_ptr)[((addr & ~1) << 2) | plane];
 #endif /* VBOX */
     } else {
         /* standard VGA latched access */
@@ -1021,7 +1022,16 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
         plane = (s->gr[4] & 2) | (addr & 1);
         mask = (1 << plane);
         if (s->sr[2] & mask) {
+#ifndef VBOX
             addr = ((addr & ~1) << 1) | plane;
+#else
+            /* 'addr' is offset in a plane, bit 0 select the plane. 
+             * Mask the bit 0, convert plane index to vram offset,
+             * that is multiply by the number of planes,
+             * and select the plane byte in the vram offset.
+             */
+            addr = ((addr & ~1) << 2) | plane;
+#endif /* VBOX */
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
@@ -1315,6 +1325,13 @@ static void vga_get_offsets(VGAState *s,
         /* compute line_offset in bytes */
         line_offset = s->cr[0x13];
         line_offset <<= 3;
+#ifdef VBOX
+        if ((s->gr[0x06] & 1) == 0)
+        {
+            /* Text mode. Every second byte of a plane is used. */
+            line_offset *= 2;
+        }
+#endif /* VBOX */
 
         /* starting address */
         start_addr = s->cr[0x0d] | (s->cr[0x0c] << 8);
@@ -1545,7 +1562,7 @@ static int vga_draw_text(VGAState *s, int full_update)
 
     depth_index = get_depth_index(s->ds->depth);
 #else /* VBOX */
-    cursor_ptr = s->CTXSUFF(vram_ptr) + (s->start_addr + cursor_offset) * 4;
+    cursor_ptr = s->CTXSUFF(vram_ptr) + (s->start_addr + cursor_offset) * 8;
     depth_index = get_depth_index(s->pDrv->cBits);
 #endif /* VBOX */
     if (cw == 16)
@@ -1620,7 +1637,12 @@ static int vga_draw_text(VGAState *s, int full_update)
                 }
             }
             d1 += x_incr;
+#ifndef VBOX
             src += 4;
+#else
+            src += 8; /* Every second byte of a plane is used in text mode. */
+#endif
+
             ch_attr_ptr++;
         }
 #ifndef VBOX
