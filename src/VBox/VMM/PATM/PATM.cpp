@@ -5977,13 +5977,37 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTGCPTR pEip, RTGCPTR *
                  || Cpu.pCurInstr->opcode == OP_CALL)
            )
         {
+            uint64_t fFlags;
+
             STAM_COUNTER_INC(&pVM->patm.s.StatPushTrap);
+
+            if (Cpu.pCurInstr->opcode == OP_PUSH)
+            {
+                rc = PGMShwGetPage(pVM, pCtx->esp, &fFlags, NULL);
+                if (    rc == VINF_SUCCESS
+                    &&  ((fFlags & (X86_PTE_P|X86_PTE_RW)) == (X86_PTE_P|X86_PTE_RW)) )
+                {
+                    /* The stack address is fine, so the push argument is a pointer -> emulate this instruction */
+
+                    /* Reset the PATM stack. */
+                    CTXSUFF(pVM->patm.s.pGCState)->Psp = PATM_STACK_SIZE;
+
+                    pVM->patm.s.pGCStateHC->fPIF = 1;
+
+                    Log(("Faulting push -> go back to the original instruction\n"));
+
+                    /* continue at the original instruction */
+                    *ppNewEip = pNewEip - SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, 0);
+                    STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
+                    return VINF_SUCCESS;
+                }
+            }
+
             /* Typical pushf (most patches)/push (call patch) trap because of a monitored page. */
             rc = PGMShwModifyPage(pVM, pCtx->esp, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
             AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Vrc\n", rc));
             if (rc == VINF_SUCCESS)
             {
-                uint64_t fFlags;
 
                 /* The guest page *must* be present. */
                 rc = PGMGstGetPage(pVM, pCtx->esp, &fFlags, NULL);
@@ -6040,7 +6064,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTGCPTR pEip, RTGCPTR *
             rc = VINF_SUCCESS;  /* Continue at original instruction. */
         }
 
-        *ppNewEip = pNewEip;
+        *ppNewEip = pNewEip - SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, 0);
         STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
         return rc;
     }
