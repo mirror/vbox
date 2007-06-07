@@ -210,6 +210,21 @@ struct USBFilterCmd
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
+static void showLogo(void)
+{
+    static bool fShown; /* show only once */
+
+    if (!fShown)
+    {
+        RTPrintf("VirtualBox Command Line Management Interface Version %s\n"
+                 "(C) 2005-2007 innotek GmbH\n"
+                 "All rights reserved.\n"
+                 "\n",
+                 VBOX_VERSION_STRING);
+        fShown = true;
+    }
+}
+
 static void printUsage(USAGECATEGORY u64Cmd)
 {
 #ifdef __LINUX__
@@ -243,6 +258,12 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     RTPrintf("Usage:\n"
              "\n");
+
+    if (u64Cmd == USAGE_ALL)
+    {
+        RTPrintf("VBoxManage -nologo ...      suppress the logo\n"
+                 "\n");
+    }
 
     if (u64Cmd & USAGE_LIST)
     {
@@ -566,6 +587,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
 {
     va_list args;
+    showLogo(); // show logo even if suppressed
     if (fInternalMode)
         printUsageInternal(u64Cmd);
     else
@@ -6104,31 +6126,46 @@ int main(int argc, char *argv[])
      */
     RTR3Init(false);
 
-    RTPrintf("VirtualBox Command Line Management Interface Version %s\n"
-             "(C) 2005-2007 innotek GmbH\n"
-             "All rights reserved.\n"
-             "\n",
-             VBOX_VERSION_STRING);
+    bool fShowLogo = true;
+    int  iCmd      = 1;
+    int  iCmdArg;
 
-    /* shortcut for no parameters or help */
-    if (    (argc < 2)
-        ||  (strcmp(argv[1], "help") == 0)
-        ||  (strcmp(argv[1], "-?") == 0)
-        ||  (strcmp(argv[1], "-h") == 0)
-        ||  (strcmp(argv[1], "-help") == 0)
-        ||  (strcmp(argv[1], "--help") == 0))
+    for (int i = 1; i < argc || argc <= iCmd; i++)
     {
-        printUsage(USAGE_ALL);
-        return 0;
+        if (    argc <= iCmd
+            ||  (strcmp(argv[i], "help")   == 0)
+            ||  (strcmp(argv[i], "-?")     == 0)
+            ||  (strcmp(argv[i], "-h")     == 0)
+            ||  (strcmp(argv[i], "-help")  == 0)
+            ||  (strcmp(argv[i], "--help") == 0))
+        {
+            showLogo();
+            printUsage(USAGE_ALL);
+            return 0;
+        }
+        else if (strcmp(argv[i], "-nologo") == 0)
+        {
+            /* suppress the logo */
+            fShowLogo = false;
+            iCmd++;
+        }
+        else if (strcmp(argv[i], "-dumpopts") == 0)
+        {
+            /* Special option to dump really all commands,
+             * even the ones not understood on this platform. */
+            printUsage(USAGE_DUMPOPTS);
+            return 0;
+        }
+        else
+        {
+            break;
+        }
     }
 
-    /* Special option to dump really all commands, even the ones not
-     * understood on this platform. */
-    if (argc == 2 && strcmp(argv[1], "-dumpopts") == 0)
-    {
-        printUsage(USAGE_DUMPOPTS);
-        return 0;
-    }
+    iCmdArg = iCmd + 1;
+
+    if (fShowLogo)
+        showLogo();
 
     HRESULT rc;
 
@@ -6139,7 +6176,7 @@ int main(int argc, char *argv[])
      * For VBox we use UTF-8 and convert to UCS-2 when calling (XP)COM APIs.
      * For simplicity, just convert the argv[] array here.
      */
-    for (int i = 2; i < argc; i++)
+    for (int i = iCmdArg; i < argc; i++)
     {
         char *converted;
         RTStrCurrentCPToUtf8(&converted, argv[i]);
@@ -6152,16 +6189,16 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////
 
     /* update settings command (no VirtualBox instantiation!) */
-    if (argc >= 2 && (strcmp(argv[1], "updatesettings") == 0))
+    if (argc >= iCmdArg && (strcmp(argv[iCmd], "updatesettings") == 0))
     {
-        rc = handleUpdateSettings(argc - 2, argv + 2);
+        rc = handleUpdateSettings(argc - iCmdArg, argv + iCmdArg);
         break;
     }
 
     /* convertdd: does not need a VirtualBox instantiation) */
-    if (argc >= 2 && (strcmp(argv[1], "convertdd") == 0))
+    if (argc >= iCmdArg && (strcmp(argv[iCmd], "convertdd") == 0))
     {
-        rc = handleConvertDDImage(argc - 2, argv + 2);
+        rc = handleConvertDDImage(argc - iCmdArg, argv + iCmdArg);
         break;
     }
 
@@ -6188,6 +6225,7 @@ int main(int argc, char *argv[])
     /* create the event queue
      * (here it is necessary only to process remaining XPCOM/IPC events
      * after the session is closed) */
+
     EventQueue eventQ;
 
     /*
@@ -6232,15 +6270,15 @@ int main(int argc, char *argv[])
     int commandIndex;
     for (commandIndex = 0; commandHandlers[commandIndex].command != NULL; commandIndex++)
     {
-        if (strcmp(commandHandlers[commandIndex].command, argv[1]) == 0)
+        if (strcmp(commandHandlers[commandIndex].command, argv[iCmd]) == 0)
         {
-            rc = commandHandlers[commandIndex].handler(argc - 2, &argv[2], virtualBox, session);
+            rc = commandHandlers[commandIndex].handler(argc - iCmdArg, &argv[iCmdArg], virtualBox, session);
             break;
         }
     }
     if (!commandHandlers[commandIndex].command)
     {
-        rc = errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[1]).raw());
+        rc = errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[iCmd]).raw());
     }
 
 
@@ -6254,10 +6292,8 @@ int main(int argc, char *argv[])
     /*
      * Free converted argument vector
      */
-    for (int i = 2; i < argc; i++)
-    {
+    for (int i = iCmdArg; i < argc; i++)
         RTStrFree(argv[i]);
-    }
 
     return rc;
 }
