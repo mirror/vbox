@@ -818,6 +818,23 @@ void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
     if (mouse_absolute)
         captureMouse (!enabled, false);
 
+    /* Hiding host cursor in case we are entering mouse integration
+     * mode until it's shape is set to the guest cursor shape in
+     * OnMousePointerShapeChange event handler.
+     *
+     * This is necessary to avoid double-cursor issue when both the
+     * guest and the host cursors are displayed in one place one-above-one.
+     *
+     * This is a workaround because the correct decision is to notify
+     * the Guest Additions about we are entering the mouse integration
+     * mode. The GuestOS should hide it's cursor to allow using of
+     * host cursor for the guest's manipulation.
+     *
+     * This notification is not possible right now due to there is
+     * no the required API. */
+    if (enabled)
+        viewport()->setCursor (QCursor (BlankCursor));
+
     mouse_integration = enabled;
 
     emitMouseStateChanged();
@@ -892,6 +909,16 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* do frame buffer dependent resize */
                 fb->resizeEvent (re);
                 viewport()->unsetCursor();
+
+                /* This event appears in case of guest video was changed
+                 * for somehow even without video resolution change.
+                 * In this last case the host VM window will not be resized
+                 * according this event and the host mouse cursor which was
+                 * unset to default here will not be hidden in capture state.
+                 * So it is necessary to perform updateMouseClipping() for
+                 * the guest resize event if the mouse cursor was captured. */
+                if (mouse_captured)
+                    updateMouseClipping();
 
                 /* apply maximum size restriction */
                 setMaximumSize (sizeHint());
