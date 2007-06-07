@@ -584,7 +584,6 @@ NS_IMPL_ISUPPORTS1_CI(VBoxSDLConsoleCallback, IConsoleCallback)
 static void show_usage()
 {
     RTPrintf("Usage:\n"
-             "  -list                    List all registered virtual machines and exit\n"
              "  -vm <id|name>            Virtual machine to start, either UUID or name\n"
              "  -hda <file>              Set temporary first hard disk to file\n"
              "  -fda <file>              Set temporary first floppy disk to file\n"
@@ -751,7 +750,6 @@ int main(int argc, char *argv[])
 #ifdef USE_XPCOM_QUEUE_THREAD
     bool fXPCOMEventThreadSignaled = false;
 #endif
-    bool fListVMs = false;
     char *hdaFile   = NULL;
     char *cdromFile = NULL;
     char *fdaFile   = NULL;
@@ -919,12 +917,8 @@ int main(int argc, char *argv[])
     // command line argument parsing stuff
     for (int curArg = 1; curArg < argc; curArg++)
     {
-        if (strcmp(argv[curArg], "-list") == 0)
-        {
-            fListVMs = true;
-        }
-        else if (strcmp(argv[curArg], "-vm") == 0
-              || strcmp(argv[curArg], "-startvm") == 0)
+        if (strcmp(argv[curArg], "-vm") == 0
+            || strcmp(argv[curArg], "-startvm") == 0)
         {
             if (++curArg >= argc)
             {
@@ -1254,56 +1248,6 @@ int main(int argc, char *argv[])
     }
     if (FAILED (rc))
         break;
-
-    /*
-     * Are we supposed to display the list of registered VMs?
-     */
-    if (fListVMs)
-    {
-        RTPrintf("\nList of registered VMs:\n");
-        /*
-         * Get the list of all registered VMs
-         */
-        ComPtr<IMachineCollection> collection;
-        rc = virtualBox->COMGETTER(Machines)(collection.asOutParam());
-        ComPtr<IMachineEnumerator> enumerator;
-        if (SUCCEEDED(rc))
-            rc = collection->Enumerate(enumerator.asOutParam());
-        if (SUCCEEDED(rc))
-        {
-            /*
-             * Iterate through the collection
-             */
-            BOOL hasMore = FALSE;
-            while (enumerator->HasMore(&hasMore), hasMore)
-            {
-                ComPtr<IMachine> machine;
-                rc =enumerator->GetNext(machine.asOutParam());
-                if ((SUCCEEDED(rc)) && machine)
-                {
-                    Bstr machineName;
-                    Guid machineGUID;
-                    Bstr settingsFilePath;
-                    ULONG memorySize;
-                    ULONG vramSize;
-                    machine->COMGETTER(Name)(machineName.asOutParam());
-                    machine->COMGETTER(Id)(machineGUID.asOutParam());
-                    machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
-                    machine->COMGETTER(MemorySize)(&memorySize);
-                    machine->COMGETTER(VRAMSize)(&vramSize);
-                    Utf8Str machineNameUtf8(machineName);
-                    Utf8Str settingsFilePathUtf8(settingsFilePath);
-                    RTPrintf("\tName:        %s\n", machineNameUtf8.raw());
-                    RTPrintf("\tUUID:        %s\n", machineGUID.toString().raw());
-                    RTPrintf("\tConfig file: %s\n", settingsFilePathUtf8.raw());
-                    RTPrintf("\tMemory size: %uMB\n", memorySize);
-                    RTPrintf("\tVRAM size:   %uMB\n\n", vramSize);
-                }
-            }
-        }
-        /* terminate application */
-        goto leave;
-    }
 
     /*
      * Do we have a name but no UUID?
