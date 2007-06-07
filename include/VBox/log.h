@@ -236,6 +236,8 @@ typedef enum LOGGROUP
     LOG_GROUP_SELM,
     /** Shared folders host service group. */
     LOG_GROUP_SHARED_FOLDERS,
+    /** OpenGL host service group. */
+    LOG_GROUP_SHARED_OPENGL,
     /** The internal networking service group. */
     LOG_GROUP_SRV_INTNET,
     /** SSM group. */
@@ -370,6 +372,7 @@ typedef enum LOGGROUP
     "RT_THREAD",    \
     "SELM",         \
     "SHARED_FOLDERS",\
+    "SHARED_OPENGL",\
     "SRV_INTNET",   \
     "SSM",          \
     "STAM",         \
