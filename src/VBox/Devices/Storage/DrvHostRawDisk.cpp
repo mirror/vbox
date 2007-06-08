@@ -249,7 +249,7 @@ static DECLCALLBACK(int) drvHostHDDBiosSetTranslation(PPDMIMEDIA pInterface, PDM
 static DECLCALLBACK(int) drvHostHDDGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     int rc = VINF_SUCCESS;
-    PDRVHOSTHDD pThis = PDMIMEDIA_2_DRVHOSTHDD(pInterface);
+//    PDRVHOSTHDD pThis = PDMIMEDIA_2_DRVHOSTHDD(pInterface);
 
     LogFlow(("%s:\n", __FUNCTION__));
     memset(pUuid, '\0', sizeof(*pUuid));
