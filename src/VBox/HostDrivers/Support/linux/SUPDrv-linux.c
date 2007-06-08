@@ -1482,8 +1482,8 @@ static void VBoxSupGipTimerPerCpu(unsigned long iTimerCPU)
                    iCPU, iTimerCPU, smp_processor_id(), pDevExt->aCPUs[iTimerCPU].iSmpProcessorId);
     }
     else
-        printk("vboxdrv: error: APIC ID is bogus (GIP CPU update): apicid=%d max=%d cpuid=%d\n",
-               iCPU, RT_ELEMENTS(pGip->aCPUs), smp_processor_id());
+        printk("vboxdrv: error: APIC ID is bogus (GIP CPU update): apicid=%d max=%lu cpuid=%d\n",
+               iCPU, (unsigned long)RT_ELEMENTS(pGip->aCPUs), smp_processor_id());
 
     local_irq_restore(SavedFlags);
 }
@@ -1625,8 +1625,8 @@ static void VBoxSupGipResumePerCpu(void *pvUser)
 
     if (RT_UNLIKELY(iCPU >= RT_ELEMENTS(pDevExt->pGip->aCPUs)))
     {
-        printk("vboxdrv: error: apicid=%d max=%d cpuid=%d\n",
-               iCPU, RT_ELEMENTS(pDevExt->pGip->aCPUs), smp_processor_id());
+        printk("vboxdrv: error: apicid=%d max=%lu cpuid=%d\n",
+               iCPU, (unsigned long)RT_ELEMENTS(pDevExt->pGip->aCPUs), smp_processor_id());
         return;
     }
 
