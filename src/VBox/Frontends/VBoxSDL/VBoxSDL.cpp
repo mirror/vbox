@@ -917,7 +917,7 @@ int main(int argc, char *argv[])
     // command line argument parsing stuff
     for (int curArg = 1; curArg < argc; curArg++)
     {
-        if (strcmp(argv[curArg], "-vm") == 0
+        if (   strcmp(argv[curArg], "-vm") == 0
             || strcmp(argv[curArg], "-startvm") == 0)
         {
             if (++curArg >= argc)
