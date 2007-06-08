@@ -735,7 +735,7 @@ TMR3DECL(void) TMR3Reset(PVM pVM)
             ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
             ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSync, offNew);
             ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
-            LogRel(("TM: Aborting catch-up attempt on reset with a %RU64 ns lag on reset; new total: %RU64 ns\n", offOld - offNew, offNew));
+            LogRel(("TM: Aborting catch-up attempt on reset with a %RU64 ns lag on reset; new total: %RU64 ns\n", offNew - offOld, offNew));
         }
     }
 
