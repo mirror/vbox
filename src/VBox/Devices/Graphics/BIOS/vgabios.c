@@ -1727,6 +1727,10 @@ set_intensity_loop:
   jne   set_intensity_loop
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   cx
   pop   bx
@@ -1756,6 +1760,10 @@ set_cga_palette_loop:
   jne   set_cga_palette_loop
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   cx
   pop   bx
@@ -2119,6 +2127,10 @@ biosfn_set_single_palette_reg:
   out   dx, al
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   ax
 no_actl_reg1:
@@ -2164,6 +2176,10 @@ set_palette_loop:
   out   dx, al
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   cx
   pop   bx
@@ -2192,6 +2208,10 @@ biosfn_toggle_intensity:
   out   dx, al
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   bx
   pop   ax
@@ -2218,6 +2238,10 @@ biosfn_get_single_palette_reg:
   mov   dx, # VGAREG_ACTL_ADDRESS
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   ax
 no_actl_reg2:
@@ -2275,6 +2299,10 @@ get_palette_loop:
   mov   dx, # VGAREG_ACTL_ADDRESS
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   cx
   pop   bx
@@ -2379,6 +2407,10 @@ set_dac_16_page:
 set_actl_normal:
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   bx
   pop   ax
@@ -2502,6 +2534,10 @@ get_dac_16_page:
   mov   dx, # VGAREG_ACTL_ADDRESS
   mov   al, #0x20
   out   dx, al
+#ifdef VBOX
+  mov   dx, # VGAREG_ACTL_RESET
+  in    al, dx
+#endif /* VBOX */
   pop   dx
   pop   ax
   ret
@@ -2541,6 +2577,9 @@ Bit16u start;Bit16u count;
   }
  inb(VGAREG_ACTL_RESET);
  outb(VGAREG_ACTL_ADDRESS,0x20);
+#ifdef VBOX
+ inb(VGAREG_ACTL_RESET);
+#endif /* VBOX */
 }
 
 // --------------------------------------------------------------------------------------------
