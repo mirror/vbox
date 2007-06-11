@@ -26,15 +26,21 @@
  * If there are more difficult platforms out there, we'll do OS
  * specific #ifdefs. But for now we'll just include the headers
  * which normally contains the alloca() prototype.
+ * When we're in kernel territory it starts getting a bit more
+ * interesting of course...
  */
-#include <stdlib.h>
-#if !defined(__DARWIN__) && !defined(__FREEBSD__)
-# include <malloc.h>
+#if defined(IN_RING0) && defined(__LINUX__)
+/* ASSUMES GNU C */
+# define alloca(cb) __builtin_alloca(cb)
+#else
+# include <stdlib.h>
+# if !defined(__DARWIN__) && !defined(__FREEBSD__)
+#  include <malloc.h>
+# endif
+# ifdef __SOLARIS__
+#  include <alloca.h>
+# endif
 #endif
-#ifdef __SOLARIS__
-# include <alloca.h>
-#endif
-
 
 #endif
 
