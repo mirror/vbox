@@ -164,7 +164,7 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 
 #ifndef IN_GC
 /**
- * Create a logger instance.
+ * Create a logger instance, comprehensive version.
  *
  * @returns iprt status code.
  *
@@ -176,12 +176,14 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
  * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
  *                              logger instance.
  * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
+ * @param   pszErrorMsg         A buffer which is filled with an error message if something fails. May be NULL.
+ * @param   cchErrorMsg         The size of the error message buffer.
  * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
  * @param   ...                 Format arguments.
  */
-RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
-                        const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                        RTUINT fDestFlags, const char *pszFilenameFmt, ...)
+RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
+                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
+                           RTUINT fDestFlags, char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args)
 {
     /*
      * Validate input.
@@ -249,10 +251,7 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroup
              */
             if (pszFilenameFmt)
             {
-                va_list args;
-                va_start(args, pszFilenameFmt);
                 RTStrPrintfV(pLogger->pszFilename, RTPATH_MAX, pszFilenameFmt, args);
-                va_end(args);
                 pLogger->fDestFlags |= RTLOGDEST_FILE;
             }
 
@@ -397,8 +396,12 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroup
             rc = VINF_SUCCESS;
 #ifdef IN_RING3
             if (pLogger->fDestFlags & RTLOGDEST_FILE)
+            {
                 rc = RTFileOpen(&pLogger->File, pLogger->pszFilename,
                                 RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
+                if (RT_FAILURE(rc))
+                    RTStrPrintf(pszErrorMsg, cchErrorMsg, "could not open file '%s'", pLogger->pszFilename);
+            }
 #endif  /* IN_RING3 */
 
             /*
@@ -412,6 +415,8 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroup
                     *ppLogger = pLogger;
                     return VINF_SUCCESS;
                 }
+                else
+                    RTStrPrintf(pszErrorMsg, cchErrorMsg, "failed to create sempahore");
             }
 #ifdef IN_RING3
             RTFileClose(pLogger->File);
@@ -428,6 +433,65 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroup
     return rc;
 }
 
+/**
+ * Create a logger instance.
+ *
+ * @returns iprt status code.
+ *
+ * @param   ppLogger            Where to store the logger instance.
+ * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
+ * @param   pszGroupSettings    The initial group settings.
+ * @param   pszEnvVarBase       Base name for the environment variables for this instance.
+ * @param   cGroups             Number of groups in the array.
+ * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
+ *                              logger instance.
+ * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
+ * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
+ * @param   ...                 Format arguments.
+ */
+RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
+                        const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
+                        RTUINT fDestFlags, const char *pszFilenameFmt, ...)
+{
+    va_list args;
+    int rc;
+
+    va_start(args, pszFilenameFmt);
+    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups, fDestFlags, NULL, 0, pszFilenameFmt, args);
+    va_end(args);
+    return rc;
+}
+
+/**
+ * Create a logger instance.
+ *
+ * @returns iprt status code.
+ *
+ * @param   ppLogger            Where to store the logger instance.
+ * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
+ * @param   pszGroupSettings    The initial group settings.
+ * @param   pszEnvVarBase       Base name for the environment variables for this instance.
+ * @param   cGroups             Number of groups in the array.
+ * @param   papszGroups         Pointer to array of groups. This must stick around for the life of the
+ *                              logger instance.
+ * @param   fDestFlags          The destination flags. RTLOGDEST_FILE is ORed if pszFilenameFmt specified.
+ * @param   pszErrorMsg         A buffer which is filled with an error message if something fails. May be NULL.
+ * @param   cchErrorMsg         The size of the error message buffer.
+ * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
+ * @param   ...                 Format arguments.
+ */
+RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
+                          const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
+                          RTUINT fDestFlags,  char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...)
+{
+    va_list args;
+    int rc;
+
+    va_start(args, pszFilenameFmt);
+    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups, fDestFlags, pszErrorMsg, cchErrorMsg, pszFilenameFmt, args);
+    va_end(args);
+    return rc;
+}
 
 /**
  * Destroys a logger instance.
