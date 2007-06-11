@@ -225,12 +225,6 @@ static int vboxClipboardReportFormats (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32F
 
 static int vboxClipboardReadData (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
-    if (cb > 0 && !VirtualLock (pv, cb))
-    {
-        dprintf (("vboxClipboardHostEventRead: VirtualLock failed\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-
     VBoxClipboardReadData parms;
 
     VBOX_INIT_CALL(&parms, VBOX_SHARED_CLIPBOARD_FN_READ_DATA, pCtx);
@@ -263,11 +257,6 @@ static int vboxClipboardReadData (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format
         }
     }
 
-    if (cb > 0)
-    {
-        VirtualUnlock (pv, cb);
-    }
-
     return rc;
 }
 
@@ -279,12 +268,6 @@ static int vboxClipboardWriteData (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Forma
 //        dprintf (("vboxClipboardWriteData: The data to be sent are the same as the last sent.\n"));
 //        return VINF_SUCCESS;
 //    }
-
-    if (cb > 0 && !VirtualLock (pv, cb))
-    {
-        dprintf (("vboxClipboardWriteData: VirtualLock failed\n"));
-        return VERR_NOT_SUPPORTED;
-    }
 
     VBoxClipboardWriteData parms;
 
@@ -298,11 +281,6 @@ static int vboxClipboardWriteData (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Forma
     if (VBOX_SUCCESS (rc))
     {
         rc = parms.hdr.result;
-    }
-
-    if (cb > 0)
-    {
-        VirtualUnlock (pv, cb);
     }
 
     return rc;
