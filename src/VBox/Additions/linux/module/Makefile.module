@@ -26,6 +26,7 @@ OBJS   = \
 	vboxmod.o \
 	GenericRequest.o \
 	PhysHeap.o \
+	SysHlp.o \
 	Init.o \
 	VMMDev.o \
 	HGCMInternal.o \
