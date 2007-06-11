@@ -27,6 +27,60 @@
 
 #include <iprt/assert.h>
 
+int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size)
+{
+    int rc = VINF_SUCCESS;
+    
+#ifdef __WIN__
+    PMDL pMdl = IoAllocateMdl (pv, u32Size, FALSE, FALSE, NULL);
+
+    if (pMdl == NULL)
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+    else
+    {
+        __try {
+            /* Calls to MmProbeAndLockPages must be enclosed in a try/except block. */
+            MmProbeAndLockPages (pMdl,
+                                 KernelMode,
+                                 IoModifyAccess);
+                                 
+            *ppvCtx = pMdl;
+
+        } __except(EXCEPTION_EXECUTE_HANDLER) {
+
+            IoFreeMdl (pMdl);
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+#else
+    NOREF(ppvCtx);
+    NOREF(pv);
+    NOREF(u32Size);
+#endif /* __WIN__ */
+    
+    return rc;
+}
+
+void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
+{
+    NOREF(pv);
+    NOREF(u32Size);
+
+#ifdef __WIN__
+    PMDL pMdl = (PMDL)pvCtx;
+
+    if (pMdl != NULL)
+    {
+        MmUnlockPages (pMdl);
+        IoFreeMdl (pMdl);
+    }
+#else
+    NOREF(pvCtx);
+#endif /* __WIN__ */
+}
+
 #ifndef VBGL_VBOXGUEST
 
 #if defined (__LINUX__) && !defined (__KERNEL__)
