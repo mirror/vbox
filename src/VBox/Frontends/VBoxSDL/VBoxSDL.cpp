@@ -848,7 +848,11 @@ int main(int argc, char *argv[])
     SDL_Event EvHKeyDown2;
 
     LogFlow(("SDL GUI started\n"));
-    RTPrintf("VirtualBox SDL GUI %s built %s %s\n",
+    RTPrintf("VirtualBox "
+#ifdef VBOX_OSE
+             "OSE "
+#endif
+             "SDL GUI %s built %s %s\n",
              VBOX_VERSION_STRING, __DATE__, __TIME__);
 
     // less than one parameter is not possible

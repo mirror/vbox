@@ -216,7 +216,11 @@ static void showLogo(void)
 
     if (!fShown)
     {
-        RTPrintf("VirtualBox Command Line Management Interface Version %s\n"
+        RTPrintf("VirtualBox "
+#ifdef VBOX_OSE
+                 "OSE "
+#endif
+                 "Command Line Management Interface Version %s\n"
                  "(C) 2005-2007 innotek GmbH\n"
                  "All rights reserved.\n"
                  "\n",
