@@ -190,6 +190,46 @@
 # error "HZ is not a multiple of 1000, the GIP stuff won't work right!"
 #endif
 
+#ifdef CONFIG_X86_LOCAL_APIC
+
+/* If an NMI occurs while we are inside the world switcher the machine will
+ * crash. The Linux NMI watchdog generates periodic NMIs increasing a counter
+ * which is compared with another counter increased in the timer interrupt
+ * handler. We disable the NMI watchdog.
+ *
+ * - Linux >= 2.6.21: The watchdog is disabled by default on i386 and x86_64.
+ * - Linux <  2.6.21: The watchdog is normally enabled by default on x86_64
+ *                    and disabled on i386.
+ */
+# if defined(__AMD64__)
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 21)
+#   define DO_DISABLE_NMI 1
+#  endif
+# endif
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+extern int nmi_active;
+#  define nmi_atomic_read(P)    *(P)
+#  define nmi_atomic_set(P, V)  *(P) = (V)
+#  define nmi_atomic_dec(P)     nmi_atomic_set(P, 0)
+# else
+#  define nmi_atomic_read(P)    atomic_read(P)
+#  define nmi_atomic_set(P, V)  atomic_set(P, V)
+#  define nmi_atomic_dec(P)     atomic_dec(P)
+# endif
+
+# ifndef X86_FEATURE_ARCH_PERFMON
+#  define X86_FEATURE_ARCH_PERFMON (3*32+9) /* Intel Architectural PerfMon */
+# endif
+# ifndef MSR_ARCH_PERFMON_EVENTSEL0
+#  define MSR_ARCH_PERFMON_EVENTSEL0 0x186
+# endif
+# ifndef ARCH_PERFMON_UNHALTED_CORE_CYCLES_PRESENT
+#  define ARCH_PERFMON_UNHALTED_CORE_CYCLES_PRESENT (1 << 0)
+# endif
+
+#endif /* CONFIG_X86_LOCAL_APIC */
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -283,6 +323,110 @@ static struct miscdevice gMiscDevice =
 };
 #endif
 
+#ifdef CONFIG_X86_LOCAL_APIC
+# ifdef DO_DISABLE_NMI
+
+/** Stop AMD NMI watchdog (x86_64 only). */
+static int stop_k7_watchdog(void)
+{
+    wrmsr(MSR_K7_EVNTSEL0, 0, 0);
+    return 1;
+}
+
+/** Stop Intel P4 NMI watchdog (x86_64 only). */
+static int stop_p4_watchdog(void)
+{
+    wrmsr(MSR_P4_IQ_CCCR0,  0, 0);
+    wrmsr(MSR_P4_IQ_CCCR1,  0, 0);
+    wrmsr(MSR_P4_CRU_ESCR0, 0, 0);
+    return 1;
+}
+
+/** The new method of detecting the event counter */
+static int stop_intel_arch_watchdog(void)
+{
+    unsigned ebx;
+
+    ebx = cpuid_ebx(10);
+    if (!(ebx & ARCH_PERFMON_UNHALTED_CORE_CYCLES_PRESENT))
+        wrmsr(MSR_ARCH_PERFMON_EVENTSEL0, 0, 0);
+    return 1;
+}
+
+/** Stop NMI watchdog. */
+static void vbox_stop_apic_nmi_watchdog(void *unused)
+{
+    int stopped = 0;
+
+    /* only support LOCAL and IO APICs for now */
+    if ((nmi_watchdog != NMI_LOCAL_APIC) &&
+        (nmi_watchdog != NMI_IO_APIC))
+        return;
+
+    if (nmi_watchdog == NMI_LOCAL_APIC)
+    {
+        switch (boot_cpu_data.x86_vendor)
+        {
+        case X86_VENDOR_AMD:
+            if (strstr(boot_cpu_data.x86_model_id, "Screwdriver"))
+               return;
+            stopped = stop_k7_watchdog();
+            break;
+        case X86_VENDOR_INTEL:
+            if (cpu_has(&boot_cpu_data, X86_FEATURE_ARCH_PERFMON))
+            {
+                stopped = stop_intel_arch_watchdog();
+                break;
+            }
+            stopped = stop_p4_watchdog();
+            break;
+        default:
+            return;
+        }
+    }
+
+    if (stopped)
+        nmi_atomic_dec(&nmi_active);
+}
+
+/** Disable LAPIC NMI watchdog. */
+static void disable_lapic_nmi_watchdog(void)
+{
+    BUG_ON(nmi_watchdog != NMI_LOCAL_APIC);
+
+    if (nmi_atomic_read(&nmi_active) <= 0)
+        return;
+
+    on_each_cpu(vbox_stop_apic_nmi_watchdog, NULL, 1, 1);
+
+    BUG_ON(nmi_atomic_read(&nmi_active) != 0);
+
+    /* tell do_nmi() and others that we're not active any more */
+    nmi_watchdog = NMI_NONE;
+}
+
+/** Shutdown NMI. */
+static void nmi_cpu_shutdown(void * dummy)
+{
+    unsigned int vERR, vPC;
+
+    vPC = apic_read(APIC_LVTPC);
+
+    if ((GET_APIC_DELIVERY_MODE(vPC) == APIC_MODE_NMI) && !(vPC & APIC_LVT_MASKED))
+    {
+        vERR = apic_read(APIC_LVTERR);
+        apic_write(APIC_LVTERR, vERR | APIC_LVT_MASKED);
+        apic_write(APIC_LVTPC,  vPC  | APIC_LVT_MASKED);
+        apic_write(APIC_LVTERR, vERR);
+    }
+}
+
+static void nmi_shutdown(void)
+{
+    on_each_cpu(nmi_cpu_shutdown, NULL, 0, 1);
+}
+# endif /* DO_DISABLE_NMI */
+#endif /* CONFIG_X86_LOCAL_APIC */
 
 /**
  * Initialize module.
@@ -307,7 +451,33 @@ static int __init VBoxSupDrvInit(void)
      * First test: NMI actiated? Works only works with Linux 2.6 -- 2.4 does not export
      *             the nmi_watchdog variable.
      */
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || \
+      (defined CONFIG_X86_64 && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
+#   ifdef DO_DISABLE_NMI
+    if (nmi_atomic_read(&nmi_active) > 0)
+    {
+        printk(KERN_INFO DEVICE_NAME ": Trying to deactivate the NMI watchdog...\n");
+
+        switch (nmi_watchdog)
+        {
+            case NMI_LOCAL_APIC:
+                disable_lapic_nmi_watchdog();
+                break;
+            case NMI_NONE:
+                nmi_atomic_dec(&nmi_active);
+                break;
+        }
+
+        if (nmi_atomic_read(&nmi_active) == 0)
+        {
+            nmi_shutdown();
+            printk(KERN_INFO DEVICE_NAME ": Successfully done.\n");
+        }
+        else
+            printk(KERN_INFO DEVICE_NAME ": Failed!\n");
+    }
+#   endif /* DO_DISABLE_NMI */
+
     /*
      * Permanent IO_APIC mode active? No way to handle this!
      */
@@ -325,8 +495,8 @@ static int __init VBoxSupDrvInit(void)
     /*
      * See arch/i386/kernel/nmi.c on >= 2.6.19: -1 means it can never enabled again
      */
-    atomic_set(&nmi_active, -1);
-    printk(KERN_INFO DEVICE_NAME ": Trying to deactivate NMI watchdog permanently...\n");
+    nmi_atomic_set(&nmi_active, -1);
+    printk(KERN_INFO DEVICE_NAME ": Trying to deactivate the NMI watchdog permanently...\n");
 
     /*
      * Now fall through and see if it actually was enabled before. If so, fail
@@ -360,7 +530,8 @@ static int __init VBoxSupDrvInit(void)
             /* performance counter generates NMI and is not masked? */
             if ((GET_APIC_DELIVERY_MODE(v) == APIC_MODE_NMI) && !(v & APIC_LVT_MASKED))
             {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || \
+     (defined CONFIG_X86_64 && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
                 printk(KERN_ERR DEVICE_NAME
                 ": NMI watchdog either active or at least initialized. Please disable the NMI\n"
                                 DEVICE_NAME
