@@ -1068,11 +1068,16 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
     char *ext = RTPathExt (loc);
 
     HardDiskStorageType_T order [2];
+    size_t cOrder = ELEMENTS (order);
 
     if (RTPathCompare (ext, ".vmdk") == 0)
     {
+        /// @todo This is a hack. The proper solution would be to save the
+        /// error info from the first try and restore that if everything fails.
+        /// That way a non-working VMDK will get a proper VMDK diagnostics
+        /// message and not some incomprehensible VDI error.
         order [0] = HardDiskStorageType_VMDKImage;
-        order [1] = HardDiskStorageType_VirtualDiskImage;
+        cOrder = 1;
     }
     else
     {
@@ -1080,7 +1085,7 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
         order [1] = HardDiskStorageType_VMDKImage;
     }
 
-    for (size_t i = 0; i < ELEMENTS (order); ++ i)
+    for (size_t i = 0; i < cOrder; ++ i)
     {
         switch (order [i])
         {
