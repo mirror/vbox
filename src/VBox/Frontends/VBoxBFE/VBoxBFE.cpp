@@ -934,10 +934,11 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     if (g_fReleaseLog)
     {
         static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+        static char szError[RTPATH_MAX + 128] = "";
         PRTLOGGER pLogger;
-        rc2 = RTLogCreate(&pLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all",
-                          "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
-                          RTLOGDEST_FILE, "./VBoxBFE.log");
+        rc2 = RTLogCreateEx(&pLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all",
+                            "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
+                            RTLOGDEST_FILE, szError, sizeof(szError), "./VBoxBFE.log");
         if (VBOX_SUCCESS(rc2))
         {
             /* some introductory information */
@@ -953,6 +954,8 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             /* register this logger as the release logger */
             RTLogRelSetDefaultInstance(pLogger);
         }
+        else
+            RTPrintf("Could not open release log (%s)\n", szError);
     }
 
     /*

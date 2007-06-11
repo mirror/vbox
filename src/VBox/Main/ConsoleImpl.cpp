@@ -6554,9 +6554,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 #ifdef __WIN__
         fFlags |= RTLOGFLAGS_USECRLF;
 #endif /* __WIN__ */
-        vrc = RTLogCreate(&loggerRelease, fFlags, "all",
-                          "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
-                          RTLOGDEST_FILE, logFile.raw());
+        char szError[RTPATH_MAX + 128] = "";
+        vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
+                            "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
+                            RTLOGDEST_FILE, szError, sizeof(szError), logFile.raw());
         if (VBOX_SUCCESS(vrc))
         {
             /* some introductory information */
@@ -6575,8 +6576,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         else
         {
             hrc = setError (E_FAIL,
-                tr ("Failed to open release log file '%s' (%Vrc)"),
-                logFile.raw(), vrc);
+                tr ("Failed to open release log (%s, %Vrc)"), szError, vrc);
             break;
         }
 
