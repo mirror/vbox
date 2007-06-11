@@ -1139,7 +1139,11 @@ int main (int argc, char **argv)
             int  iSize;
 
             iSize = snprintf (szBuf, sizeof(szBuf),
-                              "innotek VirtualBox XPCOM Server Version %s",
+                              "innotek VirtualBox "
+#ifdef VBOX_OSE
+                              "OSE "
+#endif
+                              "XPCOM Server Version %s",
                               VBOX_VERSION_STRING);
             for (int i=iSize; i>0; i--)
                 putchar('*');
