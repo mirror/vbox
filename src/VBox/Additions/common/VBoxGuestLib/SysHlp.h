@@ -56,6 +56,9 @@ typedef struct _VBGLDRIVER
 #endif /* !__WIN__ */
 } VBGLDRIVER;
 
+int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size);
+void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size);
+
 
 #ifndef VBGL_VBOXGUEST
 

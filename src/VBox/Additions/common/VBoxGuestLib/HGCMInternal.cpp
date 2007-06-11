@@ -27,6 +27,7 @@
 #include "VBGLInternal.h"
 #include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/alloca.h>
 
 /* These functions can be only used by VBoxGuest. */
 
@@ -128,7 +129,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     uint32_t cbParms;
     int rc;
 
-    if (!pCallInfo || !pAsyncCallback)
+    if (!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS)
         return VERR_INVALID_PARAMETER;
 
     dprintf (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
@@ -144,6 +145,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
     if (VBOX_SUCCESS(rc))
     {
+        void **papvCtx = NULL;
+
         /* Initialize request memory */
         pHGCMCall->header.fu32Flags = 0;
         pHGCMCall->header.result    = VINF_SUCCESS;
@@ -155,53 +158,102 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         if (cbParms)
         {
             memcpy (VMMDEV_HGCM_CALL_PARMS(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), cbParms);
+            
+            /* Lock user buffers. */
+            if (pCallInfo->cParms > 0)
+            {
+                papvCtx = (void **)alloca(pCallInfo->cParms * sizeof (papvCtx[0]));
+                memset (papvCtx, 0, pCallInfo->cParms * sizeof (papvCtx[0]));
+            }
+            
+            HGCMFunctionParameter *pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
+            
+            unsigned iParm = 0;
+            for (; iParm < pCallInfo->cParms; iParm++, pParm++)
+            {
+                if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
+                    || pParm->type == VMMDevHGCMParmType_LinAddr_Out
+                    || pParm->type == VMMDevHGCMParmType_LinAddr)
+                {
+                    rc = vbglLockLinear (&papvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
+                    
+                    if (VBOX_FAILURE (rc))
+                    {
+                        break;
+                    }
+                }
+            }
         }
 
-        dprintf (("calling VbglGRPerform\n"));
-
-        /* Issue request */
-        rc = VbglGRPerform (&pHGCMCall->header.header);
-
-        dprintf (("VbglGRPerform rc = %Vrc (header rc=%d)\n", rc, pHGCMCall->header.result));
-
-        /** If the call failed, but as a result of the request itself, then pretend success  
-         *  Upper layers will interpret the result code in the packet.
-         */
-        if (VBOX_FAILURE(rc) && rc == pHGCMCall->header.result)
-        {
-            Assert(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE);
-            rc = VINF_SUCCESS;
-        }
-
+        /* Check that the parameter locking was ok. */
         if (VBOX_SUCCESS(rc))
         {
-            /* Check if host decides to process the request asynchronously. */
-            if (rc == VINF_HGCM_ASYNC_EXECUTE)
+            dprintf (("calling VbglGRPerform\n"));
+
+            /* Issue request */
+            rc = VbglGRPerform (&pHGCMCall->header.header);
+
+            dprintf (("VbglGRPerform rc = %Vrc (header rc=%d)\n", rc, pHGCMCall->header.result));
+
+            /** If the call failed, but as a result of the request itself, then pretend success  
+             *  Upper layers will interpret the result code in the packet.
+             */
+            if (VBOX_FAILURE(rc) && rc == pHGCMCall->header.result)
             {
-                /* Wait for request completion interrupt notification from host */
-                pAsyncCallback (&pHGCMCall->header, pvAsyncData, u32AsyncData);
+                Assert(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE);
+                rc = VINF_SUCCESS;
             }
 
-            if (pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
+            if (VBOX_SUCCESS(rc))
             {
-                if (cbParms)
+                /* Check if host decides to process the request asynchronously. */
+                if (rc == VINF_HGCM_ASYNC_EXECUTE)
                 {
-                    memcpy (VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), VMMDEV_HGCM_CALL_PARMS(pHGCMCall), cbParms);
+                    /* Wait for request completion interrupt notification from host */
+                    pAsyncCallback (&pHGCMCall->header, pvAsyncData, u32AsyncData);
                 }
-                pCallInfo->result = pHGCMCall->header.result;
+
+                if (pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
+                {
+                    if (cbParms)
+                    {
+                        memcpy (VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), VMMDEV_HGCM_CALL_PARMS(pHGCMCall), cbParms);
+                    }
+                    pCallInfo->result = pHGCMCall->header.result;
+                }
+                else
+                {
+                    /* The callback returns without completing the request,
+                     * that means the wait was interrrupted. That can happen
+                     * if system reboots or the VBoxService ended abnormally.
+                     * In both cases it is OK to just leave the allocated memory
+                     * in the physical heap. The memory leak does not affect normal
+                     * operations.
+                     * @todo VbglGRCancel (&pHGCMCall->header.header) need to be implemented.
+                     *       The host will not write to the cancelled memory.
+                     */
+                    pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
+                }
             }
-            else
+        }
+            
+        /* Unlock user buffers. */
+        if (papvCtx != NULL)
+        {
+            HGCMFunctionParameter *pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
+            
+            unsigned iParm = 0;
+            for (; iParm < pCallInfo->cParms; iParm++, pParm++)
             {
-                /* The callback returns without completing the request,
-                 * that means the wait was interrrupted. That can happen
-                 * if system reboots or the VBoxService ended abnormally.
-                 * In both cases it is OK to just leave the allocated memory
-                 * in the physical heap. The memory leak does not affect normal
-                 * operations.
-                 * @todo VbglGRCancel (&pHGCMCall->header.header) need to be implemented.
-                 *       The host will not write to the cancelled memory.
-                 */
-                pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
+                if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
+                    || pParm->type == VMMDevHGCMParmType_LinAddr_Out
+                    || pParm->type == VMMDevHGCMParmType_LinAddr)
+                {
+                    if (papvCtx[iParm] != NULL)
+                    {
+                        vbglUnlockLinear (papvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
+                    }
+                }
             }
         }
 

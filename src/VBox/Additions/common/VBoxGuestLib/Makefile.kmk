@@ -43,6 +43,7 @@ endif
 
 SOURCES_GUESTLIBBASE = \
 	GenericRequest.cpp \
+	SysHlp.cpp \
 	PhysHeap.cpp \
 	Init.cpp \
 	VMMDev.cpp \
