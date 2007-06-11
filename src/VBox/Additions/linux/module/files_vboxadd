@@ -18,6 +18,7 @@
 #
 
 FILES_VBOXADD_NOBIN=" \
+    ${PATH_ROOT}/include/iprt/alloca.h=>include/iprt/alloca.h \
     ${PATH_ROOT}/include/iprt/alloc.h=>include/iprt/alloc.h \
     ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
     ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
