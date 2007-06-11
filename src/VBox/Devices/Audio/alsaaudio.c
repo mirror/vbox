@@ -21,6 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifdef VBOX
+#ifndef DEBUG
+#define NDEBUG
+#endif
+#endif
+
 #include <alsa/asoundlib.h>
 
 #include "Builtins.h"
