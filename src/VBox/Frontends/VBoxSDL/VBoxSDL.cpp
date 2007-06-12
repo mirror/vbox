@@ -682,6 +682,22 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+#ifdef __LINUX
+    /*
+     * Lock keys on SDL behave different from normal keys: A KeyPress event is generated
+     * if the lock mode gets active and a keyRelease event is genereated if the lock mode
+     * gets inactive, that is KeyPress and KeyRelease are sent when pressing the lock key
+     * to change the mode. The current lock mode is reflected in SDL_GetModState().
+     *
+     * Debian patched libSDL to make the lock keys behave like normal keys generating a
+     * KeyPress/KeyRelease event if the lock key was pressed/released. But the lock status
+     * is not reflected in the mod status anymore. We disable the Debian-specific extension
+     * to ensure a defined environment and work around the missing KeyPress/KeyRelease
+     * events in ProcessKeys().
+     */
+    setenv("SDL_DISABLE_LOCK_KEYS", 1, 1);
+#endif
+
     /*
      * the hostkey detection mode is unrelated to VM processing, so handle it before
      * we initialize anything COM related
@@ -3131,9 +3147,11 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
         case 0x45: /* Num Lock */
         case 0x3a: /* Caps Lock */
         {
-            /* SDL does not send the key up event, so we generate it.
-             * r=frank: This is not true for never SDL versions. */
-            if (ev->type == SDL_KEYDOWN)
+            /*
+             * SDL generates a KEYDOWN event if the lock key is active and a  KEYUP event
+             * if the lock key is inactive. See SDL_DISABLE_LOCK_KEYS.
+             */
+            if (ev->type == SDL_KEYDOWN || ev->type == SDL_KEYUP)
             {
                 gKeyboard->PutScancode(keycode);
                 gKeyboard->PutScancode(keycode | 0x80);
@@ -3160,7 +3178,6 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
             gKeyboard->PutScancode(0x45);
             gKeyboard->PutScancode(0x45 | 0x80);
         }
-#if 0  /* For some reason SDL_GetModState() does not return KMOD_CAPS correctly */
         if (   gcGuestCapsLockAdaptions
             && (gfGuestCapsLockPressed ^ !!(SDL_GetModState() & KMOD_CAPS)))
         {
@@ -3168,7 +3185,6 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
             gKeyboard->PutScancode(0x3a);
             gKeyboard->PutScancode(0x3a | 0x80);
         }
-#endif
     }
 
     /*
