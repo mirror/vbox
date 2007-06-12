@@ -27,6 +27,7 @@
 
 DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevRequestType reqType)
 {
+    VMMDevRequestHeader *pReq;
     int rc = VbglEnter ();
 
     if (VBOX_FAILURE(rc))
@@ -38,7 +39,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
         return VERR_INVALID_PARAMETER;
     }
 
-    VMMDevRequestHeader *pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc (cbSize);
+    pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc (cbSize);
     if (!pReq)
     {
         dprintf(("VbglGRAlloc: no memory\n"));
