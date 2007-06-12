@@ -157,6 +157,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
         if (cbParms)
         {
+            HGCMFunctionParameter *pParm;
+
             memcpy (VMMDEV_HGCM_CALL_PARMS(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), cbParms);
             
             /* Lock user buffers. */
@@ -166,8 +168,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                 memset (papvCtx, 0, pCallInfo->cParms * sizeof (papvCtx[0]));
             }
             
-            HGCMFunctionParameter *pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
-            
+            pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
             unsigned iParm = 0;
             for (; iParm < pCallInfo->cParms; iParm++, pParm++)
             {
