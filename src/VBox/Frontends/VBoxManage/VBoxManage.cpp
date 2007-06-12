@@ -2370,7 +2370,7 @@ static int handleCloneVDI(int argc, char *argv[],
 static int handleConvertDDImage(int argc, char *argv[])
 {
 #ifdef __LINUX__
-    const bool fReadFromStdIn = !strcmp(argv[0], "stdin");
+    const bool fReadFromStdIn = (argc >= 1) && !strcmp(argv[0], "stdin");
 #else
     const bool fReadFromStdIn = false;
 #endif
