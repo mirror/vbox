@@ -27,7 +27,6 @@
 #include "VBGLInternal.h"
 #include <iprt/string.h>
 #include <iprt/assert.h>
-#include <iprt/alloca.h>
 
 /* These functions can be only used by VBoxGuest. */
 
@@ -127,6 +126,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 {
     VMMDevHGCMCall *pHGCMCall;
     uint32_t cbParms;
+    HGCMFunctionParameter *pParm;
+    unsigned iParm;
     int rc;
 
     if (!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS)
@@ -145,7 +146,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
     if (VBOX_SUCCESS(rc))
     {
-        void **papvCtx = NULL;
+        void *apvCtx[VBOX_HGCM_MAX_PARMS];
+        memset (apvCtx, 0, sizeof (apvCtx));
 
         /* Initialize request memory */
         pHGCMCall->header.fu32Flags = 0;
@@ -157,26 +159,18 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
         if (cbParms)
         {
-            HGCMFunctionParameter *pParm;
-
             memcpy (VMMDEV_HGCM_CALL_PARMS(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), cbParms);
             
             /* Lock user buffers. */
-            if (pCallInfo->cParms > 0)
-            {
-                papvCtx = (void **)alloca(pCallInfo->cParms * sizeof (papvCtx[0]));
-                memset (papvCtx, 0, pCallInfo->cParms * sizeof (papvCtx[0]));
-            }
-            
             pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
-            unsigned iParm = 0;
-            for (; iParm < pCallInfo->cParms; iParm++, pParm++)
+
+            for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
             {
                 if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
                     || pParm->type == VMMDevHGCMParmType_LinAddr_Out
                     || pParm->type == VMMDevHGCMParmType_LinAddr)
                 {
-                    rc = vbglLockLinear (&papvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
+                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
                     
                     if (VBOX_FAILURE (rc))
                     {
@@ -239,21 +233,17 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         }
             
         /* Unlock user buffers. */
-        if (papvCtx != NULL)
+        pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
+
+        for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
         {
-            HGCMFunctionParameter *pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
-            
-            unsigned iParm = 0;
-            for (; iParm < pCallInfo->cParms; iParm++, pParm++)
+            if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
+                || pParm->type == VMMDevHGCMParmType_LinAddr_Out
+                || pParm->type == VMMDevHGCMParmType_LinAddr)
             {
-                if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
-                    || pParm->type == VMMDevHGCMParmType_LinAddr_Out
-                    || pParm->type == VMMDevHGCMParmType_LinAddr)
+                if (apvCtx[iParm] != NULL)
                 {
-                    if (papvCtx[iParm] != NULL)
-                    {
-                        vbglUnlockLinear (papvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
-                    }
+                    vbglUnlockLinear (apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
                 }
             }
         }
