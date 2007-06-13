@@ -110,6 +110,13 @@ private:
 
     void updateAppearanceOf (int element);
 
+#ifdef Q_WS_WIN
+    void storeHwndDescriptor();
+    void cleanHwndDescriptor();
+    HANDLE mMapFile;
+    LPCTSTR mBuf;
+#endif
+
 private slots:
 
     void finalizeOpenView();
