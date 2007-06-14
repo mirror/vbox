@@ -4212,30 +4212,32 @@ HRESULT VirtualBox::registerGuestOSTypes()
     } OSTypes[] =
     {
         /// @todo (dmik) get the list of OS types from the XML schema
-        /* NOTE: we assume that unknown is always the first entry! */
-        { "unknown",    tr ("Other/Unknown"),  OSTypeUnknown,     64,   4,  2000 },
-        { "dos",        "DOS",                 OSTypeDOS,         32,   4,   500 },
-        { "win31",      "Windows 3.1",         OSTypeWin31,       32,   4,  1000 },
-        { "win95",      "Windows 95",          OSTypeWin95,       64,   4,  2000 },
-        { "win98",      "Windows 98",          OSTypeWin98,       64,   4,  2000 },
-        { "winme",      "Windows Me",          OSTypeWinMe,       64,   4,  4000 },
-        { "winnt4",     "Windows NT 4",        OSTypeWinNT4,     128,   4,  2000 },
-        { "win2k",      "Windows 2000",        OSTypeWin2k,      168,   4,  4000 },
-        { "winxp",      "Windows XP",          OSTypeWinXP,      192,   4, 10000 },
-        { "win2k3",     "Windows Server 2003", OSTypeWin2k3,     256,   4, 20000 },
-        { "winvista",   "Windows Vista",       OSTypeWinVista,   512,   4, 20000 },
-        { "os2warp3",   "OS/2 Warp 3",         OSTypeOS2Warp3,    48,   4,  1000 },
-        { "os2warp4",   "OS/2 Warp 4",         OSTypeOS2Warp4,    64,   4,  2000 },
-        { "os2warp45",  "OS/2 Warp 4.5",       OSTypeOS2Warp45,   96,   4,  2000 },
-        { "linux22",    "Linux 2.2",           OSTypeLinux22,     64,   4,  2000 },
-        { "linux24",    "Linux 2.4",           OSTypeLinux24,    128,   4,  4000 },
-        { "linux26",    "Linux 2.6",           OSTypeLinux26,    128,   4,  8000 },
-        { "freebsd",    "FreeBSD",             OSTypeFreeBSD,     64,   4,  2000 },
-        { "openbsd",    "OpenBSD",             OSTypeOpenBSD,     64,   4,  2000 },
-        { "netbsd",     "NetBSD",              OSTypeNetBSD,      64,   4,  2000 },
-        { "netware",    "Netware",             OSTypeNetware,    128,   4,  4000 },
-        { "solaris",    "Solaris",             OSTypeSolaris,    128,   4,  8000 },
-        { "l4",         "L4",                  OSTypeL4,          64,   4,  2000 }
+        /* NOTE1: we assume that unknown is always the first entry!
+         * NOTE2: please use powers of 2 when specifying the size of harddisks since
+         *        '2GB' looks better than '1.95GB' (= 2000MB) */
+        { "unknown",    tr ("Other/Unknown"),  OSTypeUnknown,     64,   4,  2 * _1K },
+        { "dos",        "DOS",                 OSTypeDOS,         32,   4,      512 },
+        { "win31",      "Windows 3.1",         OSTypeWin31,       32,   4,  1 * _1K },
+        { "win95",      "Windows 95",          OSTypeWin95,       64,   4,  2 * _1K },
+        { "win98",      "Windows 98",          OSTypeWin98,       64,   4,  2 * _1K },
+        { "winme",      "Windows Me",          OSTypeWinMe,       64,   4,  4 * _1K },
+        { "winnt4",     "Windows NT 4",        OSTypeWinNT4,     128,   4,  2 * _1K },
+        { "win2k",      "Windows 2000",        OSTypeWin2k,      168,   4,  4 * _1K },
+        { "winxp",      "Windows XP",          OSTypeWinXP,      192,   4, 10 * _1K },
+        { "win2k3",     "Windows Server 2003", OSTypeWin2k3,     256,   4, 20 * _1K },
+        { "winvista",   "Windows Vista",       OSTypeWinVista,   512,   4, 20 * _1K },
+        { "os2warp3",   "OS/2 Warp 3",         OSTypeOS2Warp3,    48,   4,  1 * _1K },
+        { "os2warp4",   "OS/2 Warp 4",         OSTypeOS2Warp4,    64,   4,  2 * _1K },
+        { "os2warp45",  "OS/2 Warp 4.5",       OSTypeOS2Warp45,   96,   4,  2 * _1K },
+        { "linux22",    "Linux 2.2",           OSTypeLinux22,     64,   4,  2 * _1K },
+        { "linux24",    "Linux 2.4",           OSTypeLinux24,    128,   4,  4 * _1K },
+        { "linux26",    "Linux 2.6",           OSTypeLinux26,    256,   4,  8 * _1K },
+        { "freebsd",    "FreeBSD",             OSTypeFreeBSD,     64,   4,  2 * _1K },
+        { "openbsd",    "OpenBSD",             OSTypeOpenBSD,     64,   4,  2 * _1K },
+        { "netbsd",     "NetBSD",              OSTypeNetBSD,      64,   4,  2 * _1K },
+        { "netware",    "Netware",             OSTypeNetware,    128,   4,  4 * _1K },
+        { "solaris",    "Solaris",             OSTypeSolaris,    128,   4,  8 * _1K },
+        { "l4",         "L4",                  OSTypeL4,          64,   4,  2 * _1K }
     };
 
     for (uint32_t i = 0; i < ELEMENTS (OSTypes) && SUCCEEDED (rc); i++)
