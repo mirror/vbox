@@ -369,8 +369,9 @@ void WINAPI VBoxServiceStart(void)
         }
         else /* timeout */
         {
+#ifndef DEBUG_sandervl
             SvcDebugOut2("VBoxService: timed out\n");
-
+#endif
             /* we might have to repeat this operation because the shell might not be loaded yet */
             if (!fTrayIconCreated)
             {
