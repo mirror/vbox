@@ -1333,7 +1333,7 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     return S_OK;
 }
 
-STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColorDepth)
+STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColorDepth, ULONG aDisplay)
 {
     AutoLock lock(this);
     CHECK_READY();
@@ -1357,14 +1357,22 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColor
         AssertRC(rc);
         bpp = cBits;
     }
-    ULONG vramSize;
-    mParent->machine()->COMGETTER(VRAMSize)(&vramSize);
-    /* enough VRAM? */
-    if ((width * height * (bpp / 8)) > (vramSize * 1024 * 1024))
-        return setError(E_FAIL, tr("Not enough VRAM for the selected video mode"));
+    ULONG cMonitors;
+    mParent->machine()->COMGETTER(MonitorCount)(&cMonitors);
+    if (cMonitors == 0 && aDisplay > 0)
+        return E_INVALIDARG;
+    if (aDisplay >= cMonitors)
+        return E_INVALIDARG;
+
+// sunlover 20070614: It is up to the guest to decide whether the hint is valid.
+//    ULONG vramSize;
+//    mParent->machine()->COMGETTER(VRAMSize)(&vramSize);
+//    /* enough VRAM? */
+//    if ((width * height * (bpp / 8)) > (vramSize * 1024 * 1024))
+//        return setError(E_FAIL, tr("Not enough VRAM for the selected video mode"));
 
     if (mParent->getVMMDev())
-        mParent->getVMMDev()->getVMMDevPort()->pfnRequestDisplayChange(mParent->getVMMDev()->getVMMDevPort(), aWidth, aHeight, aColorDepth);
+        mParent->getVMMDev()->getVMMDevPort()->pfnRequestDisplayChange(mParent->getVMMDev()->getVMMDevPort(), aWidth, aHeight, aColorDepth, aDisplay);
     return S_OK;
 }
 

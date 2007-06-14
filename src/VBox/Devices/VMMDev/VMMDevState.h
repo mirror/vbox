@@ -107,6 +107,7 @@ typedef struct VMMDevState
         uint32_t xres;
         uint32_t yres;
         uint32_t bpp;
+        uint32_t display;
     } displayChangeRequest,
       lastReadDisplayChangeRequest;
 

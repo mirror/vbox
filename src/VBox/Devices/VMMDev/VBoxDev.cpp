@@ -772,6 +772,34 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_GetDisplayChangeRequest2:
+        {
+            if (requestHeader->size != sizeof(VMMDevDisplayChangeRequest2))
+            {
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevDisplayChangeRequest2 *displayChangeRequest = (VMMDevDisplayChangeRequest2*)requestHeader;
+                /* just pass on the information */
+                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
+                     pData->displayChangeRequest.xres, pData->displayChangeRequest.yres, pData->displayChangeRequest.bpp, pData->displayChangeRequest.display));
+                displayChangeRequest->xres    = pData->displayChangeRequest.xres;
+                displayChangeRequest->yres    = pData->displayChangeRequest.yres;
+                displayChangeRequest->bpp     = pData->displayChangeRequest.bpp;
+                displayChangeRequest->display = pData->displayChangeRequest.display;
+
+                if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
+                {
+                    /* Remember which resolution the client have queried. */
+                    pData->lastReadDisplayChangeRequest = pData->displayChangeRequest;
+                }
+
+                requestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
         /*
          * Query whether the given video mode is supported
          */
@@ -1373,14 +1401,15 @@ static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, 
 }
 
 
-static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t xres, uint32_t yres, uint32_t bpp)
+static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t xres, uint32_t yres, uint32_t bpp, uint32_t display)
 {
     VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
 
     /* Verify that the new resolution is different and that guest does not yet know about it. */
     bool fSameResolution = (!xres || (pData->lastReadDisplayChangeRequest.xres == xres)) &&
                            (!yres || (pData->lastReadDisplayChangeRequest.yres == yres)) &&
-                           (!bpp || (pData->lastReadDisplayChangeRequest.bpp == bpp));
+                           (!bpp || (pData->lastReadDisplayChangeRequest.bpp == bpp)) &&
+                           pData->lastReadDisplayChangeRequest.display == display;
 
     if (!xres && !yres && !bpp)
     {
@@ -1389,19 +1418,20 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
     }
 
 #ifdef DEBUG_sunlover
-    Log(("vmmdevRequestDisplayChange: same=%d. new: xres=%d, yres=%d, bpp=%d. old: xres=%d, yres=%d, bpp=%d.\n",
-          fSameResolution, xres, yres, bpp, pData->lastReadDisplayChangeRequest.xres, pData->lastReadDisplayChangeRequest.yres, pData->lastReadDisplayChangeRequest.bpp));
+    Log(("vmmdevRequestDisplayChange: same=%d. new: xres=%d, yres=%d, bpp=%d, display=%d. old: xres=%d, yres=%d, bpp=%d, display=%d.\n",
+          fSameResolution, xres, yres, bpp, display, pData->lastReadDisplayChangeRequest.xres, pData->lastReadDisplayChangeRequest.yres, pData->lastReadDisplayChangeRequest.bpp, pData->lastReadDisplayChangeRequest.display));
 #endif /* DEBUG_sunlover */
 
     if (!fSameResolution)
     {
-        LogRel(("VMMDev::SetVideoModeHint: got a video mode hint (%dx%dx%d)\n",
-                xres, yres, bpp));
+        LogRel(("VMMDev::SetVideoModeHint: got a video mode hint (%dx%dx%d) at %d\n",
+                xres, yres, bpp, display));
 
         /* we could validate the information here but hey, the guest can do that as well! */
-        pData->displayChangeRequest.xres = xres;
-        pData->displayChangeRequest.yres = yres;
-        pData->displayChangeRequest.bpp  = bpp;
+        pData->displayChangeRequest.xres    = xres;
+        pData->displayChangeRequest.yres    = yres;
+        pData->displayChangeRequest.bpp     = bpp;
+        pData->displayChangeRequest.display = display;
 
         /* IRQ so the guest knows what's going on */
         VMMDevNotifyGuest (pData, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);

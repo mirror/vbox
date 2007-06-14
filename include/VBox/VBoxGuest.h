@@ -123,6 +123,7 @@ typedef enum
     VMMDevReq_GetDisplayChangeRequest    = 51,
     VMMDevReq_VideoModeSupported         = 52,
     VMMDevReq_GetHeightReduction         = 53,
+    VMMDevReq_GetDisplayChangeRequest2   = 54,
 #ifdef VBOX_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -336,6 +337,24 @@ typedef struct
      */
     uint32_t eventAck;
 } VMMDevDisplayChangeRequest;
+
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    /** horizontal pixel resolution (0 = do not change) */
+    uint32_t xres;
+    /** vertical pixel resolution (0 = do not change) */
+    uint32_t yres;
+    /** bits per pixel (0 = do not change) */
+    uint32_t bpp;
+    /** Flag that the request is an acknowlegement for the VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
+     *  Values: 0 - just querying, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
+     */
+    uint32_t eventAck;
+    /** 0 for primary display, 1 for the first secondary, etc. */
+    uint32_t display;
+} VMMDevDisplayChangeRequest2;
 
 /** video mode supported request structure */
 typedef struct
@@ -1021,6 +1040,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReportGuestInfo);
         case VMMDevReq_GetDisplayChangeRequest:
             return sizeof(VMMDevDisplayChangeRequest);
+        case VMMDevReq_GetDisplayChangeRequest2:
+            return sizeof(VMMDevDisplayChangeRequest2);
         case VMMDevReq_VideoModeSupported:
             return sizeof(VMMDevVideoModeSupportedRequest);
         case VMMDevReq_GetHeightReduction:

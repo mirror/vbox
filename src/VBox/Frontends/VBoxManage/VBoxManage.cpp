@@ -394,7 +394,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            usbdetach <uuid>|<address> |\n"
                  "                            dvdattach none|<uuid>|<filename>|host:<drive> |\n"
                  "                            floppyattach none|<uuid>|<filename>|host:<drive> |\n"
-                 "                            setvideomodehint <xres> <yres> <bpp> |\n"
+                 "                            setvideomodehint <xres> <yres> <bpp> [display]|\n"
                  "                            setcredentials <username> <password> <domain>\n"
                  "                                           [-allowlocallogon <yes|no>]\n"
                  "\n");
@@ -4276,7 +4276,7 @@ static int handleControlVM(int argc, char *argv[],
         }
         else if (strcmp(argv[1], "setvideomodehint") == 0)
         {
-            if (argc != 5)
+            if (argc != 5 && argc != 6)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
@@ -4285,10 +4285,13 @@ static int handleControlVM(int argc, char *argv[],
             uint32_t xres = atoi(argv[2]);
             uint32_t yres = atoi(argv[3]);
             uint32_t bpp  = atoi(argv[4]);
+            uint32_t displayIdx = 0;
+            if (argc == 6)
+                displayIdx = atoi(argv[5]);
 
             ComPtr<IDisplay> display;
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
-            CHECK_ERROR_BREAK(display, SetVideoModeHint(xres, yres, bpp));
+            CHECK_ERROR_BREAK(display, SetVideoModeHint(xres, yres, bpp, displayIdx));
         }
         else if (strcmp(argv[1], "setcredentials") == 0)
         {
