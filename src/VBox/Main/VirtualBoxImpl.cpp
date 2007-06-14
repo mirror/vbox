@@ -4234,7 +4234,7 @@ HRESULT VirtualBox::registerGuestOSTypes()
         { "openbsd",    "OpenBSD",             OSTypeOpenBSD,     64,   4,  2000 },
         { "netbsd",     "NetBSD",              OSTypeNetBSD,      64,   4,  2000 },
         { "netware",    "Netware",             OSTypeNetware,    128,   4,  4000 },
-        { "solaris",    "Solaris",             OSTypeSolaris,    128,   4,  4000 },
+        { "solaris",    "Solaris",             OSTypeSolaris,    128,   4,  8000 },
         { "l4",         "L4",                  OSTypeL4,          64,   4,  2000 }
     };
 
