@@ -394,17 +394,6 @@ typedef struct _VBoxSFQueryMappings
  * SHFL_FN_QUERY_MAP_NAME
  */
 
-/** Name types. @{ */
-
-/** None of names queried. Just check the root.  */
-#define SHFL_NAME_NONE  (0)
-/** Where the guest should represent host files. */
-#define SHFL_NAME_GUEST (1)
-/** Name or host resource. */
-#define SHFL_NAME_HOST  (2)
-
-/** @} */
-
 /** Parameters structure. */
 typedef struct _VBoxSFQueryMapName
 {
@@ -415,11 +404,6 @@ typedef struct _VBoxSFQueryMapName
      */
     HGCMFunctionParameter root;
 
-    /** 32bit, in:
-     * Type of name to query (SHFL_NAME_*).
-     */
-    HGCMFunctionParameter type;
-
     /** pointer, in/out:
      * Points to SHFLSTRING buffer.
      */
@@ -428,7 +412,7 @@ typedef struct _VBoxSFQueryMapName
 } VBoxSFQueryMapName;
 
 /** Number of parameters */
-#define SHFL_CPARMS_QUERY_MAP_NAME (3)
+#define SHFL_CPARMS_QUERY_MAP_NAME (2)
 
 /**
  * SHFL_FN_MAP_FOLDER
