@@ -101,6 +101,13 @@ GUESTADDITIONS_WIN32_DEPS = $(PATH_BIN)/additions/VBoxGuest.sys \
 	./WINNT/Network/AMD/netamd.inf \
 	./WINNT/Network/AMD/pcntpci5.cat \
 	./WINNT/Network/AMD/PCNTPCI5.sys
+
+ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
+GUESTADDITIONS_WIN32_DEPS += \
+	$(PATH_BIN)/additions/VBoxMRXNP.dll \
+	$(PATH_BIN)/additions/VBoxSF.sys
+endif
+
 GUESTADDITIONS_WIN32_FILESPEC = \
 	driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/additions/VBoxGuest.sys \
 	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
