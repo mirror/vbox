@@ -80,10 +80,13 @@
 #include "DrvHostBase.h"
 
 
+/* Forward declarations. */
+
+static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock);
 
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
-static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface)
+static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
 {
      PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
      RTCritSectEnter(&pThis->CritSect);
@@ -92,8 +95,12 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface)
       * Validate state.
       */
      int rc = VINF_SUCCESS;
-     if (!pThis->fLocked)
+     if (!pThis->fLocked || fForce)
      {
+        /* Unlock drive if necessary. */
+        if (pThis->fLocked)
+            drvHostDvdDoLock(pThis, false);
+
          /*
           * Eject the disc.
           */
@@ -497,7 +504,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0Interval\0Locked\0BIOSVisible\0Passthrough\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0Interval\0Locked\0BIOSVisible\0AttachFailError\0Passthrough\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
 
@@ -538,13 +545,20 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
          * 2nd init part.
          */
         rc = DRVHostBaseInitFinish(pThis);
-        if (VBOX_SUCCESS(rc))
-        {
-            LogFlow(("drvHostDvdConstruct: return %Vrc\n", rc));
-            return rc;
-        }
     }
-    DRVHostBaseDestruct(pDrvIns);
+
+    if (VBOX_FAILURE(rc))
+    {
+        if (!pThis->fAttachFailError)
+        {
+            /* Suppressing the attach failure error must not affect the normal
+             * DRVHostBaseDestruct, so reset this flag below before leaving. */
+            pThis->fKeepInstance = true;
+            rc = VINF_SUCCESS;
+        }
+        DRVHostBaseDestruct(pDrvIns);
+        pThis->fKeepInstance = false;
+    }
 
     LogFlow(("drvHostDvdConstruct: returns %Vrc\n", rc));
     return rc;

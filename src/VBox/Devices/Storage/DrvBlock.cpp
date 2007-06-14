@@ -508,7 +508,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
 
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
-static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface)
+static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
 {
     PDRVBLOCK pData = PDMIMOUNT_2_DRVBLOCK(pInterface);
 
@@ -520,11 +520,14 @@ static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface)
         Log(("drvblockUmount: Not mounted\n"));
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
-    if (pData->fLocked)
+    if (pData->fLocked && !fForce)
     {
         Log(("drvblockUmount: Locked\n"));
         return VERR_PDM_MEDIA_LOCKED;
     }
+
+    /* Media is no longer locked even if it was previously. */
+    pData->fLocked = false;
 
     /*
      * Detach the media driver and query it's interface.

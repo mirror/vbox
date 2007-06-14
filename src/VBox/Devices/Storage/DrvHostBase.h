@@ -48,6 +48,10 @@ typedef struct DRVHOSTBASE
     bool                    fReadOnlyConfig;
     /** The current readonly status. */
     bool                    fReadOnly;
+    /** Flag whether failure to attach is an error or not. */
+    bool                    fAttachFailError;
+    /** Flag whether to keep instance working (as unmounted though). */
+    bool                    fKeepInstance;
     /** Device name (MMHeap). */
     char                   *pszDevice;
     /** Device name to open (RTStrFree). */
