@@ -152,8 +152,7 @@ DECLVBGL(int) vboxCallQueryMappings (PVBSFCLIENT pClient, SHFLMAPPING paMappings
     return rc;
 }
 
-DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root,
-                          int type, SHFLSTRING *pString, uint32_t size)
+DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRING *pString, uint32_t size)
 {
     int rc = VINF_SUCCESS;
 
@@ -163,9 +162,6 @@ DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root,
 
     data.root.type                   = VMMDevHGCMParmType_32bit;
     data.root.u.value32              = root;
-
-    data.type.type                   = VMMDevHGCMParmType_32bit;
-    data.type.u.value32              = type;
 
     data.name.type                   = VMMDevHGCMParmType_LinAddr;
     data.name.u.Pointer.size         = size;

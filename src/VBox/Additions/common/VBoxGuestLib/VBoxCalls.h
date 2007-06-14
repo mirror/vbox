@@ -124,7 +124,7 @@ DECLVBGL(void) vboxDisconnect (PVBSFCLIENT pClient);
 
 DECLVBGL(int) vboxCallQueryMappings (PVBSFCLIENT pClient, SHFLMAPPING paMappings[], uint32_t *pcMappings);
 
-DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root, int type, SHFLSTRING *pString, uint32_t size);
+DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRING *pString, uint32_t size);
 
 DECLVBGL(int) vboxCallCreate (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms);
 
