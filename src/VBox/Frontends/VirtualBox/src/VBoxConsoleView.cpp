@@ -3009,7 +3009,7 @@ void VBoxConsoleView::doResizeHint()
         sz -= QSize (frameWidth() * 2, frameWidth() * 2);
         LogFlowFunc (("Will suggest %d,%d\n", sz.width(), sz.height()));
 
-        cconsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0);
+        cconsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
     }
 }
 

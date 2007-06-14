@@ -137,7 +137,7 @@ public:
     STDMETHOD(LockFramebuffer)(BYTE **address);
     STDMETHOD(UnlockFramebuffer)();
     STDMETHOD(RegisterExternalFramebuffer)(IFramebuffer *frameBuf);
-    STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG colorDepth);
+    STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG colorDepth, ULONG display);
     STDMETHOD(TakeScreenShot)(BYTE *address, ULONG width, ULONG height);
     STDMETHOD(DrawToScreen)(BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
     STDMETHOD(InvalidateAndUpdate)();

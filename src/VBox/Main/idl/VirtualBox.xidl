@@ -6297,7 +6297,7 @@
 
     <interface
         name="IDisplay" extends="$unknown"
-        uuid="FD443EC1-0012-4F5B-9282-D72760A66916"
+        uuid="0a6a7746-5469-47e4-9a00-8b1ea28891b8"
         wsmap="suppress"
     >
         <attribute name="width" type="unsigned long" readonly="yes">
@@ -6352,10 +6352,14 @@
                 after a timeout retry.
                 Specifying "0" for either width and height or the color depth
                 means that the dimensions or color depth should not be changed.
+                It is possible to specify the number of the guest display
+                that has to be resized, if guest supports multimonitor configuration.
+                The display value 0 means primary display, 1 - first secondary.
             </desc>
             <param name="width" type="unsigned long" dir="in"/>
             <param name="height" type="unsigned long" dir="in"/>
             <param name="colorDepth" type="unsigned long" dir="in"/>
+            <param name="display" type="unsigned long" dir="in"/>
         </method>
 
         <method name="takeScreenShot">

@@ -2287,7 +2287,7 @@ int main(int argc, char *argv[])
                  *       when the mouse button was released.
                  */
                 /* communicate the resize event to the guest */
-                gDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0);
+                gDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0, 0);
                 break;
 
             }

@@ -823,12 +823,12 @@ static void vbvaFetchBytes (VBVAMEMORY *pVbvaMemory, uint8_t *pu8Dst, uint32_t c
     return;
 }
 
-void VMDisplay::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColorDepth)
+void VMDisplay::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColorDepth, ULONG aDisplay)
 {
     PPDMIVMMDEVPORT pVMMDevPort = gVMMDev->getVMMDevPort ();
 
     if (pVMMDevPort)
-        pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aColorDepth);
+        pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aColorDepth, aDisplay);
 }
 
 static bool vbvaPartialRead (uint8_t **ppu8, uint32_t *pcb, uint32_t cbRecord, VBVAMEMORY *pVbvaMemory)
