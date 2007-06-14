@@ -142,15 +142,8 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 #ifdef __WIN__
     IO_STATUS_BLOCK ioStatusBlock;
 
-    KEVENT *pEvent;
-#ifdef KEVENT_STACK_ALLOC
-    KEVENT eventAlloc;
-    pEvent = &eventAlloc;
-#else
-    pEvent = (KEVENT *)ExAllocatePool (NonPagedPool, sizeof (KEVENT));
-    if (!pEvent) return VERR_NO_MEMORY;
-#endif /* KEVENT_STACK_ALLOC */
-    KeInitializeEvent (pEvent, NotificationEvent, FALSE);
+    KEVENT Event;
+    KeInitializeEvent (&Event, NotificationEvent, FALSE);
 
     PIRP irp = IoBuildDeviceIoControlRequest (u32Function,
                                               pDriver->pDeviceObject,
@@ -158,15 +151,12 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
                                               cbData,
                                               pvData,
                                               cbData,
-                                              FALSE,
-                                              pEvent,
+                                              FALSE, /* external */
+                                              &Event,
                                               &ioStatusBlock);
     if (irp == NULL)
     {
         Log(("vbglDriverIOCtl: IoBuildDeviceIoControlRequest failed\n"));
-#ifndef KEVENT_STACK_ALLOC
-        ExFreePool (pEvent);
-#endif /* KEVENT_STACK_ALLOC */
         return VERR_NO_MEMORY;
     }
 
@@ -175,7 +165,7 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
     if (rc == STATUS_PENDING)
     {
         Log(("vbglDriverIOCtl: STATUS_PENDING\n"));
-        rc = KeWaitForSingleObject(pEvent,
+        rc = KeWaitForSingleObject(&Event,
                                    Executive,
                                    KernelMode,
                                    FALSE,
@@ -186,10 +176,6 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 
     if (!NT_SUCCESS(rc))
         Log(("vbglDriverIOCtl: IoCallDriver failed with ntstatus=%x\n", rc));
-
-#ifndef KEVENT_STACK_ALLOC
-    ExFreePool (pEvent);
-#endif /* KEVENT_STACK_ALLOC */
 
     return NT_SUCCESS(rc)? VINF_SUCCESS: VERR_VBGL_IOCTL_FAILED;
 #else
