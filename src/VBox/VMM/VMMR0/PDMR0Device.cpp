@@ -79,6 +79,8 @@ static DECLCALLBACK(void) pdmR0DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCP
 static DECLCALLBACK(bool) pdmR0DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR0DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
 static DECLCALLBACK(int) pdmR0DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
+static DECLCALLBACK(int) pdmR0DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
+static DECLCALLBACK(int) pdmR0DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
 static DECLCALLBACK(int) pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData);
 /** @} */
 
@@ -150,6 +152,8 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_A20IsEnabled,
     pdmR0DevHlp_VMSetError,
     pdmR0DevHlp_VMSetErrorV,
+    pdmR0DevHlp_VMSetRuntimeError,
+    pdmR0DevHlp_VMSetRuntimeErrorV,
     pdmR0DevHlp_PATMSetMMIOPatchInfo,
     PDM_DEVHLPR0_VERSION
 };
@@ -326,6 +330,27 @@ static DECLCALLBACK(int) pdmR0DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     int rc2 = VMSetErrorV(pDevIns->Internal.s.pVMHC, rc, RT_SRC_POS_ARGS, pszFormat, va); Assert(rc2 == rc); NOREF(rc2);
+    return rc;
+}
+
+
+/** @copydoc PDMDEVHLPR0::pfnVMSetRuntimeError */
+static DECLCALLBACK(int) pdmR0DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    va_list args;
+    va_start(args, pszFormat);
+    int rc = VMSetRuntimeErrorV(pDevIns->Internal.s.pVMHC, fFatal, pszErrorID, pszFormat, args);
+    va_end(args);
+    return rc;
+}
+
+
+/** @copydoc PDMDEVHLPR0::pfnVMSetRuntimeErrorV */
+static DECLCALLBACK(int) pdmR0DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    int rc = VMSetRuntimeErrorV(pDevIns->Internal.s.pVMHC, fFatal, pszErrorID, pszFormat, va);
     return rc;
 }
 

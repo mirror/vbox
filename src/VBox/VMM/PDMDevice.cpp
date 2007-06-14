@@ -107,7 +107,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 static DECLCALLBACK(PTMTIMERHC) pdmR3DevHlp_TMTimerCreateExternal(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev);
 static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback);
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                             PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld);
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
@@ -119,6 +119,8 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t 
 static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv);
 static DECLCALLBACK(int) pdmR3DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
 static DECLCALLBACK(int) pdmR3DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
+static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
+static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
 static DECLCALLBACK(bool) pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
 static DECLCALLBACK(bool) pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
 static DECLCALLBACK(int) pdmR3DevHlp_DBGFStopV(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction, const char *pszFormat, va_list args);
@@ -304,6 +306,8 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MMHeapFree,
     pdmR3DevHlp_VMSetError,
     pdmR3DevHlp_VMSetErrorV,
+    pdmR3DevHlp_VMSetRuntimeError,
+    pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_AssertEMT,
     pdmR3DevHlp_AssertOther,
     pdmR3DevHlp_DBGFStopV,
@@ -390,6 +394,8 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_MMHeapFree,
     pdmR3DevHlp_VMSetError,
     pdmR3DevHlp_VMSetErrorV,
+    pdmR3DevHlp_VMSetRuntimeError,
+    pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_AssertEMT,
     pdmR3DevHlp_AssertOther,
     pdmR3DevHlp_DBGFStopV,
@@ -742,7 +748,7 @@ int pdmR3DevInit(PVM pVM)
             for (u32Order = 1; !(u32 & u32Order); u32Order <<= 1)
                 /* nop */;
         }
-        else 
+        else
             AssertMsgRCReturn(rc, ("Configuration error: reading \"Priority\" for the '%s' device failed rc=%Vrc!\n", szName, rc), rc);
 
         /* Enumerate the device instances. */
@@ -1697,7 +1703,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
 
 
 /** @copydoc PDMDEVHLP::pfnPCISetConfigCallbacks */
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld, 
+static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                             PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2126,6 +2132,27 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_
 }
 
 
+/** @copydoc PDMDEVHLP::pfnVMSetRuntimeError */
+static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    va_list args;
+    va_start(args, pszFormat);
+    int rc = VMSetRuntimeErrorV(pDevIns->Internal.s.pVMHC, fFatal, pszErrorID, pszFormat, args);
+    va_end(args);
+    return rc;
+}
+
+
+/** @copydoc PDMDEVHLP::pfnVMSetRuntimeErrorV */
+static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    int rc = VMSetRuntimeErrorV(pDevIns->Internal.s.pVMHC, fFatal, pszErrorID, pszFormat, va);
+    return rc;
+}
+
+
 /** @copydoc PDMDEVHLP::pfnAssertEMT */
 static DECLCALLBACK(bool) pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction)
 {
@@ -2346,7 +2373,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSE
 static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_UTCNow: caller='%s'/%d: pTime=%p\n", 
+    LogFlow(("pdmR3DevHlp_UTCNow: caller='%s'/%d: pTime=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pTime));
 
     pTime = TMR3UTCNow(pDevIns->Internal.s.pVMHC, pTime);

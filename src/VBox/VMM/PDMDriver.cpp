@@ -75,6 +75,8 @@ static DECLCALLBACK(int)  pdmR3DrvHlp_DetachSelf(PPDMDRVINS pDrvIns);
 static DECLCALLBACK(int)  pdmR3DrvHlp_MountPrepare(PPDMDRVINS pDrvIns, const char *pszFilename, const char *pszCoreDriver);
 static DECLCALLBACK(int) pdmR3DrvHlp_VMSetError(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
 static DECLCALLBACK(int) pdmR3DrvHlp_VMSetErrorV(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
+static DECLCALLBACK(int) pdmR3DrvHlp_VMSetRuntimeError(PPDMDRVINS pDrvIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
+static DECLCALLBACK(int) pdmR3DrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
 static DECLCALLBACK(bool) pdmR3DrvHlp_AssertEMT(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction);
 static DECLCALLBACK(bool) pdmR3DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction);
 static DECLCALLBACK(int)  pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, PFNPDMQUEUEDRV pfnCallback, PPDMQUEUE *ppQueue);
@@ -122,6 +124,8 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_AssertOther,
     pdmR3DrvHlp_VMSetError,
     pdmR3DrvHlp_VMSetErrorV,
+    pdmR3DrvHlp_VMSetRuntimeError,
+    pdmR3DrvHlp_VMSetRuntimeErrorV,
     pdmR3DrvHlp_PDMQueueCreate,
     pdmR3DrvHlp_PDMPollerRegister,
     pdmR3DrvHlp_TMGetVirtualFreq,
@@ -797,6 +801,27 @@ static DECLCALLBACK(int) pdmR3DrvHlp_VMSetErrorV(PPDMDRVINS pDrvIns, int rc, RT_
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     int rc2 = VMSetErrorV(pDrvIns->Internal.s.pVM, rc, RT_SRC_POS_ARGS, pszFormat, va); Assert(rc2 == rc); NOREF(rc2);
+    return rc;
+}
+
+
+/** @copydoc PDMDRVHLP::pfnVMSetRuntimeError */
+static DECLCALLBACK(int) pdmR3DrvHlp_VMSetRuntimeError(PPDMDRVINS pDrvIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    va_list args;
+    va_start(args, pszFormat);
+    int rc = VMSetRuntimeErrorV(pDrvIns->Internal.s.pVM, fFatal, pszErrorID, pszFormat, args);
+    va_end(args);
+    return rc;
+}
+
+
+/** @copydoc PDMDRVHLP::pfnVMSetRuntimeErrorV */
+static DECLCALLBACK(int) pdmR3DrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    int rc = VMSetRuntimeErrorV(pDrvIns->Internal.s.pVM, fFatal, pszErrorID, pszFormat, va);
     return rc;
 }
 
