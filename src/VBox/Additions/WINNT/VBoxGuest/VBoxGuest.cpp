@@ -143,6 +143,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     pDrvObj->MajorFunction[IRP_MJ_CREATE]             = VBoxGuestCreate;
     pDrvObj->MajorFunction[IRP_MJ_CLOSE]              = VBoxGuestClose;
     pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]     = VBoxGuestDeviceControl;
+    pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = VBoxGuestDeviceControl;
     pDrvObj->MajorFunction[IRP_MJ_SHUTDOWN]           = VBoxGuestShutdown;
     pDrvObj->MajorFunction[IRP_MJ_READ]               = VBoxGuestNotSupportedStub;
     pDrvObj->MajorFunction[IRP_MJ_WRITE]              = VBoxGuestNotSupportedStub;
