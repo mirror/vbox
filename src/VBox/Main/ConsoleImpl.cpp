@@ -2838,7 +2838,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
                 /*
                  * Unmount the media.
                  */
-                rc = pIMount->pfnUnmount (pIMount);
+                rc = pIMount->pfnUnmount (pIMount, false);
                 if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
                     rc = VINF_SUCCESS;
                 break;

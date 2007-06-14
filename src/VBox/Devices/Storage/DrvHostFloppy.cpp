@@ -180,13 +180,19 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
          * 2nd init part.
          */
         rc = DRVHostBaseInitFinish(&pThis->Base);
-        if (VBOX_SUCCESS(rc))
-        {
-            LogFlow(("drvHostFloppyConstruct: return %Vrc\n", rc));
-            return rc;
-        }
     }
-    DRVHostBaseDestruct(pDrvIns);
+    if (VBOX_FAILURE(rc))
+    {
+        if (!pThis->Base.fAttachFailError)
+        {
+            /* Suppressing the attach failure error must not affect the normal
+             * DRVHostBaseDestruct, so reset this flag below before leaving. */
+            pThis->Base.fKeepInstance = true;
+            rc = VINF_SUCCESS;
+        }
+        DRVHostBaseDestruct(pDrvIns);
+        pThis->Base.fKeepInstance = false;
+    }
 
     LogFlow(("drvHostFloppyConstruct: returns %Vrc\n", rc));
     return rc;

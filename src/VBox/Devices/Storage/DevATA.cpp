@@ -2525,7 +2525,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
                         PVMREQ pReq;
                         rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), &pReq, RT_INDEFINITE_WAIT,
-                                         (PFNRT)s->pDrvMount->pfnUnmount, 1, s->pDrvMount);
+                                         (PFNRT)s->pDrvMount->pfnUnmount, 2, s->pDrvMount, false);
                         AssertReleaseRC(rc);
                         VMR3ReqFree(pReq);
                         }

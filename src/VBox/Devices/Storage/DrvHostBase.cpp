@@ -456,7 +456,7 @@ static DECLCALLBACK(int) drvHostBaseMount(PPDMIMOUNT pInterface, const char *psz
 
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
-static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface)
+static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce)
 {
      LogFlow(("drvHostBaseUnmount: returns VERR_NOT_SUPPORTED\n"));
      return VERR_NOT_SUPPORTED;
@@ -566,16 +566,16 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, PDM
 
 /**
  * Gets the BSD Name (/dev/disc[0-9]+) for the service.
- * 
- * This is done by recursing down the I/O registry until we hit upon an entry 
- * with a BSD Name. Usually we find it two levels down. (Further down under 
+ *
+ * This is done by recursing down the I/O registry until we hit upon an entry
+ * with a BSD Name. Usually we find it two levels down. (Further down under
  * the IOCDPartitionScheme, the volume (slices) BSD Name is found. We don't
  * seem to have to go this far fortunately.)
- * 
+ *
  * @return  VINF_SUCCESS if found, VERR_FILE_NOT_FOUND otherwise.
  * @param   Entry       The current I/O registry entry reference.
  * @param   pszName     Where to store the name. 128 bytes.
- * @param   cRecursions Number of recursions. This is used as an precation 
+ * @param   cRecursions Number of recursions. This is used as an precation
  *                      just to limit the depth and avoid blowing the stack
  *                      should we hit a bug or something.
  */
@@ -609,9 +609,9 @@ static int drvHostBaseGetBSDName(io_registry_entry_t Entry, char *pszName, unsig
 }
 
 
-/** 
+/**
  * Callback notifying us that the async DADiskClaim()/DADiskUnmount call has completed.
- * 
+ *
  * @param   DiskRef         The disk that was attempted claimed / unmounted.
  * @param   DissenterRef    NULL on success, contains details on failure.
  * @param   pvContext       Pointer to the return code variable.
@@ -629,7 +629,7 @@ static void drvHostBaseDADoneCallback(DADiskRef DiskRef, DADissenterRef Dissente
 
 /**
  * Obtain exclusive access to the DVD device, umount it if necessary.
- * 
+ *
  * @return  VBox status code.
  * @param   pThis       The driver instance.
  * @param   DVDService  The DVD service object.
@@ -643,7 +643,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
         IOReturn irc = (*pThis->ppScsiTaskDI)->ObtainExclusiveAccess(pThis->ppScsiTaskDI);
         if (irc == kIOReturnSuccess)
         {
-            /* 
+            /*
              * This is a bit weird, but if we unmounted the DVD drive we also need to
              * unlock it afterwards or the guest won't be able to eject it later on.
              */
@@ -660,13 +660,13 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
         }
         if (irc == kIOReturnExclusiveAccess)
             return VERR_SHARING_VIOLATION;      /* already used exclusivly. */
-        if (irc != kIOReturnBusy) 
+        if (irc != kIOReturnBusy)
             return VERR_GENERAL_FAILURE;        /* not mounted */
 
         /*
          * Attempt to the unmount all volumes of the device.
-         * It seems we can can do this all in one go without having to enumerate the 
-         * volumes (sessions) and deal with them one by one. This is very fortuitous 
+         * It seems we can can do this all in one go without having to enumerate the
+         * volumes (sessions) and deal with them one by one. This is very fortuitous
          * as the disk arbitration API is a bit cumbersome to deal with.
          */
         if (iTry > 2)
@@ -682,7 +682,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
                 pThis->pDADisk = DADiskCreateFromBSDName(kCFAllocatorDefault, pThis->pDASession, szName);
                 if (pThis->pDADisk)
                 {
-                    /* 
+                    /*
                      * Try claim the device.
                      */
                     Log(("%s-%d: calling DADiskClaim on '%s'.\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, szName));
@@ -716,7 +716,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
                     }
                     else
                         Log(("%s-%d: claim => rc32=%d & rcDA=%#x\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc32, rcDA));
-                    
+
                     CFRelease(pThis->pDADisk);
                     pThis->pDADisk = NULL;
                 }
@@ -1500,8 +1500,8 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
 #endif
 
 #ifdef __DARWIN__
-    /* 
-     * The unclaiming doesn't seem to mean much, the DVD is actaully 
+    /*
+     * The unclaiming doesn't seem to mean much, the DVD is actaully
      * remounted when we release exclusive access. I'm not quite sure
      * if I should put the unclaim first or not...
      *
@@ -1562,7 +1562,12 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
         pThis->pszDeviceOpen = NULL;
     }
 
-    if (RTCritSectIsInitialized(&pThis->CritSect))
+    /* Forget about the notifications. */
+    pThis->pDrvMountNotify = NULL;
+
+    /* Leave the instance operational if this is just a cleanup of the state
+     * after an attach error happened. So don't destry the critsect then. */
+    if (!pThis->fKeepInstance && RTCritSectIsInitialized(&pThis->CritSect))
         RTCritSectDelete(&pThis->CritSect);
     LogFlow(("%s-%d: drvHostBaseDestruct completed\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
 }
@@ -1590,6 +1595,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
      * Initialize most of the data members.
      */
     pThis->pDrvIns                          = pDrvIns;
+    pThis->fKeepInstance                    = false;
     pThis->ThreadPoller                     = NIL_RTTHREAD;
 #ifdef __DARWIN__
     pThis->MasterPort                       = NULL;
@@ -1721,6 +1727,13 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
         return rc;
     }
 
+    /* Define whether attach failure is an error (default) or not. */
+    bool fAttachFailError;
+    rc = CFGMR3QueryBool(pCfgHandle, "AttachFailError", &fAttachFailError);
+    if (VBOX_FAILURE(rc))
+        fAttachFailError = true;
+    pThis->fAttachFailError = fAttachFailError;
+
     /* name to open & watch for */
 #ifdef __WIN__
     int iBit = toupper(pThis->pszDevice[0]) - 'A';
@@ -1753,6 +1766,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
  */
 int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
 {
+    int src = VINF_SUCCESS;
     PPDMDRVINS pDrvIns = pThis->pDrvIns;
 
     /* log config summary */
@@ -1850,11 +1864,21 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
                        pszDevice, pThis->fReadOnlyConfig ? "readonly" : "read/write",
                        pszDevice);
             default:
-                return rc;
+                if (pThis->fAttachFailError)
+                    return rc;
+                else
+                {
+                    int erc = PDMDrvHlpVMSetRuntimeError(pDrvIns,
+                                                         false, "DrvHost_MOUNTFAIL",
+                                                         N_("Cannot attach to host device '%s'"), pszDevice);
+                    AssertRC(erc);
+                    src = rc;
+                }
         }
     }
 #ifdef __WIN__
-    DRVHostBaseMediaPresent(pThis);
+    if (VBOX_SUCCESS(src))
+        DRVHostBaseMediaPresent(pThis);
 #endif
 
     /*
@@ -1872,12 +1896,15 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     }
 
 #ifndef __WIN__
-    /*
-     * Create the event semaphore which the poller thread will wait on.
-     */
-    rc = RTSemEventCreate(&pThis->EventPoller);
-    if (VBOX_FAILURE(rc))
-        return rc;
+    if (VBOX_SUCCESS(src))
+    {
+        /*
+         * Create the event semaphore which the poller thread will wait on.
+         */
+        rc = RTSemEventCreate(&pThis->EventPoller);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
 #endif
 
     /*
@@ -1887,27 +1914,33 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /*
-     * Start the thread which will poll for the media.
-     */
-    rc = RTThreadCreate(&pThis->ThreadPoller, drvHostBaseMediaThread, pThis, 0,
-                        RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "DVDMEDIA");
-    if (VBOX_FAILURE(rc))
+    if (VBOX_SUCCESS(src))
     {
-        AssertMsgFailed(("Failed to create poller thread. rc=%Vrc\n", rc));
-        return rc;
+        /*
+         * Start the thread which will poll for the media.
+         */
+        rc = RTThreadCreate(&pThis->ThreadPoller, drvHostBaseMediaThread, pThis, 0,
+                            RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "DVDMEDIA");
+        if (VBOX_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to create poller thread. rc=%Vrc\n", rc));
+            return rc;
+        }
+
+        /*
+         * Wait for the thread to start up (!w32:) and do one detection loop.
+         */
+        rc = RTThreadUserWait(pThis->ThreadPoller, 10000);
+        AssertRC(rc);
+#ifdef __WIN__
+        if (!pThis->hwndDeviceChange)
+            return VERR_GENERAL_FAILURE;
+#endif
     }
 
-    /*
-     * Wait for the thread to start up (!w32:) and do one detection loop.
-     */
-    rc = RTThreadUserWait(pThis->ThreadPoller, 10000);
-    AssertRC(rc);
-#ifdef __WIN__
-    if (!pThis->hwndDeviceChange)
-        return VERR_GENERAL_FAILURE;
-#endif
-
-    return rc;
+    if (VBOX_FAILURE(src))
+        return src;
+    else
+        return rc;
 }
 
