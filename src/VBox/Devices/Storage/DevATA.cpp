@@ -3550,7 +3550,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
     {
 #ifdef IN_RING3
         /* Software RESET low to high */
-        uint32_t uCmdWait0 = -1, uCmdWait1 = -1;
+        int32_t uCmdWait0 = -1, uCmdWait1 = -1;
         uint64_t uNow = RTTimeNanoTS();
         if (pCtl->aIfs[0].u64CmdTS)
             uCmdWait0 = (uNow - pCtl->aIfs[0].u64CmdTS) / 1000;
