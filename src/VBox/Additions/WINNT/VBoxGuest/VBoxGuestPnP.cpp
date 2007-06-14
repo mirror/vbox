@@ -46,7 +46,6 @@ static VOID     showDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList);
 #pragma alloc_text (PAGE, VBoxGuestPnP)
 #pragma alloc_text (PAGE, VBoxGuestPower)
 #pragma alloc_text (PAGE, sendIrpSynchronously)
-#pragma alloc_text (PAGE, pnpIrpComplete)
 #pragma alloc_text (PAGE, showDeviceResources)
 #endif
 
