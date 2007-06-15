@@ -76,55 +76,55 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Lewy Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Prawy Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Lewy Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Prawy Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Lewy Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Prawy Alt</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation type="unfinished"></translation>
+        <translation>Lewy WinKey</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation type="unfinished"></translation>
+        <translation>Prawy WinKey</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation type="unfinished"></translation>
+        <translation>Klawisz menu</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;klawisz_%1&gt;</translation>
     </message>
 </context>
 <context>
@@ -806,7 +806,7 @@
     </message>
     <message>
         <source>Refresh</source>
-        <translation>Odświerz</translation>
+        <translation>Odśwież</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
@@ -960,15 +960,15 @@
     </message>
     <message>
         <source>Refresh the media list</source>
-        <translation>Odświerz listę nośników</translation>
+        <translation>Odśwież listę nośników</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Obrazy CD/DVD-ROM (*.iso);;Wszystkie pliki (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Obrazy dyskietek (*.img)kie pliki (*)</translation>
     </message>
 </context>
 <context>
@@ -2587,11 +2587,11 @@ Będzie ona używana przez wszystkie produkty VirtualBox, aby zidentyfikować st
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Odświerz</translation>
+        <translation>&amp;Odśwież</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>Odświerz</translation>
+        <translation>Odśwież</translation>
     </message>
     <message>
         <source>Ctrl+R</source>
@@ -2599,7 +2599,7 @@ Będzie ona używana przez wszystkie produkty VirtualBox, aby zidentyfikować st
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Odświerz stan dostępności wybranej maszyny wirtualnej</translation>
+        <translation>Odśwież stan dostępności wybranej maszyny wirtualnej</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -2691,19 +2691,19 @@ Będzie ona używana przez wszystkie produkty VirtualBox, aby zidentyfikować st
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż &amp;Log...</translation>
     </message>
     <message>
         <source>Show Log...</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż Log...</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż pliki log wybranej maszyny wirtualnej</translation>
     </message>
 </context>
 <context>
@@ -2732,7 +2732,7 @@ Use
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;Lista wszystkich współdzielonych folderów dostępnych dla tej maszyny.
+        <translation>&lt;qt&gt;Lista wszystkich współdzielonych folderów dostępnych dla tej maszyny.
 Użycie</translation>
     </message>
     <message>
@@ -3190,7 +3190,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Kreator pierwszego uruchomienia</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
@@ -3198,7 +3198,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Witamy w kreatorze pierwszego uruchomienia!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
@@ -3210,19 +3210,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie &amp;CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;rządzenie dyskietki</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation type="unfinished">Alt+R</translation>
+        <translation>Alt+U</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
@@ -3242,15 +3242,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished">Pl&amp;ik obrazu</translation>
+        <translation>Pl&amp;ik obrazu</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>VDM</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Select Installation Media</source>
@@ -3266,15 +3266,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Podsumowanie</translation>
+        <translation>Podsumowanie</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie dyskietki</translation>
     </message>
     <message>
         <source>Host Drive %1</source>
@@ -3282,7 +3282,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Źródło&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
 </context>
 <context>
@@ -3306,35 +3306,35 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetl Logi</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zapisz</translation>
     </message>
     <message>
         <source>Alt+S</source>
-        <translation type="unfinished">Alt+S</translation>
+        <translation>Alt+Z</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">&amp;Odświerz</translation>
+        <translation>&amp;Odśwież</translation>
     </message>
     <message>
         <source>Alt+R</source>
-        <translation type="unfinished">Alt+R</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Z&amp;amknij</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+A</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Wyświetlacz logów VirtualBox</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
@@ -3342,7 +3342,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz Log VirtualBox,jako</translation>
     </message>
 </context>
 <context>
@@ -4100,31 +4100,31 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Interfejsy hosta</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">Lista wszystkich dostępnych interfejsów gospodarza.</translation>
+        <translation>Lista wszystkich dostępnych interfejsów gospodarza.</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">Dodaje nowy interfejs gospodarza.</translation>
+        <translation>Dodaje nowy interfejs gospodarza.</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">Usuwa wybrany interfejs.</translation>
+        <translation>Usuwa wybrany interfejs.</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
-        <translation type="unfinished">&lt;Brak pasujących interfejsów&gt;</translation>
+        <translation>&lt;Brak pasujących interfejsów&gt;</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Dodaj</translation>
+        <translation>Dodaj</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">Usuń</translation>
+        <translation>Usuń</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
