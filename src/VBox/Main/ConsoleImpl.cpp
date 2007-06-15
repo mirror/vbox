@@ -6255,6 +6255,12 @@ HRESULT Console::captureUSBDevices (PVM pVM)
     int vrc = PDMR3QueryLun (pVM, "usb-ohci", 0, 0, &pBase);
     if (VBOX_SUCCESS (vrc))
     {
+        /* leave the lock before calling Host in VBoxSVC since Host may call
+         * us back from under its lock (e.g. onUSBDeviceAttach()) which would
+         * produce an inter-process dead-lock otherwise. */
+        AutoLock alock (this);
+        alock.leave();
+
         HRESULT hrc = mControl->AutoCaptureUSBDevices();
         ComAssertComRCRetRC (hrc);
     }
@@ -6281,8 +6287,15 @@ void Console::releaseAllUSBDevices (void)
     /* sanity check */
     AssertReturnVoid (isLockedOnCurrentThread());
 
-    mControl->ReleaseAllUSBDevices();
     mUSBDevices.clear();
+
+    /* leave the lock before calling Host in VBoxSVC since Host may call
+     * us back from under its lock (e.g. onUSBDeviceAttach()) which would
+     * produce an inter-process dead-lock otherwise. */
+    AutoLock alock (this);
+    alock.leave();
+
+    mControl->ReleaseAllUSBDevices();
 }
 
 /**
