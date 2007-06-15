@@ -216,15 +216,11 @@ static void showLogo(void)
 
     if (!fShown)
     {
-        RTPrintf("VirtualBox "
-#ifdef VBOX_OSE
-                 "OSE "
-#endif
-                 "Command Line Management Interface Version %s\n"
+        RTPrintf("VirtualBox Command Line Management Interface Version "
+                 VBOX_VERSION_STRING  "\n"
                  "(C) 2005-2007 innotek GmbH\n"
                  "All rights reserved.\n"
-                 "\n",
-                 VBOX_VERSION_STRING);
+                 "\n");
         fShown = true;
     }
 }
