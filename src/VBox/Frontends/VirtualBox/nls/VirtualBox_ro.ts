@@ -267,7 +267,7 @@
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Inchidere maşină virtuală</translation>
+        <translation>Închidere maşină virtuală</translation>
     </message>
     <message>
         <source>You want to:</source>
@@ -367,11 +367,11 @@
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Redimensionează automat ecran musafir</translation>
+        <translation>Redimensionează automat ecranul</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>R&amp;edimensionează automat ecran musafir</translation>
+        <translation>R&amp;edimensionează automat ecranul</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -411,7 +411,7 @@
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>Inc&amp;hidere ACPI</translation>
+        <translation>Înc&amp;hidere ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
@@ -419,15 +419,15 @@
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>în&amp;chide...</translation>
+        <translation>În&amp;chide...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>închide maşina virtuală</translation>
+        <translation>Închide maşina virtuală</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Salvează In&amp;stantaneu...</translation>
+        <translation>Salvează in&amp;stantaneu...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
@@ -564,7 +564,7 @@
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Inidică dacă cursorul mouse sistemului gazdă este capturat de către SO musafir:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul nu este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrare mouse (IM) este Activată&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul nu este capturat.&lt;/nobr&gt;&lt;br&gt;Notă: funcţia integrare mouse necesită instalate pe SO musafir a Guest Additions.</translation>
+        <translation>Inidică dacă cursorul mouse sistemului gazdă este capturat de către SO musafir:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul nu este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrare mouse (IM) este Activată&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul nu este capturat.&lt;/nobr&gt;&lt;br&gt;Notă: funcţia integrare mouse necesită instalarea pe SO musafir a Guest Additions.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
@@ -572,7 +572,7 @@
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Arată tasta gazdă setată în prezent.&lt;br&gt;Această tastă, când este apăsată singură, schimbă starea de captură a mouse şi tastaturii. Poate fi utilizată în combinaţie cu alte taste pentru a efectua rapdi acţiuni din meniul prncipal.</translation>
+        <translation>Arată tasta gazdă setată în prezent.&lt;br&gt;Această tastă, când este apăsată singură, schimbă starea de captură a mouseului şi a tastaturii. Poate fi utilizată în combinaţie cu alte taste pentru a efectua rapid acţiuni din meniul principal.</translation>
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
@@ -608,7 +608,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;virtual&amp;nbsp;hard&amp;nbsp;disks</source>
-        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;discurilor&amp;nbsp;hard&amp;nbsp;virtuale&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;discurilor&amp;nbsp;hard&amp;nbsp;virtuale</translation>
     </message>
     <message>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
@@ -681,7 +681,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea mediului dischetă&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;dischetă&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -1327,7 +1327,7 @@
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>în curs de închidere</translation>
+        <translation>În curs de închidere</translation>
     </message>
     <message>
         <source>None</source>
@@ -1991,7 +1991,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Image Type</source>
-        <translation>Tip Imagine</translation>
+        <translation>Tip imagine</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
@@ -2113,7 +2113,7 @@ Va fi folosit de către toate produsele VirtualBox pentru a identifica maşina v
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation>Nume MV şi Tip SO</translation>
+        <translation>Nume MV şi tip SO</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
@@ -2273,7 +2273,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nu am putut iniţializa COM sau nu am putut găsi serverul COM al VirtualBox. Se pare că serverul VirtualBox nu rulează sau nu a putut porni.&lt;/p&gt;&lt;p&gt;Aplicaţia se va inchide acum.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut iniţializa COM sau nu am putut găsi serverul COM al VirtualBox. Se pare că serverul VirtualBox nu rulează sau nu a putut porni.&lt;/p&gt;&lt;p&gt;Aplicaţia se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2301,7 +2301,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nu am putut crea o maşină vrituală nouă &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nu am putut crea o maşină virtuală nouă &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2485,7 +2485,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Maşina virtuală este în prezent în starea &lt;b&gt;Pauză&lt;/b&gt;, astfel nu acceptă input de la tastatură sau mouse. Dacă doriţi sa reluaţi lucrul în maşina vrituală, trebuie să restabiliţi rularea selectând acest lucru din acţiunea corespunzătoare de pe bara meniu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Maşina virtuală este în prezent în starea &lt;b&gt;Pauză&lt;/b&gt;, astfel nu acceptă introducere de date de la tastatură sau mouse. Dacă doriţi sa reluaţi lucrul în maşina virtuală, trebuie să restabiliţi rularea selectând acţiunea corespunzătoare de pe bara meniu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or dischet? media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
@@ -2866,7 +2866,7 @@ to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Listează toate directoarele partajate accesibile acestei maşini.
 Folosiţi comanda:
-&lt;tt&gt;net use x:\\vboxsvr\share&lt;/tt&gt;
+&lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
 pentru a accesa un director partajat denumit &lt;i&gt;share&lt;/i&gt; dintr-un SO gen DOS, sau
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions.&lt;/qt&gt;</translation>
@@ -3408,7 +3408,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation type="unfinished">Detalii &amp;maşină</translation>
+        <translation>Maşina virtuală selectată este  &lt;i&gt;inaccesibilă&lt;/i&gt;. Vă rugăm inspectaţi mesajul de eroare de mai jos şi apăsaţi butonul &lt;b&gt;Reîmprospătare&lt;/b&gt; dacă doriţi să repetaţi testul de accesibilitate:</translation>
     </message>
 </context>
 <context>
@@ -3779,7 +3779,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation>Afişează comanda executată pentru a inchide interfaţa TAP.</translation>
+        <translation>Afişează comanda executată pentru a închide interfaţa TAP.</translation>
     </message>
     <message>
         <source>Selects the terminate application.</source>
@@ -4171,7 +4171,7 @@ determină musafirul să vadă o placă audio, oricum orice acces la aceasta va 
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation>Activează Controlor &amp;USB</translation>
+        <translation>Activează controlor &amp;USB</translation>
     </message>
     <message>
         <source>Alt+U</source>
@@ -4402,7 +4402,7 @@ toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation>Interfaţa reţea gazdă incorectă este selectată pentru Placa %1.</translation>
+        <translation>Interfaţa reţea gazdă incorectă este selectată pentru placa de reţea %1.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
@@ -4437,7 +4437,7 @@ aceasta funcţie necesită instalarea Guest Additions pe SO musafir.
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation>Director I&amp;nstantanee</translation>
+        <translation>Director i&amp;nstantanee</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
@@ -4448,7 +4448,7 @@ aceasta funcţie necesită instalarea Guest Additions pe SO musafir.
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Când este activat, maşina virtuală va suporta
-ACPI (Advanced Confirguration şi Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
+ACPI (Advanced Configuration and Power Management Interface). &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
 această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -4456,7 +4456,7 @@ această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Când este activat, maşina virtuală va suporta
-IO ACPI (Input Output Advanced Confirguration şi Power Management Interface), care ar putea afecta performanţa sistemului. &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
+IO ACPI (Input Output Advanced Configuration şi Power Management Interface), care ar putea afecta performanţa sistemului. &lt;b&gt;Notă:&lt;/b&gt; nu dezactivaţi
 această opţiune după ce aţi instalat un sistem de operare musafir Microsoft!&lt;/qt&gt;</translation>
     </message>
     <message>
