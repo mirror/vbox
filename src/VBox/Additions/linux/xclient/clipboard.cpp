@@ -132,6 +132,10 @@ typedef struct
     Atom atomMultiple;
     /** X11 atom refering to the clipboard: TIMESTAMP */
     Atom atomTimestamp;
+    /** X11 atom refering to the clipboard utf16 text format: text/plain;charset=ISO-10646-UCS-2 */
+    Atom atomUtf16;
+    /** X11 atom refering to the clipboard utf8 text format: UTF8_STRING */
+    Atom atomUtf8;
 
     /** A list of the X11 formats which we support, mapped to our identifier for them, in the order
         we prefer to have them in. */
@@ -946,7 +950,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     Log2 (("vboxClipboardConvertUtf16: converted text is %.*ls\n", cwGuestText - 1,
            pu16GuestText + 1));
     RTMemFree(reinterpret_cast<void *>(pu16HostText));
-    *atomTypeReturn = XA_STRING;
+    *atomTypeReturn = g_ctx.atomUtf16;
     *pValReturn = reinterpret_cast<XtPointer>(pu16GuestText);
     *pcLenReturn = cwGuestText * 2;
     *piFormatReturn = 8;
@@ -1027,7 +1031,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     Log2 (("vboxClipboardConvertUtf8: converted text is %.*s\n", cbGuestText, pcGuestText));
     RTMemFree(reinterpret_cast<char *>(pu16HostText));
     RTMemFree(reinterpret_cast<char *>(pu16GuestText));
-    *atomTypeReturn = XA_STRING;
+    *atomTypeReturn = g_ctx.atomUtf8;
     *pValReturn = reinterpret_cast<XtPointer>(pcGuestText);
     *pcLenReturn = cbGuestText;
     *piFormatReturn = 8;
@@ -1182,6 +1186,7 @@ static void vboxClipboardLoseProc(Widget, Atom *)
 {
     LogFlowFunc(("giving the guest clipboard ownership\n"));
     g_ctx.eOwner = GUEST;
+    g_ctx.notifyHost = true;
     LogFlowFunc(("returning\n"));
 }
 
@@ -1206,15 +1211,10 @@ void vboxClipboardFormatAnnounce (uint32_t u32Formats)
     g_ctx.guestTextFormat = INVALID;
     g_ctx.guestBitmapFormat = INVALID;
     if (XtOwnSelection(g_ctx.widget, g_ctx.atomClipboard, CurrentTime, vboxClipboardConvertProc,
-                       vboxClipboardLoseProc, 0) == True)
-    {
-        /* We set this so that the host gets notified when we take the clipboard, even if no
-          guest formats are found which we understand. */
-        g_ctx.notifyHost = true;
-    }
-    else
+                       vboxClipboardLoseProc, 0) != True)
     {
         Log2 (("vboxClipboardFormatAnnounce: returning clipboard ownership to the guest\n"));
+        g_ctx.notifyHost = true;
         g_ctx.eOwner = GUEST;
     }
     LogFlowFunc(("returning\n"));
@@ -1522,6 +1522,9 @@ static int vboxClipboardCreateWindow(void)
     g_ctx.atomTargets   = XInternAtom(XtDisplay(g_ctx.widget), "TARGETS",   false);
     g_ctx.atomMultiple  = XInternAtom(XtDisplay(g_ctx.widget), "MULTIPLE",  false);
     g_ctx.atomTimestamp = XInternAtom(XtDisplay(g_ctx.widget), "TIMESTAMP", false);
+    g_ctx.atomUtf16     = XInternAtom(XtDisplay(g_ctx.widget),
+                                      "text/plain;charset=ISO-10646-UCS-2", false);
+    g_ctx.atomUtf8      = XInternAtom(XtDisplay(g_ctx.widget), "UTF_STRING", false);
     /* And build up the vector of supported formats */
 #ifdef USE_UTF16
     vboxClipboardAddFormat("text/plain;charset=ISO-10646-UCS-2", UTF16,
