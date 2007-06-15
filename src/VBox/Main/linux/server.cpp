@@ -1139,11 +1139,7 @@ int main (int argc, char **argv)
             int  iSize;
 
             iSize = snprintf (szBuf, sizeof(szBuf),
-                              "innotek VirtualBox "
-#ifdef VBOX_OSE
-                              "OSE "
-#endif
-                              "XPCOM Server Version %s",
+                              "innotek VirtualBox XPCOM Server Version "
                               VBOX_VERSION_STRING);
             for (int i=iSize; i>0; i--)
                 putchar('*');
@@ -1175,7 +1171,7 @@ int main (int argc, char **argv)
         if (pszPidFile)
         {
             char szBuf[32];
-            char *lf = "\n";
+            const char *lf = "\n";
             RTFileOpen(&pidFile, pszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE);
             RTStrFormatNumber(szBuf, getpid(), 10, 0, 0, 0);
             RTFileWrite(pidFile, szBuf, strlen(szBuf), NULL);
