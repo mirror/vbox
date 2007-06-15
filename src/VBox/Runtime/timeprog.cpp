@@ -34,10 +34,20 @@
  *
  * @returns Timestamp relative to program startup.
  */
-RTR3DECL(uint64_t)  RTTimeProgramNanoTS(void)
+RTDECL(uint64_t)  RTTimeProgramNanoTS(void)
 {
-    AssertMsg(g_u64ProgramStartNanoTS, ("RTR3Init hasn't been called!\n"));
     return RTTimeNanoTS() - g_u64ProgramStartNanoTS;
+}
+
+
+/**
+ * Get the microsecond timestamp relative to program startup.
+ *
+ * @returns Timestamp relative to program startup.
+ */
+RTDECL(uint64_t)  RTTimeProgramMicroTS(void)
+{
+    return RTTimeProgramNanoTS() / 1000;
 }
 
 
@@ -46,9 +56,8 @@ RTR3DECL(uint64_t)  RTTimeProgramNanoTS(void)
  *
  * @returns Timestamp relative to program startup.
  */
-RTR3DECL(uint64_t)  RTTimeProgramMilliTS(void)
+RTDECL(uint64_t)  RTTimeProgramMilliTS(void)
 {
-/*    AssertMsg(g_u64ProgramStartMilliTS, ("RTR3Init hasn't been called!\n")); */
     return RTTimeMilliTS() - g_u64ProgramStartMilliTS;
 }
 
@@ -58,8 +67,19 @@ RTR3DECL(uint64_t)  RTTimeProgramMilliTS(void)
  *
  * @returns Timestamp relative to program startup.
  */
-RTR3DECL(uint32_t)  RTTimeProgramSecTS(void)
+RTDECL(uint32_t)  RTTimeProgramSecTS(void)
 {
     AssertMsg(g_u64ProgramStartMilliTS, ("RTR3Init hasn't been called!\n"));
     return (uint32_t)(RTTimeProgramMilliTS() / 1000);
+}
+
+
+/**
+ * Get the RTTimeNanoTS() of when the program started.
+ *
+ * @returns Program startup timestamp.
+ */
+RTDECL(uint64_t) RTTimeProgramStartNanoTS(void)
+{
+    return g_u64ProgramStartNanoTS;
 }

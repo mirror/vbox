@@ -82,6 +82,23 @@ RTR0DECL(int) RTR0Init(unsigned fReserved);
 RTR0DECL(void) RTR0Term(void);
 #endif
 
+#ifdef IN_GC
+/**
+ * Initalizes the guest context runtime library.
+ *
+ * @returns iprt status code.
+ *
+ * @param   u64ProgramStartNanoTS  The startup timestamp.
+ */
+RTGCDECL(int) RTGCInit(uint64_t u64ProgramStartNanoTS);
+
+/**
+ * Terminates the guest context runtime library.
+ */
+RTGCDECL(void) RTGCTerm(void);
+#endif
+
+
 /** @} */
 
 /** @} */

@@ -674,6 +674,13 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
     {
         CPUMHyperSetCtxCore(pVM, NULL);
         CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
+        uint64_t u64TS = RTTimeProgramStartNanoTS();
+#if GC_ARCH_BITS == 32
+        CPUMPushHyper(pVM, (uint32_t)(u64TS >> 32));    /* Param 3: The program startup TS - Hi. */
+        CPUMPushHyper(pVM, (uint32_t)u64TS);            /* Param 3: The program startup TS - Lo. */
+#else /* 64-bit GC */
+        CPUMPushHyper(pVM, u64TS);                      /* Param 3: The program startup TS. */
+#endif        
         CPUMPushHyper(pVM, VBOX_VERSION);               /* Param 2: Version argument. */
         CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
         CPUMPushHyper(pVM, pVM->pVMGC);                 /* Param 0: pVM */
