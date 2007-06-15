@@ -688,22 +688,35 @@ RTDECL(uint64_t) RTTimeSystemMilliTS(void);
  *
  * @returns Timestamp relative to program startup.
  */
-RTR3DECL(uint64_t)  RTTimeProgramNanoTS(void);
+RTDECL(uint64_t)  RTTimeProgramNanoTS(void);
+
+/**
+ * Get the microsecond timestamp relative to program startup.
+ *
+ * @returns Timestamp relative to program startup.
+ */
+RTDECL(uint64_t)  RTTimeProgramMicroTS(void);
 
 /**
  * Get the millisecond timestamp relative to program startup.
  *
  * @returns Timestamp relative to program startup.
  */
-RTR3DECL(uint64_t)  RTTimeProgramMilliTS(void);
+RTDECL(uint64_t)  RTTimeProgramMilliTS(void);
 
 /**
  * Get the second timestamp relative to program startup.
  *
  * @returns Timestamp relative to program startup.
  */
-RTR3DECL(uint32_t)  RTTimeProgramSecTS(void);
+RTDECL(uint32_t)  RTTimeProgramSecTS(void);
 
+/**
+ * Get the RTTimeNanoTS() of when the program started.
+ *
+ * @returns Program startup timestamp.
+ */ 
+RTDECL(uint64_t) RTTimeProgramStartNanoTS(void);
 
 /** @} */
 

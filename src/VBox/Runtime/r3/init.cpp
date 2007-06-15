@@ -67,6 +67,11 @@ char        g_szrtProgramPath[RTPATH_MAX];
 uint64_t    g_u64ProgramStartNanoTS;
 
 /**
+ * Program start microsecond TS.
+ */
+uint64_t    g_u64ProgramStartMicroTS;
+
+/**
  * Program start millisecond TS.
  */
 uint64_t    g_u64ProgramStartMilliTS;
@@ -145,7 +150,8 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
      * Init the program start TSes.
      */
     g_u64ProgramStartNanoTS = RTTimeNanoTS();
-    g_u64ProgramStartMilliTS = RTTimeMilliTS();
+    g_u64ProgramStartMicroTS = g_u64ProgramStartNanoTS / 1000;
+    g_u64ProgramStartMilliTS = g_u64ProgramStartNanoTS / 1000000;
 
 #ifndef IN_GUEST
     /*

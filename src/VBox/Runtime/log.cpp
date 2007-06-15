@@ -1927,7 +1927,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_MS_PROG)
                 {
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(IN_GC)
                     uint64_t u64 = RTTimeProgramMilliTS();
 #else
                     uint64_t u64 = 0;

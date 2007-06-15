@@ -423,8 +423,9 @@ VMMR0DECL(int) VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
  * @param   pVM         The VM to operate on.
  * @param   uOperation  Which operation to execute (VMMGCOPERATION).
  * @param   uArg        Argument to that operation.
+ * @param   ...         Additional arguments.
  */
-VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg);
+VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
 
 /**
  * Switches from guest context to host context.

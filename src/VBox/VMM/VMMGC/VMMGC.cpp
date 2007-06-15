@@ -33,6 +33,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/initterm.h>
 
 
 /*******************************************************************************
@@ -60,7 +61,7 @@ static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pR
  * @param   uOperation  Which operation to execute (VMMGCOPERATION).
  * @param   uArg        Argument to that operation.
  */
-VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg)
+VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
 {
     /* todo */
     switch (uOperation)
@@ -70,8 +71,25 @@ VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg)
          */
         case VMMGC_DO_VMMGC_INIT:
         {
-            Log(("VMMGCEntry: VMMGC_DO_VMMGC_INIT - uArg=%#x\n", uArg));
+            /* fetch the additional argument(s). */
+            va_list va;
+            va_start(va, uArg);
+            uint64_t u64TS = va_arg(va, uint64_t);
+            va_end(va);
+            
+            Log(("VMMGCEntry: VMMGC_DO_VMMGC_INIT - uArg=%#x (version) u64TS=%RX64\n", uArg, u64TS));
+            
+            /* 
+             * Validate the version. 
+             */
             /** @todo validate version. */
+            
+            /*
+             * Initialize the runtime.
+             */
+            int rc = RTGCInit(u64TS);
+            AssertRCReturn(rc, rc);
+            
             return VINF_SUCCESS;
         }
 

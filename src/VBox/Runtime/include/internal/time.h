@@ -26,9 +26,10 @@
 
 __BEGIN_DECLS
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(IN_GC)
 
 extern uint64_t g_u64ProgramStartNanoTS;
+extern uint64_t g_u64ProgramStartMicroTS;
 extern uint64_t g_u64ProgramStartMilliTS;
 
 #endif
