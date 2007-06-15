@@ -2469,7 +2469,8 @@ leave:
     }
 
     LogFlow(("Releasing mouse, keyboard, vrdpserver, display, console...\n"));
-    gDisplay->SetupInternalFramebuffer(0);
+    if (gDisplay)
+        gDisplay->SetupInternalFramebuffer(0);
     gMouse = NULL;
     gKeyboard = NULL;
     gVrdpServer = NULL;
