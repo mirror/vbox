@@ -382,14 +382,10 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
             rc = VINF_EM_RAW_EMULATE_INSTR;
     }
     else
-    if (pRegFrame->eflags.Bits.u1VM)
     {
         rc = TRPMForwardTrap(pVM, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
-    else
-        /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
-        rc = VINF_EM_RAW_EMULATE_INSTR;
 
     return trpmGCExitTrap(pVM, rc, pRegFrame);
 }
