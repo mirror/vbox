@@ -682,7 +682,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-#ifdef __LINUX
+#ifdef __LINUX__
     /*
      * Lock keys on SDL behave different from normal keys: A KeyPress event is generated
      * if the lock mode gets active and a keyRelease event is genereated if the lock mode
@@ -695,7 +695,7 @@ int main(int argc, char *argv[])
      * to ensure a defined environment and work around the missing KeyPress/KeyRelease
      * events in ProcessKeys().
      */
-    setenv("SDL_DISABLE_LOCK_KEYS", 1, 1);
+    setenv("SDL_DISABLE_LOCK_KEYS", "1", 1);
 #endif
 
     /*
