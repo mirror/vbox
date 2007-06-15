@@ -698,11 +698,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     csession = session;
 
-#ifdef Q_WS_WIN
-    /* Store HWND descriptor into named virtual shared memory segment. */
-    storeHwndDescriptor();
-#endif
-
     if (!centralWidget())
     {
         setCentralWidget (new QWidget (this, "centralWidget"));
@@ -1000,11 +995,6 @@ void VBoxConsoleWnd::closeView()
         LogFlowFuncLeave();
         return;
     }
-
-#ifdef Q_WS_WIN
-    /* Closes the handlers to the stored NVSM segment to let the system free it. */
-    cleanHwndDescriptor();
-#endif
 
     idle_timer->stop();
     idle_timer->disconnect (SIGNAL (timeout()), this, SLOT (updateDeviceLights()));
@@ -1735,56 +1725,6 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
 #endif
 }
-
-#ifdef Q_WS_WIN
-/* This function stores the current VM console window HWND handler to the
- * named virtual shared memory segment with VBoxQt-{machine-uuid} name
- * allowing other application get accessing this VM console window. */
-void VBoxConsoleWnd::storeHwndDescriptor()
-{
-    QString machineId = csession.GetMachine().GetId().toString();
-    QString segmentName = QString ("VBoxQt-%1").arg (machineId);
-
-    /* Structure for storing HWND information */
-    struct VBoxQtInfo
-    {
-        VBoxQtInfo (uint32_t aVersion, HWND aHwnd)
-            : version (aVersion), hwndWin (aHwnd) {}
-        uint32_t version; /* Version of the structure, currently 1 */
-        HWND     hwndWin; /* HWND Descriptor */
-    } info (1, winId());
-
-    /* Open NVSM handle */
-    mMapFile = CreateFileMapping (INVALID_HANDLE_VALUE,   // use paging file
-                                  NULL,                   // default security
-                                  PAGE_READWRITE,         // read/write access
-                                  0,                      // max. object size
-                                  sizeof (info),          // buffer size
-                         (LPCWSTR)segmentName.unicode()); // name of mapping object
-    if (mMapFile == NULL) return;
-
-    mBuf = (LPTSTR) MapViewOfFile (mMapFile,              // handle to map object
-                                   FILE_MAP_ALL_ACCESS,   // read/write permission
-                                   0,
-                                   0,
-                                   sizeof (info));
-    if (mBuf == NULL) return;
-
-    CopyMemory ((PVOID)mBuf, (void*)&info, sizeof (info));
-}
-
-/* This function closes any handlers pointed to allocated named virtual
- * shared memory segment with this dialog's HWND handler. */
-void VBoxConsoleWnd::cleanHwndDescriptor()
-{
-    /* Freeing resources */
-    if (mBuf != NULL)
-        UnmapViewOfFile (mBuf);
-    if (mMapFile != NULL)
-        CloseHandle (mMapFile);
-}
-#endif
-
 
 //
 // Private slots
