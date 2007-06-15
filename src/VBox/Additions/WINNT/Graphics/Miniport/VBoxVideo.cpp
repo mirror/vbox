@@ -1540,8 +1540,24 @@ VP_STATUS VBoxVideoGetChildDescriptor(
    PULONG pUId,
    PULONG pUnused)
 {
-   dprintf(("VBoxVideo::VBoxVideoGetChildDescriptor\n"));
-   return ERROR_NO_MORE_DEVICES;
+    dprintf(("VBoxVideo::VBoxVideoGetChildDescriptor\n"));
+
+    DEVICE_EXTENSION *pDevExt = (DEVICE_EXTENSION *)HwDeviceExtension;
+
+    if (ChildEnumInfo->ChildIndex > 0)
+    {
+        if (   (ChildEnumInfo->ChildIndex == 1 && gNumDisplays == 0)
+            || ((int)ChildEnumInfo->ChildIndex <= gNumDisplays)
+           )
+        {
+            *VideoChildType = Monitor;
+            *pUId = ChildEnumInfo->ChildIndex;
+
+            return VIDEO_ENUM_MORE_DEVICES;
+        }
+    }
+
+    return ERROR_NO_MORE_DEVICES;
 }
 
 
