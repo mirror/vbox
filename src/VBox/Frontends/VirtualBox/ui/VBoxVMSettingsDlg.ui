@@ -133,16 +133,16 @@
         </item>
         <item>
             <property name="text">
-                <string> Floppy </string>
+                <string> CD/DVD-ROM </string>
             </property>
             <property name="text">
                 <string>2</string>
             </property>
             <property name="text">
-                <string>#floppy</string>
+                <string>#dvd</string>
             </property>
             <property name="pixmap">
-                <pixmap>fd_16px.png</pixmap>
+                <pixmap>cd_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
@@ -153,16 +153,16 @@
         </item>
         <item>
             <property name="text">
-                <string> CD/DVD-ROM </string>
+                <string> Floppy </string>
             </property>
             <property name="text">
                 <string>3</string>
             </property>
             <property name="text">
-                <string>#dvd</string>
+                <string>#floppy</string>
             </property>
             <property name="pixmap">
-                <pixmap>cd_16px.png</pixmap>
+                <pixmap>fd_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
@@ -1507,181 +1507,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
             </widget>
             <widget class="QWidget">
                 <property name="name">
-                    <cstring>pageFloppy</cstring>
-                </property>
-                <attribute name="id">
-                    <number>2</number>
-                </attribute>
-                <vbox>
-                    <property name="name">
-                        <cstring>unnamed</cstring>
-                    </property>
-                    <property name="margin">
-                        <number>0</number>
-                    </property>
-                    <property name="spacing">
-                        <number>10</number>
-                    </property>
-                    <widget class="QButtonGroup">
-                        <property name="name">
-                            <cstring>bgFloppy</cstring>
-                        </property>
-                        <property name="title">
-                            <string>&amp;Mount Floppy Drive</string>
-                        </property>
-                        <property name="checkable">
-                            <bool>true</bool>
-                        </property>
-                        <vbox>
-                            <property name="name">
-                                <cstring>unnamed</cstring>
-                            </property>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>layout139</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QRadioButton">
-                                        <property name="name">
-                                            <cstring>rbHostFloppy</cstring>
-                                        </property>
-                                        <property name="text">
-                                            <string>Host Floppy &amp;Drive</string>
-                                        </property>
-                                        <property name="accel">
-                                            <string>Alt+D</string>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Mounts the specified host Floppy drive to the virtual Floppy drive.</string>
-                                        </property>
-                                    </widget>
-                                    <widget class="QComboBox">
-                                        <property name="name">
-                                            <cstring>cbHostFloppy</cstring>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Lists host Floppy drives available to mount to the virtual machine.</string>
-                                        </property>
-                                    </widget>
-                                    <spacer>
-                                        <property name="name">
-                                            <cstring>spacer123</cstring>
-                                        </property>
-                                        <property name="orientation">
-                                            <enum>Horizontal</enum>
-                                        </property>
-                                        <property name="sizeType">
-                                            <enum>Expanding</enum>
-                                        </property>
-                                        <property name="sizeHint">
-                                            <size>
-                                                <width>51</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                    </spacer>
-                                </hbox>
-                            </widget>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>layout140</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QRadioButton">
-                                        <property name="name">
-                                            <cstring>rbISOFloppy</cstring>
-                                        </property>
-                                        <property name="text">
-                                            <string>&amp;Image File</string>
-                                        </property>
-                                        <property name="accel">
-                                            <string>Alt+I</string>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Mounts the specified Floppy image to the virtual Floppy drive.</string>
-                                        </property>
-                                    </widget>
-                                    <spacer>
-                                        <property name="name">
-                                            <cstring>spacer135_4</cstring>
-                                        </property>
-                                        <property name="orientation">
-                                            <enum>Horizontal</enum>
-                                        </property>
-                                        <property name="sizeType">
-                                            <enum>Expanding</enum>
-                                        </property>
-                                        <property name="sizeHint">
-                                            <size>
-                                                <width>156</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                    </spacer>
-                                </hbox>
-                            </widget>
-                            <widget class="QLayoutWidget">
-                                <property name="name">
-                                    <cstring>fdLayout</cstring>
-                                </property>
-                                <hbox>
-                                    <property name="name">
-                                        <cstring>unnamed</cstring>
-                                    </property>
-                                    <widget class="QToolButton">
-                                        <property name="name">
-                                            <cstring>tbISOFloppy</cstring>
-                                        </property>
-                                        <property name="focusPolicy">
-                                            <enum>TabFocus</enum>
-                                        </property>
-                                        <property name="text">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="iconSet">
-                                            <iconset></iconset>
-                                        </property>
-                                        <property name="textLabel">
-                                            <string>Select</string>
-                                        </property>
-                                        <property name="autoRaise">
-                                            <bool>true</bool>
-                                        </property>
-                                        <property name="whatsThis" stdset="0">
-                                            <string>Invokes the Virtual Disk Manager to select a Floppy image to mount.</string>
-                                        </property>
-                                    </widget>
-                                </hbox>
-                            </widget>
-                        </vbox>
-                    </widget>
-                    <spacer>
-                        <property name="name">
-                            <cstring>spacer119</cstring>
-                        </property>
-                        <property name="orientation">
-                            <enum>Vertical</enum>
-                        </property>
-                        <property name="sizeType">
-                            <enum>Expanding</enum>
-                        </property>
-                        <property name="sizeHint">
-                            <size>
-                                <width>20</width>
-                                <height>0</height>
-                            </size>
-                        </property>
-                    </spacer>
-                </vbox>
-            </widget>
-            <widget class="QWidget">
-                <property name="name">
                     <cstring>pageDVD</cstring>
                 </property>
                 <attribute name="id">
@@ -1839,6 +1664,181 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                     <spacer>
                         <property name="name">
                             <cstring>spacer19</cstring>
+                        </property>
+                        <property name="orientation">
+                            <enum>Vertical</enum>
+                        </property>
+                        <property name="sizeType">
+                            <enum>Expanding</enum>
+                        </property>
+                        <property name="sizeHint">
+                            <size>
+                                <width>20</width>
+                                <height>0</height>
+                            </size>
+                        </property>
+                    </spacer>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageFloppy</cstring>
+                </property>
+                <attribute name="id">
+                    <number>2</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <property name="spacing">
+                        <number>10</number>
+                    </property>
+                    <widget class="QButtonGroup">
+                        <property name="name">
+                            <cstring>bgFloppy</cstring>
+                        </property>
+                        <property name="title">
+                            <string>&amp;Mount Floppy Drive</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout139</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbHostFloppy</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>Host Floppy &amp;Drive</string>
+                                        </property>
+                                        <property name="accel">
+                                            <string>Alt+D</string>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Mounts the specified host Floppy drive to the virtual Floppy drive.</string>
+                                        </property>
+                                    </widget>
+                                    <widget class="QComboBox">
+                                        <property name="name">
+                                            <cstring>cbHostFloppy</cstring>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Lists host Floppy drives available to mount to the virtual machine.</string>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer123</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>51</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>layout140</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QRadioButton">
+                                        <property name="name">
+                                            <cstring>rbISOFloppy</cstring>
+                                        </property>
+                                        <property name="text">
+                                            <string>&amp;Image File</string>
+                                        </property>
+                                        <property name="accel">
+                                            <string>Alt+I</string>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Mounts the specified Floppy image to the virtual Floppy drive.</string>
+                                        </property>
+                                    </widget>
+                                    <spacer>
+                                        <property name="name">
+                                            <cstring>spacer135_4</cstring>
+                                        </property>
+                                        <property name="orientation">
+                                            <enum>Horizontal</enum>
+                                        </property>
+                                        <property name="sizeType">
+                                            <enum>Expanding</enum>
+                                        </property>
+                                        <property name="sizeHint">
+                                            <size>
+                                                <width>156</width>
+                                                <height>20</height>
+                                            </size>
+                                        </property>
+                                    </spacer>
+                                </hbox>
+                            </widget>
+                            <widget class="QLayoutWidget">
+                                <property name="name">
+                                    <cstring>fdLayout</cstring>
+                                </property>
+                                <hbox>
+                                    <property name="name">
+                                        <cstring>unnamed</cstring>
+                                    </property>
+                                    <widget class="QToolButton">
+                                        <property name="name">
+                                            <cstring>tbISOFloppy</cstring>
+                                        </property>
+                                        <property name="focusPolicy">
+                                            <enum>TabFocus</enum>
+                                        </property>
+                                        <property name="text">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="iconSet">
+                                            <iconset></iconset>
+                                        </property>
+                                        <property name="textLabel">
+                                            <string>Select</string>
+                                        </property>
+                                        <property name="autoRaise">
+                                            <bool>true</bool>
+                                        </property>
+                                        <property name="whatsThis" stdset="0">
+                                            <string>Invokes the Virtual Disk Manager to select a Floppy image to mount.</string>
+                                        </property>
+                                    </widget>
+                                </hbox>
+                            </widget>
+                        </vbox>
+                    </widget>
+                    <spacer>
+                        <property name="name">
+                            <cstring>spacer119</cstring>
                         </property>
                         <property name="orientation">
                             <enum>Vertical</enum>
@@ -2837,15 +2837,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <tabstop>tbHDB</tabstop>
     <tabstop>grbHDD</tabstop>
     <tabstop>tbHDD</tabstop>
+    <tabstop>rbHostDVD</tabstop>
+    <tabstop>cbHostDVD</tabstop>
+    <tabstop>rbISODVD</tabstop>
+    <tabstop>tbISODVD</tabstop>
     <tabstop>bgFloppy</tabstop>
     <tabstop>rbHostFloppy</tabstop>
     <tabstop>cbHostFloppy</tabstop>
     <tabstop>rbISOFloppy</tabstop>
     <tabstop>tbISOFloppy</tabstop>
-    <tabstop>rbHostDVD</tabstop>
-    <tabstop>cbHostDVD</tabstop>
-    <tabstop>rbISODVD</tabstop>
-    <tabstop>tbISODVD</tabstop>
     <tabstop>cbAudioDriver</tabstop>
     <tabstop>cbEnableUSBController</tabstop>
     <tabstop>lvUSBFilters</tabstop>
