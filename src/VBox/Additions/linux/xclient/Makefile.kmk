@@ -28,6 +28,8 @@ ifneq ($(USERNAME),bird) # crap
 PROGRAMS = vboxadd-xclient
 endif
 
+OTHER_CLEAN              = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
+
 vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxadd-xclient_SOURCES  = clipboard.cpp
 vboxadd-xclient_LIBPATH  = $(PATH_TARGET)/vboxadd-xclient $(VBOX_LIBPATH32_X11)
@@ -39,6 +41,7 @@ vboxadd-xclient_DEFS     = _GNU_SOURCE VBOX_HGCM
 $(PATH_TARGET)/vboxadd-xclient/vboxadd-xclient: $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
 
 $(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
-	ln -s `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
+	$(call MSG_L1,Forcing static libstdc++)
+	$(QUIET)ln -s `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
 
 include	$(PATH_KBUILD)/footer.kmk
