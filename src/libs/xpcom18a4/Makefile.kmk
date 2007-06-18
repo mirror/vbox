@@ -34,7 +34,6 @@ TEMPLATE_XPCOM_ASDEFS              = $(NO_SUCH_VARIABLE)
 TEMPLATE_XPCOM_CXXFLAGS            = -pipe -ansi -Wall -Wno-unused -Wno-non-virtual-dtor \
                                      $(VBOX_GCC_Wno-invalid-offsetof) -Wno-sign-compare -Wno-unused -Wno-ctor-dtor-privacy \
                                      $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
-
 TEMPLATE_XPCOM_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_XPCOM_CXXFLAGS.release    = -O
 TEMPLATE_XPCOM_CXXFLAGS.profile    = -O
@@ -53,7 +52,7 @@ TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\
 TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" MOZ_DLL_SUFFIX=\".dylib\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  MOZ_DLL_SUFFIX=\".so\"    XP_UNIX=1 _GNU_SOURCE HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     MOZ_DLL_SUFFIX=\".s.so\"  XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
-TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2 4.5\"    OSARCH=\"OS/2\"   MOZ_DLL_SUFFIX=\".dll\"   XP_UNIX=1
+TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2\ 4.5\"   OSARCH=\"OS/2\"   MOZ_DLL_SUFFIX=\".dll\"   XP_OS2 XP_PC BSD_SELECT TCPV40HDRS
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
                                      -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
@@ -93,6 +92,16 @@ TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
 TEMPLATE_XPCOM_LIBS.l4             = $(VBOX_GCC_LIBGCC)
 TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst))) \
                                      $(PATH_VBox-xpcom-string)/idl_ts
+ifeq ($(BUILD_TARGET),os2)
+ ifndef USE_OS2_TOOLKIT_HEADERS
+  TEMPLATE_XPCOM_DEFS.os2         += OS2EMX_PLAIN_CHAR
+ endif
+ TEMPLATE_XPCOM_DEFS.os2          += XP_OS2_EMX OS2
+ # this is at least for strnicmp()
+ TEMPLATE_XPCOM_DEFS.os2          += _EMX_SOURCE
+ # @@todo shouldn't this be somehow default for ASTOOL?
+ TEMPLATE_XPCOM_ASFLAGS.os2       += -Zomf
+endif
 
 
 #
@@ -122,6 +131,7 @@ TEMPLATE_XPCOMEXE_LDFLAGS.l4       = $(L4_DIR)/lib/x86_586/crt0.o \
     -Wl,--rpath-link,$(L4_LIBDIR) \
     # -Wl,--whole-archive,--no-allow-shlib-undefined
 
+
 #
 # Template for building XPCOM executables for running at build time.
 #
@@ -148,6 +158,12 @@ TEMPLATE_XPCOMBLDPROG_INCS              = $(VBOX_PATH_SDK)/include \
                                           $(VBOX_PATH_SDK)/include/xpcom/string \
                                           $(VBOX_PATH_SDK)/include/xpcom/xpcom \
                                           $(VBOX_PATH_SDK)/include/xpcom/ipcd
+TEMPLATE_XPCOMBLDPROG_INCS.$(BUILD_TARGET)         = $(TEMPLATE_XPCOMEXE_INCS.$(BUILD_TARGET))
+TEMPLATE_XPCOMBLDPROG_INCS.$(BUILD_TARGET_ARCH)    = $(TEMPLATE_XPCOMEXE_INCS.$(BUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_LIBPATH.$(BUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LIBPATH.$(BUILD_TARGET))
+TEMPLATE_XPCOMBLDPROG_LIBPATH.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LIBPATH.$(BUILD_TARGET_ARCH))
+TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(BUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(BUILD_TARGET))
+TEMPLATE_XPCOMBLDPROG_LDFLAGS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_LDFLAGS.$(BUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
@@ -312,7 +328,9 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_macos.h \
 	nsprpub/pr/include/md/_netbsd.h \
 	nsprpub/pr/include/md/_openbsd.h \
+	nsprpub/pr/include/md/_os2_errors.h \
 	nsprpub/pr/include/md/_os2.h \
+	nsprpub/pr/include/md/_pcos.h \
 	nsprpub/pr/include/md/_solaris.h \
 	nsprpub/pr/include/md/_unix_errors.h \
 	nsprpub/pr/include/md/_unixos.h \
@@ -527,13 +545,18 @@ xpidl_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_struct.c \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 
-# We do these ONCE.
-libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
-libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
-xpidl_CFLAGS = \
+ifeq ($(filter-out os2,$(BUILD_TARGET)),)
+ xpidl_INCS = $(VBOX_PATH_LIBIDL)/include $(VBOX_PATH_GLIB)/include
+ xpidl_LIBS = $(VBOX_PATH_LIBIDL)/lib/libidl.lib $(VBOX_PATH_LIBIDL)/lib/glib.lib
+else
+ # We do these ONCE.
+ libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
+ libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
+ xpidl_CFLAGS = \
 	$(libIDL_config_cflags)
-xpidl_LDFLAGS = \
+ xpidl_LDFLAGS = \
 	$(libIDL_config_libs)
+endif
 
 #
 # The XPT linker.
@@ -709,6 +732,39 @@ VBox-xpcom-nspr_SOURCES.linux  = \
 VBox-xpcom-nspr_SOURCES.linux.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
 VBox-xpcom-nspr_SOURCES.linux.amd64 = nsprpub/pr/src/md/unix/os_Linux_x86_64.s
 
+VBox-xpcom-nspr_SOURCES.os2  = \
+	nsprpub/pr/src/io/prdir.c \
+	nsprpub/pr/src/io/prfile.c \
+	nsprpub/pr/src/io/prio.c \
+	nsprpub/pr/src/io/prsocket.c \
+	nsprpub/pr/src/md/os2/os2misc.c \
+	nsprpub/pr/src/md/os2/os2sem.c \
+	nsprpub/pr/src/md/os2/os2inrval.c \
+	nsprpub/pr/src/md/os2/os2gc.c \
+	nsprpub/pr/src/md/os2/os2thred.c \
+	nsprpub/pr/src/md/os2/os2io.c \
+	nsprpub/pr/src/md/os2/os2cv.c \
+	nsprpub/pr/src/md/os2/os2sock.c \
+	nsprpub/pr/src/md/os2/os2_errors.c \
+	nsprpub/pr/src/md/os2/os2poll.c \
+	nsprpub/pr/src/md/os2/os2rng.c \
+	nsprpub/pr/src/threads/prdump.c \
+	nsprpub/pr/src/threads/prmon.c \
+	nsprpub/pr/src/threads/prsem.c \
+	nsprpub/pr/src/threads/prcthr.c \
+	nsprpub/pr/src/threads/combined/prucpu.c \
+	nsprpub/pr/src/threads/combined/prucv.c \
+	nsprpub/pr/src/threads/combined/prulock.c \
+	nsprpub/pr/src/threads/combined/prustack.c \
+	nsprpub/pr/src/threads/combined/pruthr.c
+# gcc/emx sources
+VBox-xpcom-nspr_SOURCES.os2  += \
+	nsprpub/pr/src/md/os2/os2emx.s \
+	nsprpub/pr/src/md/os2/os2vaclegacy.s
+# IBM VAC sources (not used)
+#VBox-xpcom-nspr_SOURCES.os2  += \
+#	nsprpub/pr/src/md/os2/os2vacpp.asm
+
 
 nsprpub/pr/src/prvrsion.c_DEPS = $(PATH_VBox-xpcom-nspr)/_pr_bld.h
 nsprpub/lib/ds/plvrsion.c_DEPS = $(PATH_VBox-xpcom-nspr)/_pl_bld.h
@@ -738,6 +794,7 @@ VBox-xpcom-string_SOURCES = \
 
 VBox-xpcom-base_TEMPLATE = XPCOM
 VBox-xpcom-base_NOINST = 1
+VBox-xpcom-base_DEFS = _IMPL_NS_COM
 VBox-xpcom-base_SOURCES = \
 	xpcom/base/nsAllocator.cpp \
 	xpcom/base/nsConsoleMessage.cpp \
@@ -752,6 +809,7 @@ VBox-xpcom-base_SOURCES = \
 
 VBox-xpcom-ds_TEMPLATE = XPCOM
 VBox-xpcom-ds_NOINST = 1
+VBox-xpcom-ds_DEFS = _IMPL_NS_COM
 VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/pldhash.c \
 	xpcom/ds/nsAtomTable.cpp \
@@ -791,7 +849,7 @@ VBox-xpcom-ds_SOURCES = \
 # @todo what about MOZ_USER_DIR?
 VBox-xpcom-io_TEMPLATE = XPCOM
 VBox-xpcom-io_NOINST = 1
-VBox-xpcom-io_DEFS = MOZ_USER_DIR=\".mozilla\"
+VBox-xpcom-io_DEFS = _IMPL_NS_COM MOZ_USER_DIR=\".mozilla\"
 VBox-xpcom-io_INCS.darwin = \
 	xpcom/MoreFiles
 VBox-xpcom-io_SOURCES = \
@@ -830,7 +888,7 @@ VBox-xpcom-io_SOURCES.os2 = \
 
 VBox-xpcom-components_TEMPLATE = XPCOM
 VBox-xpcom-components_NOINST = 1
-VBox-xpcom-components_DEFS = EXPORT_XPTI_API
+VBox-xpcom-components_DEFS = _IMPL_NS_COM EXPORT_XPTI_API
 VBox-xpcom-components_SOURCES = \
 	xpcom/components/nsCategoryManager.cpp \
 	xpcom/components/nsComponentManager.cpp \
@@ -842,6 +900,7 @@ VBox-xpcom-components_SOURCES = \
 
 VBox-xpcom-threads_TEMPLATE = XPCOM
 VBox-xpcom-threads_NOINST = 1
+VBox-xpcom-threads_DEFS = _IMPL_NS_COM
 VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/plevent.c \
 	xpcom/threads/nsAutoLock.cpp \
@@ -855,7 +914,7 @@ VBox-xpcom-threads_SOURCES = \
 
 VBox-xpcom-xptinfo_TEMPLATE = XPCOM
 VBox-xpcom-xptinfo_NOINST = 1
-VBox-xpcom-xptinfo_DEFS = EXPORT_XPTI_API
+VBox-xpcom-xptinfo_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API
 VBox-xpcom-xptinfo_SOURCES = \
 	xpcom/reflect/xptinfo/src/xptiFile.cpp \
 	xpcom/reflect/xptinfo/src/xptiInterfaceInfo.cpp \
@@ -870,7 +929,7 @@ VBox-xpcom-xptinfo_SOURCES = \
 
 VBox-xpcom-xptcall_TEMPLATE = XPCOM
 VBox-xpcom-xptcall_NOINST = 1
-VBox-xpcom-xptcall_DEFS                = EXPORT_XPTC_API
+VBox-xpcom-xptcall_DEFS                = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTC_API
 VBox-xpcom-xptcall_DEFS.darwin         = KEEP_STACK_16_BYTE_ALIGNED
 VBox-xpcom-xptcall_DEFS.l4             = L4
 VBox-xpcom-xptcall_SOURCES             = xpcom/reflect/xptcall/src/xptcall.cpp
@@ -880,9 +939,19 @@ VBox-xpcom-xptcall_SOURCES.linux.x86   = xpcom/reflect/xptcall/src/md/unix/xptci
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
 VBox-xpcom-xptcall_SOURCES.linux.amd64 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp
+# gcc/emx sources
+VBox-xpcom-xptcall_SOURCES.os2         = xpcom/reflect/xptcall/src/md/os2/xptcinvoke_gcc_x86_os2.cpp \
+                                         xpcom/reflect/xptcall/src/md/os2/xptcstubs_gcc_x86_os2.cpp
+VBox-xpcom-xptcall_INCS.os2            = xpcom/reflect/xptcall/src/md/unix
+VBox-xpcom-xptcall_DEFS.os2            = MOZ_NEED_LEADING_UNDERSCORE
+# IBM/VAC sources (not used)
+#VBox-xpcom-xptcall_SOURCES.os2         = xpcom/reflect/xptcall/src/md/unix/xptcstubs_os2.cpp \
+#                                         xpcom/reflect/xptcall/src/md/unix/xptcinvoke_vacpp.asm \
+#                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_vacpp.asm
 
 VBox-xpcom-proxy_TEMPLATE = XPCOM
 VBox-xpcom-proxy_NOINST   = 1
+VBox-xpcom-proxy_DEFS     = _IMPL_NS_COM EXPORT_XPTC_API EXPORT_XPTI_API
 VBox-xpcom-proxy_SOURCES  = xpcom/proxy/src/nsProxyEvent.cpp \
                             xpcom/proxy/src/nsProxyEventClass.cpp \
                             xpcom/proxy/src/nsProxyEventObject.cpp \
@@ -891,7 +960,7 @@ VBox-xpcom-proxy_SOURCES  = xpcom/proxy/src/nsProxyEvent.cpp \
 
 # glue library which all client apps will link with
 VBoxXPCOMGlue_TEMPLATE = XPCOM
-VBoxXPCOMGlue_DEFS     = XPCOM_GLUE
+VBoxXPCOMGlue_DEFS     = _IMPL_NS_COM XPCOM_GLUE
 VBoxXPCOMGlue_SOURCES  = xpcom/glue/nsCOMPtr.cpp \
                          xpcom/glue/nsComponentManagerUtils.cpp \
                          xpcom/glue/nsDebug.cpp \
@@ -909,6 +978,7 @@ VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)/lib/
 # The VBoxXPCOM Shared Object, assembling all lib files.
 #
 VBoxXPCOM_TEMPLATE = XPCOM
+VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
 VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
 VBoxXPCOM_SOURCES = \
 	xpcom/glue/nsCOMPtr.cpp \
@@ -923,6 +993,8 @@ VBoxXPCOM_SOURCES = \
 	xpcom/build/nsStringAPI.cpp
 VBoxXPCOM_SOURCES.darwin = \
 	darwindeps.cpp
+VBoxXPCOM_SOURCES.os2 = \
+	os2deps.cpp
 VBoxXPCOM_LIBS = \
 	$(TARGET_VBox-xpcom-typelib) \
 	$(TARGET_VBox-xpcom-string) \
@@ -970,6 +1042,7 @@ ifdef IPC_LOGGING
  TEMPLATE_XPCOMIPC_LIBS            = $(TEMPLATE_XPCOM_LIBS) $(LIB_RUNTIME)
 endif
 TEMPLATE_XPCOMIPC_LIBS.darwin      = $(TARGET_VBoxXPCOM)
+TEMPLATE_XPCOMIPC_LIBS.os2         = $(TARGET_VBoxXPCOM)
 
 TEMPLATE_XPCOMIPCEXE               = XPCOM IPC executables
 TEMPLATE_XPCOMIPCEXE_EXTENDS       = XPCOMEXE
@@ -1016,6 +1089,7 @@ VBox-xcpom-ipctmgrcom_SOURCES = \
 
 # DCONNECT client shared object
 VBoxXPCOMIPCC_TEMPLATE = XPCOMIPC
+VBoxXPCOMIPCC_NAME.os2 = VBoxIPCC
 ifneq ($(BUILD_TARGET),linux)
 VBoxXPCOMIPCC_INST = $(INST_BIN)components/
 endif

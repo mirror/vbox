@@ -180,6 +180,18 @@
 #define NS_CALLBACK_(_type, _name) _type (* _name)
 #define NS_STDCALL
 
+#elif defined(XP_OS2) && defined(__declspec)
+
+#define NS_IMPORT __declspec(dllimport)
+#define NS_IMPORT_(type) type __declspec(dllimport) __stdcall
+#define NS_EXPORT __declspec(dllexport)
+#define NS_EXPORT_(type) type __declspec(dllexport) __stdcall
+#define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type NS_DEFCALL
+#define NS_IMETHODIMP_(type) type
+#define NS_METHOD_(type) type
+#define NS_CALLBACK_(_type, _name) _type (* _name)
+#define NS_STDCALL
+
 #else
 
 # ifdef VBOX_HAVE_VISIBILITY_HIDDEN

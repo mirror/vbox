@@ -61,9 +61,9 @@
 XPTString in_str = { 4, "bazz" };
 
 struct TestData {
-    uint32	bit32;
-    uint16      bit16;
-    uint8       bit8[2];
+    PRUint32	bit32;
+    PRUint16    bit16;
+    PRUint8     bit8[2];
     char	*cstr;
     XPTString   *str;
 } input = { 0xdeadbeef, 0xcafe, {0xba, 0xbe}, "foobar", &in_str},
@@ -96,7 +96,7 @@ main(int argc, char **argv)
     XPTState *state;
     XPTCursor curs, *cursor = &curs;
     char *header, *data, *whole;
-    uint32 hlen, dlen, i;
+    PRUint32 hlen, dlen, i;
 
     TRY("XPT_NewArena", (arena = XPT_NewArena(1024, sizeof(double), "main")));
     
