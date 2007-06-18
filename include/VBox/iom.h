@@ -40,6 +40,42 @@ __BEGIN_DECLS
  */
 #define IOM_NO_PDMINS_CHECKS
 
+/**
+ * Macro for checking if an I/O or MMIO emulation call succeeded.
+ * 
+ * This macro shall only be used with the IOM APIs where it's mentioned 
+ * in the return value description. And there is must be used to correctly
+ * determin if the call succeeded and things like the EIP needs updating.
+ * 
+ * 
+ * @returns Success indicator (true/false).
+ * 
+ * @param   rc          The status code. This may be evaluated
+ *                      more than once!
+ * 
+ * @remark  To avoid making assumptions about the layout of the
+ *          VINF_EM_FIRST...VINF_EM_LAST range we're checking
+ *          explicitly for each for exach the exceptions.
+ *          However, for efficieny we ASSUME that the
+ *          VINF_EM_LAST is smaller than most of the relevant
+ *          status codes. We also ASSUME that the
+ *          VINF_EM_RESCHEDULE_REM status code is the most
+ *          frequent status code we'll enounter in this range.
+ * 
+ * @todo    Will have to add VINF_EM_DBG_HYPER_BREAKPOINT if the
+ *          I/O port and MMIO breakpoints should trigger before
+ *          the I/O is done. Currently, we don't implement these
+ *          kind of breakpoints.
+ */
+#define IOM_SUCCESS(rc)     (   (rc) == VINF_SUCCESS \
+                             || (   (rc) <= VINF_EM_LAST \
+                                 && (rc) != VINF_EM_RESCHEDULE_REM \
+                                 && (rc) >= VINF_EM_FIRST \
+                                 && (rc) != VINF_EM_RESCHEDULE_RAW \
+                                 && (rc) != VINF_EM_RESCHEDULE_HWACC \
+                                ) \
+                            )
+
 
 /**
  * Port I/O Handler for IN operations.
@@ -262,9 +298,10 @@ IOMDECL(int)  IOMMMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
  * Reads an I/O port register.
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
  * @param   pVM         VM handle.
@@ -278,9 +315,10 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
  * Writes to an I/O port register.
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  *
  * @param   pVM         VM handle.
@@ -294,9 +332,10 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
  * OUT <DX|imm16>, <AL|AX|EAX>
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -312,9 +351,10 @@ IOMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  * IN <AL|AX|EAX>, <DX|imm16>
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -331,9 +371,10 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
  * Reads the string buffer of an I/O port register.
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  *
  * @param   pVM         VM handle.
@@ -366,9 +407,10 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
  * ES:EDI,DX[,ECX]
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -408,9 +450,10 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
  * DS:ESI,DX[,ECX]
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -429,9 +472,10 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
  * @remark  Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -509,9 +553,10 @@ IOMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
  * trap is a in or out type instruction. (Call it indirectly via EM that is.)
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)

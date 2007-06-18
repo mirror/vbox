@@ -53,9 +53,10 @@
  * trap is a in or out type instruction. (Call it indirectly via EM that is.)
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)

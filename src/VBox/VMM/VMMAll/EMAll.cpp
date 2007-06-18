@@ -272,8 +272,7 @@ EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu,
      */
 #ifdef IN_GC
     int rc = IOMGCIOPortHandler(pVM, pCtxCore, pCpu);
-    if (    rc == VINF_SUCCESS
-        ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+    if (IOM_SUCCESS(rc))
         pCtxCore->eip += cbOp;
     return rc;
 #else
