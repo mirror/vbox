@@ -681,6 +681,7 @@ ifeq ($(BUILD_TARGET),darwin)
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.dylib
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.dylib
+ LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dylib
 endif
 ifeq ($(BUILD_TARGET),l4)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.s.so
@@ -689,6 +690,7 @@ ifeq ($(BUILD_TARGET),l4)
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.s.so
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_BIN)/VBoxREMImp.s.so
+ LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.s.so
 endif
 ifeq ($(filter-out linux freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.so
@@ -697,6 +699,7 @@ ifeq ($(filter-out linux freebsd netbsd openbsd solaris,$(BUILD_TARGET)),)
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.so
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_BIN)/VBoxREMImp.so
+ LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.so
 endif
 ifeq ($(BUILD_TARGET),os2)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.dll
@@ -705,6 +708,7 @@ ifeq ($(BUILD_TARGET),os2)
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.dll
  LIB_VMMGC       = $(PATH_LIB)/VMMGCImp.lib
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
+ LIB_XPCOM       = $(PATH_BIN)/VBoxXCOM.dll
  OBJ_SYS0        = $(PATH_OBJ)/src/VBox/Runtime/RuntimeR0/os2/sys0.obj
 endif
 ifeq ($(BUILD_TARGET),win)
@@ -714,6 +718,7 @@ ifeq ($(BUILD_TARGET),win)
  LIB_VMM         = $(PATH_LIB)/VBoxVMM.lib
  LIB_VMMGC       = $(PATH_OUT)/obj/src/VBox/VMM/VMMGC/VMMGC.lib
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
+ LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dll
 endif
 
 # The kprofile build automagically links with kProfile.
@@ -742,7 +747,11 @@ ifeq ($(BUILD_PLATFORM),win)
 # VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/libxslt/10114/xsltproc.exe
  VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
 else
+ifeq ($(BUILD_PLATFORM),os2)
+ VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/os2.x86/bin/xsltproc.exe
+else
  VBOX_XSLTPROC ?= xsltproc$(HOSTSUFF_EXE)
+endif
 endif
 
 # bin2c (convert binary files into C arrays)
@@ -774,6 +783,20 @@ ifeq ($(filter-out win.x86 linux.x86, $(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH)),
  PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
 endif
 
+# glib and libIDL needed by XPCOM on OS/2.
+ifeq ($(BUILD_TARGET),os2)
+ VBOX_PATH_GLIB      ?= $(PATH_DEVTOOLS_TRG)/glibidl
+ VBOX_PATH_GLIB      := $(wildcard $(VBOX_PATH_GLIB))
+ VBOX_PATH_LIBIDL    ?= $(PATH_DEVTOOLS_TRG)/glibidl
+ VBOX_PATH_LIBIDL    := $(wildcard $(VBOX_PATH_LIBIDL))
+ ifeq ($(VBOX_PATH_GLIB),)
+  $(warning VBOX_PATH_GLIB is wrong or not defined!)
+ endif
+ ifeq ($(VBOX_PATH_LIBIDL),)
+  $(warning VBOX_PATH_LIBIDL is wrong or not defined!)
+ endif
+endif
+
 # XPCOM setup for all but win32.
 ifneq ($(BUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
@@ -786,9 +809,11 @@ ifneq ($(BUILD_TARGET),win)
  	$(VBOX_PATH_SDK)/include/xpcom/string \
  	$(VBOX_PATH_SDK)/include/xpcom/xpcom \
  	$(VBOX_PATH_SDK)/include/xpcom/ipcd
- # libIDL-config (for xpcom18a4)
- ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
-  export VBOX_LIBIDL_CONFIG := $(firstword $(shell which libIDL-config-2 libIDL-config 2> /dev/null))
+ ifneq ($(BUILD_TARGET),os2)
+  # libIDL-config (for xpcom18a4)
+  ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
+   export VBOX_LIBIDL_CONFIG := $(firstword $(shell which libIDL-config-2 libIDL-config 2> /dev/null))
+  endif
  endif
 endif
 
@@ -1753,7 +1778,7 @@ else
  TEMPLATE_VBOXMAINCLIENT_LIBS = $(TEMPLATE_VBOXMAINEXE_LIBS) \
 	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+	$(LIB_XPCOM) \
 	$(LIB_RUNTIME)
 
  TEMPLATE_VBOXMAINCLIENT_DEFS = $(TEMPLATE_VBOXMAINEXE_DEFS) \
@@ -1846,7 +1871,7 @@ else # the gcc guys:
  	$(LIB_REM) \
  	$(LIB_VMM) \
  	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
- 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+ 	$(LIB_XPCOM)
 
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   TEMPLATE_VBOXQTGUIEXE_LIBPATH = \
