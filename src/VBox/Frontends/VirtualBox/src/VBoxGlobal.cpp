@@ -2951,6 +2951,43 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
     return result;
 }
 
+/** 
+ *  Removes the acceletartor mark (the ampersand symbol) from the given string
+ *  and returns the result. The string is supposed to be a menu item's text
+ *  that may (or may not) contain the accelerator mark.
+ *
+ *  In order to support accelerators used in non-alphabet languages
+ *  (e.g. Japanese) that has a form of "(&<L>)" (where <L> is a latin letter),
+ *  this method first searches for this pattern and, if found, removes it as a
+ *  whole. If such a pattern is not found, then the '&' character is simply
+ *  removed from the string.
+ *
+ *  @note This function removes only the first occurense of the accelerator
+ *  mark.
+ * 
+ *  @param aText Menu item's text to remove the acceletaror mark from.
+ * 
+ *  @return The resulting string.
+ */
+/* static */
+QString VBoxGlobal::removeAccelMark (const QString &aText)
+{
+    QString result = aText;
+
+    QRegExp accel ("\\(&[a-zA-Z]\\)");
+    int pos = accel.search (result);
+    if (pos >= 0)
+        result.remove (pos, accel.cap().length());
+    else
+    {
+        pos = result.find ('&');
+        if (pos >= 0)
+            result.remove (pos, 1);
+    }
+
+    return result;
+}
+
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 

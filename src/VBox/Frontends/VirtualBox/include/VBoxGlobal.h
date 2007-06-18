@@ -432,6 +432,8 @@ public:
 
     static bool activateWindow (WId aWId, bool aSwitchDesktop = true);
 
+    static QString removeAccelMark (const QString &aText);
+
 signals:
 
     /**
