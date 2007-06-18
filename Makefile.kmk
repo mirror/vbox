@@ -76,6 +76,14 @@ ifeq ($(filter-out win,$(BUILD_TARGET)),)
  endif
 endif
 
+# The GLIB and LIBIDL DLLs.
+ifeq ($(filter-out os2,$(BUILD_TARGET)),)
+ # static libraries of these may be provided instead,
+ # so copy DLLs only when they are present
+ bin_SOURCES += $(wildcard $(VBOX_PATH_GLIB)/lib/glib.dll)
+ bin_SOURCES += $(wildcard $(VBOX_PATH_LIBIDL)/lib/libIDL.dll)
+endif
+
 ifeq ($(BUILD_TARGET),darwin)
  ifneq ($(VBOX_WITH_QTGUI),)
   ifdef LIB_QT
