@@ -57,8 +57,12 @@
 #ifdef EXPORT_XPTC_API
 #define XPTC_PUBLIC_API(t)    PR_IMPLEMENT(t)
 #define XPTC_PUBLIC_DATA(t)   PR_IMPLEMENT_DATA(t)
-#ifdef _WIN32
+#if defined(_WIN32)
 #    define XPTC_EXPORT           __declspec(dllexport)
+#elif defined(XP_OS2) && defined(__declspec)
+#    define XPTC_EXPORT           __declspec(dllexport)
+#elif defined(XP_OS2_VACPP)
+#    define XPTC_EXPORT           extern
 #else
 #  ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 #    define XPTC_EXPORT           __attribute__((visibility("default")))
@@ -67,10 +71,18 @@
 #  endif
 #endif
 #else
-#ifdef _WIN32
+#if defined(_WIN32)
 #    define XPTC_PUBLIC_API(t)    __declspec(dllimport) t
 #    define XPTC_PUBLIC_DATA(t)   __declspec(dllimport) t
 #    define XPTC_EXPORT           __declspec(dllimport)
+#elif defined(XP_OS2) && defined(__declspec)
+#    define XPTC_PUBLIC_API(t)    __declspec(dllimport) t
+#    define XPTC_PUBLIC_DATA(t)   __declspec(dllimport) t
+#    define XPTC_EXPORT           __declspec(dllimport)
+#elif defined(XP_OS2_VACPP)
+#    define XPTC_PUBLIC_API(t)    extern t
+#    define XPTC_PUBLIC_DATA(t)   extern t
+#    define XPTC_EXPORT           extern
 #else
 #    define XPTC_PUBLIC_API(t)    PR_IMPLEMENT(t)
 #    define XPTC_PUBLIC_DATA(t)   t

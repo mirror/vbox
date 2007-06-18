@@ -369,7 +369,8 @@ extern PRInt32 _MD_Accept(PRFileDesc *fd, PRNetAddr *raddr, PRUint32 *rlen,
 /* --- Lock stuff --- */
 #define _PR_LOCK                      _MD_LOCK
 #define _PR_UNLOCK					  _MD_UNLOCK
-
+extern void
+md_UnlockAndPostNotifies(struct _MDLock *lock, PRThread *waitThred, struct _MDCVar *waitCV);
 #ifdef USE_RAMSEM
 #define _MD_NEW_LOCK                  (_PR_MD_NEW_LOCK)
 #define _MD_FREE_LOCK(lock)           (DosCloseEventSem(((PRAMSEM)(&((lock)->mutex)))->hevSem))

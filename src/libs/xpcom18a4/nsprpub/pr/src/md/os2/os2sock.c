@@ -59,9 +59,11 @@
 #ifdef XP_OS2_VACPP
 #define _OS2_WRITEV writev
 #define _OS2_IOCTL ioctl
+#define _OS2_const const
 #else
 #define _OS2_WRITEV so_writev
 #define _OS2_IOCTL so_ioctl
+#define _OS2_const
 #endif
 
 void
@@ -550,7 +552,7 @@ _PR_MD_WRITEV(PRFileDesc *fd, const PRIOVec *iov, PRInt32 iov_size,
         }
     }
 
-    while ((rv = _OS2_WRITEV(osfd, (const struct iovec*)iov, iov_size)) == -1) {
+    while ((rv = _OS2_WRITEV(osfd, (_OS2_const struct iovec*)iov, iov_size)) == -1) {
         err = sock_errno();
         if ((err == EWOULDBLOCK))    {
             if (fd->secret->nonblocking) {
