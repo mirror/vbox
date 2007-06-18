@@ -1419,6 +1419,7 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
         valid = !(rbISODVD->isChecked() && uuidISODVD.isNull());
 
         cbHostDVD->setEnabled (rbHostDVD->isChecked());
+        cbPassthrough->setEnabled (rbHostDVD->isChecked());
 
         cbISODVD->setEnabled (rbISODVD->isChecked());
         tbISODVD->setEnabled (rbISODVD->isChecked());
@@ -1688,6 +1689,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
                     cbHostDVD->setCurrentText (fullName);
                 }
                 rbHostDVD->setChecked (true);
+                cbPassthrough->setChecked (dvd.GetPassthrough());
                 break;
             }
             case CEnums::ImageMounted:
@@ -1934,10 +1936,12 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         CDVDDrive dvd = cmachine.GetDVDDrive();
         if (!bgDVD->isChecked())
         {
+            dvd.SetPassthrough (false);
             dvd.Unmount();
         }
         else if (rbHostDVD->isChecked())
         {
+            dvd.SetPassthrough (cbPassthrough->isChecked());
             int id = cbHostDVD->currentItem();
             Assert (id >= 0);
             if (id < (int) hostDVDs.count())
@@ -1949,6 +1953,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
         else if (rbISODVD->isChecked())
         {
+            dvd.SetPassthrough (false);
             Assert (!uuidISODVD.isNull());
             dvd.MountImage (uuidISODVD);
         }
