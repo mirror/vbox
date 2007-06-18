@@ -390,6 +390,7 @@ void VBoxNewHDWzd::showPage( QWidget *page )
     {
         QString type = rbDynamicType->isOn() ? rbDynamicType->text()
                                              : rbFixedType->text();
+        type.remove (QRegExp( "\\(&\\w\\)" ));
         type.remove ('&');
 
         Q_UINT64 sizeB = imageSize() * _1M;
