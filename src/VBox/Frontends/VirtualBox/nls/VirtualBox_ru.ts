@@ -1343,12 +1343,12 @@
     <message>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Мастер</translation>
+        <translation>мастер</translation>
     </message>
     <message>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
-        <translation>Слейв</translation>
+        <translation>слейв</translation>
     </message>
     <message>
         <source>Device&amp;nbsp;%1</source>
@@ -2651,11 +2651,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation>Показать &amp;лог...</translation>
+        <translation>Показать &amp;журнал...</translation>
     </message>
     <message>
         <source>Show Log...</source>
-        <translation>Показать лог...</translation>
+        <translation>Показать журнал...</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
@@ -2663,7 +2663,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation>Показать лог-файлы выбранной виртуальной машины</translation>
+        <translation>Показать файлы журналов выбранной виртуальной машины</translation>
     </message>
 </context>
 <context>
@@ -3294,7 +3294,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation>Просмотр лог-файлов</translation>
+        <translation>Просмотр журналов</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -3322,15 +3322,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - Просмотр лог-файлов VirtualBox</translation>
+        <translation>%1 - Просмотр журналов VirtualBox</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Лог-файлы не найдены. Нажмите кнопку &lt;b&gt;Обновить&lt;/b&gt; для того, чтобы перечитать содержимое лог-папки &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Файлы журналов не найдены. Нажмите кнопку &lt;b&gt;Обновить&lt;/b&gt; для того, чтобы перечитать содержимое папки &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Сохранить лог VirtualBox как</translation>
+        <translation>Сохранить журнал VirtualBox как</translation>
     </message>
 </context>
 <context>
@@ -3676,7 +3676,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Primary Master</source>
-        <translation>&amp;Первичный Мастер</translation>
+        <translation>&amp;Первичный мастер</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -3684,11 +3684,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>P&amp;rimary Slave</source>
-        <translation>П&amp;ервичный Слейв</translation>
+        <translation>П&amp;ервичный слейв</translation>
     </message>
     <message>
         <source>&amp;Secondary (IDE 1) Slave</source>
-        <translation>Вто&amp;ричный Слейв</translation>
+        <translation>Вто&amp;ричный слейв</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
@@ -3925,23 +3925,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Первичный Мастер&lt;/i&gt;.</translation>
+        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Первичный мастер&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Первичный Слейв&lt;/i&gt;.</translation>
+        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Первичный слейв&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation>Жесткий диск &lt;i&gt;Первичный Слейв&lt;/i&gt; уже присоединен к другому разъему.</translation>
+        <translation>Жесткий диск &lt;i&gt;Первичный слейв&lt;/i&gt; уже присоединен к другому разъему.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Вторичный Слейв&lt;/i&gt;.</translation>
+        <translation>Не выбран жесткий диск для разъема &lt;i&gt;Вторичный слейв&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation>Жесткий диск &lt;i&gt;Вторичный Слейв&lt;/i&gt; уже присоединен к другому разъему.</translation>
+        <translation>Жесткий диск &lt;i&gt;Вторичный слейв&lt;/i&gt; уже присоединен к другому разъему.</translation>
     </message>
     <message>
         <source>CD/DVD drive image file is not selected.</source>
@@ -3997,7 +3997,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;Если стоит галочка, то виртуальная машина будет поддерживать
-операции ввода/ввывода контроллера прерываний (IO APIC), что может слегка снизить производительность ВМ. &lt;b&gt;Примечание:&lt;/b&gt; не выключайте
+операции ввода/вывода контроллера прерываний (IO APIC), что может слегка снизить производительность ВМ. &lt;b&gt;Примечание:&lt;/b&gt; не выключайте
 это свойство после установки Windows в качестве гостевой ОС!&lt;/qt&gt;</translation>
     </message>
     <message>
