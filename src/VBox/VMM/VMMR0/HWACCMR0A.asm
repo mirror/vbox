@@ -239,8 +239,8 @@ BEGINPROC VMXStartVM
 
 ALIGNCODE(16)
 .vmlaunch_done:
-    jc      .vmxstart_invalid_vmxon_ptr
-    jz      .vmxstart_start_failed
+    jc      near .vmxstart_invalid_vmxon_ptr
+    jz      near .vmxstart_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
     lidt    [xSP]
@@ -414,8 +414,8 @@ BEGINPROC VMXResumeVM
 
 ALIGNCODE(16)
 .vmresume_done:
-    jc      .vmxresume_invalid_vmxon_ptr
-    jz      .vmxresume_start_failed
+    jc      near .vmxresume_invalid_vmxon_ptr
+    jz      near .vmxresume_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
     lidt    [xSP]
