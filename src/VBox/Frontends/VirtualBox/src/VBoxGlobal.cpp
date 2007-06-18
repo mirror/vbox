@@ -1117,43 +1117,6 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
         QString item;
 
-        /* Floppy */
-        CFloppyDrive floppy = m.GetFloppyDrive();
-        item = QString (sSectionItemTpl);
-        switch (floppy.GetState())
-        {
-            case CEnums::NotMounted:
-                item = item.arg (tr ("Not mounted", "details report (floppy)"), "");
-                break;
-            case CEnums::ImageMounted:
-            {
-                CFloppyImage img = floppy.GetImage();
-                item = item.arg (tr ("Image", "details report (floppy)"),
-                                 prepareFileNameForHTML (img.GetFilePath()));
-                break;
-            }
-            case CEnums::HostDriveCaptured:
-            {
-                CHostFloppyDrive drv = floppy.GetHostDrive();
-                QString drvName = drv.GetName();
-                QString description = drv.GetDescription();
-                QString fullName = description.isEmpty() ?
-                    drvName :
-                    QString ("%1 (%2)").arg (description, drvName);
-                item = item.arg (tr ("Host Drive", "details report (floppy)"),
-                                 fullName);
-                break;
-            }
-            default:
-                AssertMsgFailed (("Invalid floppy state: %d", floppy.GetState()));
-        }
-        detailsReport += sectionTpl
-            .arg (2 + 1) /* rows */
-            .arg ("fd_16px.png", /* icon */
-                  "#floppy", /* link */
-                  tr ("Floppy", "details report"), /* title */
-                  item); /* items */
-
         /* DVD */
         CDVDDrive dvd = m.GetDVDDrive();
         item = QString (sSectionItemTpl);
@@ -1190,6 +1153,43 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                   "#dvd", /* link */
                   tr ("CD/DVD-ROM", "details report"), /* title */
                   item); // items
+
+        /* Floppy */
+        CFloppyDrive floppy = m.GetFloppyDrive();
+        item = QString (sSectionItemTpl);
+        switch (floppy.GetState())
+        {
+            case CEnums::NotMounted:
+                item = item.arg (tr ("Not mounted", "details report (floppy)"), "");
+                break;
+            case CEnums::ImageMounted:
+            {
+                CFloppyImage img = floppy.GetImage();
+                item = item.arg (tr ("Image", "details report (floppy)"),
+                                 prepareFileNameForHTML (img.GetFilePath()));
+                break;
+            }
+            case CEnums::HostDriveCaptured:
+            {
+                CHostFloppyDrive drv = floppy.GetHostDrive();
+                QString drvName = drv.GetName();
+                QString description = drv.GetDescription();
+                QString fullName = description.isEmpty() ?
+                    drvName :
+                    QString ("%1 (%2)").arg (description, drvName);
+                item = item.arg (tr ("Host Drive", "details report (floppy)"),
+                                 fullName);
+                break;
+            }
+            default:
+                AssertMsgFailed (("Invalid floppy state: %d", floppy.GetState()));
+        }
+        detailsReport += sectionTpl
+            .arg (2 + 1) /* rows */
+            .arg ("fd_16px.png", /* icon */
+                  "#floppy", /* link */
+                  tr ("Floppy", "details report"), /* title */
+                  item); /* items */
 
         /* audio */
         {
