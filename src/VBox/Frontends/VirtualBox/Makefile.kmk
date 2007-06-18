@@ -401,9 +401,16 @@ $(eval qmfile  := $(PATH_$(target))/nls/$(notdir $(basename $(tsfile))).qm)
 
 OTHER_CLEAN += $(qmfile)
 
+# Note that we use -nocompress in lrelease to avoid stripping comments and
+# other information from .qm files. If we don't do that, we get .qm files two
+# times smaller, but QTranslator::findMessage() will start searching for
+# translations in all existing contexts in case if it cannot find it in the
+# original context (which is of course not acceptable, no matter if it's a
+# special Qt "feature" or just a bug).
+
 $(qmfile): $(tsfile) | $$(call DIRDEP,$(dir $(qmfile)))
 	$$(call MSG_TOOLS,lrelease,$(target),$(tsfile),$$@)
-	$$(QUIET)$$(VBOX_LRELEASE) $(tsfile) -qm $$@
+	$$(QUIET)$$(VBOX_LRELEASE) -nocompress $(tsfile) -qm $$@
 
 endef
 
