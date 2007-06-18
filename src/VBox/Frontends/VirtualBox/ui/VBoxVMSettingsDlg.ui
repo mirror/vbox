@@ -1510,7 +1510,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                     <cstring>pageDVD</cstring>
                 </property>
                 <attribute name="id">
-                    <number>3</number>
+                    <number>2</number>
                 </attribute>
                 <vbox>
                     <property name="name">
@@ -1685,7 +1685,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                     <cstring>pageFloppy</cstring>
                 </property>
                 <attribute name="id">
-                    <number>2</number>
+                    <number>3</number>
                 </attribute>
                 <vbox>
                     <property name="name">
