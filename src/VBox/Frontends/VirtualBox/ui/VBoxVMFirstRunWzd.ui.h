@@ -248,7 +248,12 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
         while (en.HasMore())
         {
             CHostDVDDrive hostDVD = en.GetNext();
-            cbHost->insertItem (hostDVD.GetName(), id);
+            QString name = hostDVD.GetName();
+            QString description = hostDVD.GetDescription();
+            QString fullName = description.isEmpty() ?
+                name :
+                QString ("%1 (%2)").arg (description, name);
+            cbHost->insertItem (fullName, id);
             hostDVDs [id] = hostDVD;
             ++ id;
         }
@@ -268,7 +273,12 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
         while (en.HasMore())
         {
             CHostFloppyDrive hostFloppy = en.GetNext();
-            cbHost->insertItem (hostFloppy.GetName(), id);
+            QString name = hostFloppy.GetName();
+            QString description = hostFloppy.GetDescription();
+            QString fullName = description.isEmpty() ?
+                name :
+                QString ("%1 (%2)").arg (description, name);
+            cbHost->insertItem (fullName, id);
             hostFloppys [id] = hostFloppy;
             ++ id;
         }
