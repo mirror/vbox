@@ -1364,13 +1364,25 @@ static int vboxClipboardThread(RTTHREAD /* ThreadSelf */, void * /* pvUser */)
  */
 void vboxClipboardDisconnect (void)
 {
+#if 0
     VMMDevHGCMDisconnect request;
+#endif
     LogFlowFunc(("\n"));
 
     AssertReturn(g_ctx.client != 0, (void) 0);
+#if 0
+    /* Currently, disconnecting is not needed, as the new "connect clipboard"
+       ioctl in the Guest Additions kernel module disconnects the last
+       connection made automatically.  The reason for this change was that
+       currently only one clipboard connection is allowed, and that if the
+       client holding that connection was terminated too abruptly, the
+       information needed to disconnect that connection was lost.  If the
+       subsystem is ever changed to allow several connections, this will have
+       to be rethought. */
     vmmdevInitRequest((VMMDevRequestHeader*)&request, VMMDevReq_HGCMDisconnect);
     request.u32ClientID = g_ctx.client;
     ioctl(g_ctx.sendDevice, IOCTL_VBOXGUEST_VMMREQUEST, (void*)&request);
+#endif
     LogFlowFunc(("returning\n"));
 }
 
@@ -1402,17 +1414,6 @@ int vboxClipboardXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
     exit(1);
 }
 
-void vboxClipboardSignalHandler(int number)
-{
-    LogFlowFunc(("number: %d\n", number));
-    vboxClipboardDisconnect();
-    if (g_ctx.daemonise == 0)
-    {
-        cout << "Received signal " << number << ".  Aborting" << endl;
-    }
-    LogFlowFunc(("exiting\n"));
-    exit(1);
-}
 
 /**
   * Connect the guest clipboard to the host.
@@ -1421,60 +1422,30 @@ void vboxClipboardSignalHandler(int number)
   */
 int vboxClipboardConnect (void)
 {
-    VMMDevHGCMConnect request;
-    struct sigaction sSigAction;
-
     LogFlowFunc(("\n"));
-    memset(&request, 0, sizeof(request));
-    request.u32ClientID = 0;
+    int rc;
     /* Only one client is supported for now */
     AssertReturn(g_ctx.client == 0, VERR_NOT_SUPPORTED);
 
-    vmmdevInitRequest((VMMDevRequestHeader*)&request, VMMDevReq_HGCMConnect);
-    request.loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    strcpy (request.loc.u.host.achName, "VBoxSharedClipboard");
-    if (ioctl(g_ctx.sendDevice, IOCTL_VBOXGUEST_VMMREQUEST, (void*)&request) >= 0)
+    rc = ioctl(g_ctx.sendDevice, IOCTL_VBOXGUEST_CLIPBOARD_CONNECT, (void*)&g_ctx.client);
+    if (rc >= 0)
     {
-        if (VBOX_SUCCESS(request.header.header.rc))
+        if (g_ctx.client == 0)
         {
-            if (request.u32ClientID == 0)
-            {
-                cout << "We got an invalid client ID of 0!" << endl;
-                return VERR_NOT_SUPPORTED;
-            }
-            g_ctx.client = request.u32ClientID;
-            g_ctx.eOwner = HOST;
-        }
-        else
-        {
-            Log(("Error connecting to host.  header.rc = %Vrc\n", request.header.header.rc));
-            cout << "Unable to connect to the host system." << endl;
-            LogFlowFunc(("returned VERR_NOT_SUPPORTED\n"));
+            cout << "We got an invalid client ID of 0!" << endl;
             return VERR_NOT_SUPPORTED;
         }
-
+        g_ctx.eOwner = HOST;
     }
     else
     {
-        Log(("Error performing VMM request ioctl. errno = %d\n", errno));
-        cout << "The VirtualBox device in the guest is not responding correctly." << endl;
+        Log(("Error connecting to host.  rc = %d (%s)\n", rc, strerror(-rc)));
+        cout << "Unable to connect to the host system." << endl;
         LogFlowFunc(("returned VERR_NOT_SUPPORTED\n"));
         return VERR_NOT_SUPPORTED;
     }
-    /* If the programme exits without disconnecting from the shared clipboard service, we
-       will need to reboot the guest in order to use it again.  So we set handlers for as
-       many fatal conditions as possible which disconnect and exit the programme. */
+    /* Set an X11 error handler, so that we don't die when we get BadAtom errors. */
     XSetErrorHandler(vboxClipboardXLibErrorHandler);
-    sSigAction.sa_handler = vboxClipboardSignalHandler;
-    sigemptyset(&sSigAction.sa_mask);
-    sSigAction.sa_flags = 0;
-    sigaction(SIGSEGV, &sSigAction, 0);
-    sigaction(SIGBUS, &sSigAction, 0);
-    sigaction(SIGUSR1, &sSigAction, 0);
-    sigaction(SIGINT, &sSigAction, 0);
-    sigaction(SIGQUIT, &sSigAction, 0);
-    sigaction(SIGTERM, &sSigAction, 0);
-    sigaction(SIGTRAP, &sSigAction, 0);
     LogFlowFunc(("returned VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }

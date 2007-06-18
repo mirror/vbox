@@ -278,6 +278,102 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             return vbox_ioctl_hgcm_call(arg, vboxDev);
         }
 
+        case IOCTL_VBOXGUEST_CLIPBOARD_CONNECT:
+        {
+            static uint32_t u32ClientID = 0;
+            VMMDevHGCMDisconnect *reqDisconnect = NULL;
+            VMMDevHGCMConnect *reqConnect = NULL;
+            size_t cbRequestSize;
+            int rc;
+
+            /* First, disconnect any old client. */
+            if (u32ClientID != 0)
+            {
+                /* get the request size */
+                cbRequestSize = vmmdevGetRequestSize(VMMDevReq_HGCMDisconnect);
+                /* request storage for the request */
+                rc = VbglGRAlloc((VMMDevRequestHeader **) &reqDisconnect, cbRequestSize,
+                                 VMMDevReq_HGCMDisconnect);
+                if (VBOX_FAILURE(rc))
+                {
+                    printk(KERN_ERR
+                          "vboxadd_ioctl: could not allocate request structure! rc = %d\n", rc);
+                    return -EFAULT;
+                }
+                /* now get the full request */
+                vmmdevInitRequest(&reqDisconnect->header.header, VMMDevReq_HGCMDisconnect);
+                reqDisconnect->u32ClientID = u32ClientID;
+
+                /* now issue the request */
+                rc = VbglGRPerform(&reqDisconnect->header.header);
+
+                /* asynchronous processing? */
+                if (rc == VINF_HGCM_ASYNC_EXECUTE)
+                {
+                    VMMDevHGCMRequestHeader *reqHGCM = &reqDisconnect->header;
+                    wait_event (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
+                    rc = reqHGCM->header.rc;
+                }
+
+                /* failed? */
+                if (VBOX_FAILURE(rc) || VBOX_FAILURE(reqDisconnect->header.header.rc))
+                {
+                    printk(KERN_ERR "vboxadd_ioctl: request execution failed!\n");
+                    VbglGRFree(&reqDisconnect->header.header);
+                    return -EFAULT;
+                }
+            }
+
+            /* And connect... */
+            /* get the request size */
+            cbRequestSize = vmmdevGetRequestSize(VMMDevReq_HGCMConnect);
+            /* request storage for the request */
+            rc = VbglGRAlloc((VMMDevRequestHeader **) &reqConnect, cbRequestSize, VMMDevReq_HGCMConnect);
+            if (VBOX_FAILURE(rc))
+            {
+                printk(KERN_ERR
+                       "vboxadd_ioctl: could not allocate request structure! rc = %d\n", rc);
+                return -EFAULT;
+            }
+            /* now get the full request */
+            vmmdevInitRequest((VMMDevRequestHeader*)reqConnect, VMMDevReq_HGCMConnect);
+            reqConnect->loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+            strcpy (reqConnect->loc.u.host.achName, "VBoxSharedClipboard");
+
+            /* now issue the request */
+            rc = VbglGRPerform(&reqConnect->header.header);
+
+            /* asynchronous processing? */
+            if (rc == VINF_HGCM_ASYNC_EXECUTE)
+            {
+                VMMDevHGCMRequestHeader *reqHGCM = &reqConnect->header;
+                wait_event (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
+                rc = reqHGCM->header.rc;
+            }
+
+            /* failed? */
+            if (VBOX_FAILURE(rc) || VBOX_FAILURE(reqConnect->header.header.rc))
+            {
+                printk(KERN_ERR "vboxadd_ioctl: request execution failed!\n");
+                VbglGRFree(&reqConnect->header.header);
+                return -EFAULT;
+            }
+            else
+            {
+                /* success, copy the result data to user space */
+                u32ClientID = reqConnect->u32ClientID;
+                if (copy_to_user((void*)arg, (void*)&(reqConnect->u32ClientID), sizeof(uint32_t)))
+                {
+                    printk(KERN_ERR
+                           "vboxadd_ioctl: error copying request result to user space!\n");
+                    VbglGRFree(&reqConnect->header.header);
+                    return -EFAULT;
+                }
+            }
+            VbglGRFree(&reqConnect->header.header);
+            break;
+        }
+
         default:
         {
             elog("vboxadd_ioctl: unknown command: %x, IOCTL_VBOXGUEST_HGCM_CALL is %x\n", cmd,
