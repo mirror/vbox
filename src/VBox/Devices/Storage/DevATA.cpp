@@ -829,7 +829,6 @@ static void ataSetIRQ(ATADevState *s)
          * line is asserted. It monitors the line for a rising edge. */
         if (!s->fIrqPending)
             pCtl->BmDma.u8Status |= BM_STATUS_INT;
-        s->fIrqPending = true;
         /* Only actually set the IRQ line if updating the currently selected drive. */
         if (s == &pCtl->aIfs[pCtl->iSelectedIf])
         {
@@ -841,6 +840,7 @@ static void ataSetIRQ(ATADevState *s)
                 PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 1);
         }
     }
+    s->fIrqPending = true;
 }
 
 #endif /* IN_RING3 */
@@ -850,10 +850,9 @@ static void ataUnsetIRQ(ATADevState *s)
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
 
-    if (s->fIrqPending)
+    if (!(s->uATARegDevCtl & ATA_DEVCTL_DISABLE_IRQ))
     {
         Log2(("%s: LUN#%d deasserting IRQ\n", __FUNCTION__, s->iLUN));
-        s->fIrqPending = false;
         /* Only actually unset the IRQ line if updating the currently selected drive. */
         if (s == &pCtl->aIfs[pCtl->iSelectedIf])
         {
@@ -863,6 +862,7 @@ static void ataUnsetIRQ(ATADevState *s)
                 PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 0);
         }
     }
+    s->fIrqPending = false;
 }
 
 #ifdef IN_RING3
@@ -3010,7 +3010,6 @@ static void ataResetDevice(ATADevState *s)
 {
     s->cMultSectors = ATA_MAX_MULT_SECTORS;
     s->cNotifiedMediaChange = 0;
-    s->fIrqPending = true; /* Ensure that the interrupt is unset. */
     ataUnsetIRQ(s);
 
     s->uATARegSelect = 0x20;
@@ -3367,20 +3366,33 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
                 /* select another drive */
                 pCtl->iSelectedIf = (val >> 4) & 1;
                 /* The IRQ line is multiplexed between the two drives, so
-                 * update the state when switching to another drive. */
-                if (pCtl->aIfs[pCtl->iSelectedIf].fIrqPending)
+                 * update the state when switching to another drive. Only need
+                 * to update interrupt line if it is enabled and there is a
+                 * state change. */
+                if (    !(pCtl->aIfs[pCtl->iSelectedIf].uATARegDevCtl & ATA_DEVCTL_DISABLE_IRQ)
+                    &&  (   pCtl->aIfs[pCtl->iSelectedIf].fIrqPending
+                         !=  pCtl->aIfs[pCtl->iSelectedIf ^ 1].fIrqPending))
                 {
-                    if (pCtl->irq == 16)
-                        PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 1);
+                    if (pCtl->aIfs[pCtl->iSelectedIf].fIrqPending)
+                    {
+                        Log2(("%s: LUN#%d asserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+                        /* The BMDMA unit unconditionally sets BM_STATUS_INT if
+                         * the interrupt line is asserted. It monitors the line
+                         * for a rising edge. */
+                        pCtl->BmDma.u8Status |= BM_STATUS_INT;
+                        if (pCtl->irq == 16)
+                            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 1);
+                        else
+                            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 1);
+                    }
                     else
-                        PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 1);
-                }
-                else
-                {
-                    if (pCtl->irq == 16)
-                        PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
-                    else
-                        PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 0);
+                    {
+                        Log2(("%s: LUN#%d deasserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+                        if (pCtl->irq == 16)
+                            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+                        else
+                            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 0);
+                    }
                 }
             }
             break;
@@ -3602,6 +3614,33 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 #else /* !IN_RING3 */
         AssertMsgFailed(("RESET handling is too complicated for GC\n"));
 #endif /* IN_RING3 */
+    }
+
+    /* Change of interrupt disable flag. Update interrupt line if interrupt
+     * is pending on the current interface. */
+    if ((val ^ pCtl->aIfs[0].uATARegDevCtl) & ATA_DEVCTL_DISABLE_IRQ
+        &&  pCtl->aIfs[pCtl->iSelectedIf].fIrqPending)
+    {
+        if (!(val & ATA_DEVCTL_DISABLE_IRQ))
+        {
+            Log2(("%s: LUN#%d asserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+            /* The BMDMA unit unconditionally sets BM_STATUS_INT if the
+             * interrupt line is asserted. It monitors the line for a rising
+             * edge. */
+            pCtl->BmDma.u8Status |= BM_STATUS_INT;
+            if (pCtl->irq == 16)
+                PDMDevHlpPCISetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), 0, 1);
+            else
+                PDMDevHlpISASetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 1);
+        }
+        else
+        {
+            Log2(("%s: LUN#%d deasserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+            if (pCtl->irq == 16)
+                PDMDevHlpPCISetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), 0, 0);
+            else
+                PDMDevHlpISASetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 0);
+        }
     }
 
     if (val & ATA_DEVCTL_HOB)
