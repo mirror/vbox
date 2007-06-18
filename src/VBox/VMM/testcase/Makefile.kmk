@@ -144,6 +144,7 @@ tstMicro_LIBS           = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstMicroGC_TEMPLATE     = VBOXGC
 tstMicroGC_SOURCES      = tstMicroGC.cpp tstMicroGCA.asm
 tstMicroGC_DEFS         =
+tstMicroGC_INCS         = $(VBOX_PATH_VMM_SRC)/testcase
 ifeq ($(VBOX_LDR_FMT32),pe)
 tstMicroGC_LDFLAGS      = -Entry:tstMicroGC
 endif
@@ -219,7 +220,7 @@ else
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
 		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS),-I$(inc)/) -o $@.o -l $@.lst $<
+		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase,-I$(inc)/) -o $@.o -l $@.lst $<
 		$(VBOX_NM) $@.o | $(SED) \
 			-e '/[0-9a-fA-F][0-9a-fA-F]* [^a] /d' \
 			-e 's/[0-9a-fA-F][0-9a-fA-F]* a \([^ ]*\)/global \1/' \
@@ -258,7 +259,7 @@ else
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
 		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS) $(PATH_TARGET),-I$(inc)/) -o $@ $<
+		$(foreach inc,$(INCS) $(PATH_TARGET) $(VBOX_PATH_VMM_SRC)/testcase,-I$(inc)/) -o $@ $<
 endif
 
 # 2. use nm and sed to transform this into the header we want.
