@@ -320,7 +320,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                                 /* check for value. */
                                 while (isspace(*pszVar) || *pszVar == '\n' || *pszVar == '\r')
                                     pszVar++;
-                                if (*pszVar == '=')
+                                if (*pszVar == '=' || *pszVar == ':')
                                 {
                                     pszVar++;
                                     const char *pszEnd = strchr(pszVar, ';');
