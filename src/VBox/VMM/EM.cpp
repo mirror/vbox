@@ -1320,14 +1320,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
          * Handled the I/O return codes.
          * (The unhandled cases end up with rc == VINF_EM_RESCHEDULE_REM.)
          */
-        if (rc == VINF_EM_RESCHEDULE_REM)
-        {
-            /* emulate this instruction only */
-            goto emulate_instr;
-        }
-
-        if (    rc == VINF_SUCCESS
-            ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+        if (IOM_SUCCESS(rc))
         {
             pCtx->eip += Cpu.opsize;
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
@@ -1341,6 +1334,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
             return rc;
         }
         AssertMsg(rc != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
+
         if (VBOX_FAILURE(rc))
         {
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
@@ -1348,7 +1342,6 @@ int emR3RawExecuteIOInstruction(PVM pVM)
         }
         AssertMsg(rc == VINF_EM_RESCHEDULE_REM, ("rc=%Vrc\n", rc));
     }
-emulate_instr:
     STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
     return emR3RawExecuteInstruction(pVM, "IO: ");
 }

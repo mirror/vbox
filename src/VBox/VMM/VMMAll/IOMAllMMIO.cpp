@@ -1591,9 +1591,10 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  * @remark Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -1676,7 +1677,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     {
         uint32_t u32Value;
         rc = IOMIOPortRead(pVM, uPort, &u32Value, cbTransfer);
-        if (rc == VINF_IOM_HC_IOPORT_READ || VBOX_FAILURE(rc))
+        if (!IOM_SUCCESS(rc))
             break;
         int rc2 = iomRamWrite(pVM, GCPtrDst, &u32Value, cbTransfer);
         Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
@@ -1702,9 +1703,10 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
  * ES:EDI,DX[,ECX]
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -1745,9 +1747,10 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  * @remark  Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
@@ -1833,7 +1836,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
         if (rc != VINF_SUCCESS)
             break;
         rc = IOMIOPortWrite(pVM, uPort, u32Value, cbTransfer);
-        if (rc == VINF_IOM_HC_IOPORT_WRITE || VBOX_FAILURE(rc))
+        if (!IOM_SUCCESS(rc))
             break;
         GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbTransfer);
         pRegFrame->esi += cbTransfer;
@@ -1858,9 +1861,10 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
  * DS:ESI,DX[,ECX]
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented 
- *          here are to be treated as internal failure.
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success but schedulinging information needs to be passed onto EM.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
