@@ -273,8 +273,8 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
     rc = pDisplay->COMGETTER(Height)(&displayHeight);
     ComAssertComRCRet (rc, rc);
 
-    uint32_t mouseXAbs = (x * 0xFFFF) / displayWidth;
-    uint32_t mouseYAbs = (y * 0xFFFF) / displayHeight;
+    uint32_t mouseXAbs = displayWidth? (x * 0xFFFF) / displayWidth: 0;
+    uint32_t mouseYAbs = displayHeight? (y * 0xFFFF) / displayHeight: 0;
 
     /*
      * Send the absolute mouse position to the VMM device

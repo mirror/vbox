@@ -4396,14 +4396,13 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                 pData->pDrv = (PDMIDISPLAYCONNECTOR*)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_DISPLAY_CONNECTOR);
                 if (pData->pDrv)
                 {
-                    if (    pData->pDrv->pu8Data
-                        &&  pData->pDrv->pfnRefresh
+                    /* pData->pDrv->pu8Data can be NULL when there is no framebuffer. */
+                    if (    pData->pDrv->pfnRefresh
                         &&  pData->pDrv->pfnResize
                         &&  pData->pDrv->pfnUpdateRect)
                         rc = VINF_SUCCESS;
                     else
                     {
-                        Assert(pData->pDrv->pu8Data);
                         Assert(pData->pDrv->pfnRefresh);
                         Assert(pData->pDrv->pfnResize);
                         Assert(pData->pDrv->pfnUpdateRect);

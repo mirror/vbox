@@ -4935,7 +4935,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     /* VESA height reduction */
     ULONG ulHeightReduction;
     IFramebuffer *pFramebuffer = pConsole->getDisplay()->getFramebuffer();
-    hrc = pFramebuffer->COMGETTER(HeightReduction)(&ulHeightReduction);             H();
+    if (pFramebuffer)
+    {
+        hrc = pFramebuffer->COMGETTER(HeightReduction)(&ulHeightReduction);         H();
+    }
+    else
+    {
+        /* If framebuffer is not available, there is no height reduction. */
+        ulHeightReduction = 0;
+    }
     rc = CFGMR3InsertInteger(pCfg,  "HeightReduction", ulHeightReduction);          RC_CHECK();
 
     /* Attach the display. */

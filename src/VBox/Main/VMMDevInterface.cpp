@@ -268,8 +268,10 @@ DECLCALLBACK(int) vmmdevVideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint
     if (!fSupported)
         return VERR_INVALID_PARAMETER;
     IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
-    Assert(framebuffer);
-    framebuffer->VideoModeSupported(width, height, bpp, (BOOL*)fSupported);
+    if (framebuffer)
+        framebuffer->VideoModeSupported(width, height, bpp, (BOOL*)fSupported);
+    else
+        *fSupported = true;
     return VINF_SUCCESS;
 }
 
@@ -280,8 +282,10 @@ DECLCALLBACK(int) vmmdevGetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, uint
     if (!heightReduction)
         return VERR_INVALID_PARAMETER;
     IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
-    Assert(framebuffer);
-    framebuffer->COMGETTER(HeightReduction)((ULONG*)heightReduction);
+    if (framebuffer)
+        framebuffer->COMGETTER(HeightReduction)((ULONG*)heightReduction);
+    else
+        *heightReduction = 0;
     return VINF_SUCCESS;
 }
 
