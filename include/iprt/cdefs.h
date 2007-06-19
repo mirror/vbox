@@ -797,6 +797,12 @@
  */
 #define RT_ELEMENTS(aArray)         ( sizeof(aArray) / sizeof((aArray)[0]) )
 
+#ifdef __OS2__
+/* Undefine RT_MAX since there is an unfortunate clash with the max 
+   resource type define in os2.h. */
+# undef RT_MAX
+#endif 
+
 /** @def RT_MAX
  * Finds the maximum value.
  * @returns The higher of the two.
