@@ -1864,16 +1864,15 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
                        pszDevice, pThis->fReadOnlyConfig ? "readonly" : "read/write",
                        pszDevice);
             default:
+            {
                 if (pThis->fAttachFailError)
                     return rc;
-                else
-                {
-                    int erc = PDMDrvHlpVMSetRuntimeError(pDrvIns,
-                                                         false, "DrvHost_MOUNTFAIL",
-                                                         N_("Cannot attach to host device '%s'"), pszDevice);
-                    AssertRC(erc);
-                    src = rc;
-                }
+                int erc = PDMDrvHlpVMSetRuntimeError(pDrvIns,
+                                                     false, "DrvHost_MOUNTFAIL",
+                                                     N_("Cannot attach to host device '%s'"), pszDevice);
+                AssertRC(erc);
+                src = rc;
+            }
         }
     }
 #ifdef __WIN__
@@ -1940,7 +1939,6 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
 
     if (VBOX_FAILURE(src))
         return src;
-    else
-        return rc;
+    return rc;
 }
 
