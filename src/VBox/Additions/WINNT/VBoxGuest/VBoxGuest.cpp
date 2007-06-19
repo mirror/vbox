@@ -53,6 +53,7 @@ static void     VBoxGuestUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS VBoxGuestCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS VBoxGuestClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS VBoxGuestSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS VBoxGuestShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS VBoxGuestNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static VOID     vboxWorkerThread(PVOID context);
@@ -152,7 +153,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 #else
     pDrvObj->MajorFunction[IRP_MJ_PNP]                = VBoxGuestPnP;
     pDrvObj->MajorFunction[IRP_MJ_POWER]              = VBoxGuestPower;
-    pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]     = VBoxGuestNotSupportedStub;
+    pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]     = VBoxGuestSystemControl;
     pDrvObj->DriverExtension->AddDevice               = (PDRIVER_ADD_DEVICE)VBoxGuestAddDevice;
 #endif
 
@@ -760,6 +761,26 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     dprintf(("VBoxGuest::VBoxGuestDeviceControl: returned cbOut=%d rc=%#x\n", cbOut, Status));
 
     return Status;
+}
+
+
+/**
+ * IRP_MJ_SYSTEM_CONTROL handler
+ *
+ * @returns NT status code
+ * @param   pDevObj     Device object.
+ * @param   pIrp        IRP.
+ */
+NTSTATUS VBoxGuestSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+{
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+
+    dprintf(("VBoxGuest::VBoxGuestSystemControl\n"));
+
+    /* Always pass it on to the next driver. */
+    IoSkipCurrentIrpStackLocation(pIrp);
+
+    return IoCallDriver(pDevExt->nextLowerDriver, pIrp);
 }
 
 /**
