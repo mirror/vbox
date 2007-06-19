@@ -315,6 +315,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-acpi on|off]\n"
                  "                            [-ioapic on|off]\n"
                  "                            [-hwvirtex on|off|default]\n"
+                 "                            [-monitorcount <number>\n"
                  "                            [-bioslogofadein on|off]\n"
                  "                            [-bioslogofadeout on|off]\n"
                  "                            [-bioslogodisplaytime <msec>]\n"
@@ -838,6 +839,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     char pszTime[30] = {0};
     RTTimeSpecToString(&timeSpec, pszTime, 30);
     RTPrintf("State:           %s (since %s)\n", pszState, pszTime);
+
+    ULONG numMonitors;
+    machine->COMGETTER(MonitorCount)(&numMonitors);
+    RTPrintf("Monitor count:   %d\n", numMonitors);
 
     ComPtr<IFloppyDrive> floppyDrive;
     rc = machine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
@@ -2722,6 +2727,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *acpi = NULL;
     char *hwvirtex = NULL;
     char *ioapic = NULL;
+    int monitorcount = -1;
     char *bioslogofadein = NULL;
     char *bioslogofadeout = NULL;
     uint32_t bioslogodisplaytime = ~0;
@@ -2837,6 +2843,15 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
             hwvirtex = argv[i];
+        }
+        else if (strcmp(argv[i], "-monitorcount") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            monitorcount = atoi(argv[i]);
         }
         else if (strcmp(argv[i], "-bioslogofadein") == 0)
         {
@@ -3310,6 +3325,10 @@ static int handleModifyVM(int argc, char *argv[],
                 rc = E_FAIL;
                 break;
             }
+        }
+        if (monitorcount != -1)
+        {
+            CHECK_ERROR(machine, COMSETTER(MonitorCount)(monitorcount));
         }
         if (bioslogofadein)
         {
