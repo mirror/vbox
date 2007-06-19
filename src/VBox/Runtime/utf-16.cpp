@@ -476,20 +476,18 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
             fShouldFree = false;
             if (cch <= cchResult)
                 return VERR_BUFFER_OVERFLOW;
-            // cchResult = cch;
             pszResult = *ppsz;
         }
         else
         {
             *ppsz = NULL;
             fShouldFree = true;
-            // cchResult = RT_MAX(cch, cchResult + 1);
             cch = RT_MAX(cch, cchResult + 1);
             pszResult = (char *)RTMemAlloc(cch);
         }
         if (pszResult)
         {
-            rc = rtUtf16RecodeAsUtf8(pwszString, cwcString, pszResult, cch, &cchResult);
+            rc = rtUtf16RecodeAsUtf8(pwszString, cwcString, pszResult, cch - 1, &cch);
             if (RT_SUCCESS(rc))
             {
                 *ppsz = pszResult;
