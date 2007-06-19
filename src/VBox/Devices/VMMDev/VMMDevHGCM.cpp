@@ -203,8 +203,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
         /* convert */
         RTHCPTR HCPtr;
         
-        rc = pDevIns->pDevHlp->pfnPhysGCPtr2HCPtr (pDevIns, GCPtr, &HCPtr);
-//        rc = PGMPhysGCPtr2HCPtr (pVM, GCPtr, &HCPtr);
+        rc = PDMDevHlpPhysGCPtr2HCPtr(pDevIns, GCPtr, &HCPtr);
         
         Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %p. %Vrc\n", iPage, GCPtr, HCPtr, rc));
     
@@ -481,8 +480,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                      pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
                      pHostParm->u.pointer.size = size;
 
-                     rc = pVMMDevState->pDevIns->pDevHlp->pfnPhys2HCVirt (pVMMDevState->pDevIns, physAddr,
-                                                                          size, &pHostParm->u.pointer.addr);
+                     rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr);
 
                      Log(("vmmdevHGCMCall: PhysAddr guest parameter %VGp\n", physAddr));
                  } break;
@@ -509,10 +507,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                      {
                          /* Don't overdo it */
                          if (pGuestParm->type != VMMDevHGCMParmType_LinAddr_Out)
-                         {
-                             rc = pVMMDevState->pDevIns->pDevHlp->pfnPhysReadGCVirt (pVMMDevState->pDevIns, pcBuf,
-                                                                                     linearAddr, size);
-                         }
+                             rc = PDMDevHlpPhysReadGCVirt(pVMMDevState->pDevIns, pcBuf, linearAddr, size);
                          else
                              rc = VINF_SUCCESS;
 
