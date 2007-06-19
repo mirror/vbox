@@ -148,7 +148,7 @@ STDMETHODIMP InternalFramebuffer::NotifyUpdate(ULONG x, ULONG y,
 }
 
 STDMETHODIMP
-InternalFramebuffer::RequestResize(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+InternalFramebuffer::RequestResize(ULONG iScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
                                    ULONG lineSize, ULONG w, ULONG h,
                                    BOOL *finished)
 {

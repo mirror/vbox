@@ -104,7 +104,7 @@ VRDPR3DECL(void) VRDPShutdownServer (HVRDPSERVER hserver);
  * @param w       width of rectangle.
  * @param h       height of rectangle.
  */
-VRDPR3DECL(void) VRDPSendUpdateBitmap (HVRDPSERVER hserver, unsigned x, unsigned y, unsigned w, unsigned h);
+VRDPR3DECL(void) VRDPSendUpdateBitmap (HVRDPSERVER hserver, unsigned uScreenId, unsigned x, unsigned y, unsigned w, unsigned h);
 
 /**
  * Inform client that display was resized.
@@ -121,7 +121,7 @@ VRDPR3DECL(void) VRDPSendResize (HVRDPSERVER hserver);
  * @param pvUpdate  The update information. Actually pointer to VBoxGuest.h::VBVACMDHDR structure with extra data.
  * @param cbUpdate  Size of the update data.
  */
-VRDPR3DECL(void) VRDPSendUpdate (HVRDPSERVER hserver, void *pvUpdate, uint32_t cbUpdate);
+VRDPR3DECL(void) VRDPSendUpdate (HVRDPSERVER hserver, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
 
 /** @todo comment the structure. */
 typedef struct _VRDPCOLORPOINTER

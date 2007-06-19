@@ -102,6 +102,7 @@
 #include <iprt/string.h>
 
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxVideo.h>
 
 #if defined(VBE_NEW_DYN_LIST) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
 # include "DevVGAModes.h"
@@ -620,6 +621,11 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 val == VBE_DISPI_ID2) {
                 s->vbe_regs[s->vbe_index] = val;
             }
+#ifdef VBOX
+            if (val == VBE_DISPI_ID_VBOX_VIDEO) {
+                s->vbe_regs[s->vbe_index] = val;
+            }
+#endif /* VBOX */
             break;
         case VBE_DISPI_INDEX_XRES:
             if ((val <= VBE_DISPI_MAX_XRES) && ((val & 7) == 0)) {
@@ -831,6 +837,29 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                     s->vbe_start_addr += x * ((s->vbe_regs[VBE_DISPI_INDEX_BPP] + 7) >> 3);
                 s->vbe_start_addr >>= 2;
             }
+            break;
+        case VBE_DISPI_INDEX_CMONITORS:
+#ifdef VBOX
+#ifdef IN_RING3
+            /* Changes in the VGA device are minimal. The device is bypassed. The driver does all work. */
+            if (val == VBOX_VIDEO_DISABLE_ADAPTER_MEMORY)
+            {
+                s->pDrv->pfnProcessAdapterData(s->pDrv, NULL, 0);
+            }
+            else if (val == VBOX_VIDEO_INTERPRET_ADAPTER_MEMORY)
+            {
+                s->pDrv->pfnProcessAdapterData(s->pDrv, s->CTXSUFF(vram_ptr), s->vram_size);
+            }
+            else if ((val & 0xFFFF0000) == VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE)
+            {
+                /*
+                 * LFB video mode is either disabled or changed. This notification
+                 * is used by the display to disable VBVA.
+                 */
+                s->pDrv->pfnProcessDisplayData(s->pDrv, s->CTXSUFF(vram_ptr), val & 0xFFFF);
+            }
+#endif /* IN_RING3 */
+#endif /* VBOX */
             break;
         default:
             break;
@@ -2731,9 +2760,10 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
 #ifdef IN_GC
     /*
-     * The VBE_DISPI_INDEX_ENABLE has to be done on the host in order to call pfnLFBModeChange callback.
+     * This has to be done on the host in order to execute the connector callbacks.
      */
-    if (s->vbe_index == VBE_DISPI_INDEX_ENABLE)
+    if (s->vbe_index == VBE_DISPI_INDEX_ENABLE
+        || s->vbe_index == VBE_DISPI_INDEX_CMONITORS)
     {
         Log(("vgaIOPortWriteVBEData: VBE_DISPI_INDEX_ENABLE - Switching to host...\n"));
         return VINF_IOM_HC_IOPORT_WRITE;
@@ -2766,7 +2796,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         }
     }
 #endif
-    if (cb == 2)
+    if (cb == 2 || cb == 4)
     {
 //#ifdef IN_GC
 //        /*

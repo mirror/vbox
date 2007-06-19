@@ -97,7 +97,7 @@ public:
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
-    STDMETHOD(RequestResize)(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+    STDMETHOD(RequestResize)(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
                              ULONG lineSize, ULONG w, ULONG h, BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation, BOOL *supported);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);
@@ -251,7 +251,7 @@ public:
     STDMETHOD(Move)(ULONG x, ULONG y);
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
-    STDMETHOD(RequestResize)(FramebufferPixelFormat_T pixelFormat, ULONG vram,
+    STDMETHOD(RequestResize)(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, ULONG vram,
                              ULONG lineSize, ULONG w, ULONG h, BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation,
                                   BOOL *supported);

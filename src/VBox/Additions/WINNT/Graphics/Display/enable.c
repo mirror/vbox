@@ -166,6 +166,7 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38 0x26
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40 0x28
     {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41 0x29
+    {   INDEX_DrvNotify,                (PFN) DrvNotify             },	// 87 0x57
 //     /* Experimental. */
 //     {   0x7,                            (PFN) DrvResetPDEV          },	// 0x7
 //     {   0x5b,                           (PFN) DrvNineGrid           },	// 0x5b
@@ -189,6 +190,8 @@ static ULONG gflHooks = 0;
 #define HOOKS_BMF16BPP gflHooks
 #define HOOKS_BMF24BPP gflHooks
 #define HOOKS_BMF32BPP gflHooks
+
+HSEMAPHORE ghsemHwBuffer = 0;
 
 /******************************Public*Routine******************************\
 * DrvEnableDriver
@@ -237,6 +240,11 @@ PDRVENABLEDATA pded)
             DDI_DRIVER_VERSION_NT5:
             DDI_DRIVER_VERSION_NT4;
 
+    if (!ghsemHwBuffer)
+    {
+        ghsemHwBuffer = EngCreateSemaphore ();
+    }
+
     return(TRUE);
 }
 
@@ -251,6 +259,13 @@ PDRVENABLEDATA pded)
 VOID DrvDisableDriver(VOID)
 {
     DISPDBG((0, "VBoxDisp::DrvDisableDriver called.\n"));
+
+    if (ghsemHwBuffer)
+    {
+        EngDeleteSemaphore (ghsemHwBuffer);
+        ghsemHwBuffer = NULL;
+    }
+
     return;
 }
 
@@ -821,3 +836,40 @@ IN RECTL *prcl)
 {
 }
 
+/******************************Public*Routine******************************\
+* DrvNotify
+*
+* Called by GDI to notify us of certain "interesting" events
+*
+* DN_DEVICE_ORIGIN is used to communicate the X/Y offsets of individual monitors
+*                  when DualView is in effect.
+*
+\**************************************************************************/
+
+VOID DrvNotify(
+SURFOBJ *pso,
+ULONG iType,
+PVOID pvData)
+{
+    PDEV*   ppdev = (PDEV*) pso->dhpdev;
+
+    DISPDBG((0, "VBoxDisp::DrvNotify called.\n"));
+
+    switch(iType)
+    {
+        case DN_DEVICE_ORIGIN:
+            ppdev->ptlDevOrg = *(PPOINTL)pvData;
+            DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p, pInfo = %p)\n", ppdev->ptlDevOrg.x, 
+                     ppdev->ptlDevOrg.y, pso, ppdev->pInfo));
+            if (ppdev->pInfo)
+            {
+                ppdev->pInfo->screen.xOrigin = ppdev->ptlDevOrg.x;
+                ppdev->pInfo->screen.yOrigin = ppdev->ptlDevOrg.y;
+                VBoxProcessDisplayInfo(ppdev);
+            }
+            break;
+        case DN_DRAWING_BEGIN:
+            DISPDBG((3, "DN_DRAWING_BEGIN (PSO = %p)\n", pso));
+            break;
+    }
+}

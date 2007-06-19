@@ -430,7 +430,7 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
  *                      for all call to the resize complete API before
  *                      continuing with display updates.
  */
-STDMETHODIMP VBoxSDLFB::RequestResize(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
                                       ULONG lineSize, ULONG w, ULONG h, BOOL *finished)
 {
     LogFlow(("VBoxSDLFB::RequestResize: w = %d, h = %d, pixelFormat: %d, vram = %p, lineSize = %d\n",
@@ -1346,7 +1346,7 @@ STDMETHODIMP VBoxSDLFBOverlay::NotifyUpdate(ULONG x, ULONG y,
  * @param   h           New overlay height.
  * @retval  finished    Set if the operation has completed.
  */
-STDMETHODIMP VBoxSDLFBOverlay::RequestResize(FramebufferPixelFormat_T pixelFormat,
+STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat,
                                              ULONG vram, ULONG lineSize, ULONG w,
                                              ULONG h, BOOL *finished)
 {

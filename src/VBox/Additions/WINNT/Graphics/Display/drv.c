@@ -98,17 +98,17 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
     {                                                                 \
         PPDEV ppdev = (PPDEV)__psoDest->dhpdev;                       \
                                                                       \
-        if (vboxHwBufferBeginUpdate (ppdev))                          \
+        if (ppdev->pInfo && vboxHwBufferBeginUpdate (ppdev))          \
         {                                                             \
             vbva##__fn __a;                                           \
                                                                       \
-            if (ppdev->vbva.pVbvaMemory->fu32ModeFlags                \
-                & VBVA_F_MODE_VRDP_RESET)                             \
+            if (  ppdev->pInfo->hostEvents.fu32Events                 \
+                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)           \
             {                                                         \
                 vrdpReset (ppdev);                                    \
                                                                       \
-                ppdev->vbva.pVbvaMemory->fu32ModeFlags &=             \
-                    ~VBVA_F_MODE_VRDP_RESET;                          \
+                ppdev->pInfo->hostEvents.fu32Events &=                \
+                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;  \
             }                                                         \
                                                                       \
             if (ppdev->vbva.pVbvaMemory->fu32ModeFlags                \

@@ -54,6 +54,11 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
     ULONG ulEnable = TRUE;
 
     DISPDBG((1, "VBoxDisp::vboxVbvaEnable called\n"));
+    
+    if (!ghsemHwBuffer)
+    {
+        return FALSE;
+    }
 
     if (EngDeviceIoControl(ppdev->hDriver,
                            IOCTL_VIDEO_VBVA_ENABLE,
@@ -70,23 +75,11 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
             && ppdev->vbva.pfnFlush
             && ppdev->vbva.pvFlush)
         {
-            if (!ppdev->hsemHwBuffer)
-            {
-                ppdev->hsemHwBuffer = EngCreateSemaphore ();
-            }
+            ppdev->fHwBufferOverflow = FALSE;
+            ppdev->pRecord           = NULL;
 
-            if (ppdev->hsemHwBuffer)
-            {
-                ppdev->fHwBufferOverflow = FALSE;
-                ppdev->pRecord           = NULL;
-
-                /* All have been initialized. */
-                bRc = TRUE;
-            }
-            else
-            {
-                DISPDBG((1, "VBoxDisp::vboxVbvaEnable failed to create semaphore!!!\n"));
-            }
+            /* All have been initialized. */
+            bRc = TRUE;
         }
     }
 
@@ -103,12 +96,6 @@ void vboxVbvaDisable (PPDEV ppdev)
     DISPDBG((1, "VBoxDisp::vbvaDisable called.\n"));
 
     RtlZeroMemory (&ppdev->vbva, sizeof (ppdev->vbva));
-
-    if (ppdev->hsemHwBuffer)
-    {
-        EngDeleteSemaphore (ppdev->hsemHwBuffer);
-        ppdev->hsemHwBuffer = NULL;
-    }
 
     ppdev->fHwBufferOverflow = FALSE;
     ppdev->pRecord           = NULL;
@@ -129,7 +116,7 @@ BOOL vboxHwBufferBeginUpdate (PPDEV ppdev)
     {
         uint32_t indexRecordNext;
 
-        EngAcquireSemaphore (ppdev->hsemHwBuffer);
+        EngAcquireSemaphore (ghsemHwBuffer);
 
         VBVA_ASSERT (!ppdev->fHwBufferOverflow);
         VBVA_ASSERT (ppdev->pRecord == NULL);
@@ -147,7 +134,7 @@ BOOL vboxHwBufferBeginUpdate (PPDEV ppdev)
             /* Even after flush there is no place. Fail the request. */
             DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate no space in the queue of records!!! first %d, last %d\n",
                      pVbvaMemory->indexRecordFirst, pVbvaMemory->indexRecordFree));
-            EngReleaseSemaphore (ppdev->hsemHwBuffer);
+            EngReleaseSemaphore (ghsemHwBuffer);
         }
         else
         {
@@ -189,7 +176,7 @@ void vboxHwBufferEndUpdate (PPDEV ppdev)
     ppdev->fHwBufferOverflow = FALSE;
     ppdev->pRecord = NULL;
 
-    EngReleaseSemaphore (ppdev->hsemHwBuffer);
+    EngReleaseSemaphore (ghsemHwBuffer);
 
     return;
 }
@@ -335,3 +322,17 @@ BOOL vboxOrderSupported (PPDEV ppdev, unsigned code)
     return FALSE;
 }
 
+void VBoxProcessDisplayInfo(PPDEV ppdev)
+{
+    DWORD returnedDataLength;
+
+    DISPDBG((1, "Process: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+
+    EngDeviceIoControl(ppdev->hDriver,
+                       IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY,
+                       NULL,
+                       0,
+                       NULL,
+                       0,
+                       &returnedDataLength);
+}

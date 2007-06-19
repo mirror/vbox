@@ -80,6 +80,11 @@
 #define VBE_DISPI_ID1                   0xB0C1
 #define VBE_DISPI_ID2                   0xB0C2
 
+#ifdef VBOX
+/* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_CMONITORS. */
+#define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
+#endif /* VBOX */
+
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
 #define VBE_DISPI_GETCAPS               0x02

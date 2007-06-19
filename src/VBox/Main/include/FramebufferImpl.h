@@ -62,7 +62,7 @@ public:
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h,
                             BOOL *finished);
-    STDMETHOD(RequestResize)(FramebufferPixelFormat_T pixelFormat, BYTE *vram,
+    STDMETHOD(RequestResize)(ULONG uScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
                              ULONG lineSize, ULONG w, ULONG h,
                              BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation,

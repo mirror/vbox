@@ -23,6 +23,7 @@
 #include "Helper.h"
 
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxVideo.h>
 
 #include <VBox/VBoxGuestLib.h>
 
@@ -194,12 +195,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     size_t maxModesPerColorDepth = MAX_VIDEO_MODES / 2 / 4;
 
     /* size of the VRAM in bytes */
-    ULONG totalVramSize = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
-    ULONG vramSize;
-
-    /* Split up VRAM for DualView */
-    vramSize = totalVramSize / gNumDisplays;
-    dprintf(("VBoxVideo: Total VRAM %u bytes, per display %u bytes\n", totalVramSize, vramSize));
+    ULONG vramSize = DeviceExtension->ulMaxFrameBufferSize;
 
     gNumVideoModes = 0;
 
@@ -684,12 +680,120 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     }
 }
 
+/* Computes the size of a framebuffer. DualView has a few framebuffers of the computed size. */
+static ULONG VBoxVideoComputeMaxFrameBufferSize (ULONG AdapterMemorySize)
+{
+    /* The VRAM layout: 
+     *     Last 4096 bytes - Adapter information area.
+     *     Slack - what left after dividing the VRAM.
+     *     4096 bytes aligned framebuffers:
+     *       last 4096 bytes of each framebuffer is the display information area.
+     */
+
+    /* Size of a framebuffer. */
+    ULONG ulSize = (AdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE) / gNumDisplays;
+    
+    /* Align down to 4096 bytes. */
+    ulSize &= ~0xFFF;
+    
+    dprintf(("VBoxVideo::VBoxVideoComputeMaxFrameBufferSize: AdapterMemorySize = 0x%08X, gNumDisplays = %d, ulSize = 0x%08X, ulSize * gNumDisplays = 0x%08X, slack = 0x%08X\n",
+             AdapterMemorySize, gNumDisplays, ulSize, ulSize * gNumDisplays, (AdapterMemorySize - 4096) - ulSize * gNumDisplays));
+    
+    if (ulSize > VBOX_VIDEO_DISPLAY_INFORMATION_SIZE)
+    {
+        /* Compute the size of the framebuffer. */
+        ulSize -= VBOX_VIDEO_DISPLAY_INFORMATION_SIZE;
+    }
+    else
+    {
+        ulSize = 0;
+    }
+    
+    return ulSize;
+}
+
+static VOID VBoxMapAdapterInfo (PDEVICE_EXTENSION PrimaryExtension, ULONG AdapterMemorySize)
+{
+    PHYSICAL_ADDRESS FrameBuffer;
+    ULONG inIoSpace = 0;
+    VP_STATUS Status;
+
+    dprintf(("VBoxVideo::VBoxSetupAdapterInfo\n"));
+
+    FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + AdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
+
+    PVOID VideoRamBase = NULL;
+    ULONG VideoRamLength = VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
+
+    Status = VideoPortMapMemory(PrimaryExtension, FrameBuffer,
+       &VideoRamLength, &inIoSpace,
+       &VideoRamBase);
+
+    if (Status == NO_ERROR)
+    {
+        PrimaryExtension->AdapterInformation = VideoRamBase;
+    }
+    else
+    {
+        PrimaryExtension->AdapterInformation = NULL;
+    }
+}
+
+static VOID VBoxSetupAdapterInfo (PDEVICE_EXTENSION PrimaryExtension)
+{
+    if (!PrimaryExtension->AdapterInformation)
+    {
+        return;
+    }
+    
+    /* That dublicates the code in VBoxSetupDisplays, better would be to have 
+     * linked list of device extestions and fill the adapter memory with
+     * information from these extension structures.
+     */
+    uint8_t *pu8 = (uint8_t *)PrimaryExtension->AdapterInformation;
+    uint32_t u32Offset = 0;
+    
+    VBOXVIDEOINFOHDR *pHdr;
+    int iDisplay;
+
+    for (iDisplay = 0; iDisplay < gNumDisplays; ++iDisplay)
+    {
+        pHdr = (VBOXVIDEOINFOHDR *)pu8;
+        pu8 += sizeof (VBOXVIDEOINFOHDR);
+
+        pHdr->u8Type     = VBOX_VIDEO_INFO_TYPE_DISPLAY;
+        pHdr->u8Reserved = 0;
+        pHdr->u16Length  = sizeof (VBOXVIDEOINFODISPLAY);
+
+        VBOXVIDEOINFODISPLAY *pDisplay = (VBOXVIDEOINFODISPLAY *)pu8;
+        pu8 += sizeof (VBOXVIDEOINFODISPLAY);
+
+        pDisplay->u32Index           = iDisplay;
+        pDisplay->u32Offset          = u32Offset;
+        pDisplay->u32FramebufferSize = PrimaryExtension->ulMaxFrameBufferSize;
+        pDisplay->u32InformationSize = VBOX_VIDEO_DISPLAY_INFORMATION_SIZE;
+        
+        u32Offset += PrimaryExtension->ulMaxFrameBufferSize + VBOX_VIDEO_DISPLAY_INFORMATION_SIZE;
+    }
+
+    pHdr = (VBOXVIDEOINFOHDR *)pu8;
+    pu8 += sizeof (VBOXVIDEOINFOHDR);
+
+    pHdr->u8Type     = VBOX_VIDEO_INFO_TYPE_END;
+    pHdr->u8Reserved = 0;
+    pHdr->u16Length  = 0;
+
+    /* Inform the host about the display configuration. */
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_CMONITORS);
+    VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_ADAPTER_MEMORY);
+}
+
 /**
  * Helper function to register secondary displays (DualView). Note that this will not
  * be available on pre-XP versions, and some editions on XP will fail because they are
  * intentionally crippled.
  */
-VOID VBoxRegisterSecondaryDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
+VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
 {
    typedef VP_STATUS (*pCreateSecDisp)(PVOID, PVOID *, ULONG);
    pCreateSecDisp pVPCreateSecDisp;
@@ -697,12 +801,43 @@ VOID VBoxRegisterSecondaryDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PO
    int iDisplay;
    VP_STATUS rc;
    PDEVICE_EXTENSION pSecExt;
+   ULONG AdapterMemorySize;
 
-   dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays\n"));
+   dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays: PrimaryExtension = %p\n", PrimaryExtension));
 
-   /* Initialize DualView related stuff in device extension (must be done always!) */
+   AdapterMemorySize = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+
+   /* Initialize DualView related stuff in device extension for 1 monitor (must be done always!).
+    * Assume that the is no dual view and initialize the maximum possible frame buffer size.
+    * Also assume no VBox extension support.
+    */
    PrimaryExtension->iDevice      = 0;
    PrimaryExtension->pvPrimaryExt = PrimaryExtension;
+
+   PrimaryExtension->ulFrameBufferOffset = 0;
+   PrimaryExtension->ulMaxFrameBufferSize = AdapterMemorySize -
+                                            VBOX_VIDEO_ADAPTER_INFORMATION_SIZE -
+                                            VBOX_VIDEO_DISPLAY_INFORMATION_SIZE;
+   PrimaryExtension->bDualViewSupported = FALSE;
+   PrimaryExtension->AdapterInformation = NULL;
+   
+   /* Verify that the HW support VirtualBox extensions. */
+   VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+   VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_VBOX_VIDEO);
+   if (VideoPortReadPortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA) != VBE_DISPI_ID_VBOX_VIDEO)
+   {
+       dprintf(("VBoxVideo::VBoxSetupDisplays: virtual hardware do not support VBox extensions!!!\n"));
+       return;
+   }
+
+   /* Map the adapter information memory. */
+   VBoxMapAdapterInfo (PrimaryExtension, AdapterMemorySize);
+   
+   if (!PrimaryExtension->AdapterInformation)
+   {
+       dprintf(("VBoxVideo::VBoxSetupDisplays: failed to map adapter memory!!!\n"));
+       return;
+   }
 
    /* Dynamically query the VideoPort import to be binary compatible across Windows versions */
    if (vboxQueryWinVersion() <= WINNT4) 
@@ -724,17 +859,29 @@ VOID VBoxRegisterSecondaryDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PO
       gNumDisplays = VideoPortReadPortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
       dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays: gNumDisplays = %d\n", gNumDisplays));
 
+      PrimaryExtension->bDualViewSupported = (gNumDisplays != 0);
+
+      /* Now when the number of monitors is known, update the maximum size. */
+      PrimaryExtension->ulMaxFrameBufferSize = VBoxVideoComputeMaxFrameBufferSize (AdapterMemorySize);
+
       for (iDisplay = 1; iDisplay < gNumDisplays; ++iDisplay)
       {
          rc = pVPCreateSecDisp(PrimaryExtension, (PVOID*)&pSecExt, VIDEO_DUALVIEW_REMOVABLE);
-         dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays: VideoPortCreateSecondaryDisplay returned %#x\n", rc));
+         dprintf(("VBoxVideo::VBoxRegisterSecondaryDisplays: VideoPortCreateSecondaryDisplay returned %#x, pSecExt = %p\n", rc, pSecExt));
          if (rc != NO_ERROR)   /* Failure to create secondary displays is not fatal */
             break;
 
          pSecExt->iDevice = iDisplay;
          pSecExt->pvPrimaryExt = PrimaryExtension;
+
+         pSecExt->ulFrameBufferOffset = iDisplay * (PrimaryExtension->ulMaxFrameBufferSize + VBOX_VIDEO_DISPLAY_INFORMATION_SIZE);
+         pSecExt->ulMaxFrameBufferSize = PrimaryExtension->ulMaxFrameBufferSize;
+         pSecExt->bDualViewSupported = PrimaryExtension->bDualViewSupported;
+         pSecExt->AdapterInformation = PrimaryExtension->AdapterInformation;
       }
    }
+
+   VBoxSetupAdapterInfo (PrimaryExtension);
 }
 
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
@@ -818,7 +965,7 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: VbglInit returned 0x%x\n", rc));
 
       /* Attempt to register secondary displays */
-      VBoxRegisterSecondaryDisplays((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo);
+      VBoxSetupDisplays((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo);
 
       // pretend success to make the driver work.
       rc = NO_ERROR;
@@ -1212,6 +1359,47 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             break;
         }
 
+        case IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY:
+        {
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY\n"));
+
+            if (pDevExt->bDualViewSupported)
+            {
+                /* The display driver must have prepared the monitor information. */
+                VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_CMONITORS);
+                VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
+            }
+            else
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+            }
+            Result = pDevExt->bDualViewSupported;
+            break;
+        }
+
+        case IOCTL_VIDEO_QUERY_DISPLAY_INFO:
+        {
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_QUERY_DISPLAY_INFO\n"));
+
+            if (RequestPacket->OutputBufferLength < sizeof(QUERYDISPLAYINFORESULT))
+            {
+                dprintf(("VBoxVideo::VBoxVideoStartIO: output buffer too small: %d needed: %d!!!\n",
+                         RequestPacket->OutputBufferLength, sizeof(QUERYDISPLAYINFORESULT)));
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return FALSE;
+            }
+
+            QUERYDISPLAYINFORESULT *pDispInfo = (QUERYDISPLAYINFORESULT *)RequestPacket->OutputBuffer;
+            
+            pDispInfo->iDevice = pDevExt->iDevice;
+            pDispInfo->u32DisplayInfoSize = VBOX_VIDEO_DISPLAY_INFORMATION_SIZE;
+
+            RequestPacket->StatusBlock->Information = sizeof(QUERYDISPLAYINFORESULT);
+            Result = TRUE;
+
+            break;
+        }
+
         case IOCTL_VIDEO_VBVA_ENABLE:
         {
             int rc;
@@ -1255,7 +1443,10 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
         }
 
         default:
-            dprintf(("VBoxVideo::VBoxVideoStartIO: unsupported %p\n", RequestPacket->IoControlCode));
+            dprintf(("VBoxVideo::VBoxVideoStartIO: unsupported %p, fn %d(0x%x)\n",
+                      RequestPacket->IoControlCode,
+                      (RequestPacket->IoControlCode >> 2) & 0xFFF,
+                      (RequestPacket->IoControlCode >> 2) & 0xFFF));
             RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
             return FALSE;
     }
@@ -1278,10 +1469,19 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 {
     dprintf(("VBoxVideo::VBoxVideoResetHW\n"));
+
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)HwDeviceExtension;
+
+    if (pDevExt->iDevice > 0)
+    {
+        dprintf(("VBoxVideo::VBoxVideoResetHW: Skipping for non-primary display %d\n",
+                 pDevExt->iDevice));
+        return TRUE;
+    }
+
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
 
-    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)HwDeviceExtension;
     if (pDevExt->pvReqFlush != NULL)
     {
         VbglGRFree ((VMMDevRequestHeader *)pDevExt->pvReqFlush);
@@ -1334,7 +1534,8 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     dprintf(("VBoxVideoSetCurrentMode: width: %d, height: %d, bpp: %d\n", ModeInfo->VisScreenWidth,
              ModeInfo->VisScreenHeight, ModeInfo->BitsPerPlane));
 
-    if (DeviceExtension->iDevice > 0) {
+    if (DeviceExtension->iDevice > 0)
+    {
         dprintf(("VBoxVideo::VBoxVideoSetCurrentMode: Skipping for non-primary display %d\n",
                  DeviceExtension->iDevice));
         return TRUE;
@@ -1368,6 +1569,14 @@ BOOLEAN FASTCALL VBoxVideoResetDevice(
 {
    dprintf(("VBoxVideo::VBoxVideoResetDevice\n"));
 
+    if (DeviceExtension->iDevice > 0)
+    {
+        /* If the device is the secondary display, however, it is recommended that no action be taken. */
+        dprintf(("VBoxVideo::VBoxVideoResetDevice: Skipping for non-primary display %d\n",
+                 DeviceExtension->iDevice));
+        return TRUE;
+    }
+
 #if 0
    /* Don't disable the extended video mode. This would only switch the video mode
     * to <current width> x <current height> x 0 bpp which is not what we want. And
@@ -1392,19 +1601,14 @@ BOOLEAN FASTCALL VBoxVideoMapVideoMemory(PDEVICE_EXTENSION DeviceExtension,
 {
     PHYSICAL_ADDRESS FrameBuffer;
     ULONG inIoSpace = 0;
-    ULONG ulOffset;
-    ULONG AdapterMemorySize;
     VP_STATUS Status;
 
     dprintf(("VBoxVideo::VBoxVideoMapVideoMemory\n"));
 
-    AdapterMemorySize = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+    FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + DeviceExtension->ulFrameBufferOffset;
 
-    FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
     MapInformation->VideoRamBase = RequestedAddress->RequestedVirtualAddress;
-    MapInformation->VideoRamLength = AdapterMemorySize;
-//       VideoModes[DeviceExtension->CurrentMode - 1].VideoMemoryBitmapHeight *
-//       VideoModes[DeviceExtension->CurrentMode - 1].ScreenStride;
+    MapInformation->VideoRamLength = DeviceExtension->ulMaxFrameBufferSize + VBOX_VIDEO_DISPLAY_INFORMATION_SIZE;
 
     Status = VideoPortMapMemory(DeviceExtension, FrameBuffer,
        &MapInformation->VideoRamLength, &inIoSpace,
@@ -1412,10 +1616,7 @@ BOOLEAN FASTCALL VBoxVideoMapVideoMemory(PDEVICE_EXTENSION DeviceExtension,
 
     if (Status == NO_ERROR)
     {
-        /* Calculate VRAM offset for DualView */
-        ulOffset = AdapterMemorySize / gNumDisplays * DeviceExtension->iDevice;
-
-        MapInformation->FrameBufferBase = (PUCHAR)MapInformation->VideoRamBase + ulOffset;
+        MapInformation->FrameBufferBase = (PUCHAR)MapInformation->VideoRamBase;
         MapInformation->FrameBufferLength =
             VideoModes[DeviceExtension->CurrentMode - 1].VisScreenHeight *
             VideoModes[DeviceExtension->CurrentMode - 1].ScreenStride;
@@ -1540,7 +1741,8 @@ VP_STATUS VBoxVideoGetChildDescriptor(
    PULONG pUId,
    PULONG pUnused)
 {
-    dprintf(("VBoxVideo::VBoxVideoGetChildDescriptor\n"));
+   dprintf(("VBoxVideo::VBoxVideoGetChildDescriptor: HwDeviceExtension = %p, ChildEnumInfo = %p\n",
+            HwDeviceExtension, ChildEnumInfo));
 
     DEVICE_EXTENSION *pDevExt = (DEVICE_EXTENSION *)HwDeviceExtension;
 
@@ -1564,16 +1766,20 @@ VP_STATUS VBoxVideoGetChildDescriptor(
 static DECLCALLBACK(void) vboxVbvaFlush (void *pvFlush)
 {
     DEVICE_EXTENSION *pDevExt = (DEVICE_EXTENSION *)pvFlush;
+    DEVICE_EXTENSION *pPrimaryDevExt = (DEVICE_EXTENSION *)(pDevExt? pDevExt->pvPrimaryExt: NULL);
 
-    if (pDevExt && pDevExt->pvReqFlush)
+    if (pPrimaryDevExt)
     {
-        VMMDevVideoAccelFlush *req = (VMMDevVideoAccelFlush *)pDevExt->pvReqFlush;
+        VMMDevVideoAccelFlush *req = (VMMDevVideoAccelFlush *)pPrimaryDevExt->pvReqFlush;
 
-        int rc = VbglGRPerform (&req->header);
-
-        if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+        if (req)
         {
-            dprintf(("VBoxVideo::vbvaFlush: rc = %Vrc, VMMDev rc = %Vrc!!!\n", rc, req->header.rc));
+            int rc = VbglGRPerform (&req->header);
+
+            if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+            {
+                dprintf(("VBoxVideo::vbvaFlush: rc = %Vrc, VMMDev rc = %Vrc!!!\n", rc, req->header.rc));
+            }
         }
     }
 
@@ -1595,6 +1801,28 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
 
     dprintf(("VBoxVideo::vboxVbvaEnable: VbglQueryVMMDevMemory rc = %d, pVMMDevMemory = %p\n", rc, pVMMDevMemory));
     
+    if (pDevExt->iDevice > 0)
+    {
+        DEVICE_EXTENSION *pPrimaryDevExt = (DEVICE_EXTENSION *)pDevExt->pvPrimaryExt;
+
+        dprintf(("VBoxVideo::vboxVbvaEnable: Skipping for non-primary display %d\n",
+                 pDevExt->iDevice));
+        
+        if (   ulEnable
+            && pPrimaryDevExt->ulVbvaEnabled)
+        {
+            pVbvaResult->pVbvaMemory = &pVMMDevMemory->vbvaMemory;
+            pVbvaResult->pfnFlush    = vboxVbvaFlush;
+            pVbvaResult->pvFlush     = pDevExt;
+        }
+        else
+        {
+            VideoPortZeroMemory(&pVbvaResult, sizeof(VBVAENABLERESULT));
+        }
+
+        return rc;
+    }
+
     if (VBOX_SUCCESS(rc))
     {
         /* Allocate the memory block for VMMDevReq_VideoAccelFlush request. */
@@ -1623,6 +1851,8 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
 
     if (VBOX_SUCCESS(rc))
     {
+        ULONG ulEnabled = 0;
+
         /*
          * Tell host that VBVA status is changed.
          */
@@ -1652,6 +1882,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
                         pVbvaResult->pVbvaMemory = &pVMMDevMemory->vbvaMemory;
                         pVbvaResult->pfnFlush    = vboxVbvaFlush;
                         pVbvaResult->pvFlush     = pDevExt;
+                        ulEnabled = 1;
                     }
                     else
                     {
@@ -1683,11 +1914,15 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
                     rc = req->header.rc;
                 }
             }
+
+            VbglGRFree (&req->header);
         }
         else
         {
             dprintf(("VBoxVideo::vboxVbvaEnable: VbglGRAlloc rc = %Vrc!!!\n", rc));
         }
+
+        pDevExt->ulVbvaEnabled = ulEnabled;
     }
 
     return rc;

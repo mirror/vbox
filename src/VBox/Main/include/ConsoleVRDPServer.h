@@ -78,9 +78,9 @@ public:
     /*
      * Forwarders to VRDP server library.
      */
-    void SendUpdate (void *pvUpdate, uint32_t cbUpdate) const;
+    void SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const;
     void SendResize (void) const;
-    void SendUpdateBitmap (uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
+    void SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
     void SetFramebuffer (IFramebuffer *framebuffer, uint32_t fFlags) const;
 
     void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format) const;
@@ -112,7 +112,7 @@ private:
     static int  (VBOXCALL *mpfnVRDPSetFramebuffer)  (HVRDPSERVER hServer, IFramebuffer *pFramebuffer, uint32_t fFlags);
     static void (VBOXCALL *mpfnVRDPSetCallback)     (HVRDPSERVER hServer, VRDPSERVERCALLBACK *pcallback, void *pvUser);
     static void (VBOXCALL *mpfnVRDPShutdownServer)  (HVRDPSERVER hServer);
-    static void (VBOXCALL *mpfnVRDPSendUpdateBitmap)(HVRDPSERVER hServer, unsigned x, unsigned y, unsigned w, unsigned h);
+    static void (VBOXCALL *mpfnVRDPSendUpdateBitmap)(HVRDPSERVER hServer, unsigned uScreenId, unsigned x, unsigned y, unsigned w, unsigned h);
     static void (VBOXCALL *mpfnVRDPSendResize)      (HVRDPSERVER hServer);
     static void (VBOXCALL *mpfnVRDPSendAudioSamples)(HVRDPSERVER hserver, void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format);
     static void (VBOXCALL *mpfnVRDPSendAudioVolume) (HVRDPSERVER hserver, uint16_t left, uint16_t right);
@@ -121,7 +121,7 @@ private:
 #else
     static void (VBOXCALL *mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, void *pvParms, uint32_t cbParms);
 #endif /* VRDP_MC */
-    static void (VBOXCALL *mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, void *pvUpdate, uint32_t cbUpdate);
+    static void (VBOXCALL *mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
     static void (VBOXCALL *mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
     static void (VBOXCALL *mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
 #endif /* VBOX_VRDP */

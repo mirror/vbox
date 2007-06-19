@@ -44,6 +44,8 @@ __END_DECLS
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
 #define VBE_DISPI_INDEX_CMONITORS       0xa
 #define VBE_DISPI_ID2                   0xB0C2
+/* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_CMONITORS. */
+#define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
 #define VBE_DISPI_LFB_ENABLED           0x40
@@ -65,6 +67,15 @@ typedef struct
    ULONG iDevice;       /* Device index (0 for primary) */
    PVOID pvPrimaryExt;  /* Pointer to primary device extension */
    BOOLEAN bEnabled;    /* Device enabled flag */
+
+   ULONG ulFrameBufferOffset;
+   ULONG ulMaxFrameBufferSize;
+
+   BOOLEAN bDualViewSupported;
+   
+   PVOID AdapterInformation;
+   
+   ULONG ulVbvaEnabled;
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 extern "C"
