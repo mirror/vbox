@@ -212,7 +212,7 @@ NS_IMETHODIMP VBoxDirectFB::NotifyUpdate(uint32_t x, uint32_t y,
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::RequestResize(FramebufferPixelFormat_T pixelFormat, uint32_t vram, uint32_t lineSize, uint32_t w, uint32_t h,
+NS_IMETHODIMP VBoxDirectFB::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, uint32_t vram, uint32_t lineSize, uint32_t w, uint32_t h,
                                            PRBool *finished)
 {
     uint32_t needsLocking = fbSurfaceLocked;

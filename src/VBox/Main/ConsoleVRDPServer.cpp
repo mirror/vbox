@@ -40,7 +40,7 @@ int  (VBOXCALL *ConsoleVRDPServer::mpfnVRDPStartServer)     (IConsole *pConsole,
 int  (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSetFramebuffer)  (HVRDPSERVER hServer, IFramebuffer *pFramebuffer, uint32_t fFlags);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSetCallback)     (HVRDPSERVER hServer, VRDPSERVERCALLBACK *pcallback, void *pvUser);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPShutdownServer)  (HVRDPSERVER hServer);
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdateBitmap)(HVRDPSERVER hServer, unsigned x, unsigned y, unsigned w, unsigned h);
+void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdateBitmap)(HVRDPSERVER hServer, unsigned uScreenId, unsigned x, unsigned y, unsigned w, unsigned h);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendResize)      (HVRDPSERVER hServer);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendAudioSamples)(HVRDPSERVER hserver, void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendAudioVolume) (HVRDPSERVER hserver, uint16_t left, uint16_t right);
@@ -49,7 +49,7 @@ void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver
 #else
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, void *pvParms, uint32_t cbParms);
 #endif /* VRDP_MC */
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, void *pvUpdate, uint32_t cbUpdate);
+void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
 #endif /* VBOX_VRDP */
@@ -124,6 +124,7 @@ int ConsoleVRDPServer::Launch (void)
 
         if (VBOX_SUCCESS(rc))
         {
+#ifndef VRDP_MC
             LogFlow(("VRDP server created: %p, will set mFramebuffer\n", mhServer));
 
             IFramebuffer *framebuffer = mConsole->getDisplay()->getFramebuffer();
@@ -132,7 +133,7 @@ int ConsoleVRDPServer::Launch (void)
                 framebuffer? VRDP_EXTERNAL_FRAMEBUFFER: VRDP_INTERNAL_FRAMEBUFFER);
 
             LogFlow(("Framebuffer %p set for the VRDP server\n", framebuffer));
-            
+#endif /* !VRDP_MC */
 #ifdef VBOX_WITH_USB
 #ifdef VRDP_MC
             remoteUSBThreadStart ();
@@ -922,11 +923,11 @@ void *ConsoleVRDPServer::GetUSBBackendPointer (void)
 
 
 
-void ConsoleVRDPServer::SendUpdate (void *pvUpdate, uint32_t cbUpdate) const
+void ConsoleVRDPServer::SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const
 {
 #ifdef VBOX_VRDP
     if (mpfnVRDPSendUpdate)
-        mpfnVRDPSendUpdate (mhServer, pvUpdate, cbUpdate);
+        mpfnVRDPSendUpdate (mhServer, uScreenId, pvUpdate, cbUpdate);
 #endif
 }
 
@@ -938,11 +939,11 @@ void ConsoleVRDPServer::SendResize (void) const
 #endif
 }
 
-void ConsoleVRDPServer::SendUpdateBitmap (uint32_t x, uint32_t y, uint32_t w, uint32_t h) const
+void ConsoleVRDPServer::SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const
 {
 #ifdef VBOX_VRDP
     if (mpfnVRDPSendUpdateBitmap)
-        mpfnVRDPSendUpdateBitmap (mhServer, x, y, w, h);
+        mpfnVRDPSendUpdateBitmap (mhServer, uScreenId, x, y, w, h);
 #endif
 }
 
@@ -1021,7 +1022,9 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
             static const struct SymbolEntry symbols[] =
             {
                 DEFSYMENTRY(VRDPStartServer),
+#ifndef VRDP_MC
                 DEFSYMENTRY(VRDPSetFramebuffer),
+#endif /* VRDP_MC */
                 DEFSYMENTRY(VRDPSetCallback),
                 DEFSYMENTRY(VRDPShutdownServer),
                 DEFSYMENTRY(VRDPSendUpdate),

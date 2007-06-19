@@ -6047,7 +6047,7 @@
 
     <interface
         name="IFramebuffer" extends="$unknown"
-        uuid="4481F27F-5C79-48d9-86C1-A2EC6747034D"
+        uuid="9f3eba23-6a75-49f3-93e7-cad00fb605f6"
         wsmap="suppress"
     >
         <attribute name="address" type="octet" mod="ptr" readonly="yes">
@@ -6167,6 +6167,9 @@
                     lock.
                 </note>
             </desc>
+            <param name="screenId" type="unsigned long" dir="in">
+                <desc>The value to be used in the <link to="IDisplay::resizeCompleted()"/> call.</desc>
+            </param>
             <param name="pixelFormat" type="FramebufferPixelFormat" dir="in">
                 <desc>Pixel format of the surface (BPP and layout)</desc>
             </param>
@@ -6297,7 +6300,7 @@
 
     <interface
         name="IDisplay" extends="$unknown"
-        uuid="0a6a7746-5469-47e4-9a00-8b1ea28891b8"
+        uuid="e740a435-88d1-4f14-b9ca-a1b30e2c5038"
         wsmap="suppress"
     >
         <attribute name="width" type="unsigned long" readonly="yes">
@@ -6340,6 +6343,24 @@
                 Registers an external framebuffer.
             </desc>
             <param name="framebuffer" type="IFramebuffer" dir="in"/>
+        </method>
+
+        <method name="setFramebuffer">
+            <desc>
+                Sets the framebuffer for given screen.
+            </desc>
+            <param name="screenId" type="unsigned long" dir="in"/>
+            <param name="framebuffer" type="IFramebuffer" dir="in"/>
+        </method>
+
+        <method name="queryFramebuffer">
+            <desc>
+                Queries the framebuffer for given screen.
+            </desc>
+            <param name="screenId" type="unsigned long" dir="in"/>
+            <param name="framebuffer" type="IFramebuffer" dir="out"/>
+            <param name="xOrigin" type="long" dir="out"/>
+            <param name="yOrigin" type="long" dir="out"/>
         </method>
 
         <method name="setVideoModeHint">
@@ -6395,6 +6416,7 @@
             <desc>
                 Signals that a framebuffer has completed the resize operation.
             </desc>
+            <param name="screenId" type="unsigned long" dir="in"/>
         </method>
 
         <method name="updateCompleted">

@@ -137,9 +137,17 @@ static BOOL bcFindHash (VRDPBC *pCache, const VRDPBCHASH *phash)
 static BOOL bcInsertHash (VRDPBC *pCache, const VRDPBCHASH *phash, VRDPBCHASH *phashDeleted)
 {
     BOOL bRc = FALSE;
+    VRDPBCENTRY *pEntry;
+
+    DISPDBG((1, "insert hash cache %p, tail %p.\n", pCache, pCache->tail));
 
     /* Get the free entry to be used. Try tail, that should be */
-    VRDPBCENTRY *pEntry = pCache->tail;
+    pEntry = pCache->tail;
+    
+    if (pEntry == NULL)
+    {
+        return bRc;
+    }
 
     if (pEntry->fUsed)
     {
@@ -171,6 +179,7 @@ int vrdpbmpCacheSurface (VRDPBC *pCache, const SURFOBJ *pso, VRDPBCHASH *phash, 
 
     BOOL bResult = bcComputeHash (pso, &hash);
 
+    DISPDBG((1, "vrdpbmpCacheSurface: compute hash %d.\n", bResult));
     if (!bResult)
     {
         DISPDBG((1, "MEMBLT: vrdpbmpCacheSurface: could not compute hash.\n"));
@@ -179,6 +188,7 @@ int vrdpbmpCacheSurface (VRDPBC *pCache, const SURFOBJ *pso, VRDPBCHASH *phash, 
 
     bResult = bcFindHash (pCache, &hash);
 
+    DISPDBG((1, "vrdpbmpCacheSurface: find hash %d.\n", bResult));
     *phash = hash;
 
     if (bResult)
@@ -190,6 +200,7 @@ int vrdpbmpCacheSurface (VRDPBC *pCache, const SURFOBJ *pso, VRDPBCHASH *phash, 
 
     bResult = bcInsertHash (pCache, &hash, phashDeleted);
 
+    DISPDBG((1, "vrdpbmpCacheSurface: insert hash %d.\n", bResult));
     if (bResult)
     {
         rc |= VRDPBMP_RC_F_DELETED;

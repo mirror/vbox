@@ -303,20 +303,25 @@ static int vrdpGetIntersectingClipRects (VRDPCLIPRECTS *pClipRects, SURFOBJ *pso
 
             DISPDBG((1, "%d rects\n", cRects));
 
-            VBVA_ASSERT(cRects > 0);
-
-            for (; cRects != 0; cRects--, prclClipSrc++)
+            if (cRects > 0)
             {
-                vrdpIntersectRects (prclClipDst, prclClipSrc, &pClipRects->rclDst);
+                for (; cRects != 0; cRects--, prclClipSrc++)
+                {
+                    vrdpIntersectRects (prclClipDst, prclClipSrc, &pClipRects->rclDst);
 
-                if (vrdpIsRectEmpty (prclClipDst))
-                {
-                    pClipRects->rects.c--;
+                    if (vrdpIsRectEmpty (prclClipDst))
+                    {
+                        pClipRects->rects.c--;
+                    }
+                    else
+                    {
+                        prclClipDst++;
+                    }
                 }
-                else
-                {
-                    prclClipDst++;
-                }
+            }
+            else
+            {
+                pClipRects->rclDst.left = pClipRects->rclDst.right = 0;
             }
         }
     }
@@ -756,7 +761,7 @@ static void vrdpReportPatBlt (PPDEV ppdev,
 
     memcpy (order.pattern, pBrush->u.pat.au8Pattern, sizeof (order.pattern));
 
-    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VBVA_VRDP_PATBLT_BRUSH);
+    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VBVA_VRDP_PATBLTBRUSH);
 }
 
 static void vrdpReportDstBlt (PPDEV ppdev,
@@ -1050,6 +1055,7 @@ void vrdpBitBlt (
                 VRDPBCHASH hashDeleted;
                 int cacheResult;
 
+                DISPDBG((1, "VRDP::vrdpBitBlt: MEMBLT.\n"));
                 if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
                     || psoSrc->iUniq == 0)
                 {
@@ -1058,6 +1064,7 @@ void vrdpBitBlt (
                 }
                 else
                 {
+                    DISPDBG((1, "VRDP::vrdpBitBlt: going to cache.\n"));
                     cacheResult = vrdpbmpCacheSurface (&ppdev->cache, psoSrc, &hash, &hashDeleted);
                 }
 
@@ -1741,6 +1748,8 @@ void vrdpSaveScreenBits(
 
 void vrdpReset (PPDEV ppdev)
 {
+    DISPDBG((1, "vrdpReset %p\n", ppdev));
+
     vrdpbmpReset (&ppdev->cache);
 
     return;

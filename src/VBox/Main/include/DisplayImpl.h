@@ -23,11 +23,50 @@
 #define ____H_DISPLAYIMPL
 
 #include "VirtualBoxBase.h"
+#include "SchemaDefs.h"
 #include <iprt/semaphore.h>
 #include <VBox/pdm.h>
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxVideo.h>
 
 class Console;
+
+enum {
+    ResizeStatus_Void,
+    ResizeStatus_InProgress,
+    ResizeStatus_UpdateDisplayData
+};
+
+typedef struct _DISPLAYFBINFO
+{
+    uint32_t u32Offset;
+    uint32_t u32MaxFramebufferSize;
+    uint32_t u32InformationSize;
+
+    ComPtr<IFramebuffer> pFramebuffer;
+
+    LONG xOrigin;
+    LONG yOrigin;
+
+    ULONG w;
+    ULONG h;
+
+    VBOXVIDEOINFOHOSTEVENTS *pHostEvents;
+
+    volatile uint32_t u32ResizeStatus;
+    
+    /* The Framebuffer has default format and must be updates immediately. */
+    bool fDefaultFormat;
+    
+    struct {
+        /* The rectangle that includes all dirty rectangles. */
+        int32_t xLeft;
+        int32_t xRight;
+        int32_t yTop;
+        int32_t yBottom;
+    } dirtyRect;
+
+} DISPLAYFBINFO;
 
 class ATL_NO_VTABLE Display :
     public IConsoleCallback,
@@ -58,11 +97,11 @@ public:
     void uninit();
 
     // public methods only for internal purposes
-    int handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h);
+    int handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h);
     void handleDisplayUpdate (int x, int y, int cx, int cy);
     IFramebuffer *getFramebuffer()
     {
-        return mFramebuffer;
+        return maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
     }
 
     int VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory);
@@ -137,11 +176,13 @@ public:
     STDMETHOD(LockFramebuffer)(BYTE **address);
     STDMETHOD(UnlockFramebuffer)();
     STDMETHOD(RegisterExternalFramebuffer)(IFramebuffer *frameBuf);
+    STDMETHOD(SetFramebuffer)(ULONG aScreenId, IFramebuffer * aFramebuffer);
+    STDMETHOD(QueryFramebuffer)(ULONG aScreenId, IFramebuffer * * aFramebuffer, LONG * aXOrigin, LONG * aYOrigin);
     STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG colorDepth, ULONG display);
     STDMETHOD(TakeScreenShot)(BYTE *address, ULONG width, ULONG height);
     STDMETHOD(DrawToScreen)(BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
     STDMETHOD(InvalidateAndUpdate)();
-    STDMETHOD(ResizeCompleted)();
+    STDMETHOD(ResizeCompleted)(ULONG aScreenId);
     STDMETHOD(UpdateCompleted)();
 
     // for VirtualBoxSupportErrorInfoImpl
@@ -154,7 +195,7 @@ private:
     void updateDisplayData (bool aCheckParams = false);
 
     static DECLCALLBACK(int) changeFramebuffer (Display *that, IFramebuffer *aFB,
-                                                bool aInternal);
+                                                bool aInternal, unsigned uScreenId);
 
     static DECLCALLBACK(void*) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
     static DECLCALLBACK(int)   drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
@@ -165,6 +206,8 @@ private:
     static DECLCALLBACK(void)  displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterface);
     static DECLCALLBACK(void)  displayResetCallback(PPDMIDISPLAYCONNECTOR pInterface);
     static DECLCALLBACK(void)  displayLFBModeChangeCallback(PPDMIDISPLAYCONNECTOR pInterface, bool fEnabled);
+    static DECLCALLBACK(void)  displayProcessAdapterDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize);
+    static DECLCALLBACK(void)  displayProcessDisplayDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId);
 
     ComObjPtr <Console, ComWeakRef> mParent;
     /** Pointer to the associated display driver. */
@@ -174,7 +217,11 @@ private:
     /** Set after the first attempt to find the VMM Device. */
     bool                    mfVMMDevInited;
     bool mInternalFramebuffer;
-    ComPtr<IFramebuffer> mFramebuffer;
+//    ComPtr<IFramebuffer> mFramebuffer;
+
+    unsigned mcMonitors;
+    DISPLAYFBINFO maFramebuffers[SchemaDefs::MaxGuestMonitors];
+
     bool mFramebufferOpened;
     /** bitmask of acceleration operations supported by current framebuffer */
     ULONG mSupportedAccelOps;
@@ -205,13 +252,7 @@ private:
     void vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd);
 
     void handleResizeCompletedEMT (void);
-    volatile uint32_t mu32ResizeStatus;
-    
-    enum {
-        ResizeStatus_Void,
-        ResizeStatus_InProgress,
-        ResizeStatus_UpdateDisplayData
-    };
+//    volatile uint32_t mu32ResizeStatus;
 };
 
 #endif // ____H_DISPLAYIMPL

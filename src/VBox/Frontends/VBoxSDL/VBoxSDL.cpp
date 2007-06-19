@@ -1899,7 +1899,7 @@ int main(int argc, char *argv[])
                         LogFlow(("SDL_USER_EVENT_RESIZE\n"));
                         gpFrameBuffer->resizeGuest();
                         /* notify the display that the resize has been completed */
-                        gDisplay->ResizeCompleted();
+                        gDisplay->ResizeCompleted(0);
                         break;
                     }
 
@@ -2296,7 +2296,7 @@ int main(int argc, char *argv[])
                 LogFlow(("SDL_USER_EVENT_RESIZE\n"));
                 gpFrameBuffer->resizeGuest();
                 /* notify the display that the resize has been completed */
-                gDisplay->ResizeCompleted();
+                gDisplay->ResizeCompleted(0);
                 break;
             }
 

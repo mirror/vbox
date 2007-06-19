@@ -25,6 +25,12 @@
 
 #include <VBox/VBoxGuest.h>
 
+#define IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY \
+    CTL_CODE(FILE_DEVICE_VIDEO, 0x420, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_VIDEO_QUERY_DISPLAY_INFO \
+    CTL_CODE(FILE_DEVICE_VIDEO, 0x421, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
 /** Called by the display driver when it is ready to
  *  switch to VBVA operation mode.
  *  Successful return means that VBVA can be used and
@@ -58,6 +64,19 @@ typedef struct _VBVAENABLERESULT
     void *pvFlush;
 
 } VBVAENABLERESULT;
+
+/**
+ * Data returned by IOCTL_VIDEO_QUERY_DISPLAY_INFO.
+ *
+ */
+typedef struct _QUERYDISPLAYINFORESULT
+{
+    /* Device index (0 for primary) */
+    ULONG iDevice;
+
+    /* Size of the display information area. */
+    uint32_t u32DisplayInfoSize;
+} QUERYDISPLAYINFORESULT;
 #pragma pack()
 
 #endif /* __VBOXIOCTL__H */

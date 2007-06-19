@@ -22,10 +22,23 @@
 
 #include "../Miniport/vboxioctl.h"
 
+#include <VBox/VBoxVideo.h>
+
 /* Forward declaration. */
 struct _PDEV;
 typedef struct _PDEV PDEV;
 typedef PDEV *PPDEV;
+
+typedef struct _VBOXDISPLAYINFO
+{
+    VBOXVIDEOINFOHDR         hdrLink;
+    VBOXVIDEOINFOLINK        link;
+    VBOXVIDEOINFOHDR         hdrScreen;
+    VBOXVIDEOINFOSCREEN      screen;
+    VBOXVIDEOINFOHDR         hdrHostEvents;
+    VBOXVIDEOINFOHOSTEVENTS  hostEvents;
+    VBOXVIDEOINFOHDR         hdrEnd;
+} VBOXDISPLAYINFO;
 
 #include "vbvavrdp.h"
 #include "vrdpbmp.h"
@@ -51,6 +64,7 @@ struct  _PDEV
     ULONG   cyScreen;                   // Visible screen height
     POINTL  ptlOrg;                     // Where this display is anchored in
                                         //   the virtual desktop.
+    POINTL  ptlDevOrg;                  // Device origin for DualView (0,0 for primary view).
     ULONG   ulMode;                     // Mode the mini-port driver is in.
     LONG    lDeltaScreen;               // Distance from one scan to the next.
     ULONG   cScreenSize;                // size of video memory, including
@@ -73,14 +87,21 @@ struct  _PDEV
     FLONG   flHooks;
     
     VBVAENABLERESULT vbva;
-    HSEMAPHORE       hsemHwBuffer;
+    uint32_t         u32VRDPResetFlag;
     BOOL             fHwBufferOverflow;
     VBVARECORD       *pRecord;
     VRDPBC           cache;
 
     ULONG cSSB;                 // Number of active saved screen bits records in the following array.
     SSB aSSB[4];                // LIFO type stack for saved screen areas.
+
+    VBOXDISPLAYINFO *pInfo;
+    ULONG iDevice;
 };
+
+/* The global semaphore handle for all driver instances. */
+extern HSEMAPHORE ghsemHwBuffer;
+
 
 DWORD getAvailableModes(HANDLE, PVIDEO_MODE_INFORMATION *, DWORD *);
 BOOL bInitPDEV(PPDEV, PDEVMODEW, GDIINFO *, DEVINFO *);
@@ -125,6 +146,8 @@ BOOL vboxWrite (PPDEV ppdev, const void *pv, uint32_t cb);
 
 BOOL vboxOrderSupported (PPDEV ppdev, unsigned code);
 
+void VBoxProcessDisplayInfo(PPDEV ppdev);
+void VBoxUpdateDisplayInfo (PPDEV ppdev);
 
 void drvLoadEng (void);
 

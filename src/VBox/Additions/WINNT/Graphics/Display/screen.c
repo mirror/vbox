@@ -34,6 +34,91 @@ const DEVINFO gDevInfoFrameBuffer = {
     0                 /* Default palette to use for this device */
 };
 
+/* Setup display information after remapping. */
+static void vboxSetupDisplayInfo (PPDEV ppdev, VIDEO_MEMORY_INFORMATION *pMemoryInformation)
+{
+    VBOXDISPLAYINFO *pInfo;
+    uint8_t *pu8;
+    
+    DWORD returnedDataLength;
+    QUERYDISPLAYINFORESULT DispInfo;
+    RtlZeroMemory(&DispInfo, sizeof (DispInfo));
+    if (EngDeviceIoControl(ppdev->hDriver,
+                           IOCTL_VIDEO_QUERY_DISPLAY_INFO,
+                           NULL,
+                           0,
+                           &DispInfo,
+                           sizeof(DispInfo),
+                           &returnedDataLength))
+    {
+        DISPDBG((1, "DISP bInitSURF failed IOCTL_VIDEO_QUERY_DISPLAY_INFO\n"));
+        ppdev->pInfo = NULL;
+        return;
+    }
+    
+    if (returnedDataLength != sizeof (QUERYDISPLAYINFORESULT)
+        || DispInfo.u32DisplayInfoSize >= pMemoryInformation->VideoRamLength)
+    {
+        DISPDBG((1, "DISP bInitSURF failed DispInfo.u32DisplayInfoSize 0x%x >= pMemoryInformation->VideoRamLength 0x%x\n",
+                 DispInfo.u32DisplayInfoSize, pMemoryInformation->VideoRamLength));
+        ppdev->pInfo = NULL;
+        return;
+    }
+    
+    ppdev->iDevice = DispInfo.iDevice;
+
+    pu8 = (uint8_t *)pMemoryInformation->VideoRamBase;
+    pu8 += pMemoryInformation->VideoRamLength - DispInfo.u32DisplayInfoSize;
+
+    pInfo = (VBOXDISPLAYINFO *)pu8;
+    pu8 += sizeof (VBOXDISPLAYINFO);
+
+    pInfo->hdrLink.u8Type     = VBOX_VIDEO_INFO_TYPE_LINK;
+    pInfo->hdrLink.u8Reserved = 0;
+    pInfo->hdrLink.u16Length  = sizeof (VBOXVIDEOINFOLINK);
+    pInfo->link.i32Offset = 0;
+
+    pInfo->hdrScreen.u8Type     = VBOX_VIDEO_INFO_TYPE_SCREEN;
+    pInfo->hdrScreen.u8Reserved = 0;
+    pInfo->hdrScreen.u16Length  = sizeof (VBOXVIDEOINFOSCREEN);
+    DISPDBG((1, "Setup: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+    pInfo->screen.xOrigin      = ppdev->ptlDevOrg.x;
+    pInfo->screen.yOrigin      = ppdev->ptlDevOrg.y;
+    pInfo->screen.u32LineSize  = 0;
+    pInfo->screen.u16Width     = 0;
+    pInfo->screen.u16Height    = 0;
+    pInfo->screen.bitsPerPixel = 0;
+    pInfo->screen.u8Flags      = VBOX_VIDEO_INFO_SCREEN_F_NONE;
+    
+    pInfo->hdrHostEvents.u8Type     = VBOX_VIDEO_INFO_TYPE_HOST_EVENTS;
+    pInfo->hdrHostEvents.u8Reserved = 0;
+    pInfo->hdrHostEvents.u16Length  = sizeof (VBOXVIDEOINFOHOSTEVENTS);
+    pInfo->hostEvents.fu32Events = VBOX_VIDEO_INFO_HOST_EVENTS_F_NONE;
+
+    pInfo->hdrEnd.u8Type     = VBOX_VIDEO_INFO_TYPE_END;
+    pInfo->hdrEnd.u8Reserved = 0;
+    pInfo->hdrEnd.u16Length  = 0;
+
+    ppdev->pInfo = pInfo;
+}
+
+
+static void vboxUpdateDisplayInfo (PPDEV ppdev)
+{
+    if (ppdev->pInfo)
+    {
+        ppdev->pInfo->screen.u32LineSize  = ppdev->lDeltaScreen;
+        ppdev->pInfo->screen.u16Width     = (uint16_t)ppdev->cxScreen;
+        ppdev->pInfo->screen.u16Height    = (uint16_t)ppdev->cyScreen;
+        ppdev->pInfo->screen.bitsPerPixel = (uint8_t)ppdev->ulBitCount;
+        ppdev->pInfo->screen.u8Flags      = VBOX_VIDEO_INFO_SCREEN_F_ACTIVE;
+
+        DISPDBG((1, "Update: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+        VBoxProcessDisplayInfo(ppdev);
+    }
+}
+
+
 /******************************Public*Routine******************************\
 * bInitSURF
 *
@@ -154,6 +239,9 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         ppdev->pPointerAttributes->Column = 0;
         ppdev->pPointerAttributes->Row = 0;
         ppdev->pPointerAttributes->Enable = 0;
+
+        /* Setup the display information. */
+        vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
     }
 
         
@@ -163,11 +251,17 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         || ppdev->ulBitCount == 24
         || ppdev->ulBitCount == 32)
     {
-        /* Enable VBVA for this video mode. */
-        vboxVbvaEnable (ppdev);
+        if (ppdev->pInfo) /* Do not use VBVA on old hosts. */
+        {
+            /* Enable VBVA for this video mode. */
+            vboxVbvaEnable (ppdev);
+        }
     }
 
     DISPDBG((1, "DISP bInitSURF success\n"));
+
+    /* Update the display information. */
+    vboxUpdateDisplayInfo (ppdev);
     
     return(TRUE);
 }

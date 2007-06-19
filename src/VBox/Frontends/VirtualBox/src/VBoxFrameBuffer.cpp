@@ -138,7 +138,7 @@ STDMETHODIMP VBoxFrameBuffer::Unlock()
 }
 
 /** @note This method is called on EMT from under this object's lock */
-STDMETHODIMP VBoxFrameBuffer::RequestResize (FramebufferPixelFormat_T aPixelFormat,
+STDMETHODIMP VBoxFrameBuffer::RequestResize (ULONG aScreenId, FramebufferPixelFormat_T aPixelFormat,
                                              BYTE *aVRAM, ULONG aLineSize,
                                              ULONG aWidth, ULONG aHeight,
                                              BOOL *aFinished)

@@ -90,7 +90,7 @@ HRESULT Display::FinalConstruct()
     mLastWidth = 0;
     mLastHeight = 0;
 
-    mu32ResizeStatus = ResizeStatus_Void;
+//    mu32ResizeStatus = ResizeStatus_Void;
 
     return S_OK;
 }
@@ -127,10 +127,37 @@ HRESULT Display::init (Console *parent)
 
     // by default, we have an internal framebuffer which is
     // NULL, i.e. a black hole for no display output
-    mFramebuffer = 0;
+//    mFramebuffer = 0;
     mInternalFramebuffer = true;
     mFramebufferOpened = false;
     mSupportedAccelOps = 0;
+
+    ULONG ul;
+    mParent->machine()->COMGETTER(MonitorCount)(&ul);
+    mcMonitors = ul;
+
+    for (ul = 0; ul < mcMonitors; ul++)
+    {
+        maFramebuffers[ul].u32Offset = 0;
+        maFramebuffers[ul].u32MaxFramebufferSize = 0;
+        maFramebuffers[ul].u32InformationSize = 0;
+
+        maFramebuffers[ul].pFramebuffer = NULL;
+
+        maFramebuffers[ul].xOrigin = 0;
+        maFramebuffers[ul].yOrigin = 0;
+
+        maFramebuffers[ul].w = 0;
+        maFramebuffers[ul].h = 0;
+
+        maFramebuffers[ul].pHostEvents = NULL;
+
+        maFramebuffers[ul].u32ResizeStatus = ResizeStatus_Void;
+
+        maFramebuffers[ul].fDefaultFormat = false;
+
+        memset (&maFramebuffers[ul].dirtyRect, 0 , sizeof (maFramebuffers[ul].dirtyRect));
+    }
 
     mParent->RegisterCallback(this);
 
@@ -149,7 +176,13 @@ void Display::uninit()
     AutoLock alock (this);
     AssertReturn (isReady(), (void) 0);
 
-    mFramebuffer.setNull();
+//    mFramebuffer.setNull();
+    ULONG ul;
+    for (ul = 0; ul < mcMonitors; ul++)
+    {
+        maFramebuffers[ul].pFramebuffer = NULL;
+    }
+
     RTSemEventMultiDestroy(mUpdateSem);
 
     if (mParent)
@@ -188,14 +221,14 @@ STDMETHODIMP Display::OnStateChange(MachineState_T machineState)
 /**
  *  @thread EMT
  */
-static int callFramebufferResize (IFramebuffer *pFramebuffer, FramebufferPixelFormat_T pixelFormat, void *pvVRAM, uint32_t cbLine, int w, int h)
+static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId, FramebufferPixelFormat_T pixelFormat, void *pvVRAM, uint32_t cbLine, int w, int h)
 {
     Assert (pFramebuffer);
 
     /* Call the framebuffer to try and set required pixelFormat. */
     BOOL finished = TRUE;
 
-    pFramebuffer->RequestResize (pixelFormat, (BYTE *) pvVRAM, cbLine, w, h, &finished);
+    pFramebuffer->RequestResize (uScreenId, pixelFormat, (BYTE *) pvVRAM, cbLine, w, h, &finished);
 
     if (!finished)
     {
@@ -218,13 +251,14 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, FramebufferPixelFo
  *
  *  @thread EMT
  */
-int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h)
+int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h)
 {
-    LogRel (("Display::handleDisplayResize(): pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X\n",
-             pvVRAM, w, h, bpp, cbLine));
+    LogRel (("Display::handleDisplayResize(): uScreenId = %d, pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X\n",
+             uScreenId, pvVRAM, w, h, bpp, cbLine));
 
     /* If there is no framebuffer, this call is not interesting. */
-    if (mFramebuffer.isNull())
+    if (   uScreenId >= mcMonitors
+        || maFramebuffers[uScreenId].pFramebuffer.isNull())
     {
         return VINF_SUCCESS;
     }
@@ -248,15 +282,15 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
     /* Atomically set the resize status before calling the framebuffer. The new InProgress status will
      * disable access to the VGA device by the EMT thread.
      */
-    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_InProgress, ResizeStatus_Void);
+    bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus, ResizeStatus_InProgress, ResizeStatus_Void);
     AssertReleaseMsg(f, ("f = %d\n", f));NOREF(f);
 
     /* The framebuffer is locked in the state.
      * The lock is kept, because the framebuffer is in undefined state.
      */
-    mFramebuffer->Lock();
+    maFramebuffers[uScreenId].pFramebuffer->Lock();
 
-    int rc = callFramebufferResize (mFramebuffer, pixelFormat, pvVRAM, cbLine, w, h);
+    int rc = callFramebufferResize (maFramebuffers[uScreenId].pFramebuffer, uScreenId, pixelFormat, pvVRAM, cbLine, w, h);
     if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
     {
         /* Immediately return to the caller. ResizeCompleted will be called back by the
@@ -268,7 +302,7 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
     }
 
     /* Set the status so the 'handleResizeCompleted' would work.  */
-    f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
     AssertRelease(f);NOREF(f);
 
     /* The method also unlocks the framebuffer. */
@@ -286,43 +320,56 @@ int Display::handleDisplayResize (uint32_t bpp, void *pvVRAM, uint32_t cbLine, i
 void Display::handleResizeCompletedEMT (void)
 {
     LogFlowFunc(("\n"));
-    if (!mFramebuffer.isNull())
-    {
-        /* Framebuffer has completed the resize. Update the connector data. */
-        updateDisplayData();
     
-        /* Check the framebuffer pixel format to setup the rendering in VGA device. */
-        FramebufferPixelFormat_T newPixelFormat;
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
+    {
+        DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
 
-        mFramebuffer->COMGETTER(PixelFormat) (&newPixelFormat);
+        /* Try to into non resizing state. */
+        bool f = ASMAtomicCmpXchgU32 (&pFBInfo->u32ResizeStatus, ResizeStatus_Void, ResizeStatus_UpdateDisplayData);
 
-        mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, newPixelFormat == FramebufferPixelFormat_PixelFormatDefault);
-    }
+        if (f == false)
+        {
+            /* This is not the display that has completed resizing. */
+            continue;
+        }
+
+        if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
+        {
+            /* Primary framebuffer has completed the resize. Update the connector data for VGA device. */
+            updateDisplayData();
+    
+            /* Check the framebuffer pixel format to setup the rendering in VGA device. */
+            FramebufferPixelFormat_T newPixelFormat;
+            pFBInfo->pFramebuffer->COMGETTER(PixelFormat) (&newPixelFormat);
+
+            pFBInfo->fDefaultFormat = (newPixelFormat == FramebufferPixelFormat_PixelFormatDefault);
+
+            mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, pFBInfo->fDefaultFormat);
+        }
 
 #ifdef DEBUG_sunlover
-    if (!stam)
-    {
-        /* protect mpVM */
-        Console::SafeVMPtr pVM (mParent);
-        AssertComRC (pVM.rc());
+        if (!stam)
+        {
+            /* protect mpVM */
+            Console::SafeVMPtr pVM (mParent);
+            AssertComRC (pVM.rc());
 
-        STAM_REG(pVM, &StatDisplayRefresh, STAMTYPE_PROFILE, "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
-        stam = 1;
-    }
+            STAM_REG(pVM, &StatDisplayRefresh, STAMTYPE_PROFILE, "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
+            stam = 1;
+        }
 #endif /* DEBUG_sunlover */
 
-    /* Inform VRDP server about the change of display parameters. */
-    LogFlowFunc (("Calling VRDP\n"));
-    mParent->consoleVRDPServer()->SendResize();
+        /* Inform VRDP server about the change of display parameters. */
+        LogFlowFunc (("Calling VRDP\n"));
+        mParent->consoleVRDPServer()->SendResize();
 
-    /* Go into non resizing state. */
-    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_Void, ResizeStatus_UpdateDisplayData);
-    AssertRelease(f);NOREF(f);
-    
-    if (!mFramebuffer.isNull())
-    {
-        /* Unlock framebuffer after evrything is done. */
-        mFramebuffer->Unlock();
+        if (!pFBInfo->pFramebuffer.isNull())
+        {
+            /* Unlock framebuffer after evrything is done. */
+            pFBInfo->pFramebuffer->Unlock();
+        }
     }
 }
 
@@ -359,6 +406,34 @@ static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy
     }
 }
 
+unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int *py, int *pw, int *ph)
+{
+    DISPLAYFBINFO *pInfo = pInfos;
+    unsigned uScreenId;
+    Log(("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
+    for (uScreenId = 0; uScreenId < cInfos; uScreenId++, pInfo++)
+    {
+        Log(("    [%d] %d,%d %dx%d\n", uScreenId, pInfo->xOrigin, pInfo->yOrigin, pInfo->w, pInfo->h));
+        if (   (pInfo->xOrigin <= *px && *px < pInfo->xOrigin + (int)pInfo->w)
+            && (pInfo->yOrigin <= *py && *py < pInfo->yOrigin + (int)pInfo->h))
+        {
+            /* The rectangle belongs to the screen. Correct coordinates. */
+            *px -= pInfo->xOrigin;
+            *py -= pInfo->yOrigin;
+            Log(("    -> %d,%d", *px, *py));
+            break;
+        }
+    }
+    if (uScreenId == cInfos)
+    {
+        /* Map to primary screen. */
+        uScreenId = 0;
+    }
+    Log((" scr %d\n", uScreenId));
+    return uScreenId;
+}
+
+
 /**
  *  Handles display update event.
  *
@@ -371,27 +446,33 @@ static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy
  */
 void Display::handleDisplayUpdate (int x, int y, int w, int h)
 {
-    // if there is no framebuffer, this call is not interesting
-    if (mFramebuffer.isNull())
-        return;
-
-    mFramebuffer->Lock();
-
 #ifdef DEBUG_sunlover
     LogFlowFunc (("%d,%d %dx%d (%d,%d)\n",
                   x, y, w, h, mpDrv->Connector.cx, mpDrv->Connector.cy));
 #endif /* DEBUG_sunlover */
 
+#ifdef VRDP_MC
+    unsigned uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
+#else
     checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
+#endif /* VRDP_MC */
 
 #ifdef DEBUG_sunlover
     LogFlowFunc (("%d,%d %dx%d (checked)\n", x, y, w, h));
 #endif /* DEBUG_sunlover */
 
+    IFramebuffer *pFramebuffer = maFramebuffers[uScreenId].pFramebuffer;
+
+    // if there is no framebuffer, this call is not interesting
+    if (pFramebuffer == NULL)
+        return;
+
+    pFramebuffer->Lock();
+
     /* special processing for the internal framebuffer */
     if (mInternalFramebuffer)
     {
-        mFramebuffer->Unlock();
+        pFramebuffer->Unlock();
     } else
     {
         /* callback into the framebuffer to notify it */
@@ -399,7 +480,7 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 
         RTSemEventMultiReset(mUpdateSem);
 
-        mFramebuffer->NotifyUpdate(x, y, w, h, &finished);
+        pFramebuffer->NotifyUpdate(x, y, w, h, &finished);
 
         if (!finished)
         {
@@ -407,11 +488,11 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
              *  the framebuffer needs more time to process
              *  the event so we have to halt the VM until it's done
              */
-            mFramebuffer->Unlock();
+            pFramebuffer->Unlock();
             RTSemEventMultiWait(mUpdateSem, RT_INDEFINITE_WAIT);
         } else
         {
-            mFramebuffer->Unlock();
+            pFramebuffer->Unlock();
         }
 
         if (!mfVideoAccelEnabled)
@@ -419,7 +500,7 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
             /* When VBVA is enabled, the VRDP server is informed in the VideoAccelFlush.
              * Inform the server here only if VBVA is disabled.
              */
-            mParent->consoleVRDPServer()->SendUpdateBitmap(x, y, w, h);
+            mParent->consoleVRDPServer()->SendUpdateBitmap(uScreenId, x, y, w, h);
         }
     }
     return;
@@ -428,40 +509,30 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 typedef struct _VBVADIRTYREGION
 {
     /* Copies of object's pointers used by vbvaRgn functions. */
-    IFramebuffer     *pFramebuffer;
+    DISPLAYFBINFO    *paFramebuffers;
+    unsigned          cMonitors;
     Display          *pDisplay;
     PPDMIDISPLAYPORT  pPort;
 
-    /* The Framebuffer has default format and must be updates immediately. */
-    bool fDefaultFormat;
-
-    /* Merged rectangles. */
-    int32_t xLeft;
-    int32_t xRight;
-    int32_t yTop;
-    int32_t yBottom;
-
 } VBVADIRTYREGION;
 
-static void vbvaRgnInit (VBVADIRTYREGION *prgn, IFramebuffer *pfb, Display *pd, PPDMIDISPLAYPORT pp)
+static void vbvaRgnInit (VBVADIRTYREGION *prgn, DISPLAYFBINFO *paFramebuffers, unsigned cMonitors, Display *pd, PPDMIDISPLAYPORT pp)
 {
-    memset (prgn, 0, sizeof (VBVADIRTYREGION));
-
-    prgn->pFramebuffer = pfb;
+    prgn->paFramebuffers = paFramebuffers;
+    prgn->cMonitors = cMonitors;
     prgn->pDisplay = pd;
     prgn->pPort = pp;
-
-    if (pfb)
+    
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
     {
-        FramebufferPixelFormat_T pixelFormat;
-        pfb->COMGETTER(PixelFormat) (&pixelFormat);
-        prgn->fDefaultFormat = (pixelFormat == FramebufferPixelFormat_PixelFormatDefault);
-    }
+        DISPLAYFBINFO *pFBInfo = &prgn->paFramebuffers[uScreenId];
 
-    return;
+        memset (&pFBInfo->dirtyRect, 0, sizeof (pFBInfo->dirtyRect));
+    }
 }
 
-static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, VBVACMDHDR *phdr)
+static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMDHDR *phdr)
 {
     LogFlowFunc (("x = %d, y = %d, w = %d, h = %d\n",
                   phdr->x, phdr->y, phdr->w, phdr->h));
@@ -482,40 +553,43 @@ static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, VBVACMDHDR *phdr)
     int32_t xRight  = phdr->x + phdr->w;
     int32_t yBottom = phdr->y + phdr->h;
 
-    if (prgn->xRight == 0)
+    DISPLAYFBINFO *pFBInfo = &prgn->paFramebuffers[uScreenId];
+
+    if (pFBInfo->dirtyRect.xRight == 0)
     {
         /* This is the first rectangle to be added. */
-        prgn->xLeft   = phdr->x;
-        prgn->yTop    = phdr->y;
-        prgn->xRight  = xRight;
-        prgn->yBottom = yBottom;
+        pFBInfo->dirtyRect.xLeft   = phdr->x;
+        pFBInfo->dirtyRect.yTop    = phdr->y;
+        pFBInfo->dirtyRect.xRight  = xRight;
+        pFBInfo->dirtyRect.yBottom = yBottom;
     }
     else
     {
         /* Adjust region coordinates. */
-        if (prgn->xLeft > phdr->x)
+        if (pFBInfo->dirtyRect.xLeft > phdr->x)
         {
-            prgn->xLeft = phdr->x;
+            pFBInfo->dirtyRect.xLeft = phdr->x;
         }
 
-        if (prgn->yTop > phdr->y)
+        if (pFBInfo->dirtyRect.yTop > phdr->y)
         {
-            prgn->yTop = phdr->y;
+            pFBInfo->dirtyRect.yTop = phdr->y;
         }
 
-        if (prgn->xRight < xRight)
+        if (pFBInfo->dirtyRect.xRight < xRight)
         {
-            prgn->xRight = xRight;
+            pFBInfo->dirtyRect.xRight = xRight;
         }
 
-        if (prgn->yBottom < yBottom)
+        if (pFBInfo->dirtyRect.yBottom < yBottom)
         {
-            prgn->yBottom = yBottom;
+            pFBInfo->dirtyRect.yBottom = yBottom;
         }
     }
 
-    if (prgn->fDefaultFormat)
+    if (pFBInfo->fDefaultFormat)
     {
+        //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
         prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, phdr->x, phdr->y, phdr->w, phdr->h);
         prgn->pDisplay->handleDisplayUpdate (phdr->x, phdr->y, phdr->w, phdr->h);
     }
@@ -523,22 +597,27 @@ static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, VBVACMDHDR *phdr)
     return;
 }
 
-static void vbvaRgnUpdateFramebuffer (VBVADIRTYREGION *prgn)
+static void vbvaRgnUpdateFramebuffer (VBVADIRTYREGION *prgn, unsigned uScreenId)
 {
-    uint32_t w = prgn->xRight - prgn->xLeft;
-    uint32_t h = prgn->yBottom - prgn->yTop;
+    DISPLAYFBINFO *pFBInfo = &prgn->paFramebuffers[uScreenId];
 
-    if (!prgn->fDefaultFormat && prgn->pFramebuffer && w != 0 && h != 0)
+    uint32_t w = pFBInfo->dirtyRect.xRight - pFBInfo->dirtyRect.xLeft;
+    uint32_t h = pFBInfo->dirtyRect.yBottom - pFBInfo->dirtyRect.yTop;
+
+    if (!pFBInfo->fDefaultFormat && pFBInfo->pFramebuffer && w != 0 && h != 0)
     {
-        prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, prgn->xLeft, prgn->yTop, w, h);
-        prgn->pDisplay->handleDisplayUpdate (prgn->xLeft, prgn->yTop, w, h);
+        //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
+        prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, pFBInfo->dirtyRect.xLeft, pFBInfo->dirtyRect.yTop, w, h);
+        prgn->pDisplay->handleDisplayUpdate (pFBInfo->dirtyRect.xLeft, pFBInfo->dirtyRect.yTop, w, h);
     }
 }
 
 static void vbvaSetMemoryFlags (VBVAMEMORY *pVbvaMemory,
                                 bool fVideoAccelEnabled,
                                 bool fVideoAccelVRDP,
-                                uint32_t fu32SupportedOrders)
+                                uint32_t fu32SupportedOrders,
+                                DISPLAYFBINFO *paFBInfos,
+                                unsigned cFBInfos)
 {
     if (pVbvaMemory)
     {
@@ -558,6 +637,15 @@ static void vbvaSetMemoryFlags (VBVAMEMORY *pVbvaMemory,
         }
 
         pVbvaMemory->fu32ModeFlags = fu32Flags;
+    }
+
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < cFBInfos; uScreenId++)
+    {
+        if (paFBInfos[uScreenId].pHostEvents)
+        {
+            paFBInfos[uScreenId].pHostEvents->fu32Events |= VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
+        }
     }
 }
 
@@ -635,7 +723,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     mfVideoAccelEnabled = false;
 
     /* Update entire display. */
-    if (mu32ResizeStatus == ResizeStatus_Void)
+    if (maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].u32ResizeStatus == ResizeStatus_Void)
     {
         mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
     }
@@ -658,7 +746,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
         mfVideoAccelEnabled = true;
 
         /* Initialize the hardware memory. */
-        vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders);
+        vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
         mpVbvaMemory->off32Data = 0;
         mpVbvaMemory->off32Free = 0;
 
@@ -705,7 +793,7 @@ void Display::VideoAccelVRDP (bool fEnable)
         mfVideoAccelVRDP = false;
         mfu32SupportedOrders = 0;
         
-        vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders);
+        vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
         
         LogRel(("VBVA: VRDP acceleration has been disabled.\n"));
     }
@@ -720,7 +808,7 @@ void Display::VideoAccelVRDP (bool fEnable)
         /* Supporting all orders. */
         mfu32SupportedOrders = ~0;
         
-        vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders);
+        vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
     
         LogRel(("VBVA: VRDP acceleration has been requested.\n"));
     }
@@ -748,7 +836,7 @@ void Display::VideoAccelVRDP (bool fEnable, uint32_t fu32SupportedOrders)
         mfu32SupportedOrders = 0;
     }
 
-    vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders);
+    vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
 
     LogRel(("VBVA: VRDP acceleration has been %s.\n", fEnable? "requested": "disabled"));
 }
@@ -1053,17 +1141,18 @@ void Display::VideoAccelFlush (void)
     }
 
     /* Process the ring buffer */
-
-    bool fFramebufferIsNull = mFramebuffer.isNull();
-
-    if (!fFramebufferIsNull)
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
     {
-        mFramebuffer->Lock();
+        if (!maFramebuffers[uScreenId].pFramebuffer.isNull())
+        {
+            maFramebuffers[uScreenId].pFramebuffer->Lock ();
+        }
     }
 
     /* Initialize dirty rectangles accumulator. */
     VBVADIRTYREGION rgn;
-    vbvaRgnInit (&rgn, mFramebuffer, this, mpDrv->pUpPort);
+    vbvaRgnInit (&rgn, maFramebuffers, mcMonitors, this, mpDrv->pUpPort);
 
     for (;;)
     {
@@ -1088,14 +1177,30 @@ void Display::VideoAccelFlush (void)
             break;
         }
 
-        if (cbCmd != 0 && !fFramebufferIsNull)
+        if (cbCmd != 0)
         {
 #ifdef DEBUG_sunlover
             LogFlowFunc (("hdr: cbCmd = %d, x=%d, y=%d, w=%d, h=%d\n",
                           cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
 #endif /* DEBUG_sunlover */
 
-            if (mu32ResizeStatus == ResizeStatus_Void)
+            VBVACMDHDR hdrSaved = *phdr;
+
+            int x = phdr->x;
+            int y = phdr->y;
+            int w = phdr->w;
+            int h = phdr->h;
+
+            uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
+
+            phdr->x = (int16_t)x;
+            phdr->y = (int16_t)y;
+            phdr->w = (uint16_t)w;
+            phdr->h = (uint16_t)h;
+            
+            DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
+            if (pFBInfo->u32ResizeStatus == ResizeStatus_Void)
             {
                 /* Handle the command.
                  *
@@ -1110,25 +1215,30 @@ void Display::VideoAccelFlush (void)
                  */
 
                 /* Accumulate the update. */
-                vbvaRgnDirtyRect (&rgn, phdr);
+                vbvaRgnDirtyRect (&rgn, uScreenId, phdr);
 
                 /* Forward the command to VRDP server. */
-                mParent->consoleVRDPServer()->SendUpdate (phdr, cbCmd);
+                mParent->consoleVRDPServer()->SendUpdate (uScreenId, phdr, cbCmd);
+                
+                *phdr = hdrSaved;
             }
         }
 
         vbvaReleaseCmd (phdr, cbCmd);
     }
 
-    if (!fFramebufferIsNull)
+    for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
     {
-        mFramebuffer->Unlock ();
-    }
+        if (!maFramebuffers[uScreenId].pFramebuffer.isNull())
+        {
+            maFramebuffers[uScreenId].pFramebuffer->Unlock ();
+        }
 
-    if (mu32ResizeStatus == ResizeStatus_Void)
-    {
-        /* Draw the framebuffer. */
-        vbvaRgnUpdateFramebuffer (&rgn);
+        if (maFramebuffers[uScreenId].u32ResizeStatus == ResizeStatus_Void)
+        {
+            /* Draw the framebuffer. */
+            vbvaRgnUpdateFramebuffer (&rgn, uScreenId);
+        }
     }
 }
 
@@ -1234,7 +1344,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
         int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
                                (PFNRT) changeFramebuffer, 3,
                                this, static_cast <IFramebuffer *> (frameBuf),
-                               true /* aInternal */);
+                               true /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
         if (VBOX_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
@@ -1246,7 +1356,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
     else
     {
         /* No VM is created (VM is powered off), do a direct call */
-        int vrc = changeFramebuffer (this, frameBuf, true /* aInternal */);
+        int vrc = changeFramebuffer (this, frameBuf, true /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
         ComAssertRCRet (vrc, E_FAIL);
     }
 
@@ -1262,11 +1372,11 @@ STDMETHODIMP Display::LockFramebuffer (BYTE **address)
     CHECK_READY();
 
     /* only allowed for internal framebuffers */
-    if (mInternalFramebuffer && !mFramebufferOpened && !mFramebuffer.isNull())
+    if (mInternalFramebuffer && !mFramebufferOpened && !maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer.isNull())
     {
         CHECK_CONSOLE_DRV (mpDrv);
 
-        mFramebuffer->Lock();
+        maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer->Lock();
         mFramebufferOpened = true;
         *address = mpDrv->Connector.pu8Data;
         return S_OK;
@@ -1285,7 +1395,7 @@ STDMETHODIMP Display::UnlockFramebuffer()
     {
         CHECK_CONSOLE_DRV (mpDrv);
 
-        mFramebuffer->Unlock();
+        maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer->Unlock();
         mFramebufferOpened = false;
         return S_OK;
     }
@@ -1314,7 +1424,7 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
                                (PFNRT) changeFramebuffer, 3,
-                               this, frameBuf, false /* aInternal */);
+                               this, frameBuf, false /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
         if (VBOX_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
@@ -1326,9 +1436,72 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     else
     {
         /* No VM is created (VM is powered off), do a direct call */
-        int vrc = changeFramebuffer (this, frameBuf, false /* aInternal */);
+        int vrc = changeFramebuffer (this, frameBuf, false /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
         ComAssertRCRet (vrc, E_FAIL);
     }
+
+    return S_OK;
+}
+
+STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer * aFramebuffer)
+{
+    LogFlowFunc (("\n"));
+
+    if (!aFramebuffer)
+        return E_POINTER;
+
+    AutoLock lock (this);
+    CHECK_READY();
+
+    Console::SafeVMPtrQuiet pVM (mParent);
+    if (pVM.isOk())
+    {
+        /* Must leave the lock here because the changeFramebuffer will also obtain it. */
+        lock.leave ();
+
+        /* send request to the EMT thread */
+        PVMREQ pReq = NULL;
+        int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
+                               (PFNRT) changeFramebuffer, 3,
+                               this, aFramebuffer, false /* aInternal */, aScreenId);
+        if (VBOX_SUCCESS (vrc))
+            vrc = pReq->iStatus;
+        VMR3ReqFree (pReq);
+
+        lock.enter ();
+
+        ComAssertRCRet (vrc, E_FAIL);
+    }
+    else
+    {
+        /* No VM is created (VM is powered off), do a direct call */
+        int vrc = changeFramebuffer (this, aFramebuffer, false /* aInternal */, aScreenId);
+        ComAssertRCRet (vrc, E_FAIL);
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP Display::QueryFramebuffer (ULONG aScreenId, IFramebuffer * * aFramebuffer, LONG * aXOrigin, LONG * aYOrigin)
+{
+    LogFlowFunc (("aScreenId = %d\n", aScreenId));
+
+    if (!aFramebuffer)
+        return E_POINTER;
+
+    AutoLock lock (this);
+    CHECK_READY();
+
+    /* @todo this should be actually done on EMT. */
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+
+    *aFramebuffer = pFBInfo->pFramebuffer;
+    if (*aFramebuffer)
+        (*aFramebuffer)->AddRef ();
+    if (aXOrigin)
+        *aXOrigin = pFBInfo->xOrigin;
+    if (aYOrigin)
+        *aYOrigin = pFBInfo->yOrigin;
 
     return S_OK;
 }
@@ -1554,7 +1727,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
  *
  * @returns COM status code
  */
-STDMETHODIMP Display::ResizeCompleted()
+STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 {
     LogFlowFunc (("\n"));
 
@@ -1575,7 +1748,7 @@ STDMETHODIMP Display::ResizeCompleted()
                 "for external framebuffers"));
 
     /* Set the flag indicating that the resize has completed and display data need to be updated. */
-    bool f = ASMAtomicCmpXchgU32 (&mu32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[aScreenId].u32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
     AssertRelease(f);NOREF(f);
 
     return S_OK;
@@ -1607,10 +1780,10 @@ STDMETHODIMP Display::UpdateCompleted()
             tr ("Resize completed notification is valid only "
                 "for external framebuffers"));
 
-    mFramebuffer->Lock();
+    maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer->Lock();
     /* signal our semaphore */
     RTSemEventMultiSignal(mUpdateSem);
-    mFramebuffer->Unlock();
+    maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer->Unlock();
 
     return S_OK;
 }
@@ -1646,23 +1819,26 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
         VM_ASSERT_EMT (pVM.raw());
 #endif
 
-    if (mFramebuffer)
+    /* The method is only relevant to the primary framebuffer. */
+    IFramebuffer *pFramebuffer = maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
+
+    if (pFramebuffer)
     {
         HRESULT rc;
         BYTE *address = 0;
-        rc = mFramebuffer->COMGETTER(Address) (&address);
+        rc = pFramebuffer->COMGETTER(Address) (&address);
         AssertComRC (rc);
         ULONG lineSize = 0;
-        rc = mFramebuffer->COMGETTER(LineSize) (&lineSize);
+        rc = pFramebuffer->COMGETTER(LineSize) (&lineSize);
         AssertComRC (rc);
         ULONG colorDepth = 0;
-        rc = mFramebuffer->COMGETTER(ColorDepth) (&colorDepth);
+        rc = pFramebuffer->COMGETTER(ColorDepth) (&colorDepth);
         AssertComRC (rc);
         ULONG width = 0;
-        rc = mFramebuffer->COMGETTER(Width) (&width);
+        rc = pFramebuffer->COMGETTER(Width) (&width);
         AssertComRC (rc);
         ULONG height = 0;
-        rc = mFramebuffer->COMGETTER(Height) (&height);
+        rc = pFramebuffer->COMGETTER(Height) (&height);
         AssertComRC (rc);
 
         /*
@@ -1678,7 +1854,7 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
              mLastWidth != (int) width ||
              mLastHeight != (int) height))
         {
-            handleDisplayResize (mLastColorDepth,
+            handleDisplayResize (VBOX_VIDEO_PRIMARY_SCREEN, mLastColorDepth,
                                  mLastAddress,
                                  mLastLineSize,
                                  mLastWidth,
@@ -1712,18 +1888,21 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
  */
 /* static */
 DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
-                                              bool aInternal)
+                                              bool aInternal, unsigned uScreenId)
 {
-    LogFlowFunc (("\n"));
+    LogFlowFunc (("uScreenId = %d\n", uScreenId));
 
     AssertReturn (that, VERR_INVALID_PARAMETER);
     AssertReturn (aFB || aInternal, VERR_INVALID_PARAMETER);
+    AssertReturn (uScreenId >= 0 && uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
 
     /// @todo (r=dmik) AutoCaller
 
     AutoLock alock (that);
 
-    that->mFramebuffer = aFB;
+    DISPLAYFBINFO *pDisplayFBInfo = &that->maFramebuffers[uScreenId];
+    pDisplayFBInfo->pFramebuffer = aFB;
+
     that->mInternalFramebuffer = aInternal;
     that->mSupportedAccelOps = 0;
 
@@ -1747,9 +1926,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
                 FramebufferAccelerationOperation_ScreenCopyAcceleration;
     }
 
-    that->mParent->consoleVRDPServer()->
-        SetFramebuffer (aFB, aFB ? VRDP_EXTERNAL_FRAMEBUFFER :
-                                   VRDP_INTERNAL_FRAMEBUFFER);
+    that->mParent->consoleVRDPServer()->SendResize ();
 
     that->updateDisplayData (true /* aCheckParams */);
 
@@ -1757,7 +1934,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
 }
 
 /**
- * Handle display resize event.
+ * Handle display resize event issued by the VGA device for the primary screen.
  *
  * @see PDMIDISPLAYCONNECTOR::pfnResize
  */
@@ -1769,7 +1946,7 @@ DECLCALLBACK(int) Display::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterfac
     LogFlowFunc (("bpp %d, pvVRAM %p, cbLine %d, cx %d, cy %d\n",
                   bpp, pvVRAM, cbLine, cx, cy));
 
-    return pDrv->pDisplay->handleDisplayResize(bpp, pvVRAM, cbLine, cx, cy);
+    return pDrv->pDisplay->handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy);
 }
 
 /**
@@ -1815,91 +1992,101 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 
     Display *pDisplay = pDrv->pDisplay;
 
-    /* Check the resize status. The status can be checked normally because
-     * the status affects only the EMT.
-     */
-    uint32_t u32ResizeStatus = pDisplay->mu32ResizeStatus;
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
+    {
+        DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
 
-    if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
-    {
-        LogFlowFunc (("ResizeStatus_UpdateDisplayData\n"));
-        /* The framebuffer was resized and display data need to be updated. */
-        pDisplay->handleResizeCompletedEMT ();
-        /* Continue with normal processing because the status here is ResizeStatus_Void. */
-        Assert (pDisplay->mu32ResizeStatus == ResizeStatus_Void);
-        /* Repaint the display because VM continued to run during the framebuffer resize. */
-        if (!pDisplay->mFramebuffer.isNull())
-            pDrv->pUpPort->pfnUpdateDisplayAll(pDrv->pUpPort);
-        /* Ignore the refresh to replay the logic. */
-        return;
-    }
-    else if (u32ResizeStatus == ResizeStatus_InProgress)
-    {
-        /* The framebuffer is being resized. Do not call the VGA device back. Immediately return. */
-        LogFlowFunc (("ResizeStatus_InProcess\n"));
-        return;
-    }
-
-    if (pDisplay->mFramebuffer.isNull())
-    {
-        /*
-         *  Do nothing in the "black hole" mode to avoid copying guest
-         *  video memory to the frame buffer
+        /* Check the resize status. The status can be checked normally because
+         * the status affects only the EMT.
          */
-    }
-    else
-    {
-        if (pDisplay->mfPendingVideoAccelEnable)
+        uint32_t u32ResizeStatus = pFBInfo->u32ResizeStatus;
+
+        if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
         {
-            /* Acceleration was enabled while machine was not yet running
-             * due to restoring from saved state. Update entire display and
-             * actually enable acceleration.
-             */
-            Assert(pDisplay->mpPendingVbvaMemory);
-
-            /* Acceleration can not be yet enabled.*/
-            Assert(pDisplay->mpVbvaMemory == NULL);
-            Assert(!pDisplay->mfVideoAccelEnabled);
-
-            if (pDisplay->mfMachineRunning)
+            LogFlowFunc (("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
+            /* The framebuffer was resized and display data need to be updated. */
+            pDisplay->handleResizeCompletedEMT ();
+            /* Continue with normal processing because the status here is ResizeStatus_Void. */
+            Assert (pFBInfo->u32ResizeStatus == ResizeStatus_Void);
+            if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
             {
-                pDisplay->VideoAccelEnable (pDisplay->mfPendingVideoAccelEnable,
-                                            pDisplay->mpPendingVbvaMemory);
-
-                /* Reset the pending state. */
-                pDisplay->mfPendingVideoAccelEnable = false;
-                pDisplay->mpPendingVbvaMemory = NULL;
+                /* Repaint the display because VM continued to run during the framebuffer resize. */
+                if (!pFBInfo->pFramebuffer.isNull())
+                    pDrv->pUpPort->pfnUpdateDisplayAll(pDrv->pUpPort);
             }
+            /* Ignore the refresh for the screen to replay the logic. */
+            continue;
+        }
+        else if (u32ResizeStatus == ResizeStatus_InProgress)
+        {
+            /* The framebuffer is being resized. Do not call the VGA device back. Immediately return. */
+            LogFlowFunc (("ResizeStatus_InProcess\n"));
+            continue;
+        }
+
+        if (pFBInfo->pFramebuffer.isNull())
+        {
+            /*
+             *  Do nothing in the "black hole" mode to avoid copying guest
+             *  video memory to the frame buffer
+             */
         }
         else
         {
-            Assert(pDisplay->mpPendingVbvaMemory == NULL);
-
-            if (pDisplay->mfVideoAccelEnabled)
+            if (pDisplay->mfPendingVideoAccelEnable)
             {
-                Assert(pDisplay->mpVbvaMemory);
-                pDisplay->VideoAccelFlush ();
+                /* Acceleration was enabled while machine was not yet running
+                 * due to restoring from saved state. Update entire display and
+                 * actually enable acceleration.
+                 */
+                Assert(pDisplay->mpPendingVbvaMemory);
+
+                /* Acceleration can not be yet enabled.*/
+                Assert(pDisplay->mpVbvaMemory == NULL);
+                Assert(!pDisplay->mfVideoAccelEnabled);
+
+                if (pDisplay->mfMachineRunning)
+                {
+                    pDisplay->VideoAccelEnable (pDisplay->mfPendingVideoAccelEnable,
+                                                pDisplay->mpPendingVbvaMemory);
+
+                    /* Reset the pending state. */
+                    pDisplay->mfPendingVideoAccelEnable = false;
+                    pDisplay->mpPendingVbvaMemory = NULL;
+                }
             }
             else
             {
-                Assert(pDrv->Connector.pu8Data);
-                pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
+                Assert(pDisplay->mpPendingVbvaMemory == NULL);
+
+                if (pDisplay->mfVideoAccelEnabled)
+                {
+                    Assert(pDisplay->mpVbvaMemory);
+                    pDisplay->VideoAccelFlush ();
+                }
+                else
+                {
+                    Assert(pDrv->Connector.pu8Data);
+                    pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
+                }
             }
-        }
 #ifdef VRDP_MC
-        /* Inform to VRDP server that the current display update sequence is
-         * completed. At this moment the framebuffer memory contains a definite
-         * image, that is synchronized with the orders already sent to VRDP client.
-         * The server can now process redraw requests from clients or initial
-         * fullscreen updates for new clients.
-         */
-        Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
-        pDisplay->mParent->consoleVRDPServer()->SendUpdate (NULL, 0);
+            /* Inform to VRDP server that the current display update sequence is
+             * completed. At this moment the framebuffer memory contains a definite
+             * image, that is synchronized with the orders already sent to VRDP client.
+             * The server can now process redraw requests from clients or initial
+             * fullscreen updates for new clients.
+             */
+            Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
+            pDisplay->mParent->consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
 #endif /* VRDP_MC */
+        }
     }
 
 #ifdef DEBUG_sunlover
     STAM_PROFILE_STOP(&StatDisplayRefresh, a);
+    LogFlowFunc (("leave\n"));
 #endif /* DEBUG_sunlover */
 }
 
@@ -1933,6 +2120,199 @@ DECLCALLBACK(void) Display::displayLFBModeChangeCallback(PPDMIDISPLAYCONNECTOR p
 
     /* Disable VBVA mode in any case. The guest driver reenables VBVA mode if necessary. */
     pDrv->pDisplay->VideoAccelEnable (false, NULL);
+}
+
+/**
+ * Adapter information change notification.
+ *
+ * @see PDMIDISPLAYCONNECTOR::pfnProcessAdapterData
+ */
+DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize)
+{
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+
+    if (pvVRAM == NULL)
+    {
+        unsigned i;
+        for (i = 0; i < pDrv->pDisplay->mcMonitors; i++)
+        {
+            DISPLAYFBINFO *pFBInfo = &pDrv->pDisplay->maFramebuffers[i];
+
+            pFBInfo->u32Offset = 0;
+            pFBInfo->u32MaxFramebufferSize = 0;
+            pFBInfo->u32InformationSize = 0;
+        }
+    }
+    else
+    {
+         uint8_t *pu8 = (uint8_t *)pvVRAM;
+         pu8 += u32VRAMSize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
+         
+         // @todo
+         uint8_t *pu8End = pu8 + VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
+
+         VBOXVIDEOINFOHDR *pHdr;
+    
+         for (;;)
+         {
+             pHdr = (VBOXVIDEOINFOHDR *)pu8;
+             pu8 += sizeof (VBOXVIDEOINFOHDR);
+             
+             if (pu8 >= pu8End)
+             {
+                 LogRel(("VBoxVideo: Guest adapter information overflow!!!\n"));
+                 break;
+             }
+
+             if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_DISPLAY)
+             {
+                 if (pHdr->u16Length != sizeof (VBOXVIDEOINFODISPLAY))
+                 {
+                     LogRel(("VBoxVideo: Guest adapter information %s invalid length %d!!!\n", "DISPLAY", pHdr->u16Length));
+                     break;
+                 }
+
+                 VBOXVIDEOINFODISPLAY *pDisplay = (VBOXVIDEOINFODISPLAY *)pu8;
+
+                 if (pDisplay->u32Index >= pDrv->pDisplay->mcMonitors)
+                 {
+                     LogRel(("VBoxVideo: Guest adapter information invalid display index %d!!!\n", pDisplay->u32Index));
+                     break;
+                 }
+
+                 DISPLAYFBINFO *pFBInfo = &pDrv->pDisplay->maFramebuffers[pDisplay->u32Index];
+
+                 pFBInfo->u32Offset = pDisplay->u32Offset;
+                 pFBInfo->u32MaxFramebufferSize = pDisplay->u32FramebufferSize;
+                 pFBInfo->u32InformationSize = pDisplay->u32InformationSize;
+
+                 LogFlow(("VBOX_VIDEO_INFO_TYPE_DISPLAY: %d: at 0x%08X, size 0x%08X, info 0x%08X\n", pDisplay->u32Index, pDisplay->u32Offset, pDisplay->u32FramebufferSize, pDisplay->u32InformationSize));
+             }
+             else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_END)
+             {
+                 if (pHdr->u16Length != 0)
+                 {
+                     LogRel(("VBoxVideo: Guest adapter information %s invalid length %d!!!\n", "END", pHdr->u16Length));
+                     break;
+                 }
+
+                 break;
+             }
+             else
+             {
+                 LogRel(("Guest adapter information contains unsupported type %d\n", pHdr->u8Type));
+             }
+
+             pu8 += pHdr->u16Length;
+         }
+    }
+}
+
+/**
+ * Display information change notification.
+ *
+ * @see PDMIDISPLAYCONNECTOR::pfnProcessDisplayData
+ */
+DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId)
+{
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+
+    if (uScreenId >= pDrv->pDisplay->mcMonitors)
+    {
+        LogRel(("VBoxVideo: Guest display information invalid display index %d!!!\n", uScreenId));
+        return;
+    }
+
+    /* Get the display information strcuture. */
+    DISPLAYFBINFO *pFBInfo = &pDrv->pDisplay->maFramebuffers[uScreenId];
+
+    uint8_t *pu8 = (uint8_t *)pvVRAM;
+    pu8 += pFBInfo->u32Offset + pFBInfo->u32MaxFramebufferSize;
+         
+    // @todo
+    uint8_t *pu8End = pu8 + pFBInfo->u32InformationSize;
+
+    VBOXVIDEOINFOHDR *pHdr;
+    
+    for (;;)
+    {
+        pHdr = (VBOXVIDEOINFOHDR *)pu8;
+        pu8 += sizeof (VBOXVIDEOINFOHDR);
+             
+        if (pu8 >= pu8End)
+        {
+            LogRel(("VBoxVideo: Guest display information overflow!!!\n"));
+            break;
+        }
+
+        if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_SCREEN)
+        {
+            if (pHdr->u16Length != sizeof (VBOXVIDEOINFOSCREEN))
+            {
+                LogRel(("VBoxVideo: Guest display information %s invalid length %d!!!\n", "SCREEN", pHdr->u16Length));
+                break;
+            }
+
+            VBOXVIDEOINFOSCREEN *pScreen = (VBOXVIDEOINFOSCREEN *)pu8;
+
+            pFBInfo->xOrigin = pScreen->xOrigin;
+            pFBInfo->yOrigin = pScreen->yOrigin;
+
+            pFBInfo->w = pScreen->u16Width;
+            pFBInfo->h = pScreen->u16Height;
+
+            LogFlow(("VBOX_VIDEO_INFO_TYPE_SCREEN: (%p) %d: at %d,%d, linesize 0x%X, size %dx%d, bpp %d, flags 0x%02X\n",
+                     pHdr, uScreenId, pScreen->xOrigin, pScreen->yOrigin, pScreen->u32LineSize, pScreen->u16Width, pScreen->u16Height, pScreen->bitsPerPixel, pScreen->u8Flags));
+
+            if (uScreenId != VBOX_VIDEO_PRIMARY_SCREEN)
+            {
+                /* Primary screen resize is initiated by the VGA device. */
+                pDrv->pDisplay->handleDisplayResize(uScreenId, pScreen->bitsPerPixel, (uint8_t *)pvVRAM + pFBInfo->u32Offset, pScreen->u32LineSize, pScreen->u16Width, pScreen->u16Height);
+            }
+        }
+        else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_END)
+        {
+            if (pHdr->u16Length != 0)
+            {
+                LogRel(("VBoxVideo: Guest adapter information %s invalid length %d!!!\n", "END", pHdr->u16Length));
+                break;
+            }
+
+            break;
+        }
+        else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_HOST_EVENTS)
+        {
+            if (pHdr->u16Length != sizeof (VBOXVIDEOINFOHOSTEVENTS))
+            {
+                LogRel(("VBoxVideo: Guest display information %s invalid length %d!!!\n", "HOST_EVENTS", pHdr->u16Length));
+                break;
+            }
+
+            VBOXVIDEOINFOHOSTEVENTS *pHostEvents = (VBOXVIDEOINFOHOSTEVENTS *)pu8;
+
+            pFBInfo->pHostEvents = pHostEvents;
+
+            LogFlow(("VBOX_VIDEO_INFO_TYPE_HOSTEVENTS: (%p)\n",
+                     pHostEvents));
+        }
+        else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_LINK)
+        {
+            if (pHdr->u16Length != sizeof (VBOXVIDEOINFOLINK))
+            {
+                LogRel(("VBoxVideo: Guest adapter information %s invalid length %d!!!\n", "LINK", pHdr->u16Length));
+                break;
+            }
+
+            VBOXVIDEOINFOLINK *pLink = (VBOXVIDEOINFOLINK *)pu8;
+            pu8 += pLink->i32Offset;
+        }
+        else
+        {
+            LogRel(("Guest display information contains unsupported type %d\n", pHdr->u8Type));
+        }
+
+        pu8 += pHdr->u16Length;
+    }
 }
 
 /**
@@ -2021,6 +2401,8 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
     pData->Connector.pfnRefresh         = Display::displayRefreshCallback;
     pData->Connector.pfnReset           = Display::displayResetCallback;
     pData->Connector.pfnLFBModeChange   = Display::displayLFBModeChangeCallback;
+    pData->Connector.pfnProcessAdapterData = Display::displayProcessAdapterDataCallback;
+    pData->Connector.pfnProcessDisplayData = Display::displayProcessDisplayDataCallback;
 
     /*
      * Get the IDisplayPort interface of the above driver/device.

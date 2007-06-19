@@ -937,7 +937,7 @@ bool VBoxConsoleView::event (QEvent *e)
                     normalizeGeometry (true /* adjustPosition */);
 
                 /* report to the VM thread that we finished resizing */
-                cconsole.GetDisplay().ResizeCompleted();
+                cconsole.GetDisplay().ResizeCompleted(0);
 
                 ignore_mainwnd_resize = old_ignore_mainwnd_resize;
 

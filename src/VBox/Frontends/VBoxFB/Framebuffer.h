@@ -43,7 +43,7 @@ public:
     NS_IMETHOD GetPixelFormat(FramebufferPixelFormat_T *pixelFormat);
     NS_IMETHOD NotifyUpdate(uint32_t x, uint32_t y,
                            uint32_t w, uint32_t h, PRBool *finished);
-    NS_IMETHOD RequestResize(FramebufferPixelFormat_T pixelFormat, uint32_t vram, uint32_t lineSize, uint32_t w, uint32_t h,
+    NS_IMETHOD RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, uint32_t vram, uint32_t lineSize, uint32_t w, uint32_t h,
                              PRBool *finished);
 private:
     int createSurface(uint32_t w, uint32_t h);

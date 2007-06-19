@@ -22,16 +22,26 @@
 
 #include "driver.h"
 
-void vboxReportDirtyRect (PPDEV ppdev, RECTL *pRect)
+void vboxReportDirtyRect (PPDEV ppdev, RECTL *pRectOrig)
 {
     if (ppdev)
     {
         VBVACMDHDR hdr;
+        
+        RECTL rect = *pRectOrig;
 
-        hdr.x = (int16_t)pRect->left;
-        hdr.y = (int16_t)pRect->top;
-        hdr.w = (uint16_t)(pRect->right - pRect->left);
-        hdr.h = (uint16_t)(pRect->bottom - pRect->top);
+        if (rect.left < 0) rect.left = 0;
+        if (rect.top < 0) rect.top = 0;
+        if (rect.right > (int)ppdev->cxScreen) rect.right = ppdev->cxScreen;
+        if (rect.bottom > (int)ppdev->cyScreen) rect.bottom = ppdev->cyScreen;
+
+        hdr.x = (int16_t)rect.left;
+        hdr.y = (int16_t)rect.top;
+        hdr.w = (uint16_t)(rect.right - rect.left);
+        hdr.h = (uint16_t)(rect.bottom - rect.top);
+
+        hdr.x += (int16_t)ppdev->ptlDevOrg.x;
+        hdr.y += (int16_t)ppdev->ptlDevOrg.y;
 
         vboxWrite (ppdev, &hdr, sizeof(hdr));
     }

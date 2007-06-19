@@ -215,7 +215,7 @@ public:
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
 
-    STDMETHOD(RequestResize) (FramebufferPixelFormat_T aPixelFormat,
+    STDMETHOD(RequestResize) (ULONG aScreenId, FramebufferPixelFormat_T aPixelFormat,
                               BYTE *aVRAM, ULONG aLineSize,
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished);

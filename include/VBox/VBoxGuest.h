@@ -559,7 +559,7 @@ typedef struct _VBVACMDHDR
 #define VBVA_VRDP_SOLIDBLT       (2)
 #define VBVA_VRDP_DSTBLT         (3)
 #define VBVA_VRDP_SCREENBLT      (4)
-#define VBVA_VRDP_PATBLT_BRUSH   (5)
+#define VBVA_VRDP_PATBLTBRUSH    (5)
 #define VBVA_VRDP_MEMBLT         (6)
 #define VBVA_VRDP_CACHED_BITMAP  (7)
 #define VBVA_VRDP_DELETED_BITMAP (8)

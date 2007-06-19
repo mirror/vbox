@@ -851,6 +851,30 @@ typedef struct PDMIDISPLAYCONNECTOR
      */
     DECLCALLBACKMEMBER(void, pfnLFBModeChange)(PPDMIDISPLAYCONNECTOR pInterface, bool fEnabled);
 
+    /**
+     * Process the guest graphics adapter information.
+     *
+     * Direct notification from guest to the display connector.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   pvVRAM              Address of the guest VRAM.
+     * @param   u32VRAMSize         Size of the guest VRAM.
+     * @thread  The emulation thread.
+     */
+    DECLCALLBACKMEMBER(void, pfnProcessAdapterData)(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize);
+
+    /**
+     * Process the guest display information.
+     *
+     * Direct notification from guest to the display connector.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   pvVRAM              Address of the guest VRAM.
+     * @param   uScreenId           The index of the guest display to be processed.
+     * @thread  The emulation thread.
+     */
+    DECLCALLBACKMEMBER(void, pfnProcessDisplayData)(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId);
+
 
     /** Read-only attributes.
      * For preformance reasons some readonly attributes are kept in the interface.
