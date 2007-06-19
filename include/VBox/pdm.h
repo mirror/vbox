@@ -5450,7 +5450,7 @@ typedef HCPTRTYPE(struct PDMDEVHLP *) PPDMDEVHLP;
 typedef HCPTRTYPE(const struct PDMDEVHLP *) PCPDMDEVHLP;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2030000
+#define PDM_DEVHLP_VERSION  0xf2040000
 
 
 /**
