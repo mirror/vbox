@@ -2882,10 +2882,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     /*
      * Create the FDC timer.
      */
-    rc = pDevIns->pDevHlp->pfnTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL,
-                                            fdc_timer,
-                                            "FDC Timer",
-                                            &fdctrl->result_timer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdc_timer, "FDC Timer", &fdctrl->result_timer);
     if (VBOX_FAILURE (rc)) {
         return rc;
     }
