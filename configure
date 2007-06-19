@@ -230,6 +230,8 @@ check_environment()
       ;;
     darwin)
       ;;
+    freebsd)
+      ;;
     *)
       log_failure "Cannot determine OS"
       exit 1
