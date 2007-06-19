@@ -152,7 +152,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 #else
     pDrvObj->MajorFunction[IRP_MJ_PNP]                = VBoxGuestPnP;
     pDrvObj->MajorFunction[IRP_MJ_POWER]              = VBoxGuestPower;
-//    pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]     = VBoxGuestSystemControl;
+    pDrvObj->MajorFunction[IRP_MJ_SYSTEM_CONTROL]     = VBoxGuestNotSupportedStub;
     pDrvObj->DriverExtension->AddDevice               = (PDRIVER_ADD_DEVICE)VBoxGuestAddDevice;
 #endif
 
