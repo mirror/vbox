@@ -1,5 +1,4 @@
 /** @file
- *
  * innotek Portable Runtime - Parameter Definitions.
  */
 
@@ -29,6 +28,11 @@
  * @ingroup grp_rt_cdefs
  * @{
  */
+
+/* Undefine PAGE_SIZE to avoid unnecessary noice when clashing with 
+   system headers. Include system headers before / after iprt depending 
+   on which you wish to take precedence. */
+#undef PAGE_SIZE
 
 /**
  * i386 Page size.
