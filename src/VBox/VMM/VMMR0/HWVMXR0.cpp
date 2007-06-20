@@ -1719,8 +1719,7 @@ ResumeExecution:
 
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIORead);
                 rc = IOMIOPortRead(pVM, uPort, &u32Val, cbSize);
-                if (    rc == VINF_SUCCESS
-                    ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+                if (IOM_SUCCESS(rc))
                 {
                     /* Write back to the EAX register. */
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
