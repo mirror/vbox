@@ -1741,6 +1741,10 @@ ResumeExecution:
             }
             break;
         }
+        /* Force instruction emulation and not a reschedule to the recompiler as that will come right back to us */
+        if (rc == VINF_EM_RESCHEDULE_REM)
+            rc = VINF_IOM_HC_IOPORT_READWRITE;
+
 #ifdef VBOX_STRICT
         if (rc == VINF_IOM_HC_IOPORT_READ)
             Assert(!fIOWrite);
