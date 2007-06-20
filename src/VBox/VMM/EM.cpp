@@ -728,7 +728,7 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
 
     if (pCtx->eflags.Bits.u1VM)
         Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF));
-    else 
+    else
         Log(("EMR%d: %08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->cr0));
 #endif
     STAM_PROFILE_ADV_START(&pVM->em.s.StatREMTotal, a);
@@ -1118,7 +1118,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
         DBGFR3DisasInstrCurrentLog(pVM, pszPrefix);
     }
 #endif /* LOG_ENABLED */
-    
+
     /*
      * PATM is making life more interesting.
      * We cannot hand anything to REM which has an EIP inside patch code. So, we'll
@@ -1273,7 +1273,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "IO EMU");
     if (VBOX_SUCCESS(rc))
     {
-        rc = VINF_EM_RESCHEDULE_REM;
+        rc = VINF_EM_RAW_EMULATE_INSTR;
 
         if (!(Cpu.prefix & (PREFIX_REP | PREFIX_REPNE)))
         {
@@ -1316,9 +1316,9 @@ int emR3RawExecuteIOInstruction(PVM pVM)
             }
         }
 
-        /* 
+        /*
          * Handled the I/O return codes.
-         * (The unhandled cases end up with rc == VINF_EM_RESCHEDULE_REM.)
+         * (The unhandled cases end up with rc == VINF_EM_RAW_EMULATE_INSTR.)
          */
         if (IOM_SUCCESS(rc))
         {
@@ -1340,7 +1340,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
             return rc;
         }
-        AssertMsg(rc == VINF_EM_RESCHEDULE_REM, ("rc=%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RESCHEDULE_REM, ("rc=%Vrc\n", rc));
     }
     STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
     return emR3RawExecuteInstruction(pVM, "IO: ");
@@ -1482,7 +1482,7 @@ int emR3RawRingSwitch(PVM pVM)
         {
             if (pCtx->SysEnter.cs != 0)
             {
-                rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+                rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip),
                                         SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
                 if (VBOX_SUCCESS(rc))
                 {
@@ -1569,13 +1569,13 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
     {
 #ifdef LOG_ENABLED
         DBGFR3InfoLog(pVM, "cpumguest", "Trap in patch code");
-        DBGFR3DisasInstrCurrentLog(pVM, "Patch code"); 
+        DBGFR3DisasInstrCurrentLog(pVM, "Patch code");
 
         DISCPUSTATE Cpu;
         int         rc;
 
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "Patch code: ");
-        if (    VBOX_SUCCESS(rc) 
+        if (    VBOX_SUCCESS(rc)
             &&  Cpu.pCurInstr->opcode == OP_IRET)
         {
             uint32_t eip, selCS, uEFlags;
@@ -1733,7 +1733,7 @@ int emR3RawPrivileged(PVM pVM)
             && !pCtx->eflags.Bits.u1VM
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
-            int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+            int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip),
                                         SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0);
             if (VBOX_SUCCESS(rc))
             {
@@ -2083,7 +2083,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Memory mapped I/O access - attempt to patch the instruction
          */
         case VINF_PATM_HC_MMIO_PATCH_READ:
-            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip), 
+            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid, pCtx->eip),
                                     PATMFL_MMIO_ACCESS | (SELMIsSelector32Bit(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) ? PATMFL_CODE32 : 0));
             if (VBOX_FAILURE(rc))
                 rc = emR3RawExecuteInstruction(pVM, "MMIO");
@@ -2781,7 +2781,7 @@ inline EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
     }
 
     unsigned uSS = pCtx->ss;
-    if (    pCtx->eflags.Bits.u1VM 
+    if (    pCtx->eflags.Bits.u1VM
         ||  (uSS & X86_SEL_RPL) == 3)
     {
         if (!EMIsRawRing3Enabled(pVM))
