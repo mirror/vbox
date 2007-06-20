@@ -54,13 +54,13 @@ ifeq ($(BUILD_TARGET),win)
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox.idl
  OTHER_CLEAN     = \
 	$(PATH_BIN)/comregister.cmd \
- 	$(VBOX_PATH_SDK)/include/VirtualBox.h \
- 	$(IDLFILE) \
- 	$(VBOX_PATH_SDK)/lib/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.h \
- 	$(PATH_VBoxCOM)/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.tlb
+    $(VBOX_PATH_SDK)/include/VirtualBox.h \
+    $(IDLFILE) \
+    $(VBOX_PATH_SDK)/lib/VirtualBox.tlb \
+    $(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
+    $(PATH_VBoxCOM)/VirtualBox.h \
+    $(PATH_VBoxCOM)/VirtualBox_i.c \
+    $(PATH_VBoxCOM)/VirtualBox.tlb
 else
  INSTALLS        = xpcom-components
  IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox_XPCOM.idl
@@ -72,9 +72,9 @@ else
  IDLHEADER       = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
  OTHERS          = $(IDLTYPELIB)
  OTHER_CLEAN     = \
- 	$(IDLFILE) \
- 	$(IDLHEADER) \
- 	$(IDLTYPELIB)
+    $(IDLFILE) \
+    $(IDLHEADER) \
+    $(IDLTYPELIB)
 
 endif
 
@@ -104,6 +104,7 @@ $(call DIRDEP, $(PATH_OUT)/docs/Main):
 #
 # VBoxSVC executable
 #
+
 VBoxSVC_TEMPLATE = VBOXMAINEXE
 VBoxSVC_DEFS = CFGLDR_HAVE_COM IN_CFGLDR_R3
 ifdef VBOX_WITH_VRDP
@@ -127,6 +128,7 @@ endif
 ifdef VBOX_WITHOUT_LINUX_COMPILER_H
 VBoxSVC_DEFS += VBOX_WITHOUT_LINUX_COMPILER_H
 endif
+
 VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
 VBoxSVC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
@@ -135,23 +137,19 @@ VBoxSVC_INCS = \
 	$(PATH_VBoxSVC) \
 	$(PATH_VBoxCOM) \
 	$(PATH_CURRENT)
-ifdef VBOX_WITH_XPCOM
+ifeq ($(BUILD_TARGET),win)
+ VBoxSVC_LIBS += \
+	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB)
+else
  VBoxSVC_LIBS += \
 	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
-	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL) \
-	$(TARGET_VBoxXPCOM)
- VBoxSVC_LIBS += \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
- VBoxSVC_LIBS.darwin = \
+	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL)
+endif
+VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
-else
- VBoxSVC_LIBS = \
-	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxXML$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
-endif
+
 ifdef VBOX_WITH_LIBHAL
 VBoxSVC_CXXFLAGS += \
 	$(LIB_HAL_CFLAGS)
@@ -225,9 +223,10 @@ endif
 #
 # VBoxSVC wrapper module
 #
+
 ifdef VBOX_WITH_XPCOM
 
-VBoxSVCM_TEMPLATE       = VBOXMAIN
+VBoxSVCM_TEMPLATE       = VBOXMAINDLL
 ifneq ($(BUILD_TARGET),linux)
 VBoxSVCM_INST           = $(INST_BIN)components/
 endif
@@ -235,12 +234,9 @@ VBoxSVCM_DEFS           = IN_RING3 IN_CFGLDR_R3
 VBoxSVCM_INCS           = \
 	include \
 	$(PATH_VBoxC) \
-	$(PATH_VBoxCOM) \
 	$(PATH_CURRENT)
 VBoxSVCM_SOURCES        = \
 	linux/server_module.cpp
-VBoxSVCM_LIBS           = \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 VBoxSVCM_LDFLAGS.darwin = \
 	-install_name @executable_path/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxSVCM.def
@@ -257,12 +253,15 @@ endif # VBOX_WITH_XPCOM
 #
 # VBoxC module
 #
-VBoxC_TEMPLATE = VBOXMAIN
+
+VBoxC_TEMPLATE = VBOXMAINDLL
 ifneq ($(filter-out linux win,$(BUILD_TARGET)),)
 VBoxC_INST = $(INST_BIN)components/
 endif
+
 VBoxC_DEFS = IN_RING3 IN_CFGLDR_R3
 VBoxC_DEFS += VBOX_COM_INPROC
+
 ifdef VBOX_WITH_VRDP
 VBoxC_DEFS += VBOX_VRDP IN_VRDP_R3
 endif
@@ -281,34 +280,28 @@ endif
 ifdef VBOX_WITH_WINMM
 VBoxC_DEFS += VBOX_WITH_WINMM
 endif
+
 VBoxC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
+
 VBoxC_INCS          = \
 	include \
 	$(PATH_VBoxC) \
 	$(PATH_VBoxCOM)
 VBoxC_INCS.win     := \
 	$(PATH_SUB_CURRENT)
+
 VBoxC_LDFLAGS.darwin = \
 	-install_name @executable_path/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxC.def
 ifdef VBOX_USE_VCC80
 VBoxC_LDFLAGS.win = /MANIFEST
 endif
-ifdef VBOX_WITH_XPCOM
-VBoxC_LIBS = \
-	$(TARGET_VBoxXPCOM) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
- ifneq ($(BUILD_TARGET),darwin) # Why is a XPCOM component linking with the glue? Because of the old com.cpp?
-VBoxC_LIBS += $(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
- endif
-else
-VBoxC_LIBS = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
-endif
+
 VBoxC_LIBS += \
 	$(LIB_VMM) \
 	$(LIB_REM)
+
 VBoxC_SOURCES = \
 	Logging.cpp \
 	VBoxDll.cpp \
@@ -363,7 +356,7 @@ endif
 #
 # VBoxXML
 #
-VBoxXML_TEMPLATE   = VBOXMAIN
+VBoxXML_TEMPLATE   = VBOXMAINDLL
 VBoxXML_SDKS       = VBOX_XALAN VBOX_XERCES
 ## @todo Why do we need this? Why isn't it in the template?!?
 VBoxXML_CXXFLAGS.win = -EHsc
@@ -375,11 +368,6 @@ VBoxXML_INCS       = \
 VBoxXML_SOURCES    = \
 	xml/cfgldr.cpp \
 	xml/cfgldrhlp.cpp
-ifdef VBOX_WITH_XPCOM
-VBoxXML_LIBS       = \
-	$(TARGET_VBoxXPCOM) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
-endif
 VBoxXML_LDFLAGS.darwin = -install_name @executable_path/VBoxXML.dylib -Wl,-x # no debug info please.
 
 ## @todo (dmik): temporarily embed SettingsConverter.xsl into VBoxXML,
@@ -394,6 +382,7 @@ $(PATH_TARGET)/SettingsConverter_xsl.h: xml/SettingsConverter.xsl $(VBOX_BIN2C) 
 #
 # tstCFGLdr - broken.
 #
+
 tstCFGLdr_TEMPLATE = VBOXR3
 tstCFGLdr_SDKS     = VBOX_XALAN VBOX_XERCES
 tstCFGLdr_DEFS     = IN_CFGLDR_R3 STANDALONE_TEST
@@ -416,6 +405,9 @@ tstCFGLdr_LIBS    += \
 #
 # VBoxCOM - COM Abstraction Layer library
 #
+
+## @todo rename VBoxXPCOM below to VBoxCOM as well (for simplicity!)
+
 VBoxCOM_COMMON_SOURCES = \
 	glue/com.cpp \
 	glue/initterm.cpp \
@@ -423,7 +415,7 @@ VBoxCOM_COMMON_SOURCES = \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp
 
-VBoxCOM_TEMPLATE = VBOXMAIN
+VBoxCOM_TEMPLATE = VBOXMAINLIB
 VBoxCOM_DEFS.x86 = _WIN32_WINNT=0x0500
 VBoxCOM_DEFS.amd64 = _WIN32_WINNT=0x0510
 VBoxCOM_SOURCES = \
@@ -434,7 +426,7 @@ VBoxCOM_SOURCES = \
 #
 # VBoxXPCOM
 #
-VBoxXPCOM_TEMPLATE = VBOXMAIN
+VBoxXPCOM_TEMPLATE = VBOXMAINLIB
 VBoxXPCOM_SOURCES = \
 	$(VBoxCOM_COMMON_SOURCES) \
 	linux/helpers.cpp
