@@ -537,7 +537,7 @@ ifdef L4_DIR
  L4_OBJ := $(L4_DIR)/build-x86-$(L4_CPU)-$(L4_API)
  ifeq ($(BUILD_TARGET),l4)
   L4LINUX26_INCDIR := \
-  	$(L4LINUX26_DIR)/include \
+	$(L4LINUX26_DIR)/include \
 	$(L4LINUX26_DIR)/include/asm-l4/i386-arch
   # support splitted Linux kernels (make O=<build directory>)
   kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(L4LINUX26_DIR)/Makefile)
@@ -548,16 +548,16 @@ ifdef L4_DIR
 	$(kernelpath)/include
   endif
   L4_INCDIR := \
-  	$(L4_OBJ)/include/uclibc++ \
-  	$(L4_OBJ)/include/x86/uclibc \
-  	$(L4_OBJ)/include/uclibc \
-  	$(L4LINUX26_INCDIR) \
-  	$(L4_OBJ)/include/x86/$(L4_API) \
-  	$(L4_OBJ)/include/x86 \
-  	$(L4_OBJ)/include \
-  	$(L4_DIR)/tool/dice/include
+	$(L4_OBJ)/include/uclibc++ \
+	$(L4_OBJ)/include/x86/uclibc \
+	$(L4_OBJ)/include/uclibc \
+	$(L4LINUX26_INCDIR) \
+	$(L4_OBJ)/include/x86/$(L4_API) \
+	$(L4_OBJ)/include/x86 \
+	$(L4_OBJ)/include \
+	$(L4_DIR)/tool/dice/include
   L4_LIBDIR := \
-  	$(L4_DIR)/build-x86-$(L4_CPU)-$(L4_API)/lib/x86_$(L4_CPU)/$(L4_API)
+	$(L4_DIR)/build-x86-$(L4_CPU)-$(L4_API)/lib/x86_$(L4_CPU)/$(L4_API)
  endif # BUILD_TARGET == l4
 endif # L4_DIR
 
@@ -801,12 +801,12 @@ ifneq ($(BUILD_TARGET),win)
  VBOX_XPIDL          ?= $(PATH_OBJ)/src/libs/xpcom18a4/xpidl/xpidl$(HOSTSUFF_EXE)
  VBOX_PATH_XPCOM_IDL ?= $(VBOX_PATH_SDK)/idl
  VBOX_XPCOM_INCS     ?= \
- 	$(VBOX_PATH_SDK)/include \
- 	$(VBOX_PATH_SDK)/include/xpcom \
- 	$(VBOX_PATH_SDK)/include/xpcom/nsprpub \
- 	$(VBOX_PATH_SDK)/include/xpcom/string \
- 	$(VBOX_PATH_SDK)/include/xpcom/xpcom \
- 	$(VBOX_PATH_SDK)/include/xpcom/ipcd
+	$(VBOX_PATH_SDK)/include \
+	$(VBOX_PATH_SDK)/include/xpcom \
+	$(VBOX_PATH_SDK)/include/xpcom/nsprpub \
+	$(VBOX_PATH_SDK)/include/xpcom/string \
+	$(VBOX_PATH_SDK)/include/xpcom/xpcom \
+	$(VBOX_PATH_SDK)/include/xpcom/ipcd
  ifneq ($(BUILD_TARGET),os2)
   # libIDL-config (for xpcom18a4)
   ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
@@ -1050,7 +1050,7 @@ SDK_VBOX_OPENSSL_LIBS?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 SDK_VBOX_FFMPEG       = .
 ifeq ($(filter-out win os2 darwin,$(BUILD_TARGET)),)
  SDK_VBOX_FFMPEG_INCS ?= \
- 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavutil \
+	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavutil \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavformat
  ifeq ($(BUILD_TARGET),win)
@@ -1653,19 +1653,17 @@ endif
 
 
 #
-# Template for building executables that is part of the VBox MAIN component.
+# Template for building executables that are part of the VBox Main component
+# (COM/XPCOM interface to VirtualBox).
 #
-TEMPLATE_VBOXMAINEXE         = VBox Main Executables
+
+TEMPLATE_VBOXMAINEXE         = VBox Main Executable
 TEMPLATE_VBOXMAINEXE_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXMAINEXE_ASFLAGS             = $(VBOX_ASFLAGS)
 TEMPLATE_VBOXMAINEXE_DEFS                = IN_RING3 UNICODE NDEBUG=1
 TEMPLATE_VBOXMAINEXE_LIBS.kprofile       = $(LIB_KPROFILE)
 TEMPLATE_VBOXMAINEXE_INCS                = \
 	$(VBOX_PATH_SDK)/include
-ifdef VBOX_WITH_XPCOM
- TEMPLATE_VBOXMAINEXE_INCS              += \
-	$(VBOX_XPCOM_INCS)
-endif
 
 ifeq ($(BUILD_TARGET),win)
   TEMPLATE_VBOXMAINEXE_SDKS              = WINPSDK W2K3DDK
@@ -1683,7 +1681,7 @@ ifeq ($(BUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_CFLAGS.debug       = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
  TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile    = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
  TEMPLATE_VBOXMAINEXE_INCS              += \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
+    $(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
  TEMPLATE_VBOXMAINEXE_LDFLAGS            = \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LARGEADDRESSAWARE /DEBUG\
 	/DISALLOWLIB:libc.lib \
@@ -1702,7 +1700,6 @@ ifeq ($(BUILD_TARGET),win)
 
 else # the GCC guys:
 
-TEMPLATE_VBOXMAINEXE_DEFS               += VBOX_WITH_XPCOM
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wno-non-virtual-dtor -fshort-wchar -fpermissive $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug      = -fno-inline
@@ -1710,9 +1707,8 @@ TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = -fno-inline
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_XPCOM_INCS)
  ifeq ($(BUILD_TARGET),linux)
-TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt
+TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME)
  else ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 # no libs as yet in l4 target - must be added later
@@ -1738,33 +1734,66 @@ TEMPLATE_VBOXMAINEXE_LIBS                =
 
 endif # !win
 
+# Add COM/XPCOM stuff
+ifdef VBOX_WITH_XPCOM
+ TEMPLATE_VBOXMAINEXE_DEFS              += VBOX_WITH_XPCOM
+ TEMPLATE_VBOXMAINEXE_INCS              += \
+	$(VBOX_XPCOM_INCS)
+ TEMPLATE_VBOXMAINEXE_LIBS              += \
+	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
+	$(LIB_XPCOM)
+else
+ifeq ($(BUILD_TARGET),win)
+ TEMPLATE_VBOXMAINEXE_LIBS              += \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
+endif
+endif
+
 #
-# Template for building the Main components.
-# This differ from VBOXMAINEXE only in PIC handling and similar DLL stuff.
+# Template for building the Main DLL modules (such as in-process COM/XPCOM
+# components for Main).
 #
-TEMPLATE_VBOXMAIN  = VBox Main Components
-TEMPLATE_VBOXMAIN_EXTENDS = VBOXMAINEXE
+# This differs from VBOXMAINEXE only in PIC handling and similar DLL stuff.
+#
+
+TEMPLATE_VBOXMAINDLL  = VBox Main Component (shared library)
+TEMPLATE_VBOXMAINDLL_EXTENDS = VBOXMAINEXE
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  ifneq ($(BUILD_TARGET),win)
-  TEMPLATE_VBOXMAIN_DEFS     = PIC $(TEMPLATE_VBOXMAINEXE_DEFS)
-  TEMPLATE_VBOXMAIN_CFLAGS   = -fPIC $(TEMPLATE_VBOXMAINEXE_CFLAGS)
-  TEMPLATE_VBOXMAIN_CXXFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
-  TEMPLATE_VBOXMAIN_LDFLAGS  = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
+  TEMPLATE_VBOXMAINDLL_DEFS     = PIC $(TEMPLATE_VBOXMAINEXE_DEFS)
+  TEMPLATE_VBOXMAINDLL_CFLAGS   = -fPIC $(TEMPLATE_VBOXMAINEXE_CFLAGS)
+  TEMPLATE_VBOXMAINDLL_CXXFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
+  TEMPLATE_VBOXMAINDLL_LDFLAGS  = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
  endif
 endif
-TEMPLATE_VBOXMAIN_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
+TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
+
+ifdef VBOX_WITH_XPCOM
+ # XPCOM component modules don't need the XPCOM glue library
+ TEMPLATE_VBOXMAINDLL_LIBS = $(filter-out \
+	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB),\
+	$(TEMPLATE_VBOXMAINEXE_LIBS))
+endif
 
 #
-# Template for building executables that use the VBox MAIN component (COM stuff etc.).
+# Template for building the Main static libraries.
 #
-TEMPLATE_VBOXMAINCLIENTEXE             = VBox MAIN Client (executable)
-TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS     = VBOXMAINCLIENT
+# This differs from VBOXMAINEXE only that it zeroes out the _LIBS definition.
+#
 
-## @todo Cleanup the EXE/DLL usage of this template. In the mean time, don't use this template.
-TEMPLATE_VBOXMAINCLIENT             = VBox MAIN Client (executrable)
-TEMPLATE_VBOXMAINCLIENT_EXTENDS     = VBOXMAINEXE
+TEMPLATE_VBOXMAINLIB  = VBox Main Component (static library)
+TEMPLATE_VBOXMAINLIB_EXTENDS = VBOXMAINEXE
+TEMPLATE_VBOXMAINLIB_LIBS =
+
+#
+# Template for building executables that use the VBox Main component.
+#
+
+TEMPLATE_VBOXMAINCLIENTEXE             = VBox Main Client (executable)
+TEMPLATE_VBOXMAINCLIENTEXE_EXTENDS     = VBOXMAINEXE
 ifeq ($(BUILD_TARGET),win)
- TEMPLATE_VBOXMAINCLIENT_LIBS.win   = $(TEMPLATE_VBOXMAINEXE_LIBS.win) \
+ TEMPLATE_VBOXMAINCLIENTEXE_LIBS.win   = $(TEMPLATE_VBOXMAINEXE_LIBS.win) \
    $(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
    $(PATH_SDK_WINPSDK_LIB)/User32.Lib \
    $(PATH_SDK_WINPSDK_LIB)/Shell32.Lib \
@@ -1773,28 +1802,26 @@ ifeq ($(BUILD_TARGET),win)
    $(PATH_SDK_WINPSDK_LIB)/OleAut32.Lib \
    $(PATH_SDK_WINPSDK_LIB)/Uuid.Lib
 else
- TEMPLATE_VBOXMAINCLIENT_LIBS = $(TEMPLATE_VBOXMAINEXE_LIBS) \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
-	$(LIB_XPCOM) \
-	$(LIB_RUNTIME)
-
- TEMPLATE_VBOXMAINCLIENT_DEFS = $(TEMPLATE_VBOXMAINEXE_DEFS) \
+ TEMPLATE_VBOXMAINCLIENTEXE_DEFS = $(TEMPLATE_VBOXMAINEXE_DEFS) \
 	NDEBUG TRIMMED
- ## Wonder why we compile main with defaults for these two and then drops it in the client executables...
- TEMPLATE_VBOXMAINCLIENT_CXXFLAGS = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS) \
-	-fno-rtti -fno-exceptions
- TEMPLATE_VBOXMAINCLIENT_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) \
+ ## @todo remove
+ ## Wonder why we compile main with defaults for these two and then drops it
+ ## in the client executables...
+ #TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS) \
+ #	-fno-rtti -fno-exceptions
+ TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) \
 	-pthread
- TEMPLATE_VBOXMAINCLIENT_LDFLAGS.darwin = $(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin) \
-   	-bind_at_load -framework Carbon
+ TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin = $(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin) \
+    -bind_at_load -framework Carbon
 endif
 
 #
-# Template for building shared libraries / DLLs that use the VBox MAIN component (COM stuff etc.).
-# This differ from VBOXMAINCLIENTEXE only in PIC handling and similar DLL stuff.
+# Template for building shared libraries / DLLs that use the VBox Main component.
 #
-TEMPLATE_VBOXMAINCLIENTDLL              = VBox MAIN Client Shared Libraries
+# This differs from VBOXMAINCLIENTEXE only in PIC handling and similar DLL stuff.
+#
+
+TEMPLATE_VBOXMAINCLIENTDLL              = VBox MAIN Client (shared library)
 TEMPLATE_VBOXMAINCLIENTDLL_EXTENDS      = VBOXMAINCLIENTEXE
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  ifneq ($(BUILD_TARGET),win)
@@ -1810,6 +1837,7 @@ TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLAT
 #
 # Template for building Qt GUI executables.
 #
+
 TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
 TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXQTGUIEXE_INCS = \
@@ -1822,7 +1850,7 @@ ifeq ($(BUILD_TARGET),win)
  ## @todo VCC70 flags?
  ifdef VBOX_USE_VCC80
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
- 	-nologo -Zm200 -W3 -MD -EHsc -Zc:wchar_t-
+	-nologo -Zm200 -W3 -MD -EHsc -Zc:wchar_t-
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
  else
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
@@ -1830,53 +1858,47 @@ ifeq ($(BUILD_TARGET),win)
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -GZ
  endif
  TEMPLATE_VBOXQTGUIEXE_INCS += \
-  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
  TEMPLATE_VBOXQTGUIEXE_LDFLAGS = \
- 	/NOD /NOLOGO /INCREMENTAL:NO /MAPINFO:EXPORTS /DEBUG \
- 	/DELAYLOAD:oleaut32.dll
+	/NOD /NOLOGO /INCREMENTAL:NO /MAPINFO:EXPORTS /DEBUG \
+	/DELAYLOAD:oleaut32.dll
  TEMPLATE_VBOXQTGUIEXE_SDKS = WINPSDK
  TEMPLATE_VBOXQTGUIEXE_LIBS = \
- 	$(LIB_QT) \
+	$(LIB_QT) \
 	$(LIB_QTMAIN) \
- 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
- 	$(LIB_RUNTIME) \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+	$(LIB_RUNTIME) \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
  TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the gcc guys:
  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM
  TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
 
  TEMPLATE_VBOXQTGUIEXE_INCS += \
- 	$(LIB_SDL_INC) \
- 	$(VBOX_XPCOM_INCS)
+	$(LIB_SDL_INC)
  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
- 	-pipe -Wall -W -frtti -fno-exceptions -Wno-non-virtual-dtor \
- 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
+	-pipe -Wall -W -frtti -fno-exceptions -Wno-non-virtual-dtor \
+	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
  ## @todo no $(LIB_QTMAIN) here?
  TEMPLATE_VBOXQTGUIEXE_LIBS = \
- 	$(LIB_QT) \
+	$(LIB_QT) \
 	$(LIB_SDL) \
- 	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
- 	$(LIB_RUNTIME) \
- 	$(LIB_REM) \
- 	$(LIB_VMM) \
- 	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
- 	$(LIB_XPCOM)
+	$(LIB_RUNTIME) \
+	$(LIB_REM) \
+	$(LIB_VMM)
 
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   TEMPLATE_VBOXQTGUIEXE_LIBPATH = \
- 	$(VBOX_PATH_QT)/lib64 $(VBOX_PATH_QT)/lib
+	$(VBOX_PATH_QT)/lib64 $(VBOX_PATH_QT)/lib
  else
   TEMPLATE_VBOXQTGUIEXE_LIBPATH = \
- 	$(VBOX_PATH_QT)/lib
+	$(VBOX_PATH_QT)/lib
  endif
 
  ifeq ($(BUILD_TARGET),darwin)
@@ -1889,14 +1911,30 @@ else # the gcc guys:
   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
  else
   TEMPLATE_VBOXQTGUIEXE_LIBS += \
- 	Xext \
- 	X11 \
- 	m \
+	Xext \
+	X11 \
+	m \
 	$(LIB_PTHREAD)
   TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
 	$(VBOX_LIBPATH_X11)
  endif
 
+endif
+
+# Add COM/XPCOM stuff
+ifdef VBOX_WITH_XPCOM
+ TEMPLATE_VBOXQTGUIEXE_DEFS            += VBOX_WITH_XPCOM
+ TEMPLATE_VBOXQTGUIEXE_INCS            += \
+	$(VBOX_XPCOM_INCS)
+ TEMPLATE_VBOXQTGUIEXE_LIBS            += \
+	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
+	$(LIB_XPCOM)
+else
+ifeq ($(BUILD_TARGET),win)
+ TEMPLATE_VBOXQTGUIEXE_LIBS            += \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
+endif
 endif
 
 #
@@ -1952,7 +1990,7 @@ ifeq ($(BUILD_PLATFORM),win)
  TEMPLATE_VBOXBLDPROG_CFLAGS.profile     = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile)
  TEMPLATE_VBOXBLDPROG_CFLAGS.kprofile    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile)
  TEMPLATE_VBOXBLDPROG_LDFLAGS            = \
-  	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LARGEADDRESSAWARE /DEBUG \
+	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LARGEADDRESSAWARE /DEBUG \
 	/DISALLOWLIB:libcd.lib \
 	/DISALLOWLIB:libcmtd.lib \
 	/DISALLOWLIB:msvcrt.lib \
@@ -1960,9 +1998,9 @@ ifeq ($(BUILD_PLATFORM),win)
 	/DISALLOWLIB:msvcprt.lib \
 	/DISALLOWLIB:msvcprtd.lib
  TEMPLATE_VBOXBLDPROG_LIBS               = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXBLDPROG_TOOL)_LIB)/oldnames.lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXBLDPROG_TOOL)_LIB)/libcmt.lib \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXBLDPROG_TOOL)_LIB)/libcpmt.lib
+	$(PATH_TOOL_$(TEMPLATE_VBOXBLDPROG_TOOL)_LIB)/oldnames.lib \
+	$(PATH_TOOL_$(TEMPLATE_VBOXBLDPROG_TOOL)_LIB)/libcmt.lib \
+	$(PATH_TOOL_$(TEMPLATE_VBOXBLDPROG_TOOL)_LIB)/libcpmt.lib
 
 else
 # (gcc of some kind )

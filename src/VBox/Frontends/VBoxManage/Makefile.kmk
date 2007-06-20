@@ -25,7 +25,7 @@ include $(PATH_KBUILD)/header.kmk
 
 PROGRAMS = VBoxManage
 
-VBoxManage_TEMPLATE   = VBOXMAINCLIENT
+VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
 VBoxManage_SOURCES    = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp

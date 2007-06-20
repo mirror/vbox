@@ -47,7 +47,7 @@ endif
 #
 # tstAPI
 #
-tstAPI_TEMPLATE = VBOXMAINCLIENT
+tstAPI_TEMPLATE = VBOXMAINCLIENTEXE
 tstAPI_SOURCES  = tstAPI.cpp
 
 #
@@ -70,7 +70,7 @@ tstVBoxAPILinux_LIBS     = \
 #
 # tstVBoxAPIWin
 #
-tstVBoxAPIWin_TEMPLATE = VBOXMAINCLIENT
+tstVBoxAPIWin_TEMPLATE = VBOXMAINCLIENTEXE
 tstVBoxAPIWin_SOURCES  = \
 	tstVBoxAPIWin.cpp \
 	$(PATH_BIN)/sdk/lib/VirtualBox_i.c
