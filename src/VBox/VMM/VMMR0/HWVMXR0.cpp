@@ -1727,8 +1727,11 @@ ResumeExecution:
                 }
             }
         }
-        if (    rc == VINF_SUCCESS
-            ||  (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+        /* 
+         * Handled the I/O return codes.
+         * (The unhandled cases end up with rc == VINF_EM_RESCHEDULE_REM.)
+         */
+        if (IOM_SUCCESS(rc))
         {
             /* Update EIP and continue execution. */
             pCtx->eip += cbInstr;
