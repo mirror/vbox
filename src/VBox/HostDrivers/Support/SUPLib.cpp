@@ -1020,19 +1020,6 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
     if (!strncmp(pszSymbol, "SUPR0$", sizeof("SUPR0$") - 1))
         pszSymbol += sizeof("SUPR0$") - 1;
 
-    /* iterate the function table. */
-    int c = g_pFunctions->cFunctions;
-    PSUPFUNC pFunc = &g_pFunctions->aFunctions[0];
-    while (c-- > 0)
-    {
-        if (!strcmp(pFunc->szName, pszSymbol))
-        {
-            *pValue = (uintptr_t)pFunc->pfn;
-            return VINF_SUCCESS;
-        }
-        pFunc++;
-    }
-
     /*
      * Check the VMMR0.r0 module if loaded.
      */
@@ -1046,6 +1033,19 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
             *pValue = (uintptr_t)pvValue;
             return VINF_SUCCESS;
         }
+    }
+
+    /* iterate the function table. */
+    int c = g_pFunctions->cFunctions;
+    PSUPFUNC pFunc = &g_pFunctions->aFunctions[0];
+    while (c-- > 0)
+    {
+        if (!strcmp(pFunc->szName, pszSymbol))
+        {
+            *pValue = (uintptr_t)pFunc->pfn;
+            return VINF_SUCCESS;
+        }
+        pFunc++;
     }
 
     /*
