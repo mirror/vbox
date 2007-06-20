@@ -571,7 +571,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 Log(("Page out of sync: %p eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%VGp scan=%d\n",
                      pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys, CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip)));
 #  endif /* LOG_ENABLED */
- 
+
 #  if PGM_WITH_PAGING(PGM_GST_TYPE) && !defined(IN_RING0)
                 if (cpl == 0)
                 {
@@ -584,7 +584,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         if (    pvFault == (RTGCPTR)pRegFrame->eip
                             ||  (RTGCUINTPTR)pvFault - pRegFrame->eip < 8    /* instruction crossing a page boundary */
 #   ifdef CSAM_DETECT_NEW_CODE_PAGES
-                            ||  (   !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip) 
+                            ||  (   !PATMIsPatchGCAddr(pVM, (RTGCPTR)pRegFrame->eip)
                                  && CSAMDoesPageNeedScanning(pVM, (RTGCPTR)pRegFrame->eip))   /* any new code we encounter here */
 #   endif /* CSAM_DETECT_NEW_CODE_PAGES */
                            )
@@ -616,7 +616,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                            )
                         {
                             /* In case of a write to a non-present supervisor shadow page, we'll take special precautions
-                             * to detect loading of new code pages. 
+                             * to detect loading of new code pages.
                              */
 
                             /*
@@ -637,7 +637,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 {
                                     CSAMMarkPossibleCodePage(pVM, pvFault);
                                 }
-                            }                            
+                            }
                         }
 #   endif  /* CSAM_DETECT_NEW_CODE_PAGES */
 
@@ -942,11 +942,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  endif
                     pPT->a[iPTEDst].u = 0;
                 }
-#else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */ 
-                rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0); 
-                if (VBOX_SUCCESS(rc)) 
-                    rc = VINF_SUCCESS; 
-#endif       
+#else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
+                rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
+                if (VBOX_SUCCESS(rc))
+                    rc = VINF_SUCCESS;
+#endif
                 STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePage4KBPages));
                 PGM_INVL_PG(GCPtrPage);
             }
@@ -1413,15 +1413,15 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                                     ||  PGMRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
                                                         MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)
                                    )
-#endif    
+#endif
                                     PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                                 Log2(("SyncPage: 4K+ %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
-                                      GCPtrCurPage, PteSrc.n.u1Present, 
+                                      GCPtrCurPage, PteSrc.n.u1Present,
                                       PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                                      PteSrc.n.u1User & PdeSrc.n.u1User, 
+                                      PteSrc.n.u1User & PdeSrc.n.u1User,
                                       (uint64_t)PteSrc.u,
                                       (uint64_t)pPTDst->a[iPTDst].u,
-                                      pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : "")); 
+                                      pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                             }
                         }
                     }
@@ -1433,9 +1433,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                         const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                         PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPage: 4K  %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s\n",
-                              GCPtrPage, PteSrc.n.u1Present, 
+                              GCPtrPage, PteSrc.n.u1Present,
                               PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                              PteSrc.n.u1User & PdeSrc.n.u1User, 
+                              PteSrc.n.u1User & PdeSrc.n.u1User,
                               (uint64_t)PteSrc.u,
                               pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                     }
@@ -1595,12 +1595,12 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                 PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
 
                 Log2(("SyncPage: 4K+ %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
-                      GCPtrCurPage, PteSrc.n.u1Present, 
+                      GCPtrCurPage, PteSrc.n.u1Present,
                       PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                      PteSrc.n.u1User & PdeSrc.n.u1User, 
+                      PteSrc.n.u1User & PdeSrc.n.u1User,
                       (uint64_t)PteSrc.u,
                       (uint64_t)pPTDst->a[iPTDst].u,
-                      pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : "")); 
+                      pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
             }
         }
     }
@@ -1621,9 +1621,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
         PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
 
         Log2(("SyncPage: 4K  %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s\n",
-              GCPtrPage, PteSrc.n.u1Present, 
+              GCPtrPage, PteSrc.n.u1Present,
               PteSrc.n.u1Write & PdeSrc.n.u1Write,
-              PteSrc.n.u1User & PdeSrc.n.u1User, 
+              PteSrc.n.u1User & PdeSrc.n.u1User,
               (uint64_t)PteSrc.u,
               pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
     }
@@ -2075,9 +2075,9 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                             PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPT:   4K+ %VGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%VGp\n",
                               (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)),
-                              PteSrc.n.u1Present, 
+                              PteSrc.n.u1Present,
                               PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                              PteSrc.n.u1User & PdeSrc.n.u1User, 
+                              PteSrc.n.u1User & PdeSrc.n.u1User,
                               (uint64_t)PteSrc.u,
                               pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : "", pPTDst->a[iPTDst].u, iPTSrc, PdeSrc.au32[0],
                               (PdeSrc.u & GST_PDE_PG_MASK) + iPTSrc*sizeof(PteSrc)));
@@ -2276,7 +2276,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
     GCPhys = GCPtrPage & X86_PAGE_4K_BASE_MASK_32;
     rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
 
-    if (    rc == VINF_SUCCESS 
+    if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_CACHED_PAGE)
         pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     else
@@ -2313,7 +2313,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
  */
 PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 {
-#if (PGM_GST_TYPE == PGM_TYPE_32BIT ||  PGM_GST_TYPE == PGM_TYPE_REAL ||  PGM_GST_TYPE == PGM_TYPE_PROT) && PGM_SHW_TYPE != PGM_TYPE_AMD64
+#if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) && PGM_SHW_TYPE != PGM_TYPE_AMD64
 
 # if PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
 #  error "Invalid shadow mode for 32-bit guest mode!"
@@ -2539,19 +2539,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
 {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE
-    /*
-     * Inform the PGM PD Cache Manager about the pending sync.
-     */
-    if (fGlobal || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
-    {
-#  if 0 /** @todo what the heck is this about? */
-        /* Don't cause an additional global CR3 reload the next time (the flag is cleared in PGMSyncCR3). */
-        VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3);
-#  endif
-
-        /* Change this CR3 reload to be a global one. */
-        fGlobal = true;
-    }
+    if (VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+        fGlobal = true; /* Change this CR3 reload to be a global one. */
 # endif
 #endif
 
