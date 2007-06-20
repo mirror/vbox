@@ -1509,6 +1509,11 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* IO APIC */
     chbEnableIOAPIC->setChecked (biosSettings.GetIOAPICEnabled());
 
+    /* VT-x/AMD-V */
+    machine.GetHWVirtExEnabled() == CEnums::False ? chbVTX->setChecked (false) :
+    machine.GetHWVirtExEnabled() == CEnums::True ?  chbVTX->setChecked (true) :
+                                                    chbVTX->setNoChange();
+
     /* Saved state folder */
     leSnapshotFolder->setText (machine.GetSnapshotFolder());
 
@@ -1841,6 +1846,11 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* IO APIC */
     biosSettings.SetIOAPICEnabled (chbEnableIOAPIC->isChecked());
+
+    /* VT-x/AMD-V */
+    cmachine.SetHWVirtExEnabled (
+        chbVTX->state() == QButton::Off ? CEnums::False :
+        chbVTX->state() == QButton::On ? CEnums::True : CEnums::Default);
 
     /* Saved state folder */
     if (leSnapshotFolder->isModified())

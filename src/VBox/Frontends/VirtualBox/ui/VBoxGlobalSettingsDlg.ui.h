@@ -575,6 +575,12 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
     leVDIFolder->setText (props.GetDefaultVDIFolder());
     leMachineFolder->setText (props.GetDefaultMachineFolder());
 
+    /* vrdp lib path */
+    leVRDPLib->setText (props.GetRemoteDisplayAuthLibrary());
+
+    /* VT-x/AMD-V */
+    chbVTX->setChecked (props.GetHWVirtExEnabled());
+
     /* proprietary GUI settings */
 
     hkeHostKey->setKey (gs.hostKey() );
@@ -656,6 +662,13 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
         props.SetDefaultVDIFolder (leVDIFolder->text());
     if (props.isOk() && leMachineFolder->isModified())
         props.SetDefaultMachineFolder (leMachineFolder->text());
+
+    /* vrdp lib path */
+    if (leVRDPLib->isModified())
+        props.SetRemoteDisplayAuthLibrary (leVRDPLib->text());
+
+    /* VT-x/AMD-V */
+    props.SetHWVirtExEnabled (chbVTX->isChecked());
 
     if (!props.isOk())
         return;
@@ -762,6 +775,7 @@ void VBoxGlobalSettingsDlg::tbResetFolder_clicked()
     QLineEdit *le = 0;
     if (tb == tbResetVDIFolder) le = leVDIFolder;
     else if (tb == tbResetMachineFolder) le = leMachineFolder;
+    else if (tb == tbResetVRDPLib) le = leVRDPLib;
     Assert (le);
 
     /*
@@ -780,25 +794,30 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
     QLineEdit *le = 0;
     if (tb == tbSelectVDIFolder) le = leVDIFolder;
     else if (tb == tbSelectMachineFolder) le = leMachineFolder;
+    else if (tb == tbSelectVRDPLib) le = leVRDPLib;
     Assert (le);
 
     QString initDir = VBoxGlobal::getFirstExistingDir (le->text());
     if (initDir.isNull())
         initDir = vboxGlobal().virtualBox().GetHomeFolder();
-    QString folder = VBoxGlobal::getExistingDirectory (initDir, this);
-    if (folder.isNull())
+
+    QString path = le == leVRDPLib ?
+        VBoxGlobal::getOpenFileName (initDir, QString::null, this,
+                                     "getFile", QString::null) :
+        VBoxGlobal::getExistingDirectory (initDir, this);
+    if (path.isNull())
         return;
 
-    folder = QDir::convertSeparators (folder);
+    path = QDir::convertSeparators (path);
     /* remove trailing slash if any */
-    folder.remove (QRegExp ("[\\\\/]$"));
+    path.remove (QRegExp ("[\\\\/]$"));
 
     /*
-     *  do this instead of le->setText (folder) to cause
+     *  do this instead of le->setText (path) to cause
      *  isModified() return true
      */
     le->selectAll();
-    le->insert (folder);
+    le->insert (path);
 }
 
 // USB Filter stuff
