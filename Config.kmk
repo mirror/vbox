@@ -746,12 +746,10 @@ VBOX_AS86      ?= $(PATH_DEVTOOLS_BLD)/bin/as86$(HOSTSUFF_EXE)
 ifeq ($(BUILD_PLATFORM),win)
 # VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/libxslt/10114/xsltproc.exe
  VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
-else
-ifeq ($(BUILD_PLATFORM),os2)
- VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/os2.x86/bin/xsltproc.exe
+else ifeq ($(BUILD_PLATFORM),os2)
+ VBOX_XSLTPROC ?= $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
 else
  VBOX_XSLTPROC ?= xsltproc$(HOSTSUFF_EXE)
-endif
 endif
 
 # bin2c (convert binary files into C arrays)
