@@ -16,7 +16,7 @@
     </message>
     <message>
       <source>Backtab</source>
-      <translation type="unfinished" />
+      <translation>Bakåttab</translation>
     </message>
     <message>
       <source>Backspace</source>
@@ -44,7 +44,7 @@
     </message>
     <message>
       <source>Print</source>
-      <translation type="unfinished" />
+      <translation>Print</translation>
     </message>
     <message>
       <source>SysReq</source>
@@ -200,7 +200,7 @@
     </message>
     <message>
       <source>Standby</source>
-      <translation type="unfinished" />
+      <translation>Vänteläge</translation>
     </message>
     <message>
       <source>Open URL</source>
@@ -288,7 +288,7 @@
     <message>
       <source>QT_LAYOUT_DIRECTION</source>
       <comment>Translate this string to the string 'LTR' in left-to-right languages or to 'RTL' in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-      <translation type="unfinished" />
+      <translation>LTR</translation>
     </message>
     <message>
       <source>Executable '%1' requires Qt %2, found Qt %3.</source>
@@ -296,7 +296,7 @@
     </message>
     <message>
       <source>Incompatible Qt Library Error</source>
-      <translation type="unfinished" />
+      <translation>Inkompatibelt Qt-biblioteksfel</translation>
     </message>
   </context>
   <context>
@@ -314,15 +314,15 @@
     <name>QColorDialog</name>
     <message>
       <source>Hu&amp;e:</source>
-      <translation type="unfinished" />
+      <translation>N&amp;yans:</translation>
     </message>
     <message>
       <source>&amp;Sat:</source>
-      <translation type="unfinished" />
+      <translation>&amp;Mättnad:</translation>
     </message>
     <message>
       <source>&amp;Val:</source>
-      <translation type="unfinished" />
+      <translation>&amp;Lju:</translation>
     </message>
     <message>
       <source>&amp;Red:</source>
@@ -470,7 +470,7 @@
     </message>
     <message>
       <source>Look &amp;in:</source>
-      <translation type="unfinished" />
+      <translation>Leta &amp;i:</translation>
     </message>
     <message>
       <source>File &amp;name:</source>
@@ -502,15 +502,15 @@
     </message>
     <message>
       <source>Preview File Info</source>
-      <translation type="unfinished" />
+      <translation>Förhandsvisa filinfo</translation>
     </message>
     <message>
       <source>Preview File Contents</source>
-      <translation type="unfinished" />
+      <translation>Förhandsvisa filinnehåll</translation>
     </message>
     <message>
       <source>Read-write</source>
-      <translation type="unfinished" />
+      <translation>Läs-skriv</translation>
     </message>
     <message>
       <source>Read-only</source>
@@ -518,7 +518,7 @@
     </message>
     <message>
       <source>Write-only</source>
-      <translation type="unfinished" />
+      <translation>Endast skriv</translation>
     </message>
     <message>
       <source>Inaccessible</source>
@@ -821,7 +821,7 @@ Kontrollera sökväg och filnamn.</translation>
     </message>
     <message>
       <source>Canadian Aboriginal</source>
-      <translation type="unfinished" />
+      <translation>Kanadensiska urinvånare</translation>
     </message>
     <message>
       <source>Mongolian</source>
@@ -833,15 +833,15 @@ Kontrollera sökväg och filnamn.</translation>
     </message>
     <message>
       <source>Letterlike Symbols</source>
-      <translation type="unfinished" />
+      <translation>Bokstavsliknande symboler</translation>
     </message>
     <message>
       <source>Number Forms</source>
-      <translation type="unfinished" />
+      <translation>Talformer</translation>
     </message>
     <message>
       <source>Mathematical Operators</source>
-      <translation type="unfinished" />
+      <translation>Matematiska operatorer</translation>
     </message>
     <message>
       <source>Technical Symbols</source>
@@ -857,7 +857,7 @@ Kontrollera sökväg och filnamn.</translation>
     </message>
     <message>
       <source>Enclosed and Square</source>
-      <translation type="unfinished" />
+      <translation>Enclosed and Square</translation>
     </message>
     <message>
       <source>Braille</source>
@@ -888,11 +888,11 @@ Kontrollera sökväg och filnamn.</translation>
     </message>
     <message>
       <source>Stri&amp;keout</source>
-      <translation type="unfinished" />
+      <translation>Genomstru&amp;ken</translation>
     </message>
     <message>
       <source>&amp;Underline</source>
-      <translation>&amp;Understrykning</translation>
+      <translation>&amp;Understruken</translation>
     </message>
     <message>
       <source>&amp;Color</source>
@@ -986,32 +986,38 @@ Kontrollera sökväg och filnamn.</translation>
     <message>
       <source>Changing directory failed:
 %1</source>
-      <translation type="unfinished" />
+      <translation>Byte av katalog misslyckades:
+%1</translation>
     </message>
     <message>
       <source>Downloading file failed:
 %1</source>
-      <translation type="unfinished" />
+      <translation>Hämtning av fil misslyckades:
+%1</translation>
     </message>
     <message>
       <source>Uploading file failed:
 %1</source>
-      <translation type="unfinished" />
+      <translation>Sändning av fil misslyckades:
+%1</translation>
     </message>
     <message>
       <source>Removing file failed:
 %1</source>
-      <translation type="unfinished" />
+      <translation>Borttagning av fil misslyckades:
+%1</translation>
     </message>
     <message>
       <source>Creating directory failed:
 %1</source>
-      <translation type="unfinished" />
+      <translation>Skapandet av katalog misslyckades:
+%1</translation>
     </message>
     <message>
       <source>Removing directory failed:
 %1</source>
-      <translation type="unfinished" />
+      <translation>Borttagning av katalog misslyckades:
+%1</translation>
     </message>
     <message>
       <source>Not connected</source>
@@ -1019,7 +1025,7 @@ Kontrollera sökväg och filnamn.</translation>
     </message>
     <message>
       <source>Connection refused for data connection</source>
-      <translation type="unfinished" />
+      <translation>Anslutning för dataanslutning nekades</translation>
     </message>
   </context>
   <context>
@@ -1033,7 +1039,7 @@ Kontrollera sökväg och filnamn.</translation>
     <name>QHttp</name>
     <message>
       <source>Connection refused</source>
-      <translation type="unfinished" />
+      <translation>Anslutningen nekades</translation>
     </message>
     <message>
       <source>Host %1 not found</source>
@@ -1041,15 +1047,15 @@ Kontrollera sökväg och filnamn.</translation>
     </message>
     <message>
       <source>Wrong content length</source>
-      <translation type="unfinished" />
+      <translation>Felaktig innehållslängd</translation>
     </message>
     <message>
       <source>HTTP request failed</source>
-      <translation type="unfinished" />
+      <translation>HTTP-begäran misslyckades</translation>
     </message>
     <message>
       <source>Host %1 found</source>
-      <translation type="unfinished" />
+      <translation>Värden %1 hittades</translation>
     </message>
     <message>
       <source>Host found</source>
@@ -1081,19 +1087,19 @@ Kontrollera sökväg och filnamn.</translation>
     </message>
     <message>
       <source>No server set to connect to</source>
-      <translation type="unfinished" />
+      <translation>Ingen server inställd att ansluta till</translation>
     </message>
     <message>
       <source>Server closed connection unexpectedly</source>
-      <translation type="unfinished" />
+      <translation>Servern stängde oväntat anslutningen</translation>
     </message>
     <message>
       <source>Invalid HTTP response header</source>
-      <translation type="unfinished" />
+      <translation>Ogiltigt HTTP-svarshuvud</translation>
     </message>
     <message>
       <source>Invalid HTTP chunked body</source>
-      <translation type="unfinished" />
+      <translation>Ogiltig HTTP chunked body</translation>
     </message>
   </context>
   <context>
@@ -1185,7 +1191,7 @@ till
     <name>QMainWindow</name>
     <message>
       <source>Line up</source>
-      <translation type="unfinished" />
+      <translation>Rada upp</translation>
     </message>
     <message>
       <source>Customize...</source>
@@ -1200,7 +1206,7 @@ till
     </message>
     <message>
       <source>Config</source>
-      <translation type="unfinished" />
+      <translation>Konfiguration</translation>
     </message>
     <message>
       <source>Preference</source>
@@ -1247,7 +1253,7 @@ till
     </message>
     <message>
       <source>&amp;Abort</source>
-      <translation type="unfinished" />
+      <translation>&amp;Avbryt</translation>
     </message>
     <message>
       <source>&amp;Retry</source>
@@ -1259,14 +1265,14 @@ till
     </message>
     <message>
       <source>&lt;h3>About Qt&lt;/h3>&lt;p>This program uses Qt version %1.&lt;/p>&lt;p>Qt is a C++ toolkit for multiplatform GUI &amp;amp; application development.&lt;/p>&lt;p>Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants.&lt;br>Qt is also available for embedded devices.&lt;/p>&lt;p>Qt is a Trolltech product. See &lt;tt>http://www.trolltech.com/qt/&lt;/tt> for more information.&lt;/p></source>
-      <translation type="unfinished" />
+      <translation>&lt;h3>Om Qt&lt;/h3>&lt;p>Det här programmet använder Qt version %1.&lt;/p>&lt;p>Qt är en C++-verktygslåda för grafiska gränssnitt för flera plattformar och programutveckling.&lt;/p>&lt;p>Qt erbjuder portabilitet för källkoden för MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux och alla större kommersiella Unix-varianter.&lt;br>Qt finns även tillgängligt för inbäddade enheter.&lt;/p>&lt;p>Qt är en produkt från Trolltech. Se &lt;tt>http://www.trolltech.com/qt/&lt;/tt> för mer information.&lt;/p></translation>
     </message>
   </context>
   <context>
     <name>QNetworkProtocol</name>
     <message>
       <source>Operation stopped by the user</source>
-      <translation type="unfinished" />
+      <translation>Åtgärden stoppad av användaren</translation>
     </message>
   </context>
   <context>
@@ -1309,7 +1315,7 @@ till
     </message>
     <message>
       <source>Print destination</source>
-      <translation type="unfinished" />
+      <translation>Utskriftsmål</translation>
     </message>
     <message>
       <source>Print to printer:</source>
@@ -1523,35 +1529,35 @@ till
     </message>
     <message>
       <source>disabled feature used</source>
-      <translation type="unfinished" />
+      <translation>inaktiverad funktion använd</translation>
     </message>
     <message>
       <source>bad char class syntax</source>
-      <translation type="unfinished" />
+      <translation>felaktig teckenklassyntax</translation>
     </message>
     <message>
       <source>bad lookahead syntax</source>
-      <translation type="unfinished" />
+      <translation>felaktig lookahead-syntax</translation>
     </message>
     <message>
       <source>bad repetition syntax</source>
-      <translation type="unfinished" />
+      <translation>felaktig upprepningssyntax</translation>
     </message>
     <message>
       <source>invalid octal value</source>
-      <translation type="unfinished" />
+      <translation>ogiltigt oktalvärde</translation>
     </message>
     <message>
       <source>missing left delim</source>
-      <translation type="unfinished" />
+      <translation>vänster avgränsare saknas</translation>
     </message>
     <message>
       <source>unexpected end</source>
-      <translation type="unfinished" />
+      <translation>oväntat slut</translation>
     </message>
     <message>
       <source>met internal limit</source>
-      <translation type="unfinished" />
+      <translation>nådde intern begränsning</translation>
     </message>
   </context>
   <context>
@@ -1562,7 +1568,7 @@ till
     </message>
     <message>
       <source>Delete this record?</source>
-      <translation type="unfinished" />
+      <translation>Ta bort denna post?</translation>
     </message>
     <message>
       <source>Yes</source>
@@ -1574,7 +1580,7 @@ till
     </message>
     <message>
       <source>Insert</source>
-      <translation type="unfinished" />
+      <translation>Infoga</translation>
     </message>
     <message>
       <source>Update</source>
@@ -1582,7 +1588,7 @@ till
     </message>
     <message>
       <source>Save edits?</source>
-      <translation type="unfinished" />
+      <translation>Spara ändringar?</translation>
     </message>
     <message>
       <source>Cancel</source>
@@ -1594,7 +1600,7 @@ till
     </message>
     <message>
       <source>Cancel your edits?</source>
-      <translation type="unfinished" />
+      <translation>Avbryt dina ändringar?</translation>
     </message>
   </context>
   <context>
@@ -1655,7 +1661,7 @@ till
     <name>QTitleBar</name>
     <message>
       <source>System Menu</source>
-      <translation type="unfinished" />
+      <translation>Systemmeny</translation>
     </message>
     <message>
       <source>Shade</source>
@@ -1697,31 +1703,31 @@ till
     </message>
     <message>
       <source>The protocol `%1' does not support listing directories</source>
-      <translation type="unfinished" />
+      <translation>Protokollet \&quot;%1\&quot; saknar stöd för att lista kataloger</translation>
     </message>
     <message>
       <source>The protocol `%1' does not support creating new directories</source>
-      <translation type="unfinished" />
+      <translation>Protokollet \&quot;%1\&quot; saknar stöd för att skapa nya kataloger</translation>
     </message>
     <message>
       <source>The protocol `%1' does not support removing files or directories</source>
-      <translation type="unfinished" />
+      <translation>Protokollet \&quot;%1\&quot; saknar stöd för att ta bort filer eller kataloger</translation>
     </message>
     <message>
       <source>The protocol `%1' does not support renaming files or directories</source>
-      <translation type="unfinished" />
+      <translation>Protokollet \&quot;%1\&quot; saknar stöd för att byta namn på filer eller kataloger</translation>
     </message>
     <message>
       <source>The protocol `%1' does not support getting files</source>
-      <translation type="unfinished" />
+      <translation>Protokollet \&quot;%1\&quot; saknar stöd för att hämta filer</translation>
     </message>
     <message>
       <source>The protocol `%1' does not support putting files</source>
-      <translation type="unfinished" />
+      <translation>Protokollet \&quot;%1\&quot; saknar stöd för att skicka filer</translation>
     </message>
     <message>
       <source>The protocol `%1' does not support copying or moving files or directories</source>
-      <translation type="unfinished" />
+      <translation>Protokollet \&quot;%1\&quot; saknar stöd för att kopiera eller flytta filer eller kataloger</translation>
     </message>
     <message>
       <source>(unknown)</source>
@@ -1837,7 +1843,7 @@ till
     </message>
     <message>
       <source>Stay on &amp;Top</source>
-      <translation type="unfinished" />
+      <translation>Alltid övers&amp;t</translation>
     </message>
     <message>
       <source>Sh&amp;ade</source>
@@ -1853,7 +1859,7 @@ till
     </message>
     <message>
       <source>Restore Down</source>
-      <translation type="unfinished" />
+      <translation>Återställ nedåt</translation>
     </message>
     <message>
       <source>Close</source>
@@ -1868,11 +1874,11 @@ till
     <name>QXml</name>
     <message>
       <source>no error occurred</source>
-      <translation type="unfinished" />
+      <translation>inget fel inträffade</translation>
     </message>
     <message>
       <source>error triggered by consumer</source>
-      <translation type="unfinished" />
+      <translation>fel utlöst av konsument</translation>
     </message>
     <message>
       <source>unexpected end of file</source>
@@ -1880,19 +1886,19 @@ till
     </message>
     <message>
       <source>more than one document type definition</source>
-      <translation type="unfinished" />
+      <translation>fler än en dokumenttypsdefinition</translation>
     </message>
     <message>
       <source>error occurred while parsing element</source>
-      <translation type="unfinished" />
+      <translation>fel inträffade vid tolkning av element</translation>
     </message>
     <message>
       <source>tag mismatch</source>
-      <translation type="unfinished" />
+      <translation>taggen stämmer inte</translation>
     </message>
     <message>
       <source>error occurred while parsing content</source>
-      <translation type="unfinished" />
+      <translation>fel inträffade vid tolkning av innehåll</translation>
     </message>
     <message>
       <source>unexpected character</source>
@@ -1900,63 +1906,63 @@ till
     </message>
     <message>
       <source>invalid name for processing instruction</source>
-      <translation type="unfinished" />
+      <translation>ogiltigt namn för behandlande instruktion</translation>
     </message>
     <message>
       <source>version expected while reading the XML declaration</source>
-      <translation type="unfinished" />
+      <translation>version väntades vid läsning av XML-deklarationen</translation>
     </message>
     <message>
       <source>wrong value for standalone declaration</source>
-      <translation type="unfinished" />
+      <translation>felaktigt värde för fristående deklaration</translation>
     </message>
     <message>
       <source>encoding declaration or standalone declaration expected while reading the XML declaration</source>
-      <translation type="unfinished" />
+      <translation>kodninsdeklaration eller fristående deklaration förväntades vid läsning av XML-deklarationen</translation>
     </message>
     <message>
       <source>standalone declaration expected while reading the XML declaration</source>
-      <translation type="unfinished" />
+      <translation>fristående deklaration förväntades vid läsning av XML-deklarationen</translation>
     </message>
     <message>
       <source>error occurred while parsing document type definition</source>
-      <translation type="unfinished" />
+      <translation>fel inträffade vid tolkning av dokumenttypsdefinitionen</translation>
     </message>
     <message>
       <source>letter is expected</source>
-      <translation type="unfinished" />
+      <translation>bokstav förväntades</translation>
     </message>
     <message>
       <source>error occurred while parsing comment</source>
-      <translation type="unfinished" />
+      <translation>fel inträffade vid tolkning av kommentar</translation>
     </message>
     <message>
       <source>error occurred while parsing reference</source>
-      <translation type="unfinished" />
+      <translation>fel inträffade vid tolkning av referens</translation>
     </message>
     <message>
       <source>internal general entity reference not allowed in DTD</source>
-      <translation type="unfinished" />
+      <translation>intern allmän entitetsreferens tillåts inte i DTD</translation>
     </message>
     <message>
       <source>external parsed general entity reference not allowed in attribute value</source>
-      <translation type="unfinished" />
+      <translation>extern tolkad allmän entitetsreferens tillåts inte i attributvärde</translation>
     </message>
     <message>
       <source>external parsed general entity reference not allowed in DTD</source>
-      <translation type="unfinished" />
+      <translation>extern tolkad allmän entitetsreferens tillåts inte i DTD</translation>
     </message>
     <message>
       <source>unparsed entity reference in wrong context</source>
-      <translation type="unfinished" />
+      <translation>otolkad entitetsreferens i fel kontext</translation>
     </message>
     <message>
       <source>recursive entities</source>
-      <translation type="unfinished" />
+      <translation>rekursiva entiteter</translation>
     </message>
     <message>
       <source>error in the text declaration of an external entity</source>
-      <translation type="unfinished" />
+      <translation>fel i textdeklarationen av en extern entitet</translation>
     </message>
   </context>
   <context>
