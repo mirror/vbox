@@ -1332,7 +1332,7 @@
     <message>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ohita</translation>
     </message>
     <message>
         <source>Hold</source>
@@ -1660,7 +1660,7 @@
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tallentaa muutokset ja sulkee valintaikkunan.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -1927,7 +1927,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OS &amp;Tyyppi</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -2016,7 +2016,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
@@ -2450,11 +2450,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Uusi...</translation>
     </message>
     <message>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Uusi</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
@@ -2534,7 +2534,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;VirtualBox Web Sivusto...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
@@ -2629,7 +2629,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxSharedFoldersSettings</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nimi</translation>
     </message>
     <message>
         <source>Path</source>
@@ -2881,7 +2881,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Palautuspiste %1</translation>
     </message>
 </context>
 <context>
@@ -3160,7 +3160,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Levykuva Tiedosto</translation>
     </message>
     <message>
         <source>Alt+I</source>
@@ -3236,7 +3236,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pä&amp;ivitä</translation>
     </message>
     <message>
         <source>Alt+R</source>
