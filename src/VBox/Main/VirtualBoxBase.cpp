@@ -19,13 +19,15 @@
  * license agreement apply instead of the previous paragraph.
  */
 
+#if !defined (VBOX_WITH_XPCOM)
 #if defined (__WIN__)
 #include <windows.h>
 #include <dbghelp.h>
-#else // !defined (__WIN__)
+#endif
+#else // !defined (VBOX_WITH_XPCOM)
 #include <nsIServiceManager.h>
 #include <nsIExceptionService.h>
-#endif
+#endif // !defined (VBOX_WITH_XPCOM)
 
 #include "VirtualBoxBase.h"
 #include "VirtualBoxErrorInfoImpl.h"
@@ -506,7 +508,7 @@ void VirtualBoxBase::AutoLock::CritSectEnter (RTCRITSECT *aLock)
 {
     AssertReturn (aLock, (void) 0);
 
-#if defined(__LINUX__) && defined(__GNUC__)
+#if (defined(__LINUX__) || defined(__OS2__)) && defined(__GNUC__)
 
     RTCritSectEnterDebug (aLock,
                           "AutoLock::lock()/enter() return address >>>", 0,
@@ -569,7 +571,7 @@ void VirtualBoxBase::AutoLock::CritSectEnter (RTCRITSECT *aLock)
 
     RTCritSectEnter (aLock);
 
-#endif // defined(__LINUX__)
+#endif // defined(__LINUX__)...
 }
 
 #endif // defined(DEBUG)
@@ -670,6 +672,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
         rc = info.createObject();
         CheckComRCBreakRC (rc);
 
+#if !defined (VBOX_WITH_XPCOM)
 #if defined (__WIN__)
 
         ComPtr <IVirtualBoxErrorInfo> curInfo;
@@ -706,7 +709,8 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
         if (SUCCEEDED (rc))
             rc = ::SetErrorInfo (0, err);
 
-#else // !defined (__WIN__)
+#endif
+#else // !defined (VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
         es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
@@ -768,7 +772,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
             rc = NS_OK;
         }
 
-#endif // !defined (__WIN__)
+#endif // !defined (VBOX_WITH_XPCOM)
     }
     while (0);
 

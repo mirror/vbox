@@ -30,6 +30,8 @@
  */
 #include <iprt/types.h>
 
+#if !defined (VBOX_WITH_XPCOM)
+
 #if defined (__WIN__)
 
 // Windows COM
@@ -43,23 +45,23 @@
 #define NS_DECL_ISUPPORTS
 #define NS_IMPL_ISUPPORTS1_CI(a, b)
 
-// these are XPCOM only, one for every interface implemented
+/* these are XPCOM only, one for every interface implemented */
 #define NS_DECL_ISUPPORTS
 #define NS_DECL_IVIRTUALBOX
 #define NS_DECL_IMACHINECOLLECTION
 #define NS_DECL_IMACHINE
 
-// input pointer argument to method
+/* input pointer argument to method */
 #define INPTR
 
-// makes the name of the getter interface function (n must be capitalized)
+/* makes the name of the getter interface function (n must be capitalized) */
 #define COMGETTER(n)    get_##n
-// makes the name of the setter interface function (n must be capitalized)
+/* makes the name of the setter interface function (n must be capitalized) */
 #define COMSETTER(n)    put_##n
 
-// a type for an input GUID parameter in the interface method declaration
+/* a type for an input GUID parameter in the interface method declaration */
 #define GUIDPARAM           GUID
-// a type for an output GUID parameter in the interface method declaration
+/* a type for an output GUID parameter in the interface method declaration */
 #define GUIDPARAMOUT        GUID*
 
 /**
@@ -70,10 +72,29 @@
  */
 #define COM_IIDOF(I) _ATL_IIDOF (I)
 
-#else // !defined (__WIN__)
+#else // defined (__WIN__)
+
+#error "VBOX_WITH_XPCOM is not defined!"
+
+#endif // defined (__WIN__)
+
+#else // !defined (VBOX_WITH_XPCOM)
 
 // XPCOM
 /////////////////////////////////////////////////////////////////////////////
+
+#if defined (__OS2__)
+
+/* Make sure OS/2 Toolkit headers are pulled in to have
+ * BOOL/ULONG/etc. typedefs already defined in order to be able to redefine
+ * them using #define. */
+#include <os2.h>
+
+/* OS/2 Toolkit defines TRUE and FALSE */
+#undef FALSE
+#undef TRUE
+
+#endif // defined (__OS2__)
 
 #include <nsID.h>
 
@@ -111,23 +132,23 @@
 #define FALSE PR_FALSE
 #define TRUE PR_TRUE
 
-// makes the name of the getter interface function (n must be capitalized)
+/* makes the name of the getter interface function (n must be capitalized) */
 #define COMGETTER(n)    Get##n
-// makes the name of the setter interface function (n must be capitalized)
+/* makes the name of the setter interface function (n must be capitalized) */
 #define COMSETTER(n)    Set##n
 
-// a type to define a raw GUID variable (better to use the Guid class)
+/* a type to define a raw GUID variable (better to use the Guid class) */
 #define GUID                nsID
-// a type for an input GUID parameter in the interface method declaration
+/* a type for an input GUID parameter in the interface method declaration */
 #define GUIDPARAM           nsID &
-// a type for an output GUID parameter in the interface method declaration
+/* a type for an output GUID parameter in the interface method declaration */
 #define GUIDPARAMOUT        nsID **
 
-// CLSID and IID for compatibility with Win32
+/* CLSID and IID for compatibility with Win32 */
 typedef nsCID   CLSID;
 typedef nsIID   IID;
 
-// OLE error codes
+/* OLE error codes */
 #define S_OK                NS_OK
 #define E_UNEXPECTED        NS_ERROR_UNEXPECTED
 #define E_NOTIMPL           NS_ERROR_NOT_IMPLEMENTED
@@ -146,8 +167,8 @@ typedef nsIID   IID;
 
 #define COM_IIDOF(I) NS_GET_IID (I)
 
-// two very simple ATL emulator classes to provide
-// FinalConstruct()/FinalRelease() functionality on Linux
+/* two very simple ATL emulator classes to provide
+ * FinalConstruct()/FinalRelease() functionality on Linux */
 
 class CComObjectRootEx
 {
@@ -162,10 +183,10 @@ public:
     virtual ~CComObject() { this->FinalRelease(); }
 };
 
-// input pointer argument to method
+/* input pointer argument to method */
 #define INPTR const
 
-// helper functions
+/* helper functions */
 extern "C"
 {
 BSTR SysAllocString (const OLECHAR* sz);

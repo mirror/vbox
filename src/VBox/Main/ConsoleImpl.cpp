@@ -6006,6 +6006,9 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
 #elif defined(__DARWIN__)
         /** @todo Implement tap networking for Darwin. */
         int rcVBox = VERR_NOT_IMPLEMENTED;
+#elif defined(__OS2__)
+        /** @todo Implement tap networking for OS/2. */
+        int rcVBox = VERR_NOT_IMPLEMENTED;
 #elif defined(VBOX_WITH_UNIXY_TAP_NETWORKING)
 # error "PORTME: Implement OS specific TAP interface open/creation."
 #else
@@ -6572,9 +6575,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         PRTLOGGER loggerRelease;
         static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
         RTUINT fFlags = RTLOGFLAGS_PREFIX_TIME_PROG;
-#ifdef __WIN__
+#if defined (__WIN__) || defined (__OS2__)
         fFlags |= RTLOGFLAGS_USECRLF;
-#endif /* __WIN__ */
+#endif
         char szError[RTPATH_MAX + 128] = "";
         vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
                             "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,

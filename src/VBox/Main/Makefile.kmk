@@ -445,6 +445,7 @@ VBOX_XML_SCHEMA_COMMON = xml/VirtualBox-settings-common.xsd
 VBOX_XML_SCHEMA.darwin = xml/VirtualBox-settings-macosx.xsd
 VBOX_XML_SCHEMA.linux  = xml/VirtualBox-settings-linux.xsd
 VBOX_XML_SCHEMA.win    = xml/VirtualBox-settings-windows.xsd
+VBOX_XML_SCHEMA.os2    = xml/VirtualBox-settings-os2.xsd
 
 VirtualBoxXMLUtil.cpp_DEPS = $(VBOX_XML_ENTITIES) $(VBOX_XML_ENTITIES_COMMON)
 

@@ -4236,6 +4236,10 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         else if (driver == L"coreaudio")
             audioDriver = AudioDriverType_CoreAudioDriver;
 #endif
+#ifdef __OS2__
+        else if (driver == L"mmpm")
+            audioDriver = AudioDriverType_MMPMAudioDriver;
+#endif
         else
             AssertMsgFailed (("Invalid driver: %ls\n", driver.raw()));
         mAudioAdapter->COMSETTER(AudioDriver) (audioDriver);
@@ -6037,6 +6041,13 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
             case AudioDriverType_CoreAudioDriver:
             {
                 CFGLDRSetString (adapterNode, "driver", "coreaudio");
+                break;
+            }
+#endif
+#ifdef __OS2__
+            case AudioDriverType_MMPMAudioDriver:
+            {
+                CFGLDRSetString (adapterNode, "driver", "mmpm");
                 break;
             }
 #endif
