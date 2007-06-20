@@ -781,20 +781,6 @@ ifeq ($(filter-out win.x86 linux.x86, $(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH)),
  PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
 endif
 
-# glib and libIDL needed by XPCOM on OS/2.
-ifeq ($(BUILD_TARGET),os2)
- VBOX_PATH_GLIB      ?= $(PATH_DEVTOOLS_TRG)/glibidl
- VBOX_PATH_GLIB      := $(wildcard $(VBOX_PATH_GLIB))
- VBOX_PATH_LIBIDL    ?= $(PATH_DEVTOOLS_TRG)/glibidl
- VBOX_PATH_LIBIDL    := $(wildcard $(VBOX_PATH_LIBIDL))
- ifeq ($(VBOX_PATH_GLIB),)
-  $(warning VBOX_PATH_GLIB is wrong or not defined!)
- endif
- ifeq ($(VBOX_PATH_LIBIDL),)
-  $(warning VBOX_PATH_LIBIDL is wrong or not defined!)
- endif
-endif
-
 # XPCOM setup for all but win32.
 ifneq ($(BUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
