@@ -132,7 +132,8 @@ EB_CFLAGS+=     -DVERSION_MAJOR=$(VERSION_MAJOR) \
                 -DVERSION_MINOR=$(VERSION_MINOR) \
                 -DVERSION=\"$(VERSION)\" $(OLDGAS) \
                 -I include -I arch/$(ARCH)/include \
-                -DARCH=$(ARCH)
+                -DARCH=$(ARCH) \
+		$(VBOX_GCC_Wno-pointer-sign) -Wno-unused
 
 IDENT=          '$(@F) $(VERSION) (GPL) etherboot.org'
 
