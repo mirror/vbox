@@ -1250,7 +1250,7 @@ nsComponentManagerImpl::ReadPersistentRegistry()
             "@mozilla.org/locale/win32-locale;1",
             "@mozilla.org/widget/lookandfeel/win;1",
         // */
-            0
+            { 0 }
         };
         for (int i=0; abusedContracts[i] && *abusedContracts[i]; i++) {
             nsFactoryEntry *entry = nsnull;

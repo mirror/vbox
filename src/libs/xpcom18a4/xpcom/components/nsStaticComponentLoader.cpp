@@ -162,7 +162,7 @@ nsStaticComponentLoader::GetInfoFor(const char *aLocation,
         rv = info->info.getModule(mComponentMgr, nsnull,
                              getter_AddRefs(info->module));
 #ifdef DEBUG
-        fprintf(stderr, "nSCL: GetInfoFor(\"%s\"): %lx\n", aLocation, rv);
+        fprintf(stderr, "nSCL: GetInfoFor(\"%s\"): %x\n", aLocation, rv);
 #endif
         if (NS_FAILED(rv))
             return rv;
@@ -198,7 +198,7 @@ nsStaticComponentLoader::info_RegisterSelf(PLDHashTable *table,
     if (!info->module) {
         rv = info->info.getModule(mgr, nsnull, getter_AddRefs(info->module));
 #ifdef DEBUG
-        fprintf(stderr, "nSCL: getModule(\"%s\"): %lx\n", info->info.name, rv);
+        fprintf(stderr, "nSCL: getModule(\"%s\"): %x\n", info->info.name, rv);
 #endif
         if (NS_FAILED(rv))
             return PL_DHASH_NEXT; // oh well.
@@ -207,7 +207,7 @@ nsStaticComponentLoader::info_RegisterSelf(PLDHashTable *table,
     rv = info->module->RegisterSelf(mgr, nsnull, info->info.name,
                                     staticComponentType);
 #ifdef DEBUG
-    fprintf(stderr, "nSCL: autoreg of \"%s\": %lx\n", info->info.name, rv);
+    fprintf(stderr, "nSCL: autoreg of \"%s\": %x\n", info->info.name, rv);
 #endif
 
     if (rv == NS_ERROR_FACTORY_REGISTER_AGAIN)
