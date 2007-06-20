@@ -34,7 +34,7 @@ VBoxFB_INCS       = \
 	$(PATH_BIN)/sdk/include \
 	$(VBOX_XPCOM_INCS)
 VBoxFB_LIBS       = \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME) \
 	xpcomglue \
 	nspr4 \

@@ -32,21 +32,18 @@ ifndef VBOX_OSE
 SUBDIRS_AFTER += webservice
 endif
 
-LIBRARIES        =
+LIBRARIES        = VBoxCOM
 DLLS             = VBoxXML VBoxC
 PROGRAMS         = VBoxSVC
-ifeq ($(BUILD_TARGET),win)
- LIBRARIES       = VBoxCOM
-else
+ifneq ($(BUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
  DLLS           += VBoxSVCM
- LIBRARIES       = VBoxXPCOM
- DEFS           += VBOX_WITH_XPCOM
  DEFS           += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
  DEFS           += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
+
 #PROGRAMS         = tstCFGLdr
 
 ifeq ($(BUILD_TARGET),win)
@@ -383,55 +380,39 @@ $(PATH_TARGET)/SettingsConverter_xsl.h: xml/SettingsConverter.xsl $(VBOX_BIN2C) 
 # tstCFGLdr - broken.
 #
 
-tstCFGLdr_TEMPLATE = VBOXR3
+tstCFGLdr_TEMPLATE = VBOXMAINCLIENTEXE
 tstCFGLdr_SDKS     = VBOX_XALAN VBOX_XERCES
 tstCFGLdr_DEFS     = IN_CFGLDR_R3 STANDALONE_TEST
-## @todo these makes uncessary noice. fix the template usage!
-tstCFGLdr_CXXFLAGS.win = -EHsc
 tstCFGLdr_SOURCES  = \
 	xml/cfgldr.cpp \
 	xml/cfgldrhlp.cpp
 tstCFGLdr_INCS     = \
 	include \
 	$(PATH_TARGET)
-ifdef VBOX_WITH_XPCOM
-tstCFGLdr_LIBS     = \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB)
-endif
-tstCFGLdr_LIBS    += \
-	$(LIB_RUNTIME)
 
 
 #
 # VBoxCOM - COM Abstraction Layer library
 #
 
-## @todo rename VBoxXPCOM below to VBoxCOM as well (for simplicity!)
-
-VBoxCOM_COMMON_SOURCES = \
+VBoxCOM_TEMPLATE        = VBOXMAINLIB
+VBoxCOM_SOURCES         = \
 	glue/com.cpp \
 	glue/initterm.cpp \
 	glue/string.cpp \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp
-
-VBoxCOM_TEMPLATE = VBOXMAINLIB
-VBoxCOM_DEFS.x86 = _WIN32_WINNT=0x0500
-VBoxCOM_DEFS.amd64 = _WIN32_WINNT=0x0510
-VBoxCOM_SOURCES = \
-	$(VBoxCOM_COMMON_SOURCES) \
+ifeq ($(BUILD_TARGET),win)
+ VBoxCOM_DEFS.x86      += _WIN32_WINNT=0x0500
+ VBoxCOM_DEFS.amd64    += _WIN32_WINNT=0x0510
+ VBoxCOM_SOURCES       += \
 	$(PATH_VBoxCOM)/VirtualBox_i.c
-
-
-#
-# VBoxXPCOM
-#
-VBoxXPCOM_TEMPLATE = VBOXMAINLIB
-VBoxXPCOM_SOURCES = \
-	$(VBoxCOM_COMMON_SOURCES) \
-	linux/helpers.cpp
-VBoxXPCOM_INCS = \
+else
+ VBoxCOM_INCS          += \
 	include
+ VBoxCOM_SOURCES       += \
+	linux/helpers.cpp
+endif
 
 
 #
@@ -450,7 +431,7 @@ endef
 $(foreach src,\
 	$(VBoxC_SOURCES)   $(VBoxC_SOURCES.$(BUILD_TARGET)) \
 	$(VBoxSVC_SOURCES) $(VBoxSVC_SOURCES.$(BUILD_TARGET)) \
-	$(VBoxCOM_COMMON_SOURCES) $(VBoxCOM_SOURCES) $(VBoxXPCOM_SOURCES) \
+	$(VBoxCOM_SOURCES) \
 	,$(eval $(value def_src_deps)))
 
 
@@ -619,5 +600,5 @@ $(PATH_BIN)/comregister.cmd: win32/comregister.cmd
 
 
 # Hot fix when dependencies goes bad again...
-#.NOTPARALLEL: $(TARGET_VBoxC) $(TARGET_VBoxSVC) $(TARGET_VBoxXPCOM) $(TARGET_VBoxCOM) $(IDLHEADER) $(IDLFILE) $(PATH_VBoxCOM)/VirtualBox_i.c
+#.NOTPARALLEL: $(TARGET_VBoxC) $(TARGET_VBoxSVC) $(TARGET_VBoxCOM) $(IDLHEADER) $(IDLFILE) $(PATH_VBoxCOM)/VirtualBox_i.c
 

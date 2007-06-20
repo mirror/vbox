@@ -28,16 +28,8 @@ PROGRAMS = VBoxSDL tstSDL
 #
 # VBoxSDL
 #
-ifneq ($(filter win linux,$(BUILD_TARGET)),)	## @todo Convert these two to the other template too!
- VBoxSDL_TEMPLATE  = VBOXR3NPEXE
- VBoxSDL_CXXFLAGS.win = \
-	-EHsc
- VBoxSDL_CXXFLAGS.linux = \
-	-DNDEBUG -DTRIMMED -DVBOX_WITH_XPCOM -O -Wall -fno-rtti -fno-exceptions \
-	-Wno-non-virtual-dtor -Wno-long-long -fshort-wchar -pthread -pipe
-else
- VBoxSDL_TEMPLATE  = VBOXMAINCLIENTEXE
-endif
+
+VBoxSDL_TEMPLATE   = VBOXMAINCLIENTEXE
 VBoxSDL_SDKS       = LIBSDL
 VBoxSDL_SOURCES    = \
 	VBoxSDL.cpp \
@@ -66,32 +58,12 @@ endif
 VBoxSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
 VBoxSDL_DEFS.win.amd64 = _WIN32_WINNT=0x0510
 VBoxSDL_INCS = \
-	$(PATH_BIN)/sdk/include
-ifdef VBOX_WITH_XPCOM
- VBoxSDL_INCS = \
 	$(PATH_BIN)/sdk/include \
-	$(VBOX_XPCOM_INCS) \
 	$(PATH_VBoxSDL)
- VBoxSDL_LIBS = \
-    $(LIB_SDK_LIBSDL_SDLMAIN) \
-	$(PATH_LIB)/VBoxXPCOM$(VBOX_SUFF_LIB) \
-	$(LIB_RUNTIME) \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
- VBoxSDL_LIBS.linux = \
+VBoxSDL_LIBS.linux = \
 	$(LIB_XCURSOR)
- VBoxSDL_LDFLAGS.darwin = \
-    -framework Foundation -framework AppKit
-else # !VBOX_WITH_XPCOM
- VBoxSDL_INCS.win = \
-	$(PATH_BIN)/sdk/include \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
-	$(PATH_VBoxSDL)
- VBoxSDL_LIBS.win = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib \
-	$(LIB_RUNTIME)
-endif # !VBOX_WITH_XPCOM
+VBoxSDL_LDFLAGS.darwin = \
+	-framework Foundation -framework AppKit
 ifdef VBOX_OPENGL
  #VBoxSDL_LIBS.linux += GL
 endif
