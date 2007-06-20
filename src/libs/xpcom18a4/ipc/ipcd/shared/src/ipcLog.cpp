@@ -52,9 +52,9 @@
 #undef PAGE_SIZE
 #endif
 #include <iprt/runtime.h> // for RTR3Init
-#else // VBOX
+#else // !VBOX
 PRBool ipcLogEnabled = PR_FALSE;
-#endif // VBOX
+#endif // !VBOX
 
 char ipcLogPrefix[10] = {0};
 
