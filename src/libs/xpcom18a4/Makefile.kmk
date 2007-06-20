@@ -546,8 +546,23 @@ xpidl_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 
 ifeq ($(filter-out os2,$(BUILD_TARGET)),)
- xpidl_INCS = $(VBOX_PATH_LIBIDL)/include $(VBOX_PATH_GLIB)/include
- xpidl_LIBS = $(VBOX_PATH_LIBIDL)/lib/libidl.lib $(VBOX_PATH_LIBIDL)/lib/glib.lib
+ # glib and libIDL needed by XPCOM on OS/2.
+ VBOX_PATH_GLIB      ?= $(PATH_DEVTOOLS_TRG)/glibidl
+ VBOX_PATH_GLIB      := $(wildcard $(VBOX_PATH_GLIB))
+ VBOX_PATH_LIBIDL    ?= $(PATH_DEVTOOLS_TRG)/glibidl
+ VBOX_PATH_LIBIDL    := $(wildcard $(VBOX_PATH_LIBIDL))
+ ifeq ($(VBOX_PATH_GLIB),)
+  $(warning VBOX_PATH_GLIB is wrong or not defined!)
+ endif
+ ifeq ($(VBOX_PATH_LIBIDL),)
+  $(warning VBOX_PATH_LIBIDL is wrong or not defined!)
+ endif
+ xpidl_INCS = \
+	$(VBOX_PATH_LIBIDL)/include \
+	$(VBOX_PATH_GLIB)/include
+ xpidl_LIBS = \
+	$(VBOX_PATH_LIBIDL)/lib/libidl.lib \
+	$(VBOX_PATH_LIBIDL)/lib/glib.lib
 else
  # We do these ONCE.
  libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
