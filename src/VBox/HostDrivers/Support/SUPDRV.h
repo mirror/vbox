@@ -565,7 +565,7 @@ typedef struct SUPDRVSESSION
     uint16_t                    Alignment; /**< Alignment */
 #endif
 #if defined(__DARWIN__) || defined(__OS2__)
-    /** Pointer to the next session with the same has. */
+    /** Pointer to the next session with the same hash. */
     PSUPDRVSESSION              pNextHash;
 #endif
 } SUPDRVSESSION;
