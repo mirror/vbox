@@ -1596,12 +1596,13 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  *
  * @remark Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_EMULATE_INSTR   Defer the read to the REM.
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
@@ -1624,7 +1625,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
      */
     if (   (uPrefix & PREFIX_REPNE)
         || pRegFrame->eflags.Bits.u1DF)
-        return VINF_EM_RESCHEDULE_REM;
+        return VINF_EM_RAW_EMULATE_INSTR;
 
     /*
      * Get bytes/words/dwords count to transfer.
@@ -1643,13 +1644,13 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    int rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid, 
+    int rc = SELMToFlatEx(pVM, pRegFrame->eflags, pRegFrame->es, (RTGCPTR)pRegFrame->edi, &pRegFrame->esHid,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           &GCPtrDst, NULL);
     if (VBOX_FAILURE(rc))
     {
         Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
-        return VINF_EM_RESCHEDULE_REM;
+        return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
@@ -1660,7 +1661,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (rc != VINF_SUCCESS)
     {
         Log(("INS will generate a trap -> fallback, rc=%d\n", rc));
-        return VINF_EM_RESCHEDULE_REM;
+        return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     Log(("IOM: rep ins%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
@@ -1707,12 +1708,13 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
  * [REP*] INSB/INSW/INSD
  * ES:EDI,DX[,ECX]
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_EMULATE_INSTR   Defer the read to the REM.
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
@@ -1751,10 +1753,10 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  *
  * @remark  Assumes caller checked the access privileges (IOMInterpretCheckPortIOAccess)
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
@@ -1779,7 +1781,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
      */
     if (   (uPrefix & (PREFIX_SEG | PREFIX_REPNE))
         || pRegFrame->eflags.Bits.u1DF)
-        return VINF_EM_RESCHEDULE_REM;
+        return VINF_EM_RAW_EMULATE_INSTR;
 
     /*
      * Get bytes/words/dwords count to transfer.
@@ -1803,7 +1805,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (VBOX_FAILURE(rc))
     {
         Log(("OUTS source address conversion failed -> fallback, rc=%Vrc\n", rc));
-        return VINF_EM_RESCHEDULE_REM;
+        return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     /* Access verification first; we currently can't recover properly from traps inside this instruction */
@@ -1813,7 +1815,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (rc != VINF_SUCCESS)
     {
         Log(("OUTS will generate a trap -> fallback, rc=%Vrc\n", rc));
-        return VINF_EM_RESCHEDULE_REM;
+        return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     Log(("IOM: rep outs%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
@@ -1864,12 +1866,13 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
  * [REP*] OUTSB/OUTSW/OUTSD
  * DS:ESI,DX[,ECX]
  *
- * @returns Strict VBox status code. Informational status codes other than the one documented 
+ * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
  * @retval  VINF_SUCCESS                Success.
- * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the 
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
  * @retval  VINF_IOM_HC_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_EM_RAW_EMULATE_INSTR   Defer the write to the REM.
  * @retval  VINF_EM_RAW_GUEST_TRAP      The exception was left pending. (TRPMRaiseXcptErr)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)

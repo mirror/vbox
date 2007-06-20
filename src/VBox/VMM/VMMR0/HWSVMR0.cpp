@@ -389,7 +389,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             }
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
-        if (!(val & X86_CR0_CD))            
+        if (!(val & X86_CR0_CD))
             val &= ~X86_CR0_NW;     /* Illegal when cache is turned on. */
 
         val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
@@ -1287,7 +1287,7 @@ ResumeExecution:
                 }
             }
         }
-        /* 
+        /*
          * Handled the I/O return codes.
          * (The unhandled cases end up with rc == VINF_EM_RESCHEDULE_REM.)
          */
@@ -1309,11 +1309,8 @@ ResumeExecution:
         else if (rc == VINF_IOM_HC_IOPORT_WRITE)
             Assert(IoExitInfo.n.u1Type == 0);
         else
-            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("%Vrc\n", rc));
-#endif 
-        /* Force instruction emulation and not a reschedule to the recompiler as that will come right back to us */
-        if (rc == VINF_EM_RESCHEDULE_REM)
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("%Vrc\n", rc));
+#endif
         Log2(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
         break;
     }
