@@ -7299,7 +7299,7 @@
 
     <enum
         name="AudioDriverType"
-        uuid="0194b900-7233-42d3-b7a1-097bbf53febd"
+        uuid="4bcc3d73-c2fe-40db-b72f-0c2ca9d68496"
     >
         <const name="NullAudioDriver"   value="0"/>
         <const name="WINMMAudioDriver"  value="1"/>
@@ -7307,6 +7307,7 @@
         <const name="ALSAAudioDriver"   value="3"/>
         <const name="DSOUNDAudioDriver" value="4"/>
         <const name="CoreAudioDriver"   value="5"/>
+        <const name="MMPMAudioDriver"   value="5"/>
     </enum>
 
     <interface

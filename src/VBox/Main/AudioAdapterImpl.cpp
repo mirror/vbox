@@ -232,6 +232,9 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T audioDriver)
 #ifdef __DARWIN__
             case AudioDriverType_CoreAudioDriver:
 #endif 
+#ifdef __OS2__
+            case AudioDriverType_MMPMAudioDriver:
+#endif 
             {
                 mData.backup();
                 mData->mAudioDriver = audioDriver;

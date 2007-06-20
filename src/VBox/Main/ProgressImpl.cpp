@@ -19,11 +19,11 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if !defined (__WIN__)
+#if defined (VBOX_WITH_XPCOM)
 #include <nsIServiceManager.h>
 #include <nsIExceptionService.h>
 #include <nsCOMPtr.h>
-#endif // !defined (__WIN__)
+#endif // defined (VBOX_WITH_XPCOM)
 
 #include "ProgressImpl.h"
 #include "VirtualBoxImpl.h"
@@ -767,6 +767,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
     {
         /* try to import error info from the current thread */
 
+#if !defined (VBOX_WITH_XPCOM)
 #if defined (__WIN__)
 
         ComPtr <IErrorInfo> err;
@@ -778,7 +779,8 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
                 rc = E_FAIL;
         }
 
-#else // !defined (__WIN__)
+#endif // !defined (__WIN__)
+#else // !defined (VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
         es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
@@ -798,7 +800,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
                 }
             }
         }
-#endif // !defined (__WIN__)
+#endif // !defined (VBOX_WITH_XPCOM)
 
         AssertMsg (rc == S_OK, ("Couldn't get error info (rc=%08X) while trying "
                                 "to set a failed result (%08X)!\n", rc, aResultCode));

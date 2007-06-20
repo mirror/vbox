@@ -814,7 +814,7 @@ NS_METHOD nsMyFactory::Create(nsISupports* outer, const nsIID& aIID, void* *aIns
  *  Instantiates a new factory and calls
  *  nsMyModuleComponentInfo::mFactoryConstructor.
  */
-NS_COM nsresult
+nsresult
 NS_NewMyFactory(nsIGenericFactory* *result,
                 const nsMyModuleComponentInfo *info)
 {

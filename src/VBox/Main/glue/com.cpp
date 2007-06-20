@@ -159,8 +159,9 @@ int GetVBoxUserHomeDirectory (Utf8Str &aDir)
     {
         /* compose the config directory (full path) */
         vrc = RTPathUserHome (path, sizeof (path));
-        aDir = Utf8StrFmt ("%s%c%s", path, RTPATH_DELIMITER,
-                           VBOX_USER_HOME_SUFFIX);
+        if (RT_SUCCESS (vrc))
+            aDir = Utf8StrFmt ("%s%c%s", path, RTPATH_DELIMITER,
+                               VBOX_USER_HOME_SUFFIX);
     }
 
     /* ensure the home directory exists */

@@ -3327,9 +3327,11 @@ HRESULT VirtualBox::checkMediaForConflicts (HardDisk *aHardDisk,
 
         aId = &aHardDisk->id();
         if (aHardDisk->storageType() == HardDiskStorageType_VirtualDiskImage)
+#if !defined (VBOX_WITH_XPCOM)
 #if defined(__WIN__)
             /// @todo (dmik) stupid BSTR declaration lacks the BCSTR counterpart
             const_cast <BSTR> (aFilePathFull) = aHardDisk->asVDI()->filePathFull();
+#endif
 #else
             aFilePathFull = aHardDisk->asVDI()->filePathFull();
 #endif

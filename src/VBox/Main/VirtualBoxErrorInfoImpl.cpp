@@ -86,6 +86,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Next) (IVirtualBoxErrorInfo **aNext)
     return mNext.queryInterfaceTo (aNext);
 }
 
+#if !defined (VBOX_WITH_XPCOM)
 #if defined (__WIN__)
 
 /**
@@ -141,7 +142,8 @@ STDMETHODIMP VirtualBoxErrorInfo::GetSource (BSTR *source)
     return COMGETTER(Component) (source);
 }
 
-#else // !defined (__WIN__)
+#endif // defined (__WIN__)
+#else // !defined (VBOX_WITH_XPCOM)
 
 /**
  *  Initializes itself by fetching error information from the given error info
@@ -240,5 +242,5 @@ NS_IMETHODIMP VirtualBoxErrorInfo::ToString (char **_retval)
 NS_IMPL_THREADSAFE_ISUPPORTS2 (VirtualBoxErrorInfo,
                                nsIException, IVirtualBoxErrorInfo)
 
-#endif
+#endif // !defined (VBOX_WITH_XPCOM)
 
