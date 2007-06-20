@@ -74,6 +74,58 @@
         <source>Right </source>
         <translation>Jobb </translation>
     </message>
+    <message>
+        <source>Left Shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right Alt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left WinKey</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right WinKey</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Menu key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt Gr</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;key_%1&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIMessageBox</name>
@@ -212,7 +264,7 @@
     </message>
     <message>
         <source>&amp;Revert to the current shapshot</source>
-        <translation>Visszaálni az előző pillanatkép&amp;re</translation>
+        <translation type="obsolete">Visszaálni az előző pillanatkép&amp;re</translation>
     </message>
     <message>
         <source>Alt+R</source>
@@ -245,6 +297,10 @@
     <message>
         <source>Alt+C</source>
         <translation>Alt+C</translation>
+    </message>
+    <message>
+        <source>&amp;Revert to the current snapshot</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -534,7 +590,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Jelzi&amp;nbsp;a&amp;nbsp;hálózat&amp;nbsp;aktivítását&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Jelzi&amp;nbsp;a&amp;nbsp;hálózat&amp;nbsp;aktivítását&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
@@ -582,7 +638,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem találom a VirtualBox Guest Additions CD képet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; vagy &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem találom a VirtualBox Guest Additions CD képet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; vagy &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -591,6 +647,62 @@
     <message>
         <source>&amp;Machine</source>
         <translation>&amp;Gép</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters indicator</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>network</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>Floppy tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>CD/DVD tip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect the cable from the selected virtual network adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect the cable to the selected virtual network adapter</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -824,7 +936,7 @@
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso)</source>
-        <translation>CD/DVD-ROM képek (*.iso)</translation>
+        <translation type="obsolete">CD/DVD-ROM képek (*.iso)</translation>
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
@@ -832,7 +944,7 @@
     </message>
     <message>
         <source>Floppy images (*.img)</source>
-        <translation>Floppy képek (*.img)</translation>
+        <translation type="obsolete">Floppy képek (*.img)</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -858,6 +970,14 @@
         <source>Refresh the media list</source>
         <translation>Média lista frissítése</translation>
     </message>
+    <message>
+        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobal</name>
@@ -869,12 +989,12 @@
     <message>
         <source>Unknown device %04hX:%04hX</source>
         <comment>USB device details</comment>
-        <translation>Ismeretlen eszköz %04hX:%04hX</translation>
+        <translation type="obsolete">Ismeretlen eszköz %04hX:%04hX</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;Vendor ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %04hX&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %04hX&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
@@ -1373,6 +1493,16 @@
         <source>Select a file</source>
         <translation>Fájl kiválasztása</translation>
     </message>
+    <message>
+        <source>Unknown device %1:%2</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -1620,7 +1750,7 @@
     <message>
         <source>&lt;unavailabie&gt;</source>
         <comment>Language</comment>
-        <translation>&lt;elérhetetlen&gt;</translation>
+        <translation type="obsolete">&lt;elérhetetlen&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
@@ -1681,6 +1811,11 @@ to the system default language.&lt;/qt&gt;
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation>Egy teljesen új USB szűrő létrehozása a kiválasztott USB eszköz paraméterei alapján.</translation>
     </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxMediaComboBox</name>
@@ -1718,7 +1853,7 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Válassza ki az elkészítendő virtuális merevlemez típusát.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Válassza ki az elkészítendő virtuális merevlemez típusát.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dinamikusan növekvő&lt;/b&gt; kezdetben kis helyet foglal, később
 a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg el nem éri az itt megadott méretet.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fix méretű&lt;/b&gt; nem tud növekedni. Annyi helyet fog elfoglalni amennyit itt beállítasz.&lt;/p&gt;</translation>
@@ -1807,6 +1942,15 @@ lemezből&lt;/p&gt;</translation>
         <source>Select a file for the new hard disk image file</source>
         <translation>Válassza ki az új merevlemezkép fájlját</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxNewVMWzd</name>
@@ -1824,13 +1968,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
         <translation type="unfinished">Az Új virtuális gép varázsló üdvözli önt!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select a type of the guest operating
-system you plan to install in the machine.&lt;/p&gt;
-&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox products to identify the created virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>N&amp;ame</source>
@@ -1871,16 +2008,6 @@ It will be used by all VirtualBox products to identify the created virtual machi
     <message>
         <source>Memory</source>
         <translation>Memória</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used
-as a boot hard disk of the virtual machine. You can either create a new hard
-disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
-image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
-&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
-step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
@@ -1959,6 +2086,23 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>A merevlemez ajánlott mérete &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
+&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used
+as the boot hard disk of the virtual machine. You can either create a new hard
+disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
+image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
+button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
+step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2241,21 +2385,8 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;nobrl&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occured during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occured during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2293,6 +2424,31 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2521,6 +2677,22 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Machine</source>
         <translation>&amp;Gép</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Log...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+L</source>
+        <translation type="unfinished">Ctrl+L</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2911,20 +3083,20 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; gyártót a szűréshez. 
+        <translation type="obsolete">&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; gyártót a szűréshez. 
 Ha üresen hagyja, minden gyártóra illeszkedni fog.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; terméknevet a szűréshez. Ha üresen hagyja, minden termékre illeszkedni fog.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; terméknevet a szűréshez. Ha üresen hagyja, minden termékre illeszkedni fog.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
 value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; sorozatszámot a szűréshez. Ha üresen hagyja, minden sorozatszámra illeszkedni fog.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Adjon meg egy &lt;i&gt;pontos&lt;/i&gt; sorozatszámot a szűréshez. Ha üresen hagyja, minden sorozatszámra illeszkedni fog.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines whether this filter applies
@@ -2941,16 +3113,34 @@ computer when a matching device is attached: give it up to the host OS
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;qt&gt;Defines the manufacturer filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the product name filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Defines the serial number filter as an
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
+value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An emtpy string will match any
+&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2958,13 +3148,13 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An emtpy string will match any
+is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An emtpy string will match any
+&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3009,6 +3199,105 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
+    <name>VBoxVMFirstRunWzd</name>
+    <message>
+        <source>First Run Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD-ROM Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation type="unfinished">Alt+C</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+F</source>
+        <translation type="unfinished">Alt+F</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Host Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+H</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Image File</source>
+        <translation type="unfinished">&amp;Képfájl</translation>
+    </message>
+    <message>
+        <source>Alt+I</source>
+        <translation type="unfinished">Alt+I</translation>
+    </message>
+    <message>
+        <source>VDM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished">Összegzés</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Drive %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMListBox</name>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
@@ -3023,6 +3312,49 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Inaccessible</source>
         <translation>Elérhetetlen</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMLogViewer</name>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+S</source>
+        <translation type="unfinished">Alt+S</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Frissítés</translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <translation type="unfinished">Alt+R</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation type="unfinished">Alt+C</translation>
+    </message>
+    <message>
+        <source>%1 - VirtualBox Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3073,7 +3405,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation>Gazda interfész hozzáadása.</translation>
+        <translation type="obsolete">Gazda interfész hozzáadása.</translation>
     </message>
     <message>
         <source>&amp;File Descriptor</source>
@@ -3093,15 +3425,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
-        <translation>&lt;Nincs használható interfész&gt;</translation>
+        <translation type="obsolete">&lt;Nincs használható interfész&gt;</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>HozzáadHozzáad</translation>
+        <translation type="obsolete">HozzáadHozzáad</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Töröl</translation>
+        <translation type="obsolete">Töröl</translation>
     </message>
     <message>
         <source>Select TAP setup application</source>
@@ -3113,11 +3445,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation>VirtualBox gazda interfész %1</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a differnet interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">VirtualBox gazda interfész %1</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -3140,19 +3468,7 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the command executed to setup the TAP interface.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3165,6 +3481,10 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Selects the terminate application.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3192,7 +3512,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;i&gt;Válasszon egy kategóriát a bal oldali listából és vigye az egeret a beállítás fölé a bővebb információért&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
@@ -3640,7 +3960,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
@@ -3771,16 +4091,52 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Egy teljesen üres USB szűrőt hoz létre. Ez a szűrő minden csatlakoztatott eszközre illeszkedni fog.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Egy teljesen új USB szűrő létrehozása a kiválasztott USB eszköz paraméterei alapján.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>%1.eszköz</translation>
+    </message>
+    <message>
+        <source>Host &amp;Interfaces</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all available host interfaces.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adds a new host interface.</source>
+        <translation type="unfinished">Gazda interfész hozzáadása.</translation>
+    </message>
+    <message>
+        <source>Removes the selected host interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;No suitable interfaces&gt;</source>
+        <translation type="unfinished">&lt;Nincs használható interfész&gt;</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">Töröl</translation>
+    </message>
+    <message>
+        <source>VirtualBox Host Interface %1</source>
+        <translation type="unfinished">VirtualBox gazda interfész %1</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
