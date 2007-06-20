@@ -1845,6 +1845,10 @@ int main(int argc, char *argv[])
     bool fTerminateDuringStartup;
     fTerminateDuringStartup = false;
 
+    LogRel(("VBoxSDL: NUM lock initially %s, CAPS lock initially %s\n",
+              !!(SDL_GetModState() & KMOD_NUM)  ? "ON" : "OFF",
+              !!(SDL_GetModState() & KMOD_CAPS) ? "ON" : "OFF"));
+
     /* start regular timer so we don't starve in the event loop */
     SDL_TimerID sdlTimer;
     sdlTimer = SDL_AddTimer(100, StartupTimer, NULL);
