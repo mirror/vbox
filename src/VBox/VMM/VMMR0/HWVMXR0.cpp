@@ -1728,7 +1728,7 @@ ResumeExecution:
         }
         /*
          * Handled the I/O return codes.
-         * (The unhandled cases end up with rc == VINF_EM_RESCHEDULE_REM.)
+         * (The unhandled cases end up with rc == VINF_EM_RAW_EMULATE_INSTR.)
          */
         if (IOM_SUCCESS(rc))
         {
@@ -1741,13 +1741,19 @@ ResumeExecution:
             }
             break;
         }
+        if (rc == VINF_EM_RAW_EMULATE_INSTR)
+        {
+            /* First attempt to emulate directly before falling back to the recompiler */
+            rc = (fIOWrite) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
+        }
+
 #ifdef VBOX_STRICT
         if (rc == VINF_IOM_HC_IOPORT_READ)
             Assert(!fIOWrite);
         else if (rc == VINF_IOM_HC_IOPORT_WRITE)
             Assert(fIOWrite);
         else
-            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("%Vrc\n", rc));
+            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
 #endif
         break;
     }
