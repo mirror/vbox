@@ -21,8 +21,9 @@
 
 #include "VBoxService.h"
 #include "resource.h"
+#include <malloc.h>
 
-// #define DEBUG_DISPLAY_CHANGE
+#include "helpers.h"
 
 /* global variables */
 HANDLE                gVBoxDriver;
@@ -38,7 +39,7 @@ VOID DisplayChangeThread(void *dummy);
 LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-VOID SvcDebugOut2(LPSTR String, ...)
+void SvcDebugOut2(char *String, ...)
 {
    va_list va;
 
@@ -61,15 +62,10 @@ VOID SvcDebugOut2(LPSTR String, ...)
 #endif /* DEBUG_DISPLAY_CHANGE */
    }
 
+   SetLastError (0);
+
    va_end (va);
 }
-
-#ifdef DEBUG_DISPLAY_CHANGE
-#define DDCLOG(a) do { SvcDebugOut2 a; } while (0)
-#else
-#define DDCLOG(a) do {} while (0)
-#endif /* DEBUG_DISPLAY_CHANGE */
-
 
 /**
  * Helper function to send a message to WinDbg
@@ -417,9 +413,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     SvcDebugOut2("VBoxService: WinMain\n");
     gInstance = hInstance;
     VBoxServiceStart ();
+    return 0;
 }
 
-static bool isVBoxDisplayDriverActive (TCHAR *paszDeviceName)
+static bool isVBoxDisplayDriverActive (void)
 {
     bool result = false;
 
@@ -451,7 +448,6 @@ static bool isVBoxDisplayDriverActive (TCHAR *paszDeviceName)
             if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
             {
                 DDCLOG(("VBox display driver is active.\n"));
-                strcpy (paszDeviceName, dispDevice.DeviceName);
                 result = true;
             }
 
@@ -468,63 +464,183 @@ static bool isVBoxDisplayDriverActive (TCHAR *paszDeviceName)
     return result;
 }
 
-static LPCTSTR vboxQueryMonitorName (TCHAR *DeviceName, TCHAR *MonitorName, INT idx)
+/* ChangeDisplaySettingsEx does not exist in NT. ResizeDisplayDevice uses the function. */
+typedef LONG WINAPI defChangeDisplaySettingsEx(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
+static defChangeDisplaySettingsEx *pChangeDisplaySettingsEx = NULL;
+
+/* Returns TRUE to try again. */
+static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel)
 {
-    LPCTSTR result = NULL;
-
-    DISPLAY_DEVICE dispDevice;
-#ifdef DEBUG_DISPLAY_CHANGE
-    FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
-
-    dispDevice.cb = sizeof(DISPLAY_DEVICE);
+    BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0);
     
-    INT devNum = 0;
+    DISPLAY_DEVICE DisplayDevice;
 
-    while (EnumDisplayDevices(DeviceName,
-                              devNum,
-                              &dispDevice,
-                              0))
-    {
-        DDCLOG(("DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
-                      devNum,
-                      &dispDevice.DeviceName[0],
-                      &dispDevice.DeviceString[0],
-                      &dispDevice.DeviceID[0],
-                      &dispDevice.DeviceKey[0],
-                      dispDevice.StateFlags));
+    ZeroMemory(&DisplayDevice, sizeof(DisplayDevice));
+    DisplayDevice.cb = sizeof(DisplayDevice);
+    
+    /* Find out how many display devices the system has */
+    DWORD NumDevices = 0;
+    DWORD i = 0;
+    while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
+    { 
+        DDCLOG(("[%d] %s\n", i, DisplayDevice.DeviceName));
 
-        FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
-
-        dispDevice.cb = sizeof(DISPLAY_DEVICE);
-
-        devNum++;
+        if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+        {
+            DDCLOG(("Found primary device. err %d\n", GetLastError ()));
+            NumDevices++;
+        }
+        else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
+        {
+            
+            DDCLOG(("Found secondary device. err %d\n", GetLastError ()));
+            NumDevices++;
+        }
+        
+        ZeroMemory(&DisplayDevice, sizeof(DisplayDevice));
+        DisplayDevice.cb = sizeof(DisplayDevice);
+        i++;
     }
-#endif /* DEBUG_DISPLAY_CHANGE */
-
-    FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
-
-    dispDevice.cb = sizeof(DISPLAY_DEVICE);
-
-    DDCLOG(("VBoxService: vboxQueryMonitorName: DeviceName: %s, idx %d (sizeof (TCHAR) %d)\n", DeviceName, idx, sizeof (TCHAR)));
-
-    if (EnumDisplayDevices(DeviceName,
-                           idx,
-                           &dispDevice,
-                           0))
+    
+    DDCLOG(("Found total %d devices. err %d\n", NumDevices, GetLastError ()));
+    
+    if (NumDevices == 0 || Id >= NumDevices)
     {
-        DDCLOG(("DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
-                      devNum,
-                      &dispDevice.DeviceName[0],
-                      &dispDevice.DeviceString[0],
-                      &dispDevice.DeviceID[0],
-                      &dispDevice.DeviceKey[0],
-                      dispDevice.StateFlags));
+        DDCLOG(("Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
+        return FALSE;
+    }
+    
+    DISPLAY_DEVICE *paDisplayDevices = (DISPLAY_DEVICE *)alloca (sizeof (DISPLAY_DEVICE) * NumDevices);
+    DEVMODE *paDeviceModes = (DEVMODE *)alloca (sizeof (DEVMODE) * NumDevices);
+    RECTL *paRects = (RECTL *)alloca (sizeof (RECTL) * NumDevices);
+    
+    /* Fetch information about current devices and modes. */
+    DWORD DevNum = 0;
+    DWORD DevPrimaryNum = 0;
+    
+    ZeroMemory(&DisplayDevice, sizeof(DISPLAY_DEVICE));
+    DisplayDevice.cb = sizeof(DISPLAY_DEVICE);
+    
+    i = 0;
+    while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
+    { 
+        DDCLOG(("[%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
+        
+        BOOL bFetchDevice = FALSE;
 
-        strcpy (MonitorName, dispDevice.DeviceName);
-        result = &MonitorName[0];
+        if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+        {
+            DDCLOG(("Found primary device. err %d\n", GetLastError ()));
+            DevPrimaryNum = DevNum;
+            bFetchDevice = TRUE;
+        }
+        else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
+        {
+            
+            DDCLOG(("Found secondary device. err %d\n", GetLastError ()));
+            bFetchDevice = TRUE;
+        }
+        
+        if (bFetchDevice)
+        {
+            if (DevNum >= NumDevices)
+            {
+                DDCLOG(("%d >= %d\n", NumDevices, DevNum));
+                return FALSE;
+            }
+        
+            paDisplayDevices[DevNum] = DisplayDevice;
+            
+            ZeroMemory(&paDeviceModes[DevNum], sizeof(DEVMODE));
+            paDeviceModes[DevNum].dmSize = sizeof(DEVMODE);
+            if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
+                 ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
+            {
+                DDCLOG(("EnumDisplaySettings err %d\n", GetLastError ()));
+                return FALSE;
+            }
+            
+            DDCLOG(("%dx%d at %d,%d\n",
+                    paDeviceModes[DevNum].dmPelsWidth,
+                    paDeviceModes[DevNum].dmPelsHeight,
+                    paDeviceModes[DevNum].dmPosition.x,
+                    paDeviceModes[DevNum].dmPosition.y));
+                    
+            paRects[DevNum].left   = paDeviceModes[DevNum].dmPosition.x;
+            paRects[DevNum].top    = paDeviceModes[DevNum].dmPosition.y;
+            paRects[DevNum].right  = paDeviceModes[DevNum].dmPosition.x + paDeviceModes[DevNum].dmPelsWidth;
+            paRects[DevNum].bottom = paDeviceModes[DevNum].dmPosition.y + paDeviceModes[DevNum].dmPelsHeight;
+            DevNum++;
+        }
+        
+        ZeroMemory(&DisplayDevice, sizeof(DISPLAY_DEVICE));
+        DisplayDevice.cb = sizeof(DISPLAY_DEVICE);
+        i++;
+    }
+    
+    if (Width == 0)
+    {
+        Width = paRects[Id].right - paRects[Id].left;
     }
 
-    return result;
+    if (Height == 0)
+    {
+        Height = paRects[Id].bottom - paRects[Id].top;
+    }
+
+    /* Check whether a mode reset or a change is requested. */
+    if (   !fModeReset
+        && paRects[Id].right - paRects[Id].left == Width
+        && paRects[Id].bottom - paRects[Id].top == Height
+        && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
+    {
+        DDCLOG(("VBoxService: already at desired resolution.\n"));
+        return FALSE;
+    }
+
+    resizeRect(paRects, NumDevices, DevPrimaryNum, Id, Width, Height);
+    
+    /* Without this, Windows will not ask the miniport for its
+     * mode table but uses an internal cache instead.
+     */
+    DEVMODE tempDevMode;
+    ZeroMemory (&tempDevMode, sizeof (tempDevMode));
+    tempDevMode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
+
+    /* Assign the new rectangles to displays. */
+    for (i = 0; i < NumDevices; i++)
+    {
+        paDeviceModes[i].dmPosition.x = paRects[i].left;
+        paDeviceModes[i].dmPosition.y = paRects[i].top;
+        paDeviceModes[i].dmPelsWidth  = paRects[i].right - paRects[i].left;
+        paDeviceModes[i].dmPelsHeight = paRects[i].bottom - paRects[i].top;
+        
+        paDeviceModes[i].dmFields = DM_POSITION | DM_PELSHEIGHT | DM_PELSWIDTH;
+        
+        if (   i == Id
+            && BitsPerPixel != 0)
+        {
+            paDeviceModes[i].dmFields |= DM_BITSPERPEL;
+            paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
+        }
+        
+        pChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
+                 &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL); 
+        DDCLOG(("ChangeDisplaySettings position err %d\n", GetLastError ()));
+    }
+    
+    /* A second call to ChangeDisplaySettings updates the monitor. */
+    LONG status = ChangeDisplaySettings(NULL, 0); 
+    DDCLOG(("ChangeDisplaySettings update status %d\n", status));
+    if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
+    {
+        /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
+        return FALSE;
+    }
+
+    /* Retry the request. */
+    return TRUE;
 }
 
 /**
@@ -537,19 +653,12 @@ VOID DisplayChangeThread(void *dummy)
     VBoxGuestFilterMaskInfo maskInfo;
     DWORD cbReturned;
     
-    typedef LONG WINAPI defChangeDisplaySettingsEx(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
-    typedef BOOL WINAPI defEnumDisplaySettingsEx(LPCTSTR lpszDeviceName, DWORD iModeNum, LPDEVMODE lpDevMode, DWORD dwFlags);
-    
-    defChangeDisplaySettingsEx *pChangeDisplaySettingsEx = NULL;
-    defEnumDisplaySettingsEx *pEnumDisplaySettingsEx = NULL;
-
     HMODULE hUser = GetModuleHandle("USER32");
 
     if (hUser)
     {
         pChangeDisplaySettingsEx = (defChangeDisplaySettingsEx *)GetProcAddress(hUser, "ChangeDisplaySettingsExA"); 
-        pEnumDisplaySettingsEx = (defEnumDisplaySettingsEx *)GetProcAddress(hUser, "EnumDisplaySettingsExA");
-        DDCLOG(("VBoxService: pChangeDisplaySettingsEx = %p, pEnumDisplaySettingsEx = %p\n", pChangeDisplaySettingsEx, pEnumDisplaySettingsEx));
+        DDCLOG(("VBoxService: pChangeDisplaySettingsEx = %p\n", pChangeDisplaySettingsEx));
     }
 
     maskInfo.u32OrMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
@@ -610,108 +719,108 @@ VOID DisplayChangeThread(void *dummy)
                                                                  &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest), &cbReturned, NULL);
                         displayChangeRequest.display = 0;
                     }
+
                     if (fDisplayChangeQueried)
                     {
                         DDCLOG(("VBoxService: VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
+                        /* Horizontal resolution must be a multiple of 8, round down. */
+                        displayChangeRequest.xres &= 0xfff8;
+
                         /*
                          * Only try to change video mode if the active display driver is VBox additions.
                          */
-                        TCHAR DeviceName[32];
-                        if (isVBoxDisplayDriverActive (DeviceName))
+                        if (isVBoxDisplayDriverActive ())
                         {
-                            TCHAR MonitorName[32];
-                            LPCTSTR lpszDeviceName = NULL;
-                            if (displayChangeRequest.display > 0 && pChangeDisplaySettingsEx != NULL)
+                            if (pChangeDisplaySettingsEx != 0)
                             {
-                                lpszDeviceName = vboxQueryMonitorName (DeviceName, MonitorName, displayChangeRequest.display);
-                            }
-
-                            DDCLOG(("VBoxService: lpszDeviceName: %s\n", lpszDeviceName? lpszDeviceName: "(empty)"));
-
-                            DEVMODE devMode;
-                            memset (&devMode, 0, sizeof (devMode));
-                            devMode.dmSize = sizeof(DEVMODE);
-
-                            /* get the current screen setup, using Ex to get dmPosition if available. */
-                            if (pEnumDisplaySettingsEx?
-                                    pEnumDisplaySettingsEx(lpszDeviceName, ENUM_CURRENT_SETTINGS, &devMode, 0):
-                                    EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devMode))
-                            {
-                                SvcDebugOut2("VBoxService: Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y);
-
-                                /* Horizontal resolution must be a multiple of 8, round down. */
-                                displayChangeRequest.xres &= 0xfff8;
-
-                                /* Check whether a mode reset or a change is requested. */
-                                if (displayChangeRequest.xres || displayChangeRequest.yres || displayChangeRequest.bpp)
+                                /* W2K or later. */
+                                if (!ResizeDisplayDevice(displayChangeRequest.display,
+                                                         displayChangeRequest.xres,
+                                                         displayChangeRequest.yres,
+                                                         displayChangeRequest.bpp))
                                 {
-                                    /* A change is requested.
-                                     * Set values which are not to be changed to the current values.
-                                     */
-                                    if (!displayChangeRequest.xres)
-                                        displayChangeRequest.xres = devMode.dmPelsWidth;
-                                    if (!displayChangeRequest.yres)
-                                        displayChangeRequest.yres = devMode.dmPelsHeight;
-                                    if (!displayChangeRequest.bpp)
-                                        displayChangeRequest.bpp = devMode.dmBitsPerPel;
-                                }
-                                else
-                                {
-                                    /* All zero values means a forced mode reset. Do nothing. */
-                                }
-
-                                /* Verify that the mode is indeed changed. */
-                                if (   devMode.dmPelsWidth  == displayChangeRequest.xres
-                                    && devMode.dmPelsHeight == displayChangeRequest.yres
-                                    && devMode.dmBitsPerPel == displayChangeRequest.bpp)
-                                {
-                                    SvcDebugOut2("VBoxService: already at desired resolution.\n");
-                                    break;
-                                }
-
-                                // without this, Windows will not ask the miniport for its
-                                // mode table but uses an internal cache instead
-                                DEVMODE tempDevMode = {0};
-                                tempDevMode.dmSize = sizeof(DEVMODE);
-                                EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
-
-                                /* adjust the values that are supposed to change */
-                                if (displayChangeRequest.xres)
-                                    devMode.dmPelsWidth  = displayChangeRequest.xres;
-                                if (displayChangeRequest.yres)
-                                    devMode.dmPelsHeight = displayChangeRequest.yres;
-                                if (displayChangeRequest.bpp)
-                                    devMode.dmBitsPerPel = displayChangeRequest.bpp;
-
-                                if (lpszDeviceName) devMode.dmFields |= DM_POSITION;
-
-                                DDCLOG(("VBoxService: setting the new mode %dx%dx%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
-
-                                /* set the new mode */
-                                LONG status;
-                                status = pChangeDisplaySettingsEx?
-                                             pChangeDisplaySettingsEx(lpszDeviceName, &devMode, NULL, CDS_UPDATEREGISTRY, NULL):
-                                             ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
-                                if (status != DISP_CHANGE_SUCCESSFUL)
-                                {
-                                    SvcDebugOut("VBoxService: error from ChangeDisplaySettings: %d\n", status);
-
-                                    if (status == DISP_CHANGE_BADMODE)
-                                    {
-                                        /* Our driver can not set the requested mode. Stop trying. */
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    /* Successfully set new video mode. */
                                     break;
                                 }
                             }
                             else
                             {
-                                SvcDebugOut("VBoxService: error from EnumDisplaySettings\n", 0);
+                                /* Single monitor NT. */
+                                DEVMODE devMode;
+                                memset (&devMode, 0, sizeof (devMode));
+                                devMode.dmSize = sizeof(DEVMODE);
+
+                                /* get the current screen setup */
+                                if (EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
+                                {
+                                    SvcDebugOut2("VBoxService: Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y);
+
+                                    /* Check whether a mode reset or a change is requested. */
+                                    if (displayChangeRequest.xres || displayChangeRequest.yres || displayChangeRequest.bpp)
+                                    {
+                                        /* A change is requested.
+                                         * Set values which are not to be changed to the current values.
+                                         */
+                                        if (!displayChangeRequest.xres)
+                                            displayChangeRequest.xres = devMode.dmPelsWidth;
+                                        if (!displayChangeRequest.yres)
+                                            displayChangeRequest.yres = devMode.dmPelsHeight;
+                                        if (!displayChangeRequest.bpp)
+                                            displayChangeRequest.bpp = devMode.dmBitsPerPel;
+                                    }
+                                    else
+                                    {
+                                        /* All zero values means a forced mode reset. Do nothing. */
+                                    }
+
+                                    /* Verify that the mode is indeed changed. */
+                                    if (   devMode.dmPelsWidth  == displayChangeRequest.xres
+                                        && devMode.dmPelsHeight == displayChangeRequest.yres
+                                        && devMode.dmBitsPerPel == displayChangeRequest.bpp)
+                                    {
+                                        SvcDebugOut2("VBoxService: already at desired resolution.\n");
+                                        break;
+                                    }
+
+                                    // without this, Windows will not ask the miniport for its
+                                    // mode table but uses an internal cache instead
+                                    DEVMODE tempDevMode = {0};
+                                    tempDevMode.dmSize = sizeof(DEVMODE);
+                                    EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
+
+                                    /* adjust the values that are supposed to change */
+                                    if (displayChangeRequest.xres)
+                                        devMode.dmPelsWidth  = displayChangeRequest.xres;
+                                    if (displayChangeRequest.yres)
+                                        devMode.dmPelsHeight = displayChangeRequest.yres;
+                                    if (displayChangeRequest.bpp)
+                                        devMode.dmBitsPerPel = displayChangeRequest.bpp;
+
+                                    DDCLOG(("VBoxService: setting the new mode %dx%dx%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
+
+                                    /* set the new mode */
+                                    LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
+                                    if (status != DISP_CHANGE_SUCCESSFUL)
+                                    {
+                                        SvcDebugOut("VBoxService: error from ChangeDisplaySettings: %d\n", status);
+
+                                        if (status == DISP_CHANGE_BADMODE)
+                                        {
+                                            /* Our driver can not set the requested mode. Stop trying. */
+                                            break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        /* Successfully set new video mode. */
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    SvcDebugOut2("VBoxService: error from EnumDisplaySettings: %d\n", GetLastError ());
+                                    break;
+                                }
                             }
                         }
                         else

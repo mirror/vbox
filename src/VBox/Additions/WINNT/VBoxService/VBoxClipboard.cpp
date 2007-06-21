@@ -2,6 +2,9 @@
  *
  * VBoxClipboard - Shared clipboard
  *
+ */
+
+/*
  * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
