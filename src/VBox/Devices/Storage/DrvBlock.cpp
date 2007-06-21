@@ -635,9 +635,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
      * Validate configuration.
      */
 #if defined(VBOX_PERIODIC_FLUSH) || defined(VBOX_IGNORE_FLUSH)
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0Cylinders\0Heads\0Sectors\0Translation\0Mountable\0FlushInterval\0IgnoreFlush\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Translation\0Mountable\0FlushInterval\0IgnoreFlush\0"))
 #else /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0Cylinders\0Heads\0Sectors\0Translation\0Mountable\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Translation\0Mountable\0"))
 #endif /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
@@ -750,6 +750,8 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         AssertMsgFailed(("Configuration error: Query \"BIOSVisible\" resulted in %Vrc.\n", rc));
         return rc;
     }
+
+    /** @todo AttachFailError is currently completely ignored. */
 
     /* Cylinders */
     rc = CFGMR3QueryU32(pCfgHandle, "Cylinders", &pData->cCylinders);
