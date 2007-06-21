@@ -1021,8 +1021,19 @@ static int alsa_ctl_in (HWVoiceIn *hw, int cmd, ...)
     return -1;
 }
 
+#ifdef VBOX
+static void alsa_error_handler(const char *file, int line, const char *function,
+                               int err, const char *fmt, ...)
+{
+    /* ignore */
+}
+#endif
+
 static void *alsa_audio_init (void)
 {
+#ifdef VBOX
+    snd_lib_error_set_handler (alsa_error_handler);
+#endif
     return &conf;
 }
 
