@@ -934,7 +934,7 @@ typedef struct
 # define VBOXGUEST_IOCTL_CATEGORY_FAST              0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)        ((unsigned char)(Function))
 
-#elif defined(__LINUX__) 
+#elif defined(__LINUX__)
 # define IOCTL_CODE(DeviceType, Function, Method_ignored, Access_ignored, DataSize) \
     ( (3 << 30) | ((DeviceType) << 8) | (Function) | ((DataSize) << 16) )
 # define METHOD_BUFFERED        0
@@ -947,7 +947,7 @@ typedef struct
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
 
 #else
-# error "Port Me"
+/* PORTME */
 #endif
 
 /** IOCTL to VBoxGuest to query the VMMDev IO port region start. */
