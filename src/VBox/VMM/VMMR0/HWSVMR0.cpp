@@ -1289,7 +1289,7 @@ ResumeExecution:
         }
         /*
          * Handled the I/O return codes.
-         * (The unhandled cases end up with rc == VINF_EM_RESCHEDULE_REM.)
+         * (The unhandled cases end up with rc == VINF_EM_RAW_EMULATE_INSTR.)
          */
         if (IOM_SUCCESS(rc))
         {
@@ -1303,13 +1303,19 @@ ResumeExecution:
             Log2(("EM status from IO at %VGv %x size %d: %Vrc\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize, rc));
             break;
         }
+        if (rc == VINF_EM_RAW_EMULATE_INSTR)
+        {
+            /* First attempt to emulate directly before falling back to the recompiler */
+            rc = (IoExitInfo.n.u1Type == 0) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
+        }
+
 #ifdef VBOX_STRICT
         if (rc == VINF_IOM_HC_IOPORT_READ)
             Assert(IoExitInfo.n.u1Type != 0);
         else if (rc == VINF_IOM_HC_IOPORT_WRITE)
             Assert(IoExitInfo.n.u1Type == 0);
         else
-            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("%Vrc\n", rc));
+            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
 #endif
         Log2(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
         break;
