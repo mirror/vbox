@@ -599,6 +599,15 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     }
 
     resizeRect(paRects, NumDevices, DevPrimaryNum, Id, Width, Height);
+#ifdef DDCLOG
+    for (i = 0; i < NumDevices; i++)
+    {
+        DDCLOG(("[%d]: %d,%d %dx%d\n",
+                i, paRects[i].left, paRects[i].top,
+                paRects[i].right - paRects[i].left,
+                paRects[i].bottom - paRects[i].top));
+    }
+#endif /* DDCLOG */
     
     /* Without this, Windows will not ask the miniport for its
      * mode table but uses an internal cache instead.
