@@ -1585,6 +1585,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
                                            PCFGMNODE pCfgHandle)
 {
     PCIAC97LinkState *pData = PDMINS2DATA(pDevIns, PCIAC97LinkState *);
+    AC97LinkState    *s     = &pData->ac97;
     int               rc;
 
     Assert(iInstance == 0);
@@ -1592,9 +1593,9 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     /*
      * Initialize data (most of it anyway).
      */
-    pData->ac97.pDevIns                      = pDevIns;
+    s->pDevIns                  = pDevIns;
     /* IBase */
-    pData->ac97.IBase.pfnQueryInterface      = ichac97QueryInterface;
+    s->IBase.pfnQueryInterface  = ichac97QueryInterface;
 
     /* PCI Device */
     pData->dev.config[0x00] = 0x86;      /* vid vendor id intel ro */
@@ -1664,8 +1665,8 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     /*
      * Attach driver.
      */
-    rc = PDMDevHlpDriverAttach (pDevIns, 0, &pData->ac97.IBase,
-                                &pData->ac97.pDrvBase, "Audio Driver Port");
+    rc = PDMDevHlpDriverAttach (pDevIns, 0, &s->IBase,
+                                &s->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log (("ac97: No attached driver!\n"));
     else if (VBOX_FAILURE(rc))
@@ -1674,34 +1675,65 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         return rc;
     }
 
-    AUD_register_card ("ICH0", &pData->ac97.card);
+    AUD_register_card ("ICH0", &s->card);
 
     ac97Reset(pDevIns);
 
-    /**
-     * @todo We should probably display a message box. And perhaps we should
-     *       select the noaudio driver instead.
-     */
 #ifndef __DARWIN__ /* coreaudio doesn't supply these. */
-    if (!pData->ac97.voice_pi)
+    if (!s->voice_pi)
         LogRel(("AC97: WARNING: Unable to open PCM IN!\n"));
-    if (!pData->ac97.voice_mc)
+    if (!s->voice_mc)
         LogRel(("AC97: WARNING: Unable to open PCM MC!\n"));
 #endif 
-    if (!pData->ac97.voice_po)
+    if (!s->voice_po)
         LogRel(("AC97: WARNING: Unable to open PCM OUT!\n"));
 
-#ifdef __DARWIN__ /* coreaudio doesn't supply all, only bitch if we don't get anything. */
-    if (!pData->ac97.voice_pi && !pData->ac97.voice_po && !pData->ac97.voice_mc)
-#else
-    if (!pData->ac97.voice_pi || !pData->ac97.voice_po || !pData->ac97.voice_mc)
-#endif 
-        VMSetRuntimeError(PDMDevHlpGetVM(pDevIns), false,
-                          "HostAudioNotResponding",
-                          N_("Some audio devices could not be opened. Guest applications "
-                             "generating audio output or depending on audio input may hang. "
-                             "Make sure your host audio device is working properly. Check "
-                             "the logfile for error messages of the audio subsystem."));
+    if (!s->voice_pi && !s->voice_po && !s->voice_mc)
+    {
+        /* Was not able initialize *any* voice. Select the NULL audio driver instead */
+        AUD_close_in  (&s->card, s->voice_pi);
+        AUD_close_out (&s->card, s->voice_po);
+        AUD_close_in  (&s->card, s->voice_mc);
+        s->voice_po = NULL;
+        s->voice_pi = NULL;
+        s->voice_mc = NULL;
+        AUD_init_null();
+        ac97Reset(pDevIns);
+
+        PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
+             N_("No audio devices could not be opened. Selecting the NULL audio backend "
+                "with the consequence that no sound is audible."));
+    }
+#ifndef __DARWIN__
+    else if (!s->voice_pi || !s->voice_po || !s->voice_mc)
+    {
+        char   szMissingVoices[128];
+        size_t len = 0;
+        bool   fComma = false;
+        if (!s->voice_pi)
+        {
+            len = RTStrPrintf(szMissingVoices, sizeof(szMissingVoices), "PCM_in");
+            fComma = true;
+        }
+        if (!s->voice_po)
+        {
+            len = RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices)-len, "%sPCM_out", 
+                              fComma ? ", " : "");
+            fComma = true;
+        }
+        if (!s->voice_mc)
+        {
+            len = RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices)-len, "%sPCM_mic", 
+                              fComma ? ", " : "");
+        }
+
+        PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
+             N_("Some audio devices (%s) could not be opened. Guest applications generating audio "
+                "output or depending on audio input may hang. Make sure your host audio device "
+                "is working properly. Check the logfile for error messages of the audio "
+                "subsystem."), szMissingVoices);
+    }
+#endif
 
     return VINF_SUCCESS;
 }
