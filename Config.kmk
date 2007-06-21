@@ -2263,6 +2263,44 @@ TEMPLATE_VBOXLNX32GUESTR3LIB_EXTENDS           = VBOXLNX32GUESTR3EXE
 TEMPLATE_VBOXLNX32GUESTR3LIB_INST              = $(INST_ADDITION_LIB)
 
 
+
+
+ifdef VBOX_WITH_OS2_ADDITIONS
+
+#
+# Template for building OS/2 R0 things.
+#
+TEMPLATE_VBOXOS2GUESTR0                 = VBox OS/2 Guest Driver
+TEMPLATE_VBOXOS2GUESTR0_INST            = $(INST_ADDITIONS)os2/
+TEMPLATE_VBOXOS2GUESTR0_BLD_TRG         = os2
+TEMPLATE_VBOXOS2GUESTR0_BLD_TRG_ARCH    = x86
+TEMPLATE_VBOXOS2GUESTR0_BLD_TRG_CPU     = blend
+TEMPLATE_VBOXOS2GUESTR0_DEFS            = IN_GUEST IN_GUEST_R0 IN_RING0 IN_RT_R0 __OS2__ HC_ARCH_BITS=32 GC_ARCH_BITS=32
+TEMPLATE_VBOXOS2GUESTR0_SYSSUFF         = .sys
+TEMPLATE_VBOXOS2GUESTR0_ASTOOL          = NASM
+TEMPLATE_VBOXOS2GUESTR0_ASFLAGS         = -f obj -DASM_FORMAT_OMF -D__NASM__ -w+orphan-labels -g
+TEMPLATE_VBOXOS2GUESTR0_TOOL            = GXX3OMF
+TEMPLATE_VBOXOS2GUESTR0_CXXFLAGS        = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -fno-strict-aliasing -fno-rtti -fno-exceptions
+TEMPLATE_VBOXOS2GUESTR0_CFLAGS          = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -fno-strict-aliasing
+ifneq ($(BUILD_TARGET),debug)
+ TEMPLATE_VBOXOS2GUESTR0_CFLAGS        += -O2 -fno-omit-frame-pointer
+ TEMPLATE_VBOXOS2GUESTR0_CXXFLAGS      += -O2 -fno-omit-frame-pointer
+endif
+TEMPLATE_VBOXOS2GUESTR0_LIBS            = $(VBOX_GCC_LIBGCC) ## @todo this isn't nice.
+TEMPLATE_VBOXOS2GUESTR0_LDFLAGS         = -Zlinker Option -Zlinker internalrelocs, -Zlinker togglerelocs
+
+#
+# R0 OS/2 guest libraries
+#
+TEMPLATE_VBOXOS2GUESTR0LIB              = VBox OS/2 Guest Driver Library
+TEMPLATE_VBOXOS2GUESTR0LIB_EXTENDS      = VBOXOS2GUESTR0
+TEMPLATE_VBOXOS2GUESTR0LIB_INST         = $(INST_ADDITIONS_LIB)os2/
+
+VBOX_LIB_IPRT_OS2GUESTR0 = $(PATH_LIB)/additions/os2/RuntimeOS2GuestR0.lib
+
+endif # VBOX_WITH_OS2_ADDITIONS
+
+
 #
 # Two targets to coordinate version number changes properly. Note that the
 # only way to get a really consistent build is to run 'kmk' in the top-level
