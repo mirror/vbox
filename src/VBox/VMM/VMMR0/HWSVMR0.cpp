@@ -1303,11 +1303,6 @@ ResumeExecution:
             Log2(("EM status from IO at %VGv %x size %d: %Vrc\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize, rc));
             break;
         }
-        if (rc == VINF_EM_RAW_EMULATE_INSTR)
-        {
-            /* First attempt to emulate directly before falling back to the recompiler */
-            rc = (IoExitInfo.n.u1Type == 0) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
-        }
 
 #ifdef VBOX_STRICT
         if (rc == VINF_IOM_HC_IOPORT_READ)
