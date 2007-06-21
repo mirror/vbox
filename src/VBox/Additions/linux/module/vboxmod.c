@@ -322,6 +322,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                     VbglGRFree(&reqDisconnect->header.header);
                     return -EFAULT;
                 }
+                VbglGRFree(&reqDisconnect->header.header);
             }
 
             /* And connect... */
