@@ -247,6 +247,8 @@ public:
         QVBoxLayout *buttonLayout = new QVBoxLayout (mainLayout, 0, "buttonLayout");
         mBtnUp = new QToolButton (this, "mBtnUp");
         mBtnDown = new QToolButton (this, "mBtnDown");
+        mBtnUp->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
+        mBtnDown->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
         QWhatsThis::add (mBtnUp, tr ("Moves the selected boot device up."));
         QWhatsThis::add (mBtnDown, tr ("Moves the selected boot device down."));
         QToolTip::add (mBtnUp, tr ("Move Up (Ctrl-Up)"));
@@ -260,7 +262,7 @@ public:
         mBtnDown->setIconSet (VBoxGlobal::iconSet ("list_movedown_16px.png",
                                                    "list_movedown_disabled_16px.png"));
         QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Minimum,
-                                                     QSizePolicy::Expanding);
+                                                     QSizePolicy::Minimum);
         connect (mBtnUp, SIGNAL (clicked()), this, SLOT (moveItemUp()));
         connect (mBtnDown, SIGNAL (clicked()), this, SLOT (moveItemDown()));
         connect (mBootTable, SIGNAL (moveItemUp()), this, SLOT (moveItemUp()));

@@ -991,161 +991,95 @@
                                         <property name="name">
                                             <cstring>unnamed</cstring>
                                         </property>
-                                        <widget class="QLayoutWidget">
+                                        <widget class="QGroupBox">
                                             <property name="name">
-                                                <cstring>layout147</cstring>
+                                                <cstring>groupBox12</cstring>
+                                            </property>
+                                            <property name="sizePolicy">
+                                                <sizepolicy>
+                                                    <hsizetype>0</hsizetype>
+                                                    <vsizetype>1</vsizetype>
+                                                    <horstretch>0</horstretch>
+                                                    <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                            </property>
+                                            <property name="title">
+                                                <string>Boo&amp;t Order</string>
                                             </property>
                                             <vbox>
                                                 <property name="name">
                                                     <cstring>unnamed</cstring>
                                                 </property>
-                                                <property name="margin">
-                                                    <number>0</number>
-                                                </property>
-                                                <property name="spacing">
-                                                    <number>0</number>
-                                                </property>
-                                                <widget class="QGroupBox">
-                                                    <property name="name">
-                                                        <cstring>groupBox12</cstring>
-                                                    </property>
-                                                    <property name="sizePolicy">
-                                                        <sizepolicy>
-                                                            <hsizetype>0</hsizetype>
-                                                            <vsizetype>0</vsizetype>
-                                                            <horstretch>0</horstretch>
-                                                            <verstretch>0</verstretch>
-                                                        </sizepolicy>
-                                                    </property>
-                                                    <property name="title">
-                                                        <string>Boo&amp;t Order</string>
-                                                    </property>
-                                                    <vbox>
-                                                        <property name="name">
-                                                            <cstring>unnamed</cstring>
-                                                        </property>
-                                                    </vbox>
-                                                </widget>
-                                                <spacer>
-                                                    <property name="name">
-                                                        <cstring>spacer129</cstring>
-                                                    </property>
-                                                    <property name="orientation">
-                                                        <enum>Vertical</enum>
-                                                    </property>
-                                                    <property name="sizeType">
-                                                        <enum>Minimum</enum>
-                                                    </property>
-                                                    <property name="sizeHint">
-                                                        <size>
-                                                            <width>21</width>
-                                                            <height>0</height>
-                                                        </size>
-                                                    </property>
-                                                </spacer>
                                             </vbox>
                                         </widget>
-                                        <widget class="QLayoutWidget">
+                                        <widget class="QGroupBox">
                                             <property name="name">
-                                                <cstring>layout146</cstring>
+                                                <cstring>groupBox23</cstring>
+                                            </property>
+                                            <property name="sizePolicy">
+                                                <sizepolicy>
+                                                    <hsizetype>7</hsizetype>
+                                                    <vsizetype>1</vsizetype>
+                                                    <horstretch>1</horstretch>
+                                                    <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                            </property>
+                                            <property name="title">
+                                                <string>Extended Features</string>
                                             </property>
                                             <vbox>
                                                 <property name="name">
                                                     <cstring>unnamed</cstring>
                                                 </property>
-                                                <property name="margin">
-                                                    <number>0</number>
-                                                </property>
-                                                <property name="spacing">
-                                                    <number>0</number>
-                                                </property>
-                                                <widget class="QGroupBox">
+                                                <widget class="QCheckBox">
                                                     <property name="name">
-                                                        <cstring>groupBox23</cstring>
+                                                        <cstring>chbEnableACPI</cstring>
                                                     </property>
-                                                    <property name="sizePolicy">
-                                                        <sizepolicy>
-                                                            <hsizetype>7</hsizetype>
-                                                            <vsizetype>0</vsizetype>
-                                                            <horstretch>1</horstretch>
-                                                            <verstretch>0</verstretch>
-                                                        </sizepolicy>
+                                                    <property name="text">
+                                                        <string>Enable A&amp;CPI</string>
                                                     </property>
-                                                    <property name="title">
-                                                        <string>Extended Features</string>
+                                                    <property name="accel">
+                                                        <string>Alt+C</string>
                                                     </property>
-                                                    <vbox>
-                                                        <property name="name">
-                                                            <cstring>unnamed</cstring>
-                                                        </property>
-                                                        <widget class="QCheckBox">
-                                                            <property name="name">
-                                                                <cstring>chbEnableACPI</cstring>
-                                                            </property>
-                                                            <property name="text">
-                                                                <string>Enable A&amp;CPI</string>
-                                                            </property>
-                                                            <property name="accel">
-                                                                <string>Alt+C</string>
-                                                            </property>
-                                                            <property name="whatsThis" stdset="0">
-                                                                <string>&lt;qt&gt;When checked, the virtual machine will support
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
-                                                            </property>
-                                                        </widget>
-                                                        <widget class="QCheckBox">
-                                                            <property name="name">
-                                                                <cstring>chbEnableIOAPIC</cstring>
-                                                            </property>
-                                                            <property name="text">
-                                                                <string>Enable IO A&amp;PIC</string>
-                                                            </property>
-                                                            <property name="accel">
-                                                                <string>Alt+P</string>
-                                                            </property>
-                                                            <property name="whatsThis" stdset="0">
-                                                                <string>&lt;qt&gt;When checked, the virtual machine will support
+                                                    </property>
+                                                </widget>
+                                                <widget class="QCheckBox">
+                                                    <property name="name">
+                                                        <cstring>chbEnableIOAPIC</cstring>
+                                                    </property>
+                                                    <property name="text">
+                                                        <string>Enable IO A&amp;PIC</string>
+                                                    </property>
+                                                    <property name="accel">
+                                                        <string>Alt+P</string>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</string>
-                                                            </property>
-                                                        </widget>
-                                                        <widget class="QCheckBox">
-                                                            <property name="name">
-                                                                <cstring>chbVTX</cstring>
-                                                            </property>
-                                                            <property name="text">
-                                                                <string>Enable &amp;VT-x/AMD-V</string>
-                                                            </property>
-                                                            <property name="accel">
-                                                                <string>Alt+V</string>
-                                                            </property>
-                                                            <property name="tristate">
-                                                                <bool>true</bool>
-                                                            </property>
-                                                            <property name="whatsThis" stdset="0">
-                                                                <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V. The third checkbox state means that this setting is determined by the value of the global setting.</string>
-                                                            </property>
-                                                        </widget>
-                                                    </vbox>
+                                                    </property>
                                                 </widget>
-                                                <spacer>
+                                                <widget class="QCheckBox">
                                                     <property name="name">
-                                                        <cstring>spacer128</cstring>
+                                                        <cstring>chbVTX</cstring>
                                                     </property>
-                                                    <property name="orientation">
-                                                        <enum>Vertical</enum>
+                                                    <property name="text">
+                                                        <string>Enable &amp;VT-x/AMD-V</string>
                                                     </property>
-                                                    <property name="sizeType">
-                                                        <enum>Minimum</enum>
+                                                    <property name="accel">
+                                                        <string>Alt+V</string>
                                                     </property>
-                                                    <property name="sizeHint">
-                                                        <size>
-                                                            <width>20</width>
-                                                            <height>0</height>
-                                                        </size>
+                                                    <property name="tristate">
+                                                        <bool>true</bool>
                                                     </property>
-                                                </spacer>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>When checked, the virtual machine will try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V. The third checkbox state means that this setting is determined by the value of the global setting.</string>
+                                                    </property>
+                                                </widget>
                                             </vbox>
                                         </widget>
                                     </hbox>
