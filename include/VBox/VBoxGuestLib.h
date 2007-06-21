@@ -151,7 +151,7 @@ typedef DECLVBGL(void) VBGLHGCMCALLBACK(VMMDevHGCMRequestHeader *pHeader, void *
  */
 
 DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
-                     VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+                               VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 
 /**
@@ -169,7 +169,7 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
  */
 
 DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
-                        VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+                                  VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /* Call a HGCM service.
  *
@@ -183,9 +183,9 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
  * @return VBox status code.
  */
 DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
-                  VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+                            VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
-#else
+#else /* !VBGL_VBOXGUEST */
 
 struct VBGLHGCMHANDLEDATA;
 typedef struct VBGLHGCMHANDLEDATA *VBGLHGCMHANDLE;
@@ -227,7 +227,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnect
 DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 /** @} */
 
-#endif /* VBGL_VBOXGUEST */
+#endif /* !VBGL_VBOXGUEST */
 
 #endif /* VBOX_HGCM */
 
