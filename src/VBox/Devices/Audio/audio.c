@@ -1600,6 +1600,13 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
     return VINF_SUCCESS;
 }
 
+int AUD_init_null(void)
+{
+    AudioState *s = &glob_audio_state;
+
+    return audio_driver_init (s, &no_audio_driver);
+}
+
 CaptureVoiceOut *AUD_add_capture (
     AudioState *s,
     audsettings_t *as,

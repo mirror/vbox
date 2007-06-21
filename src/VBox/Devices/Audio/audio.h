@@ -161,6 +161,8 @@ void AUD_set_volume_out (SWVoiceOut *po, int mute, uint8_t lvol, uint8_t rvol);
 void AUD_set_volume (audmixerctl_t mt, int *mute, uint8_t *lvol, uint8_t *rvol);
 void AUD_set_record_source (audrecsource_t *ars, audrecsource_t *als);
 
+int  AUD_init_null(void);
+
 static inline void *advance (void *p, int incr)
 {
 #ifndef VBOX
