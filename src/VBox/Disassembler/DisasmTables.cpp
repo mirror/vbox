@@ -203,10 +203,10 @@ const OPCODE g_aOneByteMapX86[256] =
     OP("imul %Gv,%Ev,%Iv",   IDX_ParseModRM,     IDX_UseModRM,   IDX_ParseImmV,  OP_IMUL,    OP_PARM_Gv,         OP_PARM_Ev,     OP_PARM_Iv,     OPTYPE_HARMLESS),
     OP("push %Ib",           IDX_ParseImmByteSX, 0,          0,          OP_PUSH,    OP_PARM_Ib,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     OP("imul %Gv,%Ev,%Ib",   IDX_ParseModRM,     IDX_UseModRM,   IDX_ParseImmByteSX,OP_IMUL,   OP_PARM_Gv,         OP_PARM_Ev,     OP_PARM_Ib,     OPTYPE_HARMLESS),
-    OP("insb %Yb,DX",        IDX_ParseYb,        IDX_ParseFixedReg,       0,          OP_INSB,    OP_PARM_Yb,         OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("insw/d %Yv,DX",      IDX_ParseYv,        IDX_ParseFixedReg,       0,          OP_INSWD,   OP_PARM_Yv,         OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("outsb DX,%Xb",       IDX_ParseFixedReg,  IDX_ParseXb,    0,          OP_OUTSB,   OP_PARM_REG_DX,     OP_PARM_Yb,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("outsw/d DX,%Xv",     IDX_ParseFixedReg,  IDX_ParseXv,    0,          OP_OUTSWD,  OP_PARM_REG_DX,     OP_PARM_Yv,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
+    OP("insb %Yb,DX",        IDX_ParseYb,        IDX_ParseFixedReg,       0,          OP_INSB,    OP_PARM_Yb,         OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_READ),
+    OP("insw/d %Yv,DX",      IDX_ParseYv,        IDX_ParseFixedReg,       0,          OP_INSWD,   OP_PARM_Yv,         OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_READ),
+    OP("outsb DX,%Xb",       IDX_ParseFixedReg,  IDX_ParseXb,    0,          OP_OUTSB,   OP_PARM_REG_DX,     OP_PARM_Yb,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_WRITE),
+    OP("outsw/d DX,%Xv",     IDX_ParseFixedReg,  IDX_ParseXv,    0,          OP_OUTSWD,  OP_PARM_REG_DX,     OP_PARM_Yv,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_WRITE),
 
 
     /* 7 */
@@ -345,18 +345,18 @@ const OPCODE g_aOneByteMapX86[256] =
     OP("loope %Jb",          IDX_ParseImmBRel,   0,          0,          OP_LOOPE,   OP_PARM_Jb,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
     OP("loop %Jb",           IDX_ParseImmBRel,   0,          0,          OP_LOOP,    OP_PARM_Jb,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
     OP("j(e)cxz %Jb",        IDX_ParseImmBRel,   0,          0,          OP_JECXZ,   OP_PARM_Jb,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW|OPTYPE_RELATIVE_CONTROLFLOW|OPTYPE_COND_CONTROLFLOW),
-    OP("in AL,%Ib",          IDX_ParseFixedReg,  IDX_ParseImmByte,0,         OP_IN,      OP_PARM_REG_AL,     OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("in %eAX,%Ib",        IDX_ParseFixedReg,  IDX_ParseImmByte,0,         OP_IN,      OP_PARM_REG_EAX,    OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("out %Ib,AL",         IDX_ParseImmByte,   IDX_ParseFixedReg,0,        OP_OUT,     OP_PARM_Ib,         OP_PARM_REG_AL, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("out %Ib,%eAX",       IDX_ParseImmByte,   IDX_ParseFixedReg,0,        OP_OUT,     OP_PARM_Ib,         OP_PARM_REG_EAX,OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
+    OP("in AL,%Ib",          IDX_ParseFixedReg,  IDX_ParseImmByte,0,         OP_IN,      OP_PARM_REG_AL,     OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_READ),
+    OP("in %eAX,%Ib",        IDX_ParseFixedReg,  IDX_ParseImmByte,0,         OP_IN,      OP_PARM_REG_EAX,    OP_PARM_Ib,     OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_READ),
+    OP("out %Ib,AL",         IDX_ParseImmByte,   IDX_ParseFixedReg,0,        OP_OUT,     OP_PARM_Ib,         OP_PARM_REG_AL, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_WRITE),
+    OP("out %Ib,%eAX",       IDX_ParseImmByte,   IDX_ParseFixedReg,0,        OP_OUT,     OP_PARM_Ib,         OP_PARM_REG_EAX,OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_WRITE),
     OP("call %Jv",           IDX_ParseImmVRel,   0,          0,          OP_CALL,    OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_RELATIVE_CONTROLFLOW),
     OP("jmp %Jv",            IDX_ParseImmVRel,   0,          0,          OP_JMP,     OP_PARM_Jv,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
     OP("jmp %Ap",            IDX_ParseImmAddr,   0,          0,          OP_JMP,     OP_PARM_Ap,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
     OP("jmp %Jb",            IDX_ParseImmBRel,   0,          0,          OP_JMP,     OP_PARM_Jb,         OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW | OPTYPE_RELATIVE_CONTROLFLOW),
-    OP("in AL,DX",           IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_IN,      OP_PARM_REG_AL,     OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("in %eAX,DX",         IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_IN,      OP_PARM_REG_EAX,    OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("out DX,AL",          IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_OUT,     OP_PARM_REG_DX,     OP_PARM_REG_AL, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
-    OP("out DX,%eAX",        IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_OUT,     OP_PARM_REG_DX,     OP_PARM_REG_EAX,OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED),
+    OP("in AL,DX",           IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_IN,      OP_PARM_REG_AL,     OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_READ),
+    OP("in %eAX,DX",         IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_IN,      OP_PARM_REG_EAX,    OP_PARM_REG_DX, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_READ),
+    OP("out DX,AL",          IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_OUT,     OP_PARM_REG_DX,     OP_PARM_REG_AL, OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_WRITE),
+    OP("out DX,%eAX",        IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,       OP_OUT,     OP_PARM_REG_DX,     OP_PARM_REG_EAX,OP_PARM_NONE,   OPTYPE_PORTIO | OPTYPE_PRIVILEGED | OPTYPE_PORTIO_WRITE),
 
 
     /* F */
