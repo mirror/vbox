@@ -493,6 +493,11 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
             case SVC_MSG_UNLOAD:
             {
                 LogFlowFunc(("SVC_MSG_UNLOAD\n"));
+                if (pSvc->m_fntable.pfnUnload)
+                {
+                    pSvc->m_fntable.pfnUnload ();
+                }
+
                 pSvc->unloadServiceDLL ();
                 fQuit = true;
             } break;
