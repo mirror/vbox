@@ -78,6 +78,8 @@ __BEGIN_DECLS
 #define OPTYPE_RRM_DANGEROUS_16      BIT(15) /**< Some additional dangerouse ones when recompiling 16-bit raw r0. */
 #define OPTYPE_RRM_MASK              (OPTYPE_RRM_DANGEROUS | OPTYPE_RRM_DANGEROUS_16)
 #define OPTYPE_INHIBIT_IRQS          BIT(16) /**< Will or can inhibit irqs (sti, pop ss, mov ss) */
+#define OPTYPE_PORTIO_READ           BIT(17)
+#define OPTYPE_PORTIO_WRITE          BIT(18)
 #define OPTYPE_ALL                   (0xffffffff)
 
 /** Parameter usage flags.
