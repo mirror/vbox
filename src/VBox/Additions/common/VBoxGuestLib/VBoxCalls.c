@@ -31,6 +31,7 @@
 #endif
 #include <iprt/time.h>
 #include <iprt/path.h>
+#include <iprt/string.h>
 
 #define SHFL_CPARMS_SET_UTF8 0
 
@@ -40,8 +41,7 @@
     (a)->u32Function = SHFL_FN_##b;      \
     (a)->cParms      = SHFL_CPARMS_##b
 
-#ifdef __linux__
-# include <linux/string.h>
+#ifndef __WIN__
 # define RtlZeroMemory(a, b) memset (a, 0, b)
 #endif
 
@@ -181,7 +181,7 @@ DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRI
 }
 
 DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
-                      PVBSFMAP pMap)
+                                PVBSFMAP pMap)
 {
     int rc = VINF_SUCCESS;
 
@@ -236,7 +236,7 @@ DECLVBGL(int) vboxCallUnmapFolder(PVBSFCLIENT pClient, PVBSFMAP pMap)
 }
 
 DECLVBGL(int) vboxCallCreate (PVBSFCLIENT pClient, PVBSFMAP pMap,
-                    PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms)
+                              PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms)
 {
     /** @todo copy buffers to physical or mapped memory. */
     int rc = VINF_SUCCESS;
@@ -296,7 +296,7 @@ DECLVBGL(int) vboxCallClose (PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE Hand
 }
 
 DECLVBGL(int) vboxCallRemove (PVBSFCLIENT pClient, PVBSFMAP pMap,
-                    PSHFLSTRING pParsedPath, uint32_t flags)
+                              PSHFLSTRING pParsedPath, uint32_t flags)
 {
     int rc = VINF_SUCCESS;
 
@@ -328,7 +328,7 @@ DECLVBGL(int) vboxCallRemove (PVBSFCLIENT pClient, PVBSFMAP pMap,
 }
 
 DECLVBGL(int) vboxCallRename (PVBSFCLIENT pClient, PVBSFMAP pMap,
-                    PSHFLSTRING pSrcPath, PSHFLSTRING pDestPath, uint32_t flags)
+                              PSHFLSTRING pSrcPath, PSHFLSTRING pDestPath, uint32_t flags)
 {
     int rc = VINF_SUCCESS;
 
@@ -363,7 +363,7 @@ DECLVBGL(int) vboxCallRename (PVBSFCLIENT pClient, PVBSFMAP pMap,
 }
 
 DECLVBGL(int) vboxCallRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
-                 uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
+                           uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     int rc = VINF_SUCCESS;
 
@@ -398,7 +398,7 @@ DECLVBGL(int) vboxCallRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
 }
 
 DECLVBGL(int) vboxCallWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
-                  uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
+                            uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     int rc = VINF_SUCCESS;
 
@@ -513,7 +513,7 @@ DECLVBGL(int) vboxCallDirInfo (
 }
 
 DECLVBGL(int) vboxCallFSInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
-                   uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer)
+                             uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer)
 {
     int rc = VINF_SUCCESS;
 
@@ -548,7 +548,7 @@ DECLVBGL(int) vboxCallFSInfo(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFil
 }
 
 DECLVBGL(int) vboxCallLock(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
-                 uint64_t offset, uint64_t cbSize, uint32_t fLock)
+                           uint64_t offset, uint64_t cbSize, uint32_t fLock)
 {
     int rc = VINF_SUCCESS;
 

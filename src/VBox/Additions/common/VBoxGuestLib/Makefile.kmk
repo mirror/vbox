@@ -40,6 +40,11 @@ ifdef VBOX_WITH_LINUX_ADDITIONS
  	VBoxGuestLibBaseLinux
  endif
 endif
+ifdef VBOX_WITH_OS2_ADDITIONS
+ LIBRARIES += \
+	VBoxGuestLibOS2 \
+	VBoxGuestLibBaseOS2
+endif
 
 SOURCES_GUESTLIBBASE = \
 	GenericRequest.cpp \
@@ -102,6 +107,24 @@ VBoxGuestLibBaseLinux_TEMPLATE = VBOXLNX32GUESTR0
 VBoxGuestLibBaseLinux_SOURCES  = $(SOURCES_GUESTLIBBASE)
 VBoxGuestLibBaseLinux_INCS     = $(VBoxGuestLib_INCS)
 VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
+
+
+#
+# VBoxGuestLibOS2
+#
+VBoxGuestLibOS2_TEMPLATE  = VBOXR0DRV
+VBoxGuestLibOS2_SOURCES   = $(SOURCES_GUESTLIB)
+VBoxGuestLibOS2_INCS      = $(VBoxGuestLib_INCS)
+VBoxGuestLibOS2_DEFS      = VBOX_HGCM LOG_TO_BACKDOOR IN_GUEST_R0 IN_GUEST
+
+
+#
+# VBoxGuestLibBaseOS2
+#
+VBoxGuestLibBaseOS2_TEMPLATE = VBOXR0DRV
+VBoxGuestLibBaseOS2_SOURCES  = $(SOURCES_GUESTLIBBASE)
+VBoxGuestLibBaseOS2_INCS     = $(VBoxGuestLib_INCS)
+VBoxGuestLibBaseOS2_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR IN_GUEST_R0 IN_GUEST
 
 
 include	$(PATH_KBUILD)/subfooter.kmk

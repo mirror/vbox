@@ -85,7 +85,7 @@ typedef struct _VBSFMAP
 #define DRIVE_FLAG_LOCKED          (0x2)
 #define DRIVE_FLAG_WRITE_PROTECTED (0x4)
 
-#ifndef __linux__
+#ifdef __WIN__
 /** Device extension structure for each drive letter we created. */
 typedef struct _VBSFDRIVE
 {
@@ -111,7 +111,7 @@ typedef struct _VBSFDRIVE
     ERESOURCE DriveResource;
 } VBSFDRIVE;
 typedef VBSFDRIVE *PVBSFDRIVE;
-#endif
+#endif /* __WIN__ */
 
 /* forward decl */
 struct _MRX_VBOX_DEVICE_EXTENSION;

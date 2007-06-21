@@ -51,9 +51,13 @@ typedef struct _VBGLDRIVER
 #ifdef __WIN__
     PDEVICE_OBJECT pDeviceObject;
     PFILE_OBJECT pFileObject;
-#else /* !__WIN__ */
+#elif defined (__LINUX__)
     void *opaque;
-#endif /* !__WIN__ */
+#elif defined (__OS2__)
+    uint32_t placeholder;
+#else
+# error "Port me"
+#endif
 } VBGLDRIVER;
 
 int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size);
