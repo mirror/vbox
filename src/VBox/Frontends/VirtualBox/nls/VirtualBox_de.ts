@@ -2903,11 +2903,11 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <name>VBoxSwitchMenu</name>
     <message>
         <source>Disable</source>
-        <translation>Aktivieren</translation>
+        <translation>Deaktivieren</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation>Deaktivieren</translation>
+        <translation>Aktivieren</translation>
     </message>
     <message>
         <source>%1 %2</source>
