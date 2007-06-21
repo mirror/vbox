@@ -38,19 +38,28 @@ typedef uint32_t vmmDevHypPtr;
 /** Hypervisor physical pointer size type */
 typedef uint32_t vmmDevHypPhys;
 
-#ifdef __WIN__
+#if defined(__LINUX__)
+/** The support device name. */
+# define VBOXGUEST_DEVICE_NAME        "/dev/vboxadd"
+
+#elif defined(__OS2__)
+/** The support device name. */
+# define VBOXGUEST_DEVICE_NAME        "\\Dev\VBoxGst$"
+
+#elif defined(__WIN__)
 /** The support service name. */
-#define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
+# define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
 /** Win32 Device name. */
-#define VBOXGUEST_DEVICE_NAME        "\\\\.\\VBoxGuest"
+# define VBOXGUEST_DEVICE_NAME        "\\\\.\\VBoxGuest"
 /** Global name for Win2k+ */
-#define VBOXGUEST_DEVICE_NAME_GLOBAL "\\\\.\\Global\\VBoxGuest"
+# define VBOXGUEST_DEVICE_NAME_GLOBAL "\\\\.\\Global\\VBoxGuest"
 /** Win32 driver name */
-#define VBOXGUEST_DEVICE_NAME_NT     L"\\Device\\VBoxGuest"
+# define VBOXGUEST_DEVICE_NAME_NT     L"\\Device\\VBoxGuest"
 /** device name */
-#define VBOXGUEST_DEVICE_NAME_DOS    L"\\DosDevices\\VBoxGuest"
-#else /* !__WIN__ */
-#define VBOXGUEST_DEVICE_NAME        "/dev/vboxadd"
+# define VBOXGUEST_DEVICE_NAME_DOS    L"\\DosDevices\\VBoxGuest"
+
+#else
+/* PORTME */
 #endif
 
 /** VirtualBox vendor ID */
@@ -861,25 +870,93 @@ typedef struct
 
 /**
  * VBoxGuest IOCTL codes and structures.
+ * 
+ * The range 0..15 is for basic driver communication.
+ * The range 16..31 is for HGCM communcation.
+ * The range 32..47 is reserved for future use.
+ * The range 48..63 is for OS specific communcation.
+ * The 7th bit is reserved for future hacks.
+ * The 8th bit is reserved for distinguishing between 32-bit and 64-bit 
+ * processes in future 64-bit guest additions. 
+ * 
+ * While windows IOCTL function number has to start at 2048 and stop at 4096 there 
+ * never was any need to do this for everyone. A simple ((Function) | 0x800) would 
+ * have sufficed. On Linux we're now intruding upon the type field. Fortunately 
+ * this hasn't caused any trouble because the FILE_DEVICE_UNKNOWN value was set 
+ * to 0x22 (if it were 0x2C it would not have worked soo smoothly). The situation 
+ * would've been the same for *BSD and Darwin since they seems to share common 
+ * _IOC() heritage.
+ * 
+ * However, on good old OS/2 we only have 8-bit handy for the function number. The 
+ * result from using the old IOCTL function numbers her would've been overlapping
+ * between the two ranges. 
+ * 
+ * To fix this problem and get rid of all the unnecessary windowsy crap that I 
+ * bet was copied from my SUPDRVIOC.h once upon a time (although the concept of 
+ * prefixing macros with the purpose of avoid clashes with system stuff and 
+ * to indicate exactly how owns them seems to have been lost somewhere along 
+ * the way), I've introduced a VBOXGUEST_IOCTL_CODE for defining generic IN/OUT
+ * IOCtls on new ports of the additions.
+ * 
+ * @remark  When creating new IOCtl interfaces keep in mind that not all OSes supports
+ *          reporting back the output size. (This got messed up a little bit in VBoxDrv.)
+ * 
+ *          OS/2 restricts the in/out data size to 64KB, while Linux, BSD and Darwin are 
+ *          limited by a 14 bits size field (16KB). So, special considerations need to
+ *          be taken if more input/output needs to be passed around.
+ * 
+ *          When passing variable sized input/output special care need to be taken on 
+ *          Unix platforms (if we're going to play by the rules) since the size is 
+ *          passed as part of the IOCtl code there. IIRC Darwin will use the size to 
+ *          perform locking and in/out copying, I don't quite know about linux and *BSD.
+ *          
+ * @remark  If adding interfaces that only has input or only has output, some new macros
+ *          needs to be created so the most efficient IOCtl data buffering method can be
+ *          used.
+ * 
  * @{
- * IOCTL function numbers start from 2048, because MSDN says the
- * second parameter of CTL_CODE macro (function) must be <= 2048 and <= 4095 for IHVs.
- * The IOCTL number algorithm corresponds to CTL_CODE on Windows but for Linux IOCTLs,
- * we also encode the data size, so we need an additional parameter.
  */
+#ifdef __AMD64__
+# define VBOXGUEST_IOCTL_FLAG     128
+#elif defined(__X86__)
+# define VBOXGUEST_IOCTL_FLAG     0
+#else
+# error "dunno which arch this is!"
+#endif
+
 #if defined(__WIN__)
-#define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
+# define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
     ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
-#else /* unix: */
-#define IOCTL_CODE(DeviceType, Function, Method_ignored, Access_ignored, DataSize) \
+
+#elif defined(__OS2__)
+# define VBOXGUEST_IOCTL_CATEGORY                   0xc2
+# define VBOXGUEST_IOCTL_CODE(Function, Size)       ((unsigned char)(Function))
+# define VBOXGUEST_IOCTL_CATEGORY_FAST              0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)        ((unsigned char)(Function))
+
+#elif defined(__LINUX__) 
+# define IOCTL_CODE(DeviceType, Function, Method_ignored, Access_ignored, DataSize) \
     ( (3 << 30) | ((DeviceType) << 8) | (Function) | ((DataSize) << 16) )
-#define METHOD_BUFFERED        0
-#define FILE_WRITE_ACCESS      0x0002
-#define FILE_DEVICE_UNKNOWN    0x00000022
+# define METHOD_BUFFERED        0
+# define FILE_WRITE_ACCESS      0x0002
+# define FILE_DEVICE_UNKNOWN    0x00000022
+
+#elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
+# include <sys/ioccom.h>
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   _IORW('V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)    _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG)
+
+#else
+# error "Port Me"
 #endif
 
 /** IOCTL to VBoxGuest to query the VMMDev IO port region start. */
-#define IOCTL_VBOXGUEST_GETVMMDEVPORT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestPortInfo))
+#ifdef VBOXGUEST_IOCTL_CODE
+# define VBOXGUEST_IOCTL_GETVMMDEVPORT  VBOXGUEST_IOCTL_CODE(1, sizeof(VBoxGuestPortInfo))
+# define IOCTL_VBOXGUEST_GETVMMDEVPORT  VBOXGUEST_IOCTL_GETVMMDEVPORT
+#else
+# define IOCTL_VBOXGUEST_GETVMMDEVPORT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestPortInfo))
+#endif 
 
 #pragma pack(4)
 typedef struct _VBoxGuestPortInfo
@@ -889,7 +966,12 @@ typedef struct _VBoxGuestPortInfo
 } VBoxGuestPortInfo;
 
 /** IOCTL to VBoxGuest to wait for a VMMDev host notification */
-#define IOCTL_VBOXGUEST_WAITEVENT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2049, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestWaitEventInfo))
+#ifdef VBOXGUEST_IOCTL_CODE
+# define VBOXGUEST_IOCTL_WAITEVENT      VBOXGUEST_IOCTL_CODE(2, sizeof(VBoxGuestWaitEventInfo))
+# define IOCTL_VBOXGUEST_WAITEVENT      VBOXGUEST_IOCTL_WAITEVENT
+#else
+# define IOCTL_VBOXGUEST_WAITEVENT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2049, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestWaitEventInfo))
+#endif 
 
 /**
  * Result codes for VBoxGuestWaitEventInfo::u32Result
@@ -918,11 +1000,17 @@ typedef struct _VBoxGuestWaitEventInfo
     uint32_t u32EventFlagsOut;
 } VBoxGuestWaitEventInfo;
 
-/** IOCTL to VBoxGuest to perform a VMM request */
-#define IOCTL_VBOXGUEST_VMMREQUEST IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2050, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VMMDevRequestHeader))
+/** IOCTL to VBoxGuest to perform a VMM request
+ * @remark  The data buffer for this IOCtl has an variable size, keep this in mind
+ *          on systems where this matters. */
+#ifdef VBOXGUEST_IOCTL_CODE
+# define VBOXGUEST_IOCTL_VMMREQUEST(Size)   VBOXGUEST_IOCTL_CODE(3, sizeof(VMMDevRequestHeader))
+# define IOCTL_VBOXGUEST_VMMREQUEST         VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevRequestHeader))
+#else
+# define IOCTL_VBOXGUEST_VMMREQUEST IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2050, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VMMDevRequestHeader))
+#endif 
 
-/** IOCTL to VBoxGuest to control event filter mask */
-
+/** Input and output buffer layout of the IOCTL_VBOXGUEST_CTL_FILTER_MASK. */
 typedef struct _VBoxGuestFilterMaskInfo
 {
     uint32_t u32OrMask;
@@ -930,7 +1018,13 @@ typedef struct _VBoxGuestFilterMaskInfo
 } VBoxGuestFilterMaskInfo;
 #pragma pack()
 
-#define IOCTL_VBOXGUEST_CTL_FILTER_MASK IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2051, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof (VBoxGuestFilterMaskInfo))
+/** IOCTL to VBoxGuest to control event filter mask */
+#ifdef VBOXGUEST_IOCTL_CODE
+# define VBOXGUEST_IOCTL_CTL_FILTER_MASK    VBOXGUEST_IOCTL_CODE(4, sizeof(VBoxGuestFilterMaskInfo))
+# define IOCTL_VBOXGUEST_CTL_FILTER_MASK    VBOXGUEST_IOCTL_CTL_FILTER_MASK
+#else
+# define IOCTL_VBOXGUEST_CTL_FILTER_MASK IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2051, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof (VBoxGuestFilterMaskInfo))
+#endif 
 
 #ifdef VBOX_HGCM
 /* These structures are shared between the driver and other binaries,
@@ -960,10 +1054,21 @@ typedef struct _VBoxGuestHGCMCallInfo
 } VBoxGuestHGCMCallInfo;
 #pragma pack()
 
-#define IOCTL_VBOXGUEST_HGCM_CONNECT      IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3072, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMConnectInfo))
-#define IOCTL_VBOXGUEST_HGCM_DISCONNECT   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3073, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMDisconnectInfo))
-#define IOCTL_VBOXGUEST_HGCM_CALL         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3074, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMCallInfo))
-#define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3075, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(uint32_t))
+#ifdef VBOXGUEST_IOCTL_CODE
+# define VBOXGUEST_IOCTL_HGCM_CONNECT       VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
+# define IOCTL_VBOXGUEST_HGCM_CONNECT       VBOXGUEST_IOCTL_HGCM_CONNECT
+# define VBOXGUEST_IOCTL_HGCM_DISCONNECT    VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
+# define IOCTL_VBOXGUEST_HGCM_DISCONNECT    VBOXGUEST_IOCTL_HGCM_DISCONNECT
+# define VBOXGUEST_IOCTL_HGCM_CALL(Size)    VBOXGUEST_IOCTL_CODE(18, (Size))
+# define IOCTL_VBOXGUEST_HGCM_CALL          VBOXGUEST_IOCTL_HGCM_CALL(sizeof(VBoxGuestHGCMCallInfo))
+# define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
+# define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT  VBOXGUEST_IOCTL_CLIPBOARD_CONNECT
+#else
+# define IOCTL_VBOXGUEST_HGCM_CONNECT      IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3072, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMConnectInfo))
+# define IOCTL_VBOXGUEST_HGCM_DISCONNECT   IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3073, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMDisconnectInfo))
+# define IOCTL_VBOXGUEST_HGCM_CALL         IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3074, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestHGCMCallInfo))
+# define IOCTL_VBOXGUEST_CLIPBOARD_CONNECT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 3075, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(uint32_t))
+#endif 
 
 #define VBOXGUEST_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
