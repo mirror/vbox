@@ -1741,11 +1741,6 @@ ResumeExecution:
             }
             break;
         }
-        if (rc == VINF_EM_RAW_EMULATE_INSTR)
-        {
-            /* First attempt to emulate directly before falling back to the recompiler */
-            rc = (fIOWrite) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
-        }
 
 #ifdef VBOX_STRICT
         if (rc == VINF_IOM_HC_IOPORT_READ)
