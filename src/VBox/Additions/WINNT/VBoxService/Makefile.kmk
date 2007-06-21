@@ -32,6 +32,7 @@ VBoxService_DEFS     = VBOX_HGCM
 VBoxService_SOURCES  = \
 	VBoxService.cpp \
 	VBoxClipboard.cpp \
+	helpers.cpp \
 	VBoxService.rc
 VBoxService_LIBS     = \
 	$(PATH_LIB)/additions/RuntimeW32GuestR3.lib
