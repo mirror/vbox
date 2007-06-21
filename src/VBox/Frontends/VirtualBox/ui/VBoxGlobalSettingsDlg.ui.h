@@ -315,8 +315,8 @@ void VBoxGlobalSettingsDlg::init()
                                        QLabel::AlignTop));
 
     whatsThisLabel->setFixedHeight (whatsThisLabel->frameWidth() * 2 +
-                                      6 /* seems that RichText adds some margin */ +
-                                      whatsThisLabel->fontMetrics().lineSpacing() * 3);
+                                    6 /* seems that RichText adds some margin */ +
+                                    whatsThisLabel->fontMetrics().lineSpacing() * 4);
     whatsThisLabel->setMinimumWidth (whatsThisLabel->frameWidth() * 2 +
                                      6 /* seems that RichText adds some margin */ +
                                      whatsThisLabel->fontMetrics().width ('m') * 40);
