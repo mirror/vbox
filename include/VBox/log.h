@@ -386,29 +386,6 @@ typedef enum LOGGROUP
     "VRDP",         \
 }
 
-
-__BEGIN_DECLS
-
-/**
- * Prints a formatted string to the backdoor port.
- *
- * @returns Number of bytes written.
- * @param   pszFormat   Format string.
- * @param   ...         Optional arguments specified in the format string.
- */
-RTDECL(size_t) RTLogBackdoorPrintf(const char *pszFormat, ...);
-
-/**
- * Prints a formatted string to the backdoor port.
- *
- * @returns Number of bytes written.
- * @param   pszFormat   Format string.
- * @param   args        Optional arguments specified in the format string.
- */
-RTDECL(size_t)  RTLogBackdoorPrintfV(const char *pszFormat, va_list args);
-
-__END_DECLS
-
 /** @} */
 #endif
 

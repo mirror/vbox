@@ -1458,6 +1458,27 @@ RTDECL(void) RTLogWriteStdOut(const char *pach, size_t cb);
  */
 RTDECL(void) RTLogWriteStdErr(const char *pach, size_t cb);
 
+#ifdef VBOX
+
+/**
+ * Prints a formatted string to the backdoor port.
+ *
+ * @returns Number of bytes written.
+ * @param   pszFormat   Format string.
+ * @param   ...         Optional arguments specified in the format string.
+ */
+RTDECL(size_t) RTLogBackdoorPrintf(const char *pszFormat, ...);
+
+/**
+ * Prints a formatted string to the backdoor port.
+ *
+ * @returns Number of bytes written.
+ * @param   pszFormat   Format string.
+ * @param   args        Optional arguments specified in the format string.
+ */
+RTDECL(size_t)  RTLogBackdoorPrintfV(const char *pszFormat, va_list args);
+
+#endif /* VBOX */
 
 __END_DECLS
 
