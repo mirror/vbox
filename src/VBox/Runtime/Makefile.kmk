@@ -27,6 +27,8 @@ ifdef VBOX_ADDITIONS_LINUX_ONLY
  LIBRARIES  = RuntimeLnx32GuestR0 RuntimeLnx32GuestR3
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
+else ifdef VBOX_ADDITIONS_OS2_ONLY
+ LIBRARIES += RuntimeOS2GuestR0 #RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
 else
  # Build everything.
  BLDPROGS   = uniread
@@ -42,6 +44,9 @@ else
   ifdef VBOX_WITH_LINUX_ADDITIONS_32BIT_R0
    LIBRARIES += RuntimeLnx32GuestR0
   endif
+ endif
+ ifdef VBOX_WITH_OS2_ADDITIONS
+  LIBRARIES += RuntimeOS2GuestR0 #RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
  endif
  LIBRARIES.l4= RuntimeR3L4
  DLLS = VBoxRT
@@ -826,6 +831,19 @@ RuntimeLnx32GuestR0_SOURCES       = \
 	$(RuntimeR0Drv_SOURCES) \
 	$(RuntimeR0Drv_SOURCES.linux) \
 	VBox/logbackdoor.cpp
+
+
+#
+# RuntimeOS2GuestR0 - OS/2 Warp 4.5 guest driver runtime.
+#
+RuntimeOS2GuestR0_TEMPLATE      = VBOXOS2GUESTR0LIB
+RuntimeOS2GuestR0_INCS         := $(PATH_SUB_CURRENT)
+RuntimeOS2GuestR0_DEFS          = RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
+RuntimeOS2GuestR0_SOURCES       = \
+	$(filter-out assert.cpp generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
+	$(RuntimeR0Drv_SOURCES.os2) \
+	VBox/logbackdoor.cpp
+
 
 #
 # RuntimeGC - Guest context library.
