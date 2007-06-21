@@ -99,6 +99,14 @@ struct pcaprec_hdr
     uint32_t    orig_len;       /* actual length of packet */
 };
 
+struct pcaprec_hdr_init
+{
+    uint32_t        u32Magic;
+    struct pcap_hdr pcap;
+#ifdef LOG_ENABLED
+    pcaprec_hdr     rec;
+#endif
+};
 
 
 /**
@@ -403,16 +411,21 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Write pcap header.
      */
-    struct
-    {
-        uint32_t        u32Magic;
-        struct pcap_hdr pcap;
 #ifdef LOG_ENABLED
-        pcaprec_hdr     rec;
-    }       Hdr = { PCAP_MAGIC, { 2, 4, 0, 0, 0xffff, 1 }, { 0, 1, 0, 60} }; /* force ethereal to start at 0.000000. */
+    pcaprec_hdr_init Hdr = 
+    { 
+        PCAP_MAGIC, 
+        { 2, 4, 0, 0, 0xffff, 1 }, 
+        { 0, 1, 0, 60} 
+    }; /* force ethereal to start at 0.000000. */
 #else
-    }       Hdr = { PCAP_MAGIC, { 2, 4, 0, 0, 0xffff, 1 } }; /* this is just to make it happy, not to be correct. */
+    pcaprec_hdr_init Hdr =
+    {
+        PCAP_MAGIC,
+        { 2, 4, 0, 0, 0xffff, 1 } 
+    }; /* this is just to make it happy, not to be correct. */
 #endif
+
     RTFileWrite(pData->File, &Hdr, sizeof(Hdr), NULL);
 
     return VINF_SUCCESS;
