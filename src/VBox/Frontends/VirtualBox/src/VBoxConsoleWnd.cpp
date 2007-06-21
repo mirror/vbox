@@ -1042,6 +1042,12 @@ void VBoxConsoleWnd::refreshView()
     }
 }
 
+void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
+{
+    vmDisableMouseIntegrAction->setOn (aDisabled);
+    vmDisableMouseIntegrAction->setEnabled (false);
+}
+
 //
 // Protected Members
 /////////////////////////////////////////////////////////////////////////////

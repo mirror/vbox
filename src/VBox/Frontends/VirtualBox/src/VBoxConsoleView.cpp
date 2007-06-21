@@ -983,6 +983,8 @@ bool VBoxConsoleView::event (QEvent *e)
                     emitMouseStateChanged();
                     vboxProblem().remindAboutMouseIntegration (mouse_absolute);
                 }
+                if (me->needsHostCursor())
+                    mainwnd->setMouseIntegrationLocked (false);
                 return true;
             }
 
