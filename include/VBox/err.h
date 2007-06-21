@@ -711,6 +711,8 @@
 #define VINF_IOM_HC_IOPORT_READ             2620
 /** Reason for leaving GC: I/O port write. */
 #define VINF_IOM_HC_IOPORT_WRITE            2621
+/** Reason for leaving GC: I/O port read write. */
+#define VINF_IOM_HC_IOPORT_READWRITE        2622
 /** Reason for leaving GC: MMIO write. */
 #define VINF_IOM_HC_MMIO_READ               2623
 /** Reason for leaving GC: MMIO read. */
