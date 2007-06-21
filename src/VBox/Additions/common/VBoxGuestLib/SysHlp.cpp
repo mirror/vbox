@@ -124,7 +124,8 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     /** @todo return RTErrConvertFromNtStatus(rc)! */
     Log(("vbglDriverOpen VBoxGuest failed with ntstatus=%x\n", rc));
     return rc;
-#else
+
+#elif defined (__LINUX__)
     void *opaque;
 
     opaque = (void *) vboxadd_cmc_open ();
@@ -134,6 +135,12 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     }
     pDriver->opaque = opaque;
     return VINF_SUCCESS;
+
+#elif defined (__OS2__)
+    return VERR_NOT_IMPLEMENTED;
+
+#else
+# error "Port me"
 #endif
 }
 
@@ -178,8 +185,15 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
         Log(("vbglDriverIOCtl: IoCallDriver failed with ntstatus=%x\n", rc));
 
     return NT_SUCCESS(rc)? VINF_SUCCESS: VERR_VBGL_IOCTL_FAILED;
-#else
+
+#elif defined (__LINUX__)
     return vboxadd_cmc_call (pDriver->opaque, u32Function, pvData);
+
+#elif defined (__OS2__)
+    return VERR_NOT_IMPLEMENTED;
+
+#else
+# error "Port me"
 #endif
 }
 
@@ -188,8 +202,15 @@ void vbglDriverClose (VBGLDRIVER *pDriver)
 #ifdef __WIN__
     Log(("vbglDriverClose pDeviceObject=%x\n", pDriver->pDeviceObject));
     ObDereferenceObject (pDriver->pFileObject);
-#else
+
+#elif defined (__LINUX__)
     vboxadd_cmc_close (pDriver->opaque);
+
+#elif defined (__OS2__)
+    
+
+#else
+# error "Port me"
 #endif
 }
 
