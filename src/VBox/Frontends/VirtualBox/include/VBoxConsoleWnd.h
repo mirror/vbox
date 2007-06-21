@@ -72,6 +72,8 @@ public:
 
     bool isTrueFullscreen() const { return full_screen; }
 
+    void setMouseIntegrationLocked (bool);
+
 public slots:
 
 protected:
