@@ -44,7 +44,7 @@ typedef uint32_t vmmDevHypPhys;
 
 #elif defined(__OS2__)
 /** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "\\Dev\VBoxGst$"
+# define VBOXGUEST_DEVICE_NAME        "\\Dev\\VBoxGst$"
 
 #elif defined(__WIN__)
 /** The support service name. */
