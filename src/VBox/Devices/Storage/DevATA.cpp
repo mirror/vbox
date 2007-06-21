@@ -5223,7 +5223,7 @@ static DECLCALLBACK(void) ataRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  * Most VM resources are freed by the VM. This callback is provided so that any non-VM
  * resources can be freed correctly.
  *
- * @param   pDrvIns     The driver instance data.
+ * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
 {
@@ -5554,7 +5554,7 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
  * Suspend notification.
  *
  * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
+ * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ataSuspend(PPDMDEVINS pDevIns)
 {
@@ -5569,7 +5569,7 @@ static DECLCALLBACK(void) ataSuspend(PPDMDEVINS pDevIns)
  * Resume notification.
  *
  * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
+ * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ataResume(PPDMDEVINS pDevIns)
 {
@@ -5593,7 +5593,7 @@ static DECLCALLBACK(void) ataResume(PPDMDEVINS pDevIns)
  * Power Off notification.
  *
  * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
+ * @param   pDevIns     The device instance data.
  */
 static DECLCALLBACK(void) ataPowerOff(PPDMDEVINS pDevIns)
 {
