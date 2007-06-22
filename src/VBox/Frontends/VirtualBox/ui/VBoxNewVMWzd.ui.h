@@ -325,6 +325,11 @@ bool VBoxNewVMWzd::constructMachine()
     AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
     cmachine.SetOSTypeId (type.GetId());
 
+    if (type.GetId() == "os2warp3" ||
+        type.GetId() == "os2warp4" ||
+        type.GetId() == "os2warp45")
+        cmachine.SetHWVirtExEnabled (CEnums::True);
+
     /* RAM size */
     cmachine.SetMemorySize (slRAM->value());
 
