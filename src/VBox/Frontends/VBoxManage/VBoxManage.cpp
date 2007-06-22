@@ -344,7 +344,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("                            [-audio none|null");
         if (fWin)
         {
+#ifdef VBOX_WITH_WINMM
             RTPrintf(                        "|winmm|dsound");
+#else
+            RTPrintf(                        "|dsound");
+#endif
         }
         if (fLinux)
         {
@@ -3688,11 +3692,13 @@ static int handleModifyVM(int argc, char *argv[],
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
 #ifdef __WIN__
+#ifdef VBOX_WITH_WINMM
             else if (strcmp(audio, "winmm") == 0)
             {
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_WINMMAudioDriver));
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
+#endif
             else if (strcmp(audio, "dsound") == 0)
             {
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DSOUNDAudioDriver));
