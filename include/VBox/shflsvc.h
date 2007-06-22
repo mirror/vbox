@@ -438,10 +438,15 @@ typedef struct _VBoxSFMapFolder
      */
     HGCMFunctionParameter delimiter;
 
+    /** 32bit, in: bool
+     * fCaseSensitive
+     */
+    HGCMFunctionParameter fCaseSensitive;
+
 } VBoxSFMapFolder;
 
 /** Number of parameters */
-#define SHFL_CPARMS_MAP_FOLDER (3)
+#define SHFL_CPARMS_MAP_FOLDER (4)
 
 /**
  * SHFL_FN_UNMAP_FOLDER
