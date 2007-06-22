@@ -1648,6 +1648,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Initialize data (most of it anyway).
      */
+    /* Save PDM device instance data for future reference. */
+    pData->pDevIns = pDevIns;
+
     /* PCI vendor, just a free bogus value */
     pData->dev.config[0x00] = 0xee;
     pData->dev.config[0x01] = 0x80;
@@ -1667,12 +1670,14 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register the backdoor logging port
      */
     rc = PDMDevHlpIOPortRegister(pDevIns, RTLOG_DEBUG_PORT, 1, NULL, vmmdevBackdoorLog, NULL, NULL, NULL, "VMMDev backdoor logging");
+    AssertRCReturn(rc, rc);
 
 #ifdef TIMESYNC_BACKDOOR
     /*
      * Alternative timesync source (temporary!)
      */
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x505, 1, NULL, vmmdevTimesyncBackdoorWrite, vmmdevTimesyncBackdoorRead, NULL, NULL, "VMMDev timesync backdoor");
+    AssertRCReturn(rc, rc);
 #endif
 
     /*
@@ -1711,62 +1716,53 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->HGCMPort.pfnCompleted          = hgcmCompleted;
 #endif
 
-   /*    * Get the corresponding connector interface
-    */
-   rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->Base, &pData->pDrvBase, "VMM Driver Port");
-   if (VBOX_SUCCESS(rc))
-   {
-       pData->pDrv = (PPDMIVMMDEVCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_VMMDEV_CONNECTOR);
-       if (!pData->pDrv)
-       {
-           AssertMsgFailed(("LUN #0 doesn't have a VMMDev connector interface! rc=%Vrc\n", rc));
-           rc = VERR_PDM_MISSING_INTERFACE;
-       }
+    /*    
+     * Get the corresponding connector interface
+     */
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pData->Base, &pData->pDrvBase, "VMM Driver Port");
+    if (VBOX_SUCCESS(rc))
+    {
+        pData->pDrv = (PPDMIVMMDEVCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_VMMDEV_CONNECTOR);
+        if (!pData->pDrv)
+            AssertMsgFailedReturn(("LUN #0 doesn't have a VMMDev connector interface!\n"), VERR_PDM_MISSING_INTERFACE);
 #ifdef VBOX_HGCM
-       else
-       {
-           pData->pHGCMDrv = (PPDMIHGCMCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_HGCM_CONNECTOR);
-           if (!pData->pHGCMDrv)
-           {
-               Log(("LUN #0 doesn't have a HGCM connector interface, HGCM is not supported. rc=%Vrc\n", rc));
-               /* this is not actually an error, just means that there is no support for HGCM */
-           }
-       }
+        pData->pHGCMDrv = (PPDMIHGCMCONNECTOR)pData->pDrvBase->pfnQueryInterface(pData->pDrvBase, PDMINTERFACE_HGCM_CONNECTOR);
+        if (!pData->pHGCMDrv)
+        {
+            Log(("LUN #0 doesn't have a HGCM connector interface, HGCM is not supported. rc=%Vrc\n", rc));
+            /* this is not actually an error, just means that there is no support for HGCM */
+        }
 #endif
-   }
-   else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-   {
-       Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-       rc = VINF_SUCCESS;
-   }
-   else
-       AssertMsgFailed(("Failed to attach LUN #0! rc=%Vrc\n", rc));
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+        rc = VINF_SUCCESS;
+    }
+    else
+        AssertMsgFailedReturn(("Failed to attach LUN #0! rc=%Vrc\n", rc), rc);
 
+    /* 
+     * Register saved state and init the HGCM CmdList critsect.
+     */
     rc = PDMDevHlpSSMRegister(pDevIns, "VMMDev", iInstance, VMMDEV_SSM_VERSION, sizeof(*pData),
-                                          NULL, vmmdevSaveState, NULL,
-                                          NULL, vmmdevLoadState, vmmdevLoadStateDone);
+                              NULL, vmmdevSaveState, NULL,
+                              NULL, vmmdevLoadState, vmmdevLoadStateDone);
+    AssertRCReturn(rc, rc);
 
-    /* Save PDM device instance data for future reference. */
-    pData->pDevIns = pDevIns;
-
+#ifdef VBOX_HGCM
+    rc = RTCritSectInit(&pData->critsectHGCMCmdList);
+    AssertRCReturn(rc, rc);
+#endif /* VBOX_HGCM */
 
     /*
      * Allocate the VMMDev RAM region.
      */
     /** @todo freeing of the RAM. */
     rc = SUPPageAlloc(VMMDEV_RAM_SIZE >> PAGE_SHIFT, (void **)&pData->pVMMDevRAMHC);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("VMMDev SUPPageAlloc(%#x,) -> %d\n", VMMDEV_RAM_SIZE, rc));
-    }
-    
-#ifdef VBOX_HGCM
-    rc = RTCritSectInit(&pData->critsectHGCMCmdList);
-    AssertRC(rc);
-#endif /* VBOX_HGCM */
+    AssertMsgRCReturn(rc, ("VMMDev SUPPageAlloc(%#x,) -> %Vrc\n", VMMDEV_RAM_SIZE, rc), rc);
 
     /* initialize the VMMDev memory */
-    memset (pData->pVMMDevRAMHC, 0, sizeof (VMMDevMemory));
     pData->pVMMDevRAMHC->u32Size = sizeof (VMMDevMemory);
     pData->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
 
@@ -1799,7 +1795,10 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 
     if (pData->pVMMDevRAMHC)
     {
-        memset (pData->pVMMDevRAMHC, 0, sizeof (VMMDevMemory));
+        /* re-initialize the VMMDev memory */
+        memset (pData->pVMMDevRAMHC, 0, VMMDEV_RAM_SIZE);
+        pData->pVMMDevRAMHC->u32Size = sizeof (VMMDevMemory);
+        pData->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
     }
 
     /* credentials have to go away */
