@@ -714,15 +714,14 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
 }
 
-void R0LogFlush()
+
+void R0LogFlush(void)
 {
     vmmR0LoggerFlush(RTLogDefaultInstance());
 }
 
-#ifdef DEBUG_NO_RING0_ASSERTIONS
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_EM
 
+#ifdef DEBUG_NO_RING0_ASSERTIONS
 /**
  * Check if we really want to hit a breakpoint.
  * Can jump back to ring-3 when the longjmp is armed.
@@ -741,8 +740,17 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
 
     return false;
 }
+#endif /* !DEBUG_NO_RING0_ASSERTIONS */
 
 
+
+/*
+ * Keep this private until it writes to the release log.
+ */
+#ifdef DEBUG_sandervl
+
+# undef LOG_GROUP
+# define LOG_GROUP LOG_GROUP_EM
 
 /** Runtime assert implementation for Native Win32 Ring-0. */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
@@ -779,4 +787,4 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
     }
 }
 
-#endif
+#endif /* private */
