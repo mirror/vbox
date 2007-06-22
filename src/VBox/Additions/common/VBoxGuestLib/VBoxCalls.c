@@ -201,7 +201,7 @@ DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
 
     data.fCaseSensitive.type          = VMMDevHGCMParmType_32bit;
 #if defined(__OS2__) || defined(__WIN__)
-    data.fCaseSensitive.u.value32     = 1;
+    data.fCaseSensitive.u.value32     = 0;
 #else
     data.fCaseSensitive.u.value32     = 1;
 #endif
