@@ -373,6 +373,7 @@ void Display::handleResizeCompletedEMT (void)
     }
 }
 
+#ifndef VRDP_MC
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
 {
     /* Correct negative x and y coordinates. */
@@ -405,6 +406,7 @@ static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy
         *ph = cy > *py? cy - *py: 0;
     }
 }
+#endif
 
 unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int *py, int *pw, int *ph)
 {
