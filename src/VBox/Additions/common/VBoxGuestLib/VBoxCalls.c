@@ -199,6 +199,13 @@ DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
     data.delimiter.type               = VMMDevHGCMParmType_32bit;
     data.delimiter.u.value32          = RTPATH_DELIMITER;
 
+    data.fCaseSensitive.type          = VMMDevHGCMParmType_32bit;
+#if defined(__OS2__) || defined(__WIN__)
+    data.fCaseSensitive.u.value32     = 1;
+#else
+    data.fCaseSensitive.u.value32     = 1;
+#endif
+
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
 
 /*    Log(("VBOXSF: VBoxSF::vboxCallMapFolder: "
