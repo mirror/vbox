@@ -79,10 +79,15 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PHYS:
             if (!pMemOs2->Core.pv)
                 break;
+
+        case RTR0MEMOBJTYPE_MAPPING:
+            if (pMemOs2->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
+                break; 
+
+            /* fall thru */
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_CONT:
-        case RTR0MEMOBJTYPE_MAPPING:
             rc = KernVMFree(pMemOs2->Core.pv);
             AssertMsg(!rc, ("rc=%d type=%d pv=%p cb=%#zx\n", rc, pMemOs2->Core.enmType, pMemOs2->Core.pv, pMemOs2->Core.cb));
             break;
@@ -288,7 +293,69 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_
 
 int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
+
+/** @todo finish the implementation. */
+
+    int rc;
+    void *pvR0 = NULL;
+    PRTR0MEMOBJOS2 pMemToMapOs2 = (PRTR0MEMOBJOS2)pMemToMap;
+    switch (pMemToMapOs2->Core.enmType)
+    {
+        /*
+         * These has kernel mappings.
+         */
+        case RTR0MEMOBJTYPE_PAGE:
+        case RTR0MEMOBJTYPE_LOW:
+        case RTR0MEMOBJTYPE_CONT:
+            pvR0 = pMemToMapOs2->Core.pv;
+            break;
+
+        case RTR0MEMOBJTYPE_PHYS:
+            pvR0 = pMemToMapOs2->Core.pv;
+            if (!pvR0)
+            {
+                /* no ring-0 mapping, so allocate a mapping in the process. */
+                AssertMsgReturn(uAlignment == PAGE_SIZE, ("%#zx\n", uAlignment), VERR_NOT_SUPPORTED);
+                AssertMsgReturn(fProt & RTMEM_PROT_WRITE, ("%#x\n", fProt), VERR_NOT_SUPPORTED);
+                Assert(!pMemToMapOs2->Core.u.Phys.fAllocated);
+                ULONG ulPhys = pMemToMapOs2->Core.u.Phys.PhysBase;
+                rc = KernVMAlloc(pMemToMapOs2->Core.cb, VMDHA_PHYS/* | VMDHA_SHARED?*/, &pvR0, (PPVOID)&ulPhys, NULL);
+                if (rc)
+                    return RTErrConvertFromOS2(rc);
+                pMemToMapOs2->Core.pv = pvR0;
+            }
+            break;
+
+        case RTR0MEMOBJTYPE_LOCK:
+            if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
+                return VERR_NOT_SUPPORTED; /** @todo implement this... */
+            pvR0 = pMemToMapOs2->Core.pv;
+            break;
+
+        case RTR0MEMOBJTYPE_RES_VIRT:
+        case RTR0MEMOBJTYPE_MAPPING:
+        default:
+            AssertMsgFailed(("enmType=%d\n", pMemToMapOs2->Core.enmType));
+            return VERR_INTERNAL_ERROR;
+    }
+
+    /*
+     * Create a dummy mapping object for it.
+     *
+     * All mappings are read/write/execute in OS/2 and there isn't 
+     * any cache options, so sharing is ok. And the main memory object
+     * isn't actually freed until all the mappings have been freed up
+     * (reference counting).
+     */
+    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_MAPPING, pvR0, pMemToMapOs2->Core.cb);
+    if (pMemOs2)
+    {
+        pMemOs2->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
+        *ppMem = &pMemOs2->Core;
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
 }
 
 
@@ -314,6 +381,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
 
         case RTR0MEMOBJTYPE_PHYS:
             pvR0 = pMemToMapOs2->Core.pv;
+#if 0/* this is wrong. */
             if (!pvR0)
             {
                 /* no ring-0 mapping, so allocate a mapping in the process. */
@@ -326,6 +394,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
                     return RTErrConvertFromOS2(rc);
             }
             break;
+#endif 
+            return VERR_NOT_SUPPORTED;
 
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
@@ -363,7 +433,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_MAPPING, pvR3, pMemToMapOs2->Core.cb);
     if (pMemOs2)
     {
-Assert(pMemOs2->Core.pv == pvR3);
+        Assert(pMemOs2->Core.pv == pvR3);
         pMemOs2->Core.u.Mapping.R0Process = R0Process;
         *ppMem = &pMemOs2->Core;
         return VINF_SUCCESS;
