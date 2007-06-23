@@ -119,8 +119,8 @@ vboxvideo_drv_70_INCS = \
 	../x11include/7.0/X11 \
 	../x11include/7.0/xorg
 vboxvideo_drv_70_SOURCES  = \
-	vboxvideo_13.c \
-	vboxutils.c # $(vboxvideo_drv_SOURCES)
+	vboxvideo_70.c \
+	vboxutils.c
 
 
 vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -132,8 +132,8 @@ vboxvideo_drv_71_INCS = \
 	../x11include/7.1/X11 \
 	../x11include/7.1/xorg
 vboxvideo_drv_71_SOURCES  = \
-	vboxvideo_13.c \
-	vboxutils.c # $(vboxvideo_drv_SOURCES)
+	vboxvideo_70.c \
+	vboxutils.c
 
 vboxvideo_drv_13_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
@@ -145,7 +145,7 @@ vboxvideo_drv_13_INCS = \
 	../x11include/1.3/xorg
 vboxvideo_drv_13_SOURCES  = \
 	vboxvideo_13.c \
-	vboxutils.c # $(vboxvideo_drv_SOURCES)
+	vboxutils.c
 
 
 include	$(PATH_KBUILD)/footer.kmk
