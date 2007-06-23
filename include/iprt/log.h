@@ -672,96 +672,6 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 
 
 
-/** @name COM port logging
- * {
- */
-
-#ifdef __DOXYGEN__
-# define LOG_TO_COM
-# define LOG_NO_COM
-#endif
-
-/** @def LOG_TO_COM
- * Redirects the normal loging macros to the serial versions.
- */
-
-/** @def LOG_NO_COM
- * Disables all LogCom* macros.
- */
-
-/** @def LogCom
- * Generic logging to serial port.
- */
-#if defined(LOG_ENABLED) && !defined(LOG_NO_COM)
-# define LogCom(a) RTLogComPrintf a
-#else
-# define LogCom(a) do { } while (0)
-#endif
-
-/** @def LogComFlow
- * Logging to serial port of execution flow.
- */
-#if defined(LOG_ENABLED) && defined(LOG_ENABLE_FLOW) && !defined(LOG_NO_COM)
-# define LogComFlow(a) RTLogComPrintf a
-#else
-# define LogComFlow(a) do { } while (0)
-#endif
-
-#ifdef LOG_TO_COM
-# undef Log
-# define Log(a)      LogCom(a)
-# undef LogFlow
-# define LogFlow(a)  LogComFlow(a)
-#endif
-
-/** @} */
-
-
-/** @name Backdoor Logging
- * @{
- */
-
-#ifdef __DOXYGEN__
-# define LOG_TO_BACKDOOR
-# define LOG_NO_BACKDOOR
-#endif
-
-/** @def LOG_TO_BACKDOOR
- * Redirects the normal logging macros to the backdoor versions.
- */
-
-/** @def LOG_NO_BACKDOOR
- * Disables all LogBackdoor* macros.
- */
-
-/** @def LogBackdoor
- * Generic logging to the VBox backdoor via port io.
- */
-#if defined(LOG_ENABLED) && !defined(LOG_NO_BACKDOOR)
-# define LogBackdoor(a) RTLogBackdoorPrintf a
-#else
-# define LogBackdoor(a) do { } while (0)
-#endif
-
-/** @def LogBackdoorFlow
- * Logging of execution flow messages to the backdoor io port.
- */
-#if defined(LOG_ENABLED) && !defined(LOG_NO_BACKDOOR)
-# define LogBackdoorFlow(a) RTLogBackdoorPrintf a
-#else
-# define LogBackdoorFlow(a) do { } while (0)
-#endif
-
-#ifdef LOG_TO_BACKDOOR
-# undef Log
-# define Log(a)      LogBackdoor(a)
-# undef LogFlow
-# define LogFlow(a)  LogBackdoorFlow(a)
-#endif
-
-/** @} */
-
-
 /** @name Release Logging
  * @{
  */
@@ -1010,7 +920,114 @@ RTDECL(void) RTLogRelPrintf(const char *pszFormat, ...);
  */
 RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
 
+
 /** @} */
+
+
+
+/** @name COM port logging
+ * {
+ */
+
+#ifdef __DOXYGEN__
+# define LOG_TO_COM
+# define LOG_NO_COM
+#endif
+
+/** @def LOG_TO_COM
+ * Redirects the normal loging macros to the serial versions.
+ */
+
+/** @def LOG_NO_COM
+ * Disables all LogCom* macros.
+ */
+
+/** @def LogCom
+ * Generic logging to serial port.
+ */
+#if defined(LOG_ENABLED) && !defined(LOG_NO_COM)
+# define LogCom(a) RTLogComPrintf a
+#else
+# define LogCom(a) do { } while (0)
+#endif
+
+/** @def LogComFlow
+ * Logging to serial port of execution flow.
+ */
+#if defined(LOG_ENABLED) && defined(LOG_ENABLE_FLOW) && !defined(LOG_NO_COM)
+# define LogComFlow(a) RTLogComPrintf a
+#else
+# define LogComFlow(a) do { } while (0)
+#endif
+
+#ifdef LOG_TO_COM
+# undef Log
+# define Log(a)             LogCom(a)
+# undef LogFlow
+# define LogFlow(a)         LogComFlow(a)
+#endif
+
+/** @} */
+
+
+/** @name Backdoor Logging
+ * @{
+ */
+
+#ifdef __DOXYGEN__
+# define LOG_TO_BACKDOOR
+# define LOG_NO_BACKDOOR
+#endif
+
+/** @def LOG_TO_BACKDOOR
+ * Redirects the normal logging macros to the backdoor versions.
+ */
+
+/** @def LOG_NO_BACKDOOR
+ * Disables all LogBackdoor* macros.
+ */
+
+/** @def LogBackdoor
+ * Generic logging to the VBox backdoor via port I/O.
+ */
+#if defined(LOG_ENABLED) && !defined(LOG_NO_BACKDOOR)
+# define LogBackdoor(a)     RTLogBackdoorPrintf a
+#else
+# define LogBackdoor(a)     do { } while (0)
+#endif
+
+/** @def LogBackdoorFlow
+ * Logging of execution flow messages to the backdoor I/O port.
+ */
+#if defined(LOG_ENABLED) && !defined(LOG_NO_BACKDOOR)
+# define LogBackdoorFlow(a) RTLogBackdoorPrintf a
+#else
+# define LogBackdoorFlow(a) do { } while (0)
+#endif
+
+/** @def LogRelBackdoor
+ * Generic logging to the VBox backdoor via port I/O.
+ */
+#if !defined(LOG_NO_BACKDOOR)
+# define LogRelBackdoor(a)  RTLogBackdoorPrintf a
+#else
+# define LogRelBackdoor(a)  do { } while (0)
+#endif
+
+#ifdef LOG_TO_BACKDOOR
+# undef Log
+# define Log(a)         LogBackdoor(a)
+# undef LogFlow
+# define LogFlow(a)     LogBackdoorFlow(a)
+# undef LogRel
+# define LogRel(a)      LogRelBackdoor(a)
+# undef LogRelFlow
+# define LogRelFlow(a)  LogRelBackdoorFlow(a)
+#endif
+
+/** @} */
+
+
 
 
 /**
