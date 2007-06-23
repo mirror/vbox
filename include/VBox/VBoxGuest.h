@@ -1192,6 +1192,85 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
     return VINF_SUCCESS;
 }
 
+
+#ifdef __OS2__
+
+/** OS/2 specific: IDC client connection request.
+ * 
+ * This takes no input (parameter). 
+ * 
+ * It returns a VBOXGUESTOS2IDCCONNECT structure in the data buffer 
+ * provided in the generic ioctl request.
+ * 
+ * @remark  Duplicated in the 16-bit and assembly headers. 
+ */
+#define VBOXGUEST_IOCTL_OS2_IDC_CONNECT  VBOXGUEST_IOCTL_CODE(48, sizeof(VBOXGUESTOS2IDCCONNECT))
+
+/** 
+ * VBOXGUEST_IOCTL_OS2_IDC_CONNECT output. 
+ */
+typedef struct VBOXGUESTOS2IDCCONNECT
+{
+    /** VMMDEV_VERSION. */
+    uint32_t u32Version;
+    /** Opaque session handle. */
+    uint32_t u32Session;
+
+    /**
+     * The 32-bit service entry point.
+     * 
+     * @returns VBox status code.   
+     * @param   u32Session          The above session handle.
+     * @param   iFunction           The requested function.
+     * @param   pvData              The input/output data buffer. The caller ensures that this
+     *                              cannot be swapped out, or that it's acceptable to take a
+     *                              page in fault in the current context. If the request doesn't
+     *                              take input or produces output, apssing NULL is okay.
+     * @param   cbData              The size of the data buffer.
+     * @param   pcbDataReturned     Where to store the amount of data that's returned.
+     *                              This can be NULL if pvData is NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnServiceEP)(uint32_t u32Session, unsigned iFunction, void *pvData, size_t cbData, size_t *pcbDataReturned);
+
+    /** The 16-bit service entry point for C code (cdecl). 
+     * 
+     * It's the same as the 32-bit entry point, but the types has 
+     * changed to 16-bit equivalents.
+     * 
+     * @code
+     * int far cdecl 
+     * VBoxGuestOs2IDCService16(uint32_t u32Session, uint16_t iFunction, 
+     *                          void far *fpvData, uint16_t cbData, uint16_t far *pcbDataReturned);
+     * @endcode
+     */
+    RTFAR16 fpfnServiceEP;
+
+    /** The 16-bit service entry point for Assembly code (register). 
+     * 
+     * This is just a wrapper around fpfnServiceEP to simplify calls
+     * from 16-bit assembly code.
+     *
+     * @returns (e)ax: VBox status code; cx: The amount of data returned.
+     *            
+     * @param   u32Session          eax   - The above session handle.
+     * @param   iFunction           dl    - The requested function.
+     * @param   pvData              es:bx - The input/output data buffer.
+     * @param   cbData              cx    - The size of the data buffer.
+     */
+    RTFAR16 fpfnServiceAsmEP;
+} VBOXGUESTOS2IDCCONNECT;
+/** Pointer to VBOXGUESTOS2IDCCONNECT buffer. */
+typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
+
+/** OS/2 specific: IDC client disconnect request.
+ * 
+ * This takes no input and it doesn't return anything. Obviously this 
+ * is only recognized if it arrives thru the IDC service EP. 
+ */
+#define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT  VBOXGUEST_IOCTL_CODE(49, sizeof(uint32_t))
+
+#endif /* __OS2__ */
+
 /** @} */
 
 #endif /* __VBox_VBoxGuest_h__ */
