@@ -1006,7 +1006,7 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
 #endif
 
 /** @def LogRelBackdoor
- * Generic logging to the VBox backdoor via port I/O.
+ * Release logging to the VBox backdoor via port I/O.
  */
 #if !defined(LOG_NO_BACKDOOR)
 # define LogRelBackdoor(a)  RTLogBackdoorPrintf a
@@ -1021,8 +1021,6 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
 # define LogFlow(a)     LogBackdoorFlow(a)
 # undef LogRel
 # define LogRel(a)      LogRelBackdoor(a)
-# undef LogRelFlow
-# define LogRelFlow(a)  LogRelBackdoorFlow(a)
 #endif
 
 /** @} */
