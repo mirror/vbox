@@ -23,7 +23,7 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 SYSMODS  = vboxvideo_drv
-DLLS     = vboxvideo_drv_70 vboxvideo_drv_71
+DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13
 
 # for BUILD_TARGET=l4
 SUFF_DLL = .so
@@ -102,7 +102,7 @@ vboxvideo_drv_INCS = \
 	../x11include/4.2/programs/Xserver/Xext
 endif
 vboxvideo_drv_SOURCES = \
-	vboxvideo.c \
+	vboxvideo_68.c \
 	vboxutils.c
 
 
@@ -119,7 +119,8 @@ vboxvideo_drv_70_INCS = \
 	../x11include/7.0/X11 \
 	../x11include/7.0/xorg
 vboxvideo_drv_70_SOURCES  = \
-	$(vboxvideo_drv_SOURCES)
+	vboxvideo_13.c \
+	vboxutils.c # $(vboxvideo_drv_SOURCES)
 
 
 vboxvideo_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
@@ -131,7 +132,20 @@ vboxvideo_drv_71_INCS = \
 	../x11include/7.1/X11 \
 	../x11include/7.1/xorg
 vboxvideo_drv_71_SOURCES  = \
-	$(vboxvideo_drv_SOURCES)
+	vboxvideo_13.c \
+	vboxutils.c # $(vboxvideo_drv_SOURCES)
+
+vboxvideo_drv_13_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
+vboxvideo_drv_13_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
+vboxvideo_drv_13_LDFLAGS = -s 
+vboxvideo_drv_13_INCS = \
+	../x11include/1.3 \
+	../x11include/1.3/X11 \
+	../x11include/1.3/xorg
+vboxvideo_drv_13_SOURCES  = \
+	vboxvideo_13.c \
+	vboxutils.c # $(vboxvideo_drv_SOURCES)
 
 
 include	$(PATH_KBUILD)/footer.kmk
