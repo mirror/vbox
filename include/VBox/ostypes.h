@@ -63,7 +63,7 @@ typedef enum
     OSTypeNetware   = 0x70000,
     OSTypeSolaris   = 0x80000,
     OSTypeL4        = 0x90000
-} OSType;
+} OSType, VBOXOSTYPE;
 
 __END_DECLS
 
