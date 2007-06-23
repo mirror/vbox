@@ -49,7 +49,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Authors: Paulo C�ar Pereira de Andrade <pcpa@conectiva.com.br>
+ * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
 #define DEBUG_VERB 2
@@ -65,6 +65,7 @@
 #endif
 #include "vboxvideo.h"
 #include "version-generated.h"
+#include <xf86.h>
 
 /* All drivers initialising the SW cursor need this */
 #include "mipointer.h"
@@ -93,6 +94,7 @@ static void VBOXLeaveVT(int scrnIndex, int flags);
 static Bool VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen);
 static Bool VBOXSaveScreen(ScreenPtr pScreen, int mode);
 static Bool VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags);
+static ModeStatus VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass);
 static Bool VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode);
 static void VBOXAdjustFrame(int scrnIndex, int x, int y, int flags);
 static void VBOXFreeScreen(int scrnIndex, int flags);
@@ -297,7 +299,7 @@ VBOXAvailableOptions(int chipid, int busid)
 static void
 VBOXIdentify(int flags)
 {
-    xf86PrintChipsets(VBOX_NAME, "guest driver for VBox", VBOXChipsets);
+    xf86PrintChipsets(VBOX_NAME, "guest driver for VirtualBox", VBOXChipsets);
 }
 
 /*
@@ -345,6 +347,7 @@ VBOXProbe(DriverPtr drv, int flags)
                         pScrn->PreInit       = VBOXPreInit;
 			pScrn->ScreenInit    = VBOXScreenInit;
 			pScrn->SwitchMode    = VBOXSwitchMode;
+			pScrn->ValidMode     = VBOXValidMode;
 			pScrn->AdjustFrame   = VBOXAdjustFrame;
 			pScrn->EnterVT       = VBOXEnterVT;
 			pScrn->LeaveVT       = VBOXLeaveVT;
@@ -819,6 +822,55 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     pScreen->CloseScreen = pVBox->CloseScreen;
     return pScreen->CloseScreen(scrnIndex, pScreen);
+}
+
+/**
+ * Quoted from "How to add an (S)VGA driver to XFree86"
+ * (http://www.xfree86.org/3.3.6/VGADriver.html):
+ * 
+ * The ValidMode() function is required. It is used to check for any
+ * chipset-dependent reasons why a graphics mode might not be valid. It gets
+ * called by higher levels of the code after the Probe() stage. In many cases
+ * no special checking will be required and this function will simply return
+ * TRUE always.
+ */
+static ModeStatus
+VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass)
+{
+    static int warned = 0;
+    ScrnInfoPtr pScrn = xf86Screens[scrn];
+    MonPtr mon = pScrn->monitor;
+    ModeStatus ret;
+    DisplayModePtr mode;
+    float v;
+
+    if (pass != MODECHECK_FINAL) {
+        if (!warned) {
+            xf86DrvMsg(scrn, X_WARNING, "VBOXValidMode called unexpectedly\n");
+            warned = 1;
+        }
+    }
+    /*
+     * First off, if this isn't a mode we handed to the server (ie,
+     * M_T_BUILTIN), then we reject it out of hand.
+     */
+    if (!(p->type & M_T_BUILTIN))
+        return MODE_NOMODE;
+    /*
+     * Finally, walk through the vsync rates 1Hz at a time looking for a mode
+     * that will fit.  This is assuredly a terrible way to do this, but
+     * there's no obvious method for computing a mode of a given size that
+     * will pass xf86CheckModeForMonitor.
+     */
+    for (v = mon->vrefresh[0].lo; v <= mon->vrefresh[0].hi; v++) {
+        mode = xf86CVTMode(p->HDisplay, p->VDisplay, v, 0, 0);
+        ret = xf86CheckModeForMonitor(mode, mon);
+        xfree(mode);
+        if (ret == MODE_OK)
+            break;
+    }
+
+    return ret;
 }
 
 static Bool
