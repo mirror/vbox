@@ -67,6 +67,12 @@
  *      - \%RHu             - Takes a #RTHCUINT value.
  *      - \%RHv             - Takes a #RTHCPTR, #RTHCINTPTR or #RTHCUINTPTR value.
  *      - \%RHx             - Takes a #RTHCUINT or #RTHCINT value, formatting it as hex.
+ *      - \%RCi             - Takes a #RTCCINT value.
+ *      - \%RCp             - Takes a #RTCCPHYS value.
+ *      - \%RCr             - Takes a #RTCCUINTREG value.
+ *      - \%RCu             - Takes a #RTUINT value.
+ *      - \%RCv             - Takes a #uintptr_t, #intptr_t, void * value.
+ *      - \%RCx             - Takes a #RTUINT or #RTINT value, formatting it as hex.
  *
  *
  * Group 2, the generic integer types which are prefered over relying on what
@@ -162,6 +168,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             case 'T':
             case 'G':
             case 'H':
+            case 'C':
             case 'I':
             case 'X':
             case 'U':
@@ -183,6 +190,12 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 s_aTypes[] =
                 {
 #define STRMEM(str) sizeof(str) - 1, str
+                    { STRMEM("Ci"),      sizeof(RTINT),          10, RTSF_INT,   RTSTR_F_VALSIGNED },
+                    { STRMEM("Cp"),      sizeof(RTGCPHYS),       16, RTSF_INTW,  0 },
+                    { STRMEM("Cr"),      sizeof(RTCCUINTREG),    16, RTSF_INTW,  0 },
+                    { STRMEM("Cu"),      sizeof(RTUINT),         10, RTSF_INT,   0 },
+                    { STRMEM("Cv"),      sizeof(void *),         16, RTSF_INTW,  0 },
+                    { STRMEM("Cx"),      sizeof(RTUINT),         16, RTSF_INT,   0 },
                     { STRMEM("Gi"),      sizeof(RTGCINT),        10, RTSF_INT,   RTSTR_F_VALSIGNED },
                     { STRMEM("Gp"),      sizeof(RTGCPHYS),       16, RTSF_INTW,  0 },
                     { STRMEM("Gr"),      sizeof(RTGCUINTREG),    16, RTSF_INTW,  0 },
