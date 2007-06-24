@@ -28,7 +28,7 @@ ifdef VBOX_ADDITIONS_LINUX_ONLY
 else ifdef VBOX_ADDITIONS_WIN32_ONLY
  LIBRARIES = RuntimeW32GuestR0 RuntimeW32GuestR3 RuntimeW32NT4GuestR0
 else ifdef VBOX_ADDITIONS_OS2_ONLY
- LIBRARIES += RuntimeOS2GuestR0 #RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
+ LIBRARIES += RuntimeOS2GuestR0 RuntimeOS2GuestR3 #RuntimeOS2Warp3GuestR0
 else
  # Build everything.
  BLDPROGS   = uniread
@@ -463,6 +463,19 @@ ifdef IPRT_WITH_KLDR
 endif
 RuntimeLnx32GuestR3_SOURCES    = $(RuntimeR3_SOURCES.linux) $(RuntimeR3_SOURCES)
 RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
+
+
+#
+# RuntimeOS2GuestR3 - OS/2 guest program runtime.
+#
+RuntimeOS2GuestR3_TEMPLATE     = VBOXOS2GUESTR3LIB
+RuntimeOS2GuestR3_DEFS         = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
+ifdef IPRT_WITH_KLDR
+ RuntimeOS2GuestR3_DEFS       += LDR_WITH_KLDR KLDR_USE_CRT
+ RuntimeOS2GuestR3_DEFS.debug += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
+endif
+RuntimeOS2GuestR3_SOURCES      = $(RuntimeR3_SOURCES.os2) $(RuntimeR3_SOURCES)
+RuntimeOS2GuestR3_INCS         = $(RuntimeR3_INCS.os2)    $(RuntimeR3_INCS)
 
 
 #
