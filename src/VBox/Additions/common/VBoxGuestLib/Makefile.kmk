@@ -42,9 +42,9 @@ ifdef VBOX_WITH_LINUX_ADDITIONS
 endif
 ifdef VBOX_WITH_OS2_ADDITIONS
  LIBRARIES += \
-	VBoxGuestR3LibOS2 \
-	VBoxGuestR3LibBaseOS2 \
-	VBoxGuestR0Lib
+	VBoxGuestR0LibOS2 \
+	VBoxGuestR0LibBaseOS2 \
+	VBoxGuestR3LibOS2
 endif
 
 SOURCES_GUESTLIBBASE = \
