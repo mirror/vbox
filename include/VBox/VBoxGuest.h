@@ -104,6 +104,8 @@ typedef uint32_t vmmDevHypPhys;
  * Additions are allowed to work only if
  * additions_major == vmmdev_current && additions_minor <= vmmdev_current.
  * Additions version is reported to host (VMMDev) by VMMDevReq_ReportGuestInfo.
+ * 
+ * @remark  These defines also live in the 16-bit and assembly versions of this header.
  */
 #define VMMDEV_VERSION_MAJOR (0x1)
 #define VMMDEV_VERSION_MINOR (0x4)
@@ -1195,19 +1197,11 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
 
 #ifdef __OS2__
 
-/** OS/2 specific: IDC client connection request.
- * 
- * This takes no input (parameter). 
- * 
- * It returns a VBOXGUESTOS2IDCCONNECT structure in the data buffer 
- * provided in the generic ioctl request.
- * 
- * @remark  Duplicated in the 16-bit and assembly headers. 
- */
-#define VBOXGUEST_IOCTL_OS2_IDC_CONNECT  VBOXGUEST_IOCTL_CODE(48, sizeof(VBOXGUESTOS2IDCCONNECT))
-
 /** 
- * VBOXGUEST_IOCTL_OS2_IDC_CONNECT output. 
+ * The data buffer layout for the IDC entry point (AttachDD).
+ * 
+ * @remark  This is defined in multiple 16-bit headers / sources. 
+ *          Some places it's called VBGOS2IDC to short things a bit.
  */
 typedef struct VBOXGUESTOS2IDCCONNECT
 {
@@ -1267,7 +1261,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
  * This takes no input and it doesn't return anything. Obviously this 
  * is only recognized if it arrives thru the IDC service EP. 
  */
-#define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT  VBOXGUEST_IOCTL_CODE(49, sizeof(uint32_t))
+#define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT  VBOXGUEST_IOCTL_CODE(48, sizeof(uint32_t))
 
 #endif /* __OS2__ */
 
