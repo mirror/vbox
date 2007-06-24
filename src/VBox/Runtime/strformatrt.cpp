@@ -729,7 +729,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 switch (s_aTypes[i].enmType)
                 {
                     case RTST_TIMESPEC:
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%llu ns", RTTimeSpecGetNano(u.pTimeSpec));
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%lld ns", RTTimeSpecGetNano(u.pTimeSpec));
 
                     default:
                         AssertMsgFailed(("Invalid/unhandled enmType=%d\n", s_aTypes[i].enmType));
