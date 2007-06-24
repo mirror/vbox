@@ -661,7 +661,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 s_aTypes[] =
                 {
 #define STRMEM(str) sizeof(str) - 1, str
-                    { STRMEM("timespec"),   sizeof(PCRTTIMESPEC),  RTST_FLAGS_POINTER, RTST_TIMESPEC},
+                    { STRMEM("Dtimespec"),   sizeof(PCRTTIMESPEC),  RTST_FLAGS_POINTER, RTST_TIMESPEC},
 #undef STRMEM
                 };
 
