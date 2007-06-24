@@ -420,10 +420,11 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
  */
 RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
 {
-    if (RTStrPrintf(psz, cb, "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32Z",
-                    pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
-                    pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond)
-        <= cb)
+    size_t cch = RTStrPrintf(psz, cb, "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32Z",
+                             pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
+                             pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond);
+    if (    cch <= 1 
+        ||  psz[cch - 1] != 'Z')
         return NULL;
     return psz;
 }
