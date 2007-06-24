@@ -228,7 +228,9 @@ static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
             if (data & REG_B_SET) {
                 /* set mode: reset UIP mode */
                 s->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
-                data &= ~REG_B_UIE;
+#if 0 /* This is probably wrong as it breaks changing the time/date in OS/2. */
+                data &= ~REG_B_UIE; 
+#endif 
             } else {
                 /* if disabling set mode, update the time */
                 if (s->cmos_data[RTC_REG_B] & REG_B_SET) {
