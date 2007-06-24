@@ -163,6 +163,33 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetSeconds(PRTTIMESPEC pTime, int64_t i64Secon
 
 
 /**
+ * Makes the time spec absolute like abs() does (i.e. a positive value).
+ *
+ * @returns pTime.
+ * @param   pTime       The time spec to modify.
+ */
+DECLINLINE(PRTTIMESPEC) RTTimeSpecAbsolute(PRTTIMESPEC pTime)
+{
+    if (pTime->i64NanosecondsRelativeToUnixEpoch < 0)
+        pTime->i64NanosecondsRelativeToUnixEpoch = -pTime->i64NanosecondsRelativeToUnixEpoch;
+    return pTime;
+}
+
+
+/**
+ * Negates the time.
+ *
+ * @returns pTime.
+ * @param   pTime       The time spec to modify.
+ */
+DECLINLINE(PRTTIMESPEC) RTTimeSpecNegate(PRTTIMESPEC pTime)
+{
+    pTime->i64NanosecondsRelativeToUnixEpoch = -pTime->i64NanosecondsRelativeToUnixEpoch;
+    return pTime;
+}
+
+
+/**
  * Adds a time period to the time.
  *
  * @returns pTime.
