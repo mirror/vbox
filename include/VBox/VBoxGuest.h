@@ -1273,4 +1273,25 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 /** @} */
 
+
+#ifdef IN_RING3
+
+/** @def VBGLR3DECL
+ * Ring 3 VBGL declaration.
+ * @param   type    The return type of the function declaration.
+ */
+#define VBGLR3DECL(type) VBOXCALL type
+
+__BEGIN_DECLS
+VBGLR3DECL(int)     VbglR3Init(void);
+VBGLR3DECL(void)    VbglR3Term(void);
+VBGLR3DECL(int)     VbglR3GRPerform(VMMDevRequestHeader *pReq);
+# ifdef __iprt_time_h__
+VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
+# endif 
+
+__END_DECLS
+
+#endif /* IN_RING3 */
+
 #endif /* __VBox_VBoxGuest_h__ */
