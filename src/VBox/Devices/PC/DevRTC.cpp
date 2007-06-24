@@ -138,9 +138,10 @@ struct RTCState {
     PDMRTCREG       RtcReg;
     /** The RTC device helpers. */
     HCPTRTYPE(PCPDMRTCHLP) pRtcHlpHC;
-    /** Number of release log entries. Used to prevent floading. */
+    /** Number of release log entries. Used to prevent flooding. */
     uint32_t        cRelLogEntries;
-    uint32_t        alignment;
+    /** The current/previous timer period. Used to prevent flooding changes. */
+    uint32_t        CurPeriod;
 };
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -168,8 +169,12 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
         TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
 
-        if (s->cRelLogEntries++ < 64)
-            LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
+        if (period != s->CurPeriod)
+        {
+            if (s->cRelLogEntries++ < 64)
+                LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
+            s->CurPeriod = period;
+        }
     } else {
         if (TMTimerIsActive(s->CTXSUFF(pPeriodicTimer)) && s->cRelLogEntries++ < 64)
             LogRel(("RTC: stopped the periodic timer\n"));
@@ -518,8 +523,10 @@ static int rtc_load(QEMUFile *f, void *opaque, int version_id)
             period_code += 7;
         int period = 1 << (period_code - 1);
         LogRel(("RTC: period=%#x (%d) %u Hz (restore)\n", period, period, _32K / period));
+        s->CurPeriod = period;
     } else {
         LogRel(("RTC: stopped the periodic timer (restore)\n"));
+        s->CurPeriod = 0;
     }
     s->cRelLogEntries = 0;
     return 0;
