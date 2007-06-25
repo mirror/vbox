@@ -801,7 +801,7 @@ VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass)
     static int warned = 0;
     ScrnInfoPtr pScrn = xf86Screens[scrn];
     MonPtr mon = pScrn->monitor;
-    ModeStatus ret;
+    ModeStatus ret = MODE_BAD;
     DisplayModePtr mode;
     float v;
 
