@@ -572,7 +572,8 @@ static void intnetNetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, cons
             Log2(("Dst=%.6Rhxs ?==? %.6Rhxs\n", &pEthHdr->MacDst, &pIf->Mac));
             if (    (   !pIf->fMacSet
                      || !memcmp(&pIf->Mac, &pEthHdr->MacDst, sizeof(pIf->Mac)))
-                ||  pIf->fPromiscuous)
+                ||  (   pIf->fPromiscuous
+                     && pIf != pIfSender /* promiscuous mode: omit the sender */))
                 intnetIfSend(pIf, pvFrame, cbFrame);
         }
     }
