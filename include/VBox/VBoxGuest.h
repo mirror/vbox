@@ -1274,7 +1274,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
  * Ring 3 VBGL declaration.
  * @param   type    The return type of the function declaration.
  */
-#define VBGLR3DECL(type) VBOXCALL type
+#define VBGLR3DECL(type) type VBOXCALL
 
 __BEGIN_DECLS
 VBGLR3DECL(int)     VbglR3Init(void);
