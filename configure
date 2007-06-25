@@ -1235,6 +1235,10 @@ if [ $OSE -eq 1 -a -d "`cd $(dirname $0); pwd`/src/VBox/Devices/USB" ]; then
   OSE=0
 fi
 
+if [ "$BUILD_TYPE" = "debug" ]; then
+  echo "Creating DEBUG build!" >> $LOG
+fi
+
 # first determine our environment
 check_environment
 check_kbuild
