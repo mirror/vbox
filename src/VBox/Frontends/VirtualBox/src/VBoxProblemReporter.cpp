@@ -1043,18 +1043,6 @@ void VBoxProblemReporter::cannotOpenSession (const CSession &session)
     );
 }
 
-void VBoxProblemReporter::cannotOpenSession (const CVirtualBox &vbox,
-                                             const QUuid &id
-) {
-    message (
-        mainWindowShown(),
-        Error,
-        tr ("Failed to open a session for a virtual machine with UUID <b>%1</b>.")
-            .arg (id),
-        formatErrorInfo (vbox)
-    );
-}
-
 void VBoxProblemReporter::cannotOpenSession (
     const CVirtualBox &vbox, const CMachine &machine,
     const CProgress &progress

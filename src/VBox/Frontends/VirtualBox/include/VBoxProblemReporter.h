@@ -164,7 +164,6 @@ public:
                                 VBoxDefs::DiskType type, const QString &src);
 
     void cannotOpenSession (const CSession &session);
-    void cannotOpenSession (const CVirtualBox &vbox, const QUuid &id);
     void cannotOpenSession (const CVirtualBox &vbox, const CMachine &machine,
                             const CProgress &progress = CProgress());
 

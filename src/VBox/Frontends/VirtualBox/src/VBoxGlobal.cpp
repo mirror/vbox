@@ -1351,20 +1351,9 @@ bool VBoxGlobal::startMachine (const QUuid &id)
 {
     AssertReturn (valid, false);
 
-    CSession session;
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
-    session.createInstance (CLSID_Session);
-    if (session.isNull()) {
-        vboxProblem().cannotOpenSession (session);
+    CSession session = vboxGlobal().openSession (id);
+    if (session.isNull())
         return false;
-    }
-
-    vbox.OpenSession (session, id);
-    if (!vbox.isOk()) {
-        vboxProblem().cannotOpenSession (vbox, id);
-        return false;
-    }
 
     return consoleWnd().openView (session);
 }
