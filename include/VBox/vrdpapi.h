@@ -572,7 +572,6 @@ VRDPR3DECL(void) VRDPClipboard (HVRDPSERVER hserver,
                                 uint32_t cbData,
                                 uint32_t *pcbActualRead);
 
-#ifdef VRDP_MC
 /**
  * Sends a USB request.
  *
@@ -686,36 +685,6 @@ typedef struct _VRDPSERVERCALLBACK
                                                      PFNVRDPCLIPBOARDCALLBACK *ppfn,
                                                      void **ppv);
 } VRDPSERVERCALLBACK;
-#else
-/**
- * Sends a USB request.
- *
- * @param hserver    Handle of VRDP server instance.
- * @param pvParm     Function specific parameters buffer.
- * @param cbParm     Size of the buffer.
- * @param pvRet      Function specific returned data buffer.
- * @param cbRet      Size of the buffer.
- * @param prc        VBox return code.
- */
-VRDPR3DECL(void) VRDPSendUSBRequest (HVRDPSERVER hserver, void *pvParm, uint32_t cbRarm);
-
-
-typedef DECLCALLBACK(int) FNVRDPUSBCALLBACK (void *pv, uint8_t code, void *pvRet, uint32_t cbRet);
-typedef FNVRDPUSBCALLBACK *PFNVRDPUSBCALLBACK;
-
-typedef DECLCALLBACK(int) FNVRDPCLIPBOARDCALLBACK (void *pv, uint32_t u32Format, void *pvData, uint32_t cbData);
-typedef FNVRDPCLIPBOARDCALLBACK *PFNVRDPCLIPBOARDCALLBACK;
-
-typedef struct _VRDPSERVERCALLBACK
-{
-    DECLCALLBACKMEMBER(int, pfnClientLogon) (void *pvUser, const char *pszUser, const char *pszPassword, const char *pszDomain);
-    DECLCALLBACKMEMBER(void, pfnClientConnect) (void *pvUser, uint32_t fu32SupportedOrders);
-    DECLCALLBACKMEMBER(void, pfnClientDisconnect) (void *pvUser);
-    DECLCALLBACKMEMBER(void, pfnInterceptAudio) (void *pvUser, bool fKeepHostAudio);
-    DECLCALLBACKMEMBER(void, pfnInterceptUSB) (void *pvUser, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
-    DECLCALLBACKMEMBER(void, pfnInterceptClipboard) (void *pvUser, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
-} VRDPSERVERCALLBACK;
-#endif /* VRDP_MC */
 
 /**
  * Set a callback pointers table that will be called by the server in certain situations.

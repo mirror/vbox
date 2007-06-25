@@ -37,8 +37,6 @@ typedef enum
 class Console;
 class ConsoleVRDPServer;
 
-#ifdef VRDP_MC
-
 /* How many remote devices can be attached to a remote client. 
  * Normally a client computer has 2-8 physical USB ports, so 16 devices
  * should be usually enough.
@@ -53,17 +51,10 @@ class RemoteUSBBackendListable
         
         RemoteUSBBackendListable() : pNext (NULL), pPrev (NULL) {};
 };
-#endif /* VRDP_MC */
 
-#ifdef VRDP_MC
 class RemoteUSBBackend: public RemoteUSBBackendListable
-#else
-class RemoteUSBBackend
-#endif /* VRDP_MC */
 {
     public:
-
-#ifdef VRDP_MC
         RemoteUSBBackend(Console *console, ConsoleVRDPServer *server, uint32_t u32ClientId);
         ~RemoteUSBBackend();
         
@@ -79,21 +70,10 @@ class RemoteUSBBackend
         void NotifyDelete (void);
         
         void PollRemoteDevices (void);
-#else
-        RemoteUSBBackend(Console *console, ConsoleVRDPServer *server);
-        ~RemoteUSBBackend();
-
-        int InterceptUSB (PFNVRDPUSBCALLBACK *ppfn, void **ppv);
-        void ReleaseUSB (void);
-
-        REMOTEUSBCALLBACK *GetRemoteBackendCallback (void) { return &mCallback; };
-#endif /* VRDP_MC */
 
     public: /* Functions for internal use. */
-
         ConsoleVRDPServer *VRDPServer (void) { return mServer; };
 
-#ifdef VRDP_MC
         bool pollingEnabledURB (void) { return mfPollURB; }
 
         int saveDeviceList (const void *pvList, uint32_t cbList);
@@ -113,45 +93,11 @@ class RemoteUSBBackend
         bool addUUID (const Guid *pUuid);
         bool findUUID (const Guid *pUuid);
         void removeUUID (const Guid *pUuid);
-#else
-        bool pollingEnabledURB (void) { return mfPollURB; };
-
-        void notifyThreadStarted (RTTHREAD self);
-        void notifyThreadFinished (void);
-        bool threadEnabled (void);
-        bool continueThread (void);
-
-        bool needRDL (void);
-        void notifyRDLSent (void);
-
-        int negotiateResponse (VRDPUSBREQNEGOTIATERET *pret);
-
-        int saveDeviceList (void *pvList, uint32_t cbList);
-        bool processRDL (void);
-
-        void request (void);
-        void release (void);
-
-        void waitEvent (unsigned cMillies);
-
-        void addDevice (PREMOTEUSBDEVICE pDevice);
-        void removeDevice (PREMOTEUSBDEVICE pDevice);
-
-        PREMOTEUSBDEVICE deviceFromId (VRDPUSBDEVID id);
-
-        int reapURB (void *pvBody, uint32_t cbBody);
-#endif /* VRDP_MC */
 
     private:
-
-#ifndef VRDP_MC
-        void initMembers (void);
-#endif /* !VRDP_MC */
-
         Console *mConsole;
         ConsoleVRDPServer *mServer;
 
-#ifdef VRDP_MC
         int cRefs;
         
         uint32_t mu32ClientId;
@@ -182,27 +128,6 @@ class RemoteUSBBackend
         bool mfWillBeDeleted;
         
         Guid aGuids[VRDP_MAX_USB_DEVICES_PER_CLIENT];
-#else
-        RTCRITSECT mCritsect;
-        RTSEMEVENT mEvent;
-
-        REMOTEUSBCALLBACK mCallback;
-
-        RTTHREAD mThread;
-
-        bool mfThreadActive;
-        bool mfThreadEnabled;
-        bool mfTerminateThread;
-
-        RDLState menmRDLState;
-
-        void *mpvDeviceList;
-        uint32_t mcbDeviceList;
-
-        PREMOTEUSBDEVICE mpDevices;
-
-        bool mfPollURB;
-#endif /* VRDP_MC */
 };
 
 #endif /* ____H_REMOTEUSBBACKEND */

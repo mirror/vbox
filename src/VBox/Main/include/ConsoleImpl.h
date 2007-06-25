@@ -181,11 +181,7 @@ public:
 
     static VRDPSERVERCALLBACK *getVrdpServerCallback () { return &sVrdpServerCallback; };
 
-#ifdef VRDP_MC
     void processRemoteUSBDevices (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevList, uint32_t cbDevList);
-#else
-    void processRemoteUSBDevices (VRDPUSBDEVICEDESC *pDevList, uint32_t cbDevList);
-#endif /* VRDP_MC */
 
     // callback callers
     void onMousePointerShapeChange(bool fVisible, bool fAlpha,
@@ -405,7 +401,6 @@ private:
     static DECLCALLBACK(void)   drvStatus_Destruct(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(int)    drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
 
-#ifdef VRDP_MC
     int mcAudioRefs;
     volatile uint32_t mcVRDPClients;
 
@@ -415,14 +410,6 @@ private:
     static DECLCALLBACK(void)   vrdp_InterceptAudio (void *pvUser, uint32_t u32ClientId);
     static DECLCALLBACK(void)   vrdp_InterceptUSB (void *pvUser, uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
     static DECLCALLBACK(void)   vrdp_InterceptClipboard (void *pvUser, uint32_t u32ClientId, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
-#else
-    static DECLCALLBACK(int)    vrdp_ClientLogon (void *pvUser, const char *pszUser, const char *pszPassword, const char *pszDomain);
-    static DECLCALLBACK(void)   vrdp_ClientConnect (void *pvUser, uint32_t fu32SupportedOrders);
-    static DECLCALLBACK(void)   vrdp_ClientDisconnect (void *pvUser);
-    static DECLCALLBACK(void)   vrdp_InterceptAudio (void *pvUser, bool keepHostAudio);
-    static DECLCALLBACK(void)   vrdp_InterceptUSB (void *pvUser, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
-    static DECLCALLBACK(void)   vrdp_InterceptClipboard (void *pvUser, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
-#endif /* VRDP_MC */
 
     static VRDPSERVERCALLBACK   sVrdpServerCallback;
 
