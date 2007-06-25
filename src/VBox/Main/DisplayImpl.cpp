@@ -373,7 +373,6 @@ void Display::handleResizeCompletedEMT (void)
     }
 }
 
-#ifndef VRDP_MC
 static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy)
 {
     /* Correct negative x and y coordinates. */
@@ -406,7 +405,6 @@ static void checkCoordBounds (int *px, int *py, int *pw, int *ph, int cx, int cy
         *ph = cy > *py? cy - *py: 0;
     }
 }
-#endif
 
 unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int *py, int *pw, int *ph)
 {
@@ -453,11 +451,7 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
                   x, y, w, h, mpDrv->Connector.cx, mpDrv->Connector.cy));
 #endif /* DEBUG_sunlover */
 
-#ifdef VRDP_MC
     unsigned uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
-#else
-    checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
-#endif /* VRDP_MC */
 
 #ifdef DEBUG_sunlover
     LogFlowFunc (("%d,%d %dx%d (checked)\n", x, y, w, h));
@@ -481,6 +475,8 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
         BOOL finished = FALSE;
 
         RTSemEventMultiReset(mUpdateSem);
+
+        checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
 
         pFramebuffer->NotifyUpdate(x, y, w, h, &finished);
 
@@ -769,16 +765,10 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
 }
 
 #ifdef VBOX_VRDP
-#ifdef VRDP_MC
 /* Called always by one VRDP server thread. Can be thread-unsafe.
  */
 void Display::VideoAccelVRDP (bool fEnable)
 {
-#if 0
-    /* Supporting all orders. */
-    uint32_t fu32SupportedOrders = ~0;
-#endif
-    
     int c = fEnable?
                 ASMAtomicIncS32 (&mcVideoAccelVRDPRefs):
                 ASMAtomicDecS32 (&mcVideoAccelVRDPRefs);
@@ -822,27 +812,6 @@ void Display::VideoAccelVRDP (bool fEnable)
         Assert (mfVideoAccelVRDP == true);
     }
 }
-#else
-void Display::VideoAccelVRDP (bool fEnable, uint32_t fu32SupportedOrders)
-{
-    Assert (mfVideoAccelVRDP != fEnable);
-
-    mfVideoAccelVRDP = fEnable;
-
-    if (fEnable)
-    {
-        mfu32SupportedOrders = fu32SupportedOrders;
-    }
-    else
-    {
-        mfu32SupportedOrders = 0;
-    }
-
-    vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
-
-    LogRel(("VBVA: VRDP acceleration has been %s.\n", fEnable? "requested": "disabled"));
-}
-#endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
 
 static bool vbvaVerifyRingBuffer (VBVAMEMORY *pVbvaMemory)
@@ -2073,8 +2042,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                     pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
                 }
             }
-#ifdef VRDP_MC
-            /* Inform to VRDP server that the current display update sequence is
+            /* Inform the VRDP server that the current display update sequence is
              * completed. At this moment the framebuffer memory contains a definite
              * image, that is synchronized with the orders already sent to VRDP client.
              * The server can now process redraw requests from clients or initial
@@ -2082,7 +2050,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
              */
             Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
             pDisplay->mParent->consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
-#endif /* VRDP_MC */
         }
     }
 

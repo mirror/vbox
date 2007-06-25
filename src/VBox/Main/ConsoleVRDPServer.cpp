@@ -44,11 +44,7 @@ void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdateBitmap)(HVRDPSERVER hServer
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendResize)      (HVRDPSERVER hServer);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendAudioSamples)(HVRDPSERVER hserver, void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendAudioVolume) (HVRDPSERVER hserver, uint16_t left, uint16_t right);
-#ifdef VRDP_MC
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, uint32_t u32ClientId, void *pvParms, uint32_t cbParms);
-#else
-void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, void *pvParms, uint32_t cbParms);
-#endif /* VRDP_MC */
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
 void (VBOXCALL *ConsoleVRDPServer::mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
@@ -58,7 +54,6 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 {
     mConsole = console;
 
-#ifdef VRDP_MC
     int rc = RTCritSectInit (&mCritSect);
     AssertRC (rc);
     
@@ -73,11 +68,6 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     mUSBBackends.fThreadRunning = false;
     mUSBBackends.event = 0;
 #endif
-#else
-#ifdef VBOX_WITH_USB
-    mRemoteUSBBackend = NULL;
-#endif
-#endif /* VRDP_MC */
 
 #ifdef VBOX_VRDP
     mhServer = 0;
@@ -88,7 +78,6 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 
 ConsoleVRDPServer::~ConsoleVRDPServer ()
 {
-#ifdef VRDP_MC
     Stop ();
 
     if (RTCritSectIsInitialized (&mCritSect))
@@ -96,12 +85,6 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
         RTCritSectDelete (&mCritSect);
         memset (&mCritSect, 0, sizeof (mCritSect));
     }
-#else
-#ifdef VBOX_VRDP
-    Stop ();
-    /* No unloading of anything because we might still have live object around. */
-#endif
-#endif /* VRDP_MC */
 }
 
 int ConsoleVRDPServer::Launch (void)
@@ -124,20 +107,8 @@ int ConsoleVRDPServer::Launch (void)
 
         if (VBOX_SUCCESS(rc))
         {
-#ifndef VRDP_MC
-            LogFlow(("VRDP server created: %p, will set mFramebuffer\n", mhServer));
-
-            IFramebuffer *framebuffer = mConsole->getDisplay()->getFramebuffer();
-
-            mpfnVRDPSetFramebuffer (mhServer, framebuffer,
-                framebuffer? VRDP_EXTERNAL_FRAMEBUFFER: VRDP_INTERNAL_FRAMEBUFFER);
-
-            LogFlow(("Framebuffer %p set for the VRDP server\n", framebuffer));
-#endif /* !VRDP_MC */
 #ifdef VBOX_WITH_USB
-#ifdef VRDP_MC
             remoteUSBThreadStart ();
-#endif /* VRDP_MC */
 #endif /* VBOX_WITH_USB */
         }
         else
@@ -177,19 +148,7 @@ void ConsoleVRDPServer::Stop (void)
 #endif
 
 #ifdef VBOX_WITH_USB
-#ifdef VRDP_MC
     remoteUSBThreadStop ();
-#else
-    /* Delete the USB backend object if it was not deleted properly. */
-    if (mRemoteUSBBackend)
-    {
-        Log(("ConsoleVRDPServer::Stop: deleting USB backend\n"));
-
-        mRemoteUSBBackend->ReleaseUSB ();
-        delete mRemoteUSBBackend;
-        mRemoteUSBBackend = NULL;
-    }
-#endif /* VRDP_MC */
 #endif /* VBOX_WITH_USB */
 
     mpfnAuthEntry = NULL;
@@ -202,7 +161,6 @@ void ConsoleVRDPServer::Stop (void)
     }
 }
 
-#ifdef VRDP_MC
 /* Worker thread for Remote USB. The thread polls the clients for
  * the list of attached USB devices.
  * The thread is also responsible for attaching/detaching devices
@@ -247,12 +205,10 @@ static DECLCALLBACK(int) threadRemoteUSB (RTTHREAD self, void *pvUser)
 
 void ConsoleVRDPServer::notifyRemoteUSBThreadRunning (RTTHREAD thread)
 {
-#ifdef VBOX_WITH_USB
     mUSBBackends.thread = thread;
     mUSBBackends.fThreadRunning = true;
     int rc = RTThreadUserSignal (thread);
     AssertRC (rc);
-#endif
 }
     
 bool ConsoleVRDPServer::isRemoteUSBThreadRunning (void)
@@ -320,7 +276,6 @@ void ConsoleVRDPServer::remoteUSBThreadStop (void)
     }
 }
 #endif /* VBOX_WITH_USB */
-#endif /* VRDP_MC */
 
 VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
                                                 const char *pszUser, const char *pszPassword, const char *pszDomain,
@@ -447,7 +402,6 @@ void ConsoleVRDPServer::AuthDisconnect (const Guid &uuid, uint32_t u32ClientId)
         mpfnAuthEntry2 (&rawuuid, VRDPAuthGuestNotAsked, NULL, NULL, NULL, false, u32ClientId);
 }
 
-#ifdef VRDP_MC
 int ConsoleVRDPServer::lockConsoleVRDPServer (void)
 {
     int rc = RTCritSectEnter (&mCritSect);
@@ -875,52 +829,6 @@ void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBa
     unlockConsoleVRDPServer ();
 #endif
 }
-#else // VRDP_MC
-void ConsoleVRDPServer::CreateUSBBackend (PFNVRDPUSBCALLBACK *ppfn, void **ppv)
-{
-#ifdef VBOX_WITH_USB
-    Assert(mRemoteUSBBackend == NULL);
-
-    mRemoteUSBBackend = new RemoteUSBBackend (mConsole, this);
-
-    if (mRemoteUSBBackend)
-    {
-        int rc = mRemoteUSBBackend->InterceptUSB (ppfn, ppv);
-
-        if (VBOX_FAILURE (rc))
-        {
-            delete mRemoteUSBBackend;
-            mRemoteUSBBackend = NULL;
-        }
-    }
-#endif /* VBOX_WITH_USB */
-}
-
-void ConsoleVRDPServer::DeleteUSBBackend (void)
-{
-#ifdef VBOX_WITH_USB
-    LogFlow(("ConsoleVRDPServer::DeleteUSBBackend: %p\n", mRemoteUSBBackend));
-
-    if (mRemoteUSBBackend)
-    {
-        mRemoteUSBBackend->ReleaseUSB ();
-        delete mRemoteUSBBackend;
-        mRemoteUSBBackend = NULL;
-    }
-#endif /* VBOX_WITH_USB */
-}
-
-void *ConsoleVRDPServer::GetUSBBackendPointer (void)
-{
-#ifdef VBOX_WITH_USB
-    Assert (mRemoteUSBBackend); /* Must be called only if the object exists. */
-    return mRemoteUSBBackend->GetRemoteBackendCallback ();
-#else
-    return NULL;
-#endif 
-}
-#endif /* VRDP_MC */
-
 
 
 void ConsoleVRDPServer::SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const
@@ -971,7 +879,6 @@ void ConsoleVRDPServer::SendAudioVolume (uint16_t left, uint16_t right) const
 #endif
 }
 
-#ifdef VRDP_MC
 void ConsoleVRDPServer::SendUSBRequest (uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const
 {
 #ifdef VBOX_VRDP
@@ -979,15 +886,6 @@ void ConsoleVRDPServer::SendUSBRequest (uint32_t u32ClientId, void *pvParms, uin
         mpfnVRDPSendUSBRequest (mhServer, u32ClientId, pvParms, cbParms);
 #endif
 }
-#else
-void ConsoleVRDPServer::SendUSBRequest (void *pvParms, uint32_t cbParms) const
-{
-#ifdef VBOX_VRDP
-    if (mpfnVRDPSendUSBRequest)
-        mpfnVRDPSendUSBRequest (mhServer, pvParms, cbParms);
-#endif
-}
-#endif /* VRDP_MC */
 
 void ConsoleVRDPServer::QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const
 {
@@ -1022,9 +920,6 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
             static const struct SymbolEntry symbols[] =
             {
                 DEFSYMENTRY(VRDPStartServer),
-#ifndef VRDP_MC
-                DEFSYMENTRY(VRDPSetFramebuffer),
-#endif /* VRDP_MC */
                 DEFSYMENTRY(VRDPSetCallback),
                 DEFSYMENTRY(VRDPShutdownServer),
                 DEFSYMENTRY(VRDPSendUpdate),

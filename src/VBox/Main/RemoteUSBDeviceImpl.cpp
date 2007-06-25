@@ -51,11 +51,7 @@ void RemoteUSBDevice::FinalRelease()
 /**
  * Initializes the remote USB device object.
  */
-#ifdef VRDP_MC
 HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevDesc)
-#else
-HRESULT RemoteUSBDevice::init (VRDPUSBDEVICEDESC *pDevDesc)
-#endif /* VRDP_MC  */
 {
     LogFlowMember (("RemoteUSBDevice::init()\n"));
 
@@ -73,11 +69,7 @@ HRESULT RemoteUSBDevice::init (VRDPUSBDEVICEDESC *pDevDesc)
     mSerialNumber = pDevDesc->oSerialNumber? (char *)pDevDesc + pDevDesc->oSerialNumber: "";
 
     char id[64];
-#ifdef VRDP_MC
     RTStrPrintf(id, sizeof (id), REMOTE_USB_BACKEND_PREFIX_S "0x%08X&0x%08X", pDevDesc->id, u32ClientId);
-#else
-    RTStrPrintf(id, sizeof (id), REMOTE_USB_BACKEND_PREFIX_S "0x%08X", pDevDesc->id);
-#endif /* VRDP_MC  */
     mAddress      = id;
 
     mPort         = pDevDesc->idPort;
@@ -87,9 +79,7 @@ HRESULT RemoteUSBDevice::init (VRDPUSBDEVICEDESC *pDevDesc)
     mDirty        = false;
     mDevId        = pDevDesc->id;
 
-#ifdef VRDP_MC
     mClientId     = u32ClientId;
-#endif /* VRDP_MC  */
 
     setReady (true);
     return S_OK;

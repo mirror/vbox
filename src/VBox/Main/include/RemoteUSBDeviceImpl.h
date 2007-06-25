@@ -53,11 +53,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-#ifdef VRDP_MC
     HRESULT init(uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevDesc);
-#else
-    HRESULT init(VRDPUSBDEVICEDESC *pDevDesc);
-#endif /* VRDP_MC */
     void uninit();
 
     // IUSBDevice properties
@@ -80,9 +76,7 @@ public:
     void dirty (bool aDirty) { mDirty = aDirty; }
 
     uint16_t devId (void) { return mDevId; }
-#ifdef VRDP_MC
     uint32_t clientId (void) { return mClientId; }
-#endif /* VRDP_MC */
 
     bool captured (void) { return mState == USBDeviceState_USBDeviceCaptured; }
     void captured (bool aCaptured)
@@ -122,9 +116,7 @@ private:
 
     bool mDirty;
     uint16_t mDevId;
-#ifdef VRDP_MC
     uint32_t mClientId;
-#endif /* VRDP_MC */
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)

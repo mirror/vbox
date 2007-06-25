@@ -110,11 +110,7 @@ public:
     bool VideoAccelAllowed (void);
 
 #ifdef VBOX_VRDP
-#ifdef VRDP_MC
     void VideoAccelVRDP (bool fEnable);
-#else
-    void VideoAccelVRDP (bool fEnable, uint32_t fu32SupportedOrders);
-#endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
 
     // IConsoleCallback methods

@@ -301,10 +301,8 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     unconst (mConsoleVRDPServer) = new ConsoleVRDPServer (this);
     AssertReturn (mConsoleVRDPServer, E_FAIL);
 
-#ifdef VRDP_MC
     mcAudioRefs = 0;
     mcVRDPClients = 0;
-#endif /* VRDP_MC */
 
     unconst (mVMMDev) = new VMMDev(this);
     AssertReturn (mVMMDev, E_FAIL);
@@ -442,25 +440,14 @@ void Console::uninit()
     LogFlowThisFuncLeave();
 }
 
-#ifdef VRDP_MC
 DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
                                              uint32_t u32ClientId,
                                              const char *pszUser,
                                              const char *pszPassword,
                                              const char *pszDomain)
-#else
-DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser, const char *pszUser,
-                                             const char *pszPassword,
-                                             const char *pszDomain)
-#endif /* VRDP_MC */
 {
     LogFlowFuncEnter();
-#ifdef VRDP_MC
     LogFlowFunc (("%d, %s, %s, %s\n", u32ClientId, pszUser, pszPassword, pszDomain));
-#else
-    uint32_t u32ClientId = 0;
-    LogFlowFunc (("%s, %s, %s\n", pszUser, pszPassword, pszDomain));
-#endif /* VRDP_MC */
 
     Console *console = static_cast <Console *> (pvUser);
     AssertReturn (console, VERR_INVALID_POINTER);
@@ -629,13 +616,8 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser, const char *pszUser,
     return VERR_ACCESS_DENIED;
 }
 
-#ifdef VRDP_MC
 DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
                                                 uint32_t u32ClientId)
-#else
-DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
-                                                uint32_t fu32SupportedOrders)
-#endif /* VRDP_MC */
 {
     LogFlowFuncEnter();
 
@@ -646,27 +628,19 @@ DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
     AssertComRCReturnVoid (autoCaller.rc());
 
 #ifdef VBOX_VRDP
-#ifdef VRDP_MC
     ASMAtomicIncU32(&console->mcVRDPClients);
 
     NOREF(u32ClientId);
     console->mDisplay->VideoAccelVRDP (true);
-#else
-    console->mDisplay->VideoAccelVRDP (true, fu32SupportedOrders);
-#endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
 
     LogFlowFuncLeave();
     return;
 }
 
-#ifdef VRDP_MC
 DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser,
                                                    uint32_t u32ClientId,
                                                    uint32_t fu32Intercepted)
-#else
-DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
-#endif /* VRDP_MC */
 {
     LogFlowFuncEnter();
 
@@ -679,27 +653,17 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
     AssertReturnVoid (console->mConsoleVRDPServer);
 
 #ifdef VBOX_VRDP
-#ifdef VRDP_MC
     ASMAtomicDecU32(&console->mcVRDPClients);
 
     console->mDisplay->VideoAccelVRDP (false);
-#else
-    u32ClientId = 0;
-    console->mDisplay->VideoAccelVRDP (false, 0);
-#endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
 
-#ifdef VRDP_MC
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_USB)
     {
         console->mConsoleVRDPServer->USBBackendDelete (u32ClientId);
     }
-#else
-    console->mConsoleVRDPServer->DeleteUSBBackend ();
-#endif /* VRDP_MC */
 
 #ifdef VBOX_VRDP
-#ifdef VRDP_MC
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_CLIPBOARD)
     {
         console->mConsoleVRDPServer->ClipboardDelete (u32ClientId);
@@ -721,16 +685,6 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
             }
         }
     }
-#else
-    if (console->mAudioSniffer)
-    {
-        PPDMIAUDIOSNIFFERPORT port = console->mAudioSniffer->getAudioSnifferPort();
-        if (port)
-        {
-            port->pfnSetup (port, false, false);
-        }
-    }
-#endif /* VRDP_MC */
 #endif /* VBOX_VRDP */
 
     Guid uuid;
@@ -748,12 +702,8 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser)
     return;
 }
 
-#ifdef VRDP_MC
 DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser,
                                                  uint32_t u32ClientId)
-#else
-DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser, bool fKeepHostAudio)
-#endif /* VRDP_MC */
 {
     LogFlowFuncEnter();
 
@@ -763,17 +713,11 @@ DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser, bool fKeepHostAud
     AutoCaller autoCaller (console);
     AssertComRCReturnVoid (autoCaller.rc());
 
-#ifdef VRDP_MC
     LogFlowFunc (("mAudioSniffer %p, u32ClientId %d.\n",
                   console->mAudioSniffer, u32ClientId));
     NOREF(u32ClientId);
-#else
-    LogFlowFunc (("mAudioSniffer %p, keepHostAudio %d.\n",
-                  console->mAudioSniffer, fKeepHostAudio));
-#endif /* VRDP_MC */
 
 #ifdef VBOX_VRDP
-#ifdef VRDP_MC
     console->mcAudioRefs++;
 
     if (console->mcAudioRefs == 1)
@@ -787,30 +731,16 @@ DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser, bool fKeepHostAud
             }
         }
     }
-#else
-    if (console->mAudioSniffer)
-    {
-        PPDMIAUDIOSNIFFERPORT port = console->mAudioSniffer->getAudioSnifferPort();
-        if (port)
-        {
-            port->pfnSetup (port, true, !!fKeepHostAudio);
-        }
-    }
-#endif /* VRDP_MC */
 #endif
 
     LogFlowFuncLeave();
     return;
 }
 
-#ifdef VRDP_MC
 DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
                                                uint32_t u32ClientId,
                                                PFNVRDPUSBCALLBACK *ppfn,
                                                void **ppv)
-#else
-DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser, PFNVRDPUSBCALLBACK *ppfn, void **ppv)
-#endif /* VRDP_MC */
 {
     LogFlowFuncEnter();
 
@@ -822,17 +752,12 @@ DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser, PFNVRDPUSBCALLBACK 
 
     AssertReturnVoid (console->mConsoleVRDPServer);
 
-#ifdef VRDP_MC
     console->mConsoleVRDPServer->USBBackendCreate (u32ClientId, ppfn, ppv);
-#else
-    console->mConsoleVRDPServer->CreateUSBBackend (ppfn, ppv);
-#endif /* VRDP_MC */
 
     LogFlowFuncLeave();
     return;
 }
 
-#ifdef VRDP_MC
 DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
                                                      uint32_t u32ClientId,
                                                      PFNVRDPCLIPBOARDCALLBACK *ppfn,
@@ -855,15 +780,6 @@ DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
     LogFlowFuncLeave();
     return;
 }
-#else
-DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
-                                                     PFNVRDPCLIPBOARDCALLBACK *ppfn,
-                                                     void **ppv)
-{
-    /* Obsolete. */
-    return;
-}
-#endif /* VRDP_MC */
 
 
 // static
@@ -4228,14 +4144,6 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfi
     hrc = aHostDevice->COMGETTER (Remote) (&fRemote);
     ComAssertComRCRetRC (hrc);
 
-#ifndef VRDP_MC
-    if (fRemote)
-    {
-        pvRemote = mConsoleVRDPServer->GetUSBBackendPointer ();
-        ComAssertRet (pvRemote, E_FAIL);
-    }
-#endif /* !VRDP_MC */
-
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
@@ -4305,7 +4213,6 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
 
     AssertReturn (that && aConfig && aUuid, VERR_INVALID_PARAMETER);
 
-#ifdef VRDP_MC
     if (aRemote)
     {
         /* @todo aRemoteBackend input parameter is not needed. */
@@ -4323,7 +4230,6 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
             return VERR_INVALID_PARAMETER;
         }
     }
-#endif /* VRDP_MC */
 
     int vrc = aConfig->pfnCreateProxyDevice (aConfig, aUuid, aRemote, aAddress,
                                              aRemoteBackend);
@@ -4418,7 +4324,6 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
 
     AssertReturn (that && aConfig && aUuid, VERR_INVALID_PARAMETER);
 
-#ifdef VRDP_MC
     /*
      * If that was a remote device, release the backend pointer.
      * The pointer was requested in usbAttachCallback.
@@ -4433,7 +4338,6 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
         Guid guid (*aUuid);
         that->consoleVRDPServer ()->USBBackendReleasePointer (&guid);
     }
-#endif /* VRDP_MC */
 
     int vrc = aConfig->pfnDestroyProxyDevice (aConfig, aUuid);
 
@@ -6312,18 +6216,10 @@ void Console::releaseAllUSBDevices (void)
 /**
  *  @note Locks this object for writing.
  */
-#ifdef VRDP_MC
 void Console::processRemoteUSBDevices (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevList, uint32_t cbDevList)
-#else
-void Console::processRemoteUSBDevices (VRDPUSBDEVICEDESC *pDevList, uint32_t cbDevList)
-#endif /* VRDP_MC */
 {
     LogFlowThisFuncEnter();
-#ifdef VRDP_MC
     LogFlowThisFunc (("u32ClientId = %d, pDevList=%p, cbDevList = %d\n", u32ClientId, pDevList, cbDevList));
-#else
-    LogFlowThisFunc (("pDevList=%p, cbDevList = %d\n", pDevList, cbDevList));
-#endif /* VRDP_MC */
 
     AutoCaller autoCaller (this);
     if (!autoCaller.isOk())
@@ -6368,12 +6264,8 @@ void Console::processRemoteUSBDevices (VRDPUSBDEVICEDESC *pDevList, uint32_t cbD
         it = mRemoteUSBDevices.begin();
         while (it != mRemoteUSBDevices.end())
         {
-#ifdef VRDP_MC
             if ((*it)->devId () == e->id
                 && (*it)->clientId () == u32ClientId)
-#else
-            if ((*it)->devId () == e->id)
-#endif /* VRDP_MC */
             {
                /* The device is already in the list. */
                (*it)->dirty (false);
@@ -6393,11 +6285,7 @@ void Console::processRemoteUSBDevices (VRDPUSBDEVICEDESC *pDevList, uint32_t cbD
             /* Create the device object and add the new device to list. */
             ComObjPtr <RemoteUSBDevice> device;
             device.createObject();
-#ifdef VRDP_MC
             device->init (u32ClientId, e);
-#else
-            device->init (e);
-#endif /* VRDP_MC */
 
             mRemoteUSBDevices.push_back (device);
 

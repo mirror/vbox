@@ -49,7 +49,6 @@ public:
 
     void AuthDisconnect (const Guid &uuid, uint32_t u32ClientId);
 
-#ifdef VRDP_MC
     void USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
     void USBBackendDelete (uint32_t u32ClientId);
     
@@ -68,12 +67,6 @@ public:
     
     void ClipboardCreate (uint32_t u32ClientId, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
     void ClipboardDelete (uint32_t u32ClientId);
-#else
-    void CreateUSBBackend (PFNVRDPUSBCALLBACK *ppfn, void **ppv);
-    void DeleteUSBBackend (void);
-
-    void *GetUSBBackendPointer (void);
-#endif /* VRDP_MC */
 
     /*
      * Forwarders to VRDP server library.
@@ -85,11 +78,7 @@ public:
 
     void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format) const;
     void SendAudioVolume (uint16_t left, uint16_t right) const;
-#ifdef VRDP_MC
     void SendUSBRequest (uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const;
-#else
-    void SendUSBRequest (void *pvParms, uint32_t cbParms) const;
-#endif /* VRDP_MC */
 
     void QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const;
 
@@ -116,17 +105,12 @@ private:
     static void (VBOXCALL *mpfnVRDPSendResize)      (HVRDPSERVER hServer);
     static void (VBOXCALL *mpfnVRDPSendAudioSamples)(HVRDPSERVER hserver, void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format);
     static void (VBOXCALL *mpfnVRDPSendAudioVolume) (HVRDPSERVER hserver, uint16_t left, uint16_t right);
-#ifdef VRDP_MC
     static void (VBOXCALL *mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, uint32_t u32ClientId, void *pvParms, uint32_t cbParms);
-#else
-    static void (VBOXCALL *mpfnVRDPSendUSBRequest)  (HVRDPSERVER hserver, void *pvParms, uint32_t cbParms);
-#endif /* VRDP_MC */
     static void (VBOXCALL *mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
     static void (VBOXCALL *mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
     static void (VBOXCALL *mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
 #endif /* VBOX_VRDP */
 
-#ifdef VRDP_MC
     RTCRITSECT mCritSect;
 
     int lockConsoleVRDPServer (void);
@@ -160,15 +144,6 @@ private:
     void remoteUSBThreadStart (void);
     void remoteUSBThreadStop (void);
 #endif /* VBOX_WITH_USB */
-#else
-#ifdef VBOX_WITH_USB
-    /* The remote USB backend object is created only if the client
-     * asks for USB channel. The object is created in the vrdp_InterceptUSB
-     * callback.
-     */
-    RemoteUSBBackend *mRemoteUSBBackend;
-#endif /* VBOX_WITH_USB */
-#endif /* VRDP_MC */
 
     /* External authentication library handle. The library is loaded in the
      * Authenticate method and unloaded at the object destructor.
