@@ -1302,7 +1302,7 @@
     <message>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
-        <translation>Virtuaalinen Kiintolevy</translation>
+        <translation>Virtuaalinen Kiintolevy Levykuva</translation>
     </message>
     <message>
         <source>iSCSI</source>
@@ -1332,12 +1332,12 @@
     <message>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
-        <translation type="unfinished">Ohita</translation>
+        <translation>Ohita</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pidä</translation>
     </message>
     <message>
         <source>Master</source>
@@ -1407,12 +1407,12 @@
     <message>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ei tuettu</translation>
     </message>
     <message>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ei käytettävissä</translation>
     </message>
     <message>
         <source>Busy</source>
@@ -1466,7 +1466,7 @@
     </message>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse kansio</translation>
     </message>
     <message>
         <source>Select a file</source>
@@ -1901,7 +1901,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Luo Uusi Virtuaalikone</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
@@ -1912,7 +1912,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Tervetuloa Virtuaalikoneen Luonti Velhoon!</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
@@ -1923,15 +1923,15 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nimi</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished">OS &amp;Tyyppi</translation>
+        <translation>OS &amp;Tyyppi</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>VM Nimi ja OS Tyyppi</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
@@ -1973,19 +1973,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Käynnistä Kovalevyltä</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Uusi...</translation>
     </message>
     <message>
         <source>E&amp;xisting...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ole&amp;massa oleva...</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalinen Kiintolevy</translation>
     </message>
     <message>
         <source>
@@ -2012,11 +2012,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhteenveto</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
@@ -2413,15 +2413,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaali &amp;Levy Hallinta...</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L</translation>
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Näyttää Virtuaali Levy Hallinta dialogin</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -2629,16 +2629,16 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxSharedFoldersSettings</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nimi</translation>
+        <translation>Nimi</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Polku</translation>
     </message>
     <message>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Shared &amp;Folders</source>
@@ -2659,7 +2659,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää uuden jaettu kansion määrittelyineen.</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -2671,7 +2671,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Poistaa valitun jaetun kansion määrityksineen.</translation>
     </message>
     <message>
         <source>Add a new shared folder</source>
@@ -2695,11 +2695,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Nimi:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Polku:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muokkaa valitun jaetun kansion määrityksiä.</translation>
     </message>
 </context>
 <context>
@@ -2761,11 +2761,11 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Discard Snapshot</source>
@@ -2881,7 +2881,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">Palautuspiste %1</translation>
+        <translation>Palautuspiste %1</translation>
     </message>
 </context>
 <context>
@@ -3160,7 +3160,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished">&amp;Levykuva Tiedosto</translation>
+        <translation>&amp;Levykuva Tiedosto</translation>
     </message>
     <message>
         <source>Alt+I</source>
@@ -3168,7 +3168,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>VDM</source>
-        <translation type="unfinished"></translation>
+        <translation>VDM</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
@@ -3224,43 +3224,43 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Logi Katselin</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tallenna</translation>
     </message>
     <message>
         <source>Alt+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+T</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">Pä&amp;ivitä</translation>
+        <translation>Pä&amp;ivitä</translation>
     </message>
     <message>
         <source>Alt+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+I</translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sulje</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+S</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - VirtualBox Logi Katselin</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Logi tiedostoja ei löydetty. Napsauta &lt;b&gt;Päivitä&lt;/b&gt; painiketta skannaaksesi logi kansio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna VirtualBox Logi nimellä</translation>
     </message>
 </context>
 <context>
@@ -3554,7 +3554,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Säädä videomuistin määrää virtuaalikoneelle.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -3578,19 +3578,19 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
-        <translation type="unfinished"></translation>
+        <translation>Käytä A&amp;CPI:a</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+C</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Käytä IO AC&amp;PI:a</translation>
     </message>
     <message>
         <source>Alt+P</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+P</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -3762,11 +3762,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
+        <translation>Määrittelee VRDP tunnistus menetelmän.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Määrittelee tunnistuksen aikakatkaisun, millisekunneissa.</translation>
     </message>
     <message>
         <source>Help</source>
@@ -3778,11 +3778,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished"></translation>
+        <translation>Näyttää ohje dialogin.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Virheelliset tunnistus asetukset</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -3855,11 +3855,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ensisijaista Isäntä (Primary Master) kiintolevyä ei ole valittu.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ensisijaista Orja (Primary Slave) kiintolevyä ei ole valittu.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
@@ -3867,7 +3867,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toissijaista Orja (Secondary Slave) kiintolevyä ei ole valittu.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
