@@ -754,8 +754,8 @@ int vmR3SetHaltMethod(PVM pVM, VMHALTMETHOD enmHaltMethod)
         else if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_CHILD_NOT_FOUND)
             return VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to Query VM/HaltMethod as uint32_t."));
         else
-            enmHaltMethod = VMHALTMETHOD_OLD;
-            //enmHaltMethod = VMHALTMETHOD_1;
+            enmHaltMethod = VMHALTMETHOD_1;
+            //enmHaltMethod = VMHALTMETHOD_OLD;
     }
 
     /*
