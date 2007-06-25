@@ -37,7 +37,7 @@
 
 #include <iprt/cdefs.h>
 
-#if (!defined(__LINUX__) || !defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(IPRT_NO_CRT)
+#if (!defined(__LINUX__) || !defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT)
 # include <stdint.h>
 
 #else
@@ -55,8 +55,12 @@ typedef unsigned int        __uint32_t;
 typedef _int64              __int64_t;
 typedef unsigned _int64     __uint64_t;
 # else
+#  if defined(__IBMC__) || defined(__IBMCPP__) /* assume VAC308 without long long. */
+typedef struct { __uint32_t lo,hi; } __int64_t, __uint64_t;
+#  else
 typedef long long       __int64_t;
 typedef unsigned long long  __uint64_t;
+#  endif
 # endif
 #endif /* !linux kernel */
 
