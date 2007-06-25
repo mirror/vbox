@@ -33,34 +33,25 @@
 #endif
 
 
-/** @defgroup grp_vrdp    VRDP
- * VirtualBox Remote Desktop Protocol (VRDP) interface that allows to use
+/** @defgroup grp_vrdp VRDP
+ * VirtualBox Remote Desktop Protocol (VRDP) interface that lets to use
  * the VRDP server.
  * @{
  */
 
-/** Flags for VDRPSetFramebuffer */
-#define VRDP_INTERNAL_FRAMEBUFFER (0)
-#define VRDP_EXTERNAL_FRAMEBUFFER (1)
-
-/** Default port that VRDP binds to */
+/** Default port that VRDP binds to. */
 #define VRDP_DEFAULT_PORT (3389)
 
 __BEGIN_DECLS
 
-/* Forward declaration */
-
+/* Forward declaration of the VRDP server instance handle. */
 #ifdef __cplusplus
-
 class VRDPServer;
 typedef class VRDPServer *HVRDPSERVER;
-
 #else
-
 struct VRDPServer;
 typedef struct VRDPServer *HVRDPSERVER;
-
-#endif
+#endif /* __cplusplus */
 
 /**
  * Start server for the specified IConsole.
@@ -73,19 +64,6 @@ typedef struct VRDPServer *HVRDPSERVER;
  */
 VRDPR3DECL(int) VRDPStartServer (IConsole *pconsole, IVRDPServer *pvrdpserver, HVRDPSERVER *phserver);
 
-
-/**
- * Set framebuffer which will be delivered to client.
- *
- * @param hserver      Handle of VRDP server instance.
- * @param pframebuffer Pointer to external IFramebuffer to be used.
- * @param flags        VRDP_EXTERNAL_FRAMEBUFFER - the server must use supplied
- *                         framebuffer or do not use framebuffer if pframebuffer == NULL
- *                     VRDP_INTERNAL_FRAMEBUFFER - the server must create internal
- *                         framebuffer and register it with Machine's IDisplay,
- *                         pframebuffer ignored.
- */
-VRDPR3DECL(int) VRDPSetFramebuffer (HVRDPSERVER hserver, IFramebuffer *pframebuffer, uint32_t flags);
 
 /**
  * Shutdown server.
