@@ -1067,7 +1067,7 @@
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%3 MO&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%3 Mo&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>General</source>
@@ -1082,7 +1082,7 @@
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%4 MO&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%4 Mo&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
@@ -1271,7 +1271,7 @@
     <message>
         <source>Starting</source>
         <comment>MachineState</comment>
-        <translation>En cours d&apos;ammorçage</translation>
+        <translation>En cours d&apos;amorçage</translation>
     </message>
     <message>
         <source>Stopping</source>
@@ -1988,7 +1988,7 @@ contiendra l&apos;image du disque dur, ou entrez le nom du fichier dans le champ
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisir la taille de l&apos;image virtuelle du disque dur en méga-octets. Cette taille sera rapportée au système d&apos;ecploitation client comme taille du disque dur virtuel.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisir la taille de l&apos;image virtuelle du disque dur en méga-octets. Cette taille sera rapportée au système d&apos;exploitation client comme taille du disque dur virtuel.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Image &amp;Size</source>
@@ -2063,7 +2063,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation>Sya&amp;tème</translation>
+        <translation>Sys&amp;tème</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
@@ -2075,7 +2075,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Taiile la &amp;mémoire vive de base</translation>
+        <translation>Taille la &amp;mémoire vive de base</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -2091,7 +2091,7 @@ Il est utilisé par tous les produits de VirtualBox pour l&apos;identification d
     </message>
     <message>
         <source>MB</source>
-        <translation>MO</translation>
+        <translation>Mo</translation>
     </message>
     <message>
         <source>Memory</source>
@@ -2105,9 +2105,9 @@ image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
 button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisi l&apos;image de disque dur utilisé comme disque dur d&apos;ammorçage de la machine virtuelle.
+        <translation>&lt;p&gt;Choisi l&apos;image de disque dur utilisé comme disque dur d&apos;amorçage de la machine virtuelle.
 Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou choisir une image de disque dur existante sur le menu déroulant, ou encore activer le bouton &lt;b&gt;Existant&lt;/b&gt; afin de lancer l&apos;assistant de création de disque dur.&lt;/p&gt;
-&lt;p&gt;Si vôtre configuration est plus compliquée, vous pouvez sauter ce pas et attaché le disque dur plus tard, en utilisant la boîte de dialogue Préférences VM .&lt;/p&gt;
+&lt;p&gt;Si votre configuration est plus compliquée, vous pouvez sauter ce pas et attaché le disque dur plus tard, en utilisant la boîte de dialogue Préférences VM .&lt;/p&gt;
 </translation>
     </message>
     <message>
@@ -2157,11 +2157,11 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;Mo&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Type du système d&apos;exploitation:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mémoire vive de base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Type du système d&apos;exploitation:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mémoire vive de base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;Mo&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
@@ -2169,11 +2169,11 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>La taille recommandée pou la mémoire vive de base est &lt;b&gt;%1&lt;/b&gt; MO.</translation>
+        <translation>La taille recommandée pou la mémoire vive de base est &lt;b&gt;%1&lt;/b&gt; Mo.</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>La taille recommandée pour le disque dur d&apos;amorçage est &lt;b&gt;%1&lt;/b&gt; MO.</translation>
+        <translation>La taille recommandée pour le disque dur d&apos;amorçage est &lt;b&gt;%1&lt;/b&gt; Mo.</translation>
     </message>
 </context>
 <context>
@@ -2214,12 +2214,11 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Echec de l&apos;initialisation COM ou serveur  VirtualBox COM non trouvé. Le serveur VirtualBox, n&apos;a probablement pas été lancé ou le lancement à échoué.&lt;/p&gt;
-&lt;p&gt;L&apos;application terminera maintenant.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Echec de l&apos;initialisation COM ou serveur  VirtualBox COM non trouvé. Le serveur VirtualBox, n&apos;a probablement pas été lancé ou le lancement à échoué.&lt;/p&gt;&lt;p&gt;L&apos;application terminera maintenant.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>Echec de création de l&apos;objet COM de VirtualBox.&lt;/p&gt;&lt;p&gt;L&apos;application terminera maintenant.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Echec de création de l&apos;objet COM pour VirtualBox.&lt;/p&gt;&lt;p&gt;L&apos;application terminera maintenant.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2508,12 +2507,12 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Appelé:</translation>
+        <translation>Fonction Appelée:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>Appelé&amp;nbsp;RC:</translation>
+        <translation>Code&amp;nbsp;retourné:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -2602,7 +2601,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Close application</source>
-        <translation></translation>
+        <translation>Fermer VirtualBox</translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -2866,7 +2865,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Mom&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Chemin:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Nom&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Chemin:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
@@ -3893,7 +3892,7 @@ plan to install into this virtual machine (called a guest operating system).</so
     </message>
     <message>
         <source>MB</source>
-        <translation>MO</translation>
+        <translation>Mo</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
@@ -3963,7 +3962,7 @@ this feature after having installed a Windows guest operating system!</source>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
-        <translation>Odre d&apos;&amp;amorçage</translation>
+        <translation>Ordre d&apos;&amp;amorçage</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
@@ -4278,7 +4277,7 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;Mo&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
