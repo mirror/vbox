@@ -422,8 +422,10 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Register statistics.
      */
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.c1nsVirtualRawSteps,   STAMTYPE_U32, "/TM/1nsSteps",    STAMUNIT_OCCURENCES,      "Virtual time 1ns steps (due to TSC / GIP variations)");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.cVirtualRawBadRawPrev, STAMTYPE_U32, "/TM/BadPrevTime", STAMUNIT_OCCURENCES,      "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.c1nsVirtualRawSteps,   STAMTYPE_U32, "/TM/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations)");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.cVirtualRawBadRawPrev, STAMTYPE_U32, "/TM/BadPrevTime",               STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG(     pVM, (void *)&pVM->tm.s.offVirtualSync,        STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset", STAMUNIT_NS,         "The current offset. (subtract GivenUp to get the lag)");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.offVirtualSyncGivenUp, STAMTYPE_U64, "/TM/VirtualSync/GivenUp",       STAMUNIT_NS,         "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
 
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,          STAMTYPE_PROFILE,       "/TM/DoQueues",         STAMUNIT_TICKS_PER_CALL,    "Profiling timer TMR3TimerQueuesDo.");
@@ -465,8 +467,6 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,        STAMTYPE_PROFILE_ADV,   "/TM/VirtualSync/CatchUp",              STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
     STAM_REG(pVM, (void *)&pVM->tm.s.fVirtualSyncCatchUp,       STAMTYPE_U8,        "/TM/VirtualSync/CatchUpActive",        STAMUNIT_NONE,           "Catch-Up active indicator.");
     STAM_REG(pVM, (void *)&pVM->tm.s.u32VirtualSyncCatchUpPercentage, STAMTYPE_U32, "/TM/VirtualSync/CatchUpPercentage",    STAMUNIT_PCT,           "The catch-up percentage. (+100/100 to get clock multiplier)");
-    STAM_REG(pVM, (void *)&pVM->tm.s.offVirtualSync,            STAMTYPE_U64,       "/TM/VirtualSync/CurrentOffset",        STAMUNIT_NS,            "The current offset. (subtract GivenUp to get the lag)");
-    STAM_REG(pVM, (void *)&pVM->tm.s.offVirtualSyncGivenUp,     STAMTYPE_U64,       "/TM/VirtualSync/GivenUp",              STAMUNIT_NS,            "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUp,             STAMTYPE_COUNTER,   "/TM/VirtualSync/GiveUp",               STAMUNIT_OCCURENCES,    "Times the catch-up was abandoned.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting,STAMTYPE_COUNTER,  "/TM/VirtualSync/GiveUpBeforeStarting", STAMUNIT_OCCURENCES,    "Times the catch-up was abandoned before even starting. (Typically debugging++.)");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRun,                STAMTYPE_COUNTER,   "/TM/VirtualSync/Run",                  STAMUNIT_OCCURENCES,    "Times the virtual sync timer queue was considered.");
