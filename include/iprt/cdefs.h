@@ -411,7 +411,7 @@
  * How to declare an imported function.
  * @param   type    The return type of the function declaration.
  */
-#if defined(_MSC_VER) || defined(__OS2__)
+#if defined(_MSC_VER) || (defined(__OS2__) && !defined(__IBMC__) && !defined(__IBMCPP__))
 # define DECLIMPORT(type)       __declspec(dllimport) type
 #else
 # define DECLIMPORT(type)       type
@@ -511,6 +511,8 @@
 # define DECLINLINE(type) inline type
 #elif defined(_MSC_VER)
 # define DECLINLINE(type) _inline type
+#elif defined(__IBMC__)
+# define DECLINLINE(type) _Inline type
 #else
 # define DECLINLINE(type) inline type
 #endif
@@ -1071,6 +1073,9 @@
 #endif
 #ifdef _MSC_VER
 # define Breakpoint()           __asm int 3
+#endif
+#if defined(__IBMC__) || defined(__IBMCPP__)
+# define Breakpoint()           __interrupt(3)
 #endif
 #ifndef Breakpoint
 # error "This compiler is not supported!"
