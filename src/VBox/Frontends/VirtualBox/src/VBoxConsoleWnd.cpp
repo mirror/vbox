@@ -714,7 +714,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     console = new VBoxConsoleView (this, cconsole, mode,
                                    centralWidget(), "console");
 
-    loadGuiCustomizations();
+    activateUICustomizations();
 
     ((QBoxLayout*) centralWidget()->layout())->addWidget (
         console, 0, AlignVCenter | AlignHCenter);
@@ -885,7 +885,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     return true;
 }
 
-void VBoxConsoleWnd::loadGuiCustomizations()
+void VBoxConsoleWnd::activateUICustomizations()
 {
     VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Process known keys */
