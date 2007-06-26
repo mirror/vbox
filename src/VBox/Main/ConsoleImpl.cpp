@@ -3114,13 +3114,16 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
 
     AutoLock alock (this);
 
-    /* VM might have been stopped when this message arrives */
-    if (mMachineState < MachineState_Running ||
-        mMachineState == MachineState_Stopping)
+    /* protect mpVM (we don't need error info, since it's a callback) */
+    AutoVMCallerQuiet autoVMCaller (this);
+    if (FAILED (autoVMCaller.rc()))
     {
+        /* The VM may be no more operational when this message arrives
+         * (e.g. it may be Saving or Stopping or just PoweredOff) --
+         * autoVMCaller.rc() will return a failure in this case. */
         LogFlowThisFunc (("Attach request ignored (mMachineState=%d).\n",
                           mMachineState));
-        return E_FAIL;
+        return autoVMCaller.rc();
     }
 
     if (aError != NULL)
@@ -3129,10 +3132,6 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
         onUSBDeviceStateChange (aDevice, true /* aAttached */, aError);
         return S_OK;
     }
-
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC (autoVMCaller.rc());
 
     /* Don't proceed unless we've found the usb controller. */
     PPDMIBASE pBase = NULL;
@@ -3197,18 +3196,25 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
         ++ it;
     }
 
-    /* VM might have been stopped when this message arrives */
+
     if (device.isNull())
     {
-        LogFlowThisFunc (("Device not found.\n"));
-        if (mMachineState < MachineState_Running ||
-            mMachineState == MachineState_Stopping)
+        LogFlowThisFunc (("USB device not found.\n"));
+
+        /* The VM may be no more operational when this message arrives
+         * (e.g. it may be Saving or Stopping or just PoweredOff). Use
+         * AutoVMCaller to detect it -- AutoVMCaller::rc() will return a
+         * failure in this case. */
+
+        AutoVMCallerQuiet autoVMCaller (this);
+        if (FAILED (autoVMCaller.rc()))
         {
             LogFlowThisFunc (("Detach request ignored (mMachineState=%d).\n",
                               mMachineState));
-            return E_FAIL;
+            return autoVMCaller.rc();
         }
-        /* the device must be in the list */
+
+        /* the device must be in the list otherwise */
         AssertFailedReturn (E_FAIL);
     }
 
