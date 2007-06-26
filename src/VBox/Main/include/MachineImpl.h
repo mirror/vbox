@@ -298,12 +298,22 @@ public:
      *  children. The usage pattern is:
      *
      *  @code
+     *      AutoCaller autoCaller (this);
+     *      CheckComRCReturnRC (autoCaller.rc());
+     *
      *      Machine::AutoStateDependency <MutableStateDep> adep (mParent);
      *      CheckComRCReturnRC (stateDep.rc());
      *      ...
      *      // code that depends on the particular machine state
      *      ...
      *  @endcode
+     *
+     *  Note that it is more convenient to use the following individual
+     *  shortcut classes instead of using this template directly:
+     *  AutoAnyStateDependency, AutoMutableStateDependency and
+     *  AutoMutableOrSavedStateDependency. The usage pattern is exactly the
+     *  same as above except that there is no need to specify the template
+     *  argument because it is already done by the shortcut class.
      *
      *  @param taDepType    Dependecy type to manage.
      */
@@ -372,6 +382,53 @@ public:
         DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoStateDependency)
         DECLARE_CLS_NEW_DELETE_NOOP (AutoStateDependency)
     };
+
+    /** 
+     *  Shortcut to AutoStateDependency <AnyStateDep>.
+     *  See AutoStateDependency to get the usage pattern.
+     *
+     *  Accepts any machine state and guarantees the state won't change before
+     *  this object is destroyed. If the machine state cannot be protected (as
+     *  a result of the state change currently in progress), this instance's
+     *  #rc() method will indicate a failure, and the caller is not allowed to
+     *  rely on any particular machine state and should return the failed
+     *  result code to the upper level.
+     */
+    typedef AutoStateDependency <AnyStateDep> AutoAnyStateDependency;
+
+    /** 
+     *  Shortcut to AutoStateDependency <MutableStateDep>.
+     *  See AutoStateDependency to get the usage pattern.
+     *
+     *  Succeeds only if the machine state is in one of the mutable states, and
+     *  guarantees the given mutable state won't change before this object is
+     *  destroyed. If the machine is not mutable, this instance's #rc() method
+     *  will indicate a failure, and the caller is not allowed to rely on any
+     *  particular machine state and should return the failed result code to
+     *  the upper level.
+     *
+     *  Intended to be used within all setter methods of IMachine
+     *  children objects (DVDDrive, NetworkAdapter, AudioAdapter, etc.) to
+     *  provide data protection and consistency.
+     */
+    typedef AutoStateDependency <MutableStateDep> AutoMutableStateDependency;
+
+    /** 
+     *  Shortcut to AutoStateDependency <MutableOrSavedStateDep>.
+     *  See AutoStateDependency to get the usage pattern.
+     *
+     *  Succeeds only if the machine state is in one of the mutable states, or
+     *  if the machine is in the Saved state, and guarantees the given mutable
+     *  state won't change before this object is destroyed. If the machine is
+     *  not mutable, this instance's #rc() method will indicate a failure, and
+     *  the caller is not allowed to rely on any particular machine state and
+     *  should return the failed result code to the upper level.
+     *
+     *  Intended to be used within setter methods of IMachine
+     *  children objects that may also operate on Saved machines.
+     */
+    typedef AutoStateDependency <MutableOrSavedStateDep> AutoMutableOrSavedStateDependency;
+
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Machine)
 
