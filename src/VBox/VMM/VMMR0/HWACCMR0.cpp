@@ -60,6 +60,8 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
 
 #ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
 
+    pVM->hwaccm.s.ulLastError = VINF_SUCCESS;
+
     /*
      * Check for VMX capabilities
      */
@@ -122,7 +124,11 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                         ASMSetCR4(pVM->hwaccm.s.vmx.hostCR4 | X86_CR4_VMXE);
                     }
                 }
+                else
+                    pVM->hwaccm.s.ulLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
             }
+            else
+                pVM->hwaccm.s.ulLastError = VERR_VMX_NO_VMX;
         }
         else
         if (    u32Vendor1 == 0x68747541 /* Auth */
@@ -157,10 +163,20 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                     pVM->hwaccm.s.svm.fSupported = true;
                 }
                 else
+                {
+                    pVM->hwaccm.s.ulLastError = VERR_SVM_ILLEGAL_EFER_MSR;
                     AssertFailed();
+                }
             }
+            else
+                pVM->hwaccm.s.ulLastError = VERR_SVM_NO_SVM;
         }
+        else
+            pVM->hwaccm.s.ulLastError = VERR_HWACCM_UNKNOWN_CPU;
     }
+    else
+        pVM->hwaccm.s.ulLastError = VERR_HWACCM_NO_CPUID;
+
 #endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
 
     return VINF_SUCCESS;
