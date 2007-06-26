@@ -208,7 +208,7 @@ extern DECLIMPORT(const SUPGLOBALINFOPAGE) g_SUPGlobalInfoPage;
 DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
 {
     PCSUPGLOBALINFOPAGE pGIP;
-    __asm__ __volatile__ ("movabs g_SUPGlobalInfoPage,%0\n\t"
+    __asm__ __volatile__ ("movabs $g_SUPGlobalInfoPage,%0\n\t"
                           : "=a" (pGIP));
     return pGIP;
 }
