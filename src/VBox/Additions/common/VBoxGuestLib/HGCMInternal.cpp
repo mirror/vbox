@@ -170,6 +170,14 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                     || pParm->type == VMMDevHGCMParmType_LinAddr_Out
                     || pParm->type == VMMDevHGCMParmType_LinAddr)
                 {
+                    /* PORTME: When porting this to Darwin and other systems where the entire kernel isn't mapped
+                       into every process, all linear address will have to be converted to physical SG lists at
+                       this point. Care must also be taken on these guests to not mix kernel and user addresses
+                       in HGCM calls, or we'll end up locking the wrong memory. If VMMDev/HGCM gets a linear address
+                       it will assume that it's in the current memory context (i.e. use CR3 to translate it).
+
+                       These kind of problems actually applies to some patched linux kernels too, including older
+                       fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
                     rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
                     
                     if (VBOX_FAILURE (rc))
