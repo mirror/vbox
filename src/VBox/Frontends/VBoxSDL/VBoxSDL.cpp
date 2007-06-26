@@ -512,14 +512,9 @@ public:
     {
         if (!canShow)
             return E_POINTER;
-#if defined (__LINUX__)
-        /// @todo see the big comment in Frontends/VirtualBox/src/VBoxVMListBoxItem::switchTo()
-        *canShow = FALSE;
-#else
         SDL_SysWMinfo info;
         SDL_VERSION(&info.version);
         *canShow = !!SDL_GetWMInfo(&info);
-#endif
         return S_OK;
     }
 
@@ -530,7 +525,7 @@ public:
         if (SDL_GetWMInfo(&info))
         {
 #if defined (__LINUX__)
-            *winId = (ULONG64) info.info.x11.window;
+            *winId = (ULONG64) info.info.x11.wmwindow;
 #elif defined (__WIN__)
             *winId = (ULONG64) info.window;
 #else
@@ -1915,7 +1910,6 @@ int main(int argc, char *argv[])
                     case SDL_USER_EVENT_XPCOM_EVENTQUEUE:
                     {
                         LogFlow(("SDL_USER_EVENT_XPCOM_EVENTQUEUE: processing XPCOM event queue...\n"));
-                        consumedXPCOMUserEvent();
                         eventQ->ProcessPendingEvents();
                         signalXPCOMEventQueueThread();
                         break;
@@ -4302,7 +4296,13 @@ static int WaitSDLEvent(SDL_Event *event)
     {
         int rc = SDL_PollEvent (event);
         if (rc == 1)
+        {
+#ifdef USE_XPCOM_QUEUE_THREAD
+            if (event->type == SDL_USER_EVENT_XPCOM_EVENTQUEUE)
+                consumedXPCOMUserEvent();
+#endif
             return 1;
+        }
         /* Immediately wake up if new SDL events are available. This does not
          * work for internal SDL events. Don't wait more than 10ms. */
         RTSemEventWait(g_EventSemSDLEvents, 10);
