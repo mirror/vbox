@@ -170,9 +170,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeIn)(BOOL enable)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mLogoFadeIn = enable;
@@ -200,9 +202,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeOut)(BOOL enable)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mLogoFadeOut = enable;
@@ -230,9 +234,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoDisplayTime)(ULONG displayTime)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mLogoDisplayTime = displayTime;
@@ -263,9 +269,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(INPTR BSTR imagePath)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mLogoImagePath = imagePath;
@@ -292,9 +300,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(BootMenuMode)(BIOSBootMenuMode_T bootMenuMo
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mBootMenuMode = bootMenuMode;
@@ -322,9 +332,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(ACPIEnabled)(BOOL enable)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mACPIEnabled = enable;
@@ -352,9 +364,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mIOAPICEnabled = enable;
@@ -382,9 +396,11 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     mData.backup();
     mData->mTimeOffset = offset;

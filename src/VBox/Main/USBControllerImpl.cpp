@@ -226,9 +226,11 @@ STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -294,9 +296,11 @@ STDMETHODIMP USBController::CreateDeviceFilter (INPTR BSTR aName,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    AutoLock alock (this);
 
     ComObjPtr <USBDeviceFilter> filter;
     filter.createObject();
@@ -318,7 +322,7 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
     CheckComRCReturnRC (autoCaller.rc());
 
     /* the machine needs to be mutable */
-    Machine::AutoStateDependency <Machine::MutableStateDep> adep (mParent);
+    Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
     AutoLock alock (this);
@@ -379,7 +383,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
     CheckComRCReturnRC (autoCaller.rc());
 
     /* the machine needs to be mutable */
-    Machine::AutoStateDependency <Machine::MutableStateDep> adep (mParent);
+    Machine::AutoMutableStateDependency adep (mParent);
     CheckComRCReturnRC (adep.rc());
 
     AutoLock alock (this);
@@ -676,7 +680,7 @@ bool USBController::rollback()
     AssertComRCReturn (autoCaller.rc(), false);
 
     /* we need the machine state */
-    Machine::AutoStateDependency <Machine::MutableStateDep> adep (mParent);
+    Machine::AutoMutableStateDependency adep (mParent);
     AssertComRCReturn (adep.rc(), false);
 
     AutoLock alock (this);
@@ -949,7 +953,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
 #if 0
 #else
     /* we need the machine state */
-    Machine::AutoStateDependency <Machine::MutableStateDep> adep (mParent);
+    Machine::AutoMutableStateDependency adep (mParent);
     AssertComRCReturnRC (adep.rc());
 
     /* nothing to do if the machine isn't running */
