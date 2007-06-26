@@ -458,7 +458,7 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
         rcVBox = VbglGRPerform (&vboxDev->irqAckRequest->header);
         if (VBOX_SUCCESS(rcVBox) && VBOX_SUCCESS(vboxDev->irqAckRequest->header.rc))
         {
-            if (likely (vboxDev->irqAckRequest->events))
+            if (RT_LIKELY (vboxDev->irqAckRequest->events))
             {
                 vboxDev->u32Events |= vboxDev->irqAckRequest->events;
                 wake_up (&vboxDev->eventq);
