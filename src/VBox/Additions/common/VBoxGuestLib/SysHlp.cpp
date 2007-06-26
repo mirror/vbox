@@ -26,6 +26,10 @@
 #include "SysHlp.h"
 
 #include <iprt/assert.h>
+#if !defined(__WIN__) && !defined(__LINUX__)
+#include <iprt/memobj.h>
+#endif 
+
 
 int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size)
 {
@@ -54,11 +58,22 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size)
             rc = VERR_INVALID_PARAMETER;
         }
     }
-#else
+
+#elif defined(__LINUX__)
     NOREF(ppvCtx);
     NOREF(pv);
     NOREF(u32Size);
-#endif /* __WIN__ */
+
+#else
+    /* Default to IPRT - this ASSUMES that it is USER addresses we're locking. */
+    RTR0MEMOBJ MemObj;
+    rc = RTR0MemObjLockUser(&MemObj, pv, u32Size, NIL_RTR0PROCESS);
+    if (RT_SUCCESS(rc))
+        *ppvCtx = MemObj;
+    else
+        *ppvCtx = NIL_RTR0MEMOBJ;
+
+#endif
     
     return rc;
 }
@@ -76,9 +91,17 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
         MmUnlockPages (pMdl);
         IoFreeMdl (pMdl);
     }
-#else
+
+#elif defined(__LINUX__)
     NOREF(pvCtx);
-#endif /* __WIN__ */
+
+#else
+    /* default to IPRT */
+    RTR0MEMOBJ MemObj = (RTR0MEMOBJ)pvCtx;
+    int rc = RTR0MemObjFree(MemObj, false);
+    AssertRC(rc);
+
+#endif
 }
 
 #ifndef VBGL_VBOXGUEST
@@ -90,17 +113,25 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
 # include <sys/ioctl.h>
 #endif
 
-#ifndef __WIN__
-# ifdef __cplusplus
-extern "C" {
-# endif
+#ifdef __LINUX__
+__BEGIN_DECLS
 extern DECLVBGL(void *) vboxadd_cmc_open (void);
 extern DECLVBGL(void) vboxadd_cmc_close (void *);
 extern DECLVBGL(int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
-# ifdef __cplusplus
-}
-# endif
-#endif
+__END_DECLS
+#endif /* __LINUX__ */
+
+#ifdef __OS2__
+__BEGIN_DECLS
+/* 
+ * On OS/2 we'll do the connecting in the assembly code of the 
+ * client driver, exporting a g_VBoxGuestIDC symbol containing
+ * the connection information obtained from the 16-bit IDC.
+ */
+extern VBOXGUESTOS2IDCCONNECT g_VBoxGuestIDC;
+__END_DECLS
+#endif 
+
 
 int vbglDriverOpen (VBGLDRIVER *pDriver)
 {
@@ -137,7 +168,19 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     return VINF_SUCCESS;
 
 #elif defined (__OS2__)
-    return VERR_NOT_IMPLEMENTED;
+    /* 
+     * Just check whether the connection was made or not.
+     */
+    if (    g_VBoxGuestIDC.u32Version == VMMDEV_VERSION
+        &&  VALID_PTR(g_VBoxGuestIDC.u32Session)
+        &&  VALID_PTR(g_VBoxGuestIDC.pfnServiceEP))
+    {
+        pDriver->u32Session = g_VBoxGuestIDC.u32Session;
+        return VINF_SUCCESS;
+    }
+    pDriver->u32Session = UINT32_MAX;
+    Log(("vbglDriverOpen: failed\n"));
+    return VERR_FILE_NOT_FOUND;
 
 #else
 # error "Port me"
@@ -190,7 +233,12 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
     return vboxadd_cmc_call (pDriver->opaque, u32Function, pvData);
 
 #elif defined (__OS2__)
-    return VERR_NOT_IMPLEMENTED;
+    if (    pDriver->u32Session 
+        &&  pDriver->u32Session == g_VBoxGuestIDC.u32Session)
+        return g_VBoxGuestIDC.pfnServiceEP(pDriver->u32Session, u32Function, pvData, cbData, NULL);
+
+    Log(("vbglDriverIOCtl: No connection\n"));
+    return VERR_WRONG_ORDER;
 
 #else
 # error "Port me"
@@ -207,7 +255,7 @@ void vbglDriverClose (VBGLDRIVER *pDriver)
     vboxadd_cmc_close (pDriver->opaque);
 
 #elif defined (__OS2__)
-    
+    pDriver->u32Session = 0;
 
 #else
 # error "Port me"

@@ -54,7 +54,7 @@ typedef struct _VBGLDRIVER
 #elif defined (__LINUX__)
     void *opaque;
 #elif defined (__OS2__)
-    uint32_t placeholder;
+    uint32_t u32Session; /**< just for sanity checking. */
 #else
 # error "Port me"
 #endif
