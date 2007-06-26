@@ -252,8 +252,10 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
             }
 
             SetPageReserved(&paPages[iPage]);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 4, 20) /** @todo find the exact kernel where change_page_attr was introduced. */
             if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL))
                 MY_CHANGE_PAGE_ATTR(&paPages[iPage], 1, MY_PAGE_KERNEL_EXEC);
+#endif
         }
         *pPhys = page_to_phys(paPages);
         return phys_to_virt(page_to_phys(paPages));
@@ -294,8 +296,10 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
         for (iPage = 0; iPage < cPages; iPage++)
         {
             ClearPageReserved(&paPages[iPage]);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 4, 20) /** @todo find the exact kernel where change_page_attr was introduced. */
             if (pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL))
                 MY_CHANGE_PAGE_ATTR(&paPages[iPage], 1, PAGE_KERNEL);
+#endif
         }
         __free_pages(paPages, cOrder);
     }
