@@ -36,6 +36,11 @@
  */
 int startXPCOMEventQueueThread(int eqFD);
 
+/*
+ * Notify the XPCOM thread that we consumed an XPCOM event
+ */
+void consumedXPCOMUserEvent(void);
+
 /**
  * Signal to the XPCOM even queue thread that it should select for more events.
  */

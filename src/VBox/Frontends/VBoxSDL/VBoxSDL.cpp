@@ -139,6 +139,7 @@ static void    HandleGuestCapsChanged(void);
 static int     HandleHostKey(const SDL_KeyboardEvent *pEv);
 static Uint32  StartupTimer(Uint32 interval, void *param);
 static Uint32  ResizeTimer(Uint32 interval, void *param);
+static int     WaitSDLEvent(SDL_Event *event);
 
 
 /*******************************************************************************
@@ -201,6 +202,9 @@ static SDL_SysWMinfo gSdlInfo;
 #endif
 RTLDRMOD gLibrarySDL_ttf = NIL_RTLDRMOD;
 #endif
+
+static RTSEMEVENT g_EventSemSDLEvents;
+static volatile int32_t g_cNotifyUpdateEventsPending;
 
 /**
  * Callback handler for VirtualBox events
@@ -296,9 +300,7 @@ public:
                     SDL_Event event  = {0};
                     event.type       = SDL_USEREVENT;
                     event.user.type  = SDL_USER_EVENT_SECURELABEL_UPDATE;
-                    int rc = SDL_PushEvent(&event);
-                    NOREF(rc);
-                    AssertMsg(!rc, ("SDL_PushEvent returned with SDL error '%s'\n", SDL_GetError()));
+                    PushSDLEventForSure(&event);
                 }
             }
         }
@@ -413,8 +415,7 @@ public:
         event.user.type  = SDL_USER_EVENT_POINTER_CHANGE;
         event.user.data1 = data;
 
-        int rc = SDL_PushEvent (&event);
-        AssertMsg(!rc, ("SDL_PushEvent returned with SDL error '%s'\n", SDL_GetError()));
+        int rc = PushSDLEventForSure (&event);
         if (rc)
             delete data;
 
@@ -431,9 +432,7 @@ public:
         event.type      = SDL_USEREVENT;
         event.user.type = SDL_USER_EVENT_GUEST_CAP_CHANGED;
 
-        int rc = SDL_PushEvent (&event);
-        NOREF(rc);
-        AssertMsg(!rc, ("SDL_PushEvent returned with SDL error '%s'\n", SDL_GetError()));
+        PushSDLEventForSure (&event);
         return S_OK;
     }
 
@@ -464,9 +463,7 @@ public:
             event.user.type = SDL_USER_EVENT_UPDATE_TITLEBAR;
         }
 
-        int rc = SDL_PushEvent(&event);
-        NOREF(rc);
-        AssertMsg(!rc, ("SDL_PushEvent returned with SDL error '%s'\n", SDL_GetError()));
+        PushSDLEventForSure(&event);
         return S_OK;
     }
 
@@ -1289,6 +1286,10 @@ int main(int argc, char *argv[])
         goto leave;
     }
 
+    /* create SDL event semaphore */
+    rc = RTSemEventCreate(&g_EventSemSDLEvents);
+    AssertReleaseRC(rc);
+
     rc = virtualBox->OpenSession(session, uuid);
     if (FAILED(rc))
     {
@@ -1879,7 +1880,7 @@ int main(int argc, char *argv[])
             /*
              * Wait for SDL events.
              */
-            if (SDL_WaitEvent(&event))
+            if (WaitSDLEvent(&event))
             {
                 switch (event.type)
                 {
@@ -1914,6 +1915,7 @@ int main(int argc, char *argv[])
                     case SDL_USER_EVENT_XPCOM_EVENTQUEUE:
                     {
                         LogFlow(("SDL_USER_EVENT_XPCOM_EVENTQUEUE: processing XPCOM event queue...\n"));
+                        consumedXPCOMUserEvent();
                         eventQ->ProcessPendingEvents();
                         signalXPCOMEventQueueThread();
                         break;
@@ -2003,7 +2005,7 @@ int main(int argc, char *argv[])
     }
 #endif
     LogFlow(("VBoxSDL: Entering big event loop\n"));
-    while (SDL_WaitEvent(&event))
+    while (WaitSDLEvent(&event))
     {
         switch (event.type)
         {
@@ -2253,6 +2255,7 @@ int main(int argc, char *argv[])
                 /*
                  * Decode event parameters.
                  */
+                ASMAtomicDecS32(&g_cNotifyUpdateEventsPending);
                 #define DECODEX(event) ((intptr_t)(event).user.data1 >> 16)
                 #define DECODEY(event) ((intptr_t)(event).user.data1 & 0xFFFF)
                 #define DECODEW(event) ((intptr_t)(event).user.data2 >> 16)
@@ -2677,12 +2680,12 @@ static uint16_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
 #if 0
         case SDLK_CLEAR:            return 0x;
         case SDLK_KP_EQUALS:        return 0x;
-        case SDLK_COMPOSE:	    return 0x;
+        case SDLK_COMPOSE:          return 0x;
         case SDLK_HELP:             return 0x;
         case SDLK_BREAK:            return 0x;
-        case SDLK_POWER:	    return 0x;
-        case SDLK_EURO:		    return 0x;
-        case SDLK_UNDO:		    return 0x;
+        case SDLK_POWER:            return 0x;
+        case SDLK_EURO:             return 0x;
+        case SDLK_UNDO:             return 0x;
 #endif
         default:
             Log(("Unhandled sdl key event: sym=%d scancode=%#x unicode=%#x\n",
@@ -3536,7 +3539,7 @@ void SaveState(void)
          * title bar on the Mac.
          */
         SDL_Event event;
-        if (SDL_WaitEvent(&event))
+        if (WaitSDLEvent(&event))
         {
             switch (event.type)
             {
@@ -4271,6 +4274,7 @@ static Uint32 StartupTimer(Uint32 interval, void *param)
     event.type      = SDL_USEREVENT;
     event.user.type = SDL_USER_EVENT_TIMER;
     SDL_PushEvent(&event);
+    RTSemEventSignal(g_EventSemSDLEvents);
     return interval;
 }
 
@@ -4283,7 +4287,71 @@ static Uint32 ResizeTimer(Uint32 interval, void *param)
     SDL_Event event = {0};
     event.type      = SDL_USEREVENT;
     event.user.type = SDL_USER_EVENT_WINDOW_RESIZE_DONE;
-    SDL_PushEvent(&event);
+    PushSDLEventForSure(&event);
     /* one-shot */
     return 0;
 }
+
+/**
+ * Wait for the next SDL event. Don't use SDL_WaitEvent since this function
+ * calls SDL_Delay(10) if the event queue is empty.
+ */
+static int WaitSDLEvent(SDL_Event *event)
+{
+    for (;;)
+    {
+        int rc = SDL_PollEvent (event);
+        if (rc == 1)
+            return 1;
+        /* Immediately wake up if new SDL events are available. This does not
+         * work for internal SDL events. Don't wait more than 10ms. */
+        RTSemEventWait(g_EventSemSDLEvents, 10);
+    }
+}
+
+/**
+ * Ensure that an SDL event is really enqueued. Try multiple times if necessary.
+ */
+int PushSDLEventForSure(SDL_Event *event)
+{
+    int ntries = 10;
+    for (; ntries > 0; ntries--)
+    {
+        int rc = SDL_PushEvent(event);
+        RTSemEventSignal(g_EventSemSDLEvents);
+        if (rc == 0)
+            return 0;
+        Log(("PushSDLEventForSure: waiting for 2ms\n"));
+        RTThreadSleep(2);
+    }
+    LogRel(("WARNING: Failed to enqueue SDL event %d.%d!\n",
+           event->type, event->type == SDL_USEREVENT ? event->user.type : 0));
+    return -1;
+}
+
+#ifdef __LINUX__
+/**
+ * Special SDL_PushEvent function for NotifyUpdate events. These events may occur in bursts
+ * so make sure they don't flood the SDL event queue.
+ */
+void PushNotifyUpdateEvent(SDL_Event *event)
+{
+    int rc = SDL_PushEvent(event);
+    RTSemEventSignal(g_EventSemSDLEvents);
+    AssertMsg(!rc, ("SDL_PushEvent returned SDL error\n"));
+    /* A global counter is faster than SDL_PeepEvents() */
+    if (!rc)
+        ASMAtomicIncS32(&g_cNotifyUpdateEventsPending);
+    /* In order to not flood the SDL event queue, yield the CPU or (if there are already many
+     * events queued) even sleep */
+    if (g_cNotifyUpdateEventsPending > 96)
+    {
+        /* Too many NotifyUpdate events, sleep for a small amount to give the main thread time
+         * to handle these events. The SDL queue can hold up to 128 events. */
+        Log(("PushNotifyUpdateEvent: Sleep 1ms\n"));
+        RTThreadSleep(1);
+    }
+    else
+        RTThreadYield();
+}
+#endif /* __LINUX__ */

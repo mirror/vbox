@@ -23,6 +23,7 @@
 #define LOG_GROUP LOG_GROUP_GUI
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
@@ -38,7 +39,11 @@
 #ifdef USE_XPCOM_QUEUE_THREAD
 
 /** global flag indicating that the event queue thread should terminate */
-bool volatile   g_fTerminateXPCOMQueueThread = false;
+static bool volatile   g_fTerminateXPCOMQueueThread = false;
+
+/** How many XPCOM user events are on air. Only allow one pending event to prevent
+ * an overflow of the SDL event queue. */
+static volatile int32_t g_s32XPCOMEventsPending;
 
 /** Semaphore the XPCOM event thread will sleep on while it waits for the main thread to process pending requests. */
 RTSEMEVENT    g_EventSemXPCOMQueueThread = NULL;
@@ -71,28 +76,45 @@ DECLCALLBACK(int) xpcomEventThread(RTTHREAD thread, void *pvUser)
         /* are there any events to process? */
         if ((n > 0) && !g_fTerminateXPCOMQueueThread)
         {
-            /*
-             * Post the event and wait for it to be processed. If we don't wait,
-             * we'll flood the queue on SMP systems and when the main thread is busy.
-             * In the event of a push error, we'll yield the timeslice and retry.
+	    /*
+	     * Wait until all XPCOM events are processed. 1s just for sanity.
              */
-            SDL_Event event = {0};
-            event.type = SDL_USEREVENT;
-            event.user.type = SDL_USER_EVENT_XPCOM_EVENTQUEUE;
-            rc = SDL_PushEvent(&event);
-            if (!rc)
-            {
-                RTSemEventWait(g_EventSemXPCOMQueueThread, 100);
-                cErrors = 0;
+	    int iWait = 1000;
+	    /*
+	     * Don't post an event if there is a pending XPCOM event to prevent an
+	     * overflow of the SDL event queue.
+	     */
+	    if (g_s32XPCOMEventsPending < 1)
+	    {
+                /*
+		 * Post the event and wait for it to be processed. If we don't wait,
+		 * we'll flood the queue on SMP systems and when the main thread is busy.
+		 * In the event of a push error, we'll yield the timeslice and retry.
+		 */
+                SDL_Event event = {0};
+                event.type = SDL_USEREVENT;
+                event.user.type = SDL_USER_EVENT_XPCOM_EVENTQUEUE;
+                rc = SDL_PushEvent(&event);
+                if (!rc)
+                {
+                    /* success */
+                    ASMAtomicIncS32(&g_s32XPCOMEventsPending);
+                    cErrors = 0;
+                }
+                else
+                {
+                    /* failure */
+                    cErrors++;
+                    if (!RTThreadYield())
+                        RTThreadSleep(2);
+                    iWait = (cErrors >= 10) ? RT_MIN(cErrors - 8, 50) : 0;
+                }
             }
             else
-            {
-                cErrors++;
-                if (!RTThreadYield())
-                    RTThreadSleep(2);
-                if (cErrors >= 10)
-                    RTSemEventWait(g_EventSemXPCOMQueueThread, RT_MIN(cErrors - 8, 50));
-            }
+                Log2(("not enqueueing SDL XPCOM event (%d)\n", g_s32XPCOMEventsPending));
+
+            if (iWait)
+                RTSemEventWait(g_EventSemXPCOMQueueThread, iWait);
         }
     } while (!g_fTerminateXPCOMQueueThread);
     return VINF_SUCCESS;
@@ -114,6 +136,14 @@ int startXPCOMEventQueueThread(int eqFD)
     }
     AssertRC(rc);
     return rc;
+}
+
+/*
+ * Notify the XPCOM tread that we consumed an XPCOM event.
+ */
+void consumedXPCOMUserEvent(void)
+{
+    ASMAtomicDecS32(&g_s32XPCOMEventsPending);
 }
 
 /**
@@ -138,7 +168,4 @@ void terminateXPCOMQueueThread(void)
     }
 }
 
-
-
 #endif /* USE_XPCOM_QUEUE_THREAD */
-
