@@ -60,8 +60,8 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
 
 #ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
 
-    pVM->hwaccm.s.fInitialized = true;
-    pVM->hwaccm.s.ulLastError  = VINF_SUCCESS;
+    pVM->hwaccm.s.fHWACCMR0Init = true;
+    pVM->hwaccm.s.ulLastError   = VINF_SUCCESS;
 
     /*
      * Check for VMX capabilities
