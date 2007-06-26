@@ -271,6 +271,11 @@ private:
     typedef AutoVMCallerBase <false, false> AutoVMCaller;
 
     /**
+     *  Same as AutoVMCaller but doesn't set extended error info on failure.
+     */
+    typedef AutoVMCallerBase <true, false> AutoVMCallerQuiet;
+
+    /**
      *  Base template for SaveVMPtr and SaveVMPtrQuiet.
      */
     template <bool taQuiet = false>
