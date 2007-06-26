@@ -41,8 +41,8 @@
 /** global flag indicating that the event queue thread should terminate */
 static bool volatile   g_fTerminateXPCOMQueueThread = false;
 
-/** How many XPCOM user events are on air. Only allow one pending event to prevent
- * an overflow of the SDL event queue. */
+/** How many XPCOM user events are on air. Only allow one pending event to
+ *  prevent an overflow of the SDL event queue. */
 static volatile int32_t g_s32XPCOMEventsPending;
 
 /** Semaphore the XPCOM event thread will sleep on while it waits for the main thread to process pending requests. */
@@ -71,7 +71,6 @@ DECLCALLBACK(int) xpcomEventThread(RTTHREAD thread, void *pvUser)
         FD_ZERO(&fdset);
         FD_SET(eqFD, &fdset);
         int n = select(eqFD + 1, &fdset, NULL, NULL, NULL);
-
 
         /* are there any events to process? */
         if ((n > 0) && !g_fTerminateXPCOMQueueThread)
@@ -138,8 +137,8 @@ int startXPCOMEventQueueThread(int eqFD)
     return rc;
 }
 
-/*
- * Notify the XPCOM tread that we consumed an XPCOM event.
+/**
+ * Notify the XPCOM thread that we consumed an XPCOM event.
  */
 void consumedXPCOMUserEvent(void)
 {
