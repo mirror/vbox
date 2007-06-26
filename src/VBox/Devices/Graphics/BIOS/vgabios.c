@@ -366,8 +366,13 @@ int10_test_vbe_07:
   jmp   int10_end
 int10_test_vbe_08:
   cmp   al, #0x08
-  jne   int10_normal
+  jne   int10_test_vbe_09
   call  vbe_biosfn_set_get_dac_palette_format
+  jmp   int10_end
+int10_test_vbe_09:
+  cmp   al, #0x09
+  jne   int10_normal
+  call  vbe_biosfn_set_get_palette_data
   jmp   int10_end
 #endif
 

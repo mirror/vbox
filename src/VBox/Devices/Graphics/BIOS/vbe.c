@@ -1426,14 +1426,100 @@ ASM_END
  *
  * Input:
  *              AX      = 4F09h
+ *     (16-bit) BL      = 00h Set palette data
+ *                      = 01h Get palette data
+ *                      = 02h Set secondary palette data
+ *                      = 03h Get secondary palette data
+ *                      = 80h Set palette data during VRetrace
+ *              CX      = Number of entries to update (<= 256)
+ *              DX      = First entry to update
+ *              ES:DI   = Table of palette values
  * Output:
  *              AX      = VBE Return Status
  *
- * FIXME: incomplete API description, Input & Output
+ * Notes:
+ *     Secondary palette support is a "future extension".
+ *     Attempts to set/get it should return status 02h.
+ * 
+ *     In VBE 3.0, reading palette data is optional and
+ *     subfunctions 01h and 03h may return failure.
+ * 
+ *     The format of palette entries is as follows:
+ * 
+ *     PaletteEntry struc
+ *     Blue     db  ?   ; Blue channel value (6 or 8 bits)
+ *     Green    db  ?   ; Green channel value (6 or 8 bits)
+ *     Red      db  ?   ; Red channel value (6 or 8 bits)
+ *     Padding  db  ?   ; DWORD alignment byte (unused)
+ *     PaletteEntry ends
+ * 
+ *     Most applications use VGA DAC registers directly to
+ *     set/get palette in VBE modes. However, subfn 4F09h is
+ *     required for NonVGA controllers (eg. XGA).
  */
-void vbe_biosfn_set_get_palette_data(AX)
-{
-}
+ASM_START
+vbe_biosfn_set_get_palette_data:
+  test bl, bl
+  jz   set_palette_data
+  cmp  bl, #0x01
+  je   get_palette_data
+  cmp  bl, #0x03
+  jbe  vbe_09_nohw
+  cmp  bl, #0x80
+  jne  vbe_09_unsupported
+#if 0
+      /* this is where we could wait for vertical retrace */
+#endif
+set_palette_data:
+  pushad
+  push  ds
+  push  es
+  pop   ds
+  mov   al, dl
+  mov   dx, # VGAREG_DAC_WRITE_ADDRESS
+  out   dx, al
+  inc   dx
+  mov   si, di
+set_pal_loop:
+  lodsd
+  ror   eax, #16
+  out   dx, al
+  rol   eax, #8
+  out   dx, al
+  rol   eax, #8
+  out   dx, al
+  loop  set_pal_loop
+  pop   ds
+  popad
+vbe_09_ok:
+  mov  ax, #0x004f
+  ret
+
+get_palette_data:
+  pushad
+  mov   al, dl
+  mov   dx, # VGAREG_DAC_READ_ADDRESS
+  out   dx, al
+  add   dl, #2
+get_pal_loop:
+  xor   eax, eax
+  in    al, dx
+  shl   eax, #8
+  in    al, dx
+  shl   eax, #8
+  in    al, dx
+  stosd
+  loop  get_pal_loop
+  popad
+  jmp   vbe_09_ok
+
+vbe_09_unsupported:
+  mov  ax, #0x014f
+  ret
+vbe_09_nohw:
+  mov  ax, #0x024f
+  ret
+ASM_END
 
 /** Function 0Ah - Return VBE Protected Mode Interface
  *
