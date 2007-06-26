@@ -1060,6 +1060,8 @@
 #define VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR        (-4008)
 /** VMX CPU extension not available */
 #define VERR_VMX_NO_VMX                             (-4009)
+/** VMXON failed; possibly because it was already run before */
+#define VERR_VMX_VMXON_FAILED                       (-4010)
 /** @} */
 
 /** @name VBox SVM Status Codes
