@@ -1165,6 +1165,27 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+#ifdef DEBUG
+        case VMMDevReq_LogString:
+        {
+            if (requestHeader->size != sizeof(VMMDevReqLogString))
+            {
+                AssertMsgFailed(("VMMDevReq_LogString request size too small.\n"));
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevReqLogString *pReqLogString = (VMMDevReqLogString*)requestHeader;
+#undef LOG_GROUP
+#define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
+                Log(("Guest Log: %s\n", pReqLogString->szString));
+
+#undef LOG_GROUP
+#define LOG_GROUP LOG_GROUP_DEV_VMM
+
+            }
+        }
+#endif
         default:
         {
             requestHeader->rc = VERR_NOT_IMPLEMENTED;
