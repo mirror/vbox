@@ -1168,7 +1168,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 #ifdef DEBUG
         case VMMDevReq_LogString:
         {
-            if (requestHeader->size != sizeof(VMMDevReqLogString))
+            if (requestHeader->size < sizeof(VMMDevReqLogString))
             {
                 AssertMsgFailed(("VMMDevReq_LogString request size too small.\n"));
                 requestHeader->rc = VERR_INVALID_PARAMETER;
