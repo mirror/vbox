@@ -256,6 +256,9 @@ typedef struct HWACCM
     /** Saved error from detection */
     uint32_t                ulLastError;
 
+    /** HWACCMR0Init was run */
+    bool                    fInitialized;
+
     /** Currenty shadow paging mode. */
     PGMMODE                 enmShadowMode;
 
