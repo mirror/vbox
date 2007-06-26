@@ -531,6 +531,7 @@ void HostUSBDevice::reset()
         LogFlowThisFunc (("Calling machine->onUSBDeviceDetach()...\n"));
 
         HRESULT rc = mMachine->onUSBDeviceDetach (mId, NULL);
+        NOREF(rc);
 
         /* This call may expectedly fail with rc = NS_ERROR_FAILURE (on XPCOM)
          * if the VM process requests device release right before termination
