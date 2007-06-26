@@ -144,6 +144,9 @@ typedef enum
     VMMDevReq_VideoAccelFlush            = 71,
     VMMDevReq_QueryCredentials           = 100,
     VMMDevReq_ReportCredentialsJudgement = 101,
+#ifdef DEBUG
+    VMMDevReq_LogString                  = 200,
+#endif
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -233,6 +236,15 @@ typedef struct
      */
     char pointerData[4];
 } VMMDevReqMousePointer;
+
+/** string log request structure */
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    /** variable length string data */
+    char szString[1];
+} VMMDevReqLogString;
 
 /** host version request structure */
 typedef struct
@@ -1168,6 +1180,10 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevVideoAccelFlush);
         case VMMDevReq_QueryCredentials:
             return sizeof(VMMDevCredentials);
+#ifdef DEBUG
+        case VMMDevReq_LogString:
+            return sizeof(VMMDevReqLogString);
+#endif
         default:
             return 0;
     }
