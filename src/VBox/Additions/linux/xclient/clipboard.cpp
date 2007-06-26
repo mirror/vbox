@@ -136,6 +136,8 @@ typedef struct
     Atom atomUtf16;
     /** X11 atom refering to the clipboard utf8 text format: UTF8_STRING */
     Atom atomUtf8;
+    /** X11 atom refering to the native X11 clipboard text format: COMPOUND_TEXT */
+    Atom atomCText;
 
     /** A list of the X11 formats which we support, mapped to our identifier for them, in the order
         we prefer to have them in. */
@@ -1157,6 +1159,13 @@ static Boolean vboxClipboardConvertProc(Widget, Atom *atomSelection, Atom *atomT
             }
         }
     }
+    if (*atomTarget == g_ctx.atomCText)
+    {
+        /* We do not support compound text conversion.  However, as we are required to do so by
+           the X11 standards, we return Latin-1 if we are asked to do so anyway. */
+        LogRel(("An application on your guest system has asked for clipboard data in COMPOUND_TEXT format.  Since VirtualBox does not support this format, international characters will get lost.  Please set up your guest applications to use Unicode!\n"));
+        eFormat = LATIN1;
+    }
     switch (eFormat)
     {
     case TARGETS:
@@ -1496,6 +1505,7 @@ static int vboxClipboardCreateWindow(void)
     g_ctx.atomUtf16     = XInternAtom(XtDisplay(g_ctx.widget),
                                       "text/plain;charset=ISO-10646-UCS-2", false);
     g_ctx.atomUtf8      = XInternAtom(XtDisplay(g_ctx.widget), "UTF_STRING", false);
+    g_ctx.atomCText     = XInternAtom(XtDisplay(g_ctx.widget), "COMPOUND_TEXT", false);
     /* And build up the vector of supported formats */
 #ifdef USE_UTF16
     vboxClipboardAddFormat("text/plain;charset=ISO-10646-UCS-2", UTF16,
