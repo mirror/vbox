@@ -97,6 +97,13 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                  * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
                  * Once the lock bit is set, this MSR can no longer be modified.
                  */
+                if (!(pVM->hwaccm.s.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK)))
+                {
+                    /* MSR is not yet locked; we can change it ourselves here */
+                    pVM->hwaccm.s.vmx.msr.feature_ctrl |= (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK);
+                    ASMWrMsr(MSR_IA32_FEATURE_CONTROL, pVM->hwaccm.s.vmx.msr.feature_ctrl);
+                }
+
                 if (   (pVM->hwaccm.s.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                                                           == (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                 {
