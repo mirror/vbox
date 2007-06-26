@@ -45,6 +45,24 @@ static uint32_t aIOSize[4]  = {1, 2, 0, 4};
 static uint32_t aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
 
 
+static void VMXR0CheckError(PVM pVM, int rc)
+{
+    if (rc == VERR_VMX_GENERIC)
+    {
+        RTCCUINTREG instrError;
+
+        VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
+        Log(("VMXR0CheckError -> generic error %x\n", instrError));
+
+        pVM->hwaccm.s.vmx.ulLastInstrError = instrError;
+    }
+    else
+    {
+        Log(("VMXR0CheckError failed with %Vrc\n", rc));
+    }
+    pVM->hwaccm.s.ulLastError = rc;
+}
+
 /**
  * Sets up and activates VMX
  *
@@ -78,17 +96,7 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     rc = VMXEnable(pVM->hwaccm.s.vmx.pVMXONPhys);
     if (VBOX_FAILURE(rc))
     {
-#ifdef DEBUG
-        if (rc == VERR_VMX_GENERIC)
-        {
-            RTCCUINTREG instrError;
-
-            VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
-            Log(("VMXEnable -> generic error %x\n", instrError));
-        }
-        else
-            Log(("VMXEnable failed with %Vrc\n", rc));
-#endif
+        VMXR0CheckError(pVM, rc);
         return rc;
     }
 
@@ -268,6 +276,7 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     AssertRC(rc);
 
 vmx_end:
+    VMXR0CheckError(pVM, rc);
     /* Leave VMX Root Mode. */
     VMXDisable();
     return rc;

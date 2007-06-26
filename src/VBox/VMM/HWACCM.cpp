@@ -441,6 +441,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             else
             {
                 LogRel(("HWACCM: VMX setup failed with rc=%Vrc!\n", rc));
+                LogRel(("HWACCM: Last instruction error %x\n", pVM->hwaccm.s.vmx.ulLastInstrError));
                 pVM->fHWACCMEnabled = false;
             }
         }
@@ -475,6 +476,10 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
                 pVM->fHWACCMEnabled = false;
             }
         }
+    }
+    else
+    {
+        LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Vrc\n", pVM->hwaccm.s.ulLastError));
     }
 
 }

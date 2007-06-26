@@ -191,6 +191,9 @@ typedef struct HWACCM
             uint64_t                vmx_cr4_fixed1;
             uint64_t                vmx_vmcs_enum;
         } msr;
+
+        /* Last instruction error */
+        uint32_t                    ulLastInstrError;
     } vmx;
 
     struct
@@ -249,6 +252,9 @@ typedef struct HWACCM
         uint32_t                    errCode;
         uint64_t                    intInfo;
     } Event;
+
+    /** Saved error from detection */
+    uint32_t                ulLastError;
 
     /** Currenty shadow paging mode. */
     PGMMODE                 enmShadowMode;
