@@ -97,7 +97,7 @@ HWACCMR0DECL(int) VMXR0Setup(PVM pVM)
     if (VBOX_FAILURE(rc))
     {
         VMXR0CheckError(pVM, rc);
-        return rc;
+        return VERR_VMX_VMXON_FAILED;
     }
 
     /* Clear VM Control Structure. */
