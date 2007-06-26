@@ -1056,6 +1056,10 @@
 #define VERR_VMX_UNABLE_TO_RESUME_VM                (-4006)
 /** Unable to switch due to invalid host state. */
 #define VERR_VMX_INVALID_HOST_STATE                 (-4007)
+/** IA32_FEATURE_CONTROL MSR not setup correcty (turn on VMX in the host system BIOS) */
+#define VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR        (-4008)
+/** VMX CPU extension not available */
+#define VERR_VMX_NO_VMX                             (-4009)
 /** @} */
 
 /** @name VBox SVM Status Codes
@@ -1063,6 +1067,19 @@
  */
 /** Unable to start VM execution. */
 #define VERR_SVM_UNABLE_TO_START_VM                 (-4050)
+/** SVM bit not set in K6_EFER MSR */
+#define VERR_SVM_ILLEGAL_EFER_MSR                   (-4051)
+/** SVM CPU extension not available. */
+#define VERR_SVM_NO_SVM                             (-4052)
+/** @} */
+
+/** @name VBox HWACCM Status Codes
+ * @{
+ */
+/** Unable to start VM execution. */
+#define VERR_HWACCM_UNKNOWN_CPU                     (-4100)
+/** No CPUID support. */
+#define VERR_HWACCM_NO_CPUID                        (-4101)
 /** @} */
 
 /* SED-END */
