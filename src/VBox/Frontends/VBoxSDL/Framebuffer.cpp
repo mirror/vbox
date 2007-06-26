@@ -386,10 +386,10 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
 
 #ifdef __LINUX__
     /*
-     * SDL does not allow us to make this call from any other
-     * thread. So we have to send an event to the main SDL
-     * thread and process it there. For sake of simplicity, we encode
-     * all information in the event parameters.
+     * SDL does not allow us to make this call from any other thread than
+     * the main SDL thread (which initialized the video mode). So we have
+     * to send an event to the main SDL thread and process it there. For
+     * sake of simplicity, we encode all information in the event parameters.
      */
     SDL_Event event;
     event.type       = SDL_USEREVENT;
@@ -397,11 +397,7 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     // 16 bit is enough for coordinates
     event.user.data1 = (void*)(x << 16 | y);
     event.user.data2 = (void*)(w << 16 | h);
-    int rc = SDL_PushEvent(&event);
-    NOREF(rc);
-    AssertMsg(!rc, ("SDL_PushEvent returned SDL error '%s'\n", SDL_GetError()));
-    /* in order to not flood the SDL event queue, yield the CPU */
-    RTThreadYield();
+    PushNotifyUpdateEvent(&event);
 #else /* !__LINUX__ */
     update(x, y, w, h, true /* fGuestRelative */);
 #endif /* !__LINUX__ */
@@ -437,27 +433,27 @@ STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T 
              w, h, pixelFormat, vram, lineSize));
 
     /*
-     * SDL does not allow us to make this call from any other
-     * thread. So we have to send an event to the main SDL
-     * thread and tell VBox to wait.
+     * SDL does not allow us to make this call from any other thread than
+     * the main thread (the one which initialized the video mode). So we
+     * have to send an event to the main SDL thread and tell VBox to wait.
      */
     if (!finished)
     {
         AssertMsgFailed(("RequestResize requires the finished flag!\n"));
         return E_FAIL;
     }
-    mGuestXRes = w;
-    mGuestYRes = h;
+    mGuestXRes   = w;
+    mGuestYRes   = h;
     mPixelFormat = pixelFormat;
-    mPtrVRAM = vram;
-    mLineSize = lineSize;
+    mPtrVRAM     = vram;
+    mLineSize    = lineSize;
 
     SDL_Event event;
     event.type       = SDL_USEREVENT;
     event.user.type  = SDL_USER_EVENT_RESIZE;
-    int rc = SDL_PushEvent(&event);
-    NOREF(rc);
-    AssertMsg(!rc, ("SDL_PushEvent returned SDL error '%s'\n", SDL_GetError()));
+
+    /* Try multiple times if necessary */
+    PushSDLEventForSure(&event);
 
     /* we want this request to be processed quickly, so yield the CPU */
     RTThreadYield();

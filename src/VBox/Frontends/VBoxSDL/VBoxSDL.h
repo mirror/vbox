@@ -71,4 +71,9 @@ int resizeUI(uint16_t width, uint16_t height);
 int setUITitle(char *title);
 #endif /* VBOX_WIN32_UI */
 
+#ifdef __LINUX__
+void PushNotifyUpdateEvent(SDL_Event *event);
+#endif
+int  PushSDLEventForSure(SDL_Event *event);
+
 #endif // __H_VBOXSDL
