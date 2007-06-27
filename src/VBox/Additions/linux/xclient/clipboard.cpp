@@ -531,7 +531,7 @@ static void vboxClipboardGetCText(XtPointer pValue, size_t cbSourceLen)
     XtFree(reinterpret_cast<char *>(pValue));
     if (rc < 0)
     {
-        char *pcReason;
+        const char *pcReason;
         switch(rc)
         {
         case XNoMemory:
@@ -1205,7 +1205,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     RTMemFree(pcUtf8Text);
     if (rc < 0)
     {
-        char *pcReason;
+        const char *pcReason;
         switch(rc)
         {
         case XNoMemory:
