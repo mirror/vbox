@@ -26,6 +26,7 @@
 #include "Collection.h"
 
 #include <VBox/cfgldr.h>
+#include <VBox/VBoxHDD-new.h>
 
 #include <iprt/semaphore.h>
 
@@ -295,7 +296,7 @@ private:
     HRESULT createImage (ULONG64 aSize, BOOL aDynamic, IProgress **aProgress);
 
     /** VDI asynchronous operation thread function */
-    static DECLCALLBACK(int) vdiTaskThread (RTTHREAD thread, void *pvUser);
+    static DECLCALLBACK(int) VDITaskThread (RTTHREAD thread, void *pvUser);
 
     enum State
     {
@@ -507,7 +508,10 @@ private:
     HRESULT createImage (ULONG64 aSize, BOOL aDynamic, IProgress **aProgress);
 
     /** VDI asynchronous operation thread function */
-    static DECLCALLBACK(int) vdiTaskThread (RTTHREAD thread, void *pvUser);
+    static DECLCALLBACK(int) VDITaskThread (RTTHREAD thread, void *pvUser);
+
+    static DECLCALLBACK(void) VDError (void *pvUser, int rc, RT_SRC_POS_DECL,
+                                       const char *pszFormat, va_list va);
 
     enum State
     {
@@ -529,6 +533,10 @@ private:
 
     Bstr mFilePath;
     Bstr mFilePathFull;
+
+    PVBOXHDD mContainer;
+
+    Utf8Str mLastVDError;
 
     friend class HardDisk;
 };
