@@ -41,11 +41,7 @@ __BEGIN_DECLS
  * RTMemRealloc(), RTMemTmpAlloc() and RTMemTmpAllocZ() for allocations greater
  * than RTMEM_ALIGNMENT.
  */
-#ifdef __L4ENV__
-# define RTMEM_ALIGNMENT    4   /**< @todo Michael, can you check that this is still true with ucLibc, please. */
-#else
-# define RTMEM_ALIGNMENT    8
-#endif
+#define RTMEM_ALIGNMENT    8
 
 /**
  * Allocates temporary memory.
