@@ -156,7 +156,7 @@ typedef struct DEVPIC
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 #ifdef LOG_ENABLED
-static inline void DumpPICState(PicState *s, char *szFn)
+static inline void DumpPICState(PicState *s, const char *szFn)
 {
     PDEVPIC pData = PDMINS2DATA(CTXSUFF(s->pDevIns), PDEVPIC);
 
