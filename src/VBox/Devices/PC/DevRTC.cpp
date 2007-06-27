@@ -169,7 +169,7 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
         TMTimerSet(s->CTXSUFF(pPeriodicTimer), s->next_periodic_time);
 
-        if (period != s->CurPeriod)
+        if ((uint32_t)period != s->CurPeriod)
         {
             if (s->cRelLogEntries++ < 64)
                 LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
