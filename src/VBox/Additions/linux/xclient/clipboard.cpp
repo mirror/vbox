@@ -24,6 +24,7 @@
    code paths. */
 #define USE_UTF16
 #define USE_UTF8
+#define USE_CTEXT
 #define USE_LATIN1
 
 #define LOG_GROUP LOG_GROUP_HGCM
@@ -80,6 +81,7 @@ enum g_eClipboardFormats
     INVALID = 0,
     TARGETS,
     LATIN1,
+    CTEXT,
     UTF8,
     UTF16
 };
@@ -358,8 +360,8 @@ static int vboxClipboardReadHostData (uint32_t u32Format, void **ppv, uint32_t *
 }
 
 /**
- * Convert a Utf16 text with Linux EOLs to Utf16-LE with Windows EOLs, allocating memory
- * for the converted text.  Does no checking for validity.
+ * Convert a Utf16 text with Linux EOLs to zero-terminated Utf16-LE with Windows EOLs, allocating
+ * memory for the converted text.  Does no checking for validity.
  *
  * @returns VBox status code
  *
@@ -384,7 +386,7 @@ static int vboxClipboardUtf16LinToWin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 *
         LogFlowFunc(("*ppu16Dest=0, *pcwDest=0, rc=VINF_SUCCESS\n"));
         return VINF_SUCCESS;
     }
-    AssertReturn(pu16Src != 0, VERR_INVALID_PARAMETER);
+    AssertReturn(VALID_PTR(pu16Src), VERR_INVALID_PARAMETER);
     cwDest = 0;
     for (i = 0; i < cwSrc; ++i, ++cwDest)
     {
@@ -392,8 +394,12 @@ static int vboxClipboardUtf16LinToWin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 *
         {
             ++cwDest;
         }
+        if (pu16Src[i] == 0)
+        {
+            break;
+        }
     }
-    /* Leave space for a trailing null in any case */
+    /* Leave space for a trailing null */
     ++cwDest;
     pu16Dest = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwDest * 2));
     if (pu16Dest == 0)
@@ -407,6 +413,10 @@ static int vboxClipboardUtf16LinToWin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 *
         {
             pu16Dest[j] = CARRIAGERETURN;
             ++j;
+        }
+        if (pu16Src[i] == 0)
+        {
+            break;
         }
         pu16Dest[j] = pu16Src[i];
     }
@@ -495,6 +505,79 @@ static void vboxClipboardGetUtf8(XtPointer pValue, size_t cbSourceLen)
 }
 
 /**
+ * Convert the compound text returned from the guest X11 clipboard to UTF-16LE with Windows EOLs
+ * and send it to the host.
+ *
+ * @param pValue      Source compound text
+ * @param cbSourceLen Length in 8-bit bytes of the source text
+ */
+static void vboxClipboardGetCText(XtPointer pValue, size_t cbSourceLen)
+{
+    size_t cwSourceLen, cwDestLen;
+    char **ppu8SourceText = 0;
+    PRTUTF16 pu16SourceText = 0, pu16DestText;
+    XTextProperty property;
+    int rc, cProps;
+
+    LogFlowFunc(("\n"));
+    Log2 (("vboxClipboardGetCText: converting compound text to Utf-16LE. Original is %.*s\n",
+           cbSourceLen, pValue));
+    /* First convert the compound text to Utf8 */
+    property.value = reinterpret_cast<unsigned char *>(pValue);
+    property.encoding = g_ctx.atomCText;
+    property.format = 8;
+    property.nitems = cbSourceLen;
+    rc = Xutf8TextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SourceText, &cProps);
+    XtFree(reinterpret_cast<char *>(pValue));
+    if (rc < 0)
+    {
+        char *pcReason;
+        switch(rc)
+        {
+        case XNoMemory:
+            pcReason = "out of memory";
+            break;
+        case XLocaleNotSupported:
+            pcReason = "locale (Utf8) not supported";
+            break;
+        case XConverterNotFound:
+            pcReason = "converter not found";
+            break;
+        default:
+            pcReason = "unknown error";
+        }
+        XFreeStringList(ppu8SourceText);
+        LogRel(("vboxClipboardGetCText: Xutf8TextPropertyToTextList failed.  Reason: %s\n",
+                pcReason));
+        vboxClipboardSendData (0, 0, 0);
+        LogFlowFunc(("sending empty data and returning\n"));
+        return;
+    }
+    /* Next convert the UTF8 to UTF16 */
+    rc = RTStrToUtf16Ex(*ppu8SourceText, cbSourceLen, &pu16SourceText, 0, &cwSourceLen);
+    XFreeStringList(ppu8SourceText);
+    if (rc != VINF_SUCCESS)
+    {
+        vboxClipboardSendData (0, 0, 0);
+        LogFlowFunc(("sending empty data and returning\n"));
+        return;
+    }
+    rc = vboxClipboardUtf16LinToWin(pu16SourceText, cwSourceLen, &pu16DestText, &cwDestLen);
+    RTMemFree(reinterpret_cast<void *>(pu16SourceText));
+    if (rc != VINF_SUCCESS)
+    {
+        vboxClipboardSendData (0, 0, 0);
+        LogFlowFunc(("sending empty data and returning\n"));
+        return;
+    }
+    Log2 (("vboxClipboardGetCText: converted string is %.*ls\n", cwDestLen, pu16DestText));
+    vboxClipboardSendData (VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                            reinterpret_cast<void *>(pu16DestText), cwDestLen * 2);
+    RTMemFree(reinterpret_cast<void *>(pu16DestText));
+    LogFlowFunc(("returning\n"));
+}
+
+/**
  * Convert the Latin1 text returned from the guest X11 clipboard to UTF-16LE with Windows EOLs
  * and send it to the host.
  *
@@ -571,6 +654,9 @@ static void vboxClipboardGetProc(Widget, XtPointer /* pClientData */, Atom * /* 
     {
     case UTF16:
         vboxClipboardGetUtf16(pValue, cTextLen / 2);
+        break;
+    case CTEXT:
+        vboxClipboardGetCText(pValue, cTextLen);
         break;
     case UTF8:
     case LATIN1:
@@ -787,8 +873,8 @@ static Boolean vboxClipboardConvertTargets(Atom *atomTypeReturn, XtPointer *pVal
 }
 
 /**
- * Get the size of the buffer needed to hold a Utf16 string with Linux EOLs converted from
- * a Utf16 string with Windows EOLs.
+ * Get the size of the buffer needed to hold a zero-terminated Utf16 string with Linux EOLs
+ * converted from a Utf16 string with Windows EOLs.
  *
  * @returns The size of the buffer needed in bytes
  *
@@ -800,7 +886,7 @@ static int vboxClipboardUtf16GetLinSize(PRTUTF16 pu16Src, size_t cwSrc)
     enum { LINEFEED = 0xa, CARRIAGERETURN = 0xd };
     size_t cwDest;
 
-    LogFlowFunc(("pu16Src=%.*ls, cwSrc=%u", cwSrc, pu16Src, cwSrc));
+    LogFlowFunc(("pu16Src=%.*ls, cwSrc=%u\n", cwSrc, pu16Src, cwSrc));
     AssertReturn(pu16Src != 0, VERR_INVALID_PARAMETER);
     /* We only take little endian Utf16 */
     AssertReturn(pu16Src[0] != 0xfffe, VERR_INVALID_PARAMETER);
@@ -823,11 +909,11 @@ static int vboxClipboardUtf16GetLinSize(PRTUTF16 pu16Src, size_t cwSrc)
             ++i;
         if (pu16Src[i] == 0)
         {
-            /* The terminating zero is included in the size */
-            ++cwDest;
             break;
         }
     }
+    /* The terminating null */
+    ++cwDest;
     LogFlowFunc(("returning %d\n", cwDest * 2));
     return cwDest * 2;
 }
@@ -850,10 +936,10 @@ static int vboxClipboardUtf16WinToLin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 p
     size_t cwDestPos;
 
     LogFlowFunc(("pu16Src=%.*ls, cwSrc=%u, pu16Dest=%p, cwDest=%u\n",
-                 cwSrc, pu16Src, cwSrc, pu16Dest, cwDest));
+                  cwSrc, pu16Src, cwSrc, pu16Dest, cwDest));
     /* A buffer of size 0 may not be an error, but it is not a good idea either. */
     Assert(cwDest > 0);
-    AssertReturn(pu16Src != 0, VERR_INVALID_PARAMETER);
+    AssertReturn(VALID_PTR(pu16Src), VERR_INVALID_PARAMETER);
     /* We only take little endian Utf16 */
     AssertReturn(pu16Src[0] != 0xfffe, VERR_INVALID_PARAMETER);
     if (cwSrc == 0)
@@ -897,7 +983,13 @@ static int vboxClipboardUtf16WinToLin(PRTUTF16 pu16Src, size_t cwSrc, PRTUTF16 p
             break;
         }
     }
-    LogFlowFunc(("set string %.*ls.  Returning\n", cwDestPos, pu16Dest));
+    if (cwDestPos == cwDest)
+    {
+        LogFlowFunc(("returning VERR_BUFFER_OVERFLOW\n"));
+        return VERR_BUFFER_OVERFLOW;
+    }
+    pu16Dest[cwDestPos] = 0;
+    LogFlowFunc(("set string %ls.  Returning\n", pu16Dest + 1));
     return VINF_SUCCESS;
 }
 
@@ -991,6 +1083,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         return false;
     }
     cwHostText = cbHostText / 2;
+    Log2 (("vboxClipboardConvertUtf8: original text is %.*ls\n", cwHostText, pu16HostText));
     cwGuestText = vboxClipboardUtf16GetLinSize(pu16HostText, cwHostText);
     pu16GuestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwGuestText * 2));
     if (pu16GuestText == 0)
@@ -1000,43 +1093,144 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         return false;
     }
     rc = vboxClipboardUtf16WinToLin(pu16HostText, cwHostText, pu16GuestText, cwGuestText);
+    RTMemFree(reinterpret_cast<char *>(pu16HostText));
     if (rc != VINF_SUCCESS)
     {
         Log2(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
-        RTMemFree(reinterpret_cast<char *>(pu16HostText));
         RTMemFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
         return false;
     }
     /* Now convert the Utf16 Linux text to Utf8 */
     cbGuestText = cwGuestText * 3;  /* Should always be enough. */
-    if (rc != VINF_SUCCESS)
+    pcGuestText = XtMalloc(cbGuestText);
+    if (pcGuestText == 0)
     {
-        RTMemFree(reinterpret_cast<char *>(pu16HostText));
         RTMemFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    pcGuestText = XtMalloc(cbGuestText);
     /* Our runtime can't cope with endian markers. */
     rc = RTUtf16ToUtf8Ex(pu16GuestText + 1, cwGuestText - 1, &pcGuestText, cbGuestText, 0);
+    RTMemFree(reinterpret_cast<char *>(pu16GuestText));
     if (rc != VINF_SUCCESS)
     {
-        RTMemFree(reinterpret_cast<char *>(pu16HostText));
-        RTMemFree(reinterpret_cast<char *>(pu16GuestText));
         XtFree(pcGuestText);
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    Log2 (("vboxClipboardConvertUtf8: returning Utf-8, original text is %.*ls\n", cwHostText,
-           pu16HostText));
     Log2 (("vboxClipboardConvertUtf8: converted text is %.*s\n", cbGuestText, pcGuestText));
-    RTMemFree(reinterpret_cast<char *>(pu16HostText));
-    RTMemFree(reinterpret_cast<char *>(pu16GuestText));
     *atomTypeReturn = g_ctx.atomUtf8;
     *pValReturn = reinterpret_cast<XtPointer>(pcGuestText);
     *pcLenReturn = cbGuestText;
     *piFormatReturn = 8;
+    LogFlowFunc(("rc = true\n"));
+    return true;
+}
+
+/**
+ * Satisfy a request from the guest to convert the clipboard text to compound text.
+ *
+ * @returns true if we successfully convert the data to the format requested, false otherwise.
+ *
+ * @param atomTypeReturn The type of the data we are returning
+ * @param pValReturn     A pointer to the data we are returning.  This should be to memory
+ *                       allocated by XtMalloc, which will be freed by the toolkit later
+ * @param pcLenReturn    The length of the data we are returning
+ * @param piFormatReturn The format (8bit, 16bit, 32bit) of the data we are returning
+ */
+static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValReturn,
+                                         unsigned long *pcLenReturn, int *piFormatReturn)
+{
+    PRTUTF16 pu16GuestText, pu16HostText;
+    char *pcUtf8Text;
+    unsigned cbHostText, cwHostText, cwGuestText, cbUtf8Text;
+    XTextProperty property;
+    int rc;
+
+    LogFlowFunc(("\n"));
+    /* Get the host Utf16 data and convert it to Linux Utf16. */
+    rc = vboxClipboardReadHostData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                                   reinterpret_cast<void **>(&pu16HostText), &cbHostText);
+    if ((rc != VINF_SUCCESS) || cbHostText == 0)
+    {
+        Log (("vboxClipboardConvertCText: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
+        g_ctx.hostFormats = 0;
+        LogFlowFunc(("rc = false\n"));
+        return false;
+    }
+    Log2 (("vboxClipboardConvertCText: original text is %.*ls\n", cwHostText, pu16HostText));
+    cwHostText = cbHostText / 2;
+    cwGuestText = vboxClipboardUtf16GetLinSize(pu16HostText, cwHostText);
+    pu16GuestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwGuestText * 2));
+    if (pu16GuestText == 0)
+    {
+        Log(("vboxClipboardConvertCText: out of memory\n"));
+        RTMemFree(reinterpret_cast<char *>(pu16HostText));
+        LogFlowFunc(("rc = false\n"));
+        return false;
+    }
+    rc = vboxClipboardUtf16WinToLin(pu16HostText, cwHostText, pu16GuestText, cwGuestText);
+    RTMemFree(reinterpret_cast<char *>(pu16HostText));
+    if (rc != VINF_SUCCESS)
+    {
+        Log2(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
+        RTMemFree(reinterpret_cast<char *>(pu16GuestText));
+        LogFlowFunc(("rc = false\n"));
+        return false;
+    }
+    /* Now convert the Utf16 Linux text to Utf8 */
+    cbUtf8Text = cwGuestText * 3;  /* Should always be enough. */
+    pcUtf8Text = reinterpret_cast<char *>(RTMemAlloc(cbUtf8Text));
+    if (pcUtf8Text == 0)
+    {
+        Log(("vboxClipboardConvertCText: out of memory\n"));
+        RTMemFree(reinterpret_cast<char *>(pu16GuestText));
+        LogFlowFunc(("rc = false\n"));
+        return false;
+    }
+    /* Our runtime can't cope with endian markers. */
+    rc = RTUtf16ToUtf8Ex(pu16GuestText + 1, cwGuestText - 1, &pcUtf8Text, cbUtf8Text, 0);
+    RTMemFree(reinterpret_cast<char *>(pu16GuestText));
+    if (rc != VINF_SUCCESS)
+    {
+        Log(("vboxClipboardConvertCText: RTUtf16ToUtf8Ex failed: rc=%Vrc\n", rc));
+        XtFree(pcUtf8Text);
+        LogFlowFunc(("rc = false\n"));
+        return false;
+    }
+    /* And finally (!) convert the Utf8 text to compound text. */
+    rc = Xutf8TextListToTextProperty(XtDisplay(g_ctx.widget), &pcUtf8Text, 1,
+                                     XCompoundTextStyle, &property);
+    RTMemFree(pcUtf8Text);
+    if (rc < 0)
+    {
+        char *pcReason;
+        switch(rc)
+        {
+        case XNoMemory:
+            pcReason = "out of memory";
+            break;
+        case XLocaleNotSupported:
+            pcReason = "locale (Utf8) not supported";
+            break;
+        case XConverterNotFound:
+            pcReason = "converter not found";
+            break;
+        default:
+            pcReason = "unknown error";
+        }
+        LogRel(("vboxClipboardConvertCText: Xutf8TextListToTextProperty failed.  Reason: %s\n",
+                pcReason));
+        XFree(property.value);
+        LogFlowFunc(("rc = false\n"));
+        return false;
+    }
+    Log2 (("vboxClipboardConvertCText: converted text is %s\n", property.value));
+    *atomTypeReturn = property.encoding;
+    *pValReturn = reinterpret_cast<XtPointer>(property.value);
+    *pcLenReturn = property.nitems;
+    *piFormatReturn = property.format;
     LogFlowFunc(("rc = true\n"));
     return true;
 }
@@ -1159,13 +1353,6 @@ static Boolean vboxClipboardConvertProc(Widget, Atom *atomSelection, Atom *atomT
             }
         }
     }
-    if (*atomTarget == g_ctx.atomCText)
-    {
-        /* We do not support compound text conversion.  However, as we are required to do so by
-           the X11 standards, we return Latin-1 if we are asked to do so anyway. */
-        LogRel(("An application on your guest system has asked for clipboard data in COMPOUND_TEXT format.  Since VirtualBox does not support this format, international characters will get lost.  Please set up your guest applications to use Unicode!\n"));
-        eFormat = LATIN1;
-    }
     switch (eFormat)
     {
     case TARGETS:
@@ -1178,6 +1365,10 @@ static Boolean vboxClipboardConvertProc(Widget, Atom *atomSelection, Atom *atomT
         return rc;
     case UTF8:
         rc = vboxClipboardConvertUtf8(atomTypeReturn, pValReturn, pcLenReturn, piFormatReturn);
+        LogFlowFunc(("rc=%d\n", rc));
+        return rc;
+    case CTEXT:
+        rc = vboxClipboardConvertCText(atomTypeReturn, pValReturn, pcLenReturn, piFormatReturn);
         LogFlowFunc(("rc=%d\n", rc));
         return rc;
     case LATIN1:
@@ -1517,6 +1708,10 @@ static int vboxClipboardCreateWindow(void)
     vboxClipboardAddFormat("text/plain;charset=UTF-8", UTF8,
                            VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     vboxClipboardAddFormat("text/plain;charset=utf-8", UTF8,
+                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+#endif
+#ifdef USE_CTEXT
+    vboxClipboardAddFormat("COMPOUND_TEXT", CTEXT,
                            VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
 #endif
 #ifdef USE_LATIN1
