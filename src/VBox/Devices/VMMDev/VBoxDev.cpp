@@ -1178,7 +1178,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevReqLogString *pReqLogString = (VMMDevReqLogString*)requestHeader;
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
-                Log(("Guest Log: %s\n", pReqLogString->szString));
+                Log(("Guest Log: %s", pReqLogString->szString));
 
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_DEV_VMM
