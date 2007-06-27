@@ -1184,6 +1184,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 #define LOG_GROUP LOG_GROUP_DEV_VMM
                 requestHeader->rc = VINF_SUCCESS;
             }
+            break;
         }
 #endif
         default:
