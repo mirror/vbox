@@ -186,6 +186,12 @@ public:
      */
     bool isFullAvailable() const { return mIsFullAvailable; }
 
+    /** 
+     *  Returns @c true if both isBasicAvailable() and isFullAvailable() are
+     *  @c false. 
+     */
+    bool isNull() const { return !mIsBasicAvailable && !mIsFullAvailable; }
+
     /**
      *  Returns the COM result code of the failed operation.
      */
@@ -241,6 +247,26 @@ public:
      *  @param aPrefix  optional prefix
      */
     void print (const char *aPrefix = NULL);
+
+    /**
+     *  Resets all collected error information. #isNull() will
+     *  return @c true after this method is called.
+     */
+    void setNull()
+    {
+        mIsBasicAvailable = false;
+        mIsFullAvailable = false;
+
+        mResultCode = S_OK;
+        mInterfaceID.clear();
+        mComponent.setNull();
+        mText.setNull();
+        mNext.reset();
+        mInterfaceName.setNull();
+        mCalleeIID.clear();
+        mCalleeName.setNull();
+        mErrorInfo.setNull();
+    }
 
 protected:
 
@@ -326,15 +352,38 @@ class ErrorInfoKeeper : public ErrorInfo
 {
 public:
 
-    /** Constructs a new instance that will fetch the current error info. */
-    ErrorInfoKeeper() : ErrorInfo (false), mForgot (false)
-        { init (true /* aKeepObj */); }
+    /**
+     *  Constructs a new instance that will fetch the current error info if
+     *  @a aIsNull is @c false (by default) or remain uninitialized (null)
+     *  otherwise.
+     *
+     *  @param aIsNull  @true to prevent fetching error info and leave
+     *                  the instance uninitialized.
+     */
+    ErrorInfoKeeper (bool aIsNull = false)
+        : ErrorInfo (false), mForgot (false)
+    {
+        if (!aIsNull)
+            init (true /* aKeepObj */);
+    }
 
     /**
      *  Destroys this instance and automatically calls #restore() which will
      *  either restore error info fetched by the constructor or do nothing
      *  if #forget() was called before destruction. */
     ~ErrorInfoKeeper() { if (!mForgot) restore(); }
+
+    /** 
+     *  Tries to (re-)fetch error info set on the current thread.  On success,
+     *  the previous error information, if any, will be overwritten with the
+     *  new error information. On failure, or if there is no error information
+     *  available, this instance will be reset to null.
+     */
+    void fetch()
+    {
+        setNull();
+        init (true /* aKeepObj */);
+    }
 
     /**
      *  Restores error info fetched by the constructor and forgets it
@@ -348,14 +397,14 @@ public:
      *  Forgets error info fetched by the constructor to prevent it from
      *  being restored by #restore() or by the destructor.
      */
-    void forget() { mForgot = 0; }
+    void forget() { mForgot = true; }
 
     /**
      *  Forgets error info fetched by the constructor to prevent it from
      *  being restored by #restore() or by the destructor, and returns the
      *  stored error info object to the caller.
      */
-    ComPtr <IUnknown> takeError() { mForgot = 0; return mErrorInfo; }
+    ComPtr <IUnknown> takeError() { mForgot = true; return mErrorInfo; }
 
 private:
 
