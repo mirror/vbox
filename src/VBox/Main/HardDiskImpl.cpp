@@ -1072,7 +1072,8 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
     };
 
     /* try to guess the probe order by extension */
-    size_t first = -1;
+    size_t first = 0;
+    bool haveFirst = false;
     Utf8Str loc = aLocation;
     char *ext = RTPathExt (loc);
 
@@ -1081,6 +1082,7 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
         if (RTPathCompare (ext, storageTypes [i].ext) == 0)
         {
             first = i;
+            haveFirst = true;
             break;
         }
     }
@@ -1092,7 +1094,7 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
 
     for (size_t i = 0; i < ELEMENTS (storageTypes); ++ i)
     {
-        size_t j = first == -1 ? i : i == 0 ? first : i == first ? 0 : i;
+        size_t j = !haveFirst ? i : i == 0 ? first : i == first ? 0 : i;
         switch (storageTypes [j].type)
         {
             case HardDiskStorageType_VirtualDiskImage:
@@ -1129,15 +1131,15 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
 
         Assert (FAILED (rc));
 
-        /* remember the first encountered error */
-        if (j == first)
+        /* remember the error of the matching class */
+        if (haveFirst && j == first)
         {
             firstRC = rc;
             firstErr.fetch();
         }
     }
 
-    if (first != -1)
+    if (haveFirst)
     {
         Assert (FAILED (firstRC));
         /* firstErr will restore the error info upon destruction */
