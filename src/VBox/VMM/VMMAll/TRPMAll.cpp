@@ -660,8 +660,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     {
                         LogFlow(("Stack %VGv pos %02d: %08x\n", &CTXSUFF(pTrapStack)[j], j, CTXSUFF(pTrapStack)[j]));
                     }
-                    char *pszPrefix = "";
-                    char *szEFlags = "";
+                    const char *pszPrefix = "";
+                    const char *szEFlags = "";
 
                     LogFlow((   "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                             "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
