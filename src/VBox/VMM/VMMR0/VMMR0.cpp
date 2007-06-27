@@ -57,11 +57,9 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
-#ifdef DEBUG
 #define DEBUG_NO_RING0_ASSERTIONS
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
-#endif
 #endif
 
 /*******************************************************************************
@@ -744,18 +742,13 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
 
 
 
-/*
- * Keep this private until it writes to the release log.
- */
-#ifdef DEBUG_sandervl
-
 # undef LOG_GROUP
 # define LOG_GROUP LOG_GROUP_EM
 
 /** Runtime assert implementation for Native Win32 Ring-0. */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
-    Log(("\n!!R0-Assertion Failed!!\n"
+    LogRel(("\n!!R0-Assertion Failed!!\n"
          "Expression: %s\n"
          "Location  : %s(%d) %s\n",
          pszExpr, pszFile, uLine, pszFunction));
@@ -768,7 +761,7 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars)
 {
     for (size_t i=0;i<cbChars;i++)
-        Log(("%c", pachChars[i]));
+        LogRel(("%c", pachChars[i]));
 
     return cbChars;
 }
@@ -786,5 +779,3 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
         R0LogFlush();
     }
 }
-
-#endif /* private */
