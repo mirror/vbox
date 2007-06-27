@@ -1855,7 +1855,19 @@ static bool atapiPassthroughSS(ATADevState *s)
     else
     {
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
-            LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d %Vrc\n", s->iLUN, s->aATAPICmd[0], uATAPISenseKey, rc));
+        {
+            uint8_t u8Cmd = s->aATAPICmd[0];
+            do
+            {
+                /* don't log superflous errors */
+                if (    rc == VERR_DEV_IO_ERROR
+                    && (   u8Cmd == SCSI_TEST_UNIT_READY
+                        || u8Cmd == SCSI_READ_CAPACITY
+                        || u8Cmd == SCSI_READ_TOC_PMA_ATIP))
+                    break;
+                LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d %Vrc\n", s->iLUN, u8Cmd, uATAPISenseKey, rc));
+            } while (0);
+        }
         atapiCmdError(s, uATAPISenseKey, 0);
         /* This is a drive-reported error. atapiCmdError() sets both the error
          * error code in the ATA error register and in s->uATAPISenseKey. The
