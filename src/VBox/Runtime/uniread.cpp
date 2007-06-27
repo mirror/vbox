@@ -195,7 +195,7 @@ static RTUNICP ToRange(const char *psz, PRTUNICP pLast)
  * @returns Pointer to string copy.
  * @param   pszStr      The string to duplicate.
  */
-static char *DupStr(char *pszStr)
+static char *DupStr(const char *pszStr)
 {
     if (!*pszStr)
         return "";
@@ -217,7 +217,7 @@ struct CPINFO
     RTUNICP     SimpleUpperCaseMapping;
     RTUNICP     SimpleLowerCaseMapping;
     RTUNICP     SimpleTitleCaseMapping;
-    char       *pszName;
+    const char  *pszName;
     /** Set if this is an unused entry */
     unsigned    fNullEntry : 1;
 
@@ -267,16 +267,16 @@ struct CPINFO
     unsigned    fXIDStart : 1;
 
     /* unprocess stuff, so far. */
-    char *pszGeneralCategory;
-    char *pszCanonicalCombiningClass;
-    char *pszBidiClass;
-    char *pszDecompositionType;
-    char *pszDecompositionMapping;
-    char *pszNumericType;
-    char *pszNumericValue;
-    char *pszBidiMirrored;
-    char *pszUnicode1Name;
-    char *pszISOComment;
+    const char *pszGeneralCategory;
+    const char *pszCanonicalCombiningClass;
+    const char *pszBidiClass;
+    const char *pszDecompositionType;
+    const char *pszDecompositionMapping;
+    const char *pszNumericType;
+    const char *pszNumericValue;
+    const char *pszBidiMirrored;
+    const char *pszUnicode1Name;
+    const char *pszISOComment;
 } g_aCPInfo[0xf0000];
 
 
