@@ -635,7 +635,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
         return VERR_EM_INTERPRETER;
 
 #ifdef DEBUG
-    char *pszInstr;
+    const char *pszInstr;
 
     if (pCpu->pCurInstr->opcode == OP_XOR)
         pszInstr = "Xor";
@@ -742,7 +742,7 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         return VERR_EM_INTERPRETER;
 
 #ifdef DEBUG
-    char *pszInstr;
+    const char *pszInstr;
 
     if (pCpu->pCurInstr->opcode == OP_SUB)
         pszInstr = "Sub";
@@ -861,7 +861,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         return VERR_EM_INTERPRETER;
 
 #ifdef DEBUG
-    char *pszInstr;
+    const char *pszInstr;
 
     if (pCpu->pCurInstr->opcode == OP_BTR)
         pszInstr = "Btr";
