@@ -32,7 +32,6 @@
 #include <iprt/dir.h>
 #include <iprt/cpputils.h>
 #include <VBox/VBoxHDD.h>
-#include <VBox/VBoxHDD-new.h>
 #include <VBox/err.h>
 
 #include <algorithm>
@@ -484,7 +483,7 @@ STDMETHODIMP HardDisk::CloneToImage (INPTR BSTR aFilePath,
     addReader();
 
     /* create the hard disk creation thread, pass operation data */
-    int vrc = RTThreadCreate (NULL, HVirtualDiskImage::vdiTaskThread,
+    int vrc = RTThreadCreate (NULL, HVirtualDiskImage::VDITaskThread,
                               (void *) task, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER,
                               0, "VDITask");
     ComAssertMsgRC (vrc, ("Could not create a thread (%Vrc)", vrc));
@@ -1061,33 +1060,40 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
     AssertReturn (aLocation, E_INVALIDARG);
     AssertReturn (*aLocation, E_INVALIDARG);
 
-    HRESULT rc = S_OK;
+    static const struct
+    {
+        HardDiskStorageType_T type;
+        const char *ext;
+    }
+    storageTypes[] =
+    {
+        { HardDiskStorageType_VMDKImage, ".vmdk" },
+        { HardDiskStorageType_VirtualDiskImage, ".vdi" },
+    };
 
     /* try to guess the probe order by extension */
+    size_t first = -1;
     Utf8Str loc = aLocation;
     char *ext = RTPathExt (loc);
 
-    HardDiskStorageType_T order [2];
-    size_t cOrder = ELEMENTS (order);
-
-    if (RTPathCompare (ext, ".vmdk") == 0)
+    for (size_t i = 0; i < ELEMENTS (storageTypes); ++ i)
     {
-        /// @todo This is a hack. The proper solution would be to save the
-        /// error info from the first try and restore that if everything fails.
-        /// That way a non-working VMDK will get a proper VMDK diagnostics
-        /// message and not some incomprehensible VDI error.
-        order [0] = HardDiskStorageType_VMDKImage;
-        cOrder = 1;
-    }
-    else
-    {
-        order [0] = HardDiskStorageType_VirtualDiskImage;
-        order [1] = HardDiskStorageType_VMDKImage;
+        if (RTPathCompare (ext, storageTypes [i].ext) == 0)
+        {
+            first = i;
+            break;
+        }
     }
 
-    for (size_t i = 0; i < cOrder; ++ i)
+    HRESULT rc = S_OK;
+
+    HRESULT firstRC = S_OK;
+    com::ErrorInfoKeeper firstErr (true /* aIsNull */);
+
+    for (size_t i = 0; i < ELEMENTS (storageTypes); ++ i)
     {
-        switch (order [i])
+        size_t j = first == -1 ? i : i == 0 ? first : i == first ? 0 : i;
+        switch (storageTypes [j].type)
         {
             case HardDiskStorageType_VirtualDiskImage:
             {
@@ -1117,12 +1123,37 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
             }
             default:
             {
-                ComAssertComRCRetRC (E_FAIL);
+                AssertComRCReturnRC (E_FAIL);
             }
+        }
+
+        Assert (FAILED (rc));
+
+        /* remember the first encountered error */
+        if (j == first)
+        {
+            firstRC = rc;
+            firstErr.fetch();
         }
     }
 
-    return rc;
+    if (first != -1)
+    {
+        Assert (FAILED (firstRC));
+        /* firstErr will restore the error info upon destruction */
+        return firstRC;
+    }
+
+    /* There was no exact extension match; chances are high that an error we
+     * got after probing is useless. Use a generic error message instead. */
+
+    firstErr.forget();
+
+    return setError (E_FAIL,
+        tr ("Could not recognize the format of the hard disk '%ls'. "
+            "Either the given format is not supported or hard disk data "
+            "is corrupt"),
+        aLocation);
 }
 
 // protected methods
@@ -2598,7 +2629,7 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
     task->size *= 1024 * 1024; /* convert to bytes */
 
     /* create the hard disk creation thread, pass operation data */
-    vrc = RTThreadCreate (NULL, vdiTaskThread, (void *) task, 0,
+    vrc = RTThreadCreate (NULL, VDITaskThread, (void *) task, 0,
                           RTTHREADTYPE_MAIN_HEAVY_WORKER, 0, "VDITask");
     ComAssertMsgRC (vrc, ("Could not create a thread (%Vrc)", vrc));
     if (VBOX_FAILURE (vrc))
@@ -2617,13 +2648,12 @@ HRESULT HVirtualDiskImage::createImage (ULONG64 aSize, BOOL aDynamic,
 }
 
 /* static */
-DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) HVirtualDiskImage::VDITaskThread (RTTHREAD thread, void *pvUser)
 {
     VDITask *task = static_cast <VDITask *> (pvUser);
     AssertReturn (task, VERR_GENERAL_FAILURE);
 
-    LogFlow (("vdiTaskThread(): operation=%d, size=%llu\n",
-              task->operation, task->size));
+    LogFlowFunc (("operation=%d, size=%llu\n", task->operation, task->size));
 
     VDIIMAGETYPE type = (VDIIMAGETYPE) 0;
 
@@ -2674,7 +2704,7 @@ DECLCALLBACK(int) HVirtualDiskImage::vdiTaskThread (RTTHREAD thread, void *pvUse
         }
     }
 
-    LogFlow (("vdiTaskThread(): rc=%08X\n", rc));
+    LogFlowFunc (("rc=%08X\n", rc));
 
     AutoLock alock (task->vdi);
 
@@ -3312,11 +3342,18 @@ HRESULT HVMDKImage::FinalConstruct()
     mSize = 0;
     mActualSize = 0;
 
+    /* initialize the container */
+    int vrc = VDCreate ("VMDK", VDError, this, &mContainer);
+    ComAssertRCRet (vrc, E_FAIL);
+
     return S_OK;
 }
 
 void HVMDKImage::FinalRelease()
 {
+    if (mContainer != NULL)
+        VDDestroy (mContainer);
+
     HardDisk::FinalRelease();
 }
 
@@ -3917,12 +3954,6 @@ HRESULT HVMDKImage::setFilePath (const BSTR aFilePath)
     return S_OK;
 }
 
-DECLCALLBACK(void) VDError (void *pvUser, int rc, RT_SRC_POS_DECL,
-                            const char *pszFormat, va_list va)
-{
-    /// @todo pass the error message to the operation initiator
-}
-
 /**
  *  Helper to query information about the VDI hard disk.
  *
@@ -3962,32 +3993,26 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
     Utf8Str filePath = mFilePathFull;
     Bstr errMsg;
 
-    PVBOXHDD hdd = NULL;
+    /* reset any previous error report from VDError() */
+    mLastVDError.setNull();
 
     do
     {
         Guid id, parentId;
-
-        /// @todo make PVBOXHDD a member variable and init/destroy it upon
-        /// image creation/deletion instead of doing that here every time.
-
-        vrc = VDCreate ("VMDK", VDError, NULL, &hdd);
-        if (VBOX_FAILURE (vrc))
-            break;
 
         /// @todo changed from VD_OPEN_FLAGS_READONLY to VD_OPEN_FLAGS_NORMAL,
         /// because otherwise registering a VMDK which so far has no UUID will
         /// yield a null UUID. It cannot be added to a VMDK opened readonly,
         /// obviously. This of course changes locking behavior, but for now
         /// this is acceptable. A better solution needs to be found later.
-        vrc = VDOpen (hdd, filePath, VD_OPEN_FLAGS_NORMAL);
+        vrc = VDOpen (mContainer, filePath, VD_OPEN_FLAGS_NORMAL);
         if (VBOX_FAILURE (vrc))
             break;
 
-        vrc = VDGetUuid (hdd, 0, id.ptr());
+        vrc = VDGetUuid (mContainer, 0, id.ptr());
         if (VBOX_FAILURE (vrc))
             break;
-        vrc = VDGetParentUuid (hdd, 0, parentId.ptr());
+        vrc = VDGetParentUuid (mContainer, 0, parentId.ptr());
         if (VBOX_FAILURE (vrc))
             break;
 
@@ -4054,15 +4079,14 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         /* query logical size only for non-differencing images */
         if (!mParent)
         {
-            uint64_t size = VDGetSize (hdd);
+            uint64_t size = VDGetSize (mContainer);
             /* convert to MBytes */
             mSize = size / 1024 / 1024;
         }
     }
     while (0);
 
-    if (hdd)
-        VDDestroy (hdd);
+    VDCloseAll (mContainer);
 
     /* enter the lock again */
     alock.enter();
@@ -4080,6 +4104,8 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         {
             if (!errMsg.isNull())
                 *aAccessError = errMsg;
+            else if (!mLastVDError.isNull())
+                *aAccessError = mLastVDError;
             else if (VBOX_FAILURE (vrc))
                 *aAccessError = Utf8StrFmt (
                     tr ("Could not access hard disk image '%ls' (%Vrc)"),
@@ -4109,6 +4135,9 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         mStateCheckSem = NIL_RTSEMEVENTMULTI;
     }
 
+    /* cleanup the last error report from VDError() */
+    mLastVDError.setNull();
+
     return rc;
 }
 
@@ -4130,11 +4159,31 @@ HRESULT HVMDKImage::createImage (ULONG64 aSize, BOOL aDynamic,
 }
 
 /* static */
-DECLCALLBACK(int) HVMDKImage::vdiTaskThread (RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) HVMDKImage::VDITaskThread (RTTHREAD thread, void *pvUser)
 {
     AssertMsgFailed (("Not implemented"));
     return VERR_GENERAL_FAILURE;
 
 /// @todo (r=dmik) later
-//  Use code from HVirtualDiskImage::vdiTaskThread as an example.
+//  Use code from HVirtualDiskImage::VDITaskThread as an example.
 }
+
+/* static */
+DECLCALLBACK(void) HVMDKImage::VDError (void *pvUser, int rc, RT_SRC_POS_DECL,
+                                        const char *pszFormat, va_list va)
+{
+    HVMDKImage *that = static_cast <HVMDKImage *> (pvUser);
+    AssertReturnVoid (that != NULL);
+
+    /// @todo pass the error message to the operation initiator
+    Utf8Str err = Utf8StrFmt (pszFormat, va);
+    if (VBOX_FAILURE (rc))
+        err = Utf8StrFmt ("%s (%Vrc)", err.raw(), rc);
+
+    if (that->mLastVDError.isNull())
+        that->mLastVDError = err;
+    else
+        that->mLastVDError = Utf8StrFmt
+            ("%s.\n%s", that->mLastVDError.raw(), err.raw());
+}
+
