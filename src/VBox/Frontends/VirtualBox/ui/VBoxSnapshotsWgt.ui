@@ -139,30 +139,30 @@
         </action>
         <action>
             <property name="name">
-                <cstring>discardCurStateAction</cstring>
+                <cstring>revertToCurSnapAction</cstring>
             </property>
             <property name="text">
-                <string>Discard Current State</string>
+                <string>Revert to Current Snapshot</string>
             </property>
             <property name="menuText">
-                <string>D&amp;iscard Current State</string>
+                <string>F&amp;evert to Current Snapshot</string>
             </property>
             <property name="accel">
-                <string>Ctrl+Alt+D</string>
+                <string>Ctrl+Alt+R</string>
             </property>
         </action>
         <action>
             <property name="name">
-                <cstring>discardCurSnapAndStateAction</cstring>
+                <cstring>revertToAndDiscardCurSnapAction</cstring>
             </property>
             <property name="text">
-                <string>Discard Current Snapshot and State</string>
+                <string>Revert to and Discard Current Snapshot</string>
             </property>
             <property name="menuText">
-                <string>D&amp;iscard Current Snapshot and State</string>
+                <string>R&amp;evert to and Discard Current Snapshot</string>
             </property>
             <property name="accel">
-                <string>Ctrl+Alt+Shift+D</string>
+                <string>Ctrl+Alt+Shift+R</string>
             </property>
         </action>
     </actiongroup>
@@ -207,13 +207,13 @@
         <slot>takeSnapshot()</slot>
     </connection>
     <connection>
-        <sender>discardCurStateAction</sender>
+        <sender>revertToCurSnapAction</sender>
         <signal>activated()</signal>
         <receiver>VBoxSnapshotsWgt</receiver>
         <slot>discardCurState()</slot>
     </connection>
     <connection>
-        <sender>discardCurSnapAndStateAction</sender>
+        <sender>revertToAndDiscardCurSnapAction</sender>
         <signal>activated()</signal>
         <receiver>VBoxSnapshotsWgt</receiver>
         <slot>discardCurSnapAndState()</slot>
