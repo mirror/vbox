@@ -789,8 +789,15 @@ static void vboxClipboardTargetsProc(Widget, XtPointer, Atom * /* selection */, 
         }
 #endif
         g_ctx.guestTextFormat = eBestTarget;
-        if (eBestTarget != INVALID)
+        /* We fall back to compound text if no recognized formats are found.  This seems (?)
+           to violate the ICCCM, but some applications seem to expect it. */
+        // if (eBestTarget != INVALID)
             u32Formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+        if (eBestTarget == INVALID)
+        {
+            g_ctx.atomGuestTextFormat = g_ctx.atomCText;
+            g_ctx.guestTextFormat = CTEXT;
+        }
         vboxClipboardReportFormats(u32Formats);
         g_ctx.notifyHost = false;
     }
