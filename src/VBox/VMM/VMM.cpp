@@ -431,6 +431,8 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
  *
  * If you want to log in non-debug modes, you'll have to remember to change SUPDRvShared.c
  * to not stub all the log functions.
+ *
+ * You might also wish to enable the AssertMsg1/2 overrides in VMMR0.cpp when enabling this.
  */
 # ifdef DEBUG_sandervl
                     rc = MMHyperAlloc(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
