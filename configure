@@ -93,13 +93,17 @@ log_success()
 {
   if [ -n "$1" ]; then echo -n "$1, "; fi
   echo "OK."
-  echo -e "$1\n\n" >> $LOG
+  echo "$1" >> $LOG
+  echo >> $LOG
+  echo >> $LOG
 }
 
 log_failure()
 {
-  echo -e "\n  ** $1!"
-  echo -e "** $1!\n" >> $LOG
+  echo
+  echo "  ** $1!"
+  echo "** $1!" >> $LOG
+  echo >> $LOG
 }
 
 cnf_append()
@@ -173,12 +177,14 @@ test_compile()
   $CXX -O -Wall -o .tmp_out .tmp_src.cc $1 >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     if [ -z "$4" ]; then
-      echo -e "\n  $2 not found at $1 or $3 headers not found"
-      echo      "  Check the file $LOG for detailed error information."
+      echo
+      echo "  $2 not found at $1 or $3 headers not found"
+      echo "  Check the file $LOG for detailed error information."
       fail
     else
       echo "not found."
-      echo -e "\n" >> $LOG
+      echo >> $LOG
+      echo >> $LOG
     fi
     return 1
   fi
@@ -196,7 +202,8 @@ test_execute()
     fail $1
     return 1
   fi
-  echo -e "\n\n" >> $LOG
+  echo >> $LOG
+  echo >> $LOG
   return 0
 }
 
@@ -266,10 +273,13 @@ check_gcc()
       if [ "x$cc_ver" != "x$cxx_ver" ]; then
         log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
         fail really
+      elif [ $cc_maj -eq 4 -a $cc_min -eq 0 ]; then
+        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with x>0"
+        fail really
       elif [ $cc_maj -gt 3 ]; then
         log_success "found version $cc_ver"
       elif [ $cc_maj -lt 3 -o $cc_min -lt 2 ]; then
-        log_failure "gcc version $cc_ver found, expected at least gcc version 3.2"
+        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with x>0"
         fail really
       else
         log_success "found version $cc_ver"
@@ -465,7 +475,9 @@ EOF
     fi
   else
     echo "Building xalan from shipped sources."
-    echo -e "Building xalan from shipped sources.\n\n" >> $LOG
+    echo "Building xalan from shipped sources." >> $LOG
+    echo >> $LOG
+    echo >> $LOG
   fi
 }
 
@@ -500,7 +512,9 @@ EOF
     fi
   else
     echo "Building xerces from shipped sources."
-    echo -e "Building xerces from shipped sources.\n\n" >> $LOG
+    echo "Building xerces from shipped sources." >> $LOG
+    echo >> $LOG
+    echo >> $LOG
   fi
 }
 
@@ -912,8 +926,9 @@ EOF
     fi
   done
   if [ $found_qt -ne 1 ]; then
-    echo -e "\n  Qt not found at \"$QTDIR\" or Qt headers not found"
-    echo      "  Check the file $LOG for detailed error information."
+    echo
+    echo "  Qt not found at \"$QTDIR\" or Qt headers not found"
+    echo "  Check the file $LOG for detailed error information."
     fail
     return 1
   fi
@@ -958,8 +973,9 @@ EOF
   echo "$CC -O -Wall -o .tmp_out .tmp_src.c -nostdinc -I$LINUX/include" >> $LOG
   $CC -O -Wall -o .tmp_out .tmp_src.c -nostdinc -I$LINUX/include >> $LOG 2>&1
   if [ $? -ne 0 ]; then
-    echo -e "\n  Linux kernel headers not found at $LINUX"
-    echo      "  Check the file $LOG for detailed error information."
+    echo
+    echo "  Linux kernel headers not found at $LINUX"
+    echo "  Check the file $LOG for detailed error information."
     fail
   else
     if test_execute; then
