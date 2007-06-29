@@ -27,9 +27,9 @@
 class Machine;
 
 class ATL_NO_VTABLE FloppyDrive :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <FloppyDrive, IFloppyDrive>,
     public VirtualBoxSupportTranslation <FloppyDrive>,
-    public VirtualBoxBase,
     public IFloppyDrive
 {
 public:
@@ -56,6 +56,8 @@ public:
         DriveState_T mDriveState;
     };
 
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (FloppyDrive)
+
     DECLARE_NOT_AGGREGATABLE(FloppyDrive)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -67,26 +69,28 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (FloppyDrive)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *parent);
-    HRESULT init (Machine *parent, FloppyDrive *that);
-    HRESULT initCopy (Machine *parent, FloppyDrive *that);
+    HRESULT init (Machine *aParent);
+    HRESULT init (Machine *aParent, FloppyDrive *aThat);
+    HRESULT initCopy (Machine *parent, FloppyDrive *aThat);
     void uninit();
 
     // IFloppyDrive properties
-    STDMETHOD(COMGETTER(Enabled)) (BOOL *enabled);
-    STDMETHOD(COMSETTER(Enabled)) (BOOL enabled);
-    STDMETHOD(COMGETTER(State)) (DriveState_T *driveState);
+    STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(State)) (DriveState_T *aDriveState);
 
     // IFloppyDrive methods
-    STDMETHOD(MountImage)(INPTR GUIDPARAM imageId);
-    STDMETHOD(CaptureHostDrive)(IHostFloppyDrive *hostFloppyDrive);
+    STDMETHOD(MountImage) (INPTR GUIDPARAM aImageId);
+    STDMETHOD(CaptureHostDrive) (IHostFloppyDrive *aHostFloppyDrive);
     STDMETHOD(Unmount)();
-    STDMETHOD(GetImage)(IFloppyImage **floppyImage);
-    STDMETHOD(GetHostDrive)(IHostFloppyDrive **hostFloppyDrive);
+    STDMETHOD(GetImage) (IFloppyImage **aFloppyImage);
+    STDMETHOD(GetHostDrive) (IHostFloppyDrive **aHostFloppyDrive);
 
     // public methods only for internal purposes
 
@@ -95,6 +99,9 @@ public:
     bool rollback();
     void commit();
     void copyFrom (FloppyDrive *aThat);
+
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
 
     Backupable <Data> &data() { return mData; }
 
@@ -105,8 +112,9 @@ private:
 
     HRESULT unmount();
 
-    ComObjPtr <Machine, ComWeakRef> mParent;
-    ComObjPtr <FloppyDrive> mPeer;
+    const ComObjPtr <Machine, ComWeakRef> mParent;
+    const ComObjPtr <FloppyDrive> mPeer;
+
     Backupable <Data> mData;
 };
 

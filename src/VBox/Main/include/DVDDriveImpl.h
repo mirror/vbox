@@ -27,9 +27,9 @@
 class Machine;
 
 class ATL_NO_VTABLE DVDDrive :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <DVDDrive, IDVDDrive>,
     public VirtualBoxSupportTranslation <DVDDrive>,
-    public VirtualBoxBase,
     public IDVDDrive
 {
 public:
@@ -55,6 +55,8 @@ public:
         BOOL mPassthrough;
     };
 
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (DVDDrive)
+
     DECLARE_NOT_AGGREGATABLE(DVDDrive)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -66,26 +68,28 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (DVDDrive)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *parent);
-    HRESULT init (Machine *parent, DVDDrive *that);
-    HRESULT initCopy (Machine *parent, DVDDrive *that);
+    HRESULT init (Machine *aParent);
+    HRESULT init (Machine *aParent, DVDDrive *aThat);
+    HRESULT initCopy (Machine *aParent, DVDDrive *aThat);
     void uninit();
 
     // IDVDDrive properties
-    STDMETHOD(COMGETTER(State)) (DriveState_T *driveState);
-    STDMETHOD(COMGETTER(Passthrough)) (BOOL *passthrough);
-    STDMETHOD(COMSETTER(Passthrough)) (BOOL passthrough);
+    STDMETHOD(COMGETTER(State)) (DriveState_T *aDriveState);
+    STDMETHOD(COMGETTER(Passthrough)) (BOOL *aPassthrough);
+    STDMETHOD(COMSETTER(Passthrough)) (BOOL aPassthrough);
 
     // IDVDDrive methods
-    STDMETHOD(MountImage)(INPTR GUIDPARAM imageId);
-    STDMETHOD(CaptureHostDrive)(IHostDVDDrive *hostDVDDrive);
+    STDMETHOD(MountImage) (INPTR GUIDPARAM aImageId);
+    STDMETHOD(CaptureHostDrive) (IHostDVDDrive *aHostDVDDrive);
     STDMETHOD(Unmount)();
-    STDMETHOD(GetImage)(IDVDImage **dvdImage);
-    STDMETHOD(GetHostDrive)(IHostDVDDrive **hostDVDDrive);
+    STDMETHOD(GetImage) (IDVDImage **aDVDImage);
+    STDMETHOD(GetHostDrive) (IHostDVDDrive **aHostDVDDrive);
 
     // public methods only for internal purposes
 
@@ -94,6 +98,9 @@ public:
     bool rollback();
     void commit();
     void copyFrom (DVDDrive *aThat);
+
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
 
     Backupable <Data> &data() { return mData; }
 
@@ -104,8 +111,9 @@ private:
 
     HRESULT unmount();
 
-    ComObjPtr <Machine, ComWeakRef> mParent;
-    ComObjPtr <DVDDrive> mPeer;
+    const ComObjPtr <Machine, ComWeakRef> mParent;
+    const ComObjPtr <DVDDrive> mPeer;
+
     Backupable <Data> mData;
 };
 

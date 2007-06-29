@@ -21,15 +21,16 @@
 
 #include "DVDDriveImpl.h"
 #include "MachineImpl.h"
+#include "VirtualBoxImpl.h"
 #include "Logging.h"
 
 #include <iprt/string.h>
-
-// defines
-////////////////////////////////////////////////////////////////////////////////
+#include <iprt/cpputils.h>
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
+
+DEFINE_EMPTY_CTOR_DTOR (DVDDrive)
 
 HRESULT DVDDrive::FinalConstruct()
 {
@@ -38,8 +39,7 @@ HRESULT DVDDrive::FinalConstruct()
 
 void DVDDrive::FinalRelease()
 {
-    if (isReady())
-        uninit ();
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -48,24 +48,27 @@ void DVDDrive::FinalRelease()
 /**
  * Initializes the DVD drive object.
  *
- * @param   parent  handle of our parent object
+ * @param   aParent  Handle of our parent object.
  * @return  COM result indicator
  */
-HRESULT DVDDrive::init (Machine *parent)
+HRESULT DVDDrive::init (Machine *aParent)
 {
-    LogFlowMember (("DVDDrive::init (%p)\n", parent));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
-    ComAssertRet (parent, E_INVALIDARG);
+    ComAssertRet (aParent, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
 
     mData.allocate();
 
-    setReady (true);
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -76,47 +79,63 @@ HRESULT DVDDrive::init (Machine *parent)
  *
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
+ *
+ *  @note Locks @a aThat object for reading.
  */
-HRESULT DVDDrive::init (Machine *parent, DVDDrive *that)
+HRESULT DVDDrive::init (Machine *aParent, DVDDrive *aThat)
 {
-    LogFlowMember (("DVDDrive::init (%p, %p)\n", parent, that));
+    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (parent && that, E_INVALIDARG);
+    ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    mPeer = that;
+    unconst (mParent) = aParent;
+    unconst (mPeer) = aThat;
 
-    AutoLock thatlock (that);
-    mData.share (that->mData);
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
 
-    setReady (true);
+    AutoReaderLock thatLock (aThat);
+    mData.share (aThat->mData);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
 /**
- *  Initializes the guest object given another guest object
+ *  Initializes the DVD drive object given another DVD drive object
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
+ *
+ *  @note Locks @a aThat object for reading.
  */
-HRESULT DVDDrive::initCopy (Machine *parent, DVDDrive *that)
+HRESULT DVDDrive::initCopy (Machine *aParent, DVDDrive *aThat)
 {
-    LogFlowMember (("DVDDrive::initCopy (%p, %p)\n", parent, that));
+    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (parent && that, E_INVALIDARG);
+    ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
 
-    AutoLock thatlock (that);
-    mData.attachCopy (that->mData);
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
 
-    setReady (true);
+    AutoReaderLock thatLock (aThat);
+    mData.attachCopy (aThat->mData);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -126,94 +145,112 @@ HRESULT DVDDrive::initCopy (Machine *parent, DVDDrive *that)
  */
 void DVDDrive::uninit()
 {
-    LogFlowMember (("DVDDrive::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
     mData.free();
 
-    mPeer.setNull();
-    mParent.setNull();
-
-    setReady (false);
+    unconst (mParent).setNull();
+    unconst (mParent).setNull();
 }
 
 // IDVDDrive properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP DVDDrive::COMGETTER(State) (DriveState_T *driveState)
+STDMETHODIMP DVDDrive::COMGETTER(State) (DriveState_T *aDriveState)
 {
-    if (!driveState)
+    if (!aDriveState)
         return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aDriveState = mData->mDriveState;
+
+    return S_OK;
+}
+
+STDMETHODIMP DVDDrive::COMGETTER(Passthrough) (BOOL *aPassthrough)
+{
+    if (!aPassthrough)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aPassthrough = mData->mPassthrough;
+
+    return S_OK;
+}
+
+STDMETHODIMP DVDDrive::COMSETTER(Passthrough) (BOOL aPassthrough)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
     AutoLock alock (this);
-    CHECK_READY();
 
-    *driveState = mData->mDriveState;
-    return S_OK;
-}
-
-STDMETHODIMP DVDDrive::COMGETTER(Passthrough) (BOOL *passthrough)
-{
-    if (!passthrough)
-        return E_POINTER;
-
-    AutoLock alock(this);
-    CHECK_READY();
-
-    *passthrough = mData->mPassthrough;
-    return S_OK;
-}
-
-STDMETHODIMP DVDDrive::COMSETTER(Passthrough) (BOOL passthrough)
-{
-    AutoLock alock(this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent);
-
-    if (mData->mPassthrough != passthrough)
+    if (mData->mPassthrough != aPassthrough)
     {
         mData.backup();
-        mData->mPassthrough = passthrough;
+        mData->mPassthrough = aPassthrough;
     }
+
     return S_OK;
 }
 
 // IDVDDrive methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP DVDDrive::MountImage(INPTR GUIDPARAM imageId)
+STDMETHODIMP DVDDrive::MountImage (INPTR GUIDPARAM aImageId)
 {
-    if (Guid::isEmpty(imageId))
+    if (Guid::isEmpty (aImageId))
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     HRESULT rc = E_FAIL;
 
-    // find the image in the collection
-    ComPtr <IVirtualBox> vbox;
-    rc = mParent->COMGETTER(Parent) (vbox.asOutParam());
-    AssertComRCReturn (rc, rc);
+    /* Our lifetime is bound to mParent's lifetime, so we don't add caller.
+     * We also don't lock mParent since its mParent field is const. */
 
     ComPtr <IDVDImage> image;
-    rc = vbox->GetDVDImage (imageId, image.asOutParam());
+    rc = mParent->virtualBox()->GetDVDImage (aImageId, image.asOutParam());
+
     if (SUCCEEDED (rc))
     {
         if (mData->mDriveState != DriveState_ImageMounted ||
             !mData->mDVDImage.equalsTo (image))
         {
             mData.backup();
+
             unmount();
+
             mData->mDVDImage = image;
             mData->mDriveState = DriveState_ImageMounted;
 
+            /* leave the lock before informing callbacks*/
             alock.unlock();
+
             mParent->onDVDDriveChange();
         }
     }
@@ -221,25 +258,33 @@ STDMETHODIMP DVDDrive::MountImage(INPTR GUIDPARAM imageId)
     return rc;
 }
 
-STDMETHODIMP DVDDrive::CaptureHostDrive(IHostDVDDrive *hostDVDDrive)
+STDMETHODIMP DVDDrive::CaptureHostDrive (IHostDVDDrive *aHostDVDDrive)
 {
-    if (!hostDVDDrive)
+    if (!aHostDVDDrive)
         return E_INVALIDARG;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     if (mData->mDriveState != DriveState_HostDriveCaptured ||
-        !mData->mHostDrive.equalsTo (hostDVDDrive))
+        !mData->mHostDrive.equalsTo (aHostDVDDrive))
     {
         mData.backup();
+
         unmount();
-        mData->mHostDrive = hostDVDDrive;
+
+        mData->mHostDrive = aHostDVDDrive;
         mData->mDriveState = DriveState_HostDriveCaptured;
 
+        /* leave the lock before informing callbacks*/
         alock.unlock();
+
         mParent->onDVDDriveChange();
     }
 
@@ -248,61 +293,82 @@ STDMETHODIMP DVDDrive::CaptureHostDrive(IHostDVDDrive *hostDVDDrive)
 
 STDMETHODIMP DVDDrive::Unmount()
 {
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     if (mData->mDriveState != DriveState_NotMounted)
     {
         mData.backup();
+
         unmount();
+
         mData->mDriveState = DriveState_NotMounted;
 
+        /* leave the lock before informing callbacks*/
         alock.unlock();
+
         mParent->onDVDDriveChange();
     }
 
     return S_OK;
 }
 
-STDMETHODIMP DVDDrive::GetImage(IDVDImage **dvdImage)
+STDMETHODIMP DVDDrive::GetImage (IDVDImage **aDVDImage)
 {
-    if (!dvdImage)
+    if (!aDVDImage)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mData->mDVDImage.queryInterfaceTo (dvdImage);
+    AutoReaderLock alock (this);
+
+    mData->mDVDImage.queryInterfaceTo (aDVDImage);
+
     return S_OK;
 }
 
-STDMETHODIMP DVDDrive::GetHostDrive(IHostDVDDrive **hostDrive)
+STDMETHODIMP DVDDrive::GetHostDrive(IHostDVDDrive **aHostDrive)
 {
-    if (!hostDrive)
+    if (!aHostDrive)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mData->mHostDrive.queryInterfaceTo (hostDrive);
+    AutoReaderLock alock (this);
+
+    mData->mHostDrive.queryInterfaceTo (aHostDrive);
+
     return S_OK;
 }
 
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
+/** 
+ *  @note Locks this object for writing.
+ */
 bool DVDDrive::rollback()
 {
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
     AutoLock alock (this);
 
     bool changed = false;
 
     if (mData.isBackedUp())
     {
-        // we need to check all data to see whether anything will be changed
-        // after rollback
+        /* we need to check all data to see whether anything will be changed
+         * after rollback */
         changed = mData.hasActualChanges();
         mData.rollback();
     }
@@ -310,26 +376,52 @@ bool DVDDrive::rollback()
     return changed;
 }
 
+/** 
+ *  @note Locks this object for writing, together with the peer object (also
+ *  for writing) if there is one.
+ */
 void DVDDrive::commit()
 {
-    AutoLock alock (this);
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* lock both for writing since we modify both */
+    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeWlock (mPeer));
+
     if (mData.isBackedUp())
     {
         mData.commit();
         if (mPeer)
         {
-            // attach new data to the peer and reshare it
-            AutoLock peerlock (mPeer);
+            /* attach new data to the peer and reshare it */
             mPeer->mData.attach (mData);
         }
     }
 }
 
+/** 
+ *  @note Locks this object for writing, together with the peer object (locked
+ *  for reading) if there is one.
+ */
 void DVDDrive::copyFrom (DVDDrive *aThat)
 {
-    AutoLock alock (this);
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
 
-    // this will back up current data
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* peer is not modified, lock it for reading */
+    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeRlock (mPeer));
+
+    /* this will back up current data */
     mData.assignCopy (aThat->mData);
 }
 
@@ -337,16 +429,19 @@ void DVDDrive::copyFrom (DVDDrive *aThat)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Helper to unmount a drive
+ *  Helper to unmount a drive.
  *
- * @returns COM status code
+ *  @return COM status code
  *
  */
 HRESULT DVDDrive::unmount()
 {
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
     if (mData->mDVDImage)
         mData->mDVDImage.setNull();
     if (mData->mHostDrive)
         mData->mHostDrive.setNull();
+
     return S_OK;
 }
