@@ -723,7 +723,7 @@ static void vboxClipboardTargetsProc(Widget, XtPointer, Atom * /* selection */, 
     static int cCalls = 0;
     Atom *atomTargets = reinterpret_cast<Atom *>(pValue);
     /* The number of format atoms the clipboard holder is offering us */
-    unsigned cAtoms = (*pcLen) * (*piFormat) / sizeof(Atom) / 8;
+    unsigned cAtoms = *pcLen;
     /* The best clipboard format we have found so far */
     g_eClipboardFormats eBestTarget = INVALID;
     /* The atom corresponding to our best clipboard format found */
@@ -768,7 +768,6 @@ static void vboxClipboardTargetsProc(Widget, XtPointer, Atom * /* selection */, 
         }
 #endif
     }
-    XtFree(reinterpret_cast<char *>(pValue));
     g_ctx.atomGuestTextFormat = atomBestTarget;
     /* If the available formats as seen by the host have changed, or if we suspect that
        the host has cached the clipboard data (which can change without our noticing it),
@@ -780,27 +779,31 @@ static void vboxClipboardTargetsProc(Widget, XtPointer, Atom * /* selection */, 
         if (atomBestTarget != None)
         {
             char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomBestTarget);
-            Log2 (("vboxClipboardTargetsProc: switching to guest text target %s\n", szAtomName));
+            Log2 (("vboxClipboardTargetsProc: switching to guest text target %s.  Available targets are:\n",
+                   szAtomName));
             XFree(szAtomName);
         }
         else
         {
-            Log2(("vboxClipboardTargetsProc: no supported host text target found.\n"));
+            Log2(("vboxClipboardTargetsProc: no supported host text target found.  Available targets are:\n"));
+        }
+        for (unsigned i = 0; i < cAtoms; ++i)
+        {
+            char *szAtomName = XGetAtomName(XtDisplay(g_ctx.widget), atomTargets[i]);
+            if (szAtomName != 0)
+            {
+                Log2 (("vboxClipboardTargetsProc:     %s\n", szAtomName));
+                XFree(szAtomName);
+            }
         }
 #endif
         g_ctx.guestTextFormat = eBestTarget;
-        /* We fall back to compound text if no recognized formats are found.  This seems (?)
-           to violate the ICCCM, but some applications seem to expect it. */
-        // if (eBestTarget != INVALID)
+        if (eBestTarget != INVALID)
             u32Formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
-        if (eBestTarget == INVALID)
-        {
-            g_ctx.atomGuestTextFormat = g_ctx.atomCText;
-            g_ctx.guestTextFormat = CTEXT;
-        }
         vboxClipboardReportFormats(u32Formats);
         g_ctx.notifyHost = false;
     }
+    XtFree(reinterpret_cast<char *>(pValue));
     ++cCalls;
 }
 
@@ -874,7 +877,7 @@ static Boolean vboxClipboardConvertTargets(Atom *atomTypeReturn, XtPointer *pVal
     *atomTypeReturn = XA_ATOM;
     *pValReturn = reinterpret_cast<XtPointer>(atomTargets);
     *pcLenReturn = cTargets + 3;
-    *piFormatReturn = sizeof(Atom) * 8;
+    *piFormatReturn = 32;
     LogFlowFunc(("returning true\n"));
     return true;
 }
