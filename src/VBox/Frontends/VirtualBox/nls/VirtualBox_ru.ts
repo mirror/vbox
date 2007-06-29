@@ -2210,7 +2210,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите убрать из системы (дерегистрировать) недоступную виртуальную машину &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Вы не сможете зарегистрировать ее вновь средствами графического интерфейса.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите удалить недоступную виртуальную машину &lt;b&gt;%1&lt;/b&gt; из списка зарегистрированных машин?&lt;/p&gt;&lt;p&gt;Вы не сможете зарегистрировать ее вновь средствами графического интерфейса.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
@@ -2226,7 +2226,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Хотите ли Вы удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Нет&lt;/b&gt;, то виртуальный жесткий диск будет удален из системы (дерегистрирован) и исчезнет из списка, но файл образа останется на физическом жестком диске.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Да&lt;/b&gt;, то файл образа будет физически удален после дерегистрации жесткого диска. Эту операцию отменить нельзя.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Нет&lt;/b&gt;, то виртуальный жесткий диск будет удален из списка зарегистрированных носителей, но файл образа останется на физическом жестком диске (и сможет быть впоследствии зарегистрирован вновь).&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Да&lt;/b&gt;, то файл образа будет физически удален после удаления виртуального жесткого диска из списка. Эту операцию отменить нельзя.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2234,7 +2234,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Хотите ли Вы удалить (дерегистрировать) виртуальный жесткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить виртуальный жесткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка зарегистрированных носителей?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
@@ -2395,7 +2395,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>Вызванный объект: </translation>
+        <translation>Вызванный интерфейс: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
