@@ -269,6 +269,20 @@ public:
          return aLockable && belongsTo (aLockable->lockHandle());
     }
 
+    /**
+     *  Returns a tag to lock the given Lockable for reading by AutoMultiLock.
+     *  Shortcut to |aL->lockHandle()->rlock()|.
+     *  The returned tag is a no-op when @a aL is |NULL|.
+     */
+    static internal::LockableTag maybeRlock (Lockable *aL);
+
+    /**
+     *  Returns a tag to lock the given Lockable for writing by AutoMultiLock.
+     *  Shortcut to |aL->lockHandle()->wlock()|.
+     *  The returned tag is a no-op when @a aL is |NULL|.
+     */
+    static internal::LockableTag maybeWlock (Lockable *aL);
+
 private:
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoLock)
@@ -345,6 +359,18 @@ inline internal::LockableTag AutoLock::Lockable::rlock() const
 inline internal::LockableTag AutoLock::Lockable::wlock() const
 {
     return internal::LockableTag (lockHandle(), 'w');
+}
+
+/* static */
+inline internal::LockableTag AutoLock::maybeRlock (AutoLock::Lockable *aL)
+{
+    return internal::LockableTag (aL ? aL->lockHandle() : NULL, 'r');
+}
+
+/* static */
+inline internal::LockableTag AutoLock::maybeWlock (AutoLock::Lockable *aL)
+{
+    return internal::LockableTag (aL ? aL->lockHandle() : NULL, 'w');
 }
 
 /**
