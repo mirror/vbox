@@ -3163,14 +3163,14 @@ findVirtualDiskImage (const Guid *aId, const BSTR aFilePathFull,
  *  the first object that matches either of them (not necessarily both)
  *  is returned.
  *
- *  @param id
+ *  @param aId
  *      ID of the DVD image (unused when NULL)
- *  @param filePathFull
+ *  @param aFilePathFull
  *      full path to the image file (unused when NULL)
  *  @param aSetError
  *      if TRUE, the appropriate error info is set in case when the image is not
  *      found and only one search criteria (ID or file name) is specified.
- *  @param dvdImage
+ *  @param aImage
  *      where to store the found DVD image object (can be NULL)
  *
  *  @return
