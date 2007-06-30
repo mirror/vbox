@@ -174,7 +174,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         ULONG ulData = (ULONG)VERR_INTERNAL_ERROR;
         rc = KernBlock((ULONG)pEventInt,
                        cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies,
-                       BLOCK_SPINLOCK | (fInterruptible ? BLOCK_UNINTERRUPTABLE : 0),
+                       BLOCK_SPINLOCK | (!fInterruptible ? BLOCK_UNINTERRUPTABLE : 0),
                        &pEventInt->Spinlock,
                        &ulData);
         switch (rc)
