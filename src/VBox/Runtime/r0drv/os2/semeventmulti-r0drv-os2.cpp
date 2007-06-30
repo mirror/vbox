@@ -176,7 +176,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         ULONG ulData = (ULONG)VERR_INTERNAL_ERROR;
         rc = KernBlock((ULONG)pEventMultiInt,
                        cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies,
-                       BLOCK_SPINLOCK | (fInterruptible ? BLOCK_UNINTERRUPTABLE : 0),
+                       BLOCK_SPINLOCK | (!fInterruptible ? BLOCK_UNINTERRUPTABLE : 0),
                        &pEventMultiInt->Spinlock,
                        &ulData);
         switch (rc)
