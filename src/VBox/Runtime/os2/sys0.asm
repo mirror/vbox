@@ -27,6 +27,8 @@
 
 BEGINCODE
 
+global __text
+__text:
 global ___ehInit
 ___ehInit:
     db 0cch
@@ -35,3 +37,15 @@ ___ehInit:
     int3
     xor eax,eax
     ret
+
+BEGINDATA
+global __data
+__data:
+global __data_start
+__data_start:
+
+BEGINBSS
+global __bss_start
+__bss_start:
+
+
