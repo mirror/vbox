@@ -151,7 +151,6 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
     if (pThread)
         return (RTTHREAD)pThread;
     /** @todo import alien threads? */
-    AssertMsgFailed(("Thread not found\n"));
     return NULL;
 }
 
