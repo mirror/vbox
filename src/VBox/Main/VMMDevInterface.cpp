@@ -535,7 +535,6 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     {
         LogRel(("Failed to load Shared Folders service %Vrc\n", rc));
     }
-#ifdef DEBUG_sandervl
     rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedOpenGL", "VBoxSharedOpenGL");
     if (VBOX_SUCCESS(rc))
     {
@@ -545,7 +544,6 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     {
         LogRel(("Failed to load Shared OpenGL service %Vrc\n", rc));
     }
-#endif
 
     pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
 #endif /* VBOX_HGCM */
