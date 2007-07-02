@@ -321,7 +321,7 @@ void VBoxSnapshotsWgt::init()
     revertToCurSnapAction->setIconSet (VBoxGlobal::iconSetEx (
         "discard_cur_state_22px.png", "discard_cur_state_16px.png",
         "discard_cur_state_dis_22px.png", "discard_cur_state_dis_16px.png"));
-    revertToAndDiscardCurSnapAction->setIconSet (VBoxGlobal::iconSetEx (
+    discardCurSnapAndStateAction->setIconSet (VBoxGlobal::iconSetEx (
         "discard_cur_state_snapshot_22px.png", "discard_cur_state_snapshot_16px.png",
         "discard_cur_state_snapshot_dis_22px.png", "discard_cur_state_snapshot_dis_16px.png"));
     showSnapshotDetailsAction->setIconSet (VBoxGlobal::iconSetEx (
