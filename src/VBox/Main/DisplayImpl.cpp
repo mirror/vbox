@@ -1515,6 +1515,8 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColor
 //    if ((width * height * (bpp / 8)) > (vramSize * 1024 * 1024))
 //        return setError(E_FAIL, tr("Not enough VRAM for the selected video mode"));
 
+    /* Have to leave the lock because the pfnRequestDisplayChnage will call EMT.  */
+    lock.leave ();
     if (mParent->getVMMDev())
         mParent->getVMMDev()->getVMMDevPort()->pfnRequestDisplayChange(mParent->getVMMDev()->getVMMDevPort(), aWidth, aHeight, aColorDepth, aDisplay);
     return S_OK;
