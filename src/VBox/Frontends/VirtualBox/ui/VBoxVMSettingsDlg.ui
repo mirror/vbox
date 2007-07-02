@@ -2032,6 +2032,19 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <property name="margin">
                         <number>0</number>
                     </property>
+                    <widget class="QTabWidget">
+                        <property name="name">
+                            <cstring>tbwNetwork</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>1</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                    </widget>
                     <widget class="QGroupBox">
                         <property name="name">
                             <cstring>gbInterfaceList</cstring>
@@ -2983,7 +2996,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QStringList mInterfaceList;</variable>
     <variable access="private">QWidgetStack *wstUSBFilters;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
-    <variable access="private">QTabWidget* tbwNetwork;</variable>
     <variable access="private">VBoxSharedFoldersSettings* mSharedFolders;</variable>
     <variable access="private">QString warningString;</variable>
     <variable access="private">VBoxMediaComboBox *cbHDA;</variable>
