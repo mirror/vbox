@@ -26,6 +26,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/Miniport/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Display/Makefile.kmk
+include $(PATH_SUB_CURRENT)/OpenGL/Makefile.kmk
 
 #
 # Install the inf & cat.
