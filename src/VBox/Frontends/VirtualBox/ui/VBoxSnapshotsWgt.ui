@@ -111,6 +111,9 @@
             <property name="accel">
                 <string>Ctrl+Shift+D</string>
             </property>
+            <property name="statusTip">
+                <string>Discard the selected snapshot of the virtual machine</string>
+            </property>
         </action>
     </actiongroup>
     <actiongroup>
@@ -134,7 +137,10 @@
                 <string>Take &amp;Snapshot</string>
             </property>
             <property name="accel">
-                <string>Ctrl+Alt+S</string>
+                <string>Ctrl+Shift+S</string>
+            </property>
+            <property name="statusTip">
+                <string>Take a snapshot of the current virtual machine state</string>
             </property>
         </action>
         <action>
@@ -145,24 +151,30 @@
                 <string>Revert to Current Snapshot</string>
             </property>
             <property name="menuText">
-                <string>R&amp;evert to Current Snapshot</string>
+                <string>&amp;Revert to Current Snapshot</string>
             </property>
             <property name="accel">
-                <string>Ctrl+Alt+R</string>
+                <string>Ctrl+Shift+R</string>
+            </property>
+            <property name="statusTip">
+                <string>Restore the virtual machine state from the state stored in the current snapshot</string>
             </property>
         </action>
         <action>
             <property name="name">
-                <cstring>revertToAndDiscardCurSnapAction</cstring>
+                <cstring>discardCurSnapAndStateAction</cstring>
             </property>
             <property name="text">
-                <string>Revert to and Discard Current Snapshot</string>
+                <string>Discard Current Snapshot and State</string>
             </property>
             <property name="menuText">
-                <string>R&amp;evert to and Discard Current Snapshot</string>
+                <string>D&amp;iscard Current Snapshot and State</string>
             </property>
             <property name="accel">
-                <string>Ctrl+Alt+Shift+R</string>
+                <string>Ctrl+Shift+B</string>
+            </property>
+            <property name="statusTip">
+                <string>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</string>
             </property>
         </action>
     </actiongroup>
@@ -178,6 +190,9 @@
         </property>
         <property name="accel">
             <string>Space</string>
+        </property>
+        <property name="statusTip">
+            <string>Show details of the selected snapshot</string>
         </property>
     </action>
 </actions>
@@ -213,7 +228,7 @@
         <slot>discardCurState()</slot>
     </connection>
     <connection>
-        <sender>revertToAndDiscardCurSnapAction</sender>
+        <sender>discardCurSnapAndStateAction</sender>
         <signal>activated()</signal>
         <receiver>VBoxSnapshotsWgt</receiver>
         <slot>discardCurSnapAndState()</slot>
