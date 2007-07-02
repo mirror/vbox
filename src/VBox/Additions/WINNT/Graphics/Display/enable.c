@@ -158,9 +158,6 @@ DRVFN gadrvfn_nt5[] = {
 //     {   0x4f,                           (PFN) DrvReconnect          },	// 0x4f
 //     {   0x50,                           (PFN) DrvShadowConnect      },	// 0x50
 //     {   0x51,                           (PFN) DrvShadowDisconnect   },	// 0x51
-//     {   0x3d,                           (PFN) DrvDDInit             },	// 0x3d
-//     {   0x3b,                           (PFN) DrvGetDirectDrawInfo  },	// 0x3b
-//     {   0x3c,                           (PFN) DrvEnableDirectDraw   },	// 0x3c
     
 };
 
