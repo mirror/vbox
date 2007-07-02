@@ -2284,22 +2284,26 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
 #  if RT_INLINE_ASM_GNU_STYLE
 #   if defined(PIC) || defined(__DARWIN__) /* darwin: 4.0.1 compiler option / bug? */
     uint32_t u32 = (uint32_t)u64New;
-    __asm__ __volatile__("xchgl %%ebx, %3\n\t"
-                         "lock; cmpxchg8b (%5)\n\t"
+    uint32_t u32Spill;
+    __asm__ __volatile__("xchgl %%ebx, %4\n\t"
+                         "lock; cmpxchg8b (%6)\n\t"
                          "setz  %%al\n\t"
-                         "xchgl %%ebx, %3\n\t"
+                         "xchgl %%ebx, %4\n\t"
                          "movzx %%al, %%eax\n\t"
                          : "=a" (u32Ret),
+                           "=d" (u32Spill),
                            "=m" (*pu64)
                          : "A" (u64Old),
                            "m" ( u32 ),
                            "c" ( (uint32_t)(u64New >> 32) ),
                            "S" (pu64) );
 #   else /* !PIC */
-    __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
+    uint32_t u32Spill;
+    __asm__ __volatile__("lock; cmpxchg8b %2\n\t"
                          "setz  %%al\n\t"
                          "movzx %%al, %%eax\n\t"
                          : "=a" (u32Ret),
+                           "=d" (u32Spill),
                            "=m" (*pu64)
                          : "A" (u64Old),
                            "b" ( (uint32_t)u64New ),
@@ -2955,7 +2959,7 @@ DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint3
                          "movl %%esi,%%eax \n\t" /* eax = u64Lo.lo */
                          "divl %%ecx       \n\t" /* u64Result.lo */
                          "movl %%edi,%%edx \n\t" /* u64Result.hi */
-                         : "=A"(u64Result),
+                         : "=A"(u64Result), "=c"(u32Dummy),
                            "=S"(u32Dummy), "=D"(u32Dummy)
                          : "a"((uint32_t)u64A),
                            "S"((uint32_t)(u64A >> 32)),
