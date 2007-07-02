@@ -217,7 +217,7 @@ struct CPINFO
     RTUNICP     SimpleUpperCaseMapping;
     RTUNICP     SimpleLowerCaseMapping;
     RTUNICP     SimpleTitleCaseMapping;
-    const char  *pszName;
+    const char *pszName;
     /** Set if this is an unused entry */
     unsigned    fNullEntry : 1;
 
