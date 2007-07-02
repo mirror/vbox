@@ -280,7 +280,7 @@ public:
 
     void fixTabStops()
     {
-        /* Fixing focus order for BootItemsList */
+        /* fix focus order for BootItemsList */
         setTabOrder (mBootTable, mBtnUp);
         setTabOrder (mBtnUp, mBtnDown);
     }
@@ -704,15 +704,11 @@ void VBoxVMSettingsDlg::init()
                          "to the host audio card."));
 
     /* Network Page */
+
 #ifndef Q_WS_WIN
     gbInterfaceList->setHidden (true);
 #endif
-
     /* setup tab widget */
-    QVBoxLayout* pageNetworkLayout = static_cast<QVBoxLayout*> (pageNetwork->layout());
-    tbwNetwork = new QTabWidget (pageNetwork, "tbwNetwork");
-    pageNetworkLayout->insertWidget (0, tbwNetwork);
-    tbwNetwork->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
     mNoInterfaces = tr ("<No suitable interfaces>");
     /* setup iconsets */
     pbHostAdd->setIconSet (VBoxGlobal::iconSet ("add_host_iface_16px.png",
@@ -2125,6 +2121,17 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
 
     page->setValidator (wval);
     page->revalidate();
+
+#ifdef Q_WS_WIN
+
+    /* fix focus order (make sure the Host Interface list UI goes after the
+     * last network adapter UI item) */
+
+    setTabOrder (page->chbCableConnected, lbHostInterface);
+    setTabOrder (lbHostInterface, pbHostAdd);
+    setTabOrder (pbHostAdd, pbHostRemove);
+
+#endif
 }
 
 void VBoxVMSettingsDlg::slRAM_valueChanged( int val )
