@@ -63,7 +63,7 @@ RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode)
         return rc;
 
     /*
-     * Iterate the path components making sure each of the exist.
+     * Iterate the path components making sure each of them exists.
      */
     /* skip volume name */
     char *psz = &szAbsPath[rtPathVolumeSpecLen(szAbsPath)];
