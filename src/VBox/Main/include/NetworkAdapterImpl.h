@@ -28,7 +28,7 @@
 class Machine;
 
 class ATL_NO_VTABLE NetworkAdapter :
-    public VirtualBoxBase,
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <NetworkAdapter, INetworkAdapter>,
     public VirtualBoxSupportTranslation <NetworkAdapter>,
     public INetworkAdapter
@@ -85,6 +85,8 @@ public:
         Bstr mInternalNetwork;
     };
 
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (NetworkAdapter)
+
     DECLARE_NOT_AGGREGATABLE(NetworkAdapter)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -96,42 +98,44 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (NetworkAdapter)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *parent, ULONG slot);
-    HRESULT init (Machine *parent, NetworkAdapter *that);
-    HRESULT initCopy (Machine *parent, NetworkAdapter *that);
+    HRESULT init (Machine *aParent, ULONG aSlot);
+    HRESULT init (Machine *aParent, NetworkAdapter *aThat);
+    HRESULT initCopy (Machine *aParent, NetworkAdapter *aThat);
     void uninit();
 
     // INetworkAdapter properties
-    STDMETHOD(COMGETTER(AdapterType))(NetworkAdapterType_T *adapterType);
-    STDMETHOD(COMSETTER(AdapterType))(NetworkAdapterType_T adapterType);
-    STDMETHOD(COMGETTER(Slot)) (ULONG *slot);
-    STDMETHOD(COMGETTER(Enabled)) (BOOL *enabled);
-    STDMETHOD(COMSETTER(Enabled)) (BOOL enabled);
-    STDMETHOD(COMGETTER(MACAddress))(BSTR *macAddress);
-    STDMETHOD(COMSETTER(MACAddress))(INPTR BSTR macAddress);
-    STDMETHOD(COMGETTER(AttachmentType))(NetworkAttachmentType_T *attachmentType);
-    STDMETHOD(COMGETTER(HostInterface))(BSTR *hostInterface);
-    STDMETHOD(COMSETTER(HostInterface))(INPTR BSTR hostInterface);
+    STDMETHOD(COMGETTER(AdapterType))(NetworkAdapterType_T *aAdapterType);
+    STDMETHOD(COMSETTER(AdapterType))(NetworkAdapterType_T aAdapterType);
+    STDMETHOD(COMGETTER(Slot)) (ULONG *aSlot);
+    STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(MACAddress)) (BSTR *aMACAddress);
+    STDMETHOD(COMSETTER(MACAddress)) (INPTR BSTR aMACAddress);
+    STDMETHOD(COMGETTER(AttachmentType)) (NetworkAttachmentType_T *aAttachmentType);
+    STDMETHOD(COMGETTER(HostInterface)) (BSTR *aHostInterface);
+    STDMETHOD(COMSETTER(HostInterface)) (INPTR BSTR aHostInterface);
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    STDMETHOD(COMGETTER(TAPFileDescriptor))(LONG *tapFileDescriptor);
-    STDMETHOD(COMSETTER(TAPFileDescriptor))(LONG tapFileDescriptor);
-    STDMETHOD(COMGETTER(TAPSetupApplication))(BSTR *tapSetupApplication);
-    STDMETHOD(COMSETTER(TAPSetupApplication))(INPTR BSTR tapSetupApplication);
-    STDMETHOD(COMGETTER(TAPTerminateApplication))(BSTR *tapTerminateApplication);
-    STDMETHOD(COMSETTER(TAPTerminateApplication))(INPTR BSTR tapTerminateApplication);
+    STDMETHOD(COMGETTER(TAPFileDescriptor)) (LONG *aTAPFileDescriptor);
+    STDMETHOD(COMSETTER(TAPFileDescriptor)) (LONG aTAPFileDescriptor);
+    STDMETHOD(COMGETTER(TAPSetupApplication)) (BSTR *aTAPSetupApplication);
+    STDMETHOD(COMSETTER(TAPSetupApplication)) (INPTR BSTR aTAPSetupApplication);
+    STDMETHOD(COMGETTER(TAPTerminateApplication)) (BSTR *aTAPTerminateApplication);
+    STDMETHOD(COMSETTER(TAPTerminateApplication)) (INPTR BSTR aTAPTerminateApplication);
 #endif
-    STDMETHOD(COMGETTER(InternalNetwork))(BSTR *internalNetwork);
-    STDMETHOD(COMSETTER(InternalNetwork))(INPTR BSTR internalNetwork);
-    STDMETHOD(COMGETTER(CableConnected))(BOOL *connected);
-    STDMETHOD(COMSETTER(CableConnected))(BOOL connected);
-    STDMETHOD(COMGETTER(TraceEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(TraceEnabled))(BOOL enabled);
-    STDMETHOD(COMGETTER(TraceFile))(BSTR *traceFile);
-    STDMETHOD(COMSETTER(TraceFile))(INPTR BSTR traceFile);
+    STDMETHOD(COMGETTER(InternalNetwork)) (BSTR *aInternalNetwork);
+    STDMETHOD(COMSETTER(InternalNetwork)) (INPTR BSTR aInternalNetwork);
+    STDMETHOD(COMGETTER(CableConnected)) (BOOL *aConnected);
+    STDMETHOD(COMSETTER(CableConnected)) (BOOL aConnected);
+    STDMETHOD(COMGETTER(TraceEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(TraceEnabled)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(TraceFile)) (BSTR *aTraceFile);
+    STDMETHOD(COMSETTER(TraceFile)) (INPTR BSTR aTraceFile);
 
     // INetworkAdapter methods
     STDMETHOD(AttachToNAT)();
@@ -141,13 +145,16 @@ public:
 
     // public methods only for internal purposes
 
-    const Backupable <Data> &data() const { return mData; }
-
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
     bool rollback();
     void commit();
     void copyFrom (NetworkAdapter *aThat);
+
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
+
+    const Backupable <Data> &data() const { return mData; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"NetworkAdapter"; }
@@ -157,8 +164,9 @@ private:
     void detach();
     void generateMACAddress();
 
-    ComObjPtr <Machine, ComWeakRef> mParent;
-    ComObjPtr <NetworkAdapter> mPeer;
+    const ComObjPtr <Machine, ComWeakRef> mParent;
+    const ComObjPtr <NetworkAdapter> mPeer;
+
     Backupable <Data> mData;
 };
 

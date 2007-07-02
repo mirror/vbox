@@ -23,8 +23,12 @@
 #include "MachineImpl.h"
 #include "Logging.h"
 
+#include <iprt/cpputils.h>
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
+
+DEFINE_EMPTY_CTOR_DTOR (AudioAdapter)
 
 HRESULT AudioAdapter::FinalConstruct()
 {
@@ -33,33 +37,35 @@ HRESULT AudioAdapter::FinalConstruct()
 
 void AudioAdapter::FinalRelease()
 {
-    if (isReady())
-        uninit ();
+    uninit ();
 }
 
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the audio adapter object.
+ *  Initializes the audio adapter object.
  *
- * @returns COM result indicator
+ *  @param aParent  Handle of the parent object.
  */
-HRESULT AudioAdapter::init (Machine *parent)
+HRESULT AudioAdapter::init (Machine *aParent)
 {
-    LogFlowMember (("AudioAdapter::init (%p)\n", parent));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
-    ComAssertRet (parent, E_INVALIDARG);
+    ComAssertRet (aParent, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
 
     mData.allocate();
 
-    setReady (true);
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -70,23 +76,31 @@ HRESULT AudioAdapter::init (Machine *parent)
  *
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
+ *
+ *  @note Locks @a aThat object for reading.
  */
-HRESULT AudioAdapter::init (Machine *parent, AudioAdapter *that)
+HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
 {
-    LogFlowMember (("AudioAdapter::init (%p, %p)\n", parent, that));
+    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (parent && that, E_INVALIDARG);
+    ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    mPeer = that;
+    unconst (mParent) = aParent;
+    unconst (mPeer) = aThat;
 
-    AutoLock thatlock (that);
-    mData.share (that->mData);
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
 
-    setReady (true);
+    AutoReaderLock thatLock (aThat);
+    mData.share (aThat->mData);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -94,23 +108,31 @@ HRESULT AudioAdapter::init (Machine *parent, AudioAdapter *that)
  *  Initializes the guest object given another guest object
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
+ *
+ *  @note Locks @a aThat object for reading.
  */
-HRESULT AudioAdapter::initCopy (Machine *parent, AudioAdapter *that)
+HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
 {
-    LogFlowMember (("AudioAdapter::initCopy (%p, %p)\n", parent, that));
+    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (parent && that, E_INVALIDARG);
+    ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
 
-    AutoLock thatlock (that);
-    mData.attachCopy (that->mData);
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
 
-    setReady (true);
+    AutoReaderLock thatLock (aThat);
+    mData.attachCopy (aThat->mData);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -120,101 +142,91 @@ HRESULT AudioAdapter::initCopy (Machine *parent, AudioAdapter *that)
  */
 void AudioAdapter::uninit()
 {
-    LogFlowMember (("AudioAdapter::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
     mData.free();
 
-    mPeer.setNull();
-    mParent.setNull();
-
-    setReady(false);
+    unconst (mPeer).setNull();
+    unconst (mParent).setNull();
 }
 
 // IAudioAdapter properties
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Returns the enabled status
- *
- * @returns COM status code
- * @param enabled address of result variable
- */
-STDMETHODIMP AudioAdapter::COMGETTER(Enabled)(BOOL *enabled)
+STDMETHODIMP AudioAdapter::COMGETTER(Enabled)(BOOL *aEnabled)
 {
-    if (!enabled)
+    if (!aEnabled)
         return E_POINTER;
 
-    AutoLock lock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *enabled = mData->mEnabled;
+    AutoReaderLock alock (this);
+
+    *aEnabled = mData->mEnabled;
+
     return S_OK;
 }
 
-/**
- * Sets the enabled state
- *
- * @returns COM status code
- * @param enabled address of result variable
- */
-STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL enabled)
+STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL aEnabled)
 {
-    AutoLock lock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (mData->mEnabled != enabled)
+    AutoLock alock (this);
+
+    if (mData->mEnabled != aEnabled)
     {
         mData.backup();
-        mData->mEnabled = enabled;
+        mData->mEnabled = aEnabled;
     }
 
     return S_OK;
 }
 
-/**
- * Returns the current audio driver type
- *
- * @returns COM status code
- * @param audioDriver address of result variable
- */
-STDMETHODIMP AudioAdapter::COMGETTER(AudioDriver)(AudioDriverType_T *audioDriver)
+STDMETHODIMP AudioAdapter::COMGETTER(AudioDriver)(AudioDriverType_T *aAudioDriver)
 {
-    if (!audioDriver)
+    if (!aAudioDriver)
         return E_POINTER;
 
-    AutoLock lock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *audioDriver = mData->mAudioDriver;
+    AutoReaderLock alock (this);
+
+    *aAudioDriver = mData->mAudioDriver;
+
     return S_OK;
 }
 
-/**
- * Sets the audio driver type
- *
- * @returns COM status code
- * @param audioDriver audio driver type to use
- */
-STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T audioDriver)
+STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver)
 {
-    AutoLock lock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     HRESULT rc = S_OK;
 
-    if (mData->mAudioDriver != audioDriver)
+    if (mData->mAudioDriver != aAudioDriver)
     {
         /*
          * which audio driver type are we supposed to use?
          */
-        switch (audioDriver)
+        switch (aAudioDriver)
         {
             case AudioDriverType_NullAudioDriver:
 #ifdef __WIN__
@@ -237,13 +249,14 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T audioDriver)
 #endif 
             {
                 mData.backup();
-                mData->mAudioDriver = audioDriver;
+                mData->mAudioDriver = aAudioDriver;
                 break;
             }
 
             default:
             {
-                Log(("wrong audio driver type specified!\n"));
+                AssertMsgFailed (("Wrong audio driver type %d\n",
+                                  aAudioDriver));
                 rc = E_FAIL;
             }
         }
@@ -258,26 +271,77 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T audioDriver)
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
+/** 
+ *  @note Locks this object for writing.
+ */
+bool AudioAdapter::rollback()
+{
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
+    AutoLock alock (this);
+
+    bool changed = false;
+
+    if (mData.isBackedUp())
+    {
+        /* we need to check all data to see whether anything will be changed
+         * after rollback */
+        changed = mData.hasActualChanges();
+        mData.rollback();
+    }
+
+    return changed;
+}
+
+/** 
+ *  @note Locks this object for writing, together with the peer object (also
+ *  for writing) if there is one.
+ */
 void AudioAdapter::commit()
 {
-    AutoLock alock (this);
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* lock both for writing since we modify both */
+    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeWlock (mPeer));
+
     if (mData.isBackedUp())
     {
         mData.commit();
         if (mPeer)
         {
-            // attach new data to the peer and reshare it
-            AutoLock peerlock (mPeer);
+            /* attach new data to the peer and reshare it */
             mPeer->mData.attach (mData);
         }
     }
 }
 
+/** 
+ *  @note Locks this object for writing, together with the peer object
+ *  represented by @a aThat (locked for reading).
+ */
 void AudioAdapter::copyFrom (AudioAdapter *aThat)
 {
-    AutoLock alock (this);
+    AssertReturnVoid (aThat != NULL);
 
-    // this will back up current data
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* peer is not modified, lock it for reading */
+    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
+
+    /* this will back up current data */
     mData.assignCopy (aThat->mData);
 }
-

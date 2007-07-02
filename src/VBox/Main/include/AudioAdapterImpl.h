@@ -27,9 +27,9 @@
 class Machine;
 
 class ATL_NO_VTABLE AudioAdapter :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <AudioAdapter, IAudioAdapter>,
     public VirtualBoxSupportTranslation <AudioAdapter>,
-    public VirtualBoxBase,
     public IAudioAdapter
 {
 public:
@@ -52,6 +52,8 @@ public:
         AudioDriverType_T mAudioDriver;
     };
 
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (AudioAdapter)
+
     DECLARE_NOT_AGGREGATABLE(AudioAdapter)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -63,37 +65,43 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (AudioAdapter)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *parent);
-    HRESULT init (Machine *parent, AudioAdapter *that);
-    HRESULT initCopy (Machine *parent, AudioAdapter *that);
+    HRESULT init (Machine *aParent);
+    HRESULT init (Machine *aParent, AudioAdapter *aThat);
+    HRESULT initCopy (Machine *aParent, AudioAdapter *aThat);
     void uninit();
 
-    STDMETHOD(COMGETTER(Enabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(Enabled))(BOOL enabled);
-    STDMETHOD(COMGETTER(AudioDriver)) (AudioDriverType_T *audioDriverType);
-    STDMETHOD(COMSETTER(AudioDriver)) (AudioDriverType_T audioDriverType);
+    STDMETHOD(COMGETTER(Enabled))(BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Enabled))(BOOL aEnabled);
+    STDMETHOD(COMGETTER(AudioDriver)) (AudioDriverType_T *aAudioDriverType);
+    STDMETHOD(COMSETTER(AudioDriver)) (AudioDriverType_T aAudioDriverType);
 
     // public methods only for internal purposes
 
-    const Backupable <Data> &data() const { return mData; }
-
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
-    void rollback() { AutoLock alock (this); mData.rollback(); }
+    bool rollback();
     void commit();
     void copyFrom (AudioAdapter *aThat);
+
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
+
+    const Backupable <Data> &data() const { return mData; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"AudioAdapter"; }
 
 private:
 
-    ComObjPtr <Machine, ComWeakRef> mParent;
-    ComObjPtr <AudioAdapter> mPeer;
+    const ComObjPtr <Machine, ComWeakRef> mParent;
+    const ComObjPtr <AudioAdapter> mPeer;
+
     Backupable <Data> mData;
 };
 

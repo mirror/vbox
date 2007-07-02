@@ -23,14 +23,15 @@
 #include "Logging.h"
 #include "MachineImpl.h"
 
-#include <VBox/err.h>
 #include <iprt/string.h>
+#include <iprt/cpputils.h>
 
-// defines
-////////////////////////////////////////////////////////////////////////////////
+#include <VBox/err.h>
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
+
+DEFINE_EMPTY_CTOR_DTOR (NetworkAdapter)
 
 HRESULT NetworkAdapter::FinalConstruct()
 {
@@ -39,46 +40,47 @@ HRESULT NetworkAdapter::FinalConstruct()
 
 void NetworkAdapter::FinalRelease()
 {
-    if (isReady())
-        uninit ();
+    uninit ();
 }
 
 // public initializer/uninitializer for internal purposes only
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the network adapter object.
+ *  Initializes the network adapter object.
  *
- * @param   parent  handle of our parent object
- * @return  COM result indicator
+ *  @param aParent  Handle of the parent object.
  */
-HRESULT NetworkAdapter::init (Machine *parent, ULONG slot)
+HRESULT NetworkAdapter::init (Machine *aParent, ULONG aSlot)
 {
-    LogFlowMember (("NetworkAdapter::init (%p): slot=%d\n", parent, slot));
+    LogFlowThisFunc (("aParent=%p, aSlot=%d\n", aParent, aSlot));
 
-    ComAssertRet (parent, E_INVALIDARG);
-    ComAssertRet (slot < SchemaDefs::NetworkAdapterCount, E_INVALIDARG);
+    ComAssertRet (aParent, E_INVALIDARG);
+    ComAssertRet (aSlot < SchemaDefs::NetworkAdapterCount, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
 
     mData.allocate();
 
-    // initialize data
-    mData->mSlot = slot;
+    /* initialize data */
+    mData->mSlot = aSlot;
 
-    // default to Am79C973
+    /* default to Am79C973 */
     mData->mAdapterType = NetworkAdapterType_NetworkAdapterAm79C973;
 
-    // generate the MAC address early to guarantee it is the same both after
-    // changing some other property (i.e. after mData.backup()) and after the
-    // subsequent mData.rollback().
+    /* generate the MAC address early to guarantee it is the same both after
+     * changing some other property (i.e. after mData.backup()) and after the
+     * subsequent mData.rollback(). */
     generateMACAddress();
 
-    setReady (true);
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -89,23 +91,31 @@ HRESULT NetworkAdapter::init (Machine *parent, ULONG slot)
  *
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
+ *
+ *  @note Locks @a aThat object for reading.
  */
-HRESULT NetworkAdapter::init (Machine *parent, NetworkAdapter *that)
+HRESULT NetworkAdapter::init (Machine *aParent, NetworkAdapter *aThat)
 {
-    LogFlowMember (("NetworkAdapter::init (%p, %p)\n", parent, that));
+    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (parent && that, E_INVALIDARG);
+    ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    mPeer = that;
+    unconst (mParent) = aParent;
+    unconst (mPeer) = aThat;
 
-    AutoLock thatlock (that);
-    mData.share (that->mData);
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
 
-    setReady (true);
+    AutoReaderLock thatLock (aThat);
+    mData.share (aThat->mData);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -113,23 +123,31 @@ HRESULT NetworkAdapter::init (Machine *parent, NetworkAdapter *that)
  *  Initializes the guest object given another guest object
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
+ *
+ *  @note Locks @a aThat object for reading.
  */
-HRESULT NetworkAdapter::initCopy (Machine *parent, NetworkAdapter *that)
+HRESULT NetworkAdapter::initCopy (Machine *aParent, NetworkAdapter *aThat)
 {
-    LogFlowMember (("NetworkAdapter::initCopy (%p, %p)\n", parent, that));
+    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (parent && that, E_INVALIDARG);
+    ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
 
-    AutoLock thatlock (that);
-    mData.attachCopy (that->mData);
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
 
-    setReady (true);
+    AutoReaderLock thatLock (aThat);
+    mData.attachCopy (aThat->mData);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -139,142 +157,156 @@ HRESULT NetworkAdapter::initCopy (Machine *parent, NetworkAdapter *that)
  */
 void NetworkAdapter::uninit()
 {
-    LogFlowMember (("INetworkAdapter::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
     mData.free();
 
-    mPeer.setNull();
-    mParent.setNull();
-
-    setReady (false);
+    unconst (mPeer).setNull();
+    unconst (mParent).setNull();
 }
 
 // INetworkAdapter properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP NetworkAdapter::COMGETTER(AdapterType) (NetworkAdapterType_T *adapterType)
+STDMETHODIMP NetworkAdapter::COMGETTER(AdapterType) (NetworkAdapterType_T *aAdapterType)
 {
-    if (!adapterType)
+    if (!aAdapterType)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *adapterType = mData->mAdapterType;
+    AutoReaderLock alock (this);
+
+    *aAdapterType = mData->mAdapterType;
+
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T adapterType)
+STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapterType)
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     /* make sure the value is allowed */
-    switch (adapterType)
+    switch (aAdapterType)
     {
         case NetworkAdapterType_NetworkAdapterAm79C970A:
         case NetworkAdapterType_NetworkAdapterAm79C973:
             break;
         default:
-            return setError(E_FAIL, tr("Invalid network adapter type '%d'"), adapterType);
+            return setError (E_FAIL,
+                tr("Invalid network adapter type '%d'"),
+                aAdapterType);
     }
 
-    if (mData->mAdapterType != adapterType)
+    if (mData->mAdapterType != aAdapterType)
     {
         mData.backup();
-        mData->mAdapterType = adapterType;
+        mData->mAdapterType = aAdapterType;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMGETTER(Slot) (ULONG *slot)
+STDMETHODIMP NetworkAdapter::COMGETTER(Slot) (ULONG *aSlot)
 {
-    if (!slot)
+    if (!aSlot)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *slot = mData->mSlot;
+    AutoReaderLock alock (this);
+
+    *aSlot = mData->mSlot;
+
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMGETTER(Enabled) (BOOL *enabled)
+STDMETHODIMP NetworkAdapter::COMGETTER(Enabled) (BOOL *aEnabled)
 {
-    if (!enabled)
+    if (!aEnabled)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *enabled = mData->mEnabled;
+    AutoReaderLock alock (this);
+
+    *aEnabled = mData->mEnabled;
+
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL enabled)
+STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (mData->mEnabled != enabled)
+    AutoLock alock (this);
+
+    if (mData->mEnabled != aEnabled)
     {
         mData.backup();
-        mData->mEnabled = enabled;
+        mData->mEnabled = aEnabled;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-/**
- * Returns the MAC address string
- *
- * @returns COM status code
- * @param macAddress address of result variable
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *macAddress)
+STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
 {
-    if (!macAddress)
+    if (!aMACAddress)
         return E_POINTER;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     ComAssertRet (!!mData->mMACAddress, E_FAIL);
 
-    mData->mMACAddress.cloneTo (macAddress);
+    mData->mMACAddress.cloneTo (aMACAddress);
 
     return S_OK;
 }
 
-/**
- * Sets the MAC address
- *
- * @returns COM status code
- * @param   macAddress 12-digit hexadecimal MAC address string with
- *                     capital letters. Can be NULL to generate a MAC
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR macAddress)
+STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
@@ -282,20 +314,21 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR macAddress)
     /*
      * Are we supposed to generate a MAC?
      */
-    if (!macAddress)
+    if (!aMACAddress)
     {
         mData.backup();
+
         generateMACAddress();
         emitChangeEvent = true;
     }
     else
     {
-        if (mData->mMACAddress != macAddress)
+        if (mData->mMACAddress != aMACAddress)
         {
             /*
              * Verify given MAC address
              */
-            Utf8Str macAddressUtf = macAddress;
+            Utf8Str macAddressUtf = aMACAddress;
             char *macAddressStr = (char*)macAddressUtf.raw();
             int i = 0;
             while ((i < 12) && macAddressStr && (rc == S_OK))
@@ -315,7 +348,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR macAddress)
             if (SUCCEEDED (rc))
             {
                 mData.backup();
-                mData->mMACAddress = macAddress;
+
+                mData->mMACAddress = aMACAddress;
                 emitChangeEvent = true;
             }
         }
@@ -323,57 +357,47 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR macAddress)
 
     if (emitChangeEvent)
     {
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         mParent->onNetworkAdapterChange (this);
     }
 
     return rc;
 }
 
-/**
- * Returns the attachment type
- *
- * @returns COM status code
- * @param   attachmentType address of result variable
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(NetworkAttachmentType_T *attachmentType)
+STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
+    NetworkAttachmentType_T *aAttachmentType)
 {
-    if (!attachmentType)
+    if (!aAttachmentType)
         return E_POINTER;
-    AutoLock alock(this);
-    CHECK_READY();
 
-    *attachmentType = mData->mAttachmentType;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aAttachmentType = mData->mAttachmentType;
 
     return S_OK;
 }
 
-/**
- * Returns the host interface the adapter is attached to
- *
- * @returns COM status code
- * @param   hostInterface address of result string
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *hostInterface)
+STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *aHostInterface)
 {
-    if (!hostInterface)
+    if (!aHostInterface)
         return E_POINTER;
-    AutoLock alock(this);
-    CHECK_READY();
 
-    mData->mHostInterface.cloneTo(hostInterface);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mData->mHostInterface.cloneTo (aHostInterface);
 
     return S_OK;
 }
 
-/**
- * Sets the host interface device name.
- *
- * @returns COM status code
- * @param   hostInterface name of the host interface device in use
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR hostInterface)
+STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
 {
     /** @todo Validate input string length. r=dmik: do it in XML schema?*/
 
@@ -381,183 +405,179 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR hostInterface)
     // we don't allow null strings for the host interface on Win32
     // (because the @name attribute of <HostInerface> must be always present,
     // but can be empty).
-    if (!hostInterface)
+    if (!aHostInterface)
         return E_INVALIDARG;
 #endif
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     // empty strings are not allowed as path names
-    if (hostInterface && !(*hostInterface))
+    if (aHostInterface && !(*aHostInterface))
         return E_INVALIDARG;
 #endif
 
-    AutoLock alock(this);
-    CHECK_READY();
+     AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (mData->mHostInterface != hostInterface)
+    AutoLock alock (this);
+
+    if (mData->mHostInterface != aHostInterface)
     {
         mData.backup();
-        mData->mHostInterface = hostInterface;
+        mData->mHostInterface = aHostInterface;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-/**
- * Returns the TAP file descriptor the adapter is attached to
- *
- * @returns COM status code
- * @param   tapFileDescriptor address of result string
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *tapFileDescriptor)
+
+STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *aTAPFileDescriptor)
 {
-    if (!tapFileDescriptor)
+    if (!aTAPFileDescriptor)
         return E_POINTER;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *tapFileDescriptor = mData->mTAPFD;
+    AutoReaderLock alock (this);
+
+    *aTAPFileDescriptor = mData->mTAPFD;
 
     return S_OK;
 }
 
-/**
- * Sets the TAP file descriptor the adapter is attached to
- *
- * @returns COM status code
- * @param   tapFileDescriptor file descriptor of existing TAP interface
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(TAPFileDescriptor)(LONG tapFileDescriptor)
+STDMETHODIMP NetworkAdapter::COMSETTER(TAPFileDescriptor)(LONG aTAPFileDescriptor)
 {
     /*
      * Validate input.
      */
-    RTFILE tapFD = tapFileDescriptor;
-    if (tapFD != NIL_RTFILE && (LONG)tapFD != tapFileDescriptor)
+    RTFILE tapFD = aTAPFileDescriptor;
+    if (tapFD != NIL_RTFILE && (LONG)tapFD != aTAPFileDescriptor)
     {
-        AssertMsgFailed(("Invalid file descriptor: %ld.\n", tapFileDescriptor));
+        AssertMsgFailed(("Invalid file descriptor: %ld.\n", aTAPFileDescriptor));
         return setError (E_INVALIDARG,
-            tr ("Invalid file descriptor: %ld"), tapFileDescriptor);
+            tr ("Invalid file descriptor: %ld"), aTAPFileDescriptor);
     }
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (mData->mTAPFD != (RTFILE) tapFileDescriptor)
+    AutoLock alock (this);
+
+    if (mData->mTAPFD != (RTFILE) aTAPFileDescriptor)
     {
         mData.backup();
-        mData->mTAPFD = tapFileDescriptor;
+        mData->mTAPFD = aTAPFileDescriptor;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-
-/**
- * Returns the current TAP setup application path
- *
- * @returns COM status code
- * @param   tapSetupApplication address of result buffer
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication)(BSTR *tapSetupApplication)
+STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication) (
+    BSTR *aTAPSetupApplication)
 {
-    if (!tapSetupApplication)
+    if (!aTAPSetupApplication)
         return E_POINTER;
-    AutoLock alock(this);
-    CHECK_READY();
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     /* we don't have to be in TAP mode to support this call */
-    mData->mTAPSetupApplication.cloneTo(tapSetupApplication);
+    mData->mTAPSetupApplication.cloneTo (aTAPSetupApplication);
 
     return S_OK;
 }
 
-/**
- * Stores a new TAP setup application
- *
- * @returns COM status code
- * @param   tapSetupApplication new TAP setup application path
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(TAPSetupApplication)(INPTR BSTR tapSetupApplication)
+STDMETHODIMP NetworkAdapter::COMSETTER(TAPSetupApplication) (
+    INPTR BSTR aTAPSetupApplication)
 {
-    // empty strings are not allowed as path names
-    if (tapSetupApplication && !(*tapSetupApplication))
+    /* empty strings are not allowed as path names */
+    if (aTAPSetupApplication && !(*aTAPSetupApplication))
         return E_INVALIDARG;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (mData->mTAPSetupApplication != tapSetupApplication)
+    AutoLock alock (this);
+
+    if (mData->mTAPSetupApplication != aTAPSetupApplication)
     {
         mData.backup();
-        mData->mTAPSetupApplication = tapSetupApplication;
+        mData->mTAPSetupApplication = aTAPSetupApplication;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-/**
- * Returns the current TAP terminate application path
- *
- * @returns COM status code
- * @param   tapTerminateApplication address of result buffer
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication)(BSTR *tapTerminateApplication)
+STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication) (
+    BSTR *aTAPTerminateApplication)
 {
-    if (!tapTerminateApplication)
+    if (!aTAPTerminateApplication)
         return E_POINTER;
-    AutoLock alock(this);
-    CHECK_READY();
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     /* we don't have to be in TAP mode to support this call */
-    mData->mTAPTerminateApplication.cloneTo(tapTerminateApplication);
+    mData->mTAPTerminateApplication.cloneTo(aTAPTerminateApplication);
 
     return S_OK;
 }
 
-/**
- * Stores a new TAP terminate application
- *
- * @returns COM status code
- * @param   tapTerminateApplication new TAP terminate application path
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication)(INPTR BSTR tapTerminateApplication)
+STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
+    INPTR BSTR aTAPTerminateApplication)
 {
-    // empty strings are not allowed as path names
-    if (tapTerminateApplication && !(*tapTerminateApplication))
+    /* empty strings are not allowed as path names */
+    if (aTAPTerminateApplication && !(*aTAPTerminateApplication))
         return E_INVALIDARG;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (mData->mTAPTerminateApplication != tapTerminateApplication)
+    AutoLock alock (this);
+
+    if (mData->mTAPTerminateApplication != aTAPTerminateApplication)
     {
         mData.backup();
-        mData->mTAPTerminateApplication = tapTerminateApplication;
+        mData->mTAPTerminateApplication = aTAPTerminateApplication;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         mParent->onNetworkAdapterChange(this);
     }
 
@@ -566,190 +586,175 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication)(INPTR BSTR tapTe
 
 #endif /* VBOX_WITH_UNIXY_TAP_NETWORKING */
 
-/**
- * Returns the internal network the adapter is attached to
- *
- * @returns COM status code
- * @param   internalNetwork address of result variable
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork)(BSTR *internalNetwork)
+STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
 {
-    // we don't allow null strings
-    if (!internalNetwork)
+    /* we don't allow null strings */
+    if (!aInternalNetwork)
         return E_POINTER;
-    AutoLock alock(this);
-    CHECK_READY();
 
-    mData->mInternalNetwork.cloneTo(internalNetwork);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mData->mInternalNetwork.cloneTo (aInternalNetwork);
 
     return S_OK;
 }
 
-/**
- * Sets the internal network for attachment.
- *
- * @returns COM status code
- * @param   internalNetwork internal network name
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork)(INPTR BSTR internalNetwork)
+STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (INPTR BSTR aInternalNetwork)
 {
-    if (!internalNetwork)
+    if (!aInternalNetwork)
         return E_INVALIDARG;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (mData->mInternalNetwork != internalNetwork)
+    AutoLock alock (this);
+
+    if (mData->mInternalNetwork != aInternalNetwork)
     {
         /* if an empty string is to be set, internal networking must be turned off */
-        if (   (internalNetwork == Bstr(""))
+        if (   (aInternalNetwork == Bstr(""))
             && (mData->mAttachmentType = NetworkAttachmentType_InternalNetworkAttachment))
         {
-            return setError(E_FAIL, tr("A valid internal network name must be set"));
+            return setError (E_FAIL, tr ("Empty internal network name is not valid"));
         }
 
         mData.backup();
-        mData->mInternalNetwork = internalNetwork;
+        mData->mInternalNetwork = aInternalNetwork;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-
-/**
- * Return the current cable status
- *
- * @returns COM status code
- * @param   connected address of result variable
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected)(BOOL *connected)
+STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected) (BOOL *aConnected)
 {
-    if (!connected)
+    if (!aConnected)
         return E_POINTER;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *connected = mData->mCableConnected;
+    AutoReaderLock alock (this);
+
+    *aConnected = mData->mCableConnected;
+
     return S_OK;
 }
 
-/**
- * Set the cable status flag.
- *
- * @returns COM status code
- * @param   connected new trace flag
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected)(BOOL connected)
+STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (connected != mData->mCableConnected)
+    AutoLock alock (this);
+
+    if (aConnected != mData->mCableConnected)
     {
         mData.backup();
-        mData->mCableConnected = connected;
+        mData->mCableConnected = aConnected;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-/**
- * Return the current trace status
- *
- * @returns COM status code
- * @param   enabled address of result variable
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled)(BOOL *enabled)
+STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
 {
-    if (!enabled)
+    if (!aEnabled)
         return E_POINTER;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *enabled = mData->mTraceEnabled;
+    AutoReaderLock alock (this);
+
+    *aEnabled = mData->mTraceEnabled;
     return S_OK;
 }
 
-/**
- * Set the trace flag.
- *
- * @returns COM status code
- * @param   enabled new trace flag
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled)(BOOL enabled)
+STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    if (enabled != mData->mTraceEnabled)
+    AutoLock alock (this);
+
+    if (aEnabled != mData->mTraceEnabled)
     {
         mData.backup();
-        mData->mTraceEnabled = enabled;
+        mData->mTraceEnabled = aEnabled;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-/**
- * Return the current trace file name
- *
- * @returns COM status code
- * @param   address where to store result
- */
-STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile)(BSTR *traceFile)
+STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile) (BSTR *aTraceFile)
 {
-    if (!traceFile)
+    if (!aTraceFile)
         return E_POINTER;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mData->mTraceFile.cloneTo(traceFile);
+    AutoReaderLock alock (this);
+
+    mData->mTraceFile.cloneTo (aTraceFile);
+
     return S_OK;
 }
 
-/**
- * Set the trace file name
- *
- * @returns COM status code
- * @param   New trace file name
- */
-STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile)(INPTR BSTR traceFile)
+STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (INPTR BSTR aTraceFile)
 {
-    if (!traceFile)
+    if (!aTraceFile)
         return E_INVALIDARG;
 
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY(mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
 
-    mData.backup();
-    mData->mTraceFile = traceFile;
+    AutoLock alock (this);
 
-    /* notify parent */
-    alock.unlock();
-    mParent->onNetworkAdapterChange(this);
+    if (mData->mTraceFile != aTraceFile)
+    {
+        mData.backup();
+        mData->mTraceFile = aTraceFile;
+
+        /* leave the lock before informing callbacks */
+        alock.unlock();
+
+        mParent->onNetworkAdapterChange (this);
+    }
 
     return S_OK;
 }
@@ -757,119 +762,124 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile)(INPTR BSTR traceFile)
 // INetworkAdapter methods
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Attach the network card to the NAT interface.
- *
- * @returns COM status code
- */
 STDMETHODIMP NetworkAdapter::AttachToNAT()
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     if (mData->mAttachmentType != NetworkAttachmentType_NATNetworkAttachment)
     {
         mData.backup();
+
         detach();
+
         mData->mAttachmentType = NetworkAttachmentType_NATNetworkAttachment;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-/**
- * Attach the network card to the defined host interface.
- *
- * @returns COM status code
- */
 STDMETHODIMP NetworkAdapter::AttachToHostInterface()
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     /* don't do anything if we're already host interface attached */
     if (mData->mAttachmentType != NetworkAttachmentType_HostInterfaceNetworkAttachment)
     {
         mData.backup();
+
         /* first detach the current attachment */
-        if (mData->mAttachmentType != NetworkAttachmentType_NoNetworkAttachment)
-            detach();
+        detach();
+
         mData->mAttachmentType = NetworkAttachmentType_HostInterfaceNetworkAttachment;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-/**
- * Attach the network card to the defined internal network.
- *
- * @returns COM status code
- */
 STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     /* don't do anything if we're already internal network attached */
     if (mData->mAttachmentType != NetworkAttachmentType_InternalNetworkAttachment)
     {
-        /* there must an internal network name */
-        if (   !mData->mInternalNetwork
-            || (mData->mInternalNetwork == Bstr("")))
-        {
-            LogRel(("Internal network name not defined, setting to default \"intnet\"\n"));
-            HRESULT rc = COMSETTER(InternalNetwork)(Bstr("intnet"));
-            if (FAILED(rc))
-                return rc;
-        }
-
         mData.backup();
+
         /* first detach the current attachment */
         detach();
+
+        /* there must an internal network name */
+        if (   !mData->mInternalNetwork
+            || (mData->mInternalNetwork == Bstr ("")))
+        {
+            LogRel (("Internal network name not defined, "
+                     "setting to default \"intnet\"\n"));
+            mData->mInternalNetwork = Bstr ("intnet");
+        }
+
         mData->mAttachmentType = NetworkAttachmentType_InternalNetworkAttachment;
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
 }
 
-/**
- * Detach the network card from its interface
- *
- * @returns COM status code
- */
 STDMETHODIMP NetworkAdapter::Detach()
 {
-    AutoLock alock(this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    CHECK_MACHINE_MUTABILITY (mParent);
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
 
     if (mData->mAttachmentType != NetworkAttachmentType_NoNetworkAttachment)
     {
         mData.backup();
+
         detach();
 
-        /* notify parent */
+        /* leave the lock before informing callbacks */
         alock.unlock();
-        mParent->onNetworkAdapterChange(this);
+
+        mParent->onNetworkAdapterChange (this);
     }
 
     return S_OK;
@@ -878,16 +888,23 @@ STDMETHODIMP NetworkAdapter::Detach()
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
+/** 
+ *  @note Locks this object for writing.
+ */
 bool NetworkAdapter::rollback()
 {
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
     AutoLock alock (this);
 
     bool changed = false;
 
     if (mData.isBackedUp())
     {
-        // we need to check all data to see whether anything will be changed
-        // after rollback
+        /* we need to check all data to see whether anything will be changed
+         * after rollback */
         changed = mData.hasActualChanges();
         mData.rollback();
     }
@@ -895,26 +912,54 @@ bool NetworkAdapter::rollback()
     return changed;
 }
 
+/** 
+ *  @note Locks this object for writing, together with the peer object (also
+ *  for writing) if there is one.
+ */
 void NetworkAdapter::commit()
 {
-    AutoLock alock (this);
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* lock both for writing since we modify both */
+    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeWlock (mPeer));
+
     if (mData.isBackedUp())
     {
         mData.commit();
         if (mPeer)
         {
-            // attach new data to the peer and reshare it
-            AutoLock peerlock (mPeer);
+            /* attach new data to the peer and reshare it */
             mPeer->mData.attach (mData);
         }
     }
 }
 
+/** 
+ *  @note Locks this object for writing, together with the peer object
+ *  represented by @a aThat (locked for reading).
+ */
 void NetworkAdapter::copyFrom (NetworkAdapter *aThat)
 {
-    AutoLock alock (this);
+    AssertReturnVoid (aThat != NULL);
 
-    // this will back up current data
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* peer is not modified, lock it for reading */
+    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
+
+    /* this will back up current data */
     mData.assignCopy (aThat->mData);
 }
 
@@ -922,10 +967,14 @@ void NetworkAdapter::copyFrom (NetworkAdapter *aThat)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Worker routine for detach handling. No locking, no notifications.
+ *  Worker routine for detach handling. No locking, no notifications.
+
+ *  @note Must be called from under the object's write lock.
  */
 void NetworkAdapter::detach()
 {
+    AssertReturnVoid (isLockedOnCurrentThread());
+
     switch (mData->mAttachmentType)
     {
         case NetworkAttachmentType_NoNetworkAttachment:
@@ -960,8 +1009,11 @@ void NetworkAdapter::detach()
 }
 
 /**
- * Generates a new unique MAC address based on our vendor ID and
- * parts of a GUID
+ *  Generates a new unique MAC address based on our vendor ID and
+ *  parts of a GUID.
+ *
+ *  @note Must be called from under the object's write lock or within the init
+ *  span.
  */
 void NetworkAdapter::generateMACAddress()
 {
@@ -973,7 +1025,8 @@ void NetworkAdapter::generateMACAddress()
     char strMAC[13];
     Guid guid;
     guid.create();
-    RTStrPrintf(strMAC, sizeof(strMAC), "080027%02X%02X%02X", guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
-    LogFlowThisFunc (("Generated '%s'\n", strMAC));
+    RTStrPrintf (strMAC, sizeof(strMAC), "080027%02X%02X%02X",
+                 guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
+    LogFlowThisFunc (("generated MAC: '%s'\n", strMAC));
     mData->mMACAddress = strMAC;
 }

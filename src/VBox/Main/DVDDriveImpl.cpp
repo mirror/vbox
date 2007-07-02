@@ -46,10 +46,9 @@ void DVDDrive::FinalRelease()
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the DVD drive object.
+ *  Initializes the DVD drive object.
  *
- * @param   aParent  Handle of our parent object.
- * @return  COM result indicator
+ *  @param aParent  Handle of the parent object.
  */
 HRESULT DVDDrive::init (Machine *aParent)
 {
@@ -154,7 +153,7 @@ void DVDDrive::uninit()
 
     mData.free();
 
-    unconst (mParent).setNull();
+    unconst (mPeer).setNull();
     unconst (mParent).setNull();
 }
 
@@ -248,7 +247,7 @@ STDMETHODIMP DVDDrive::MountImage (INPTR GUIDPARAM aImageId)
             mData->mDVDImage = image;
             mData->mDriveState = DriveState_ImageMounted;
 
-            /* leave the lock before informing callbacks*/
+            /* leave the lock before informing callbacks */
             alock.unlock();
 
             mParent->onDVDDriveChange();
@@ -282,7 +281,7 @@ STDMETHODIMP DVDDrive::CaptureHostDrive (IHostDVDDrive *aHostDVDDrive)
         mData->mHostDrive = aHostDVDDrive;
         mData->mDriveState = DriveState_HostDriveCaptured;
 
-        /* leave the lock before informing callbacks*/
+        /* leave the lock before informing callbacks */
         alock.unlock();
 
         mParent->onDVDDriveChange();
@@ -310,7 +309,7 @@ STDMETHODIMP DVDDrive::Unmount()
 
         mData->mDriveState = DriveState_NotMounted;
 
-        /* leave the lock before informing callbacks*/
+        /* leave the lock before informing callbacks */
         alock.unlock();
 
         mParent->onDVDDriveChange();
@@ -405,11 +404,13 @@ void DVDDrive::commit()
 }
 
 /** 
- *  @note Locks this object for writing, together with the peer object (locked
- *  for reading) if there is one.
+ *  @note Locks this object for writing, together with the peer object
+ *  represented by @a aThat (locked for reading).
  */
 void DVDDrive::copyFrom (DVDDrive *aThat)
 {
+    AssertReturnVoid (aThat != NULL);
+
     /* sanity */
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -419,7 +420,7 @@ void DVDDrive::copyFrom (DVDDrive *aThat)
     AssertComRCReturnVoid (thatCaller.rc());
 
     /* peer is not modified, lock it for reading */
-    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeRlock (mPeer));
+    AutoMultiLock <2> alock (this->wlock(), aThat->rlock());
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
