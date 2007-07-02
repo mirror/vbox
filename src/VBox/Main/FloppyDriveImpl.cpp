@@ -46,10 +46,9 @@ void FloppyDrive::FinalRelease()
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the Floppy drive object.
+ *  Initializes the Floppy drive object.
  *
- * @param   aParent  Handle of our parent object.
- * @return  COM result indicator
+ *  @param aParent  Handle of the parent object.
  */
 HRESULT FloppyDrive::init (Machine *aParent)
 {
@@ -154,7 +153,7 @@ void FloppyDrive::uninit()
 
     mData.free();
 
-    unconst (mParent).setNull();
+    unconst (mPeer).setNull();
     unconst (mParent).setNull();
 }
 
@@ -194,7 +193,7 @@ STDMETHODIMP FloppyDrive::COMSETTER(Enabled) (BOOL aEnabled)
         mData.backup();
         mData->mEnabled = aEnabled;
 
-        /* leave the lock before informing callbacks*/
+        /* leave the lock before informing callbacks */
         alock.unlock();
 
         mParent->onFloppyDriveChange();
@@ -255,7 +254,7 @@ STDMETHODIMP FloppyDrive::MountImage (INPTR GUIDPARAM aImageId)
             mData->mFloppyImage = image;
             mData->mDriveState = DriveState_ImageMounted;
 
-            /* leave the lock before informing callbacks*/
+            /* leave the lock before informing callbacks */
             alock.unlock();
 
             mParent->onFloppyDriveChange();
@@ -289,7 +288,7 @@ STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
         mData->mHostDrive = aHostFloppyDrive;
         mData->mDriveState = DriveState_HostDriveCaptured;
 
-        /* leave the lock before informing callbacks*/
+        /* leave the lock before informing callbacks */
         alock.unlock();
 
         mParent->onFloppyDriveChange();
@@ -317,7 +316,7 @@ STDMETHODIMP FloppyDrive::Unmount()
 
         mData->mDriveState = DriveState_NotMounted;
 
-        /* leave the lock before informing callbacks*/
+        /* leave the lock before informing callbacks */
         alock.unlock();
 
         mParent->onFloppyDriveChange();
