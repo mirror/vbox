@@ -213,9 +213,19 @@ DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
     return pGIP;
 }
 #  define g_pSUPGlobalInfoPage         (SUPGetGIP())
+# elif defined(__GNUC__) && !defined(__DARWIN__)
+/** gcc optimizes &g_SUPGlobalInfoPage + offset */
+DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
+{
+    PCSUPGLOBALINFOPAGE pGIP;
+    __asm__ __volatile__ ("movl $g_SUPGlobalInfoPage,%0\n\t"
+                          : "=a" (pGIP));
+    return pGIP;
+}
+#  define g_pSUPGlobalInfoPage         (SUPGetGIP())
 # else
 #  define g_pSUPGlobalInfoPage         (&g_SUPGlobalInfoPage)
-#endif
+# endif
 #else
 extern DECLIMPORT(PCSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
 #endif
