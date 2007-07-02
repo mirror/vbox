@@ -75,7 +75,10 @@ typedef struct VMMDevState
     uint32_t irq;
     /** Current host side event flags */
     uint32_t u32HostEventFlags;
-    /** Mask of events guest is interested in */
+    /** Mask of events guest is interested in. Note that the HGCM events 
+     *  are enabled automatically by the VMMDev device when guest issues
+     *  HGCM commands.
+     */
     uint32_t u32GuestFilterMask;
     /** Delayed mask of guest events */
     uint32_t u32NewGuestFilterMask;
@@ -144,10 +147,15 @@ typedef struct VMMDevState
     PVBOXHGCMCMD pHGCMCmdList;
     /** Critical section to protect the list. */
     RTCRITSECT critsectHGCMCmdList;
+    /** How many HGCM commands are pending. */
+    volatile uint32_t u32HGCMRefs;
 #endif /* VBOX_HGCM */
 
 } VMMDevState;
 
 void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask);
+void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
+                                   uint32_t u32OrMask,
+                                   uint32_t u32NotMask);
 
 #endif /* __VMMDevState_h__ */

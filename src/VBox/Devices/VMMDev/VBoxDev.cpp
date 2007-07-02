@@ -208,9 +208,9 @@ static void vmmdevNotifyGuest_EMT (VMMDevState *pVMMDevState, uint32_t u32EventM
     }
 }
 
-static void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
-                                          uint32_t u32OrMask,
-                                          uint32_t u32NotMask)
+void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
+                                   uint32_t u32OrMask,
+                                   uint32_t u32NotMask)
 {
     const bool fHadEvents =
         (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask) != 0;
@@ -1773,8 +1773,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_HGCM
+    pData->pHGCMCmdList = NULL;
     rc = RTCritSectInit(&pData->critsectHGCMCmdList);
     AssertRCReturn(rc, rc);
+    pData->u32HGCMRefs = 0;
 #endif /* VBOX_HGCM */
 
     /*
