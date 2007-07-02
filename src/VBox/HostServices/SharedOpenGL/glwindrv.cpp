@@ -130,7 +130,7 @@ int vboxglDisconnect(PVBOXOGLCTX pClient)
     {
         if (pClient->hdc)
             DeleteDC(pClient->hdc);
-    	DestroyWindow(pClient->hwnd);
+    	PostMessage(pClient->hwnd, WM_CLOSE, 0, 0);
     }
 #endif
     return VINF_SUCCESS;
