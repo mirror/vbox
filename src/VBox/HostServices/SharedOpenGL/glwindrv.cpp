@@ -161,24 +161,24 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     SetWindowPos(pClient->hwnd, NULL, 0, 0, cx, cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
     PIXELFORMATDESCRIPTOR pfd = {0};
-	int format;
-	
-	pClient->hdc = GetDC(pClient->hwnd);
-	
-	pfd.nSize       = sizeof(pfd);
-	pfd.nVersion    = 1;
-	pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	pfd.iPixelType  = iPixelType;
-	pfd.cColorBits  = cColorBits;
-	pfd.cDepthBits  = cDepthBits;
-	pfd.iLayerType  = PFD_MAIN_PLANE;
+    int format;
+
+    pClient->hdc = GetDC(pClient->hwnd);
+
+    pfd.nSize       = sizeof(pfd);
+    pfd.nVersion    = 1;
+    pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType  = iPixelType;
+    pfd.cColorBits  = cColorBits;
+    pfd.cDepthBits  = cDepthBits;
+    pfd.iLayerType  = PFD_MAIN_PLANE;
     uint32_t lasterr = glGetError();
-	format = ChoosePixelFormat(pClient->hdc, &pfd);
+    format = ChoosePixelFormat(pClient->hdc, &pfd);
     lasterr = glGetError();
-	SetPixelFormat(pClient->hdc, format, &pfd);
-	
+    SetPixelFormat(pClient->hdc, format, &pfd);
+
     lasterr = glGetError();
-	glrc = wglCreateContext(pClient->hdc);
+    glrc = wglCreateContext(pClient->hdc);
     lasterr = glGetError();
     Assert(glrc);
 #else
@@ -273,21 +273,21 @@ void vboxglDrvCreateLayerContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
         SetWindowPos(pClient->hwnd, NULL, 0, 0, cx, cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
     }
     PIXELFORMATDESCRIPTOR pfd = {0};
-	int format;
-	
-	pClient->hdc = GetDC(pClient->hwnd);
-	
-	pfd.nSize       = sizeof(pfd);
-	pfd.nVersion    = 1;
-	pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	pfd.iPixelType  = iPixelType;
-	pfd.cColorBits  = cColorBits;
-	pfd.cDepthBits  = cDepthBits;
-	pfd.iLayerType  = PFD_MAIN_PLANE;
-	format = ChoosePixelFormat(pClient->hdc, &pfd);
-	SetPixelFormat(pClient->hdc, format, &pfd);
-	
-	glrc = wglCreateLayerContext(pClient->hdc, iLayerPlane);
+    int format;
+
+    pClient->hdc = GetDC(pClient->hwnd);
+
+    pfd.nSize       = sizeof(pfd);
+    pfd.nVersion    = 1;
+    pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType  = iPixelType;
+    pfd.cColorBits  = cColorBits;
+    pfd.cDepthBits  = cDepthBits;
+    pfd.iLayerType  = PFD_MAIN_PLANE;
+    format = ChoosePixelFormat(pClient->hdc, &pfd);
+    SetPixelFormat(pClient->hdc, format, &pfd);
+
+    glrc = wglCreateLayerContext(pClient->hdc, iLayerPlane);
 #else
     AssertFailed();
 #endif
