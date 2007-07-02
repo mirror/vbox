@@ -19,6 +19,7 @@
 #include "devioctl.h"
 #include "ntddvdeo.h"
 #include "debug.h"
+#include "dd.h"
 
 #include "../Miniport/vboxioctl.h"
 

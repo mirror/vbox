@@ -115,30 +115,6 @@ BOOL DrvDDInit (PVOID x1)
     return FALSE;
 }
 
-BOOL APIENTRY DrvGetDirectDrawInfo(
-    DHPDEV        dhpdev,
-    DD_HALINFO   *pHalInfo,
-    DWORD        *pdwNumHeaps,
-    VIDEOMEMORY  *pvmList,
-    DWORD        *pdwNumFourCCCodes,
-    DWORD        *pdwFourCC
-    )
-{
-    DISPDBG((0, "Experimental %s: %p, %p, %p, %p, %p. %p\n", __FUNCTION__, dhpdev, pHalInfo, pdwNumHeaps, pvmList, pdwNumFourCCCodes, pdwFourCC));
-    return FALSE;
-}
-
-BOOL APIENTRY DrvEnableDirectDraw(
-    DHPDEV                  dhpdev,
-    DD_CALLBACKS           *pCallBacks,
-    DD_SURFACECALLBACKS    *pSurfaceCallBacks,
-    DD_PALETTECALLBACKS    *pPaletteCallBacks
-    )
-{
-    DISPDBG((0, "Experimental %s: %p, %p, %p, %p\n", __FUNCTION__, dhpdev, pCallBacks, pSurfaceCallBacks, pPaletteCallBacks));
-    return FALSE;
-}
-
 /* Experimental end */
 
 // W2K,XP functions
@@ -166,6 +142,11 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38 0x26
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40 0x28
     {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41 0x29
+#if 0
+    {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
+    {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
+    {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
+#endif
     {   INDEX_DrvNotify,                (PFN) DrvNotify             },	// 87 0x57
 //     /* Experimental. */
 //     {   0x7,                            (PFN) DrvResetPDEV          },	// 0x7

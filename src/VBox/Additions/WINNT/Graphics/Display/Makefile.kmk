@@ -41,6 +41,7 @@ VBoxDisp_SOURCES     = \
 	pointer.c \
 	screen.c \
 	drv.c \
+        dd.c \
 	vbva.c \
 	vrdp.c \
 	vrdpbmp.c \
