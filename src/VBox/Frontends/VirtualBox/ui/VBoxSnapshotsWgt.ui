@@ -145,7 +145,7 @@
                 <string>Revert to Current Snapshot</string>
             </property>
             <property name="menuText">
-                <string>F&amp;evert to Current Snapshot</string>
+                <string>R&amp;evert to Current Snapshot</string>
             </property>
             <property name="accel">
                 <string>Ctrl+Alt+R</string>
