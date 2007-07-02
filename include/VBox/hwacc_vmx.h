@@ -221,7 +221,7 @@
  * @{
  */
 /** Highest field index. */
-#define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 ((a >> 1ULL) & 0x1FF))
+#define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 ((a >> 1ULL) & 0x1FF)
 
 /** @} */
 
@@ -719,6 +719,7 @@ DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
        :"0"(VINF_SUCCESS),
         "ir"((uint32_t)pVMXOn),        /* don't allow direct memory reference here, */
         "ir"((uint32_t)(pVMXOn >> 32)) /* this would not work with -fomit-frame-pointer */
+       :"memory"
        );
 # else
     __asm
@@ -795,6 +796,7 @@ DECLINLINE(int) VMXClearVMCS(RTHCPHYS pVMCS)
        :"0"(VINF_SUCCESS),
         "ir"((uint32_t)pVMCS),        /* don't allow direct memory reference here, */
         "ir"((uint32_t)(pVMCS >> 32)) /* this would not work with -fomit-frame-pointer */
+       :"memory"
        );
 # else
     __asm
