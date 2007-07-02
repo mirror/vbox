@@ -27,14 +27,11 @@ SUBDIRS_BLDPROGS = Devices
 SUBDIRS = \
 	Runtime \
 	HostDrivers \
+        HostServices \
 	VMM \
 	Devices \
 	Disassembler \
 	Debugger 
-
-ifneq ($(wildcard HostServices),)
-SUBDIRS += HostServices
-endif
 
 ifdef VBOX_WITH_MAIN
 SUBDIRS += Main
