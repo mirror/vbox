@@ -59,6 +59,8 @@ static DECLCALLBACK(int) svcDisconnect (uint32_t u32ClientID, void *pvClient)
     int rc = VINF_SUCCESS;
     VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvClient;
 
+    NOREF(pClient);
+
     Log(("svcDisconnect: u32ClientID = %d\n", u32ClientID));
     vboxglDisconnect((PVBOXOGLCTX)pvClient);
     return rc;
