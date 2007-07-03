@@ -46,13 +46,16 @@ TEMPLATE_XPCOM_CFLAGS.release      = -O
 TEMPLATE_XPCOM_CFLAGS.profile      = -O
 TEMPLATE_XPCOM_CFLAGS.l4           = -nostdinc
 TEMPLATE_XPCOM_CFLAGS.linux        = -pthread -ansi
-TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1 _IMPL_NS_COM
+TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1 _IMPL_NS_COM \
+                                     XPCOM_DLL_BASE=\"$(basename $(notdir $(LIB_XPCOM)))\" \
+                                     MOZ_DLL_SUFFIX=\"$(suffix $(LIB_XPCOM))\"
 TEMPLATE_XPCOM_DEFS.x86            = i386=1
 TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\(a\,b\)=__builtin_va_copy\(a\,b\)
-TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" MOZ_DLL_SUFFIX=\".dylib\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1
-TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  MOZ_DLL_SUFFIX=\".so\"    XP_UNIX=1 _GNU_SOURCE HAVE_VISIBILITY_ATTRIBUTE=1
-TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     MOZ_DLL_SUFFIX=\".s.so\"  XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
-TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2\ 4.5\"   OSARCH=\"OS/2\"   MOZ_DLL_SUFFIX=\".dll\"   XP_OS2 XP_PC BSD_SELECT TCPV40HDRS
+TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1
+TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  XP_UNIX=1 _GNU_SOURCE HAVE_VISIBILITY_ATTRIBUTE=1
+TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
+TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC BSD_SELECT TCPV40HDRS
+TEMPLATE_XPCOM_LIBPATH.os2         = $(PATH_EMXPGCC)/lib/tcpipv4
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
                                      -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
@@ -1054,6 +1057,12 @@ endif
 TEMPLATE_XPCOMIPC                  = XPCOM IPC libraries
 TEMPLATE_XPCOMIPC_EXTENDS          = XPCOM
 TEMPLATE_XPCOMIPC_DEFS             = $(TEMPLATE_XPCOM_DEFS) BUILD_DCONNECT="1"
+TEMPLATE_XPCOMIPC_DEFS.win         = $(TEMPLATE_XPCOM_DEFS.win)     IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD.exe\"
+TEMPLATE_XPCOMIPC_DEFS.darwin      = $(TEMPLATE_XPCOM_DEFS.darwin)  IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD\"
+TEMPLATE_XPCOMIPC_DEFS.linux       = $(TEMPLATE_XPCOM_DEFS.linux)   IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD\"
+TEMPLATE_XPCOMIPC_DEFS.l4          = $(TEMPLATE_XPCOM_DEFS.l4)      IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD\"
+TEMPLATE_XPCOMIPC_DEFS.os2         = $(TEMPLATE_XPCOM_DEFS.os2)     IPC_DAEMON_APP_NAME=\"VBoxXPCOMIPCD.exe\"
+
 ifdef IPC_LOGGING
  TEMPLATE_XPCOMIPC_DEFS           += IN_RING3 IPC_LOGGING
  TEMPLATE_XPCOMIPC_LIBS            = $(TEMPLATE_XPCOM_LIBS) $(LIB_RUNTIME)
@@ -1115,8 +1124,17 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcdclient.cpp \
 	ipc/ipcd/client/src/ipcService.cpp \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
-	ipc/ipcd/client/src/ipcConnectionUnix.cpp \
 	ipc/ipcd/extensions/dconnect/src/ipcDConnectService.cpp
+VBoxXPCOMIPCC_SOURCES.win = \
+	ipc/ipcd/client/src/ipcConnectionWin.cpp
+VBoxXPCOMIPCC_SOURCES.darwin = \
+	ipc/ipcd/client/src/ipcConnectionUnix.cpp
+VBoxXPCOMIPCC_SOURCES.l4 = \
+	ipc/ipcd/client/src/ipcConnectionUnix.cpp
+VBoxXPCOMIPCC_SOURCES.linix = \
+	ipc/ipcd/client/src/ipcConnectionUnix.cpp
+VBoxXPCOMIPCC_SOURCES.os2 = \
+	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name @executable_path/components/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \
 	$(TARGET_VBox-xpcom-ipcutils) \
@@ -1133,7 +1151,16 @@ VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcd.cpp \
 	ipc/ipcd/daemon/src/ipcClient.cpp \
 	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
-	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
+	ipc/ipcd/daemon/src/ipcCommandModule.cpp
+VBoxXPCOMIPCD_SOURCES.win = \
+	ipc/ipcd/daemon/src/ipcdWin.cpp
+VBoxXPCOMIPCD_SOURCES.darwin = \
+	ipc/ipcd/daemon/src/ipcdUnix.cpp
+VBoxXPCOMIPCD_SOURCES.l4 = \
+	ipc/ipcd/daemon/src/ipcdUnix.cpp
+VBoxXPCOMIPCD_SOURCES.linux = \
+	ipc/ipcd/daemon/src/ipcdUnix.cpp
+VBoxXPCOMIPCD_SOURCES.os2 = \
 	ipc/ipcd/daemon/src/ipcdUnix.cpp
 
 #

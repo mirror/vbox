@@ -37,6 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include "nsXPCOMPrivate.h"
 #include "nsDebugImpl.h"
 #include "nsDebug.h"
 #include "prprf.h"
@@ -226,7 +227,7 @@ nsDebugImpl::Assertion(const char *aStr, const char *aExpr, const char *aFile, P
       si.cb          = sizeof(si);
       si.wShowWindow = SW_SHOW;
 
-      if(GetModuleFileName(GetModuleHandle("xpcom.dll"), executable, MAX_PATH) &&
+      if(GetModuleFileName(GetModuleHandle(XPCOM_DLL), executable, MAX_PATH) &&
          NULL != (pName = strrchr(executable, '\\')) &&
          NULL != strcpy(pName+1, "windbgdlg.exe") &&
 #ifdef DEBUG_jband

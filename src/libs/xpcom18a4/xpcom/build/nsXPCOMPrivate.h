@@ -167,23 +167,33 @@ NS_GetFrozenFunctions(XPCOMFunctions *entryPoints, const char* libraryPath);
  * GRE_CONF_NAME          - Name of the GRE Configuration file
  */
 
+#ifdef XPCOM_DLL_BASE
+#define XPCOM_DLL         XPCOM_DLL_BASE MOZ_DLL_SUFFIX
+#endif
+
 #if defined(XP_WIN32) || defined(XP_OS2)
 
 #define XPCOM_SEARCH_KEY  "PATH"
 #define GRE_CONF_NAME     "gre.config"
 #define GRE_WIN_REG_LOC   "Software\\mozilla.org\\GRE\\"
-#define XPCOM_DLL         "xpcom.dll"
+#ifndef XPCOM_DLL
+#define XPCOM_DLL         "xpcom"MOZ_DLL_SUFFIX
+#endif
 
 #elif defined(XP_BEOS)
 
 #define XPCOM_SEARCH_KEY  "ADDON_PATH"
 #define GRE_CONF_NAME ".gre.config"
 #define GRE_CONF_PATH "/boot/home/config/settings/GRE/gre.conf"
+#ifndef XPCOM_DLL
 #define XPCOM_DLL "libxpcom"MOZ_DLL_SUFFIX
+#endif
 
 #else // Unix
 
-#define XPCOM_DLL "VBoxXPCOM"MOZ_DLL_SUFFIX
+#ifndef XPCOM_DLL
+#define XPCOM_DLL "libxpcom"MOZ_DLL_SUFFIX
+#endif
 
 // you have to love apple..
 #ifdef XP_MACOSX  
