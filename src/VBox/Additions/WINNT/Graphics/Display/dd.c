@@ -58,7 +58,8 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
 
     /* Setup the HAL driver caps. */
     memset(pHalInfo, 0, sizeof(DD_HALINFO));
-    pHalInfo->dwSize = sizeof(DD_HALINFO);
+    pHalInfo->dwSize    = sizeof(DD_HALINFO);
+    pHalInfo->dwFlags   = 0;
 
     if (!(pvmList && pdwFourCC)) 
     {
@@ -82,9 +83,15 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         pHalInfo->vmiData.dwOffscreenAlign          = 4;
         pHalInfo->vmiData.dwZBufferAlign            = 4;
         pHalInfo->vmiData.dwTextureAlign            = 4;
-
-        pHalInfo->ddCaps.dwVidMemTotal = pDev->cScreenSize;
     }
+    pHalInfo->ddCaps.dwSize         = sizeof(DDNTCORECAPS);
+    pHalInfo->ddCaps.dwVidMemTotal  = pDev->cScreenSize;
+    pHalInfo->ddCaps.dwVidMemFree   = pDev->cScreenSize;
+
+    pHalInfo->ddCaps.dwCaps         = DDCAPS_NOHARDWARE; /* ??? */
+    pHalInfo->ddCaps.dwCaps2        = DDCAPS2_CERTIFIED;
+
+    pHalInfo->ddCaps.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_VIDEOMEMORY;
 
 #if 0
     /* DX5 and up */
@@ -139,6 +146,7 @@ BOOL APIENTRY DrvEnableDirectDraw(
     pCallBacks->MapMemory             = DdMapMemory;
     DDHAL_CB32_CANCREATESURFACE | DDHAL_CB32_CREATESURFACE | DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_MAPMEMORY | DDHAL_CB32_GETSCANLINE 
     */
+    /* Note: pCallBacks->SetMode & pCallBacks->DestroyDriver are unused in Windows 2000 and up */
 
     // Fill in the Surface Callback pointers
     memset(&pSurfaceCallBacks, 0, sizeof(DD_SURFACECALLBACKS));
@@ -157,6 +165,9 @@ BOOL APIENTRY DrvEnableDirectDraw(
 //    pSurfaceCallBacks.SetColorKey = DdSetColorKey;
 //    pSurfaceCallBacks.dwFlags |= DDHAL_SURFCB32_SETCOLORKEY;
 
+    memset(&pPaletteCallBacks, 0, sizeof(DD_PALETTECALLBACKS));
+    pPaletteCallBacks->dwSize           = sizeof(DD_PALETTECALLBACKS);
+    pPaletteCallBacks->dwFlags          = 0;
 
     return TRUE;
 }
