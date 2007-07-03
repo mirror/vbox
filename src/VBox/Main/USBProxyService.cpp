@@ -275,9 +275,9 @@ void USBProxyService::processChanges (void)
                     NewObj->init (pNew, this);
                     Log (("USBProxyService::processChanges: attached %p/%p:{.idVendor=%#06x, .idProduct=%#06x, .pszProduct=\"%s\", .pszManufacturer=\"%s\"}\n",
                           (HostUSBDevice *)NewObj, pNew, pNew->idVendor, pNew->idProduct, pNew->pszProduct, pNew->pszManufacturer));
+                    deviceAdded (NewObj, pNew);
 
-                    /* not really necessary to lock here, but make Assert
-                     * checks happy */
+                    /* Not really necessary to lock here, but make Assert checks happy. */
                     AutoLock newDevLock (NewObj);
 
                     mDevices.insert (It, NewObj);
@@ -292,6 +292,7 @@ void USBProxyService::processChanges (void)
                     if (!DevPtr->isStatePending())
                     {
                         It = mDevices.erase (It);
+                        deviceRemoved (DevPtr);
                         mHost->onUSBDeviceDetached (DevPtr);
                         Log (("USBProxyService::processChanges: detached %p\n",
                               (HostUSBDevice *)DevPtr)); /** @todo add details .*/
@@ -379,7 +380,7 @@ void USBProxyService::processChanges (void)
 }
 
 
-/*static*/ void USBProxyService::freeDevice (PUSBDEVICE pDevice)
+/*static*/ void USBProxyService::freeDeviceMembers (PUSBDEVICE pDevice)
 {
     PUSBCONFIG pCfg = pDevice->paConfigurations;
     unsigned cCfgs = pDevice->bNumConfigurations;
@@ -418,9 +419,12 @@ void USBProxyService::processChanges (void)
 
     RTStrFree ((char *)pDevice->pszAddress);
     pDevice->pszAddress = NULL;
+}
 
+/*static*/ void USBProxyService::freeDevice (PUSBDEVICE pDevice)
+{
+    freeDeviceMembers (pDevice);
     RTMemFree (pDevice);
-
 }
 
 
@@ -519,35 +523,45 @@ void USBProxyService::removeFilter (void * /* aID */)
 }
 
 
-int USBProxyService::captureDevice (HostUSBDevice *pDevice)
+int USBProxyService::captureDevice (HostUSBDevice */*aDevice*/)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-int USBProxyService::holdDevice (HostUSBDevice *pDevice)
+int USBProxyService::holdDevice (HostUSBDevice */*aDevice*/)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-int USBProxyService::releaseDevice (HostUSBDevice *pDevice)
+int USBProxyService::releaseDevice (HostUSBDevice */*aDevice*/)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-int USBProxyService::resetDevice (HostUSBDevice *pDevice)
+int USBProxyService::resetDevice (HostUSBDevice */*aDevice*/)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-bool USBProxyService::updateDeviceState (HostUSBDevice *pDevice, PUSBDEVICE pUSBDevice)
+bool USBProxyService::updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice)
 {
-    AssertReturn (pDevice, false);
-    AssertReturn (pDevice->isLockedOnCurrentThread(), false);
+    AssertReturn (aDevice, false);
+    AssertReturn (aDevice->isLockedOnCurrentThread(), false);
 
-    return pDevice->updateState (pUSBDevice);
+    return aDevice->updateState (aUSBDevice);
+}
+
+
+void USBProxyService::deviceAdded (HostUSBDevice */*aDevice*/, PUSBDEVICE /*aUSBDevice*/)
+{
+}
+
+
+void USBProxyService::deviceRemoved (HostUSBDevice */*aDevice*/)
+{
 }
 

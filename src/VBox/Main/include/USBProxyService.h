@@ -87,10 +87,25 @@ public:
      * This is responsible for calling HostUSBDevice::updateState() and check for async completion.
      *
      * @returns true if there is a state change.
-     * @param   pDevice     The device in question.
-     * @param   pUSBDevice  The USB device structure for the last enumeration.
+     * @param   aDevice     The device in question.
+     * @param   aUSBDevice  The USB device structure for the last enumeration.
      */
-    virtual bool updateDeviceState (HostUSBDevice *pDevice, PUSBDEVICE pUSBDevice);
+    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
+
+    /**
+     * Add device notification hook for the OS specific code.
+     *
+     * @param   aDevice     The device in question.
+     * @param   aUSBDevice  The USB device structure.
+     */
+    virtual void deviceAdded (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
+
+    /**
+     * Remove device notification hook for the OS specific code.
+     *
+     * @param   aDevice     The device in question.
+     */
+    virtual void deviceRemoved (HostUSBDevice *aDevice);
 
     /**
      * Query if the service is active and working.
@@ -181,6 +196,13 @@ protected:
 
 
 public:
+    /**
+     * Free all the members of a USB device returned by getDevice().
+     *
+     * @param   pDevice     Pointer to the device.
+     */
+    static void freeDeviceMembers (PUSBDEVICE pDevice);
+
     /**
      * Free one USB device returned by getDevice().
      *
@@ -281,11 +303,13 @@ public:
     virtual int releaseDevice (HostUSBDevice *aDevice);
     virtual int resetDevice (HostUSBDevice *aDevice);
     virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
+    virtual void deviceAdded (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
 
 protected:
     virtual int wait (unsigned aMillies);
     virtual int interruptWait (void);
     virtual PUSBDEVICE getDevices (void);
+    int addDeviceToChain (PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
 
 private:
     /** File handle to the '/proc/bus/usb/devices' file. */
@@ -298,6 +322,8 @@ private:
     RTFILE mWakeupPipeW;
     /** The root of usbfs. */
     Utf8Str mUsbfsRoot;
+    /** Number of 500ms polls left to do. See usbDeterminState for details. */
+    unsigned mUdevPolls;
 };
 # endif /* __LINUX__ */
 
