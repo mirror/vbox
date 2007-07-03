@@ -54,12 +54,13 @@ LRESULT CALLBACK VBoxOGLWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 DECLCALLBACK(int) vboxWndThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvUser;
+    HWND        hwnd;
 
-    pClient->hwnd= CreateWindow("VBoxOGL", "VirtualBox OpenGL", 
-		                        WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE,
-		                        0, 0, 0, 0,
-		                        NULL, NULL, 0, NULL);	
-    Assert(pClient->hwnd);
+    hwnd = pClient->hwnd= CreateWindow("VBoxOGL", "VirtualBox OpenGL", 
+		                               WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE,
+		                               0, 0, 0, 0,
+        	                        NULL, NULL, 0, NULL);	
+    Assert(hwnd);
     while(true)
     {
         MSG msg;
@@ -73,6 +74,7 @@ DECLCALLBACK(int) vboxWndThread(RTTHREAD ThreadSelf, void *pvUser)
             DispatchMessage(&msg);
         }
     }
+    DestroyWindow(hwnd);
     return VINF_SUCCESS;
 }
 
@@ -131,6 +133,7 @@ int vboxglDisconnect(PVBOXOGLCTX pClient)
         if (pClient->hdc)
             DeleteDC(pClient->hdc);
     	PostMessage(pClient->hwnd, WM_CLOSE, 0, 0);
+        pClient->hwnd = 0;
     }
 #endif
     return VINF_SUCCESS;
