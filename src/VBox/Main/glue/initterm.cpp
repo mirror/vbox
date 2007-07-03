@@ -183,14 +183,18 @@ HRESULT Initialize()
         nsCOMPtr <DirectoryServiceProvider> dsProv;
 
         /* prepare paths for registry files */
-        Utf8Str homeDir;
-        int vrc = GetVBoxUserHomeDirectory (homeDir);
+        char homeDir [RTPATH_MAX];
+        int vrc = GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
         if (RT_SUCCESS (vrc))
         {
-            Utf8Str compReg = Utf8StrFmt ("%s%c%s", homeDir.raw(),
-                                          RTPATH_DELIMITER, "compreg.dat");
-            Utf8Str xptiDat = Utf8StrFmt ("%s%c%s", homeDir.raw(),
-                                          RTPATH_DELIMITER, "xpti.dat");
+            char compReg [RTPATH_MAX];
+            char xptiDat [RTPATH_MAX];
+
+            RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
+                         homeDir, RTPATH_DELIMITER, "compreg.dat");
+            RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
+                         homeDir, RTPATH_DELIMITER, "xpti.dat");
+
             dsProv = new DirectoryServiceProvider();
             if (dsProv)
                 rc = dsProv->init (compReg, xptiDat);
@@ -229,7 +233,7 @@ HRESULT Initialize()
 
             if (RT_SUCCESS (vrc))
             {
-                nsCOMPtr<nsILocalFile> file;
+                nsCOMPtr <nsILocalFile> file;
                 rc = NS_NewNativeLocalFile (nsEmbedCString (appDirCP),
                                             PR_FALSE, getter_AddRefs (file));
                 if (NS_SUCCEEDED (rc))

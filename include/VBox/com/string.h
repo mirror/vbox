@@ -42,10 +42,14 @@ class Utf8Str;
  *  Helper class that represents the |BSTR| type and hides platform-specific
  *  implementation details.
  *
- *  @note
- *  This class follows the common ownership transfer rule, Regarding to passing
- *  strings as method parameters, this means that the instance data is always
- *  owned by the caller.
+ *  This class uses COM/XPCOM-provided memory management routines to allocate
+ *  and free string buffers. This makes it possible to:
+ *  - use it as a type of member variables of COM/XPCOM components and pass
+ *    their values to callers through component methods' output parameters
+ *    using the #cloneTo() operation;
+ *  - adopt (take ownership of) string buffers returned in output parameters
+ *    of COM methods using the #asOutParam() operation and correctly free them
+ *    afterwards.
  */
 class Bstr
 {
@@ -242,6 +246,15 @@ inline bool operator!= (const BSTR l, const Bstr &r) { return r.operator!= (l); 
  *  Helper class that represents UTF8 (|char *|) strings. Useful in
  *  conjunction with Bstr to simplify conversions beetween UCS2 (|BSTR|)
  *  and UTF8.
+ *
+ *  This class uses COM/XPCOM-provided memory management routines to allocate
+ *  and free string buffers. This makes it possible to:
+ *  - use it as a type of member variables of COM/XPCOM components and pass
+ *    their values to callers through component methods' output parameters
+ *    using the #cloneTo() operation;
+ *  - adopt (take ownership of) string buffers returned in output parameters
+ *    of COM methods using the #asOutParam() operation and correctly free them
+ *    afterwards.
  */
 class Utf8Str
 {

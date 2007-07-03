@@ -132,10 +132,13 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
 #endif /* !defined (VBOX_WITH_XPCOM) */
 }
 
-int GetVBoxUserHomeDirectory (Utf8Str &aDir)
+int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
 {
+    AssertReturn (aDir, VERR_INVALID_POINTER);
+    AssertReturn (aDirLen > 0, VERR_BUFFER_OVERFLOW);
+
     /* start with null */
-    aDir.setNull();
+    *aDir = 0;
 
     const char *VBoxUserHome = RTEnvGet ("VBOX_USER_HOME");
 
@@ -151,7 +154,12 @@ int GetVBoxUserHomeDirectory (Utf8Str &aDir)
         {
             vrc = RTPathAbs (VBoxUserHomeUtf8, path, sizeof (path));
             if (RT_SUCCESS (vrc))
-                aDir = path;
+            {
+                if (aDirLen < strlen (path) + 1)
+                    vrc = VERR_BUFFER_OVERFLOW;
+                else
+                    strcpy (aDir, path);
+            }
             RTStrFree (VBoxUserHomeUtf8);
         }
     }
@@ -160,8 +168,13 @@ int GetVBoxUserHomeDirectory (Utf8Str &aDir)
         /* compose the config directory (full path) */
         vrc = RTPathUserHome (path, sizeof (path));
         if (RT_SUCCESS (vrc))
-            aDir = Utf8StrFmt ("%s%c%s", path, RTPATH_DELIMITER,
-                               VBOX_USER_HOME_SUFFIX);
+        {
+            size_t len = 
+                RTStrPrintf (aDir, aDirLen, "%s%c%s",
+                             path, RTPATH_DELIMITER, VBOX_USER_HOME_SUFFIX);
+            if (len != strlen (path) + 1 + strlen (VBOX_USER_HOME_SUFFIX))
+                vrc = VERR_BUFFER_OVERFLOW;
+        }
     }
 
     /* ensure the home directory exists */

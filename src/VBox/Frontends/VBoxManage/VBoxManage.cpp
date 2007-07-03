@@ -6123,13 +6123,17 @@ static int handleUpdateSettings (int argc, char *argv[])
     }
     else
     {
-        Utf8Str homeDir;
-        GetVBoxUserHomeDirectory (homeDir);
+        char homeDir [RTPATH_MAX];
+        vrc = GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
 
-        RTPrintf ("Updating settings files in the following VirtualBox Home Directory:\n"
-                  "\n    %s\n\n", homeDir.raw());
+        AssertRC (vrc);
+        if (VBOX_SUCCESS (vrc))
+        {
+            RTPrintf ("Updating settings files in the following VirtualBox Home Directory:\n"
+                      "\n    %s\n\n", homeDir);
 
-        vrc = handleUpdateSettings_processDir (homeDir, mode, skipinvalid);
+            vrc = handleUpdateSettings_processDir (homeDir, mode, skipinvalid);
+        }
     }
 
     if (mode == HUSPD_DryRun)

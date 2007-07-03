@@ -138,12 +138,17 @@ HRESULT VirtualBox::init()
     LogFlowThisFunc (("Version: %ls\n", sVersion.raw()));
 
     /* Get the VirtualBox home directory. */
-    int vrc = com::GetVBoxUserHomeDirectory (unconst (mData.mHomeDir));
-    if (VBOX_FAILURE (vrc))
-        return setError (E_FAIL,
-            tr ("Could not create the VirtualBox home directory '%s'"
-                "(%Vrc)"),
-            mData.mHomeDir.raw(), vrc);
+    {
+        char homeDir [RTPATH_MAX];
+        int vrc = com::GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
+        if (VBOX_FAILURE (vrc))
+            return setError (E_FAIL,
+                tr ("Could not create the VirtualBox home directory '%s'"
+                    "(%Vrc)"),
+                homeDir, vrc);
+
+        unconst (mData.mHomeDir) = homeDir;
+    }
 
     /* compose the global config file name (always full path) */
     Utf8StrFmt vboxConfigFile ("%s%c%s", mData.mHomeDir.raw(),
