@@ -498,7 +498,10 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
             /* When VBVA is enabled, the VRDP server is informed in the VideoAccelFlush.
              * Inform the server here only if VBVA is disabled.
              */
-            mParent->consoleVRDPServer()->SendUpdateBitmap(uScreenId, x, y, w, h);
+            if (maFramebuffers[uScreenId].u32ResizeStatus == ResizeStatus_Void)
+            {
+                mParent->consoleVRDPServer()->SendUpdateBitmap(uScreenId, x, y, w, h);
+            }
         }
     }
     return;
@@ -2050,8 +2053,11 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
              * The server can now process redraw requests from clients or initial
              * fullscreen updates for new clients.
              */
-            Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
-            pDisplay->mParent->consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
+            if (pFBInfo->u32ResizeStatus == ResizeStatus_Void)
+            {
+                Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
+                pDisplay->mParent->consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
+            }
         }
     }
 
