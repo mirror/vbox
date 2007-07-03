@@ -68,7 +68,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
     for (;;)
     {
         uint32_t u32TransactionId;
-        PCSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+        PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
 #ifdef IN_RING3
         if (RT_UNLIKELY(!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC))
             return RTTimeSystemNanoTS();
@@ -93,7 +93,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
         else
         {
             /* SUPGIPMODE_ASYNC_TSC */
-            PCSUPGIPCPU pGipCpu;
+            PSUPGIPCPU pGipCpu;
 
             uint8_t u8ApicId = ASMGetApicId();
             if (RT_LIKELY(u8ApicId < RT_ELEMENTS(pGip->aCPUs)))

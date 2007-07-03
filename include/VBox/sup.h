@@ -32,7 +32,7 @@ __BEGIN_DECLS
  * @{
  */
 
-/** 
+/**
  * Physical page descriptor.
  */
 #pragma pack(4) /* space is more important. */
@@ -84,7 +84,7 @@ typedef enum SUPPAGINGMODE
 
 /**
  * Per CPU data.
- * This is only used when 
+ * This is only used when
  */
 typedef struct SUPGIPCPU
 {
@@ -121,10 +121,9 @@ typedef struct SUPGIPCPU
 AssertCompileSize(SUPGIPCPU, 96);
 /*AssertCompileMemberAlignment(SUPGIPCPU, u64TSC, 8); -fixme */
 
-/** Pointer to per cpu data. */
+/** Pointer to per cpu data.
+ * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
 typedef SUPGIPCPU *PSUPGIPCPU;
-/** Pointer to const per cpu data. */
-typedef const SUPGIPCPU *PCSUPGIPCPU;
 
 /**
  * Global Information Page.
@@ -163,21 +162,20 @@ typedef struct SUPGLOBALINFOPAGE
 AssertCompile(sizeof(SUPGLOBALINFOPAGE) <= 0x1000);
 /* AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPU, 32); - fixme */
 
-/** Pointer to the global info page. */
+/** Pointer to the global info page.
+ * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
 typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
-/** Const pointer to the global info page. */
-typedef const SUPGLOBALINFOPAGE *PCSUPGLOBALINFOPAGE;
 
 #pragma pack() /* end of paranoia */
 
 /** The value of the SUPGLOBALINFOPAGE::u32Magic field. (Soryo Fuyumi) */
 #define SUPGLOBALINFOPAGE_MAGIC     0x19590106
-/** The GIP version. 
- * Upper 16 bits is the major version. Major version is only changed with 
+/** The GIP version.
+ * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
 #define SUPGLOBALINFOPAGE_VERSION   0x00020000
 
-/** 
+/**
  * SUPGLOBALINFOPAGE::u32Mode values.
  */
 typedef enum SUPGIPMODE
@@ -197,47 +195,43 @@ typedef enum SUPGIPMODE
  * This pointer is valid as long as SUPLib has a open session. Anyone using
  * the page must treat this pointer as higly volatile and not trust it beyond
  * one transaction.
+ *
+ * @remark  The GIP page is read-only to everyone but the support driver and
+ *          is actually mapped read only everywhere but in ring-0. However
+ *          it is not marked 'const' as this might confuse compilers into
+ *          thinking that values doesn't change even if members are marked
+ *          as volatile. Thus, there is no PCSUPGLOBALINFOPAGE type.
  */
 #if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_GC)
-extern DECLEXPORT(PCSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
+extern DECLEXPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 #elif defined(IN_RING0)
-extern DECLIMPORT(const SUPGLOBALINFOPAGE) g_SUPGlobalInfoPage;
+extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
 # if defined(__GNUC__) && !defined(__DARWIN__) && defined(__AMD64__)
 /** Workaround for ELF+GCC problem on 64-bit hosts.
  * (GCC emits a mov with a R_X86_64_32 reloc, we need R_X86_64_64.) */
-DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
+DECLINLINE(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
 {
-    PCSUPGLOBALINFOPAGE pGIP;
+    PSUPGLOBALINFOPAGE pGIP;
     __asm__ __volatile__ ("movabs $g_SUPGlobalInfoPage,%0\n\t"
                           : "=a" (pGIP));
     return pGIP;
 }
-#  define g_pSUPGlobalInfoPage         (SUPGetGIP())
-# elif defined(__GNUC__) && !defined(__DARWIN__)
-/** gcc optimizes &g_SUPGlobalInfoPage + offset */
-DECLINLINE(PCSUPGLOBALINFOPAGE) SUPGetGIP(void)
-{
-    PCSUPGLOBALINFOPAGE pGIP;
-    __asm__ __volatile__ ("movl $g_SUPGlobalInfoPage,%0\n\t"
-                          : "=a" (pGIP));
-    return pGIP;
-}
-#  define g_pSUPGlobalInfoPage         (SUPGetGIP())
+#  define g_pSUPGlobalInfoPage          (SUPGetGIP())
 # else
-#  define g_pSUPGlobalInfoPage         (&g_SUPGlobalInfoPage)
+#  define g_pSUPGlobalInfoPage          (&g_SUPGlobalInfoPage)
 # endif
 #else
-extern DECLIMPORT(PCSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
+extern DECLIMPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 #endif
 
 
 /**
  * Gets the TSC frequency of the calling CPU.
- * 
+ *
  * @returns TSC frequency.
  * @param   pGip        The GIP pointer.
  */
-DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PCSUPGLOBALINFOPAGE pGip)
+DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PSUPGLOBALINFOPAGE pGip)
 {
     unsigned iCpu;
 
@@ -579,7 +573,6 @@ SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 /** @} */
 
 __END_DECLS
-
 
 #endif
 

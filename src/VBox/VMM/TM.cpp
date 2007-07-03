@@ -568,7 +568,7 @@ static uint64_t tmR3CalibrateTSC(void)
      * Use GIP when available present.
      */
     uint64_t    u64Hz;
-    PCSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (    pGip
         &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
     {
