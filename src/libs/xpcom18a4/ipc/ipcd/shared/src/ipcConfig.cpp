@@ -35,7 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
+#elif defined(XP_OS2) && defined(XP_OS2_NATIVEIPC)
 #else
 #include <string.h>
 #include "ipcConfig.h"
@@ -43,8 +44,12 @@
 #include "prenv.h"
 #include "plstr.h"
 
-#ifdef XP_OS2
+#if defined(XP_OS2) && !defined(XP_OS2_NATIVEIPC)
+#ifdef VBOX
+static const char kDefaultSocketPrefix[] = "\\socket\\vbox-";
+#else
 static const char kDefaultSocketPrefix[] = "\\socket\\mozilla-";
+#endif
 static const char kDefaultSocketSuffix[] = "-ipc\\ipcd";
 #else
 #ifdef VBOX
