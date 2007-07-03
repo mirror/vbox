@@ -153,8 +153,7 @@ BOOL APIENTRY DrvEnableDirectDraw(
 {
     DISPDBG((0, "%s: %p, %p, %p, %p\n", __FUNCTION__, dhpdev, pCallBacks, pSurfaceCallBacks, pPaletteCallBacks));
 
-    // Fill in the HAL Callback pointers
-    memset(&pCallBacks, 0, sizeof(DD_CALLBACKS));
+    /* Fill in the HAL Callback pointers */
     pCallBacks->dwSize                = sizeof(DD_CALLBACKS);
     pCallBacks->dwFlags               = 0;
 
@@ -169,8 +168,7 @@ BOOL APIENTRY DrvEnableDirectDraw(
     */
     /* Note: pCallBacks->SetMode & pCallBacks->DestroyDriver are unused in Windows 2000 and up */
 
-    // Fill in the Surface Callback pointers
-    memset(&pSurfaceCallBacks, 0, sizeof(DD_SURFACECALLBACKS));
+    /* Fill in the Surface Callback pointers */
     pSurfaceCallBacks->dwSize           = sizeof(DD_SURFACECALLBACKS);
     pSurfaceCallBacks->dwFlags          = 0;
 
@@ -188,7 +186,7 @@ BOOL APIENTRY DrvEnableDirectDraw(
 //    pSurfaceCallBacks.SetColorKey = DdSetColorKey;
 //    pSurfaceCallBacks.dwFlags |= DDHAL_SURFCB32_SETCOLORKEY;
 
-    memset(&pPaletteCallBacks, 0, sizeof(DD_PALETTECALLBACKS));
+    /* Fill in the Palette Callback pointers */
     pPaletteCallBacks->dwSize           = sizeof(DD_PALETTECALLBACKS);
     pPaletteCallBacks->dwFlags          = 0;
 
