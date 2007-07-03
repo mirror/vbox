@@ -201,6 +201,12 @@ int main(int argc, char *argv[])
 
     HRESULT rc;
 
+    {
+        char homeDir [RTPATH_MAX];
+        GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
+        printf ("VirtualBox Home Directory = '%s'\n", homeDir);
+    }
+
     printf ("Initializing COM...\n");
 
     CHECK_RC_RET (com::Initialize());
@@ -212,6 +218,22 @@ int main(int argc, char *argv[])
 
     ComPtr <IVirtualBox> virtualBox;
     ComPtr <ISession> session;
+
+#if 0
+    // Utf8Str test
+    ////////////////////////////////////////////////////////////////////////////
+
+    Utf8Str nullUtf8Str;
+    printf ("nullUtf8Str='%s'\n", nullUtf8Str.raw());
+    
+    Utf8Str simpleUtf8Str = "simpleUtf8Str";
+    printf ("simpleUtf8Str='%s'\n", simpleUtf8Str.raw());
+
+    Utf8Str utf8StrFmt = Utf8StrFmt ("[0=%d]%s[1=%d]",
+                                     0, "utf8StrFmt", 1);
+    printf ("utf8StrFmt='%s'\n", utf8StrFmt.raw());
+
+#endif
 
     printf ("Creating VirtualBox object...\n");
     CHECK_RC (virtualBox.createLocalObject (CLSID_VirtualBox));
@@ -453,7 +475,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 1
+#if 0
     // find a registered hard disk by location
     ///////////////////////////////////////////////////////////////////////////
     do

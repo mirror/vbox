@@ -24,7 +24,6 @@
 #define __VBox_com_com_h__
 
 #include "VBox/com/defs.h"
-#include "VBox/com/string.h"
 
 namespace com
 {
@@ -58,16 +57,21 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName);
 /** 
  *  Returns the VirtualBox user home directory.
  *
- *  On failure, this function will return a path that caused a failure (or a
- *  null string if the faiulre is not path-related).
+ *  On failure, this function will return a path that caused a failure (or
+ *  NULL if the faiulre is not path-related).
  *
  *  On success, this function will try to create the returned directory if it
  *  doesn't exist yet. This may also fail with the corresponding status code.
- * 
- *  @param aDir     Where to return the directory to.
+ *
+ *  If @a aDirLen is smaller than RTPATH_MAX then there is a great chance that
+ *  this method will return VERR_BUFFER_OVERFLOW.
+ *
+ *  @param aDir     Buffer to store the directory string in UTF-8 encoding.
+ *  @param aDirLen  Length of the supplied buffer including space for the
+ *                  terminating null character, in bytes.
  *  @return         VBox status code.
  */
-int GetVBoxUserHomeDirectory (Utf8Str &aDir);
+int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen);
 
 }; // namespace com
 
