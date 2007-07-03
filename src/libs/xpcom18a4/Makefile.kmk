@@ -550,17 +550,15 @@ xpidl_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_struct.c \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 
-ifeq ($(filter-out os2,$(BUILD_TARGET)),)
+ifeq ($(BUILD_TARGET),os2)
  # glib and libIDL needed by XPCOM on OS/2.
- VBOX_PATH_GLIB      ?= $(PATH_DEVTOOLS_TRG)/glibidl
- VBOX_PATH_GLIB      := $(wildcard $(VBOX_PATH_GLIB))
- VBOX_PATH_LIBIDL    ?= $(PATH_DEVTOOLS_TRG)/glibidl
- VBOX_PATH_LIBIDL    := $(wildcard $(VBOX_PATH_LIBIDL))
- ifeq ($(VBOX_PATH_GLIB),)
-  $(warning VBOX_PATH_GLIB is wrong or not defined!)
+ VBOX_PATH_GLIB      ?= $(PATH_DEVTOOLS_TRG)/glibidl/gcc335
+ VBOX_PATH_LIBIDL    ?= $(PATH_DEVTOOLS_TRG)/glibidl/gcc335
+ ifeq ($(wildcard $(VBOX_PATH_GLIB)),)
+  $(warning VBOX_PATH_GLIB is "$(VBOX_PATH_GLIB)" which is not a valid directory!)
  endif
- ifeq ($(VBOX_PATH_LIBIDL),)
-  $(warning VBOX_PATH_LIBIDL is wrong or not defined!)
+ ifeq ($(wildcard $(VBOX_PATH_LIBIDL)),)
+  $(warning VBOX_PATH_LIBIDL is "$(VBOX_PATH_LIBIDL)" which is not a valid directory!)
  endif
  xpidl_INCS = \
 	$(VBOX_PATH_LIBIDL)/include \
@@ -568,6 +566,14 @@ ifeq ($(filter-out os2,$(BUILD_TARGET)),)
  xpidl_LIBS = \
 	$(VBOX_PATH_LIBIDL)/lib/libidl.lib \
 	$(VBOX_PATH_LIBIDL)/lib/glib.lib
+ # install necessary DLLs to the same place where xpidl goes
+ INSTALLS += xpidl-DLLS
+ xpidl_ORDERDEPS = xpidl-DLLS
+ xpidl-DLLS_INST = $(xpidl_INST)
+ # static libraries of these may be provided instead,
+ # so copy DLLs only when they are present
+ xpidl-DLLS_SOURCES += $(wildcard $(VBOX_PATH_GLIB)/lib/glib.dll)
+ xpidl-DLLS_SOURCES += $(wildcard $(VBOX_PATH_LIBIDL)/lib/libIDL.dll)
 else
  # We do these ONCE.
  libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
@@ -1442,8 +1448,8 @@ $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(idl)))) \
             $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): $(idl) | $(TARGET_xpidl)
 	$$(call MSG_TOOL,xpidl,XPCOM,$$<,$$@)
 	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/include $(VBOX_PATH_SDK)/idl
-	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
-	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
+	$$(QUIET)$$(VBOX_XPIDL) -m header $(XPIDL_INCS) -e $$@ $$<
+	$$(QUIET)$$(VBOX_XPIDL) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
 	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/idl
 endef
 
