@@ -903,7 +903,7 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
     //
     AssertMsg(!(pSurfaceGlobal->ddpfSurface.dwFlags & DDPF_FOURCC), ("GDI called us with a non-RGB surface!"));
 
-
+#if 0
     // The GDI driver does not accelerate surfaces in AGP memory,
     // thus we fail the call
 
@@ -1009,7 +1009,8 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
 
     DISPDBG((0, "DrvDeriveSurface return NULL"));
     DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch));
-      
+#endif
+    
     return(0);
 }
 #endif /* VBOX_WITH_DDRAW */
