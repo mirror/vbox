@@ -19,6 +19,10 @@
  * license agreement apply instead of the previous paragraph.
  */
 
+#ifdef __OS2__
+# include <prproces.h>
+#endif
+
 #include <nsMemory.h>
 #include <nsString.h>
 #include <nsCOMPtr.h>
@@ -164,14 +168,27 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
                 startedOnce = true;
 
-                RTPROCESS pid = NIL_RTPROCESS;
+#ifdef __OS2__
+                char *const args[] = { VBoxSVCPath, "--automate", 0 };
+                /* use NSPR because we want the process to be detached right
+                 * at startup (it isn't possible to detach it later on) */
+                PRStatus rv = PR_CreateProcessDetached (VBoxSVCPath,
+                                                        args, NULL, 0);
+                if (rv != PR_SUCCESS)
+                {
+                    rc = NS_ERROR_FAILURE;
+                    break;
+                }
+#else
                 const char *args[] = { VBoxSVCPath, "--automate", 0 };
+                RTPROCESS pid = NIL_RTPROCESS;
                 vrc = RTProcCreate (VBoxSVCPath, args, NULL, 0, &pid);
                 if (VBOX_FAILURE (vrc))
                 {
                     rc = NS_ERROR_FAILURE;
                     break;
                 }
+#endif
 
                 /* wait for the server process to establish a connection */
                 do

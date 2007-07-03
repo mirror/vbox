@@ -983,8 +983,17 @@ int main (int argc, char **argv)
         }
     }
 
-    static int daemon_pipe_fds[2];
     static RTFILE pidFile = NIL_RTFILE;
+
+#ifdef __OS2__
+
+    /* nothing to do here, the process is supposed to be already
+     * started daemonized when it is necessary */  
+    NOREF(fDaemonize);
+
+#else // ifdef __OS2__
+
+    static int daemon_pipe_fds[2];
 
     if (fDaemonize)
     {
@@ -1045,6 +1054,8 @@ int main (int argc, char **argv)
         /* close the reading end of the pipe */
         close(daemon_pipe_fds[0]);
     }
+
+#endif // ifdef __OS2__
 
 #if defined(USE_BACKTRACE)
     {
@@ -1160,8 +1171,10 @@ int main (int argc, char **argv)
         if (fDaemonize)
         {
             printf ("\nStarting event loop....\n[send TERM signal to quit]\n");
+#ifndef __OS2__
             /* now we're ready, signal the parent process */
             write(daemon_pipe_fds[1], "READY", strlen("READY"));
+#endif
         }
         else
         {
@@ -1219,8 +1232,10 @@ int main (int argc, char **argv)
 
     if (fDaemonize)
     {
+#ifndef __OS2__
         /* close writing end of the pipe as well */
         close(daemon_pipe_fds[1]);
+#endif
     }
 
     return 0;
