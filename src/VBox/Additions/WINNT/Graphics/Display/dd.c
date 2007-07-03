@@ -120,9 +120,11 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
 
     pHalInfo->ddCaps.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
 
+#if 0 /* not mandatory */
     /* DX5 and up */
     pHalInfo->GetDriverInfo = DdGetDriverInfo;
     pHalInfo->dwFlags |= DDHALINFO_GETDRIVERINFOSET;
+#endif
 
 #if 0
     /* No 3D capabilities */
@@ -167,11 +169,12 @@ BOOL APIENTRY DrvEnableDirectDraw(
 
     /* Fill in the HAL Callback pointers */
     pCallBacks->dwSize                = sizeof(DD_CALLBACKS);
+    pCallBacks->dwFlags               = 0;
+
+    /*
     pCallBacks->dwFlags               = DDHAL_CB32_CREATESURFACE | DDHAL_CB32_CANCREATESURFACE;
     pCallBacks->CreateSurface         = DdCreateSurface;
     pCallBacks->CanCreateSurface      = DdCanCreateSurface;
-
-    /*
     pCallBacks->WaitForVerticalBlank  = DdWaitForVerticalBlank;
     pCallBacks->GetScanLine           = DdGetScanLine;
     pCallBacks->MapMemory             = DdMapMemory;
@@ -181,12 +184,13 @@ BOOL APIENTRY DrvEnableDirectDraw(
 
     /* Fill in the Surface Callback pointers */
     pSurfaceCallBacks->dwSize           = sizeof(DD_SURFACECALLBACKS);
-    pSurfaceCallBacks->dwFlags          = DDHAL_SURFCB32_DESTROYSURFACE | DDHAL_SURFCB32_LOCK; // DDHAL_SURFCB32_UNLOCK;
-    pSurfaceCallBacks->DestroySurface   = DdDestroySurface;
-//    pSurfaceCallBacks->Lock             = DdLock;
-    pSurfaceCallBacks->Unlock           = DdUnlock;
+    pSurfaceCallBacks->dwFlags          = 0;
 
     /*
+    pSurfaceCallBacks->dwFlags          = DDHAL_SURFCB32_DESTROYSURFACE | DDHAL_SURFCB32_LOCK; // DDHAL_SURFCB32_UNLOCK;
+    pSurfaceCallBacks->DestroySurface   = DdDestroySurface;
+    pSurfaceCallBacks->Lock             = DdLock;
+    pSurfaceCallBacks->Unlock           = DdUnlock;
     pSurfaceCallBacks->Flip             = DdFlip;
     pSurfaceCallBacks->GetBltStatus     = DdGetBltStatus;
     pSurfaceCallBacks->GetFlipStatus    = DdGetFlipStatus;
@@ -691,13 +695,6 @@ DWORD APIENTRY DdFlipToGDISurface(PDD_FLIPTOGDISURFACEDATA lpFlipToGDISurface)
 // DirectDraw 'HeapVidMemAllocAligned' function in your driver, and you
 // can boot those allocations out of memory to make room for DirectDraw.
 //
-// We implement this function in the P2 driver because we have DirectDraw
-// entirely manage our off-screen heap, and we use HeapVidMemAllocAligned
-// to put GDI device-bitmaps in off-screen memory.  DirectDraw applications
-// have a higher priority for getting stuff into video memory, though, and
-// so this function is used to boot those GDI surfaces out of memory in
-// order to make room for DirectDraw.
-//
 //-----------------------------------------------------------------------------
 
 DWORD APIENTRY DdFreeDriverMemory(PDD_FREEDRIVERMEMORYDATA lpFreeDriverMemory)
@@ -706,7 +703,7 @@ DWORD APIENTRY DdFreeDriverMemory(PDD_FREEDRIVERMEMORYDATA lpFreeDriverMemory)
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
     lpFreeDriverMemory->ddRVal = DDERR_OUTOFMEMORY;
-    return (DDHAL_DRIVER_HANDLED);
+    return DDHAL_DRIVER_HANDLED;
 }
 
 
