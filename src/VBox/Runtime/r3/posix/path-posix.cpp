@@ -96,7 +96,7 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealP
 /**
  * Cleans up a path specifier a little bit.
  * This includes removing duplicate slashes, uncessary single dots, and
- * trailing slashes.
+ * trailing slashes. Also, replaces all RTPATH_SLASH characters with '/'.
  *
  * @returns Number of bytes in the clean path.
  * @param   pszPath     The path to cleanup.
@@ -123,16 +123,16 @@ static int fsCleanPath(char *pszPath)
     for (;;)
     {
         char ch = *pszSrc++;
-        if (RTPATH_IS_SEP(ch))
+        if (RTPATH_IS_SLASH(ch))
         {
-            *pszTrg++ = RTPATH_SLASH;
+            *pszTrg++ = '/';
             for (;;)
             {
                 do  ch = *pszSrc++;
-                while (RTPATH_IS_SEP(ch));
+                while (RTPATH_IS_SLASH(ch));
 
                 /* Remove '/./' and '/.'. */
-                if (ch != '.' || (*pszSrc && !RTPATH_IS_SEP(*pszSrc)))
+                if (ch != '.' || (*pszSrc && !RTPATH_IS_SLASH(*pszSrc)))
                     break;
             }
         }
@@ -147,11 +147,11 @@ static int fsCleanPath(char *pszPath)
      */
     int cch = pszTrg - pszPath;
     if (    cch > 1
-        &&  pszTrg[-1] == RTPATH_SLASH
+        &&  RTPATH_IS_SLASH(pszTrg[-1])
 #ifdef HAVE_DRIVE
-        &&  pszTrg[-2] != ':'
+        &&  !RTPATH_IS_VOLSEP(pszTrg[-2])
 #endif
-        &&  pszTrg[-2] != RTPATH_SLASH)
+        &&  !RTPATH_IS_SLASH(pszTrg[-2]))
         pszPath[--cch] = '\0';
 
     return cch;
@@ -167,7 +167,8 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
     int rc = rtPathToNative(&pszNativePath, pszPath);
     if (RT_FAILURE(rc))
     {
-        LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cchAbsPath));
+        LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath,
+                 pszPath, pszAbsPath, cchAbsPath, rc));
         return rc;
     }
 
@@ -179,7 +180,15 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
     char *psz = realpath(pszNativePath, szTmpPath);
     if (!psz)
     {
-        if (errno == ENOENT || errno == ENOTDIR)
+        if (errno == ENOENT || errno == ENOTDIR
+#ifdef __OS2__
+            /// @todo realpath() returns EIO for non-existent UNC paths like
+            //  //server/share/subdir (i.e. when a subdir is specified within
+            //  a share). We should either fix realpath() in libc or remove
+            //  this todo.
+            || errno == EIO
+#endif
+            )
         {
             if (strlen(pszNativePath) <= PATH_MAX)
             {
@@ -194,18 +203,58 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
                 size_t cch = 0; // current resolved path length
                 char *pszCur = szTmpSrc;
 
-                if (*pszCur == RTPATH_SLASH)
+#ifdef HAVE_DRIVE
+                if (pszCur[0] && RTPATH_IS_VOLSEP(pszCur[1]) && pszCur[2] == '/')
+                {
+                    psz = szTmpPath;
+                    cch = 2;
+                    pszCur += 3;
+                }
+#ifdef HAVE_UNC
+                else
+                if (pszCur[0] == '/' && pszCur[1] == '/')
+                {
+                    pszCur += 2;
+                    char *pszSlash = strchr(pszCur, '/');
+                    size_t cchElement = pszSlash ? pszSlash - pszCur : strlen(pszCur);
+                    if (cchElement && pszCur[cchElement])
+                    {
+                        psz = szTmpPath;
+                        cch = cchElement + 2;
+                        pszCur += cchElement + 1;
+                    }
+                    else
+                        /* we've got just "//server" or "//" */
+                        /// @todo (r=dmik) not 100% sure we should fail, but the
+                        //  above cases are just invalid (incomplete) paths,
+                        //  no matter that Win32 returns these paths as is.
+                        rc = VERR_INVALID_NAME;
+                }
+#endif
+#else
+                if (*pszCur == '/')
                 {
                     psz = szTmpPath;
                     pszCur++;
                 }
+#endif
                 else
                 {
                     /* get the cwd */
                     psz = getcwd(szTmpPath,  sizeof(szTmpPath));
                     AssertMsg(psz, ("Couldn't get cwd!\n"));
                     if (psz)
-                        cch = strlen(psz);
+                    {
+#ifdef HAVE_DRIVE
+                        if (*pszCur == '/')
+                        {
+                            cch = 2;
+                            pszCur++;
+                        }
+                        else
+#endif
+                            cch = strlen(psz);
+                    }
                     else
                         rc = RTErrConvertFromErrno(errno);
                 }
@@ -215,9 +264,12 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
                     bool fResolveSymlinks = true;
                     char szTmpPath2[PATH_MAX + 1];
 
+                    /* make sure strrchr() will work correctly */
+                    psz[cch] = '\0';
+
                     while (*pszCur)
                     {
-                        char *pszSlash = strchr(pszCur, RTPATH_SLASH);
+                        char *pszSlash = strchr(pszCur, '/');
                         size_t cchElement = pszSlash ? pszSlash - pszCur : strlen(pszCur);
                         if (cch + cchElement + 1 > PATH_MAX)
                         {
@@ -227,17 +279,23 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
 
                         if (!strncmp(pszCur, "..", cchElement))
                         {
-                            char *pszLastSlash = strrchr(psz, RTPATH_SLASH);
+                            char *pszLastSlash = strrchr(psz, '/');
+#ifdef HAVE_UNC
+                            if (pszLastSlash && pszLastSlash > psz &&
+                                pszLastSlash[-1] != '/')
+#else
                             if (pszLastSlash)
+#endif
                             {
                                 cch = pszLastSlash - psz;
                                 psz[cch] = '\0';
                             }
-                            /* else: We've reached the root and the parent of the root is the root. */
+                            /* else: We've reached the root and the parent of
+                             * the root is the root. */
                         }
                         else
                         {
-                            psz[cch++] = RTPATH_SLASH;
+                            psz[cch++] = '/';
                             memcpy(psz + cch, pszCur, cchElement);
                             cch += cchElement;
                             psz[cch] = '\0';
@@ -255,7 +313,12 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
                                 }
                                 else
                                 {
-                                    if (errno != ENOENT && errno != ENOTDIR)
+                                    if (errno != ENOENT && errno != ENOTDIR
+#ifdef __OS2__
+                                        /// @todo see above
+                                        && errno != EIO
+#endif
+                                        )
                                     {
                                         rc = RTErrConvertFromErrno(errno);
                                         break;
@@ -273,10 +336,15 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
                             ++pszCur;
                     }
 
-                    /* if the length is zero here, then we're at the root (Not true for half-posixs stuff such as libc!) */
+#ifdef HAVE_DRIVE
+                    /* check if we're at the root */
+                    if (cch == 2 && RTPATH_IS_VOLSEP(psz[1]))
+#else
+                    /* if the length is zero here, then we're at the root */
                     if (!cch)
+#endif
                     {
-                        psz[cch++] = RTPATH_SLASH;
+                        psz[cch++] = '/';
                         psz[cch] = '\0';
                     }
                 }
@@ -299,9 +367,16 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
         rc = rtPathFromNative(&pszUtf8AbsPath, psz);
         if (RT_FAILURE(rc))
         {
-            LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cchAbsPath));
+            LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath,
+                     pszPath, pszAbsPath, cchAbsPath, rc));
             return rc;
         }
+
+        /* replace '/' back with native RTPATH_SLASH */
+        psz = pszUtf8AbsPath;
+        for (; *psz; psz++)
+            if (*psz == '/')
+                *psz = RTPATH_SLASH;
 
         unsigned cch = strlen(pszUtf8AbsPath) + 1;
         if (cch <= cchAbsPath)
@@ -311,8 +386,9 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
         RTStrFree(pszUtf8AbsPath);
     }
 
-    LogFlow(("RTPathAbs(%p:{%s}, %p:{%s}, %d): returns %Rrc\n", pszPath, pszPath,
-             pszAbsPath, RT_SUCCESS(rc) ? pszAbsPath : "<failed>", cchAbsPath));
+    LogFlow(("RTPathAbs(%p:{%s}, %p:{%s}, %d): returns %Rrc\n", pszPath,
+             pszPath, pszAbsPath, RT_SUCCESS(rc) ? pszAbsPath : "<failed>",
+             cchAbsPath, rc));
     return rc;
 }
 
