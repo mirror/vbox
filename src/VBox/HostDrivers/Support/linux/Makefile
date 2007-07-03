@@ -89,14 +89,16 @@ ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
 endif
 
 # module install dir.
-ifndef MODULE_DIR
- MODULE_DIR_TST := /lib/modules/$(shell uname -r)
- ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
-  MODULE_DIR := $(MODULE_DIR_TST)/misc
- else
-  $(error Unable to find the folder to install the support driver to)
- endif
-endif # MODULE_DIR unspecified
+ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
+ ifndef MODULE_DIR
+  MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+  ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+   MODULE_DIR := $(MODULE_DIR_TST)/misc
+  else
+   $(error Unable to find the folder to install the support driver to)
+  endif
+ endif # MODULE_DIR unspecified
+endif
 
 # guess kernel version (24 or 26)
 KERN_VERSION := $(if $(wildcard $(KERN_DIR)/Rules.make),24,26)
