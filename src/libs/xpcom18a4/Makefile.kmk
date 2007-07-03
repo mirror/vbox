@@ -1131,7 +1131,7 @@ VBoxXPCOMIPCC_SOURCES.darwin = \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 VBoxXPCOMIPCC_SOURCES.l4 = \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
-VBoxXPCOMIPCC_SOURCES.linix = \
+VBoxXPCOMIPCC_SOURCES.linux = \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 VBoxXPCOMIPCC_SOURCES.os2 = \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
