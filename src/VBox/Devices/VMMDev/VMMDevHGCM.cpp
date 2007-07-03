@@ -110,7 +110,7 @@ static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, R
     
     if (VBOX_SUCCESS (rc))
     {
-        LogFlowFunc(("%p\n", pCmd));
+        LogFlowFunc(("%p type %d\n", pCmd, enmCmdType));
 
         /* Insert at the head of the list. The vmmdevHGCMLoadStateDone depends on this. */
         pCmd->pNext = pVMMDevState->pHGCMCmdList;
@@ -131,6 +131,7 @@ static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, R
             || enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT
             || enmCmdType == VBOXHGCMCMDTYPE_CALL)
         {
+            Log(("vmmdevHGCMAddCommand: u32HGCMEnabled = %d\n", pVMMDevState->u32HGCMEnabled));
             if (ASMAtomicCmpXchgU32(&pVMMDevState->u32HGCMEnabled, 1, 0))
             {
                  VMMDevCtlSetGuestFilterMask (pVMMDevState, VMMDEV_EVENT_HGCM, 0);
