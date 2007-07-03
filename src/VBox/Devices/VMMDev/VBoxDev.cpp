@@ -216,6 +216,7 @@ static void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
     const bool fHadEvents =
         (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask) != 0;
 
+    Log(("vmmdevCtlGuestFilterMask_EMT: u32OrMask = 0x%08X, u32NotMask = 0x%08X, fHadEvents = %d.\n", u32OrMask, u32NotMask, fHadEvents));
     if (fHadEvents)
     {
         if (!pVMMDevState->fNewGuestFilterMask)
@@ -240,9 +241,7 @@ void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
     PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS(pVMMDevState);
     PVM pVM = PDMDevHlpGetVM(pDevIns);
 
-#ifdef DEBUG_sunlover
     Log(("VMMDevCtlSetGuestFilterMask: u32OrMask = 0x%08X, u32NotMask = 0x%08X.\n", u32OrMask, u32NotMask));
-#endif /* DEBUG_sunlover */
 
     if (VM_IS_EMT(pVM))
     {
