@@ -141,7 +141,7 @@ endef
 #   by that source, so it must be generated before the source gets compiled.
 #   @param  $mocsrc     the source file with Q_OBJECT
 define def_qt_gen_inc_moc
-$(eval mocobj := $(PATH_$(target)_$(mocsrc))/$(notdir $(basename $(mocsrc)))$(SUFF_OBJ))
+$(eval mocobj := $(PATH_$(target)_$(mocsrc))/$(notdir $(basename $(mocsrc)))$(VBOX_SUFF_OBJ))
 $(eval mocinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocsrc))).moc)
 $$(mocobj): $(mocinc)
 $$(mocinc): $(mocsrc)
@@ -157,7 +157,7 @@ endef
 #   @param  $mocuihdr     the UI header file with Q_OBJECT
 define def_qt_gen_inc_mocuihdr
 $(eval uisrc    := $(PATH_$(target))/ui/$(notdir $(basename $(basename $(mocuihdr)))).cpp)
-$(eval uiobj    := $(PATH_$(target)_$(uisrc))/$(notdir $(basename $(uisrc)))$(SUFF_OBJ))
+$(eval uiobj    := $(PATH_$(target)_$(uisrc))/$(notdir $(basename $(uisrc)))$(VBOX_SUFF_OBJ))
 $(eval mocuiinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocuihdr))).moc)
 $$(uisrc): $(mocuiinc)
 $$(mocuiinc): $(mocuihdr)
@@ -227,9 +227,9 @@ updatenls:
 #
 # Hand made dependencies go here
 #
-$(PATH_VBoxDbg)/gen/ui/VBoxNewVMWzd$(SUFF_OBJ):        $(PATH_VBoxDbg)/ui/VBoxNewVMWzd.h $(PATH_VBoxDbg)/ui/VBoxDiskImageMgrDlg.h
-$(PATH_VBoxDbg)/gen/ui/VBoxDiskImageMgrDlg$(SUFF_OBJ): ui/VBoxDiskImageMgrDlg.ui $(PATH_VBoxDbg)/ui/VBoxNewHDWzd.h
-$(PATH_VBoxDbg)/gen/ui/VBoxCloseVMDlg$(SUFF_OBJ):      $(PATH_VBoxDbg)/ui/VBoxCloseVMDlg.h
+$(PATH_VBoxDbg)/gen/ui/VBoxNewVMWzd$(VBOX_SUFF_OBJ):        $(PATH_VBoxDbg)/ui/VBoxNewVMWzd.h $(PATH_VBoxDbg)/ui/VBoxDiskImageMgrDlg.h
+$(PATH_VBoxDbg)/gen/ui/VBoxDiskImageMgrDlg$(VBOX_SUFF_OBJ): ui/VBoxDiskImageMgrDlg.ui $(PATH_VBoxDbg)/ui/VBoxNewHDWzd.h
+$(PATH_VBoxDbg)/gen/ui/VBoxCloseVMDlg$(VBOX_SUFF_OBJ):      $(PATH_VBoxDbg)/ui/VBoxCloseVMDlg.h
 
 
 test:
