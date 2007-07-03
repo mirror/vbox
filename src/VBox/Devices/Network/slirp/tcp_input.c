@@ -240,6 +240,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 	u_long tiwin;
 	int ret;
 /*	int ts_present = 0; */
+	int mbuf_freed = 0;
 
 	DEBUG_CALL("tcp_input");
 	DEBUG_ARGS((dfd," m = %8lx  iphlen = %2d  inso = %lx\n",
@@ -1346,7 +1347,7 @@ dodata:
 		 */
 		len = so->so_rcv.sb_datalen - (tp->rcv_adv - tp->rcv_nxt);
 	} else {
-		m_free(pData, m);
+	        mbuf_freed = 1; /* The mbuf must be freed, but only when its content is not needed anymore. */
 		tiflags &= ~TH_FIN;
 	}
 
@@ -1433,6 +1434,9 @@ dodata:
 		tp->t_flags |= TF_ACKNOW;
 	}
 
+	if (mbuf_freed) {
+		m_free(pData, m);
+	}
 	/*
 	 * Return any desired output.
 	 */
