@@ -817,9 +817,9 @@ ifneq ($(BUILD_TARGET),win)
  endif
 endif
 
-## @todo isn't worth to teach kmk_ash.exe to do the following for every .EXE it runs?
 ifeq ($(BUILD_TARGET),os2)
- VBOX_XPIDL    := cmd.exe /c "set BEGINLIBPATH=$(dir $(VBOX_XPIDL)) & $(VBOX_XPIDL)"
+ # search DLLs in the EXE directory first
+ VBOX_XPIDL    := BEGINLIBPATH="$(dir $(VBOX_XPIDL));$$BEGINLIBPATH" $(VBOX_XPIDL)
 endif
 #$(error $(VBOX_XPIDL))
 
@@ -1139,12 +1139,12 @@ VBOX_MOC      ?= $(VBOX_PATH_QT_HOST)/bin/moc$(HOSTSUFF_EXE)
 VBOX_LUPDATE  ?= $(VBOX_PATH_QT_HOST)/bin/lupdate$(HOSTSUFF_EXE)
 VBOX_LRELEASE ?= $(VBOX_PATH_QT_HOST)/bin/lrelease$(HOSTSUFF_EXE)
 
-## @todo isn't worth to teach kmk_ash.exe to do the following for every .EXE it runs?
 ifeq ($(BUILD_TARGET),os2)
- VBOX_UIC      := cmd.exe /c "set BEGINLIBPATH=$(dir $(VBOX_UIC)) & $(VBOX_UIC)"
- VBOX_MOC      := cmd.exe /c "set BEGINLIBPATH=$(dir $(VBOX_MOC)) & $(VBOX_MOC)"
- VBOX_LUPDATE  := cmd.exe /c "set BEGINLIBPATH=$(dir $(VBOX_LUPDATE)) & $(VBOX_LUPDATE)"
- VBOX_LRELEASE := cmd.exe /c "set BEGINLIBPATH=$(dir $(VBOX_LRELEASE)) & $(VBOX_LRELEASE)"
+ # search DLLs in the EXE directory first
+ VBOX_UIC      := BEGINLIBPATH="$(dir $(VBOX_UIC));$$BEGINLIBPATH" $(VBOX_UIC)
+ VBOX_MOC      := BEGINLIBPATH="$(dir $(VBOX_MOC));$$BEGINLIBPATH" $(VBOX_MOC)
+ VBOX_LUPDATE  := BEGINLIBPATH="$(dir $(VBOX_LUPDATE));$$BEGINLIBPATH" $(VBOX_LUPDATE)
+ VBOX_LRELEASE := BEGINLIBPATH="$(dir $(VBOX_LRELEASE));$$BEGINLIBPATH" $(VBOX_LRELEASE)
 endif
 
 #
