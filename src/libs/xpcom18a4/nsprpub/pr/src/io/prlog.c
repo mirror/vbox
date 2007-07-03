@@ -49,6 +49,11 @@
  * 04/10/2000   IBM Corp.       Added DebugBreak() definitions for OS/2
  */
 
+/* @todo cannot currently build with VBOX defined on linux platforms... */
+#if defined(VBOX) && !defined(XP_OS2)
+#undef VBOX
+#endif
+
 #if defined(VBOX)
 #define IN_RING3
 #include <iprt/initterm.h> /* for RTR3Init */
