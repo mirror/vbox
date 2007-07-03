@@ -33,6 +33,7 @@
 #undef ASSERT
 
 #include <VBox/com/com.h>
+#include <VBox/com/assert.h>
 
 #undef ASSERT
 
