@@ -544,7 +544,7 @@ typedef struct SUPDRVSESSION
 #else
     /** The read-only usermode mapping address of the GID.
      * This is NULL if the GIP hasn't been mapped. */
-    PCSUPGLOBALINFOPAGE         pGip;
+    PSUPGLOBALINFOPAGE          pGip;
 #endif
     /** Set if the session is using the GIP. */
     uint32_t                    fGipReferenced;
@@ -649,7 +649,7 @@ typedef struct SUPDRVDEVEXT
     /** The last mono time stamp. */
     uint64_t volatile       u64LastMonotime;
     /** Set when GIP is suspended to prevent the timers from re-registering themselves). */
-    uint8_t volatile        fGIPSuspended;            
+    uint8_t volatile        fGIPSuspended;
 # ifdef CONFIG_SMP
     /** Array of per CPU data for SUPGIPMODE_ASYNC_TSC. */
     struct LINUXCPU
@@ -685,8 +685,8 @@ void VBOXCALL   supdrvOSLowFreeOne(PSUPDRVMEMREF pMem);
 int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
 void VBOXCALL   supdrvOSMemGetPages(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
 void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem);
-int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip);
-int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE pGip);
+int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip);
+int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip);
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt);
 void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt);
 unsigned VBOXCALL supdrvOSGetCPUCount(void);

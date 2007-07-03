@@ -565,9 +565,9 @@ typedef struct SUPGIPMAP_IN
 typedef struct SUPGIPMAP_OUT
 {
     /** Pointer to the read-only usermode GIP mapping for this session. */
-    R3PTRTYPE(PCSUPGLOBALINFOPAGE)  pGipR3;
+    R3PTRTYPE(PSUPGLOBALINFOPAGE)   pGipR3;
     /** Pointer to the supervisor mode GIP mapping. */
-    R0PTRTYPE(PCSUPGLOBALINFOPAGE)  pGipR0;
+    R0PTRTYPE(PSUPGLOBALINFOPAGE)   pGipR0;
     /** The physical address of the GIP. */
     RTHCPHYS                        HCPhysGip;
 } SUPGIPMAP_OUT, *PSUPGIPMAP_OUT;

@@ -1670,7 +1670,7 @@ static void VBoxSupGipTimerPerCpu(unsigned long iTimerCPU)
  * @returns negative errno.
  * @param   pDevExt     Instance data.
  */
-int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip)
+int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip)
 {
     int             rc = 0;
     unsigned long   ulAddr;
@@ -1721,7 +1721,7 @@ int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip)
      */
     if (!rc)
     {
-        *ppGip = (PCSUPGLOBALINFOPAGE)ulAddr;
+        *ppGip = (PSUPGLOBALINFOPAGE)ulAddr;
         dprintf2(("supdrvOSGipMap: ppGip=%p\n", *ppGip));
         return 0;
     }
@@ -1747,7 +1747,7 @@ int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip)
  * @returns negative errno.
  * @param   pDevExt     Instance data.
  */
-int VBOXCALL supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE pGip)
+int VBOXCALL supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
 {
     dprintf2(("supdrvOSGipUnmap: pGip=%p\n", pGip));
     if (current->mm)

@@ -995,7 +995,7 @@ static void _stdcall VBoxSupDrvGipPerCpuDpc(IN PKDPC pDpc, IN PVOID pvUser, IN P
  * @returns negative errno.
  * @param   pDevExt     Instance data.
  */
-int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip)
+int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip)
 {
     dprintf2(("supdrvOSGipMap: ppGip=%p (pDevExt->pGipMdl=%p)\n", ppGip, pDevExt->pGipMdl));
 
@@ -1006,7 +1006,7 @@ int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip)
     void *pv = NULL;
     __try
     {
-        *ppGip = (PCSUPGLOBALINFOPAGE)MmMapLockedPagesSpecifyCache(pDevExt->pGipMdl, UserMode, MmCached, NULL, FALSE, NormalPagePriority);
+        *ppGip = (PSUPGLOBALINFOPAGE)MmMapLockedPagesSpecifyCache(pDevExt->pGipMdl, UserMode, MmCached, NULL, FALSE, NormalPagePriority);
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -1026,7 +1026,7 @@ int VBOXCALL supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE *ppGip)
  * @returns negative errno.
  * @param   pDevExt     Instance data.
  */
-int VBOXCALL supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PCSUPGLOBALINFOPAGE pGip)
+int VBOXCALL supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
 {
     dprintf2(("supdrvOSGipUnmap: pGip=%p (pGipMdl=%p)\n", pGip, pDevExt->pGipMdl));
 

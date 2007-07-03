@@ -69,7 +69,7 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
     uint64_t    u64NanoTS;
     uint32_t    u32UpdateIntervalTSC;
     uint32_t    u32TransactionId;
-    PCSUPGLOBALINFOPAGE pGip;
+    PSUPGLOBALINFOPAGE pGip;
 
     /*
      * Read the data.
@@ -100,7 +100,7 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
         else
         {
             /* SUPGIPMODE_ASYNC_TSC */
-            PCSUPGIPCPU pGipCpu;
+            PSUPGIPCPU pGipCpu;
 
             uint8_t u8ApicId = ASMGetApicId();
             if (RT_LIKELY(u8ApicId < RT_ELEMENTS(pGip->aCPUs)))

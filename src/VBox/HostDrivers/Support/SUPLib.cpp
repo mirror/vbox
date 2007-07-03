@@ -92,9 +92,9 @@ typedef FNCALLVMMR0 *PFNCALLVMMR0;
  *
  * @todo This will probably deserve it's own session or some other good solution...
  */
-DECLEXPORT(PCSUPGLOBALINFOPAGE) g_pSUPGlobalInfoPage;
+DECLEXPORT(PSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
 /** Address of the ring-0 mapping of the GIP. */
-static PCSUPGLOBALINFOPAGE      g_pSUPGlobalInfoPageR0;
+static PSUPGLOBALINFOPAGE       g_pSUPGlobalInfoPageR0;
 /** The physical address of the GIP. */
 static RTHCPHYS                 g_HCPhysSUPGlobalInfoPage = NIL_RTHCPHYS;
 
@@ -253,7 +253,7 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
             }
             else
             {
-                LogRel(("Support driver version mismatch: SessionVersion=%#x DriverVersion=%#x ClientVersion=%#x\n", 
+                LogRel(("Support driver version mismatch: SessionVersion=%#x DriverVersion=%#x ClientVersion=%#x\n",
                         Out.u32SessionVersion, Out.u32DriverVersion, SUPDRVIOC_VERSION));
                 rc = VERR_VM_DRIVER_VERSION_MISMATCH;
             }
@@ -263,7 +263,7 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
              if (rc == VERR_INVALID_PARAMETER) /* for pre 0x00040002 drivers */
                  rc = VERR_VM_DRIVER_VERSION_MISMATCH;
              if (rc == VERR_VM_DRIVER_VERSION_MISMATCH)
-                 LogRel(("Support driver version mismatch: DriverVersion=%#x ClientVersion=%#x\n", 
+                 LogRel(("Support driver version mismatch: DriverVersion=%#x ClientVersion=%#x\n",
                          Out.u32DriverVersion, SUPDRVIOC_VERSION));
              else
                  LogRel(("Support driver version/Cookie negotiations error: rc=%Vrc\n", rc));
@@ -342,7 +342,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
 #endif
 
         /* fake the GIP. */
-        g_pSUPGlobalInfoPage = (PCSUPGLOBALINFOPAGE)RTMemPageAlloc(PAGE_SIZE);
+        g_pSUPGlobalInfoPage = (PSUPGLOBALINFOPAGE)RTMemPageAlloc(PAGE_SIZE);
         if (g_pSUPGlobalInfoPage)
         {
             g_pSUPGlobalInfoPageR0 = g_pSUPGlobalInfoPage;
@@ -1256,7 +1256,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                     else
                         pIn->eEPType                = pIn->EP_NOTHING;
                     pIn->offStrTab                  = offStrTab;
-                    pIn->cbStrTab                   = (uint32_t)CalcArgs.cbStrings; 
+                    pIn->cbStrTab                   = (uint32_t)CalcArgs.cbStrings;
                     AssertRelease(pIn->cbStrTab == CalcArgs.cbStrings);
                     pIn->offSymbols                 = offSymTab;
                     pIn->cSymbols                   = CalcArgs.cSymbols;
@@ -1285,7 +1285,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                 rc = VERR_NO_TMP_MEMORY;
             }
         }
-        else if (VBOX_SUCCESS(rc) && fIsVMMR0) 
+        else if (VBOX_SUCCESS(rc) && fIsVMMR0)
             g_pvVMMR0 = OpenOut.pvImageBase;
     }
     RTLdrClose(hLdrMod);
