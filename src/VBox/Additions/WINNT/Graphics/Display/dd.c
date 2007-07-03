@@ -1,3 +1,5 @@
+#ifdef VBOX_WITH_DDRAW
+
 /******************************Module*Header**********************************\
 *
 *                           **************************
@@ -707,3 +709,5 @@ DWORD APIENTRY DdFreeDriverMemory(PDD_FREEDRIVERMEMORYDATA lpFreeDriverMemory)
     return (DDHAL_DRIVER_HANDLED);
 }
 
+
+#endif /* VBOX_WITH_DDRAW */
