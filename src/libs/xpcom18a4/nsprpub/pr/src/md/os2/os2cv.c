@@ -332,9 +332,9 @@ _PR_MD_WAIT_CV(_MDCVar *cv, _MDLock *lock, PRIntervalTime timeout )
     DosRequestMutexSem((lock->mutex), SEM_INDEFINITE_WAIT);
 #endif
 
-    PR_ASSERT(rv == NO_ERROR || rv == ERROR_TIMEOUT);
+    PR_ASSERT(rv == NO_ERROR || rv == ERROR_TIMEOUT || rv == ERROR_INTERRUPT);
 
-    if(rv == ERROR_TIMEOUT)
+    if(rv == ERROR_TIMEOUT || rv == ERROR_INTERRUPT)
     {
        if (thred->md.inCVWaitQueue) {
            PR_ASSERT((cv->waitTail != NULL && cv->waitHead != NULL)
