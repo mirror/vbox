@@ -155,6 +155,9 @@ _PR_MD_OPEN(const char *name, PRIntn osflags, int mode)
 
     if (osflags & PR_SYNC) access |= OPEN_FLAGS_WRITE_THROUGH;
 
+    /* we don't want to let children inherit file handles by default */
+    access |= OPEN_FLAGS_NOINHERIT;
+
     if (osflags & PR_RDONLY)
         access |= OPEN_ACCESS_READONLY;
     else if (osflags & PR_WRONLY)
@@ -586,21 +589,21 @@ _PR_MD_GETFILEINFO64(const char *fn, PRFileInfo64 *info)
 PRInt32
 _PR_MD_GETOPENFILEINFO(const PRFileDesc *fd, PRFileInfo *info)
 {
-   /* For once, the VAC compiler/library did a nice thing.
-    * The file handle used by the C runtime is the same one
-    * returned by the OS when you call DosOpen().  This means
-    * that you can take an OS HFILE and use it with C file
-    * functions.  The only caveat is that you have to call
-    * _setmode() first to initialize some junk.  This is
-    * immensely useful because I did not have a clue how to
-    * implement this function otherwise.  The windows folks
-    * took the source from the Microsoft C library source, but
-    * IBM wasn't kind enough to ship the source with VAC.
-    * On second thought, the needed function could probably
-    * be gotten from the OS/2 GNU library source, but the
-    * point is now moot.
-    */
-   struct stat hinfo;
+    /* For once, the VAC compiler/library did a nice thing.
+     * The file handle used by the C runtime is the same one
+     * returned by the OS when you call DosOpen().  This means
+     * that you can take an OS HFILE and use it with C file
+     * functions.  The only caveat is that you have to call
+     * _setmode() first to initialize some junk.  This is
+     * immensely useful because I did not have a clue how to
+     * implement this function otherwise.  The windows folks
+     * took the source from the Microsoft C library source, but
+     * IBM wasn't kind enough to ship the source with VAC.
+     * On second thought, the needed function could probably
+     * be gotten from the OS/2 GNU library source, but the
+     * point is now moot.
+     */
+    struct stat hinfo;
     PRInt64 s, s2us;
 
     _setmode(fd->secret->md.osfd, O_BINARY);
@@ -659,7 +662,7 @@ _PR_MD_RENAME(const char *from, const char *to)
 PRInt32
 _PR_MD_ACCESS(const char *name, PRAccessHow how)
 {
-  PRInt32 rv;
+    PRInt32 rv;
     switch (how) {
       case PR_ACCESS_WRITE_OK:
         rv = access(name, 02);
@@ -682,7 +685,7 @@ _PR_MD_ACCESS(const char *name, PRAccessHow how)
 PRInt32
 _PR_MD_MKDIR(const char *name, PRIntn mode)
 {
-   PRInt32 rc;
+    PRInt32 rc;
     /* XXXMB - how to translate the "mode"??? */
     if ((rc = DosCreateDir((char *)name, NULL))== NO_ERROR) {
         return 0;
@@ -695,7 +698,7 @@ _PR_MD_MKDIR(const char *name, PRIntn mode)
 PRInt32
 _PR_MD_RMDIR(const char *name)
 {
-   PRInt32 rc;
+    PRInt32 rc;
     if ( (rc = DosDeleteDir((char *)name)) == NO_ERROR) {
         return 0;
     } else {
@@ -708,12 +711,12 @@ PRStatus
 _PR_MD_LOCKFILE(PRInt32 f)
 {
 	PRInt32   rv;
-   FILELOCK lock, unlock;
+    FILELOCK lock, unlock;
 
-   lock.lOffset = 0;
-   lock.lRange = 0xffffffff;
-   unlock.lOffset = 0;
-   unlock.lRange = 0;
+    lock.lOffset = 0;
+    lock.lRange = 0xffffffff;
+    unlock.lOffset = 0;
+    unlock.lRange = 0;
 
 	/*
      * loop trying to DosSetFileLocks(),
@@ -745,14 +748,14 @@ PRStatus
 _PR_MD_UNLOCKFILE(PRInt32 f)
 {
 	PRInt32   rv;
-   FILELOCK lock, unlock;
+    FILELOCK lock, unlock;
 
-   lock.lOffset = 0;
-   lock.lRange = 0;
-   unlock.lOffset = 0;
-   unlock.lRange = 0xffffffff;
+    lock.lOffset = 0;
+    lock.lRange = 0;
+    unlock.lOffset = 0;
+    unlock.lRange = 0xffffffff;
     
-   rv = DosSetFileLocks( (HFILE) f,
+    rv = DosSetFileLocks( (HFILE) f,
                           &unlock, &lock,
                           0, 0); 
             
@@ -777,7 +780,7 @@ _PR_MD_SET_FD_INHERITABLE(PRFileDesc *fd, PRBool inheritable)
         case PR_DESC_FILE:
             rc = DosQueryFHState((HFILE)fd->secret->md.osfd, &flags);
             if (rc != NO_ERROR) {
-                PR_SetError(PR_UNKNOWN_ERROR, _MD_ERRNO());
+                PR_SetError(PR_UNKNOWN_ERROR, rc);
                 return PR_FAILURE;
             }
 
@@ -790,20 +793,30 @@ _PR_MD_SET_FD_INHERITABLE(PRFileDesc *fd, PRBool inheritable)
             flags &= (OPEN_FLAGS_WRITE_THROUGH | OPEN_FLAGS_FAIL_ON_ERROR | OPEN_FLAGS_NO_CACHE | OPEN_FLAGS_NOINHERIT);
             rc = DosSetFHState((HFILE)fd->secret->md.osfd, flags);
             if (rc != NO_ERROR) {
-                PR_SetError(PR_UNKNOWN_ERROR, _MD_ERRNO());
+                PR_SetError(PR_UNKNOWN_ERROR, rc);
                 return PR_FAILURE;
             }
             break;
 
         case PR_DESC_LAYERED:
-            /* what to do here? */
+            /* XXX what to do here? */
             PR_SetError(PR_UNKNOWN_ERROR, 87 /*ERROR_INVALID_PARAMETER*/);
             return PR_FAILURE;
 
         case PR_DESC_SOCKET_TCP:
         case PR_DESC_SOCKET_UDP:
-            /* These are global on OS/2. */
+        {
+#ifdef XP_OS2_EMX
+            int rv = fcntl(fd->secret->md.osfd, F_SETFD, inheritable ? 0 : FD_CLOEXEC);
+            if (-1 == rv) {
+                PR_SetError(PR_UNKNOWN_ERROR, _MD_ERRNO());
+                return PR_FAILURE;
+            }
+#else
+            /* In VAC, socket() FDs are global. */
+#endif
             break;
+        }
     }
 
     return PR_SUCCESS;
@@ -812,22 +825,83 @@ _PR_MD_SET_FD_INHERITABLE(PRFileDesc *fd, PRBool inheritable)
 void
 _PR_MD_INIT_FD_INHERITABLE(PRFileDesc *fd, PRBool imported)
 {
-    /* XXX this function needs to be implemented */
-    fd->secret->inheritable = _PR_TRI_UNKNOWN;
+    if (imported) {
+        /* for imported handles, we'll determine the inheritance state later
+         * in _PR_MD_QUERY_FD_INHERITABLE */
+        fd->secret->inheritable = _PR_TRI_UNKNOWN;
+    } else {
+        switch (fd->methods->file_type)
+        {
+            case PR_DESC_PIPE:
+                /* On OS/2, pipe handles created by NPSR (PR_CreatePipe) are
+                 * inheritable by default */
+                fd->secret->inheritable = _PR_TRI_TRUE;
+                break;
+            case PR_DESC_FILE:
+                /* On OS/2, file handles created by NPSR (_MD_OPEN) are
+                 * made non-inheritable by default */
+                fd->secret->inheritable = _PR_TRI_FALSE;
+                break;
+
+            case PR_DESC_LAYERED:
+                /* XXX what to do here? */
+                break;
+
+            case PR_DESC_SOCKET_TCP:
+            case PR_DESC_SOCKET_UDP:
+#ifdef XP_OS2_EMX
+                /* In EMX/GCC, sockets opened by NSPR (_PR_MD_SOCKET) are
+                 * made non-inheritedable by default */
+                fd->secret->inheritable = _PR_TRI_FALSE;
+#else
+                /* In VAC, socket() FDs are global. */
+                fd->secret->inheritable = _PR_TRI_TRUE;
+#endif
+                break;
+        }
+    }
 }
 
 void
 _PR_MD_QUERY_FD_INHERITABLE(PRFileDesc *fd)
 {
-    /* XXX this function needs to be reviewed */
-    ULONG flags;
-
     PR_ASSERT(_PR_TRI_UNKNOWN == fd->secret->inheritable);
-    if (DosQueryFHState((HFILE)fd->secret->md.osfd, &flags) == 0) {
-        if (flags & OPEN_FLAGS_NOINHERIT) {
-            fd->secret->inheritable = _PR_TRI_FALSE;
-        } else {
-            fd->secret->inheritable = _PR_TRI_TRUE;
+
+    switch (fd->methods->file_type)
+    {
+        case PR_DESC_PIPE:
+        case PR_DESC_FILE:
+        {
+            ULONG flags;
+            if (DosQueryFHState((HFILE)fd->secret->md.osfd, &flags) == 0) {
+                if (flags & OPEN_FLAGS_NOINHERIT) {
+                    fd->secret->inheritable = _PR_TRI_FALSE;
+                } else {
+                    fd->secret->inheritable = _PR_TRI_TRUE;
+                }
+            }
+            break;
+        }
+
+        case PR_DESC_LAYERED:
+            /* XXX what to do here? */
+            break;
+
+        case PR_DESC_SOCKET_TCP:
+        case PR_DESC_SOCKET_UDP:
+        {
+#ifdef XP_OS2_EMX
+            /* In EMX/GCC, socket() FDs are inherited by default. */
+            int flags = fcntl(fd->secret->md.osfd, F_GETFD, 0);
+            if (FD_CLOEXEC == flags) {
+                fd->secret->inheritable = _PR_TRI_FALSE;
+            } else {
+                fd->secret->inheritable = _PR_TRI_TRUE;
+            }
+#else
+            /* In VAC, socket() FDs are global. */
+#endif
+            break;
         }
     }
 }

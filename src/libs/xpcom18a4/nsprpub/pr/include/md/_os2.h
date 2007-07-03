@@ -431,6 +431,14 @@ md_UnlockAndPostNotifies(struct _MDLock *lock, PRThread *waitThred, struct _MDCV
 struct PRProcess;
 struct PRProcessAttr;
 
+extern struct PRProcess * _PR_CreateOS2ProcessEx(
+    const char *path,
+    char *const *argv,
+    char *const *envp,
+    const struct PRProcessAttr *attr,
+    PRBool detached
+);
+
 #define _MD_CREATE_PROCESS _PR_CreateOS2Process
 extern struct PRProcess * _PR_CreateOS2Process(
     const char *path,
