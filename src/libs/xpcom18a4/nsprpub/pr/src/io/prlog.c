@@ -49,16 +49,16 @@
  * 04/10/2000   IBM Corp.       Added DebugBreak() definitions for OS/2
  */
 
+#if defined(VBOX)
+#define IN_RING3
+#include <iprt/initterm.h> /* for RTR3Init */
+#include <iprt/log.h>
+#endif
+
 #include "primpl.h"
 #include "prenv.h"
 #include "prprf.h"
 #include <string.h>
-
-#if defined(VBOX)
-#define IN_RING3
-#include <iprt/runtime.h> /* for RTR3Init */
-#include <iprt/log.h>
-#endif
 
 /*
  * Lock used to lock the log.
@@ -124,25 +124,19 @@ static PRLock *_pr_logLock;
 ** and the "default" log group will be used for logging.
 */
 #if defined(VBOX)
+#if defined(_PR_USE_STDIO_FOR_LOGGING)
 #define IPRT_DEBUG_FILE (FILE*)-3
+#else
+#define IPRT_DEBUG_FILE (PRFileDesc*)-3
+#endif
 #endif
 
 /* Macros used to reduce #ifdef pollution */
 
-#if defined(VBOX)
-#define _PUT_LOG(fd, buf, nb) \
+#if defined(_PR_USE_STDIO_FOR_LOGGING) && defined(XP_PC)
+#define __PUT_LOG(fd, buf, nb) \
     PR_BEGIN_MACRO \
-    if (logFile == IPRT_DEBUG_FILE) { \
-        Log(("%*.*S", nb, nb, buf)); \
-    } else { \
-        fwrite(buf, 1, nb, fd); \
-        fflush(fd); \
-    } \
-    PR_END_MACRO
-#elif defined(_PR_USE_STDIO_FOR_LOGGING) && defined(XP_PC)
-#define _PUT_LOG(fd, buf, nb) \
-    PR_BEGIN_MACRO \
-    if (logFile == WIN32_DEBUG_FILE) { \
+    if (fd == WIN32_DEBUG_FILE) { \
         char savebyte = buf[nb]; \
         buf[nb] = '\0'; \
         OutputDebugString(buf); \
@@ -153,13 +147,26 @@ static PRLock *_pr_logLock;
     } \
     PR_END_MACRO
 #elif defined(_PR_USE_STDIO_FOR_LOGGING)
-#define _PUT_LOG(fd, buf, nb) {fwrite(buf, 1, nb, fd); fflush(fd);}
+#define __PUT_LOG(fd, buf, nb) {fwrite(buf, 1, nb, fd); fflush(fd);}
 #elif defined(_PR_PTHREADS)
-#define _PUT_LOG(fd, buf, nb) PR_Write(fd, buf, nb)
+#define __PUT_LOG(fd, buf, nb) PR_Write(fd, buf, nb)
 #elif defined(XP_MAC)
-#define _PUT_LOG(fd, buf, nb) _PR_MD_WRITE_SYNC(fd, buf, nb)
+#define __PUT_LOG(fd, buf, nb) _PR_MD_WRITE_SYNC(fd, buf, nb)
 #else
-#define _PUT_LOG(fd, buf, nb) _PR_MD_WRITE(fd, buf, nb)
+#define __PUT_LOG(fd, buf, nb) _PR_MD_WRITE(fd, buf, nb)
+#endif
+
+#if defined(VBOX)
+#define _PUT_LOG(fd, buf, nb) \
+    PR_BEGIN_MACRO \
+    if (fd == IPRT_DEBUG_FILE) { \
+        Log(("%*.*S", nb, nb, buf)); \
+    } else { \
+        __PUT_LOG(fd, buf, nb); \
+    } \
+    PR_END_MACRO
+#else
+#define _PUT_LOG(fd, buf, nb) __PUT_LOG(fd, buf, nb)
 #endif
 
 /************************************************************************/
