@@ -329,7 +329,7 @@ endef
 #   @param  $mocsrc     source file with Q_OBJECT
 define def_qt_gen_inc_moc
 
-$(eval mocobj := $(PATH_$(target)_$(mocsrc))/$(notdir $(basename $(mocsrc)))$(SUFF_OBJ))
+$(eval mocobj := $(PATH_$(target)_$(mocsrc))/$(notdir $(basename $(mocsrc)))$(VBOX_SUFF_OBJ))
 $(eval mocinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocsrc))).moc)
 
 $(target)_GENHDRS_REAL += $(mocinc)
@@ -351,7 +351,7 @@ endef
 define def_qt_gen_inc_mocuihdr
 
 $(eval uisrc    := $(PATH_$(target))/ui/$(notdir $(basename $(basename $(mocuihdr)))).cpp)
-$(eval uiobj    := $(PATH_$(target)_$$(uisrc))/$(notdir $(basename $$(uisrc)))$(SUFF_OBJ))
+$(eval uiobj    := $(PATH_$(target)_$$(uisrc))/$(notdir $(basename $$(uisrc)))$(VBOX_SUFF_OBJ))
 $(eval mocuiinc := $(PATH_$(target))/moc/$(notdir $(basename $(mocuihdr))).moc)
 
 $(target)_GENHDRS_REAL += $(mocuiinc)

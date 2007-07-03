@@ -1005,6 +1005,11 @@ else
 VBOX_SUFF_LIB = .a
 endif
 VBOX_SUFF_DLL = $(SUFF_DLL)
+ifeq ($(BUILD_TARGET),os2) # GXX3OMF produces out .o at the moment.
+VBOX_SUFF_OBJ = .o
+else
+VBOX_SUFF_OBJ = $(SUFF_OBJ)
+endif
 VBOXW32GUEST_SUFF_LIB = .lib
 VBOXLNX32GUEST_SUFF_LIB = .a
 
