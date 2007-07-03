@@ -27,6 +27,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN
+
 #include <mach/mach.h>
 #include <Carbon/Carbon.h>
 #include <IOKit/IOKitLib.h>
@@ -38,6 +40,7 @@
 # include <IOKit/IOCFPlugIn.h>
 #endif
 
+#include <VBox/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
@@ -187,6 +190,175 @@ static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyS
 }
 
 
+#if 1 /* dumping disabled */
+# define DARWIN_IOKIT_LOG(a)         Log(a)
+# define DARWIN_IOKIT_LOG_FLUSH()    do {} while (0)
+# define DARWIN_IOKIT_DUMP_OBJ(o)    do {} while (0)
+#else
+# if 0
+#  include <iprt/stream.h>
+#  define DARWIN_IOKIT_LOG(a) RTPrintf a
+#  define DARWIN_IOKIT_LOG_FLUSH() RTStrmFlush(g_pStdOut)
+# else
+#  define DARWIN_IOKIT_LOG(a) RTLogPrintf a
+#  define DARWIN_IOKIT_LOG(a) RTLogFlush()
+# endif
+# define DARWIN_IOKIT_DUMP_OBJ(o)    darwinDumpObj(o)
+
+/**
+ * Callback for dumping a dictionary key.
+ *
+ * @param   pvKey       The key name.
+ * @param   pvValue     The key value
+ * @param   pvUser      The recursion depth.
+ */
+static void darwinDumpDictCallback(const void *pvKey, const void *pvValue, void *pvUser)
+{
+    /* display the key name. */
+    char *pszKey = (char *)RTMemTmpAlloc(1024);
+    if (!CFStringGetCString((CFStringRef)pvKey, pszKey, 1024, kCFStringEncodingUTF8))
+        strcpy(pszKey, "CFStringGetCString failure");
+    DARWIN_IOKIT_LOG(("%+*s%s", (int)(uintptr_t)pvUser, "", pszKey));
+    RTMemTmpFree(pszKey);
+
+    /* display the value type */
+    CFTypeID Type = CFGetTypeID(pvValue);
+    DARWIN_IOKIT_LOG((" [%d-", Type));
+
+    /* display the value */
+    if (Type == CFDictionaryGetTypeID())
+    {
+        DARWIN_IOKIT_LOG(("dictionary] =\n"
+                     "%-*s{\n", (int)(uintptr_t)pvUser, ""));
+        CFDictionaryApplyFunction((CFDictionaryRef)pvValue, darwinDumpDictCallback, (void *)((uintptr_t)pvUser + 4));
+        DARWIN_IOKIT_LOG(("%-*s}\n", (int)(uintptr_t)pvUser, ""));
+    }
+    else if (Type == CFNumberGetTypeID())
+    {
+        union
+        {
+            SInt8 s8;
+            SInt16 s16;
+            SInt32 s32;
+            SInt64 s64;
+            Float32 rf32;
+            Float64 rd64;
+            char ch;
+            short s;
+            int i;
+            long l;
+            long long ll;
+            float rf;
+            double rd;
+            CFIndex iCF;
+        } u;
+        memset(&u, 0, sizeof(u));
+        CFNumberType NumType = CFNumberGetType((CFNumberRef)pvValue);
+        if (CFNumberGetValue((CFNumberRef)pvValue, NumType, &u))
+        {
+            switch (CFNumberGetType((CFNumberRef)pvValue))
+            {
+                case kCFNumberSInt8Type:    DARWIN_IOKIT_LOG(("SInt8] = %RI8 (%#RX8)\n", NumType, u.s8, u.s8)); break;
+                case kCFNumberSInt16Type:   DARWIN_IOKIT_LOG(("SInt16] = %RI16 (%#RX16)\n", NumType, u.s16, u.s16)); break;
+                case kCFNumberSInt32Type:   DARWIN_IOKIT_LOG(("SInt32] = %RI32 (%#RX32)\n", NumType, u.s32, u.s32)); break;
+                case kCFNumberSInt64Type:   DARWIN_IOKIT_LOG(("SInt64] = %RI64 (%#RX64)\n", NumType, u.s64, u.s64)); break;
+                case kCFNumberFloat32Type:  DARWIN_IOKIT_LOG(("float32] = %#lx\n", NumType, u.l)); break;
+                case kCFNumberFloat64Type:  DARWIN_IOKIT_LOG(("float64] = %#llx\n", NumType, u.ll)); break;
+                case kCFNumberFloatType:    DARWIN_IOKIT_LOG(("float] = %#lx\n", NumType, u.l)); break;
+                case kCFNumberDoubleType:   DARWIN_IOKIT_LOG(("double] = %#llx\n", NumType, u.ll)); break;
+                case kCFNumberCharType:     DARWIN_IOKIT_LOG(("char] = %hhd (%hhx)\n", NumType, u.ch, u.ch)); break;
+                case kCFNumberShortType:    DARWIN_IOKIT_LOG(("short] = %hd (%hx)\n", NumType, u.s, u.s)); break;
+                case kCFNumberIntType:      DARWIN_IOKIT_LOG(("int] = %d (%#x)\n", NumType, u.i, u.i)); break;
+                case kCFNumberLongType:     DARWIN_IOKIT_LOG(("long] = %ld (%#lx)\n", NumType, u.l, u.l)); break;
+                case kCFNumberLongLongType: DARWIN_IOKIT_LOG(("long long] = %lld (%#llx)\n", NumType, u.ll, u.ll)); break;
+                case kCFNumberCFIndexType:  DARWIN_IOKIT_LOG(("CFIndex] = %lld (%#llx)\n", NumType, (long long)u.iCF, (long long)u.iCF)); break;
+                    break;
+                default:                    DARWIN_IOKIT_LOG(("%d?] = %lld (%llx)\n", NumType, u.ll, u.ll)); break;
+            }
+        }
+        else
+            DARWIN_IOKIT_LOG(("number] = CFNumberGetValue failed\n"));
+    }
+    else if (Type == CFBooleanGetTypeID())
+        DARWIN_IOKIT_LOG(("boolean] = %RTbool\n", CFBooleanGetValue((CFBooleanRef)pvValue)));
+    else if (Type == CFStringGetTypeID())
+    {
+        DARWIN_IOKIT_LOG(("string] = "));
+        char *pszValue = (char *)RTMemTmpAlloc(16*_1K);
+        if (!CFStringGetCString((CFStringRef)pvValue, pszValue, 16*_1K, kCFStringEncodingUTF8))
+            strcpy(pszValue, "CFStringGetCString failure");
+        DARWIN_IOKIT_LOG(("\"%s\"\n", pszValue));
+        RTMemTmpFree(pszValue);
+    }
+    else
+        DARWIN_IOKIT_LOG(("??] = %p\n", pvValue));
+}
+
+
+/**
+ * Dumps a dictionary to the log.
+ *
+ * @param   DictRef     The dictionary to dump.
+ */
+static void darwinDumpDict(CFMutableDictionaryRef DictRef, unsigned cIndents)
+{
+    CFDictionaryApplyFunction(DictRef, darwinDumpDictCallback, (void *)(uintptr_t)cIndents);
+    DARWIN_IOKIT_LOG_FLUSH();
+}
+
+
+/**
+ * Dumps an I/O kit registry object and all it children.
+ * @param   Object      The object to dump.
+ * @param   cIndents    The number of indents to use.
+ */
+static void darwinDumpObjInt(io_object_t Object, unsigned cIndents)
+{
+    static io_string_t s_szPath;
+    kern_return_t krc = IORegistryEntryGetPath(Object, kIOServicePlane, s_szPath);
+    if (krc != KERN_SUCCESS)
+        strcpy(s_szPath, "IORegistryEntryGetPath failed");
+    DARWIN_IOKIT_LOG(("Dumping %p - %s:\n", (const void *)Object, s_szPath));
+
+    CFMutableDictionaryRef PropsRef = 0;
+    krc = IORegistryEntryCreateCFProperties(Object, &PropsRef, kCFAllocatorDefault, kNilOptions);
+    if (krc == KERN_SUCCESS)
+    {
+        darwinDumpDict(PropsRef, cIndents + 4);
+        CFRelease(PropsRef);
+    }
+
+    /*
+     * Children.
+     */
+    io_iterator_t Children;
+    krc = IORegistryEntryGetChildIterator(Object, kIOServicePlane, &Children);
+    if (krc == KERN_SUCCESS)
+    {
+        io_object_t Child;
+        while ((Child = IOIteratorNext(Children)))
+        {
+            darwinDumpObjInt(Child, cIndents + 4);
+            IOObjectRelease(Child);
+        }
+        IOObjectRelease(Children);
+    }
+    else
+        DARWIN_IOKIT_LOG(("IORegistryEntryGetChildIterator -> %#x\n", krc));
+}
+
+/**
+ * Dumps an I/O kit registry object and all it children.
+ * @param   Object      The object to dump.
+ */
+static void darwinDumpObj(io_object_t Object)
+{
+    darwinDumpObjInt(Object, 0);
+}
+
+#endif
+
+
 /**
  * Notification data created by DarwinSubscribeUSBNotifications, used by
  * the callbacks and finally freed by DarwinUnsubscribeUSBNotifications.
@@ -220,18 +392,36 @@ static void darwinDrainIterator(io_iterator_t pIterator)
 {
     io_object_t Object;
     while ((Object = IOIteratorNext(pIterator)))
+    {
+        DARWIN_IOKIT_DUMP_OBJ(Object);
         IOObjectRelease(Object);
+    }
 }
 
 
 /**
- * Callback for the two attach notifications.
+ * Callback for the 1st attach notification.
  *
  * @param   pvNotify        Our data.
  * @param   NotifyIterator  The notification iterator.
  */
-static void darwinUSBAttachNotification(void *pvNotify, io_iterator_t NotifyIterator)
+static void darwinUSBAttachNotification1(void *pvNotify, io_iterator_t NotifyIterator)
 {
+    DARWIN_IOKIT_LOG(("USB Attach Notification1\n"));
+    NOREF(pvNotify); //PDARWINUSBNOTIFY pNotify = (PDARWINUSBNOTIFY)pvNotify;
+    darwinDrainIterator(NotifyIterator);
+}
+
+
+/**
+ * Callback for the 2nd attach notification.
+ *
+ * @param   pvNotify        Our data.
+ * @param   NotifyIterator  The notification iterator.
+ */
+static void darwinUSBAttachNotification2(void *pvNotify, io_iterator_t NotifyIterator)
+{
+    DARWIN_IOKIT_LOG(("USB Attach Notification2\n"));
     NOREF(pvNotify); //PDARWINUSBNOTIFY pNotify = (PDARWINUSBNOTIFY)pvNotify;
     darwinDrainIterator(NotifyIterator);
 }
@@ -245,6 +435,7 @@ static void darwinUSBAttachNotification(void *pvNotify, io_iterator_t NotifyIter
  */
 static void darwinUSBDetachNotification(void *pvNotify, io_iterator_t NotifyIterator)
 {
+    DARWIN_IOKIT_LOG(("USB Detach Notification\n"));
     NOREF(pvNotify); //PDARWINUSBNOTIFY pNotify = (PDARWINUSBNOTIFY)pvNotify;
     darwinDrainIterator(NotifyIterator);
 }
@@ -288,7 +479,7 @@ void *DarwinSubscribeUSBNotifications(void)
             kern_return_t rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                                 kIOPublishNotification,
                                                                 IOServiceMatching(kIOUSBDeviceClassName),
-                                                                darwinUSBAttachNotification,
+                                                                darwinUSBAttachNotification1,
                                                                 pNotify,
                                                                 &pNotify->AttachIterator);
             if (rc == KERN_SUCCESS)
@@ -297,7 +488,7 @@ void *DarwinSubscribeUSBNotifications(void)
                 rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                       kIOMatchedNotification,
                                                       IOServiceMatching(kIOUSBDeviceClassName),
-                                                      darwinUSBAttachNotification,
+                                                      darwinUSBAttachNotification2,
                                                       pNotify,
                                                       &pNotify->AttachIterator2);
                 if (rc == KERN_SUCCESS)
@@ -364,6 +555,7 @@ void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
 PUSBDEVICE DarwinGetUSBDevices(void)
 {
     AssertReturn(darwinOpenMasterPort(), NULL);
+    //DARWIN_IOKIT_LOG(("DarwinGetUSBDevices\n"));
 
     /*
      * Create a matching dictionary for searching for USB Devices in the IOKit.
@@ -388,6 +580,8 @@ PUSBDEVICE DarwinGetUSBDevices(void)
     io_object_t USBDevice;
     while ((USBDevice = IOIteratorNext(USBDevices)) != 0)
     {
+        //DARWIN_IOKIT_DUMP_OBJ(USBDevice);
+
         /*
          * Query the device properties from the registry.
          *
@@ -500,6 +694,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
     }
 
     IOObjectRelease(USBDevices);
+    //DARWIN_IOKIT_LOG_FLUSH();
 
     /*
      * Some post processing. There are a couple of things we have to
