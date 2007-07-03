@@ -147,15 +147,15 @@ typedef struct VMMDevState
     PVBOXHGCMCMD pHGCMCmdList;
     /** Critical section to protect the list. */
     RTCRITSECT critsectHGCMCmdList;
-    /** How many HGCM commands are pending. */
-    volatile uint32_t u32HGCMRefs;
+    /** Whether the HGCM events are already automatically enabled. */
+    uint32_t u32HGCMEnabled;
 #endif /* VBOX_HGCM */
 
 } VMMDevState;
 
 void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask);
-void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
-                                   uint32_t u32OrMask,
-                                   uint32_t u32NotMask);
+void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
+                                  uint32_t u32OrMask,
+                                  uint32_t u32NotMask);
 
 #endif /* __VMMDevState_h__ */

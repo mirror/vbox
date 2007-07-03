@@ -31,6 +31,7 @@
 #include <VBox/mm.h>
 #include <VBox/pgm.h>
 #include <VBox/err.h>
+#include <VBox/vm.h> /* for VM_IS_EMT */
 
 #define LOG_GROUP LOG_GROUP_DEV_VMM
 #include <VBox/log.h>
@@ -208,9 +209,9 @@ static void vmmdevNotifyGuest_EMT (VMMDevState *pVMMDevState, uint32_t u32EventM
     }
 }
 
-void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
-                                   uint32_t u32OrMask,
-                                   uint32_t u32NotMask)
+static void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
+                                          uint32_t u32OrMask,
+                                          uint32_t u32NotMask)
 {
     const bool fHadEvents =
         (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask) != 0;
@@ -229,6 +230,34 @@ void vmmdevCtlGuestFilterMask_EMT (VMMDevState *pVMMDevState,
         pVMMDevState->u32GuestFilterMask |= u32OrMask;
         pVMMDevState->u32GuestFilterMask &= ~u32NotMask;
         vmmdevMaybeSetIRQ_EMT (pVMMDevState);
+    }
+}
+
+void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
+                                  uint32_t u32OrMask,
+                                  uint32_t u32NotMask)
+{
+    PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS(pVMMDevState);
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
+
+#ifdef DEBUG_sunlover
+    Log(("VMMDevCtlSetGuestFilterMask: u32OrMask = 0x%08X, u32NotMask = 0x%08X.\n", u32OrMask, u32NotMask));
+#endif /* DEBUG_sunlover */
+
+    if (VM_IS_EMT(pVM))
+    {
+        vmmdevCtlGuestFilterMask_EMT (pVMMDevState, u32OrMask, u32NotMask);
+    }
+    else
+    {
+        int rc;
+        PVMREQ pReq;
+
+        rc = VMR3ReqCallVoid (pVM, &pReq, RT_INDEFINITE_WAIT,
+                              (PFNRT) vmmdevCtlGuestFilterMask_EMT,
+                              3, pVMMDevState, u32OrMask, u32NotMask);
+        AssertReleaseRC (rc);
+        VMR3ReqFree (pReq);
     }
 }
 
@@ -897,9 +926,12 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevCtlGuestFilterMask *pCtlMaskRequest;
 
                 pCtlMaskRequest = (VMMDevCtlGuestFilterMask *) requestHeader;
+                /* The HGCM events are enabled by the VMMDev device automatically when any
+                 * HGCM command is issued. The guest then can not disable these events.
+                 */
                 vmmdevCtlGuestFilterMask_EMT (pData,
                                               pCtlMaskRequest->u32OrMask,
-                                              pCtlMaskRequest->u32NotMask);
+                                              pCtlMaskRequest->u32NotMask & ~VMMDEV_EVENT_HGCM);
                 requestHeader->rc = VINF_SUCCESS;
 
             }
@@ -1776,7 +1808,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->pHGCMCmdList = NULL;
     rc = RTCritSectInit(&pData->critsectHGCMCmdList);
     AssertRCReturn(rc, rc);
-    pData->u32HGCMRefs = 0;
+    pData->u32HGCMEnabled = 0;
 #endif /* VBOX_HGCM */
 
     /*

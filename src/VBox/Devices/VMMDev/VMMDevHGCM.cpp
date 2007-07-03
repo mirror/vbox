@@ -131,9 +131,10 @@ static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, R
             || enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT
             || enmCmdType == VBOXHGCMCMDTYPE_CALL)
         {
-            uint32_t u32 = ASMAtomicIncU32 (&pVMMDevState->u32HGCMRefs);
-            Assert(u32 != 0);
-            vmmdevCtlGuestFilterMask_EMT (pVMMDevState, VMMDEV_EVENT_HGCM, 0);
+            if (ASMAtomicCmpXchgU32(&pVMMDevState->u32HGCMEnabled, 1, 0))
+            {
+                 VMMDevCtlSetGuestFilterMask (pVMMDevState, VMMDEV_EVENT_HGCM, 0);
+            }
         }
 
         vmmdevHGCMCmdListUnlock (pVMMDevState);
@@ -168,19 +169,6 @@ static int vmmdevHGCMRemoveCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd
         else
         {
             pVMMDevState->pHGCMCmdList = pCmd->pNext;
-        }
-
-        /* Automatically disable HGCM events, if there are no more HGCM commands. */
-        if (   pCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT
-            || pCmd->enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT
-            || pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL)
-        {
-            uint32_t u32 = ASMAtomicDecU32 (&pVMMDevState->u32HGCMRefs);
-            Assert(u32 != 0xFFFFFFFF);
-            if (u32 == 0)
-            {
-                vmmdevCtlGuestFilterMask_EMT (pVMMDevState, 0, VMMDEV_EVENT_HGCM);
-            }
         }
 
         vmmdevHGCMCmdListUnlock (pVMMDevState);
