@@ -78,7 +78,7 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         DISPDBG((0, "pvPrimary                      %x\n", pHalInfo->vmiData.pvPrimary));
         DISPDBG((0, "fpPrimary                      %x\n", pHalInfo->vmiData.fpPrimary));
         DISPDBG((0, "dwDisplayWidth                 %x\n", pHalInfo->vmiData.dwDisplayWidth));
-        DISPDBG((0, "dwDisplayHeight                %x\n", pHalInfo->vmiData.dwDisplayHeigth));
+        DISPDBG((0, "dwDisplayHeight                %x\n", pHalInfo->vmiData.dwDisplayHeight));
         DISPDBG((0, "lDisplayPitch                  %x\n", pHalInfo->vmiData.lDisplayPitch));
         DISPDBG((0, "dwRGBBitCount                  %x\n", pHalInfo->vmiData.ddpfDisplay.dwRGBBitCount));
 
