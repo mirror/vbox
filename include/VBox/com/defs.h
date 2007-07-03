@@ -88,6 +88,8 @@
 /* Make sure OS/2 Toolkit headers are pulled in to have
  * BOOL/ULONG/etc. typedefs already defined in order to be able to redefine
  * them using #define. */
+#define INCL_BASE
+#define INCL_PM
 #include <os2.h>
 
 /* OS/2 Toolkit defines TRUE and FALSE */
