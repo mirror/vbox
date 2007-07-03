@@ -88,6 +88,16 @@ _PR_MD_SOCKET(int domain, int type, int flags)
         _PR_MD_MAP_SOCKET_ERROR(err);
     }
 
+#ifdef XP_OS2_EMX
+    /* Disable inheritance of socket FDs by default to avoid side effects */
+    err = fcntl(osfd, F_SETFD, FD_CLOEXEC);
+    if (-1 == err) {
+        PR_SetError(PR_UNKNOWN_ERROR, _MD_ERRNO());
+        soclose(osfd);
+        return -1;
+    }
+#endif
+
     return(osfd);
 }
 

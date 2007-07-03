@@ -233,18 +233,23 @@ static int compare(const void *arg1, const void *arg2)
     return stricmp(* (char**)arg1, * (char**)arg2);
 }
 
-PRProcess * _PR_CreateOS2Process(
+/*
+ * On OS/2, you can only detach a new process -- you cannot make it detached
+ * after it has been started. This is why _PR_CreateOS2ProcessEx() is
+ * necessary. This function is called directly from PR_CreateProcessDetached().
+ */
+PRProcess * _PR_CreateOS2ProcessEx(
     const char *path,
     char *const *argv,
     char *const *envp,
-    const PRProcessAttr *attr)
+    const PRProcessAttr *attr,
+    PRBool detached)
 {
     PRProcess *proc = NULL;
     char *cmdLine = NULL;
     char **newEnvp = NULL;
     char *envBlock = NULL;
    
-    STARTDATA startData = {0};
     APIRET    rc;
     ULONG     ulAppType = 0;
     PID       pid = 0;
@@ -254,6 +259,7 @@ PRProcess * _PR_CreateOS2Process(
     char      pszFormatString[CCHMAXPATH];
     char      pszObjectBuffer[CCHMAXPATH];
     char     *pszFormatResult = NULL;
+    char     *pszArg0 = NULL;
 
     proc = PR_NEW(PRProcess);
     if (!proc) {
@@ -265,28 +271,53 @@ PRProcess * _PR_CreateOS2Process(
         PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
         goto errorExit;
     }
-   
-    if (envp == NULL) {
-        newEnvp = NULL;
-    } else {
-        int i;
-        int numEnv = 0;
+
+    /* the 0th argument to the program (by convention, the program name, as
+     * entered by user) */
+    pszArg0 = argv[0];
+
+    /*
+     * If attr->fdInheritBuffer is not NULL, we need to insert
+     * it into the envp array, so envp cannot be NULL.
+     */
+    if ((envp == NULL) && attr && attr->fdInheritBuffer) {
+        envp = environ;
+    }
+
+    if (envp != NULL) {
+        int idx;
+        int numEnv;
+        int newEnvpSize;
+
+        numEnv = 0;
         while (envp[numEnv]) {
             numEnv++;
         }
-        newEnvp = (char **) PR_MALLOC((numEnv+1) * sizeof(char *));
-        for (i = 0; i <= numEnv; i++) {
-            newEnvp[i] = envp[i];
+        newEnvpSize = numEnv + 1;  /* terminating null pointer */
+        if (attr && attr->fdInheritBuffer) {
+            newEnvpSize++;
         }
-        qsort((void *) newEnvp, (size_t) numEnv, sizeof(char *), compare);
+        newEnvp = (char **) PR_MALLOC(newEnvpSize * sizeof(char *));
+        for (idx = 0; idx < numEnv; idx++) {
+            newEnvp[idx] = envp[idx];
+        }
+        if (attr && attr->fdInheritBuffer) {
+            newEnvp[idx++] = attr->fdInheritBuffer;
+        }
+        newEnvp[idx] = NULL;
+        qsort((void *) newEnvp, (size_t) (newEnvpSize - 1),
+                sizeof(char *), compare);
     }
     if (assembleEnvBlock(newEnvp, &envBlock) == -1) {
         PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
         goto errorExit;
     }
-  
+
     if (attr) {
-       PR_ASSERT(!"Not implemented");
+        if (attr->stdinFd || attr->stdoutFd || attr->stderrFd)
+            PR_ASSERT(!"Stdin/stdout redirection is not implemented");
+        if (attr->currentDirectory)
+            PR_ASSERT(!"Setting current directory is not implemented");
     }
 
     rc = DosQueryAppType(path, &ulAppType);
@@ -299,6 +330,7 @@ PRProcess * _PR_CreateOS2Process(
              if (!rc) {
                 strcpy(pszFormatString, "/C %s %s");
                 strcpy(pszEXEName, pszComSpec);
+                pszArg0 = pszEXEName;
                 ulAppType = FAPPTYP_WINDOWCOMPAT;
              }
           }
@@ -308,55 +340,105 @@ PRProcess * _PR_CreateOS2Process(
        PR_SetError(PR_UNKNOWN_ERROR, 0);
        goto errorExit;
     }
- 
-    if ((ulAppType & FAPPTYP_WINDOWAPI) == FAPPTYP_WINDOWAPI) {
-        startData.SessionType = SSF_TYPE_PM;
-    }
-    else if (ulAppType & FAPPTYP_WINDOWCOMPAT) {
-        startData.SessionType = SSF_TYPE_WINDOWABLEVIO;
+
+    if (detached) {
+        /* we don't care about parent/child process type matching,
+         * DosExecPgm() should complain if there is a mismatch. */
+
+        size_t cbArg0 = strlen(pszArg0);
+        char *pszArgs = NULL;
+
+        if (pszEXEName[0]) {
+            pszFormatResult = PR_MALLOC(cbArg0 + 1 +
+                                        strlen(pszFormatString) +
+                                        strlen(path) + strlen(cmdLine) + 1 + 1);
+            if (!pszFormatResult) {
+                PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
+                goto errorExit;
+            }
+            pszArgs = pszFormatResult + cbArg0 + 1;
+            sprintf(pszArgs, pszFormatString, path, cmdLine);
+        } else {
+            strcpy(pszEXEName, path);
+            pszFormatResult = PR_MALLOC(cbArg0 + 1 +
+                                        strlen(cmdLine) + 1 + 1);
+            if (!pszFormatResult) {
+                PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
+                goto errorExit;
+            }
+            pszArgs = pszFormatResult + cbArg0 + 1;
+            strcpy(pszArgs, cmdLine);
+        }
+
+        strcpy(pszFormatResult, pszArg0);
+        /* add final NULL */
+        pszArgs[strlen(pszArgs) + 1] = '\0';
+
+        RESULTCODES res = {0};
+        rc = DosExecPgm(pszObjectBuffer, CCHMAXPATH, EXEC_BACKGROUND,
+                        pszFormatResult, envBlock, &res, pszEXEName);
+
+        if (rc != NO_ERROR) {
+            PR_SetError(PR_UNKNOWN_ERROR, rc);
+            goto errorExit;
+        }
+
+        proc->md.pid = res.codeTerminate;
     }
     else {
-        startData.SessionType = SSF_TYPE_DEFAULT;
-    }
- 
-    if (ulAppType & (FAPPTYP_WINDOWSPROT31 | FAPPTYP_WINDOWSPROT | FAPPTYP_WINDOWSREAL))
-    {
-        strcpy(pszEXEName, "WINOS2.COM");
-        startData.SessionType = PROG_31_STDSEAMLESSVDM;
-        strcpy(pszFormatString, "/3 %s %s");
-    }
- 
-    startData.InheritOpt = SSF_INHERTOPT_SHELL;
- 
-    if (pszEXEName[0]) {
-        pszFormatResult = PR_MALLOC(strlen(pszFormatString)+strlen(path)+strlen(cmdLine));
-        sprintf(pszFormatResult, pszFormatString, path, cmdLine);
-        startData.PgmInputs = pszFormatResult;
-    } else {
-        strcpy(pszEXEName, path);
-        startData.PgmInputs = cmdLine;
-    }
-    startData.PgmName = pszEXEName;
- 
-    startData.Length = sizeof(startData);
-    startData.Related = SSF_RELATED_INDEPENDENT;
-    startData.ObjectBuffer = pszObjectBuffer;
-    startData.ObjectBuffLen = CCHMAXPATH;
-    startData.Environment = envBlock;
- 
-    rc = DosStartSession(&startData, &ulAppType, &pid);
+        STARTDATA startData = {0};
 
-    if ((rc != NO_ERROR) && (rc != ERROR_SMG_START_IN_BACKGROUND)) {
-        PR_SetError(PR_UNKNOWN_ERROR, 0);
+        if ((ulAppType & FAPPTYP_WINDOWAPI) == FAPPTYP_WINDOWAPI) {
+            startData.SessionType = SSF_TYPE_PM;
+        }
+        else if (ulAppType & FAPPTYP_WINDOWCOMPAT) {
+            startData.SessionType = SSF_TYPE_WINDOWABLEVIO;
+        }
+        else {
+            startData.SessionType = SSF_TYPE_DEFAULT;
+        }
+
+        if (ulAppType & (FAPPTYP_WINDOWSPROT31 | FAPPTYP_WINDOWSPROT | FAPPTYP_WINDOWSREAL))
+        {
+            strcpy(pszEXEName, "WINOS2.COM");
+            startData.SessionType = PROG_31_STDSEAMLESSVDM;
+            strcpy(pszFormatString, "/3 %s %s");
+        }
+
+        startData.InheritOpt = SSF_INHERTOPT_PARENT;
+
+        if (pszEXEName[0]) {
+            pszFormatResult = PR_MALLOC(strlen(pszFormatString)+strlen(path)+strlen(cmdLine));
+            sprintf(pszFormatResult, pszFormatString, path, cmdLine);
+            startData.PgmInputs = pszFormatResult;
+        } else {
+            strcpy(pszEXEName, path);
+            startData.PgmInputs = cmdLine;
+        }
+        startData.PgmName = pszEXEName;
+
+        startData.Length = sizeof(startData);
+        startData.Related = SSF_RELATED_INDEPENDENT;
+        startData.ObjectBuffer = pszObjectBuffer;
+        startData.ObjectBuffLen = CCHMAXPATH;
+        startData.Environment = envBlock;
+
+        rc = DosStartSession(&startData, &ulAppType, &pid);
+
+        if ((rc != NO_ERROR) && (rc != ERROR_SMG_START_IN_BACKGROUND)) {
+            PR_SetError(PR_UNKNOWN_ERROR, rc);
+            goto errorExit;
+        }
+
+        proc->md.pid = pid;
     }
- 
-    proc->md.pid = pid;
 
     if (pszFormatResult) {
         PR_DELETE(pszFormatResult);
     }
- 
-    PR_DELETE(cmdLine);
+    if (cmdLine) {
+        PR_DELETE(cmdLine);
+    }
     if (newEnvp) {
         PR_DELETE(newEnvp);
     }
@@ -366,6 +448,9 @@ PRProcess * _PR_CreateOS2Process(
     return proc;
 
 errorExit:
+    if (pszFormatResult) {
+        PR_DELETE(pszFormatResult);
+    }
     if (cmdLine) {
         PR_DELETE(cmdLine);
     }
@@ -379,7 +464,16 @@ errorExit:
         PR_DELETE(proc);
     }
     return NULL;
-}  /* _PR_CreateOS2Process */
+}  /* _PR_CreateOS2ProcessEx */
+
+PRProcess * _PR_CreateOS2Process(
+    const char *path,
+    char *const *argv,
+    char *const *envp,
+    const PRProcessAttr *attr)
+{
+    return _PR_CreateOS2ProcessEx(path, argv, envp, attr, PR_FALSE);
+}
 
 PRStatus _PR_DetachOS2Process(PRProcess *process)
 {
