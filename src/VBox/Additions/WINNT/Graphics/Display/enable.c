@@ -43,6 +43,11 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40
     {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41
+#ifdef VBOX_WITH_DDRAW
+    {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
+    {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
+    {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
+#endif
 };
 /* Experimental begin */
 BOOL APIENTRY DrvResetPDEV(
@@ -137,7 +142,7 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38 0x26
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40 0x28
     {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41 0x29
-#if 0
+#ifdef VBOX_WITH_DDRAW
     {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
     {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
     {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
