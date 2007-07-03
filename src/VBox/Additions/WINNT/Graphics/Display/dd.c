@@ -61,7 +61,6 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     *pdwNumHeaps       = 0;
 
     /* Setup the HAL driver caps. */
-    memset(pHalInfo, 0, sizeof(DD_HALINFO));
     pHalInfo->dwSize    = sizeof(DD_HALINFO);
     pHalInfo->dwFlags   = 0;
 
@@ -76,9 +75,18 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         pHalInfo->vmiData.ddpfDisplay.dwSize        = sizeof(DDPIXELFORMAT);
         pHalInfo->vmiData.ddpfDisplay.dwFlags       = DDPF_RGB;
         pHalInfo->vmiData.ddpfDisplay.dwRGBBitCount = pDev->ulBitCount;
+        DISPDBG((0, "pvPrimary                      %x\n", pHalInfo->vmiData.pvPrimary));
+        DISPDBG((0, "fpPrimary                      %x\n", pHalInfo->vmiData.fpPrimary));
+        DISPDBG((0, "dwDisplayWidth                 %x\n", pHalInfo->vmiData.dwDisplayWidth));
+        DISPDBG((0, "dwDisplayHeight                %x\n", pHalInfo->vmiData.dwDisplayHeigth));
+        DISPDBG((0, "lDisplayPitch                  %x\n", pHalInfo->vmiData.lDisplayPitch));
+        DISPDBG((0, "dwRGBBitCount                  %x\n", pHalInfo->vmiData.ddpfDisplay.dwRGBBitCount));
 
         if (pDev->ulBitmapType == BMF_8BPP)
+        {
             pHalInfo->vmiData.ddpfDisplay.dwFlags |= DDPF_PALETTEINDEXED8;
+            DISPDBG((0, "DDPF_PALETTEINDEXED8\n"));
+        }
 
         pHalInfo->vmiData.ddpfDisplay.dwRBitMask    = pDev->flRed;
         pHalInfo->vmiData.ddpfDisplay.dwGBitMask    = pDev->flGreen;
@@ -103,7 +111,15 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     pHalInfo->dwFlags |= DDHALINFO_GETDRIVERINFOSET;
 #endif
 
-    /** @todo video memory heap */
+    /* No 3D capabilities */
+#if 0
+    if (pHalInfo->lpD3DGlobalDriverData)
+    {
+        LPD3DHAL_GLOBALDRIVERDATA lpD3DGlobalDriverData = (LPD3DHAL_GLOBALDRIVERDATA)pHalInfo->lpD3DGlobalDriverData;
+        lpD3DGlobalDriverData->dwSize = sizeof(D3DHAL_GLOBALDRIVERDATA);
+    }
+#endif
+    
     return TRUE;
 }
 
