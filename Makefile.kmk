@@ -55,10 +55,10 @@ ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
  endif
 endif
 
+
 # The Qt DLLs.
-#ifeq ($(filter-out win os2,$(BUILD_TARGET)),)
-ifeq ($(filter-out win,$(BUILD_TARGET)),)
- ifneq ($(VBOX_WITH_QTGUI),)
+ifneq ($(VBOX_WITH_QTGUI),)
+ ifeq ($(BUILD_TARGET),win)
   #include $(PATH_KBUILD)/sdks/QT3.kmk
   #bin_SOURCES += \
   #	$(DLL_SDK_QT3_QT)
@@ -73,25 +73,20 @@ ifeq ($(filter-out win,$(BUILD_TARGET)),)
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
   endif
- endif
-endif
-
-# The GLIB and LIBIDL DLLs.
-ifeq ($(filter-out os2,$(BUILD_TARGET)),)
- # static libraries of these may be provided instead,
- # so copy DLLs only when they are present
- bin_SOURCES += $(wildcard $(VBOX_PATH_GLIB)/lib/glib.dll)
- bin_SOURCES += $(wildcard $(VBOX_PATH_LIBIDL)/lib/libIDL.dll)
-endif
-
-ifeq ($(BUILD_TARGET),darwin)
- ifneq ($(VBOX_WITH_QTGUI),)
+ else ifeq ($(BUILD_TARGET),os2)
+  VBOX_DLL_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/bin/qt*.dll)))
+  ifdef VBOX_DLL_QT
+   bin_SOURCES += \
+	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
+  endif
+ else ifeq ($(BUILD_TARGET),darwin)
   ifdef LIB_QT
    bin_SOURCES += \
 	$(LIB_QT)
   endif
  endif
 endif
+
 
 # The compiler runtime DLLs.
 ifeq ($(BUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)

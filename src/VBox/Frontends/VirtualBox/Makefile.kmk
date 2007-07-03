@@ -83,7 +83,7 @@ VirtualBox_QT_MOCHDRS = \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
-ifneq ($(BUILD_TARGET),win)
+ifdef VBOX_WITH_XPCOM
 VirtualBox_QT_MOCSRCS += src/COMDefs.cpp
 endif
 
@@ -158,7 +158,7 @@ VirtualBox_SOURCES.darwin = \
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
 #  more generic -Wno-extra
-ifneq ($(BUILD_TARGET),win)
+ifdef VBOX_WITH_XPCOM
 src/COMDefs.cpp_CXXFLAGS  = $(VBOX_GCC_Wno-extra)
 endif
 
