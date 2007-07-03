@@ -26,7 +26,14 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/EventQueue.h>
 #include <VBox/com/VirtualBox.h>
+
 #include <iprt/stream.h>
+
+#ifdef __OS2__
+# undef RT_MAX
+// from <iprt/cdefs.h>
+# define RT_MAX(Value1, Value2)  ((Value1) >= (Value2) ? (Value1) : (Value2))
+#endif
 
 using namespace com;
 
