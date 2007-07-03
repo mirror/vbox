@@ -109,11 +109,6 @@ BOOL DrvShadowDisconnect (PVOID x1, PVOID x2)
     return FALSE;
 }
 
-BOOL DrvDDInit (PVOID x1)
-{
-    DISPDBG((0, "Experimental %s: %p\n", __FUNCTION__, x1));
-    return FALSE;
-}
 
 /* Experimental end */
 
