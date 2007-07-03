@@ -54,6 +54,12 @@
 #include "prprf.h"
 #include <string.h>
 
+#if defined(VBOX)
+#define IN_RING3
+#include <iprt/runtime.h> // for RTR3Init
+#include <iprt/log.h>
+#endif
+
 /*
  * Lock used to lock the log.
  *
@@ -112,9 +118,28 @@ static PRLock *_pr_logLock;
 #define WIN32_DEBUG_FILE (FILE*)-2
 #endif
 
+/*
+** Use the innotek Portable Runtime logging facility when
+** NSPR_LOG_FILE is set to "WinDebug". The default IPRT log instance
+** and the "default" log group will be used for logging.
+*/
+#if defined(VBOX)
+#define IPRT_DEBUG_FILE (FILE*)-3
+#endif
+
 /* Macros used to reduce #ifdef pollution */
 
-#if defined(_PR_USE_STDIO_FOR_LOGGING) && defined(XP_PC)
+#if defined(VBOX)
+#define _PUT_LOG(fd, buf, nb) \
+    PR_BEGIN_MACRO \
+    if (logFile == IPRT_DEBUG_FILE) { \
+        Log(("%*.*S", nb, nb, buf)); \
+    } else { \
+        fwrite(buf, 1, nb, fd); \
+        fflush(fd); \
+    } \
+    PR_END_MACRO
+#elif defined(_PR_USE_STDIO_FOR_LOGGING) && defined(XP_PC)
 #define _PUT_LOG(fd, buf, nb) \
     PR_BEGIN_MACRO \
     if (logFile == WIN32_DEBUG_FILE) { \
@@ -288,6 +313,9 @@ void _PR_LogCleanup(void)
     if (logFile
         && logFile != stdout
         && logFile != stderr
+#ifdef VBOX
+        && logFile != IPRT_DEBUG_FILE
+#endif
 #ifdef XP_PC
         && logFile != WIN32_DEBUG_FILE
 #endif
@@ -374,6 +402,15 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #ifdef _PR_USE_STDIO_FOR_LOGGING
     FILE *newLogFile;
 
+#ifdef VBOX
+    if ( strcmp( file, "IPRT") == 0)
+    {
+	    // initialize VBox Runtime
+		RTR3Init(false, 0);
+        newLogFile = IPRT_DEBUG_FILE;
+    }
+    else
+#endif
 #ifdef XP_PC
     if ( strcmp( file, "WinDebug") == 0)
     {
@@ -392,6 +429,9 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
     if (logFile
         && logFile != stdout
         && logFile != stderr
+#ifdef VBOX
+        && logFile != IPRT_DEBUG_FILE
+#endif
 #ifdef XP_PC
         && logFile != WIN32_DEBUG_FILE
 #endif

@@ -71,6 +71,10 @@ static PRInt32 PR_CALLBACK FileRead(PRFileDesc *fd, void *buf, PRInt32 amount)
     if (rv == -1)
     	return rv;
 
+    PR_LOG(_pr_io_lm, PR_LOG_MAX,
+	       ("read: fd=%p osfd=%d buf=%p amount=%d",
+		    fd, fd ? fd->secret->md.osfd : 0, buf, amount));
+
 	rv = _PR_MD_READ(fd, buf, amount);
 	if (rv < 0) {
 		PR_ASSERT(rv == -1);
@@ -107,6 +111,9 @@ static PRInt32 PR_CALLBACK FileWrite(PRFileDesc *fd, const void *buf, PRInt32 am
     } /* if (fd->secret->appendMode...) */
 #endif /* XP_UNIX */
     while (amount > 0) {
+        PR_LOG(_pr_io_lm, PR_LOG_MAX,
+	           ("write: fd=%p osfd=%d buf=%p amount=%d",
+		        fd, fd ? fd->secret->md.osfd : 0, buf, amount));
 		temp = _PR_MD_WRITE(fd, buf, amount);
 		if (temp < 0) {
 			count = -1;

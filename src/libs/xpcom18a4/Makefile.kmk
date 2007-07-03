@@ -103,6 +103,8 @@ ifeq ($(BUILD_TARGET),os2)
  TEMPLATE_XPCOM_ASFLAGS.os2       += -Zomf
 endif
 
+# We use IPRT logging in debug builds, so we need IPRT
+TEMPLATE_XPCOM_LIBS.debug         += $(LIB_RUNTIME)
 
 #
 # Template for building the XPCOM executables
