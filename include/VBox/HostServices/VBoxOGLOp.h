@@ -526,7 +526,8 @@
     PVBOX_OGL_CMD pCmd = (PVBOX_OGL_CMD)pCmdBuffer;                                         \
     Assert(pCmd->enmOp == VBOX_OGL_OP_##op);                                                \
     Assert(pCmd->cParams == numpar);                                                        \
-    uint8_t      *pParam = (uint8_t *)(pCmd+1);
+    uint8_t      *pParam = (uint8_t *)(pCmd+1);                                             \
+    NOREF(pParam)
 
 #define OGL_PARAM(Type, par)                                                                \
     Type         par;                                                                       \
