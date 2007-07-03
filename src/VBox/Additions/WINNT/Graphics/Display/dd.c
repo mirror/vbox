@@ -12,6 +12,10 @@
 * Copyright (c) 1995-1999 Microsoft Corporation.  All rights reserved.
 \*****************************************************************************/
 
+#ifdef DEBUG
+#define LOG_ENABLED
+#endif
+
 #include "driver.h"
 #include "dd.h"
 
@@ -96,14 +100,15 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         pHalInfo->vmiData.dwZBufferAlign            = 4;
         pHalInfo->vmiData.dwTextureAlign            = 4;
     }
+    memset(&pHalInfo->ddCaps, 0, sizeof(DDNTCORECAPS));
     pHalInfo->ddCaps.dwSize         = sizeof(DDNTCORECAPS);
     pHalInfo->ddCaps.dwVidMemTotal  = pDev->cScreenSize;
     pHalInfo->ddCaps.dwVidMemFree   = pDev->cScreenSize;
 
-    pHalInfo->ddCaps.dwCaps         = DDCAPS_NOHARDWARE; /* ??? */
+    pHalInfo->ddCaps.dwCaps         = 0;
     pHalInfo->ddCaps.dwCaps2        = DDCAPS2_CERTIFIED;
 
-    pHalInfo->ddCaps.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_VIDEOMEMORY;
+    pHalInfo->ddCaps.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
 
 #if 0
     /* DX5 and up */
