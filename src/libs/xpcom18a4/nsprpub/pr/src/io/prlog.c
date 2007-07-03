@@ -56,7 +56,7 @@
 
 #if defined(VBOX)
 #define IN_RING3
-#include <iprt/runtime.h> // for RTR3Init
+#include <iprt/runtime.h> /* for RTR3Init */
 #include <iprt/log.h>
 #endif
 
@@ -405,7 +405,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #ifdef VBOX
     if ( strcmp( file, "IPRT") == 0)
     {
-	    // initialize VBox Runtime
+        /* initialize VBox Runtime */
 		RTR3Init(false, 0);
         newLogFile = IPRT_DEBUG_FILE;
     }
