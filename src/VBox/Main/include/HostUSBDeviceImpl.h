@@ -139,6 +139,11 @@ private:
     /** Pointer to the USB Device structure owned by this device.
      * Only used for host devices. */
     PUSBDEVICE mUsb;
+
+    friend class USBProxyService;
+#ifdef __LINUX__
+    friend class USBProxyServiceLinux;
+#endif
 };
 
 
