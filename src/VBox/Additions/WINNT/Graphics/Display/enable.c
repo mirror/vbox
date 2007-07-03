@@ -13,6 +13,7 @@
 \**************************************************************************/
 
 #include "driver.h"
+#include "dd.h"
 
 // The driver function table with all function index/address pairs
 
@@ -146,6 +147,7 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
     {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
     {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
+    {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85
 #endif
     {   INDEX_DrvNotify,                (PFN) DrvNotify             },	// 87 0x57
 //     /* Experimental. */
@@ -851,3 +853,163 @@ PVOID pvData)
             break;
     }
 }
+
+#ifdef VBOX_WITH_DDRAW
+//--------------------------Public Routine-------------------------------------
+//
+// HBITMAP DrvDeriveSurface
+//
+// This function derives and creates a GDI surface from the specified
+// DirectDraw surface.
+//
+// Parameters
+//  pDirectDraw-----Points to a DD_DIRECTDRAW_GLOBAL structure that describes
+//                  the DirectDraw object. 
+//  pSurface--------Points to a DD_SURFACE_LOCAL structure that describes the
+//                  DirectDraw surface around which to wrap a GDI surface.
+//
+// Return Value
+//  DrvDeriveSurface returns a handle to the created GDI surface upon success.
+//  It returns NULL if the call fails or if the driver cannot accelerate GDI
+//  drawing to the specified DirectDraw surface.
+//
+// Comments
+//  DrvDeriveSurface allows the driver to create a GDI surface around a
+//  DirectDraw video memory or AGP surface object in order to allow accelerated
+//  GDI drawing to the surface. If the driver does not hook this call, all GDI
+//  drawing to DirectDraw surfaces is done in software using the DIB engine.
+//
+//  GDI calls DrvDeriveSurface with RGB surfaces only.
+//
+//  The driver should call DrvCreateDeviceBitmap to create a GDI surface of the
+//  same size and format as that of the DirectDraw surface. Space for the
+//  actual pixels need not be allocated since it already exists.
+//
+//-----------------------------------------------------------------------------
+HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* pSurface)
+{
+    PPDEV               pDev = (PPDEV)pDirectDraw->dhpdev;
+    HBITMAP             hbmDevice;
+    DD_SURFACE_GLOBAL*  pSurfaceGlobal;
+    SIZEL               sizl;
+
+    DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
+
+    pSurfaceGlobal = pSurface->lpGbl;
+
+    //
+    // GDI should never call us for a non-RGB surface, but let's assert just
+    // to make sure they're doing their job properly.
+    //
+    AssertMsg(!(pSurfaceGlobal->ddpfSurface.dwFlags & DDPF_FOURCC), ("GDI called us with a non-RGB surface!"));
+
+
+    // The GDI driver does not accelerate surfaces in AGP memory,
+    // thus we fail the call
+
+    if (pSurface->ddsCaps.dwCaps & DDSCAPS_NONLOCALVIDMEM)
+    {
+        DISPDBG((0, "DrvDeriveSurface return NULL, surface in AGP memory"));
+        return 0;
+    }
+
+    // The GDI driver does not accelerate managed surface,
+    // thus we fail the call
+    if (pSurface->lpSurfMore->ddsCapsEx.dwCaps2 & DDSCAPS2_TEXTUREMANAGE)
+    {
+        DISPDBG((0, "DrvDeriveSurface return NULL, surface is managed"));
+        return 0;
+    }
+
+    //
+    // The rest of our driver expects GDI calls to come in with the same
+    // format as the primary surface.  So we'd better not wrap a device
+    // bitmap around an RGB format that the rest of our driver doesn't
+    // understand.  Also, we must check to see that it is not a surface
+    // whose pitch does not match the primary surface.
+    //
+    // NOTE: Most surfaces created by this driver are allocated as 2D surfaces
+    // whose lPitch's are equal to the screen pitch.  However, overlay surfaces
+    // are allocated such that there lPitch's are usually different then the
+    // screen pitch.  The hardware can not accelerate drawing operations to
+    // these surfaces and thus we fail to derive these surfaces.
+    //
+    if ( (pSurfaceGlobal->ddpfSurface.dwRGBBitCount == pDev->ulBitCount) )
+    {
+        SIZEL sizel;
+        DWORD ulBitmapType, flHooks;        
+
+        sizl.cx = pSurfaceGlobal->wWidth;
+        sizl.cy = pSurfaceGlobal->wHeight;
+
+        if (pDev->ulBitCount == 8)
+        {
+            if (!bInit256ColorPalette(pDev)) {
+                DISPDBG((0, "DISP DrvEnableSurface failed to init the 8bpp palette\n"));
+                return(FALSE);
+            }
+            ulBitmapType = BMF_8BPP;
+            flHooks = HOOKS_BMF8BPP;
+        }
+        else if (pDev->ulBitCount == 16)
+        {
+            ulBitmapType = BMF_16BPP;
+            flHooks = HOOKS_BMF16BPP;
+        }
+        else if (pDev->ulBitCount == 24)
+        {
+            ulBitmapType = BMF_24BPP;
+            flHooks = HOOKS_BMF24BPP;
+        }
+        else
+        {
+            ulBitmapType = BMF_32BPP;
+            flHooks = HOOKS_BMF32BPP;
+        }
+
+        hbmDevice = EngCreateBitmap(sizl,
+                                    pDev->lDeltaScreen,
+                                    ulBitmapType,
+                                    (pDev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
+                                    (PVOID) (pDev->pjScreen));
+        if (hbmDevice)
+        {
+            VOID* pvScan0 = pDev->pjScreen + pSurfaceGlobal->fpVidMem;
+
+            //
+            // Note that HOOK_SYNCHRONIZE must always be hooked when we
+            // give GDI a pointer to the bitmap bits. We don't need to
+            // do it here since HOOK_SYNCHRONIZE is always set in our
+            // pdev->flHooks
+            //
+            ULONG   flags = MS_NOTSYSTEMMEMORY;
+
+            if ( EngModifySurface((HSURF)hbmDevice,
+                                  pDev->hdevEng,
+                                  pDev->flHooks,
+                                  flags,
+                                  (DHSURF)hbmDevice,
+                                  pvScan0,
+                                  pSurfaceGlobal->lPitch,
+                                  NULL) )
+            {
+                SURFOBJ*    surfobj = EngLockSurface((HSURF) hbmDevice);
+                AssertMsg(surfobj->iType == STYPE_BITMAP, ("expected STYPE_BITMAP"));
+                surfobj->iType = STYPE_DEVBITMAP;
+                EngUnlockSurface(surfobj);
+
+                DISPDBG((0, "DrvDeriveSurface return succeed"));
+                return(hbmDevice);
+            }
+
+            DISPDBG((0, "DrvDeriveSurface: EngModifySurface failed"));
+            EngDeleteSurface((HSURF)hbmDevice);
+        }
+    }
+
+    DISPDBG((0, "DrvDeriveSurface return NULL"));
+    DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch));
+      
+    return(0);
+}
+#endif /* VBOX_WITH_DDRAW */

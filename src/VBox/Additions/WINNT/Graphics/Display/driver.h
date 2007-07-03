@@ -19,7 +19,6 @@
 #include "devioctl.h"
 #include "ntddvdeo.h"
 #include "debug.h"
-#include "dd.h"
 
 #include "../Miniport/vboxioctl.h"
 
@@ -98,6 +97,10 @@ struct  _PDEV
 
     VBOXDISPLAYINFO *pInfo;
     ULONG iDevice;
+#ifdef VBOX_WITH_DDRAW
+    BOOL             bDdExclusiveMode;
+    DWORD            dwNewDDSurfaceOffset;
+#endif
 };
 
 /* The global semaphore handle for all driver instances. */
