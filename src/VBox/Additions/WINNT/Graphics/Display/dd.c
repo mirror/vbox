@@ -15,6 +15,10 @@
 #include "driver.h"
 #include "dd.h"
 
+#if 0
+static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface);
+#endif
+
 /**
  * DrvGetDirectDrawInfo
  *
@@ -139,12 +143,13 @@ BOOL APIENTRY DrvEnableDirectDraw(
     pCallBacks->dwFlags               = 0;
 
     /*
-    pCallBacks->CanCreateSurface      = DdCanCreateSurface;
+    pCallBacks->dwFlags               = DDHAL_CB32_CREATESURFACE;
     pCallBacks->CreateSurface         = DdCreateSurface;
+    pCallBacks->CanCreateSurface      = DdCanCreateSurface;
     pCallBacks->WaitForVerticalBlank  = DdWaitForVerticalBlank;
     pCallBacks->GetScanLine           = DdGetScanLine;
     pCallBacks->MapMemory             = DdMapMemory;
-    DDHAL_CB32_CANCREATESURFACE | DDHAL_CB32_CREATESURFACE | DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_MAPMEMORY | DDHAL_CB32_GETSCANLINE 
+    DDHAL_CB32_CANCREATESURFACE | DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_MAPMEMORY | DDHAL_CB32_GETSCANLINE 
     */
     /* Note: pCallBacks->SetMode & pCallBacks->DestroyDriver are unused in Windows 2000 and up */
 
@@ -152,14 +157,16 @@ BOOL APIENTRY DrvEnableDirectDraw(
     memset(&pSurfaceCallBacks, 0, sizeof(DD_SURFACECALLBACKS));
     pSurfaceCallBacks->dwSize           = sizeof(DD_SURFACECALLBACKS);
     pSurfaceCallBacks->dwFlags          = 0;
+
     /*
+    pSurfaceCallBacks->dwFlags          = DDHAL_SURFCB32_DESTROYSURFACE | DDHAL_SURFCB32_LOCK;
     pSurfaceCallBacks->DestroySurface   = DdDestroySurface;
-    pSurfaceCallBacks->Flip             = DdFlip;
     pSurfaceCallBacks->Lock             = DdLock;
+    pSurfaceCallBacks->Flip             = DdFlip;
     pSurfaceCallBacks->GetBltStatus     = DdGetBltStatus;
     pSurfaceCallBacks->GetFlipStatus    = DdGetFlipStatus;
     pSurfaceCallBacks->Blt              = DdBlt;
-    DDHAL_SURFCB32_DESTROYSURFACE | DDHAL_SURFCB32_FLIP | DDHAL_SURFCB32_BLT | DDHAL_SURFCB32_GETBLTSTATUS | DDHAL_SURFCB32_GETFLIPSTATUS DDHAL_SURFCB32_LOCK;
+    DDHAL_SURFCB32_FLIP | DDHAL_SURFCB32_BLT | DDHAL_SURFCB32_GETBLTSTATUS | DDHAL_SURFCB32_GETFLIPSTATUS;
     */
 
 //    pSurfaceCallBacks.SetColorKey = DdSetColorKey;
@@ -189,4 +196,26 @@ VOID APIENTRY DrvDisableDirectDraw( DHPDEV dhpdev)
 }
 
 
+#if 0
+/**
+ * DdCreateSurface
+ * 
+ * The DdCreateSurface callback function creates a DirectDraw surface.
+ * 
+ * lpCreateSurface
+ *     Points to a DD_CREATESURFACEDATA structure that contains the information required to create a surface.
+ * 
+ * Return Value
+ * 
+ * DdCreateSurface returns one of the following callback codes:
+ * DDHAL_DRIVER_HANDLED
+ * DDHAL_DRIVER_NOTHANDLED
+ * 
+ */
+static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
+{
+    lpCreateSurface->lpDD->fpVidMem = DDHAL_PLEASEALLOC_USERMEM;
 
+    return DDHAL_DRIVER_NOTHANDLED;
+}
+#endif
