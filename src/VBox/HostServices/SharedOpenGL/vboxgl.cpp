@@ -134,7 +134,7 @@ int vboxglFlushBuffer(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer, uint32_t cbCmdBu
     AssertReturn(pCmdBuffer == pOrgBuffer + cbCmdBuffer, VERR_INVALID_PARAMETER);
 
     *pLastRetVal = pClient->lastretval;
-    *pLastError  = glGetError();
+    *pLastError  = 0; //glGetError();
 
 #ifdef DEBUG
     Log(("Flush: last return value=%VX64\n", *pLastRetVal));

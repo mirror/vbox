@@ -131,7 +131,7 @@ int vboxglDisconnect(PVBOXOGLCTX pClient)
     if (pClient->hwnd)
     {
         if (pClient->hdc)
-            DeleteDC(pClient->hdc);
+            ReleaseDC(pClient->hwnd, pClient->hdc);
     	PostMessage(pClient->hwnd, WM_CLOSE, 0, 0);
         pClient->hwnd = 0;
     }
@@ -424,8 +424,15 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     Assert(pClient->cbLastParam == nBytes);
     ppfd = (LPPIXELFORMATDESCRIPTOR)pClient->pLastParam;
 
+    hdc = VBOX_OGL_GUEST_TO_HOST_HDC(hdc);
+    if (!hdc)
+        hdc = GetDC(0);
+
     Log(("DrvDescribePixelFormat %x %d %d %x\n", hdc, iPixelFormat, nBytes, ppfd));
-    pClient->lastretval = DescribePixelFormat(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), iPixelFormat, nBytes, ppfd);
+    pClient->lastretval = DescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
     if (!pClient->lastretval)
         Log(("DescribePixelFormat failed with %d\n", GetLastError()));
+
+    if (!VBOX_OGL_GUEST_TO_HOST_HDC(hdc))
+        ReleaseDC(0, pClient->hdc);
 }

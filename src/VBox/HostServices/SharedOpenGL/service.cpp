@@ -208,8 +208,8 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             }
             else 
             if (    paParms[0].type != VBOX_HGCM_SVC_PARM_PTR       /* pCmdBuffer */
-                ||  paParms[1].type != VBOX_HGCM_SVC_PARM_PTR       /* pLastParam */
-                ||  paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT     /* cCommands */
+                ||  paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT     /* cCommands */
+                ||  paParms[2].type != VBOX_HGCM_SVC_PARM_PTR       /* pLastParam */
                 ||  paParms[3].type != VBOX_HGCM_SVC_PARM_64BIT     /* retval */
                 ||  paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT     /* lasterror */
                )
@@ -226,8 +226,8 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 uint64_t lastretval;
 
                 /* Save the last parameter of the last command in the client structure so the macro can pick it up there */
-                pClient->pLastParam  = (uint8_t *)paParms[1].u.pointer.addr;
-                pClient->cbLastParam = paParms[1].u.pointer.size;
+                pClient->pLastParam  = (uint8_t *)paParms[2].u.pointer.addr;
+                pClient->cbLastParam = paParms[2].u.pointer.size;
 
                 /* Execute the function. */
                 rc = vboxglFlushBuffer(pClient, pCmdBuffer, cbCmdBuffer, cCommands, &lasterror, &lastretval);
