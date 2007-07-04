@@ -522,22 +522,24 @@ int main(int argc, char *argv[])
     do
     {
         ComPtr <IMachine> machine;
-        Bstr name = "Windows XP";
+        Bstr name = argc > 1 ? argv [1] : "dos";
         printf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_ERROR_BREAK (virtualBox, FindMachine (name, machine.asOutParam()));
-//        printf ("Accessing the machine in read-only mode:\n");
-//        readAndChangeMachineSettings (machine);
-//        if (argc != 2)
-//        {
-//            printf("Error: a string has to be supplied!\n");
-//        }
-//        else
-//        {
-//            Bstr secureLabel = argv[1];
-//            machine->COMSETTER(ExtraData)(L"VBoxSDL/SecureLabel", secureLabel);
-//        }
+        printf ("Accessing the machine in read-only mode:\n");
+        readAndChangeMachineSettings (machine);
+#if 0
+        if (argc != 2)
+        {
+            printf ("Error: a string has to be supplied!\n");
+        }
+        else
+        {
+            Bstr secureLabel = argv[1];
+            machine->COMSETTER(ExtraData)(L"VBoxSDL/SecureLabel", secureLabel);
+        }
+#endif
     }
-    while (FALSE);
+    while (0);
     printf ("\n");
 #endif
 
@@ -708,7 +710,7 @@ int main(int argc, char *argv[])
     do
     {
         ComPtr <IMachine> machine;
-        Bstr name = L"dos";
+        Bstr name = argc > 1 ? argv [1] : "dos";
         printf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_ERROR_BREAK (virtualBox, FindMachine (name, machine.asOutParam()));
         Guid guid;
@@ -721,6 +723,22 @@ int main(int argc, char *argv[])
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
         printf ("Accessing the machine within the session:\n");
         readAndChangeMachineSettings (sessionMachine, machine);
+#if 0
+        printf ("\n");
+        printf ("Enabling the VRDP server (must succeed even if the VM is saved):\n");
+        ComPtr <IVRDPServer> vrdp;
+        CHECK_ERROR_BREAK (sessionMachine, COMGETTER(VRDPServer) (vrdp.asOutParam()));
+        if (FAILED (vrdp->COMSETTER(Enabled) (TRUE)))
+        {
+            PRINT_ERROR_INFO (com::ErrorInfo (vrdp));
+        }
+        else
+        {
+            BOOL enabled = FALSE;
+            CHECK_ERROR_BREAK (vrdp, COMGETTER(Enabled) (&enabled));
+            printf ("VRDP server is %s\n", enabled ? "enabled" : "disabled");
+        }
+#endif
 #endif
 #if 0
         ComPtr <IConsole> console;
