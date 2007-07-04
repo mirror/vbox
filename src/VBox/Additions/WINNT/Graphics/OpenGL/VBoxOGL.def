@@ -378,18 +378,18 @@ EXPORTS
     glPushClientAttrib
 
 ; test exports
-    wglCreateContext
-    wglMakeCurrent
-    wglDeleteContext
-    SwapBuffers
+;    wglCreateContext
+;    wglMakeCurrent
+;    wglDeleteContext
+;    SwapBuffers
 
-    wglGetProcAddress
-    wglDescribeLayerPlane
-    wglGetLayerPaletteEntries
-    wglDescribePixelFormat
-    wglCopyContext
-    wglShareLists
-    wglSetLayerPaletteEntries
-    wglRealizeLayerPalette
-    wglSwapLayerBuffers
-    wglSetPixelFormat
+;    wglGetProcAddress
+;    wglDescribeLayerPlane
+;    wglGetLayerPaletteEntries
+;    wglDescribePixelFormat
+;    wglCopyContext
+;    wglShareLists
+;    wglSetLayerPaletteEntries
+;    wglRealizeLayerPalette
+;    wglSwapLayerBuffers
+;    wglSetPixelFormat

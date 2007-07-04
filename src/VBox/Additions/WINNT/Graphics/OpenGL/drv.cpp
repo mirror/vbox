@@ -75,12 +75,6 @@ PROC APIENTRY DrvGetProcAddress(LPCSTR lpszProc)
     return pfnProc;
 }
 
-/* Test export for directly linking with vboxogl.dll */
-PROC WINAPI wglGetProcAddress(LPCSTR lpszProc)
-{
-    return DrvGetProcAddress(lpszProc);
-}
-
 BOOL APIENTRY DrvValidateVersion(DWORD version)
 {
     DbgPrintf(("DrvValidateVersion %x -> always TRUE\n", version));
@@ -97,9 +91,16 @@ PICDTABLE APIENTRY DrvSetContext(HDC hdc, HGLRC hglrc, void *callback)
     return &icdTable;
 }
 
+#ifdef VBOX_WITH_WGL_EXPORTS
 /* Test export for directly linking with vboxogl.dll */
 BOOL WINAPI wglMakeCurrent(HDC hdc, HGLRC hglrc)
 {
     DrvSetContext(hdc, hglrc, NULL);
     return TRUE;
 }
+
+PROC WINAPI wglGetProcAddress(LPCSTR lpszProc)
+{
+    return DrvGetProcAddress(lpszProc);
+}
+#endif
