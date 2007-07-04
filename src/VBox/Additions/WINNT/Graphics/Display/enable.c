@@ -108,6 +108,27 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
     }
 #endif
 
+    case QUERYESCSUPPORT:
+        if (    cjIn == sizeof(DWORD)
+            &&  pvIn)
+        {
+            DWORD nEscapeQuery = *(DWORD *)pvIn;
+
+            switch(nEscapeQuery)
+            {
+#ifdef VBOX_WITH_OPENGL
+            case OPENGL_GETINFO:
+                return 1;
+#endif
+            default:
+                DISPDBG((0, "QUERYESCSUPPORT %d unsupported\n", nEscapeQuery));
+                break;
+            }
+        }
+        else
+            DISPDBG((0, "QUERYESCSUPPORT invalid size %d\n", cjOut));
+        break;
+
     default:
         DISPDBG((0, "Unsupported Escape %d\n", iEsc));
         break;
