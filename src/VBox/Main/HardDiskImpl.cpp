@@ -138,7 +138,7 @@ void HardDisk::FinalRelease()
  */
 HRESULT HardDisk::protectedInit (VirtualBox *aVirtualBox, HardDisk *aParent)
 {
-    LogFlowMember (("HardDisk::protectedInit (aParent=%p)\n", aParent));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aVirtualBox, E_INVALIDARG);
 
@@ -167,7 +167,7 @@ HRESULT HardDisk::protectedInit (VirtualBox *aVirtualBox, HardDisk *aParent)
  */
 void HardDisk::protectedUninit (AutoLock &alock)
 {
-    LogFlowMember (("HardDisk::protectedUninit()\n"));
+    LogFlowThisFunc (("\n"));
 
     Assert (alock.belongsTo (this));
     Assert (isReady());
@@ -1354,7 +1354,7 @@ void HVirtualDiskImage::FinalRelease()
 HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                                  CFGNODE aHDNode, CFGNODE aVDINode)
 {
-    LogFlowMember (("HVirtualDiskImage::init (load)\n"));
+    LogFlowThisFunc (("aHDNode=%p, aVDINode=%p\n", aHDNode, aVDINode));
 
     AssertReturn (aHDNode && aVDINode, E_FAIL);
 
@@ -1380,7 +1380,7 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         rc = setFilePath (filePath);
         CheckComRCBreakRC (rc);
 
-        LogFlowMember ((" '%ls'\n", mFilePathFull.raw()));
+        LogFlowThisFunc (("'%ls'\n", mFilePathFull.raw()));
 
         /* load basic settings and children */
         rc = loadSettings (aHDNode);
@@ -1416,8 +1416,8 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                                 const BSTR aFilePath, BOOL aRegistered /* = FALSE */)
 {
-    LogFlowMember (("HVirtualDiskImage::init (aFilePath='%ls', aRegistered=%d)\n",
-                   aFilePath, aRegistered));
+    LogFlowThisFunc (("aFilePath='%ls', aRegistered=%d\n",
+                      aFilePath, aRegistered));
 
     AutoLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
@@ -1483,7 +1483,7 @@ HRESULT HVirtualDiskImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
  */
 void HVirtualDiskImage::uninit()
 {
-    LogFlowMember (("HVirtualDiskImage::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
     AutoLock alock (this);
     if (!isReady())
@@ -1833,16 +1833,24 @@ Bstr HVirtualDiskImage::toString (bool aShort /* = false */)
 
 /**
  *  Creates a clone of this hard disk by storing hard disk data in the given
- *  VDI file name.
+ *  VDI file.
  *
- *  @param aId          UUID to assign to the created image
- *  @param aTargetPath  VDI file where the cloned image is to be to stored
- *  @param aProgress    progress object to run during operation
+ *  If the operation fails, @a aDeleteTarget will be set to @c true unless the
+ *  failure happened because the target file already existed.
+ *
+ *  @param aId              UUID to assign to the created image.
+ *  @param aTargetPath      VDI file where the cloned image is to be to stored.
+ *  @param aProgress        progress object to run during operation.
+ *  @param aDeleteTarget    Whether it is recommended to delete target on
+ *                          failure or not.
  */
 HRESULT
 HVirtualDiskImage::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
-                                 Progress *aProgress)
+                                 Progress *aProgress, bool &aDeleteTarget)
 {
+    /* normally, the target file should be deleted on error */
+    aDeleteTarget = true;
+
     AssertReturn (!aId.isEmpty(), E_FAIL);
     AssertReturn (!aTargetPath.isNull(), E_FAIL);
     AssertReturn (aProgress, E_FAIL);
@@ -1871,6 +1879,10 @@ HVirtualDiskImage::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
 
     alock.enter();
     releaseReader();
+
+    /* We don't want to delete existing user files */
+    if (vrc == VERR_ALREADY_EXISTS)
+        aDeleteTarget = false;
 
     if (VBOX_SUCCESS (vrc))
         vrc = VDISetImageUUIDs (aTargetPath, aId, NULL, NULL, NULL);
@@ -2067,8 +2079,7 @@ HVirtualDiskImage::cloneDiffImage (const Bstr &aFolder, const Guid &aMachineId,
  */
 HRESULT HVirtualDiskImage::mergeImageToParent (Progress *aProgress)
 {
-    LogFlowMember (("HVirtualDiskImage::mergeImageToParent(): image='%ls'\n",
-                    mFilePathFull.raw()));
+    LogFlowThisFunc (("mFilePathFull='%ls'\n", mFilePathFull.raw()));
 
     AutoLock alock (this);
     CHECK_READY();
@@ -2182,8 +2193,7 @@ HRESULT HVirtualDiskImage::mergeImageToParent (Progress *aProgress)
  */
 HRESULT HVirtualDiskImage::mergeImageToChildren (Progress *aProgress)
 {
-    LogFlowMember (("HVirtualDiskImage::mergeImageToChildren(): image='%ls'\n",
-                    mFilePathFull.raw()));
+    LogFlowThisFunc (("mFilePathFull='%ls'\n", mFilePathFull.raw()));
 
     AutoLock alock (this);
     CHECK_READY();
@@ -2670,6 +2680,8 @@ DECLCALLBACK(int) HVirtualDiskImage::VDITaskThread (RTTHREAD thread, void *pvUse
     HRESULT rc = S_OK;
     Utf8Str errorMsg;
 
+    bool deleteTarget = true;
+
     if (task->operation == VDITask::CloneToImage)
     {
         Assert (!task->vdi->id().isEmpty());
@@ -2677,7 +2689,7 @@ DECLCALLBACK(int) HVirtualDiskImage::VDITaskThread (RTTHREAD thread, void *pvUse
         AutoLock sourceLock (task->source);
         rc = task->source->cloneToImage (task->vdi->id(),
                                          Utf8Str (task->vdi->filePathFull()),
-                                         task->progress);
+                                         task->progress, deleteTarget);
 
         /* release reader added in HardDisk::CloneToImage() */
         task->source->releaseReader();
@@ -2689,6 +2701,10 @@ DECLCALLBACK(int) HVirtualDiskImage::VDITaskThread (RTTHREAD thread, void *pvUse
                                       Utf8Str (task->vdi->mDescription),
                                       progressCallback,
                                       static_cast <Progress *> (task->progress));
+
+        /* We don't want to delete existing user files */
+        if (vrc == VERR_ALREADY_EXISTS)
+            deleteTarget = false;
 
         if (VBOX_SUCCESS (vrc) && task->vdi->id())
         {
@@ -2732,7 +2748,8 @@ DECLCALLBACK(int) HVirtualDiskImage::VDITaskThread (RTTHREAD thread, void *pvUse
     else
     {
         /* delete the target file so we don't have orphaned files */
-        RTFileDelete(Utf8Str (task->vdi->filePathFull()));
+        if (deleteTarget)
+            RTFileDelete(Utf8Str (task->vdi->filePathFull()));
 
         task->vdi->mState = HVirtualDiskImage::NotCreated;
         /* complete the progress object */
@@ -2793,7 +2810,7 @@ void HISCSIHardDisk::FinalRelease()
 HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
                               CFGNODE aHDNode, CFGNODE aISCSINode)
 {
-    LogFlowMember (("HISCSIHardDisk::init (load)\n"));
+    LogFlowThisFunc (("aHDNode=%p, aISCSINode=%p\n", aHDNode, aISCSINode));
 
     AssertReturn (aHDNode && aISCSINode, E_FAIL);
 
@@ -2826,9 +2843,9 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
         /* password (optional) */
         CFGLDRQueryBSTR (aISCSINode, "password", mPassword.asOutParam());
 
-        LogFlowMember ((" 'iscsi:%ls:%hu@%ls/%ls:%llu'\n",
-                        mServer.raw(), mPort, mUserName.raw(), mTarget.raw(),
-                        mLun));
+        LogFlowThisFunc (("'iscsi:%ls:%hu@%ls/%ls:%llu'\n",
+                          mServer.raw(), mPort, mUserName.raw(), mTarget.raw(),
+                          mLun));
 
         /* load basic settings and children */
         rc = loadSettings (aHDNode);
@@ -2859,7 +2876,7 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox,
  */
 HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox)
 {
-    LogFlowMember (("HISCSIHardDisk::init()\n"));
+    LogFlowThisFunc (("\n"));
 
     AutoLock alock (this);
     ComAssertRet (!isReady(), E_UNEXPECTED);
@@ -2897,7 +2914,7 @@ HRESULT HISCSIHardDisk::init (VirtualBox *aVirtualBox)
  */
 void HISCSIHardDisk::uninit()
 {
-    LogFlowMember (("HISCSIHardDisk::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
     AutoLock alock (this);
     if (!isReady())
@@ -3264,15 +3281,20 @@ Bstr HISCSIHardDisk::toString (bool aShort /* = false */)
 
 /**
  *  Creates a clone of this hard disk by storing hard disk data in the given
- *  VDI file name.
+ *  VDI file.
  *
- *  @param aId          UUID to assign to the created image
- *  @param aTargetPath  VDI file where the cloned image is to be to stored
- *  @param aProgress    progress object to run during operation
+ *  If the operation fails, @a aDeleteTarget will be set to @c true unless the
+ *  failure happened because the target file already existed.
+ *
+ *  @param aId              UUID to assign to the created image.
+ *  @param aTargetPath      VDI file where the cloned image is to be to stored.
+ *  @param aProgress        progress object to run during operation.
+ *  @param aDeleteTarget    Whether it is recommended to delete target on
+ *                          failure or not.
  */
 HRESULT
 HISCSIHardDisk::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
-                              Progress *aProgress)
+                              Progress *aProgress, bool &aDeleteTarget)
 {
     ComAssertMsgFailed (("Not implemented"));
     return E_NOTIMPL;
@@ -3376,7 +3398,7 @@ void HVMDKImage::FinalRelease()
 HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                           CFGNODE aHDNode, CFGNODE aVMDKNode)
 {
-    LogFlowMember (("HVMDKImage::init (load)\n"));
+    LogFlowThisFunc (("aHDNode=%p, aVMDKNode=%p\n", aHDNode, aVMDKNode));
 
     AssertReturn (aHDNode && aVMDKNode, E_FAIL);
 
@@ -3402,7 +3424,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         rc = setFilePath (filePath);
         CheckComRCBreakRC (rc);
 
-        LogFlowMember ((" '%ls'\n", mFilePathFull.raw()));
+        LogFlowThisFunc (("'%ls'\n", mFilePathFull.raw()));
 
         /* load basic settings and children */
         rc = loadSettings (aHDNode);
@@ -3447,8 +3469,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                           const BSTR aFilePath, BOOL aRegistered /* = FALSE */)
 {
-    LogFlowMember (("HVMDKImage::init (aFilePath='%ls', aRegistered=%d)\n",
-                    aFilePath, aRegistered));
+    LogFlowThisFunc (("aFilePath='%ls', aRegistered=%d\n", aFilePath, aRegistered));
 
     AssertReturn (aParent == NULL, E_FAIL);
 
@@ -3519,7 +3540,7 @@ HRESULT HVMDKImage::init (VirtualBox *aVirtualBox, HardDisk *aParent,
  */
 void HVMDKImage::uninit()
 {
-    LogFlowMember (("HVMDKImage::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
     AutoLock alock (this);
     if (!isReady())
@@ -3885,15 +3906,20 @@ Bstr HVMDKImage::toString (bool aShort /* = false */)
 
 /**
  *  Creates a clone of this hard disk by storing hard disk data in the given
- *  VDI file name.
+ *  VDI file.
  *
- *  @param aId          UUID to assign to the created image
- *  @param aTargetPath  VDI file where the cloned image is to be to stored
- *  @param aProgress    progress object to run during operation
+ *  If the operation fails, @a aDeleteTarget will be set to @c true unless the
+ *  failure happened because the target file already existed.
+ *
+ *  @param aId              UUID to assign to the created image.
+ *  @param aTargetPath      VDI file where the cloned image is to be to stored.
+ *  @param aProgress        progress object to run during operation.
+ *  @param aDeleteTarget    Whether it is recommended to delete target on
+ *                          failure or not.
  */
 HRESULT
 HVMDKImage::cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
-                          Progress *aProgress)
+                          Progress *aProgress, bool &aDeleteTarget)
 {
     ComAssertMsgFailed (("Not implemented"));
     return E_NOTIMPL;

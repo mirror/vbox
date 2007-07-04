@@ -145,7 +145,7 @@ public:
     virtual bool sameAs (HardDisk *that);
 
     virtual HRESULT cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
-                                  Progress *aProgress) = 0;
+                                  Progress *aProgress, bool &aDeleteTarget) = 0;
     virtual HRESULT createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
                                      Progress *aProgress) = 0;
 public:
@@ -273,7 +273,7 @@ public:
     Bstr toString (bool aShort = false);
 
     HRESULT cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
-                          Progress *aProgress);
+                          Progress *aProgress, bool &aDeleteTarget);
     HRESULT createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
                              Progress *aProgress);
 
@@ -402,7 +402,7 @@ public:
     Bstr toString (bool aShort = false);
 
     HRESULT cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
-                          Progress *aProgress);
+                          Progress *aProgress, bool &aDeleteTarget);
     HRESULT createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
                              Progress *aProgress);
 
@@ -494,7 +494,7 @@ public:
     Bstr toString (bool aShort = false);
 
     HRESULT cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
-                          Progress *aProgress);
+                          Progress *aProgress, bool &aDeleteTarget);
     HRESULT createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
                              Progress *aProgress);
 
