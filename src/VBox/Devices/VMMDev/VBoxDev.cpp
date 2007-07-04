@@ -1635,6 +1635,14 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
         pData->pDrv->pfnVideoAccelEnable (pData->pDrv, !!pData->u32VideoAccelEnabled, &pData->pVMMDevRAMHC->vbvaMemory);
     }
 
+    if (pData->fu32AdditionsOk)
+    {
+        LogRel(("Guest Additions information report: additionsVersion = 0x%08X  osType = 0x%08X\n",
+                pData->guestInfo.additionsVersion,
+                pData->guestInfo.osType));
+        pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
+    }
+
     return VINF_SUCCESS;
 }
 
