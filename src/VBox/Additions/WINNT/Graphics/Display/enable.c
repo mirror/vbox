@@ -82,7 +82,7 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
 #ifdef VBOX_WITH_OPENGL
     case OPENGL_GETINFO:
     {
-        if (    cjOut == sizeof(OPENGL_INFO) 
+        if (    cjOut >= sizeof(OPENGL_INFO) 
             &&  pvOut) 
         { 
             POPENGL_INFO pInfo = (POPENGL_INFO)pvOut; 
