@@ -100,8 +100,6 @@ public:
 
     // public methods only for internal purposes
 
-    const ComObjPtr <Machine, ComWeakRef> &parent() { return mParent; };
-
     HRESULT loadSettings (CFGNODE aMachine);
     HRESULT saveSettings (CFGNODE aMachine);
 
@@ -110,8 +108,6 @@ public:
     bool rollback();
     void commit();
     void copyFrom (USBController *aThat);
-
-    const Backupable<Data> &data() { return mData; }
 
     HRESULT onMachineRegistered (BOOL aRegistered);
 
@@ -122,6 +118,14 @@ public:
     bool hasMatchingFilter (IUSBDevice *aUSBDevice);
 
     HRESULT notifyProxy (bool aInsertFilters);
+
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
+
+    /** @note this doesn't require a read lock since mParent is constant. */
+    const ComObjPtr <Machine, ComWeakRef> &parent() { return mParent; };
+
+    const Backupable<Data> &data() { return mData; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"USBController"; }
