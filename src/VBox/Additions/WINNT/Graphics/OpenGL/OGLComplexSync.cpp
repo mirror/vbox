@@ -121,8 +121,16 @@ int APIENTRY DrvGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
 int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
 {
     /* if ppfd == NULL, then DrvDescribelayerPlane returns the maximum nr of supported pixel formats */
-    VBOX_OGL_GEN_SYNC_OP4_PASS_PTR_RET(int, DrvDescribePixelFormat, hdc, iPixelFormat, nBytes, nBytes, ppfd);
-    return retval;
+    if (ppfd)
+    {
+        VBOX_OGL_GEN_SYNC_OP4_PASS_PTR_RET(int, DrvDescribePixelFormat, hdc, iPixelFormat, nBytes, nBytes, ppfd);
+        return retval;
+    }
+    else
+    {
+        VBOX_OGL_GEN_SYNC_OP4_RET(int, DrvDescribePixelFormat, hdc, iPixelFormat, nBytes, ppfd);
+        return retval;
+    }
 }
 
 #ifdef VBOX_WITH_WGL_EXPORTS
