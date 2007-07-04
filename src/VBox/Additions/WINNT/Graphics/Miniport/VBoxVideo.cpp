@@ -1732,7 +1732,7 @@ BOOLEAN FASTCALL VBoxVideoSetColorRegisters(
 {
    LONG Entry;
 
-   dprintf(("VBoxVideo::VBoxVideoSetColorRegisters\n"));
+   dprintf(("VBoxVideo::VBoxVideoSetColorRegisters first entry %d num entries %d\n", ColorLookUpTable->FirstEntry, ColorLookUpTable->NumEntries));
 
    if (ColorLookUpTable->NumEntries + ColorLookUpTable->FirstEntry > 256)
       return FALSE;
