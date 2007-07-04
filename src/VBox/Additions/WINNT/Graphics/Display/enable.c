@@ -38,6 +38,7 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },	// 20
     {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },	// 22
     {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },	// 23
+    {   INDEX_DrvEscape,                (PFN) DrvEscape             },	// 24
     {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },	// 29
     {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },	// 30
     {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },	// 31
@@ -72,16 +73,45 @@ VOID APIENTRY DrvDestroyFont(
     DISPDBG((0, "Experimental %s: %p\n", __FUNCTION__, pfo));
 }
 
-ULONG APIENTRY DrvEscape(
-    SURFOBJ *pso,
-    ULONG    iEsc,
-    ULONG    cjIn,
-    PVOID    pvIn,
-    ULONG    cjOut,
-    PVOID    pvOut
-    )
+ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID pvOut)
 {
-    DISPDBG((0, "Experimental %s: %p, %p, %p, %p, %p, %p\n", __FUNCTION__, pso, iEsc, cjIn, pvIn, cjOut, pvOut));
+    DISPDBG((0, "%s: %p, %p, %p, %p, %p, %p\n", __FUNCTION__, pso, iEsc, cjIn, pvIn, cjOut, pvOut));
+
+    switch(iEsc)
+    {
+#ifdef VBOX_WITH_OPENGL
+    case OPENGL_GETINFO:
+    {
+        if (    cjOut == sizeof(OPENGL_INFO)
+            &&  pvOut)
+        {
+            POPENGL_INFO pInfo = (POPENGL_INFO)pvOut;
+
+            pInfo->dwVersion        = 2;
+            pInfo->dwDriverVersion  = 1;
+            pInfo->szDriverName[0]  = 'V';
+            pInfo->szDriverName[1]  = 'B';
+            pInfo->szDriverName[2]  = 'o';
+            pInfo->szDriverName[3]  = 'x';
+            pInfo->szDriverName[4]  = 'O';
+            pInfo->szDriverName[5]  = 'G';
+            pInfo->szDriverName[6]  = 'L';
+            pInfo->szDriverName[7]  = 0;
+
+            DISPDBG((0, "OPENGL_GETINFO\n"));
+            return cjOut;
+        }
+        else
+            DISPDBG((0, "OPENGL_GETINFO invalid size %d\n", cjOut));
+
+        break;
+    }
+#endif
+
+    default:
+        DISPDBG((0, "Unsupported Escape %d\n", iEsc));
+        break;
+    }
     return 0;
 }
     
@@ -137,6 +167,7 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },	// 20 0x14
     {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },	// 22 0x16
     {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },	// 23 0x17
+    {   INDEX_DrvEscape,                (PFN) DrvEscape             },	// 24 0x18
     {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },	// 29 0x1d
     {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },	// 30 0x1e
     {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },	// 31 0x1f
