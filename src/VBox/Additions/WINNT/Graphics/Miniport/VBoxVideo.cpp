@@ -208,7 +208,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      */
     ULONG yOffset = vboxGetHeightReduction();
 
-#if 0 // do not support 8 bit video modes
+#ifdef VBOX_WITH_8BPP_MODES
     /*
      * 8 bit video modes
      */
@@ -262,7 +262,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* advance to the next mode matrix entry */
         ++matrixIndex;
     }
-#endif /* 0 */
+#endif /* VBOX_WITH_8BPP_MODES */
 
     /*
      * 16 bit video modes
@@ -584,6 +584,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             if (   (   xres
                     && yres
                     && (   (bpp == 16)
+#ifdef VBOX_WITH_8BPP_MODES
+                        || (bpp == 8)
+#endif
                         || (bpp == 24)
                         || (bpp == 32)))
                 && (xres * yres * (bpp / 8) < vramSize))
@@ -616,6 +619,16 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].YMillimeter                  = 240;
                 switch (bpp)
                 {
+#ifdef VBOX_WITH_8BPP_MODES
+                    case 8:
+                        VideoModes[gNumVideoModes].NumberRedBits        = 6;
+                        VideoModes[gNumVideoModes].NumberGreenBits      = 6;
+                        VideoModes[gNumVideoModes].NumberBlueBits       = 6;
+                        VideoModes[gNumVideoModes].RedMask              = 0;
+                        VideoModes[gNumVideoModes].GreenMask            = 0;
+                        VideoModes[gNumVideoModes].BlueMask             = 0;
+                        break;
+#endif
                     case 16:
                         VideoModes[gNumVideoModes].NumberRedBits        = 5;
                         VideoModes[gNumVideoModes].NumberGreenBits      = 6;
@@ -642,6 +655,10 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                         break;
                 }
                 VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+#ifdef VBOX_WITH_8BPP_MODES
+                if (bpp == 8)
+                    VideoModes[gNumVideoModes].AttributeFlags          |= VIDEO_MODE_PALETTE_DRIVEN | VIDEO_MODE_MANAGED_PALETTE;
+#endif
                 VideoModes[gNumVideoModes].VideoMemoryBitmapWidth       = xres;
                 VideoModes[gNumVideoModes].VideoMemoryBitmapHeight      = yres;
                 VideoModes[gNumVideoModes].DriverSpecificAttributeFlags = 0;
