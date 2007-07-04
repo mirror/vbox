@@ -30,9 +30,9 @@
 class Machine;
 
 class ATL_NO_VTABLE VRDPServer :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <VRDPServer, IVRDPServer>,
     public VirtualBoxSupportTranslation <VRDPServer>,
-    public VirtualBoxBase,
     public IVRDPServer
 {
 public:
@@ -58,6 +58,8 @@ public:
         BOOL mAllowMultiConnection;
     };
 
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (VRDPServer)
+
     DECLARE_NOT_AGGREGATABLE(VRDPServer)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -69,37 +71,37 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (VRDPServer)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *parent);
-    HRESULT init(Machine *parent, VRDPServer *that);
-    HRESULT initCopy (Machine *parent, VRDPServer *that);
+    HRESULT init(Machine *aParent);
+    HRESULT init(Machine *aParent, VRDPServer *aThat);
+    HRESULT initCopy (Machine *aParent, VRDPServer *aThat);
     void uninit();
 
     // IVRDPServer properties
-    STDMETHOD(COMGETTER(Enabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(Enabled))(BOOL enable);
-    STDMETHOD(COMGETTER(Port))(ULONG *port);
-    STDMETHOD(COMSETTER(Port))(ULONG port);
-    STDMETHOD(COMGETTER(NetAddress))(BSTR *address);
-    STDMETHOD(COMSETTER(NetAddress))(INPTR BSTR address);
-    STDMETHOD(COMGETTER(AuthType))(VRDPAuthType_T *type);
-    STDMETHOD(COMSETTER(AuthType))(VRDPAuthType_T type);
-    STDMETHOD(COMGETTER(AuthTimeout))(ULONG *timeout);
-    STDMETHOD(COMSETTER(AuthTimeout))(ULONG timeout);
-    STDMETHOD(COMGETTER(AllowMultiConnection))(BOOL *enabled);
-    STDMETHOD(COMSETTER(AllowMultiConnection))(BOOL enable);
+    STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Enabled)) (BOOL aEnable);
+    STDMETHOD(COMGETTER(Port)) (ULONG *aPort);
+    STDMETHOD(COMSETTER(Port)) (ULONG aPort);
+    STDMETHOD(COMGETTER(NetAddress)) (BSTR *aAddress);
+    STDMETHOD(COMSETTER(NetAddress)) (INPTR BSTR aAddress);
+    STDMETHOD(COMGETTER(AuthType)) (VRDPAuthType_T *aType);
+    STDMETHOD(COMSETTER(AuthType)) (VRDPAuthType_T aType);
+    STDMETHOD(COMGETTER(AuthTimeout)) (ULONG *aTimeout);
+    STDMETHOD(COMSETTER(AuthTimeout)) (ULONG aTimeout);
+    STDMETHOD(COMGETTER(AllowMultiConnection)) (BOOL *aAllowMultiConnection);
+    STDMETHOD(COMSETTER(AllowMultiConnection)) (BOOL aAllowMultiConnection);
 
     // IVRDPServer methods
 
     // public methods only for internal purposes
 
-    void loadConfig (CFGNODE node);
-    void saveConfig (CFGNODE node);
-
-    const Backupable <Data> &data() const { return mData; }
+    HRESULT loadSettings (CFGNODE aNode);
+    HRESULT saveSettings (CFGNODE aNode);
 
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
@@ -107,13 +109,19 @@ public:
     void commit();
     void copyFrom (VRDPServer *aThat);
 
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
+
+    const Backupable <Data> &data() const { return mData; }
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"VRDPServer"; }
 
 private:
 
-    ComObjPtr <Machine, ComWeakRef> mParent;
-    ComObjPtr <VRDPServer> mPeer;
+    const ComObjPtr <Machine, ComWeakRef> mParent;
+    const ComObjPtr <VRDPServer> mPeer;
+
     Backupable <Data> mData;
 };
 
