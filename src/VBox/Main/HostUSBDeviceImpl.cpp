@@ -914,6 +914,8 @@ int HostUSBDevice::compare (PCUSBDEVICE aDev1, PCUSBDEVICE aDev2,
  *
  *  @param   aDev    The current device state as seen by the proxy backend.
  *
+ *  @return Whether the Host object should be bothered with this state change.
+ *
  *  @note Locks this object for writing.
  */
 bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
@@ -948,6 +950,10 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
      * is owned by the host) and return false in this case. We may want to
      * change it later and, e.g. re-run all USB filters when the device goes from
      * from Busy to Available).
+     *
+     * 2007-07-04: State transitions from Unavailable to Busy or Available
+     *             are now considered important and will cause filters to
+     *             be rerun on the device. (See #2030 and #1870.)
      */
 
     LogFlowThisFunc (("aDev->enmState=%d mState=%d mPendingState=%d\n",
@@ -990,8 +996,6 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             {
                 case USBDeviceState_USBDeviceBusy:
                     return false;
-                /* the following state changes don't require any action for now */
-                case USBDeviceState_USBDeviceUnavailable:
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
                     break;
@@ -1002,6 +1006,10 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                     /* fall thru */
 #endif
                 default:
+                    /* USBDeviceState_USBDeviceUnavailable: The device has become capturable, re-run filters. */
+                    /* USBDeviceState_USBDeviceHeld:        Pending request. */
+                    /* USBDeviceState_USBDeviceCaptured:    Pending request. */
+                    /* USBDeviceState_USBDeviceNotSupported: Something is broken. */
                     isImportant = true;
             }
             LogFlowThisFunc (("%d -> %d\n",
@@ -1022,11 +1030,13 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                     break;
 #endif
                 /* the following state changes don't require any action for now */
-                case USBDeviceState_USBDeviceUnavailable:
                 case USBDeviceState_USBDeviceBusy:
                     isImportant = false;
                     break;
                 default:
+                /* USBDeviceState_USBDeviceUnavailable: The device has become available, re-run filters. */
+                /* USBDeviceState_USBDeviceHeld:        Pending request. */
+                /* USBDeviceState_USBDeviceNotSupported: Something is broken. */
                     isImportant = true;
             }
             LogFlowThisFunc (("%d -> %d\n",
