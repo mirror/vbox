@@ -444,14 +444,14 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
 /**
  *  Loads settings from the configuration node.
  *
- *  @note Locks objects for reading!
+ *  @note Locks objects for writing!
  */
 HRESULT USBController::loadSettings (CFGNODE aMachine)
 {
-    ComAssertRet (aMachine, E_FAIL);
+    AssertReturn (aMachine, E_FAIL);
 
     AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AssertComRCReturnRC (autoCaller.rc());
 
     AutoLock alock (this);
 
@@ -524,7 +524,7 @@ HRESULT USBController::loadSettings (CFGNODE aMachine)
  */
 HRESULT USBController::saveSettings (CFGNODE aMachine)
 {
-    ComAssertRet (aMachine, E_FAIL);
+    AssertReturn (aMachine, E_FAIL);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -680,7 +680,7 @@ bool USBController::rollback()
     AssertComRCReturn (autoCaller.rc(), false);
 
     /* we need the machine state */
-    Machine::AutoMutableStateDependency adep (mParent);
+    Machine::AutoAnyStateDependency adep (mParent);
     AssertComRCReturn (adep.rc(), false);
 
     AutoLock alock (this);
@@ -953,7 +953,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
 #if 0
 #else
     /* we need the machine state */
-    Machine::AutoMutableStateDependency adep (mParent);
+    Machine::AutoAnyStateDependency adep (mParent);
     AssertComRCReturnRC (adep.rc());
 
     /* nothing to do if the machine isn't running */
