@@ -48,33 +48,6 @@
 // defines
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- *  Checks whether the given Machine object is mutable (allows for calling setters)
- *  or not. When the machine is not mutable, sets error info and returns E_ACCESSDENIED.
- *  The translatable error message is defined in null context.
- *
- *  This macro <b>must</b> be used within setters of all Machine children
- *  (DVDDrive, NetworkAdapter, AudioAdapter, etc.).
- *
- *  @param machine  the machine object (must cast to Machine *)
- */
-/// @todo replace with AutoStateDependency
-#define CHECK_MACHINE_MUTABILITY(machine) \
-    do { \
-        if (!machine->isMutable()) \
-            return setError (E_ACCESSDENIED, tr ("The machine is not mutable")); \
-    } while (0)
-
-/** Like CHECK_MACHINE_MUTABILITY but a saved state is OK, too. */
-/// @todo replace with AutoStateDependency
-#define CHECK_MACHINE_MUTABILITY_IGNORING_SAVED(machine) \
-    do { \
-        if (!machine->isMutableIgnoringSavedState()) \
-            return setError (E_ACCESSDENIED, \
-                             tr ("The machine is not mutable or in saved state")); \
-    } while (0)
-
-
 // helper declarations
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -524,31 +497,6 @@ public:
     // public methods only for internal purposes
 
     /// @todo (dmik) add lock and make non-inlined after revising classes
-    //  that use it (actually, the CHECK_MACHINE_MUTABILITY macro).
-    //  Note: these classes should enter Machine lock to keep the returned
-    //  information valid!
-    /// @todo replace with AutoStateDependency
-    bool isMutable()
-    {
-        return ((!mData->mRegistered) ||
-                (mType == IsSessionMachine &&
-                 mData->mMachineState <= MachineState_Paused &&
-                 mData->mMachineState != MachineState_Saved));
-    }
-
-    /// @todo (dmik) add lock and make non-inlined after revising classes
-    //  that use it (actually, the CHECK_MACHINE_MUTABILITY_IGNORING_SAVED macro).
-    //  Note: these classes should enter Machine lock to keep the returned
-    //  information valid!
-    /// @todo replace with AutoStateDependency
-    bool isMutableIgnoringSavedState()
-    {
-        return ((!mData->mRegistered) ||
-                (mType == IsSessionMachine &&
-                 mData->mMachineState <= MachineState_Paused));
-    }
-
-    /// @todo (dmik) add lock and make non-inlined after revising classes
     //  that use it. Note: they should enter Machine lock to keep the returned
     //  information valid!
     bool isRegistered() { return !!mData->mRegistered; }
@@ -613,6 +561,8 @@ protected:
     enum InstanceType { IsMachine, IsSessionMachine, IsSnapshotMachine };
 
     HRESULT registeredInit();
+
+    HRESULT checkStateDependency (StateDependency aDepType);
 
     inline Machine *machine();
 

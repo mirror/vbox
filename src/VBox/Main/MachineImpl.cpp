@@ -71,13 +71,6 @@
 // defines / prototypes
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- *  Local mutability check macro for Machine implementation only.
- */
-#define CHECK_SETTER() \
-    if (!isMutable()) \
-        return setError (E_ACCESSDENIED, tr ("The machine is not mutable"));
-
 // globals
 /////////////////////////////////////////////////////////////////////////////
 
@@ -800,7 +793,8 @@ STDMETHODIMP Machine::COMSETTER(Name) (INPTR BSTR aName)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mUserData.backup();
     mUserData->mName = aName;
@@ -830,7 +824,8 @@ STDMETHODIMP Machine::COMSETTER(Description) (INPTR BSTR aDescription)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mUserData.backup();
     mUserData->mDescription = aDescription;
@@ -884,7 +879,8 @@ STDMETHODIMP Machine::COMSETTER(OSTypeId) (INPTR BSTR aOSTypeId)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mUserData.backup();
     mUserData->mOSTypeId = aOSTypeId;
@@ -921,7 +917,8 @@ STDMETHODIMP Machine::COMSETTER(MemorySize) (ULONG memorySize)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mHWData.backup();
     mHWData->mMemorySize = memorySize;
@@ -958,7 +955,8 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize) (ULONG memorySize)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mHWData.backup();
     mHWData->mVRAMSize = memorySize;
@@ -994,7 +992,8 @@ STDMETHODIMP Machine::COMSETTER(MonitorCount) (ULONG monitorCount)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mHWData.backup();
     mHWData->mMonitorCount = monitorCount;
@@ -1038,7 +1037,8 @@ STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(TriStateBool_T enable)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     /** @todo check validity! */
 
@@ -1077,7 +1077,8 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     if (!mData->mCurrentSnapshot.isNull())
         return setError (E_FAIL,
@@ -1244,7 +1245,8 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *modified)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     if (!isConfigLocked())
     {
@@ -1466,7 +1468,8 @@ Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
@@ -1493,7 +1496,8 @@ STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     mHWData.backup();
     mHWData->mBootOrder [aPosition - 1] = aDevice;
@@ -1533,7 +1537,8 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     if (!mData->mRegistered)
         return setError (E_FAIL,
@@ -1563,9 +1568,8 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
 
     /* find a hard disk by UUID */
     ComObjPtr <HardDisk> hd;
-    HRESULT rc = mParent->getHardDisk (id, hd);
-    if (FAILED (rc))
-        return rc;
+    rc = mParent->getHardDisk (id, hd);
+    CheckComRCReturnRC (rc);
 
     AutoLock hdLock (hd);
 
@@ -1727,7 +1731,8 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     AssertReturn (mData->mMachineState != MachineState_Saved, E_FAIL);
 
@@ -1994,7 +1999,10 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     AutoMultiLock <2> alock (mParent->rlock(), this->wlock());
 
     if (mType == IsSnapshotMachine)
-        CHECK_SETTER();
+    {
+        HRESULT rc = checkStateDependency (MutableStateDep);
+        CheckComRCReturnRC (rc);
+    }
 
     bool changed = false;
     HRESULT rc = S_OK;
@@ -2125,7 +2133,8 @@ STDMETHODIMP Machine::SaveSettings()
     /* Under some circumstancies, saveSettings() needs mParent lock */
     AutoMultiLock <2> alock (mParent->wlock(), this->wlock());
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     /* the settings file path may never be null */
     ComAssertRet (mData->mConfigFileFull, E_FAIL);
@@ -2141,7 +2150,8 @@ STDMETHODIMP Machine::DiscardSettings()
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     /*
      *  during this rollback, the session will be notified if data has
@@ -2159,7 +2169,8 @@ STDMETHODIMP Machine::DeleteSettings()
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     if (mData->mRegistered)
         return setError (E_FAIL,
@@ -2276,25 +2287,24 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 
     AutoLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     /// @todo (dmik) check global shared folders when they are done
 
     ComObjPtr <SharedFolder> sharedFolder;
-    HRESULT rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
+    rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
     if (SUCCEEDED (rc))
         return setError (E_FAIL,
             tr ("Shared folder named '%ls' already exists"), aName);
 
     sharedFolder.createObject();
     rc = sharedFolder->init (machine(), aName, aHostPath);
-    if (FAILED (rc))
-        return rc;
+    CheckComRCReturnRC (rc);
 
     BOOL accessible = FALSE;
     rc = sharedFolder->COMGETTER(Accessible) (&accessible);
-    if (FAILED (rc))
-        return rc;
+    CheckComRCReturnRC (rc);
 
     if (!accessible)
         return setError (E_FAIL,
@@ -2316,12 +2326,12 @@ STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
 
     AutoReaderLock alock (this);
 
-    CHECK_SETTER();
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
 
     ComObjPtr <SharedFolder> sharedFolder;
-    HRESULT rc = findSharedFolder (aName, sharedFolder, true /* aSetError */);
-    if (FAILED (rc))
-        return rc;
+    rc = findSharedFolder (aName, sharedFolder, true /* aSetError */);
+    CheckComRCReturnRC (rc);
 
     mHWData.backup();
     mHWData->mSharedFolders.remove (sharedFolder);
@@ -2338,7 +2348,7 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
     *aCanShow = FALSE;
 
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC (autoCaller.rc());
 
     ComPtr <IInternalSessionControl> directControl;
     {
@@ -3033,14 +3043,15 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
  *  least until #releaseStateDependency() is called.
  *
  *  Depending on the @a aDepType value, additional state checks may be
- *  made. These checks will set extended error info on failure.
+ *  made. These checks will set extended error info on failure. See
+ *  #checkStateDependency() for more info.
  *
  *  If this method returns a failure, the dependency is not added and the
  *  caller is not allowed to rely on any particular machine state or
  *  registration state value and may return the failed result code to the
  *  upper level.
  *
- *  @param aDepType     Dependency type to choose
+ *  @param aDepType     Dependency type to add.
  *  @param aState       Current machine state (NULL if not interested).
  *  @param aRegistered  Current registered state (NULL if not interested).
  */
@@ -3068,34 +3079,8 @@ HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep *
             mData->mMachineState);
     }
 
-    switch (aDepType)
-    {
-        case AnyStateDep:
-        {
-            break;
-        }
-        case MutableStateDep:
-        {
-            if (mData->mRegistered &&
-                (mType != IsSessionMachine ||
-                 mData->mMachineState > MachineState_Paused ||
-                 mData->mMachineState == MachineState_Saved))
-                return setError (E_ACCESSDENIED,
-                    tr ("The machine is not mutable (state is %d)"),
-                    mData->mMachineState);
-            break;
-        }
-        case MutableOrSavedStateDep:
-        {
-            if (mData->mRegistered &&
-                (mType != IsSessionMachine ||
-                 mData->mMachineState > MachineState_Paused))
-                return setError (E_ACCESSDENIED,
-                    tr ("The machine is not mutable (state is %d)"),
-                    mData->mMachineState);
-            break;
-        }
-    }
+    HRESULT rc = checkStateDependency (aDepType);
+    CheckComRCReturnRC (rc);
 
     if (aState)
         *aState = mData->mMachineState;
@@ -3132,6 +3117,69 @@ void Machine::releaseStateDependency()
 
 // protected methods
 /////////////////////////////////////////////////////////////////////////////
+
+/** 
+ *  Performs machine state checks based on the @a aDepType value. If a check
+ *  fails, this method will set extended error info, otherwise it will return
+ *  S_OK. It is supposed, that on failure, the caller will immedieately return
+ *  the return value of this method to the upper level.
+ *
+ *  When @a aDepType is AnyStateDep, this method always returns S_OK.
+ *
+ *  When @a aDepType is MutableStateDep, this method returns S_OK only if the
+ *  current state of this machine object allows to change settings of the
+ *  machine (i.e. the machine is not registered, or registered but not running
+ *  and not saved). It is useful to call this method from Machine setters
+ *  before performing any change.
+ * 
+ *  When @a aDepType is MutableOrSavedStateDep, this method behaves the same
+ *  as for MutableStateDep except that if the machine is saved, S_OK is also
+ *  returned. This is useful in setters which allow changing machine
+ *  properties when it is in the saved state.
+ *
+ *  @param aDepType     Dependency type to check.
+ *
+ *  @note External classes should use #addStateDependency() and
+ *  #releaseStateDependency() methods or the smart AutoStateDependency
+ *  template.
+ *
+ *  @note This method must be called from under this object's lock.
+ */
+HRESULT Machine::checkStateDependency (StateDependency aDepType)
+{
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    switch (aDepType)
+    {
+        case AnyStateDep:
+        {
+            break;
+        }
+        case MutableStateDep:
+        {
+            if (mData->mRegistered &&
+                (mType != IsSessionMachine ||
+                 mData->mMachineState > MachineState_Paused ||
+                 mData->mMachineState == MachineState_Saved))
+                return setError (E_ACCESSDENIED,
+                    tr ("The machine is not mutable (state is %d)"),
+                    mData->mMachineState);
+            break;
+        }
+        case MutableOrSavedStateDep:
+        {
+            if (mData->mRegistered &&
+                (mType != IsSessionMachine ||
+                 mData->mMachineState > MachineState_Paused))
+                return setError (E_ACCESSDENIED,
+                    tr ("The machine is not mutable (state is %d)"),
+                    mData->mMachineState);
+            break;
+        }
+    }
+
+    return S_OK;
+}
 
 /**
  *  Helper to uninitialize all associated child objects
@@ -3545,7 +3593,7 @@ HRESULT Machine::loadSettings (bool aRegistered)
          *  NOTE: the assignment below must be the last thing to do,
          *  otherwise it will be not possible to change the settings
          *  somewehere in the code above because all setters will be
-         *  blocked by CHECK_SETTER()
+         *  blocked by checkStateDependency (MutableStateDep).
          */
 
         /* set the machine state to Aborted or Saved when appropriate */
@@ -3819,15 +3867,14 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
 
 #ifdef VBOX_VRDP
     /* RemoteDisplay node (optional) */
-    /// @todo (dmik) move the code to VRDPServer
-    /// @todo r=sunlover: moved. dmik, please review.
     {
         CFGNODE remoteDisplayNode = 0;
         CFGLDRGetChildNode (aNode, "RemoteDisplay", 0, &remoteDisplayNode);
         if (remoteDisplayNode)
         {
-            mVRDPServer->loadConfig (remoteDisplayNode);
+            HRESULT rc = mVRDPServer->loadSettings (remoteDisplayNode);
             CFGLDRReleaseNode (remoteDisplayNode);
+            CheckComRCReturnRC (rc);
         }
     }
 #endif
@@ -4069,15 +4116,13 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             CFGLDRReleaseNode (typeNode);
         CFGLDRReleaseNode (driveNode);
 
-        if (FAILED (rc))
-            return rc;
+        CheckComRCReturnRC (rc);
     }
 
     /* USB Controller */
     {
         HRESULT rc = mUSBController->loadSettings (aNode);
-        if (FAILED (rc))
-            return rc;
+        CheckComRCReturnRC (rc);
     }
 
     /* Network node (required) */
@@ -5677,8 +5722,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
     }
     while (0);
 
-    if (FAILED (rc))
-        return rc;
+    CheckComRCReturnRC (rc);
 
     /* display (required) */
     {
@@ -5691,16 +5735,14 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
 
 #ifdef VBOX_VRDP
     /* VRDP settings (optional) */
-    /// @todo (dmik) move the code to VRDPServer
-    /// @todo r=sunlover: moved. dmik, please review.
     {
         CFGNODE remoteDisplayNode = 0;
         CFGLDRCreateChildNode (aNode, "RemoteDisplay", &remoteDisplayNode);
-
         if (remoteDisplayNode)
         {
-            mVRDPServer->saveConfig (remoteDisplayNode);
+            rc = mVRDPServer->saveSettings (remoteDisplayNode);
             CFGLDRReleaseNode (remoteDisplayNode);
+            CheckComRCReturnRC (rc);
         }
     }
 #endif
@@ -5828,8 +5870,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
     }
     while (0);
 
-    if (FAILED (rc))
-        return rc;
+    CheckComRCReturnRC (rc);
 
     /* Flooppy drive (required) */
     /// @todo (dmik) move the code to DVDDrive
@@ -5885,14 +5926,12 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
     }
     while (0);
 
-    if (FAILED (rc))
-        return rc;
+    CheckComRCReturnRC (rc);
 
 
     /* USB Controller (required) */
     rc = mUSBController->saveSettings (aNode);
-    if (FAILED (rc))
-        return rc;
+    CheckComRCReturnRC (rc);
 
     /* Network adapters (required) */
     do
