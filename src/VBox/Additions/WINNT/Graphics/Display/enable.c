@@ -82,28 +82,8 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
 #ifdef VBOX_WITH_OPENGL
     case OPENGL_GETINFO:
     {
-        if (    cjOut == sizeof(OPENGL_INFO)
-            &&  pvOut)
-        {
-            POPENGL_INFO pInfo = (POPENGL_INFO)pvOut;
-
-            pInfo->dwVersion        = 2;
-            pInfo->dwDriverVersion  = 1;
-            pInfo->szDriverName[0]  = 'V';
-            pInfo->szDriverName[1]  = 'B';
-            pInfo->szDriverName[2]  = 'o';
-            pInfo->szDriverName[3]  = 'x';
-            pInfo->szDriverName[4]  = 'O';
-            pInfo->szDriverName[5]  = 'G';
-            pInfo->szDriverName[6]  = 'L';
-            pInfo->szDriverName[7]  = 0;
-
-            DISPDBG((0, "OPENGL_GETINFO\n"));
-            return cjOut;
-        }
-        else
-            DISPDBG((0, "OPENGL_GETINFO invalid size %d\n", cjOut));
-
+        /* It doesn't matter that we fail here. Opengl32 will fall back to software rendering when this escape is not supported. */
+        DISPDBG((0, "OPENGL_GETINFO size %d\n", cjOut));
         break;
     }
 #endif
