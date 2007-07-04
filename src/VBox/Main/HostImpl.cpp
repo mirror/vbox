@@ -2081,6 +2081,18 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
         /* it was a state change request */
         aDevice->handlePendingStateChange();
     }
+    else if (   aDevice->state() == USBDeviceState_USBDeviceAvailable
+             || aDevice->state() == USBDeviceState_USBDeviceBusy)
+    {
+        /* The device has gone from being unavailable (not subject to filters) to being
+           available / busy. This transition can be triggered by udevd or manual
+           permission changes on Linux. On all systems may be triggered by the host
+           ceasing to use the device - like unmounting an MSD in the Finder or invoking
+           the "Safely remove XXXX" stuff on Windows (perhaps). */
+        ComObjPtr <HostUSBDevice> device (aDevice);
+        HRESULT rc = applyAllUSBFilters (device);
+        AssertComRC (rc);
+    }
     else
     {
         /* some external state change */
