@@ -103,6 +103,15 @@ struct  _PDEV
 #endif
 };
 
+#ifdef VBOX_WITH_OPENGL
+typedef struct
+{
+    DWORD dwVersion;
+    DWORD dwDriverVersion;
+    WCHAR szDriverName[256];
+} OPENGL_INFO, *POPENGL_INFO;
+#endif
+
 /* The global semaphore handle for all driver instances. */
 extern HSEMAPHORE ghsemHwBuffer;
 
