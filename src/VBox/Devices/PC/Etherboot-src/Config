@@ -508,13 +508,8 @@ endif # !VBOX
 ifeq ($(ENVIRONMENT),VBOX)
 PERL=		/usr/bin/perl
 ifneq ($(BUILD_PLATFORM),win32)
-ifneq ($(BUILD_PLATFORM_ARCH),amd64)
-EB_CC=		$(TOOL_$(VBOX_GCC_TOOL)_CC)
-EB_LD=		ld
-else
-EB_CC=		gcc32
-EB_LD=		ld -m elf_i386
-endif
+EB_CC=		$(TOOL_$(VBOX_GCC32_TOOL)_CC)
+EB_LD=		$(TOOL_$(VBOX_GCC32_TOOL)_LD_SYSMOD)
 EB_AR=		ar
 EB_RANLIB=	ranlib
 EB_OBJCOPY=	objcopy
