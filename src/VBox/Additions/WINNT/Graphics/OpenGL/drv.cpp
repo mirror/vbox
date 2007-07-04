@@ -75,6 +75,12 @@ PROC APIENTRY DrvGetProcAddress(LPCSTR lpszProc)
     return pfnProc;
 }
 
+/* Test export for directly linking with vboxogl.dll */
+PROC WINAPI wglGetProcAddress(LPCSTR lpszProc)
+{
+    return DrvGetProcAddress(lpszProc);
+}
+
 BOOL APIENTRY DrvValidateVersion(DWORD version)
 {
     DbgPrintf(("DrvValidateVersion %x -> always TRUE\n", version));

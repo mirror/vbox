@@ -116,6 +116,14 @@ BOOL APIENTRY DrvDescribeLayerPlane(HDC hdc,int iPixelFormat,
     return retval;
 }
 
+/* Test export for directly linking with vboxogl.dll */
+BOOL WINAPI wglDescribeLayerPlane(HDC hdc,int iPixelFormat,
+                                  int iLayerPlane, UINT nBytes,
+                                  LPLAYERPLANEDESCRIPTOR plpd)
+{
+    return DrvDescribeLayerPlane(hdc, iPixelFormat, iLayerPlane, nBytes, plpd);
+}
+
 int APIENTRY DrvGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
                                        int iStart, int cEntries,
                                        COLORREF *pcr)
@@ -124,11 +132,25 @@ int APIENTRY DrvGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
     return retval;
 }
 
+/* Test export for directly linking with vboxogl.dll */
+int WINAPI wglGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
+                                     int iStart, int cEntries,
+                                     COLORREF *pcr)
+{
+    return DrvGetLayerPaletteEntries(hdc, iLayerPlane, iStart, cEntries, pcr);
+}
+
 int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
 {
     /* if ppfd == NULL, then DrvDescribelayerPlane returns the maximum nr of supported pixel formats */
     VBOX_OGL_GEN_SYNC_OP4_PASS_PTR_RET(int, DrvDescribePixelFormat, hdc, iPixelFormat, nBytes, nBytes, ppfd);
     return retval;
+}
+
+/* Test export for directly linking with vboxogl.dll */
+int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
+{
+    return DrvDescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
 }
 
 void APIENTRY glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels)
