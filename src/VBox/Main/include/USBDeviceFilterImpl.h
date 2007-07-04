@@ -35,9 +35,9 @@ class Host;
 ////////////////////////////////////////////////////////////////////////////////
 
 class ATL_NO_VTABLE USBDeviceFilter :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <USBDeviceFilter, IUSBDeviceFilter>,
     public VirtualBoxSupportTranslation <USBDeviceFilter>,
-    public VirtualBoxBase,
     public IUSBDeviceFilter
 {
 public:
@@ -100,6 +100,8 @@ public:
         void *mId;
     };
 
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (USBDeviceFilter)
+
     DECLARE_NOT_AGGREGATABLE(USBDeviceFilter)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -110,6 +112,8 @@ public:
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (USBDeviceFilter)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -152,25 +156,29 @@ public:
 
     // public methods only for internal purposes
 
+    bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
+    bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
+    bool rollback();
+    void commit();
+
+    void unshare();
+
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
+
     void *& id() { return mData.data()->mId; }
 
     const Data &data() { return *mData.data(); }
     ComObjPtr <USBDeviceFilter> peer() { return mPeer; }
-
-    bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }
-    bool isReallyModified() { AutoLock alock (this); return mData.hasActualChanges(); }
-    void rollback() { AutoLock alock (this); mData.rollback(); }
-    void commit();
-
-    void unshare();
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"USBDeviceFilter"; }
 
 private:
 
-    ComObjPtr <USBController, ComWeakRef> mParent;
-    ComObjPtr <USBDeviceFilter> mPeer;
+    const ComObjPtr <USBController, ComWeakRef> mParent;
+    const ComObjPtr <USBDeviceFilter> mPeer;
+
     Backupable <Data> mData;
 
     /** Used externally to indicate this filter is in the list
@@ -184,9 +192,9 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 class ATL_NO_VTABLE HostUSBDeviceFilter :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostUSBDeviceFilter, IHostUSBDeviceFilter>,
     public VirtualBoxSupportTranslation <HostUSBDeviceFilter>,
-    public VirtualBoxBase,
     public IHostUSBDeviceFilter
 {
 public:
@@ -197,6 +205,8 @@ public:
 
         USBDeviceFilterAction_T mAction;
     };
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HostUSBDeviceFilter)
 
     DECLARE_NOT_AGGREGATABLE(HostUSBDeviceFilter)
 
@@ -209,6 +219,8 @@ public:
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (HostUSBDeviceFilter)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -253,6 +265,9 @@ public:
 
     // public methods only for internal purposes
 
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
+
     void *& id() { return mData.data()->mId; }
 
     const Data &data() { return *mData.data(); }
@@ -262,7 +277,8 @@ public:
 
 private:
 
-    ComObjPtr <Host, ComWeakRef> mParent;
+    const ComObjPtr <Host, ComWeakRef> mParent;
+
     Backupable <Data> mData;
 
     /** Used externally to indicate this filter is in the list
@@ -284,13 +300,13 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN (IfaceUSBDevice, IUSBDevice)
 
     STDMETHOD(FindById) (INPTR GUIDPARAM aId, IUSBDevice **aDevice)
     {
-        // internal collection, no need to implement
+        /* internal collection, no need to implement */
         return E_NOTIMPL;
     }
 
     STDMETHOD(FindByAddress) (INPTR BSTR aAddress, IUSBDevice **aDevice)
     {
-        // internal collection, no need to implement
+        /* internal collection, no need to implement */
         return E_NOTIMPL;
     }
 

@@ -26,12 +26,16 @@
 #include "HostImpl.h"
 #include "Logging.h"
 
+#include <iprt/cpputils.h>
+
 ////////////////////////////////////////////////////////////////////////////////
 // USBDeviceFilter
 ////////////////////////////////////////////////////////////////////////////////
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
+
+DEFINE_EMPTY_CTOR_DTOR (USBDeviceFilter)
 
 HRESULT USBDeviceFilter::FinalConstruct()
 {
@@ -47,7 +51,9 @@ void USBDeviceFilter::FinalRelease()
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the USB device filter object.
+ *  Initializes the USB device filter object.
+ *
+ *  @param aParent  Handle of the parent object.
  */
 HRESULT USBDeviceFilter::init (USBController *aParent,
                                INPTR BSTR aName, BOOL aActive,
@@ -57,20 +63,26 @@ HRESULT USBDeviceFilter::init (USBController *aParent,
                                INPTR BSTR aSerialNumber,
                                INPTR BSTR aPort, INPTR BSTR aRemote)
 {
-    LogFlowMember (("USBDeviceFilter::init (%p)\n", aParent));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aParent && aName && *aName, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
+
+    /* register with parent early, since uninit() will unconditionally
+     * unregister on failure */
+    mParent->addDependentChild (this);
 
     mData.allocate();
     mData->mName = aName;
     mData->mActive = aActive;
 
-    // initialize all filters to any match using null string
+    /* initialize all filters to any match using null string */
     mData->mVendorId = NULL;
     mData->mProductId = NULL;
     mData->mRevision = NULL;
@@ -82,67 +94,66 @@ HRESULT USBDeviceFilter::init (USBController *aParent,
 
     mInList = false;
 
-    // use setters for the attributes below to reuse parsing errors handling
-    setReady (true);
+    /* use setters for the attributes below to reuse parsing errors
+     * handling */
+
     HRESULT rc = S_OK;
     do
     {
         rc = COMSETTER(VendorId) (aVendorId);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(ProductId) (aProductId);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Revision) (aRevision);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Manufacturer) (aManufacturer);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Product) (aProduct);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(SerialNumber) (aSerialNumber);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Port) (aPort);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Remote) (aRemote);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
     }
     while (0);
 
+    /* Confirm successful initialization when it's the case */
     if (SUCCEEDED (rc))
-        mParent->addDependentChild (this);
-    else
-        setReady (false);
+        autoInitSpan.setSucceeded();
 
     return rc;
 }
 
 /**
- * Initializes the USB device filter object (short version).
+ *  Initializes the USB device filter object (short version).
+ *
+ *  @param aParent  Handle of the parent object.
  */
 HRESULT USBDeviceFilter::init (USBController *aParent, INPTR BSTR aName)
 {
-    LogFlowMember (("USBDeviceFilter::init (%p) [short]\n", aParent));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aParent && aName && *aName, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
+
+    /* register with parent early, since uninit() will unconditionally
+     * unregister on failure */
+    mParent->addDependentChild (this);
 
     mData.allocate();
 
     mData->mName = aName;
     mData->mActive = FALSE;
 
-    // initialize all filters to any match using null string
+    /* initialize all filters to any match using null string */
     mData->mVendorId = NULL;
     mData->mProductId = NULL;
     mData->mRevision = NULL;
@@ -154,9 +165,9 @@ HRESULT USBDeviceFilter::init (USBController *aParent, INPTR BSTR aName)
 
     mInList = false;
 
-    mParent->addDependentChild (this);
+    /* Confirm successful initialization */
+    autoInitSpan.setSucceeded();
 
-    setReady (true);
     return S_OK;
 }
 
@@ -172,40 +183,55 @@ HRESULT USBDeviceFilter::init (USBController *aParent, INPTR BSTR aName)
  *
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
+ *
+ *  @note Locks @a aThat object for writing if @a aReshare is @c true, or for
+ *  reading if @a aReshare is false.
  */
 HRESULT USBDeviceFilter::init (USBController *aParent, USBDeviceFilter *aThat,
                                bool aReshare /* = false */)
 {
-    LogFlowMember (("USBDeviceFilter::init (%p, %p): aReshare=%d\n",
-                    aParent, aThat, aReshare));
+    LogFlowThisFunc (("aParent=%p, aThat=%p, aReshare=%RTbool\n",
+                      aParent, aThat, aReshare));
 
     ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
+    unconst (mParent) = aParent;
 
-    AutoLock thatlock (aThat);
+    /* register with parent early, since uninit() will unconditionally
+     * unregister on failure */
+    mParent->addDependentChild (this);
+
+    /* sanity */
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
+
     if (aReshare)
     {
-        aThat->mPeer = this;
+        AutoLock thatLock (aThat);
+
+        unconst (aThat->mPeer) = this;
         mData.attach (aThat->mData);
     }
     else
     {
-        mPeer = aThat;
+        unconst (mPeer) = aThat;
+
+        AutoReaderLock thatLock (aThat);
         mData.share (aThat->mData);
     }
 
-    // the arbitrary ID field is not reset because
-    // the copy is a shadow of the original
+    /* the arbitrary ID field is not reset because
+     * the copy is a shadow of the original */
 
     mInList = aThat->mInList;
 
-    mParent->addDependentChild (this);
+    /* Confirm successful initialization */
+    autoInitSpan.setSucceeded();
 
-    setReady (true);
     return S_OK;
 }
 
@@ -213,32 +239,43 @@ HRESULT USBDeviceFilter::init (USBController *aParent, USBDeviceFilter *aThat,
  *  Initializes the guest object given another guest object
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
+ *
+ *  @note Locks @a aThat object for reading.
  */
 HRESULT USBDeviceFilter::initCopy (USBController *aParent, USBDeviceFilter *aThat)
 {
-    LogFlowMember (("USBDeviceFilter::initCopy (%p, %p)\n", aParent, aThat));
+    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
 
     ComAssertRet (aParent && aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
-    // mPeer is left null
+    unconst (mParent) = aParent;
+    /* mPeer is left null */
 
-    AutoLock thatlock (aThat);
+    /* register with parent early, since uninit() will unconditionally
+     * unregister on failure */
+    mParent->addDependentChild (this);
+
+    /* sanity */
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnRC (thatCaller.rc());
+
+    AutoReaderLock thatLock (aThat);
     mData.attachCopy (aThat->mData);
 
-    // reset the arbitrary ID field
-    // (this field is something unique that two distinct objects, even if they
-    // are deep copies of each other, should not share)
+    /* reset the arbitrary ID field
+     * (this field is something unique that two distinct objects, even if they
+     * are deep copies of each other, should not share) */
     mData->mId = NULL;
 
     mInList = aThat->mInList;
 
-    mParent->addDependentChild (this);
+    /* Confirm successful initialization */
+    autoInitSpan.setSucceeded();
 
-    setReady (true);
     return S_OK;
 }
 
@@ -248,27 +285,21 @@ HRESULT USBDeviceFilter::initCopy (USBController *aParent, USBDeviceFilter *aTha
  */
 void USBDeviceFilter::uninit()
 {
-    LogFlowMember (("USBDeviceFilter::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-
-    LogFlowMember (("USBDeviceFilter::uninit(): isReady=%d\n", isReady()));
-
-    if (!isReady())
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
         return;
 
     mInList = false;
 
     mData.free();
 
-    setReady (false);
-
-    alock.leave();
     mParent->removeDependentChild (this);
-    alock.enter();
 
-    mPeer.setNull();
-    mParent.setNull();
+    unconst (mPeer).setNull();
+    unconst (mParent).setNull();
 }
 
 // IUSBDeviceFilter properties
@@ -279,10 +310,13 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Name) (BSTR *aName)
     if (!aName)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mName.cloneTo (aName);
+
     return S_OK;
 }
 
@@ -291,17 +325,23 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Name) (INPTR BSTR aName)
     if (!aName || *aName == 0)
         return E_INVALIDARG;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mName != aName)
     {
         mData.backup();
         mData->mName = aName;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -313,26 +353,35 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Active) (BOOL *aActive)
     if (!aActive)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     *aActive = mData->mActive;
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Active) (BOOL aActive)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mActive != aActive)
     {
         mData.backup();
         mData->mActive = aActive;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this, TRUE /* aActiveChanged */);
     }
 
@@ -344,18 +393,26 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(VendorId) (BSTR *aVendorId)
     if (!aVendorId)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mVendorId.string().cloneTo (aVendorId);
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mVendorId.string() != aVendorId)
     {
@@ -376,8 +433,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
         mData.backup();
         mData->mVendorId = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -389,18 +447,26 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(ProductId) (BSTR *aProductId)
     if (!aProductId)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mProductId.string().cloneTo (aProductId);
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mProductId.string() != aProductId)
     {
@@ -421,8 +487,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
         mData.backup();
         mData->mProductId = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -434,18 +501,26 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Revision) (BSTR *aRevision)
     if (!aRevision)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mRevision.string().cloneTo (aRevision);
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mRevision.string() != aRevision)
     {
@@ -466,8 +541,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
         mData.backup();
         mData->mRevision = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -479,8 +555,10 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Manufacturer) (BSTR *aManufacturer)
     if (!aManufacturer)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mManufacturer.string().cloneTo (aManufacturer);
     return S_OK;
@@ -488,9 +566,14 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Manufacturer) (BSTR *aManufacturer)
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufacturer)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mManufacturer.string() != aManufacturer)
     {
@@ -504,8 +587,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufacturer)
         mData.backup();
         mData->mManufacturer = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -517,18 +601,26 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Product) (BSTR *aProduct)
     if (!aProduct)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mProduct.string().cloneTo (aProduct);
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mProduct.string() != aProduct)
     {
@@ -542,8 +634,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
         mData.backup();
         mData->mProduct = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -555,18 +648,26 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
     if (!aSerialNumber)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mSerialNumber.string().cloneTo (aSerialNumber);
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNumber)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mSerialNumber.string() != aSerialNumber)
     {
@@ -580,8 +681,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNumber)
         mData.backup();
         mData->mSerialNumber = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -593,18 +695,26 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Port) (BSTR *aPort)
     if (!aPort)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mPort.string().cloneTo (aPort);
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mPort.string() != aPort)
     {
@@ -625,8 +735,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
         mData.backup();
         mData->mPort = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -638,18 +749,26 @@ STDMETHODIMP USBDeviceFilter::COMGETTER(Remote) (BSTR *aRemote)
     if (!aRemote)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mRemote.string().cloneTo (aRemote);
+
     return S_OK;
 }
 
 STDMETHODIMP USBDeviceFilter::COMSETTER(Remote) (INPTR BSTR aRemote)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
-    CHECK_MACHINE_MUTABILITY (mParent->parent());
 
     if (mData->mRemote.string() != aRemote)
     {
@@ -663,8 +782,9 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Remote) (INPTR BSTR aRemote)
         mData.backup();
         mData->mRemote = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onDeviceFilterChange (this);
     }
 
@@ -674,16 +794,53 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Remote) (INPTR BSTR aRemote)
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
+/** 
+ *  @note Locks this object for writing.
+ */
+bool USBDeviceFilter::rollback()
+{
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
+    AutoLock alock (this);
+
+    bool changed = false;
+
+    if (mData.isBackedUp())
+    {
+        /* we need to check all data to see whether anything will be changed
+         * after rollback */
+        changed = mData.hasActualChanges();
+        mData.rollback();
+    }
+
+    return changed;
+}
+
+/** 
+ *  @note Locks this object for writing, together with the peer object (also
+ *  for writing) if there is one.
+ */
 void USBDeviceFilter::commit()
 {
-    AutoLock alock (this);
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* lock both for writing since we modify both */
+    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeWlock (mPeer));
+
     if (mData.isBackedUp())
     {
         mData.commit();
         if (mPeer)
         {
-            // attach new data to the peer and reshare it
-            AutoLock peerlock (mPeer);
+            /* attach new data to the peer and reshare it */
             mPeer->mData.attach (mData);
         }
     }
@@ -692,17 +849,33 @@ void USBDeviceFilter::commit()
 /**
  *  Cancels sharing (if any) by making an independent copy of data.
  *  This operation also resets this object's peer to NULL.
+ *
+ *  @note Locks this object for writing, together with the peer object
+ *  represented by @a aThat (locked for reading).
  */
 void USBDeviceFilter::unshare()
 {
-    AutoLock alock (this);
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (mPeer);
+    AssertComRCReturnVoid (thatCaller.rc());
+     
+    /* peer is not modified, lock it for reading */
+    AutoMultiLock <2> alock (this->wlock(), AutoLock::maybeRlock (mPeer));
+   
     if (mData.isShared())
     {
+
         if (!mData.isBackedUp())
             mData.backup();
+
         mData.commit();
     }
-    mPeer.setNull();
+
+    unconst (mPeer).setNull();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -711,6 +884,8 @@ void USBDeviceFilter::unshare()
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
+
+DEFINE_EMPTY_CTOR_DTOR (HostUSBDeviceFilter)
 
 HRESULT HostUSBDeviceFilter::FinalConstruct()
 {
@@ -726,7 +901,9 @@ void HostUSBDeviceFilter::FinalRelease()
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the USB device filter object.
+ *  Initializes the USB device filter object.
+ *
+ *  @param aParent  Handle of the parent object.
  */
 HRESULT HostUSBDeviceFilter::init (Host *aParent,
                                    INPTR BSTR aName, BOOL aActive,
@@ -737,21 +914,26 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent,
                                    INPTR BSTR aPort,
                                    USBDeviceFilterAction_T aAction)
 {
-    LogFlowMember (("HostUSBDeviceFilter::init(): isReady=%d\n", isReady()));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aParent && aName && *aName, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
+    unconst (mParent) = aParent;
+
+    /* register with parent early, since uninit() will unconditionally
+     * unregister on failure */
+    mParent->addDependentChild (this);
 
     mData.allocate();
     mData->mName = aName;
     mData->mActive = aActive;
     mData->mAction = aAction;
 
-    // initialize all filters to any match using null string
+    /* initialize all filters to any match using null string */
     mData->mVendorId = NULL;
     mData->mProductId = NULL;
     mData->mRevision = NULL;
@@ -763,65 +945,66 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent,
 
     mInList = false;
 
-    // use setters for the attributes below to reuse parsing errors handling
-    setReady (true);
-    HRESULT rc;
+    /* use setters for the attributes below to reuse parsing errors
+     * handling */
+
+    HRESULT rc = S_OK;
     do
     {
         rc = COMSETTER(VendorId) (aVendorId);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(ProductId) (aProductId);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Revision) (aRevision);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Manufacturer) (aManufacturer);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Product) (aProduct);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(SerialNumber) (aSerialNumber);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
         rc = COMSETTER(Port) (aPort);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
     }
     while (0);
 
+    /* Confirm successful initialization when it's the case */
     if (SUCCEEDED (rc))
-        mParent->addDependentChild (this);
-    else
-        setReady (false);
+        autoInitSpan.setSucceeded();
 
     return rc;
 }
 
 /**
- * Initializes the USB device filter object (short version).
+ *  Initializes the USB device filter object (short version).
+ *
+ *  @param aParent  Handle of the parent object.
  */
 HRESULT HostUSBDeviceFilter::init (Host *aParent, INPTR BSTR aName)
 {
-    LogFlowMember (("HostUSBDeviceFilter::init(): isReady=%d\n", isReady()));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aParent && aName && *aName, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
+    unconst (mParent) = aParent;
+
+    /* register with parent early, since uninit() will unconditionally
+     * unregister on failure */
+    mParent->addDependentChild (this);
 
     mData.allocate();
+
     mData->mName = aName;
     mData->mActive = FALSE;
     mData->mAction = USBDeviceFilterAction_USBDeviceFilterIgnore;
 
     mInList = false;
 
-    // initialize all filters using null string (any match)
+    /* initialize all filters to any match using null string */
     mData->mVendorId = NULL;
     mData->mProductId = NULL;
     mData->mRevision = NULL;
@@ -831,9 +1014,9 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent, INPTR BSTR aName)
     mData->mPort = NULL;
     mData->mRemote = NULL;
 
-    mParent->addDependentChild (this);
+    /* Confirm successful initialization */
+    autoInitSpan.setSucceeded();
 
-    setReady (true);
     return S_OK;
 }
 
@@ -843,26 +1026,20 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent, INPTR BSTR aName)
  */
 void HostUSBDeviceFilter::uninit()
 {
-    LogFlowMember (("HostUSBDeviceFilter::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-
-    LogFlowMember (("HostUSBDeviceFilter::uninit(): isReady=%d\n", isReady()));
-
-    if (!isReady())
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
         return;
 
     mInList = false;
 
     mData.free();
 
-    setReady (false);
-
-    alock.leave();
     mParent->removeDependentChild (this);
-    alock.enter();
 
-    mParent.setNull();
+    unconst (mParent).setNull();
 }
 
 // IUSBDeviceFilter properties
@@ -873,10 +1050,13 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Name) (BSTR *aName)
     if (!aName)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mName.cloneTo (aName);
+
     return S_OK;
 }
 
@@ -885,15 +1065,18 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Name) (INPTR BSTR aName)
     if (!aName || *aName == 0)
         return E_INVALIDARG;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mName != aName)
     {
         mData->mName = aName;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -905,24 +1088,30 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Active) (BOOL *aActive)
     if (!aActive)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     *aActive = mData->mActive;
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Active) (BOOL aActive)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mActive != aActive)
     {
         mData->mActive = aActive;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this, TRUE /* aActiveChanged  */);
     }
 
@@ -934,17 +1123,22 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(VendorId) (BSTR *aVendorId)
     if (!aVendorId)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mVendorId.string().cloneTo (aVendorId);
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mVendorId.string() != aVendorId)
     {
@@ -964,8 +1158,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
 
         mData->mVendorId = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -977,17 +1172,22 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(ProductId) (BSTR *aProductId)
     if (!aProductId)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mProductId.string().cloneTo (aProductId);
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mProductId.string() != aProductId)
     {
@@ -1007,8 +1207,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
 
         mData->mProductId = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -1020,17 +1221,22 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Revision) (BSTR *aRevision)
     if (!aRevision)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mRevision.string().cloneTo (aRevision);
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mRevision.string() != aRevision)
     {
@@ -1050,8 +1256,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
 
         mData->mRevision = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -1063,17 +1270,22 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Manufacturer) (BSTR *aManufacturer)
     if (!aManufacturer)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mManufacturer.string().cloneTo (aManufacturer);
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufacturer)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mManufacturer.string() != aManufacturer)
     {
@@ -1086,8 +1298,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Manufacturer) (INPTR BSTR aManufactu
 
         mData->mManufacturer = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -1099,17 +1312,22 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Product) (BSTR *aProduct)
     if (!aProduct)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mProduct.string().cloneTo (aProduct);
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mProduct.string() != aProduct)
     {
@@ -1122,8 +1340,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Product) (INPTR BSTR aProduct)
 
         mData->mProduct = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -1135,17 +1354,22 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
     if (!aSerialNumber)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mSerialNumber.string().cloneTo (aSerialNumber);
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNumber)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mSerialNumber.string() != aSerialNumber)
     {
@@ -1158,8 +1382,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(SerialNumber) (INPTR BSTR aSerialNum
 
         mData->mSerialNumber = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -1171,17 +1396,22 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Port) (BSTR *aPort)
     if (!aPort)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mPort.string().cloneTo (aPort);
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mPort.string() != aPort)
     {
@@ -1201,8 +1431,9 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
 
         mData->mPort = flt;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
@@ -1214,10 +1445,13 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Remote) (BSTR *aRemote)
     if (!aRemote)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     mData->mRemote.string().cloneTo (aRemote);
+
     return S_OK;
 }
 
@@ -1236,24 +1470,30 @@ STDMETHODIMP HostUSBDeviceFilter::COMGETTER(Action) (USBDeviceFilterAction_T *aA
     if (!aAction)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
 
     *aAction = mData->mAction;
+
     return S_OK;
 }
 
 STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Action) (USBDeviceFilterAction_T aAction)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoLock alock (this);
-    CHECK_READY();
 
     if (mData->mAction != aAction)
     {
         mData->mAction = aAction;
 
-        // notify parent
+        /* leave the lock before informing callbacks */
         alock.unlock();
+
         return mParent->onUSBDeviceFilterChange (this);
     }
 
