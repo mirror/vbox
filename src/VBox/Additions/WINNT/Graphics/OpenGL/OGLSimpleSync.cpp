@@ -29,22 +29,10 @@ BOOL APIENTRY DrvDeleteContext(HGLRC hglrc)
     return retval;
 }
 
-/* Test export for directly linking with vboxogl.dll */
-BOOL WINAPI wglDeleteContext(HGLRC hglrc)
-{
-    return DrvDeleteContext(hglrc);
-}
-
 BOOL APIENTRY DrvCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 {
     VBOX_OGL_GEN_SYNC_OP3_RET(BOOL, DrvCopyContext, hglrcSrc, hglrcDst, mask);
     return retval;
-}
-
-/* Test export for directly linking with vboxogl.dll */
-BOOL WINAPI wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
-{
-    return DrvCopyContext(hglrcSrc, hglrcDst, mask);
 }
 
 void APIENTRY DrvReleaseContext(HGLRC hglrc)
@@ -58,11 +46,6 @@ BOOL APIENTRY DrvShareLists(HGLRC hglrc1, HGLRC hglrc2)
     return retval;
 }
 
-BOOL WINAPI wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
-{
-    return DrvShareLists(hglrc1, hglrc2);
-}
-
 int APIENTRY DrvSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
                                        int iStart, int cEntries,
                                        CONST COLORREF *pcr)
@@ -71,24 +54,11 @@ int APIENTRY DrvSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
     return retval;
 }
 
-/* Test export for directly linking with vboxogl.dll */
-int WINAPI wglSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
-                                     int iStart, int cEntries,
-                                     CONST COLORREF *pcr)
-{
-    return DrvSetLayerPaletteEntries(hdc, iLayerPlane, iStart, cEntries, pcr);
-}
 
 BOOL APIENTRY DrvRealizeLayerPalette(HDC hdc, int iLayerPlane, BOOL bRealize)
 {
     VBOX_OGL_GEN_SYNC_OP3_RET(BOOL, DrvRealizeLayerPalette, hdc, iLayerPlane, bRealize);
     return retval;
-}
-
-/* Test export for directly linking with vboxogl.dll */
-BOOL WINAPI wglRealizeLayerPalette(HDC hdc, int iLayerPlane, BOOL bRealize)
-{
-    return DrvRealizeLayerPalette(hdc, iLayerPlane, bRealize);
 }
 
 BOOL APIENTRY DrvSwapLayerBuffers(HDC hdc, UINT fuPlanes)
@@ -97,22 +67,10 @@ BOOL APIENTRY DrvSwapLayerBuffers(HDC hdc, UINT fuPlanes)
     return retval;
 }
 
-/* Test export for directly linking with vboxogl.dll */
-BOOL WINAPI wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
-{
-    return DrvSwapLayerBuffers(hdc, fuPlanes);
-}
-
 BOOL APIENTRY DrvSetPixelFormat(HDC hdc, int iPixelFormat)
 {
     VBOX_OGL_GEN_SYNC_OP2_RET(BOOL, DrvSetPixelFormat, hdc, iPixelFormat);
     return retval;
-}
-
-/* Test export for directly linking with vboxogl.dll */
-BOOL WINAPI wglSetPixelFormat(HDC hdc, int iPixelFormat)
-{
-    return DrvSetPixelFormat(hdc, iPixelFormat);
 }
 
 BOOL APIENTRY DrvSwapBuffers(HDC hdc)
@@ -121,11 +79,50 @@ BOOL APIENTRY DrvSwapBuffers(HDC hdc)
     return retval;
 }
 
+#ifdef VBOX_WITH_WGL_EXPORTS
 /* Test export for directly linking with vboxogl.dll */
+int WINAPI wglSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
+                                     int iStart, int cEntries,
+                                     CONST COLORREF *pcr)
+{
+    return DrvSetLayerPaletteEntries(hdc, iLayerPlane, iStart, cEntries, pcr);
+}
+
+BOOL WINAPI wglSetPixelFormat(HDC hdc, int iPixelFormat)
+{
+    return DrvSetPixelFormat(hdc, iPixelFormat);
+}
+
+BOOL WINAPI wglRealizeLayerPalette(HDC hdc, int iLayerPlane, BOOL bRealize)
+{
+    return DrvRealizeLayerPalette(hdc, iLayerPlane, bRealize);
+}
+
+BOOL WINAPI wglDeleteContext(HGLRC hglrc)
+{
+    return DrvDeleteContext(hglrc);
+}
+
+BOOL WINAPI wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
+{
+    return DrvSwapLayerBuffers(hdc, fuPlanes);
+}
+
 BOOL WINAPI SwapBuffers(HDC hdc)
 {
     return DrvSwapBuffers(hdc);
 }
+
+BOOL WINAPI wglCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
+{
+    return DrvCopyContext(hglrcSrc, hglrcDst, mask);
+}
+
+BOOL WINAPI wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
+{
+    return DrvShareLists(hglrc1, hglrc2);
+}
+#endif
 
 /* OpenGL functions */
 void APIENTRY glFinish (void)

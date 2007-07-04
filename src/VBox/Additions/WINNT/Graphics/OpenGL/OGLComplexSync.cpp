@@ -63,12 +63,6 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
     return retval;
 }
 
-/* Test export for directly linking with vboxogl.dll */
-HGLRC WINAPI wglCreateContext(HDC hdc)
-{
-    return DrvCreateContext(hdc);
-}
-
 HGLRC APIENTRY DrvCreateLayerContext(HDC hdc, int iLayerPlane)
 {
     uint32_t cx, cy;
@@ -116,28 +110,12 @@ BOOL APIENTRY DrvDescribeLayerPlane(HDC hdc,int iPixelFormat,
     return retval;
 }
 
-/* Test export for directly linking with vboxogl.dll */
-BOOL WINAPI wglDescribeLayerPlane(HDC hdc,int iPixelFormat,
-                                  int iLayerPlane, UINT nBytes,
-                                  LPLAYERPLANEDESCRIPTOR plpd)
-{
-    return DrvDescribeLayerPlane(hdc, iPixelFormat, iLayerPlane, nBytes, plpd);
-}
-
 int APIENTRY DrvGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
                                        int iStart, int cEntries,
                                        COLORREF *pcr)
 {
     VBOX_OGL_GEN_SYNC_OP5_PASS_PTR_RET(int, DrvGetLayerPaletteEntries, hdc, iLayerPlane, iStart, cEntries, sizeof(COLORREF)*cEntries, pcr);
     return retval;
-}
-
-/* Test export for directly linking with vboxogl.dll */
-int WINAPI wglGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
-                                     int iStart, int cEntries,
-                                     COLORREF *pcr)
-{
-    return DrvGetLayerPaletteEntries(hdc, iLayerPlane, iStart, cEntries, pcr);
 }
 
 int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
@@ -147,11 +125,33 @@ int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPI
     return retval;
 }
 
+#ifdef VBOX_WITH_WGL_EXPORTS
 /* Test export for directly linking with vboxogl.dll */
 int WINAPI wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd)
 {
     return DrvDescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
 }
+
+BOOL WINAPI wglDescribeLayerPlane(HDC hdc,int iPixelFormat,
+                                  int iLayerPlane, UINT nBytes,
+                                  LPLAYERPLANEDESCRIPTOR plpd)
+{
+    return DrvDescribeLayerPlane(hdc, iPixelFormat, iLayerPlane, nBytes, plpd);
+}
+
+int WINAPI wglGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
+                                     int iStart, int cEntries,
+                                     COLORREF *pcr)
+{
+    return DrvGetLayerPaletteEntries(hdc, iLayerPlane, iStart, cEntries, pcr);
+}
+
+HGLRC WINAPI wglCreateContext(HDC hdc)
+{
+    return DrvCreateContext(hdc);
+}
+
+#endif
 
 void APIENTRY glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels)
 {
