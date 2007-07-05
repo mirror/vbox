@@ -92,7 +92,7 @@ BOOL APIENTRY DrvSetPixelFormat(HDC hdc, int iPixelFormat)
     {
         RECT rect;
 
-        GetClientRect(hwnd, &rect);
+        GetWindowRect(hwnd, &rect);
         cx = rect.right - rect.left;
         cy = rect.bottom - rect.top;
     }

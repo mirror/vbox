@@ -309,14 +309,7 @@ void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
         while (!pClient->hwnd)
             RTThreadSleep(100);
     }
-    RECT rect;
-    rect.bottom = 0;
-    rect.left   = 0;
-    rect.right  = cx;
-    rect.top    = cy;
-    /* Convert client rectangel to window rectangle */
-    AdjustWindowRect(&rect, WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE, FALSE);
-    SetWindowPos(pClient->hwnd, NULL, 0, 0, rect.right - rect.left, rect.top - rect.bottom, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+    SetWindowPos(pClient->hwnd, NULL, 0, 0, cx, cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
     pClient->hdc = GetDC(pClient->hwnd);
 
