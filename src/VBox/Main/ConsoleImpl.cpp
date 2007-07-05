@@ -1985,7 +1985,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
         SHFLSTRING      *pFolderName, *pMapName;
         int              cbString;
 
-        Log(("Add shared folder %ls -> %ls\n", aName, aHostPath));
+        Log (("Add shared folder %ls -> %ls\n", aName, aHostPath));
 
         cbString = (RTStrUcs2Len(aHostPath) + 1) * sizeof(RTUCS2);
         pFolderName = (SHFLSTRING *)RTMemAllocZ(sizeof(SHFLSTRING) + cbString);
@@ -2011,11 +2011,15 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
         parms[1].u.pointer.addr = pMapName;
         parms[1].u.pointer.size = sizeof(SHFLSTRING) + cbString;
 
-        rc = mVMMDev->hgcmHostCall("VBoxSharedFolders", SHFL_FN_ADD_MAPPING, 2, &parms[0]);
+        int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
+                                         SHFL_FN_ADD_MAPPING,
+                                         2, &parms[0]);
         RTMemFree(pFolderName);
         RTMemFree(pMapName);
-        if (rc != VINF_SUCCESS)
-            return setError (E_FAIL, tr ("Unable to add mapping %ls to %ls."), aHostPath, aName);
+        if (vrc != VINF_SUCCESS)
+            return setError (E_FAIL,
+                tr ("Could not create a shared folder '%ls' mapped to '%ls' (%Vrc)"),
+                aName, aHostPath, vrc);
     }
 
     mSharedFolders.push_back (sharedFolder);
@@ -2067,10 +2071,14 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
         parms.u.pointer.addr = pMapName;
         parms.u.pointer.size = sizeof(SHFLSTRING) + cbString;
 
-        rc = mVMMDev->hgcmHostCall("VBoxSharedFolders", SHFL_FN_REMOVE_MAPPING, 1, &parms);
+        int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
+                                         SHFL_FN_REMOVE_MAPPING,
+                                         1, &parms);
         RTMemFree(pMapName);
-        if (rc != VINF_SUCCESS)
-            rc = setError (E_FAIL, tr ("Unable to remove the mapping %ls."), aName);
+        if (vrc != VINF_SUCCESS)
+            rc = setError (E_FAIL,
+                tr ("Could not remove the shared folder '%ls' (%Vrc)"),
+                aName, vrc);
     }
 
     mSharedFolders.remove (sharedFolder);
@@ -6651,8 +6659,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                         if (VBOX_FAILURE (vrc))
                         {
                             hrc = setError (E_FAIL,
-                                tr ("Unable to add mapping '%ls' to '%ls' (%Vrc)"),
-                                hostPath.raw(), name.raw(), vrc);
+                                tr ("Could not create a shared folder '%ls' mapped to '%ls' (%Vrc)"),
+                                name.raw(), hostPath.raw(), vrc);
                             break;
                         }
                     }
