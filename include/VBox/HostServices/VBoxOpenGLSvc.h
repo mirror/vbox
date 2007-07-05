@@ -28,7 +28,7 @@
 #include <VBox/hgcmsvc.h>
 
 /* OpenGL command buffer size */
-#define VBOX_OGL_MAX_CMD_BUFFER                     (64*1024)
+#define VBOX_OGL_MAX_CMD_BUFFER                     (128*1024)
 #define VBOX_OGL_CMD_ALIGN                          4
 #define VBOX_OGL_CMD_ALIGN_MASK                     (VBOX_OGL_CMD_ALIGN-1)
 #define VBOX_OGL_CMD_MAGIC                          0x1234ABCD
