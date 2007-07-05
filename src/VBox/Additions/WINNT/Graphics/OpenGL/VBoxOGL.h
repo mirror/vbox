@@ -25,6 +25,8 @@
 #undef WINGDIAPI
 #define WINGDIAPI
 #include "GL/gl.h"
+#define WGL_WGLEXT_PROTOTYPES
+#include <VBox/HostServices/wglext.h>
 
 #include <iprt/cdefs.h>
 #include <iprt/assert.h>

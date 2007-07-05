@@ -23,16 +23,78 @@
  *
  */
 
+#define VBOX_OGL_WITH_EXTENSION_ARRAY
 #include "vboxgl.h"
 #include <VBox/HostServices/wglext.h>
 
+#define LOG_GROUP LOG_GROUP_SHARED_OPENGL
+#include <VBox/log.h>
+
+/**
+ * Initialize OpenGL extensions
+ *
+ * @returns VBox error code
+ */
+int vboxInitOpenGLExtensions()
+{
+    const GLubyte *pszExtensions = glGetString(GL_EXTENSIONS);
+    static bool    fInitialized  = false;
+
+    if (fInitialized)
+        return VINF_SUCCESS;
+
+    for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
+    {
+        if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtFunctionName))
+            OpenGLExtensions[i].fAvailable = vboxDrvIsExtensionAvailable((char *)OpenGLExtensions[i].pszExtFunctionName);
+    }
+    fInitialized = true;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Check if an opengl extension function is available
+ *
+ * @returns VBox error code
+ * @param   pszFunctionName     OpenGL extension function name
+ */
+bool vboxwglGetProcAddress(char *pszFunctionName)
+{
+    for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
+    {
+        if (    OpenGLExtensions[i].fAvailable
+            && !strcmp(OpenGLExtensions[i].pszExtFunctionName, pszFunctionName))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 void vboxwglSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-     AssertFailed();
+    Assert(pfnwglSwapIntervalEXT);
+
+    OGL_CMD(wglSwapIntervalEXT, 1);
+    OGL_PARAM(int, interval);
+    pClient->lastretval = pfnwglSwapIntervalEXT(interval);
+    if (!pClient->lastretval)
+        Log(("wglSwapIntervalEXT failed with %d\n", GetLastError()));
+
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxwglGetSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-     AssertFailed();
+    Assert(pfnwglGetSwapIntervalEXT);
+
+    OGL_CMD(wglGetSwapIntervalEXT, 0);
+    pClient->lastretval = pfnwglGetSwapIntervalEXT();
+    if (!pClient->lastretval)
+        Log(("wglGetSwapIntervalEXT failed with %d\n", GetLastError()));
+
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }

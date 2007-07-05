@@ -28,6 +28,7 @@
 #include <GL/gl.h>
 #include <VBox/types.h>
 #include "gldrv.h"
+#include <VBox/HostServices/wglext.h>
 
 typedef void (* PFN_VBOXGLWRAPPER)(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
@@ -77,6 +78,22 @@ int vboxglGetString(VBOXOGLCTX *pClient, GLenum name, char *pString, uint32_t *p
  * @param   pLastRetVal     Pointer to return val of last executed command (out)
  */
 int vboxglFlushBuffer(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer, uint32_t cbCmdBuffer, uint32_t cCommands, GLenum *pLastError, uint64_t *pLastRetVal);
+
+
+/**
+ * Initialize OpenGL extensions
+ *
+ * @returns VBox error code
+ */
+int vboxInitOpenGLExtensions();
+
+/**
+ * Check if an opengl extension function is available
+ *
+ * @returns VBox error code
+ * @param   pszFunctionName     OpenGL extension function name
+ */
+bool vboxwglGetProcAddress(char *pszFunctionName);
 
 
 /* OpenGL wrappers */
