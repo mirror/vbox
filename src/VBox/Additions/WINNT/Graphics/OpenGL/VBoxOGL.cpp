@@ -377,7 +377,7 @@ uint64_t VBoxOGLFlush()
 
     VBOX_INIT_CALL(&parms.hdr, GLFLUSH, pCtx);
 
-    parms.pCmdBuffer.type                   = VMMDevHGCMParmType_LinAddr;
+    parms.pCmdBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
     parms.pCmdBuffer.u.Pointer.size         = pCtx->pCurrentCmd - pCtx->pCmdBuffer;
     parms.pCmdBuffer.u.Pointer.u.linearAddr = (vmmDevHypPtr)pCtx->pCmdBuffer;
     parms.cCommands.type                    = VMMDevHGCMParmType_32bit;
@@ -425,7 +425,7 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
 
     VBOX_INIT_CALL(&parms.hdr, GLFLUSHPTR, pCtx);
 
-    parms.pCmdBuffer.type                   = VMMDevHGCMParmType_LinAddr;
+    parms.pCmdBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
     parms.pCmdBuffer.u.Pointer.size         = pCtx->pCurrentCmd - pCtx->pCmdBuffer;
     parms.pCmdBuffer.u.Pointer.u.linearAddr = (vmmDevHypPtr)pCtx->pCmdBuffer;
     parms.cCommands.type                    = VMMDevHGCMParmType_32bit;
