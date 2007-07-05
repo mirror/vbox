@@ -196,6 +196,14 @@ uint64_t VBoxOGLFlush();
  */
 uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam);
 
+
+/**
+ * Initialize OpenGL extensions
+ *
+ * @returns VBox status code
+ */
+int vboxInitOpenGLExtensions();
+
 /**
  * Check if an OpenGL extension is available on the host
  *

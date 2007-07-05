@@ -45,12 +45,17 @@ static OPENGL_EXT OpenGLExtensions[] =
 int vboxInitOpenGLExtensions()
 {
     const GLubyte *pszExtensions = glGetString(GL_EXTENSIONS);
+    static bool    fInitialized  = false;
+
+    if (fInitialized)
+        return VINF_SUCCESS;
 
     for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
     {
         if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtFunctionName))
             OpenGLExtensions[i].fAvailable = VBoxIsExtensionAvailable(OpenGLExtensions[i].pszExtFunctionName);
     }
+    fInitialized = true;
     return VINF_SUCCESS;
 }
 
