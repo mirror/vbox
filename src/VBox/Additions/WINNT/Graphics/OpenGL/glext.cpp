@@ -23,6 +23,10 @@
  *
  */
 
+#include "VBoxOGL.h"
+#include <VBox/HostServices/wglext.h>
+
+#if 0
  GL_ARB_multitexture
  GL_EXT_texture_env_add 
  GL_EXT_compiled_vertex_array 
@@ -100,3 +104,18 @@
  GL_WIN_swap_hint 
  WGL_EXT_extensions_string 
  WGL_EXT_swap_control 
+#endif
+
+
+BOOL WINAPI wglSwapIntervalEXT(int interval)
+{
+    VBOX_OGL_GEN_SYNC_OP1_RET(BOOL, wglSwapIntervalEXT, interval);
+    return retval;
+}
+
+int WINAPI wglGetSwapIntervalEXT(void)
+{
+    VBOX_OGL_GEN_SYNC_OP_RET(int, wglGetSwapIntervalEXT);
+    return retval;
+}
+
