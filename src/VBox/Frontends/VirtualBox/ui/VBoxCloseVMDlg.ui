@@ -287,7 +287,16 @@ All Rights Reserved
         <receiver>cbDiscardCurState</receiver>
         <slot>setEnabled(bool)</slot>
     </connection>
+    <connection>
+        <sender>buttonHelp</sender>
+        <signal>clicked()</signal>
+        <receiver>&amp;vboxGlobal()</receiver>
+        <slot>showHelpDialog()</slot>
+    </connection>
 </connections>
+<includes>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+</includes>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

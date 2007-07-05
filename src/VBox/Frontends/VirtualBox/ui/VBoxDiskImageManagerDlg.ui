@@ -495,6 +495,12 @@
         <receiver>VBoxDiskImageManagerDlg</receiver>
         <slot>processCurrentChanged()</slot>
     </connection>
+    <connection>
+        <sender>buttonHelp</sender>
+        <signal>clicked()</signal>
+        <receiver>&amp;vboxGlobal()</receiver>
+        <slot>showHelpDialog()</slot>
+    </connection>
 </connections>
 <includes>
     <include location="global" impldecl="in implementation">qapplication.h</include>

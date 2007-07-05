@@ -2940,7 +2940,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
     return result;
 }
 
-/** 
+/**
  *  Removes the acceletartor mark (the ampersand symbol) from the given string
  *  and returns the result. The string is supposed to be a menu item's text
  *  that may (or may not) contain the accelerator mark.
@@ -2953,9 +2953,9 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
  *
  *  @note This function removes only the first occurense of the accelerator
  *  mark.
- * 
+ *
  *  @param aText Menu item's text to remove the acceletaror mark from.
- * 
+ *
  *  @return The resulting string.
  */
 /* static */
@@ -2975,6 +2975,27 @@ QString VBoxGlobal::removeAccelMark (const QString &aText)
     }
 
     return result;
+}
+
+void VBoxGlobal::showHelpDialog()
+{
+#ifndef VBOX_OSE
+#if defined (Q_WS_WIN32)
+    QString fullHelpFilePath = qApp->applicationDirPath() + "/VirtualBox.chm";
+
+    HtmlHelp (GetDesktopWindow(), fullHelpFilePath.ucs2(),
+              HH_DISPLAY_TOPIC, NULL);
+#elif defined (Q_WS_X11)
+    QString fullProgPath = qApp->applicationDirPath();
+    QProcess kchmViewer (fullProgPath + "/kchmviewer");
+    kchmViewer.addArgument (fullProgPath + "/VirtualBox.chm");
+    kchmViewer.launch ("");
+#elif defined (Q_WS_MAC)
+    QProcess openApp (QString("/usr/bin/open"));
+    openApp.addArgument (qApp->applicationDirPath() + "/UserManual.pdf");
+    openApp.launch ("");
+#endif
+#endif /* VBOX_OSE */
 }
 
 // Protected members
