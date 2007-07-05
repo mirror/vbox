@@ -310,7 +310,7 @@ void VBoxDbgLog(char *pszFormat, ...)
       vsprintf (Buffer, pszFormat, va);
 
       printf(Buffer);
-//      OutputDebugStringA(Buffer);
+      OutputDebugStringA(Buffer);
    }
 
    va_end (va);
@@ -434,8 +434,9 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
     parms.retval.u.value64                  = 0;
     parms.lasterror.type                    = VMMDevHGCMParmType_32bit;
     parms.lasterror.u.value32               = 0;
-    if (!cbParam || !pLastParam)
+    if (cbParam)
     {
+        Assert(pLastParam);
         parms.pLastParam.type                   = VMMDevHGCMParmType_LinAddr;
         parms.pLastParam.u.Pointer.size         = cbParam;
         parms.pLastParam.u.Pointer.u.linearAddr = (vmmDevHypPtr)pLastParam;
