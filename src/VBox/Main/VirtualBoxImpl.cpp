@@ -4436,7 +4436,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                 delete [] handles;
                 handles = new HANDLE [cnt + 1];
                 handles [0] = that->mWatcherData.mUpdateReq;
-                for (int i = 0; i < cnt; i++)
+                for (size_t i = 0; i < cnt; ++ i)
                     handles [i + 1] = (machines [i])->ipcSem();
             }
         }
