@@ -65,10 +65,11 @@ bool vboxwglGetProcAddress(char *pszFunctionName)
         if (    OpenGLExtensions[i].fAvailable
             && !strcmp(OpenGLExtensions[i].pszExtFunctionName, pszFunctionName))
         {
+            Log(("vboxwglGetProcAddress: found %s\n", pszFunctionName));
             return true;
         }
     }
-
+    Log(("vboxwglGetProcAddress: didn't find %s\n", pszFunctionName));
     return false;
 }
 
