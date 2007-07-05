@@ -125,7 +125,7 @@ int vboxglFlushBuffer(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer, uint32_t cbCmdBu
 #endif
         AssertMsgReturn(pCmd->enmOp < VBOX_OGL_OP_Last, ("Invalid OpenGL cmd %x\n", pCmd->enmOp), VERR_INVALID_PARAMETER);
 
-        Log(("Flush cmd %s cParams=%d cbCmd=%x\n", pszVBoxOGLCmd[pCmd->enmOp], pCmd->cParams, pCmd->cbCmd));
+        Log2(("Flush cmd %s cParams=%d cbCmd=%x\n", pszVBoxOGLCmd[pCmd->enmOp], pCmd->cParams, pCmd->cbCmd));
 
         /* call wrapper */
         AssertMsgReturn(pfnOGLWrapper[pCmd->enmOp], ("No wrapper for opcode %x\n", pCmd->enmOp), VERR_INVALID_PARAMETER);
