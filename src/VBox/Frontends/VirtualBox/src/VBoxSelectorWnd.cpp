@@ -47,10 +47,6 @@
 #include <qlayout.h>
 #include <qvbox.h>
 
-#if defined (Q_WS_WIN32)
-#include <Htmlhelp.h>
-#endif
-
 
 static const char *GUI_LastWindowPosition = "GUI/LastWindowPostion";
 static const char *GUI_LastWindowPosition_Max = "max";

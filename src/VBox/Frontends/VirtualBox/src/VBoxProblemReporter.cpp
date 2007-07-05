@@ -40,6 +40,11 @@
 
 #include <iprt/err.h>
 
+#if defined (Q_WS_WIN32)
+#include <Htmlhelp.h>
+#endif
+
+
 /**
  *  A QProgressDialog enhancement that allows to:
  *
