@@ -23,23 +23,8 @@
  *
  */
 
+#define VBOX_OGL_WITH_EXTENSION_ARRAY
 #include "VBoxOGL.h"
-#define WGL_WGLEXT_PROTOTYPES
-#include <VBox/HostServices/wglext.h>
-
-typedef struct
-{
-    const char *pszExtName;
-    const char *pszExtFunctionName;
-    RTUINTPTR   pfnFunction;
-    bool        fAvailable;
-} OPENGL_EXT, *POPENGL_EXT;
-
-static OPENGL_EXT OpenGLExtensions[] = 
-{
-    {   "WGL_EXT_swap_control",             "wglSwapIntervalEXT",               (RTUINTPTR)wglSwapIntervalEXT,                      false },
-    {   "WGL_EXT_swap_control",             "wglGetSwapIntervalEXT",            (RTUINTPTR)wglGetSwapIntervalEXT,                   false },
-};
 
 
 int vboxInitOpenGLExtensions()
@@ -62,7 +47,7 @@ int vboxInitOpenGLExtensions()
 
 PROC APIENTRY DrvGetProcAddress(LPCSTR lpszProc)
 {
-    PROC pfnProc;
+    PROC pfnProc = NULL;
 
     for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
     {

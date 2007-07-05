@@ -31,6 +31,7 @@
  */
 int vboxglGlobalInit()
 {
+    vboxInitOpenGLExtensions();
     return VINF_SUCCESS;
 }
 

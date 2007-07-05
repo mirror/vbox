@@ -1854,5 +1854,32 @@ static PFN_VBOXGLWRAPPER pfnOGLWrapper[VBOX_OGL_OP_Last] =
 };
 #endif
 
+
+#ifdef VBOX_OGL_WITH_EXTENSION_ARRAY
+typedef struct
+{
+    const char *pszExtName;
+    const char *pszExtFunctionName;
+    RTUINTPTR   pfnFunction;
+    bool        fAvailable;
+} OPENGL_EXT, *POPENGL_EXT;
+
+#ifdef VBOX_OGL_GUEST_SIDE
+#define VBOX_OGL_EXTENSION(a)   a
+#else
+#define VBOX_OGL_EXTENSION(a)   pfn##a
+
+static PFNWGLSWAPINTERVALEXTPROC        pfnwglSwapIntervalEXT       = NULL;
+static PFNWGLGETSWAPINTERVALEXTPROC     pfnwglGetSwapIntervalEXT    = NULL;
+
+#endif
+
+static OPENGL_EXT OpenGLExtensions[] = 
+{
+    {   "WGL_EXT_swap_control",             "wglSwapIntervalEXT",               (RTUINTPTR)VBOX_OGL_EXTENSION(wglSwapIntervalEXT),                      false },
+    {   "WGL_EXT_swap_control",             "wglGetSwapIntervalEXT",            (RTUINTPTR)VBOX_OGL_EXTENSION(wglGetSwapIntervalEXT),                   false },
+};
+#endif /* VBOX_OGL_WITH_EXTENSION_ARRAY */
+
 #endif /* __VBOXOGLOP_H__ */
 
