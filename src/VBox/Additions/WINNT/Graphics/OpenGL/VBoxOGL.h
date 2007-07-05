@@ -68,6 +68,13 @@ void APIENTRY glSetError(GLenum glNewError);
         glSetError(a);              \
     }
 #define DbgPrintf(a)        VBoxDbgLog a
+
+#ifdef VBOX_DEBUG_LVL2
+#define DbgPrintf2(a)       VBoxDbgLog a
+#else
+#define DbgPrintf2(a)
+#endif
+
 #else
 #define glLogError(a)       glSetError(a)
 #define DbgPrintf(a)
