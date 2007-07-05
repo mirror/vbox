@@ -45,7 +45,7 @@ int vboxInitOpenGLExtensions()
 
     for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
     {
-        if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtFunctionName))
+        if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtName))
             OpenGLExtensions[i].fAvailable = vboxDrvIsExtensionAvailable((char *)OpenGLExtensions[i].pszExtFunctionName);
     }
     fInitialized = true;
