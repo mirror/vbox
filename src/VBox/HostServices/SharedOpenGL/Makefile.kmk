@@ -39,7 +39,8 @@ VBoxSharedOpenGL_SOURCES = \
         HostOGLSimpleAsync.cpp \
         HostOGLSimpleSync.cpp \
         HostOGLComplexAsync.cpp \
-        HostOGLComplexSync.cpp 
+        HostOGLComplexSync.cpp \
+        glext.cpp
 
 VBoxSharedOpenGL_SOURCES.linux = \
         gllindrv.cpp
