@@ -335,6 +335,8 @@ void vboxglGetTexLevelParameterfv (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglGetTexLevelParameteriv (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglGetTexImage (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
+void vboxwglSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
+void vboxwglGetSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
 /* after the above */
 #include <VBox/HostServices/VBoxOpenGLSvc.h>
