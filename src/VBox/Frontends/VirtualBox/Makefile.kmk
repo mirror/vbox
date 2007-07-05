@@ -50,6 +50,7 @@ INSTALLS = VirtualBox.nls
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 VirtualBox_SDKS.linux = LIBSDL
+VirtualBox_SDKS.os2 = LIBSDL
 
 ifeq ($(BUILD_TARGET),darwin)
 # For the launch trick we need different inode numbers.
@@ -167,6 +168,7 @@ VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE
 VirtualBox_DEFS.linux     = VBOX_GUI_USE_SDL
 VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
+VirtualBox_DEFS.os2       = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL QT_DLL
 #ifndef VBOX_OSE
  VirtualBox_DEFS.darwin  += VBOX_WITH_HACKED_QT
 #endif

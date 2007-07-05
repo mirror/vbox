@@ -515,27 +515,39 @@ static void vboxGlobalCleanup()
  *  Determines the rendering mode from the argument. Sets the appropriate
  *  default rendering mode if the argumen is NULL.
  */
-static VBoxDefs::RenderMode vboxGetRenderMode( const char *display )
+static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 {
-    VBoxDefs::RenderMode mode;
-#if   defined (Q_WS_WIN32)
+    VBoxDefs::RenderMode mode = VBoxDefs::InvalidRenderMode;
+
+#if (defined (Q_WS_WIN32) || defined (Q_WS_PM)) && defined (VBOX_GUI_USE_QIMAGE)
     mode = VBoxDefs::QImageMode;
-#elif defined (Q_WS_X11)
+#elif defined (Q_WS_X11) && defined (VBOX_GUI_USE_SDL)
     mode = VBoxDefs::SDLMode;
-#else
+#elif defined (VBOX_GUI_USE_QIMAGE)
     mode = VBoxDefs::QImageMode;
+#else
+# error "Cannot determine the default render mode!"
 #endif
 
-    if ( display ) {
-        if (        !::strcmp( display, "timer" ) ){
+    if (aModeStr)
+    {
+        if (0) ;
+#if defined (VBOX_GUI_USE_REFRESH_TIMER)
+        else if (::strcmp (aModeStr, "timer") == 0)
             mode = VBoxDefs::TimerMode;
-        } else if ( !::strcmp( display, "image" ) ) {
+#endif
+#if defined (VBOX_GUI_USE_QIMAGE)
+        else if (::strcmp (aModeStr, "image") == 0)
             mode = VBoxDefs::QImageMode;
-        } else if ( !::strcmp( display, "sdl" ) ) {
+#endif
+#if defined (VBOX_GUI_USE_SDL)
+        else if (::strcmp (aModeStr, "sdl") == 0)
             mode = VBoxDefs::SDLMode;
-        } else if ( !::strcmp( display, "ddraw" ) ) {
+#endif
+#if defined (VBOX_GUI_USE_DDRAW)
+        else if (::strcmp (aModeStr, "ddraw") == 0)
             mode = VBoxDefs::DDRAWMode;
-        }
+#endif
     }
 
     return mode;

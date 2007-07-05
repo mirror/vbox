@@ -605,6 +605,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
         default:
             AssertReleaseMsgFailed (("Render mode must be valid: %d\n", mode));
+            LogRel (("Invalid render mode: %d\n", mode));
             qApp->exit (1);
             break;
     }
