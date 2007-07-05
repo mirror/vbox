@@ -755,8 +755,11 @@ public:
     // public methods only for internal purposes
 
     bool checkForDeath();
-#ifdef __WIN__
+
+#if defined (__WIN__) 
     HANDLE ipcSem() { return mIPCSem; }
+#elif defined (__OS2__)
+    HMTX ipcSem() { return mIPCSem; }
 #endif
 
     HRESULT onDVDDriveChange();
@@ -820,8 +823,13 @@ private:
 #if defined(__WIN__)
     HANDLE mIPCSem;
     Bstr mIPCSemName;
+#elif defined(__OS2__)
+    HMTX mIPCSem;
+    Bstr mIPCSemName;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
+#else
+# error "Port me!"
 #endif
 
     static DECLCALLBACK(int) taskHandler (RTTHREAD thread, void *pvUser);

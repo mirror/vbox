@@ -277,11 +277,15 @@ HRESULT VirtualBox::init()
         /* start the client watcher thread */
 #if defined(__WIN__)
         unconst (mWatcherData.mUpdateReq) = ::CreateEvent (NULL, FALSE, FALSE, NULL);
-#else
+#elif defined(__OS2__)
         RTSemEventCreate (&unconst (mWatcherData.mUpdateReq));
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+        RTSemEventCreate (&unconst (mWatcherData.mUpdateReq));
+#else
+# error "Port me!"
 #endif
         int vrc = RTThreadCreate (&unconst (mWatcherData.mThread),
-                                  clientWatcher, (void *) this,
+                                  ClientWatcher, (void *) this,
                                   0, RTTHREADTYPE_MAIN_WORKER,
                                   RTTHREADFLAGS_WAITABLE, "Watcher");
         ComAssertRC (vrc);
@@ -292,7 +296,7 @@ HRESULT VirtualBox::init()
     if (SUCCEEDED (rc)) do
     {
         /* start the async event handler thread */
-        int vrc = RTThreadCreate (&unconst (mAsyncEventThread), asyncEventHandler,
+        int vrc = RTThreadCreate (&unconst (mAsyncEventThread), AsyncEventHandler,
                                   &unconst (mAsyncEventQ),
                                   0, RTTHREADTYPE_MAIN_WORKER,
                                   RTTHREADFLAGS_WAITABLE, "EventHandler");
@@ -418,12 +422,20 @@ void VirtualBox::uninit()
         ::CloseHandle (mWatcherData.mUpdateReq);
         unconst (mWatcherData.mUpdateReq) = NULL;
     }
-#else
+#elif defined(__OS2__)
     if (mWatcherData.mUpdateReq != NIL_RTSEMEVENT)
     {
         RTSemEventDestroy (mWatcherData.mUpdateReq);
         unconst (mWatcherData.mUpdateReq) = NIL_RTSEMEVENT;
     }
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+    if (mWatcherData.mUpdateReq != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy (mWatcherData.mUpdateReq);
+        unconst (mWatcherData.mUpdateReq) = NIL_RTSEMEVENT;
+    }
+#else
+# error "Port me!"
 #endif
 
     /* uninitialize the Xerces XML subsystem */
@@ -2393,8 +2405,12 @@ void VirtualBox::updateClientWatcher()
     /* sent an update request */
 #if defined(__WIN__)
     ::SetEvent (mWatcherData.mUpdateReq);
-#else
+#elif defined(__OS2__)
     RTSemEventSignal (mWatcherData.mUpdateReq);
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+    RTSemEventSignal (mWatcherData.mUpdateReq);
+#else
+# error "Port me!"
 #endif
 }
 
@@ -4346,7 +4362,7 @@ HRESULT VirtualBox::unlockConfig()
  *  that have opened sessions using IVirtualBox::OpenSession()
  */
 // static
-DECLCALLBACK(int) VirtualBox::clientWatcher (RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
@@ -4354,7 +4370,7 @@ DECLCALLBACK(int) VirtualBox::clientWatcher (RTTHREAD thread, void *pvUser)
     Assert (that);
 
     SessionMachineVector machines;
-    int cnt = 0;
+    size_t cnt = 0;
 
 #if defined(__WIN__)
 
@@ -4436,7 +4452,137 @@ DECLCALLBACK(int) VirtualBox::clientWatcher (RTTHREAD thread, void *pvUser)
 
     ::CoUninitialize();
 
-#else
+#elif defined (__OS2__)
+
+    /// @todo (dmik) processes reaping!
+
+    /* according to PMREF, 64 is the maximum for the muxwait list */
+    SEMRECORD handles [64];
+
+    HMUX muxSem = NULLHANDLE;
+
+    do
+    {
+        AutoCaller autoCaller (that);
+        /* VirtualBox has been early uninitialized, terminate */
+        if (!autoCaller.isOk())
+            break;
+
+        do
+        {
+            /* release the caller to let uninit() ever proceed */
+            autoCaller.release();
+
+            int vrc = RTSemEventWait (that->mWatcherData.mUpdateReq, 500);
+
+            /*
+             *  Restore the caller before using VirtualBox. If it fails, this
+             *  means VirtualBox is being uninitialized and we must terminate.
+             */
+            autoCaller.add();
+            if (!autoCaller.isOk())
+                break;
+
+            bool update = false;
+
+            if (VBOX_SUCCESS (vrc))
+            {
+                /* update event is signaled */
+                update = true;
+            }
+            else
+            {
+                AssertMsg (vrc == VERR_TIMEOUT || vrc == VERR_INTERRUPTED,
+                           ("RTSemEventWait returned %Vrc\n", vrc));
+
+                /* are there any mutexes? */
+                if (cnt > 0)
+                {
+                    /* figure out what's going on with machines */
+
+                    unsigned long semId = 0;
+                    APIRET arc = ::DosWaitMuxWaitSem (muxSem,
+                                                      SEM_IMMEDIATE_RETURN, &semId);
+
+                    if (arc == NO_ERROR)
+                    {
+                        /* machine mutex is normally released */
+                        Assert (semId >= 0 && semId < cnt);
+                        if (semId >= 0 && semId < cnt)
+                            machines [semId]->checkForDeath();
+                        update = true;
+                    }
+                    else if (arc == ERROR_SEM_OWNER_DIED)
+                    {
+                        /* machine mutex is abandoned due to client process
+                         * termination; find which mutex is in the Owner Died
+                         * state */
+                        for (size_t i = 0; i < cnt; ++ i)
+                        {
+                            PID pid; TID tid;
+                            unsigned long reqCnt;
+                            arc = DosQueryMutexSem ((HMTX) handles [i].hsemCur, &pid,
+                                                    &tid, &reqCnt);
+                            if (arc == ERROR_SEM_OWNER_DIED)
+                            {
+                                /* close the dead mutex as asked by PMREF */
+                                ::DosCloseMutexSem ((HMTX) handles [i].hsemCur);
+
+                                Assert (i >= 0 && i < cnt);
+                                if (i >= 0 && i < cnt)
+                                    machines [i]->checkForDeath();
+                            }
+                        }
+                        update = true;
+                    }
+                    else
+                        AssertMsg (arc == ERROR_INTERRUPT || arc == ERROR_TIMEOUT,
+                                   ("DosWaitMuxWaitSem returned %d\n", arc));
+                }
+            }
+
+            if (update)
+            {
+                /* close the old muxsem */
+                if (muxSem != NULLHANDLE)
+                    ::DosCloseMuxWaitSem (muxSem);
+                /* obtain a new set of opened machines */
+                that->getOpenedMachines (machines);
+                cnt = machines.size();
+                LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
+                /// @todo use several muxwait sems if cnt is > 64
+                AssertMsg (cnt <= 64 /* according to PMREF */,
+                           ("maximum of 64 mutex semaphores reached (%d)", cnt));
+                if (cnt > 64)
+                    cnt = 64;
+                if (cnt > 0)
+                {
+                    /* renew the set of event handles */
+                    for (size_t i = 0; i < cnt; ++ i)
+                    {
+                        handles [i].hsemCur = (HSEM) machines [i]->ipcSem();
+                        handles [i].ulUser = i;
+                    }
+                    /* create a new muxsem */
+                    APIRET arc = ::DosCreateMuxWaitSem (NULL, &muxSem, cnt, handles,
+                                                        DCMW_WAIT_ANY);
+                    AssertMsg (arc == NO_ERROR,
+                               ("DosCreateMuxWaitSem returned %d\n", arc));
+                }
+            }
+        }
+        while (true);
+    }
+    while (0);
+
+    /* close the muxsem */
+    if (muxSem != NULLHANDLE)
+        ::DosCloseMuxWaitSem (muxSem);
+
+    /* delete the set of opened machines if any */
+    machines.clear();
+
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
     bool need_update = false;
 
@@ -4472,7 +4618,7 @@ DECLCALLBACK(int) VirtualBox::clientWatcher (RTTHREAD thread, void *pvUser)
             }
 
             need_update = false;
-            for (int i = 0; i < cnt; i++)
+            for (size_t i = 0; i < cnt; ++ i)
                 need_update |= (machines [i])->checkForDeath();
 
             /* reap child processes */
@@ -4521,6 +4667,8 @@ DECLCALLBACK(int) VirtualBox::clientWatcher (RTTHREAD thread, void *pvUser)
     /* delete the set of opened machines if any */
     machines.clear();
 
+#else
+# error "Port me!"
 #endif
 
     LogFlowFuncLeave();
@@ -4531,7 +4679,7 @@ DECLCALLBACK(int) VirtualBox::clientWatcher (RTTHREAD thread, void *pvUser)
  *  Thread function that handles custom events posted using #postEvent().
  */
 // static
-DECLCALLBACK(int) VirtualBox::asyncEventHandler (RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) VirtualBox::AsyncEventHandler (RTTHREAD thread, void *pvUser)
 {
     LogFlowFuncEnter();
 

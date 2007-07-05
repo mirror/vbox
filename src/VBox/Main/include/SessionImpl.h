@@ -124,14 +124,17 @@ private:
 
     ComPtr <IVirtualBox> mVirtualBox;
 
-    // the interprocess semaphore handle (id) for the opened machine
+    /* interprocess semaphore handle (id) for the opened machine */
 #if defined(__WIN__)
     HANDLE mIPCSem;
     HANDLE mIPCThreadSem;
+#elif defined(__OS2__)
+    RTTHREAD mIPCThread;
+    RTSEMEVENT mIPCThreadSem;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
 #else
-# error "PORTME"
+# error "Port me!"
 #endif
 };
 
