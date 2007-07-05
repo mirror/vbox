@@ -497,11 +497,11 @@
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Сбросить все предупреждения</translation>
+        <translation>&amp;Разрешить все предупреждения</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation>Включить отображение всех отключенных предупреждений и сообщений</translation>
+        <translation>Включить отображение всех отключенных ранее предупреждений и сообщений</translation>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
@@ -2591,11 +2591,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Сбросить все предупреждения</translation>
+        <translation>&amp;Разрешить все предупреждения</translation>
     </message>
     <message>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation>Включить отображение всех отключенных предупреждений и сообщений</translation>
+        <translation>Включить отображение всех отключенных ранее предупреждений и сообщений</translation>
     </message>
     <message>
         <source>&amp;File</source>
