@@ -217,8 +217,8 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->lastretval = 0; /** @todo */
 }
 
-bool vboxDrvIsExtensionAvailable(char *pszExtFunctionName)
+RTUINTPTR vboxDrvIsExtensionAvailable(char *pszExtFunctionName)
 {
-    return false;
+    return 0;
 }
 
