@@ -26,23 +26,31 @@
 BOOL APIENTRY DrvDeleteContext(HGLRC hglrc)
 {
     VBOX_OGL_GEN_SYNC_OP1_RET(BOOL, DrvDeleteContext, hglrc);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
 BOOL APIENTRY DrvCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 {
     VBOX_OGL_GEN_SYNC_OP3_RET(BOOL, DrvCopyContext, hglrcSrc, hglrcDst, mask);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
 void APIENTRY DrvReleaseContext(HGLRC hglrc)
 {
     VBOX_OGL_GEN_SYNC_OP1(DrvReleaseContext, hglrc);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
 }
 
 BOOL APIENTRY DrvShareLists(HGLRC hglrc1, HGLRC hglrc2)
 {
     VBOX_OGL_GEN_SYNC_OP2_RET(BOOL, DrvShareLists, hglrc1, hglrc2);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
@@ -51,6 +59,8 @@ int APIENTRY DrvSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
                                        CONST COLORREF *pcr)
 {
     VBOX_OGL_GEN_SYNC_OP5_PTR_RET(int, DrvSetLayerPaletteEntries, hdc, iLayerPlane, iStart, cEntries, sizeof(COLORREF)*cEntries, pcr);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
@@ -58,24 +68,32 @@ int APIENTRY DrvSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
 BOOL APIENTRY DrvRealizeLayerPalette(HDC hdc, int iLayerPlane, BOOL bRealize)
 {
     VBOX_OGL_GEN_SYNC_OP3_RET(BOOL, DrvRealizeLayerPalette, hdc, iLayerPlane, bRealize);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
 BOOL APIENTRY DrvSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 {
     VBOX_OGL_GEN_SYNC_OP2_RET(BOOL, DrvSwapLayerBuffers, hdc, fuPlanes);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
 BOOL APIENTRY DrvSetPixelFormat(HDC hdc, int iPixelFormat)
 {
     VBOX_OGL_GEN_SYNC_OP2_RET(BOOL, DrvSetPixelFormat, hdc, iPixelFormat);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
 BOOL APIENTRY DrvSwapBuffers(HDC hdc)
 {
     VBOX_OGL_GEN_SYNC_OP1_RET(BOOL, DrvSwapBuffers, hdc);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 

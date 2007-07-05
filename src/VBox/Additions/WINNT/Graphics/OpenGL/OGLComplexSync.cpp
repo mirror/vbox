@@ -60,6 +60,8 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
         pfd.cDepthBits = 16;
     }
     VBOX_OGL_GEN_SYNC_OP6_RET(HGLRC, DrvCreateContext, hdc, cx, cy, pfd.cColorBits, pfd.iPixelType, pfd.cDepthBits);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
@@ -99,6 +101,8 @@ HGLRC APIENTRY DrvCreateLayerContext(HDC hdc, int iLayerPlane)
     }
 
     VBOX_OGL_GEN_SYNC_OP7_RET(HGLRC, DrvCreateLayerContext, hdc, iLayerPlane, cx, cy, pfd.cColorBits, pfd.iPixelType, pfd.cDepthBits);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
@@ -107,6 +111,8 @@ BOOL APIENTRY DrvDescribeLayerPlane(HDC hdc,int iPixelFormat,
                                     LPLAYERPLANEDESCRIPTOR plpd)
 {
     VBOX_OGL_GEN_SYNC_OP5_PASS_PTR_RET(BOOL, DrvDescribeLayerPlane, hdc, iPixelFormat, iLayerPlane, nBytes, nBytes, plpd);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
@@ -115,6 +121,8 @@ int APIENTRY DrvGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
                                        COLORREF *pcr)
 {
     VBOX_OGL_GEN_SYNC_OP5_PASS_PTR_RET(int, DrvGetLayerPaletteEntries, hdc, iLayerPlane, iStart, cEntries, sizeof(COLORREF)*cEntries, pcr);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
@@ -122,6 +130,8 @@ int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPI
 {
     /* if ppfd == NULL, then DrvDescribelayerPlane returns the maximum nr of supported pixel formats */
     VBOX_OGL_GEN_SYNC_OP4_PASS_PTR_RET(int, DrvDescribePixelFormat, hdc, iPixelFormat, nBytes, nBytes, ppfd);
+    /* Propagate error through the right channel */
+    SetLastError(glGetError());
     return retval;
 }
 
