@@ -440,10 +440,10 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
         ReleaseDC(0, pClient->hdc);
 }
 
-bool vboxDrvIsExtensionAvailable(char *pszExtFunctionName)
+RTUINTPTR vboxDrvIsExtensionAvailable(char *pszExtFunctionName)
 {
-    bool fAvailable = !!wglGetProcAddress(pszExtFunctionName);
+    RTUINTPTR pfnProc = (RTUINTPTR)wglGetProcAddress(pszExtFunctionName);
 
-    Log(("vboxDrvIsExtensionAvailable %s -> %d\n", pszExtFunctionName, fAvailable));
-    return fAvailable;
+    Log(("vboxDrvIsExtensionAvailable %s -> %d\n", pszExtFunctionName, !!pfnProc));
+    return pfnProc;
 }

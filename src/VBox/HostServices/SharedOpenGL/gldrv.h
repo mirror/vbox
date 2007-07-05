@@ -149,6 +149,7 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglDrvSwapBuffers(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
-bool vboxDrvIsExtensionAvailable(char *pszExtFunctionName);
+
+RTUINTPTR vboxDrvIsExtensionAvailable(char *pszExtFunctionName);
 
 #endif /* __VBOXGLWIN__H */
