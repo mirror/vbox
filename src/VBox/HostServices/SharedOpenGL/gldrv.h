@@ -52,6 +52,7 @@ typedef struct
 
 
 #ifndef __WIN__
+
 typedef uint32_t    DWORD;
 typedef uint16_t    WORD;
 typedef uint8_t     BYTE;
@@ -61,6 +62,9 @@ typedef HANDLE      HDC;
 typedef HANDLE      HGLRC;
 typedef uint32_t    UINT;
 typedef uint32_t    COLORREF;
+
+#define DECLARE_HANDLE(a)  typedef a HANDLE;
+#define WINAPI
 
 typedef struct
 {
