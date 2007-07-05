@@ -301,6 +301,7 @@ static uint32_t vboxglGetNrElements(GLenum pname)
         return 16;
 
     default:
+        AssertMsgFailed(("%s Unknown element %x\n", __FUNCTION__, pname));
         return 0;
     }
 }
