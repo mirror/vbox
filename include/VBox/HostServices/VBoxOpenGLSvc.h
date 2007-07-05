@@ -65,6 +65,7 @@ typedef struct
 #define VBOXOGL_FN_GLGETSTRING          (1)
 #define VBOXOGL_FN_GLFLUSH              (2)
 #define VBOXOGL_FN_GLFLUSHPTR           (3)
+#define VBOXOGL_FN_GLCHECKEXT           (4)
 
 /** @} */
 
@@ -169,6 +170,26 @@ typedef struct
 
 /** Number of parameters */
 #define VBOXOGL_CPARMS_GLFLUSHPTR (5)
+
+
+/**
+ * VBOXOGL_FN_GLCHECKEXT
+ */
+
+/** Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** pointer, in
+     * Extension function name
+     */
+    HGCMFunctionParameter   pszExtFnName;
+
+} VBoxOGLglCheckExt;
+
+/** Number of parameters */
+#define VBOXOGL_CPARMS_GLCHECKEXT (1)
 
 /** @} */
 

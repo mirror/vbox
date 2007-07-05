@@ -24,7 +24,72 @@
  */
 
 #include "VBoxOGL.h"
+#define WGL_WGLEXT_PROTOTYPES
 #include <VBox/HostServices/wglext.h>
+
+typedef struct
+{
+    const char *pszExtName;
+    const char *pszExtFunctionName;
+    RTUINTPTR   pfnFunction;
+    bool        fAvailable;
+} OPENGL_EXT, *POPENGL_EXT;
+
+static OPENGL_EXT OpenGLExtensions[] = 
+{
+    {   "WGL_EXT_swap_control",             "wglSwapIntervalEXT",               (RTUINTPTR)wglSwapIntervalEXT,                      false },
+    {   "WGL_EXT_swap_control",             "wglGetSwapIntervalEXT",            (RTUINTPTR)wglGetSwapIntervalEXT,                   false },
+};
+
+
+int vboxInitOpenGLExtensions()
+{
+    const GLubyte *pszExtensions = glGetString(GL_EXTENSIONS);
+
+    for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
+    {
+        if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtFunctionName))
+            OpenGLExtensions[i].fAvailable = VBoxIsExtensionAvailable(OpenGLExtensions[i].pszExtFunctionName);
+    }
+    return VINF_SUCCESS;
+}
+
+
+PROC APIENTRY DrvGetProcAddress(LPCSTR lpszProc)
+{
+    PROC pfnProc;
+
+    for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
+    {
+        if (    OpenGLExtensions[i].fAvailable
+            && !strcmp(OpenGLExtensions[i].pszExtFunctionName, lpszProc))
+        {
+            pfnProc = (PROC)OpenGLExtensions[i].pfnFunction;
+        }
+    }
+    if (pfnProc == NULL)
+        DbgPrintf(("DrvGetProcAddress %s FAILED\n", lpszProc));
+    else
+        DbgPrintf(("DrvGetProcAddress %s\n", lpszProc));
+
+    return pfnProc;
+}
+
+BOOL WINAPI wglSwapIntervalEXT(int interval)
+{
+    VBOX_OGL_GEN_SYNC_OP1_RET(BOOL, wglSwapIntervalEXT, interval);
+    return retval;
+}
+
+int WINAPI wglGetSwapIntervalEXT(void)
+{
+    VBOX_OGL_GEN_SYNC_OP_RET(int, wglGetSwapIntervalEXT);
+    return retval;
+}
+
+
+
+
 
 #if 0
  GL_ARB_multitexture
@@ -103,19 +168,5 @@
  GL_SUN_multi_draw_arrays 
  GL_WIN_swap_hint 
  WGL_EXT_extensions_string 
- WGL_EXT_swap_control 
 #endif
-
-
-BOOL WINAPI wglSwapIntervalEXT(int interval)
-{
-    VBOX_OGL_GEN_SYNC_OP1_RET(BOOL, wglSwapIntervalEXT, interval);
-    return retval;
-}
-
-int WINAPI wglGetSwapIntervalEXT(void)
-{
-    VBOX_OGL_GEN_SYNC_OP_RET(int, wglGetSwapIntervalEXT);
-    return retval;
-}
 

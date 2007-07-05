@@ -415,3 +415,8 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     if (!VBOX_OGL_GUEST_TO_HOST_HDC(hdc))
         ReleaseDC(0, pClient->hdc);
 }
+
+bool vboxDrvIsExtensionAvailable(char *pszExtFunctionName)
+{
+    return !!wglGetProcAddress(pszExtFunctionName);
+}

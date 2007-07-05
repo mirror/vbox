@@ -256,6 +256,51 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             break;
         } 
 
+        case VBOXOGL_FN_GLCHECKEXT:
+        {
+            Log(("svcCall: VBOXOGL_FN_GLCHECKEXT\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != VBOXOGL_CPARMS_GLCHECKEXT)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else 
+            if (    paParms[0].type != VBOX_HGCM_SVC_PARM_PTR       /* pszExtFnName */
+               )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                char    *pszExtFnName = (char *)paParms[0].u.pointer.addr;
+                uint32_t cbExtFnName  = paParms[0].u.pointer.size;
+
+                /* sanity checks */
+                if (    cbExtFnName > 256
+                    ||  pszExtFnName[cbExtFnName-1] != 0
+                   )
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {
+                    /* Execute the function. */
+                    if (vboxDrvIsExtensionAvailable(pszExtFnName))
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = VERR_FILE_NOT_FOUND;
+
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        /* Update parameters.*/
+                    }
+                }
+            }
+            break;
+        } 
+
         default:
         {
             rc = VERR_NOT_IMPLEMENTED;

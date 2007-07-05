@@ -197,6 +197,14 @@ uint64_t VBoxOGLFlush();
 uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam);
 
 /**
+ * Check if an OpenGL extension is available on the host
+ *
+ * @returns available or not
+ * @param   pszExtFunctionName  
+ */
+bool VBoxIsExtensionAvailable(const char *pszExtFunctionName);
+
+/**
  * Query the specified cached parameter
  * 
  * @returns requested cached value
