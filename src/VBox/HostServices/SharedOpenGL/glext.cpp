@@ -29,6 +29,7 @@
 
 #define LOG_GROUP LOG_GROUP_SHARED_OPENGL
 #include <VBox/log.h>
+#include <string.h>
 
 /**
  * Initialize OpenGL extensions
@@ -76,6 +77,7 @@ bool vboxwglGetProcAddress(char *pszFunctionName)
     return false;
 }
 
+#ifdef __WIN__
 void vboxwglSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
     Assert(pfnwglSwapIntervalEXT);
@@ -102,3 +104,4 @@ void vboxwglGetSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->fHasLastError = true;
     pClient->ulLastError   = GetLastError();
 }
+#endif /* __WIN__ */
