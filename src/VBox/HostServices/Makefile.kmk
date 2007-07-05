@@ -23,12 +23,16 @@ DEPTH = ../../..
 include	$(PATH_KBUILD)/subheader.kmk
 
 # Include sub-makefiles.
+ifdef VBOX_WITH_SHARED_FOLDERS
 include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
+endif
 ifeq ($(filter-out win linux, $(BUILD_TARGET)),)
 ifdef VBOX_WITH_OGL
 include $(PATH_SUB_CURRENT)/SharedOpenGL/Makefile.kmk
 endif
+ifdef VBOX_WITH_SHARED_CLIPBOARD
 include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
+endif
 endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
