@@ -36,7 +36,7 @@ void VBoxCmdStart(uint32_t enmOp, uint32_t cParams, uint32_t cbParams)
     PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
     PVBOX_OGL_CMD        pCmd = (PVBOX_OGL_CMD)pCtx->pCurrentCmd;
 
-    DbgPrintf(("Start %s cParams=%d cbParams=%d\n", pszVBoxOGLCmd[enmOp], cParams, cbParams));
+    DbgPrintf2(("Start %s cParams=%d cbParams=%d\n", pszVBoxOGLCmd[enmOp], cParams, cbParams));
 
     if (pCtx->pCurrentCmd + cParams*VBOX_OGL_CMD_ALIGN + cbParams + sizeof(VBOX_OGL_CMD) >= pCtx->pCmdBufferEnd)
     {
@@ -73,14 +73,14 @@ void VBoxCmdSaveParameter(uint8_t *pParam, uint32_t cbParam)
     switch(cbParam)
     {
     case 1:
-        DbgPrintf(("Param %s val=%x cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], *(uint8_t *)pParam, cbParam));
+        DbgPrintf2(("Param %s val=%x cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], *(uint8_t *)pParam, cbParam));
         break;
     case 2:
-        DbgPrintf(("Param %s val=%x cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], *(uint16_t *)pParam, cbParam));
+        DbgPrintf2(("Param %s val=%x cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], *(uint16_t *)pParam, cbParam));
         break;
     case 4:
     default:
-        DbgPrintf(("Param %s val=%x cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], *(uint32_t *)pParam, cbParam));
+        DbgPrintf2(("Param %s val=%x cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], *(uint32_t *)pParam, cbParam));
         break;
     }
 #endif
@@ -105,7 +105,7 @@ void VBoxCmdSaveMemParameter(uint8_t *pParam, uint32_t cbParam)
 
     Assert(pCurrentCmdBlock + cbParam < pCtx->pCmdBufferEnd);
 
-    DbgPrintf(("Mem Param %s cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], cbParam));
+    DbgPrintf2(("Mem Param %s cbParam=%d\n", pszVBoxOGLCmd[pCmd->enmOp], cbParam));
 
 #ifdef VBOX_OGL_CMD_STRICT
     pCurrentParam->Magic   = VBOX_OGL_CMD_MAGIC;
@@ -136,7 +136,7 @@ void VBoxCmdStop(uint32_t enmOp)
     PVBOX_OGL_CMD        pCmd = (PVBOX_OGL_CMD)pCtx->pCurrentCmd;
     uint8_t             *pCurrentCmdBlock = (uint8_t *)pCmd + pCmd->cbCmd;
 
-    DbgPrintf(("End %s cbCmd=%d\n", pszVBoxOGLCmd[pCmd->enmOp], pCmd->cbCmd));
+    DbgPrintf2(("End %s cbCmd=%d\n", pszVBoxOGLCmd[pCmd->enmOp], pCmd->cbCmd));
 
     pCtx->pCurrentCmd = pCurrentCmdBlock;
     pCtx->cCommands++;
