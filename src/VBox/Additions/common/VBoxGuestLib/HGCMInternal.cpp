@@ -178,7 +178,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
                        These kind of problems actually applies to some patched linux kernels too, including older
                        fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
-                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
+                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size, (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */);
                     
                     if (VBOX_FAILURE (rc))
                     {
