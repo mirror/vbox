@@ -29,7 +29,7 @@
 
 #define LOG_GROUP LOG_GROUP_SHARED_OPENGL
 #include <VBox/log.h>
-#include <string.h>
+#include <iprt/string.h>
 
 /**
  * Initialize OpenGL extensions
