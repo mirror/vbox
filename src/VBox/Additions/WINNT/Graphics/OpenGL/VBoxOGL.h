@@ -78,6 +78,7 @@ void APIENTRY glSetError(GLenum glNewError);
 #else
 #define glLogError(a)       glSetError(a)
 #define DbgPrintf(a)
+#define DbgPrintf2(a)
 #endif
 
 
