@@ -246,6 +246,7 @@ public slots:
 
     void showHelpWebDialog();
     void showHelpAboutDialog();
+    void showHelpHelpDialog();
     void resetSuppressedMessages();
 
 private:

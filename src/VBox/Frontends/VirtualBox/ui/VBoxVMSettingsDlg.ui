@@ -2894,8 +2894,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <connection>
         <sender>buttonHelp</sender>
         <signal>clicked()</signal>
-        <receiver>&amp;vboxGlobal()</receiver>
-        <slot>showHelpDialog()</slot>
+        <receiver>&amp;vboxProblem()</receiver>
+        <slot>showHelpHelpDialog()</slot>
     </connection>
 </connections>
 <tabstops>

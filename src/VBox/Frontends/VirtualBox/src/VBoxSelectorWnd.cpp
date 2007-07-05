@@ -950,7 +950,7 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
 
 void VBoxSelectorWnd::showHelpContents()
 {
-    vboxGlobal().showHelpDialog();
+    vboxProblem().showHelpHelpDialog();
 }
 
 // Protected members
