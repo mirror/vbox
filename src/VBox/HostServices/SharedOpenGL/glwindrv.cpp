@@ -418,6 +418,32 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
 bool vboxDrvIsExtensionAvailable(char *pszExtFunctionName)
 {
-    Log(("vboxDrvIsExtensionAvailable %s -> %d\n", pszExtFunctionName, !!wglGetProcAddress(pszExtFunctionName)));
-    return !!wglGetProcAddress(pszExtFunctionName);
+    PIXELFORMATDESCRIPTOR pfd;
+    int iFormat;
+    HDC hdc = GetDC(0);
+
+/** @todo rather expensive -> check all known extensions in one go */
+    ZeroMemory(&pfd, sizeof(pfd));
+    pfd.nSize       = sizeof(pfd);
+    pfd.nVersion    = 1;
+    pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType  = PFD_TYPE_RGBA;
+    pfd.cColorBits  = 24;
+    pfd.cDepthBits  = 16;
+    pfd.iLayerType  = PFD_MAIN_PLANE;
+    iFormat         = ChoosePixelFormat(hdc, &pfd);
+    SetPixelFormat(hdc, iFormat, &pfd);
+
+    HGLRC hRC = wglCreateContext(hdc);
+    wglMakeCurrent(hdc, hRC);
+
+    bool fAvailable = !!wglGetProcAddress(pszExtFunctionName);
+
+    Log(("vboxDrvIsExtensionAvailable %s -> %d\n", pszExtFunctionName, fAvailable));
+
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(hRC);
+    ReleaseDC(0, hdc);
+
+    return fAvailable;
 }
