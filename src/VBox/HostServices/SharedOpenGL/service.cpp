@@ -275,11 +275,11 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             {
                 /* Fetch parameters. */
                 char    *pszExtFnName = (char *)paParms[0].u.pointer.addr;
-                uint32_t cbExtFnName  = paParms[0].u.pointer.size;
+                uint32_t cbExtFnName  = paParms[0].u.pointer.size; /* size including null terminator */
 
                 /* sanity checks */
                 if (    cbExtFnName > 256
-                    ||  pszExtFnName[cbExtFnName-1] != 0
+                    ||  pszExtFnName[cbExtFnName] != 0
                    )
                 {
                     rc = VERR_INVALID_PARAMETER;
