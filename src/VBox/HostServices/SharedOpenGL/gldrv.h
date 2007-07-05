@@ -63,8 +63,12 @@ typedef HANDLE      HGLRC;
 typedef uint32_t    UINT;
 typedef uint32_t    COLORREF;
 typedef void        VOID;
+typedef int16_t     SHORT;
+typedef uint16_t    USHORT;
+typedef int64_t     INT64;
+typedef float       FLOAT; /* ??? */
 
-#define DECLARE_HANDLE(a)  typedef HANDLE a;
+#define DECLARE_HANDLE(a)  typedef HANDLE a
 #define WINAPI
 
 typedef struct
