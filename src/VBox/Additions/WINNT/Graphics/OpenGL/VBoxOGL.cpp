@@ -434,9 +434,19 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
     parms.retval.u.value64                  = 0;
     parms.lasterror.type                    = VMMDevHGCMParmType_32bit;
     parms.lasterror.u.value32               = 0;
-    parms.pLastParam.type                   = VMMDevHGCMParmType_LinAddr;
-    parms.pLastParam.u.Pointer.size         = cbParam;
-    parms.pLastParam.u.Pointer.u.linearAddr = (vmmDevHypPtr)pLastParam;
+    if (!cbParam || !pLastParam)
+    {
+        parms.pLastParam.type                   = VMMDevHGCMParmType_LinAddr;
+        parms.pLastParam.u.Pointer.size         = cbParam;
+        parms.pLastParam.u.Pointer.u.linearAddr = (vmmDevHypPtr)pLastParam;
+    }
+    else
+    {
+        /* Placeholder as HGCM doesn't like NULL pointers */
+        Assert(!cbParam && !pLastParam);
+        parms.pLastParam.type                   = VMMDevHGCMParmType_32bit;
+        parms.pLastParam.u.value32              = 0;
+    }
 
     int rc = vboxHGCMCall(vboxOGLCtx.hGuestDrv, &parms, sizeof (parms));
 
