@@ -7382,8 +7382,12 @@ HRESULT SessionMachine::FinalConstruct()
 
 #if defined(__WIN__)
     mIPCSem = NULL;
+#elif defined(__OS2__)
+    mIPCSem = NULLHANDLE;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     mIPCSem = -1;
+#else
+# error "Port me!"
 #endif
 
     return S_OK;
@@ -7419,14 +7423,25 @@ HRESULT SessionMachine::init (Machine *aMachine)
         if (mIPCSemName[i] == '\\')
             mIPCSemName[i] = '/';
     mIPCSem = ::CreateMutex (NULL, FALSE, mIPCSemName);
-    ComAssertMsgRet (mIPCSem, ("Cannot create IPC mutex, err=0x%08X", ::GetLastError()),
+    ComAssertMsgRet (mIPCSem,
+                     ("Cannot create IPC mutex '%ls', err=%d\n",
+                      mIPCSemName.raw(), ::GetLastError()),
+                     E_FAIL);
+#elif defined(__OS2__)
+    Utf8Str ipcSem = Utf8StrFmt ("\\SEM32\\VBOX\\VM\\{%Vuuid}",
+                                 aMachine->mData->mUuid.raw());
+    mIPCSemName = ipcSem;
+    APIRET arc = ::DosCreateMutexSem ((PSZ) ipcSem.raw(), &mIPCSem, 0, FALSE);
+    ComAssertMsgRet (arc == NO_ERROR,
+                     ("Cannot create IPC mutex '%s', arc=%ld\n",
+                      ipcSem.raw(), arc),
                      E_FAIL);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     Utf8Str configFile = aMachine->mData->mConfigFileFull;
-    char *pszConfigFile = NULL;
-    RTStrUtf8ToCurrentCP (&pszConfigFile, configFile);
-    key_t key = ::ftok (pszConfigFile, 0);
-    RTStrFree (pszConfigFile);
+    char *configFileCP = NULL;
+    RTStrUtf8ToCurrentCP (&configFileCP, configFile);
+    key_t key = ::ftok (configFileCP, 0);
+    RTStrFree (configFileCP);
     mIPCSem = ::semget (key, 1, S_IRWXU | S_IRWXG | S_IRWXO | IPC_CREAT);
     ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", errno),
                      E_FAIL);
@@ -7434,6 +7449,8 @@ HRESULT SessionMachine::init (Machine *aMachine)
     int rv = ::semctl (mIPCSem, 0, SETVAL, 1);
     ComAssertMsgRet (rv == 0, ("Cannot init IPC semaphore, errno=%d", errno),
                      E_FAIL);
+#else
+# error "Port me!"
 #endif
 
     /* memorize the peer Machine */
@@ -7525,10 +7542,16 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         if (mIPCSem)
             ::CloseHandle (mIPCSem);
         mIPCSem = NULL;
+#elif defined(__OS2__)
+        if (mIPCSem != NULLHANDLE)
+            ::DosCloseMutexSem (mIPCSem);
+        mIPCSem = NULLHANDLE;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         if (mIPCSem >= 0)
             ::semctl (mIPCSem, 0, IPC_RMID);
         mIPCSem = -1;
+#else
+# error "Port me!"
 #endif
         uninitDataAndChildObjects();
         unconst (mParent).setNull();
@@ -7667,10 +7690,16 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     if (mIPCSem)
         ::CloseHandle (mIPCSem);
     mIPCSem = NULL;
+#elif defined(__OS2__)
+    if (mIPCSem != NULLHANDLE)
+        ::DosCloseMutexSem (mIPCSem);
+    mIPCSem = NULLHANDLE;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     if (mIPCSem >= 0)
         ::semctl (mIPCSem, 0, IPC_RMID);
     mIPCSem = -1;
+#else
+# error "Port me!"
 #endif
 
     /* fire an event */
@@ -7721,14 +7750,14 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
 
     AutoReaderLock alock (this);
 
-#if defined(__WIN__)
+#if defined(__WIN__) || defined(__OS2__)
     mIPCSemName.cloneTo (id);
     return S_OK;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     mData->mConfigFileFull.cloneTo (id);
     return S_OK;
 #else
-    return S_FAIL;
+# error "Port me!"
 #endif
 }
 
@@ -8430,14 +8459,13 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
  *  Called from the client watcher thread to check for unexpected client
  *  process death.
  *
- *  @note On Win32, this method is called only when we've got the semaphore
- *  (i.e. it has been signaled when we were waiting for it).
+ *  @note On Win32 and on OS/2, this method is called only when we've got the
+ *  mutex (i.e. the client has either died or terminated normally). This
+ *  method always returns true.
  *
- *  On Win32, this method always returns true.
- *
- *  On Linux, the method returns true if the client process has terminated
- *  abnormally (and/or the session has been uninitialized) and false if it is
- *  still alive.
+ *  @note On Linux, the method returns true if the client process has
+ *  terminated abnormally (and/or the session has been uninitialized) and
+ *  false if it is still alive.
  *
  *  @note Locks this object for writing.
  */
@@ -8445,7 +8473,7 @@ bool SessionMachine::checkForDeath()
 {
     Uninit::Reason reason;
     bool doUninit = false;
-    bool rc = false;
+    bool ret = false;
 
     /*
      *  Enclose autoCaller with a block because calling uninit()
@@ -8487,7 +8515,18 @@ bool SessionMachine::checkForDeath()
 
         doUninit = true;
 
-        rc = true;
+        ret = true;
+
+#elif defined(__OS2__)
+
+        AssertMsg (mIPCSem, ("semaphore must be created"));
+
+        /* release the IPC mutex */
+        ::DosReleaseMutexSem (mIPCSem);
+
+        doUninit = true;
+
+        ret = true;
 
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
@@ -8500,8 +8539,10 @@ bool SessionMachine::checkForDeath()
             doUninit = true;
         }
 
-        rc = val > 0;
+        ret = val > 0;
 
+#else
+# error "Port me!"
 #endif
 
     } /* AutoCaller block */
@@ -8509,7 +8550,7 @@ bool SessionMachine::checkForDeath()
     if (doUninit)
         uninit (reason);
 
-    return rc;
+    return ret;
 }
 
 /**

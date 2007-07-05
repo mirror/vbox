@@ -355,16 +355,24 @@ private:
         ClientWatcherData()
 #if defined(__WIN__)
             : mUpdateReq (NULL)
-#else
+#elif defined(__OS2__)
             : mUpdateReq (NIL_RTSEMEVENT)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+            : mUpdateReq (NIL_RTSEMEVENT)
+#else
+# error "Port me!"
 #endif
             , mThread (NIL_RTTHREAD) {}
 
         // const objects not requiring locking
 #if defined(__WIN__)
         const HANDLE mUpdateReq;
-#else
+#elif defined(__OS2__)
         const RTSEMEVENT mUpdateReq;
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+        const RTSEMEVENT mUpdateReq;
+#else
+# error "Port me!"
 #endif
         const RTTHREAD mThread;
 
@@ -381,8 +389,8 @@ private:
 
     static Bstr sVersion;
 
-    static DECLCALLBACK(int) clientWatcher (RTTHREAD thread, void *pvUser);
-    static DECLCALLBACK(int) asyncEventHandler (RTTHREAD thread, void *pvUser);
+    static DECLCALLBACK(int) ClientWatcher (RTTHREAD thread, void *pvUser);
+    static DECLCALLBACK(int) AsyncEventHandler (RTTHREAD thread, void *pvUser);
 
 #ifdef __WIN__
     static DECLCALLBACK(int) SVCHelperClientThread (RTTHREAD aThread, void *aUser);

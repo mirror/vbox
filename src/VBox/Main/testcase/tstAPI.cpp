@@ -704,7 +704,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 0
+#if 1
     // open a (direct) session
     ///////////////////////////////////////////////////////////////////////////
     do
@@ -717,7 +717,7 @@ int main(int argc, char *argv[])
         CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
         printf ("Opening a session for this machine...\n");
         CHECK_RC_BREAK (virtualBox->OpenSession (session, guid));
-#if 0
+#if 1
         ComPtr <IMachine> sessionMachine;
         printf ("Getting sessioned machine object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
@@ -762,6 +762,8 @@ int main(int argc, char *argv[])
             printf ("console = %p\n", (IConsole *) console);
         }
 #endif
+        printf("Press enter to close session...");
+        getchar();
         session->Close();
     }
     while (FALSE);

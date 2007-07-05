@@ -36,7 +36,9 @@ ifneq ($(BUILD_TARGET),win)
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
  DLLS           += VBoxSVCM
- DEFS           += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+ ifneq ($(BUILD_TARGET),os2)
+  DEFS          += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+ endif
  DEFS           += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
 

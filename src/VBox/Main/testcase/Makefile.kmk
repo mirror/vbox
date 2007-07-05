@@ -26,6 +26,8 @@ ifdef VBOX_WITH_TESTCASES
  PROGRAMS       = tstAPI
  PROGRAMS.linux = tstVBoxAPILinux
  PROGRAMS.win   = tstVBoxAPIWin
+else ifeq ($(USER),dmik)
+ PROGRAMS       = tstAPI
 endif # VBOX_WITH_TESTCASES
 
 INSTALLS = samples

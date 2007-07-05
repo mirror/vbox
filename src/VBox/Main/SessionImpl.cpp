@@ -39,7 +39,7 @@
 #include <VBox/err.h>
 #include <iprt/process.h>
 
-#if defined(__WIN__)
+#if defined(__WIN__) || defined (__OS2__)
 /** VM IPC mutex holder thread */
 static DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser);
 #endif
@@ -93,8 +93,13 @@ HRESULT Session::init()
 #if defined(__WIN__)
     mIPCSem = NULL;
     mIPCThreadSem = NULL;
+#elif defined(__OS2__)
+    mIPCThread = NIL_RTTHREAD;
+    mIPCThreadSem = NIL_RTSEMEVENT;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     mIPCSem = -1;
+#else
+# error "Port me!"
 #endif
 
     /* Confirm a successful initialization when it's the case */
@@ -644,8 +649,13 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
         mType = SessionType_InvalidSessionType;
 #if defined(__WIN__)
         Assert (!mIPCSem && !mIPCThreadSem);
+#elif defined(__OS2__)
+        Assert (mIPCThread == NIL_RTTHREAD &&
+                mIPCThreadSem == NIL_RTSEMEVENT);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         Assert (mIPCSem == -1);
+#else
+# error "Port me!"
 #endif
         LogFlowThisFuncLeave();
         return S_OK;
@@ -740,9 +750,9 @@ HRESULT Session::grabIPCSemaphore()
     /* open the IPC semaphore based on the sessionId and try to grab it */
     Bstr ipcId;
     rc = mControl->GetIPCId (ipcId.asOutParam());
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
-    LogFlowThisFunc (("ipcId: {%ls}\n", ipcId.raw()));
+    LogFlowThisFunc (("ipcId='%ls'\n", ipcId.raw()));
 
 #if defined(__WIN__)
 
@@ -763,7 +773,7 @@ HRESULT Session::grabIPCSemaphore()
     data [1] = (void *) mIPCThreadSem;
     data [2] = 0; /* will get an output from the thread */
 
-    /* create the thread to hold the IPC mutex until signalled to release it */
+    /* create a thread to hold the IPC mutex until signalled to release it */
     RTTHREAD tid;
     int vrc = RTThreadCreate (&tid, IPCMutexHolderThread, (void *) data,
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "IPCHolder");
@@ -771,7 +781,7 @@ HRESULT Session::grabIPCSemaphore()
 
     /* wait until thread init is completed */
     DWORD wrc = ::WaitForSingleObject (mIPCThreadSem, INFINITE);
-    AssertMsg (wrc == WAIT_OBJECT_0, ("Wait failed, err=%d", ::GetLastError()));
+    AssertMsg (wrc == WAIT_OBJECT_0, ("Wait failed, err=%d\n", ::GetLastError()));
     Assert (data [2]);
 
     if (wrc == WAIT_OBJECT_0 && data [2])
@@ -786,6 +796,33 @@ HRESULT Session::grabIPCSemaphore()
         mIPCThreadSem = NULL;
         rc = E_FAIL;
     }
+
+#elif defined(__OS2__)
+
+    /* We use XPCOM where any message (including close()) can arrive on any
+     * worker thread (which will not necessarily match this thread that opens
+     * the mutex). Therefore, we need a separate thread to hold the IPC mutex
+     * and then release it in close(). */
+
+    int vrc = RTSemEventCreate (&mIPCThreadSem);
+    AssertRCReturn (vrc, E_FAIL);
+
+    void *data [3];
+    data [0] = (void *) ipcId.raw();
+    data [1] = (void *) mIPCThreadSem;
+    data [2] = (void *) false; /* will get the thread result here */
+
+    /* create a thread to hold the IPC mutex until signalled to release it */
+    vrc = RTThreadCreate (&mIPCThread, IPCMutexHolderThread, (void *) data,
+                          0, RTTHREADTYPE_MAIN_WORKER, 0, "IPCHolder");
+    AssertRCReturn (vrc, E_FAIL);
+
+    /* wait until thread init is completed */
+    vrc = RTThreadUserWait (mIPCThread, RT_INDEFINITE_WAIT);
+    AssertReturn (VBOX_SUCCESS (vrc) || vrc == VERR_INTERRUPTED, E_FAIL);
+
+    /* the thread must succeed */
+    AssertReturn ((bool) data [2], E_FAIL);
 
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
@@ -807,6 +844,8 @@ HRESULT Session::grabIPCSemaphore()
                     ("Cannot grab IPC semaphore, errno=%d", errno),
                     E_FAIL);
 
+#else
+# error "Port me!"
 #endif
 
     return rc;
@@ -817,10 +856,11 @@ void Session::releaseIPCSemaphore()
 {
     /* release the IPC semaphore */
 #if defined(__WIN__)
+
     if (mIPCSem && mIPCThreadSem)
     {
         /*
-         *  say the thread holding the IPC mutex to release it;
+         *  tell the thread holding the IPC mutex to release it;
          *  it will close mIPCSem handle
          */
         ::SetEvent (mIPCSem);
@@ -828,12 +868,40 @@ void Session::releaseIPCSemaphore()
         ::WaitForSingleObject (mIPCThreadSem, INFINITE);
         ::CloseHandle (mIPCThreadSem);
     }
+
+#elif defined(__OS2__)
+
+    if (mIPCThread != NIL_RTTHREAD)
+    {
+        Assert (mIPCThreadSem != NIL_RTSEMEVENT);
+
+        /* tell the thread holding the IPC mutex to release it */
+        int vrc = RTSemEventSignal (mIPCThreadSem);
+        AssertRC (vrc == NO_ERROR);
+
+        /* wait for the thread to finish */
+        vrc = RTThreadUserWait (mIPCThread, RT_INDEFINITE_WAIT);
+        Assert (VBOX_SUCCESS (vrc) || vrc == VERR_INTERRUPTED);
+
+        mIPCThread = NIL_RTTHREAD;
+    }
+
+    if (mIPCThreadSem != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy (mIPCThreadSem);
+        mIPCThreadSem = NIL_RTSEMEVENT;
+    }
+
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+
     if (mIPCSem >= 0)
     {
         ::sembuf sop = { 0, 1, SEM_UNDO };
         ::semop (mIPCSem, &sop, 1);
     }
+
+#else
+# error "Port me!"
 #endif
 }
 
@@ -850,7 +918,7 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
     HANDLE initDoneSem = (HANDLE) data [1];
 
     HANDLE ipcMutex = ::OpenMutex (MUTEX_ALL_ACCESS, FALSE, sessionId);
-    AssertMsg (ipcMutex, ("cannot open IPC mutex, err=%08X\n", ::GetLastError()));
+    AssertMsg (ipcMutex, ("cannot open IPC mutex, err=%d\n", ::GetLastError()));
 
     if (ipcMutex)
     {
@@ -887,3 +955,58 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
 }
 #endif
 
+#if defined(__OS2__) 
+/** VM IPC mutex holder thread */
+DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
+{
+    LogFlowFuncEnter();
+
+    Assert (pvUser);
+    void **data = (void **) pvUser;
+
+    Utf8Str ipcId = (BSTR) data [0];
+    RTSEMEVENT finishSem = (RTSEMEVENT) data [1];
+
+    LogFlowFunc (("ipcId='%s', finishSem=%p\n", ipcId.raw(), finishSem));
+
+    HMTX ipcMutex = NULLHANDLE;
+    APIRET arc = ::DosOpenMutexSem ((PSZ) ipcId.raw(), &ipcMutex);
+    AssertMsg (arc == NO_ERROR, ("cannot open IPC mutex, arc=%ld\n", arc));
+
+    if (arc == NO_ERROR)
+    {
+        /* grab the mutex */
+        LogFlowFunc (("grabbing IPC mutex...\n"));
+        arc = ::DosRequestMutexSem (ipcMutex, SEM_IMMEDIATE_RETURN);
+        AssertMsg (arc == NO_ERROR, ("cannot grab IPC mutex, arc=%ld\n", arc));
+        if (arc == NO_ERROR)
+        {
+            /* store the answer */
+            data [2] = (void *) true;
+            /* signal we're done */
+            int vrc = RTThreadUserSignal (Thread);
+            AssertRC (vrc);
+
+            /* wait until we're signaled to release the IPC mutex */
+            LogFlowFunc (("waiting for termination signal..\n"));
+            vrc = RTSemEventWait (finishSem, RT_INDEFINITE_WAIT);
+            Assert (arc == ERROR_INTERRUPT || ERROR_TIMEOUT);
+
+            /* release the IPC mutex */
+            LogFlowFunc (("releasing IPC mutex...\n"));
+            arc = ::DosReleaseMutexSem (ipcMutex);
+            AssertMsg (arc == NO_ERROR, ("cannot release mutex, arc=%ld\n", arc));
+        }
+    }
+
+    /* store the answer */
+    data [1] = (void *) false;
+    /* signal we're done */
+    int vrc = RTThreadUserSignal (Thread);
+    AssertRC (vrc);
+
+    LogFlowFuncLeave();
+
+    return 0;
+}
+#endif
