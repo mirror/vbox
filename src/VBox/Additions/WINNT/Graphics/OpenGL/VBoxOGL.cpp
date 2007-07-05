@@ -313,7 +313,7 @@ void VBoxDbgLog(char *pszFormat, ...)
       vsprintf (Buffer, pszFormat, va);
 
       printf(Buffer);
-      OutputDebugStringA(Buffer);
+//      OutputDebugStringA(Buffer);
    }
 
    va_end (va);
