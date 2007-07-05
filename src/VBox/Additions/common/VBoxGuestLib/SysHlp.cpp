@@ -31,7 +31,7 @@
 #endif 
 
 
-int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size)
+int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess)
 {
     int rc = VINF_SUCCESS;
     
@@ -48,7 +48,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size)
             /* Calls to MmProbeAndLockPages must be enclosed in a try/except block. */
             MmProbeAndLockPages (pMdl,
                                  KernelMode,
-                                 IoModifyAccess);
+                                 (fWriteAccess) ? IoModifyAccess : IoReadAccess);
                                  
             *ppvCtx = pMdl;
 

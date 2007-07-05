@@ -60,7 +60,7 @@ typedef struct _VBGLDRIVER
 #endif
 } VBGLDRIVER;
 
-int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size);
+int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess);
 void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size);
 
 
