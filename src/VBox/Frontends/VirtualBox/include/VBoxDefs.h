@@ -117,7 +117,7 @@ struct VBoxDefs
 
     /** VM display rendering mode. */
     enum RenderMode {
-        TimerMode, QImageMode, SDLMode, DDRAWMode
+        InvalidRenderMode, TimerMode, QImageMode, SDLMode, DDRAWMode
     };
 
     /** Additional Qt event types. */
