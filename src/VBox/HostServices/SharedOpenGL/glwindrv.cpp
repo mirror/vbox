@@ -143,7 +143,7 @@ int vboxglDisconnect(PVBOXOGLCTX pClient)
 /* Driver functions */
 void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    HGLRC glrc;
+    HGLRC glrc = 0;
 
     OGL_CMD(DrvCreateContext, 6);
     OGL_PARAM(HDC, hdc);
@@ -177,37 +177,36 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pfd.iLayerType  = PFD_MAIN_PLANE;
     uint32_t lasterr = glGetError();
     format = ChoosePixelFormat(pClient->hdc, &pfd);
-    lasterr = glGetError();
     SetPixelFormat(pClient->hdc, format, &pfd);
 
-    lasterr = glGetError();
     glrc = wglCreateContext(pClient->hdc);
-    lasterr = glGetError();
     Assert(glrc);
 #else
     AssertFailed();
     glrc = 0;
 #endif
 
-    pClient->lastretval = (uint64_t)glrc;
+    pClient->lastretval    = (uint64_t)glrc;
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvSetContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    BOOL ret;
-
     OGL_CMD(DrvSetContext, 2);
     OGL_PARAM(HDC, hdc);
     OGL_PARAM(HGLRC, hglrc);
 
     Log(("DrvSetyContext %x %x\n", hdc, hglrc));
 #ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    ret = wglMakeCurrent(pClient->hdc, hglrc);
-    if (!ret)
+    pClient->lastretval = wglMakeCurrent(pClient->hdc, hglrc);
+    if (!pClient->lastretval)
         Log(("wglMakeCurrent failed with %d\n", GetLastError()));
 #else
     AssertFailed();
 #endif
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvCopyContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -220,38 +219,41 @@ void vboxglDrvCopyContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->lastretval = wglCopyContext(hglrcSrc, hglrcDst, mask);
     if (!pClient->lastretval)
         Log(("wglCopyContext failed with %d\n", GetLastError()));
+
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvReleaseContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    BOOL ret;
-
     OGL_CMD(DrvReleaseContext, 1);
     OGL_PARAM(HGLRC, hglrc);
 
     Log(("DrvReleaseContext %x\n", hglrc));
     /* clear current selection */
-    ret = wglMakeCurrent(pClient->hdc, NULL);
-    if (!ret)
+    pClient->lastretval = wglMakeCurrent(pClient->hdc, NULL);
+    if (!pClient->lastretval)
         Log(("wglMakeCurrent failed with %d\n", GetLastError()));
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvDeleteContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    BOOL ret;
-
     OGL_CMD(DrvDeleteContext, 1);
     OGL_PARAM(HGLRC, hglrc);
 
     Log(("DrvDeleteContext %x\n", hglrc));
-    ret = wglDeleteContext(hglrc);
-    if (!ret)
+    pClient->lastretval = wglDeleteContext(hglrc);
+    if (!pClient->lastretval)
         Log(("wglDeleteContext failed with %d\n", GetLastError()));
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvCreateLayerContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    HGLRC glrc;
+    HGLRC glrc = 0;
 
     OGL_CMD(DrvCreateLayerContext, 7);
     OGL_PARAM(HDC, hdc);
@@ -294,6 +296,10 @@ void vboxglDrvCreateLayerContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 #else
     AssertFailed();
 #endif
+
+    pClient->lastretval    = (uint64_t)glrc;
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvShareLists(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -304,6 +310,8 @@ void vboxglDrvShareLists(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
     Log(("DrvShareLists %x %x\n", hglrc1, hglrc2));
     pClient->lastretval = wglShareLists(hglrc1, hglrc2);
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 
@@ -315,6 +323,8 @@ void vboxglDrvRealizeLayerPalette(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     OGL_PARAM(BOOL, bRealize);
     Log(("DrvRealizeLayerPalette %x %d %d\n", hdc, iLayerPlane, bRealize));
     pClient->lastretval = wglRealizeLayerPalette(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), iLayerPlane, bRealize);
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvSwapLayerBuffers(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -324,6 +334,8 @@ void vboxglDrvSwapLayerBuffers(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     OGL_PARAM(UINT, fuPlanes);
     Log(("DrvSwapLayerBuffers %x %d\n", hdc, fuPlanes));
     pClient->lastretval = wglSwapLayerBuffers(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), fuPlanes);
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -346,6 +358,8 @@ void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
         Log(("DescribePixelFormat %d failed with 0 (%d)\n", iPixelFormat, GetLastError()));
         pClient->lastretval = 0;
     }
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvSwapBuffers(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -359,6 +373,8 @@ void vboxglDrvSwapBuffers(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
         Log(("SwapBuffers failed with %d\n", GetLastError()));
 
     /** @todo sync bitmap/screen contents */
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvDescribeLayerPlane(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -377,6 +393,8 @@ void vboxglDrvDescribeLayerPlane(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->lastretval = wglDescribeLayerPlane(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), iPixelFormat, iLayerPlane, nBytes, plpd);
     if (!pClient->lastretval)
         Log(("wglDescribeLayerPlane failed with %d\n", GetLastError()));
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvSetLayerPaletteEntries(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -392,6 +410,8 @@ void vboxglDrvSetLayerPaletteEntries(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->lastretval = wglSetLayerPaletteEntries(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), iLayerPlane, iStart, cEntries, pcr);
     if (!pClient->lastretval)
         Log(("wglSetLayerPaletteEntries failed with %d\n", GetLastError()));
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvGetLayerPaletteEntries(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -411,6 +431,8 @@ void vboxglDrvGetLayerPaletteEntries(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->lastretval = wglGetLayerPaletteEntries(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), iLayerPlane, iStart, cEntries, pcr);
     if (!pClient->lastretval)
         Log(("wglGetLayerPaletteEntries failed with %d\n", GetLastError()));
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 }
 
 void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
@@ -432,6 +454,9 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->lastretval = DescribePixelFormat(hdc, iPixelFormat, nBytes, ppfd);
     if (!pClient->lastretval)
         Log(("DescribePixelFormat failed with %d\n", GetLastError()));
+
+    pClient->fHasLastError = true;
+    pClient->ulLastError   = GetLastError();
 
     if (!VBOX_OGL_GUEST_TO_HOST_HDC(hdc))
         ReleaseDC(0, pClient->hdc);
