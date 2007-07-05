@@ -417,7 +417,7 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
     LPPIXELFORMATDESCRIPTOR ppfd;
 
-    OGL_CMD(DrvDescribePixelFormat, 4);
+    OGL_CMD(DrvDescribePixelFormat, 3);
     OGL_PARAM(HDC, hdc);
     OGL_PARAM(int, iPixelFormat);
     OGL_PARAM(UINT, nBytes);
