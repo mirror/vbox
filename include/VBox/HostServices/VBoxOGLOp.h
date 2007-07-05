@@ -544,7 +544,7 @@
     Type        *par;                                                                       \
     VBOX_OGL_CHECK_MAGIC(pParVal);                                                          \
     if (pParVal->cbParam)                                                                   \
-        par = (Type *)(pParam+1);                                                           \
+        par = (Type *)(pParVal+1);                                                          \
     else                                                                                    \
         par = NULL;                                                                         \
     pParam += sizeof(*pParVal) + pParVal->cbParam;                                          \
@@ -555,7 +555,7 @@
     Type        *par;                                                                       \
     VBOX_OGL_CHECK_MAGIC(pParVal);                                                          \
     if (pParVal->cbParam)                                                                   \
-        par = (Type *)(pParam+1);                                                           \
+        par = (Type *)(pParVal+1);                                                          \
     else                                                                                    \
         par = NULL;                                                                         \
     pParam += sizeof(*pParVal) + pParVal->cbParam;                                          \
