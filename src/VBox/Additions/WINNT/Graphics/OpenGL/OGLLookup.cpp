@@ -101,6 +101,7 @@ uint32_t glInternalLightvElem(GLenum pname)
         return 1;
 
     default:
+        AssertMsgFailed(("%s Unknown element %x\n", __FUNCTION__, pname));
         return 0;
     }
 }
@@ -124,6 +125,7 @@ uint32_t glInternalMaterialvElem(GLenum pname)
         return 3;
 
     default:
+        AssertMsgFailed(("%s Unknown element %x\n", __FUNCTION__, pname));
         return 0;
     }
 }
@@ -139,6 +141,7 @@ uint32_t glInternalTexEnvvElem(GLenum pname)
         return 4;
 
     default:
+        AssertMsgFailed(("%s Unknown element %x\n", __FUNCTION__, pname));
         return 0;
     }
 }
@@ -155,6 +158,7 @@ uint32_t glInternalTexGenvElem(GLenum pname)
         return 4;
 
     default:
+        AssertMsgFailed(("%s Unknown element %x\n", __FUNCTION__, pname));
         return 0;
     }
 }
@@ -174,6 +178,7 @@ uint32_t glInternalTexParametervElem(GLenum pname)
         return 4;
 
     default:
+        AssertMsgFailed(("%s Unknown element %x\n", __FUNCTION__, pname));
         return 0;
     }
 }
@@ -207,7 +212,7 @@ GLint glInternalGetPixelFormatElements(GLenum format)
     case GL_BGRA_EXT:
         return 4;
     default:
-        AssertFailed();
+        AssertMsgFailed(("%s Unknown format %x\n", __FUNCTION__, format));
         return 0;
     }
 }
