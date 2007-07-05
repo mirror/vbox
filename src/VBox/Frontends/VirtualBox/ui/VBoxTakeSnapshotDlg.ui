@@ -287,6 +287,12 @@
         <receiver>VBoxTakeSnapshotDlg</receiver>
         <slot>leName_textChanged(const QString&amp;)</slot>
     </connection>
+    <connection>
+        <sender>buttonHelp</sender>
+        <signal>clicked()</signal>
+        <receiver>&amp;vboxGlobal()</receiver>
+        <slot>showHelpDialog()</slot>
+    </connection>
 </connections>
 <tabstops>
     <tabstop>leName</tabstop>
@@ -295,6 +301,7 @@
 <includes>
     <include location="global" impldecl="in declaration">qlabel.h</include>
     <include location="global" impldecl="in declaration">qlineedit.h</include>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
     <include location="local" impldecl="in implementation">VBoxTakeSnapshotDlg.ui.h</include>
 </includes>
