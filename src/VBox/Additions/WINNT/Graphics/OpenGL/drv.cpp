@@ -64,17 +64,6 @@ static ICDTABLE icdTable = { 336, {
 
 
 
-PROC APIENTRY DrvGetProcAddress(LPCSTR lpszProc)
-{
-    PROC pfnProc = GetProcAddress(hDllVBoxOGL, lpszProc);
-    if (pfnProc == NULL)
-        DbgPrintf(("DrvGetProcAddress %s FAILED\n", lpszProc));
-    else
-        DbgPrintf(("DrvGetProcAddress %s\n", lpszProc));
-
-    return pfnProc;
-}
-
 BOOL APIENTRY DrvValidateVersion(DWORD version)
 {
     DbgPrintf(("DrvValidateVersion %x -> always TRUE\n", version));

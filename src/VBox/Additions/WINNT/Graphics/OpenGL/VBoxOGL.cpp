@@ -469,3 +469,34 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
 #endif
     return parms.retval.u.value64;
 }
+
+/**
+ * Check if an OpenGL extension is available on the host
+ *
+ * @returns available or not
+ * @param   pszExtFunctionName  
+ */
+bool VBoxIsExtensionAvailable(const char *pszExtFunctionName)
+{
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
+    VBoxOGLglCheckExt parms;
+
+    AssertReturn(pCtx->pCurrentCmd > pCtx->pCmdBuffer, 0);
+
+    VBOX_INIT_CALL(&parms.hdr, GLCHECKEXT, pCtx);
+
+    parms.pszExtFnName.type                   = VMMDevHGCMParmType_LinAddr_In;
+    parms.pszExtFnName.u.Pointer.size         = strlen(pszExtFunctionName)+1;
+    parms.pszExtFnName.u.Pointer.u.linearAddr = (vmmDevHypPtr)pszExtFunctionName;
+
+    int rc = vboxHGCMCall(vboxOGLCtx.hGuestDrv, &parms, sizeof (parms));
+
+    if (    VBOX_FAILURE(rc)
+        ||  VBOX_FAILURE(parms.hdr.result))
+    {
+        DbgPrintf(("GLCHECKEXT failed with %x %x\n", rc, parms.hdr.result));
+        return false;
+    }
+
+    return true;
+}
