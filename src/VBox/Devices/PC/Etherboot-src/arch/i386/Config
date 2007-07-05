@@ -89,9 +89,9 @@
 ifeq ($(ENVIRONMENT),VBOX)
 EB_CFLAGS+=	-DPCBIOS
 EB_CFLAGS+=     -fstrength-reduce -fomit-frame-pointer -march=i386
-EB_CFLAGS+=	$(call VBOX_GCC_CHECK_CC,-falign-jumps=1 -falign-loops=1 -falign-functions=1,\
-                                         -malign-jumps=1 -malign-loops=1 -malign-functions=1)
-EB_CFLAGS+=	$(call VBOX_GCC_CHECK_CC,-mtune=i386,-mcpu=i386)
+EB_CFLAGS+=	$(call VBOX_GCC32_CHECK_CC,-falign-jumps=1 -falign-loops=1 -falign-functions=1,\
+                                           -malign-jumps=1 -malign-loops=1 -malign-functions=1)
+EB_CFLAGS+=	$(call VBOX_GCC32_CHECK_CC,-mtune=i386,-mcpu=i386)
 EB_LDFLAGS+=	-N
 else # !VBOX
 # BIOS select don't change unless you know what you are doing
