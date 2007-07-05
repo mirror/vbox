@@ -108,7 +108,7 @@ static PRBool AcquireDaemonLock(const char *baseDir)
     lockFile[dirLen] = '/';
     memcpy(lockFile + dirLen + 1, lockName, sizeof(lockName));
 
-    // 
+    //
     // open lock file.  it remains open until we shutdown.
     //
     ipcLockFD = open(lockFile, O_WRONLY|O_CREAT, S_IWUSR|S_IRUSR);
@@ -289,7 +289,7 @@ static void PollLoop(PRFileDesc *listenFD)
 
     ipcPollList[0].fd = listenFD;
     ipcPollList[0].in_flags = PR_POLL_EXCEPT | PR_POLL_READ;
-    
+
     while (1) {
         PRInt32 rv;
         PRIntn i;
@@ -433,7 +433,7 @@ int main(int argc, char **argv)
     if (!InitDaemonDir(addr.local.path)) {
         LOG(("InitDaemonDir failed\n"));
 #ifdef VBOX
-        printf("Cannot create/open directoy '%s'\n", addr.local.path);
+        printf("Cannot create/open directory '%s'\n", addr.local.path);
 #endif
         goto end;
     }
@@ -486,7 +486,7 @@ end:
     // it is critical that we release the lock before closing the socket,
     // otherwise, a client might launch another daemon that would be unable
     // to acquire the lock and would then leave the client without a daemon.
- 
+
 #ifdef VBOX
     if (successLevel >= Directory)
 #endif
