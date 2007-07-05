@@ -279,7 +279,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
 
                 /* sanity checks */
                 if (    cbExtFnName > 256
-                    ||  pszExtFnName[cbExtFnName] != 0
+                    ||  pszExtFnName[cbExtFnName-1] != 0
                    )
                 {
                     rc = VERR_INVALID_PARAMETER;
