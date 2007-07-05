@@ -25,7 +25,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
 ifeq ($(filter-out win linux, $(BUILD_TARGET)),)
+ifdef VBOX_WITH_OGL
 include $(PATH_SUB_CURRENT)/SharedOpenGL/Makefile.kmk
+endif
 include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
 endif
 
