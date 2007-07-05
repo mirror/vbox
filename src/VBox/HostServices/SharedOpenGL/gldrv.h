@@ -37,6 +37,9 @@
 typedef struct
 {
     uint64_t    lastretval;
+    uint32_t    ulLastError;
+
+    bool        fHasLastError;
 
     uint8_t    *pLastParam;
     uint32_t    cbLastParam;
