@@ -229,6 +229,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 /* Save the last parameter of the last command in the client structure so the macro can pick it up there */
                 if (paParms[2].type == VBOX_HGCM_SVC_PARM_32BIT)
                 {
+                    /* HGCM doesn't like NULL pointers. */
                     pClient->pLastParam  = NULL;
                     pClient->cbLastParam = 0;
                 }
