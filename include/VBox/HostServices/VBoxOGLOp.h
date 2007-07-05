@@ -1871,7 +1871,7 @@ typedef struct
 #ifdef VBOX_OGL_GUEST_SIDE
 #define VBOX_OGL_EXTENSION(a)   (RTUINTPTR)a
 #else
-#define VBOX_OGL_EXTENSION(a)   (RTUINTPTR *)pfn##a
+#define VBOX_OGL_EXTENSION(a)   (RTUINTPTR *)&pfn##a
 
 static PFNWGLSWAPINTERVALEXTPROC        pfnwglSwapIntervalEXT       = NULL;
 static PFNWGLGETSWAPINTERVALEXTPROC     pfnwglGetSwapIntervalEXT    = NULL;
