@@ -1860,14 +1860,18 @@ typedef struct
 {
     const char *pszExtName;
     const char *pszExtFunctionName;
+#ifdef VBOX_OGL_GUEST_SIDE
     RTUINTPTR   pfnFunction;
+#else
+    RTUINTPTR  *ppfnFunction;
+#endif
     bool        fAvailable;
 } OPENGL_EXT, *POPENGL_EXT;
 
 #ifdef VBOX_OGL_GUEST_SIDE
-#define VBOX_OGL_EXTENSION(a)   a
+#define VBOX_OGL_EXTENSION(a)   (RTUINTPTR)a
 #else
-#define VBOX_OGL_EXTENSION(a)   pfn##a
+#define VBOX_OGL_EXTENSION(a)   (RTUINTPTR *)pfn##a
 
 static PFNWGLSWAPINTERVALEXTPROC        pfnwglSwapIntervalEXT       = NULL;
 static PFNWGLGETSWAPINTERVALEXTPROC     pfnwglGetSwapIntervalEXT    = NULL;
@@ -1876,8 +1880,8 @@ static PFNWGLGETSWAPINTERVALEXTPROC     pfnwglGetSwapIntervalEXT    = NULL;
 
 static OPENGL_EXT OpenGLExtensions[] = 
 {
-    {   "WGL_EXT_swap_control",             "wglSwapIntervalEXT",               (RTUINTPTR)VBOX_OGL_EXTENSION(wglSwapIntervalEXT),                      false },
-    {   "WGL_EXT_swap_control",             "wglGetSwapIntervalEXT",            (RTUINTPTR)VBOX_OGL_EXTENSION(wglGetSwapIntervalEXT),                   false },
+    {   "WGL_EXT_swap_control",             "wglSwapIntervalEXT",               VBOX_OGL_EXTENSION(wglSwapIntervalEXT),                      false },
+    {   "WGL_EXT_swap_control",             "wglGetSwapIntervalEXT",            VBOX_OGL_EXTENSION(wglGetSwapIntervalEXT),                   false },
 };
 #endif /* VBOX_OGL_WITH_EXTENSION_ARRAY */
 

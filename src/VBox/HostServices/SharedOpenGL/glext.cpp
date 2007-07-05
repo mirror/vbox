@@ -47,8 +47,8 @@ int vboxInitOpenGLExtensions()
     {
         if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtName))
         {
-            OpenGLExtensions[i].pfnFunction = vboxDrvIsExtensionAvailable((char *)OpenGLExtensions[i].pszExtFunctionName);
-            OpenGLExtensions[i].fAvailable  = !!OpenGLExtensions[i].pfnFunction;
+            *OpenGLExtensions[i].ppfnFunction = vboxDrvIsExtensionAvailable((char *)OpenGLExtensions[i].pszExtFunctionName);
+            OpenGLExtensions[i].fAvailable   = !!*OpenGLExtensions[i].ppfnFunction;
         }
     }
     fInitialized = true;
