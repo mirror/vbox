@@ -434,10 +434,6 @@ public:
 
     static QString removeAccelMark (const QString &aText);
 
-public slots:
-
-    void showHelpDialog();
-
 signals:
 
     /**

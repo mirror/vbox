@@ -275,8 +275,8 @@
     <connection>
         <sender>buttonHelp</sender>
         <signal>clicked()</signal>
-        <receiver>&amp;vboxGlobal()</receiver>
-        <slot>showHelpDialog()</slot>
+        <receiver>&amp;vboxProblem()</receiver>
+        <slot>showHelpHelpDialog()</slot>
     </connection>
 </connections>
 <tabstops>
@@ -287,6 +287,7 @@
 <includes>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
+    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
 </includes>
 <slots>
