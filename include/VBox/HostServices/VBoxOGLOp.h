@@ -227,6 +227,10 @@
 
 /* Note: sync operations always set the last error */
 /* sync operation that returns a value */
+#define VBOX_OGL_GEN_SYNC_OP_RET(rettype, op)                                                       \
+    VBOX_OGL_GEN_OP(op)                                                                             \
+    rettype retval = (rettype)VBoxOGLFlush();
+
 #define VBOX_OGL_GEN_SYNC_OP1_RET(rettype, op, p1)                                                  \
     VBOX_OGL_GEN_OP1(op, p1)                                                                        \
     rettype retval = (rettype)VBoxOGLFlush();
@@ -743,6 +747,10 @@
 
 /* Note: sync operations always set the last error */
 /* sync operation that returns a value */
+#define VBOX_OGL_GEN_SYNC_OP_RET(rettype, op)                                                   \
+    OGL_CMD(op, 0);                                                                             \
+    pClient->lastretval = gl##op();
+
 #define VBOX_OGL_GEN_SYNC_OP1_RET(rettype, op, Type1)                                              \
     OGL_CMD(op, 1);                                                                             \
     OGL_PARAM(Type1, p1);                                                                       \
@@ -1254,6 +1262,7 @@ typedef enum
     VBOX_OGL_OP_GetTexLevelParameteriv,
     VBOX_OGL_OP_GetTexImage,
 
+    /* Windows ICD exports */
     VBOX_OGL_OP_DrvReleaseContext,
     VBOX_OGL_OP_DrvCreateContext,
     VBOX_OGL_OP_DrvDeleteContext,
@@ -1269,6 +1278,10 @@ typedef enum
     VBOX_OGL_OP_DrvDescribePixelFormat,
     VBOX_OGL_OP_DrvSetPixelFormat,
     VBOX_OGL_OP_DrvSwapBuffers,
+
+    /* OpenGL Extensions */
+    VBOX_OGL_OP_wglSwapIntervalEXT,
+    VBOX_OGL_OP_wglGetSwapIntervalEXT,
 
     VBOX_OGL_OP_Last,
 
@@ -1534,6 +1547,7 @@ static const char *pszVBoxOGLCmd[VBOX_OGL_OP_Last] =
     "glGetTexLevelParameteriv",
     "glGetTexImage",
 
+    /* Windows ICD exports */
     "DrvReleaseContext",
     "DrvCreateContext",
     "DrvDeleteContext",
@@ -1549,6 +1563,10 @@ static const char *pszVBoxOGLCmd[VBOX_OGL_OP_Last] =
     "DrvDescribePixelFormat",
     "DrvSetPixelFormat",
     "DrvSwapBuffers",
+
+    /* OpenGL Extensions */
+    "wglSwapIntervalEXT",
+    "wglGetSwapIntervalEXT",
 };
 #endif
 
@@ -1812,6 +1830,7 @@ static PFN_VBOXGLWRAPPER pfnOGLWrapper[VBOX_OGL_OP_Last] =
     vboxglGetTexLevelParameteriv,
     vboxglGetTexImage,
 
+    /* Windows ICD exports */
     vboxglDrvReleaseContext,
     vboxglDrvCreateContext,
     vboxglDrvDeleteContext,
@@ -1827,6 +1846,11 @@ static PFN_VBOXGLWRAPPER pfnOGLWrapper[VBOX_OGL_OP_Last] =
     vboxglDrvDescribePixelFormat,
     vboxglDrvSetPixelFormat,
     vboxglDrvSwapBuffers,
+
+    /* OpenGL Extensions */
+    vboxwglSwapIntervalEXT,
+    vboxwglGetSwapIntervalEXT,
+
 };
 #endif
 
