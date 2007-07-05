@@ -145,46 +145,12 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
     HGLRC glrc = 0;
 
-    OGL_CMD(DrvCreateContext, 6);
+    OGL_CMD(DrvCreateContext, 1);
     OGL_PARAM(HDC, hdc);
-    OGL_PARAM(uint32_t, cx);
-    OGL_PARAM(uint32_t, cy);
-    OGL_PARAM(BYTE, cColorBits);
-    OGL_PARAM(BYTE, iPixelType);
-    OGL_PARAM(BYTE, cDepthBits);
 
-    Log(("DrvCreateContext %x (%d,%d) bpp=%d type=%x depth=%d\n", hdc, cx, cy, cColorBits, iPixelType, cDepthBits));
-#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    if (!pClient->hwnd)
-    {
-        RTThreadCreate(NULL, vboxWndThread, pClient, 0, RTTHREADTYPE_DEFAULT, 0, "OpenGLWnd");
-        while (!pClient->hwnd)
-            RTThreadSleep(100);
-    }
-    SetWindowPos(pClient->hwnd, NULL, 0, 0, cx, cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-
-    PIXELFORMATDESCRIPTOR pfd = {0};
-    int format;
-
-    pClient->hdc = GetDC(pClient->hwnd);
-
-    pfd.nSize       = sizeof(pfd);
-    pfd.nVersion    = 1;
-    pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    pfd.iPixelType  = iPixelType;
-    pfd.cColorBits  = cColorBits;
-    pfd.cDepthBits  = cDepthBits;
-    pfd.iLayerType  = PFD_MAIN_PLANE;
-    uint32_t lasterr = glGetError();
-    format = ChoosePixelFormat(pClient->hdc, &pfd);
-    SetPixelFormat(pClient->hdc, format, &pfd);
-
+    Log(("DrvCreateContext %x\n", hdc));
+    Assert(VBOX_OGL_GUEST_TO_HOST_HDC(hdc));
     glrc = wglCreateContext(pClient->hdc);
-    Assert(glrc);
-#else
-    AssertFailed();
-    glrc = 0;
-#endif
 
     pClient->lastretval    = (uint64_t)glrc;
     pClient->fHasLastError = true;
@@ -198,13 +164,10 @@ void vboxglDrvSetContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     OGL_PARAM(HGLRC, hglrc);
 
     Log(("DrvSetyContext %x %x\n", hdc, hglrc));
-#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    pClient->lastretval = wglMakeCurrent(pClient->hdc, hglrc);
+    pClient->lastretval = wglMakeCurrent(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), hglrc);
     if (!pClient->lastretval)
         Log(("wglMakeCurrent failed with %d\n", GetLastError()));
-#else
-    AssertFailed();
-#endif
+
     pClient->fHasLastError = true;
     pClient->ulLastError   = GetLastError();
 }
@@ -231,7 +194,7 @@ void vboxglDrvReleaseContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
     Log(("DrvReleaseContext %x\n", hglrc));
     /* clear current selection */
-    pClient->lastretval = wglMakeCurrent(pClient->hdc, NULL);
+    pClient->lastretval = wglMakeCurrent(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), NULL);
     if (!pClient->lastretval)
         Log(("wglMakeCurrent failed with %d\n", GetLastError()));
     pClient->fHasLastError = true;
@@ -255,47 +218,13 @@ void vboxglDrvCreateLayerContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
     HGLRC glrc = 0;
 
-    OGL_CMD(DrvCreateLayerContext, 7);
+    OGL_CMD(DrvCreateLayerContext, 2);
     OGL_PARAM(HDC, hdc);
     OGL_PARAM(int, iLayerPlane);
-    OGL_PARAM(uint32_t, cx);
-    OGL_PARAM(uint32_t, cy);
-    OGL_PARAM(BYTE, cColorBits);
-    OGL_PARAM(BYTE, iPixelType);
-    OGL_PARAM(BYTE, cDepthBits);
 
-    Log(("DrvCreateLayerContext %x (%d,%d) bpp=%d type=%x depth=%d\n", hdc, cx, cy, cColorBits, iPixelType, cDepthBits));
-#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    if (!pClient->hwnd)
-    {
-	    pClient->hwnd= CreateWindow("VBoxOGL", "VirtualBox OpenGL", 
-		                            WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE,
-		                            0, 0, cx, cy,
-		                            NULL, NULL, 0, NULL);	
-    }
-    else
-    {
-        SetWindowPos(pClient->hwnd, NULL, 0, 0, cx, cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-    }
-    PIXELFORMATDESCRIPTOR pfd = {0};
-    int format;
-
-    pClient->hdc = GetDC(pClient->hwnd);
-
-    pfd.nSize       = sizeof(pfd);
-    pfd.nVersion    = 1;
-    pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    pfd.iPixelType  = iPixelType;
-    pfd.cColorBits  = cColorBits;
-    pfd.cDepthBits  = cDepthBits;
-    pfd.iLayerType  = PFD_MAIN_PLANE;
-    format = ChoosePixelFormat(pClient->hdc, &pfd);
-    SetPixelFormat(pClient->hdc, format, &pfd);
-
-    glrc = wglCreateLayerContext(pClient->hdc, iLayerPlane);
-#else
-    AssertFailed();
-#endif
+    Log(("DrvCreateLayerContext %x %d\n", hdc, iLayerPlane));
+    Assert(VBOX_OGL_GUEST_TO_HOST_HDC(hdc));
+    glrc = wglCreateLayerContext(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), iLayerPlane);
 
     pClient->lastretval    = (uint64_t)glrc;
     pClient->fHasLastError = true;
@@ -343,11 +272,30 @@ void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     int rc;
     PIXELFORMATDESCRIPTOR pfd;
 
-    OGL_CMD(DrvSetPixelFormat, 2);
+    OGL_CMD(DrvSetPixelFormat, 4);
     OGL_PARAM(HDC, hdc);
     OGL_PARAM(int, iPixelFormat);
+    OGL_PARAM(uint32_t, cx);
+    OGL_PARAM(uint32_t, cy);
 
-    Log(("DrvSetPixelFormat %x %d\n", hdc, iPixelFormat));
+#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
+    if (!pClient->hwnd)
+    {
+        RTThreadCreate(NULL, vboxWndThread, pClient, 0, RTTHREADTYPE_DEFAULT, 0, "OpenGLWnd");
+        while (!pClient->hwnd)
+            RTThreadSleep(100);
+    }
+    RECT rect;
+    rect.bottom = 0;
+    rect.left   = 0;
+    rect.right  = cx;
+    rect.top    = cy;
+    /* Convert client rectangel to window rectangle */
+    AdjustWindowRect(&rect, WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE, FALSE);
+    SetWindowPos(pClient->hwnd, NULL, 0, 0, rect.right - rect.left, rect.top - rect.bottom, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+
+    pClient->hdc = GetDC(pClient->hwnd);
+
     rc = DescribePixelFormat(VBOX_OGL_GUEST_TO_HOST_HDC(hdc), iPixelFormat, sizeof(pfd), &pfd);
     if (rc)
     {
@@ -358,6 +306,12 @@ void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
         Log(("DescribePixelFormat %d failed with 0 (%d)\n", iPixelFormat, GetLastError()));
         pClient->lastretval = 0;
     }
+
+#else
+    AssertFailed();
+#endif
+
+    Log(("DrvSetPixelFormat %x %d (%d,%d)\n", hdc, iPixelFormat, cx, cy));
     pClient->fHasLastError = true;
     pClient->ulLastError   = GetLastError();
 }
