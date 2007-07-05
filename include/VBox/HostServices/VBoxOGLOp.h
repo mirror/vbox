@@ -1276,7 +1276,7 @@ typedef enum
 } VBOX_OGL_OP;
 
 #if defined(DEBUG) && defined(VBOX_OGL_WITH_CMD_STRINGS)
-static char *pszVBoxOGLCmd[VBOX_OGL_OP_Last] =
+static const char *pszVBoxOGLCmd[VBOX_OGL_OP_Last] =
 {
     "ILLEGAL",
     "glArrayElement",
