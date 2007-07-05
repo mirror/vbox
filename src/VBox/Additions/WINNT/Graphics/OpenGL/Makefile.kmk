@@ -39,6 +39,7 @@ VBoxOGL_SOURCES     = \
         OGLSimpleAsync.cpp \
         OGLComplexSync.cpp \
         OGLComplexAsync.cpp \
+        glext.cpp \
         OGLLookup.cpp \
         MesaGL.cpp \
 	VBoxOGL.rc \
