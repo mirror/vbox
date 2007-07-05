@@ -66,6 +66,7 @@ typedef void        VOID;
 typedef int16_t     SHORT;
 typedef uint16_t    USHORT;
 typedef int64_t     INT64;
+typedef int32_t     INT32;
 typedef float       FLOAT; /* ??? */
 
 #define DECLARE_HANDLE(a)  typedef HANDLE a
