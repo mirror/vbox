@@ -216,6 +216,9 @@ BOOL VBoxOGLThreadAttach()
     }
     DbgPrintf(("GL_EXTENSIONS=%s\n\n", szOpenGLExtensions));
 
+    /* Initialize OpenGL extensions */
+    vboxInitOpenGLExtensions();
+
     return TRUE;
 }
 
