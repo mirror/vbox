@@ -62,8 +62,9 @@ typedef HANDLE      HDC;
 typedef HANDLE      HGLRC;
 typedef uint32_t    UINT;
 typedef uint32_t    COLORREF;
+typedef void        VOID;
 
-#define DECLARE_HANDLE(a)  typedef a HANDLE;
+#define DECLARE_HANDLE(a)  typedef HANDLE a;
 #define WINAPI
 
 typedef struct
