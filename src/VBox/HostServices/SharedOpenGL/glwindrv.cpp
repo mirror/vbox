@@ -418,5 +418,6 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
 bool vboxDrvIsExtensionAvailable(char *pszExtFunctionName)
 {
+    Log(("vboxDrvIsExtensionAvailable %s -> %d\n", pszExtFunctionName, !!wglGetProcAddress(pszExtFunctionName)));
     return !!wglGetProcAddress(pszExtFunctionName);
 }
