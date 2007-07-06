@@ -47,6 +47,25 @@ typedef struct
 
 } VBOX_OGL_CTX, *PVBOX_OGL_CTX;
 
+/* glDrawElement internal state */
+#define VBOX_OGL_DRAWELEMENT_VERTEX     0
+#define VBOX_OGL_DRAWELEMENT_TEXCOORD   1
+#define VBOX_OGL_DRAWELEMENT_COLOR      2
+#define VBOX_OGL_DRAWELEMENT_EDGEFLAG   3
+#define VBOX_OGL_DRAWELEMENT_INDEX      4
+#define VBOX_OGL_DRAWELEMENT_NORMAL     5
+#define VBOX_OGL_DRAWELEMENT_MAX        6
+
+typedef struct
+{
+    GLint           size;
+    GLenum          type;
+    GLsizei         stride;
+    uint32_t        cbDataType;
+    const GLvoid   *pointer;
+    bool            fValid;
+} VBOX_OGL_DRAWELEMENT;
+
 typedef struct
 {
     uint32_t        u32ClientID;
@@ -56,6 +75,10 @@ typedef struct
     uint8_t        *pCmdBuffer;
     uint8_t        *pCmdBufferEnd;
     uint8_t        *pCurrentCmd;
+
+    /* Internal OpenGL state variables */
+    VBOX_OGL_DRAWELEMENT    Pointer[VBOX_OGL_DRAWELEMENT_MAX];
+
 } VBOX_OGL_THREAD_CTX, *PVBOX_OGL_THREAD_CTX;
 
 
