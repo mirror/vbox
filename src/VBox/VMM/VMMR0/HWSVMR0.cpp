@@ -607,23 +607,6 @@ ResumeExecution:
     fForceTLBFlush = false;
 
     Assert(sizeof(pVM->hwaccm.s.svm.pVMCBPhys) == 8);
-    Assert(pVMCB->ctrl.u32InterceptCtrl1 == (  SVM_CTRL1_INTERCEPT_INTR
-                                             | SVM_CTRL1_INTERCEPT_VINTR
-                                             | SVM_CTRL1_INTERCEPT_NMI
-                                             | SVM_CTRL1_INTERCEPT_SMI
-                                             | SVM_CTRL1_INTERCEPT_INIT
-                                             | SVM_CTRL1_INTERCEPT_CR0           /** @todo redundant?  */
-                                             | SVM_CTRL1_INTERCEPT_RDPMC
-                                             | SVM_CTRL1_INTERCEPT_CPUID
-                                             | SVM_CTRL1_INTERCEPT_RSM
-                                             | SVM_CTRL1_INTERCEPT_HLT
-                                             | SVM_CTRL1_INTERCEPT_INOUT_BITMAP
-                                             | SVM_CTRL1_INTERCEPT_MSR_SHADOW
-                                             | SVM_CTRL1_INTERCEPT_INVLPG
-                                             | SVM_CTRL1_INTERCEPT_INVLPGA       /* AMD only */
-                                             | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* fatal */
-                                             | SVM_CTRL1_INTERCEPT_FERR_FREEZE   /* Legacy FPU FERR handling. */
-                                             ));
     Assert(pVMCB->ctrl.u32InterceptCtrl2 == ( SVM_CTRL2_INTERCEPT_VMRUN         /* required */
                                              | SVM_CTRL2_INTERCEPT_VMMCALL
                                              | SVM_CTRL2_INTERCEPT_VMLOAD
@@ -1251,13 +1234,13 @@ ResumeExecution:
 
             if (IoExitInfo.n.u1Type == 0)
             {
-                Log2(("IOMInterpretOUTSEx %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+                Log(("IOMInterpretOUTSEx %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringWrite);
                 rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
             else
             {
-                Log2(("IOMInterpretINSEx  %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+                Log(("IOMInterpretINSEx  %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
@@ -1300,7 +1283,7 @@ ResumeExecution:
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
-            Log2(("EM status from IO at %VGv %x size %d: %Vrc\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize, rc));
+            Log(("EM status from IO at %VGv %x size %d: %Vrc\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize, rc));
             break;
         }
 
@@ -1312,7 +1295,7 @@ ResumeExecution:
         else
             AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
 #endif
-        Log2(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+        Log(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
         break;
     }
 
