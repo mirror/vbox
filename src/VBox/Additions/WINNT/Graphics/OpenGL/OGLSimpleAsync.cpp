@@ -157,8 +157,6 @@ GL_GEN_FUNC1(CullFace,      GLenum);
 GL_GEN_VPAR_FUNC2(DeleteLists,      GLuint, GLsizei);
 
 GL_GEN_VPAR_FUNC2(DepthRange,       GLclampd,   GLclampd);
-GL_GEN_FUNC1(DisableClientState,    GLenum);
-GL_GEN_FUNC1(EnableClientState,     GLenum);
 GL_GEN_VPAR_FUNC3(EvalMesh1,        GLenum,     GLint,      GLint);
 GL_GEN_VPAR_FUNC5(EvalMesh2,        GLenum,     GLint,      GLint,  GLint,  GLint);
 GL_GEN_VPAR_FUNC2(LineStipple,      GLint,      GLushort);

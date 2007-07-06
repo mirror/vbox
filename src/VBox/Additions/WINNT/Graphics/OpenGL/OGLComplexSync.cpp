@@ -78,6 +78,9 @@ GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLb
 
 void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
 {
+    if (!count)
+        return; /* no error?? */
+
     AssertFailed();
     return;
 }

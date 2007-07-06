@@ -276,10 +276,70 @@ void APIENTRY glClipPlane (GLenum plane, const GLdouble *equation)
 
 
 
+void APIENTRY glDisableClientState(GLenum type)
+{
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
+    switch(type)
+    {
+    case GL_VERTEX_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_VERTEX].fValid  = false;
+        break;
+    case GL_NORMAL_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_NORMAL].fValid  = false;
+        break;
+    case GL_COLOR_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_COLOR].fValid  = false;
+        break;
+    case GL_INDEX_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_INDEX].fValid  = false;
+        break;
+    case GL_TEXTURE_COORD_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_TEXCOORD].fValid  = false;
+        break;
+    case GL_EDGE_FLAG_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_EDGEFLAG].fValid  = false;
+        break;
+    default:
+        AssertMsgFailed(("invalid type %x\n", type));
+        break;
+    }
+    VBOX_OGL_GEN_OP1(DisableClientState, type);
+}
 
-/** @todo might not work as the caller could change the array contents afterwards */
+void APIENTRY glEnableClientState(GLenum type)
+{
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
+    switch(type)
+    {
+    case GL_VERTEX_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_VERTEX].fValid  = true;
+        break;
+    case GL_NORMAL_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_NORMAL].fValid  = true;
+        break;
+    case GL_COLOR_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_COLOR].fValid  = true;
+        break;
+    case GL_INDEX_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_INDEX].fValid  = true;
+        break;
+    case GL_TEXTURE_COORD_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_TEXCOORD].fValid  = true;
+        break;
+    case GL_EDGE_FLAG_ARRAY:
+        pCtx->Pointer[VBOX_OGL_DRAWELEMENT_EDGEFLAG].fValid  = true;
+        break;
+    default:
+        AssertMsgFailed(("invalid type %x\n", type));
+        break;
+    }
+    VBOX_OGL_GEN_OP1(EnableClientState, type);
+}
+
 void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 {
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
+
     if (size < 2 || size > 4)
     {
         glLogError(GL_INVALID_VALUE);
@@ -287,18 +347,14 @@ void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GL
     }
 
     GLint cbDataType = glVBoxGetDataTypeSize(type);
-
     if (!cbDataType)
     {
         glLogError(GL_INVALID_ENUM);
         return;
     }
 
-    GLint cVertex   = glInternalGetIntegerv(GL_VERTEX_ARRAY_COUNT_EXT);
     GLint minStride = size*cbDataType;
-
-    if (    cVertex <= 0
-        ||  stride < minStride)
+    if (stride < minStride)
     {
         glLogError(GL_INVALID_VALUE);
         return;
@@ -307,13 +363,17 @@ void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GL
     if (stride == 0)
         stride = minStride;
 
-    VBOX_OGL_GEN_OP4PTR(VertexPointer, size, type, stride, stride * cVertex, pointer);
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_VERTEX].pointer = pointer;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_VERTEX].size    = size;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_VERTEX].stride  = stride;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_VERTEX].type    = type;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_VERTEX].cbDataType = cbDataType;
     return;
 }
 
-/** @todo might not work as the caller could change the array contents afterwards */
 void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 {
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
     if (size < 1 || size > 4)
     {
         glLogError(GL_INVALID_VALUE);
@@ -328,11 +388,9 @@ void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const 
         return;
     }
 
-    GLint cTexCoord = glInternalGetIntegerv(GL_TEXTURE_COORD_ARRAY_COUNT_EXT);
     GLint minStride = size*cbDataType;
 
-    if (    cTexCoord <= 0
-        ||  stride < minStride)
+    if (stride < minStride)
     {
         glLogError(GL_INVALID_VALUE);
         return;
@@ -341,13 +399,18 @@ void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const 
     if (stride == 0)
         stride = minStride;
 
-    VBOX_OGL_GEN_OP4PTR(TexCoordPointer, size, type, stride, stride * cTexCoord, pointer);
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_TEXCOORD].pointer = pointer;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_TEXCOORD].size    = size;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_TEXCOORD].stride  = stride;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_TEXCOORD].type    = type;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_TEXCOORD].cbDataType = cbDataType;
     return;
 }
 
 /** @todo might not work as the caller could change the array contents afterwards */
 void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 {
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
     if (size < 3 || size > 4)
     {
         glLogError(GL_INVALID_VALUE);
@@ -362,11 +425,9 @@ void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLv
         return;
     }
 
-    GLint cColors   = glInternalGetIntegerv(GL_COLOR_ARRAY_COUNT_EXT);
     GLint minStride = size*cbDataType;
 
-    if (    cColors <= 0
-        ||  stride < minStride)
+    if (stride < minStride)
     {
         glLogError(GL_INVALID_VALUE);
         return;
@@ -375,18 +436,20 @@ void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLv
     if (stride == 0)
         stride = minStride;
 
-    VBOX_OGL_GEN_OP4PTR(ColorPointer, size, type, stride, stride * cColors, pointer);
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_COLOR].pointer = pointer;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_COLOR].size    = size;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_COLOR].stride  = stride;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_COLOR].type    = type;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_COLOR].cbDataType = cbDataType;
     return;
 }
 
-/** @todo might not work as the caller could change the array contents afterwards */
 void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer)
 {
-    GLint cEdgeFlag = glInternalGetIntegerv(GL_EDGE_FLAG_ARRAY_COUNT_EXT);
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
     GLint minStride = sizeof(GLboolean);
 
-    if (    cEdgeFlag <= 0
-        ||  stride < minStride)
+    if (stride < minStride)
     {
         glLogError(GL_INVALID_VALUE);
         return;
@@ -395,13 +458,16 @@ void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer)
     if (stride == 0)
         stride = minStride;
 
-    VBOX_OGL_GEN_OP2PTR(EdgeFlagPointer, stride, stride * cEdgeFlag, pointer);
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_EDGEFLAG].size    = 1;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_EDGEFLAG].pointer = pointer;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_EDGEFLAG].stride  = stride;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_EDGEFLAG].cbDataType = sizeof(GLboolean);
     return;
 }
 
-/** @todo might not work as the caller could change the array contents afterwards */
 void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer)
 {
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
     GLint cbDataType = glVBoxGetDataTypeSize(type);
 
     if (!cbDataType)
@@ -410,11 +476,9 @@ void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer
         return;
     }
 
-    GLint cIndexPtr = glInternalGetIntegerv(GL_INDEX_ARRAY_COUNT_EXT);
     GLint minStride = cbDataType;
 
-    if (    cIndexPtr <= 0
-        ||  stride < minStride)
+    if (stride < minStride)
     {
         glLogError(GL_INVALID_VALUE);
         return;
@@ -423,12 +487,16 @@ void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer
     if (stride == 0)
         stride = minStride;
 
-    VBOX_OGL_GEN_OP3PTR(IndexPointer, type, stride, stride * cIndexPtr, pointer);
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_INDEX].size    = 1;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_INDEX].pointer = pointer;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_INDEX].stride  = stride;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_INDEX].type    = type;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_INDEX].cbDataType = cbDataType;
 }
 
-/** @todo might not work as the caller could change the array contents afterwards */
 void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer)
 {
+    PVBOX_OGL_THREAD_CTX pCtx = VBoxOGLGetThreadCtx();
     GLint cbDataType = glVBoxGetDataTypeSize(type);
 
     if (!cbDataType)
@@ -438,10 +506,8 @@ void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointe
     }
 
     GLint minStride = cbDataType;
-    GLint cNormal   = glInternalGetIntegerv(GL_NORMAL_ARRAY_COUNT_EXT);
 
-    if (    cNormal <= 0
-        ||  stride < minStride)
+    if (stride < minStride)
     {
         glLogError(GL_INVALID_VALUE);
         return;
@@ -450,7 +516,11 @@ void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointe
     if (stride == 0)
         stride = minStride;
 
-    VBOX_OGL_GEN_OP3PTR(NormalPointer, type, stride, stride * cNormal, pointer);
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_NORMAL].size    = 1;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_NORMAL].pointer = pointer;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_NORMAL].stride  = stride;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_NORMAL].type    = type;
+    pCtx->Pointer[VBOX_OGL_DRAWELEMENT_NORMAL].cbDataType = cbDataType;
     return;
 }
 
