@@ -60,7 +60,7 @@ OUTPUT_LANGUAGE        = English
 # whereas setting the tag to NO uses a Unix-style encoding (the default for
 # all platforms other than Windows).
 
-USE_WINDOWS_ENCODING   = YES
+# USE_WINDOWS_ENCODING   = YES
 
 # If the BRIEF_MEMBER_DESC tag is set to YES (the default) Doxygen will
 # include brief member descriptions after the members that are listed in
