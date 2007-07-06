@@ -228,6 +228,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , was_max (false)
     , console_style (0)
     , mIsFirstTimeStarted (false)
+    , mIsAutoSaveMedia (true)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbg_gui (NULL)
 #endif
@@ -679,6 +680,7 @@ static const char *GUI_LastWindowPosition_Max = "max";
 static const char *GUI_Fullscreen = "GUI/Fullscreen";
 static const char *GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 extern const char *GUI_FirstRun = "GUI/FirstRun";
+extern const char *GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 
 /**
  *  Opens a new console view to interact with a given VM.
@@ -736,6 +738,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
             mIsFirstTimeStarted = true;
         else if (!str.isEmpty())
             cmachine.SetExtraData (GUI_FirstRun, QString::null);
+
+        str = cmachine.GetExtraData (GUI_SaveMountedAtRuntime);
+        if (str == "no")
+            mIsAutoSaveMedia = false;
 
         str = cmachine.GetExtraData (GUI_LastWindowPosition);
 
@@ -2025,8 +2031,8 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
         AssertWrapperOk (drv);
         if (drv.isOk())
         {
-// @todo: save the settings only on power off if the appropriate flag is set
-//            console->console().SaveSettings();
+            if (mIsAutoSaveMedia)
+                console->console().GetMachine().SaveSettings();
             updateAppearanceOf (FloppyStuff);
         }
     }
@@ -2040,8 +2046,8 @@ void VBoxConsoleWnd::devicesUnmountFloppy()
     drv.Unmount();
     if (drv.isOk())
     {
-// @todo: save the settings only on power off if the appropriate flag is set
-//        console->machine().SaveSettings();
+        if (mIsAutoSaveMedia)
+            console->console().GetMachine().SaveSettings();
         updateAppearanceOf (FloppyStuff);
     }
 }
@@ -2061,8 +2067,8 @@ void VBoxConsoleWnd::devicesMountDVDImage()
         AssertWrapperOk (drv);
         if (drv.isOk())
         {
-// @todo: save the settings only on power off if the appropriate flag is set
-//            console->console().SaveSettings();
+            if (mIsAutoSaveMedia)
+                console->console().GetMachine().SaveSettings();
             updateAppearanceOf (DVDStuff);
         }
     }
@@ -2150,8 +2156,8 @@ void VBoxConsoleWnd::devicesUnmountDVD()
     AssertWrapperOk (drv);
     if (drv.isOk())
     {
-// @todo: save the settings only on power off if the appropriate flag is set
-//        console->machine().SaveSettings();
+        if (mIsAutoSaveMedia)
+            console->console().GetMachine().SaveSettings();
         updateAppearanceOf (DVDStuff);
     }
 }
@@ -2324,8 +2330,8 @@ void VBoxConsoleWnd::captureFloppy (int aId)
 
     if (drv.isOk())
     {
-// @todo: save the settings only on power off if the appropriate flag is set
-//        console->machine().SaveSettings();
+        if (mIsAutoSaveMedia)
+            console->console().GetMachine().SaveSettings();
         updateAppearanceOf (FloppyStuff);
     }
 }
@@ -2347,8 +2353,8 @@ void VBoxConsoleWnd::captureDVD (int aId)
 
     if (drv.isOk())
     {
-// @todo: save the settings only on power off if the appropriate flag is set
-//        console->machine().SaveSettings();
+        if (mIsAutoSaveMedia)
+            console->console().GetMachine().SaveSettings();
         updateAppearanceOf (DVDStuff);
     }
 }
