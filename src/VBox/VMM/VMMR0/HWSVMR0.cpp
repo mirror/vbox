@@ -1234,13 +1234,13 @@ ResumeExecution:
 
             if (IoExitInfo.n.u1Type == 0)
             {
-                Log(("IOMInterpretOUTSEx %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+                Log2(("IOMInterpretOUTSEx %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringWrite);
                 rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
             else
             {
-                Log(("IOMInterpretINSEx  %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+                Log2(("IOMInterpretINSEx  %VGv %x size=%d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
@@ -1283,7 +1283,7 @@ ResumeExecution:
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
-            Log(("EM status from IO at %VGv %x size %d: %Vrc\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize, rc));
+            Log2(("EM status from IO at %VGv %x size %d: %Vrc\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize, rc));
             break;
         }
 
@@ -1295,7 +1295,7 @@ ResumeExecution:
         else
             AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
 #endif
-        Log(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
+        Log2(("Failed IO at %VGv %x size %d\n", pCtx->eip, IoExitInfo.n.u16Port, uIOSize));
         break;
     }
 
