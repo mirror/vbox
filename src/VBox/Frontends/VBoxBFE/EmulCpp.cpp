@@ -31,7 +31,7 @@
 
 /** libstdc++ new emulator. */
 void*
-operator new(unsigned int size)
+operator new(size_t size)
 {
     return malloc(size);
 }
