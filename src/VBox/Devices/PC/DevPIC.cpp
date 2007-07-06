@@ -281,8 +281,15 @@ static int pic_update_irq(PDEVPIC pData)
             STAM_COUNTER_INC(&pData->StatClearedActiveIRQ2);
             Log(("pic_update_irq: irq 2 is active, but no interrupt is pending on the slave pic!!\n"));
             /* Clear it here, so lower priority interrupts can still be dispatched. */
+
+            /* if this was the only pending irq, then we must clear the interrupt ff flag */
+            pData->CTXALLSUFF(pPicHlp)->pfnClearInterruptFF(pData->CTXSUFF(pDevIns));
+
             /** @note Is this correct? */
             pics[0].irr &= ~(1 << 2);
+
+            /* Call ourselves again just in case other interrupts are pending */
+            return pic_update_irq(pData);
         }
     }
     return VINF_SUCCESS;
