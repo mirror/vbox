@@ -514,6 +514,35 @@
   <xsd:attribute name="tracefile" type="xsd:string"/>
 </xsd:complexType>
 
+<xsd:complexType name="TUartPort">
+  <xsd:attribute name="slot" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedInt">
+        <xsd:minInclusive value="0"/>
+        <xsd:maxExclusive value="2"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="IRQ" type="xsd:unsignedInt" default="4"/>
+  <xsd:attribute name="IOBase" type="xsd:unsignedInt" default="1016"/>
+  <xsd:attribute name="pipe" type="xsd:string"/>
+  <xsd:attribute name="server" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TUart">
+  <xsd:sequence>
+    <xsd:element name="Port" minOccurs="0" maxOccurs="unbounded">
+      <xsd:complexType>
+        <xsd:complexContent>
+          <xsd:extension base="TUartPort">
+          </xsd:extension>
+        </xsd:complexContent>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:sequence>
+</xsd:complexType>
+
 <xsd:complexType name="TSharedFolder">
   <xsd:attribute name="name" type="TNonEmptyString" use="required"/>
   <xsd:attribute name="hostPath" type="TLocalFile" use="required"/>
@@ -548,6 +577,12 @@
     <xsd:element name="Network" type="TNetwork">
       <xsd:unique name="THardware-Network-Adapter">
         <xsd:selector xpath="vb:Adapter"/>
+        <xsd:field xpath="@slot"/>
+      </xsd:unique>
+    </xsd:element>
+    <xsd:element name="Uart" type="TUart" minOccurs="0">
+      <xsd:unique name="THardware-Uart-Port">
+        <xsd:selector xpath="vb:Port"/>
         <xsd:field xpath="@slot"/>
       </xsd:unique>
     </xsd:element>

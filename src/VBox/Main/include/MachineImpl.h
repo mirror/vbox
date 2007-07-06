@@ -33,6 +33,7 @@
 #include "Collection.h"
 #include "NetworkAdapterImpl.h"
 #include "AudioAdapterImpl.h"
+#include "SerialPortImpl.h"
 #include "BIOSSettingsImpl.h"
 
 // generated header
@@ -479,6 +480,7 @@ public:
     STDMETHOD(AttachHardDisk)(INPTR GUIDPARAM aId, DiskControllerType_T aCtl, LONG aDev);
     STDMETHOD(GetHardDisk)(DiskControllerType_T aCtl, LONG aDev, IHardDisk **aHardDisk);
     STDMETHOD(DetachHardDisk) (DiskControllerType_T aCtl, LONG aDev);
+    STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
     STDMETHOD(GetNextExtraDataKey)(INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
     STDMETHOD(GetExtraData)(INPTR BSTR aKey, BSTR *aValue);
@@ -525,6 +527,7 @@ public:
     virtual HRESULT onDVDDriveChange() { return S_OK; }
     virtual HRESULT onFloppyDriveChange() { return S_OK; }
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter) { return S_OK; }
+    virtual HRESULT onSerialPortChange(ISerialPort *serialPort) { return S_OK; }
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
 
@@ -674,10 +677,11 @@ protected:
     const ComObjPtr <VRDPServer> mVRDPServer;
     const ComObjPtr <DVDDrive> mDVDDrive;
     const ComObjPtr <FloppyDrive> mFloppyDrive;
+    const ComObjPtr <SerialPort>
+        mSerialPorts [SchemaDefs::SerialPortCount];
     const ComObjPtr <AudioAdapter> mAudioAdapter;
     const ComObjPtr <USBController> mUSBController;
     const ComObjPtr <BIOSSettings> mBIOSSettings;
-
     const ComObjPtr <NetworkAdapter>
         mNetworkAdapters [SchemaDefs::NetworkAdapterCount];
 
@@ -765,6 +769,7 @@ public:
     HRESULT onDVDDriveChange();
     HRESULT onFloppyDriveChange();
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter);
+    HRESULT onSerialPortChange(ISerialPort *serialPort);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice,

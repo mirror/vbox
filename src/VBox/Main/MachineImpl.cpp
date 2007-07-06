@@ -452,6 +452,13 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     unconst (mFloppyDrive).createObject();
     mFloppyDrive->init (this);
 
+    /* create associated serial port objects */
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    {
+        unconst (mSerialPorts [slot]).createObject();
+        mSerialPorts [slot]->init (this, slot);
+    }
+
     /* create the audio adapter object (always present, default is disabled) */
     unconst (mAudioAdapter).createObject();
     mAudioAdapter->init(this);
@@ -1811,6 +1818,23 @@ STDMETHODIMP Machine::DetachHardDisk (DiskControllerType_T aCtl, LONG aDev)
     return setError (E_INVALIDARG,
         tr ("No hard disk attached to device slot %d on controller %d"),
         aDev, aCtl);
+}
+
+STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
+{
+    if (!port)
+        return E_POINTER;
+    if (slot >= ELEMENTS (mSerialPorts))
+        return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mSerialPorts [slot].queryInterfaceTo (port);
+
+    return S_OK;
 }
 
 STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
@@ -3225,6 +3249,15 @@ void Machine::uninitDataAndChildObjects()
         unconst (mAudioAdapter).setNull();
     }
 
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    {
+        if (mSerialPorts [slot])
+        {
+            mSerialPorts [slot]->uninit();
+            unconst (mSerialPorts [slot]).setNull();
+        }
+    }
+
     if (mFloppyDrive)
     {
         mFloppyDrive->uninit();
@@ -4235,6 +4268,22 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         CFGLDRReleaseNode (networkNode);
         if (FAILED (rc))
             return rc;
+    }
+
+    /* Serial node (optional) */
+    CFGNODE serialNode = 0;
+    CFGLDRGetChildNode (aNode, "Uart", 0, &serialNode);
+    if (serialNode)
+    {
+        HRESULT rc = S_OK;
+        unsigned cPorts = 0;
+        CFGLDRCountChildren (serialNode, "Port", &cPorts);
+        for (unsigned slot = 0; slot < cPorts; slot++)
+        {
+            rc = mSerialPorts [slot]->loadSettings (serialNode, slot);
+            CheckComRCReturnRC (rc);
+        }
+        CFGLDRReleaseNode (serialNode);
     }
 
     /* AudioAdapter node (required) */
@@ -6035,6 +6084,17 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
     if (FAILED (rc))
         return rc;
 
+    /* Serial ports */
+    CFGNODE serialNode = 0;
+    CFGLDRCreateChildNode (aNode, "Uart", &serialNode);
+
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot++)
+    {
+        rc = mSerialPorts [slot]->saveSettings (serialNode);
+        CheckComRCReturnRC (rc);
+    }
+    CFGLDRReleaseNode (serialNode);
+
     /* Audio adapter */
     do
     {
@@ -7079,6 +7139,10 @@ bool Machine::isModified()
         if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isModified())
             return true;
 
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+        if (mSerialPorts [slot] && mSerialPorts [slot]->isModified())
+            return true;
+
     return
         mUserData.isBackedUp() ||
         mHWData.isBackedUp() ||
@@ -7110,6 +7174,10 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isReallyModified())
+            return true;
+
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+        if (mSerialPorts [slot] && mSerialPorts [slot]->isReallyModified())
             return true;
 
     return
@@ -7151,6 +7219,7 @@ void Machine::rollback (bool aNotify)
     bool vrdpChanged = false, dvdChanged = false, floppyChanged = false,
          usbChanged = false;
     ComPtr <INetworkAdapter> networkAdapters [ELEMENTS (mNetworkAdapters)];
+    ComPtr <ISerialPort> serialPorts [ELEMENTS (mSerialPorts)];
 
     if (mBIOSSettings)
         mBIOSSettings->rollback();
@@ -7177,6 +7246,11 @@ void Machine::rollback (bool aNotify)
             if (mNetworkAdapters [slot]->rollback())
                 networkAdapters [slot] = mNetworkAdapters [slot];
 
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+        if (mSerialPorts [slot])
+            if (mSerialPorts [slot]->rollback())
+                serialPorts [slot] = mSerialPorts [slot];
+
     if (aNotify)
     {
         // inform the direct session about changes
@@ -7195,6 +7269,9 @@ void Machine::rollback (bool aNotify)
         for (ULONG slot = 0; slot < ELEMENTS (networkAdapters); slot ++)
             if (networkAdapters [slot])
                 that->onNetworkAdapterChange (networkAdapters [slot]);
+        for (ULONG slot = 0; slot < ELEMENTS (serialPorts); slot ++)
+            if (serialPorts [slot])
+                that->onSerialPortChange (serialPorts [slot]);
     }
 }
 
@@ -7241,6 +7318,8 @@ HRESULT Machine::commit()
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         mNetworkAdapters [slot]->commit();
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+        mSerialPorts [slot]->commit();
 
     if (mType == IsSessionMachine)
     {
@@ -7302,6 +7381,8 @@ void Machine::copyFrom (Machine *aThat)
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
         mNetworkAdapters [slot]->copyFrom (aThat->mNetworkAdapters [slot]);
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+        mSerialPorts [slot]->copyFrom (aThat->mSerialPorts [slot]);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -7482,6 +7563,12 @@ HRESULT SessionMachine::init (Machine *aMachine)
     /* create another audio adapter object that will be mutable */
     unconst (mAudioAdapter).createObject();
     mAudioAdapter->init (this, aMachine->mAudioAdapter);
+    /* create a list of serial ports that will be mutable */
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    {
+        unconst (mSerialPorts [slot]).createObject();
+        mSerialPorts [slot]->init (this, aMachine->mSerialPorts [slot]);
+    }
     /* create another USB controller object that will be mutable */
     unconst (mUSBController).createObject();
     mUSBController->init (this, aMachine->mUSBController);
@@ -8620,6 +8707,29 @@ HRESULT SessionMachine::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
         return S_OK;
 
     return directControl->OnNetworkAdapterChange(networkAdapter);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onSerialPortChange(ISerialPort *serialPort)
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr <IInternalSessionControl> directControl;
+    {
+        AutoReaderLock alock (this);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnSerialPortChange(serialPort);
 }
 
 /**
@@ -9938,6 +10048,12 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
         mNetworkAdapters [slot]->initCopy (this, mPeer->mNetworkAdapters [slot]);
     }
 
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    {
+        unconst (mSerialPorts [slot]).createObject();
+        mSerialPorts [slot]->initCopy (this, mPeer->mSerialPorts [slot]);
+    }
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -10020,6 +10136,12 @@ HRESULT SnapshotMachine::init (Machine *aMachine, CFGNODE aHWNode, CFGNODE aHDAs
     {
         unconst (mNetworkAdapters [slot]).createObject();
         mNetworkAdapters [slot]->init (this, slot);
+    }
+
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    {
+        unconst (mSerialPorts [slot]).createObject();
+        mSerialPorts [slot]->init (this, slot);
     }
 
     /* load hardware and harddisk settings */
