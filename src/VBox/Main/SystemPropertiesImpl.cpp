@@ -189,6 +189,17 @@ STDMETHODIMP SystemProperties::COMGETTER(NetworkAdapterCount)(ULONG *count)
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
+{
+    if (!count)
+        return E_POINTER;
+    AutoLock lock (this);
+    CHECK_READY();
+
+    *count = SchemaDefs::SerialPortCount;
+
+    return S_OK;
+}
 
 STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPosition)
 {

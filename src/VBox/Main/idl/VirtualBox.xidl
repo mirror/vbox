@@ -2437,6 +2437,18 @@
       <param name="adapter" type="INetworkAdapter" dir="return"/>
     </method>
 
+    <method name="getSerialPort" const="yes">
+      <desc>
+        Returns the serial port associated with the given slot.
+        Slots are numbered sequentially, starting with zero. The total
+        number of serial ports per every machine is defined by the
+        <link to="ISystemProperties::serialPortCount"/> property,
+        so the maximum slot number is one less than that property's value.
+      </desc>
+      <param name="slot" type="unsigned long" dir="in"/>
+      <param name="port" type="ISerialPort" dir="return"/>
+    </method>
+
     <method name="getNextExtraDataKey">
       <desc>
         Returns the extra data key name following the supplied key.
@@ -3946,6 +3958,13 @@
     <attribute name="networkAdapterCount" type="unsigned long" readonly="yes">
       <desc>
         Number of network adapters associated with every
+        <link to="IMachine"/> instance.
+      </desc>
+    </attribute>
+
+    <attribute name="serialPortCount" type="unsigned long" readonly="yes">
+      <desc>
+        Number of serial ports associated with every
         <link to="IMachine"/> instance.
       </desc>
     </attribute>
@@ -6638,6 +6657,51 @@
 
 
   <!--
+  // ISerialPort
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+     name="ISerialPort" extends="$unknown"
+     uuid="924107d2-1cac-4fc8-93be-e2d54f78dc67"
+     wsmap="managed"
+     >
+ 
+     <attribute name="slot" type="unsigned long" readonly="yes">
+      <desc>
+        Slot number this serial port is plugged into. Corresponds to
+        the value you pass to <link to="IMachine::getSerialPort"/>
+        to obtain this instance.
+      </desc>
+    </attribute>
+
+    <attribute name="enabled" type="boolean">
+      <desc>
+        Flag whether the serial port is enabled. If it is disabled,
+        the serial port will not be reported to the guest.
+      </desc>
+    </attribute>
+
+    <attribute name="iobase" type="unsigned long">
+      <desc>Gets the I/O base of the serial port.</desc>
+    </attribute>
+
+    <attribute name="irq" type="unsigned long">
+      <desc>Gets the IRQ of the serial port.</desc>
+    </attribute>
+
+    <attribute name="pipe" type="wstring">
+      <desc>Gets the name of the host pipe connected to the serial port.</desc>
+    </attribute>
+
+    <attribute name="server" type="boolean">
+      <desc>Flag whether this serial port acts as a server or a client.</desc>
+    </attribute>
+
+  </interface>
+
+
+  <!--
   // IMachineDebugger
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -7592,6 +7656,14 @@
         associated virtual machine have changed.
       </desc>
       <param name="networkAdapter" type="INetworkAdapter" dir="in"/>
+    </method>
+
+    <method name="onSerialPortChange">
+      <desc>
+        Triggered when settions of a serial port of the
+        associated virtual machine have changed.
+      </desc>
+      <param name="serialPort" type="ISerialPort" dir="in"/>
     </method>
 
     <method name="onVRDPServerChange">

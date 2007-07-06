@@ -538,6 +538,20 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter)
     return mConsole->onNetworkAdapterChange(networkAdapter);
 }
 
+STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoReaderLock alock (this);
+    AssertReturn (mState == SessionState_SessionOpen &&
+                  mType == SessionType_DirectSession, E_FAIL);
+
+    return mConsole->onSerialPortChange(serialPort);
+}
+
 STDMETHODIMP Session::OnVRDPServerChange()
 {
     LogFlowThisFunc (("\n"));

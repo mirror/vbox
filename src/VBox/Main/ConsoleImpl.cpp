@@ -3023,6 +3023,32 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
 }
 
 /**
+ *  Called by IInternalSessionControl::OnSerialPortChange().
+ *
+ *  @note Locks this object for writing.
+ */
+HRESULT Console::onSerialPortChange(ISerialPort *serialPort)
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Don't do anything if the VM isn't running */
+    if (!mpVM)
+        return S_OK;
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    LogFlowThisFunc (("Leaving rc=%#x\n", S_OK));
+    return S_OK;
+}
+
+/**
  *  Called by IInternalSessionControl::OnVRDPServerChange().
  *
  *  @note Locks this object for writing.
@@ -4515,6 +4541,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     PCFGMNODE pCfg = NULL;          /* /Devices/Dev/.../Config/ */
     PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
     PCFGMNODE pLunL1 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/ */
+    PCFGMNODE pLunL2 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/Config/ */
+
     rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
 
     /*
@@ -4804,22 +4832,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
 
-#if 0
-    /*
-     * Serial ports
-     */
-    rc = CFGMR3InsertNode(pDevices, "serial", &pDev);                               RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IRQ",       4);                                RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x3f8);                            RC_CHECK();
-
-    rc = CFGMR3InsertNode(pDev,     "1", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IRQ",       3);                                RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x2f8);                            RC_CHECK();
-#endif
-
     /*
      * VGA.
      */
@@ -5039,7 +5051,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             //rc = CFGMR3InsertString(pCfg,   "TargetSecret",     "");                    RC_CHECK();
 
             /* The iSCSI initiator needs an attached iSCSI transport driver. */
-            PCFGMNODE pLunL2 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/AttachedDriver */
             rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pLunL2);                 RC_CHECK();
             rc = CFGMR3InsertString(pLunL2, "Driver",           "iSCSITCP");            RC_CHECK();
             /* Currently the transport driver has no config options. */
@@ -5345,6 +5356,44 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 AssertMsgFailed(("should not get here!\n"));
                 break;
         }
+    }
+
+    /*
+     * Serial (UART) Ports
+     */
+    rc = CFGMR3InsertNode(pDevices, "serial", &pDev);                               RC_CHECK();
+    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::SerialPortCount; ulInstance++)
+    {
+        ComPtr<ISerialPort> serialPort;
+        hrc = pMachine->GetSerialPort (ulInstance, serialPort.asOutParam());        H();
+        BOOL fEnabled = FALSE;
+        if (serialPort)
+            hrc = serialPort->COMGETTER(Enabled)(&fEnabled);                        H();
+        if (!fEnabled)
+            continue;
+
+        char szInstance[4]; Assert(ulInstance <= 999);
+        RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
+
+        rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
+        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
+
+        ULONG uIRQ, uIOBase;
+        Bstr  pipe;
+        BOOL  fServer;
+        hrc = serialPort->COMGETTER(Irq)(&uIRQ);                                    H();
+        hrc = serialPort->COMGETTER(Iobase)(&uIOBase);                              H();
+        hrc = serialPort->COMGETTER(Pipe)(pipe.asOutParam());                       H();
+        hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
+        rc = CFGMR3InsertInteger(pCfg,   "IRQ", uIRQ);                              RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,   "IOBase", uIOBase);                        RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                         RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                         RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);                RC_CHECK();
+        rc = CFGMR3InsertString(pLunL1,  "Driver", "NamedPipe");                    RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                        RC_CHECK();
+        rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(pipe));                RC_CHECK();
+        rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);                      RC_CHECK();
     }
 
     /*

@@ -171,6 +171,7 @@ public:
     HRESULT onDVDDriveChange();
     HRESULT onFloppyDriveChange();
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter);
+    HRESULT onSerialPortChange(ISerialPort *serialPort);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError);

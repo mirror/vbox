@@ -136,6 +136,12 @@ struct SchemaDefs
       "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
+      <xsl:with-param name="member" select="'        SerialPortCount'"/>
+      <xsl:with-param name="select" select="
+        xsd:complexType[@name='TUartPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
+      "/>
+  </xsl:call-template>
+  <xsl:call-template name="defineEnumMember">
       <xsl:with-param name="member" select="'        MaxBootPosition'"/>
       <xsl:with-param name="select" select="
         xsd:complexType[@name='TBoot']//xsd:element[@name='Order']//xsd:attribute[@name='position']//xsd:maxInclusive/@value

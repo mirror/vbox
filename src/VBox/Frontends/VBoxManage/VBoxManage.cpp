@@ -335,7 +335,10 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nictracefile<1-N> <filename>]\n"
                  "                            [-hostifdev<1-N> none|<devicename>]\n"
                  "                            [-intnet<1-N> network]\n"
-                 "                            [-macaddress<1-N> auto|<mac>\n");
+                 "                            [-macaddress<1-N> auto|<mac>]\n"
+                 "                            [-uart<1-N> off | <I/O base> <IRQ> server|client\n"
+                 "                                              <host pipename>\n"
+                 );
         if (fLinux)
         {
             RTPrintf("                            [-tapsetup<1-N> none|<application>]\n"
@@ -1036,6 +1039,38 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         }
     }
 
+    /* get the maximum amount of UARTs */
+    ULONG maxUARTs = 0;
+    sysProps->COMGETTER(NetworkAdapterCount)(&maxUARTs);
+    for (ULONG currentUART = 0; currentUART < maxUARTs; currentUART++)
+    {
+        ComPtr<ISerialPort> uart;
+        rc = machine->GetSerialPort(currentUART, uart.asOutParam());
+        if (SUCCEEDED(rc) && uart)
+        {
+            BOOL fEnabled;
+            uart->COMGETTER(Enabled)(&fEnabled);
+            if (!fEnabled)
+            {
+                RTPrintf("UART %d:          disabled\n", currentUART + 1);
+            }
+            else
+            {
+                ULONG uIRQ, uIOBase;
+                Bstr pipe;
+                BOOL fServer;
+                uart->COMGETTER(Irq)(&uIRQ);
+                uart->COMGETTER(Iobase)(&uIOBase);
+                uart->COMGETTER(Pipe)(pipe.asOutParam());
+                uart->COMGETTER(Server)(&fServer);
+
+                RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d, %s, pipe '%lS'\n",
+                         currentUART + 1, uIOBase, uIRQ, fServer ? "isServer" : "isClient",
+                         pipe.raw());
+            }
+        }
+    }
+
     ComPtr<IAudioAdapter> AudioAdapter;
     rc = machine->COMGETTER(AudioAdapter)(AudioAdapter.asOutParam());
     if (SUCCEEDED(rc))
@@ -1070,7 +1105,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             rc = machine->COMGETTER(ClipboardMode)(&enmMode);
             switch (enmMode)
             {
-                case  ClipboardMode_ClipDisabled:      psz = "Disabled"; break;
+                case  ClipboardMode_ClipDisabled:      psz = "disabled"; break;
                 case  ClipboardMode_ClipHostToGuest:   psz = "HostToGuest"; break;
                 case  ClipboardMode_ClipGuestToHost:   psz = "GuestToHost"; break;
                 case  ClipboardMode_ClipBidirectional: psz = "Bidirectional"; break;
@@ -1333,7 +1368,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     /*
      * Shared folders
      */
-    RTPrintf("Shared folders:\n\n");
+    RTPrintf("Shared folders:  ");
     uint32_t numSharedFolders = 0;
 #if 0 // not yet implemented
     /* globally shared folders first */
@@ -1372,6 +1407,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             Bstr name, hostPath;
             sf->COMGETTER(Name)(name.asOutParam());
             sf->COMGETTER(HostPath)(hostPath.asOutParam());
+            if (!numSharedFolders)
+                RTPrintf("\n\n");
             RTPrintf("Name: '%lS', Host path: '%lS' (machine mapping)\n", name.raw(), hostPath.raw());
             ++numSharedFolders;
             CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
@@ -1393,6 +1430,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             Bstr name, hostPath;
             sf->COMGETTER(Name)(name.asOutParam());
             sf->COMGETTER(HostPath)(hostPath.asOutParam());
+            if (!numSharedFolders)
+                RTPrintf("\n\n");
             RTPrintf("Name: '%lS', Host path: '%lS' (transient mapping)\n", name.raw(), hostPath.raw());
             ++numSharedFolders;
             CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
@@ -2700,13 +2739,13 @@ static int handleCreateVM(int argc, char *argv[],
 }
 
 /**
- * Parses a NIC number.
+ * Parses a number.
  *
- * @returns Valid nic number on success.
- * @returns 0 if invalid nic. All necesary bitching has been done.
+ * @returns Valid number on success.
+ * @returns 0 if invalid number. All necesary bitching has been done.
  * @param   psz     Pointer to the nic number.
  */
-static unsigned parseNicNum(const char *psz, unsigned cMaxNics)
+static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
 {
     uint32_t u32;
     char *pszNext;
@@ -2714,9 +2753,9 @@ static unsigned parseNicNum(const char *psz, unsigned cMaxNics)
     if (    VBOX_SUCCESS(rc)
         &&  *pszNext == '\0'
         &&  u32 >= 1
-        &&  u32 <= cMaxNics)
+        &&  u32 <= cMaxNum)
         return (unsigned)u32;
-    errorArgument("Invalid NIC number '%s'", psz);
+    errorArgument("Invalid %s number '%s'", name, psz);
     return 0;
 }
 
@@ -2769,6 +2808,12 @@ static int handleModifyVM(int argc, char *argv[],
         CHECK_ERROR_RET (virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
         CHECK_ERROR_RET (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount), 1);
     }
+    ULONG SerialPortCount = 0;
+    {
+        ComPtr <ISystemProperties> info;
+        CHECK_ERROR_RET (virtualBox, COMGETTER(SystemProperties) (info.asOutParam()), 1);
+        CHECK_ERROR_RET (info, COMGETTER(SerialPortCount) (&SerialPortCount), 1);
+    }
 
     std::vector <char *> nics (NetworkAdapterCount, 0);
     std::vector <char *> nictype (NetworkAdapterCount, 0);
@@ -2782,6 +2827,10 @@ static int handleModifyVM(int argc, char *argv[],
     std::vector <char *> tapterm (NetworkAdapterCount, 0);
 #endif
     std::vector <char *> macs (NetworkAdapterCount, 0);
+    std::vector <ULONG>  uarts_base (SerialPortCount, 0);
+    std::vector <ULONG>  uarts_irq (SerialPortCount, 0);
+    std::vector <char *> uarts_pipe (SerialPortCount, 0);
+    std::vector <char *> uarts_server (SerialPortCount, 0);
 
     for (int i = 1; i < argc; i++)
     {
@@ -3027,7 +3076,7 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-cableconnected", 15) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][15], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][15], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3040,7 +3089,7 @@ static int handleModifyVM(int argc, char *argv[],
         /* watch for the right order of these -nic* comparisons! */
         else if (strncmp(argv[i], "-nictracefile", 13) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][13], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][13], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3052,7 +3101,7 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-nictrace", 9) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][9], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][9], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3064,7 +3113,7 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-nictype", 8) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][8], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][8], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3076,7 +3125,7 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-nic", 4) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][4], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][4], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3088,7 +3137,7 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-hostifdev", 10) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][10], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][10], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3100,7 +3149,7 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-intnet", 7) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][7], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][7], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3113,7 +3162,7 @@ static int handleModifyVM(int argc, char *argv[],
 #ifdef __LINUX__
         else if (strncmp(argv[i], "-tapsetup", 9) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][9], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][9], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3125,7 +3174,7 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-tapterminate", 13) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][13], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][13], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3138,7 +3187,7 @@ static int handleModifyVM(int argc, char *argv[],
 #endif /* __LINUX__ */
         else if (strncmp(argv[i], "-macaddress", 11) == 0)
         {
-            unsigned n = parseNicNum(&argv[i][11], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[i][11], NetworkAdapterCount, "NIC");
             if (!n)
                 return 1;
             if (argc <= i + 1)
@@ -3220,6 +3269,49 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
             snapshotFolder = argv[i];
+        }
+        else if (strncmp(argv[i], "-uart", 5) == 0)
+        {
+            unsigned n = parseNum(&argv[i][5], SerialPortCount, "UART");
+            if (!n)
+                return 1;
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
+            {
+                uarts_base[n - 1] = (ULONG)-1;
+            }
+            else
+            {
+                if (argc <= i + 2)
+                {
+                    return errorArgument("Missing argument to '%s'", argv[i-1]);
+                }
+                uint32_t uVal;
+                int vrc;
+                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+                if (vrc != VINF_SUCCESS || uVal == 0)
+                    return errorArgument("Error parsing UART I/O base '%s'", argv[i]);
+                uarts_base[n - 1] = uVal;
+                i++;
+                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+                if (vrc != VINF_SUCCESS)
+                    return errorArgument("Error parsing UART IRQ '%s'", argv[i]);
+                uarts_irq[n - 1]  = uVal;
+                i++;
+                if (strcmp(argv[i], "server") && strcmp(argv[i], "client"))
+                    return errorArgument("Third UART argument must be 'client' or 'server'");
+                uarts_server[n - 1] = argv[i];
+                i++;
+#ifdef __WIN__
+                if (strncmp(argv[i], "\\\\.\\pipe\\", 9))
+                    return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
+#endif
+                uarts_pipe[n - 1] = argv[i];
+            }
         }
         else
         {
@@ -3944,6 +4036,36 @@ static int handleModifyVM(int argc, char *argv[],
         }
         if (FAILED(rc))
             break;
+
+        /* iterate through all possible serial ports */
+        for (ULONG n = 0; n < SerialPortCount; n ++)
+        {
+            ComPtr<ISerialPort> uart;
+            CHECK_ERROR_RET (machine, GetSerialPort (n, uart.asOutParam()), 1);
+
+            ASSERT(uart);
+
+            /* something about the NIC? */
+            if (uarts_base[n])
+            {
+                if (uarts_base[n] == (ULONG)-1)
+                {
+                    CHECK_ERROR_RET(uart, COMSETTER(Enabled) (FALSE), 1);
+                }
+                else
+                {
+                    CHECK_ERROR_RET(uart, COMSETTER(Iobase) (uarts_base[n]), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(Irq) (uarts_irq[n]), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(Pipe) (Bstr(uarts_pipe[n])), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(Server)
+                                          (0 == strcmp(uarts_server[n], "server")), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(Enabled) (TRUE), 1);
+                }
+            }
+        }
+        if (FAILED(rc))
+            break;
+
 #ifdef VBOX_VRDP
         if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype || vrdpmulticon)
         {
@@ -4218,7 +4340,7 @@ static int handleControlVM(int argc, char *argv[],
             CHECK_ERROR_BREAK (virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
             CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
 
-            unsigned n = parseNicNum(&argv[1][12], NetworkAdapterCount);
+            unsigned n = parseNum(&argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
             {
                 rc = E_FAIL;

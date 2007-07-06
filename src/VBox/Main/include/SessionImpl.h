@@ -97,6 +97,7 @@ public:
     STDMETHOD(OnDVDDriveChange)();
     STDMETHOD(OnFloppyDriveChange)();
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter);
+    STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError);
