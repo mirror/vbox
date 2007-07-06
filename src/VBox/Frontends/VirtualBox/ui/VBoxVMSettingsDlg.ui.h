@@ -30,6 +30,7 @@
 *****************************************************************************/
 
 
+extern const char *GUI_SaveMountedAtRuntime;
 extern const char *GUI_FirstRun;
 
 
@@ -1521,6 +1522,10 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* Shared clipboard mode */
     cbSharedClipboard->setCurrentItem (machine.GetClipboardMode());
 
+    /* other features */
+    QString saveRtimeImages = cmachine.GetExtraData (GUI_SaveMountedAtRuntime);
+    chbRememberMedia->setChecked (saveRtimeImages != "no");
+
     /* hard disk images */
     {
         struct
@@ -1859,6 +1864,10 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* Shared clipboard mode */
     cmachine.SetClipboardMode ((CEnums::ClipboardMode)cbSharedClipboard->currentItem());
+
+    /* other features */
+    cmachine.SetExtraData (GUI_SaveMountedAtRuntime,
+                           chbRememberMedia->isChecked() ? "yes" : "no");
 
     /* hard disk images */
     {

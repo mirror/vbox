@@ -1246,6 +1246,50 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                 </widget>
                             </vbox>
                         </widget>
+                        <widget class="QWidget">
+                            <property name="name">
+                                <cstring>other</cstring>
+                            </property>
+                            <attribute name="title">
+                                <string>&amp;Other</string>
+                            </attribute>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <widget class="QCheckBox">
+                                    <property name="name">
+                                        <cstring>chbRememberMedia</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>&amp;Remember Media Mounted at Runtime</string>
+                                    </property>
+                                    <property name="accel">
+                                        <string>Alt+R</string>
+                                    </property>
+                                    <property name="checked">
+                                        <bool>true</bool>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer30</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>151</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </vbox>
+                        </widget>
                     </widget>
                 </vbox>
             </widget>

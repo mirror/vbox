@@ -285,6 +285,7 @@ private:
     QColor erase_color;
 
     bool mIsFirstTimeStarted : 1;
+    bool mIsAutoSaveMedia : 1;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger GUI
