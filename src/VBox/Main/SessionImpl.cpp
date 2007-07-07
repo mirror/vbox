@@ -1011,6 +1011,8 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
             arc = ::DosReleaseMutexSem (ipcMutex);
             AssertMsg (arc == NO_ERROR, ("cannot release mutex, arc=%ld\n", arc));
         }
+
+        ::DosCloseMutexSem (ipcMutex);
     }
 
     /* store the answer */
