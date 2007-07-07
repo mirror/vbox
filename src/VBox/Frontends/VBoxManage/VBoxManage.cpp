@@ -1041,7 +1041,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
     /* get the maximum amount of UARTs */
     ULONG maxUARTs = 0;
-    sysProps->COMGETTER(NetworkAdapterCount)(&maxUARTs);
+    sysProps->COMGETTER(SerialPortCount)(&maxUARTs);
     for (ULONG currentUART = 0; currentUART < maxUARTs; currentUART++)
     {
         ComPtr<ISerialPort> uart;
