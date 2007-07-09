@@ -47,6 +47,13 @@ typedef struct
 
 } VBOX_OGL_CTX, *PVBOX_OGL_CTX;
 
+/* HGCM macro */
+#define VBOX_INIT_CALL(a, b, c)                 \
+    (a)->result      = VINF_SUCCESS;            \
+    (a)->u32ClientID = (c)->u32ClientID;        \
+    (a)->u32Function = VBOXOGL_FN_##b;          \
+    (a)->cParms      = VBOXOGL_CPARMS_##b
+
 /* glDrawElement internal state */
 #define VBOX_OGL_DRAWELEMENT_VERTEX     0
 #define VBOX_OGL_DRAWELEMENT_TEXCOORD   1
@@ -83,6 +90,8 @@ typedef struct
 
 
 extern HINSTANCE hDllVBoxOGL;
+extern char      szOpenGLVersion[256];
+extern char      szOpenGLExtensions[8192];
 
 void APIENTRY glSetError(GLenum glNewError);
 
@@ -188,11 +197,10 @@ void VBoxCmdStop(uint32_t enmOp);
  * Send an HGCM request
  *
  * @return VBox status code
- * @param   hDriver     Driver handle
  * @param   pvData      Data pointer
  * @param   cbData      Data size
  */
-int vboxHGCMCall(HANDLE hDriver, void *pvData, unsigned cbData);
+int vboxHGCMCall(void *pvData, unsigned cbData);
 
 #ifdef DEBUG
 /**
@@ -226,8 +234,9 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam);
  * Initialize OpenGL extensions
  *
  * @returns VBox status code
+ * @param pCtx  OpenGL thread context
  */
-int vboxInitOpenGLExtensions();
+int vboxInitOpenGLExtensions(PVBOX_OGL_THREAD_CTX pCtx);
 
 /**
  * Check if an OpenGL extension is available on the host

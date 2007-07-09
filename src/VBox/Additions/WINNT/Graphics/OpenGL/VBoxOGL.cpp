@@ -23,18 +23,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#define VBOX_INIT_CALL(a, b, c)                 \
-    (a)->result      = VINF_SUCCESS;            \
-    (a)->u32ClientID = (c)->u32ClientID;        \
-    (a)->u32Function = VBOXOGL_FN_##b;          \
-    (a)->cParms      = VBOXOGL_CPARMS_##b
-
 
        HINSTANCE    hDllVBoxOGL                 = 0;
 static DWORD        dwOGLTlsIndex               = TLS_OUT_OF_INDEXES;
 static VBOX_OGL_CTX vboxOGLCtx                  = {0};
-static char         szOpenGLVersion[256]        = "";
-static char         szOpenGLExtensions[8192]    = ""; /* this one can be rather long */
+       char         szOpenGLVersion[256]        = "";
+       char         szOpenGLExtensions[8192]    = ""; /* this one can be rather long */
 
 
 /**
@@ -187,7 +181,7 @@ BOOL VBoxOGLThreadAttach()
     parms.pString.u.Pointer.size         = sizeof(szOpenGLVersion);
     parms.pString.u.Pointer.u.linearAddr = (vmmDevHypPtr)szOpenGLVersion;
 
-    int rc = vboxHGCMCall(vboxOGLCtx.hGuestDrv, &parms, sizeof (parms));
+    int rc = vboxHGCMCall(&parms, sizeof (parms));
 
     if (    VBOX_FAILURE(rc)
         ||  VBOX_FAILURE(parms.hdr.result))
@@ -197,27 +191,8 @@ BOOL VBoxOGLThreadAttach()
     }
     DbgPrintf(("GL_VERSION=%s\n", szOpenGLVersion));
 
-    memset(&parms, 0, sizeof(parms));
-    VBOX_INIT_CALL(&parms.hdr, GLGETSTRING, pCtx);
-
-    parms.name.type                      = VMMDevHGCMParmType_32bit;
-    parms.name.u.value32                 = GL_EXTENSIONS;
-    parms.pString.type                   = VMMDevHGCMParmType_LinAddr;
-    parms.pString.u.Pointer.size         = sizeof(szOpenGLExtensions);
-    parms.pString.u.Pointer.u.linearAddr = (vmmDevHypPtr)szOpenGLExtensions;
-
-    rc = vboxHGCMCall(vboxOGLCtx.hGuestDrv, &parms, sizeof (parms));
-
-    if (    VBOX_FAILURE(rc)
-        ||  VBOX_FAILURE(parms.hdr.result))
-    {
-        DbgPrintf(("GL_EXTENSIONS failed with %x %x\n", rc, parms.hdr.result));
-        return FALSE;
-    }
-    DbgPrintf(("GL_EXTENSIONS=%s\n\n", szOpenGLExtensions));
-
     /* Initialize OpenGL extensions */
-    vboxInitOpenGLExtensions();
+    vboxInitOpenGLExtensions(pCtx);
 
     return TRUE;
 }
@@ -274,15 +249,14 @@ BOOL VBoxOGLThreadDetach()
  * Send an HGCM request
  *
  * @return VBox status code
- * @param   hDriver     Driver handle
  * @param   pvData      Data pointer
  * @param   cbData      Data size
  */
-int vboxHGCMCall(HANDLE hDriver, void *pvData, unsigned cbData)
+int vboxHGCMCall(void *pvData, unsigned cbData)
 {
     DWORD cbReturned;
 
-    if (DeviceIoControl (hDriver,
+    if (DeviceIoControl (vboxOGLCtx.hGuestDrv,
                          IOCTL_VBOXGUEST_HGCM_CALL,
                          pvData, cbData,
                          pvData, cbData,
@@ -390,7 +364,7 @@ uint64_t VBoxOGLFlush()
     parms.lasterror.type                    = VMMDevHGCMParmType_32bit;
     parms.lasterror.u.value32               = 0;
 
-    int rc = vboxHGCMCall(vboxOGLCtx.hGuestDrv, &parms, sizeof (parms));
+    int rc = vboxHGCMCall(&parms, sizeof (parms));
 
     /* reset command buffer */
     pCtx->pCurrentCmd = pCtx->pCmdBuffer;
@@ -452,7 +426,7 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
         parms.pLastParam.u.value32              = 0;
     }
 
-    int rc = vboxHGCMCall(vboxOGLCtx.hGuestDrv, &parms, sizeof (parms));
+    int rc = vboxHGCMCall(&parms, sizeof (parms));
 
     /* reset command buffer */
     pCtx->pCurrentCmd = pCtx->pCmdBuffer;
@@ -490,7 +464,7 @@ bool VBoxIsExtensionAvailable(const char *pszExtFunctionName)
     parms.pszExtFnName.u.Pointer.size         = strlen(pszExtFunctionName)+1;
     parms.pszExtFnName.u.Pointer.u.linearAddr = (vmmDevHypPtr)pszExtFunctionName;
 
-    int rc = vboxHGCMCall(vboxOGLCtx.hGuestDrv, &parms, sizeof (parms));
+    int rc = vboxHGCMCall(&parms, sizeof (parms));
 
     if (    VBOX_FAILURE(rc)
         ||  VBOX_FAILURE(parms.hdr.result))

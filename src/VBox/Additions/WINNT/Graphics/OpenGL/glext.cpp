@@ -27,19 +27,55 @@
 #include "VBoxOGL.h"
 
 
-int vboxInitOpenGLExtensions()
+/**
+ * Initialize OpenGL extensions
+ *
+ * @returns VBox status code
+ * @param pCtx  OpenGL thread context
+ */
+int vboxInitOpenGLExtensions(PVBOX_OGL_THREAD_CTX pCtx)
 {
-    const GLubyte *pszExtensions = glGetString(GL_EXTENSIONS);
+    char *pszExtensions;
     static bool    fInitialized  = false;
+    VBoxOGLglGetString parms;
+    int rc;
+
+    memset(&parms, 0, sizeof(parms));
+    VBOX_INIT_CALL(&parms.hdr, GLGETSTRING, pCtx);
+
+    parms.name.type                      = VMMDevHGCMParmType_32bit;
+    parms.name.u.value32                 = GL_EXTENSIONS;
+    parms.pString.type                   = VMMDevHGCMParmType_LinAddr;
+    parms.pString.u.Pointer.size         = sizeof(szOpenGLExtensions);
+    parms.pString.u.Pointer.u.linearAddr = (vmmDevHypPtr)szOpenGLExtensions;
+
+    rc = vboxHGCMCall(&parms, sizeof (parms));
+
+    if (    VBOX_FAILURE(rc)
+        ||  VBOX_FAILURE(parms.hdr.result))
+    {
+        DbgPrintf(("GL_EXTENSIONS failed with %x %x\n", rc, parms.hdr.result));
+        return FALSE;
+    }
+    DbgPrintf(("GL_EXTENSIONS=%s\n\n", szOpenGLExtensions));
 
     if (fInitialized)
         return VINF_SUCCESS;
+
+    pszExtensions = strdup(szOpenGLExtensions);
+    szOpenGLExtensions[0] = 0;
 
     for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
     {
         if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtName))
             OpenGLExtensions[i].fAvailable = VBoxIsExtensionAvailable(OpenGLExtensions[i].pszExtFunctionName);
+        
+        if (OpenGLExtensions[i].fAvailable)
+            strcat(szOpenGLExtensions, OpenGLExtensions[i].pszExtName);
     }
+
+    free(pszExtensions);
+
     fInitialized = true;
     return VINF_SUCCESS;
 }
