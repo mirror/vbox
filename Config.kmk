@@ -601,7 +601,7 @@ DEFS.amd64   = __AMD64__
 DEFS.darwin  = __DARWIN__
 DEFS.darwin.x86 = VBOX_WITH_HYBIRD_32BIT_KERNEL
 DEFS.freebsd = __FREEBSD__
-DEFS.l4      = __L4__ __L4ENV__ L4API_l4v2 ARCH_x86 __NO_CTYPE _FILE_OFFSET_BITS=64
+DEFS.l4      = __L4__ __L4ENV__ L4API_l4v2 ARCH_$(BUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
 ifeq ($(L4_API),l4v2onv4)
  DEFS.l4    += L4API_l4v2onv4 STATIC_L4_INLINE
 endif
@@ -914,7 +914,8 @@ ifneq ($(BUILD_TARGET),l4)
 	$(APPEND) "$@" "endif"
 endif
 	@# Find the compiler includes for IPRT no-crt.
-	$(APPEND) "$@" "VBOX_PATH_GCC_INCS             ?= $(abspath $(dir $(shell LC_ALL=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)))/include"
+	@# Note that `$(dir $(gcc -print-libgcc-file-name))/include does not work for a 64-bit cross build on a 32-bit build host.
+        $(APPEND) "$@" "VBOX_PATH_GCC_INCS             ?= $(shell LC_ALL=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-search-dirs|$(SED_EXT) -ne 's+^install: \(.*[^/][^/]*\)/+\1+p')/include"
 
 	@# 32-bit (GC) compiler switch detection.
 	$(APPEND) "$@" "VBOX_GCC32_VERSION_CC          ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CC))"
@@ -922,19 +923,8 @@ endif
 	$(APPEND) "$@" "VBOX_GCC32_LIBGCC              ?= $(shell $(TOOL_$(VBOX_GCC32_TOOL)_CC) -print-libgcc-file-name)"
 	$(APPEND) "$@" "VBOX_GCC32_Wno-variadic-macros ?= $(call VBOX_GCC32_CHECK_CXX,-Wno-variadic-macros,)"
 
-ifeq ($(BUILD_TARGET),l4)
-	@# L4
-	$(APPEND) "$@" "VBOX_PATH_L4_GCC3_INSTALL      ?= $(shell LANG=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-search-dirs|$(SED_EXT) -ne 's+^install: \(.*[^/][^/]*\)/\?+\1+p')"
-endif
-
 include $(PATH_OUT)/GCCConfig.kmk
 
-ifeq ($(BUILD_TARGET),l4)
- VBOX_L4_GCC3_INCS := $(VBOX_PATH_L4_GCC3_INSTALL)/include
- # L4_GPP3_INCS := \
- #         $(VBOX_PATH_L4_GCC3_INSTALL)/include/g++-v3/ \
- #         $(VBOX_PATH_L4_GCC3_INSTALL)/include/g++-v3/i386-pc-linux-gnu/
-endif
 
 #
 # Coding Signing.
@@ -1500,7 +1490,7 @@ TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 # L4 currently can't handle exception handling.
 TEMPLATE_VBOXR3EXE_CXXFLAGS.l4         = -fno-exceptions -nostdinc \
-	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR) $(FILE_TOOL_GPP3_INCDIR)) \
+	$(addprefix -I,$(VBOX_PATH_GCC_INCS) $(L4_INCDIR) $(FILE_TOOL_GPP3_INCDIR)) \
 	$(DEBUG_L4)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXR3EXE_CFLAGS.debug        = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.debug)
@@ -1508,7 +1498,7 @@ TEMPLATE_VBOXR3EXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
 TEMPLATE_VBOXR3EXE_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXR3EXE_CFLAGS.darwin       = -fno-common
 TEMPLATE_VBOXR3EXE_CFLAGS.l4           = -nostdinc \
-	$(addprefix -I,$(VBOX_L4_GCC3_INCS) $(L4_INCDIR)) $(DEBUG_L4)
+	$(addprefix -I,$(VBOX_PATH_GCC_INCS) $(L4_INCDIR)) $(DEBUG_L4)
 TEMPLATE_VBOXR3EXE_DEFS.l4             = L4_THREAD_SAFE
 TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	$(L4_LIBDIR)/../crt0.o \
