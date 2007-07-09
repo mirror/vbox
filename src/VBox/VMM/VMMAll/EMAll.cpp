@@ -1390,6 +1390,10 @@ EMDECL(int) EMInterpretCLTS(PVM pVM)
     return CPUMSetGuestCR0(pVM, Cr0 & ~X86_CR0_TS);
 }
 
+static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretCLTS(pVM);
+}
 
 /**
  * Interpret CRx write
@@ -1803,6 +1807,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_MOV_CR,MovCRx);
         INTERPRET_CASE(OP_MOV_DR,MovDRx);
         INTERPRET_CASE(OP_LLDT,LLdt);
+        INTERPRET_CASE(OP_CLTS,Clts);
         INTERPRET_CASE(OP_MONITOR, Monitor);
         INTERPRET_CASE(OP_MWAIT, MWait);
         INTERPRET_CASE_EX_PARAM3(OP_ADD,Add, AddSub, EMEmulateAdd);
