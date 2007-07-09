@@ -1207,74 +1207,77 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                 rc = RTLdrGetBits(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase,
                                   supLoadModuleResolveImport, (void *)pszModule);
 
-                /*
-                 * Get the entry points.
-                 */
-                RTUINTPTR VMMR0Entry = 0;
-                RTUINTPTR ModuleInit = 0;
-                RTUINTPTR ModuleTerm = 0;
-                if (fIsVMMR0 && VBOX_SUCCESS(rc))
-                    rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "VMMR0Entry", &VMMR0Entry);
                 if (VBOX_SUCCESS(rc))
                 {
-                    rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleInit", &ModuleInit);
-                    if (VBOX_FAILURE(rc))
-                        ModuleInit = 0;
+                    /*
+                     * Get the entry points.
+                     */
+                    RTUINTPTR VMMR0Entry = 0;
+                    RTUINTPTR ModuleInit = 0;
+                    RTUINTPTR ModuleTerm = 0;
+                    if (fIsVMMR0)
+                        rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "VMMR0Entry", &VMMR0Entry);
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleInit", &ModuleInit);
+                        if (VBOX_FAILURE(rc))
+                            ModuleInit = 0;
 
-                    rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleTerm", &ModuleTerm);
-                    if (VBOX_FAILURE(rc))
-                        ModuleTerm = 0;
-                }
-
-                /*
-                 * Create the symbol and string tables.
-                 */
-                SUPLDRCREATETABSARGS CreateArgs;
-                CreateArgs.cbImage = CalcArgs.cbImage;
-                CreateArgs.pSym    = (PSUPLDRSYM)&pIn->achImage[offSymTab];
-                CreateArgs.pszBase =     (char *)&pIn->achImage[offStrTab];
-                CreateArgs.psz     = CreateArgs.pszBase;
-                rc = RTLdrEnumSymbols(hLdrMod, 0, NULL, 0, supLoadModuleCreateTabsCB, &CreateArgs);
-                if (VBOX_SUCCESS(rc))
-                {
-                    AssertRelease((size_t)(CreateArgs.psz - CreateArgs.pszBase) <= CalcArgs.cbStrings);
-                    AssertRelease((size_t)(CreateArgs.pSym - (PSUPLDRSYM)&pIn->achImage[offSymTab]) <= CalcArgs.cSymbols);
+                        rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleTerm", &ModuleTerm);
+                        if (VBOX_FAILURE(rc))
+                            ModuleTerm = 0;
+                    }
 
                     /*
-                     * Upload the image.
+                     * Create the symbol and string tables.
                      */
-                    pIn->u32Cookie                  = g_u32Cookie;
-                    pIn->u32SessionCookie           = g_u32SessionCookie;
-                    pIn->pfnModuleInit              = (RTR0PTR)ModuleInit;
-                    pIn->pfnModuleTerm              = (RTR0PTR)ModuleTerm;
-                    if (fIsVMMR0)
+                    SUPLDRCREATETABSARGS CreateArgs;
+                    CreateArgs.cbImage = CalcArgs.cbImage;
+                    CreateArgs.pSym    = (PSUPLDRSYM)&pIn->achImage[offSymTab];
+                    CreateArgs.pszBase =     (char *)&pIn->achImage[offStrTab];
+                    CreateArgs.psz     = CreateArgs.pszBase;
+                    rc = RTLdrEnumSymbols(hLdrMod, 0, NULL, 0, supLoadModuleCreateTabsCB, &CreateArgs);
+                    if (VBOX_SUCCESS(rc))
                     {
-                        pIn->eEPType                = pIn->EP_VMMR0;
-                        pIn->EP.VMMR0.pvVMMR0       = OpenOut.pvImageBase;
-                        pIn->EP.VMMR0.pvVMMR0Entry  = (RTR0PTR)VMMR0Entry;
-                    }
-                    else
-                        pIn->eEPType                = pIn->EP_NOTHING;
-                    pIn->offStrTab                  = offStrTab;
-                    pIn->cbStrTab                   = (uint32_t)CalcArgs.cbStrings;
-                    AssertRelease(pIn->cbStrTab == CalcArgs.cbStrings);
-                    pIn->offSymbols                 = offSymTab;
-                    pIn->cSymbols                   = CalcArgs.cSymbols;
-                    pIn->cbImage                    = cbImage;
-                    pIn->pvImageBase                = OpenOut.pvImageBase;
-                    if (!g_u32FakeMode)
-                        rc = suplibOsIOCtl(SUP_IOCTL_LDR_LOAD, pIn, cbIn, NULL, 0);
-                    else
-                        rc = VINF_SUCCESS;
-                    if (    VBOX_SUCCESS(rc)
-                        ||  rc == VERR_ALREADY_LOADED /* this is because of a competing process. */
-                       )
-                    {
+                        AssertRelease((size_t)(CreateArgs.psz - CreateArgs.pszBase) <= CalcArgs.cbStrings);
+                        AssertRelease((size_t)(CreateArgs.pSym - (PSUPLDRSYM)&pIn->achImage[offSymTab]) <= CalcArgs.cSymbols);
+
+                        /*
+                         * Upload the image.
+                         */
+                        pIn->u32Cookie                  = g_u32Cookie;
+                        pIn->u32SessionCookie           = g_u32SessionCookie;
+                        pIn->pfnModuleInit              = (RTR0PTR)ModuleInit;
+                        pIn->pfnModuleTerm              = (RTR0PTR)ModuleTerm;
                         if (fIsVMMR0)
-                            g_pvVMMR0 = OpenOut.pvImageBase;
-                        RTMemTmpFree(pIn);
-                        RTLdrClose(hLdrMod);
-                        return VINF_SUCCESS;
+                        {
+                            pIn->eEPType                = pIn->EP_VMMR0;
+                            pIn->EP.VMMR0.pvVMMR0       = OpenOut.pvImageBase;
+                            pIn->EP.VMMR0.pvVMMR0Entry  = (RTR0PTR)VMMR0Entry;
+                        }
+                        else
+                            pIn->eEPType                = pIn->EP_NOTHING;
+                        pIn->offStrTab                  = offStrTab;
+                        pIn->cbStrTab                   = (uint32_t)CalcArgs.cbStrings;
+                        AssertRelease(pIn->cbStrTab == CalcArgs.cbStrings);
+                        pIn->offSymbols                 = offSymTab;
+                        pIn->cSymbols                   = CalcArgs.cSymbols;
+                        pIn->cbImage                    = cbImage;
+                        pIn->pvImageBase                = OpenOut.pvImageBase;
+                        if (!g_u32FakeMode)
+                            rc = suplibOsIOCtl(SUP_IOCTL_LDR_LOAD, pIn, cbIn, NULL, 0);
+                        else
+                            rc = VINF_SUCCESS;
+                        if (    VBOX_SUCCESS(rc)
+                            ||  rc == VERR_ALREADY_LOADED /* this is because of a competing process. */
+                           )
+                        {
+                            if (fIsVMMR0)
+                                g_pvVMMR0 = OpenOut.pvImageBase;
+                            RTMemTmpFree(pIn);
+                            RTLdrClose(hLdrMod);
+                            return VINF_SUCCESS;
+                        }
                     }
                 }
                 RTMemTmpFree(pIn);
