@@ -1728,9 +1728,6 @@ REMR3DECL(int) REMR3State(PVM pVM)
                   | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR | CPUM_CHANGED_TR
                   | CPUM_CHANGED_FPU_REM | CPUM_CHANGED_SYSENTER_MSR))
     {
-        if (fFlags & CPUM_CHANGED_FPU_REM)
-            save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu); /* 'save' is an excellent name. */
-
         if (fFlags & CPUM_CHANGED_GLOBAL_TLB_FLUSH)
         {
             pVM->rem.s.fIgnoreCR3Load = true;
@@ -1810,6 +1807,9 @@ REMR3DECL(int) REMR3State(PVM pVM)
             /** @note do_interrupt will fault if the busy flag is still set.... */
             pVM->rem.s.Env.tr.flags &= ~DESC_TSS_BUSY_MASK;
         }
+        /* Note: *after* possible flushes!!! */
+        if (fFlags & CPUM_CHANGED_FPU_REM)
+            save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->fpu); /* 'save' is an excellent name. */
     }
 
     /*
