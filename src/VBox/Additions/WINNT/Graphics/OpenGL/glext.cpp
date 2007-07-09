@@ -40,6 +40,9 @@ int vboxInitOpenGLExtensions(PVBOX_OGL_THREAD_CTX pCtx)
     VBoxOGLglGetString parms;
     int rc;
 
+    if (fInitialized)
+        return VINF_SUCCESS;
+
     memset(&parms, 0, sizeof(parms));
     VBOX_INIT_CALL(&parms.hdr, GLGETSTRING, pCtx);
 
@@ -55,12 +58,9 @@ int vboxInitOpenGLExtensions(PVBOX_OGL_THREAD_CTX pCtx)
         ||  VBOX_FAILURE(parms.hdr.result))
     {
         DbgPrintf(("GL_EXTENSIONS failed with %x %x\n", rc, parms.hdr.result));
-        return FALSE;
+        return (rc == VINF_SUCCESS) ? parms.hdr.result : rc;
     }
     DbgPrintf(("GL_EXTENSIONS=%s\n\n", szOpenGLExtensions));
-
-    if (fInitialized)
-        return VINF_SUCCESS;
 
     pszExtensions = strdup(szOpenGLExtensions);
     szOpenGLExtensions[0] = 0;
