@@ -305,7 +305,7 @@ int HGCMService::loadServiceDLL (void)
     }
     else
     {
-        LogFlowFunc(("failed to load service library. The service is not available %Vrc\n", rc));
+        LogRel(("HGCM: Failed to load the service library: [%s], rc = %Vrc. The service will be not available.\n", m_pszSvcLibrary, rc));
         m_hLdrMod = NIL_RTLDRMOD;
     }
 
