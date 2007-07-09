@@ -70,7 +70,7 @@
 # define SUP_CTL_CATEGORY_FAST          0xc1
 # define SUP_CTL_CODE_FAST(Function)    ((unsigned char)(Function))
 
-#elif defined(__LINUX__) || defined(__L4__)
+#elif defined(__LINUX__)
 # ifdef __X86__ /** @todo With the next major version change, drop this branch. */
 #  define SUP_CTL_CODE(Function) \
     ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (sizeof(SUPDRVIOCTLDATA) << 16) )
@@ -86,6 +86,12 @@
 #   define SUP_CTL_CODE_FAST(Function)    _IO(  'V', (Function) | SUP_IOCTL_FLAG)
 #  endif
 # endif
+
+#elif defined(__L4__)
+# define SUP_CTL_CODE(Function) \
+    ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (sizeof(SUPDRVIOCTLDATA) << 16) )
+# define SUP_CTL_CODE_FAST(Function) \
+    ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (0 << 16) )
 
 #else /* BSD */
 # include <sys/ioccom.h>
