@@ -393,8 +393,9 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
     case 12:
     case 13:
     case 17:
-        Assert(enmError == TRPM_TRAP_HAS_ERRORCODE);
+        Assert(enmError == TRPM_TRAP_HAS_ERRORCODE || enmType == TRPM_SOFTWARE_INT);
         break;
+
     default:
         Assert(enmError == TRPM_TRAP_NO_ERRORCODE);
         break;
