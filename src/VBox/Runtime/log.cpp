@@ -399,7 +399,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
             {
                 rc = RTFileOpen(&pLogger->File, pLogger->pszFilename,
                                 RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(rc) && pszErrorMsg)
                     RTStrPrintf(pszErrorMsg, cchErrorMsg, "could not open file '%s'", pLogger->pszFilename);
             }
 #endif  /* IN_RING3 */
@@ -415,7 +415,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                     *ppLogger = pLogger;
                     return VINF_SUCCESS;
                 }
-                else
+                else if (pszErrorMsg)
                     RTStrPrintf(pszErrorMsg, cchErrorMsg, "failed to create sempahore");
             }
 #ifdef IN_RING3
