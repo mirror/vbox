@@ -63,7 +63,6 @@ static ICDTABLE icdTable = { 336, {
 } };
 
 
-
 BOOL APIENTRY DrvValidateVersion(DWORD version)
 {
     DbgPrintf(("DrvValidateVersion %x -> always TRUE\n", version));
@@ -221,6 +220,8 @@ BOOL APIENTRY DrvSwapBuffers(HDC hdc)
 }
 
 #ifdef VBOX_WITH_WGL_EXPORTS
+extern PROC APIENTRY DrvGetProcAddress(LPCSTR lpszProc);
+
 /* Test export for directly linking with vboxogl.dll */
 int WINAPI wglSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
                                      int iStart, int cEntries,
