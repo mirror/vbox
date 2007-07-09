@@ -734,7 +734,6 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
                 "%sldtr={%04x base=%08x limit=%08x flags=%08x}\n"
                 "%str  ={%04x base=%08x limit=%08x flags=%08x}\n"
                 "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
-                "%sFCW=%04x %sFSW=%04x %sFTW=%04x\n"
                 ,
                 pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                 pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
@@ -747,12 +746,20 @@ static void cpumR3InfoOne(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP p
                 pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
                 pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u32Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
                 pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u32Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
-                pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
-                pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW);
+                pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
+
             pHlp->pfnPrintf(pHlp,
-                "%sFPUDP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
+                "FPU:\n",
+                "%sFCW=%04x %sFSW=%04x %sFTW=%02x\n"
+                "%sres1=%02x %sFOP=%04x %sFPUIP=%08x %sCS=%04x %sRsvrd1=%04x\n"
+                "%sFPUDP=%04x %sDS=%04x %sRsvrd2=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
                 ,
+                pszPrefix, pCtx->fpu.FCW, pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW,
+                pszPrefix, pCtx->fpu.huh1, pszPrefix, pCtx->fpu.FOP, pszPrefix, pCtx->fpu.FPUIP, pszPrefix, pCtx->fpu.CS, pszPrefix, pCtx->fpu.Rsvrd1,
+                pszPrefix, pCtx->fpu.FPUDP, pszPrefix, pCtx->fpu.DS, pszPrefix, pCtx->fpu.Rsrvd2,
                 pszPrefix, pCtx->fpu.FPUDP, pszPrefix, pCtx->fpu.MXCSR, pszPrefix, pCtx->fpu.MXCSR_MASK);
+
+
             break;
     }
 }
