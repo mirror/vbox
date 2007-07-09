@@ -71,7 +71,10 @@ int vboxInitOpenGLExtensions(PVBOX_OGL_THREAD_CTX pCtx)
             OpenGLExtensions[i].fAvailable = VBoxIsExtensionAvailable(OpenGLExtensions[i].pszExtFunctionName);
         
         if (OpenGLExtensions[i].fAvailable)
+        {
             strcat(szOpenGLExtensions, OpenGLExtensions[i].pszExtName);
+            strcat(szOpenGLExtensions, " ");
+        }
     }
 
     free(pszExtensions);
