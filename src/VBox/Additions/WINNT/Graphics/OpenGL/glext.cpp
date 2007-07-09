@@ -70,7 +70,8 @@ int vboxInitOpenGLExtensions(PVBOX_OGL_THREAD_CTX pCtx)
         if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtName))
             OpenGLExtensions[i].fAvailable = VBoxIsExtensionAvailable(OpenGLExtensions[i].pszExtFunctionName);
         
-        if (OpenGLExtensions[i].fAvailable)
+        if (    OpenGLExtensions[i].fAvailable
+            &&  !strstr(szOpenGLExtensions, OpenGLExtensions[i].pszExtName))
         {
             strcat(szOpenGLExtensions, OpenGLExtensions[i].pszExtName);
             strcat(szOpenGLExtensions, " ");
