@@ -1219,12 +1219,12 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                         rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "VMMR0Entry", &VMMR0Entry);
                     if (VBOX_SUCCESS(rc))
                     {
-                        rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleInit", &ModuleInit);
-                        if (VBOX_FAILURE(rc))
+                        int rc2 = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleInit", &ModuleInit);
+                        if (VBOX_FAILURE(rc2))
                             ModuleInit = 0;
 
-                        rc = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleTerm", &ModuleTerm);
-                        if (VBOX_FAILURE(rc))
+                        rc2 = RTLdrGetSymbolEx(hLdrMod, &pIn->achImage[0], (uintptr_t)OpenOut.pvImageBase, "ModuleTerm", &ModuleTerm);
+                        if (VBOX_FAILURE(rc2))
                             ModuleTerm = 0;
                     }
                     if (VBOX_SUCCESS(rc))
