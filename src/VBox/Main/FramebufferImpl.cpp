@@ -207,3 +207,23 @@ STDMETHODIMP InternalFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG x
     *handled = false;
     return S_OK;
 }
+
+STDMETHODIMP InternalFramebuffer::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!aPcRect)
+        return E_POINTER;
+
+    return S_OK;
+}
+
+STDMETHODIMP InternalFramebuffer::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!paRect)
+        return E_POINTER;
+
+    return S_OK;
+}

@@ -323,6 +323,28 @@ HRESULT SDLFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG
     return E_NOTIMPL;
 }
 
+HRESULT SDLFramebuffer::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!aPcRect)
+        return E_POINTER;
+
+    /* @todo */
+    return S_OK;
+}
+
+HRESULT SDLFramebuffer::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!paRect)
+        return E_POINTER;
+
+    /* @todo */
+    return S_OK;
+}
+
 //
 // Internal public methods
 //
