@@ -734,6 +734,12 @@ int         pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName);
 
 void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);
 
+void        pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+void        pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
+void        pdmR3ThreadDestroyAll(PVM pVM);
+int         pdmR3ThreadResumeAll(PVM pVM);
+int         pdmR3ThreadSuspendAll(PVM pVM);
+
 #ifdef VBOX_WITH_PDM_LOCK
 void        pdmLock(PVM pVM);
 int         pdmLockEx(PVM pVM, int rc);
