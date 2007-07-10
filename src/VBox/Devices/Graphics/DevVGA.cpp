@@ -3742,7 +3742,7 @@ static DECLCALLBACK(int) vgaPortQueryColorDepth(PPDMIDISPLAYPORT pInterface, uin
 }
 
 /** @copydoc PDMIDISPLAYPORT::pfnSetVisibleRegion */
-static DECLCALLBACK(int) vgaPortSetVisibleRegion(PPDMIDISPLAYPORT pInterface, uint32_t cRect, PPDMIDISPLAYRECT pRect)
+static DECLCALLBACK(int) vgaPortSetVisibleRegion(PPDMIDISPLAYPORT pInterface, uint32_t cRect, PRTRECT pRect)
 {
     PVGASTATE pData = IDISPLAYPORT_2_VGASTATE(pInterface);
 
@@ -3755,7 +3755,7 @@ static DECLCALLBACK(int) vgaPortSetVisibleRegion(PPDMIDISPLAYPORT pInterface, ui
 
 
 /** @copydoc PDMIDISPLAYPORT::pfnQueryVisibleRegion */
-static DECLCALLBACK(int) vgaPortQueryVisibleRegion(PPDMIDISPLAYPORT pInterface, uint32_t *pcRect, PPDMIDISPLAYRECT pRect)
+static DECLCALLBACK(int) vgaPortQueryVisibleRegion(PPDMIDISPLAYPORT pInterface, uint32_t *pcRect, PRTRECT pRect)
 {
     PVGASTATE pData = IDISPLAYPORT_2_VGASTATE(pInterface);
 
