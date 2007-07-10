@@ -601,6 +601,7 @@ const char *mmR3GetTagName(MMTAG enmTag)
         TAG2STR(PDM_DRIVER_USER);
         TAG2STR(PDM_LUN);
         TAG2STR(PDM_QUEUE);
+        TAG2STR(PDM_THREAD);
 
         TAG2STR(PGM);
         TAG2STR(PGM_HANDLERS);
