@@ -7489,7 +7489,16 @@
     </attribute>
 
     <attribute name="port" type="unsigned long">
-      <desc>VRDP server port.</desc>
+      <desc>
+        VRDP server port number.
+        <note>
+          Setting the value of this property to <tt>0</tt> will reset the port
+          number to the default value which is
+          currently <tt>3389</tt>. Reading this property will always return a
+          real port number, even after it has been set to <tt>0</tt> (in which
+          case the default port is returned).
+        </note>
+      </desc>
     </attribute>
 
     <attribute name="netAddress" type="wstring">
