@@ -3741,6 +3741,40 @@ static DECLCALLBACK(int) vgaPortQueryColorDepth(PPDMIDISPLAYPORT pInterface, uin
     return VINF_SUCCESS;
 }
 
+/** @copydoc PDMIDISPLAYPORT::pfnSetVisibleRegion */
+static DECLCALLBACK(int) vgaPortSetVisibleRegion(PPDMIDISPLAYPORT pInterface, uint32_t cRect, PPDMIDISPLAYRECT pRect)
+{
+    PVGASTATE pData = IDISPLAYPORT_2_VGASTATE(pInterface);
+
+    if (!cRect || !pRect)
+        return VERR_INVALID_PARAMETER;
+
+    /** @todo */
+    return VINF_SUCCESS;
+}
+
+
+/** @copydoc PDMIDISPLAYPORT::pfnQueryVisibleRegion */
+static DECLCALLBACK(int) vgaPortQueryVisibleRegion(PPDMIDISPLAYPORT pInterface, uint32_t *pcRect, PPDMIDISPLAYRECT pRect)
+{
+    PVGASTATE pData = IDISPLAYPORT_2_VGASTATE(pInterface);
+
+    if (!pcRect)
+        return VERR_INVALID_PARAMETER;
+
+    /** @todo */
+    *pcRect = 1;
+
+    if (pRect)
+    {
+        pRect->x  = 0;
+        pRect->y  = 0;
+        pRect->cx = pData->last_scr_width;
+        pRect->cy = pData->last_scr_height;
+    }
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Create a 32-bbp snapshot of the display.
@@ -4601,16 +4635,18 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     /* the interfaces. */
-    pData->Base.pfnQueryInterface   = vgaPortQueryInterface;
+    pData->Base.pfnQueryInterface       = vgaPortQueryInterface;
 
-    pData->Port.pfnUpdateDisplay    = vgaPortUpdateDisplay;
-    pData->Port.pfnUpdateDisplayAll = vgaPortUpdateDisplayAll;
-    pData->Port.pfnQueryColorDepth  = vgaPortQueryColorDepth;
-    pData->Port.pfnSetRefreshRate   = vgaPortSetRefreshRate;
-    pData->Port.pfnSnapshot         = vgaPortSnapshot;
-    pData->Port.pfnDisplayBlt       = vgaPortDisplayBlt;
-    pData->Port.pfnUpdateDisplayRect= vgaPortUpdateDisplayRect;
-    pData->Port.pfnSetRenderVRAM    = vgaPortSetRenderVRAM;
+    pData->Port.pfnUpdateDisplay        = vgaPortUpdateDisplay;
+    pData->Port.pfnUpdateDisplayAll     = vgaPortUpdateDisplayAll;
+    pData->Port.pfnQueryColorDepth      = vgaPortQueryColorDepth;
+    pData->Port.pfnSetRefreshRate       = vgaPortSetRefreshRate;
+    pData->Port.pfnSnapshot             = vgaPortSnapshot;
+    pData->Port.pfnDisplayBlt           = vgaPortDisplayBlt;
+    pData->Port.pfnUpdateDisplayRect    = vgaPortUpdateDisplayRect;
+    pData->Port.pfnSetRenderVRAM        = vgaPortSetRenderVRAM;
+    pData->Port.pfnSetVisibleRegion     = vgaPortSetVisibleRegion;
+    pData->Port.pfnQueryVisibleRegion   = vgaPortQueryVisibleRegion;
 
 
     /*
