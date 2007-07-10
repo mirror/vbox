@@ -6095,7 +6095,6 @@
 
   </interface>
 
-
   <!--
   // IDisplay
   /////////////////////////////////////////////////////////////////////////
@@ -6111,7 +6110,7 @@
 
   <enum
      name="FramebufferPixelFormat"
-     uuid="d15f9c8b-bd7e-4003-981c-4ca14f49f2c3"
+     uuid="0389bf8d-3b41-476c-94be-53f5c84be9b5"
      >
     <const name="PixelFormatDefault"      value="0"/>
     <const name="PixelFormatRGB16"        value="1"/>
@@ -6323,6 +6322,22 @@
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
       <param name="handled" type="boolean" dir="return"/>
+    </method>
+
+    <method name="queryVisibleRegion">
+      <desc>
+        Query the visible region
+      </desc>
+      <param name="pcRect" type="unsigned long" dir="out"/>
+      <param name="pRect" type="octet" mod="ptr" dir="in"/>
+    </method>
+
+    <method name="setVisibleRegion">
+      <desc>
+        Set the visible region
+      </desc>
+      <param name="cRect" type="unsigned long" dir="in"/>
+      <param name="pRect" type="octet" mod="ptr" dir="in"/>
     </method>
 
   </interface>

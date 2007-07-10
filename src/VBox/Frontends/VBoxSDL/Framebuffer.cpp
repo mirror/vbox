@@ -569,6 +569,27 @@ STDMETHODIMP VBoxSDLFB::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG
     return S_OK;
 }
 
+STDMETHODIMP VBoxSDLFB::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!aPcRect)
+        return E_POINTER;
+
+    /* @todo */
+    return S_OK;
+}
+
+STDMETHODIMP VBoxSDLFB::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!paRect)
+        return E_POINTER;
+
+    /* @todo */
+    return S_OK;
+}
 
 //
 // Internal public methods
@@ -1450,3 +1471,4 @@ STDMETHODIMP VBoxSDLFBOverlay::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc
     *handled = false;
     return S_OK;
 }
+

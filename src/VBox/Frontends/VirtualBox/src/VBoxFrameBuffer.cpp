@@ -227,6 +227,28 @@ STDMETHODIMP VBoxFrameBuffer::CopyScreenBits (ULONG aXDst, ULONG aYDst,
     return S_OK;
 }
 
+STDMETHODIMP VBoxFrameBuffer::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!aPcRect)
+        return E_POINTER;
+
+    /* @todo */
+    return S_OK;
+}
+
+STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+{
+    PRTRECT paRect = (PRTRECT)aPRect;
+
+    if (!paRect)
+        return E_POINTER;
+
+    /* @todo */
+    return S_OK;
+}
+
 //
 // VBoxQImageFrameBuffer class
 /////////////////////////////////////////////////////////////////////////////
