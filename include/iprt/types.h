@@ -1014,15 +1014,23 @@ typedef FNRTPROGRESS *PFNRTPROGRESS;
 
 
 /**
- * Rectangle data type
+ * Rectangle data type.
  */
 typedef struct RTRECT
 {
+    /** X coordinate. */
     int32_t     x;
+    /** Y coordinate. */
     int32_t     y;
+    /** Width. */
     uint32_t    cx;
+    /** Height. */
     uint32_t    cy;
-} RTRECT, *PRTRECT;
+} RTRECT;
+/** Pointer to a rectangle. */
+typedef RTRECT *PRTRECT;
+/** Pointer to a const rectangle. */
+typedef const RTRECT *PCRTRECT;
 
 /** @} */
 
