@@ -2542,7 +2542,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                             </sizepolicy>
                                         </property>
                                         <property name="whatsThis" stdset="0">
-                                            <string>Displays the VRDP Server port.</string>
+                                            <string>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</string>
                                         </property>
                                     </widget>
                                     <widget class="QComboBox">
