@@ -653,17 +653,6 @@ typedef struct PDMIKEYBOARDCONNECTOR
 } PDMIKEYBOARDCONNECTOR;
 
 
-/**
- * Display rectangle
- */
-typedef struct PDMIDISPLAYRECT
-{
-    int32_t     x;
-    int32_t     y;
-    uint32_t    cx;
-    uint32_t    cy;
-} PDMIDISPLAYRECT, *PPDMIDISPLAYRECT;
-
 
 /** Pointer to a display port interface. */
 typedef struct PDMIDISPLAYPORT *PPDMIDISPLAYPORT;
@@ -794,7 +783,7 @@ typedef struct PDMIDISPLAYPORT
      * @param   pRect               Rectangle array
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetVisibleRegion,(PPDMIDISPLAYPORT pInterface, uint32_t cRect, PPDMIDISPLAYRECT pRect));
+    DECLR3CALLBACKMEMBER(int, pfnSetVisibleRegion,(PPDMIDISPLAYPORT pInterface, uint32_t cRect, PRTRECT pRect));
 
     /**
      * Query the visible region of the display
@@ -805,7 +794,7 @@ typedef struct PDMIDISPLAYPORT
      * @param   pRect               Rectangle array (set to NULL to query the number of rectangles)
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIDISPLAYPORT pInterface, uint32_t *pcRect, PPDMIDISPLAYRECT pRect));
+    DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIDISPLAYPORT pInterface, uint32_t *pcRect, PRTRECT pRect));
 
 } PDMIDISPLAYPORT;
 
