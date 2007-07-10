@@ -80,11 +80,11 @@ ifeq ($(BUILD_PLATFORM),win)
  dyngen_BLD_TRG_ARCH  = x86
  dyngen_BLD_TRG_CPU   = i386
  dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing
- ifeq ($(BUILD_TARGET_ARCH),amd64)
-  dyngen_DEFS        += HOST_X86_64=1
- endif
 else
  dyngen_TEMPLATE      = VBOXBLDPROG
+endif
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+ dyngen_DEFS         += HOST_X86_64=1
 endif
 dyngen_CFLAGS        += -Wno-missing-prototypes -Wno-missing-declarations
 dyngen_INCS          := \
