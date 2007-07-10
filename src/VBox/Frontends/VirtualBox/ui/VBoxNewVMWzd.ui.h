@@ -315,7 +315,8 @@ bool VBoxNewVMWzd::constructMachine()
             vboxProblem().cannotCreateMachine (vbox, this);
             return false;
         }
-        cmachine.SetExtraData (GUI_FirstRun, "yes");
+        if (uuidHD.isNull())
+            cmachine.SetExtraData (GUI_FirstRun, "yes");
     }
 
     /* name is set in CreateMachine() */
