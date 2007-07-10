@@ -48,6 +48,7 @@
   typedef signed   long  LONG;  /// @todo 64-bit: ULONG is 32-bit.
   typedef unsigned short USHORT;
   typedef bool           BOOL;
+  typedef unsigned char  BYTE;
 # define STDMETHODIMP   unsigned long
 # define STDMETHOD(a)   virtual unsigned long a
 # define S_OK           0
