@@ -368,6 +368,11 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
     }
 
     /*
+     * Destroy all threads.
+     */
+    ///@todo pdmR3ThreadDestroyAll(pVM);
+
+    /*
      * Free modules.
      */
     pdmR3LdrTerm(pVM);
@@ -618,6 +623,11 @@ PDMR3DECL(void) PDMR3PowerOn(PVM pVM)
         }
     }
 
+    /*
+     * Resume all threads.
+     */
+    ///@todo pdmR3ThreadResumeAll(pVM);    
+
     LogFlow(("PDMR3PowerOn: returns void\n"));
 }
 
@@ -703,6 +713,11 @@ PDMR3DECL(void) PDMR3Suspend(PVM pVM)
         }
     }
 
+    /*
+     * Suspend all threads.
+     */
+    ///@todo pdmR3ThreadSuspendAll(pVM);    
+
     LogFlow(("PDMR3Suspend: returns void\n"));
 }
 
@@ -741,6 +756,11 @@ PDMR3DECL(void) PDMR3Resume(PVM pVM)
         }
     }
 
+    /*
+     * Resume all threads.
+     */
+    ///@todo pdmR3ThreadResumeAll(pVM);    
+
     LogFlow(("PDMR3Resume: returns void\n"));
 }
 
@@ -778,6 +798,11 @@ PDMR3DECL(void) PDMR3PowerOff(PVM pVM)
             pDevIns->pDevReg->pfnPowerOff(pDevIns);
         }
     }
+
+    /*
+     * Suspend all threads.
+     */
+    ///@todo pdmR3ThreadSuspendAll(pVM);
 
     LogFlow(("PDMR3PowerOff: returns void\n"));
 }
