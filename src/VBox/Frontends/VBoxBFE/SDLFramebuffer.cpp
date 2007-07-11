@@ -327,7 +327,7 @@ HRESULT SDLFramebuffer::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
 {
     PRTRECT paRect = (PRTRECT)aPRect;
 
-    if (!aPcRect)
+    if (!paRect || !aPcRect)
         return E_POINTER;
 
     /* @todo */
