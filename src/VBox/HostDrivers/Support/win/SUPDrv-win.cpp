@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Win32 host:
- * Win32 host driver code
+ * VirtualBox Support Driver - Windows NT specific parts.
  */
 
 /*

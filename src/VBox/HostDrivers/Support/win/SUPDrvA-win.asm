@@ -1,7 +1,9 @@
+; $Id$
+;; @file
+; VirtualBox Support Driver - Windows NT specific assembly parts.
 ;
-; VBox host drivers - Ring-0 support drivers - Win64 host:
-; Assembly part of Win64 ring-0 host driver
 
+;
 ; Copyright (C) 2006-2007 innotek GmbH
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
@@ -23,18 +25,20 @@
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
-extern DbgPrint
+%ifdef __AMD64__
+%define _DbgPrint DbgPrint
+%endif
+extern _DbgPrint
 
 ;;
 ; Kind of alias for DbgPrint
 BEGINPROC AssertMsg2
-        jmp     DbgPrint
+        jmp     _DbgPrint
 ENDPROC AssertMsg2
 
 ;;
 ; Kind of alias for DbgPrint
 BEGINPROC SUPR0Printf
-        jmp     DbgPrint
+        jmp     _DbgPrint
 ENDPROC SUPR0Printf
-
 
