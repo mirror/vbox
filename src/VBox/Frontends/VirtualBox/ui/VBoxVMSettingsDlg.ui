@@ -1251,25 +1251,41 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                 <cstring>other</cstring>
                             </property>
                             <attribute name="title">
-                                <string>&amp;Other</string>
+                                <string>O&amp;ther</string>
                             </attribute>
                             <vbox>
                                 <property name="name">
                                     <cstring>unnamed</cstring>
                                 </property>
-                                <widget class="QCheckBox">
+                                <property name="margin">
+                                    <number>10</number>
+                                </property>
+                                <widget class="QGroupBox">
                                     <property name="name">
-                                        <cstring>chbRememberMedia</cstring>
+                                        <cstring>groupBox15</cstring>
                                     </property>
-                                    <property name="text">
-                                        <string>&amp;Remember Media Mounted at Runtime</string>
+                                    <property name="title">
+                                        <string>Other &amp;Settings</string>
                                     </property>
-                                    <property name="accel">
-                                        <string>Alt+R</string>
-                                    </property>
-                                    <property name="checked">
-                                        <bool>true</bool>
-                                    </property>
+                                    <vbox>
+                                        <property name="name">
+                                            <cstring>unnamed</cstring>
+                                        </property>
+                                        <widget class="QCheckBox">
+                                            <property name="name">
+                                                <cstring>chbRememberMedia</cstring>
+                                            </property>
+                                            <property name="text">
+                                                <string>&amp;Remember Media Mounted at Runtime</string>
+                                            </property>
+                                            <property name="accel">
+                                                <string>Alt+R</string>
+                                            </property>
+                                            <property name="checked">
+                                                <bool>true</bool>
+                                            </property>
+                                        </widget>
+                                    </vbox>
                                 </widget>
                                 <spacer>
                                     <property name="name">
