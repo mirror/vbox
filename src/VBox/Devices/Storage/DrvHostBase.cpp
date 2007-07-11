@@ -1847,6 +1847,12 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
             pszDevice = szPathReal;
         pThis->FileDevice = NIL_RTFILE;
 #endif
+        /* Disable CD/DVD passthrough in case it was enabled. Would cause
+         * weird failures later when the guest issues commands. These would
+         * all fail because of the invalid file handle. So use the normal
+         * virtual CD/DVD code, which deals more gracefully with unavailable
+         * "media" - actually a complete drive in this case. */
+        pThis->IBlock.pfnSendCmd = NULL;
         AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pszDevice, rc));
         switch (rc)
         {
