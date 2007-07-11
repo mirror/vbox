@@ -26,6 +26,7 @@
 #include <VBox/VBoxVideo.h>
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBoxDisplay.h>
 
 #if _MSC_VER >= 1400 /* bird: MS fixed swprintf to be standard-conforming... */
 #define _INC_SWPRINTF_INL_
@@ -1457,6 +1458,18 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             Result = TRUE;
 
             break;
+        }
+
+        /* Private ioctls */
+        case IOCTL_VIDEO_VBOX_SETVISIBLEREGION:
+        {
+            if (RequestPacket->InputBufferLength < sizeof(RTRECT))
+            {
+                dprintf(("VBoxVideo::IOCTL_VIDEO_VBOX_SETVISIBLEREGION: output buffer too small: %d needed: %d!!!\n",
+                         RequestPacket->OutputBufferLength, sizeof(RTRECT)));
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return FALSE;
+            }
         }
 
         default:
