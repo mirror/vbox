@@ -1463,14 +1463,42 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
         /* Private ioctls */
         case IOCTL_VIDEO_VBOX_SETVISIBLEREGION:
         {
-            if (RequestPacket->InputBufferLength < sizeof(RTRECT))
+            uint32_t cRect = RequestPacket->InputBufferLength/sizeof(RTRECT);
+            int      rc;
+
+            dprintf(("IOCTL_VIDEO_VBOX_SETVISIBLEREGION cRect=%d\n", cRect));
+            if (    RequestPacket->InputBufferLength < sizeof(RTRECT)
+                ||  RequestPacket->InputBufferLength != cRect*sizeof(RTRECT))
             {
                 dprintf(("VBoxVideo::IOCTL_VIDEO_VBOX_SETVISIBLEREGION: output buffer too small: %d needed: %d!!!\n",
                          RequestPacket->OutputBufferLength, sizeof(RTRECT)));
                 RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
                 return FALSE;
             }
-            break;
+            /*
+             * Inform the host about the visible region
+             */
+            VMMDevVideoSetVisibleRegion *req = NULL;
+
+            rc = VbglGRAlloc ((VMMDevRequestHeader **)&req,
+                              sizeof (VMMDevVideoSetVisibleRegion) + (cRect-1)*sizeof(RTRECT),
+                              VMMDevReq_VideoSetVisibleRegion);
+
+            if (VBOX_SUCCESS(rc))
+            {
+                memcpy(&req->Rect, RequestPacket->InputBuffer, cRect*sizeof(RTRECT));
+
+                rc = VbglGRPerform (&req->header);
+
+                if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+                {
+                    RequestPacket->StatusBlock->Status = NO_ERROR;
+                    break;
+                }
+            }
+            dprintf(("VBoxVideo: failed with rc=%x (hdr.rc=%x)\n", rc, req->header.rc));
+            RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+            return FALSE;
         }
 
         default:
