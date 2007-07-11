@@ -1086,31 +1086,31 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
-        case VMMDevReq_VideoSetVisibleRect:
+        case VMMDevReq_VideoSetVisibleRegion:
         {
-            if (requestHeader->size < sizeof(VMMDevVideoSetVisibleRect))
+            if (requestHeader->size < sizeof(VMMDevVideoSetVisibleRegion))
             {
-                Log(("VMMDevReq_VideoSetVisibleRect request size too small!!!\n"));
+                Log(("VMMDevReq_VideoSetVisibleRegion request size too small!!!\n"));
                 requestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (!pData->pDrv)
             {
-                Log(("VMMDevReq_VideoSetVisibleRect Connector is NULL!!!\n"));
+                Log(("VMMDevReq_VideoSetVisibleRegion Connector is NULL!!!\n"));
                 requestHeader->rc = VERR_NOT_SUPPORTED;
             }
             else
             {
-                VMMDevVideoSetVisibleRect *ptr = (VMMDevVideoSetVisibleRect *)requestHeader;
+                VMMDevVideoSetVisibleRegion *ptr = (VMMDevVideoSetVisibleRegion *)requestHeader;
 
                 if (!ptr->cRect)
                 {
-                    Log(("VMMDevReq_VideoSetVisibleRect no rectangles!!!\n"));
+                    Log(("VMMDevReq_VideoSetVisibleRegion no rectangles!!!\n"));
                     requestHeader->rc = VERR_INVALID_PARAMETER;
                 }
                 else
-                if (requestHeader->size != sizeof(VMMDevReq_VideoSetVisibleRect) + (ptr->cRect-1)*sizeof(RTRECT))
+                if (requestHeader->size != sizeof(VMMDevReq_VideoSetVisibleRegion) + (ptr->cRect-1)*sizeof(RTRECT))
                 {
-                    Log(("VMMDevReq_VideoSetVisibleRect request size too small!!!\n"));
+                    Log(("VMMDevReq_VideoSetVisibleRegion request size too small!!!\n"));
                     requestHeader->rc = VERR_INVALID_PARAMETER;
                 }
                 else
