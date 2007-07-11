@@ -1486,6 +1486,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             if (VBOX_SUCCESS(rc))
             {
+                req->cRect = cRect;
                 memcpy(&req->Rect, RequestPacket->InputBuffer, cRect*sizeof(RTRECT));
 
                 rc = VbglGRPerform (&req->header);
