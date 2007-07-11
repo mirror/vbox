@@ -1,7 +1,8 @@
+; $Id$
+;; @file
+; VirtualBox Support Driver - Built-in exports.
 ;
-; VBox host drivers - Ring-0 support drivers - Shared code
-;
-; Export definitions
+
 ;
 ; Copyright (C) 2006-2007 innotek GmbH
 ;
