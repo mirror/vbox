@@ -169,6 +169,18 @@ DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
         gDisplay->VideoAccelFlush ();
 }
 
+DECLCALLBACK(int) iface_SetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cRect, PRTRECT pRect)
+{
+    /* not implemented */
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) iface_QueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRect, PRTRECT pRect)
+{
+    /* not implemented */
+    return VINF_SUCCESS;
+}
+
 DECLCALLBACK(int) VMMDev::VideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t width, uint32_t height,
                                              uint32_t bpp, bool *fSupported)
 {
@@ -270,6 +282,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->Connector.pfnVideoAccelFlush         = iface_VideoAccelFlush;
     pData->Connector.pfnVideoModeSupported      = VMMDev::VideoModeSupported;
     pData->Connector.pfnGetHeightReduction      = VMMDev::GetHeightReduction;
+    pData->Connector.pfnSetVisibleRegion        = iface_SetVisibleRegion;
+    pData->Connector.pfnQueryVisibleRegion      = iface_QueryVisibleRegion;
 
     /*
      * Get the IVMMDevPort interface of the above driver/device.
