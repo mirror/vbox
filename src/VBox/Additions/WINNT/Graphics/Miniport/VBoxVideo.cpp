@@ -1492,7 +1492,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
                 if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
                 {
-                    RequestPacket->StatusBlock->Status = NO_ERROR;
+                    Result = TRUE;
                     break;
                 }
             }
