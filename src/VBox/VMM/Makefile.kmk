@@ -45,7 +45,7 @@ ifdef VBOX_OSE
  ifeq ($(BUILD_TARGET),darwin)
   VMMR3_DEFS   += PDMLDR_FAKE_MODE
  endif
-endif                
+endif
 VMMR3_INCS     := \
 	PATM \
 	$(PATH_SUB_CURRENT)
@@ -75,6 +75,7 @@ VMMR3_SOURCES   = \
 	PDMLdr.cpp \
 	PDMCritSect.cpp \
 	PDMQueue.cpp \
+	PDMThread.cpp \
 	PGM.cpp \
 	PGMHandler.cpp \
 	PGMMap.cpp \
