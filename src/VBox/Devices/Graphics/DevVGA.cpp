@@ -3767,10 +3767,6 @@ static DECLCALLBACK(int) vgaPortQueryVisibleRegion(PPDMIDISPLAYPORT pInterface, 
 
     if (pRect)
     {
-        pRect->x  = 0;
-        pRect->y  = 0;
-        pRect->cx = pData->last_scr_width;
-        pRect->cy = pData->last_scr_height;
     }
 
     return VINF_SUCCESS;
