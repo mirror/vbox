@@ -38,6 +38,10 @@ __BEGIN_DECLS
  * @{
  */
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+
 /** Pointer to a PDM Device. */
 typedef struct PDMDEV *PPDMDEV;
 /** Pointer to a pointer to a PDM Device. */
@@ -95,7 +99,7 @@ typedef struct PDMDEVINSINT
     GCPTRTYPE(PPDMPCIBUS)           pPciBusGC;
 #if GC_ARCH_BITS == 32
     uint32_t                        Alignment0;
-#endif 
+#endif
 } PDMDEVINSINT;
 
 
@@ -147,8 +151,8 @@ typedef struct PDMCRITSECTINT
     GCPTRTYPE(PVM)      pVMGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     uint32_t            padding;
-#endif 
-    /** Event semaphore that is scheduled to be signaled upon leaving the 
+#endif
+    /** Event semaphore that is scheduled to be signaled upon leaving the
      * critical section. This is Ring-3 only of course. */
     RTSEMEVENT          EventToSignal;
     /** R0/GC lock contention. */
@@ -162,10 +166,48 @@ typedef struct PDMCRITSECTINT
 } PDMCRITSECTINT, *PPDMCRITSECTINT;
 
 
+/**
+ * The usual device/driver/internal/external stuff.
+ */
+typedef enum
+{
+    /** The usual invalid entry. */
+    PDMTHREADTYPE_INVALID = 0,
+    /** Device type. */
+    PDMTHREADTYPE_DEVICE,
+    /** Driver type. */
+    PDMTHREADTYPE_DRIVER,
+    /** Internal type. */
+    PDMTHREADTYPE_INTERNAL,
+    /** External type. */
+    PDMTHREADTYPE_EXTERNAL,
+    /** The usual 32-bit hack. */
+    PDMTHREADTYPE_32BIT_HACK = 0x7fffffff
+} PDMTHREADTYPE;
+
+
+/**
+ * The internal structure for the thread.
+ */
+typedef struct PDMTHREADINT
+{
+    /** The VM pointer. */
+    PVMR3                           pVM;
+    /** The event semaphore the thread blocks on. */
+    RTSEMEVENTMULTI                 BlockEvent;
+    /** Pointer to the next thread. */
+    R3PTRTYPE(struct PDMTHREAD *)   pNext;
+    /** The thread type. */
+    PDMTHREADTYPE                   enmType;
+} PDMTHREADINT;
+
+
+
 /* Must be included after PDMDEVINSINT is defined. */
 #define PDMDEVINSINT_DECLARED
 #define PDMDRVINSINT_DECLARED
 #define PDMCRITSECTINT_DECLARED
+#define PDMTHREADINT_DECLARED
 #ifdef __VBox_pdm_h__
 # error "Invalid header PDM order. Include PDMInternal.h before VBox/pdm.h!"
 #endif
@@ -362,7 +404,7 @@ typedef struct PDMPCIBUS
     DECLR3CALLBACKMEMBER(int,       pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion,
                                                            PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
     /** @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksHC */
-    DECLR3CALLBACKMEMBER(void,      pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, 
+    DECLR3CALLBACKMEMBER(void,      pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead,
                                                              PPFNPCICONFIGREAD ppfnReadOld, PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
     /** @copydoc PDMPCIBUSREG::pfnSaveExecHC */
     DECLR3CALLBACKMEMBER(int,       pfnSaveExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
@@ -555,7 +597,7 @@ typedef struct PDMQUEUE
         GCPTRTYPE(PPDMQUEUEITEMCORE) volatile pItemGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
         uint32_t                              Alignment0;
-#endif 
+#endif
     }                                       aFreeItems[1];
 } PDMQUEUE;
 
@@ -590,7 +632,7 @@ typedef struct PDMDEVHLPTASK
     PDMDEVHLPTASKOP         enmOp;
 #if HC_ARCH_BITS == 64
     uint32_t                Alignment0;
-#endif 
+#endif
     /** Parameters to the operation. */
     union PDMDEVHLPTASKPARAMS
     {
@@ -677,10 +719,22 @@ typedef struct PDM
     /** Pointer to the queue which should be manually flushed - GCPtr. */
     GCPTRTYPE(struct PDMQUEUE *)    pQueueFlushGC;
 
+#if HC_ARCH_BITS == 64
+    uint32_t                        padding0;
+#endif
+
+    /** Head of the PDM Thread list. (singly linked) */
+    R3PTRTYPE(PPDMTHREAD)           pThreads;
+    /** Tail of the PDM Thread list. (singly linked) */
+    R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
+
     /** TEMPORARY HACKS FOR NETWORK POLLING.
      * @todo fix NAT and kill this!
      * @{ */
     RTUINT                          cPollers;
+#if HC_ARCH_BITS == 64
+    RTUINT                          padding1;
+#endif
     HCPTRTYPE(PFNPDMDRVPOLLER)      apfnPollers[16];
     HCPTRTYPE(PPDMDRVINS)           aDrvInsPollers[16];
     PTMTIMERHC                      pTimerPollers;
