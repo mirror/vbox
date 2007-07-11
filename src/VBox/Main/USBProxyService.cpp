@@ -523,25 +523,25 @@ void USBProxyService::removeFilter (void * /* aID */)
 }
 
 
-int USBProxyService::captureDevice (HostUSBDevice */*aDevice*/)
+int USBProxyService::captureDevice (HostUSBDevice * /* aDevice */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-int USBProxyService::holdDevice (HostUSBDevice */*aDevice*/)
+int USBProxyService::holdDevice (HostUSBDevice * /* aDevice */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-int USBProxyService::releaseDevice (HostUSBDevice */*aDevice*/)
+int USBProxyService::releaseDevice (HostUSBDevice * /* aDevice */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-int USBProxyService::resetDevice (HostUSBDevice */*aDevice*/)
+int USBProxyService::resetDevice (HostUSBDevice * /* aDevice */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -556,12 +556,12 @@ bool USBProxyService::updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSB
 }
 
 
-void USBProxyService::deviceAdded (HostUSBDevice */*aDevice*/, PUSBDEVICE /*aUSBDevice*/)
+void USBProxyService::deviceAdded (HostUSBDevice * /* aDevice */, PUSBDEVICE /* aUSBDevice */)
 {
 }
 
 
-void USBProxyService::deviceRemoved (HostUSBDevice */*aDevice*/)
+void USBProxyService::deviceRemoved (HostUSBDevice * /* aDevice */)
 {
 }
 
