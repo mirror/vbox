@@ -1086,6 +1086,42 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_VideoSetVisibleRect:
+        {
+            if (requestHeader->size < sizeof(VMMDevVideoSetVisibleRect))
+            {
+                Log(("VMMDevReq_VideoSetVisibleRect request size too small!!!\n"));
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else if (!pData->pDrv)
+            {
+                Log(("VMMDevReq_VideoSetVisibleRect Connector is NULL!!!\n"));
+                requestHeader->rc = VERR_NOT_SUPPORTED;
+            }
+            else
+            {
+                VMMDevVideoSetVisibleRect *ptr = (VMMDevVideoSetVisibleRect *)requestHeader;
+
+                if (!ptr->cRect)
+                {
+                    Log(("VMMDevReq_VideoSetVisibleRect no rectangles!!!\n"));
+                    requestHeader->rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                if (requestHeader->size != sizeof(VMMDevReq_VideoSetVisibleRect) + (ptr->cRect-1)*sizeof(RTRECT))
+                {
+                    Log(("VMMDevReq_VideoSetVisibleRect request size too small!!!\n"));
+                    requestHeader->rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {
+                    /* forward the call */
+                    requestHeader->rc = pData->pDrv->pfnSetVisibleRegion(pData->pDrv, ptr->cRect, &ptr->Rect);
+                }
+            }
+            break;
+        }
+
         case VMMDevReq_QueryCredentials:
         {
             if (requestHeader->size != sizeof(VMMDevCredentials))
