@@ -340,7 +340,9 @@ static int oss_run_out (HWVoiceOut *hw)
     uint8_t *dst;
     st_sample_t *src;
     struct audio_buf_info abinfo;
+#ifndef __L4ENV__
     struct count_info cntinfo;
+#endif
     int bufsize;
 
     live = audio_pcm_hw_get_live_out (hw);
@@ -475,7 +477,9 @@ static int oss_run_out (HWVoiceOut *hw)
 
 static void oss_fini_out (HWVoiceOut *hw)
 {
+#ifndef __L4ENV__
     int err;
+#endif
     OSSVoiceOut *oss = (OSSVoiceOut *) hw;
 
     ldebug ("oss_fini\n");
