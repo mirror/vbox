@@ -402,7 +402,10 @@ RuntimeR3_SOURCES.freebsd = \
 # L4 RuntimeR3 subtarget since L4 headers won't work with VBOXR3.
 #
 RuntimeR3L4_TEMPLATE      = VBOXR3NP
-RuntimeR3L4_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF LDR_WITH_PE __PIC__
+RuntimeR3L4_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF LDR_WITH_PE
+ifneq ($(BUILD_TARGET_ARCH),amd64)
+RuntimeR3L4_DEFS         += __PIC__
+endif
 RuntimeR3L4_INCS          = $(L4_INCDIR)
 
 RuntimeR3L4_SOURCES = \
