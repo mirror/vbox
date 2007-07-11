@@ -1496,7 +1496,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                     break;
                 }
             }
-            dprintf(("VBoxVideo: failed with rc=%x (hdr.rc=%x)\n", rc, req->header.rc));
+            dprintf(("VBoxVideo: failed with rc=%x (hdr.rc=%x)\n", rc, (req) ? req->header.rc : -1));
             RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
             return FALSE;
         }
