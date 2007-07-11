@@ -105,9 +105,9 @@ public:
     HRESULT saveSettings (CFGNODE aGlobal);
 
     HRESULT captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId);
-    HRESULT releaseUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId);
+    HRESULT detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BOOL aDone);
     HRESULT autoCaptureUSBDevices (SessionMachine *aMachine);
-    HRESULT releaseAllUSBDevices (SessionMachine *aMachine);
+    HRESULT detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone);
 
     void onUSBDeviceAttached (HostUSBDevice *aDevice);
     void onUSBDeviceDetached (HostUSBDevice *aDevice);

@@ -53,34 +53,32 @@ public:
      * A VM is trying to capture a device, do necessary preperations.
      *
      * @returns VBox status code.
-     * @param   pDevice     The device in question.
+     * @param   aDevice     The device in question.
      */
-    virtual int captureDevice (HostUSBDevice *pDevice);
+    virtual int captureDevice (HostUSBDevice *aDevice);
 
     /**
      * The device is to be held so that the host OS will not start using it.
      *
      * @returns VBox status code.
-     * @param   pDevice     The device in question.
+     * @param   aDevice     The device in question.
      */
-    virtual int holdDevice (HostUSBDevice *pDevice);
+    virtual int holdDevice (HostUSBDevice *aDevice);
+
+    /**
+     * The device is going to be detached from a VM.
+     * 
+     * @param   aDevice     The device in question.
+     */
+    virtual void detachingDevice (HostUSBDevice *aDevice);
 
     /**
      * A VM is releasing a device back to the host.
      *
      * @returns VBox status code.
-     * @param   pDevice     The device in question.
+     * @param   aDevice     The device in question.
      */
-    virtual int releaseDevice (HostUSBDevice *pDevice);
-
-    /**
-     * A VM is releaseing a device back to be held or assigned to another VM.
-     * A port reset should be performed.
-     *
-     * @returns VBox status code.
-     * @param   pDevice     The device in question.
-     */
-    virtual int resetDevice (HostUSBDevice *pDevice);
+    virtual int releaseDevice (HostUSBDevice *aDevice);
 
     /**
      * Updates the device state.
@@ -262,8 +260,8 @@ public:
 
     virtual int captureDevice (HostUSBDevice *aDevice);
     virtual int holdDevice (HostUSBDevice *aDevice);
+    virtual void detachingDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
-    virtual int resetDevice (HostUSBDevice *aDevice);
     virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
 
 protected:
@@ -282,6 +280,8 @@ private:
     /** A hack to work around the problem with the usb device enumeration
      * not including newly attached devices. */
     bool mWaitABitNextTime;
+    /** Whether we've got a fake async event and should return without entering the runloop. */
+    bool volatile mFakeAsync;
 };
 # endif /* __DARWIN__ */
 
@@ -301,7 +301,6 @@ public:
     virtual int captureDevice (HostUSBDevice *aDevice);
     virtual int holdDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
-    virtual int resetDevice (HostUSBDevice *aDevice);
     virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
     virtual void deviceAdded (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
 
@@ -344,7 +343,6 @@ public:
     virtual int captureDevice (HostUSBDevice *aDevice);
     virtual int holdDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
-    virtual int resetDevice (HostUSBDevice *aDevice);
     virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
 
 protected:

@@ -396,7 +396,7 @@ private:
                                const char *pszFormat, va_list args);
 
     HRESULT                     captureUSBDevices (PVM pVM);
-    void                        releaseAllUSBDevices (void);
+    void                        detachAllUSBDevices (bool aDone);
 
     static DECLCALLBACK (int)   powerUpThread (RTTHREAD Thread, void *pvUser);
     static DECLCALLBACK (int)   saveStateThread (RTTHREAD Thread, void *pvUser);
