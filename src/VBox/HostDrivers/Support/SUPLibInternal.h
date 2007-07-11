@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Shared code:
- * Internal header for support library
+ * VirtualBox Support Library - Internal header.
  */
 
 /*

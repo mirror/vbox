@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Shared code:
- * Support library that implements the basic lowlevel OS interfaces
+ * VirtualBox Support Library - Common code.
  */
 
 /*
@@ -24,12 +23,12 @@
  *
  * The support library is responsible for providing facilities to load
  * VMM Host Ring-0 code, to call Host VMM Ring-0 code from Ring-3 Host
- * code, and to pin down physical memory.
+ * code, to pin down physical memory, and more.
  *
  * The VMM Host Ring-0 code can be combined in the support driver if
  * permitted by kernel module license policies. If it is not combined
- * it will be externalized in a Win32 PE binary and will use the PDM
- * PE loader to load it into memory.
+ * it will be externalized in a .r0 module that will be loaded using
+ * the IPRT loader.
  *
  * The Ring-0 calling is done thru a generic SUP interface which will
  * tranfer an argument set and call a predefined entry point in the Host
