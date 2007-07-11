@@ -142,7 +142,7 @@ typedef enum
 #endif
     VMMDevReq_VideoAccelEnable           = 70,
     VMMDevReq_VideoAccelFlush            = 71,
-    VMMDevReq_VideoSetVisibleRect        = 72,
+    VMMDevReq_VideoSetVisibleRegion        = 72,
     VMMDevReq_QueryCredentials           = 100,
     VMMDevReq_ReportCredentialsJudgement = 101,
 #ifdef DEBUG
@@ -560,7 +560,7 @@ typedef struct _VMMDevVideoAccelFlush
 } VMMDevVideoAccelFlush;
 
 
-typedef struct _VMMDevVideoSetVisibleRect
+typedef struct _VMMDevVideoSetVisibleRegion
 {
     /* request header */
     VMMDevRequestHeader header;
@@ -570,7 +570,7 @@ typedef struct _VMMDevVideoSetVisibleRect
 
     /** Rectangle array */
     RTRECT   Rect;
-} VMMDevVideoSetVisibleRect;
+} VMMDevVideoSetVisibleRegion;
 
 #pragma pack()
 
@@ -1192,8 +1192,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevVideoAccelEnable);
         case VMMDevReq_VideoAccelFlush:
             return sizeof(VMMDevVideoAccelFlush);
-        case VMMDevReq_VideoSetVisibleRect:
-            return sizeof(VMMDevVideoSetVisibleRect);
+        case VMMDevReq_VideoSetVisibleRegion:
+            return sizeof(VMMDevVideoSetVisibleRegion);
         case VMMDevReq_QueryCredentials:
             return sizeof(VMMDevCredentials);
 #ifdef DEBUG
