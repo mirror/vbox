@@ -1108,7 +1108,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     requestHeader->rc = VERR_INVALID_PARAMETER;
                 }
                 else
-                if (requestHeader->size != sizeof(VMMDevReq_VideoSetVisibleRegion) + (ptr->cRect-1)*sizeof(RTRECT))
+                if (requestHeader->size != sizeof(VMMDevVideoSetVisibleRegion) + (ptr->cRect-1)*sizeof(RTRECT))
                 {
                     Log(("VMMDevReq_VideoSetVisibleRegion request size too small!!!\n"));
                     requestHeader->rc = VERR_INVALID_PARAMETER;
