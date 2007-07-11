@@ -14,6 +14,7 @@
 
 #include "driver.h"
 #include "dd.h"
+#include <VBoxDisplay.h>
 
 // The driver function table with all function index/address pairs
 
@@ -75,6 +76,8 @@ VOID APIENTRY DrvDestroyFont(
 
 ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG cjOut, PVOID pvOut)
 {
+    PDEV*   ppdev = (PDEV*) pso->dhpdev;
+
     DISPDBG((0, "%s: %p, %p, %p, %p, %p, %p\n", __FUNCTION__, pso, iEsc, cjIn, pvIn, cjOut, pvOut));
 
     switch(iEsc)
@@ -106,6 +109,58 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
         break;
     }
 #endif
+
+    case VBOXESC_SETVISIBLEREGION:
+    {
+        LPRGNDATA lpRgnData = (LPRGNDATA)pvIn;
+
+        DISPDBG((0, "VBOXESC_SETVISIBLEREGION\n"));
+
+        if (    cjIn >= sizeof(RGNDATAHEADER)
+            &&  pvIn
+            &&  lpRgnData->rdh.dwSize == sizeof(RGNDATAHEADER)
+            &&  lpRgnData->rdh.iType  == RDH_RECTANGLES
+            &&  cjIn == lpRgnData->rdh.nCount * sizeof(RECT) + sizeof(RGNDATAHEADER))
+        {
+            DWORD   ulReturn, i;
+            PRTRECT pRTRect;
+            RECT   *pRect = (RECT *)&lpRgnData->Buffer;
+
+            pRTRect = (PRTRECT) EngAllocMem(0, lpRgnData->rdh.nCount*sizeof(RTRECT), ALLOC_TAG);
+            for (i=0;i<lpRgnData->rdh.nCount;i++)
+            {
+                pRTRect[i].xLeft   = pRect->left;
+                pRTRect[i].yBottom = pRect->bottom;
+                pRTRect[i].xRight  = pRect->right;
+                pRTRect[i].yTop    = pRect->top;
+            }
+
+            if (EngDeviceIoControl(ppdev->hDriver,
+                                   IOCTL_VIDEO_VBOX_SETVISIBLEREGION,
+                                   pRTRect,
+                                   lpRgnData->rdh.nCount*sizeof(RTRECT),
+                                   NULL,
+                                   0,
+                                   &ulReturn))
+            {
+                DISPDBG((0, "DISP DrvAssertMode failed IOCTL_VIDEO_VBOX_SETVISIBLEREGION\n"));
+                return 0;
+            }
+            else
+            {
+                DISPDBG((0, "DISP IOCTL_VIDEO_VBOX_SETVISIBLEREGION successful\n"));
+                return 1;
+            }
+
+        }
+        else
+        {
+            if (pvIn)
+                DISPDBG((0, "check failed rdh.dwSize=%x iType=%d size=%d expected size=%d\n", lpRgnData->rdh.dwSize, lpRgnData->rdh.iType, cjIn, lpRgnData->rdh.nCount * sizeof(RECT) + sizeof(RGNDATAHEADER)));
+        }
+
+        break;
+    }
 
     case QUERYESCSUPPORT:
         if (    cjIn == sizeof(DWORD)
