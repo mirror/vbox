@@ -1607,7 +1607,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="67ef427d-5f01-4791-a45e-ae5e646ed7c6"
+     uuid="83c4e00c-be0b-4c10-a48e-7bf832615f7b"
      internal="yes"
      wsmap="suppress"
      >
@@ -1652,19 +1652,21 @@
       <param name="id" type="uuid" dir="in"/>
     </method>
 
-    <method name="releaseUSBDevice">
+    <method name="detachUSBDevice">
       <desc>
-        Requests to release the given USB device.
-        When the request is completed, the VM process will
+        Notification that a VM is going to detach (done = false) or has 
+        already detached (done = true) the given USB device.
+        When the done = true request is completed, the VM process will
         get a <link to="IInternalSessionControl::onUSBDeviceDetach"/>
         notification.
         <note>
-          The server must run its own filters and filters of all VMs
-          but this one on all released devices as if they were just
-          attached to the host computer.
+          In the done = true case, the server must run its own filters 
+          and filters of all VMs but this one on the detached device 
+          as if it were just attached to the host computer.
         </note>
       </desc>
       <param name="id" type="uuid" dir="in"/>
+      <param name="done" type="boolean" dir="in"/>
     </method>
 
     <method name="autoCaptureUSBDevices">
@@ -1676,16 +1678,20 @@
       </desc>
     </method>
 
-    <method name="releaseAllUSBDevices">
+    <method name="detachAllUSBDevices">
       <desc>
-        Releases all USB devices that are captured by this VM because
-        the VM has been terminated.
+        Notification that a VM that is being powered down. The done
+        parameter indicates whether which stage of the power down 
+        we're at. When done = false the VM is announcing its 
+        intentions, while when done = true the VM is reporting 
+        what it has done.
         <note>
-          The server must run its own filters and filters of all VMs
-          but this one on all released devices as if they were just
-          attached to the host computer.
+          In the done = true case, the server must run its own filters 
+          and filters of all VMs but this one on all detach devices as 
+          if they were just attached to the host computer.
         </note>
       </desc>
+      <param name="done" type="boolean" dir="in"/>
     </method>
 
     <method name="onSessionEnd">

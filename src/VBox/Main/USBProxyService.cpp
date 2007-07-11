@@ -195,13 +195,14 @@ void USBProxyService::processChanges (void)
     {
         pDevices = sortDevices (pDevices);
 
-        /* we need to lock the host object for writing because
+        /* 
+         * We need to lock the host object for writing because
          * a) the subsequent code may call Host methods that require a write
          *    lock
          * b) we will lock HostUSBDevice objects below and want to make sure
          *    the lock order is always the same (Host, HostUSBDevice, as
-         *    expected by Host) to avoid cross-deadlocks */
-
+         *    expected by Host) to avoid cross-deadlocks 
+         */
         AutoLock hostLock (mHost);
 
         /*
@@ -217,14 +218,17 @@ void USBProxyService::processChanges (void)
             if (It != mDevices.end())
                 DevPtr = *It;
 
-            /* assert that the object is still alive (we still reference it in
-             * the collection and we're the only one who calls uninit() on it */
+            /* 
+             * Assert that the object is still alive (we still reference it in
+             * the collection and we're the only one who calls uninit() on it 
+             */
             HostUSBDevice::AutoCaller devCaller (DevPtr.isNull() ? NULL : DevPtr);
             AssertComRC (devCaller.rc());
 
-            /* Lock the device object since we will read/write it's
-             * properties. All Host callbacks also imply the object is
-             * locked. */
+            /* 
+             * Lock the device object since we will read/write it's
+             * properties. All Host callbacks also imply the object is locked. 
+             */
             AutoLock devLock (DevPtr.isNull() ? NULL : DevPtr);
 
             /*
@@ -243,21 +247,20 @@ void USBProxyService::processChanges (void)
             if (!iDiff)
             {
                 /*
-                 * Device still there, update the state and move on.  Note
-                 * that pDevices will be always adopted by the HostUSBDevice
-                 * object (whose updateState() method must be always called by
-                 * updateDeviceState()) and therefore there is no reason to
-                 * free pDevices here.
+                 * The device still there, update the state and move on. The PUSBDEVICE 
+                 * structure is eaten by updateDeviceState / HostUSBDevice::updateState().
                  */
-                PUSBDEVICE pNext = pDevices->pNext; /* treated as singly linked */
-                if (updateDeviceState (DevPtr, pDevices))
+                PUSBDEVICE pCur = pDevices;
+                pDevices = pDevices->pNext;
+                pCur->pPrev = pCur->pNext = NULL;
+
+                if (updateDeviceState (DevPtr, pCur))
                 {
                     Log (("USBProxyService::processChanges: state change %p:{.idVendor=%#06x, .idProduct=%#06x, .pszProduct=\"%s\", .pszManufacturer=\"%s\"} state=%d%s\n",
-                          (HostUSBDevice *)DevPtr, pDevices->idVendor, pDevices->idProduct, pDevices->pszProduct, pDevices->pszManufacturer, DevPtr->state(), DevPtr->isStatePending() ? " (pending async op)" : ""));
+                          (HostUSBDevice *)DevPtr, pCur->idVendor, pCur->idProduct, pCur->pszProduct, pCur->pszManufacturer, DevPtr->state(), DevPtr->isStatePending() ? " (pending async op)" : ""));
                     mHost->onUSBDeviceStateChanged (DevPtr);
                 }
                 It++;
-                pDevices = pNext;
             }
             else
             {
@@ -287,9 +290,21 @@ void USBProxyService::processChanges (void)
                 {
                     /*
                      * DevPtr was detached, unless there is a pending async request.
+                     * Check if the async request timed out before making a decision.
                      */
-                    /** @todo add a timeout here. */
-                    if (!DevPtr->isStatePending())
+                    if (DevPtr->isStatePending())
+                        DevPtr->checkForAsyncTimeout();
+                    if (DevPtr->isStatePending())
+                    {
+                        if (DevPtr->pendingStateEx() == HostUSBDevice::kDetachingPendingDetach)
+                            DevPtr->setLogicalReconnect (HostUSBDevice::kDetachingPendingAttach);
+                        else if (DevPtr->pendingStateEx() == HostUSBDevice::kDetachingPendingDetachFilters)
+                            DevPtr->setLogicalReconnect (HostUSBDevice::kDetachingPendingAttachFilters);
+                        It++;
+                        Log (("USBProxyService::processChanges: detached but pending %d/%d %p\n",
+                              DevPtr->pendingState(), DevPtr->pendingStateEx(), (HostUSBDevice *)DevPtr));
+                    }
+                    else
                     {
                         It = mDevices.erase (It);
                         deviceRemoved (DevPtr);
@@ -301,14 +316,6 @@ void USBProxyService::processChanges (void)
                          * uninitialize to avoid abuse */
                         devCaller.release();
                         DevPtr->uninit();
-                    }
-                    else
-                    {
-                        /* a state change (re-cycle) request is pending, go
-                         * to the next device */
-                        It++;
-                        Log (("USBProxyService::processChanges: detached but pending %d %p\n",
-                              DevPtr->pendingState(), (HostUSBDevice *)DevPtr));
                     }
                 }
             }
@@ -455,18 +462,38 @@ bool USBProxyService::updateDeviceStateFake (HostUSBDevice *aDevice, PUSBDEVICE 
 
     if (aDevice->isStatePending())
     {
-        switch (aDevice->pendingState())
+        switch (aDevice->pendingStateEx())
         {
-            /* @todo USBDEVICESTATE_USED_BY_GUEST seems not to be used anywhere in the proxy code; it's
-             * quite logical because the proxy doesn't know anything about guest VMs. We use HELD_BY_PROXY
-             * instead -- it is sufficient and is what Main expects. */
-            case USBDeviceState_USBDeviceCaptured:      aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
-            case USBDeviceState_USBDeviceHeld:          aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
-            case USBDeviceState_USBDeviceAvailable:     aUSBDevice->enmState = USBDEVICESTATE_UNUSED; break;
-            case USBDeviceState_USBDeviceUnavailable:   aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST; break;
-            case USBDeviceState_USBDeviceBusy:          aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE; break;
+            case HostUSBDevice::kNothingPending:
+                switch (aDevice->pendingState())
+                {
+                    /* @todo USBDEVICESTATE_USED_BY_GUEST seems not to be used anywhere in the proxy code; it's
+                     * quite logical because the proxy doesn't know anything about guest VMs. We use HELD_BY_PROXY
+                     * instead -- it is sufficient and is what Main expects. */
+                    case USBDeviceState_USBDeviceCaptured:      aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
+                    case USBDeviceState_USBDeviceHeld:          aUSBDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY; break;
+                    case USBDeviceState_USBDeviceAvailable:     aUSBDevice->enmState = USBDEVICESTATE_UNUSED; break;
+                    case USBDeviceState_USBDeviceUnavailable:   aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST; break;
+                    case USBDeviceState_USBDeviceBusy:          aUSBDevice->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE; break;
+                    default:
+                        AssertMsgFailed(("%d\n", aDevice->pendingState()));
+                        break;
+                }
+                break;
+
+            /* don't call updateDeviceState until it's reattached. */
+            case HostUSBDevice::kDetachingPendingDetach:
+            case HostUSBDevice::kDetachingPendingDetachFilters:
+                freeDevice(aUSBDevice);
+                return false;
+
+            /* Let updateDeviceState / HostUSBDevice::updateState deal with this. */
+            case HostUSBDevice::kDetachingPendingAttach:
+            case HostUSBDevice::kDetachingPendingAttachFilters:
+                break;
+
             default:
-                AssertMsgFailed(("%d\n", aDevice->pendingState()));
+                AssertMsgFailed(("%d\n", aDevice->pendingStateEx()));
                 break;
         }
     }
@@ -535,13 +562,12 @@ int USBProxyService::holdDevice (HostUSBDevice * /* aDevice */)
 }
 
 
-int USBProxyService::releaseDevice (HostUSBDevice * /* aDevice */)
+void USBProxyService::detachingDevice (HostUSBDevice */*aDevice*/)
 {
-    return VERR_NOT_IMPLEMENTED;
 }
 
 
-int USBProxyService::resetDevice (HostUSBDevice * /* aDevice */)
+int USBProxyService::releaseDevice (HostUSBDevice */*aDevice*/)
 {
     return VERR_NOT_IMPLEMENTED;
 }

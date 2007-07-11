@@ -1846,6 +1846,14 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     /// @todo (r=dmik) is it legal to attach USB devices when the machine is
     //  Paused, Starting, Saving, Stopping, etc? if not, we should make a
     //  stricter check (mMachineState != MachineState_Running).
+    /* bird: It is not permitted to attach or detach while the VM is saving, is restoring 
+     * or has stopped - definintly not.
+     *
+     * Attaching while starting, well, if you don't create any deadlock it should work... 
+     * Paused should work I guess, but we shouldn't push our luck if we're pausing because an 
+     * runtime error condition was raised (which is one of the reasons there better be a separate  
+     * state for that in the VMM).
+     */
     if (mMachineState < MachineState_Running)
         return setError (E_FAIL,
             tr ("Cannot attach a USB device to a machine which is not running "
@@ -1901,6 +1909,23 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
             Guid (aId).raw());
 
+#ifdef __DARWIN__
+    /* Notify the USB Proxy that we're about to detach the device. Since 
+     * we don't dare do IPC when holding the console lock, so we'll have 
+     * to revalidate the device when we get back. */
+    alock.leave();
+    HRESULT rc2 = mControl->DetachUSBDevice (aId, false /* aDone */);
+    if (FAILED (rc2))
+        return rc2;
+    alock.enter();
+
+    for (it = mUSBDevices.begin(); it != mUSBDevices.end(); ++ it)
+        if ((*it)->id() == aId)
+            break;
+    if (it == mUSBDevices.end())
+        return S_OK;
+#endif 
+
     /* First, request VMM to detach the device */
     HRESULT rc = detachUSBDevice (it);
 
@@ -1912,7 +1937,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 
         /* Request the device release. Even if it fails, the device will
          * remain as held by proxy, which is OK for us (the VM process). */
-        rc = mControl->ReleaseUSBDevice (aId);
+        rc = mControl->DetachUSBDevice (aId, true /* aDone */);
     }
 
     return rc;
@@ -3760,12 +3785,16 @@ HRESULT Console::powerDown()
         }
 
         /* If the machine has an USB comtroller, release all USB devices
-         * (symmectric to the code in captureUSBDevices()) */
+         * (symmetric to the code in captureUSBDevices()) */
+        bool fHasUSBController = false;
         {
             PPDMIBASE pBase;
             int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
             if (VBOX_SUCCESS (vrc))
-                releaseAllUSBDevices();
+            {
+                fHasUSBController = true;
+                detachAllUSBDevices (false /* aDone */);
+            }
         }
 
         /*
@@ -3814,6 +3843,12 @@ HRESULT Console::powerDown()
             rc = setError (E_FAIL,
                 tr ("Could not destroy the machine.  (Error: %Vrc)"), vrc);
         }
+
+        /*
+         *  Complete the detaching of the USB devices.
+         */
+        if (fHasUSBController)
+            detachAllUSBDevices (true /* aDone */);
     }
     else
     {
@@ -6253,12 +6288,12 @@ HRESULT Console::captureUSBDevices (PVM pVM)
 
 
 /**
- *  Releases all USB device which is attached to the VM for the
+ *  Detach all USB device which are attached to the VM for the
  *  purpose of clean up and such like.
  *
  *  @note The caller must lock this object for writing.
  */
-void Console::releaseAllUSBDevices (void)
+void Console::detachAllUSBDevices (bool aDone)
 {
     LogFlowThisFunc (("\n"));
 
@@ -6273,7 +6308,7 @@ void Console::releaseAllUSBDevices (void)
     AutoLock alock (this);
     alock.leave();
 
-    mControl->ReleaseAllUSBDevices();
+    mControl->DetachAllUSBDevices (aDone);
 }
 
 /**

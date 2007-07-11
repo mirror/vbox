@@ -19,6 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
+#include <iprt/types.h> /* for UINT64_C */
+
 #include "HostUSBDeviceImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"
@@ -107,6 +109,7 @@ HRESULT HostUSBDevice::init(PUSBDEVICE aUsb, USBProxyService *aUSBProxyService)
     }
 
     mPendingState = mState;
+    mPendingStateEx = kNothingPending;
 
     /* Other data members */
     mIsStatePending = false;
@@ -380,6 +383,7 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine)
         ComPtr <IUSBDevice> d = this;
 
         mIsStatePending = true;
+        mPendingSince = 0;
 
         /* the VM process will query the object, so leave the lock */
         AutoLock alock (this);
@@ -400,6 +404,7 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine)
         alock.enter();
 
         mIsStatePending = false;
+        mPendingStateEx = kNothingPending;
 
         if (SUCCEEDED (rc))
         {
@@ -413,6 +418,8 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine)
 
     mIsStatePending = true;
     mPendingState = USBDeviceState_USBDeviceCaptured;
+    mPendingStateEx = kNothingPending;
+    mPendingSince = RTTimeNanoTS();
     mMachine = aMachine;
 
     mUSBProxyService->captureDevice (this);
@@ -447,6 +454,8 @@ void HostUSBDevice::requestRelease()
 
     mIsStatePending = true;
     mPendingState = USBDeviceState_USBDeviceAvailable;
+    mPendingStateEx = kNothingPending;
+    mPendingSince = RTTimeNanoTS();
 
     mUSBProxyService->releaseDevice (this);
 }
@@ -481,6 +490,8 @@ void HostUSBDevice::requestHold()
 
     mIsStatePending = true;
     mPendingState = USBDeviceState_USBDeviceHeld;
+    mPendingStateEx = kNothingPending;
+    mPendingSince = RTTimeNanoTS();
 
     mUSBProxyService->captureDevice (this);
 }
@@ -512,7 +523,7 @@ void HostUSBDevice::setHeld()
  *
  *  @note Must be called from under the object write lock.
  */
-void HostUSBDevice::reset()
+void HostUSBDevice::onDetachedPhys()
 {
     LogFlowThisFunc (("\n"));
 
@@ -523,6 +534,7 @@ void HostUSBDevice::reset()
         /* the device is captured by a machine, instruct it to release */
 
         mIsStatePending = true;
+        mPendingSince = 0;
 
         /* the VM process will query the object, so leave the lock */
         AutoLock alock (this);
@@ -546,11 +558,12 @@ void HostUSBDevice::reset()
 
         alock.enter();
 
-        /* Reset all fields. Tthe object should have been
+        /* Reset all fields. The object should have been
          * uninitialized after this method returns, so it doesn't really
          * matter what state we put it in. */
         mIsStatePending = false;
         mState = mPendingState = USBDeviceState_USBDeviceNotSupported;
+        mPendingStateEx = kNothingPending;
         mMachine.setNull();
     }
 }
@@ -568,83 +581,109 @@ void HostUSBDevice::handlePendingStateChange()
     AssertReturnVoid (isLockedOnCurrentThread());
 
     AssertReturnVoid (mIsStatePending == true);
-    AssertReturnVoid (mState != USBDeviceState_USBDeviceCaptured);
+    AssertReturnVoid (mState != USBDeviceState_USBDeviceCaptured || mPendingStateEx != kNothingPending);
 
     bool wasCapture = false;
 
     HRESULT requestRC = S_OK;
     Bstr errorText;
 
-    switch (mPendingState)
+    switch (mPendingStateEx)
     {
-        case USBDeviceState_USBDeviceCaptured:
-        {
-            if (mState == USBDeviceState_USBDeviceHeld)
+        case kNothingPending:
+            switch (mPendingState)
             {
-                if (!mMachine.isNull())
-                    wasCapture = true;
-                else
+                case USBDeviceState_USBDeviceCaptured:
                 {
-                    /* it is a canceled capture request. Give the device back
-                     * to the host. */
-                    mPendingState = USBDeviceState_USBDeviceAvailable;
-                    mUSBProxyService->releaseDevice (this);
+                    if (mState == USBDeviceState_USBDeviceHeld)
+                    {
+                        if (!mMachine.isNull())
+                            wasCapture = true;
+                        else
+                        {
+                            /* it is a canceled capture request. Give the device back
+                             * to the host. */
+                            mPendingState = USBDeviceState_USBDeviceAvailable;
+                            mUSBProxyService->releaseDevice (this);
+                        }
+                    }
+                    else
+                    {
+                        /* couldn't capture the device, will report an error */
+                        wasCapture = true;
+        
+                        Assert (!mMachine.isNull());
+        
+                        /// @todo more detailed error message depending on the state?
+                        //  probably need some error code/string from the USB proxy itself
+        
+                        requestRC = E_FAIL;
+                        errorText = Utf8StrFmt (
+                            tr ("USB device '%s' with UUID {%Vuuid} is being accessed by the host "
+                                "computer and cannot be attached to the virtual machine."
+                                "Please try later"),
+                            name().raw(), id().raw());
+                    }
+                    break;
                 }
-            }
-            else
-            {
-                /* couldn't capture the device, will report an error */
-                wasCapture = true;
-
-                Assert (!mMachine.isNull());
-
-                /// @todo more detailed error message depending on the state?
-                //  probably need some error code/string from the USB proxy itself
-
-                requestRC = E_FAIL;
-                errorText = Utf8StrFmt (
-                    tr ("USB device '%s' with UUID {%Vuuid} is being accessed by the host "
-                        "computer and cannot be attached to the virtual machine."
-                        "Please try later"),
-                    name().raw(), id().raw());
-            }
-            break;
-        }
-        case USBDeviceState_USBDeviceAvailable:
-        {
-            Assert (mMachine.isNull());
-
-            if (mState == USBDeviceState_USBDeviceHeld)
-            {
-                /* couldn't release the device (give it back to the host).
-                 * there is nobody to report an error to (the machine has
-                 * already been deassociated because VMM has already detached
-                 * the device before requesting a release). */
-            }
-            else
-            {
-                /* it is a canceled release request. Leave at the host */
-                /// @todo we may want to re-run all filters in this case
-            }
-            break;
-        }
-        case USBDeviceState_USBDeviceHeld:
-        {
-            if (mState == USBDeviceState_USBDeviceHeld)
-            {
-                /* All right, the device is now held (due to some global
-                 * filter). */
-                break;
-            }
-            else
-            {
-                /* couldn't capture the device requested by the global
-                 * filter, there is nobody to report an error to. */
+                case USBDeviceState_USBDeviceAvailable:
+                {
+                    Assert (mMachine.isNull());
+        
+                    if (mState == USBDeviceState_USBDeviceHeld)
+                    {
+                        /* couldn't release the device (give it back to the host).
+                         * there is nobody to report an error to (the machine has
+                         * already been deassociated because VMM has already detached
+                         * the device before requesting a release). */
+                    }
+                    else
+                    {
+                        /* it is a canceled release request. Leave at the host */
+                        /// @todo we may want to re-run all filters in this case
+                    }
+                    break;
+                }
+                case USBDeviceState_USBDeviceHeld:
+                {
+                    if (mState == USBDeviceState_USBDeviceHeld)
+                    {
+                        /* All right, the device is now held (due to some global
+                         * filter). */
+                        break;
+                    }
+                    else
+                    {
+                        /* couldn't capture the device requested by the global
+                         * filter, there is nobody to report an error to. */
+                    }
+                    break;
+                }
+                default:
+                    AssertFailed();
             }
             break;
-        }
+
+        /*
+         * The device has reappeared, the caller (Host) will (maybe) reapply filters,
+         * since we don't quite know we set the machine to NULL.
+         */
+        case kDetachingPendingAttachFilters:
+            mMachine.setNull();
+            break;
+
+        /*
+         * The device has reappeared while the detach operation is still in 
+         * progress, just clear the pending operation and leave the machine as is.
+         */
+        case kDetachingPendingAttach:
+            break;
+
+        case kDetachingPendingDetach:
+        case kDetachingPendingDetachFilters:
         default:
-            AssertFailed();
+            AssertMsgFailed(("%d\n", mPendingStateEx));
+            return;
     }
 
     ComObjPtr <VirtualBoxErrorInfo> error;
@@ -689,6 +728,7 @@ void HostUSBDevice::handlePendingStateChange()
         {
             mIsStatePending = false;
             mState = mPendingState = USBDeviceState_USBDeviceCaptured;
+            mPendingStateEx = kNothingPending;
             return;
         }
 
@@ -699,33 +739,61 @@ void HostUSBDevice::handlePendingStateChange()
 
     mIsStatePending = false;
     mPendingState = mState;
+    mPendingStateEx = kNothingPending;
 }
 
 /**
- *  Cancels pending state change due to machine termination.
+ *  Cancels pending state change due to machine termination or timeout.
  *
  *  @note Must be called from under the object write lock.
+ *  @param  aTimeout        Whether this is a timeout or not.
  */
-void HostUSBDevice::cancelPendingState()
+void HostUSBDevice::cancelPendingState(bool aTimeout /*= false*/)
 {
     LogFlowThisFunc (("\n"));
 
     AssertReturnVoid (isLockedOnCurrentThread());
 
     AssertReturnVoid (mIsStatePending == true);
-    AssertReturnVoid (!mMachine.isNull());
+    AssertReturnVoid (aTimeout || !mMachine.isNull());
 
-    switch (mPendingState)
+    switch (mPendingStateEx)
     {
-        case USBDeviceState_USBDeviceCaptured:
-        {
-            /* reset mMachine to deassociate it from the filter and tell
-             * handlePendingStateChange() what to do */
-            mMachine.setNull();
+        case kNothingPending:
+            switch (mPendingState)
+            {
+                case USBDeviceState_USBDeviceCaptured:
+                    /* reset mMachine to deassociate it from the filter and tell
+                     * handlePendingStateChange() what to do */
+                    mMachine.setNull();
+                    if (!aTimeout)
+                        break;
+                case USBDeviceState_USBDeviceAvailable:
+                case USBDeviceState_USBDeviceHeld:
+                    if (aTimeout)
+                    {
+                        mPendingStateEx = kNothingPending;
+                        mIsStatePending = false;
+                        break;
+                    }
+                    /* fall thru */
+                default:
+                    AssertFailed();
+            }
             break;
-        }
+
+        case kDetachingPendingDetach:
+        case kDetachingPendingDetachFilters:
+        case kDetachingPendingAttach:
+        case kDetachingPendingAttachFilters:
+            mMachine.setNull();
+            mPendingStateEx = kNothingPending;
+            mIsStatePending = false;
+            break;
+
         default:
-            AssertFailed();
+            AssertMsgFailed(("%d\n", mPendingStateEx));
+            break;
     }
 }
 
@@ -847,14 +915,7 @@ int HostUSBDevice::compare (PCUSBDEVICE aDev2)
 {
     AssertReturn (isLockedOnCurrentThread(), -1);
 
-#ifdef __WIN__
     return compare (mUsb, aDev2, !isStatePending());
-#else
-    /* Since we fake the requests anyway, there is no need to unnecessarily
-       expose ourselves to trouble the non-strict compare may cause on
-       release/capture/unplug/plug/similar-devices. */
-    return compare (mUsb, aDev2, true /* strict */);
-#endif
 }
 
 /**
@@ -881,6 +942,10 @@ int HostUSBDevice::compare (PCUSBDEVICE aDev2)
 int HostUSBDevice::compare (PCUSBDEVICE aDev1, PCUSBDEVICE aDev2,
                             bool aIsStrict /* = true */)
 {
+    /* The non-strict checks tries as best as it can to distiguish between 
+       different physical devices of the same product. Unfortunately this
+       isn't always possible and we might end up a bit confused in rare cases... */
+
     int iDiff = aDev1->idVendor - aDev2->idVendor;
     if (iDiff)
         return iDiff;
@@ -889,11 +954,18 @@ int HostUSBDevice::compare (PCUSBDEVICE aDev1, PCUSBDEVICE aDev2,
     if (iDiff)
         return iDiff;
 
+    iDiff = aDev1->bcdDevice - aDev2->bcdDevice;
+    if (iDiff)
+        return iDiff;
+
+    if (aDev1->u64SerialHash != aDev2->u64SerialHash)
+        return aDev1->u64SerialHash < aDev2->u64SerialHash ? -1 : 1;
+
     if (!aIsStrict)
         return 0;
 
-    /* The rest is considered as a strict check. */
-
+    /* The rest is considered as a strict check since it includes bits that
+       may vary on logical reconnects (or whatever you wish to call it). */
     return strcmp (aDev1->pszAddress, aDev2->pszAddress);
 }
 
@@ -956,8 +1028,8 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
      *             be rerun on the device. (See #2030 and #1870.)
      */
 
-    LogFlowThisFunc (("aDev->enmState=%d mState=%d mPendingState=%d\n",
-                      aDev->enmState, mState, mPendingState));
+    LogFlowThisFunc (("aDev->enmState=%d mState=%d mPendingState=%d mPendingStateEx=%d\n",
+                      aDev->enmState, mState, mPendingState, mPendingStateEx));
 
     switch (aDev->enmState)
     {
@@ -965,7 +1037,13 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             AssertMsgFailed (("aDev->enmState=%d\n", aDev->enmState));
         case USBDEVICESTATE_UNSUPPORTED:
             Assert (mState == USBDeviceState_USBDeviceNotSupported);
-            return false;
+            switch (mState)
+            {
+                case USBDeviceState_USBDeviceCaptured:
+                    isImportant = mIsStatePending;
+                    break;
+            }
+            return isImportant;
 
         case USBDEVICESTATE_USED_BY_HOST:
             switch (mState)
@@ -999,12 +1077,18 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
                     break;
-#ifndef __WIN__ /* Only Windows really knows whether the device is busy or captured. */
                 case USBDeviceState_USBDeviceCaptured:
+#ifndef __WIN__ /* Only Windows really knows whether the device is busy or captured. */
                     if (!mIsStatePending)
                         return false;
-                    /* fall thru */
 #endif
+                    /* Remain in the captured state if it's an async detach. */
+                    if (mPendingStateEx != kNothingPending)
+                    {
+                        LogFlowThisFunc (("USBDeviceCaptured - async detach completed (%d)\n", mPendingStateEx));
+                        return true;
+                    }
+                    /* fall thru */
                 default:
                     /* USBDeviceState_USBDeviceUnavailable: The device has become capturable, re-run filters. */
                     /* USBDeviceState_USBDeviceHeld:        Pending request. */
@@ -1064,7 +1148,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             break;
 
         case USBDEVICESTATE_USED_BY_GUEST:
-            /* @todo USBDEVICESTATE_USED_BY_GUEST seems not to be used
+            /** @todo USBDEVICESTATE_USED_BY_GUEST seems not to be used
              * anywhere in the proxy code; it's quite logical because the
              * proxy doesn't know anything about guest VMs. */
             AssertFailed();
@@ -1088,5 +1172,75 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
     }
 
     return false;
+}
+
+/**
+ *  Checks for timeout of any pending async operation.
+ * 
+ *  The caller must write lock the object prior to calling 
+ *  this method.
+ */
+void HostUSBDevice::checkForAsyncTimeout()
+{
+    AssertReturnVoid (isLockedOnCurrentThread());
+
+#ifndef __WIN__ /* no timeouts on windows yet since I don't have all the details here... */
+    if (isStatePending() && mPendingSince)
+    {
+        uint64_t elapsedNanoseconds = RTTimeNanoTS() - mPendingSince;
+        if (elapsedNanoseconds > UINT64_C (60000000000) ) /* 60 seconds */
+        {
+            LogRel (("USB: Async operation timed out; mPendingState=%d mPendingStateEx=%d idVendor=%04x (%s) idProduct=%04x (%s) bcdDevice=%04x\n",
+                     mPendingState, mPendingStateEx, mUsb->idVendor, mUsb->pszManufacturer, mUsb->idProduct,  mUsb->pszProduct, mUsb->bcdDevice));
+
+            cancelPendingState (true);
+        }
+    }
+#endif
+}
+
+/** 
+ *  This method is called by the USB proxy and Host to work the 
+ *  logical reconnection operation.
+ * 
+ *  @param  aStage      kDeatchingPendingDetach, kDeatchingPendingDetachFilters,
+ *                      kDetachingPendingAttach or kDetachingPendingAttachFilters.
+ * 
+ *  @returns Success indicator.
+ */
+bool HostUSBDevice::setLogicalReconnect (InternalState aStage)
+{
+    AssertReturn (isLockedOnCurrentThread(), false);
+
+    switch (aStage)
+    {
+        case kDetachingPendingDetach:
+            AssertReturn (!mIsStatePending, false);
+            mPendingState = mState;
+            mIsStatePending = true;
+            mPendingSince = RTTimeNanoTS();
+            break;
+
+        case kDetachingPendingDetachFilters:
+            AssertReturn (mIsStatePending, false);
+            AssertReturn (mPendingStateEx == kDetachingPendingDetach, false);
+            break;
+
+        case kDetachingPendingAttach:
+            AssertReturn (mIsStatePending, false);
+            AssertReturn (mPendingStateEx == kDetachingPendingDetach, false);
+            break;
+
+        case kDetachingPendingAttachFilters:
+            AssertReturn (mIsStatePending, false);
+            AssertReturn (   mPendingStateEx == kDetachingPendingAttach 
+                          || mPendingStateEx == kDetachingPendingDetachFilters, false);
+            break;
+
+        default:
+            AssertFailedReturn (false);
+    }
+    mPendingStateEx = aStage;
+    return true;
 }
 

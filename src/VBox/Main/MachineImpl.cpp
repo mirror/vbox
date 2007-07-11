@@ -7689,10 +7689,10 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     {
         /* Console::captureUSBDevices() is called in the VM process only after
          * setting the machine state to Starting or Restoring.
-         * Console::releaseAllUSBDevices() will be called upon successful
+         * Console::detachAllUSBDevices() will be called upon successful
          * termination. So, we need to release USB devices only if there was
          * an abnormal termination of a running VM. */
-        ReleaseAllUSBDevices();
+        DetachAllUSBDevices (TRUE /* aDone */);
     }
 
     if (!mData->mSession.mType.isNull())
@@ -7887,16 +7887,16 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
 }
 
 /**
- *  @note Locks the same as Host::releaseUSBDevice() does.
+ *  @note Locks the same as Host::detachUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::ReleaseUSBDevice (INPTR GUIDPARAM aId)
+STDMETHODIMP SessionMachine::DetachUSBDevice (INPTR GUIDPARAM aId, BOOL aDone)
 {
     LogFlowThisFunc (("\n"));
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    return mParent->host()->releaseUSBDevice (this, aId);
+    return mParent->host()->detachUSBDevice (this, aId, aDone);
 }
 
 /**
@@ -7923,7 +7923,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
 
 /**
  *  Removes all machine filters from the USB proxy service and then calls
- *  Host::releaseAllUSBDevices().
+ *  Host::detachAllUSBDevices().
  *
  *  Called by Console from the VM process upon normal VM termination or by
  *  SessionMachine::uninit() upon abnormal VM termination (from under the
@@ -7931,7 +7931,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
  *
  *  @note Locks what called methods lock.
  */
-STDMETHODIMP SessionMachine::ReleaseAllUSBDevices()
+STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
 {
     LogFlowThisFunc (("\n"));
 
@@ -7942,7 +7942,7 @@ STDMETHODIMP SessionMachine::ReleaseAllUSBDevices()
     AssertComRC (rc);
     NOREF (rc);
 
-    return mParent->host()->releaseAllUSBDevices (this);
+    return mParent->host()->detachAllUSBDevices (this, aDone);
 }
 
 /**

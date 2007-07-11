@@ -738,9 +738,9 @@ public:
     STDMETHOD(GetIPCId)(BSTR *id);
     STDMETHOD(RunUSBDeviceFilters) (IUSBDevice *aUSBDevice, BOOL *aMatched);
     STDMETHOD(CaptureUSBDevice) (INPTR GUIDPARAM aId);
-    STDMETHOD(ReleaseUSBDevice) (INPTR GUIDPARAM aId);
+    STDMETHOD(DetachUSBDevice) (INPTR GUIDPARAM aId, BOOL aDone);
     STDMETHOD(AutoCaptureUSBDevices)();
-    STDMETHOD(ReleaseAllUSBDevices)();
+    STDMETHOD(DetachAllUSBDevices)(BOOL aDone);
     STDMETHOD(OnSessionEnd)(ISession *aSession, IProgress **aProgress);
     STDMETHOD(BeginSavingState) (IProgress *aProgress, BSTR *aStateFilePath);
     STDMETHOD(EndSavingState) (BOOL aSuccess);
