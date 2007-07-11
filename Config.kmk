@@ -549,40 +549,43 @@ endif
 ASTOOL = $(VBOX_ASTOOL)
 
 #
-# L4.
+# L4-specific settings.
 #
 ifdef L4_DIR
- # default CPU type
- ifeq ($(L4_CPU),)
-  L4_CPU = 586
- endif
- ifeq ($(L4_API),)
-  L4_API = l4v2
- endif
- L4_OBJ := $(L4_DIR)/build-x86-$(L4_CPU)-$(L4_API)
  ifeq ($(BUILD_TARGET),l4)
-  L4LINUX26_INCDIR := \
-	$(L4LINUX26_DIR)/include \
-	$(L4LINUX26_DIR)/include/asm-l4/i386-arch
+  L4_API  ?= l4v2
+  L4_ARCH ?= $(BUILD_TARGET_ARCH)
+  ifeq ($(L4_ARCH),x86)
+   L4_CPU ?= 586
+   L4LINUX26_INCDIR := $(L4LINUX26_DIR)/include \
+		       $(L4LINUX26_DIR)/include/asm-l4/i386-arch
+  else ifeq ($(L4_ARCH),amd64)
+   L4_CPU ?= k8
+   L4LINUX26_INCDIR := $(L4LINUX26_DIR)/include
+   # no red zone for L4 because of IPC bindings
+   CFLAGS.l4   = -mno-red-zone
+   CXXFLAGS.l4 = -mno-red-zone
+  else
+   $(error L4_ARCH=$(L4_ARCH))
+  endif
+  L4_OBJ := $(L4_DIR)/build-$(L4_ARCH)-$(L4_CPU)-$(L4_API)
   # support splitted Linux kernels (make O=<build directory>)
   kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(L4LINUX26_DIR)/Makefile)
   ifneq ($(kernelsrc),)
    kernelpath := $(realpath $(kernelsrc))
-   L4LINUX26_INCDIR += \
-	$(L4LINUX26_DIR)/include2 \
-	$(kernelpath)/include
+    L4LINUX26_INCDIR += $(L4LINUX26_DIR)/include2 $(kernelpath)/include
   endif
   L4_INCDIR := \
-	$(L4_OBJ)/include/uclibc++ \
-	$(L4_OBJ)/include/x86/uclibc \
-	$(L4_OBJ)/include/uclibc \
-	$(L4LINUX26_INCDIR) \
-	$(L4_OBJ)/include/x86/$(L4_API) \
-	$(L4_OBJ)/include/x86 \
-	$(L4_OBJ)/include \
-	$(L4_DIR)/tool/dice/include
+    $(L4_OBJ)/include/uclibc++ \
+    $(L4_OBJ)/include/$(L4_ARCH)/uclibc \
+    $(L4_OBJ)/include/uclibc \
+    $(L4LINUX26_INCDIR) \
+    $(L4_OBJ)/include/$(L4_ARCH)/$(L4_API) \
+    $(L4_OBJ)/include/$(L4_ARCH) \
+    $(L4_OBJ)/include \
+    $(L4_DIR)/tool/dice/include
   L4_LIBDIR := \
-	$(L4_DIR)/build-x86-$(L4_CPU)-$(L4_API)/lib/x86_$(L4_CPU)/$(L4_API)
+   $(L4_DIR)/build-$(L4_ARCH)-$(L4_CPU)-$(L4_API)/lib/$(L4_ARCH)_$(L4_CPU)/$(L4_API)
  endif # BUILD_TARGET == l4
 endif # L4_DIR
 
