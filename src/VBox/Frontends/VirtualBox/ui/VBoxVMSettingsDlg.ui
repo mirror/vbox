@@ -1284,6 +1284,9 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                             <property name="checked">
                                                 <bool>true</bool>
                                             </property>
+                                            <property name="whatsThis" stdset="0">
+                                                <string>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</string>
+                                            </property>
                                         </widget>
                                     </vbox>
                                 </widget>

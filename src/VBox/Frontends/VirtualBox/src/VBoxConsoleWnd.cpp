@@ -406,13 +406,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
 
-    devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
-        QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
-    devicesUnmountFloppyAction->addTo (devicesMenu);
-    devicesMenu->insertSeparator();
     devicesMenu->insertItem (VBoxGlobal::iconSet ("cd_16px.png", "cd_disabled_16px.png"),
         QString::null, devicesMountDVDMenu, devicesMountDVDMenuId);
     devicesUnmountDVDAction->addTo (devicesMenu);
+    devicesMenu->insertSeparator();
+    devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
+        QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
+    devicesUnmountFloppyAction->addTo (devicesMenu);
     devicesMenu->insertSeparator();
     devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
@@ -2032,7 +2032,12 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
         if (drv.isOk())
         {
             if (mIsAutoSaveMedia)
-                console->console().GetMachine().SaveSettings();
+            {
+                CMachine m = csession.GetMachine();
+                m.SaveSettings();
+                if (!m.isOk())
+                    vboxProblem().cannotSaveMachineSettings (m);
+            }
             updateAppearanceOf (FloppyStuff);
         }
     }
@@ -2047,7 +2052,12 @@ void VBoxConsoleWnd::devicesUnmountFloppy()
     if (drv.isOk())
     {
         if (mIsAutoSaveMedia)
-            console->console().GetMachine().SaveSettings();
+        {
+            CMachine m = csession.GetMachine();
+            m.SaveSettings();
+            if (!m.isOk())
+                vboxProblem().cannotSaveMachineSettings (m);
+        }
         updateAppearanceOf (FloppyStuff);
     }
 }
@@ -2068,9 +2078,35 @@ void VBoxConsoleWnd::devicesMountDVDImage()
         if (drv.isOk())
         {
             if (mIsAutoSaveMedia)
-                console->console().GetMachine().SaveSettings();
+            {
+                CMachine m = csession.GetMachine();
+                m.SaveSettings();
+                if (!m.isOk())
+                    vboxProblem().cannotSaveMachineSettings (m);
+            }
             updateAppearanceOf (DVDStuff);
         }
+    }
+}
+
+
+void VBoxConsoleWnd::devicesUnmountDVD()
+{
+    if (!console) return;
+
+    CDVDDrive drv = csession.GetMachine().GetDVDDrive();
+    drv.Unmount();
+    AssertWrapperOk (drv);
+    if (drv.isOk())
+    {
+        if (mIsAutoSaveMedia)
+        {
+            CMachine m = csession.GetMachine();
+            m.SaveSettings();
+            if (!m.isOk())
+                vboxProblem().cannotSaveMachineSettings (m);
+        }
+        updateAppearanceOf (DVDStuff);
     }
 }
 
@@ -2145,21 +2181,6 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     AssertWrapperOk (drv);
     if (drv.isOk())
         updateAppearanceOf (DVDStuff);
-}
-
-void VBoxConsoleWnd::devicesUnmountDVD()
-{
-    if (!console) return;
-
-    CDVDDrive drv = csession.GetMachine().GetDVDDrive();
-    drv.Unmount();
-    AssertWrapperOk (drv);
-    if (drv.isOk())
-    {
-        if (mIsAutoSaveMedia)
-            console->console().GetMachine().SaveSettings();
-        updateAppearanceOf (DVDStuff);
-    }
 }
 
 /**
@@ -2331,7 +2352,12 @@ void VBoxConsoleWnd::captureFloppy (int aId)
     if (drv.isOk())
     {
         if (mIsAutoSaveMedia)
-            console->console().GetMachine().SaveSettings();
+        {
+            CMachine m = csession.GetMachine();
+            m.SaveSettings();
+            if (!m.isOk())
+                vboxProblem().cannotSaveMachineSettings (m);
+        }
         updateAppearanceOf (FloppyStuff);
     }
 }
@@ -2354,7 +2380,12 @@ void VBoxConsoleWnd::captureDVD (int aId)
     if (drv.isOk())
     {
         if (mIsAutoSaveMedia)
-            console->console().GetMachine().SaveSettings();
+        {
+            CMachine m = csession.GetMachine();
+            m.SaveSettings();
+            if (!m.isOk())
+                vboxProblem().cannotSaveMachineSettings (m);
+        }
         updateAppearanceOf (DVDStuff);
     }
 }
