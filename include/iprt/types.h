@@ -1018,14 +1018,14 @@ typedef FNRTPROGRESS *PFNRTPROGRESS;
  */
 typedef struct RTRECT
 {
-    /** X coordinate. */
-    int32_t     x;
-    /** Y coordinate. */
-    int32_t     y;
-    /** Width. */
-    uint32_t    cx;
-    /** Height. */
-    uint32_t    cy;
+    /** left X coordinate. */
+    int32_t     xLeft;
+    /** bottom Y coordinate. */
+    int32_t     yBottom;
+    /** right X coordinate. */
+    int32_t     xRight;
+    /** top Y coordinate. */
+    int32_t     yTop;
 } RTRECT;
 /** Pointer to a rectangle. */
 typedef RTRECT *PRTRECT;
