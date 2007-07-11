@@ -76,7 +76,7 @@ SUPR3_SOURCES       = \
 else
 SUPR3_SOURCES       = \
 	SUPLib.cpp \
-	win32/SUPLib-win32.cpp
+	win/SUPLib-win32.cpp
 endif
 
 #
@@ -108,8 +108,8 @@ VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 VBoxDrv_SOURCES       = \
 	SUPDRVShared.c
 VBoxDrv_SOURCES.x86   = \
-	win32/SUPDrv-win32.cpp \
-	win32/SUPDrvA-win32.asm
+	win/SUPDrv-win32.cpp \
+	win/SUPDrvA-win32.asm
 VBoxDrv_SOURCES.amd64 = \
 	win64/SUPDrv-win64.cpp \
 	win64/SUPDrvA-win64.asm
@@ -129,7 +129,7 @@ VBoxDrv-inf_SOURCES = \
 VBoxDrv-inf_CLEAN = $(VBoxDrv-inf_SOURCES)
 VBoxDrv-inf_BLDDIRS = $(PATH_TARGET)/VBoxDrvCat.dir
 
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win32/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 	$(call MSG_GENERATE,VBoxDrv-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
