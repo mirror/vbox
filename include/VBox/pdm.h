@@ -2051,6 +2051,29 @@ typedef struct PDMIVMMDEVCONNECTOR
      * @thread  The emulation thread.
      */
      DECLR3CALLBACKMEMBER(int, pfnSetCredentialsJudgementResult,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t fFlags));
+
+    /**
+     * Set the visible region of the display
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   cRect               Number of rectangles in pRect
+     * @param   pRect               Rectangle array
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetVisibleRegion,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cRect, PRTRECT pRect));
+
+    /**
+     * Query the visible region of the display
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pcRect              Number of rectangles in pRect
+     * @param   pRect               Rectangle array (set to NULL to query the number of rectangles)
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRect, PRTRECT pRect));
+
 } PDMIVMMDEVCONNECTOR;
 
 

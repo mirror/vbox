@@ -298,6 +298,35 @@ DECLCALLBACK(int) vmmdevSetCredentialsJudgementResult(PPDMIVMMDEVCONNECTOR pInte
     return rc;
 }
 
+DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cRect, PRTRECT pRect)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    if (!cRect)
+        return VERR_INVALID_PARAMETER;
+    IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
+    if (framebuffer)
+        framebuffer->SetVisibleRegion(cRect, (BYTE *)pRect);
+
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRect, PRTRECT pRect)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
+    if (framebuffer)
+    {
+        ULONG cRect = 0;
+        framebuffer->QueryVisibleRegion(&cRect, (BYTE *)pRect);
+
+        *pcRect = cRect;
+    }
+
+    return VINF_SUCCESS;
+}
+
 #ifdef VBOX_HGCM
 
 /* HGCM connector interface */
@@ -484,6 +513,9 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->Connector.pfnVideoModeSupported            = vmmdevVideoModeSupported;
     pData->Connector.pfnGetHeightReduction            = vmmdevGetHeightReduction;
     pData->Connector.pfnSetCredentialsJudgementResult = vmmdevSetCredentialsJudgementResult;
+    pData->Connector.pfnSetVisibleRegion              = vmmdevSetVisibleRegion;
+    pData->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
+
 
 #ifdef VBOX_HGCM
     pData->HGCMConnector.pfnConnect                   = iface_hgcmConnect;
