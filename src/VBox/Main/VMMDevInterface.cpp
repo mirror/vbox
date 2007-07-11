@@ -567,14 +567,23 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     {
         LogRel(("Failed to load Shared Folders service %Vrc\n", rc));
     }
-    rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedOpenGL", "VBoxSharedOpenGL");
-    if (VBOX_SUCCESS(rc))
+
+    bool fEnabled;
+
+    /* Check CFGM option. */
+    rc = CFGMR3QueryBool(pCfgHandle, "OpenGLEnabled", &fEnabled);
+    if (    VBOX_SUCCESS(rc)
+        &&  fEnabled)
     {
-        LogRel(("Shared OpenGL service loaded.\n"));
-    }
-    else
-    {
-        LogRel(("Failed to load Shared OpenGL service %Vrc\n", rc));
+        rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedOpenGL", "VBoxSharedOpenGL");
+        if (VBOX_SUCCESS(rc))
+        {
+            LogRel(("Shared OpenGL service loaded.\n"));
+        }
+        else
+        {
+            LogRel(("Failed to load Shared OpenGL service %Vrc\n", rc));
+        }
     }
 
     pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
