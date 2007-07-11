@@ -1470,6 +1470,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
                 return FALSE;
             }
+            break;
         }
 
         default:
