@@ -11,6 +11,9 @@
 *
 * Copyright (c) 1992-1998 Microsoft Corporation
 \**************************************************************************/
+#ifdef DEBUG
+#define LOG_ENABLED
+#endif
 
 #include "driver.h"
 #include "dd.h"
@@ -129,11 +132,11 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
             pRTRect = (PRTRECT) EngAllocMem(0, lpRgnData->rdh.nCount*sizeof(RTRECT), ALLOC_TAG);
             for (i=0;i<lpRgnData->rdh.nCount;i++)
             {
-                DISPDBG((0, "New visible rectangle (%d,%d) (%d,%d)\n", pRect->left, pRect->bottom, pRect->right, pRect->top));
-                pRTRect[i].xLeft   = pRect->left;
-                pRTRect[i].yBottom = pRect->bottom;
-                pRTRect[i].xRight  = pRect->right;
-                pRTRect[i].yTop    = pRect->top;
+                DISPDBG((0, "New visible rectangle (%d,%d) (%d,%d)\n", pRect[i].left, pRect[i].bottom, pRect[i].right, pRect[i].top));
+                pRTRect[i].xLeft   = pRect[i].left;
+                pRTRect[i].yBottom = pRect[i].bottom;
+                pRTRect[i].xRight  = pRect[i].right;
+                pRTRect[i].yTop    = pRect[i].top;
             }
 
             if (EngDeviceIoControl(ppdev->hDriver,
