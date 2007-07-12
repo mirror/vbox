@@ -33,10 +33,11 @@ BOOL (* APIENTRY pfnVBoxInstallHook)(HMODULE hDll) = NULL;
 BOOL (* APIENTRY pfnVBoxRemoveHook)() = NULL;
 
 
+void VBoxLogString(HANDLE hDriver, char *pszStr);
+
 int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
     *pfStartThread = false;
-
     hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
     if (hModule)
     {
@@ -83,3 +84,33 @@ void VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance)
     FreeLibrary(hModule);
     return;
 }
+
+#if 0
+
+static char LogBuffer[1024];
+
+
+VBGLR3DECL(int) VbglR3GRPerform(HANDLE hDriver, VMMDevRequestHeader *pReq)
+{
+    DWORD cbReturned;
+    if (!DeviceIoControl(hDriver, IOCTL_VBOXGUEST_VMMREQUEST, pReq, pReq->size,
+                         pReq, pReq->size, &cbReturned, NULL))
+    {
+        SvcDebugOut2("error doing IOCTL, last error: %d\n", GetLastError());
+    }
+    return VINF_SUCCESS;
+}
+
+void VBoxLogString(HANDLE hDriver, char *pszStr)
+{
+    VMMDevReqLogString *pReq = (VMMDevReqLogString *)LogBuffer;
+    int rc;
+
+    vmmdevInitRequest(&pReq->header, VMMDevReq_LogString);
+    strcpy(pReq->szString, pszStr);
+    pReq->header.size += strlen(pszStr);
+    rc = VbglR3GRPerform(hDriver, &pReq->header);
+    return;
+}
+
+#endif
