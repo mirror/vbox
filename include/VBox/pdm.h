@@ -1952,7 +1952,7 @@ typedef struct PDMIVMMDEVCONNECTOR
      * @param   newCapabilities     New capabilities.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnUpdateGuesteCapabilities,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities));
+    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestCapabilities,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities));
 
     /**
      * Update the mouse capabilities.

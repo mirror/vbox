@@ -537,7 +537,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pDrvIns->IBase.pfnQueryInterface                  = VMMDev::drvQueryInterface;
 
     pData->Connector.pfnUpdateGuestVersion            = vmmdevUpdateGuestVersion;
-    pData->Connector.pfnUpdateGuesteCapabilities      = vmmdevUpdateGuestCapabilities;
+    pData->Connector.pfnUpdateGuestCapabilities       = vmmdevUpdateGuestCapabilities;
     pData->Connector.pfnUpdateMouseCapabilities       = vmmdevUpdateMouseCapabilities;
     pData->Connector.pfnUpdatePointerShape            = vmmdevUpdatePointerShape;
     pData->Connector.pfnVideoAccelEnable              = iface_VideoAccelEnable;

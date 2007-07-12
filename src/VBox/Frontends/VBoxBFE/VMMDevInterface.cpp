@@ -103,6 +103,20 @@ DECLCALLBACK(void) VMMDev::UpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, V
 }
 
 /**
+ * Update the guest additions capabilities.
+ * This is called when the guest additions capabilities change. The new capabilities
+ * are given and the connector should update its internal state.
+ *
+ * @param   pInterface          Pointer to this interface.
+ * @param   newCapabilities     New capabilities.
+ * @thread  The emulation thread.
+ */
+DECLCALLBACK(void) VMMDev::UpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities)
+{
+    return;
+}
+
+/**
  * Update the mouse capabilities.
  * This is called when the mouse capabilities change. The new capabilities
  * are given and the connector should update its internal state.
@@ -276,6 +290,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pDrvIns->IBase.pfnQueryInterface            = VMMDev::drvQueryInterface;
 
     pData->Connector.pfnUpdateGuestVersion      = VMMDev::UpdateGuestVersion;
+    pData->Connector.pfnUpdateGuestCapabilities = VMMDev::UpdateGuestCapabilities;
     pData->Connector.pfnUpdateMouseCapabilities = VMMDev::UpdateMouseCapabilities;
     pData->Connector.pfnUpdatePointerShape      = VMMDev::UpdatePointerShape;
     pData->Connector.pfnVideoAccelEnable        = iface_VideoAccelEnable;
