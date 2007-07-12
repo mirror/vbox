@@ -61,6 +61,9 @@ protected:
 
     virtual void drawContents (QPainter *aPainter);
 
+#ifdef Q_WS_MAC
+    virtual void mousePressEvent (QMouseEvent *aEv);
+#endif 
     virtual void mouseDoubleClickEvent (QMouseEvent *aEv);
     virtual void contextMenuEvent (QContextMenuEvent *aEv);
 
