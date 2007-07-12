@@ -203,6 +203,8 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
     if (!guest)
         return;
 
+    Assert(!(newCapabilities & ~VMMDEV_GUEST_SUPPORTS_SEAMLESS));
+
     guest->setSeamlessSupport(BOOL (newCapabilities & VMMDEV_GUEST_SUPPORTS_SEAMLESS));
 
     /*
