@@ -502,6 +502,30 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        /* Report guest capabilities */
+        case VMMDevReq_ReportGuestCapabilities:
+        {
+            if (requestHeader->size != sizeof(VMMDevReqGuestCapabilities))
+            {
+                AssertMsgFailed(("VMMDev guest caps structure has invalid size!\n"));
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevReqGuestCapabilities *guestCaps = (VMMDevReqGuestCapabilities*)requestHeader;
+
+                if (pData->guestCaps != guestCaps->caps)
+                {
+                    /* make a copy of supplied information */
+                    pData->guestCaps = guestCaps->caps;
+
+                    pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, guestCaps->caps);
+                }
+                requestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
         /*
          * Retrieve mouse information
          */
@@ -1588,7 +1612,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION 3
+#define VMMDEV_SSM_VERSION  4
 
 /**
  * Saves a state of the VMM device.
@@ -1616,6 +1640,8 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3PutMem(pSSMHandle, &pData->guestInfo, sizeof (pData->guestInfo));
     SSMR3PutU32(pSSMHandle, pData->fu32AdditionsOk);
     SSMR3PutU32(pSSMHandle, pData->u32VideoAccelEnabled);
+
+    SSMR3PutU32(pSSMHandle, pData->guestCaps);
 
 #ifdef VBOX_HGCM
     vmmdevHGCMSaveState (pData, pSSMHandle);
@@ -1654,6 +1680,8 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3GetU32(pSSMHandle, &pData->fu32AdditionsOk);
     SSMR3GetU32(pSSMHandle, &pData->u32VideoAccelEnabled);
 
+    SSMR3GetU32(pSSMHandle, &pData->guestCaps);
+
 #ifdef VBOX_HGCM
     vmmdevHGCMLoadState (pData, pSSMHandle);
 #endif /* VBOX_HGCM */
@@ -1678,6 +1706,7 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
                 pData->guestInfo.osType));
         pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
     }
+    pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
 
     return VINF_SUCCESS;
 }
@@ -1911,6 +1940,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* Reset means that additions will report again. */
     pData->fu32AdditionsOk = false;
     memset (&pData->guestInfo, 0, sizeof (pData->guestInfo));
+    pData->guestCaps = 0;
 
     memset (&pData->lastReadDisplayChangeRequest, 0, sizeof (pData->lastReadDisplayChangeRequest));
 
