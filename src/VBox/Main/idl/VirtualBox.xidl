@@ -6220,21 +6220,15 @@
         The IFramebuffer implementation should try to setup
         a memory buffer suitable for the given pixel format
         and line size.
-        The buffer must be page aligned, must contain
-        whole number of pages, and one should be able
-        to lock it to obtain physical addresses of pages.
-        (Note: this method is currently not supported,
-        use the below mentioned vram pointer!)
 
         If the requested pixel format is not supported,
         or a PixelFormatDefault is requested,
-        a default format is set. In that case the memory
-        buffer does not have to be aligned and lockable.
+        a default format is set.
 
-        The callee is also allowed to use the guest video memory
+        The callee is allowed to use the guest video memory
         buffer (pointed to by the @a vram parameter) directly instead
         of allocating its own buffer. To indicate that the framebuffer
-        wants to use the guest video memory, its <link to="#address"/>
+        uses the guest video memory, its <link to="#address"/>
         implementation must return the same address as it gets in
         the @a vram parameter of this method.
 
