@@ -73,7 +73,7 @@ public:
     STDMETHOD(CopyScreenBits)(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
                               ULONG width, ULONG height, BOOL *handled);
 
-    STDMETHOD(QueryVisibleRegion)(ULONG * aPcRect, BYTE * aPRect);
+    STDMETHOD(GetVisibleRegion)(ULONG * aPcRect, BYTE * aPRect);
     STDMETHOD(SetVisibleRegion)(ULONG aCRect, BYTE * aPRect);
 
 private:

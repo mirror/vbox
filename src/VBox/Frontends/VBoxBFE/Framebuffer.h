@@ -51,7 +51,7 @@ public:
     virtual HRESULT CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
                                    ULONG width, ULONG height, BOOL *handled) = 0;
 
-    virtual HRESULT QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect) = 0;
+    virtual HRESULT GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect) = 0;
     virtual HRESULT SetVisibleRegion(ULONG aCRect, BYTE * aPRect) = 0;
 
     virtual void    repaint() = 0;

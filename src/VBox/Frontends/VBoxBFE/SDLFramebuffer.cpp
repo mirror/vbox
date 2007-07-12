@@ -323,7 +323,7 @@ HRESULT SDLFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG
     return E_NOTIMPL;
 }
 
-HRESULT SDLFramebuffer::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+HRESULT SDLFramebuffer::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
 {
     PRTRECT paRect = (PRTRECT)aPRect;
 
