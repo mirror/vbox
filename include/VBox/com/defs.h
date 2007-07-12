@@ -98,6 +98,12 @@
 
 #endif // defined (__OS2__)
 
+#if defined (__DARWIN__)
+  /* CFBase.h defines these*/
+# undef FALSE
+# undef TRUE
+#endif  /* __DARWIN__ */
+
 #include <nsID.h>
 
 #define ATL_NO_VTABLE
