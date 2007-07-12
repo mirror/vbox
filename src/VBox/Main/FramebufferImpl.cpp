@@ -247,6 +247,7 @@ STDMETHODIMP InternalFramebuffer::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRec
     if (!aPcRect)
         return E_POINTER;
 
+    NOREF(paRect);
     return S_OK;
 }
 
@@ -257,5 +258,6 @@ STDMETHODIMP InternalFramebuffer::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
     if (!paRect)
         return E_POINTER;
 
+    NOREF(paRect);
     return S_OK;
 }
