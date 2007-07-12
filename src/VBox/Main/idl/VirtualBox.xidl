@@ -6124,6 +6124,15 @@
     <const name="PixelFormatRGB32"        value="3"/>
   </enum>
 
+  <enum
+     name="FramebufferRenderMode"
+     uuid="456bdd27-63aa-458f-a970-8e8802732737"
+     >
+    <const name="RenderModeNormal"        value="0"/>
+    <const name="RenderModeSeamless"      value="1"/>
+    <const name="RenderModeHostWindow"    value="2"/>
+  </enum>
+
   <interface
      name="IFramebuffer" extends="$unknown"
      uuid="b47af7e6-acb1-4a75-ab4e-ec67b8125e1c"
@@ -6151,6 +6160,10 @@
 
     <attribute name="pixelFormat" type="FramebufferPixelFormat" readonly="yes">
       <desc>Framebuffer pixel format.</desc>
+    </attribute>
+
+    <attribute name="renderMode" type="FramebufferRenderMode" readonly="no">
+      <desc>Framebuffer rendering mode.</desc>
     </attribute>
 
     <attribute name="heightReduction" type="unsigned long" readonly="yes">

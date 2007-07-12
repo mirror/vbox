@@ -55,6 +55,8 @@ public:
     STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *pixelFormat);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
+    STDMETHOD(COMGETTER(RenderMode)) (FramebufferRenderMode_T *renderMode);
+    STDMETHOD(COMSETTER(RenderMode)) (FramebufferRenderMode_T  renderMode);
 
     // IFramebuffer methods
     STDMETHOD(Lock)();
@@ -83,6 +85,9 @@ private:
     int mLineSize;
     uint8_t *mData;
     RTSEMMUTEX mMutex;
+
+    /* Framebuffer render mode */
+    FramebufferRenderMode_T mRenderMode;
 };
 
 

@@ -211,6 +211,8 @@ public:
     STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *aPixelFormat);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *aHeightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
+    STDMETHOD(COMGETTER(RenderMode)) (FramebufferRenderMode_T *renderMode);
+    STDMETHOD(COMSETTER(RenderMode)) (FramebufferRenderMode_T  renderMode);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
@@ -275,6 +277,9 @@ protected:
     QMutex *mMutex;
     int mWdt;
     int mHgt;
+
+    /* Framebuffer render mode */
+    FramebufferRenderMode_T mRenderMode;
 
 #if defined (Q_OS_WIN32)
 private:
