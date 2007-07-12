@@ -29,8 +29,8 @@
 static HMODULE hModule = 0;
 /** @todo statically link in the future; dynamic linking is just testing purposes */
 
-BOOL (* APIENTRY pfnVBoxInstallHook)(HMODULE hDll) = NULL;
-BOOL (* APIENTRY pfnVBoxRemoveHook)() = NULL;
+BOOL (* pfnVBoxInstallHook)(HMODULE hDll) = NULL;
+BOOL (* pfnVBoxRemoveHook)() = NULL;
 
 
 void VBoxLogString(HANDLE hDriver, char *pszStr);
