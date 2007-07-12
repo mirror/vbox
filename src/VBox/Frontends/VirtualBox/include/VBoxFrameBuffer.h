@@ -230,8 +230,9 @@ public:
                           ULONG aColor, BOOL *aHandled);
     STDMETHOD(CopyScreenBits) (ULONG aXDst, ULONG aYDst, ULONG aXSrc, ULONG aYSrc,
                                ULONG aWidth, ULONG aHeight, BOOL *aHandled);
-    STDMETHOD(GetVisibleRegion)(ULONG * aPcRect, BYTE * aPRect);
-    STDMETHOD(SetVisibleRegion)(ULONG aCRect, BYTE * aPRect);
+
+    STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
+    STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount);
 
     // Helper functions
     int width() { return mWdt; }

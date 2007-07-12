@@ -1851,26 +1851,26 @@
 
   <interface
      name="IBIOSSettings" extends="$unknown"
-     uuid="946b83be-c5aa-4089-859d-db694f57d5ef"
+     uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
      wsmap="struct"
      >
-    <attribute name="LogoFadeIn" type="boolean">
+    <attribute name="logoFadeIn" type="boolean">
       <desc>Fade in flag for BIOS logo animation.</desc>
     </attribute>
 
-    <attribute name="LogoFadeOut" type="boolean">
+    <attribute name="logoFadeOut" type="boolean">
       <desc>Fade out flag for BIOS logo animation.</desc>
     </attribute>
 
-    <attribute name="LogoDisplayTime" type="unsigned long">
+    <attribute name="logoDisplayTime" type="unsigned long">
       <desc>BIOS logo display time in milliseconds (0 = default).</desc>
     </attribute>
 
-    <attribute name="LogoImagePath" type="wstring">
+    <attribute name="logoImagePath" type="wstring">
       <desc>Local file system path for external BIOS image.</desc>
     </attribute>
 
-    <attribute name="BootMenuMode" type="BIOSBootMenuMode">
+    <attribute name="bootMenuMode" type="BIOSBootMenuMode">
       <desc>Mode of the BIOS boot device menu.</desc>
     </attribute>
 
@@ -1885,7 +1885,7 @@
       </desc>
     </attribute>
 
-    <attribute name="TimeOffset" type="long long">
+    <attribute name="timeOffset" type="long long">
       <desc>
         Offset in milliseconds from the host system time. This allows for
         guests running with a different system date/time than the host.
@@ -6135,7 +6135,7 @@
 
   <interface
      name="IFramebuffer" extends="$unknown"
-     uuid="b47af7e6-acb1-4a75-ab4e-ec67b8125e1c"
+     uuid="450058a4-fef0-4987-81c2-7b89bfc2242f"
      wsmap="suppress"
      >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
@@ -6320,7 +6320,7 @@
 
     <method name="solidFill">
       <desc>
-        Fill the specified rectangle on screen with a solid color.
+        Fills the specified rectangle on screen with a solid color.
       </desc>
       <param name="x" type="unsigned long" dir="in"/>
       <param name="y" type="unsigned long" dir="in"/>
@@ -6332,7 +6332,7 @@
 
     <method name="copyScreenBits">
       <desc>
-        Copy specified rectangle on the screen.
+        Copies specified rectangle on the screen.
       </desc>
       <param name="xDst" type="unsigned long" dir="in"/>
       <param name="yDst" type="unsigned long" dir="in"/>
@@ -6345,18 +6345,58 @@
 
     <method name="getVisibleRegion">
       <desc>
-        Query the visible region
+        Returns the visible region of this framebuffer.
+
+        If the @a rectangles parameter is <tt>NULL</tt> then the value of the
+        @a count parameter is ignored and the number of elements necessary to
+        describe the current visible region is returned in @a countCopied.
+
+        If @a rectangles is not <tt>NULL</tt> but @a count is less
+        than the required number of elements to store region data, the method
+        will report a failure. If @a count is equal or greater than the
+        required number of elements, then the actual number of elements copied
+        to the provided array will be returned in @a countCopied.
+
+        <note>
+          The address of the provided array must be in the process space of
+          this IFramebuffer object.
+        </note>
       </desc>
-      <param name="pcRect" type="unsigned long" dir="out"/>
-      <param name="pRect" type="octet" mod="ptr" dir="in"/>
+      <param name="rectangles" type="octet" mod="ptr" dir="in">
+        <desc>Pointer to the <tt>RTRECT</tt> array to receive region data.</desc>
+      </param>
+      <param name="count" type="unsigned long" dir="in">
+        <desc>Number of <tt>RTRECT</tt> elements in the @a rectangles array.</desc>
+      </param>
+      <param name="countCopied" type="unsigned long" dir="return">
+        <desc>Number of elements copied to the @a rectangles array.</desc>
+      </param>
     </method>
 
     <method name="setVisibleRegion">
       <desc>
-        Set the visible region
+        Suggests a new visible region to this framebuffer.  This region
+        represents the area of the VM display which is a union of regions of
+        all top-level windows of the guest operating system running inside the
+        VM (if the Guest Additions for this system support this
+        functionality). This information may be used by the frontends to
+        implement the seamless desktop integration feature.
+
+        <note>
+          The address of the provided array must be in the process space of
+          this IFramebuffer object.
+        </note>
+        <note>
+          The IFramebuffer implementation must make a copy of the provided
+          array of rectangles.
+        </note>
       </desc>
-      <param name="cRect" type="unsigned long" dir="in"/>
-      <param name="pRect" type="octet" mod="ptr" dir="in"/>
+      <param name="rectangles" type="octet" mod="ptr" dir="in">
+        <desc>Pointer to the <tt>RTRECT</tt> array.</desc>
+      </param>
+      <param name="count" type="unsigned long" dir="in">
+        <desc>Number of <tt>RTRECT</tt> elements in the @a rectangles array.</desc>
+      </param>
     </method>
 
   </interface>
@@ -6461,7 +6501,7 @@
       <param name="framebuffer" type="IFramebuffer" dir="in"/>
     </method>
 
-    <method name="queryFramebuffer">
+    <method name="getFramebuffer">
       <desc>
         Queries the framebuffer for given screen.
       </desc>
@@ -6697,7 +6737,7 @@
 
   <interface
      name="ISerialPort" extends="$unknown"
-     uuid="924107d2-1cac-4fc8-93be-e2d54f78dc67"
+     uuid="a5ab0989-0ca9-4d5e-b565-f7739b92bb0c"
      wsmap="managed"
      >
  
@@ -6716,11 +6756,11 @@
       </desc>
     </attribute>
 
-    <attribute name="iobase" type="unsigned long">
+    <attribute name="IOBase" type="unsigned long">
       <desc>Gets the I/O base of the serial port.</desc>
     </attribute>
 
-    <attribute name="irq" type="unsigned long">
+    <attribute name="IRQ" type="unsigned long">
       <desc>Gets the IRQ of the serial port.</desc>
     </attribute>
 
@@ -6742,7 +6782,7 @@
 
   <interface
      name="IMachineDebugger" extends="$unknown"
-     uuid="288da658-74fa-4877-ab5c-dafdad19a1cd"
+     uuid="358b05cd-6d43-42b9-9c2b-75d466a58cfc"
      wsmap="suppress"
      >
     <method name="resetStats">
@@ -6777,7 +6817,7 @@
       <desc>Switch for enabling and disabling the CSAM component.</desc>
     </attribute>
 
-    <attribute name="LogEnabled" type="boolean">
+    <attribute name="logEnabled" type="boolean">
       <desc>Switch for enabling and disabling logging.</desc>
     </attribute>
 
@@ -6788,7 +6828,7 @@
       </desc>
     </attribute>
 
-    <attribute name="VirtualTimeRate" type="unsigned long">
+    <attribute name="virtualTimeRate" type="unsigned long">
       <desc>
         The rate at which the virtual time runs expressed as a percentage.
         The accepted range is 2% to 20000%.
@@ -6813,7 +6853,7 @@
 
   <interface
      name="IUSBController" extends="$unknown"
-     uuid="9a110c34-93c2-46b0-8ac2-b09d1067be56"
+     uuid="bf21872c-265c-41a9-99d4-ce0dcdc34a91"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
@@ -6833,7 +6873,7 @@
       </desc>
     </attribute>
 
-    <attribute name="DeviceFilters" type="IUSBDeviceFilterCollection" readonly="yes">
+    <attribute name="deviceFilters" type="IUSBDeviceFilterCollection" readonly="yes">
       <desc>
         List of USB device filters associated with the machine.
 

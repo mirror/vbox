@@ -56,8 +56,8 @@ public:
                               ULONG color, BOOL *handled);
     virtual HRESULT CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
                                    ULONG width, ULONG height, BOOL *handled);
-    virtual HRESULT GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect);
-    virtual HRESULT SetVisibleRegion(ULONG aCRect, BYTE * aPRect);
+    virtual HRESULT GetVisibleRegion(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
+    virtual HRESULT SetVisibleRegion(BYTE *aRectangles, ULONG aCount);
 
     virtual void    repaint();
     virtual void    resize();
