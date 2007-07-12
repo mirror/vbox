@@ -4537,12 +4537,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     }
     else
         fHWVirtExEnabled = (hwVirtExEnabled == TriStateBool_True);
+#ifndef __DARWIN__ /** @todo Implement HWVirtExt on darwin. See #1865. */
     if (fHWVirtExEnabled)
     {
         PCFGMNODE pHWVirtExt;
         rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                     RC_CHECK();
         rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled", 1);                         RC_CHECK();
     }
+#endif
 
     BOOL fIOAPIC;
     hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                          H();
