@@ -200,7 +200,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     }
 
     /* Default framebuffer render mode is normal (draw the entire framebuffer) */
-    mRenderMode = RenderModeNormal;
+    mRenderMode = FramebufferRenderMode::RenderModeNormal;
 
     resizeGuest();
     Assert(mScreen);
