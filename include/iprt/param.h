@@ -29,10 +29,11 @@
  * @{
  */
 
-/* Undefine PAGE_SIZE to avoid unnecessary noice when clashing with 
-   system headers. Include system headers before / after iprt depending 
+/* Undefine PAGE_SIZE and PAGE_SHIFT to avoid unnecessary noice when clashing 
+   with system headers. Include system headers before / after iprt depending 
    on which you wish to take precedence. */
 #undef PAGE_SIZE
+#undef PAGE_SHIFT
 
 /**
  * i386 Page size.
