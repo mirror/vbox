@@ -562,12 +562,12 @@ int USBProxyService::holdDevice (HostUSBDevice * /* aDevice */)
 }
 
 
-void USBProxyService::detachingDevice (HostUSBDevice */*aDevice*/)
+void USBProxyService::detachingDevice (HostUSBDevice * /* aDevice */)
 {
 }
 
 
-int USBProxyService::releaseDevice (HostUSBDevice */*aDevice*/)
+int USBProxyService::releaseDevice (HostUSBDevice * /* aDevice */)
 {
     return VERR_NOT_IMPLEMENTED;
 }
