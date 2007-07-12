@@ -572,6 +572,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
     /* Check CFGM option. */
     rc = CFGMR3QueryBool(pCfgHandle, "OpenGLEnabled", &fEnabled);
+rc = VINF_SUCCESS;
+fEnabled = true;
     if (    VBOX_SUCCESS(rc)
         &&  fEnabled)
     {
