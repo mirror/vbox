@@ -988,28 +988,6 @@ typedef struct PDMIDISPLAYPORT
      */
     DECLR3CALLBACKMEMBER(void, pfnSetRenderVRAM,(PPDMIDISPLAYPORT pInterface, bool fRender));
 
-    /**
-     * Set the visible region of the display
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to this interface.
-     * @param   cRect               Number of rectangles in pRect
-     * @param   pRect               Rectangle array
-     * @thread  The emulation thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSetVisibleRegion,(PPDMIDISPLAYPORT pInterface, uint32_t cRect, PRTRECT pRect));
-
-    /**
-     * Query the visible region of the display
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to this interface.
-     * @param   pcRect              Number of rectangles in pRect
-     * @param   pRect               Rectangle array (set to NULL to query the number of rectangles)
-     * @thread  The emulation thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIDISPLAYPORT pInterface, uint32_t *pcRect, PRTRECT pRect));
-
 } PDMIDISPLAYPORT;
 
 
