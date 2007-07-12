@@ -50,7 +50,7 @@ VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
     AssertMsg (mView, ("VBoxConsoleView must not be null\n"));
 
     /* Default framebuffer render mode is normal (draw the entire framebuffer) */
-    mRenderMode = RenderModeNormal;
+    mRenderMode = FramebufferRenderMode::RenderModeNormal;
 }
 
 VBoxFrameBuffer::~VBoxFrameBuffer()
