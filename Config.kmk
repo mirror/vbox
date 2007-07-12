@@ -581,6 +581,7 @@ ifdef L4_DIR
     $(L4_OBJ)/include/uclibc \
     $(L4LINUX26_INCDIR) \
     $(L4_OBJ)/include/$(L4_ARCH)/$(L4_API) \
+    $(L4_OBJ)/include/$(L4_API) \
     $(L4_OBJ)/include/$(L4_ARCH) \
     $(L4_OBJ)/include \
     $(L4_DIR)/tool/dice/include
