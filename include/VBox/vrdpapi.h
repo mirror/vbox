@@ -998,12 +998,12 @@ VRDPR3DECL(void) VRDPSendUpdate (HVRDPSERVER hserver, unsigned uScreenId, void *
 /** @todo comment the structure. */
 typedef struct _VRDPCOLORPOINTER
 {
-    uint16_t xHot;
-    uint16_t yHot;
-    uint16_t width;
-    uint16_t height;
-    uint16_t masklen;
-    uint16_t datalen;
+    uint16_t u16HotX;
+    uint16_t u16HotY;
+    uint16_t u16Width;
+    uint16_t u16Height;
+    uint16_t u16MaskLen;
+    uint16_t u16DataLen;
     uint32_t vrdpInternal;
 } VRDPCOLORPOINTER;
 
