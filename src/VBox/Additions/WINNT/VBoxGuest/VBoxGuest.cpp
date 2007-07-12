@@ -576,12 +576,12 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             /* just perform the request */
             VMMDevRequestHeader *req = NULL;
 
-            int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, vmmdevGetRequestSize(requestHeader->requestType), requestHeader->requestType);
+            int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, requestHeader->size, requestHeader->requestType);
 
             if (VBOX_SUCCESS(rc))
             {
                 /* copy the request information */
-                memcpy((void*)req, (void*)pBuf, vmmdevGetRequestSize(requestHeader->requestType));
+                memcpy((void*)req, (void*)pBuf, requestHeader->size);
                 rc = VbglGRPerform(req);
 
                 if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->rc))
@@ -593,8 +593,8 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 else
                 {
                     /* copy result */
-                    memcpy((void*)pBuf, (void*)req, vmmdevGetRequestSize(requestHeader->requestType));
-                    cbOut = vmmdevGetRequestSize(requestHeader->requestType);
+                    memcpy((void*)pBuf, (void*)req, requestHeader->size);
+                    cbOut = requestHeader->size;
                 }
 
                 VbglGRFree(req);
