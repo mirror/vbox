@@ -31,7 +31,7 @@ InternalFramebuffer::InternalFramebuffer()
     RTSemMutexCreate(&mMutex);
 
     /* Default framebuffer render mode is normal (draw the entire framebuffer) */
-    mRenderMode = RenderModeNormal;
+    mRenderMode = FramebufferRenderMode::RenderModeNormal;
 }
 
 InternalFramebuffer::~InternalFramebuffer()
