@@ -140,6 +140,21 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     return S_OK;
 }
 
+STDMETHODIMP Guest::COMGETTER(SeamlessSupport) (BOOL *aSeamlessSupport)
+{
+    if (!aSeamlessSupport)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aSeamlessSupport = mData.mSeamlessSupport;
+
+    return S_OK;
+}
+
 STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
                                    INPTR BSTR aDomain, BOOL aAllowInteractiveLogon)
 {
@@ -183,4 +198,14 @@ void Guest::setAdditionsVersion (Bstr aVersion)
     mData.mAdditionsVersion = aVersion;
     /* this implies that Additions are active */
     mData.mAdditionsActive = TRUE;
+}
+
+void Guest::setSeamlessSupport(BOOL aSeamlessSupport)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    mData.mSeamlessSupport = aSeamlessSupport;
 }

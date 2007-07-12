@@ -1944,6 +1944,17 @@ typedef struct PDMIVMMDEVCONNECTOR
     DECLR3CALLBACKMEMBER(void, pfnUpdateGuestVersion,(PPDMIVMMDEVCONNECTOR pInterface, struct VBoxGuestInfo *pGuestInfo));
 
     /**
+     * Update the guest additions capabilities.
+     * This is called when the guest additions capabilities change. The new capabilities
+     * are given and the connector should update its internal state.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   newCapabilities     New capabilities.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnUpdateGuesteCapabilities,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities));
+
+    /**
      * Update the mouse capabilities.
      * This is called when the mouse capabilities change. The new capabilities
      * are given and the connector should update its internal state.
