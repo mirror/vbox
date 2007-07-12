@@ -208,7 +208,7 @@ STDMETHODIMP InternalFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG x
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+STDMETHODIMP InternalFramebuffer::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
 {
     PRTRECT paRect = (PRTRECT)aPRect;
 

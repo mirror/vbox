@@ -569,7 +569,7 @@ STDMETHODIMP VBoxSDLFB::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG
     return S_OK;
 }
 
-STDMETHODIMP VBoxSDLFB::QueryVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+STDMETHODIMP VBoxSDLFB::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
 {
     PRTRECT paRect = (PRTRECT)aPRect;
 

@@ -319,7 +319,7 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
     if (framebuffer)
     {
         ULONG cRect = 0;
-        framebuffer->QueryVisibleRegion(&cRect, (BYTE *)pRect);
+        framebuffer->GetVisibleRegion(&cRect, (BYTE *)pRect);
 
         *pcRect = cRect;
     }

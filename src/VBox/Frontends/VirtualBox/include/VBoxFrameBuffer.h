@@ -228,7 +228,7 @@ public:
                           ULONG aColor, BOOL *aHandled);
     STDMETHOD(CopyScreenBits) (ULONG aXDst, ULONG aYDst, ULONG aXSrc, ULONG aYSrc,
                                ULONG aWidth, ULONG aHeight, BOOL *aHandled);
-    STDMETHOD(QueryVisibleRegion)(ULONG * aPcRect, BYTE * aPRect);
+    STDMETHOD(GetVisibleRegion)(ULONG * aPcRect, BYTE * aPRect);
     STDMETHOD(SetVisibleRegion)(ULONG aCRect, BYTE * aPRect);
 
     // Helper functions
