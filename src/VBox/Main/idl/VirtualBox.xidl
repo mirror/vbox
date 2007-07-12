@@ -4130,7 +4130,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="4b71ac5f-db5a-4b4f-af6e-a947d4b83dda"
+     uuid="d7a3f7cf-84c4-4628-9267-a1cff0e5f3bc"
      wsmap="suppress"
      >
     <desc>
@@ -4170,6 +4170,12 @@
         Additions may also report a version but yet not be active as
         the version might be refused by VirtualBox (incompatible) or
         other failures occured.
+      </desc>
+    </attribute>
+
+    <attribute name="seamlessSupport" type="boolean" readonly="yes">
+      <desc>
+        Flag whether seamless guest display rendering is supported.
       </desc>
     </attribute>
 
