@@ -95,6 +95,10 @@ typedef struct VMMDevState
      */
     VBoxGuestInfo guestInfo;
 
+    /** Information reported by guest via VMMDevReportGuestCapabilities
+     */
+    uint32_t      guestCaps;
+
     /** "Additions are Ok" indicator, set to true after processing VMMDevReportGuestInfo,
      * if additions version is compatible. This flag is here to avoid repeated comparing
      * of the version in guestInfo.

@@ -135,6 +135,7 @@ typedef enum
     VMMDevReq_VideoModeSupported         = 52,
     VMMDevReq_GetHeightReduction         = 53,
     VMMDevReq_GetDisplayChangeRequest2   = 54,
+    VMMDevReq_ReportGuestCapabilities    = 55,
 #ifdef VBOX_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -259,6 +260,15 @@ typedef struct
     /** build number */
     uint32_t build;
 } VMMDevReqHostVersion;
+
+/** guest capabilites structure */
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    /** capabilities (VMMDEV_GUEST_*) */
+    uint32_t    caps;
+} VMMDevReqGuestCapabilities;
 
 /** idle request structure */
 typedef struct
@@ -1183,6 +1193,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevVideoModeSupportedRequest);
         case VMMDevReq_GetHeightReduction:
             return sizeof(VMMDevGetHeightReductionRequest);
+        case VMMDevReq_ReportGuestCapabilities:
+            return sizeof(VMMDevReqGuestCapabilities);
 #ifdef VBOX_HGCM
         case VMMDevReq_HGCMConnect:
             return sizeof(VMMDevHGCMConnect);
