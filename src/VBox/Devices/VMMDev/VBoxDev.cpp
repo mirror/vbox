@@ -1139,6 +1139,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 }
                 else
                 {
+                    Log(("VMMDevReq_VideoSetVisibleRegion %d rectangles\n", ptr->cRect));
                     /* forward the call */
                     requestHeader->rc = pData->pDrv->pfnSetVisibleRegion(pData->pDrv, ptr->cRect, &ptr->Rect);
                 }
@@ -1269,7 +1270,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevReqLogString *pReqLogString = (VMMDevReqLogString*)requestHeader;
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
-                Log(("Guest Log: %s", pReqLogString->szString));
+//                Log(("Guest Log: %s", pReqLogString->szString));
+                Log(("DEBUG LOG: %s", pReqLogString->szString));
 
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_DEV_VMM
