@@ -1220,6 +1220,30 @@ static bool remIsFunctionUsingFP(PCREMFNDESC pDesc)
 }
 
 
+
+/**
+ * Entry logger function.
+ * 
+ * @param   pDesc       The description.
+ */
+DECLASM(void) remLogEntry(PCREMFNDESC pDesc)
+{
+    RTPrintf("calling %s\n", pDesc->pszName);
+}
+
+
+/**
+ * Exit logger function.
+ * 
+ * @param   pDesc       The description.
+ * @param   pvRet       The return code.
+ */
+DECLASM(void) remLogExit(PCREMFNDESC pDesc, void *pvRet)
+{
+    RTPrintf("returning %p from %s\n", pvRet, pDesc->pszName);
+}
+
+
 /**
  * Fixes export glue.
  *
@@ -1255,6 +1279,27 @@ static void remGenerateExportGlueFixup(void *pvGlue, size_t cb, uintptr_t uExpor
         {
             /* 64-bit address to the real export. */
             *u.pu64++ = uExport;
+            cb -= 8;
+            continue;
+        }
+        if (cb >= 8 && *u.pu64 == UINT64_C(0xdead00010001dead))
+        {
+            /* 64-bit address to the descriptor. */
+            *u.pu64++ = (uintptr_t)pDesc;
+            cb -= 8;
+            continue;
+        }
+        if (cb >= 8 && *u.pu64 == UINT64_C(0xdead00020002dead))
+        {
+            /* 64-bit address to the entry logger function. */
+            *u.pu64++ = (uintptr_t)remLogEntry;
+            cb -= 8;
+            continue;
+        }
+        if (cb >= 8 && *u.pu64 == UINT64_C(0xdead00030003dead))
+        {
+            /* 64-bit address to the entry logger function. */
+            *u.pu64++ = (uintptr_t)remLogExit;
             cb -= 8;
             continue;
         }
@@ -1300,6 +1345,27 @@ static void remGenerateImportGlueFixup(void *pvGlue, size_t cb, PCREMFNDESC pDes
         {
             /* 64-bit address to the real function. */
             *u.pu64++ = (uintptr_t)pDesc->pv;
+            cb -= 8;
+            continue;
+        }
+        if (cb >= 8 && *u.pu64 == UINT64_C(0xdead00010001dead))
+        {
+            /* 64-bit address to the descriptor. */
+            *u.pu64++ = (uintptr_t)pDesc;
+            cb -= 8;
+            continue;
+        }
+        if (cb >= 8 && *u.pu64 == UINT64_C(0xdead00020002dead))
+        {
+            /* 64-bit address to the entry logger function. */
+            *u.pu64++ = (uintptr_t)remLogEntry;
+            cb -= 8;
+            continue;
+        }
+        if (cb >= 8 && *u.pu64 == UINT64_C(0xdead00030003dead))
+        {
+            /* 64-bit address to the entry logger function. */
+            *u.pu64++ = (uintptr_t)remLogExit;
             cb -= 8;
             continue;
         }
