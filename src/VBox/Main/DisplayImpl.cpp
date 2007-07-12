@@ -1417,7 +1417,7 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     return S_OK;
 }
 
-STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer * aFramebuffer)
+STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffer)
 {
     LogFlowFunc (("\n"));
 
@@ -1456,7 +1456,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer * aFramebuff
     return S_OK;
 }
 
-STDMETHODIMP Display::QueryFramebuffer (ULONG aScreenId, IFramebuffer * * aFramebuffer, LONG * aXOrigin, LONG * aYOrigin)
+STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
 {
     LogFlowFunc (("aScreenId = %d\n", aScreenId));
 

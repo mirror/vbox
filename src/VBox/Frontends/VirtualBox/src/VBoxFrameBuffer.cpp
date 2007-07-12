@@ -258,25 +258,33 @@ STDMETHODIMP VBoxFrameBuffer::CopyScreenBits (ULONG aXDst, ULONG aYDst,
     return S_OK;
 }
 
-STDMETHODIMP VBoxFrameBuffer::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+STDMETHODIMP VBoxFrameBuffer::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
+                                               ULONG *aCountCopied)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!aPcRect)
+    if (!rects)
         return E_POINTER;
 
-    /* @todo */
+	/// @todo
+
+	NOREF(aCount);
+	NOREF(aCountCopied);
+
     return S_OK;
 }
 
-STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!paRect)
+    if (!rects)
         return E_POINTER;
 
-    /* @todo */
+	/// @todo
+
+	NOREF(aCount);
+
     return S_OK;
 }
 

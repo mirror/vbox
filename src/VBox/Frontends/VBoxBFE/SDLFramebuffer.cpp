@@ -323,25 +323,33 @@ HRESULT SDLFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG
     return E_NOTIMPL;
 }
 
-HRESULT SDLFramebuffer::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+HRESULT SDLFramebuffer::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
+                                         ULONG *aCountCopied)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!paRect || !aPcRect)
+    if (!rects)
         return E_POINTER;
 
-    /* @todo */
+	/// @todo
+
+	NOREF(aCount);
+	NOREF(aCountCopied);
+
     return S_OK;
 }
 
-HRESULT SDLFramebuffer::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+HRESULT SDLFramebuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!paRect)
+    if (!rects)
         return E_POINTER;
 
-    /* @todo */
+	/// @todo
+
+	NOREF(aCount);
+
     return S_OK;
 }
 

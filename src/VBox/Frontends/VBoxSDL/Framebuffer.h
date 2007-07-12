@@ -108,8 +108,8 @@ public:
     STDMETHOD(CopyScreenBits)(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
                               ULONG width, ULONG height, BOOL *handled);
 
-    STDMETHOD(GetVisibleRegion)(ULONG * aPcRect, BYTE * aPRect);
-    STDMETHOD(SetVisibleRegion)(ULONG aCRect, BYTE * aPRect);
+    STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
+    STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount);
 
     // internal public methods
     bool initialized() { return mfInitialized; }

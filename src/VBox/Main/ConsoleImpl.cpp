@@ -5416,8 +5416,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         ULONG uIRQ, uIOBase;
         Bstr  pipe;
         BOOL  fServer;
-        hrc = serialPort->COMGETTER(Irq)(&uIRQ);                                    H();
-        hrc = serialPort->COMGETTER(Iobase)(&uIOBase);                              H();
+        hrc = serialPort->COMGETTER(IRQ)(&uIRQ);                                    H();
+        hrc = serialPort->COMGETTER(IOBase)(&uIOBase);                              H();
         hrc = serialPort->COMGETTER(Pipe)(pipe.asOutParam());                       H();
         hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", uIRQ);                              RC_CHECK();

@@ -600,25 +600,33 @@ STDMETHODIMP VBoxSDLFB::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG
     return S_OK;
 }
 
-STDMETHODIMP VBoxSDLFB::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+STDMETHODIMP VBoxSDLFB::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
+                                         ULONG *aCountCopied)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!aPcRect)
+    if (!rects)
         return E_POINTER;
 
-    /* @todo */
+    /// @todo
+
+	NOREF(aCount);
+	NOREF(aCountCopied);
+
     return S_OK;
 }
 
-STDMETHODIMP VBoxSDLFB::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+STDMETHODIMP VBoxSDLFB::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!paRect)
+    if (!rects)
         return E_POINTER;
 
-    /* @todo */
+    /// @todo
+
+	NOREF(aCount);
+
     return S_OK;
 }
 

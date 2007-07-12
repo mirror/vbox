@@ -1059,8 +1059,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 ULONG uIRQ, uIOBase;
                 Bstr pipe;
                 BOOL fServer;
-                uart->COMGETTER(Irq)(&uIRQ);
-                uart->COMGETTER(Iobase)(&uIOBase);
+                uart->COMGETTER(IRQ)(&uIRQ);
+                uart->COMGETTER(IOBase)(&uIOBase);
                 uart->COMGETTER(Pipe)(pipe.asOutParam());
                 uart->COMGETTER(Server)(&fServer);
 
@@ -4054,8 +4054,8 @@ static int handleModifyVM(int argc, char *argv[],
                 }
                 else
                 {
-                    CHECK_ERROR_RET(uart, COMSETTER(Iobase) (uarts_base[n]), 1);
-                    CHECK_ERROR_RET(uart, COMSETTER(Irq) (uarts_irq[n]), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(IOBase) (uarts_base[n]), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(IRQ) (uarts_irq[n]), 1);
                     CHECK_ERROR_RET(uart, COMSETTER(Pipe) (Bstr(uarts_pipe[n])), 1);
                     CHECK_ERROR_RET(uart, COMSETTER(Server)
                                           (0 == strcmp(uarts_server[n], "server")), 1);

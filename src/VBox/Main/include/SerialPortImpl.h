@@ -41,8 +41,8 @@ public:
         Data()
             : mSlot (0)
             , mEnabled(FALSE)
-            , mIrq (4)
-            , mIobase (0x3f8)
+            , mIRQ (4)
+            , mIOBase (0x3f8)
         {}
 
         bool operator== (const Data &that) const
@@ -50,14 +50,14 @@ public:
             return this == &that ||
                    (mSlot == that.mSlot &&
                     mEnabled == that.mEnabled &&
-                    mIrq == that.mIrq &&
-                    mIobase == that.mIobase);
+                    mIRQ == that.mIRQ &&
+                    mIOBase == that.mIOBase);
         }
 
         ULONG mSlot;
         BOOL  mEnabled;
-        ULONG mIrq;
-        ULONG mIobase;
+        ULONG mIRQ;
+        ULONG mIOBase;
         Bstr  mPipe;
         BOOL  mServer;
     };
@@ -90,10 +90,10 @@ public:
     STDMETHOD(COMGETTER(Slot))    (ULONG     *aSlot);
     STDMETHOD(COMGETTER(Enabled)) (BOOL      *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL       aEnabled);
-    STDMETHOD(COMGETTER(Irq))     (ULONG     *aIrq);
-    STDMETHOD(COMSETTER(Irq))     (ULONG      aIrq);
-    STDMETHOD(COMGETTER(Iobase))  (ULONG     *aIobase);
-    STDMETHOD(COMSETTER(Iobase))  (ULONG      aIobase);
+    STDMETHOD(COMGETTER(IRQ))     (ULONG     *aIRQ);
+    STDMETHOD(COMSETTER(IRQ))     (ULONG      aIRQ);
+    STDMETHOD(COMGETTER(IOBase))  (ULONG     *aIOBase);
+    STDMETHOD(COMSETTER(IOBase))  (ULONG      aIOBase);
     STDMETHOD(COMGETTER(Pipe))    (BSTR      *aPipe);
     STDMETHOD(COMSETTER(Pipe))    (INPTR BSTR aPipe);
     STDMETHOD(COMGETTER(Server))  (BOOL      *aServer);

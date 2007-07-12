@@ -240,24 +240,34 @@ STDMETHODIMP InternalFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG x
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::GetVisibleRegion(ULONG * aPcRect, BYTE * aPRect)
+STDMETHODIMP InternalFramebuffer::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
+                                                   ULONG *aCountCopied)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!aPcRect)
+    if (!rects)
         return E_POINTER;
 
-    NOREF(paRect);
+	/// @todo
+
+	NOREF(rects);
+	NOREF(aCount);
+	NOREF(aCountCopied);
+
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::SetVisibleRegion(ULONG aCRect, BYTE * aPRect)
+STDMETHODIMP InternalFramebuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 {
-    PRTRECT paRect = (PRTRECT)aPRect;
+    PRTRECT rects = (PRTRECT)aRectangles;
 
-    if (!paRect)
+    if (!rects)
         return E_POINTER;
 
-    NOREF(paRect);
+	/// @todo
+
+	NOREF(rects);
+	NOREF(aCount);
+
     return S_OK;
 }

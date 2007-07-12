@@ -273,8 +273,8 @@ HRESULT SerialPort::loadSettings (CFGNODE aNode, ULONG aSlot)
 
     mData->mEnabled = fEnabled;
     mData->mSlot    = uSlot;
-    mData->mIobase  = uIOBase;
-    mData->mIrq     = uIRQ;
+    mData->mIOBase  = uIOBase;
+    mData->mIRQ     = uIRQ;
     mData->mPipe    = pipe;
     mData->mServer  = fServer;
 
@@ -296,8 +296,8 @@ HRESULT SerialPort::saveSettings (CFGNODE aNode)
 
     CFGLDRSetUInt32 (portNode, "slot",    mData->mSlot);
     CFGLDRSetBool   (portNode, "enabled", !!mData->mEnabled);
-    CFGLDRSetUInt32 (portNode, "IOBase",  mData->mIobase);
-    CFGLDRSetUInt32 (portNode, "IRQ",     mData->mIrq);
+    CFGLDRSetUInt32 (portNode, "IOBase",  mData->mIOBase);
+    CFGLDRSetUInt32 (portNode, "IRQ",     mData->mIRQ);
     CFGLDRSetBSTR   (portNode, "pipe",    mData->mPipe);
     CFGLDRSetBool   (portNode, "server",  !!mData->mServer);
 
@@ -364,9 +364,9 @@ STDMETHODIMP SerialPort::COMGETTER(Slot) (ULONG *aSlot)
     return S_OK;
 }
 
-STDMETHODIMP SerialPort::COMGETTER(Irq) (ULONG *aIrq)
+STDMETHODIMP SerialPort::COMGETTER(IRQ) (ULONG *aIRQ)
 {
-    if (!aIrq)
+    if (!aIRQ)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -374,12 +374,12 @@ STDMETHODIMP SerialPort::COMGETTER(Irq) (ULONG *aIrq)
 
     AutoReaderLock alock (this);
 
-    *aIrq = mData->mIrq;
+    *aIRQ = mData->mIRQ;
 
     return S_OK;
 }
 
-STDMETHODIMP SerialPort::COMSETTER(Irq)(ULONG aIrq)
+STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -393,10 +393,10 @@ STDMETHODIMP SerialPort::COMSETTER(Irq)(ULONG aIrq)
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
 
-    if (mData->mIrq != aIrq)
+    if (mData->mIRQ != aIRQ)
     {
         mData.backup();
-        mData->mIrq = aIrq;
+        mData->mIRQ = aIRQ;
         emitChangeEvent = true;
     }
 
@@ -411,9 +411,9 @@ STDMETHODIMP SerialPort::COMSETTER(Irq)(ULONG aIrq)
     return rc;
 }
 
-STDMETHODIMP SerialPort::COMGETTER(Iobase) (ULONG *aIobase)
+STDMETHODIMP SerialPort::COMGETTER(IOBase) (ULONG *aIOBase)
 {
-    if (!aIobase)
+    if (!aIOBase)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -421,12 +421,12 @@ STDMETHODIMP SerialPort::COMGETTER(Iobase) (ULONG *aIobase)
 
     AutoReaderLock alock (this);
 
-    *aIobase = mData->mIobase;
+    *aIOBase = mData->mIOBase;
 
     return S_OK;
 }
 
-STDMETHODIMP SerialPort::COMSETTER(Iobase)(ULONG aIobase)
+STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -440,10 +440,10 @@ STDMETHODIMP SerialPort::COMSETTER(Iobase)(ULONG aIobase)
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
 
-    if (mData->mIobase != aIobase)
+    if (mData->mIOBase != aIOBase)
     {
         mData.backup();
-        mData->mIobase = aIobase;
+        mData->mIOBase = aIOBase;
         emitChangeEvent = true;
     }
 
