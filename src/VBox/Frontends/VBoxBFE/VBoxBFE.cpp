@@ -1100,7 +1100,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertInteger(pRoot, "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
     if (g_fPreAllocRam)
     {
-        rc = CFGMR3InsertInteger(pRoot, "PreAllocRam",    1);                       UPDATE_RC();
+        rc = CFGMR3InsertInteger(pRoot, "RamPreAlloc",    1);                       UPDATE_RC();
     }
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",   10);                          UPDATE_RC();
 #ifdef VBOXSDL_ADVANCED_OPTIONS
