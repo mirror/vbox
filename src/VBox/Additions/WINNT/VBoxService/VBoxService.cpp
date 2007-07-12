@@ -82,6 +82,9 @@ VOID SvcDebugOut(LPSTR String, DWORD Status)
 int                VBoxClipboardInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
 unsigned __stdcall VBoxClipboardThread  (void *pInstance);
 void               VBoxClipboardDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
+/* The seamless windows service prototypes */
+int                VBoxSeamlessInit     (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
+void               VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance);
 
 /* The service table. */
 static VBOXSERVICEINFO vboxServiceTable[] =
@@ -91,6 +94,12 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxClipboardInit,
         VBoxClipboardThread,
         VBoxClipboardDestroy
+    },
+    {
+        "Seamless Windows",
+        VBoxSeamlessInit,
+        NULL,
+        VBoxSeamlessDestroy
     },
     {
         NULL
