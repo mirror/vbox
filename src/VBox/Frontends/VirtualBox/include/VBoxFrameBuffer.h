@@ -143,6 +143,14 @@ inline bool display_to_pixmap( const CConsole &c, QPixmap &pm )
 
 /////////////////////////////////////////////////////////////////////////////
 
+/* Framebuffer render mode */
+typedef enum
+{
+    RenderModeNormal     = 0,
+    RenderModeSeamless   = 1,
+    RenderModeHostWindow = 2
+} FramebufferRenderMode;
+
 /**
  *  Common IFramebuffer implementation for all methods used by GUI to maintain
  *  the VM display video memory.
@@ -211,8 +219,8 @@ public:
     STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *aPixelFormat);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *aHeightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(RenderMode)) (FramebufferRenderMode_T *renderMode);
-    STDMETHOD(COMSETTER(RenderMode)) (FramebufferRenderMode_T  renderMode);
+    STDMETHOD(COMGETTER(RenderMode)) (FramebufferRenderMode *renderMode);
+    STDMETHOD(COMSETTER(RenderMode)) (FramebufferRenderMode  renderMode);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
@@ -280,7 +288,7 @@ protected:
     int mHgt;
 
     /* Framebuffer render mode */
-    FramebufferRenderMode_T mRenderMode;
+    FramebufferRenderMode mRenderMode;
 
 #if defined (Q_OS_WIN32)
 private:

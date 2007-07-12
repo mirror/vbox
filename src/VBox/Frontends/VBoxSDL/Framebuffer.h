@@ -94,8 +94,6 @@ public:
     STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *pixelFormat);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(RenderMode)) (FramebufferRenderMode_T *renderMode);
-    STDMETHOD(COMSETTER(RenderMode)) (FramebufferRenderMode_T  renderMode);
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
@@ -188,9 +186,6 @@ private:
     BYTE *mPtrVRAM;
     ULONG mLineSize;
     FramebufferPixelFormat_T mPixelFormat;
-
-    /* Framebuffer render mode */
-    FramebufferRenderMode_T mRenderMode;
 
     /** the application Icon */
     SDL_Surface *mWMIcon;

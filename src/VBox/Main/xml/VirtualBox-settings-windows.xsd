@@ -52,7 +52,7 @@
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
         <xsd:minInclusive value="4"/>
-        <xsd:maxInclusive value="1200"/> <!-- actually I was able to use 1230MB on WinXP Home -->
+        <xsd:maxInclusive value="2200"/> <!-- actually I was able to use 1230MB on WinXP Home -->
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>

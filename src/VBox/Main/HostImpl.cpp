@@ -478,6 +478,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                                            &dwKeyType, (LPBYTE) name.mutableRaw(), &len);
                 if (status == ERROR_SUCCESS)
                 {
+RTLogPrintf("Connection name %ls\n", name.mutableRaw());
                     /* put a trailing zero, just in case (see MSDN) */
                     name.mutableRaw() [uniLen] = 0;
                     /* create a new object and add it to the list */

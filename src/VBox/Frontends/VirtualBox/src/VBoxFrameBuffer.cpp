@@ -50,7 +50,7 @@ VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
     AssertMsg (mView, ("VBoxConsoleView must not be null\n"));
 
     /* Default framebuffer render mode is normal (draw the entire framebuffer) */
-    mRenderMode = FramebufferRenderMode_RenderModeNormal;
+    mRenderMode = RenderModeNormal;
 }
 
 VBoxFrameBuffer::~VBoxFrameBuffer()
@@ -134,7 +134,7 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(Overlay) (IFramebufferOverlay **aOverlay
  * @returns COM status code
  * @param   renderMode  framebuffer render mode
  */
-STDMETHODIMP VBoxFrameBuffer::COMGETTER(RenderMode) (FramebufferRenderMode_T *renderMode)
+STDMETHODIMP VBoxFrameBuffer::COMGETTER(RenderMode) (FramebufferRenderMode *renderMode)
 {
     if (!renderMode)
         return E_POINTER;
@@ -148,7 +148,7 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(RenderMode) (FramebufferRenderMode_T *re
  * @returns COM status code
  * @param   renderMode  framebuffer render mode
  */
-STDMETHODIMP VBoxFrameBuffer::COMSETTER(RenderMode) (FramebufferRenderMode_T renderMode)
+STDMETHODIMP VBoxFrameBuffer::COMSETTER(RenderMode) (FramebufferRenderMode renderMode)
 {
     if (!renderMode)
         return E_POINTER;

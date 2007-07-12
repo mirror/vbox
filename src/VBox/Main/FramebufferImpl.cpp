@@ -29,9 +29,6 @@ InternalFramebuffer::InternalFramebuffer()
 {
     mData = NULL;
     RTSemMutexCreate(&mMutex);
-
-    /* Default framebuffer render mode is normal (draw the entire framebuffer) */
-    mRenderMode = FramebufferRenderMode_RenderModeNormal;
 }
 
 InternalFramebuffer::~InternalFramebuffer()
@@ -125,33 +122,6 @@ STDMETHODIMP InternalFramebuffer::COMGETTER(Overlay) (IFramebufferOverlay **aOve
     return S_OK;
 }
 
-/**
- * Return the current framebuffer render mode
- *
- * @returns COM status code
- * @param   renderMode  framebuffer render mode
- */
-STDMETHODIMP InternalFramebuffer::COMGETTER(RenderMode) (FramebufferRenderMode_T *renderMode)
-{
-    if (!renderMode)
-        return E_POINTER;
-    *renderMode = mRenderMode;
-    return S_OK;
-}
-
-/**
- * Change the current framebuffer render mode
- *
- * @returns COM status code
- * @param   renderMode  framebuffer render mode
- */
-STDMETHODIMP InternalFramebuffer::COMSETTER(RenderMode) (FramebufferRenderMode_T renderMode)
-{
-    if (!renderMode)
-        return E_POINTER;
-    mRenderMode = renderMode;
-    return S_OK;
-}
 
 // IFramebuffer methods
 /////////////////////////////////////////////////////////////////////////////
