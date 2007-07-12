@@ -609,6 +609,7 @@ typedef struct _VBVACMDHDR
 
 #define VBVA_VRDP_INDEX_TO_BIT(__index) (1 << (__index))
 
+#ifndef VRDP_NO_COM
 /* 128 bit bitmap hash. */
 typedef uint8_t VRDPBITMAPHASH[16];
 
@@ -770,6 +771,7 @@ typedef struct _VRDPORDERSAVESCREEN
     uint8_t ident;
     uint8_t restore;
 } VRDPORDERSAVESCREEN;
+#endif /* VRDP_NO_COM */
 #pragma pack()
 
 /* The VBVA ring buffer is suitable for transferring large (< 2gb) amount of data.
