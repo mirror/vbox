@@ -893,6 +893,7 @@ typedef struct
 /** The guest has been restored. */
 #define VMMDEV_EVENT_RESTORED                   BIT(4)
 
+
 /** @} */
 
 
