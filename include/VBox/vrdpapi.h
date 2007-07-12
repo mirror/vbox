@@ -670,7 +670,7 @@ typedef struct _VRDPENTRYPOINTS_1
     DECLCALLBACKMEMBER(void, VRDPUSBRequest)(HVRDPSERVER hServer,
                                              uint32_t u32ClientId,
                                              void *pvParm,
-                                             uint32_t cbRarm);
+                                             uint32_t cbParm);
 
     /**
      * Called by the application when (VRDP_CLIPBOARD_FUNCTION_*):
@@ -688,7 +688,7 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @note Initialized to NULL when the application clipboard callbacks are NULL.
      */
-    DECLCALLBACKMEMBER(void, VRDPClipboard)(HVRDPSERVER hserver,
+    DECLCALLBACKMEMBER(void, VRDPClipboard)(HVRDPSERVER hServer,
                                             uint32_t u32Function,
                                             uint32_t u32Format,
                                             void *pvData,
@@ -698,6 +698,7 @@ typedef struct _VRDPENTRYPOINTS_1
     /**
      * Query various information from the VRDP server.
      *
+     * @param hServer   The VRDP server handle.
      * @param index     VRDP_QI_* identifier of information to be returned.
      * @param pvBuffer  Address of memory buffer to which the information must be written.
      * @param cbBuffer  Size of the memory buffer in bytes.
@@ -718,6 +719,43 @@ typedef struct _VRDPENTRYPOINTS_1
 #define VRDP_QP_NETWORK_ADDRESS   (2)
 #define VRDP_QP_NUMBER_MONITORS   (3)
 
+#pragma pack(1)
+/* A framebuffer description. */
+typedef struct _VRDPFRAMEBUFFERINFO
+{
+    const uint8_t *pu8Bits;
+    int            xOrigin;
+    int            yOrigin;
+    unsigned       cWidth;
+    unsigned       cHeight;
+    unsigned       cBitsPerPixel;
+    unsigned       cbLine;
+} VRDPFRAMEBUFFERINFO;
+
+#define VRDP_INPUT_SCANCODE 0
+#define VRDP_INPUT_POINT    1
+#define VRDP_INPUT_CAD      2
+#define VRDP_INPUT_RESET    3
+
+typedef struct _VRDPINPUTSCANCODE
+{
+    unsigned uScancode;
+} VRDPINPUTSCANCODE;
+
+#define VRDP_INPUT_POINT_BUTTON1    0x01
+#define VRDP_INPUT_POINT_BUTTON2    0x02
+#define VRDP_INPUT_POINT_BUTTON3    0x04
+#define VRDP_INPUT_POINT_WHEEL_UP   0x08
+#define VRDP_INPUT_POINT_WHEEL_DOWN 0x10
+
+typedef struct _VRDPINPUTPOINT
+{
+    int x;
+    int y;
+    unsigned uButtons;
+} VRDPINPUTPOINT;
+#pragma pack()
+
 /** The VRDP server callbacks. Interface version 1. */
 typedef struct _VRDPCALLBACKS_1
 {
@@ -733,15 +771,13 @@ typedef struct _VRDPCALLBACKS_1
      * @param cbBuffer    Size of the memory buffer in bytes.
      * @param pcbOut      Size in bytes of returned information value.
      *
-     * @remark The VRDP server checks the *pcbOut. 0 there means no information was returned.
-     *         A value greater than cbBuffer means that information is too big to fit in the
-     *         buffer, in that case no information was placed to the buffer.
+     * @return IPRT status code. VINF_BUFFER_OVERFLOW if the buffer is too small for the value.
      */
-    DECLCALLBACKMEMBER(void, VRDPQueryProperty)(void *pvCallback,
-                                                uint32_t index,
-                                                void *pvBuffer,
-                                                uint32_t cbBuffer,
-                                                uint32_t *pcbOut);
+    DECLCALLBACKMEMBER(int, VRDPCallbackQueryProperty)(void *pvCallback,
+                                                       uint32_t index,
+                                                       void *pvBuffer,
+                                                       uint32_t cbBuffer,
+                                                       uint32_t *pcbOut);
 
     /* A client is logging in, the application must decide whether
      * to let to connect the client. The server will drop the connection, 
@@ -833,6 +869,59 @@ typedef struct _VRDPCALLBACKS_1
                                                    uint32_t u32Format,
                                                    const void *pvData,
                                                    uint32_t cbData);
+
+    /* The framebuffer information is queried.
+     *
+     * @param pvCallback      The callback specific pointer.
+     * @param uScreenId       The framebuffer index.
+     * @param pInfo           The information structure to ber filled.
+     *
+     * @return Whether the framebuffer is available.
+     */
+    DECLCALLBACKMEMBER(bool, VRDPCallbackFramebufferQuery)(void *pvCallback,
+                                                           unsigned uScreenId,
+                                                           VRDPFRAMEBUFFERINFO *pInfo);
+
+    /* The framebuffer is locked.
+     *
+     * @param pvCallback      The callback specific pointer.
+     * @param uScreenId       The framebuffer index.
+     */
+    DECLCALLBACKMEMBER(void, VRDPCallbackFramebufferLock)(void *pvCallback,
+                                                          unsigned uScreenId);
+
+    /* The framebuffer is unlocked.
+     *
+     * @param pvCallback      The callback specific pointer.
+     * @param uScreenId       The framebuffer index.
+     */
+    DECLCALLBACKMEMBER(void, VRDPCallbackFramebufferUnlock)(void *pvCallback,
+                                                            unsigned uScreenId);
+
+    /* Input from the client.
+     *
+     * @param pvCallback      The callback specific pointer.
+     * @param pvInput         The input information.
+     * @param cbInput         The size of the input information.
+     */
+    DECLCALLBACKMEMBER(void, VRDPCallbackInput)(void *pvCallback,
+                                                const void *pvInput,
+                                                unsigned cbInput);
+
+    /* Video mode hint from the client.
+     *
+     * @param pvCallback      The callback specific pointer.
+     * @param cWidth          Requested width.
+     * @param cHeight         Requested height.
+     * @param cBitsPerPixel   Requested color depth.
+     * @param uScreenId       The framebuffer index.
+     */
+    DECLCALLBACKMEMBER(void, VRDPCallbackVideoModeHint)(void *pvCallback,
+                                                        unsigned cWidth,
+                                                        unsigned cHeight, 
+                                                        unsigned cBitsPerPixel,
+                                                        unsigned uScreenId);
+
 } VRDPCALLBACKS_1;
 
 /**
