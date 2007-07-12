@@ -7487,7 +7487,7 @@
     <const name="ALSAAudioDriver"   value="3"/>
     <const name="DSOUNDAudioDriver" value="4"/>
     <const name="CoreAudioDriver"   value="5"/>
-    <const name="MMPMAudioDriver"   value="5"/>
+    <const name="MMPMAudioDriver"   value="6"/>
   </enum>
 
   <interface
