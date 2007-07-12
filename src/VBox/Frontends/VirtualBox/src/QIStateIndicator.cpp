@@ -150,6 +150,22 @@ void QIStateIndicator::drawContents (QPainter *aPainter)
     }
 }
 
+#ifdef Q_WS_MAC
+/** 
+ * Make the left button also show the context menu to make things 
+ * simpler for users with single mouse button mice (laptops++). 
+ */
+void QIStateIndicator::mousePressEvent (QMouseEvent *aEv)
+{
+    QContextMenuEvent qme (QContextMenuEvent::Mouse, aEv->pos(), aEv->globalPos(), 0);
+    emit contextMenuRequested (this, &qme);
+    if (qme.isAccepted())
+        aEv->accept();
+    else
+        QFrame::mousePressEvent (aEv);
+}
+#endif /* Q_WS_MAC */
+
 void QIStateIndicator::mouseDoubleClickEvent (QMouseEvent * e)
 {
     emit mouseDoubleClicked (this, e);
@@ -159,3 +175,4 @@ void QIStateIndicator::contextMenuEvent (QContextMenuEvent * e)
 {
     emit contextMenuRequested (this, e);
 }
+
