@@ -2712,6 +2712,8 @@ static void pcnetHardReset(PCNetState *pData)
     /* Initialize the PROM */
     Assert(sizeof(pData->MacConfigured) == 6);
     memcpy(pData->aPROM, &pData->MacConfigured, sizeof(pData->MacConfigured));
+    pData->aPROM[ 8] = 0x00;
+    pData->aPROM[ 9] = 0x11;
     pData->aPROM[12] = pData->aPROM[13] = 0x00;
     pData->aPROM[14] = pData->aPROM[15] = 0x57;
 
