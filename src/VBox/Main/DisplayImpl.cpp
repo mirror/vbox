@@ -276,7 +276,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
         case 32:  pixelFormat = FramebufferPixelFormat_PixelFormatRGB32; break;
         case 24:  pixelFormat = FramebufferPixelFormat_PixelFormatRGB24; break;
         case 16:  pixelFormat = FramebufferPixelFormat_PixelFormatRGB16; break;
-        default:  pixelFormat = FramebufferPixelFormat_PixelFormatDefault; cbLine = 0;
+        default:  pixelFormat = FramebufferPixelFormat_PixelFormatOpaque; cbLine = 0;
     }
 
     /* Atomically set the resize status before calling the framebuffer. The new InProgress status will
@@ -344,7 +344,7 @@ void Display::handleResizeCompletedEMT (void)
             FramebufferPixelFormat_T newPixelFormat;
             pFBInfo->pFramebuffer->COMGETTER(PixelFormat) (&newPixelFormat);
 
-            pFBInfo->fDefaultFormat = (newPixelFormat == FramebufferPixelFormat_PixelFormatDefault);
+            pFBInfo->fDefaultFormat = (newPixelFormat == FramebufferPixelFormat_PixelFormatOpaque);
 
             mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, pFBInfo->fDefaultFormat);
         }

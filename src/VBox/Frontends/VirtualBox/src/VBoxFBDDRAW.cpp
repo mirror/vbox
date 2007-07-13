@@ -137,7 +137,7 @@ VBoxDDRAWFrameBuffer::VBoxDDRAWFrameBuffer (VBoxConsoleView *aView) :
     mClipper (NULL),
     mSurface (NULL),
     mPrimarySurface (NULL),
-    mPixelFormat (FramebufferPixelFormat_PixelFormatDefault),
+    mPixelFormat (FramebufferPixelFormat_PixelFormatOpaque),
     mGuestVRAMSurface (FALSE),
     mWndX (0),
     mWndY (0),
@@ -165,7 +165,7 @@ VBoxDDRAWFrameBuffer::VBoxDDRAWFrameBuffer (VBoxConsoleView *aView) :
                 mPrimarySurface->SetClipper (mClipper);
 
                 VBoxResizeEvent *re =
-                    new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatDefault,
+                    new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
                                          NULL, 0, 640, 480);
 
                 if (re)
@@ -294,16 +294,16 @@ void VBoxDDRAWFrameBuffer::setupSurface (FramebufferPixelFormat_T pixelFormat, u
         default:
         {
             /* Unsupported format leads to use of the default format. */
-            pixelFormat = FramebufferPixelFormat_PixelFormatDefault;
+            pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
         }
     }
 
     recreateSurface (pixelFormat, pvVRAM, lineSize, w, h);
 
-    if (!mSurface && pixelFormat != FramebufferPixelFormat_PixelFormatDefault)
+    if (!mSurface && pixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
     {
         /* Unable to create a new surface. Try to create a default format surface. */
-        pixelFormat = FramebufferPixelFormat_PixelFormatDefault;
+        pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
         recreateSurface (pixelFormat, NULL, 0, w, h);
     }
 
@@ -333,7 +333,7 @@ void VBoxDDRAWFrameBuffer::recreateSurface (FramebufferPixelFormat_T pixelFormat
     sd.dwWidth = w;
     sd.dwHeight = h;
 
-    if (pixelFormat == FramebufferPixelFormat_PixelFormatDefault)
+    if (pixelFormat == FramebufferPixelFormat_PixelFormatOpaque)
     {
         /* Default format is a 32 bpp surface. */
         sd.lPitch = sd.dwWidth * 4;
@@ -350,7 +350,7 @@ void VBoxDDRAWFrameBuffer::recreateSurface (FramebufferPixelFormat_T pixelFormat
 
     switch (pixelFormat)
     {
-        case FramebufferPixelFormat_PixelFormatDefault:
+        case FramebufferPixelFormat_PixelFormatOpaque:
         case FramebufferPixelFormat_PixelFormatRGB32:
         {
             sd.ddpfPixelFormat.dwRGBBitCount = 32;
@@ -377,7 +377,7 @@ void VBoxDDRAWFrameBuffer::recreateSurface (FramebufferPixelFormat_T pixelFormat
     }
 
     /* Allocate surface memory. */
-    if (pvVRAM != NULL && pixelFormat != FramebufferPixelFormat_PixelFormatDefault)
+    if (pvVRAM != NULL && pixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
     {
         sd.lpSurface = pvVRAM;
         mGuestVRAMSurface = TRUE;
