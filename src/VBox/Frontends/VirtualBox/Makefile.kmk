@@ -91,6 +91,7 @@ endif
 # UI headers (ui.h) containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCUIHDRS = \
 	ui/VBoxVMSettingsDlg.ui.h \
+	ui/VBoxVMLogViewer.ui.h \
 	ui/VBoxSharedFoldersSettings.ui.h
 
 

@@ -30,6 +30,254 @@
 *****************************************************************************/
 
 
+class VBoxLogSearchPanel : public QWidget
+{
+    Q_OBJECT
+
+public:
+
+    VBoxLogSearchPanel (QWidget *aParent,
+                        VBoxVMLogViewer *aViewer,
+                        const char *aName)
+        : QWidget (aParent, aName)
+        , mViewer (aViewer)
+        , mButtonClose (0)
+        , mSearchName (0), mSearchString (0)
+        , mButtonPrev (0), mButtonNext (0)
+        , mCaseSensitive (0)
+        , mWarningSpacer (0), mWarningIcon (0), mWarningString (0)
+    {
+        mButtonClose = new QToolButton (this);
+        mButtonClose->setAutoRaise (true);
+        mButtonClose->setFocusPolicy (QWidget::TabFocus);
+        mButtonClose->setAccel (QKeySequence (Qt::Key_Escape));
+        connect (mButtonClose, SIGNAL (clicked()), this, SLOT (hide()));
+        mButtonClose->setIconSet (VBoxGlobal::iconSet ("delete_16px.png",
+                                                   "delete_dis_16px.png"));
+
+        mSearchName = new QLabel (this);
+        mSearchString = new QLineEdit (this);
+        mSearchString->setSizePolicy (QSizePolicy::Preferred,
+                                      QSizePolicy::Fixed);
+        connect (mSearchString, SIGNAL (textChanged (const QString &)),
+                 this, SLOT (findCurrent (const QString &)));
+
+        mButtonPrev = new QToolButton (this);
+        mButtonPrev->setEnabled (false);
+        mButtonPrev->setAutoRaise (true);
+        mButtonPrev->setFocusPolicy (QWidget::TabFocus);
+        mButtonPrev->setUsesTextLabel (true);
+        mButtonPrev->setTextPosition (QToolButton::BesideIcon);
+        connect (mButtonPrev, SIGNAL (clicked()), this, SLOT (findBack()));
+        mButtonPrev->setIconSet (VBoxGlobal::iconSet ("list_moveup_16px.png",
+                                             "list_moveup_disabled_16px.png"));
+
+        mButtonNext = new QToolButton (this);
+        mButtonNext->setEnabled (false);
+        mButtonNext->setAutoRaise (true);
+        mButtonNext->setFocusPolicy (QWidget::TabFocus);
+        mButtonNext->setUsesTextLabel (true);
+        mButtonNext->setTextPosition (QToolButton::BesideIcon);
+        connect (mButtonNext, SIGNAL (clicked()), this, SLOT (findNext()));
+        mButtonNext->setIconSet (VBoxGlobal::iconSet ("list_movedown_16px.png",
+                                           "list_movedown_disabled_16px.png"));
+
+        mCaseSensitive = new QCheckBox (this);
+
+        mWarningSpacer = new QSpacerItem (0, 0, QSizePolicy::Fixed,
+                                                QSizePolicy::Minimum);
+        mWarningIcon = new QLabel (this);
+        mWarningIcon->hide();
+        QImage img = QMessageBox::standardIcon (QMessageBox::Warning).
+                                                convertToImage();
+        if (!img.isNull())
+        {
+            img = img.smoothScale (16, 16);
+            QPixmap pixmap;
+            pixmap.convertFromImage (img);
+            mWarningIcon->setPixmap (pixmap);
+        }
+        mWarningString = new QLabel (this);
+        mWarningString->hide();
+
+        QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Expanding,
+                                                     QSizePolicy::Minimum);
+
+        QHBoxLayout *mainLayout = new QHBoxLayout (this, 5, 5);
+        mainLayout->addWidget (mButtonClose);
+        mainLayout->addWidget (mSearchName);
+        mainLayout->addWidget (mSearchString);
+        mainLayout->addWidget (mButtonPrev);
+        mainLayout->addWidget (mButtonNext);
+        mainLayout->addWidget (mCaseSensitive);
+        mainLayout->addItem   (mWarningSpacer);
+        mainLayout->addWidget (mWarningIcon);
+        mainLayout->addWidget (mWarningString);
+        mainLayout->addItem   (spacer);
+
+        setFocusProxy (mCaseSensitive);
+
+        languageChange();
+    }
+
+    void languageChange()
+    {
+        QToolTip::add (mButtonClose, tr ("Close the search panel"));
+        mSearchName->setText (tr ("Find "));
+        QToolTip::add (mSearchString, tr ("Enter search string here"));
+        mButtonPrev->setTextLabel (tr ("&Previous"));
+        mButtonPrev->setAccel (QKeySequence (tr ("Alt+P")));
+        QToolTip::add (mButtonPrev,
+            tr ("Search for the previous occurrence of the string"));
+        mButtonNext->setTextLabel (tr ("&Next"));
+        mButtonNext->setAccel (QKeySequence (tr ("Alt+N")));
+        QToolTip::add (mButtonNext,
+            tr ("Search for the next occurrence of the string"));
+        mCaseSensitive->setText (tr ("Cas&e Sensitive"));
+        QToolTip::add (mCaseSensitive,
+            tr ("Check this box to perform Case Sensitive search"));
+        mWarningString->setText (tr ("Unable to find string"));
+    }
+
+private slots:
+
+    void findNext()
+    {
+        search (true);
+    }
+
+    void findBack()
+    {
+        search (false);
+    }
+
+    void findCurrent (const QString &aSearchString)
+    {
+        mButtonNext->setEnabled (aSearchString.length());
+        mButtonPrev->setEnabled (aSearchString.length());
+        toggleWarning (!aSearchString.length());
+        if (aSearchString.length())
+            search (true, true);
+        else
+            mViewer->currentLogPage()->removeSelection();
+    }
+
+private:
+
+    void search (bool aForward, bool aStartCurrent = false)
+    {
+        QTextBrowser *browser = mViewer->currentLogPage();
+        int startPrg = 0, endPrg = 0;
+        int startInd = 0, endInd = 0;
+        if (browser->hasSelectedText())
+            browser->getSelection (&startPrg, &startInd, &endPrg, &endInd);
+
+        bool found = false;
+        int increment = aForward ? 1 : -1;
+        int border = aForward ? browser->paragraphs() : -1;
+        int startFrom = aStartCurrent ? startInd : startInd + increment;
+        int paragraph = startFrom < 0 ? startPrg + increment : startPrg;
+        for (; paragraph != border; paragraph += increment)
+        {
+            QString text = browser->text (paragraph);
+            int res = aForward ?
+                text.find (mSearchString->text(), startFrom,
+                           mCaseSensitive->isChecked()) :
+                text.findRev (mSearchString->text(), startFrom,
+                              mCaseSensitive->isChecked());
+            if (res != -1)
+            {
+                found = true;
+                browser->setSelection (paragraph, res, paragraph,
+                                       res + mSearchString->text().length());
+                break;
+            }
+            startFrom = aForward ? 0 : -1;
+        }
+
+        toggleWarning (found);
+        if (!found)
+            browser->setSelection (startPrg, startInd, endPrg, endInd);
+    }
+
+    bool eventFilter (QObject *aObject, QEvent *aEvent)
+    {
+        switch (aEvent->type())
+        {
+            case QEvent::KeyPress:
+            {
+                QKeyEvent *e = static_cast<QKeyEvent*> (aEvent);
+
+                /* processing the return keypress for the mSearchString
+                 * widget as the search next string action */
+                if (aObject == mSearchString &&
+                    (e->state() == 0 || e->state() & Keypad) &&
+                    (e->key() == Key_Enter || e->key() == Key_Return))
+                {
+                    findNext();
+                    return true;
+                }
+                /* processing other search next/previous shortcuts */
+                else if (e->key() == Key_F3)
+                {
+                    if (e->state() == 0)
+                        findNext();
+                    else if (e->state() == ShiftButton)
+                        findBack();
+                    return true;
+                }
+                /* processing ctrl-f key combination as the shortcut to
+                 * move to the search field */
+                else if (e->state() == ControlButton && e->key() == Key_F)
+                {
+                    mSearchString->setFocus();
+                    return true;
+                }
+
+                break;
+            }
+            default:
+                break;
+        }
+        return false;
+    }
+
+    void showEvent (QShowEvent *aEvent)
+    {
+        QWidget::showEvent (aEvent);
+        qApp->installEventFilter (this);
+        mSearchString->setFocus();
+    }
+
+    void hideEvent (QHideEvent *aEvent)
+    {
+        if (focusData()->focusWidget()->parent() == this)
+           focusNextPrevChild (true);
+        qApp->removeEventFilter (this);
+        QWidget::hideEvent (aEvent);
+    }
+
+    void toggleWarning (bool aHide)
+    {
+        mWarningSpacer->changeSize (aHide ? 0 : 16, 0, QSizePolicy::Fixed,
+                                                       QSizePolicy::Minimum);
+        mWarningIcon->setHidden (aHide);
+        mWarningString->setHidden (aHide);
+    }
+
+    VBoxVMLogViewer *mViewer;
+    QToolButton     *mButtonClose;
+    QLabel          *mSearchName;
+    QLineEdit       *mSearchString;
+    QToolButton     *mButtonPrev;
+    QToolButton     *mButtonNext;
+    QCheckBox       *mCaseSensitive;
+    QSpacerItem     *mWarningSpacer;
+    QLabel          *mWarningIcon;
+    QLabel          *mWarningString;
+};
+
+
 VBoxVMLogViewer::LogViewersMap VBoxVMLogViewer::mSelfArray = LogViewersMap();
 
 void VBoxVMLogViewer::createLogViewer (CMachine &aMachine)
@@ -78,6 +326,18 @@ void VBoxVMLogViewer::init()
     QVBoxLayout *logsFrameLayout = new QVBoxLayout (mLogsFrame);
     logsFrameLayout->addWidget (mLogList);
 
+    /* search panel creation */
+    mSearchPanel = new VBoxLogSearchPanel (mLogsFrame, this,
+                                           "VBoxLogSearchPanel");
+    logsFrameLayout->addWidget (mSearchPanel);
+    mSearchPanel->hide();
+
+    /* fix the tab order to ensure the dialog keys are always the last */
+    setTabOrder (mSearchPanel->focusProxy(), mSaveButton);
+    setTabOrder (mSaveButton, mRefreshButton);
+    setTabOrder (mRefreshButton, mCloseButton);
+    setTabOrder (mCloseButton, mLogList);
+
     /* applying language settings */
     languageChangeImp();
 }
@@ -113,6 +373,9 @@ void VBoxVMLogViewer::languageChangeImp()
     /* setup a dialog caption */
     if (!mMachine.isNull())
         setCaption (tr ("%1 - VirtualBox Log Viewer").arg (mMachine.GetName()));
+    /* translate a search panel */
+    if (mSearchPanel)
+        mSearchPanel->languageChange();
 }
 
 
@@ -202,10 +465,16 @@ void VBoxVMLogViewer::keyPressEvent (QKeyEvent *aEvent)
             /* processing the escape keypress as the close dialog action */
             case Key_Escape:
             {
-                close();
+                mCloseButton->animateClick();
                 break;
             }
         }
+    }
+    else if (aEvent->state() == Qt::ControlButton &&
+             aEvent->key() == Qt::Key_F)
+    {
+        if (mLogList->isEnabled())
+            mSearchPanel->show();
     }
     else
         aEvent->ignore();
@@ -335,6 +604,12 @@ QTextBrowser* VBoxVMLogViewer::createLogPage (const QString &aName)
 }
 
 
+QTextBrowser* VBoxVMLogViewer::currentLogPage()
+{
+    return static_cast<QTextBrowser*> (mLogList->currentPage());
+}
+
+
 void VBoxVMLogViewer::save()
 {
     /* prepare "save as" dialog */
@@ -362,4 +637,6 @@ void VBoxVMLogViewer::save()
         newFile.writeBlock (oldFile.readAll());
     }
 }
+
+#include "VBoxVMLogViewer.ui.moc"
 
