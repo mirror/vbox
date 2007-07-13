@@ -187,7 +187,7 @@ CPUWriteMemoryFunc *g_apfnHandlerWrite[3] =
 };
 
 
-#ifdef VBOX_WITH_DEBUGGER
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(__WIN__) && defined(__AMD64__))
 /*
  * Debugger commands.
  */
@@ -336,7 +336,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-#ifdef VBOX_WITH_DEBUGGER
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(__WIN__) && defined(__AMD64__))
     /*
      * Debugger commands.
      */
@@ -3856,7 +3856,7 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 }
 
 
-#ifdef VBOX_WITH_DEBUGGER
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(__WIN__) && defined(__AMD64__))
 /**
  * External Debugger Command: .remstep [on|off|1|0]
  */

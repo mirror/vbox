@@ -21,6 +21,13 @@
 ;*******************************************************************************
 %include "iprt/asmdefs.mac"
 
+%define REM_FIXUP_32_REAL_STUFF    0deadbeefh
+%define REM_FIXUP_64_REAL_STUFF    0deadf00df00ddeadh
+%define REM_FIXUP_64_DESC          0dead00010001deadh
+%define REM_FIXUP_64_LOG_ENTRY     0dead00020002deadh
+%define REM_FIXUP_64_LOG_EXIT      0dead00030003deadh
+%define REM_FIXUP_64_WRAP_GCC_CB   0dead00040004deadh
+
 ;%define ENTRY_LOGGING   1
 ;%define EXIT_LOGGING    1
 
@@ -77,11 +84,11 @@
     sub     rsp, 20h                    ; shadow space
 
    %ifdef __WIN__
-    mov     rcx, 0xdead00010001dead
+    mov     rcx, REM_FIXUP_64_DESC
    %else
-    mov     rdi, 0xdead00010001dead
+    mov     rdi, REM_FIXUP_64_DESC
    %endif
-    mov     rax, 0xdead00020002dead
+    mov     rax, REM_FIXUP_64_LOG_ENTRY
     call    rax
 
     leave
@@ -103,12 +110,12 @@
 
    %ifdef __WIN__
     mov     rdx, rax
-    mov     rcx, 0xdead00010001dead
+    mov     rcx, REM_FIXUP_64_DESC
    %else
     mov     rsi, eax
-    mov     rdi, 0xdead00010001dead
+    mov     rdi, REM_FIXUP_64_DESC
    %endif
-    mov     rax, 0xdead00030003dead
+    mov     rax, REM_FIXUP_64_LOG_EXIT
     call    rax
 
     leave
@@ -137,9 +144,9 @@ BEGINPROC WrapGCC2MSC0Int
     sub     rsp, 20h
 
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -157,9 +164,9 @@ BEGINPROC WrapGCC2MSC1Int
 
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -178,9 +185,9 @@ BEGINPROC WrapGCC2MSC2Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -200,9 +207,9 @@ BEGINPROC WrapGCC2MSC3Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -223,9 +230,9 @@ BEGINPROC WrapGCC2MSC4Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -247,9 +254,9 @@ BEGINPROC WrapGCC2MSC5Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -272,9 +279,9 @@ BEGINPROC WrapGCC2MSC6Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -299,9 +306,9 @@ BEGINPROC WrapGCC2MSC7Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -328,9 +335,9 @@ BEGINPROC WrapGCC2MSC8Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -359,9 +366,9 @@ BEGINPROC WrapGCC2MSC9Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -392,9 +399,9 @@ BEGINPROC WrapGCC2MSC10Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -427,9 +434,9 @@ BEGINPROC WrapGCC2MSC11Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -464,9 +471,9 @@ BEGINPROC WrapGCC2MSC12Int
     mov     rdx, rsi
     mov     rcx, rdi
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -500,9 +507,9 @@ BEGINPROC WrapGCC2MSCVariadictInt
     mov     [rsp], rcx                  ; (*)
     mov     rsi, r11                    ; rsi is preserved by the callee.
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -512,6 +519,112 @@ BEGINPROC WrapGCC2MSCVariadictInt
     ; (*) unconditionally spill the registers, just in case '...' implies weird stuff on MSC. Check this out!
 ENDPROC WrapGCC2MSCVariadictInt
 
+
+;;
+; Custom template for SSMR3RegisterInternal.
+;
+; (This is based on the WrapGCC2MSC11Int template.)
+;
+; @cproto
+;
+; SSMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+;    PFNSSMINTSAVEPREP pfnSavePrep, PFNSSMINTSAVEEXEC pfnSaveExec, PFNSSMINTSAVEDONE pfnSaveDone,
+;    PFNSSMINTLOADPREP pfnLoadPrep, PFNSSMINTLOADEXEC pfnLoadExec, PFNSSMINTLOADDONE pfnLoadDone);
+;
+; @param    pVM             rdi              0
+; @param    pszName         rsi              1
+; @param    u32Instance     rdx              2
+; @param    u32Version      rcx              3
+; @param    cbGuess         r8               4
+; @param    pfnSavePrep     r9               5
+; @param    pfnSaveExec     rbp + 10h        6
+; @param    pfnSaveDone     rbp + 18h        7
+; @param    pfnLoadPrep     rbp + 20h        8
+; @param    pfnLoadExec     rbp + 28h        9
+; @param    pfnLoadDone     rbp + 30h       10
+;
+BEGINPROC WrapGCC2MSC_SSMR3RegisterInternal
+    LOG_ENTRY
+    push    rbp
+    mov     rbp, rsp
+
+    sub     rsp, 60h
+
+    mov     r10, [ebp + 30h]
+    mov     [rsp + 50h], r10            ; pfnLoadDone
+    mov     r11, [ebp + 28h]
+    mov     [rsp + 48h], r11            ; pfnLoadExec
+    mov     rax, [ebp + 20h]
+    mov     [rsp + 40h], rax            ; pfnLoadPrep
+    mov     r10, [ebp + 18h]
+    mov     [rsp + 38h], r10            ; pfnSaveDone
+    mov     r11, [ebp + 10h]
+    mov     [rsp + 30h], r11            ; pfnSaveExec
+    mov     [rsp + 28h], r9             ; pfnSavePrep
+    mov     [rsp + 20h], r8
+    mov     [rsp + 18h], rcx            ; -> r9
+    mov     [rsp + 10h], rdx            ; -> r8
+    mov     [rsp + 08h], rsi            ; -> rdx
+    mov     [rsp], rdi                  ; -> rcx
+
+    ; Now convert the function pointers. Have to setup a new shadow 
+    ; space here since the SSMR3RegisterInternal one is already in use.
+    sub     rsp, 20h
+
+    mov     rcx, REM_FIXUP_64_DESC      ; pDesc
+    lea     rdx, [rsp + 28h + 20h]      ; pValue
+    mov     r8d, 5                      ; iParam
+    mov     rax, REM_FIXUP_64_WRAP_GCC_CB
+    call    rax
+
+    mov     rcx, REM_FIXUP_64_DESC      ; pDesc
+    lea     rdx, [rsp + 30h + 20h]      ; pValue
+    mov     r8d, 6                      ; iParam
+    mov     rax, REM_FIXUP_64_WRAP_GCC_CB
+    call    rax
+
+    mov     rcx, REM_FIXUP_64_DESC      ; pDesc
+    lea     rdx, [rsp + 38h + 20h]      ; pValue
+    mov     r8d, 7                      ; iParam
+    mov     rax, REM_FIXUP_64_WRAP_GCC_CB
+    call    rax
+
+    mov     rcx, REM_FIXUP_64_DESC      ; pDesc
+    lea     rdx, [rsp + 40h + 20h]      ; pValue
+    mov     r8d, 8                      ; iParam
+    mov     rax, REM_FIXUP_64_WRAP_GCC_CB
+    call    rax
+
+    mov     rcx, REM_FIXUP_64_DESC      ; pDesc
+    lea     rdx, [rsp + 48h + 20h]      ; pValue
+    mov     r8d, 9                      ; iParam
+    mov     rax, REM_FIXUP_64_WRAP_GCC_CB
+    call    rax
+
+    mov     rcx, REM_FIXUP_64_DESC      ; pDesc
+    lea     rdx, [rsp + 50h + 20h]      ; pValue
+    mov     r8d, 10                     ; iParam
+    mov     rax, REM_FIXUP_64_WRAP_GCC_CB
+    call    rax
+
+    add     rsp, 20h
+
+    ; finally do the call.
+    mov     r9,  [rsp + 18h]
+    mov     r8,  [rsp + 10h]
+    mov     rdx, [rsp + 08h]
+    mov     rcx, [rsp]
+%ifdef USE_DIRECT_CALLS
+    call    $+5+REM_FIXUP_32_REAL_STUFF
+%else
+    mov     rax, REM_FIXUP_64_REAL_STUFF
+    call    rax
+%endif
+
+    leave
+    LOG_EXIT
+    ret
+ENDPROC WrapGCC2MSC_SSMR3RegisterInternal
 
 
 ;
@@ -528,9 +641,9 @@ BEGINPROC WrapMSC2GCC0Int
     mov     [ebp - 18h], rdi
 
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -552,9 +665,9 @@ BEGINPROC WrapMSC2GCC1Int
 
     mov     rdi, rcx
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -577,9 +690,9 @@ BEGINPROC WrapMSC2GCC2Int
     mov     rdi, rcx
     mov     rsi, rdx
 %ifdef USE_DIRECT_CALLS
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 %else
-    mov     rax, 0xdeadf00df00ddead
+    mov     rax, REM_FIXUP_64_REAL_STUFF
     call    rax
 %endif
 
@@ -602,7 +715,7 @@ BEGINPROC WrapMSC2GCC3Int
     mov     rdi, rcx
     mov     rsi, rdx
     mov     rdx, r8
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -624,7 +737,7 @@ BEGINPROC WrapMSC2GCC4Int
     mov     rsi, rdx
     mov     rdx, r8
     mov     rcx, r9
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -647,7 +760,7 @@ BEGINPROC WrapMSC2GCC5Int
     mov     rdx, r8
     mov     rcx, r9
     mov     r8, [ebp + 30h]
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -671,7 +784,7 @@ BEGINPROC WrapMSC2GCC6Int
     mov     rcx, r9
     mov     r8, [ebp + 30h]
     mov     r9, [ebp + 38h]
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -697,7 +810,7 @@ BEGINPROC WrapMSC2GCC7Int
     mov     r9, [ebp + 38h]
     mov     r10, [ebp + 40h]
     mov     [esp], r10
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -725,7 +838,7 @@ BEGINPROC WrapMSC2GCC8Int
     mov     [esp], r10
     mov     r11, [ebp + 48h]
     mov     [esp + 8], r11
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
@@ -755,7 +868,7 @@ BEGINPROC WrapMSC2GCC9Int
     mov     [esp + 8], r11
     mov     rax, [ebp + 50h]
     mov     [esp + 10h], rax
-    call    $+5+0deadbeefh
+    call    $+5+REM_FIXUP_32_REAL_STUFF
 
     mov     rdi, [ebp - 18h]
     mov     rsi, [ebp - 10h]
