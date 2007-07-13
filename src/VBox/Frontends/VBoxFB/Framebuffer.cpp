@@ -173,7 +173,7 @@ NS_IMETHODIMP VBoxDirectFB::COMGETTER(PixelFormat) (FramebufferPixelFormat_T *pi
 {
     if (!lineSize)
         return NS_ERROR_INVALID_POINTER;
-    *pixelFormat = FramebufferPixelFormat_PixelFormatDefault;
+    *pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
     return NS_OK;
 }
 

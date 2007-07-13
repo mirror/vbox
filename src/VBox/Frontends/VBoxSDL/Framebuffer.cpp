@@ -106,7 +106,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     /* Start with standard screen dimensions. */
     mGuestXRes      = 640;
     mGuestYRes      = 480;
-    mPixelFormat    = FramebufferPixelFormat_PixelFormatDefault;
+    mPixelFormat    = FramebufferPixelFormat_PixelFormatOpaque;
     mPtrVRAM        = NULL;
     mLineSize       = 0;
 #ifdef VBOX_SECURELABEL
@@ -635,7 +635,7 @@ void VBoxSDLFB::resizeGuest()
     }
 
     /* is the guest in a linear framebuffer mode we support? */
-    if (mPixelFormat != FramebufferPixelFormat_PixelFormatDefault)
+    if (mPixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
     {
         /* Create a source surface from guest VRAM. */
         mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, cBitsPerPixel,
