@@ -154,11 +154,18 @@
     <include location="global" impldecl="in implementation">qfiledialog.h</include>
     <include location="global" impldecl="in implementation">qdatetime.h</include>
     <include location="global" impldecl="in implementation">qobjectlist.h</include>
+    <include location="global" impldecl="in implementation">qcheckbox.h</include>
+    <include location="global" impldecl="in implementation">qlabel.h</include>
+    <include location="global" impldecl="in implementation">qlineedit.h</include>
+    <include location="global" impldecl="in implementation">qtoolbutton.h</include>
+    <include location="global" impldecl="in implementation">qmessagebox.h</include>
+    <include location="global" impldecl="in implementation">qfocusdata.h</include>
 </includes>
 <forwards>
     <forward>class QSizeGrip</forward>
     <forward>class QTabWidget</forward>
     <forward>class QTextBrowser</forward>
+    <forward>class VBoxLogSearchPanel</forward>
 </forwards>
 <variables>
     <variable access="private">typedef QMap &lt;QString, VBoxVMLogViewer*&gt; LogViewersMap;</variable>
@@ -170,6 +177,7 @@
     <variable access="private">QTabWidget *mLogList;</variable>
     <variable access="private">QStringList mLogFilesList;</variable>
     <variable access="private">QPushButton *mDefaultButton;</variable>
+    <variable access="private">VBoxLogSearchPanel *mSearchPanel;</variable>
 </variables>
 <slots>
     <slot access="pritave">refresh()</slot>
@@ -190,6 +198,7 @@
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function access="pritave">loadLogFile( const QString &amp; )</function>
     <function access="pritave" returnType="QTextBrowser*">createLogPage( const QString &amp; )</function>
+    <function returnType="QTextBrowser*">currentLogPage()</function>
 </functions>
 <pixmapinproject/>
 <layoutdefaults spacing="6" margin="11"/>
