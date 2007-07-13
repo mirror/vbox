@@ -579,7 +579,7 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @param hServer     The server instance handle.
      * @param u32ClientId The client identifier.
-     * @param fReconnect  Whether to send a RECONNECT message to the 
+     * @param fReconnect  Whether to send a "REDIRECT to the same server" packet to the 
      *                    client before disconnecting.
      *
      * @return IPRT status code.
