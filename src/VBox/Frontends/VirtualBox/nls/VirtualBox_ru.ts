@@ -1318,7 +1318,7 @@
     <message>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
-        <translation>Нулевая</translation>
+        <translation>Нет авторизации</translation>
     </message>
     <message>
         <source>External</source>
