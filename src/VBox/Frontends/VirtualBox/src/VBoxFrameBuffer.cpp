@@ -304,7 +304,7 @@ STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
     VBoxFrameBuffer (aView)
 {
-    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatDefault,
+    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
                                       NULL, 0, 640, 480));
 }
 
@@ -398,12 +398,12 @@ VBoxSDLFrameBuffer::VBoxSDLFrameBuffer (VBoxConsoleView *aView) :
     VBoxFrameBuffer (aView)
 {
     mScreen = NULL;
-    mPixelFormat = FramebufferPixelFormat_PixelFormatDefault;
+    mPixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
     mPtrVRAM = NULL;
     mSurfVRAM = NULL;
     mLineSize = 0;
 
-    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatDefault,
+    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
                                       NULL, 0, 640, 480));
 }
 
@@ -535,11 +535,11 @@ void VBoxSDLFrameBuffer::resizeEvent( VBoxResizeEvent *re )
         default:
         {
             /* Unsupported format leads to use of the default format. */
-            mPixelFormat = FramebufferPixelFormat_PixelFormatDefault;
+            mPixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
         }
     }
 
-    if (mPixelFormat != FramebufferPixelFormat_PixelFormatDefault)
+    if (mPixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
     {
         /* Create a source surface from guest VRAM. */
         mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mWdt, mHgt, bitsPerPixel,

@@ -100,7 +100,7 @@ STDMETHODIMP InternalFramebuffer::COMGETTER(PixelFormat) (FramebufferPixelFormat
 {
     if (!pixelFormat)
         return E_POINTER;
-    *pixelFormat = FramebufferPixelFormat_PixelFormatDefault;
+    *pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
     return S_OK;
 }
 

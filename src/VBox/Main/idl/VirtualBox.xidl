@@ -6122,9 +6122,13 @@
 
   <enum
      name="FramebufferPixelFormat"
-     uuid="0389bf8d-3b41-476c-94be-53f5c84be9b5"
+     uuid="3bd87520-2b5f-4786-a891-f8c6aeb19a1f"
      >
-    <const name="PixelFormatDefault"      value="0"/>
+    <desc>
+      Format of the virtual video card's memory buffer.  See
+      <link to="IFramebuffer::requestResize()"/> for more information.
+    </desc>
+    <const name="PixelFormatOpaque"       value="0"/>
     <const name="PixelFormatRGB16"        value="1"/>
     <const name="PixelFormatRGB24"        value="2"/>
     <const name="PixelFormatRGB32"        value="3"/>
@@ -6187,16 +6191,16 @@
     <method name="lock">
       <desc>
         Locks the framebuffer.
-        Gets called by the display object where this buffer is
-        registered.
+        Gets called by the IDisplay object where this framebuffer is
+        bound to.
       </desc>
     </method>
 
     <method name="unlock">
       <desc>
         Unlocks the framebuffer.
-        Gets called by the display object where this buffer is
-        registered.
+        Gets called by the IDisplay object where this framebuffer is
+        bound to.
       </desc>
     </method>
 
@@ -6217,43 +6221,96 @@
       <desc>
         Requests a size and pixel format change.
 
-        The IFramebuffer implementation should try to setup
-        a memory buffer suitable for the given pixel format
-        and line size.
+        There are two strategies of working with the video buffer of the
+        virtual machine. The first strategy implies that the IFramebuffer
+        implementation allocates a memory buffer for the requested display mode
+        and provides it to the virtual machine. In the second strategy, the
+        IFramebuffer implementation uses the memory buffer allocated and owned
+        by the virtual machine. The second strategy is usually faster because
+        the implementation gets a pointer to the virtual machine video card's
+        memory which it can directly use for visualising the contents of the
+        virtual display, as opposed to the first strategy where the video
+        card's memory contents are copied to the memory buffer provided by the
+        implementation every time a display update occurs.
 
-        If the requested pixel format is not supported,
-        or a PixelFormatDefault is requested,
-        a default format is set.
+        It is important to note that the second strategy is really fast only
+        when the implementation uses the provided video buffer directly, for
+        example, by blitting it to the window representing the virtual
+        machine's display, which saves at least one copy operation comparing
+        to the first strategy. However, using the video card's memory directly
+        is not always possible: for example, the format and the color depth of
+        the window representing the virtual display may differ from the format
+        or the color depth of the virtual video buffer, or the format of the
+        latter may be unknown or unsupported. In this case, the first strategy
+        (that is always available) is used as a fallback: when the virtual
+        video card's memory contents are copied to the implementation-provided
+        memory buffer, color and format conversion is done authomatically by
+        the underlying code.
 
-        The callee is allowed to use the guest video memory
-        buffer (pointed to by the @a vram parameter) directly instead
-        of allocating its own buffer. To indicate that the framebuffer
-        uses the guest video memory, its <link to="#address"/>
-        implementation must return the same address as it gets in
-        the @a vram parameter of this method.
+        The @a pixelFormat and @a VRAM parameters define whether the second
+        strategy is available or not. If @a pixelFormat is
+        <link to="PixelFormat::PixelFormatOpaque"/> (which usually indicates a
+        text mode of the virtual display) or if @a VRAM is <tt>null</tt>
+        (which means a non-linear graphical mode), then direct access to the
+        virtual card's video memory buffer is not available, the @a VRAM
+        parameter must be ignored and the implementation must use the first
+        strategy. In all other cases, @a pixelFormat together with @a lineSize
+        define the format of the video memory buffer pointed to by the @a VRAM
+        parameter and the implementation is free to choose which strategy to
+        use. To indicate that this framebuffer uses the second strategy, its
+        implementation of the <link to="#address()"/> method must return the
+        same address as it gets in the @a VRAM parameter of this method;
+        otherwise it is assumed that the first strategy is chosen.
 
-        For non linear modes (such as text and standard VGA), the @a
-        vram parameter is @c NULL and must not be used. When it's not
-        NULL, it is recommended to use it to access the guest video
-        memory instead of creating a separate buffer as it will at
-        least remove one copy operation.
+        The @a width and @a height parameters represent the size of the
+        requested display mode in both cases. In case of the first strategy,
+        the provided memory buffer should be enough to store data of the given
+        display mode. In case of the second strategy, it is guaranteed that
+        the given @a VRAM buffer contains enough space to represent the
+        display mode of the given size. Note that this framebuffer's
+        <link to="#width()"/> and <link to="#height()"/> properties must
+        return exactly the same values as passed to this method after the
+        resize is completed (see below).
 
-        The caller checks if the call was successful
-        via the <link to="#pixelFormat"/> property.
+        The @a finished output parameter determines if the implementation has
+        finished resizing the framebuffer or not. If, for some reason, the
+        resize cannot be finished immediately during this call, @a finished
+        must be set to @c false, and the implementation must call
+        <link to="IDisplay::resizeCompleted()"/> after it has returned from
+        this method as soon as possible. If @a finished is @c false, the
+        machine will not call any framebuffer methods until
+        <link to="IDisplay::resizeCompleted()"/> is called.
+
+        Note that if the second strategy is choosen, the
+        <link to="#colorDepth()"/>, <link to="#lineSize()"/> and
+        <link to="#pixelFormat()"/> properties of this framebuffer must return
+        exactly the same values as specified in the parameters of this method
+        after the resize is completed. In case of the first strategy these
+        properties must return values describing the format of the
+        implementation's own memory buffer <link to="#address()"/> points
+        to. Note also that the <link to="#colorDepth()"/> value must always
+        correlate with <link to="#pixelFormat()"/> when the latter returns any
+        value other than <link to="PixelFormat::PixelFormatOpaque"/>.
 
         <note>
-          This method is called by IDisplay under the IFramebuffer
-          lock.
+          This method is called by the IDisplay object under the
+          <link to="#lock()"/> provided by this IFramebuffer
+          implementation. If this method returns @c false in @a finished, then
+          this lock is not released until
+          <link to="IDisplay::resizeCompleted()"/> is called.
         </note>
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>The value to be used in the <link to="IDisplay::resizeCompleted()"/> call.</desc>
+        <desc>
+          Logical screen number. Must be used in the corresponding call to
+          <link to="IDisplay::resizeCompleted()"/> if this call is made.
+        </desc>
       </param>
       <param name="pixelFormat" type="FramebufferPixelFormat" dir="in">
-        <desc>Pixel format of the surface (BPP and layout)</desc>
+        <desc>Pixel format of the memory buffer pointed to by @a VRAM.</desc>
       </param>
-      <param name="vram" type="octet" mod="ptr" dir="in">
-        <desc>Pointer to the guest VRAM (NULL for non linear modes)</desc>
+      <param name="VRAM" type="octet" mod="ptr" dir="in">
+        <desc>Pointer to the virtual video card's VRAM (may be @c null).</desc>
       </param>
       <param name="lineSize" type="unsigned long" dir="in">
         <desc>Size of one scan line, in bytes.</desc>
