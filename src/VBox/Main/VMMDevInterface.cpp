@@ -521,7 +521,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"OpenGLEnabled\0))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0OpenGLEnabled\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     PPDMIBASE pBaseIgnore;
     int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBaseIgnore);
