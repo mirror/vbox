@@ -118,7 +118,7 @@ typedef enum _PictFormatShort {
 /* 1bpp formats */
    PICT_a1 =		PICT_FORMAT(1,PICT_TYPE_A,1,0,0,0),
 
-   PICT_g1 =		PICT_FORMAT(1,PICT_TYPE_GRAY,0,0,0,0),
+   PICT_g1 =		PICT_FORMAT(1,PICT_TYPE_GRAY,0,0,0,0)
 } PictFormatShort;
 
 /*
