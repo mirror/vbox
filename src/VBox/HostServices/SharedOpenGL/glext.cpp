@@ -44,7 +44,7 @@ int vboxInitOpenGLExtensions()
     if (fInitialized)
         return VINF_SUCCESS;
 
-    for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
+    for (unsigned int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
     {
         if (strstr((char *)pszExtensions, OpenGLExtensions[i].pszExtName))
         {
@@ -64,7 +64,7 @@ int vboxInitOpenGLExtensions()
  */
 bool vboxwglGetProcAddress(char *pszFunctionName)
 {
-    for (int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
+    for (unsigned int i=0;i<RT_ELEMENTS(OpenGLExtensions);i++)
     {
         if (    OpenGLExtensions[i].fAvailable
             && !strcmp(OpenGLExtensions[i].pszExtFunctionName, pszFunctionName))
