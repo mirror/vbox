@@ -248,7 +248,7 @@ public:
 
     virtual FramebufferPixelFormat_T pixelFormat()
     {
-        return FramebufferPixelFormat_PixelFormatDefault;
+        return FramebufferPixelFormat_PixelFormatOpaque;
     }
 
     void lock() { mMutex->lock(); }
