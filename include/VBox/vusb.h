@@ -104,16 +104,6 @@ typedef struct VUSBIROOTHUBPORT
     DECLR3CALLBACKMEMBER(int, pfnReset,(PVUSBIROOTHUBPORT pInterface, bool fResetOnLinux));
 
     /**
-     * Do transmit preparations.
-     *
-     * VUSB will call this upon submitting the URB request.
-     *
-     * @param   pInterface      Pointer to this structure.
-     * @param   pUrb            Pointer to the URB in question.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnXferPrepare,(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb));
-
-    /**
      * Transfer completion callback routine.
      *
      * VUSB will call this when a transfer have been completed
@@ -617,6 +607,8 @@ typedef struct vusb_urb
     uint32_t        u32Magic;
     /** The USR state. */
     VUSBURBSTATE    enmState;
+    /** URB description, can be null. intended for logging. */
+    char           *pszDesc;
 
     /** The VUSB data. */
     struct VUSBURBVUSB
@@ -673,7 +665,7 @@ typedef struct vusb_urb
         void           *pvProxyUrb;
     } Dev;
 
-    /** The device - can be NULL untill submit is attempted.
+    /** The device - NULL until a submit has been is attempted.
      * This is set when allocating the URB. */
     struct vusb_dev *pDev;
     /** The device address.
