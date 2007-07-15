@@ -485,18 +485,16 @@ typedef enum VUSBSTATUS
 {
     /** Transer was ok. */
     VUSBSTATUS_OK = 0,
-#define VUSB_XFER_OK    VUSBSTATUS_OK
     /** Transfer stalled, endpoint halted. */
     VUSBSTATUS_STALL,
-#define VUSB_XFER_STALL VUSBSTATUS_STALL
     /** Device not responding. */
     VUSBSTATUS_DNR,
-#define VUSB_XFER_DNR   VUSBSTATUS_DNR
     /** CRC error. */
     VUSBSTATUS_CRC,
-#define VUSB_XFER_CRC   VUSBSTATUS_CRC
-    /** Underflow error. */
-    VUSBSTATUS_UNDERFLOW,
+    /** Data overrun error. */
+    VUSBSTATUS_DATA_UNDERRUN,
+    /** Data overrun error. */
+    VUSBSTATUS_DATA_OVERRUN,
     /** The isochronous buffer hasn't been touched. */
     VUSBSTATUS_NOT_ACCESSED,
     /** Invalid status. */
@@ -511,19 +509,14 @@ typedef enum VUSBXFERTYPE
 {
     /** Control message. Used to represent a single control transfer. */
     VUSBXFERTYPE_CTRL = 0,
-#define VUSB_TRANSFER_TYPE_CTRL VUSBXFERTYPE_CTRL
     /* Isochronous transfer. */
     VUSBXFERTYPE_ISOC,
-#define VUSB_TRANSFER_TYPE_ISOC VUSBXFERTYPE_ISOC
     /** Bulk transfer. */
     VUSBXFERTYPE_BULK,
-#define VUSB_TRANSFER_TYPE_BULK VUSBXFERTYPE_BULK
     /** Interrupt transfer. */
     VUSBXFERTYPE_INTR,
-#define VUSB_TRANSFER_TYPE_INTR VUSBXFERTYPE_INTR
     /** Complete control message. Used to represent an entire control message. */
     VUSBXFERTYPE_MSG,
-#define VUSB_TRANSFER_TYPE_MSG  VUSBXFERTYPE_MSG
     /** Invalid transfer type. */
     VUSBXFERTYPE_INVALID = 0x7f
 } VUSBXFERTYPE;
