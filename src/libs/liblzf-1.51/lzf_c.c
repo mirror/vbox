@@ -38,7 +38,14 @@
 
 #include "lzfP.h"
 #ifdef VBOX
-#include "lzf.h"
+# include "lzf.h"
+#endif
+#ifdef USE_UINTPTR_T /* bird: use intptr_t for pointer acrobatics on 64-bit windows. */
+# if defined(_MSC_VER)
+#  include <crtdefs.h>
+# else
+#  include <stdint.h>
+# endif
 #endif
 
 #define HSIZE (1 << (HLOG))
@@ -102,7 +109,11 @@ lzf_compress (const void *const in_data, unsigned int in_len,
   const u8 *ref;
 
   unsigned int hval = FRST (ip);
+#ifdef USE_UINTPTR_T /* bird: use intptr_t for pointer acrobatics on 64-bit windows. */
+  uintptr_t off;
+#else
   unsigned long off;
+#endif
            int lit = 0;
 
 #if INIT_HTAB

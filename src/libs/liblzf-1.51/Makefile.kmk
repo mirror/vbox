@@ -24,6 +24,7 @@ LIBRARIES = VBox-liblzf
 
 VBox-liblzf_TEMPLATE = VBOXR3
 VBox-liblzf_DEFS = ULTRA_FAST #HLOG=14
+VBox-liblzf_DEFS.win.amd64 = USE_UINTPTR_T=1
 VBox-liblzf_SOURCES= \
 	lzf_c.c \
 	lzf_d.c
