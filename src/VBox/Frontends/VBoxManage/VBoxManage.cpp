@@ -3651,9 +3651,21 @@ static int handleModifyVM(int argc, char *argv[],
                 rc = hostDVDs->FindByName(Bstr(dvd + 5), hostDVDDrive.asOutParam());
                 if (!hostDVDDrive)
                 {
-                    errorArgument("Invalid host DVD drive name");
-                    rc = E_FAIL;
-                    break;
+		    /* 2nd try: try with the real name, important on Linux+libhal */
+		    char szPathReal[RTPATH_MAX];
+		    if (VBOX_FAILURE(RTPathReal(dvd + 5, szPathReal, sizeof(szPathReal))))
+		    {
+			errorArgument("Invalid host DVD drive name");
+			rc = E_FAIL;
+			break;
+		    }
+		    rc = hostDVDs->FindByName(Bstr(szPathReal), hostDVDDrive.asOutParam());
+		    if (!hostDVDDrive)
+		    {
+			errorArgument("Invalid host DVD drive name");
+			rc = E_FAIL;
+			break;
+		    }
                 }
                 CHECK_ERROR(dvdDrive, CaptureHostDrive(hostDVDDrive));
             }
