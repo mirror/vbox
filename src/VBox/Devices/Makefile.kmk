@@ -371,7 +371,6 @@ Drivers_SOURCES    = \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c \
 	PC/DrvACPI.cpp \
-	Parallel/DrvHostParallel.cpp \
 	Serial/DrvChar.cpp \
 	Serial/DrvNamedPipe.cpp \
 	Storage/DrvBlock.cpp \
@@ -430,7 +429,8 @@ endif # l4
 
 Drivers_SOURCES.linux = \
 	Network/DrvTAP.cpp \
-	Audio/ossaudio.c
+	Audio/ossaudio.c \
+	Parallel/DrvHostParallel.cpp
 
 ifeq ($(BUILD_TARGET),os2)
 Drivers_SOURCES      := $(filter-out \
