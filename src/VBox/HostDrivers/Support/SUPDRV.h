@@ -91,6 +91,10 @@
 
 #elif defined(__OS2__)
 
+#elif defined(__FREEBSD__)
+#   include <sys/libkern.h>
+#   include <iprt/string.h>
+
 #else
 #   error "unsupported OS."
 #endif
@@ -163,6 +167,15 @@ __END_DECLS
 
 /* No log API in OS/2 only COM port. */
 # define OSDBGPRINT(a) SUPR0Printf a
+
+
+/*
+ * FreeBSD
+ */
+#elif defined(__FREEBSD__)
+
+/* No log API in OS/2 only COM port. */
+# define OSDBGPRINT(a) printf a
 
 
 #else
