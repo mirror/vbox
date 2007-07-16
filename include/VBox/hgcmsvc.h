@@ -170,4 +170,4 @@ typedef DECLCALLBACK(int) VBOXHGCMSVCLOAD(VBOXHGCMSVCFNTABLE *ptable);
 typedef VBOXHGCMSVCLOAD *PFNVBOXHGCMSVCLOAD;
 #define VBOX_HGCM_SVCLOAD_NAME "VBoxHGCMSvcLoad"
 
-#endif /* !__VBox_hgcmsvc_h__ */
+#endif

@@ -1368,5 +1368,5 @@
 #endif
 
 
-#endif /* !__VBox_cdefs_h__ */
+#endif
 

@@ -1660,5 +1660,5 @@ __END_DECLS
 
 /** @} */
 
-#endif /* ___VBox_vrdpapi_h */
+#endif
 

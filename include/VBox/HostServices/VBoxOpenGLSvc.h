@@ -1,5 +1,4 @@
 /** @file
- *
  * OpenGL:
  * Common header for host service and guest clients.
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBOGLSVC__H
-#define __VBOGLSVC__H
+#ifndef ___VBox_HostService_VBoxOpenGLSvc_h
+#define ___VBox_HostService_VBoxOpenGLSvc_h
 
 #include <VBox/types.h>
 #include <VBox/VBoxGuest.h>
@@ -194,4 +193,4 @@ typedef struct
 /** @} */
 
 
-#endif /* __VBOGLSVC__H */
+#endif

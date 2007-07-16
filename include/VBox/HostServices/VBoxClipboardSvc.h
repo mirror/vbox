@@ -1,5 +1,4 @@
 /** @file
- *
  * Shared Clipboard:
  * Common header for host service and guest clients.
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBOXCLIPBOARDSVC__H
-#define __VBOXCLIPBOARDSVC__H
+#ifndef ___VBox_HostService_VBoxClipboardSvc_h
+#define ___VBox_HostService_VBoxClipboardSvc_h
 
 #include <VBox/types.h>
 #include <VBox/VBoxGuest.h>
@@ -118,4 +117,4 @@ typedef struct _VBoxClipboardWriteData
 } VBoxClipboardWriteData;
 #pragma pack ()
 
-#endif /* __VBOXCLIPBOARDSVC__H */
+#endif

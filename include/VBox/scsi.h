@@ -389,4 +389,4 @@ static const char * const g_apszSCSICmdNames[256] =
 #define SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED         0x53
 
 
-#endif /* __SCSI_h__ */
+#endif

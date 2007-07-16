@@ -924,4 +924,4 @@ typedef struct _VBoxSFRemoveMapping
 
 /** @} */
 
-#endif /* __SHFLSVC__H */
+#endif

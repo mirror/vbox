@@ -67,5 +67,5 @@ typedef struct _REMOTEUSBCALLBACK
     DECLCALLBACKMEMBER(void, pfnCancelURB)       (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB);
 } REMOTEUSBCALLBACK;
 
-#endif /* ___VBox_vrdpusb_h */
+#endif
 

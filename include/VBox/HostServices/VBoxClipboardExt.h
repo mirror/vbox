@@ -1,5 +1,4 @@
 /** @file
- *
  * Shared Clipboard:
  * Common header for the service extension.
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBOXCLIPBOARDEXT__H
-#define __VBOXCLIPBOARDEXT__H
+#ifndef ___VBox_HostService_VBoxClipboardExt_h
+#define ___VBox_HostService_VBoxClipboardExt_h
 
 #include <VBox/types.h>
 
@@ -40,4 +39,4 @@ typedef struct _VBOXCLIPBOARDEXTPARMS
     uint32_t   cbData;
 } VBOXCLIPBOARDEXTPARMS;
 
-#endif /* __VBOXCLIPBOARDEXT__H */
+#endif

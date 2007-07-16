@@ -285,4 +285,4 @@ __END_DECLS
 
 /** @} */
 
-#endif /* __VBox_VBoxGuestLib_h__ */
+#endif

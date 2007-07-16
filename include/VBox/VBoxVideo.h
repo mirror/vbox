@@ -162,4 +162,4 @@ typedef struct _VBOXVIDEOINFOHOSTEVENTS
 } VBOXVIDEOINFOHOSTEVENTS;
 #pragma pack()
 
-#endif /* ___VBox_VBoxVideo_h */
+#endif

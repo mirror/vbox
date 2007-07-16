@@ -65,4 +65,4 @@ __BEGIN_DECLS
 
 __END_DECLS
 
-#endif /* ___VBox_VBoxDev_h */
+#endif

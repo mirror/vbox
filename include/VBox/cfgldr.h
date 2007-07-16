@@ -629,4 +629,4 @@ __END_DECLS
 
 /** @} */
 
-#endif /* ___VBox_cfgldr_h */
+#endif

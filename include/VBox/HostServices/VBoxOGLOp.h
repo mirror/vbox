@@ -1,6 +1,8 @@
 /** @file
- *
  * VirtualBox OpenGL command pack/unpack header
+ */
+
+/*
  *
  * Copyright (C) 2006-2007 innotek GmbH
  *
@@ -17,8 +19,9 @@
  * license agreement apply instead of the previous paragraph.
  *
  */
-#ifndef __VBOXOGLOP_H__
-#define __VBOXOGLOP_H__
+
+#ifndef ___VBox_HostService_VBoxOGLOp_h
+#define ___VBox_HostService_VBoxOGLOp_h
 
 #ifdef VBOX_OGL_GUEST_SIDE
 /************************************************************************************************************
@@ -1885,5 +1888,5 @@ static OPENGL_EXT OpenGLExtensions[] =
 };
 #endif /* VBOX_OGL_WITH_EXTENSION_ARRAY */
 
-#endif /* __VBOXOGLOP_H__ */
+#endif
 
