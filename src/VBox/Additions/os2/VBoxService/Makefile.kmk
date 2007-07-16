@@ -1,0 +1,45 @@
+# $Id$
+## @file
+# Makefile for the OS/2 Guest Addition Services.
+#
+
+#
+# Copyright (C) 2007 innotek GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+#
+# VBoxService.exe
+#
+PROGRAMS += VBoxService
+VBoxService_TEMPLATE      = VBOXOS2GUESTR3
+VBoxService_DEFS          = VBOXSERVICE_TIMESYNC
+VBoxService_DEFS.os2      = VBOX_HGCM VBOXSERVICE_CLIPBOARD
+VBoxService_SOURCES       = \
+	VBoxService.cpp \
+	VBoxServiceTimeSync.cpp 
+VBoxService_SOURCES.os2   = \
+	VBoxService-os2.cpp \
+	VBoxService-os2.def \
+	VBoxServiceClipboard-os2.cpp 
+#VBoxService_LDFLAGS       = -t -v
+VBoxService_LIBS          = \
+	$(VBOX_LIB_VBGL_OS2_R3) \
+	$(VBOX_LIB_IPRT_OS2_GUEST_R3)
+
+include	$(PATH_KBUILD)/footer.kmk
+
