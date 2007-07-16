@@ -21,7 +21,6 @@
 #ifndef __iprt_alloca_h__
 #define __iprt_alloca_h__
 
-
 /*
  * If there are more difficult platforms out there, we'll do OS
  * specific #ifdefs. But for now we'll just include the headers
@@ -29,15 +28,15 @@
  * When we're in kernel territory it starts getting a bit more
  * interesting of course...
  */
-#if defined(IN_RING0) && defined(__LINUX__)
+#if defined(IN_RING0) && defined(RT_OS_LINUX)
 /* ASSUMES GNU C */
 # define alloca(cb) __builtin_alloca(cb)
 #else
 # include <stdlib.h>
-# if !defined(__DARWIN__) && !defined(__FREEBSD__)
+# if !defined(RT_OS_DARWIN) && !defined(RT_OS_FREEBSD)
 #  include <malloc.h>
 # endif
-# ifdef __SOLARIS__
+# ifdef RT_OS_SOLARIS
 #  include <alloca.h>
 # endif
 #endif

@@ -598,26 +598,27 @@ endif
 #
 # Setup the global defines and includes.
 #
-## @todo PATH_CURRENT has to go, fix the places where we rely on it.
+# Note! The __SOMETHING__ #defines are deprecated as they violate the C/C++ specs.
+#
 INCS += $(PATH_ROOT)/include $(PATH_OUT)
 DEFS += VBOX
 DEFS.debug := DEBUG DEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) DEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME))
 DEFS.profile = VBOX_WITH_STATISTICS
-DEFS.x86     = __X86__
-DEFS.amd64   = __AMD64__
-DEFS.darwin  = __DARWIN__
+DEFS.x86     = RT_ARCH_X86 __X86__
+DEFS.amd64   = RT_ARCH_AMD64 __AMD64__
+DEFS.darwin  = RT_OS_DARWIN __DARWIN__
 DEFS.darwin.x86 = VBOX_WITH_HYBIRD_32BIT_KERNEL
-DEFS.freebsd = __FREEBSD__
-DEFS.l4      = __L4__ __L4ENV__ L4API_l4v2 ARCH_$(BUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
+DEFS.freebsd = RT_OS_FREEBSD __FREEBSD__
+DEFS.l4      = RT_OS_L4 __L4__ __L4ENV__ L4API_l4v2 ARCH_$(BUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
 ifeq ($(L4_API),l4v2onv4)
  DEFS.l4    += L4API_l4v2onv4 STATIC_L4_INLINE
 endif
-DEFS.linux   = __LINUX__ _FILE_OFFSET_BITS=64
-DEFS.netbsd  = __NETBSD__
-DEFS.openbsd = __OPENBSD__
-DEFS.os2     = __OS2__
-DEFS.solaris = __SOLARIS__
-DEFS.win     = __WIN__
+DEFS.linux   = RT_OS_LINUX __LINUX__ _FILE_OFFSET_BITS=64
+DEFS.netbsd  = RT_OS_NETBSD
+DEFS.openbsd = RT_OS_OPENBSD
+DEFS.os2     = RT_OS_OS2 __OS2__
+DEFS.solaris = RT_OS_SOLARIS
+DEFS.win     = RT_OS_WINDOWS __WIN__
 DEFS.win.x86 = __WIN32__
 DEFS.win.amd64 = __WIN64__
 # optional defines (use environment or make commandline)
@@ -2207,12 +2208,12 @@ TEMPLATE_VBOXW32GUESTR0_ASFLAGS             = -f win32 -DASM_FORMAT_PE -D__YASM_
 TEMPLATE_VBOXW32GUESTR0_SYSSUFF             = .sys
 ifdef VBOX_USE_VCC80
  TEMPLATE_VBOXW32GUESTR0_TOOL               = VCC80X86
- TEMPLATE_VBOXW32GUESTR0_CXXFLAGS           = -Zi -Zl -GR- -GS- -EHs-c- -GF- -Gz -U__LINUX__ -U__OS2__ -W3 -wd4996 -Zc:wchar_t-
+ TEMPLATE_VBOXW32GUESTR0_CXXFLAGS           = -Zi -Zl -GR- -GS- -EHs-c- -GF- -Gz -U__LINUX__ -W3 -wd4996 -Zc:wchar_t-
  TEMPLATE_VBOXW32GUESTR0_CXXFLAGS.debug     = -GR- -EHs-c- -Zl
  TEMPLATE_VBOXW32GUESTR0_CXXFLAGS.release   = -O2 -Oy-
 else
  TEMPLATE_VBOXW32GUESTR0_TOOL               = VCC70
- TEMPLATE_VBOXW32GUESTR0_CXXFLAGS           = -Zi -Zl -GR- -GX- -GF- -Gz -U__LINUX__ -U__OS2__ -W3
+ TEMPLATE_VBOXW32GUESTR0_CXXFLAGS           = -Zi -Zl -GR- -GX- -GF- -Gz -U__LINUX__ -W3
  TEMPLATE_VBOXW32GUESTR0_CXXFLAGS.debug     = -GR- -GX- -Zl
  TEMPLATE_VBOXW32GUESTR0_CXXFLAGS.release   = -Ogitb2 -Oy-
 endif
@@ -2452,8 +2453,8 @@ $(VBOX_VERSION_HEADER): $(VBOX_VERSION_STAMP)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(RM) -f $@ $@.tmp
-	$(QUIET)$(APPEND) $@.tmp "#ifndef __version_generated_h__"
-	$(QUIET)$(APPEND) $@.tmp "#define __version_generated_h__"
+	$(QUIET)$(APPEND) $@.tmp "#ifndef ___version_generated_h___"
+	$(QUIET)$(APPEND) $@.tmp "#define ___version_generated_h___"
 	$(QUIET)$(APPEND) $@.tmp ""
 	$(QUIET)$(APPEND) $@.tmp "#define VBOX_VERSION_MAJOR $(VBOX_VERSION_MAJOR)"
 	$(QUIET)$(APPEND) $@.tmp "#define VBOX_VERSION_MINOR $(VBOX_VERSION_MINOR)"
