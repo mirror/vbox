@@ -62,7 +62,6 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 
-#include "vl_vbox.h"
 #include "Builtins.h"
 
 /*******************************************************************************
@@ -216,7 +215,7 @@ static int vmdk_probe(const uint8_t *buf, int buf_size, const char *filename)
 
     if (buf_size < 4)
         return 0;
-    magic = be32_to_cpu(*(uint32_t *)buf);
+    magic = RT_BE2H_U32(*(uint32_t *)buf);
     if (magic == VMDK3_MAGIC ||
         magic == VMDK4_MAGIC)
         return 100;
@@ -260,7 +259,7 @@ static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
     if (VBOX_FAILURE(rc))
         goto fail;
 
-    magic = be32_to_cpu(magic);
+    magic = RT_BE2H_U32(magic);
     if (magic == VMDK3_MAGIC)
     {
         VMDK3Header header;
@@ -268,18 +267,18 @@ static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
         AssertRC(rc);
         if (VBOX_FAILURE(rc))
             goto fail;
-        s->cluster_sectors = le32_to_cpu(header.granularity);
+        s->cluster_sectors = RT_LE2H_U32(header.granularity);
         s->l2_size = 1 << 9;
         s->l1_size = 1 << 6;
-        s->total_sectors = le32_to_cpu(header.disk_sectors);
-        s->l1_table_offset = le32_to_cpu(header.l1dir_offset) << 9;
+        s->total_sectors = RT_LE2H_U32(header.disk_sectors);
+        s->l1_table_offset = RT_LE2H_U32(header.l1dir_offset) << 9;
         s->l1_backup_table_offset = 0;
         s->l1_entry_sectors = s->l2_size * s->cluster_sectors;
 
         /* fill in the geometry structure */
-        pDisk->Geometry.cCylinders = le32_to_cpu(header.cylinders);
-        pDisk->Geometry.cHeads = le32_to_cpu(header.heads);
-        pDisk->Geometry.cSectors = le32_to_cpu(header.sectors_per_track);
+        pDisk->Geometry.cCylinders = RT_LE2H_U32(header.cylinders);
+        pDisk->Geometry.cHeads = RT_LE2H_U32(header.heads);
+        pDisk->Geometry.cSectors = RT_LE2H_U32(header.sectors_per_track);
         pDisk->Geometry.cbSector = VMDK_GEOMETRY_SECTOR_SIZE;
     }
     else if (magic == VMDK4_MAGIC)
@@ -290,9 +289,9 @@ static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
         AssertRC(rc);
         if (VBOX_FAILURE(rc))
             goto fail;
-        s->total_sectors = le64_to_cpu(header.capacity);
-        s->cluster_sectors = le64_to_cpu(header.granularity);
-        s->l2_size = le32_to_cpu(header.num_gtes_per_gte);
+        s->total_sectors = RT_LE2H_U64(header.capacity);
+        s->cluster_sectors = RT_LE2H_U64(header.granularity);
+        s->l2_size = RT_LE2H_U32(header.num_gtes_per_gte);
         s->l1_entry_sectors = s->l2_size * s->cluster_sectors;
         if (s->l1_entry_sectors <= 0)
         {
@@ -301,14 +300,14 @@ static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
         }
         s->l1_size = (s->total_sectors + s->l1_entry_sectors - 1)
             / s->l1_entry_sectors;
-        s->l1_table_offset = le64_to_cpu(header.rgd_offset) << 9;
-        s->l1_backup_table_offset = le64_to_cpu(header.gd_offset) << 9;
+        s->l1_table_offset = RT_LE2H_U64(header.rgd_offset) << 9;
+        s->l1_backup_table_offset = RT_LE2H_U64(header.gd_offset) << 9;
 
         /* fill in the geometry structure */
         /// @todo we should read these properties from the DDB section
         //  of the Disk DescriptorFile. So, the below values are just a
         //  quick hack.
-        pDisk->Geometry.cCylinders = RT_MIN((le64_to_cpu(header.capacity) /
+        pDisk->Geometry.cCylinders = RT_MIN((RT_LE2H_U64(header.capacity) /
                                       (16 * 63)), 16383);
         pDisk->Geometry.cHeads = 16;
         pDisk->Geometry.cSectors = 63;
@@ -336,7 +335,7 @@ static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
     if (VBOX_FAILURE(rc))
         goto fail;
     for(i = 0; i < s->l1_size; i++) {
-        le32_to_cpus(&s->l1_table[i]);
+        s->l1_table[i] = RT_LE2H_U32(s->l1_table[i]);
     }
 
     if (s->l1_backup_table_offset) {
@@ -355,7 +354,7 @@ static int vmdk_open(PVMDKDISK pDisk, const char *filename, bool fReadOnly)
         if (VBOX_FAILURE(rc))
             goto fail;
         for(i = 0; i < s->l1_size; i++) {
-            le32_to_cpus(&s->l1_backup_table[i]);
+            s->l1_backup_table[i] = RT_LE2H_U32(s->l1_backup_table[i]);
         }
     }
 
@@ -429,7 +428,7 @@ static uint64_t get_cluster_offset(BDRVVmdkState *s,
     s->l2_cache_counts[min_index] = 1;
  found:
     l2_index = ((offset >> 9) / s->cluster_sectors) % s->l2_size;
-    cluster_offset = le32_to_cpu(l2_table[l2_index]);
+    cluster_offset = RT_LE2H_U32(l2_table[l2_index]);
     if (!cluster_offset) {
         if (!allocate)
             return 0;
@@ -443,7 +442,7 @@ static uint64_t get_cluster_offset(BDRVVmdkState *s,
             return 0;
         cluster_offset >>= 9;
         /* update L2 table */
-        tmp = cpu_to_le32(cluster_offset);
+        tmp = RT_H2LE_U32(cluster_offset);
         l2_table[l2_index] = tmp;
         rc = RTFileSeek(s->File, ((int64_t)l2_offset * VMDK_GEOMETRY_SECTOR_SIZE) + (l2_index * sizeof(tmp)), RTFILE_SEEK_BEGIN, NULL);
         AssertRC(rc);
