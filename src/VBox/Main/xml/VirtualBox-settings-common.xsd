@@ -543,6 +543,34 @@
   </xsd:sequence>
 </xsd:complexType>
 
+<xsd:complexType name="TLptPort">
+  <xsd:attribute name="slot" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedInt">
+        <xsd:minInclusive value="0"/>
+        <xsd:maxExclusive value="2"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="IRQ" type="xsd:unsignedInt" default="4"/>
+  <xsd:attribute name="IOBase" type="xsd:unsignedInt" default="888"/>
+  <xsd:attribute name="DevicePath" type="TLocalFile"/>
+</xsd:complexType>
+
+<xsd:complexType name="TLpt">
+  <xsd:sequence>
+    <xsd:element name="Port" minOccurs="0" maxOccurs="unbounded">
+      <xsd:complexType>
+        <xsd:complexContent>
+          <xsd:extension base="TLptPort">
+          </xsd:extension>
+        </xsd:complexContent>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:sequence>
+</xsd:complexType>
+
 <xsd:complexType name="TSharedFolder">
   <xsd:attribute name="name" type="TNonEmptyString" use="required"/>
   <xsd:attribute name="hostPath" type="TLocalFile" use="required"/>
@@ -582,6 +610,12 @@
     </xsd:element>
     <xsd:element name="Uart" type="TUart" minOccurs="0">
       <xsd:unique name="THardware-Uart-Port">
+        <xsd:selector xpath="vb:Port"/>
+        <xsd:field xpath="@slot"/>
+      </xsd:unique>
+    </xsd:element>
+    <xsd:element name="Lpt" type="TLpt" minOccurs="0">
+      <xsd:unique name="THardware-Lpt-Port">
         <xsd:selector xpath="vb:Port"/>
         <xsd:field xpath="@slot"/>
       </xsd:unique>

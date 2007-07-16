@@ -1846,12 +1846,12 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     /// @todo (r=dmik) is it legal to attach USB devices when the machine is
     //  Paused, Starting, Saving, Stopping, etc? if not, we should make a
     //  stricter check (mMachineState != MachineState_Running).
-    /* bird: It is not permitted to attach or detach while the VM is saving, is restoring 
+    /* bird: It is not permitted to attach or detach while the VM is saving, is restoring
      * or has stopped - definintly not.
      *
-     * Attaching while starting, well, if you don't create any deadlock it should work... 
-     * Paused should work I guess, but we shouldn't push our luck if we're pausing because an 
-     * runtime error condition was raised (which is one of the reasons there better be a separate  
+     * Attaching while starting, well, if you don't create any deadlock it should work...
+     * Paused should work I guess, but we shouldn't push our luck if we're pausing because an
+     * runtime error condition was raised (which is one of the reasons there better be a separate
      * state for that in the VMM).
      */
     if (mMachineState < MachineState_Running)
@@ -1910,8 +1910,8 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             Guid (aId).raw());
 
 #ifdef __DARWIN__
-    /* Notify the USB Proxy that we're about to detach the device. Since 
-     * we don't dare do IPC when holding the console lock, so we'll have 
+    /* Notify the USB Proxy that we're about to detach the device. Since
+     * we don't dare do IPC when holding the console lock, so we'll have
      * to revalidate the device when we get back. */
     alock.leave();
     HRESULT rc2 = mControl->DetachUSBDevice (aId, false /* aDone */);
@@ -1924,7 +1924,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             break;
     if (it == mUSBDevices.end())
         return S_OK;
-#endif 
+#endif
 
     /* First, request VMM to detach the device */
     HRESULT rc = detachUSBDevice (it);
@@ -3053,6 +3053,32 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
  *  @note Locks this object for writing.
  */
 HRESULT Console::onSerialPortChange(ISerialPort *serialPort)
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    /* Don't do anything if the VM isn't running */
+    if (!mpVM)
+        return S_OK;
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    LogFlowThisFunc (("Leaving rc=%#x\n", S_OK));
+    return S_OK;
+}
+
+/**
+ *  Called by IInternalSessionControl::OnParallelPortChange().
+ *
+ *  @note Locks this object for writing.
+ */
+HRESULT Console::onParallelPortChange(IParallelPort *parallelPort)
 {
     LogFlowThisFunc (("\n"));
 
@@ -5431,6 +5457,39 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                        RC_CHECK();
         rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(pipe));                RC_CHECK();
         rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);                      RC_CHECK();
+    }
+
+    /*
+     * Parallel (LPT) Ports
+     */
+    rc = CFGMR3InsertNode(pDevices, "parallel", &pDev);                             RC_CHECK();
+    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::ParallelPortCount; ulInstance++)
+    {
+        ComPtr<IParallelPort> parallelPort;
+        hrc = pMachine->GetParallelPort (ulInstance, parallelPort.asOutParam());    H();
+        BOOL fEnabled = FALSE;
+        if (parallelPort)
+            hrc = parallelPort->COMGETTER(Enabled)(&fEnabled);                      H();
+        if (!fEnabled)
+            continue;
+
+        char szInstance[4]; Assert(ulInstance <= 999);
+        RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
+
+        rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
+        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
+
+        ULONG uIRQ, uIOBase;
+        Bstr  DevicePath;
+        hrc = parallelPort->COMGETTER(IRQ)(&uIRQ);                                  H();
+        hrc = parallelPort->COMGETTER(IOBase)(&uIOBase);                            H();
+        hrc = parallelPort->COMGETTER(DevicePath)(DevicePath.asOutParam());         H();
+        rc = CFGMR3InsertInteger(pCfg,   "IRQ", uIRQ);                              RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,   "IOBase", uIOBase);                        RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                         RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0,  "Driver", "HostParallel");                 RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);                RC_CHECK();
+        rc = CFGMR3InsertString(pLunL1,  "DevicePath", Utf8Str(DevicePath));        RC_CHECK();
     }
 
     /*

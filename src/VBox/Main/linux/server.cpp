@@ -97,6 +97,7 @@
 #include <GuestOSTypeImpl.h>
 #include <NetworkAdapterImpl.h>
 #include <SerialPortImpl.h>
+#include <ParallelPortImpl.h>
 #include <USBControllerImpl.h>
 #include <USBDeviceImpl.h>
 #include <AudioAdapterImpl.h>
@@ -154,6 +155,8 @@ NS_DECL_CLASSINFO(NetworkAdapter)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(NetworkAdapter, INetworkAdapter)
 NS_DECL_CLASSINFO(SerialPort)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SerialPort, ISerialPort)
+NS_DECL_CLASSINFO(ParallelPort)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ParallelPort, IParallelPort)
 NS_DECL_CLASSINFO(USBController)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBController, IUSBController)
 NS_DECL_CLASSINFO(USBDeviceFilter)
