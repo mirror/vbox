@@ -44,7 +44,7 @@ typedef struct RTSPINLOCKTMP
     unsigned long   flFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
 
-# elif defined(__WIN__)
+# elif defined(RT_OS_WINDOWS)
     /** The saved [R|E]FLAGS. */
     RTUINTREG       uFlags;
     /** The KIRQL. */
@@ -56,12 +56,12 @@ typedef struct RTSPINLOCKTMP
     unsigned long   flFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
 
-# elif defined(__DARWIN__)
+# elif defined(RT_OS_DARWIN)
     /** The saved [R|E]FLAGS. */
     RTUINTREG       uFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
 
-# elif defined(__OS2__) || defined(__FREEBSD__)
+# elif defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
     /** The saved [R|E]FLAGS. (dummy) */
     RTUINTREG       uFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }

@@ -63,6 +63,8 @@
 #ifdef  __DOXYGEN__
 #define __AMD64__
 #define __X86__
+#define RT_ARCH_AMD64
+#define RT_ARCH_X86
 #define IN_RING0
 #define IN_RING3
 #define IN_GC
@@ -79,23 +81,49 @@
 #define GC_ARCH_BITS
 #endif /* __DOXYGEN__ */
 
+/** @def RT_ARCH_X86
+ * Indicates that we're compiling for the X86 architecture.
+ */
+
+/** @def RT_ARCH_AMD64
+ * Indicates that we're compiling for the AMD64 architecture.
+ */
+#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
+# if defined(__amd64__) || defined(__x86_64__) || defined(_M_X64) || defined(__AMD64__)
+#  define RT_ARCH_AMD64
+# elif defined(__i386__) || defined(_M_IX86) || defined(__X86__)
+#  define RT_ARCH_X86
+# else /* PORTME: append test for new archs. */
+#  error "Check what predefined stuff your compiler uses to indicate architecture."
+# endif
+#elif defined(RT_ARCH_X86) && defined(RT_ARCH_AMD64) /* PORTME: append new archs. */
+# error "Both RT_ARCH_X86 and RT_ARCH_AMD64 cannot be defined at the same time!"
+#endif
+
+
 /** @def __X86__
  * Indicates that we're compiling for the X86 architecture.
+ * @deprecated
  */
 
 /** @def __AMD64__
  * Indicates that we're compiling for the AMD64 architecture.
+ * @deprecated
  */
 #if !defined(__X86__) && !defined(__AMD64__)
-# if defined(__amd64__) || defined(__x86_64__) || defined(_M_X64)
+# if defined(RT_ARCH_AMD64)
 #  define __AMD64__
-# elif defined(__i386__) || defined(_M_IX86)
+# elif defined(RT_ARCH_X86)
 #  define __X86__
 # else
 #  error "Check what predefined stuff your compiler uses to indicate architecture."
 # endif
 #elif defined(__X86__) && defined(__AMD64__)
 # error "Both __X86__ and __AMD64__ cannot be defined at the same time!"
+#elif defined(__X86__) && !defined(RT_ARCH_X86)
+# error "Both __X86__ without RT_ARCH_X86!"
+#elif defined(__AMD64__) && !defined(RT_ARCH_AMD64)
+# error "Both __AMD64__ without RT_ARCH_AMD64!"
 #endif
 
 /** @def IN_RING0
@@ -126,7 +154,7 @@
  * Defines the bit count of the current context.
  */
 #ifndef ARCH_BITS
-# if defined(__AMD64__)
+# if defined(RT_ARCH_AMD64)
 #  define ARCH_BITS 64
 # else
 #  define ARCH_BITS 32
@@ -387,7 +415,7 @@
  */
 #ifdef _MSC_VER
 # define RTCALL     __cdecl
-#elif defined(__GNUC__) && defined(IN_RING0) && !(defined(__OS2__) || defined(__AMD64__)) /* the latter is kernel/gcc */
+#elif defined(__GNUC__) && defined(IN_RING0) && !(defined(RT_OS_OS2) || defined(RT_ARCH_AMD64)) /* the latter is kernel/gcc */
 # define RTCALL     __attribute__((cdecl,regparm(0)))
 #else
 # define RTCALL
@@ -397,7 +425,7 @@
  * How to declare an exported function.
  * @param   type    The return type of the function declaration.
  */
-#if defined(_MSC_VER) || defined(__OS2__)
+#if defined(_MSC_VER) || defined(RT_OS_OS2)
 # define DECLEXPORT(type)       __declspec(dllexport) type
 #else
 # ifdef VBOX_HAVE_VISIBILITY_HIDDEN
@@ -411,7 +439,7 @@
  * How to declare an imported function.
  * @param   type    The return type of the function declaration.
  */
-#if defined(_MSC_VER) || (defined(__OS2__) && !defined(__IBMC__) && !defined(__IBMCPP__))
+#if defined(_MSC_VER) || (defined(RT_OS_OS2) && !defined(__IBMC__) && !defined(__IBMCPP__))
 # define DECLIMPORT(type)       __declspec(dllimport) type
 #else
 # define DECLIMPORT(type)       type
@@ -799,7 +827,7 @@
  */
 #define RT_ELEMENTS(aArray)         ( sizeof(aArray) / sizeof((aArray)[0]) )
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 /* Undefine RT_MAX since there is an unfortunate clash with the max 
    resource type define in os2.h. */
 # undef RT_MAX
@@ -1004,7 +1032,7 @@
  * namespace pollution. Kill off some of the worse ones unless we're
  * compiling kernel code.
  */
-#if defined(__DARWIN__) \
+#if defined(RT_OS_DARWIN) \
   && !defined(KERNEL) \
   && !defined(RT_NO_BSD_PARAM_H_UNDEFING) \
   && ( defined(_SYS_PARAM_H_) || defined(_I386_PARAM_H_) )
@@ -1128,9 +1156,9 @@
  * Pointer validation macro.
  * @param   ptr
  */
-#if defined(__AMD64__)
+#if defined(RT_ARCH_AMD64)
 # ifdef IN_RING3
-#  if defined(__DARWIN__) /* first 4GB is reserved for legacy kernel. */
+#  if defined(RT_OS_DARWIN) /* first 4GB is reserved for legacy kernel. */
 #   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) >= _4G \
                              && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
 #  else
@@ -1142,7 +1170,7 @@
                              && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
                                  || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
 # endif /* !IN_RING3 */
-#elif defined(__X86__)
+#elif defined(RT_ARCH_X86)
 # define VALID_PTR(ptr)     ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 #else
 # error "Architecture identifier missing / not implemented."

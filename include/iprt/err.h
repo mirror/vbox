@@ -205,7 +205,7 @@ RTDECL(PCRTSTATUSMSG) RTErrGet(int rc);
  */
 #define RTErrGetFull(rc)        (RTErrGet(rc)->pszMsgFull)
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 /**
  * Windows error code message.
  */
@@ -230,7 +230,7 @@ typedef const RTWINERRMSG *PCRTWINERRMSG;
  * @param   rc      The status code.
  */
 RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 #endif /* IN_RING3 */
 

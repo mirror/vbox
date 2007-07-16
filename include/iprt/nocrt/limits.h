@@ -45,7 +45,7 @@
 #define INT_MAX         0x7fffffff
 #define INT_MIN         (-0x7fffffff - 1)
 
-#if defined(__X86__) || defined(__WIN__)
+#if defined(__X86__) || defined(RT_OS_WINDOWS)
 # define LONG_BIT       32
 # define ULONG_MAX      0xffffffffU
 # define LONG_MAX       0x7fffffff

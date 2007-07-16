@@ -809,9 +809,9 @@ __END_DECLS
 /*
  * Include inlined implementations.
  */
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # include <iprt/nocrt/amd64/math.h>
-#elif defined(__X86__)
+#elif defined(RT_ARCH_X86)
 # include <iprt/nocrt/x86/math.h>
 #endif
 

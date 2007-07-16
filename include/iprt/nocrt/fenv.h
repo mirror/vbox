@@ -22,9 +22,9 @@
 #define ___iprt_nocrt_fenv_h
 
 #include <iprt/cdefs.h>
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # include <iprt/nocrt/amd64/fenv.h>
-#elif defined(__X86__)
+#elif defined(RT_ARCH_X86)
 # include <iprt/nocrt/x86/fenv.h>
 #else
 # error "IPRT: no fenv.h available for this platform, or the platform define is missing!"

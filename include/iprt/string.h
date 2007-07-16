@@ -27,7 +27,7 @@
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(__LINUX__) && defined(__KERNEL__)
 # include <linux/string.h>
-#elif defined(__FREEBSD__) && defined(_KERNEL)
+#elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
   /*
    * Kludge for the FreeBSD kernel:
    *  Some of the string.h stuff clashes with sys/libkern.h, so just wrap
@@ -45,7 +45,7 @@
  * Supply prototypes for standard string functions provided by
  * IPRT instead of the operating environment.
  */
-#if defined(__DARWIN__) && defined(KERNEL)
+#if defined(RT_OS_DARWIN) && defined(KERNEL)
 __BEGIN_DECLS
 void *memchr(const void *pv, int ch, size_t cb);
 char *strpbrk(const char *pszStr, const char *pszChars);

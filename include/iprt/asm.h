@@ -75,7 +75,7 @@
 #  pragma intrinsic(_InterlockedExchange)
 #  pragma intrinsic(_InterlockedCompareExchange)
 #  pragma intrinsic(_InterlockedCompareExchange64)
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
 #   pragma intrinsic(__stosq)
 #   pragma intrinsic(__readcr8)
 #   pragma intrinsic(__writecr8)
@@ -102,7 +102,7 @@
  * @remark  At the present time it's unconfirmed whether or not Microsoft skipped
  *          inline assmebly in their AMD64 compiler.
  */
-#if defined(_MSC_VER) && defined(__AMD64__)
+#if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
 # define RT_INLINE_ASM_EXTERNAL 1
 #else
 # define RT_INLINE_ASM_EXTERNAL 0
@@ -173,7 +173,7 @@ DECLINLINE(void) ASMGetIDTR(PRTIDTR pIdtr)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pIdtr]
         sidt    [rax]
 #  else
@@ -200,7 +200,7 @@ DECLINLINE(void) ASMSetIDTR(const RTIDTR *pIdtr)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pIdtr]
         lidt    [rax]
 #  else
@@ -227,7 +227,7 @@ DECLINLINE(void) ASMGetGDTR(PRTGDTR pGdtr)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pGdtr]
         sgdt    [rax]
 #  else
@@ -418,7 +418,7 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
 {
     RTCCUINTREG uFlags;
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__("pushfq\n\t"
                          "popq  %0\n\t"
                          : "=m" (uFlags));
@@ -430,7 +430,7 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         pushfq
         pop  [uFlags]
 #  else
@@ -454,7 +454,7 @@ DECLASM(void) ASMSetFlags(RTCCUINTREG uFlags);
 DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__("pushq %0\n\t"
                          "popfq\n\t"
                          : : "m" (uFlags));
@@ -466,7 +466,7 @@ DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         push    [uFlags]
         popfq
 #  else
@@ -525,7 +525,7 @@ DECLASM(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pvECX
 DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     RTCCUINTREG uRAX, uRBX, uRCX, uRDX;
     __asm__ ("cpuid\n\t"
              : "=a" (uRAX),
@@ -613,14 +613,14 @@ DECLINLINE(uint32_t) ASMCpuId_EDX(uint32_t uOperator)
 {
     RTCCUINTREG xDX;
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     RTCCUINTREG uSpill;
     __asm__ ("cpuid"
              : "=a" (uSpill),
                "=d" (xDX)
              : "0" (uOperator)
              : "rbx", "rcx");
-#  elif (defined(PIC) || defined(__DARWIN__)) && defined(__i386__) /* darwin: PIC by default. */
+#  elif (defined(PIC) || defined(RT_OS_DARWIN)) && defined(__i386__) /* darwin: PIC by default. */
     __asm__ ("push  %%ebx\n\t"
              "cpuid\n\t"
              "pop   %%ebx\n\t"
@@ -669,14 +669,14 @@ DECLINLINE(uint32_t) ASMCpuId_ECX(uint32_t uOperator)
 {
     RTCCUINTREG xCX;
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     RTCCUINTREG uSpill;
     __asm__ ("cpuid"
              : "=a" (uSpill),
                "=c" (xCX)
              : "0" (uOperator)
              : "rbx", "rdx");
-#  elif (defined(PIC) || defined(__DARWIN__)) && defined(__i386__) /* darwin: 4.0.1 compiler option / bug? */
+#  elif (defined(PIC) || defined(RT_OS_DARWIN)) && defined(__i386__) /* darwin: 4.0.1 compiler option / bug? */
     __asm__ ("push  %%ebx\n\t"
              "cpuid\n\t"
              "pop   %%ebx\n\t"
@@ -720,9 +720,9 @@ DECLINLINE(uint32_t) ASMCpuId_ECX(uint32_t uOperator)
  */
 DECLINLINE(bool) ASMHasCpuId(void)
 {
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     return true; /* ASSUME that all amd64 compatible CPUs have cpuid. */
-#else /* !__AMD64__ */
+#else /* !RT_ARCH_AMD64 */
     bool        fRet = false;
 # if RT_INLINE_ASM_GNU_STYLE
     uint32_t    u1;
@@ -758,7 +758,7 @@ DECLINLINE(bool) ASMHasCpuId(void)
     }
 # endif
     return fRet;
-#endif /* !__AMD64__ */
+#endif /* !RT_ARCH_AMD64 */
 }
 
 
@@ -774,14 +774,14 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
 {
     RTCCUINTREG xBX;
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     RTCCUINTREG uSpill;
     __asm__ ("cpuid"
              : "=a" (uSpill),
                "=b" (xBX)
              : "0" (1)
              : "rcx", "rdx");
-#  elif (defined(PIC) || defined(__DARWIN__)) && defined(__i386__)
+#  elif (defined(PIC) || defined(RT_OS_DARWIN)) && defined(__i386__)
     RTCCUINTREG uSpill;
     __asm__ ("mov   %%ebx,%1\n\t"
              "cpuid\n\t"
@@ -832,7 +832,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR0(void)
     uCR0 = __readcr0();
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ ("movq  %%cr0, %0\t\n" : "=r" (uCR0));
 #  else
     __asm__ ("movl  %%cr0, %0\t\n" : "=r" (uCR0));
@@ -840,7 +840,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR0(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, cr0
         mov     [uCR0], rax
 #  else
@@ -867,7 +867,7 @@ DECLINLINE(void) ASMSetCR0(RTCCUINTREG uCR0)
     __writecr0(uCR0);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__("movq %0, %%cr0\n\t" :: "r" (uCR0));
 #  else
     __asm__ __volatile__("movl %0, %%cr0\n\t" :: "r" (uCR0));
@@ -875,7 +875,7 @@ DECLINLINE(void) ASMSetCR0(RTCCUINTREG uCR0)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [uCR0]
         mov     cr0, rax
 #  else
@@ -902,7 +902,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR2(void)
     uCR2 = __readcr2();
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ ("movq  %%cr2, %0\t\n" : "=r" (uCR2));
 #  else
     __asm__ ("movl  %%cr2, %0\t\n" : "=r" (uCR2));
@@ -910,7 +910,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR2(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, cr2
         mov     [uCR2], rax
 #  else
@@ -934,7 +934,7 @@ DECLASM(void) ASMSetCR2(RTCCUINTREG uCR2);
 DECLINLINE(void) ASMSetCR2(RTCCUINTREG uCR2)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__("movq %0, %%cr2\n\t" :: "r" (uCR2));
 #  else
     __asm__ __volatile__("movl %0, %%cr2\n\t" :: "r" (uCR2));
@@ -942,7 +942,7 @@ DECLINLINE(void) ASMSetCR2(RTCCUINTREG uCR2)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [uCR2]
         mov     cr2, rax
 #  else
@@ -969,7 +969,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR3(void)
     uCR3 = __readcr3();
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ ("movq  %%cr3, %0\t\n" : "=r" (uCR3));
 #  else
     __asm__ ("movl  %%cr3, %0\t\n" : "=r" (uCR3));
@@ -977,7 +977,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR3(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, cr3
         mov     [uCR3], rax
 #  else
@@ -1005,7 +1005,7 @@ DECLINLINE(void) ASMSetCR3(RTCCUINTREG uCR3)
     __writecr3(uCR3);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__ ("movq %0, %%cr3\n\t" : : "r" (uCR3));
 #  else
     __asm__ __volatile__ ("movl %0, %%cr3\n\t" : : "r" (uCR3));
@@ -1013,7 +1013,7 @@ DECLINLINE(void) ASMSetCR3(RTCCUINTREG uCR3)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [uCR3]
         mov     cr3, rax
 #  else
@@ -1039,7 +1039,7 @@ DECLINLINE(void) ASMReloadCR3(void)
 
 # elif RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG u;
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__ ("movq %%cr3, %0\n\t"
                           "movq %0, %%cr3\n\t"
                           : "=r" (u));
@@ -1051,7 +1051,7 @@ DECLINLINE(void) ASMReloadCR3(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, cr3
         mov     cr3, rax
 #  else
@@ -1078,7 +1078,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR4(void)
     uCR4 = __readcr4();
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ ("movq  %%cr4, %0\t\n" : "=r" (uCR4));
 #  else
     __asm__ ("movl  %%cr4, %0\t\n" : "=r" (uCR4));
@@ -1086,7 +1086,7 @@ DECLINLINE(RTCCUINTREG) ASMGetCR4(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, cr4
         mov     [uCR4], rax
 #  else
@@ -1119,7 +1119,7 @@ DECLINLINE(void) ASMSetCR4(RTCCUINTREG uCR4)
     __writecr4(uCR4);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__ ("movq %0, %%cr4\n\t" : : "r" (uCR4));
 #  else
     __asm__ __volatile__ ("movl %0, %%cr4\n\t" : : "r" (uCR4));
@@ -1127,7 +1127,7 @@ DECLINLINE(void) ASMSetCR4(RTCCUINTREG uCR4)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [uCR4]
         mov     cr4, rax
 #  else
@@ -1152,7 +1152,7 @@ DECLASM(RTCCUINTREG) ASMGetCR8(void);
 #else
 DECLINLINE(RTCCUINTREG) ASMGetCR8(void)
 {
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
     RTCCUINTREG uCR8;
 #  if RT_INLINE_ASM_USES_INTRIN
     uCR8 = __readcr8();
@@ -1167,9 +1167,9 @@ DECLINLINE(RTCCUINTREG) ASMGetCR8(void)
     }
 #  endif
     return uCR8;
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
     return 0;
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
 }
 #endif
 
@@ -1222,7 +1222,7 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
 {
     RTCCUINTREG xFlags;
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ __volatile__("pushfq\n\t"
                          "cli\n\t"
                          "popq  %0\n\t"
@@ -1233,7 +1233,7 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
                          "popl  %0\n\t"
                          : "=m" (xFlags));
 #  endif
-# elif RT_INLINE_ASM_USES_INTRIN && !defined(__X86__)
+# elif RT_INLINE_ASM_USES_INTRIN && !defined(RT_ARCH_X86)
     xFlags = ASMGetFlags();
     _disable();
 # else
@@ -1403,7 +1403,7 @@ DECLINLINE(RTCCUINTREG) ASMGetDR7(void)
 {
     RTCCUINTREG uDR7;
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ ("movq   %%dr7, %0\n\t" : "=r" (uDR7));
 #  else
     __asm__ ("movl   %%dr7, %0\n\t" : "=r" (uDR7));
@@ -1411,7 +1411,7 @@ DECLINLINE(RTCCUINTREG) ASMGetDR7(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, dr7
         mov     [uDR7], rax
 #  else
@@ -1437,7 +1437,7 @@ DECLINLINE(RTCCUINTREG) ASMGetDR6(void)
 {
     RTCCUINTREG uDR6;
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ ("movq   %%dr6, %0\n\t" : "=r" (uDR6));
 #  else
     __asm__ ("movl   %%dr6, %0\n\t" : "=r" (uDR6));
@@ -1445,7 +1445,7 @@ DECLINLINE(RTCCUINTREG) ASMGetDR6(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, dr6
         mov     [uDR6], rax
 #  else
@@ -1472,7 +1472,7 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
     RTCCUINTREG uDR6;
 # if RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG uNewValue =  0xffff0ff0;  /* 31-16 and 4-11 are 1's, 12 and 63-31 are zero. */
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     __asm__ ("movq   %%dr6, %0\n\t"
              "movq   %1, %%dr6\n\t"
              : "=r" (uDR6)
@@ -1486,7 +1486,7 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, dr6
         mov     [uDR6], rax
         mov     rcx, rax
@@ -1741,7 +1741,7 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t *pu8, uint8_t u8)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu8]
         mov     al, [u8]
         xchg    [rdx], al
@@ -1809,7 +1809,7 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t *pu16, uint16_t u16)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu16]
         mov     ax, [u16]
         xchg    [rdx], ax
@@ -1864,7 +1864,7 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t *pu32, uint32_t u32)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         mov     eax, u32
         xchg    [rdx], eax
@@ -1907,7 +1907,7 @@ DECLASM(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64);
 #else
 DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
 {
-# if defined(__AMD64__)
+# if defined(RT_ARCH_AMD64)
 #  if RT_INLINE_ASM_USES_INTRIN
    u64 = _InterlockedExchange64((__int64 *)pu64, u64);
 
@@ -1925,9 +1925,9 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
         mov     [u64], rax
     }
 #  endif
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(__DARWIN__) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
     uint32_t u32 = (uint32_t)u64;
     __asm__ __volatile__(/*"xchgl %%esi, %5\n\t"*/
                          "xchgl %%ebx, %3\n\t"
@@ -1967,7 +1967,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
         mov     dword ptr [u64 + 4], edx
     }
 #  endif
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
     return u64;
 }
 #endif
@@ -1986,7 +1986,7 @@ DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t *pi64, int64_t i64)
 }
 
 
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 /**
  * Atomically Exchange an unsigned 128-bit value.
  *
@@ -2044,7 +2044,7 @@ DECLINLINE(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u12
 #endif
 }
 # endif
-#endif /* __AMD64__ */
+#endif /* RT_ARCH_AMD64 */
 
 
 /**
@@ -2061,7 +2061,7 @@ DECLASM(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64);
 DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
 {
     uint64_t u64;
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
 #  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("movq %1, %0\n\t"
                          : "=r" (u64)
@@ -2074,9 +2074,9 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
         mov     [u64], rax
     }
 #  endif
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(__DARWIN__) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
     uint32_t u32EBX = 0;
     __asm__ __volatile__("xchgl %%ebx, %3\n\t"
                          "lock; cmpxchg8b (%5)\n\t"
@@ -2108,7 +2108,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
         mov     dword ptr [u64 + 4], edx
     }
 #  endif
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
     return u64;
 }
 #endif
@@ -2199,14 +2199,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t *pu32, const uint32_t u32
     uint32_t u32Ret;
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
 #  else
         mov     edx, [pu32]
 #  endif
         mov     eax, [u32Old]
         mov     ecx, [u32New]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         lock cmpxchg [rdx], ecx
 #  else
         lock cmpxchg [edx], ecx
@@ -2255,7 +2255,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
 # if RT_INLINE_ASM_USES_INTRIN
    return _InterlockedCompareExchange64((__int64 *)pu64, u64New, u64Old) == u64Old;
 
-# elif defined(__AMD64__)
+# elif defined(RT_ARCH_AMD64)
 #  if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64Ret;
     __asm__ __volatile__("lock; cmpxchgq %2, %0\n\t"
@@ -2279,10 +2279,10 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
     }
     return fRet;
 #  endif
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
     uint32_t u32Ret;
 #  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(__DARWIN__) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
     uint32_t u32 = (uint32_t)u64New;
     uint32_t u32Spill;
     __asm__ __volatile__("xchgl %%ebx, %4\n\t"
@@ -2325,7 +2325,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
     }
     return !!u32Ret;
 #  endif
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
 }
 #endif
 
@@ -2418,7 +2418,7 @@ DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32)
     __asm
     {
         mov     eax, 1
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock xadd [rdx], eax
 #  else
@@ -2472,7 +2472,7 @@ DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32)
     __asm
     {
         mov     eax, -1
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock xadd [rdx], eax
 #  else
@@ -2522,7 +2522,7 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
     __asm
     {
         mov     eax, [u32]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock    or [rdx], eax
 #  else
@@ -2569,7 +2569,7 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32)
     __asm
     {
         mov     eax, [u32]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rdx, [pu32]
         lock and [rdx], eax
 #  else
@@ -2613,7 +2613,7 @@ DECLINLINE(void) ASMInvalidatePage(void *pv)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pv]
         invlpg  [rax]
 #  else
@@ -2643,7 +2643,7 @@ DECLASM(void) ASMMemZeroPage(volatile void *pv);
 DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
 {
 #  if RT_INLINE_ASM_USES_INTRIN
-#   ifdef __AMD64__
+#   ifdef RT_ARCH_AMD64
     __stosq((unsigned __int64 *)pv, 0, /*PAGE_SIZE*/0x1000 / 8);
 #   else
     __stosd((unsigned long *)pv, 0, /*PAGE_SIZE*/0x1000 / 4);
@@ -2651,7 +2651,7 @@ DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
 
 #  elif RT_INLINE_ASM_GNU_STYLE
     RTUINTREG uDummy;
-#   ifdef __AMD64__
+#   ifdef RT_ARCH_AMD64
     __asm__ __volatile__ ("rep stosq"
                           : "=D" (pv),
                             "=c" (uDummy)
@@ -2671,7 +2671,7 @@ DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
 #  else
     __asm
     {
-#   ifdef __AMD64__
+#   ifdef RT_ARCH_AMD64
         xor     rax, rax
         mov     ecx, 0200h
         mov     rdi, [pv]
@@ -2714,7 +2714,7 @@ DECLINLINE(void) ASMMemZero32(volatile void *pv, size_t cb)
     __asm
     {
         xor     eax, eax
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rcx, [cb]
         shr     rcx, 2
         mov     rdi, [pv]
@@ -2756,7 +2756,7 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rcx, [cb]
         shr     rcx, 2
         mov     rdi, [pv]
@@ -2779,14 +2779,14 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
  *
  * @returns u32F1 * u32F2.
  */
-#if RT_INLINE_ASM_EXTERNAL && !defined(__AMD64__)
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
 DECLASM(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2);
 #else
 DECLINLINE(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2)
 {
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
     return (uint64_t)u32F1 * u32F2;
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
     uint64_t u64;
 #  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("mull %%edx"
@@ -2803,7 +2803,7 @@ DECLINLINE(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2)
     }
 #  endif
     return u64;
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
 }
 #endif
 
@@ -2813,14 +2813,14 @@ DECLINLINE(uint64_t) ASMMult2xU32RetU64(uint32_t u32F1, uint32_t u32F2)
  *
  * @returns u32F1 * u32F2.
  */
-#if RT_INLINE_ASM_EXTERNAL && !defined(__AMD64__)
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
 DECLASM(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2);
 #else
 DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
 {
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
     return (int64_t)i32F1 * i32F2;
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
     int64_t i64;
 #  if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("imull %%edx"
@@ -2837,7 +2837,7 @@ DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
     }
 #  endif
     return i64;
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
 }
 #endif
 
@@ -2847,14 +2847,14 @@ DECLINLINE(int64_t) ASMMult2xS32RetS64(int32_t i32F1, int32_t i32F2)
  *
  * @returns u64 / u32.
  */
-#if RT_INLINE_ASM_EXTERNAL && !defined(__AMD64__)
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
 DECLASM(uint32_t) ASMDivU64ByU32RetU32(uint64_t u64, uint32_t u32);
 #else
 DECLINLINE(uint32_t) ASMDivU64ByU32RetU32(uint64_t u64, uint32_t u32)
 {
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
     return (uint32_t)(u64 / u32);
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
     RTUINTREG uDummy;
     __asm__ __volatile__("divl %3"
@@ -2871,7 +2871,7 @@ DECLINLINE(uint32_t) ASMDivU64ByU32RetU32(uint64_t u64, uint32_t u32)
     }
 #  endif
     return u32;
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
 }
 #endif
 
@@ -2881,14 +2881,14 @@ DECLINLINE(uint32_t) ASMDivU64ByU32RetU32(uint64_t u64, uint32_t u32)
  *
  * @returns u64 / u32.
  */
-#if RT_INLINE_ASM_EXTERNAL && !defined(__AMD64__)
+#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
 DECLASM(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32);
 #else
 DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
 {
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
     return (int32_t)(i64 / i32);
-# else /* !__AMD64__ */
+# else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
     RTUINTREG iDummy;
     __asm__ __volatile__("idivl %3"
@@ -2905,7 +2905,7 @@ DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
     }
 #  endif
     return i32;
-# endif /* !__AMD64__ */
+# endif /* !RT_ARCH_AMD64 */
 }
 #endif
 
@@ -2927,7 +2927,7 @@ DECLASM(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t
 DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
     uint64_t u64Result, u64Spill;
     __asm__ __volatile__("mulq %2\n\t"
                          "divq %3\n\t"
@@ -3006,7 +3006,7 @@ DECLINLINE(uint8_t) ASMProbeReadByte(const void *pvByte)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvByte]
         mov     al, [rax]
 #  else
@@ -3099,7 +3099,7 @@ DECLINLINE(void) ASMBitSet(volatile void *pvBitmap, int32_t iBit)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         bts     [rax], edx
@@ -3135,7 +3135,7 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void *pvBitmap, int32_t iBit)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         lock bts [rax], edx
@@ -3172,7 +3172,7 @@ DECLINLINE(void) ASMBitClear(volatile void *pvBitmap, int32_t iBit)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         btr     [rax], edx
@@ -3207,7 +3207,7 @@ DECLINLINE(void) ASMAtomicBitClear(volatile void *pvBitmap, int32_t iBit)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         lock btr [rax], edx
@@ -3243,7 +3243,7 @@ DECLINLINE(void) ASMBitToggle(volatile void *pvBitmap, int32_t iBit)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         btc     [rax], edx
@@ -3277,7 +3277,7 @@ DECLINLINE(void) ASMAtomicBitToggle(volatile void *pvBitmap, int32_t iBit)
 # else
     __asm
     {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         mov     edx, [iBit]
         lock btc [rax], edx
@@ -3321,7 +3321,7 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void *pvBitmap, int32_t iBit)
     __asm
     {
         mov     edx, [iBit]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         bts     [rax], edx
 #  else
@@ -3366,7 +3366,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void *pvBitmap, int32_t iBit)
     __asm
     {
         mov     edx, [iBit]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         lock bts [rax], edx
 #  else
@@ -3412,7 +3412,7 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void *pvBitmap, int32_t iBit)
     __asm
     {
         mov     edx, [iBit]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         btr     [rax], edx
 #  else
@@ -3459,7 +3459,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void *pvBitmap, int32_t iBit)
     __asm
     {
         mov     edx, [iBit]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         lock btr [rax], edx
 #  else
@@ -3505,7 +3505,7 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void *pvBitmap, int32_t iBit)
     __asm
     {
         mov   edx, [iBit]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov   rax, [pvBitmap]
         btc   [rax], edx
 #  else
@@ -3548,7 +3548,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void *pvBitmap, int32_t iBit
     __asm
     {
         mov     edx, [iBit]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov     rax, [pvBitmap]
         lock btc [rax], edx
 #  else
@@ -3594,7 +3594,7 @@ DECLINLINE(bool) ASMBitTest(volatile void *pvBitmap, int32_t iBit)
     __asm
     {
         mov   edx, [iBit]
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
         mov   rax, [pvBitmap]
         bt    [rax], edx
 #  else
@@ -3673,7 +3673,7 @@ DECLINLINE(int) ASMBitFirstClear(volatile void *pvBitmap, uint32_t cBits)
         cBits = RT_ALIGN_32(cBits, 32);
         __asm__ __volatile__("repe; scasl\n\t"
                              "je    1f\n\t"
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
                              "lea   -4(%%rdi), %%rdi\n\t"
                              "xorl  (%%rdi), %%eax\n\t"
                              "subq  %5, %%rdi\n\t"
@@ -3699,7 +3699,7 @@ DECLINLINE(int) ASMBitFirstClear(volatile void *pvBitmap, uint32_t cBits)
         cBits = RT_ALIGN_32(cBits, 32);
         __asm
         {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
             mov     rdi, [pvBitmap]
             mov     rbx, rdi
 #  else
@@ -3713,7 +3713,7 @@ DECLINLINE(int) ASMBitFirstClear(volatile void *pvBitmap, uint32_t cBits)
             repe    scasd
             je      done
 
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
             lea     rdi, [rdi - 4]
             xor     eax, [rdi]
             sub     rdi, rbx
@@ -3826,7 +3826,7 @@ DECLINLINE(int) ASMBitFirstSet(volatile void *pvBitmap, uint32_t cBits)
         cBits = RT_ALIGN_32(cBits, 32);
         __asm__ __volatile__("repe; scasl\n\t"
                              "je    1f\n\t"
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
                              "lea   -4(%%rdi), %%rdi\n\t"
                              "movl  (%%rdi), %%eax\n\t"
                              "subq  %5, %%rdi\n\t"
@@ -3852,7 +3852,7 @@ DECLINLINE(int) ASMBitFirstSet(volatile void *pvBitmap, uint32_t cBits)
         cBits = RT_ALIGN_32(cBits, 32);
         __asm
         {
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
             mov     rdi, [pvBitmap]
             mov     rbx, rdi
 #  else
@@ -3865,7 +3865,7 @@ DECLINLINE(int) ASMBitFirstSet(volatile void *pvBitmap, uint32_t cBits)
             shr     ecx, 5
             repe    scasd
             je      done
-#  ifdef __AMD64__
+#  ifdef RT_ARCH_AMD64
             lea     rdi, [rdi - 4]
             mov     eax, [rdi]
             sub     rdi, rbx

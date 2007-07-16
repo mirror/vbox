@@ -29,7 +29,7 @@
  */
 #ifndef IPRT_NO_CRT
 
-# if defined(__DARWIN__) && defined(KERNEL)
+# if defined(RT_OS_DARWIN) && defined(KERNEL)
     /*
      * Klugde for the darwin kernel:
      *  stddef.h is missing IIRC.
@@ -40,7 +40,7 @@
 #  endif
 #  include <sys/types.h>
 
-# elif defined(__FREEBSD__) && defined(_KERNEL)
+# elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
     /*
      * Kludge for the FreeBSD kernel:
      *  stddef.h and sys/types.h has sligtly different offsetof definitions
@@ -116,7 +116,7 @@
  */
 #ifndef __cplusplus
 # if defined(__GNUC__)
-#  if defined(__DARWIN__) && defined(_STDBOOL_H)
+#  if defined(RT_OS_DARWIN) && defined(_STDBOOL_H)
 #   undef bool
 #  endif
 typedef _Bool bool;
