@@ -134,7 +134,7 @@ typedef unsigned char bool;
 /**
  * 128-bit unsigned integer.
  */
-#if defined(__GNUC__) && defined(__amd64__)
+#if defined(__GNUC__) && defined(RT_ARCH_AMD64)
 typedef __uint128_t uint128_t;
 #else
 typedef struct uint128_s
@@ -148,7 +148,7 @@ typedef struct uint128_s
 /**
  * 128-bit signed integer.
  */
-#if defined(__GNUC__) && defined(__amd64__)
+#if defined(__GNUC__) && defined(RT_ARCH_AMD64)
 typedef __int128_t int128_t;
 #else
 typedef struct int128_s
