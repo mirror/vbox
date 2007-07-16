@@ -37,18 +37,18 @@
 
 #include <iprt/cdefs.h>
 
-#if (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT)
+#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT)
 # include <stdint.h>
 
 #else
 
-#if (!defined(RT_OS_LINUX) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(_MSC_VER) /** @todo remove _MSC_VER check (vcc8 merge) */
+#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) || defined(IPRT_NO_CRT)
 /* machine specific */
-typedef signed char     __int8_t;
+typedef signed char         __int8_t;
 typedef unsigned char       __uint8_t;
-typedef short           __int16_t;
+typedef short               __int16_t;
 typedef unsigned short      __uint16_t;
-typedef int         __int32_t;
+typedef int                 __int32_t;
 typedef unsigned int        __uint32_t;
 
 # ifdef _MSC_VER
@@ -58,13 +58,13 @@ typedef unsigned _int64     __uint64_t;
 #  if defined(__IBMC__) || defined(__IBMCPP__) /* assume VAC308 without long long. */
 typedef struct { __uint32_t lo,hi; } __int64_t, __uint64_t;
 #  else
-typedef long long       __int64_t;
+typedef long long           __int64_t;
 typedef unsigned long long  __uint64_t;
 #  endif
 # endif
-#endif /* !linux kernel */
+#endif /* !linux kernel and more */
 
-#if !defined(_WIN64) || defined(__i386__) || defined(__I386__) || defined(RT_OS_LINUX) /** @todo fix this, __x86__ should suffice if cdefs.h is included! */
+#if ARCH_BITS == 32 || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 typedef signed long             __intptr_t;
 typedef unsigned long           __uintptr_t;
 #else
@@ -74,7 +74,7 @@ typedef __uint64_t              __uintptr_t;
 
 
 /* the stuff we use */
-#if (!defined(RT_OS_LINUX) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(_MSC_VER) /** @todo remove _MSC_VER check (vcc8 merge) */
+#if (!defined(RT_OS_LINUX) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT)
 #ifndef _INT8_T_DECLARED
 typedef __int8_t        int8_t;
 #define _INT8_T_DECLARED
@@ -157,7 +157,7 @@ typedef __uintptr_t             uintptr_t;
 
 #endif /* !C++ || __STDC_CONSTANT_MACROS */
 
-#endif /* _MSC_VER */
+#endif /* ! have usable stdint.h */
 
 #endif
 
