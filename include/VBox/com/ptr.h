@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * Smart COM pointer classes declaration
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_ptr_h__
-#define __VBox_com_ptr_h__
+#ifndef ___VBox_com_ptr_h
+#define ___VBox_com_ptr_h
 
 #if !defined (VBOX_WITH_XPCOM)
 
@@ -436,4 +435,4 @@ public:
     }
 };
 
-#endif // __VBox_com_ptr_h__
+#endif

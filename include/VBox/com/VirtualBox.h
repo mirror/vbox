@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * VirtualBox COM Library definitions.
  *
@@ -32,8 +31,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_VirtualBox_h__
-#define __VBox_com_VirtualBox_h__
+#ifndef ___VBox_com_VirtualBox_h
+#define ___VBox_com_VirtualBox_h
 
 // generated VirtualBox COM library definition file
 #if !defined (VBOXCOM_NOINCLUDE)
@@ -47,4 +46,4 @@
 // for convenience
 #include "VBox/com/defs.h"
 
-#endif // __VBox_com_VirtualBox_h__
+#endif

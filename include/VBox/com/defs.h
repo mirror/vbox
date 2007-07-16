@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * Common definitions
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_defs_h__
-#define __VBox_com_defs_h__
+#ifndef ___VBox_com_defs_h
+#define ___VBox_com_defs_h
 
 /*
  * Include iprt/types.h now to make sure iprt get to stdint.h first,
@@ -299,5 +298,5 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
 #   error "Unsupported compiler!"
 #endif
 
-#endif // __VBox_com_defs_h__
+#endif
 

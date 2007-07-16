@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * Event and EventQueue class declaration
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_EventQueue_h__
-#define __VBox_com_EventQueue_h__
+#ifndef ___VBox_com_EventQueue_h
+#define ___VBox_com_EventQueue_h
 
 #if defined (__WIN__)
 #include <windows.h>
@@ -122,5 +121,5 @@ private:
 
 }; // namespace com
 
-#endif // __VBox_com_EventQueue_h__
+#endif
 

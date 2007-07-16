@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * Assertion macros for COM/XPCOM
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_assert_h__
-#define __VBox_com_assert_h__
+#ifndef ___VBox_com_assert_h
+#define ___VBox_com_assert_h
 
 #include <iprt/assert.h>
 
@@ -246,5 +245,5 @@
     if (1) { ASSERT (expr); if (!(expr)) break; } else do {} while (0)
 
 
-#endif // __VBox_com_assert_h__
+#endif
 

@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * Smart string classes declaration
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_string_h__
-#define __VBox_com_string_h__
+#ifndef ___VBox_com_string_h
+#define ___VBox_com_string_h
 
 #if !defined(__WIN__)
 #include <nsMemory.h>
@@ -545,5 +544,5 @@ private:
 
 } // namespace com
 
-#endif // __VBox_com_string_h__
+#endif
 

@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * COM initialization / shutdown
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_com_h__
-#define __VBox_com_com_h__
+#ifndef ___VBox_com_com_h
+#define ___VBox_com_com_h
 
 #include "VBox/com/defs.h"
 
@@ -75,5 +74,5 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen);
 
 }; // namespace com
 
-#endif // __VBox_com_com_h__
+#endif
 
