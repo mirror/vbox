@@ -957,9 +957,9 @@ typedef struct
  * 
  * @{
  */
-#ifdef RT_OS_AMD64
+#ifdef RT_ARCH_AMD64
 # define VBOXGUEST_IOCTL_FLAG     128
-#elif defined(RT_OS_X86)
+#elif defined(RT_ARCH_X86)
 # define VBOXGUEST_IOCTL_FLAG     0
 #else
 # error "dunno which arch this is!"
