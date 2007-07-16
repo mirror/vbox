@@ -181,6 +181,7 @@ VBoxSVC_SOURCES = \
 	GuestOSTypeImpl.cpp \
 	NetworkAdapterImpl.cpp \
 	SerialPortImpl.cpp \
+	ParallelPortImpl.cpp \
 	USBControllerImpl.cpp \
 	AudioAdapterImpl.cpp \
 	SharedFolderImpl.cpp \

@@ -63,6 +63,7 @@ public:
     STDMETHOD(COMGETTER(MaxVDISize)(ULONG64 *maxVDISize));
     STDMETHOD(COMGETTER(NetworkAdapterCount)(ULONG *count));
     STDMETHOD(COMGETTER(SerialPortCount)(ULONG *count));
+    STDMETHOD(COMGETTER(ParallelPortCount)(ULONG *count));
     STDMETHOD(COMGETTER(MaxBootPosition)(ULONG *aMaxBootPosition));
     STDMETHOD(COMGETTER(DefaultVDIFolder)) (BSTR *aDefaultVDIFolder);
     STDMETHOD(COMSETTER(DefaultVDIFolder)) (INPTR BSTR aDefaultVDIFolder);

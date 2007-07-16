@@ -201,6 +201,18 @@ STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(ParallelPortCount)(ULONG *count)
+{
+    if (!count)
+        return E_POINTER;
+    AutoLock lock (this);
+    CHECK_READY();
+
+    *count = SchemaDefs::ParallelPortCount;
+
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPosition)
 {
     if (!aMaxBootPosition)

@@ -34,6 +34,7 @@
 #include "NetworkAdapterImpl.h"
 #include "AudioAdapterImpl.h"
 #include "SerialPortImpl.h"
+#include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
 
 // generated header
@@ -481,6 +482,7 @@ public:
     STDMETHOD(GetHardDisk)(DiskControllerType_T aCtl, LONG aDev, IHardDisk **aHardDisk);
     STDMETHOD(DetachHardDisk) (DiskControllerType_T aCtl, LONG aDev);
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
+    STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
     STDMETHOD(GetNextExtraDataKey)(INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
     STDMETHOD(GetExtraData)(INPTR BSTR aKey, BSTR *aValue);
@@ -528,6 +530,7 @@ public:
     virtual HRESULT onFloppyDriveChange() { return S_OK; }
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter) { return S_OK; }
     virtual HRESULT onSerialPortChange(ISerialPort *serialPort) { return S_OK; }
+    virtual HRESULT onParallelPortChange(IParallelPort *ParallelPort) { return S_OK; }
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
 
@@ -679,6 +682,8 @@ protected:
     const ComObjPtr <FloppyDrive> mFloppyDrive;
     const ComObjPtr <SerialPort>
         mSerialPorts [SchemaDefs::SerialPortCount];
+    const ComObjPtr <ParallelPort>
+        mParallelPorts [SchemaDefs::ParallelPortCount];
     const ComObjPtr <AudioAdapter> mAudioAdapter;
     const ComObjPtr <USBController> mUSBController;
     const ComObjPtr <BIOSSettings> mBIOSSettings;
@@ -770,6 +775,7 @@ public:
     HRESULT onFloppyDriveChange();
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter);
     HRESULT onSerialPortChange(ISerialPort *serialPort);
+    HRESULT onParallelPortChange(IParallelPort *parallelPort);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice,

@@ -459,6 +459,13 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
         mSerialPorts [slot]->init (this, slot);
     }
 
+    /* create associated parallel port objects */
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    {
+        unconst (mParallelPorts [slot]).createObject();
+        mParallelPorts [slot]->init (this, slot);
+    }
+
     /* create the audio adapter object (always present, default is disabled) */
     unconst (mAudioAdapter).createObject();
     mAudioAdapter->init(this);
@@ -1833,6 +1840,23 @@ STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
     AutoReaderLock alock (this);
 
     mSerialPorts [slot].queryInterfaceTo (port);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
+{
+    if (!port)
+        return E_POINTER;
+    if (slot >= ELEMENTS (mParallelPorts))
+        return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mParallelPorts [slot].queryInterfaceTo (port);
 
     return S_OK;
 }
@@ -3258,6 +3282,15 @@ void Machine::uninitDataAndChildObjects()
         }
     }
 
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    {
+        if (mParallelPorts [slot])
+        {
+            mParallelPorts [slot]->uninit();
+            unconst (mParallelPorts [slot]).setNull();
+        }
+    }
+
     if (mFloppyDrive)
     {
         mFloppyDrive->uninit();
@@ -4284,6 +4317,22 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             CheckComRCReturnRC (rc);
         }
         CFGLDRReleaseNode (serialNode);
+    }
+
+    /* Parallel node (optional) */
+    CFGNODE parallelNode = 0;
+    CFGLDRGetChildNode (aNode, "Lpt", 0, &parallelNode);
+    if (parallelNode)
+    {
+        HRESULT rc = S_OK;
+        unsigned cPorts = 0;
+        CFGLDRCountChildren (parallelNode, "Port", &cPorts);
+        for (unsigned slot = 0; slot < cPorts; slot++)
+        {
+            rc = mParallelPorts [slot]->loadSettings (parallelNode, slot);
+            CheckComRCReturnRC (rc);
+        }
+        CFGLDRReleaseNode (parallelNode);
     }
 
     /* AudioAdapter node (required) */
@@ -6095,6 +6144,17 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
     }
     CFGLDRReleaseNode (serialNode);
 
+    /* Parallel ports */
+    CFGNODE parallelNode = 0;
+    CFGLDRCreateChildNode (aNode, "Lpt", &parallelNode);
+
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot++)
+    {
+        rc = mParallelPorts [slot]->saveSettings (parallelNode);
+        CheckComRCReturnRC (rc);
+    }
+    CFGLDRReleaseNode (parallelNode);
+
     /* Audio adapter */
     do
     {
@@ -7143,6 +7203,10 @@ bool Machine::isModified()
         if (mSerialPorts [slot] && mSerialPorts [slot]->isModified())
             return true;
 
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+        if (mParallelPorts [slot] && mParallelPorts [slot]->isModified())
+            return true;
+
     return
         mUserData.isBackedUp() ||
         mHWData.isBackedUp() ||
@@ -7178,6 +7242,10 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
 
     for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
         if (mSerialPorts [slot] && mSerialPorts [slot]->isReallyModified())
+            return true;
+
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+        if (mParallelPorts [slot] && mParallelPorts [slot]->isReallyModified())
             return true;
 
     return
@@ -7220,6 +7288,7 @@ void Machine::rollback (bool aNotify)
          usbChanged = false;
     ComPtr <INetworkAdapter> networkAdapters [ELEMENTS (mNetworkAdapters)];
     ComPtr <ISerialPort> serialPorts [ELEMENTS (mSerialPorts)];
+    ComPtr <IParallelPort> parallelPorts [ELEMENTS (mParallelPorts)];
 
     if (mBIOSSettings)
         mBIOSSettings->rollback();
@@ -7251,6 +7320,11 @@ void Machine::rollback (bool aNotify)
             if (mSerialPorts [slot]->rollback())
                 serialPorts [slot] = mSerialPorts [slot];
 
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+        if (mParallelPorts [slot])
+            if (mParallelPorts [slot]->rollback())
+                parallelPorts [slot] = mParallelPorts [slot];
+
     if (aNotify)
     {
         // inform the direct session about changes
@@ -7272,6 +7346,9 @@ void Machine::rollback (bool aNotify)
         for (ULONG slot = 0; slot < ELEMENTS (serialPorts); slot ++)
             if (serialPorts [slot])
                 that->onSerialPortChange (serialPorts [slot]);
+        for (ULONG slot = 0; slot < ELEMENTS (parallelPorts); slot ++)
+            if (parallelPorts [slot])
+                that->onParallelPortChange (parallelPorts [slot]);
     }
 }
 
@@ -7320,6 +7397,8 @@ HRESULT Machine::commit()
         mNetworkAdapters [slot]->commit();
     for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
         mSerialPorts [slot]->commit();
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+        mParallelPorts [slot]->commit();
 
     if (mType == IsSessionMachine)
     {
@@ -7383,6 +7462,8 @@ void Machine::copyFrom (Machine *aThat)
         mNetworkAdapters [slot]->copyFrom (aThat->mNetworkAdapters [slot]);
     for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
         mSerialPorts [slot]->copyFrom (aThat->mSerialPorts [slot]);
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+        mParallelPorts [slot]->copyFrom (aThat->mParallelPorts [slot]);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -7568,6 +7649,12 @@ HRESULT SessionMachine::init (Machine *aMachine)
     {
         unconst (mSerialPorts [slot]).createObject();
         mSerialPorts [slot]->init (this, aMachine->mSerialPorts [slot]);
+    }
+    /* create a list of parallel ports that will be mutable */
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    {
+        unconst (mParallelPorts [slot]).createObject();
+        mParallelPorts [slot]->init (this, aMachine->mParallelPorts [slot]);
     }
     /* create another USB controller object that will be mutable */
     unconst (mUSBController).createObject();
@@ -8730,6 +8817,29 @@ HRESULT SessionMachine::onSerialPortChange(ISerialPort *serialPort)
         return S_OK;
 
     return directControl->OnSerialPortChange(serialPort);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onParallelPortChange(IParallelPort *parallelPort)
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr <IInternalSessionControl> directControl;
+    {
+        AutoReaderLock alock (this);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnParallelPortChange(parallelPort);
 }
 
 /**
@@ -10054,6 +10164,12 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
         mSerialPorts [slot]->initCopy (this, mPeer->mSerialPorts [slot]);
     }
 
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    {
+        unconst (mParallelPorts [slot]).createObject();
+        mParallelPorts [slot]->initCopy (this, mPeer->mParallelPorts [slot]);
+    }
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -10142,6 +10258,12 @@ HRESULT SnapshotMachine::init (Machine *aMachine, CFGNODE aHWNode, CFGNODE aHDAs
     {
         unconst (mSerialPorts [slot]).createObject();
         mSerialPorts [slot]->init (this, slot);
+    }
+
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    {
+        unconst (mParallelPorts [slot]).createObject();
+        mParallelPorts [slot]->init (this, slot);
     }
 
     /* load hardware and harddisk settings */

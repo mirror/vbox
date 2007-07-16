@@ -1654,14 +1654,14 @@
 
     <method name="detachUSBDevice">
       <desc>
-        Notification that a VM is going to detach (done = false) or has 
+        Notification that a VM is going to detach (done = false) or has
         already detached (done = true) the given USB device.
         When the done = true request is completed, the VM process will
         get a <link to="IInternalSessionControl::onUSBDeviceDetach"/>
         notification.
         <note>
-          In the done = true case, the server must run its own filters 
-          and filters of all VMs but this one on the detached device 
+          In the done = true case, the server must run its own filters
+          and filters of all VMs but this one on the detached device
           as if it were just attached to the host computer.
         </note>
       </desc>
@@ -1681,13 +1681,13 @@
     <method name="detachAllUSBDevices">
       <desc>
         Notification that a VM that is being powered down. The done
-        parameter indicates whether which stage of the power down 
-        we're at. When done = false the VM is announcing its 
-        intentions, while when done = true the VM is reporting 
+        parameter indicates whether which stage of the power down
+        we're at. When done = false the VM is announcing its
+        intentions, while when done = true the VM is reporting
         what it has done.
         <note>
-          In the done = true case, the server must run its own filters 
-          and filters of all VMs but this one on all detach devices as 
+          In the done = true case, the server must run its own filters
+          and filters of all VMs but this one on all detach devices as
           if they were just attached to the host computer.
         </note>
       </desc>
@@ -1899,7 +1899,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="0332de0e-ce75-461f-8c6f-0fa42616404a"
+     uuid="31f7169f-14da-4c55-8cb6-a3665186e35e"
      wsmap="managed"
      >
     <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -2453,6 +2453,18 @@
       </desc>
       <param name="slot" type="unsigned long" dir="in"/>
       <param name="port" type="ISerialPort" dir="return"/>
+    </method>
+
+    <method name="getParallelPort" const="yes">
+      <desc>
+        Returns the parallel port associated with the given slot.
+        Slots are numbered sequentially, starting with zero. The total
+        number of parallel ports per every machine is defined by the
+        <link to="ISystemProperties::parallelPortCount"/> property,
+        so the maximum slot number is one less than that property's value.
+      </desc>
+      <param name="slot" type="unsigned long" dir="in"/>
+      <param name="port" type="IParallelPort" dir="return"/>
     </method>
 
     <method name="getNextExtraDataKey">
@@ -3927,7 +3939,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="6dc28c62-7924-43de-8336-fa754aa531d7"
+     uuid="12c2e31e-247f-4d51-82e5-5b9d4a6c7d5b"
      wsmap="struct"
      >
     <desc>
@@ -3971,6 +3983,13 @@
     <attribute name="serialPortCount" type="unsigned long" readonly="yes">
       <desc>
         Number of serial ports associated with every
+        <link to="IMachine"/> instance.
+      </desc>
+    </attribute>
+
+    <attribute name="parallelPortCount" type="unsigned long" readonly="yes">
+      <desc>
+        Number of parallel ports associated with every
         <link to="IMachine"/> instance.
       </desc>
     </attribute>
@@ -6784,7 +6803,7 @@
      uuid="a5ab0989-0ca9-4d5e-b565-f7739b92bb0c"
      wsmap="managed"
      >
- 
+
      <attribute name="slot" type="unsigned long" readonly="yes">
       <desc>
         Slot number this serial port is plugged into. Corresponds to
@@ -6814,6 +6833,46 @@
 
     <attribute name="server" type="boolean">
       <desc>Flag whether this serial port acts as a server or a client.</desc>
+    </attribute>
+
+  </interface>
+
+  <!--
+  // IParallelPort
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+     name="IParallelPort" extends="$unknown"
+     uuid="6d7f2385-8ce3-4342-a042-61fa1882354b"
+     wsmap="managed"
+     >
+
+     <attribute name="slot" type="unsigned long" readonly="yes">
+      <desc>
+        Slot number this parallel port is plugged into. Corresponds to
+        the value you pass to <link to="IMachine::getParallelPort"/>
+        to obtain this instance.
+      </desc>
+    </attribute>
+
+    <attribute name="enabled" type="boolean">
+      <desc>
+        Flag whether the parallel port is enabled. If it is disabled,
+        the parallel port will not be reported to the guest.
+      </desc>
+    </attribute>
+
+    <attribute name="IOBase" type="unsigned long">
+      <desc>Gets the I/O base of the parallel port.</desc>
+    </attribute>
+
+    <attribute name="IRQ" type="unsigned long">
+      <desc>Gets the IRQ of the parallel port.</desc>
+    </attribute>
+
+    <attribute name="DevicePath" type="wstring">
+      <desc>Gets the of the device path connected to the parallel port.</desc>
     </attribute>
 
   </interface>
@@ -7791,6 +7850,14 @@
         associated virtual machine have changed.
       </desc>
       <param name="serialPort" type="ISerialPort" dir="in"/>
+    </method>
+
+    <method name="onParallelPortChange">
+      <desc>
+        Triggered when settings of a parallel port of the
+        associated virtual machine have changed.
+      </desc>
+      <param name="parallelPort" type="IParallelPort" dir="in"/>
     </method>
 
     <method name="onVRDPServerChange">
