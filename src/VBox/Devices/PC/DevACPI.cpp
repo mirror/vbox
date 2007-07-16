@@ -27,10 +27,10 @@
 #include <iprt/asm.h>
 #ifdef IN_RING3
 #include <iprt/alloc.h>
+#include <iprt/string.h>
 #endif /* IN_RING3 */
 
 #include "Builtins.h"
-#include "vl_vbox.h"
 
 #ifdef  LOG_ENABLED
 #define DEBUG_ACPI
@@ -444,14 +444,14 @@ static void acpiPrepareHeader (ACPITBLHEADER *header, const char au8Signature[4]
                                uint32_t u32Length, uint8_t u8Revision)
 {
     memcpy(header->au8Signature, au8Signature, 4);
-    header->u32Length             = cpu_to_le32(u32Length);
+    header->u32Length             = RT_H2LE_U32(u32Length);
     header->u8Revision            = u8Revision;
     memcpy(header->au8OemId, "VBOX  ", 6);
     memcpy(header->au8OemTabId, "VBOX", 4);
     memcpy(header->au8OemTabId+4, au8Signature, 4);
-    header->u32OemRevision        = cpu_to_le32(1);
+    header->u32OemRevision        = RT_H2LE_U32(1);
     memcpy(header->au8CreatorId, "ASL ", 4);
-    header->u32CreatorRev         = cpu_to_le32(0x61);
+    header->u32CreatorRev         = RT_H2LE_U32(0x61);
 }
 
 static void acpiWriteGenericAddr(ACPIGENADDR *g, uint8_t u8AddressSpaceId,
@@ -462,7 +462,7 @@ static void acpiWriteGenericAddr(ACPIGENADDR *g, uint8_t u8AddressSpaceId,
     g->u8RegisterBitWidth  = u8RegisterBitWidth;
     g->u8RegisterBitOffset = u8RegisterBitOffset;
     g->u8AccessSize        = u8AccessSize;
-    g->u64Address          = cpu_to_le64(u64Address);
+    g->u64Address          = RT_H2LE_U64(u64Address);
 }
 
 static void acpiPhyscpy (ACPIState *s, RTGCPHYS dst, const void * const src, size_t size)
@@ -483,12 +483,12 @@ static void acpiSetupFACS (ACPIState *s, RTGCPHYS addr)
 
     memset (&facs, 0, sizeof(facs));
     memcpy (facs.au8Signature, "FACS", 4);
-    facs.u32Length            = cpu_to_le32(sizeof(ACPITBLFACS));
-    facs.u32HWSignature       = cpu_to_le32(0);
-    facs.u32FWVector          = cpu_to_le32(0);
-    facs.u32GlobalLock        = cpu_to_le32(0);
-    facs.u32Flags             = cpu_to_le32(0);
-    facs.u64X_FWVector        = cpu_to_le64(0);
+    facs.u32Length            = RT_H2LE_U32(sizeof(ACPITBLFACS));
+    facs.u32HWSignature       = RT_H2LE_U32(0);
+    facs.u32FWVector          = RT_H2LE_U32(0);
+    facs.u32GlobalLock        = RT_H2LE_U32(0);
+    facs.u32Flags             = RT_H2LE_U32(0);
+    facs.u64X_FWVector        = RT_H2LE_U64(0);
     facs.u8Version            = 1;
 
     acpiPhyscpy (s, addr, (const uint8_t*)&facs, sizeof(facs));
@@ -501,24 +501,24 @@ static void acpiSetupFADT (ACPIState *s, RTGCPHYS addr, uint32_t facs_addr, uint
 
     memset (&fadt, 0, sizeof(fadt));
     acpiPrepareHeader (&fadt.header, "FACP", sizeof(fadt), 4);
-    fadt.u32FACS              = cpu_to_le32(facs_addr);
-    fadt.u32DSDT              = cpu_to_le32(dsdt_addr);
+    fadt.u32FACS              = RT_H2LE_U32(facs_addr);
+    fadt.u32DSDT              = RT_H2LE_U32(dsdt_addr);
     fadt.u8IntModel           = INT_MODEL_DUAL_PIC;
     fadt.u8PreferredPMProfile = 0; /* unspecified */
-    fadt.u16SCIInt            = cpu_to_le16(SCI_INT);
-    fadt.u32SMICmd            = cpu_to_le32(SMI_CMD);
+    fadt.u16SCIInt            = RT_H2LE_U16(SCI_INT);
+    fadt.u32SMICmd            = RT_H2LE_U32(SMI_CMD);
     fadt.u8AcpiEnable         = ACPI_ENABLE;
     fadt.u8AcpiDisable        = ACPI_DISABLE;
     fadt.u8S4BIOSReq          = 0;
     fadt.u8PStateCnt          = 0;
-    fadt.u32PM1aEVTBLK        = cpu_to_le32(PM1a_EVT_BLK);
-    fadt.u32PM1bEVTBLK        = cpu_to_le32(PM1b_EVT_BLK);
-    fadt.u32PM1aCTLBLK        = cpu_to_le32(PM1a_CTL_BLK);
-    fadt.u32PM1bCTLBLK        = cpu_to_le32(PM1b_CTL_BLK);
-    fadt.u32PM2CTLBLK         = cpu_to_le32(PM2_CTL_BLK);
-    fadt.u32PMTMRBLK          = cpu_to_le32(PM_TMR_BLK);
-    fadt.u32GPE0BLK           = cpu_to_le32(GPE0_BLK);
-    fadt.u32GPE1BLK           = cpu_to_le32(GPE1_BLK);
+    fadt.u32PM1aEVTBLK        = RT_H2LE_U32(PM1a_EVT_BLK);
+    fadt.u32PM1bEVTBLK        = RT_H2LE_U32(PM1b_EVT_BLK);
+    fadt.u32PM1aCTLBLK        = RT_H2LE_U32(PM1a_CTL_BLK);
+    fadt.u32PM1bCTLBLK        = RT_H2LE_U32(PM1b_CTL_BLK);
+    fadt.u32PM2CTLBLK         = RT_H2LE_U32(PM2_CTL_BLK);
+    fadt.u32PMTMRBLK          = RT_H2LE_U32(PM_TMR_BLK);
+    fadt.u32GPE0BLK           = RT_H2LE_U32(GPE0_BLK);
+    fadt.u32GPE1BLK           = RT_H2LE_U32(GPE1_BLK);
     fadt.u8PM1EVTLEN          = 4;
     fadt.u8PM1CTLLEN          = 2;
     fadt.u8PM2CTLLEN          = 0;
@@ -527,23 +527,23 @@ static void acpiSetupFADT (ACPIState *s, RTGCPHYS addr, uint32_t facs_addr, uint
     fadt.u8GPE1BLKLEN         = GPE1_BLK_LEN;
     fadt.u8GPE1BASE           = GPE1_BASE;
     fadt.u8CSTCNT             = 0;
-    fadt.u16PLVL2LAT          = cpu_to_le16(P_LVL2_LAT);
-    fadt.u16PLVL3LAT          = cpu_to_le16(P_LVL3_LAT);
-    fadt.u16FlushSize         = cpu_to_le16(FLUSH_SIZE);
-    fadt.u16FlushStride       = cpu_to_le16(FLUSH_STRIDE);
+    fadt.u16PLVL2LAT          = RT_H2LE_U16(P_LVL2_LAT);
+    fadt.u16PLVL3LAT          = RT_H2LE_U16(P_LVL3_LAT);
+    fadt.u16FlushSize         = RT_H2LE_U16(FLUSH_SIZE);
+    fadt.u16FlushStride       = RT_H2LE_U16(FLUSH_STRIDE);
     fadt.u8DutyOffset         = 0;
     fadt.u8DutyWidth          = 0;
     fadt.u8DayAlarm           = 0;
     fadt.u8MonAlarm           = 0;
     fadt.u8Century            = 0;
-    fadt.u16IAPCBOOTARCH      = cpu_to_le16(IAPC_BOOT_ARCH_LEGACY_DEV | IAPC_BOOT_ARCH_8042);
+    fadt.u16IAPCBOOTARCH      = RT_H2LE_U16(IAPC_BOOT_ARCH_LEGACY_DEV | IAPC_BOOT_ARCH_8042);
     /** @note WBINVD is required for ACPI versions newer than 1.0 */
-    fadt.u32Flags             = cpu_to_le32(  FADT_FL_WBINVD | FADT_FL_SLP_BUTTON
+    fadt.u32Flags             = RT_H2LE_U32(  FADT_FL_WBINVD | FADT_FL_SLP_BUTTON
                                             | FADT_FL_FIX_RTC | FADT_FL_TMR_VAL_EXT);
     acpiWriteGenericAddr(&fadt.ResetReg,     1,  8, 0, 1, ACPI_RESET_BLK);
     fadt.u8ResetVal           = ACPI_RESET_REG_VAL;
-    fadt.u64XFACS             = cpu_to_le64((uint64_t)facs_addr);
-    fadt.u64XDSDT             = cpu_to_le64((uint64_t)dsdt_addr);
+    fadt.u64XFACS             = RT_H2LE_U64((uint64_t)facs_addr);
+    fadt.u64XDSDT             = RT_H2LE_U64((uint64_t)dsdt_addr);
     acpiWriteGenericAddr(&fadt.X_PM1aEVTBLK, 1, 32, 0, 2, PM1a_EVT_BLK);
     acpiWriteGenericAddr(&fadt.X_PM1bEVTBLK, 0,  0, 0, 0, PM1b_EVT_BLK);
     acpiWriteGenericAddr(&fadt.X_PM1aCTLBLK, 1, 16, 0, 2, PM1a_CTL_BLK);
@@ -573,7 +573,7 @@ static int acpiSetupRSDT (ACPIState *s, RTGCPHYS addr, unsigned int nb_entries, 
     acpiPrepareHeader (&rsdt->header, "RSDT", size, 1);
     for (unsigned int i = 0; i < nb_entries; ++i)
     {
-        rsdt->u32Entry[i] = cpu_to_le32(addrs[i]);
+        rsdt->u32Entry[i] = RT_H2LE_U32(addrs[i]);
         Log(("Setup RSDT: [%d] = %x\n", i, rsdt->u32Entry[i]));
     }
     rsdt->header.u8Checksum = acpiChecksum ((uint8_t*)rsdt, size);
@@ -595,7 +595,7 @@ static int acpiSetupXSDT (ACPIState *s, RTGCPHYS addr, unsigned int nb_entries, 
     acpiPrepareHeader (&xsdt->header, "XSDT", size, 1 /* according to ACPI 3.0 specs */);
     for (unsigned int i = 0; i < nb_entries; ++i)
     {
-        xsdt->u64Entry[i] = cpu_to_le64((uint64_t)addrs[i]);
+        xsdt->u64Entry[i] = RT_H2LE_U64((uint64_t)addrs[i]);
         Log(("Setup XSDT: [%d] = %VX64\n", i, xsdt->u64Entry[i]));
     }
     xsdt->header.u8Checksum = acpiChecksum ((uint8_t*)xsdt, size);
@@ -613,12 +613,12 @@ static void acpiSetupRSDP (ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_
     memcpy(rsdp->au8Signature, "RSD PTR ", 8);
     memcpy(rsdp->au8OemId, "VBOX  ", 6);
     rsdp->u8Revision    = ACPI_REVISION;
-    rsdp->u32RSDT       = cpu_to_le32(rsdt_addr);
+    rsdp->u32RSDT       = RT_H2LE_U32(rsdt_addr);
     rsdp->u8Checksum    = acpiChecksum((uint8_t*)rsdp, RT_OFFSETOF(ACPITBLRSDP, u32Length));
 
     /* ACPI 2.0 part (XSDT) */
-    rsdp->u32Length     = cpu_to_le32(sizeof(ACPITBLRSDP));
-    rsdp->u64XSDT       = cpu_to_le64(xsdt_addr);
+    rsdp->u32Length     = RT_H2LE_U32(sizeof(ACPITBLRSDP));
+    rsdp->u64XSDT       = RT_H2LE_U64(xsdt_addr);
     rsdp->u8ExtChecksum = acpiChecksum ((uint8_t*)rsdp, sizeof(ACPITBLRSDP));
 }
 
@@ -635,21 +635,21 @@ static void acpiSetupMADT (ACPIState *s, RTGCPHYS addr)
     memset(&madt, 0, sizeof(madt));
     acpiPrepareHeader(&madt.header, "APIC", sizeof(madt), 2);
 
-    madt.u32LAPIC          = cpu_to_le32(0xfee00000);
-    madt.u32Flags          = cpu_to_le32(PCAT_COMPAT);
+    madt.u32LAPIC          = RT_H2LE_U32(0xfee00000);
+    madt.u32Flags          = RT_H2LE_U32(PCAT_COMPAT);
 
     madt.LApic.u8Type      = 0;
     madt.LApic.u8Length    = sizeof(ACPITBLLAPIC);
     madt.LApic.u8ProcId    = 0;
     madt.LApic.u8ApicId    = 0;
-    madt.LApic.u32Flags    = cpu_to_le32(LAPIC_ENABLED);
+    madt.LApic.u32Flags    = RT_H2LE_U32(LAPIC_ENABLED);
 
     madt.IOApic.u8Type     = 1;
     madt.IOApic.u8Length   = sizeof(ACPITBLIOAPIC);
     madt.IOApic.u8IOApicId = 0;
     madt.IOApic.u8Reserved = 0;
-    madt.IOApic.u32Address = cpu_to_le32(0xfec00000);
-    madt.IOApic.u32GSIB    = cpu_to_le32(0);
+    madt.IOApic.u32Address = RT_H2LE_U32(0xfec00000);
+    madt.IOApic.u32GSIB    = RT_H2LE_U32(0);
 
     madt.header.u8Checksum = acpiChecksum ((uint8_t*)&madt, sizeof(madt));
     acpiPhyscpy (s, addr, &madt, sizeof(madt));
