@@ -340,11 +340,11 @@
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Größe der Gastanzeige automatisch anpassen</translation>
+        <translation>Größe des Gastes automatisch anpassen</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Größe der &amp;Gastanzeige automatisch anpassen</translation>
+        <translation>Größe des &amp;Gastes automatisch anpassen</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -412,7 +412,7 @@
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>Trennt das &amp;Diskettenlaufwerk</translation>
+        <translation>&amp;Diskettenlaufwerk trennen</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>

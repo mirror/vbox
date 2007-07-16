@@ -411,7 +411,7 @@
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>arrêt par &amp;ACPI</translation>
+        <translation>Arrêt par &amp;ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
