@@ -651,7 +651,7 @@ DECLINLINE(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID)
 # else
     __asm
     {
-#   ifdef RT_OS_AMD64
+#   ifdef RT_ARCH_AMD64
         mov     rax, pPageGC
 #   else
         mov     eax, pPageGC

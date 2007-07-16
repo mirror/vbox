@@ -61,7 +61,7 @@ endstruc
 
 %macro STAM_COUNTER_INC 1
 %ifdef VBOX_WITH_STATISTICS
- %ifdef RT_OS_AMD64
+ %ifdef RT_ARCH_AMD64
     STAM64_COUNTER_INC %1
  %else
     STAM32_COUNTER_INC %1
@@ -106,7 +106,7 @@ endstruc
 
 %macro STAM_COUNTER_ADD 2
 %ifdef VBOX_WITH_STATISTICS
- %ifdef RT_OS_AMD64
+ %ifdef RT_ARCH_AMD64
      STAM64_COUNTER_ADD %1, %2
  %else
      STAM32_COUNTER_ADD %1, %2
@@ -165,7 +165,7 @@ endstruc
 
 %macro STAM_PROFILE_START 1
 %ifdef VBOX_WITH_STATISTICS
- %ifdef RT_OS_AMD64
+ %ifdef RT_ARCH_AMD64
     STAM64_PROFILE_START %1
  %else
     STAM32_PROFILE_START %1
@@ -271,7 +271,7 @@ endstruc
 
 %macro STAM_PROFILE_STOP 2
 %ifdef VBOX_WITH_STATISTICS
- %ifdef RT_OS_AMD64
+ %ifdef RT_ARCH_AMD64
     STAM64_PROFILE_STOP %1, %2
  %else
     STAM32_PROFILE_STOP %1, %2
@@ -316,7 +316,7 @@ endstruc
 
 %macro STAM_PROFILE_ADV_START 1
 %ifdef VBOX_WITH_STATISTICS
- %ifdef RT_OS_AMD64
+ %ifdef RT_ARCH_AMD64
     STAM64_PROFILE_ADV_START %1
  %else
     STAM32_PROFILE_ADV_START %1
@@ -365,7 +365,7 @@ endstruc
 
 %macro STAM_PROFILE_ADV_STOP 1
 %ifdef VBOX_WITH_STATISTICS
- %ifdef RT_OS_AMD64
+ %ifdef RT_ARCH_AMD64
     STAM64_PROFILE_ADV_STOP %1
  %else
     STAM32_PROFILE_ADV_STOP %1

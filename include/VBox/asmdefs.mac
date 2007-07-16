@@ -162,7 +162,7 @@
 %endmacro
 
 %macro COM_S_PRINT 1+
-%ifdef RT_OS_AMD64
+%ifdef RT_ARCH_AMD64
     COM64_S_PRINT %1
 %else
     COM32_S_PRINT %1
@@ -251,7 +251,7 @@
 %endmacro
 
 %macro COM_S_CHAR 1
-%ifdef RT_OS_AMD64
+%ifdef RT_ARCH_AMD64
     COM64_S_CHAR %1
 %else
     COM32_S_CHAR %1
@@ -370,7 +370,7 @@
 %endmacro
 
 %macro COM_S_NEWLINE 0
-%ifdef RT_OS_AMD64
+%ifdef RT_ARCH_AMD64
     COM64_S_NEWLINE
 %else
     COM32_S_NEWLINE
@@ -498,7 +498,7 @@
 %endmacro
 
 %macro COM_S_DWORD_REG 1
-%ifdef RT_OS_AMD64
+%ifdef RT_ARCH_AMD64
     COM64_S_DWORD_REG %1
 %else
     COM32_S_DWORD_REG %1
@@ -626,7 +626,7 @@
 %endmacro
 
 %macro COM_S_BYTE_REG 1
-%ifdef RT_OS_AMD64
+%ifdef RT_ARCH_AMD64
     COM64_S_BYTE_REG %1
 %else
     COM32_S_BYTE_REG %1
@@ -697,7 +697,7 @@
 %endmacro
 
 %macro COM_S_DIGIT_REG 1
-%ifdef RT_OS_AMD64
+%ifdef RT_ARCH_AMD64
     COM64_S_DIGIT_REG %1
 %else
     COM32_S_DIGIT_REG %1
