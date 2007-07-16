@@ -86,6 +86,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_KBD,
     /** NE2000 Device group. */
     LOG_GROUP_DEV_NE2000,
+    /** Parallel Device group */
+    LOG_GROUP_DEV_PARALLEL,
     /** PC Device group. */
     LOG_GROUP_DEV_PC,
     /** PC Architecture Device group. */
@@ -134,6 +136,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_HOST_FLOPPY,
     /** Host hard disk (raw partition) media driver group. */
     LOG_GROUP_DRV_HOST_HDD,
+    /** Host Parallel Driver group */
+    LOG_GROUP_DRV_HOST_PARALLEL,
     /** The internal networking transport driver group. */
     LOG_GROUP_DRV_INTNET,
     /** iSCSI Initiator driver group. */
@@ -297,6 +301,7 @@ typedef enum LOGGROUP
     "DEV_IDE",      \
     "DEV_KBD",      \
     "DEV_NE2000",   \
+    "DEV_PARALLEL", \
     "DEV_PC",       \
     "DEV_PC_ARCH",  \
     "DEV_PC_BIOS",  \
@@ -321,6 +326,7 @@ typedef enum LOGGROUP
     "DRV_HOST_DVD", \
     "DRV_HOST_FLOPPY", \
     "DRV_HOST_HDD", \
+    "DRV_HOST_PARALLEL", \
     "DRV_INTNET",   \
     "DRV_ISCSI",    \
     "DRV_ISCSI_TRANSPORT_TCP", \
