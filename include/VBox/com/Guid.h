@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * Guid class declaration
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_Guid_h__
-#define __VBox_com_Guid_h__
+#ifndef ___VBox_com_Guid_h
+#define ___VBox_com_Guid_h
 
 #if !defined (__WIN__)
 #include <nsMemory.h>
@@ -159,5 +158,5 @@ inline bool operator|| (bool b, const Guid& guid) { return b || bool (guid); }
 
 }; // namespace com
 
-#endif // __VBox_com_Guid_h__
+#endif
 

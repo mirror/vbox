@@ -1,5 +1,4 @@
 /** @file
- *
  * MS COM / XPCOM Abstraction Layer:
  * ErrorInfo class declaration
  */
@@ -20,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_com_ErrorInfo_h__
-#define __VBox_com_ErrorInfo_h__
+#ifndef ___VBox_com_ErrorInfo_h
+#define ___VBox_com_ErrorInfo_h
 
 #include "VBox/com/ptr.h"
 #include "VBox/com/string.h"
@@ -413,5 +412,5 @@ private:
 
 }; // namespace com
 
-#endif // __VBox_com_ErrorInfo_h__
+#endif
 
