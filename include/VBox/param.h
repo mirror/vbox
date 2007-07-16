@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_param_h__
-#define __VBox_param_h__
+#ifndef ___VBox_param_h
+#define ___VBox_param_h
 
 #include <iprt/param.h>
 

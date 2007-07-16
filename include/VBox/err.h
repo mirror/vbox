@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_err_h__
-#define __VBox_err_h__
+#ifndef ___VBox_err_h
+#define ___VBox_err_h
 
 #include <VBox/cdefs.h>
 #include <iprt/err.h>

@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_VBoxDev_h__
-#define __VBox_VBoxDev_h__
+#ifndef ___VBox_VBoxDev_h
+#define ___VBox_VBoxDev_h
 
 #include <VBox/cdefs.h>
 
@@ -65,4 +65,4 @@ __BEGIN_DECLS
 
 __END_DECLS
 
-#endif /* __VBox_VBoxDev_h__ */
+#endif /* ___VBox_VBoxDev_h */

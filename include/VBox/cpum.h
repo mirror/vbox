@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_cpum_h__
-#define __VBox_cpum_h__
+#ifndef ___VBox_cpum_h
+#define ___VBox_cpum_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

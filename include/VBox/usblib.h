@@ -19,9 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __VBox_usblib_h__
-#define __VBox_usblib_h__
+#ifndef ___VBox_usblib_h
+#define ___VBox_usblib_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

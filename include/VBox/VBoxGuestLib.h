@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_VBoxGuestLib_h__
-#define __VBox_VBoxGuestLib_h__
+#ifndef ___VBox_VBoxGuestLib_h
+#define ___VBox_VBoxGuestLib_h
 
 #include <VBox/VBoxGuest.h>
 

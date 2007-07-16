@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_VBoxGuest_h__
-#define __VBox_VBoxGuest_h__
+#ifndef ___VBox_VBoxGuest_h
+#define ___VBox_VBoxGuest_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
@@ -1342,4 +1342,4 @@ __END_DECLS
 
 #endif /* IN_RING3 */
 
-#endif /* __VBox_VBoxGuest_h__ */
+#endif /* ___VBox_VBoxGuest_h */

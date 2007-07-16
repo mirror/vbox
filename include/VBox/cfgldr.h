@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_cfgldr_h__
-#define __VBox_cfgldr_h__
+#ifndef ___VBox_cfgldr_h
+#define ___VBox_cfgldr_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -629,4 +629,4 @@ __END_DECLS
 
 /** @} */
 
-#endif /* __VBox_cfgldr_h__ */
+#endif /* ___VBox_cfgldr_h */

@@ -23,9 +23,8 @@
  *      sed -e '/__VBox_x86_h__/d' -e '/#define/!d' -e 's/#define/%define/' include/VBox/x86.h
  */
 
-
-#ifndef __VBox_x86_h__
-#define __VBox_x86_h__
+#ifndef ___VBox_x86_h
+#define ___VBox_x86_h
 
 #include <VBox/types.h>
 

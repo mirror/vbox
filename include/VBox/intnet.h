@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_intnet_h__
-#define __VBox_intnet_h__
+#ifndef ___VBox_intnet_h
+#define ___VBox_intnet_h
 
 #include <VBox/types.h>
 #include <VBox/stam.h>

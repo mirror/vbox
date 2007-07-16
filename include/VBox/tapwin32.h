@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_tapwin32_h__
-#define __VBox_tapwin32_h__
+#ifndef ___VBox_tapwin32_h
+#define ___VBox_tapwin32_h
 
 #define TAP_DRIVER_MAJOR_VERSION    8
 #define TAP_DRIVER_MINOR_VERSION    2

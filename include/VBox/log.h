@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_log_h__
-#define __VBox_log_h__
+#ifndef ___VBox_log_h
+#define ___VBox_log_h
 
 /*
  * Set the default loggroup.

@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_vrdpapi_h__
-#define __VBox_vrdpapi_h__
+#ifndef ___VBox_vrdpapi_h
+#define ___VBox_vrdpapi_h
 
 #ifdef VRDP_NO_COM
 #include <iprt/cdefs.h>
@@ -1660,5 +1660,5 @@ __END_DECLS
 
 /** @} */
 
-#endif /* __VBox_vrdpapi_h__ */
+#endif /* ___VBox_vrdpapi_h */
 
