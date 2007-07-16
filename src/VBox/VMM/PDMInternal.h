@@ -208,7 +208,7 @@ typedef struct PDMTHREADINT
 #define PDMDRVINSINT_DECLARED
 #define PDMCRITSECTINT_DECLARED
 #define PDMTHREADINT_DECLARED
-#ifdef __VBox_pdm_h__
+#ifdef ___VBox_pdm_h
 # error "Invalid header PDM order. Include PDMInternal.h before VBox/pdm.h!"
 #endif
 #include <VBox/pdm.h>
