@@ -35,8 +35,8 @@
  * ====================================================
  */
 
-#ifndef __iprt_nocrt_math_h__
-#define __iprt_nocrt_math_h__
+#ifndef ___iprt_nocrt_math_h
+#define ___iprt_nocrt_math_h
 
 #if !defined(__GNUC__) /* && !defined(__YOUR_COMPILER__) */
 # error "IPRT: Adjust this header for your compiler"

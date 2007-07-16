@@ -46,8 +46,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef __iprt_nocrt_amd64_fenv_h__
-#define __iprt_nocrt_amd64_fenv_h__
+#ifndef ___iprt_nocrt_amd64_fenv_h
+#define ___iprt_nocrt_amd64_fenv_h
 
 #include <iprt/types.h>
 

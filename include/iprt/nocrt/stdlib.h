@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __stdlib_h__
-#define __stdlib_h__
+#ifndef ___iprt_nocrt_stdlib_h
+#define ___iprt_nocrt_stdlib_h
 
 #include <iprt/types.h>
 
