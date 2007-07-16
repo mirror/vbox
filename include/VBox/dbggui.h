@@ -21,7 +21,7 @@
 #ifndef ___VBox_dbggui_h
 #define ___VBox_dbggui_h
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 # include <VirtualBox.h>
 #else
 # include <VirtualBox_XPCOM.h>

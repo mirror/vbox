@@ -31,7 +31,7 @@
 
 #if !defined (VBOX_WITH_XPCOM)
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
 // Windows COM
 /////////////////////////////////////////////////////////////////////////////
@@ -71,18 +71,18 @@
  */
 #define COM_IIDOF(I) _ATL_IIDOF (I)
 
-#else // defined (__WIN__)
+#else // defined (RT_OS_WINDOWS)
 
 #error "VBOX_WITH_XPCOM is not defined!"
 
-#endif // defined (__WIN__)
+#endif // defined (RT_OS_WINDOWS)
 
 #else // !defined (VBOX_WITH_XPCOM)
 
 // XPCOM
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined (__OS2__)
+#if defined (RT_OS_OS2)
 
 /* Make sure OS/2 Toolkit headers are pulled in to have
  * BOOL/ULONG/etc. typedefs already defined in order to be able to redefine
@@ -95,13 +95,13 @@
 #undef FALSE
 #undef TRUE
 
-#endif // defined (__OS2__)
+#endif // defined (RT_OS_OS2)
 
-#if defined (__DARWIN__)
+#if defined (RT_OS_DARWIN)
   /* CFBase.h defines these*/
 # undef FALSE
 # undef TRUE
-#endif  /* __DARWIN__ */
+#endif  /* RT_OS_DARWIN */
 
 #include <nsID.h>
 
@@ -283,7 +283,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
     return rv;                                                                \
 }
 
-#endif // !defined (__WIN__)
+#endif // !defined (RT_OS_WINDOWS)
 
 /**
  *  Declares a whar_t string literal from the argument.

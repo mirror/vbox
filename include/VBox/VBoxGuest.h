@@ -38,15 +38,15 @@ typedef uint32_t vmmDevHypPtr;
 /** Hypervisor physical pointer size type */
 typedef uint32_t vmmDevHypPhys;
 
-#if defined(__LINUX__)
+#if defined(RT_OS_LINUX)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxadd"
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "\\Dev\\VBoxGst$"
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
 /** The support service name. */
 # define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
 /** Win32 Device name. */
@@ -957,25 +957,25 @@ typedef struct
  * 
  * @{
  */
-#ifdef __AMD64__
+#ifdef RT_OS_AMD64
 # define VBOXGUEST_IOCTL_FLAG     128
-#elif defined(__X86__)
+#elif defined(RT_OS_X86)
 # define VBOXGUEST_IOCTL_FLAG     0
 #else
 # error "dunno which arch this is!"
 #endif
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 # define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
     ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 # define VBOXGUEST_IOCTL_CATEGORY                   0xc2
 # define VBOXGUEST_IOCTL_CODE(Function, Size)       ((unsigned char)(Function))
 # define VBOXGUEST_IOCTL_CATEGORY_FAST              0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)        ((unsigned char)(Function))
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
 # define IOCTL_CODE(DeviceType, Function, Method_ignored, Access_ignored, DataSize) \
     ( (3 << 30) | ((DeviceType) << 8) | (Function) | ((DataSize) << 16) )
 # define METHOD_BUFFERED        0
@@ -1242,7 +1242,7 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
 }
 
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 
 /** 
  * The data buffer layout for the IDC entry point (AttachDD).
@@ -1310,7 +1310,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
  */
 #define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT  VBOXGUEST_IOCTL_CODE(48, sizeof(uint32_t))
 
-#endif /* __OS2__ */
+#endif /* RT_OS_OS2 */
 
 /** @} */
 
