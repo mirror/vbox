@@ -153,7 +153,7 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb);
  */
 RTDECL(void)      RTMemExecFree(void *pv);
 
-#if defined(IN_RING0) && defined(RT_ARCH_AMD64) && defined(__LINUX__)
+#if defined(IN_RING0) && defined(RT_ARCH_AMD64) && defined(RT_OS_LINUX)
 /**
  * Donate read+write+execute memory to the exec heap.
  *

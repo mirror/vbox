@@ -39,7 +39,7 @@ __BEGIN_DECLS
 typedef struct RTSPINLOCKTMP
 {
 #ifdef IN_RING0
-# ifdef __LINUX__
+# ifdef RT_OS_LINUX
     /** The saved [R|E]FLAGS. */
     unsigned long   flFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
