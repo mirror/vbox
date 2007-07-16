@@ -29,16 +29,36 @@
  */
 #ifndef IPRT_NO_CRT
 
-# if !defined(__DARWIN__) || !defined(KERNEL)   /* Klugde for the darwin kernel. */
-#  include <stddef.h>
-# else /* DARWIN && KERNEL */
+# if defined(__DARWIN__) && defined(KERNEL)
+    /*
+     * Klugde for the darwin kernel:
+     *  stddef.h is missing IIRC.
+     */
 #  ifndef _PTRDIFF_T
 #  define _PTRDIFF_T
     typedef __darwin_ptrdiff_t ptrdiff_t;
 #  endif
-# endif /* DARWIN && KERNEL */
+#  include <sys/types.h>
 
-# if defined(__LINUX__) && defined(__KERNEL__)
+# elif defined(__FREEBSD__) && defined(_KERNEL)
+    /*
+     * Kludge for the FreeBSD kernel:
+     *  stddef.h and sys/types.h has sligtly different offsetof definitions
+     *  when compiling in kernel mode. This is just to make GCC keep shut.
+     */
+#  ifndef _STDDEF_H_
+#   undef offsetof
+#  endif
+#  include <stddef.h>
+#  ifndef _SYS_TYPES_H_
+#   undef offsetof
+#  endif
+#  include <sys/types.h>
+#  ifndef offsetof
+#   error "offsetof is not defined..."
+#  endif
+
+# elif defined(__LINUX__) && defined(__KERNEL__)
     /*
      * Kludge for the linux kernel:
      *   1. sys/types.h doesn't mix with the kernel.
@@ -46,6 +66,7 @@
      *      declares false and true as enum values.
      * We work around these issues here and nowhere else.
      */
+#  include <stddef.h>
 #  if defined(__cplusplus)
     typedef bool _Bool;
 #  endif
@@ -57,7 +78,9 @@
 #  undef false
 #  undef true
 #  undef bool
+
 # else
+#  include <stddef.h>
 #  include <sys/types.h>
 # endif
 
@@ -66,6 +89,7 @@
 #  undef ssize_t
    typedef intptr_t ssize_t;
 # endif
+
 #else /* no crt */
 # include <iprt/nocrt/compiler/gcc.h>
 #endif /* no crt */
