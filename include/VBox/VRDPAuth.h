@@ -130,4 +130,4 @@ typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
 
 typedef VRDPAUTHENTRY2 *PVRDPAUTHENTRY2;
 
-#endif /* ___VBox_vrdpauth_h */
+#endif

@@ -584,4 +584,4 @@ DBGDECL(int)    DBGCTcpTerminate(PVM pVM, void *pvData);
 
 __END_DECLS
 
-#endif /* ___VBox_dbg_h */
+#endif

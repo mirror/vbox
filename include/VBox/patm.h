@@ -666,4 +666,4 @@ PATMR3DECL(bool) PATMIsSpinlockReleasePatch(PVM pVM, RTGCPTR pCallTargetGC);
 __END_DECLS
 
 
-#endif /* !__VBox_patm_h__ */
+#endif

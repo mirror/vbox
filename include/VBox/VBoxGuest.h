@@ -1342,4 +1342,4 @@ __END_DECLS
 
 #endif /* IN_RING3 */
 
-#endif /* ___VBox_VBoxGuest_h */
+#endif

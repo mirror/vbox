@@ -67,5 +67,5 @@ typedef enum
 
 __END_DECLS
 
-#endif /* !__VBox_ostypes_h__ */
+#endif
 

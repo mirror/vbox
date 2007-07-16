@@ -201,5 +201,5 @@ HWACCMR0DECL(int) HWACCMR0Disable(PVM pVM);
 __END_DECLS
 
 
-#endif /* !__VBox_hwaccm_h__ */
+#endif
 

@@ -748,5 +748,5 @@
 
 /** @} */
 
-#endif /* !__opcode_h__ */
+#endif
 

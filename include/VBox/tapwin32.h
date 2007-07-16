@@ -80,4 +80,4 @@ typedef struct
 #define TAP_IOCTL_TRANSFER_ETHPACKETS   TAP_CONTROL_CODE (10, METHOD_BUFFERED)
 
 
-#endif /* !__VBox_tapwin32_h__ */
+#endif
