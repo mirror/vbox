@@ -51,13 +51,13 @@
 #define LOG_GROUP LOG_GROUP_DEV_PCI
 /* Hack to get PCIDEVICEINT declare at the right point - include "PCIInternal.h". */
 #define PCI_INCLUDE_PRIVATE
-#include "vl_vbox.h"
 #include <VBox/pci.h>
 #include <VBox/pdm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 
 #include "Builtins.h"
 
@@ -225,7 +225,7 @@ static void pci_update_mappings(PCIDevice *d)
     int cmd, i;
     uint32_t last_addr, new_addr, config_ofs;
 
-    cmd = le16_to_cpu(*(uint16_t *)(d->config + PCI_COMMAND));
+    cmd = RT_LE2H_U16(*(uint16_t *)(d->config + PCI_COMMAND));
     for(i = 0; i < PCI_NUM_REGIONS; i++) {
         r = &d->Int.s.aIORegions[i];
         if (i == PCI_ROM_SLOT) {
@@ -236,7 +236,7 @@ static void pci_update_mappings(PCIDevice *d)
         if (r->size != 0) {
             if (r->type & PCI_ADDRESS_SPACE_IO) {
                 if (cmd & PCI_COMMAND_IO) {
-                    new_addr = le32_to_cpu(*(uint32_t *)(d->config +
+                    new_addr = RT_LE2H_U32(*(uint32_t *)(d->config +
                                                          config_ofs));
                     new_addr = new_addr & ~(r->size - 1);
                     last_addr = new_addr + r->size - 1;
@@ -250,7 +250,7 @@ static void pci_update_mappings(PCIDevice *d)
                 }
             } else {
                 if (cmd & PCI_COMMAND_MEMORY) {
-                    new_addr = le32_to_cpu(*(uint32_t *)(d->config +
+                    new_addr = RT_LE2H_U32(*(uint32_t *)(d->config +
                                                          config_ofs));
                     /* the ROM slot has a specific enable bit */
                     if (i == PCI_ROM_SLOT && !(new_addr & 1))
@@ -317,11 +317,11 @@ static DECLCALLBACK(uint32_t) pci_default_read_config(PCIDevice *d, uint32_t add
         val = d->config[address];
         break;
     case 2:
-        val = le16_to_cpu(*(uint16_t *)(d->config + address));
+        val = RT_LE2H_U16(*(uint16_t *)(d->config + address));
         break;
     default:
     case 4:
-        val = le32_to_cpu(*(uint32_t *)(d->config + address));
+        val = RT_LE2H_U32(*(uint32_t *)(d->config + address));
         break;
     }
     return val;
@@ -354,7 +354,7 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
             val &= ~(r->size - 1);
             val |= r->type;
         }
-        *(uint32_t *)(d->config + address) = cpu_to_le32(val);
+        *(uint32_t *)(d->config + address) = RT_H2LE_U32(val);
         pci_update_mappings(d);
         return;
     }
@@ -410,6 +410,19 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
             }
             break;
         }
+#ifdef VBOX
+	/* status register: only clear bits by writing a '1' at the corresponding bit */
+        if (addr == 0x06)
+        {
+            d->config[addr] &= ~val;
+            d->config[addr] |= 0x08; /* interrupt status */
+        }
+        else if (addr == 0x07)
+        {
+            d->config[addr] &= ~val;
+        }
+        else
+#endif
         if (can_write) {
             d->config[addr] = val;
         }
