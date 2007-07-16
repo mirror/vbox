@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_ctype_h__
-#define __iprt_ctype_h__
+#ifndef ___iprt_ctype_h
+#define ___iprt_ctype_h
 
 #include <ctype.h>
 

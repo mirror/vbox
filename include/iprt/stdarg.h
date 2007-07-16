@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_stdarg_h__
-#define __iprt_stdarg_h__
+#ifndef ___iprt_stdarg_h
+#define ___iprt_stdarg_h
 
 #ifndef IPRT_NO_CRT
 # include <stdarg.h>

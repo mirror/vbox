@@ -1,5 +1,4 @@
 /** @file
- *
  * innotek Portable Runtime - Unicode Code Points.
  */
 
@@ -19,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_uni_h__
-#define __iprt_uni_h__
+#ifndef ___iprt_uni_h
+#define ___iprt_uni_h
 
 /** @defgroup grp_rt_uni    RTUniCp - Unicode Code Points
  * @ingroup grp_rt

@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_asm_h__
-#define __iprt_asm_h__
+#ifndef ___iprt_asm_h
+#define ___iprt_asm_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

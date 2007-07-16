@@ -1,5 +1,4 @@
 /** @file
- *
  * innotek Portable Runtime - Compression.
  */
 
@@ -19,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_zip_h__
-#define __iprt_zip_h__
-
+#ifndef ___iprt_zip_h
+#define ___iprt_zip_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

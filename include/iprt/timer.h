@@ -1,5 +1,4 @@
 /** @file
- *
  * innotek Portable Runtime - Timer.
  */
 
@@ -19,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_timer_h__
-#define __iprt_timer_h__
+#ifndef ___iprt_timer_h
+#define ___iprt_timer_h
 
 
 #include <iprt/cdefs.h>

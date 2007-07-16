@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_avl_h__
-#define __iprt_avl_h__
+#ifndef ___iprt_avl_h
+#define ___iprt_avl_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

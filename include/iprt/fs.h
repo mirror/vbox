@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __iprt_fs_h__
-#define __iprt_fs_h__
+#ifndef ___iprt_fs_h
+#define ___iprt_fs_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
@@ -457,5 +456,5 @@ RTR3DECL(int) RTFsMountpointsEnum(PFNRTFSMOUNTPOINTENUM pfnCallback, void *pvUse
 
 __END_DECLS
 
-#endif /* __iprt_fs_h__ */
+#endif /* ___iprt_fs_h */
 

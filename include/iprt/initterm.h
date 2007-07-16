@@ -18,12 +18,11 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_initterm_h__
-#define __iprt_initterm_h__
+#ifndef ___iprt_initterm_h
+#define ___iprt_initterm_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-
 
 __BEGIN_DECLS
 

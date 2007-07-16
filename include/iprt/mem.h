@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_mem_h__
-#define __iprt_mem_h__
+#ifndef ___iprt_mem_h
+#define ___iprt_mem_h
 
 
 #include <iprt/cdefs.h>
