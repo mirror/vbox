@@ -2439,7 +2439,7 @@ endif # VBOX_WITH_OS2_ADDITIONS
 # only way to get a really consistent build is to run 'kmk' in the top-level
 # directory. If you don't run it there, you get a consistent sub-tree only.
 #
-VBOX_VERSION_STAMP = $(PATH_OUT)/version-stamp-$(VBOX_VERSION_STRING)
+VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-$(VBOX_VERSION_STRING)
 VBOX_VERSION_HEADER = $(PATH_OUT)/version-generated.h
 VBOX_VERSION_MK     = $(PATH_OUT)/version-generated.mk
 
@@ -2469,8 +2469,8 @@ $(VBOX_VERSION_HEADER): $(VBOX_VERSION_STAMP)
 #
 $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(call MSG_GENERATE,,$@)
-	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(APPEND) $@.tmp "VBOX_VERSION_MAJOR = $(VBOX_VERSION_MAJOR)"
 	$(QUIET)$(APPEND) $@.tmp "VBOX_VERSION_MINOR = $(VBOX_VERSION_MINOR)"
 	$(QUIET)$(APPEND) $@.tmp "VBOX_VERSION_BUILD = $(VBOX_VERSION_BUILD)"
@@ -2483,6 +2483,56 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 Makefile.kmk: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
 Makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
 makefile: | $(VBOX_VERSION_HEADER) $(VBOX_VERSION_MK)
+
+
+#
+# Subversion tree revision.
+#
+# The VBOX_SVN_REV contains our best guess. Use svn info on the
+# root of the treeto determin this it if .svn/entries is found,
+# otherwise fall back on the Config.kmk revision.
+#
+ifndef VBOX_SVN_REV
+ VBOX_SVN_REV_KMK       = $(PATH_OUT)/revision.kmk
+ VBOX_SVN_REV_FALLBACK := $(patsubst %:,,  $Rev$  )
+ VBOX_SVN_DEP          := $(wildcard $(PATH_ROOT)/.svn/entries)
+
+# Rule for generating a timestamp and updating the real thing on change.
+ ifneq ($(VBOX_SVN_DEP),)
+$(VBOX_SVN_REV_KMK).ts: $(VBOX_SVN_DEP)
+ else
+$(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
+ endif
+	$(call MSG_GENERATE,,$(VBOX_SVN_REV_KMK))
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(MKDIR) -p $(@D)
+ ifneq ($(VBOX_SVN_DEP),)
+	$(QUIET)$(APPEND) $@ "export VBOX_SVN_REV=$(shell svn info $(PATH_ROOT) | $(SED) -e '/^Revision/!d'  -e "s/Revision\: *//")"
+ else
+	$(QUIET)$(APPEND) $@ "export VBOX_SVN_REV=$(VBOX_SVN_REV_FALLBACK)"
+ endif
+	$(QUIET)if test ! -f $(VBOX_SVN_REV_KMK) \
+	|| test ! "`$(CAT_EXT) $@`" = "`$(CAT_EXT) $(VBOX_SVN_REV_KMK)`"; \
+	then \
+		$(RM_EXT) -f $(VBOX_SVN_REV_KMK); \
+		$(CP_EXT) -f $@ $(VBOX_SVN_REV_KMK) || exit 1; \
+		echo '* $(VBOX_SVN_REV_KMK) was updated:'; \
+	else \
+		echo '* $(VBOX_SVN_REV_KMK) was not changed:'; \
+	fi
+	$(QUIET)$(CAT_EXT) $(VBOX_SVN_REV_KMK)
+
+# Dependency on timestamp without any commands, so we
+# won't be bother if nothing changed.
+$(VBOX_SVN_REV_KMK): $(VBOX_SVN_REV_KMK).ts
+
+## @todo kBuild: Fix problem with using '$(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK)' so the
+# problem with missing $(VBOX_SVN_REV_KMK) and not $(VBOX_SVN_REV_KMK).ts can be addressed
+
+## @todo kbuild: Need $(CMP)!
+
+ include $(VBOX_SVN_REV_KMK)
+endif
 
 
 #
