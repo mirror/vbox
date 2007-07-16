@@ -1426,21 +1426,72 @@ TEMPLATE_VBOXR0DRV_LDFLAGS             = -static -nostdlib -r -Wl,-Y,1455 \
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
 endif
 
-ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)  # pure guess work just to avoid the warning below
+ifeq ($(BUILD_TARGET),freebsd)
+# x86 FreeBSD:
+#  cc -O2 -fno-strict-aliasing -pipe -Werror -D_KERNEL -DKLD_MODULE \
+#   -nostdinc -I- -I. -I@ -I@/contrib/altq -I@/../include -I/usr/include \
+#   -finline-limit=8000 -fno-common -mno-align-long-strings -mpreferred-stack-boundary=2 \
+#   -mno-mmx -mno-3dnow -mno-sse -mno-sse2 -ffreestanding -Wall -Wredundant-decls -Wnested-externs \
+#   -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Winline -Wcast-qual -fformat-extensions \
+#   -std=c99 -c ../my.c
+#  ld -d -warn-common -r -d -o my.kld my.o
+#  :> export_syms
+#  awk -f /usr/src/sys/modules/my/../../conf/kmod_syms.awk my.kld export_syms | xargs -J% objcopy % my.kld
+#  ld -Bsharable -d warn-commnon -o my.ko my.kld
+#
+# Note: @ -> /usr/src/sys  and  machine -> /usr/src/sys/i386/include
+
+## The location of the FreeBSD kernel source.
+VBOX_FREEBSD_SRC ?= /usr/src/sys
+## The FreeBSD /usr/include.
+VBOX_FREEBSD_SYS_INCS ?= /usr/include
+
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_DEFS                = __KERNEL__ IN_RING0 IN_RT_R0
-TEMPLATE_VBOXR0DRV_CFLAGS              = \
-	-Wall -Wstrict-prototypes -Wno-trigraphs $(VBOX_GCC_Wno-pointer-sign) \
-	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing -fno-common
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -msoft-float
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
-	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
-	-Wno-sign-compare -Wdeclaration-after-statement
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(filter-out -Wstrict-prototypes -Wno-pointer-sign,$(TEMPLATE_VBOXR0DRV_CFLAGS)) -fno-exceptions -fno-rtti
+TEMPLATE_VBOXR0DRV_LDTOOL              = FREEBSDKMODLD
+TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL KLD_MODULE IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_INCS                = \
+	$(VBOX_FREEBSD_SRC) \
+	$(VBOX_FREEBSD_SRC)/contrib/altq \
+	$(VBOX_FREEBSD_SRC)/../include \
+	$(VBOX_FREEBSD_SYS_INCS)
+# omitting: -Wcast-qual, -Wredundant-decls
+TEMPLATE_VBOXR0DRV_CFLAGS              =  \
+	-Wall -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
+	-Wstrict-prototypes -Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
+	-O2 -fformat-extensions -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) \
+	-nostdinc -std=c99
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-align-long-strings -mpreferred-stack-boundary=2 -mno-mmx -mno-3dnow -mno-sse -mno-sse2
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 "Port me to amd64 FreeBSD"
+TEMPLATE_VBOXR0DRV_CXXFLAGS            = -fno-exceptions -fno-rtti \
+	-Wall -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
+	-O2 -fno-format-extensions -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) \
+	-nostdinc
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .ko
-TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386 -r
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64 -r
-endif
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -d --warn-common
+TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386_fbsd
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64 "Port me to amd64 FreeBSD"
+
+TOOL_FREEBSDKMODLD = FreeBSD kernel module linker.
+# See kBuild/tools/GCC3.kmk for docs.
+TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT = $(outbase).kld
+TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT_MAYBE = $(outbase).map
+TOOL_FREEBSDKMODLD_LINK_SYSMOD_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))
+TOOL_FREEBSDKMODLD_LINK_SYSMOD_DEPORD =
+define TOOL_FREEBSDKMODLD_LINK_SYSMOD_CMDS
+	@# Link intermediate .kld (a relocatable object).
+	ld $(flags) -r -o $(outbase).kld $(objs) \
+		$(foreach p,$(libpath), -L$(p))\
+		$(foreach lib,$(libs), $(if $(findstring $(lib),$(subst /,x,$(lib))), -l$(patsubst lib%,%,$(basename $(lib))), $(lib)))
+	@# Strip non-exported symbols private and localize the exported ones.
+	awk -f $(VBOX_FREEBSD_SRC)/conf/kmod_syms.awk $(outbase).kld $(if $(othersrc), $(othersrc),/dev/null) \
+		| xargs -J% objcopy % $(outbase).kld
+	@# Link the final .ko (a shared object).
+	ld $(flags) -Bshareable -o $(out) $(outbase).kld
+endef
+
+endif # FreeBSD
 
 ifdef VBOX_WITH_VBOXDRV
  ifndef TEMPLATE_VBOXR0DRV_TOOL
