@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __iprt_nocrt_amd64_math_h__
-#define __iprt_nocrt_amd64_math_h__
+#ifndef ___iprt_nocrt_amd64_math_h
+#define ___iprt_nocrt_amd64_math_h
 
 #include <iprt/asm.h>
 

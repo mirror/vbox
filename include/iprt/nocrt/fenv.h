@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_nocrt_fenv_h__
-#define __iprt_nocrt_fenv_h__
+#ifndef ___iprt_nocrt_fenv_h
+#define ___iprt_nocrt_fenv_h
 
 #include <iprt/cdefs.h>
 #ifdef __AMD64__

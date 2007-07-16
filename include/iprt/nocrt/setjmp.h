@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __setjmp_h__
-#define __setjmp_h__
+#ifndef ___iprt_nocrt_setjmp_h
+#define ___iprt_nocrt_setjmp_h
 
 #include <iprt/types.h>
 

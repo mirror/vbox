@@ -2,8 +2,8 @@
    for compiler specific headers like on linux, mingw, os2, ++. 
    This file will be cleaned up later...  */
    
-#ifndef __nocrt_compiler_gcc_h__
-#define __nocrt_compiler_gcc_h__
+#ifndef ___iprt_nocrt_compiler_gcc_h
+#define ___iprt_nocrt_compiler_gcc_h
 
 
 /* stddef.h */

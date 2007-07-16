@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __limits_h__
-#define __limits_h__
+#ifndef ___iprt_nocrt_limits_h
+#define ___iprt_nocrt_limits_h
 
 #include <iprt/types.h>
 
