@@ -45,7 +45,7 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
  */
 
 #ifndef CTL_CODE
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
 #  define CTL_CODE(DeviceType, Function, Method, Access) \
     ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 #else /* unix: */

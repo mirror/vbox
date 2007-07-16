@@ -206,7 +206,7 @@ typedef enum SUPGIPMODE
 extern DECLEXPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 #elif defined(IN_RING0)
 extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
-# if defined(__GNUC__) && !defined(__DARWIN__) && defined(__AMD64__)
+# if defined(__GNUC__) && !defined(RT_OS_DARWIN) && defined(RT_OS_AMD64)
 /** Workaround for ELF+GCC problem on 64-bit hosts.
  * (GCC emits a mov with a R_X86_64_32 reloc, we need R_X86_64_64.) */
 DECLINLINE(PSUPGLOBALINFOPAGE) SUPGetGIP(void)

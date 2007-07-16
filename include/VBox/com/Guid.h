@@ -22,7 +22,7 @@
 #ifndef ___VBox_com_Guid_h
 #define ___VBox_com_Guid_h
 
-#if !defined (__WIN__)
+#if !defined (RT_OS_WINDOWS)
 #include <nsMemory.h>
 #endif
 
@@ -98,7 +98,7 @@ public:
     // to pass instances to RTUuid*() as a constant argument
     operator const RTUUID * const () const { return &uuid; }
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 
     // to assign instances to GUIDPARAMOUT parameters from within the interface method
     const Guid &cloneTo (GUID *pguid) const {

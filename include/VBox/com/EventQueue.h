@@ -22,7 +22,7 @@
 #ifndef ___VBox_com_EventQueue_h
 #define ___VBox_com_EventQueue_h
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 #include <windows.h>
 #else
 #include <nsEventQueueUtils.h>
@@ -83,7 +83,7 @@ public:
 
 private:
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
     DWORD mThreadId;
 
