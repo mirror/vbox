@@ -731,6 +731,11 @@ typedef enum PDMINTERFACE
     /** VUSBROOTHUBCONNECTOR    - VUSB Device interface.                (Up)     No coupling. */
     PDMINTERFACE_VUSB_DEVICE,
 
+    /** PDMIHOSTDEVICEPORT      - The Host Device port interface.       (Down)   Coupled with PDMINTERFACE_HOST_DEVICE_CONNECTOR. */
+    PDMINTERFACE_HOST_DEVICE_PORT,
+    /** PDMIHOSTDEVICECONNECTOR - The Host device connector interface   (Up)     Coupled with PDMINTERFACE_HOST_DEVICE_PORT. */
+    PDMINTERFACE_HOST_DEVICE_CONNECTOR,
+
     /** Maximum interface number. */
     PDMINTERFACE_MAX
 } PDMINTERFACE;
@@ -1758,6 +1763,71 @@ typedef struct PDMISTREAM
      */
     DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMISTREAM pInterface, const void *pvBuf, size_t *cbWrite));
 } PDMISTREAM;
+
+
+/** Pointer to a host device port interface. */
+typedef struct PDMIHOSTDEVICEPORT *PPDMIHOSTDEVICEPORT;
+
+/**
+ * Char port interface.
+ * Pair with PDMIHOSTDEVICECONNECTOR.
+ */
+typedef struct PDMIHOSTDEVICEPORT
+{
+    /**
+     * Deliver data read to the device/driver.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where the read bits are stored.
+     * @param   pcbRead         Number of bytes available for reading/having been read.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNotifyRead,(PPDMIHOSTDEVICEPORT pInterface, const void *pvBuf, size_t *pcbRead));
+} PDMIHOSTDEVICEPORT;
+
+/** Pointer to a Host Device connector interface. */
+typedef struct PDMIHOSTDEVICECONNECTOR *PPDMIHOSTDEVICECONNECTOR;
+
+/**
+ * Host device connector interface
+ * Pair with PDMIHOSTDEVICEPORT.
+ */
+typedef struct PDMIHOSTDEVICECONNECTOR
+{
+    /**
+     * Write bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where to store the write bits.
+     * @param   pcbWrite        Number of bytes to write/bytes actually written.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIHOSTDEVICECONNECTOR pInterface, const void *pvBuf, size_t *pcbWrite));
+
+    /**
+     * Read bits.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   pcbRead         Number of bytes to read/bytes actually read.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIHOSTDEVICECONNECTOR pInterface, void *pvBuf, size_t *pcbRead));
+
+    /**
+     * Perform IO control on the host device.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   uCommand        The number of the command to set or get data
+     * @param   pvData          Where to store the command data.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIOCtl,(PPDMIHOSTDEVICECONNECTOR pInterface, RTUINT uCommand, void *pvData));
+} PDMIHOSTDEVICECONNECTOR;
 
 
 /** ACPI power source identifier */
@@ -3543,6 +3613,8 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 #define PDM_DEVREG_CLASS_ACPI           BIT(15)
 /** Serial controller device. */
 #define PDM_DEVREG_CLASS_SERIAL         BIT(16)
+/** Parallel controller device */
+#define PDM_DEVREG_CLASS_PARALLEL       BIT(17)
 /** Misc devices (always last). */
 #define PDM_DEVREG_CLASS_MISC           BIT(31)
 /** @} */
