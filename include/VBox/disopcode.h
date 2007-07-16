@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __opcode_h__
-#define __opcode_h__
+#ifndef ___VBox_opcode_h
+#define ___VBox_opcode_h
 
 #define MODRM_MOD(a)    (a>>6)
 #define MODRM_REG(a)    ((a>>3)&0x7)

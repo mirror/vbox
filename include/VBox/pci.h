@@ -18,10 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __VBox_pci_h__
-#define __VBox_pci_h__
-
+#ifndef ___VBox_pci_h
+#define ___VBox_pci_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

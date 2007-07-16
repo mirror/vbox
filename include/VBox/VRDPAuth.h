@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_vrdpauth_h__
-#define __VBox_vrdpauth_h__
+#ifndef ___VBox_vrdpauth_h
+#define ___VBox_vrdpauth_h
 
 /* The following 2 enums are 32 bits values.*/
 typedef enum _VRDPAuthResult
@@ -130,4 +130,4 @@ typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
 
 typedef VRDPAUTHENTRY2 *PVRDPAUTHENTRY2;
 
-#endif /* __VBox_vrdpauth_h__ */
+#endif /* ___VBox_vrdpauth_h */

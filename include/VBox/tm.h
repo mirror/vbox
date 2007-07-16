@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __VBox_tm_h__
-#define __VBox_tm_h__
+#ifndef ___VBox_tm_h
+#define ___VBox_tm_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

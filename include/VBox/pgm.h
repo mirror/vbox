@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_pgm_h__
-#define __VBox_pgm_h__
+#ifndef ___VBox_pgm_h
+#define ___VBox_pgm_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -1517,7 +1517,7 @@ PGMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr);
  */
 PDMR3DECL(int) PGMR3PoolGrow(PVM pVM);
 
-#ifdef __VBox_dbgf_h__ /** @todo fix this! */
+#ifdef ___VBox_dbgf_h /** @todo fix this! */
 /**
  * Dumps a page table hierarchy use only physical addresses and cr4/lm flags.
  *

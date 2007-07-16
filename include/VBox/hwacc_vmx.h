@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_vmx_h__
-#define __VBox_vmx_h__
+#ifndef ___VBox_vmx_h
+#define ___VBox_vmx_h
 
 #include <VBox/types.h>
 #include <VBox/err.h>

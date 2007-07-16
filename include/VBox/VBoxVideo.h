@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_VBoxVideo_h__
-#define __VBox_VBoxVideo_h__
+#ifndef ___VBox_VBoxVideo_h
+#define ___VBox_VBoxVideo_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
@@ -162,4 +162,4 @@ typedef struct _VBOXVIDEOINFOHOSTEVENTS
 } VBOXVIDEOINFOHOSTEVENTS;
 #pragma pack()
 
-#endif /* __VBox_VBoxVideo_h__ */
+#endif /* ___VBox_VBoxVideo_h */

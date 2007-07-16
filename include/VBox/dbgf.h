@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_dbgf_h__
-#define __VBox_dbgf_h__
-
+#ifndef ___VBox_dbgf_h
+#define ___VBox_dbgf_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

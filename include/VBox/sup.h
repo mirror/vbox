@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_sup_h__
-#define __VBox_sup_h__
+#ifndef ___VBox_sup_h
+#define ___VBox_sup_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

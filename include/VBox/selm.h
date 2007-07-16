@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_selm_h__
-#define __VBox_selm_h__
+#ifndef ___VBox_selm_h
+#define ___VBox_selm_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

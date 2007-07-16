@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_types_h__
-#define __VBox_types_h__
+#ifndef ___VBox_types_h
+#define ___VBox_types_h
 
 #include <VBox/cdefs.h>
 #include <iprt/types.h>

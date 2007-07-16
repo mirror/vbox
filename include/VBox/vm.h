@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __VBox_vm_h__
-#define __VBox_vm_h__
+#ifndef ___VBox_vm_h
+#define ___VBox_vm_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -526,7 +525,7 @@ typedef struct VM
 } VM;
 
 /** Pointer to a VM. */
-#ifndef __VBox_types_h__
+#ifndef ___VBox_types_h
 typedef struct VM *PVM;
 #endif
 

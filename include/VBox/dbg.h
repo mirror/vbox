@@ -22,8 +22,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_dbg_h__
-#define __VBox_dbg_h__
+#ifndef ___VBox_dbg_h
+#define ___VBox_dbg_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -584,4 +584,4 @@ DBGDECL(int)    DBGCTcpTerminate(PVM pVM, void *pvData);
 
 __END_DECLS
 
-#endif /* __VBox_dbg_h__ */
+#endif /* ___VBox_dbg_h */

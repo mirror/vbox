@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_version_h__
-#define __VBox_version_h__
+#ifndef ___VBox_version_h
+#define ___VBox_version_h
 
 #ifndef RC_INVOKED
 #include <version-generated.h>

@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __VBox_usb_h__
-#define __VBox_usb_h__
+#ifndef ___VBox_usb_h
+#define ___VBox_usb_h
 
 #include <VBox/types.h>
 

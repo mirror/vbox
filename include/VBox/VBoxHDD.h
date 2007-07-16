@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_VBoxHDD_h__
-#define __VBox_VBoxHDD_h__
+#ifndef ___VBox_VBoxHDD_h
+#define ___VBox_VBoxHDD_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

@@ -18,9 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __SCSI_h__
-#define __SCSI_h__
+#ifndef ___VBox_scsi_h
+#define ___VBox_scsi_h
 
 
 /**

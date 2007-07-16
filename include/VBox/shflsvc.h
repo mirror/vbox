@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __SHFLSVC__H
-#define __SHFLSVC__H
+#ifndef ___VBox_shflsvc_h
+#define ___VBox_shflsvc_h
 
 #include <VBox/types.h>
 #include <VBox/VBoxGuest.h>

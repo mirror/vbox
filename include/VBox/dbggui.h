@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_dbggui_h__
-#define __VBox_dbggui_h__
+#ifndef ___VBox_dbggui_h
+#define ___VBox_dbggui_h
 
 #if defined(__WIN__)
 # include <VirtualBox.h>

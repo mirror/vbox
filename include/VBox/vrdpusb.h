@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBox_vrdpusb_h__
-#define __VBox_vrdpusb_h__
+#ifndef ___VBox_vrdpusb_h
+#define ___VBox_vrdpusb_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -67,5 +67,5 @@ typedef struct _REMOTEUSBCALLBACK
     DECLCALLBACKMEMBER(void, pfnCancelURB)       (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB);
 } REMOTEUSBCALLBACK;
 
-#endif /* __VBox_vrdpusb_h__ */
+#endif /* ___VBox_vrdpusb_h */
 
