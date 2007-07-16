@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_cdefs_h__
-#define __iprt_cdefs_h__
+#ifndef ___iprt_cdefs_h
+#define ___iprt_cdefs_h
 
 
 /** @defgroup grp_rt_cdefs  innotek Portable Runtime Common Definitions and Macros

@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_rand_h__
-#define __iprt_rand_h__
+#ifndef ___iprt_rand_h
+#define ___iprt_rand_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

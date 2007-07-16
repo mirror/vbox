@@ -1,5 +1,4 @@
 /** @file
- *
  * innotek Portable Runtime - Universal Unique Identifiers (UUID).
  */
 
@@ -19,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_uuid_h__
-#define __iprt_uuid_h__
+#ifndef ___iprt_uuid_h
+#define ___iprt_uuid_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

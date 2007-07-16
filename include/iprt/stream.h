@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_stream_h__
-#define __iprt_stream_h__
+#ifndef ___iprt_stream_h
+#define ___iprt_stream_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef __iprt_stdint_h__
-#define __iprt_stdint_h__
+#ifndef ___iprt_stdint_h
+#define ___iprt_stdint_h
 
 #ifndef __STDC_CONSTANT_MACROS
 # define __STDC_CONSTANT_MACROS

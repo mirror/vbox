@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_alloc_h__
-#define __iprt_alloc_h__
+#ifndef ___iprt_alloc_h
+#define ___iprt_alloc_h
 
 /* Forwarding to the canonical header. */
 #include <iprt/mem.h>

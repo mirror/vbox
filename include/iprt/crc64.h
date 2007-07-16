@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_crc64_h__
-#define __iprt_crc64_h__
+#ifndef ___iprt_crc64_h
+#define ___iprt_crc64_h
 
 
 #include <iprt/cdefs.h>

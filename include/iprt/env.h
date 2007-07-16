@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_env_h__
-#define __iprt_env_h__
+#ifndef ___iprt_env_h
+#define ___iprt_env_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

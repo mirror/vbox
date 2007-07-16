@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef ___iprt_cpputils_h___
-#define ___iprt_cpputils_h___
+#ifndef ___iprt_cpputils_h
+#define ___iprt_cpputils_h
 
 /** @defgroup grp_rt_cpputils   C++ Utilities
  * @ingroup grp_rt

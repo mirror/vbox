@@ -1,5 +1,4 @@
 /** @file
- *
  * innotek Portable Runtime - Threads.
  */
 
@@ -19,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_thread_h__
-#define __iprt_thread_h__
+#ifndef ___iprt_thread_h
+#define ___iprt_thread_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

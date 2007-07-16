@@ -18,8 +18,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __iprt_param_h__
-#define __iprt_param_h__
+#ifndef ___iprt_param_h
+#define ___iprt_param_h
 
 /** @todo Much of the PAGE_* stuff here is obsolete and highly risky to have around.
  * As for component configs (MM_*), either we gather all in here or we move those bits away! */
