@@ -1,0 +1,60 @@
+# $Id$
+## @file
+# Makefile for the OS/2 Guest Additions Driver.
+#
+
+#
+# Copyright (C) 2007 innotek GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+#
+# VBoxGuest.sys - The OS/2 driver.
+#
+SYSMODS.os2 += VBoxGuest
+VBoxGuest_TEMPLATE      = VBOXOS2GUESTR0
+VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
+VBoxGuest_INCS         := $(PATH_SUB_CURRENT)
+#VBoxGuest_LDFLAGS       = -s -t -v
+VBoxGuest_SOURCES       = \
+	VBoxGuestA-os2.asm \
+	VBoxGuest-os2.def
+VBoxGuest_LIBS          = \
+	$(TARGET_VBoxGuestLib) \
+	$(VBOX_LIB_VBGL_OS2_R0BASE) \
+	$(VBOX_LIB_IPRT_OS2_GUEST_R0) \
+	$(VBOX_GCC_LIBGCC) \
+	end
+
+## When debugging init with kDrvTest:
+#VBoxGuest_NAME = VBoxGst
+
+# temp hack to ensure that VBoxGuestA-os2.asm is first in the link.
+LIBRARIES += VBoxGuestLib
+VBoxGuestLib_TEMPLATE   = VBOXOS2GUESTR0LIB
+VBoxGuestLib_NOINST     = 1
+VBoxGuestLib_DEFS       = VBGL_VBOXGUEST VBOX_HGCM
+VBoxGuestLib_INCS      := \
+	$(PATH_SUB_CURRENT) \
+	$(PATH_TARGET) \
+	$(PATH_ROOT)/src/VBox/Runtime/include
+VBoxGuestLib_SOURCES    = \
+	VBoxGuest-os2.cpp \
+	VBoxGuest.cpp
+
+include	$(PATH_KBUILD)/footer.kmk
+
