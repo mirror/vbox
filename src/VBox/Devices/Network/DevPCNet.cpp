@@ -73,7 +73,6 @@
 #endif
 
 #include "Builtins.h"
-#include "vl_vbox.h"
 
 /* Enable this to catch writes to the ring descriptors instead of using excessive polling */
 /* #define PCNET_NO_POLLING */
@@ -1139,9 +1138,9 @@ static void pcnetSoftReset(PCNetState *pData)
     pData->aCSR[9]   = 0;
     pData->aCSR[10]  = 0;
     pData->aCSR[11]  = 0;
-    pData->aCSR[12]  = le16_to_cpu(((uint16_t *)&pData->aPROM[0])[0]);
-    pData->aCSR[13]  = le16_to_cpu(((uint16_t *)&pData->aPROM[0])[1]);
-    pData->aCSR[14]  = le16_to_cpu(((uint16_t *)&pData->aPROM[0])[2]);
+    pData->aCSR[12]  = RT_LE2H_U16(((uint16_t *)&pData->aPROM[0])[0]);
+    pData->aCSR[13]  = RT_LE2H_U16(((uint16_t *)&pData->aPROM[0])[1]);
+    pData->aCSR[14]  = RT_LE2H_U16(((uint16_t *)&pData->aPROM[0])[2]);
     pData->aCSR[15] &= 0x21c4;
     CSR_RCVRC(pData) = 1;
     CSR_XMTRC(pData) = 1;
@@ -1350,17 +1349,17 @@ static void pcnetInit(PCNetState *pData)
 #define PCNET_INIT() do { \
         PDMDevHlpPhysRead(pDevIns, PHYSADDR(pData, CSR_IADR(pData)),         \
                           (uint8_t *)&initblk, sizeof(initblk));             \
-        pData->aCSR[15]  = le16_to_cpu(initblk.mode);                        \
+        pData->aCSR[15]  = RT_LE2H_U16(initblk.mode);                        \
         CSR_RCVRL(pData) = (initblk.rlen < 9) ? (1 << initblk.rlen) : 512;   \
         CSR_XMTRL(pData) = (initblk.tlen < 9) ? (1 << initblk.tlen) : 512;   \
         pData->aCSR[ 6]  = (initblk.tlen << 12) | (initblk.rlen << 8);       \
-        pData->aCSR[ 8]  = le16_to_cpu(initblk.ladrf1);                      \
-        pData->aCSR[ 9]  = le16_to_cpu(initblk.ladrf2);                      \
-        pData->aCSR[10]  = le16_to_cpu(initblk.ladrf3);                      \
-        pData->aCSR[11]  = le16_to_cpu(initblk.ladrf4);                      \
-        pData->aCSR[12]  = le16_to_cpu(initblk.padr1);                       \
-        pData->aCSR[13]  = le16_to_cpu(initblk.padr2);                       \
-        pData->aCSR[14]  = le16_to_cpu(initblk.padr3);                       \
+        pData->aCSR[ 8]  = RT_LE2H_U16(initblk.ladrf1);                      \
+        pData->aCSR[ 9]  = RT_LE2H_U16(initblk.ladrf2);                      \
+        pData->aCSR[10]  = RT_LE2H_U16(initblk.ladrf3);                      \
+        pData->aCSR[11]  = RT_LE2H_U16(initblk.ladrf4);                      \
+        pData->aCSR[12]  = RT_LE2H_U16(initblk.padr1);                       \
+        pData->aCSR[13]  = RT_LE2H_U16(initblk.padr2);                       \
+        pData->aCSR[14]  = RT_LE2H_U16(initblk.padr3);                       \
         pData->GCRDRA    = PHYSADDR(pData, initblk.rdra);                    \
         pData->GCTDRA    = PHYSADDR(pData, initblk.tdra);                    \
 } while (0)
@@ -2719,7 +2718,7 @@ static void pcnetHardReset(PCNetState *pData)
 
     for (i = 0, checksum = 0; i < 16; i++)
         checksum += pData->aPROM[i];
-    *(uint16_t *)&pData->aPROM[12] = cpu_to_le16(checksum);
+    *(uint16_t *)&pData->aPROM[12] = RT_H2LE_U16(checksum);
 
     pData->aBCR[BCR_MSRDA] = 0x0005;
     pData->aBCR[BCR_MSWRA] = 0x0005;
