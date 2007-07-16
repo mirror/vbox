@@ -31,10 +31,11 @@ ifneq ($(filter-out darwin,$(BUILD_TARGET)),)
 LIBRARIES += SUPR0
 endif
 ifdef VBOX_WITH_VBOXDRV
-SYSMODS.darwin += VBoxDrv
-SYSMODS.linux  += vboxdrv
-SYSMODS.win    += VBoxDrv
-SYSMODS.os2    += VBoxDrv
+SYSMODS.darwin  += VBoxDrv
+SYSMODS.freebsd += vboxdrv
+SYSMODS.linux   += vboxdrv
+SYSMODS.win     += VBoxDrv
+SYSMODS.os2     += VBoxDrv
 endif
 
 INSTALLS.linux = vboxmod-bin vboxmod-sh
@@ -141,7 +142,7 @@ endif # win
 
 
 #
-# vboxdrv.ko - The Linux Kernel Module.
+# vboxdrv.ko - The Linux Kernel Module (syntax only).
 #
 ifeq ($(BUILD_TARGET),linux)
 vboxdrv_TEMPLATE      = VBOXR0DRV
@@ -194,7 +195,7 @@ Scripts_INST     = $(INST_DIST)
 Scripts_SOURCES  = \
 	darwin/load.sh
 
-endif
+endif # darwin
 
 
 #
@@ -227,6 +228,21 @@ VBoxDrvLib_SOURCES    = \
 	os2/SUPDrv-os2.cpp \
 	SUPDRVShared.c
 endif
+
+
+#
+# vboxdrv.ko - The FreeBSD Kernel Module.
+#
+ifeq ($(BUILD_TARGET),freebsd)
+vboxdrv_TEMPLATE      = VBOXR0DRV
+vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
+vboxdrv_INCS         := $(PATH_SUB_CURRENT)
+vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+vboxdrv_SOURCES       = \
+	$(BUILD_TARGET)/SUPDrv-$(BUILD_TARGET).c
+#	SUPDRVShared.c
+endif # freebsd
+
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
