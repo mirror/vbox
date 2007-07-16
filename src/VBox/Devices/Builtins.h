@@ -51,6 +51,7 @@ extern const PDMDEVREG g_DeviceACPI;
 extern const PDMDEVREG g_DeviceDMA;
 extern const PDMDEVREG g_DeviceFloppyController;
 extern const PDMDEVREG g_DeviceSerialPort;
+extern const PDMDEVREG g_DeviceParallelPort;
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
@@ -74,6 +75,7 @@ extern const PDMDRVREG g_DrvACPI;
 extern const PDMDRVREG g_DrvVUSBRootHub;
 extern const PDMDRVREG g_DrvChar;
 extern const PDMDRVREG g_DrvNamedPipe;
+extern const PDMDRVREG g_DrvHostParallel;
 
 __END_DECLS
 
