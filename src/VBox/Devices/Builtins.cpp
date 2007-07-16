@@ -120,6 +120,9 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceSerialPort);
     if (VBOX_FAILURE(rc))
         return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceParallelPort);
+    if (VBOX_FAILURE(rc))
+        return rc;
 
     return VINF_SUCCESS;
 }
@@ -220,6 +223,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvChar);
+    if (VBOX_FAILURE(rc))
+        return rc;
+#endif
+
+#if defined(__LINUX__)
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostParallel);
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
