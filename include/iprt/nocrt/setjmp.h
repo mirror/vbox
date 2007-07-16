@@ -25,7 +25,7 @@
 
 __BEGIN_DECLS
 
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 typedef uint64_t RT_NOCRT(jmp_buf)[8];
 #else
 typedef uint32_t RT_NOCRT(jmp_buf)[6+2];

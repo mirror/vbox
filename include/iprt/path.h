@@ -43,7 +43,7 @@ __BEGIN_DECLS
  * @remark IPRT will always accept unix slashes. So, normally you would
  *         never have to use this define.
  */
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define RTPATH_SLASH       '\\'
 #else
 # define RTPATH_SLASH       '/'
@@ -60,7 +60,7 @@ __BEGIN_DECLS
  * @remark IPRT will always accept unix slashes. So, normally you would
  *         never have to use this define.
  */
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define RTPATH_SLASH_STR   "\\"
 #else
 # define RTPATH_SLASH_STR   "/"
@@ -73,7 +73,7 @@ __BEGIN_DECLS
  * @returns true if it's a slash and false if not.
  * @returns @param      ch      Char to check.
  */
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define RTPATH_IS_SLASH(ch)    ( (ch) == '\\' || (ch) == '/' )
 #else
 # define RTPATH_IS_SLASH(ch)    ( (ch) == '/' )
@@ -91,7 +91,7 @@ __BEGIN_DECLS
  * @returns true if it is and false if it isn't.
  * @returns @param      ch      Char to check.
  */
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define RTPATH_IS_VOLSEP(ch)   ( (ch) == ':' )
 #else
 # define RTPATH_IS_VOLSEP(ch)   (false)

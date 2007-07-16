@@ -38,7 +38,7 @@ __BEGIN_DECLS
 
 /** Platform specific text line break.
  * @deprecated Use text I/O streams and '\\n'. See iprt/stream.h. */
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define RTFILE_LINEFEED    "\r\n"
 #else
 # define RTFILE_LINEFEED    "\n"

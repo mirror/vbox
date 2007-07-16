@@ -397,7 +397,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * Write to specific logger if group enabled.
  */
 #ifdef LOG_ENABLED
-# if defined(__AMD64__) || defined(LOG_USE_C99)
+# if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
 #  define _LogRemoveParentheseis(...)               __VA_ARGS__
 #  define _LogIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
 #  define LogIt(pvInst, fFlags, iGroup, fmtargs)    _LogIt(pvInst, fFlags, iGroup, _LogRemoveParentheseis fmtargs)
@@ -679,7 +679,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
-#if defined(__AMD64__) || defined(LOG_USE_C99)
+#if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
 # define _LogRelRemoveParentheseis(...)                __VA_ARGS__
 #  define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
 #  define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \

@@ -48,13 +48,13 @@
 ; Mangles the given name so it can be referenced using DECLASM() in the
 ; C/C++ world.
 %ifdef __X86__
- %ifdef __DARWIN__
+ %ifdef RT_OS_DARWIN
   %define NAME(name)    _ %+ NAME_OVERLOAD(name)
  %endif
- %ifdef __OS2__
+ %ifdef RT_OS_OS2
   %define NAME(name)    _ %+ NAME_OVERLOAD(name)
  %endif
- %ifdef __WIN__
+ %ifdef RT_OS_WINDOWS
   %define NAME(name)    _ %+ NAME_OVERLOAD(name)
  %endif
 %endif
@@ -491,7 +491,7 @@ GLOBALNAME %1_EndProc
 ; it's 12 bytes.
 ; @todo figure out what 64-bit Windows does (I don't recall right now).
 %ifdef __X86__
- %ifdef __DARWIN__
+ %ifdef RT_OS_DARWIN
   %define RTLRD_CB          16
  %else
   %define RTLRD_CB          12
