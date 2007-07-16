@@ -852,10 +852,6 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             }
             else if ((val & 0xFFFF0000) == VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE)
             {
-                /*
-                 * LFB video mode is either disabled or changed. This notification
-                 * is used by the display to disable VBVA.
-                 */
                 s->pDrv->pfnProcessDisplayData(s->pDrv, s->CTXSUFF(vram_ptr), val & 0xFFFF);
             }
 #endif /* IN_RING3 */
