@@ -1,0 +1,36 @@
+# $Id$
+## @file
+# Makefile for the OS/2 Guest Additions Shared Folder FSD.
+#
+
+DEPTH = ../../../../..
+include	$(PATH_KBUILD)/header.kmk
+
+#?DLLS += VBoxSF
+SYSMODS += VBoxSF
+VBoxSF_TEMPLATE      = VBOXOS2GUESTR0
+VBoxSF_SYSSUFF       = .ifs
+VBoxSF_DLLSUFF       = .ifs
+VBoxSF_DEFS          = VBOX_HGCM
+VBoxSF_INCS         := \
+	$(PATH_SUB_CURRENT) \
+	$(PATH_ROOT)/src/VBox/Runtime/include
+VBoxSF_LDFLAGS      := $(addprefix -Zlinker , \
+	SEG TYPE CODE PRELOAD DYNAMIC SHARED NONPERMANENT, \
+	    TYPE DATA PRELOAD DYNAMIC)
+#VBoxSF_LDFLAGS      += -s -t -v
+VBoxSF_SOURCES       = \
+	VBoxSFA.asm \
+	VBoxSF.cpp \
+	VBoxSFFile.cpp \
+	VBoxSFFind.cpp \
+	VBoxSFInit.cpp \
+	VBoxSF.def
+VBoxSF_LIBS          = \
+	$(VBOX_LIB_VBGL_OS2_R0) \
+	$(VBOX_LIB_IPRT_OS2_GUEST_R0) \
+	$(VBOX_GCC_LIBGCC) \
+	end
+
+include	$(PATH_KBUILD)/footer.kmk
+
