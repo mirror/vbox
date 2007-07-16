@@ -58,7 +58,7 @@
 #   error "offsetof is not defined..."
 #  endif
 
-# elif defined(__LINUX__) && defined(__KERNEL__)
+# elif defined(RT_OS_LINUX) && defined(__KERNEL__)
     /*
      * Kludge for the linux kernel:
      *   1. sys/types.h doesn't mix with the kernel.

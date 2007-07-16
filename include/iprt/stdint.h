@@ -37,12 +37,12 @@
 
 #include <iprt/cdefs.h>
 
-#if (!defined(__LINUX__) || !defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT)
+#if (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) && !defined(_MSC_VER) && !defined(__IBMC__) && !defined(__IBMCPP__) && !defined(IPRT_NO_CRT)
 # include <stdint.h>
 
 #else
 
-#if (!defined(__LINUX__) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(_MSC_VER) /** @todo remove _MSC_VER check (vcc8 merge) */
+#if (!defined(RT_OS_LINUX) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(_MSC_VER) /** @todo remove _MSC_VER check (vcc8 merge) */
 /* machine specific */
 typedef signed char     __int8_t;
 typedef unsigned char       __uint8_t;
@@ -64,7 +64,7 @@ typedef unsigned long long  __uint64_t;
 # endif
 #endif /* !linux kernel */
 
-#if !defined(_WIN64) || defined(__i386__) || defined(__I386__) || defined(__LINUX__) /** @todo fix this, __x86__ should suffice if cdefs.h is included! */
+#if !defined(_WIN64) || defined(__i386__) || defined(__I386__) || defined(RT_OS_LINUX) /** @todo fix this, __x86__ should suffice if cdefs.h is included! */
 typedef signed long             __intptr_t;
 typedef unsigned long           __uintptr_t;
 #else
@@ -74,7 +74,7 @@ typedef __uint64_t              __uintptr_t;
 
 
 /* the stuff we use */
-#if (!defined(__LINUX__) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(_MSC_VER) /** @todo remove _MSC_VER check (vcc8 merge) */
+#if (!defined(RT_OS_LINUX) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(_MSC_VER) /** @todo remove _MSC_VER check (vcc8 merge) */
 #ifndef _INT8_T_DECLARED
 typedef __int8_t        int8_t;
 #define _INT8_T_DECLARED

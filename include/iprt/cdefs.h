@@ -30,7 +30,7 @@
  * Include sys/cdefs.h if present, if not define the stuff we need.
  */
 #ifdef HAVE_SYS_CDEFS_H
-# if defined(__LINUX__) && defined(__KERNEL__)
+# if defined(RT_ARCH_LINUX) && defined(__KERNEL__)
 #  error "oops"
 # endif
 # include <sys/cdefs.h>
@@ -80,6 +80,14 @@
 #define R0_ARCH_BITS
 #define GC_ARCH_BITS
 #endif /* __DOXYGEN__ */
+
+/* A temporary hack. */
+#ifndef RT_ARCH_LINUX
+# ifdef __LINUX__
+#  define RT_ARCH_LINUX
+#  warning "__LINUX__ without RT_ARCH_LINUX!"
+# endif 
+#endif 
 
 /** @def RT_ARCH_X86
  * Indicates that we're compiling for the X86 architecture.

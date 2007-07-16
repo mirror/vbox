@@ -25,7 +25,7 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 #include <iprt/err.h> /* for VINF_SUCCESS */
-#if defined(__LINUX__) && defined(__KERNEL__)
+#if defined(RT_OS_LINUX) && defined(__KERNEL__)
 # include <linux/string.h>
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
   /*
