@@ -33,7 +33,6 @@
 #include <iprt/string.h>
 #include <VBox/err.h>
 
-#include "vl_vbox.h"
 #include "Builtins.h"
 #include "Builtins2.h"
 #include "DevPcBios.h"
