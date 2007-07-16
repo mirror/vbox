@@ -82,10 +82,10 @@
 #endif /* __DOXYGEN__ */
 
 /* A temporary hack. */
-#ifndef RT_ARCH_LINUX
+#ifndef RT_OS_LINUX
 # ifdef __LINUX__
-#  define RT_ARCH_LINUX
-#  warning "__LINUX__ without RT_ARCH_LINUX!"
+#  define RT_OS_LINUX
+#  warning "__LINUX__ without RT_OS_LINUX!"
 # endif 
 #endif 
 
