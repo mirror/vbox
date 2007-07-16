@@ -28,6 +28,16 @@
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(__LINUX__) && defined(__KERNEL__)
 # include <linux/string.h>
+#elif defined(__FREEBSD__) && defined(_KERNEL)
+  /*
+   * Kludge for the FreeBSD kernel:
+   *  Some of the string.h stuff clashes with sys/libkern.h, so just wrap
+   *  it up while including string.h to keep things quiet. It's nothing
+   *  important that's clashing, after all.
+   */
+# define strdup strdup_string_h
+# include <string.h>
+# undef strdup
 #else
 # include <string.h>
 #endif
