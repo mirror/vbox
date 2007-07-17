@@ -39,7 +39,9 @@ using namespace com;
 #include <X11/Xcursor/Xcursor.h>
 #endif
 
+#ifndef RT_OS_DARWIN
 #include <SDL_syswm.h>           /* for SDL_GetWMInfo() */
+#endif
 
 #include "VBoxSDL.h"
 #include "Framebuffer.h"
@@ -512,21 +514,27 @@ public:
     {
         if (!canShow)
             return E_POINTER;
+#ifdef RT_OS_DARWIN
+        /* SDL feature not available on Quartz */
+        *canShow = TRUE;
+#else
         SDL_SysWMinfo info;
         SDL_VERSION(&info.version);
         *canShow = !!SDL_GetWMInfo(&info);
+#endif
         return S_OK;
     }
 
     STDMETHOD(OnShowWindow) (ULONG64 *winId)
     {
+#ifndef RT_OS_DARWIN
         SDL_SysWMinfo info;
         SDL_VERSION(&info.version);
         if (SDL_GetWMInfo(&info))
         {
-#if defined (__LINUX__)
+#if defined (RT_OS_LINUX)
             *winId = (ULONG64) info.info.x11.wmwindow;
-#elif defined (__WIN__)
+#elif defined (RT_OS_WIN)
             *winId = (ULONG64) info.window;
 #else
             AssertFailed();
@@ -534,6 +542,7 @@ public:
 #endif
             return S_OK;
         }
+#endif /* !RT_OS_DARWIN */
         AssertFailed();
         return E_FAIL;
     }
