@@ -229,22 +229,22 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
         switch (aAudioDriver)
         {
             case AudioDriverType_NullAudioDriver:
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
             case AudioDriverType_WINMMAudioDriver:
 #endif
             case AudioDriverType_DSOUNDAudioDriver:
-#endif /* __WIN__ */
-#ifdef __LINUX__
+#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_LINUX
             case AudioDriverType_OSSAudioDriver:
 #ifdef VBOX_WITH_ALSA
             case AudioDriverType_ALSAAudioDriver:
 #endif
-#endif /* __LINUX__ */
-#ifdef __DARWIN__
+#endif /* RT_OS_LINUX */
+#ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudioDriver:
 #endif 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
             case AudioDriverType_MMPMAudioDriver:
 #endif 
             {

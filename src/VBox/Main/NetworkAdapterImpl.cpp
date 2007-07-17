@@ -401,7 +401,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
 {
     /** @todo Validate input string length. r=dmik: do it in XML schema?*/
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     // we don't allow null strings for the host interface on Win32
     // (because the @name attribute of <HostInerface> must be always present,
     // but can be empty).
@@ -989,7 +989,7 @@ void NetworkAdapter::detach()
         case NetworkAttachmentType_HostInterfaceNetworkAttachment:
         {
             /* reset handle and device name */
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
             mData->mHostInterface = "";
 #endif
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING

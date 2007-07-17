@@ -19,7 +19,7 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # if _MSC_VER < 1400
 /// @todo Without this I cannot get the stuff to
 // link. I don't know where it should come from.
@@ -32,7 +32,7 @@ extern "C"
     int errno;
 }
 # endif
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 #include "cfgldrhlp.h"
 

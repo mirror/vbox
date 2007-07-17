@@ -25,7 +25,7 @@
 #include "VirtualBoxBase.h"
 #include "ConsoleImpl.h"
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include "win32/resource.h"
 #endif
 
@@ -44,7 +44,7 @@ class ATL_NO_VTABLE Session :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <Session, ISession>,
     public VirtualBoxSupportTranslation <Session>,
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     public IDispatchImpl<ISession, &IID_ISession, &LIBID_VirtualBox,
                          kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>,
     public CComCoClass<Session, &CLSID_Session>,
@@ -127,10 +127,10 @@ private:
     ComPtr <IVirtualBox> mVirtualBox;
 
     /* interprocess semaphore handle (id) for the opened machine */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     HANDLE mIPCSem;
     HANDLE mIPCThreadSem;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     RTTHREAD mIPCThread;
     RTSEMEVENT mIPCThreadSem;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)

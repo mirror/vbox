@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__WIN__)
-#elif defined(__LINUX__)
+#if defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_LINUX)
 #   include <errno.h>
 #   include <sys/ioctl.h>
 #   include <sys/poll.h>
@@ -1270,7 +1270,7 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
         {
             case NetworkAttachmentType_HostInterfaceNetworkAttachment:
             {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
                 /* a valid host interface must have been set */
                 Bstr hostif;
                 adapter->COMGETTER(HostInterface)(hostif.asOutParam());
@@ -1294,7 +1294,7 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
                             "does not exist"),
                         hostif.raw());
                 }
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
                 break;
             }
             default:
@@ -1909,7 +1909,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
             Guid (aId).raw());
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     /* Notify the USB Proxy that we're about to detach the device. Since
      * we don't dare do IPC when holding the console lock, so we'll have
      * to revalidate the device when we get back. */
@@ -4480,7 +4480,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     VMPowerUpTask *task = static_cast <VMPowerUpTask *> (pvTask);
     AssertReturn (task, VERR_GENERAL_FAILURE);
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     {
         /* initialize COM */
         HRESULT hrc = CoInitializeEx(NULL,
@@ -4563,7 +4563,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     }
     else
         fHWVirtExEnabled = (hwVirtExEnabled == TriStateBool_True);
-#ifndef __DARWIN__ /** @todo Implement HWVirtExt on darwin. See #1865. */
+#ifndef RT_OS_DARWIN /** @todo Implement HWVirtExt on darwin. See #1865. */
     if (fHWVirtExEnabled)
     {
         PCFGMNODE pHWVirtExt;
@@ -5333,7 +5333,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
                         rc = CFGMR3InsertInteger(pCfg, "FileHandle", pConsole->maTapFD[ulInstance]); RC_CHECK();
                     }
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
                     if (fSniffer)
                     {
                         rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
@@ -5375,7 +5375,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 {
                     switch (hrc)
                     {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
                         case VERR_ACCESS_DENIED:
                             return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
                                              "Failed to open '/dev/net/tun' for read/write access. Please check the "
@@ -5383,7 +5383,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                                              "change the group of that node and get member of that group. Make "
                                              "sure that these changes are permanently in particular if you are "
                                              "using udev"));
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
                         default:
                             AssertMsgFailed(("Could not attach to host interface! Bad!\n"));
                             return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
@@ -5555,7 +5555,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "null");                   RC_CHECK();
                 break;
             }
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
             case AudioDriverType_WINMMAudioDriver:
             {
@@ -5568,8 +5568,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "dsound");                 RC_CHECK();
                 break;
             }
-#endif /* __WIN__ */
-#ifdef __LINUX__
+#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_LINUX
             case AudioDriverType_OSSAudioDriver:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                    RC_CHECK();
@@ -5582,8 +5582,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 break;
             }
 # endif
-#endif /* __LINUX__ */
-#ifdef __DARWIN__
+#endif /* RT_OS_LINUX */
+#ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudioDriver:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");              RC_CHECK();
@@ -5824,7 +5824,7 @@ HRESULT Console::callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapD
                                          Bstr &tapSetupApplication)
 {
     LogFlowThisFunc(("\n"));
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /* Command line to start the script with. */
     char szCommand[4096];
     /* Result code */
@@ -5890,7 +5890,7 @@ HRESULT Console::callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapD
     }
     LogFlowThisFunc(("rc=S_OK\n"));
     return S_OK;
-#else /* __LINUX__ not defined */
+#else /* RT_OS_LINUX not defined */
     LogFlowThisFunc(("rc=E_NOTIMPL\n"));
     return E_NOTIMPL;  /* not yet supported */
 #endif
@@ -5950,10 +5950,10 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
         /*
          * Allocate a host interface device
          */
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         /* nothing to do */
         int rcVBox = VINF_SUCCESS;
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
         int rcVBox = RTFileOpen(&maTapFD[slot], "/dev/net/tun",
                                 RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT);
         if (VBOX_SUCCESS(rcVBox))
@@ -6066,10 +6066,10 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                     break;
             }
         }
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
         /** @todo Implement tap networking for Darwin. */
         int rcVBox = VERR_NOT_IMPLEMENTED;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
         /** @todo Implement tap networking for OS/2. */
         int rcVBox = VERR_NOT_IMPLEMENTED;
 #elif defined(VBOX_WITH_UNIXY_TAP_NETWORKING)
@@ -6558,7 +6558,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     AssertReturn (!task->mConsole.isNull(), VERR_INVALID_PARAMETER);
     AssertReturn (!task->mProgress.isNull(), VERR_INVALID_PARAMETER);
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     {
         /* initialize COM */
         HRESULT hrc = CoInitializeEx (NULL,
@@ -6622,7 +6622,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         PRTLOGGER loggerRelease;
         static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
         RTUINT fFlags = RTLOGFLAGS_PREFIX_TIME_PROG;
-#if defined (__WIN__) || defined (__OS2__)
+#if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
         fFlags |= RTLOGFLAGS_USECRLF;
 #endif
         char szError[RTPATH_MAX + 128] = "";
@@ -6963,7 +6963,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         LogRel (("Power up failed (vrc=%Vrc, hrc=0x%08X)\n", vrc, hrc));
     }
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     /* uninitialize COM */
     CoUninitialize();
 #endif

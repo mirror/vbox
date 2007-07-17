@@ -146,7 +146,7 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildren *aParent,
      * itself, since adding a mapping eventually results into a
      * RTDirOpenFiltered() call (see HostServices/SharedFolders) that seems to
      * accept both the slashified paths and not. */
-#if defined (__OS2__) || defined (__WIN__)
+#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
     if (hostPathLen > 2 &&
         RTPATH_IS_SEP (hostPath.raw()[hostPathLen - 1]) &&
         RTPATH_IS_VOLSEP (hostPath.raw()[hostPathLen - 2]))

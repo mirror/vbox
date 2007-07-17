@@ -26,7 +26,7 @@
 #include "HostUSBDeviceImpl.h"
 #include "USBDeviceFilterImpl.h"
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include "win32/svchlp.h"
 #endif
 
@@ -71,7 +71,7 @@ public:
     STDMETHOD(COMGETTER(FloppyDrives))(IHostFloppyDriveCollection **drives);
     STDMETHOD(COMGETTER(USBDevices))(IHostUSBDeviceCollection **aUSBDevices);
     STDMETHOD(COMGETTER(USBDeviceFilters))(IHostUSBDeviceFilterCollection ** aUSBDeviceFilters);
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     STDMETHOD(COMGETTER(NetworkInterfaces))(IHostNetworkInterfaceCollection **networkInterfaces);
 #endif
     STDMETHOD(COMGETTER(ProcessorCount))(ULONG *count);
@@ -84,7 +84,7 @@ public:
     STDMETHOD(COMGETTER(UTCTime))(LONG64 *aUTCTime);
 
     // IHost methods
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     STDMETHOD(CreateHostNetworkInterface) (INPTR BSTR aName,
                                            IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
@@ -118,7 +118,7 @@ public:
     /* must be called from under this object's lock */ 
     USBProxyService *usbProxyService() { return mUSBProxyService; }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     static int networkInterfaceHelperServer (SVCHlpClient *aClient,
                                              SVCHlpMsg::Code aMsgCode);
 #endif
@@ -128,7 +128,7 @@ public:
 
 private:
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 # ifdef VBOX_USE_LIBHAL
     bool getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list);
     bool getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list);
@@ -152,7 +152,7 @@ private:
     bool applyMachineUSBFilters (SessionMachine *aMachine,
                                  ComObjPtr <HostUSBDevice> &aDevice);
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     static int createNetworkInterface (SVCHlpClient *aClient,
                                        const Utf8Str &aName,
                                        Guid &aGUID, Utf8Str &aErrMsg);

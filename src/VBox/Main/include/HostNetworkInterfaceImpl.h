@@ -22,7 +22,7 @@
 #ifndef ____H_HOSTNETWORKINTERFACEIMPL
 #define ____H_HOSTNETWORKINTERFACEIMPL
 
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 #error This is Windows only stuff!
 #endif
 

@@ -28,7 +28,7 @@ namespace com
 // EventQueue class
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
 #define CHECK_THREAD_RET(ret) \
     do { \
@@ -37,7 +37,7 @@ namespace com
             return ret; \
     } while (0)
 
-#else // !defined (__WIN__)
+#else // !defined (RT_OS_WINDOWS)
 
 #define CHECK_THREAD_RET(ret) \
     do { \
@@ -50,7 +50,7 @@ namespace com
             return ret; \
     } while (0)
 
-#endif // !defined (__WIN__)
+#endif // !defined (RT_OS_WINDOWS)
 
 /**
  *  Constructs an event queue for the current thread.
@@ -61,7 +61,7 @@ namespace com
  */
 EventQueue::EventQueue()
 {
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
     mThreadId = GetCurrentThreadId();
     // force the system to create the message queue for the current thread
@@ -111,7 +111,7 @@ EventQueue::EventQueue()
 
 EventQueue::~EventQueue()
 {
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 #else
     // process all pending events before destruction
     if (mEventQ)
@@ -136,7 +136,7 @@ EventQueue::~EventQueue()
  */
 BOOL EventQueue::postEvent (Event *event)
 {
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
     return PostThreadMessage (mThreadId, WM_USER, (WPARAM) event, NULL);
 
@@ -179,7 +179,7 @@ BOOL EventQueue::waitForEvent (Event **event)
 
     CHECK_THREAD_RET (FALSE);
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
     MSG msg;
     BOOL rc = GetMessage (&msg, NULL, WM_USER, WM_USER);

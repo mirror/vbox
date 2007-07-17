@@ -242,7 +242,7 @@ protected:
 
 #ifdef VBOX_WITH_USB
 
-# ifdef __DARWIN__
+# ifdef RT_OS_DARWIN
 #  include <VBox/param.h>
 #  undef PAGE_SHIFT
 #  undef PAGE_SIZE
@@ -284,10 +284,10 @@ private:
     /** Whether we've got a fake async event and should return without entering the runloop. */
     bool volatile mFakeAsync;
 };
-# endif /* __DARWIN__ */
+# endif /* RT_OS_DARWIN */
 
 
-# ifdef __LINUX__
+# ifdef RT_OS_LINUX
 #  include <stdio.h>
 
 /**
@@ -325,10 +325,10 @@ private:
     /** Number of 500ms polls left to do. See usbDeterminState for details. */
     unsigned mUdevPolls;
 };
-# endif /* __LINUX__ */
+# endif /* RT_OS_LINUX */
 
 
-# ifdef __WIN__
+# ifdef RT_OS_WINDOWS
 /**
  * The Win32 hosted USB Proxy Service.
  */
@@ -355,7 +355,7 @@ private:
 
     HANDLE hEventInterrupt;
 };
-# endif /* __WIN__ */
+# endif /* RT_OS_WINDOWS */
 
 #endif /* VBOX_WITH_USB */
 

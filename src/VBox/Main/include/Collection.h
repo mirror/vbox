@@ -57,7 +57,7 @@ template <class IEnum, class IEnumItem, class EnumItem, class ComponentClass>
 class ATL_NO_VTABLE IfaceVectorEnumerator :
     public VirtualBoxSupportErrorInfoImpl <IfaceVectorEnumerator <IEnum, IEnumItem,
                                            EnumItem, ComponentClass>, IEnum>,
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     public CComObjectRootEx <CComSingleThreadModel>,
 #else
     public CComObjectRootEx,
@@ -181,7 +181,7 @@ template <class IColl, class ICollItem, class IEnum, class CollItem, class Enum,
 class ATL_NO_VTABLE ReadonlyIfaceVector :
     public VirtualBoxSupportErrorInfoImpl <ReadonlyIfaceVector <IColl, ICollItem,
                                            IEnum, CollItem, Enum, ComponentClass>, IColl>,
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     public CComObjectRootEx <CComSingleThreadModel>,
 #else
     public CComObjectRootEx,
@@ -475,13 +475,13 @@ protected:
     COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN (prefix, iface) \
     COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_END (prefix, iface)
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX(itemcls, iface, prefix)
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION(c)
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(prefix, iface)
 
-#else // !__WIN__
+#else // !RT_OS_WINDOWS
 
 /**
  *  This macro defines nsISupports implementations (i.e. QueryInterface(),
@@ -557,6 +557,6 @@ protected:
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(prefix, iface) \
     COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX (0, iface, prefix) 
 
-#endif // !__WIN__
+#endif // !RT_OS_WINDOWS
 
 #endif // ____H_COLLECTION

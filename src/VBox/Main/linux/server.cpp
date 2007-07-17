@@ -55,7 +55,7 @@
 #include <getopt.h>
 
 // for the backtrace signal handler
-#if defined(DEBUG) && defined(__LINUX__)
+#if defined(DEBUG) && defined(RT_OS_LINUX)
 # define USE_BACKTRACE
 #endif
 #if defined(USE_BACKTRACE)
@@ -65,7 +65,7 @@
 #  define __USE_GNU
 # endif
 # include <ucontext.h>
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
 #  define REG_PC REG_RIP
 # else
 #  define REG_PC REG_EIP
@@ -991,13 +991,13 @@ int main (int argc, char **argv)
 
     static RTFILE pidFile = NIL_RTFILE;
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 
     /* nothing to do here, the process is supposed to be already
      * started daemonized when it is necessary */  
     NOREF(fDaemonize);
 
-#else // ifdef __OS2__
+#else // ifdef RT_OS_OS2
 
     static int daemon_pipe_fds[2];
 
@@ -1061,7 +1061,7 @@ int main (int argc, char **argv)
         close(daemon_pipe_fds[0]);
     }
 
-#endif // ifdef __OS2__
+#endif // ifdef RT_OS_OS2
 
 #if defined(USE_BACKTRACE)
     {
@@ -1177,7 +1177,7 @@ int main (int argc, char **argv)
         if (fDaemonize)
         {
             printf ("\nStarting event loop....\n[send TERM signal to quit]\n");
-#ifndef __OS2__
+#ifndef RT_OS_OS2
             /* now we're ready, signal the parent process */
             write(daemon_pipe_fds[1], "READY", strlen("READY"));
 #endif
@@ -1238,7 +1238,7 @@ int main (int argc, char **argv)
 
     if (fDaemonize)
     {
-#ifndef __OS2__
+#ifndef RT_OS_OS2
         /* close writing end of the pipe as well */
         close(daemon_pipe_fds[1]);
 #endif

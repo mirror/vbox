@@ -33,7 +33,7 @@
 
 #include "GuestOSTypeImpl.h"
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include "win32/svchlp.h"
 #endif
 
@@ -275,9 +275,9 @@ HRESULT VirtualBox::init()
     if (SUCCEEDED (rc))
     {
         /* start the client watcher thread */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
         unconst (mWatcherData.mUpdateReq) = ::CreateEvent (NULL, FALSE, FALSE, NULL);
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
         RTSemEventCreate (&unconst (mWatcherData.mUpdateReq));
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         RTSemEventCreate (&unconst (mWatcherData.mUpdateReq));
@@ -416,13 +416,13 @@ void VirtualBox::uninit()
         unconst (mWatcherData.mThread) = NIL_RTTHREAD;
     }
     mWatcherData.mProcesses.clear();
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     if (mWatcherData.mUpdateReq != NULL)
     {
         ::CloseHandle (mWatcherData.mUpdateReq);
         unconst (mWatcherData.mUpdateReq) = NULL;
     }
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     if (mWatcherData.mUpdateReq != NIL_RTSEMEVENT)
     {
         RTSemEventDestroy (mWatcherData.mUpdateReq);
@@ -2153,7 +2153,7 @@ HRESULT VirtualBox::removeProgress (INPTR GUIDPARAM aId)
     return E_FAIL;
 }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 
 struct StartSVCHelperClientData
 {
@@ -2387,7 +2387,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
     return 0;
 }
 
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 /**
  *  Sends a signal to the client watcher thread to rescan the set of machines
@@ -2403,9 +2403,9 @@ void VirtualBox::updateClientWatcher()
     AssertReturn (mWatcherData.mThread != NIL_RTTHREAD, (void) 0);
 
     /* sent an update request */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     ::SetEvent (mWatcherData.mUpdateReq);
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     RTSemEventSignal (mWatcherData.mUpdateReq);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     RTSemEventSignal (mWatcherData.mUpdateReq);
@@ -2424,7 +2424,7 @@ void VirtualBox::addProcessToReap (RTPROCESS pid)
     AssertComRCReturn (autoCaller.rc(), (void) 0);
 
     /// @todo (dmik) Win32?
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
     AutoLock alock (this);
     mWatcherData.mProcesses.push_back (pid);
 #endif
@@ -3349,7 +3349,7 @@ HRESULT VirtualBox::checkMediaForConflicts (HardDisk *aHardDisk,
         aId = &aHardDisk->id();
         if (aHardDisk->storageType() == HardDiskStorageType_VirtualDiskImage)
 #if !defined (VBOX_WITH_XPCOM)
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
             /// @todo (dmik) stupid BSTR declaration lacks the BCSTR counterpart
             const_cast <BSTR> (aFilePathFull) = aHardDisk->asVDI()->filePathFull();
 #endif
@@ -4372,7 +4372,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
     SessionMachineVector machines;
     size_t cnt = 0;
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 
     HRESULT hrc = CoInitializeEx (NULL,
                                   COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE |
@@ -4452,7 +4452,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
     ::CoUninitialize();
 
-#elif defined (__OS2__)
+#elif defined (RT_OS_OS2)
 
     /// @todo (dmik) processes reaping!
 

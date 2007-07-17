@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__WIN__)
-#elif defined(__LINUX__)
+#if defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_LINUX)
 #endif
 
 #ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
@@ -39,7 +39,7 @@
 #include <VBox/err.h>
 #include <iprt/process.h>
 
-#if defined(__WIN__) || defined (__OS2__)
+#if defined(RT_OS_WINDOWS) || defined (RT_OS_OS2)
 /** VM IPC mutex holder thread */
 static DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser);
 #endif
@@ -90,10 +90,10 @@ HRESULT Session::init()
     mState = SessionState_SessionClosed;
     mType = SessionType_InvalidSessionType;
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     mIPCSem = NULL;
     mIPCThreadSem = NULL;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     mIPCThread = NIL_RTTHREAD;
     mIPCThreadSem = NIL_RTSEMEVENT;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
@@ -675,9 +675,9 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
 
         mState = SessionState_SessionClosed;
         mType = SessionType_InvalidSessionType;
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
         Assert (!mIPCSem && !mIPCThreadSem);
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
         Assert (mIPCThread == NIL_RTTHREAD &&
                 mIPCThreadSem == NIL_RTSEMEVENT);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
@@ -782,7 +782,7 @@ HRESULT Session::grabIPCSemaphore()
 
     LogFlowThisFunc (("ipcId='%ls'\n", ipcId.raw()));
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 
     /*
      *  Since Session is an MTA object, this method can be executed on
@@ -825,7 +825,7 @@ HRESULT Session::grabIPCSemaphore()
         rc = E_FAIL;
     }
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 
     /* We use XPCOM where any message (including close()) can arrive on any
      * worker thread (which will not necessarily match this thread that opens
@@ -883,7 +883,7 @@ HRESULT Session::grabIPCSemaphore()
 void Session::releaseIPCSemaphore()
 {
     /* release the IPC semaphore */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 
     if (mIPCSem && mIPCThreadSem)
     {
@@ -897,7 +897,7 @@ void Session::releaseIPCSemaphore()
         ::CloseHandle (mIPCThreadSem);
     }
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 
     if (mIPCThread != NIL_RTTHREAD)
     {
@@ -933,7 +933,7 @@ void Session::releaseIPCSemaphore()
 #endif
 }
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 /** VM IPC mutex holder thread */
 DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
 {
@@ -983,7 +983,7 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
 }
 #endif
 
-#if defined(__OS2__) 
+#if defined(RT_OS_OS2) 
 /** VM IPC mutex holder thread */
 DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
 {
