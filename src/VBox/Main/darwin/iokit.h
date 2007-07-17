@@ -1,4 +1,4 @@
-/** $Id: $ */
+/* $Id$ */
 /** @file
  * Main - Darwin IOKit Routines.
  */
@@ -26,7 +26,7 @@
 #include <iprt/types.h>
 #ifdef VBOX_WITH_USB
 # include <VBox/usb.h>
-#endif 
+#endif
 
 /**
  * Darwin DVD descriptor as returned by DarwinGetDVDDrives().
@@ -39,7 +39,7 @@ typedef struct DARWINDVD
     char szName[1];
 } DARWINDVD, *PDARWINDVD;
 
-/** The run loop mode string used by iokit.cpp when it registers 
+/** The run loop mode string used by iokit.cpp when it registers
  * notifications events. */
 #define VBOX_IOKIT_MODE_STRING "VBoxIOKitMode"
 
@@ -49,6 +49,7 @@ PDARWINDVD  DarwinGetDVDDrives(void);
 void *      DarwinSubscribeUSBNotifications(void);
 void        DarwinUnsubscribeUSBNotifications(void *pvOpaque);
 PUSBDEVICE  DarwinGetUSBDevices(void);
+void        DarwinFreeUSBDeviceFromIOKit(PUSBDEVICE pCur);
 #endif
 __END_DECLS
 

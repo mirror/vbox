@@ -1,4 +1,4 @@
-/** $Id: $ */
+/* $Id$ */
 /** @file
  * Main - Darwin IOKit Routines.
  *
@@ -547,6 +547,23 @@ void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
 
 
 /**
+ * Worker function for DarwinGetUSBDevices() that tries to figure out
+ * what state the device is in.
+ *
+ * This is mostly a matter of distinguishing between devices that nobody
+ * uses, devices that can be seized and devices that cannot be grabbed.
+ *
+ * @param   pCur        The USB device data.
+ * @param   USBDevice   The USB device object.
+ * @param   PropsRef    The USB device properties.
+ */
+static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice, CFMutableDictionaryRef PropsRef)
+{
+    ///@todo
+}
+
+
+/**
  * Enumerate the USB devices returning a FIFO of them.
  *
  * @returns Pointer to the head.
@@ -603,7 +620,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                  * Mandatory
                  */
                 pCur->bcdUSB = 0;                                           /* we've no idea. */
-                pCur->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;    /* ditto. */
+                pCur->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;    /* just a default, we'll try harder in a bit. */
 
                 AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDeviceClass),           &pCur->bDeviceClass),);
                 /* skip hubs */
@@ -666,6 +683,10 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                     long cReft = (*ppUSBDeviceInterface)->Release(ppUSBDeviceInterface); MY_CHECK_CREFS(cRefs);
                 }
 #endif
+                /*
+                 * Try determin the state.
+                 */
+                darwinDeterminUSBDeviceState(pCur, USBDevice, PropsRef);
 
                 /*
                  * We're good. Link the device.
@@ -680,9 +701,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
 
             /* cleanup on failure / skipped device. */
             if (!fOk && pCur)
-            {
-                /** @todo */
-            }
+                DarwinFreeUSBDeviceFromIOKit(pCur);
 
             CFRelease(PropsRef);
         }
@@ -703,6 +722,8 @@ PUSBDEVICE DarwinGetUSBDevices(void)
      * for capturing. If there is no Apple mouse or keyboard we'll
      * take the first one from another vendor.
      */
+    /* As it turns out, the HID service will take all keyboards and mice
+       and we're not currently able to seize them. */
     PUSBDEVICE pMouse = NULL;
     PUSBDEVICE pKeyboard = NULL;
     for (PUSBDEVICE pCur = pHead; pCur; pCur = pCur->pNext)
