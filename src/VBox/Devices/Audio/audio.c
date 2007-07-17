@@ -42,7 +42,7 @@
 #include "audio.h"
 #include "audio_int.h"
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #define strcasecmp stricmp
 #endif
 
@@ -62,16 +62,16 @@ typedef struct DRVAUDIO
 } DRVAUDIO, *PDRVAUDIO;
 
 static struct audio_driver *drvtab[] = {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     &oss_audio_driver,
 #ifdef VBOX_WITH_ALSA
     &alsa_audio_driver,
 #endif
 #endif
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     &coreaudio_audio_driver,
 #endif
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     &dsound_audio_driver,
 #endif
 #ifdef __L4ENV__

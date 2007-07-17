@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # include <winsock2.h>
 typedef int socklen_t;
 #endif
@@ -25,7 +25,7 @@ typedef int socklen_t;
 #define LOG_GROUP LOG_GROUP_DRV_NAT
 #include <VBox/log.h>
 #include <iprt/mem.h>
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # include <windows.h>
 # include <io.h>
 #endif

@@ -40,15 +40,15 @@
 
 #include "Builtins.h"
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include <windows.h>
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -76,7 +76,7 @@ typedef struct DRVNAMEDPIPE
     char                *pszLocation;
     /** Flag whether VirtualBox represents the server or client side. */
     bool                fIsServer;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     /* File handle of the named pipe. */
     RTFILE              NamedPipe;
     /* Overlapped structure for writes. */
@@ -85,12 +85,12 @@ typedef struct DRVNAMEDPIPE
     OVERLAPPED          OverlappedRead;
     /* Listen thread wakeup semaphore */
     RTSEMEVENT          ListenSem;
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
     /** Socket handle of the local socket for server. */
     RTSOCKET            LocalSocketServer;
     /** Socket handle of the local socket. */
     RTSOCKET            LocalSocket;
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
     /** Thread for listening for new connections. */
     RTTHREAD            ListenThread;
     /** Flag to signal listening thread to shut down. */
@@ -111,7 +111,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
     LogFlow(("%s: pvBuf=%p cbRead=%#x (%s)\n", __FUNCTION__, pvBuf, cbRead, pData->pszLocation));
 
     Assert(pvBuf);
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     if (pData->NamedPipe != NIL_RTFILE)
     {
         DWORD cbReallyRead;
@@ -171,7 +171,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         }
         *cbRead = (size_t)cbReallyRead;
     }
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
     if (pData->LocalSocket != NIL_RTSOCKET)
     {
         ssize_t cbReallyRead;
@@ -189,7 +189,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         }
         *cbRead = cbReallyRead;
     }
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
     else
     {
         RTThreadSleep(100);
@@ -209,7 +209,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
     LogFlow(("%s: pvBuf=%p cbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, cbWrite, pData->pszLocation));
 
     Assert(pvBuf);
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     if (pData->NamedPipe != NIL_RTFILE)
     {
         unsigned cbWritten;
@@ -261,7 +261,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
         }
         *cbWrite = cbWritten;
     }
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
     if (pData->LocalSocket != NIL_RTSOCKET)
     {
         ssize_t cbWritten;
@@ -279,7 +279,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
         }
         *cbWrite = cbWritten;
     }
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
     LogFlow(("%s: returns %Vrc\n", __FUNCTION__, rc));
     return rc;
@@ -324,14 +324,14 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
 {
     PDRVNAMEDPIPE   pData = (PDRVNAMEDPIPE)pvUser;
     int             rc = VINF_SUCCESS;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     RTFILE          NamedPipe = pData->NamedPipe;
     HANDLE          hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 #endif
 
     while (RT_LIKELY(!pData->fShutdown))
     {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         OVERLAPPED overlapped;
 
         memset(&overlapped, 0, sizeof(overlapped));
@@ -368,7 +368,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
                 break;
             }
         }
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
         if (listen(pData->LocalSocketServer, 0) == -1)
         {
             rc = RTErrConvertFromErrno(errno);
@@ -392,10 +392,10 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
             else
                 pData->LocalSocket = s;
         }
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
     }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     CloseHandle(hEvent);
 #endif
     pData->ListenThread = NIL_RTTHREAD;
@@ -424,12 +424,12 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     pData->pDrvIns                      = pDrvIns;
     pData->pszLocation                  = NULL;
     pData->fIsServer                    = false;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     pData->NamedPipe                    = NIL_RTFILE;
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
     pData->LocalSocketServer            = NIL_RTSOCKET;
     pData->LocalSocket                  = NIL_RTSOCKET;
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
     pData->ListenThread                 = NIL_RTTHREAD;
     pData->fShutdown                    = false;
     /* IBase */
@@ -462,7 +462,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     }
     pData->fIsServer = fIsServer;
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     if (fIsServer)
     {
         HANDLE hPipe = CreateNamedPipe(pData->pszLocation, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 32, 32, 10000, NULL);
@@ -493,7 +493,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     memset(&pData->OverlappedRead, 0, sizeof(pData->OverlappedRead));
     pData->OverlappedWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     pData->OverlappedRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
     int s;
     struct sockaddr_un addr;
 
@@ -522,7 +522,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
             return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS, N_("NamedPipe#%d failed to connect to local socket %s"), pDrvIns->iInstance, pszLocation);
         pData->LocalSocket = s;
     }
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
 out:
     if (VBOX_FAILURE(rc))
@@ -578,7 +578,7 @@ static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
 
     pData->fShutdown = true;
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     if (pData->NamedPipe != NIL_RTFILE)
     {
         FlushFileBuffers((HANDLE)pData->NamedPipe);
@@ -593,7 +593,7 @@ static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
     /* Wake up listen thread */
     RTSemEventSignal(pData->ListenSem);
     RTSemEventDestroy(pData->ListenSem);
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
     if (pData->fIsServer)
     {
         if (pData->LocalSocketServer != NIL_RTSOCKET)
@@ -606,7 +606,7 @@ static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
         if (pData->LocalSocket != NIL_RTSOCKET)
             close(pData->LocalSocket);
     }
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 }
 
 

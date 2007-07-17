@@ -160,12 +160,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
-#if defined(__DARWIN__) || defined(__LINUX__) || defined(__WIN__)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostDVD);
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
-#if defined(__LINUX__) || defined(__WIN__)
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostFloppy);
     if (VBOX_FAILURE(rc))
         return rc;
@@ -176,7 +176,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImage);
     if (VBOX_FAILURE(rc))
         return rc;
-#if defined(__WIN__) || defined(__LINUX__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostHDD);
     if (VBOX_FAILURE(rc))
         return rc;
@@ -194,7 +194,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
-#if defined(__L4ENV__) || defined(__LINUX__) || defined(__WIN__)
+#if defined(__L4ENV__) || defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostInterface);
     if (VBOX_FAILURE(rc))
         return rc;
@@ -227,7 +227,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 #endif
 
-#if defined(__LINUX__)
+#if defined(RT_OS_LINUX)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostParallel);
     if (VBOX_FAILURE(rc))
         return rc;

@@ -25,7 +25,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 # include <mach/mach.h>
 # include <Carbon/Carbon.h>
 # include <IOKit/IOKitLib.h>
@@ -40,12 +40,12 @@
 #elif defined(__L4ENV__)
   /* Nothing special requires... yeah, right. */
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
 # include <sys/ioctl.h>
 # include <sys/fcntl.h>
 # include <errno.h>
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
 # define WIN32_NO_STATUS
 # include <Windows.h>
 # include <dbt.h>
@@ -133,7 +133,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
      * Check the state.
      */
     int rc;
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     if (    pThis->fMediaPresent
         &&  pThis->ppScsiTaskDI
         &&  pThis->cbBlock)
@@ -141,7 +141,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
     if (pThis->fMediaPresent)
 #endif
     {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         /*
          * Issue a READ(12) request.
          */
@@ -210,7 +210,7 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIBLOCK pInterface, uint64_t off, c
     {
         if (pThis->fMediaPresent)
         {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
             /** @todo write support... */
             rc = VERR_WRITE_PROTECT;
 
@@ -255,7 +255,7 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIBLOCK pInterface)
 
     if (pThis->fMediaPresent)
     {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         rc = VINF_SUCCESS;
         /** @todo scsi device buffer flush... */
 #else
@@ -560,7 +560,7 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, PDM
 
 /* -=-=-=-=- poller thread -=-=-=-=- */
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 /** The runloop input source name for the disk arbitration events. */
 #define MY_RUN_LOOP_MODE    CFSTR("drvHostBaseDA")
 
@@ -733,7 +733,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
         RTThreadSleep(10);
     }
 }
-#endif /* __DARWIN__ */
+#endif /* RT_OS_DARWIN */
 
 
 /**
@@ -744,7 +744,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
  */
 static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOnly)
 {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     /* Darwin is kind of special... */
     Assert(!pFileDevice); NOREF(pFileDevice);
     Assert(!pThis->cbBlock);
@@ -922,7 +922,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     IOObjectRelease(DVDServices);
     return rc;
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
     /** @todo we've got RTFILE_O_NON_BLOCK now. Change the code to use RTFileOpen. */
     int FileDevice = open(pThis->pszDeviceOpen, (pThis->fReadOnlyConfig ? O_RDONLY : O_RDWR) | O_NONBLOCK);
     if (FileDevice < 0)
@@ -949,7 +949,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
  */
 static int drvHostBaseReopen(PDRVHOSTBASE pThis)
 {
-#ifndef __DARWIN__ /* Only *one* open for darwin. */
+#ifndef RT_OS_DARWIN /* Only *one* open for darwin. */
     LogFlow(("%s-%d: drvHostBaseReopen: '%s'\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, pThis->pszDeviceOpen));
 
     RTFILE FileDevice;
@@ -975,7 +975,7 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
     if (pThis->FileDevice != NIL_RTFILE)
         RTFileClose(pThis->FileDevice);
     pThis->FileDevice = FileDevice;
-#endif /* !__DARWIN__ */
+#endif /* !RT_OS_DARWIN */
     return VINF_SUCCESS;
 }
 
@@ -989,7 +989,7 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
  */
 static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
 {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     /*
      * Try a READ_CAPACITY command...
      */
@@ -1018,7 +1018,7 @@ static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
     }
     return rc;
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
     /* use NT api, retry a few times if the media is being verified. */
     IO_STATUS_BLOCK             IoStatusBlock = {0};
     FILE_FS_SIZE_INFORMATION    FsSize= {0};
@@ -1053,7 +1053,7 @@ static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
 }
 
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 /**
  * Execute a SCSI command.
  *
@@ -1089,7 +1089,7 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     if (pcbBuf)
         *pcbBuf = 0;
 
-# ifdef __DARWIN__
+# ifdef RT_OS_DARWIN
     Assert(pThis->ppScsiTaskDI);
 
     int rc = VERR_GENERAL_FAILURE;
@@ -1226,7 +1226,7 @@ void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis)
 }
 
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 
 /**
  * Window procedure for the invisible window used to catch the WM_DEVICECHANGE broadcasts.
@@ -1283,7 +1283,7 @@ static LRESULT CALLBACK DeviceChangeWindowProc(HWND hwnd, UINT uMsg, WPARAM wPar
     return TRUE;
 }
 
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 
 /**
@@ -1298,7 +1298,7 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
     PDRVHOSTBASE pThis = (PDRVHOSTBASE)pvUser;
     LogFlow(("%s-%d: drvHostBaseMediaThread: ThreadSelf=%p pvUser=%p\n",
              pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, ThreadSelf, pvUser));
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     static WNDCLASS s_classDeviceChange = {0};
     static ATOM     s_hAtomDeviceChange = 0;
 
@@ -1351,7 +1351,7 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
     }
     Assert(!pThis->hwndDeviceChange);
 
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
     bool        fFirst = true;
     int         cRetries = 10;
     while (!pThis->fShutdownPoller)
@@ -1395,7 +1395,7 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
         cRetries = 10;
     }
 
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
     /* (Don't clear the thread handle here, the destructor thread is using it to wait.) */
     LogFlow(("%s-%d: drvHostBaseMediaThread: returns VINF_SUCCESS\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance));
@@ -1449,7 +1449,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
         int cTimes = 50;
         do
         {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
             if (pThis->hwndDeviceChange)
                 PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
 #else
@@ -1465,7 +1465,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     /*
      * Unlock the drive if we've locked it or we're in passthru mode.
      */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     if (    (   pThis->fLocked
              || pThis->IBlock.pfnSendCmd)
         &&  pThis->ppScsiTaskDI
@@ -1484,7 +1484,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     /*
      * Cleanup the other resources.
      */
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     if (pThis->hwndDeviceChange)
     {
         if (SetWindowLongPtr(pThis->hwndDeviceChange, GWLP_USERDATA, 0) == (LONG_PTR)pThis)
@@ -1499,7 +1499,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     }
 #endif
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     /*
      * The unclaiming doesn't seem to mean much, the DVD is actaully
      * remounted when we release exclusive access. I'm not quite sure
@@ -1597,7 +1597,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     pThis->pDrvIns                          = pDrvIns;
     pThis->fKeepInstance                    = false;
     pThis->ThreadPoller                     = NIL_RTTHREAD;
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     pThis->MasterPort                       = NULL;
     pThis->ppMMCDI                          = NULL;
     pThis->ppScsiTaskDI                     = NULL;
@@ -1735,7 +1735,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     pThis->fAttachFailError = fAttachFailError;
 
     /* name to open & watch for */
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     int iBit = toupper(pThis->pszDevice[0]) - 'A';
     if (    iBit > 'Z' - 'A'
         ||  pThis->pszDevice[1] != ':'
@@ -1797,7 +1797,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     /*
      * Verify type.
      */
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     UINT uDriveType = GetDriveType(pThis->pszDevice);
     switch (pThis->enmType)
     {
@@ -1832,7 +1832,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     /*
      * Open the device.
      */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     rc = drvHostBaseOpen(pThis, NULL, pThis->fReadOnlyConfig);
 #else
     rc = drvHostBaseReopen(pThis);
@@ -1840,7 +1840,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     if (VBOX_FAILURE(rc))
     {
         char *pszDevice = pThis->pszDevice;
-#ifndef __DARWIN__
+#ifndef RT_OS_DARWIN
         char szPathReal[256];
         if (   RTPathExists(pszDevice)
             && RT_SUCCESS(RTPathReal(pszDevice, szPathReal, sizeof(szPathReal))))
@@ -1858,7 +1858,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
         {
             case VERR_ACCESS_DENIED:
                 return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
                         N_("Cannot open host device '%s' for %s access. Check the permissions "
                            "of that device ('/bin/ls -l %s'): Most probably you need to be member "
                            "of the device group. Make sure that you logout/login after changing "
@@ -1881,7 +1881,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
             }
         }
     }
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     if (VBOX_SUCCESS(src))
         DRVHostBaseMediaPresent(pThis);
 #endif
@@ -1900,7 +1900,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
         }
     }
 
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
     if (VBOX_SUCCESS(src))
     {
         /*
@@ -1937,7 +1937,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
          */
         rc = RTThreadUserWait(pThis->ThreadPoller, 10000);
         AssertRC(rc);
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         if (!pThis->hwndDeviceChange)
             return VERR_GENERAL_FAILURE;
 #endif

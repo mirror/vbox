@@ -591,7 +591,7 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	    (setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int)) < 0) ||
 	    (bind(s,(struct sockaddr *)&addr, sizeof(addr)) < 0) ||
 	    (listen(s,1) < 0)) {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 		int tmperrno = WSAGetLastError(); /* Don't clobber the real reason we failed */
 		closesocket(s);
 		sofree(pData, so);

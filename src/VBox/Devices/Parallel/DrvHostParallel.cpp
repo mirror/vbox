@@ -32,7 +32,7 @@
 #include <iprt/stream.h>
 #include <iprt/semaphore.h>
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>

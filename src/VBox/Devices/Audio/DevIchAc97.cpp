@@ -284,7 +284,7 @@ static void fetch_bd (AC97LinkState *s, AC97BusMasterRegs *r)
 
     PDMDevHlpPhysRead (pDevIns, r->bdbar + r->civ * 8, b, sizeof(b));
     r->bd_valid   = 1;
-#if !defined(__X86__) && !defined(__AMD64__)
+#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
 #error Please adapt the code (audio buffers are little endian)!
 #else
     r->bd.addr    = (*(uint32_t *) &b[0]) & ~3;
@@ -1679,7 +1679,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
 
     ac97Reset(pDevIns);
 
-#ifndef __DARWIN__ /* coreaudio doesn't supply these. */
+#ifndef RT_OS_DARWIN /* coreaudio doesn't supply these. */
     if (!s->voice_pi)
         LogRel(("AC97: WARNING: Unable to open PCM IN!\n"));
     if (!s->voice_mc)
@@ -1704,7 +1704,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
              N_("No audio devices could not be opened. Selecting the NULL audio backend "
                 "with the consequence that no sound is audible."));
     }
-#ifndef __DARWIN__
+#ifndef RT_OS_DARWIN
     else if (!s->voice_pi || !s->voice_po || !s->voice_mc)
     {
         char   szMissingVoices[128];
