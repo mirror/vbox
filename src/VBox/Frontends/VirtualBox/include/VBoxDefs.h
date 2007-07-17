@@ -124,6 +124,7 @@ struct VBoxDefs
     enum {
         ResizeEventType = QEvent::User,
         RepaintEventType,
+        SetRegionEventType,
         MouseCapabilityEventType,
         MousePointerChangeEventType,
         MachineStateChangeEventType,
@@ -142,7 +143,7 @@ struct VBoxDefs
         ActivateMenuEventType,
 #if defined (Q_WS_MAC)
         ShowWindowEventType,
-#endif 
+#endif
     };
 };
 

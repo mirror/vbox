@@ -94,12 +94,14 @@ public:
 
     void fixModifierState (LONG *codes, uint *count);
 
+    bool isInSeamlessMode();
+
 signals:
 
     void keyboardStateChanged (int state);
     void mouseStateChanged (int state);
     void machineStateChanged (CEnums::MachineState state);
-    void additionsStateChanged (const QString &, bool);
+    void additionsStateChanged (const QString &, bool, bool);
 
 protected:
 
