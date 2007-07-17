@@ -611,12 +611,12 @@ void HostUSBDevice::handlePendingStateChange()
                     {
                         /* couldn't capture the device, will report an error */
                         wasCapture = true;
-        
+
                         Assert (!mMachine.isNull());
-        
+
                         /// @todo more detailed error message depending on the state?
                         //  probably need some error code/string from the USB proxy itself
-        
+
                         requestRC = E_FAIL;
                         errorText = Utf8StrFmt (
                             tr ("USB device '%s' with UUID {%Vuuid} is being accessed by the host "
@@ -629,7 +629,7 @@ void HostUSBDevice::handlePendingStateChange()
                 case USBDeviceState_USBDeviceAvailable:
                 {
                     Assert (mMachine.isNull());
-        
+
                     if (mState == USBDeviceState_USBDeviceHeld)
                     {
                         /* couldn't release the device (give it back to the host).
@@ -673,7 +673,7 @@ void HostUSBDevice::handlePendingStateChange()
             break;
 
         /*
-         * The device has reappeared while the detach operation is still in 
+         * The device has reappeared while the detach operation is still in
          * progress, just clear the pending operation and leave the machine as is.
          */
         case kDetachingPendingAttach:
@@ -786,6 +786,7 @@ void HostUSBDevice::cancelPendingState(bool aTimeout /*= false*/)
         case kDetachingPendingDetachFilters:
         case kDetachingPendingAttach:
         case kDetachingPendingAttachFilters:
+            LogFlowThisFunc (("cancelling reattach in state %d\n", mPendingStateEx));
             mMachine.setNull();
             mPendingStateEx = kNothingPending;
             mIsStatePending = false;
@@ -942,7 +943,7 @@ int HostUSBDevice::compare (PCUSBDEVICE aDev2)
 int HostUSBDevice::compare (PCUSBDEVICE aDev1, PCUSBDEVICE aDev2,
                             bool aIsStrict /* = true */)
 {
-    /* The non-strict checks tries as best as it can to distiguish between 
+    /* The non-strict checks tries as best as it can to distiguish between
        different physical devices of the same product. Unfortunately this
        isn't always possible and we might end up a bit confused in rare cases... */
 
@@ -1106,9 +1107,11 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             {
                 case USBDeviceState_USBDeviceAvailable:
                     return false;
-#ifdef __LINUX__ /* Hack for /proc/bus/usb/devices not necessarily putting up a driver. */
+#if defined(RT_OS_LINUX)  /* Hack for /proc/bus/usb/devices not necessarily putting up a driver. */ \
+ || defined(RT_OS_DARWIN) /* We're a bit clueless as to the exact device state, just like linux. */
                 case USBDeviceState_USBDeviceCaptured:
-                    if (!mIsStatePending)
+                    if (    !mIsStatePending
+                        ||  mPendingStateEx != kNothingPending)
                         return false;
                     isImportant = true;
                     break;
@@ -1133,12 +1136,10 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
             {
                 case USBDeviceState_USBDeviceHeld:
                     return false;
-#ifdef __WIN__
                 case USBDeviceState_USBDeviceCaptured:
                     if (!mIsStatePending)
                         return false;
                     /* no break */
-#endif
                 default:
                     LogFlowThisFunc (("%d -> %d\n",
                                       mState, USBDeviceState_USBDeviceHeld));
@@ -1176,8 +1177,8 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
 
 /**
  *  Checks for timeout of any pending async operation.
- * 
- *  The caller must write lock the object prior to calling 
+ *
+ *  The caller must write lock the object prior to calling
  *  this method.
  */
 void HostUSBDevice::checkForAsyncTimeout()
@@ -1199,13 +1200,13 @@ void HostUSBDevice::checkForAsyncTimeout()
 #endif
 }
 
-/** 
- *  This method is called by the USB proxy and Host to work the 
+/**
+ *  This method is called by the USB proxy and Host to work the
  *  logical reconnection operation.
- * 
+ *
  *  @param  aStage      kDeatchingPendingDetach, kDeatchingPendingDetachFilters,
  *                      kDetachingPendingAttach or kDetachingPendingAttachFilters.
- * 
+ *
  *  @returns Success indicator.
  */
 bool HostUSBDevice::setLogicalReconnect (InternalState aStage)
@@ -1219,22 +1220,26 @@ bool HostUSBDevice::setLogicalReconnect (InternalState aStage)
             mPendingState = mState;
             mIsStatePending = true;
             mPendingSince = RTTimeNanoTS();
+            LogFlowThisFunc (("pending detach\n"));
             break;
 
         case kDetachingPendingDetachFilters:
             AssertReturn (mIsStatePending, false);
             AssertReturn (mPendingStateEx == kDetachingPendingDetach, false);
+            LogFlowThisFunc (("pending detach+filters\n"));
             break;
 
         case kDetachingPendingAttach:
             AssertReturn (mIsStatePending, false);
             AssertReturn (mPendingStateEx == kDetachingPendingDetach, false);
+            LogFlowThisFunc (("pending attach\n"));
             break;
 
         case kDetachingPendingAttachFilters:
             AssertReturn (mIsStatePending, false);
-            AssertReturn (   mPendingStateEx == kDetachingPendingAttach 
+            AssertReturn (   mPendingStateEx == kDetachingPendingAttach
                           || mPendingStateEx == kDetachingPendingDetachFilters, false);
+            LogFlowThisFunc (("pending attach+filters\n"));
             break;
 
         default:
