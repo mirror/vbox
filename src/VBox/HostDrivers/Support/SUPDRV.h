@@ -40,7 +40,7 @@
 #endif
 
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     __BEGIN_DECLS
 #   if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
 #       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
@@ -60,7 +60,7 @@
     int VBOXCALL mymemcmp(const void *, const void *, size_t);
     __END_DECLS
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
 #   include <linux/autoconf.h>
 #   include <linux/version.h>
 #   if defined(CONFIG_MODVERSIONS) && !defined(MODVERSIONS)
@@ -85,13 +85,13 @@
 #   include <asm/semaphore.h>
 #   include <linux/timer.h>
 
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
 #   include <libkern/libkern.h>
 #   include <iprt/string.h>
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 
-#elif defined(__FREEBSD__)
+#elif defined(RT_OS_FREEBSD)
 #   include <sys/libkern.h>
 #   include <iprt/string.h>
 
@@ -116,7 +116,7 @@
 /*
  * Win32
  */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 
 /* debug printf */
 # define OSDBGPRINT(a) DbgPrint a
@@ -125,10 +125,10 @@
  * This is supposed to have a limit right below 256MB, but this appears
  * to actually be much lower. The values here have been determined experimentally.
  */
-#ifdef __X86__
+#ifdef RT_ARCH_X86
 # define MAX_LOCK_MEM_SIZE   (32*1024*1024) /* 32mb */
 #endif
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # define MAX_LOCK_MEM_SIZE   (24*1024*1024) /* 24mb */
 #endif
 
@@ -136,7 +136,7 @@
 /*
  * Linux
  */
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
 
 /* check kernel version */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
@@ -154,7 +154,7 @@ __END_DECLS
 /*
  * Darwin
  */
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
 
 /* debug printf */
 # define OSDBGPRINT(a) printf a
@@ -163,7 +163,7 @@ __END_DECLS
 /*
  * OS/2
  */
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 
 /* No log API in OS/2 only COM port. */
 # define OSDBGPRINT(a) SUPR0Printf a
@@ -172,7 +172,7 @@ __END_DECLS
 /*
  * FreeBSD
  */
-#elif defined(__FREEBSD__)
+#elif defined(RT_OS_FREEBSD)
 
 /* No log API in OS/2 only COM port. */
 # define OSDBGPRINT(a) printf a
@@ -197,7 +197,7 @@ __END_DECLS
 #endif
 
 /* dprintf2 - extended logging. */
-#if defined(__DARWIN__) || defined(__OS2__)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2)
 # define dprintf2 dprintf
 #else
 # define dprintf2(a) do { } while (0)
@@ -249,7 +249,7 @@ typedef struct SUPDRVIDTE
     uint32_t    u16OffsetLow : 16;
     /** Segment Selector. */
     uint32_t    u16SegSel : 16;
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     /** Interrupt Stack Table index. */
     uint32_t    u3IST : 3;
     /** Reserved, ignored. */
@@ -268,7 +268,7 @@ typedef struct SUPDRVIDTE
     uint32_t    u1Present : 1;
     /** High offset word. */
     uint32_t    u16OffsetHigh : 16;
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     /** The upper top part of the address. */
     uint32_t    u32OffsetTop;
     /** Reserved dword for qword (aligning the struct), ignored. */
@@ -380,11 +380,11 @@ typedef struct SUPDRVMEMREF
     {
         struct
         {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
             /** Pointer to memory descriptor list (MDL). */
             PMDL               *papMdl;
             unsigned            cMdls;
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
             struct page       **papPages;
 	    unsigned            cPages;
 #else
@@ -393,10 +393,10 @@ typedef struct SUPDRVMEMREF
         } locked;
         struct
         {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
             /** Pointer to memory descriptor list (MDL). */
             PMDL                pMdl;
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
             struct page        *paPages;
 	    unsigned            cPages;
 #else
@@ -405,10 +405,10 @@ typedef struct SUPDRVMEMREF
         } cont;
         struct
         {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
             /** Pointer to memory descriptor list (MDL). */
             PMDL                pMdl;
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
             /** Pointer to the array of page pointers. */
             struct page       **papPages;
             /** Number of pages in papPages. */
@@ -571,12 +571,12 @@ typedef struct SUPDRVSESSION
     RTPROCESS                   Process;
     /** Which process this session is associated with. */
     RTR0PROCESS                 R0Process;
-#if defined(__OS2__)
+#if defined(RT_OS_OS2)
     /** The system file number of this session. */
     uint16_t                    sfn;
     uint16_t                    Alignment; /**< Alignment */
 #endif
-#if defined(__DARWIN__) || defined(__OS2__)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2)
     /** Pointer to the next session with the same hash. */
     PSUPDRVSESSION              pNextHash;
 #endif
@@ -643,7 +643,7 @@ typedef struct SUPDRVDEVEXT
     /** If non-zero we've successfully called RTTimerRequestSystemGranularity(). */
     uint32_t                u32SystemTimerGranularityGrant;
 #endif
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     /** The GIP timer object. */
     KTIMER                  GipTimer;
     /** The GIP DPC object associated with GipTimer. */
@@ -655,7 +655,7 @@ typedef struct SUPDRVDEVEXT
     /** GIP timer interval (ms). */
     ULONG                   ulGipTimerInterval;
 #endif
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /** The last jiffies. */
     unsigned long           ulLastJiffies;
     /** The last mono time stamp. */

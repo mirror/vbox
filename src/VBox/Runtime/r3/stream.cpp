@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#if defined(__LINUX__) /* PORTME: check for the _unlocked functions in stdio.h */
+#if defined(RT_OS_LINUX) /* PORTME: check for the _unlocked functions in stdio.h */
 #define HAVE_FWRITE_UNLOCKED
 #endif
 

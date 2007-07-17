@@ -38,10 +38,10 @@
 # include <unistd.h>
 # include <sys/time.h>
 #endif
-#if defined(__OS2__) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006)
+#if defined(RT_OS_OS2) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006)
 # include <io.h>
 #endif
-#ifdef __L4__
+#ifdef RT_OS_L4
 /* This is currently ifdef'ed out in the relevant L4 header file */
 /* Same as `utimes', but takes an open file descriptor instead of a name.  */
 extern int futimes (int __fd, __const struct timeval __tvp[2]) __THROW;
@@ -333,7 +333,7 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize)
         return VERR_NOT_SUPPORTED;
     }
 
-#if defined(_MSC_VER) || (defined(__OS2__) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006))
+#if defined(_MSC_VER) || (defined(RT_OS_OS2) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006))
     if (chsize((int)File, (off_t)cbSize) == 0)
 #else
     /* This relies on a non-standard feature of FreeBSD, Linux, and OS/2

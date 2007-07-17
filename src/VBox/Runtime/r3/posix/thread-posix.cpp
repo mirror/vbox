@@ -200,9 +200,9 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
     if (!cMillies)
     {
         /* pthread_yield() isn't part of SuS, thus this fun. */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         pthread_yield_np();
-#elif defined(__FREEBSD__) /* void pthread_yield */
+#elif defined(RT_OS_FREEBSD) /* void pthread_yield */
         pthread_yield();
 #else
         if (!pthread_yield())
@@ -235,7 +235,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
 RTDECL(bool) RTThreadYield(void)
 {
     uint64_t u64TS = ASMReadTSC();
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     pthread_yield_np();
 #else
     pthread_yield();

@@ -23,7 +23,7 @@
 #define __fs_h__
 
 #include <iprt/types.h>
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 # include <sys/stat.h>
 #endif
 
@@ -36,11 +36,11 @@ bool    rtFsModeIsValid(RTFMODE fMode);
 bool    rtFsModeIsValidPermissions(RTFMODE fMode);
 
 size_t  rtPathVolumeSpecLen(const char *pszPath);
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 void    rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName);
 #endif
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 # ifdef __USE_MISC
 #  define HAVE_STAT_TIMESPEC_BRIEF
 # else

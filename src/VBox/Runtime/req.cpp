@@ -779,7 +779,7 @@ static int  rtReqProcessOne(PRTREQ pReq)
                 DECLCALLBACKMEMBER(int, pfn12)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
             } u;
             u.pfn = pReq->u.Internal.pfn;
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
             switch (pReq->u.Internal.cArgs)
             {
                 case 0:  rcRet = u.pfn00(); break;

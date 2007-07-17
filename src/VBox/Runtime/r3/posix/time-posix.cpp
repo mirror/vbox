@@ -34,7 +34,7 @@
 
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
-#if defined(CLOCK_MONOTONIC) && !defined(__L4__) && !defined(__OS2__)
+#if defined(CLOCK_MONOTONIC) && !defined(RT_OS_L4) && !defined(RT_OS_OS2)
     /* check monotonic clock first. */
     static bool s_fMonoClock = true;
     if (s_fMonoClock)

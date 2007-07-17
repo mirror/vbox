@@ -25,7 +25,7 @@
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %define _DbgPrint DbgPrint
 %endif
 extern _DbgPrint

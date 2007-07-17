@@ -48,7 +48,7 @@ typedef struct RTMEMHDR
  * @{ */
 #define RTMEMHDR_FLAG_ZEROED    BIT(0)
 #define RTMEMHDR_FLAG_EXEC      BIT(1)
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 #define RTMEMHDR_FLAG_EXEC_HEAP BIT(30)
 #define RTMEMHDR_FLAG_KMALLOC   BIT(31)
 #endif

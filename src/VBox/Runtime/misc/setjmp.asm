@@ -26,7 +26,7 @@ BEGINCODE
 
 
 BEGINPROC RT_NOCRT(setjmp)
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
         mov     rax, [rsp]
         mov     [rdi + 00h], rax        ; rip
         lea     rcx, [rsp + 8]
@@ -54,7 +54,7 @@ ENDPROC RT_NOCRT(setjmp)
 
 
 BEGINPROC RT_NOCRT(longjmp)
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
         mov     rbx, [rdi + 38h]
         mov     r12, [rdi + 30h]
         mov     r13, [rdi + 28h]

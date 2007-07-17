@@ -25,7 +25,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DIR
-#ifdef __WIN__ /* dir.h has host specific stuff */
+#ifdef RT_OS_WINDOWS /* dir.h has host specific stuff */
 # include <Windows.h>
 #else
 # include <dirent.h>

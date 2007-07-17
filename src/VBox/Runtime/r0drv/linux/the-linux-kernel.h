@@ -178,7 +178,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #  endif
 # endif
 
-# ifndef __AMD64__
+# ifndef RT_ARCH_AMD64
 /* In 2.6.9-22.ELsmp we have to call change_page_attr() twice when changing
  * the page attributes from PAGE_KERNEL to something else, because there appears
  * to be a bug in one of the many patches that redhat applied.
@@ -190,7 +190,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
             change_page_attr(pPages, cPages, prot); \
         change_page_attr(pPages, cPages, prot); \
     } while (0)
-# endif  /* !__AMD64__ */
+# endif  /* !RT_ARCH_AMD64 */
 #endif /* !NO_REDHAT_HACKS */
 
 
@@ -199,7 +199,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #endif
 
 #ifndef MY_CHANGE_PAGE_ATTR
-# ifdef __AMD64__ /** @todo This is a cheap hack, but it'll get around that 'else BUG();' in __change_page_attr().  */
+# ifdef RT_ARCH_AMD64 /** @todo This is a cheap hack, but it'll get around that 'else BUG();' in __change_page_attr().  */
 #  define MY_CHANGE_PAGE_ATTR(pPages, cPages, prot) \
     do { \
         change_page_attr(pPages, cPages, PAGE_KERNEL_NOCACHE); \

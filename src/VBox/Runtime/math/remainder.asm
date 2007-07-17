@@ -23,7 +23,7 @@
 
 BEGINCODE
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define _SP rsp
  %define _BP rbp
 %else
@@ -42,7 +42,7 @@ BEGINPROC RT_NOCRT(remainder)
     sub     _SP, 20h
 ;int3
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     movsd   [rsp + 10h], xmm1
     movsd   [rsp], xmm0
     fld     qword [rsp + 10h]
@@ -59,7 +59,7 @@ BEGINPROC RT_NOCRT(remainder)
     fstp    st1
 
 .done:
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     fstp    qword [rsp]
     movsd   xmm0, [rsp]
 %endif

@@ -24,7 +24,7 @@
 
 BEGINCODE
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define _SP rsp
  %define _BP rbp
  %define _S  8

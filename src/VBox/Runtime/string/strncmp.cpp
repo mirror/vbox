@@ -27,7 +27,7 @@ _CRTIMP int __cdecl strncmp
 int strncmp
 #endif
     (const char *pszStr1, const char *pszStr2, size_t cb)
-#if defined(__THROW) && !defined(__WIN__) && !defined(__OS2__)
+#if defined(__THROW) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
     __THROW
 #endif
 {

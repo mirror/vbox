@@ -23,9 +23,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include <winsock.h>
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -35,7 +35,7 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <unistd.h>
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
 #include <iprt/tcp.h>
 #include <iprt/thread.h>
@@ -59,7 +59,7 @@
 #endif
 
 /* fixup backlevel OSes. */
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define socklen_t  int
 #endif
 
@@ -138,7 +138,7 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg);
  */
 DECLINLINE(int) rtTcpError(void)
 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     return RTErrConvertFromWin32(WSAGetLastError());
 #else
     return RTErrConvertFromErrno(errno);
@@ -279,7 +279,7 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
         return VERR_INVALID_PARAMETER;
     }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     /*
      * Initialize WinSock and check version.
      */
@@ -474,7 +474,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
         RTSOCKET Socket = accept(pServer->SockServer, (struct sockaddr *)&RemoteAddr, &Len);
         if (Socket == -1)
         {
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
             /* These are typical for what can happen during destruction. */
             if (errno == EBADF || errno == EINVAL || errno == ENOTSOCK)
                 break;
@@ -799,7 +799,7 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
     AssertReturn(uPort, VERR_INVALID_PARAMETER);
     AssertReturn(VALID_PTR(pszAddress), VERR_INVALID_PARAMETER);
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     /*
      * Initialize WinSock and check version.
      */
@@ -873,7 +873,7 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg)
     /*
      * Attempt to close it.
      */
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     int rc = closesocket(Sock);
 #else
     int rc = close(Sock);

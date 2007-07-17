@@ -22,10 +22,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # include <Windows.h>
 
-#elif defined __L4__
+#elif defined RT_OS_L4
 
 #else /* posix */
 # include <sys/time.h>
@@ -39,12 +39,12 @@
 
 DECLINLINE(uint64_t) OSNanoTS(void)
 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     uint64_t u64; /* manual say larger integer, should be safe to assume it's the same. */
     GetSystemTimeAsFileTime((LPFILETIME)&u64);
     return u64 * 100;
 
-#elif defined __L4__
+#elif defined RT_OS_L4
     /** @todo fix a different timesource on l4. */
     return RTTimeNanoTS();
 
@@ -95,7 +95,7 @@ SUPInit();
         RTPrintf("tstTime-2: total time difference: u64OSElapsedTS=%#llx u64RTElapsedTS=%#llx delta=%lld\n",
                  u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
 
-#if defined __WIN__ || defined __LINUX__
+#if defined RT_OS_WINDOWS || defined RT_OS_LINUX
     RTPrintf("tstTime-2: RTTime1nsSteps -> %u out of %u calls\n", RTTime1nsSteps(), NUMBER_OF_CALLS);
 #endif
     if (!cErrors)

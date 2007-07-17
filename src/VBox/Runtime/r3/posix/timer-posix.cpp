@@ -37,13 +37,13 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 # include <linux/rtc.h>
 #endif
 #include <sys/time.h>
 #include <signal.h>
 #include <errno.h>
-#ifndef __OS2__
+#ifndef RT_OS_OS2
 # include <pthread.h>
 #endif
 
@@ -215,7 +215,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
         do
         {
             siginfo_t SigInfo = {0};
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
             if (RT_LIKELY(sigwait(&SigSet, &SigInfo.si_signo) >= 0))
             {
 #else
@@ -317,7 +317,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
              * turn periodic
              */
             Log(("RTTimerCreate: interval={%ld,%ld} trying to adjust /dev/rtc!\n", TimerVal.it_interval.tv_sec, TimerVal.it_interval.tv_usec));
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
             int fh = open("/dev/rtc", O_RDONLY);
             if (fh >= 0)
             {
@@ -423,7 +423,7 @@ RTR3DECL(int)     RTTimerDestroy(PRTTIMER pTimer)
     AssertRC(rc);
     if (!pTimer->fSuspended)
     {
-#ifndef __OS2__
+#ifndef RT_OS_OS2
         pthread_kill((pthread_t)RTThreadGetNative(pTimer->Thread), SIGALRM);
 #endif
     }
@@ -497,7 +497,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     int rc = VINF_SUCCESS;
     if (RTThreadSelf() != pTimer->Thread)
     {
-#ifndef __OS2__
+#ifndef RT_OS_OS2
         pthread_kill((pthread_t)RTThreadGetNative(pTimer->Thread), SIGALRM);
 #endif
         rc = RTThreadUserWait(pTimer->Thread, 45*1000);

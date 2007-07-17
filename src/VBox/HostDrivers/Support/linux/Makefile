@@ -122,14 +122,14 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -D__LINUX__ -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0
+KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0
 ifndef CONFIG_VBOXDRV_FIXEDMAJOR
  KFLAGS  += -DCONFIG_VBOXDRV_AS_MISC
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
- KFLAGS  += -D__AMD64__
+ KFLAGS  += -DRT_ARCH_AMD64
 else
- KFLAGS  += -D__X86__
+ KFLAGS  += -DRT_ARCH_X86
 endif
 #ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
 #KFLAGS   += -DDEBUG

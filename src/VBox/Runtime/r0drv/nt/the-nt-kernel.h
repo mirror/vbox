@@ -47,8 +47,8 @@ __END_DECLS
 #if !defined(__WIN32__) && !defined(__WIN64__)
 # error "__WIN32__ or __WIN64__ must be defined!"
 #endif
-#if !defined(__WIN__)
-# error "__WIN__ must be defined!"
+#if !defined(RT_OS_WINDOWS)
+# error "RT_OS_WINDOWS must be defined!"
 #endif
 
 #ifndef PAGE_OFFSET_MASK

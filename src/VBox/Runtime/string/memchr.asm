@@ -29,7 +29,7 @@ BEGINCODE
 ; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
 BEGINPROC RT_NOCRT(memchr)
         cld
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         or      r8, r8
         jz      .not_found_early
@@ -62,7 +62,7 @@ BEGINPROC RT_NOCRT(memchr)
 %ifdef ASM_CALL64_MSC
         mov     rdi, r9
 %endif
-%ifdef __X86__
+%ifdef RT_ARCH_X86
         mov     edi, edx
 %endif
         ret
@@ -71,7 +71,7 @@ BEGINPROC RT_NOCRT(memchr)
 %ifdef ASM_CALL64_MSC
         mov     rdi, r9
 %endif
-%ifdef __X86__
+%ifdef RT_ARCH_X86
         mov     edi, edx
 %endif
 .not_found_early:

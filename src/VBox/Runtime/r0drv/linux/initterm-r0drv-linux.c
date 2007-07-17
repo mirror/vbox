@@ -32,7 +32,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 /* in alloc-r0drv0-linux.c */
 extern void rtR0MemExecCleanup(void);
 #endif 
@@ -46,7 +46,7 @@ int rtR0InitNative(void)
 
 void rtR0TermNative(void)
 {
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     rtR0MemExecCleanup();
 #endif 
 }

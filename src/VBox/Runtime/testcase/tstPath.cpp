@@ -71,7 +71,7 @@ int main()
         NULL,                           "\\",
         "relative_base/dir\\",          "\\from_root",
         "relative_base/dir/",           "relative_also",
-#if defined (__OS2__) || defined (__WIN__)
+#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
         NULL,                           "C:\\",
         "C:\\",                         "..",
         "C:\\temp",                     "..",

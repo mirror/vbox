@@ -609,12 +609,12 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             {
                 long rc = va_arg(*pArgs, long);
                 char ch = *(*ppszFormat)++;
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
                 PCRTWINERRMSG pMsg = RTErrWinGet(rc);
 #endif
                 switch (ch)
                 {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
                     case 'c':
                         return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
                     case 'f':

@@ -31,13 +31,13 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
-#if defined(__LINUX__) || defined(__OS2__)
+#if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
 # define HAVE_POSIX_SPAWN 1
 #endif
 #ifdef HAVE_POSIX_SPAWN
 # include <spawn.h>
 #endif
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
 #endif
 
@@ -236,8 +236,8 @@ RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
      * because I'm lazy I'm not creating OS specific code
      * files and code for this.
      */
-#if defined(__LINUX__) || defined(__FREEBSD__)
-# ifdef __LINUX__
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+# ifdef RT_OS_LINUX
     int cchLink = readlink("/proc/self/exe", pszExecName, cchExecName - 1);
 # else    
     int cchLink = readlink("/proc/curproc/file", pszExecName, cchExecName - 1);
@@ -248,11 +248,11 @@ RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
         return pszExecName;
     }
 
-#elif defined(__OS2__) || defined(__L4__)
+#elif defined(RT_OS_OS2) || defined(RT_OS_L4)
     if (!_execname(pszExecName, cchExecName))
         return pszExecName;
 
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
     const char *pszImageName = _dyld_get_image_name(0);
     if (pszImageName)
     {

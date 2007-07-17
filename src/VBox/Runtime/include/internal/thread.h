@@ -87,7 +87,7 @@ typedef struct RTTHREADINT
     uint32_t volatile       cRefs;
     /** The current thread state. */
     RTTHREADSTATE volatile  enmState;
-#if defined(__WIN__) && defined(IN_RING3)
+#if defined(RT_OS_WINDOWS) && defined(IN_RING3)
     /** The thread handle.
      * This is not valid until the create function has returned! */
     uintptr_t               hThread;
@@ -189,7 +189,7 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread);
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType);
 
 #ifdef IN_RING3
-# ifdef __WIN__
+# ifdef RT_OS_WINDOWS
 /**
  * Callback for when a native thread is detaching.
  *

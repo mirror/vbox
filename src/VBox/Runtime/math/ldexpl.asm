@@ -23,7 +23,7 @@
 
 BEGINCODE
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define _SP rsp
  %define _BP rbp
  %define _S  8
@@ -44,7 +44,7 @@ BEGINPROC RT_NOCRT(ldexpl)
     sub     _SP, 10h
 
     ; load exp
-%ifdef __AMD64__ ; ASSUMES ONLY GCC HERE!
+%ifdef RT_ARCH_AMD64 ; ASSUMES ONLY GCC HERE!
     mov     [rsp], edi
     fild    dword [rsp]
 %else

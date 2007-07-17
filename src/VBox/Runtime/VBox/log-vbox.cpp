@@ -123,13 +123,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef IN_RING3
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
 #  include <Windows.h>
-# elif defined(__LINUX__)
+# elif defined(RT_OS_LINUX)
 #  include <unistd.h>
-# elif defined(__L4__)
+# elif defined(RT_OS_L4)
 #  include <l4/vboxserver/vboxserver.h>
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
 #  include <stdlib.h>
 # endif
 #endif
@@ -296,11 +296,11 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         RTLogLoggerEx(pLogger, 0, ~0U, "Executable: %s\n", szExecName);
 
         /* executable and arguments - tricky and all platform specific. */
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
         RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %ls\n", GetCommandLineW());
 
-# elif defined(__LINUX__) || defined(__FREEBSD__)
-#  ifdef __LINUX__
+# elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#  ifdef RT_OS_LINUX
         FILE *pFile = fopen("/proc/self/cmdline", "r");
 #  else        
         FILE *pFile = fopen("/proc/curproc/cmdline", "r");
@@ -331,7 +331,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
             fclose(pFile);
         }
 
-# elif defined(__L4__) || defined(__OS2__) || defined(__DARWIN__)
+# elif defined(RT_OS_L4) || defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
         /* commandline? */
 # else
 #  error needs porting.

@@ -85,7 +85,7 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
         if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
         {
             u32TransactionId = pGip->aCPUs[0].u32TransactionId;
-#ifdef __L4__
+#ifdef RT_OS_L4
             Assert((u32TransactionId & 1) == 0);
 #endif
             u32UpdateIntervalTSC = pGip->aCPUs[0].u32UpdateIntervalTSC;
@@ -112,7 +112,7 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
             }
 
             u32TransactionId = pGipCpu->u32TransactionId;
-#ifdef __L4__
+#ifdef RT_OS_L4
             Assert((u32TransactionId & 1) == 0);
 #endif
             u32UpdateIntervalTSC = pGipCpu->u32UpdateIntervalTSC;
@@ -141,7 +141,7 @@ DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
          */
         u64Delta = u32UpdateIntervalTSC;
     }
-#if !defined(_MSC_VER) || defined(__AMD64__) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
+#if !defined(_MSC_VER) || defined(RT_ARCH_AMD64) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
     u64Delta = ASMMult2xU32RetU64((uint32_t)u64Delta, u32NanoTSFactor0);
     u64Delta = ASMDivU64ByU32RetU32(u64Delta, u32UpdateIntervalTSC);
 #else

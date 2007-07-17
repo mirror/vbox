@@ -93,7 +93,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb)
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
     void *pv = malloc(cb);
     AssertMsg(pv, ("malloc(%d) failed!!!\n", cb));
-#ifdef __OS2__ /* temporary workaround until libc062. */
+#ifdef RT_OS_OS2 /* temporary workaround until libc062. */
     AssertMsg(   cb < 32
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1)), ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
 #else
@@ -127,7 +127,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb)
 
     void *pv = calloc(1, cb);
     AssertMsg(pv, ("calloc(1,%d) failed!!!\n", cb));
-#ifdef __OS2__ /* temporary workaround until libc062. */
+#ifdef RT_OS_OS2 /* temporary workaround until libc062. */
     AssertMsg(   cb < 32
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1)), ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
 #else
@@ -156,7 +156,7 @@ RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew)
 
     void *pv = realloc(pvOld, cbNew);
     AssertMsg(pv && cbNew, ("realloc(%p, %d) failed!!!\n", pvOld, cbNew));
-#ifdef __OS2__ /* temporary workaround until libc062. */
+#ifdef RT_OS_OS2 /* temporary workaround until libc062. */
     AssertMsg(   cbNew < 32
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1)), ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
 #else

@@ -259,7 +259,7 @@ int VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
 
     /* objects. */
     pObj = pDevExt->pObjs;
-#if !defined(DEBUG_bird) || !defined(__LINUX__) /* breaks unloading, temporary, remove me! */
+#if !defined(DEBUG_bird) || !defined(RT_OS_LINUX) /* breaks unloading, temporary, remove me! */
     Assert(!pObj);                      /* (can trigger on forced unloads) */
 #endif
     pDevExt->pObjs = NULL;
@@ -2761,7 +2761,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
         uint8_t     u8Idt = 0;
         static uint8_t au8Ints[] =
         {
-#ifdef __WIN__   /* We don't use 0xef and above because they are system stuff on linux (ef is IPI,
+#ifdef RT_OS_WINDOWS   /* We don't use 0xef and above because they are system stuff on linux (ef is IPI,
                   * local apic timer, or some other frequently fireing thing). */
             0xef, 0xee, 0xed, 0xec,
 #endif
@@ -2770,7 +2770,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
             0x7b, 0x7a, 0x79, 0x78,
             0xbf, 0xbe, 0xbd, 0xbc,
         };
-#if defined(__AMD64__) && defined(DEBUG)
+#if defined(RT_ARCH_AMD64) && defined(DEBUG)
         static int  s_iWobble = 0;
         unsigned    iMax = !(s_iWobble++ % 2) ? 0x80 : 0x100;
         dprintf(("IDT: Idtr=%p:%#x\n", (void *)Idtr.pIdt, (unsigned)Idtr.cbIdt));
@@ -2825,11 +2825,11 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     pPatch->SavedIdt                    = paIdt[pDevExt->u8Idt];
     pPatch->ChangedIdt.u16OffsetLow     = (uint32_t)((uintptr_t)&pPatch->auCode[0] & 0xffff);
     pPatch->ChangedIdt.u16OffsetHigh    = (uint32_t)((uintptr_t)&pPatch->auCode[0] >> 16);
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     pPatch->ChangedIdt.u32OffsetTop     = (uint32_t)((uintptr_t)&pPatch->auCode[0] >> 32);
 #endif
     pPatch->ChangedIdt.u16SegSel        = ASMGetCS();
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     pPatch->ChangedIdt.u3IST            = 0;
     pPatch->ChangedIdt.u5Reserved       = 0;
 #else /* x86 */
@@ -2844,7 +2844,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
      * Generate the patch code.
      */
   {
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     union
     {
         uint8_t    *pb;
@@ -2875,7 +2875,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
      *      We don't have to push the arguments here, but we have top
      *      reserve some stack space for the interrupt forwarding.
      */
-# ifdef __WIN__
+# ifdef RT_OS_WINDOWS
     *u.pb++ = 0x50;                     //  push    rax                             ; alignment filler.
     *u.pb++ = 0x41;                     //  push    r8                              ; uArg
     *u.pb++ = 0x50;
@@ -2949,7 +2949,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     *u.pb++ = 0x48;                     //  retf        ; does this require prefix?
     *u.pb++ = 0xcb;
 
-#else /* __X86__ */
+#else /* RT_ARCH_X86 */
 
     union
     {
@@ -3000,7 +3000,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     *u.pb++ = 0x8e;                     //  mov     es, eax
     *u.pb++ = 0xc0;
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     *u.pb++ = 0xb8;                     //  mov     eax, KernelFS
     *u.pu32++ = ASMGetFS();
 
@@ -3055,7 +3055,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
         *uFixJmpNotNested.pu32++ = ((uint32_t)pPatch->SavedIdt.u16OffsetHigh << 16) | pPatch->SavedIdt.u16OffsetLow;
         *uFixJmpNotNested.pu16++ = pPatch->SavedIdt.u16SegSel;
     }
-#endif /* __X86__ */
+#endif /* RT_ARCH_X86 */
     Assert(u.pb <= &pPatch->auCode[sizeof(pPatch->auCode)]);
 #if 0
     /* dump the patch code */
@@ -3233,7 +3233,7 @@ static void supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTE
     ASMSetCR0(uCR0 & ~(RTUINTREG)(1 << 16));    /*X86_CR0_WP*/
 
     /* Update IDT Entry */
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     ASMAtomicXchgU128((volatile uint128_t *)pvIdtEntry, *(uint128_t *)(uintptr_t)pNewIDTEntry);
 #else
     ASMAtomicXchgU64((volatile uint64_t *)pvIdtEntry, *(uint64_t *)(uintptr_t)pNewIDTEntry);
@@ -3628,9 +3628,9 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
 #ifndef VBOX_WITHOUT_IDT_PATCHING
         for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)
         {
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
             ASMAtomicXchgU64((volatile uint64_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup], (uint64_t)pvVMMR0);
-# else /* __X86__ */
+# else /* RT_ARCH_X86 */
             ASMAtomicXchgU32((volatile uint32_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup],
                              (uint32_t)pvVMMR0 - (uint32_t)&pPatch->auCode[pPatch->offVMMR0EntryFixup + 4]);
 # endif
@@ -3671,10 +3671,10 @@ static void supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt)
 #ifndef VBOX_WITHOUT_IDT_PATCHING
     for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)
     {
-# ifdef __AMD64__
+# ifdef RT_ARCH_AMD64
         ASMAtomicXchgU64((volatile uint64_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup],
                          (uint64_t)&pPatch->auCode[pPatch->offStub]);
-# else /* __X86__ */
+# else /* RT_ARCH_X86 */
         ASMAtomicXchgU32((volatile uint32_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup],
                          (uint32_t)&pPatch->auCode[pPatch->offStub] - (uint32_t)&pPatch->auCode[pPatch->offVMMR0EntryFixup + 4]);
 # endif
@@ -4297,7 +4297,7 @@ void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
     {
         if (pGip->u64NanoTSLastUpdateHz)
         {
-#ifdef __AMD64__ /** @todo fix 64-bit div here to work on x86 linux. */
+#ifdef RT_ARCH_AMD64 /** @todo fix 64-bit div here to work on x86 linux. */
             uint64_t u64Delta = u64NanoTS - pGip->u64NanoTSLastUpdateHz;
             uint32_t u32UpdateHz = (uint32_t)((UINT64_C(1000000000) * GIP_UPDATEHZ_RECALC_FREQ) / u64Delta);
             if (u32UpdateHz <= 2000 && u32UpdateHz >= 30)

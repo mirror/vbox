@@ -23,7 +23,7 @@
 
 BEGINCODE
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define _SP rsp
  %define _BP rbp
  %define _S  8
@@ -41,7 +41,7 @@ BEGINPROC RT_NOCRT(fabs)
     push    _BP
     mov     _BP, _SP
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     sub     _SP, 10h
 
     movsd   [_SP], xmm0

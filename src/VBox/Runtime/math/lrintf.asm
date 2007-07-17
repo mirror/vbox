@@ -28,7 +28,7 @@ BEGINCODE
 ; @returns 32-bit: eax  64-bit: rax
 ; @param    rf     32-bit: [esp + 4h]  64-bit: xmm0
 BEGINPROC RT_NOCRT(lrintf)
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cvtss2si rax, xmm0
 %else
     push    ebp

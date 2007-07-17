@@ -48,7 +48,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-#if 0 //def __AMD64__
+#if 0 //def RT_ARCH_AMD64
 typedef struct SUPDRVEXECMEM
 {
     PMDL pMdl;
@@ -327,7 +327,7 @@ static int VBoxSupDrvDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
              pBuf, pStack->Parameters.DeviceIoControl.InputBufferLength,
              pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
 
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     /* Don't allow 32-bit processes to do any I/O controls. */
     if (!IoIs32bitProcess(pIrp))
 #endif
@@ -359,7 +359,7 @@ static int VBoxSupDrvDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
             dprintf(("VBoxSupDrvDeviceControlSlow: not buffered request (%#x) - not supported\n",
                      pStack->Parameters.DeviceIoControl.IoControlCode));
     }
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     else
         dprintf(("VBoxSupDrvDeviceControlSlow: WOW64 req - not supported\n"));
 #endif
@@ -612,7 +612,7 @@ int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR p
                 /*
                  * Done, setup pMem and return values.
                  */
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
                  MmProtectMdlSystemAddress(pMem->u.cont.pMdl, PAGE_EXECUTE_READWRITE);
 #endif
                 *ppvR3 = pMem->pvR3;
@@ -1068,7 +1068,7 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
 {
     dprintf2(("supdrvOSGipSuspend:\n"));
     KeCancelTimer(&pDevExt->GipTimer);
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     ExSetTimerResolution(0, FALSE);
 #endif
 }
@@ -1083,7 +1083,7 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
  */
 void *VBOXCALL  supdrvOSExecAlloc(size_t cb)
 {
-#if 0 //def __AMD64__
+#if 0 //def RT_ARCH_AMD64
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     void *pv = ExAllocatePoolWithTag(NonPagedPool, cb, SUPDRV_NT_POOL_TAG);
     if (pv)
