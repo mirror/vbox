@@ -20,7 +20,7 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__WIN__) ///@todo someone please explain why we don't follow the book!
+#if defined(RT_OS_WINDOWS) ///@todo someone please explain why we don't follow the book!
 # define _SDL_main_h
 #endif
 #include <SDL.h>
@@ -37,7 +37,7 @@
 #include "SDL_opengl.h"
 #endif
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #define ESC_NORM
 #define ESC_BOLD
 #else
@@ -91,7 +91,7 @@ main(int argc, char **argv)
         return -1;
     }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     /* Default to DirectX if nothing else set. "windib" would be possible.  */
     if (!getenv("SDL_VIDEODRIVER"))
     {
@@ -99,7 +99,7 @@ main(int argc, char **argv)
     }
 #endif
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     _putenv("SDL_VIDEO_WINDOW_POS=0,0");
 #else
     setenv("SDL_VIDEO_WINDOW_POS", "0,0", 1);

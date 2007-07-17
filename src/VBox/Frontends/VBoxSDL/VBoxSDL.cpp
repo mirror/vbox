@@ -33,7 +33,7 @@
 
 using namespace com;
 
-#if defined (__LINUX__)
+#if defined (RT_OS_LINUX)
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>      /* for XC_left_ptr */
 #include <X11/Xcursor/Xcursor.h>
@@ -184,7 +184,7 @@ static ComPtr<IProgress> gProgress;
 
 static VBoxSDLFB  *gpFrameBuffer = NULL;
 static SDL_Cursor *gpDefaultCursor = NULL;
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 static Cursor      gpDefaultOrigX11Cursor;
 #endif
 static SDL_Cursor *gpCustomCursor = NULL;
@@ -192,12 +192,12 @@ static WMcursor   *gpCustomOrigWMcursor = NULL;
 static SDL_Cursor *gpOffCursor = NULL;
 static SDL_TimerID gSdlResizeTimer = NULL;
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 static SDL_SysWMinfo gSdlInfo;
 #endif
 
 #ifdef VBOX_SECURELABEL
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #define LIBSDL_TTF_NAME "SDL_ttf"
 #else
 #define LIBSDL_TTF_NAME "libSDL_ttf"
@@ -217,7 +217,7 @@ class VBoxSDLCallback :
 public:
     VBoxSDLCallback()
     {
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         refcnt = 0;
 #endif
     }
@@ -226,7 +226,7 @@ public:
     {
     }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     STDMETHOD_(ULONG, AddRef)()
     {
         return ::InterlockedIncrement(&refcnt);
@@ -345,7 +345,7 @@ public:
     }
 
 private:
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     long refcnt;
 #endif
 
@@ -360,7 +360,7 @@ class VBoxSDLConsoleCallback :
 public:
     VBoxSDLConsoleCallback() : m_fIgnorePowerOffEvents(false)
     {
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         refcnt = 0;
 #endif
     }
@@ -369,7 +369,7 @@ public:
     {
     }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     STDMETHOD_(ULONG, AddRef)()
     {
         return ::InterlockedIncrement(&refcnt);
@@ -569,7 +569,7 @@ public:
     }
 
 private:
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     long refcnt;
 #endif
     bool m_fIgnorePowerOffEvents;
@@ -600,7 +600,7 @@ static void show_usage()
              "  -nograbonclick           Disable mouse/keyboard grabbing on mouse click w/o additions\n"
              "  -detecthostkey           Get the hostkey identifier and modifier state\n"
              "  -hostkey <key> {<key2>} <mod> Set the host key to the values obtained using -detecthostkey\n"
-#if defined(__LINUX__) || defined(__DARWIN__) /** @todo UNIXISH_TAP stuff out of main and up to Config.kmk! */
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) /** @todo UNIXISH_TAP stuff out of main and up to Config.kmk! */
              "  -tapdev<1-N> <dev>       Use existing persistent TAP device with the given name\n"
              "  -tapfd<1-N> <fd>         Use existing TAP device, don't allocate\n"
 #endif
@@ -651,7 +651,7 @@ static void PrintError(const char *pszName, const BSTR pwszDescr, const BSTR pws
     RTPrintf("\n");
 }
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 /**
  * Custom signal handler. Currently it is only used to release modifier
  * keys when receiving the USR1 signal. When switching VTs, we might not
@@ -668,7 +668,7 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
         ResetKeys();
     }
 }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
 /** entry point */
 int main(int argc, char *argv[])
@@ -683,7 +683,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /*
      * Lock keys on SDL behave different from normal keys: A KeyPress event is generated
      * if the lock mode gets active and a keyRelease event is genereated if the lock mode
@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
     virtualBox->COMGETTER(SystemProperties) (sysInfo.asOutParam());
     sysInfo->COMGETTER (NetworkAdapterCount) (&NetworkAdapterCount);
 
-#if defined(__LINUX__) || defined(__DARWIN__)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     std::vector <Bstr> tapdev (NetworkAdapterCount);
     std::vector <int> tapfd (NetworkAdapterCount, 0);
 #endif
@@ -1096,7 +1096,7 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-#if defined(__LINUX__) || defined(__DARWIN__)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
         else if (strncmp(argv[curArg], "-tapdev", 7) == 0)
         {
             ULONG n = 0;
@@ -1123,7 +1123,7 @@ int main(int argc, char *argv[])
             tapfd[n - 1] = atoi(argv[curArg + 1]);
             curArg++;
         }
-#endif /* __LINUX__ || __DARWIN__ */
+#endif /* RT_OS_LINUX || RT_OS_DARWIN */
 #ifdef VBOX_VRDP
         else if (strcmp(argv[curArg], "-vrdp") == 0)
         {
@@ -1653,7 +1653,7 @@ int main(int argc, char *argv[])
     // until we've tried to to start the VM, ignore power off events
     consoleCallback->ignorePowerOffEvents(true);
 
-#if defined(__LINUX__) || defined(__DARWIN__)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     /*
      * Do we have a TAP device name or file descriptor? If so, communicate
      * it to the network adapter so that it doesn't allocate a new one
@@ -1690,7 +1690,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-#endif /* __LINUX__ || __DARWIN__ */
+#endif /* RT_OS_LINUX || RT_OS_DARWIN */
 
 #ifdef VBOX_VRDP
     if (portVRDP != ~0)
@@ -1779,7 +1779,7 @@ int main(int argc, char *argv[])
     /* memorize the default cursor */
     gpDefaultCursor = SDL_GetCursor();
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /* Get Window Manager info. We only need the X11 display. */
     SDL_VERSION(&gSdlInfo.version);
     if (!SDL_GetWMInfo(&gSdlInfo))
@@ -1793,7 +1793,7 @@ int main(int argc, char *argv[])
     gpDefaultOrigX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
     *(Cursor*)gpDefaultCursor->wm_cursor = XCreateFontCursor(gSdlInfo.info.x11.display, XC_left_ptr);
     SDL_SetCursor(gpDefaultCursor);
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
     /* create a fake empty cursor */
     {
@@ -1806,13 +1806,13 @@ int main(int argc, char *argv[])
     /*
      * Register our user signal handler.
      */
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
     sigemptyset (&sa.sa_mask);
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     sigaction (SIGUSR1, &sa, NULL);
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
     /*
      * Start the VM execution thread. This has to be done
@@ -2393,7 +2393,7 @@ int main(int argc, char *argv[])
 
 leave:
     LogFlow(("leaving...\n"));
-#if defined(VBOX_WITH_XPCOM) && !defined(__DARWIN__) && !defined(__OS2__)
+#if defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
     /* make sure the XPCOM event queue thread doesn't do anything harmful */
     terminateXPCOMQueueThread();
 #endif /* VBOX_WITH_XPCOM */
@@ -2452,14 +2452,14 @@ leave:
     /* restore the default cursor and free the custom one if any */
     if (gpDefaultCursor)
     {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
         Cursor pDefaultTempX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
         *(Cursor*)gpDefaultCursor->wm_cursor = gpDefaultOrigX11Cursor;
-#endif /* __LNUX__ */
+#endif /* RT_OS_LINUX */
         SDL_SetCursor(gpDefaultCursor);
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
         XFreeCursor(gSdlInfo.info.x11.display, pDefaultTempX11Cursor);
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
     }
 
     if (gpCustomCursor)
@@ -2469,9 +2469,9 @@ leave:
         SDL_FreeCursor(gpCustomCursor);
         if (pCustomTempWMCursor)
         {
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
             ::DestroyCursor(*(HCURSOR *) pCustomTempWMCursor);
-#elif defined (__LINUX__)
+#elif defined (RT_OS_LINUX)
             XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
 #endif
             free(pCustomTempWMCursor);
@@ -2536,7 +2536,7 @@ static bool UseAbsoluteMouse(void)
     return (gfAbsoluteMouseHost && gfAbsoluteMouseGuest);
 }
 
-#if defined(__DARWIN__)
+#if defined(RT_OS_DARWIN)
 /**
  * Fallback keycode conversion using SDL symbols.
  *
@@ -2696,7 +2696,7 @@ static uint16_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
             return 0;
     }
 }
-#endif /* __DARWIN__ */
+#endif /* RT_OS_DARWIN */
 
 /**
  * Converts an SDL keyboard eventcode to a XT scancode.
@@ -2709,7 +2709,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
     // start with the scancode determined by SDL
     int keycode = ev->keysym.scancode;
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     // workaround for SDL keyboard translation issues on Linux
     // keycodes > 0x100 are sent as 0xe0 keycode
     static const uint16_t x_keycode_to_pc_keycode[61] =
@@ -2806,7 +2806,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         keycode = 0;
     }
 
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
     /* This is derived partially from SDL_QuartzKeys.h and partially from testing. */
     static const uint16_t s_aMacToSet1[] =
     {
@@ -2979,7 +2979,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
     RTPrintf("scancode=%#x -> %#x\n", ev->keysym.scancode, keycode);
 #endif
 
-#endif /* __DARWIN__ */
+#endif /* RT_OS_DARWIN */
     return keycode;
 }
 
@@ -3204,7 +3204,7 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
                                                  : (keycode & 0x7f));
 }
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 #include <Carbon/Carbon.h>
 __BEGIN_DECLS
 /* Private interface in 10.3 and later. */
@@ -3264,14 +3264,14 @@ static void DisableGlobalHotKeys(bool fDisable)
     if (enmNewMode == enmMode)
         g_fHotKeysDisabled = enmMode == kCGSGlobalHotKeyDisable;
 }
-#endif /* __DARWIN__ */
+#endif /* RT_OS_DARWIN */
 
 /**
  * Start grabbing the mouse.
  */
 static void InputGrabStart(void)
 {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(true);
 #endif
     if (!gfGuestNeedsHostCursor)
@@ -3291,7 +3291,7 @@ static void InputGrabEnd(void)
     SDL_WM_GrabInput(SDL_GRAB_OFF);
     if (!gfGuestNeedsHostCursor)
         SDL_ShowCursor(SDL_ENABLE);
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(false);
 #endif
     gfGrabbed = FALSE;
@@ -3487,7 +3487,7 @@ void SaveState(void)
      * the title bar in the mean while.
      */
     LONG    cPercent = 0;
-#ifndef __DARWIN__ /* don't break the other guys yet. */
+#ifndef RT_OS_DARWIN /* don't break the other guys yet. */
     for (;;)
     {
         BOOL fCompleted = false;
@@ -3581,7 +3581,7 @@ void SaveState(void)
     SDL_RemoveTimer(sdlTimer);
     sdlTimer = 0;
 
-#endif /* __DARWIN__ */
+#endif /* RT_OS_DARWIN */
 
     /*
      * What's the result of the operation?
@@ -3816,7 +3816,7 @@ static void SetPointerShape (const PointerShapeChangeData *data)
         printf("};\n");
 #endif
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
         BITMAPV5HEADER bi;
         HBITMAP hBitmap;
@@ -3960,7 +3960,7 @@ static void SetPointerShape (const PointerShapeChangeData *data)
         if (hBitmap)
             ::DeleteObject (hBitmap);
 
-#elif defined (__LINUX__)
+#elif defined (RT_OS_LINUX)
 
         XcursorImage *img = XcursorImageCreate (data->width, data->height);
         Assert (img);
@@ -4338,7 +4338,7 @@ int PushSDLEventForSure(SDL_Event *event)
     return -1;
 }
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 /**
  * Special SDL_PushEvent function for NotifyUpdate events. These events may occur in bursts
  * so make sure they don't flood the SDL event queue.
@@ -4363,4 +4363,4 @@ void PushNotifyUpdateEvent(SDL_Event *event)
     else
         RTThreadYield();
 }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */

@@ -177,7 +177,7 @@ protected:
 };
 
 
-#if defined(__LINUX__) || defined(__L4__)
+#if defined(RT_OS_LINUX) || defined(__L4__)
 #include <stdio.h>
 
 /**
@@ -211,10 +211,10 @@ private:
     /** The root of usbfs. */
     std::string mUsbfsRoot;
 };
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 /**
  * The Win32/Win64 hosted USB Proxy Service.
  */

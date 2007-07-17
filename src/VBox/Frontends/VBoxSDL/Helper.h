@@ -23,7 +23,7 @@
 #ifndef __H_HELPER
 #define __H_HELPER
 
-#if defined(VBOX_WITH_XPCOM) && !defined(__DARWIN__) && !defined(__OS2__)
+#if defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
 
 /** Indicates that the XPCOM queue thread is needed for this platform. */
 # define USE_XPCOM_QUEUE_THREAD 1
@@ -51,7 +51,7 @@ void signalXPCOMEventQueueThread(void);
  */
 void terminateXPCOMQueueThread(void);
 
-#endif /* defined(VBOX_WITH_XPCOM) && !defined(__DARWIN__) && !defined(__OS2__) */
+#endif /* defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2) */
 
 #endif // __H_HELPER
 
