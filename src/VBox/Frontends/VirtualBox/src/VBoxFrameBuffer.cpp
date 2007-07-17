@@ -266,24 +266,36 @@ STDMETHODIMP VBoxFrameBuffer::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
     if (!rects)
         return E_POINTER;
 
-	/// @todo
+    /// @todo what and why?
 
-	NOREF(aCount);
-	NOREF(aCountCopied);
+    NOREF(aCount);
+    NOREF(aCountCopied);
 
     return S_OK;
 }
 
-STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
+STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG aCount)
 {
     PRTRECT rects = (PRTRECT)aRectangles;
 
     if (!rects)
         return E_POINTER;
 
-	/// @todo
+    if (!mView->isInSeamlessMode())
+        return S_OK;
 
-	NOREF(aCount);
+    QRegion reg;
+    for (ULONG ind = 0; ind < aCount; ++ ind)
+    {
+        QRect rect;
+        rect.setLeft (rects->xLeft);
+        rect.setBottom (rects->yBottom);
+        rect.setRight (rects->xRight);
+        rect.setTop (rects->yTop);
+        reg += rect;
+        ++ rects;
+    }
+    QApplication::postEvent (mView, new VBoxSetRegionEvent (reg));
 
     return S_OK;
 }

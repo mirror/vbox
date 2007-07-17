@@ -72,6 +72,8 @@ public:
 
     bool isTrueFullscreen() const { return full_screen; }
 
+    bool isTrueSeamless() const { return mIsInSeamlessMode; }
+
     void setMouseIntegrationLocked (bool);
 
 public slots:
@@ -119,6 +121,7 @@ private slots:
     void activateUICustomizations();
 
     void vmFullscreen (bool on);
+    void vmSeamless (bool on);
     void vmAutoresizeGuest (bool on);
     void vmAdjustWindow();
 
@@ -161,7 +164,7 @@ private slots:
 
     void updateMouseState (int state);
 
-    void updateAdditionsState (const QString&, bool);
+    void updateAdditionsState (const QString&, bool, bool);
 
     void tryClose();
 
@@ -176,6 +179,7 @@ private:
 
     // VM actions
     QAction *vmFullscreenAction;
+    QAction *vmSeamlessAction;
     QAction *vmAutoresizeGuestAction;
     QAction *vmAdjustWindowAction;
     QAction *vmTypeCADAction;
@@ -278,6 +282,7 @@ private:
 
     // variables for dealing with true fullscreen
     bool full_screen : 1;
+    bool mIsInSeamlessMode : 1;
     int normal_wflags;
     bool was_max : 1;
     QObjectList hidden_children;

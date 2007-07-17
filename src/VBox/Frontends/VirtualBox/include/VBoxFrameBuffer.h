@@ -105,6 +105,20 @@ private:
     int ex, ey, ew, eh;
 };
 
+/**
+ *  Frame buffer set region event.
+ */
+class VBoxSetRegionEvent : public QEvent
+{
+public:
+    VBoxSetRegionEvent (const QRegion &aReg)
+        : QEvent ((QEvent::Type) VBoxDefs::SetRegionEventType)
+        , mReg (aReg) {}
+    QRegion region() { return mReg; }
+private:
+    QRegion mReg;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)

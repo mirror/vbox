@@ -224,6 +224,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , machine_state (CEnums::InvalidMachineState)
     , no_auto_close (false)
     , full_screen (false)
+    , mIsInSeamlessMode (false)
     , normal_wflags (getWFlags())
     , was_max (false)
     , console_style (0)
@@ -269,6 +270,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmFullscreenAction->setIconSet (
         VBoxGlobal::iconSet ("fullscreen_16px.png", "fullscreen_disabled_16px.png"));
     vmFullscreenAction->setToggleAction (true);
+
+    vmSeamlessAction = new QAction (this, "vmSeamlessAction");
+    vmSeamlessAction->setIconSet (
+        VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"));
+    vmSeamlessAction->setToggleAction (true);
 
     vmAutoresizeGuestAction = new QAction (runningActions, "vmAutoresizeGuestAction");
     vmAutoresizeGuestAction->setIconSet (
@@ -371,6 +377,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     QPopupMenu *vmMenu = new QPopupMenu (this, "vmMenu");
     vmFullscreenAction->addTo (vmMenu);
+    vmSeamlessAction->addTo (vmMenu);
     vmAdjustWindowAction->addTo (vmMenu);
     vmAutoresizeGuestAction->addTo (vmMenu);
     vmMenu->insertSeparator();
@@ -535,6 +542,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     connect (vmFullscreenAction, SIGNAL (toggled (bool)),
              this, SLOT (vmFullscreen (bool)));
+    connect (vmSeamlessAction, SIGNAL (toggled (bool)),
+             this, SLOT (vmSeamless (bool)));
     connect (vmAutoresizeGuestAction, SIGNAL (toggled (bool)),
              this, SLOT (vmAutoresizeGuest (bool)));
     connect (vmAdjustWindowAction, SIGNAL (activated()),
@@ -678,6 +687,7 @@ static const char *GUI_LastWindowPosition = "GUI/LastWindowPostion";
 static const char *GUI_LastWindowPosition_Max = "max";
 
 static const char *GUI_Fullscreen = "GUI/Fullscreen";
+static const char *GUI_Seamless = "GUI/Seamless";
 static const char *GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 extern const char *GUI_FirstRun = "GUI/FirstRun";
 extern const char *GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
@@ -729,6 +739,11 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         if (str == "on")
             vmFullscreenAction->setOn (true);
 
+        vmSeamlessAction->setEnabled (false);
+        str = cmachine.GetExtraData (GUI_Seamless);
+        if (str == "on")
+            vmSeamlessAction->setOn (true);
+
         str = cmachine.GetExtraData (GUI_AutoresizeGuest);
         if (str != "off")
             vmAutoresizeGuestAction->setOn (true);
@@ -761,7 +776,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         {
             normal_pos = QPoint (x, y);
             normal_size = QSize (w, h);
-            if (!full_screen)
+            if (!full_screen && !vmSeamlessAction->isOn())
             {
                 move (normal_pos);
                 resize (normal_size);
@@ -778,7 +793,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         {
             normal_pos = QPoint();
             normal_size = QSize();
-            if (!full_screen)
+            if (!full_screen && !vmSeamlessAction->isOn())
             {
                 console->normalizeGeometry (true /* adjustPosition */);
                 /* maximize if needed */
@@ -844,8 +859,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              hostkey_state, SLOT (setState (int)));
     connect (console, SIGNAL (machineStateChanged (CEnums::MachineState)),
              this, SLOT (updateMachineState (CEnums::MachineState)));
-    connect (console, SIGNAL (additionsStateChanged (const QString&, bool)),
-             this, SLOT (updateAdditionsState (const QString &, bool)));
+    connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool)),
+             this, SLOT (updateAdditionsState (const QString &, bool, bool)));
 
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
@@ -1014,13 +1029,16 @@ void VBoxConsoleWnd::closeView()
                                  .arg (normal_pos.x()).arg (normal_pos.y())
                                  .arg (normal_size.width())
                                  .arg (normal_size.height());
-        if (isMaximized() || (full_screen && was_max))
+        if (isMaximized() || (full_screen && was_max)
+                          || (mIsInSeamlessMode && was_max))
             winPos += QString (",%1").arg (GUI_LastWindowPosition_Max);
 
         machine.SetExtraData (GUI_LastWindowPosition, winPos);
 
         machine.SetExtraData (GUI_Fullscreen,
                               vmFullscreenAction->isOn() ? "on" : "off");
+        machine.SetExtraData (GUI_Seamless,
+                              vmSeamlessAction->isOn() ? "on" : "off");
         machine.SetExtraData (GUI_AutoresizeGuest,
                               vmAutoresizeGuestAction->isOn() ? "on" : "off");
     }
@@ -1069,7 +1087,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         case QEvent::Resize:
         {
             QResizeEvent *re = (QResizeEvent *) e;
-            if (!full_screen &&
+            if (!full_screen && !mIsInSeamlessMode &&
                 (windowState() & (WindowMaximized | WindowMinimized |
                                   WindowFullScreen)) == 0)
             {
@@ -1082,7 +1100,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         }
         case QEvent::Move:
         {
-            if (!full_screen &&
+            if (!full_screen && !mIsInSeamlessMode &&
                 (windowState() & (WindowMaximized | WindowMinimized |
                                   WindowFullScreen)) == 0)
             {
@@ -1352,6 +1370,9 @@ void VBoxConsoleWnd::languageChange()
 
     vmFullscreenAction->setMenuText (tr ("&Fullscreen Mode") + "\tHost+F");
     vmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
+
+    vmSeamlessAction->setMenuText (tr ("&Seamless Mode") + "\tHost+S");
+    vmSeamlessAction->setStatusTip (tr ("Switch to seamless mode"));
 
     vmDisMouseIntegrMenu->setToolTip (tr ("Mouse Integration",
                                           "enable/disable..."));
@@ -1763,6 +1784,7 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
     full_screen = on;
 
     vmAdjustWindowAction->setEnabled (!on);
+    vmSeamlessAction->setEnabled (!on);
 
     bool wasHidden = isHidden();
 
@@ -1855,7 +1877,118 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         /* restore the maximized state */
         if (was_max)
             setWindowState (windowState() | WindowMaximized);
-        QTimer::singleShot (0, console, SLOT (exitFullScreen()));
+        else
+            QTimer::singleShot (0, console, SLOT (exitFullScreen()));
+    }
+
+    /* VBoxConsoleView loses focus for some reason after reparenting,
+     * restore it */
+    console->setFocus();
+
+    if (!wasHidden)
+        show();
+}
+
+void VBoxConsoleWnd::vmSeamless (bool on)
+{
+    if (on && !vmSeamlessAction->isEnabled() ||
+        !on && !mIsInSeamlessMode ||
+        on && full_screen)
+        return;
+
+    AssertReturnVoid (console);
+    AssertReturnVoid (mIsInSeamlessMode != on);
+    AssertReturnVoid ((hidden_children.isEmpty() == on));
+
+    /* activate the auto-resize feature required for the seamless mode */
+    if (!vmAutoresizeGuestAction->isOn())
+        vmAutoresizeGuestAction->setOn (true);
+    mIsInSeamlessMode = on;
+
+    vmAdjustWindowAction->setEnabled (!on);
+    vmFullscreenAction->setEnabled (!on);
+    vmAutoresizeGuestAction->setEnabled (!on);
+
+    bool wasHidden = isHidden();
+
+    if (on)
+    {
+        /* Save the previous scroll-view minimum size before entering
+         * fullscreen state to restore this minimum size before the exiting
+         * fullscreen. Required for correct scroll-view and guest display
+         * update in SDL mode. */
+        prev_min_size = console->minimumSize();
+        console->setMinimumSize (0, 0);
+
+        /* memorize the maximized state */
+        was_max = isMaximized();
+        /* set the correct flags to disable unnecessary frame controls */
+        int flags = WType_TopLevel | WStyle_Customize | WStyle_NoBorder;
+        QRect scrGeo = QApplication::desktop()->availableGeometry (this);
+        /* hide early to avoid extra flicker */
+        hide();
+        /* hide all but the central widget containing the console view */
+        QObjectList *list = queryList (NULL, NULL, false, false);
+        for (QObject *obj = list->first(); obj != NULL; obj = list->next())
+        {
+            if (obj->isWidgetType() && obj != centralWidget())
+            {
+                QWidget *w = (QWidget *) obj;
+                if (!w->isHidden())
+                {
+                    w->hide();
+                    hidden_children.append (w);
+                }
+            }
+        }
+        delete list;
+        /* reparent to apply new flags and place to the top left corner of the
+         * current desktop */
+        reparent (parentWidget(), flags, QPoint (scrGeo.x(), scrGeo.y()), false);
+        /* adjust colors and appearance */
+        console_style = console->frameStyle();
+        console->setFrameStyle (QFrame::NoFrame);
+        console->setMaximumSize (console->sizeHint());
+        console->setVScrollBarMode (QScrollView::AlwaysOff);
+        console->setHScrollBarMode (QScrollView::AlwaysOff);
+        /* go full available screen */
+        resize (scrGeo.size());
+        setMinimumSize (size());
+        setMaximumSize (size());
+    }
+    else
+    {
+        /* Restore the previous scroll-view minimum size before the exiting
+         * fullscreen. Required for correct scroll-view and guest display
+         * update in SDL mode. */
+        console->setMinimumSize (prev_min_size);
+
+        /* hide early to avoid extra flicker */
+        hide();
+        /* reparent to restore normal flags */
+        reparent (parentWidget(), normal_wflags, QPoint (0, 0), false);
+        /* adjust colors and appearance */
+        console->setFrameStyle (console_style);
+        console->setMaximumSize (console->sizeHint());
+        console->setVScrollBarMode (QScrollView::Auto);
+        console->setHScrollBarMode (QScrollView::Auto);
+        /* show everything hidden when going fullscreen */
+        for (QObject *obj = hidden_children.first(); obj != NULL;
+             obj = hidden_children.next())
+            ((QWidget *) obj)->show();
+        hidden_children.clear();
+        /* restore normal values */
+        setMinimumSize (QSize(0, 0));
+        setMaximumSize (QSize (QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+        move (normal_pos);
+        resize (normal_size);
+        /* let our toplevel widget calculate its sizeHint properly */
+        QApplication::sendPostedEvents (0, QEvent::LayoutHint);
+        /* restore the maximized state */
+        if (was_max)
+            setWindowState (windowState() | WindowMaximized);
+        else
+            QTimer::singleShot (0, console, SLOT (exitFullScreen()));
     }
 
     /* VBoxConsoleView loses focus for some reason after reparenting,
@@ -2612,9 +2745,14 @@ void VBoxConsoleWnd::updateMouseState (int state)
 }
 
 
-void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion, bool aActive)
+void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
+                                           bool aActive,
+                                           bool aSeamless)
 {
     vmAutoresizeGuestAction->setEnabled (aActive);
+    vmSeamlessAction->setEnabled (aSeamless);
+    if (aSeamless && vmSeamlessAction->isOn())
+        vmSeamless (true);
 
     /* Check the Guest Additions version and warn the user about possible
      * compatibility issues in case if the installed version is outdated. */

@@ -230,16 +230,20 @@ class GuestAdditionsEvent : public QEvent
 public:
     GuestAdditionsEvent (const QString &aOsTypeId,
                          const QString &aAddVersion,
-                         bool aAddActive) :
+                         bool aAddActive,
+                         bool aSeamlessActive) :
         QEvent ((QEvent::Type) VBoxDefs::AdditionsStateChangeEventType),
-        mOsTypeId (aOsTypeId), mAddVersion (aAddVersion), mAddActive (aAddActive) {}
+        mOsTypeId (aOsTypeId), mAddVersion (aAddVersion),
+        mAddActive (aAddActive), mSeamlessActive (aSeamlessActive) {}
     const QString &osTypeId() const { return mOsTypeId; }
     const QString &additionVersion() const { return mAddVersion; }
     bool additionActive() const { return mAddActive; }
+    bool seamlessActive() const { return mSeamlessActive; }
 private:
     QString mOsTypeId;
     QString mAddVersion;
     bool mAddActive;
+    bool mSeamlessActive;
 };
 
 /** Menu activation event */
@@ -390,7 +394,8 @@ public:
                                  new GuestAdditionsEvent (
                                      guest.GetOSTypeId(),
                                      guest.GetAdditionsVersion(),
-                                     guest.GetAdditionsActive()));
+                                     guest.GetAdditionsActive(),
+                                     guest.GetSeamlessSupport()));
         return S_OK;
     }
 
@@ -934,6 +939,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* automatically normalize geometry unless maximized or
                  * full screen */
                 if (!mainwnd->isTrueFullscreen() &&
+                    !mainwnd->isTrueSeamless() &&
                     !topLevelWidget()->isMaximized())
                     normalizeGeometry (true /* adjustPosition */);
 
@@ -954,6 +960,13 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 #endif /* Q_WS_MAC */
+
+            case VBoxDefs::SetRegionEventType:
+            {
+                VBoxSetRegionEvent *sre = (VBoxSetRegionEvent*) e;
+                mainwnd->setMask (sre->region());
+                return true;
+            }
 
             case VBoxDefs::MousePointerChangeEventType:
             {
@@ -1021,7 +1034,9 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 maybeRestrictMinimumSize();
 
-                emit additionsStateChanged (ge->additionVersion(), ge->additionActive());
+                emit additionsStateChanged (ge->additionVersion(),
+                                            ge->additionActive(),
+                                            ge->seamlessActive());
                 return true;
             }
 
@@ -1260,7 +1275,8 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                      * processed before Resize event, so the ignore_mainwnd_resize
                      * variable should be set to true here in case of mainwnd is
                      * maximized or in fullscreen state. */
-                    if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen())
+                    if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen()
+                                               || mainwnd->isTrueSeamless())
                         ignore_mainwnd_resize = true;
                 }
                 break;
@@ -1272,7 +1288,8 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                  * so posting event for auto-resize and normalization. */
                 if (!mainwnd->isMinimized() &&
                     !mainwnd->isMaximized() &&
-                    !mainwnd->isTrueFullscreen())
+                    !mainwnd->isTrueFullscreen() &&
+                    !mainwnd->isTrueSeamless())
                     QTimer::singleShot (0, this, SLOT (exitFullScreen()));
             }
 
@@ -1821,6 +1838,11 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 #endif
 
 
+}
+
+bool VBoxConsoleView::isInSeamlessMode()
+{
+    return mainwnd->isTrueSeamless();
 }
 
 /**
