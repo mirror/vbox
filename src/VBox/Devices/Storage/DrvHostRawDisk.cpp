@@ -36,10 +36,10 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include <windows.h>
 #include <winioctl.h>
-#elif __LINUX__
+#elif RT_OS_LINUX
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -47,7 +47,7 @@
 #include <unistd.h>
 #include <linux/hdreg.h>
 #include <linux/fs.h>
-#endif /* !__WIN__ && !__LINUX__ */
+#endif /* !RT_OS_WINDOWS && !RT_OS_LINUX */
 
 #include "Builtins.h"
 
@@ -338,7 +338,7 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         pThis->cHeads = 0;
         pThis->cSectors = 0;
         pThis->enmTranslation = PDMBIOSTRANSLATION_AUTO;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         DISK_GEOMETRY DriveGeo;
         DWORD cbDriveGeo;
         if (DeviceIoControl((HANDLE)pThis->HostDiskFile,
@@ -366,7 +366,7 @@ static DECLCALLBACK(int) drvHostHDDConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         }
         else
             rc = RTErrConvertFromWin32(GetLastError());
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
         struct stat DevStat;
         if (!fstat(pThis->HostDiskFile, &DevStat) && S_ISBLK(DevStat.st_mode))
         {

@@ -113,7 +113,7 @@ struct RTCState {
     uint8_t Alignment0[7];
     struct tm current_tm;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && IN_GC
-# if !defined(__WIN__)
+# if !defined(RT_OS_WINDOWS)
     uint32_t Alignment1[3];
 # endif
 #endif

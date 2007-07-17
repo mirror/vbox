@@ -25,21 +25,21 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_FLOPPY
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
 # include <linux/fd.h>
 # include <sys/fcntl.h>
 # include <errno.h>
 
-# elif defined(__WIN__)
+# elif defined(RT_OS_WINDOWS)
 # include <windows.h>
 # include <dbt.h>
 
 #elif defined(__L4ENV__)
 
-#else /* !__WIN__ nor __LINUX__ nor __L4ENV__ */
+#else /* !RT_OS_WINDOWS nor RT_OS_LINUX nor __L4ENV__ */
 # error "Unsupported Platform."
-#endif /* !__WIN__ nor __LINUX__ nor __L4ENV__ */
+#endif /* !RT_OS_WINDOWS nor RT_OS_LINUX nor __L4ENV__ */
 
 #include <VBox/pdm.h>
 #include <VBox/cfgm.h>
@@ -73,7 +73,7 @@ typedef struct DRVHOSTFLOPPY
 
 
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 /**
  * Get media size and do change processing.
  *
@@ -101,10 +101,10 @@ static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t 
 
     return RTFileSeek(pThis->FileDevice, 0, RTFILE_SEEK_END, pcb);
 }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 /**
  * This thread will periodically poll the Floppy for media presence.
  *
@@ -145,7 +145,7 @@ static DECLCALLBACK(int) drvHostFloppyPoll(PDRVHOSTBASE pThis)
     RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
 
 /**
@@ -171,7 +171,7 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         /*
          * Override stuff.
          */
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
         pThis->Base.pfnPoll         = drvHostFloppyPoll;
         pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
 #endif

@@ -364,7 +364,7 @@ struct PCNetState_st
 #define CSR_DRCVBC(S)    !!((S)->aCSR[15] & 0x4000) /**< Disable Receive Broadcast */
 #define CSR_PROM(S)      !!((S)->aCSR[15] & 0x8000) /**< Promiscuous Mode */
 
-#if !defined(__X86__) && !defined(__AMD64__)
+#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
 #error fix macros (and more in this file) for big-endian machines
 #endif
 
@@ -894,7 +894,7 @@ DECLINLINE(int) padr_match(PCNetState *pData, const uint8_t *buf, int size)
 {
     struct ether_header *hdr = (struct ether_header *)buf;
     int     result;
-#if (defined(__X86__) || defined(__AMD64__)) && !defined(PCNET_DEBUG_MATCH)
+#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(PCNET_DEBUG_MATCH)
     result = !CSR_DRCVPA(pData) && !memcmp(hdr->ether_dhost, pData->aCSR + 12, 6);
 #else
     uint8_t padr[6];
@@ -936,7 +936,7 @@ static int ladr_match(PCNetState *pData, const uint8_t *buf, int size)
     if (RT_UNLIKELY(hdr->ether_dhost[0] & 0x01) && ((uint64_t *)&pData->aCSR[8])[0] != 0LL)
     {
         int index;
-#if defined(__X86__) || defined(__AMD64__)
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
         index = lnc_mchash(hdr->ether_dhost) >> 26;
         return ((uint8_t*)(pData->aCSR + 8))[index >> 3] & (1 << (index & 7));
 #else
@@ -4243,7 +4243,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         if (rc == VINF_NAT_DNS)
         {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
             VMSetRuntimeError(PDMDevHlpGetVM(pDevIns), false, "NoDNSforNAT",
                               N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #else

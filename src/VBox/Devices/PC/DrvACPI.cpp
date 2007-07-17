@@ -24,7 +24,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_ACPI
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include <windows.h>
 #endif
 
@@ -37,7 +37,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 #include <iprt/string.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -98,7 +98,7 @@ static DECLCALLBACK(void *) drvACPIQueryInterface(PPDMIBASE pInterface, PDMINTER
 static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
                                                  PDMACPIPOWERSOURCE *pPowerSource)
 {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     SYSTEM_POWER_STATUS powerStatus;
     if (GetSystemPowerStatus(&powerStatus))
     {
@@ -126,7 +126,7 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
                          GetLastError()));
         *pPowerSource = PDM_ACPI_POWER_SOURCE_UNKNOWN;
     }
-#elif defined (__LINUX__) /* !__WIN__ */
+#elif defined (RT_OS_LINUX) /* !RT_OS_WINDOWS */
     DIR *dfd;
     struct dirent *dp;
     FILE *statusFile = NULL;
@@ -182,9 +182,9 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
         }
         fclose(statusFile);
     }
-#else /* !__LINUX__ either - what could this be? */
+#else /* !RT_OS_LINUX either - what could this be? */
     *pPowerSource = PDM_ACPI_POWER_SOURCE_OUTLET;
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
     return VINF_SUCCESS;
 }
 
@@ -202,7 +202,7 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
     *penmRemainingCapacity  = PDM_ACPI_BAT_CAPACITY_UNKNOWN;
     *pu32PresentRate        = ~0;      /* present rate is unknown */
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     SYSTEM_POWER_STATUS powerStatus;
     if (GetSystemPowerStatus(&powerStatus))
     {
@@ -227,7 +227,7 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
         AssertMsgFailed(("Could not determine system power status, error: 0x%x\n",
                         GetLastError()));
     }
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
     DIR *dfd;
     struct dirent *dp;
     FILE *statusFile = NULL;
@@ -416,7 +416,7 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
                                                       * PDM_ACPI_BAT_CAPACITY_MAX);
         *pu32PresentRate = (uint32_t)(((float)presentRateTotal / (float)maxCapacityTotal) * 1000);
     }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
     return VINF_SUCCESS;
 }
 

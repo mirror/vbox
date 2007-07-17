@@ -25,7 +25,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_DVD
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 # include <mach/mach.h>
 # include <Carbon/Carbon.h>
 # include <IOKit/IOKitLib.h>
@@ -39,7 +39,7 @@
 #elif defined(__L4ENV__)
 /* nothing (yet). */
 
-#elif defined __LINUX__
+#elif defined RT_OS_LINUX
 # include <sys/ioctl.h>
 /* This is a hack to work around conflicts between these linux kernel headers
  * and the GLIBC tcpip headers. They have different declarations of the 4
@@ -54,7 +54,7 @@
 # include <errno.h>
 # define USE_MEDIA_POLLING
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
 # include <Windows.h>
 # include <winioctl.h>
 # include <ntddscsi.h>
@@ -104,7 +104,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
          /*
           * Eject the disc.
           */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
          uint8_t abCmd[16] =
          {
              SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
@@ -112,7 +112,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
          };
          rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
          rc = ioctl(pThis->FileDevice, CDROMEJECT, 0);
          if (rc < 0)
          {
@@ -124,7 +124,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
                  rc = RTErrConvertFromErrno(errno);
          }
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
          RTFILE FileDevice = pThis->FileDevice;
          if (FileDevice == NIL_RTFILE) /* obsolete crap */
              rc = RTFileOpen(&FileDevice, pThis->pszDeviceOpen, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
@@ -179,7 +179,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
  */
 static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
 {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     uint8_t abCmd[16] =
     {
         SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, fLock, 0,
@@ -187,7 +187,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
     };
     int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
     int rc = ioctl(pThis->FileDevice, CDROM_LOCKDOOR, (int)fLock);
     if (rc < 0)
     {
@@ -199,7 +199,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
             rc = RTErrConvertFromErrno(errno);
     }
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
 
     PREVENT_MEDIA_REMOVAL PreventMediaRemoval = {fLock};
     DWORD cbReturned;
@@ -225,7 +225,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
 
 
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 /**
  * Get the media size.
  *
@@ -243,7 +243,7 @@ static int drvHostDvdGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
     return RTFileSeek(pThis->FileDevice, 0, RTFILE_SEEK_END, pcb);
 
 }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
 
 #ifdef USE_MEDIA_POLLING
@@ -255,7 +255,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     /*
      * Poll for media change.
      */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     AssertReturn(pThis->ppScsiTaskDI, VERR_INTERNAL_ERROR);
 
     /*
@@ -284,7 +284,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
         /** @todo check this media chance stuff on Darwin. */
     }
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
     bool fMediaPresent = ioctl(pThis->FileDevice, CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
 
 #else
@@ -308,9 +308,9 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
         /*
          * Poll for media change.
          */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         /* taken care of above. */
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
         bool fMediaChanged = ioctl(pThis->FileDevice, CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
 #else
 # error "Unsupported platform."
@@ -337,7 +337,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     int rc;
     LogFlow(("%s: cmd[0]=%#04x txdir=%d pcbBuf=%d timeout=%d\n", __FUNCTION__, pbCmd[0], enmTxDir, *pcbBuf, cTimeoutMillies));
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     /*
      * Pass the request on to the internal scsi command interface.
      * The command seems to be 12 bytes long, the docs a bit copy&pasty on the command length point...
@@ -356,7 +356,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     /* Not really ported to L4 yet. */
     rc = VERR_INTERNAL_ERROR;
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
     int direction;
     struct cdrom_generic_command cgc;
     request_sense sense;
@@ -417,7 +417,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
      * of data transferred (for packet commands with little data transfer
      * it's 0). So just assume that everything worked ok. */
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
     int direction;
     struct _REQ
     {
@@ -537,7 +537,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         else
             pThis->pfnPoll       = NULL;
 #endif
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
         pThis->pfnGetMediaSize   = drvHostDvdGetMediaSize;
 #endif
 
