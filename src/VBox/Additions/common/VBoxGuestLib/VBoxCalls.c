@@ -41,7 +41,7 @@
     (a)->u32Function = SHFL_FN_##b;      \
     (a)->cParms      = SHFL_CPARMS_##b
 
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 # define RtlZeroMemory(a, b) memset (a, 0, b)
 #endif
 
