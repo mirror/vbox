@@ -64,7 +64,7 @@ using namespace com;
 #include <stdlib.h> /* putenv */
 #include <errno.h>
 
-#if defined(__LINUX__) || defined(__L4__)
+#if defined(RT_OS_LINUX) || defined(__L4__)
 #include <fcntl.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -199,7 +199,7 @@ typedef struct BFENetworkDevice
     const char *pszSniff;   /**< Output file for the network sniffer. */
     PDMMAC      Mac;        /**< The mac address for the device. */
     const char *pszName;     /**< The device name of a HIF device. The name of the internal network. */
-#if 1//defined(__LINUX__)
+#if 1//defined(RT_OS_LINUX)
     bool        fHaveFd;    /**< Set if fd is valid. */
     int32_t     fd;         /**< The file descriptor of a HIF device.*/
 #endif
@@ -302,7 +302,7 @@ static void show_usage()
 #if 0
              "  -netsniff<1-N>     Enable packet sniffer\n"
 #endif
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
              "  -tapfd<1-N> <fd>   Use existing TAP device, don't allocate\n"
 #endif
 #ifdef VBOX_VRDP
@@ -561,7 +561,7 @@ int main(int argc, char **argv)
             g_aNetDevs[i].fSniff = true;
             /** @todo filename */
         }
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
         else if (strncmp(pszArg, "-tapfd", 6) == 0)
         {
             int i = networkArg2Index(pszArg, 7);
@@ -572,7 +572,7 @@ int main(int argc, char **argv)
                 return SyntaxError("cannot grok tap fd: %s (%VRc)\n", argv[curArg], rc);
             g_aNetDevs[i].fHaveFd = true;
         }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 #ifdef VBOX_VRDP
         else if (strcmp(pszArg, "-vrdp") == 0)
         {
@@ -685,7 +685,7 @@ int main(int argc, char **argv)
     /* loop until the powerup processing is done */
     do
     {
-#if defined(__LINUX__) && defined(USE_SDL)
+#if defined(RT_OS_LINUX) && defined(USE_SDL)
         if (   machineState == VMSTATE_CREATING
             || machineState == VMSTATE_LOADING)
         {
@@ -1478,7 +1478,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                 rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");         UPDATE_RC();
                 rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                     UPDATE_RC();
 
-#if defined(__LINUX__)
+#if defined(RT_OS_LINUX)
                 if (g_aNetDevs[ulInstance].fHaveFd)
                 {
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName);
@@ -1489,7 +1489,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                 else
 #endif
                 {
-#if defined (__LINUX__) || defined (__L4__)
+#if defined (RT_OS_LINUX) || defined (__L4__)
                     /*
                      * Create/Open the TAP the device.
                      */
@@ -1540,7 +1540,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName);        UPDATE_RC();
                     rc = CFGMR3InsertInteger(pCfg, "FileHandle", (RTFILE)tapFD);                    UPDATE_RC();
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
                     /*
                      * We need the GUID too here...
                      */
@@ -1549,7 +1549,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     rc = CFGMR3InsertString(pCfg, "GUID", g_aNetDevs[ulInstance].pszName /*pszGUID*/);  UPDATE_RC();
 
 
-#else /* !__LINUX__ && !__L4__ */
+#else /* !RT_OS_LINUX && !__L4__ */
                     FatalError("Name based HIF devices not implemented yet for this host platform\n");
                     return VERR_NOT_IMPLEMENTED;
 #endif
@@ -1597,17 +1597,17 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                 UPDATE_RC();
         rc = CFGMR3InsertString(pLunL0, "Driver",         "AUDIO");                 UPDATE_RC();
         rc = CFGMR3InsertNode(pLunL0,   "Config",         &pCfg);                   UPDATE_RC();
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "winmm");                 UPDATE_RC();
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "coreaudio");             UPDATE_RC();
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "oss");                   UPDATE_RC();
 #elif defined(__L4ENV__)
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "oss");                   UPDATE_RC();
 #else /* portme */
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "none");                  UPDATE_RC();
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
     }
 
 #ifdef VBOXBFE_WITH_USB

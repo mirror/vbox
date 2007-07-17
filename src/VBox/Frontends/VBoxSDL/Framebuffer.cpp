@@ -29,7 +29,7 @@
 
 #include <iprt/stream.h>
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 # undef RT_MAX
 // from <iprt/cdefs.h>
 # define RT_MAX(Value1, Value2)  ((Value1) >= (Value2) ? (Value1) : (Value2))
@@ -86,7 +86,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     int rc;
     LogFlow(("VBoxSDLFB::VBoxSDLFB\n"));
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
     refcnt = 0;
 #endif
 
@@ -121,7 +121,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     rc = RTCritSectInit(&mUpdateLock);
     AssertMsg(rc == VINF_SUCCESS, ("Error from RTCritSectInit!\n"));
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     /* default to DirectX if nothing else set */
     if (!getenv("SDL_VIDEODRIVER"))
     {
@@ -129,7 +129,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
 //        _putenv("SDL_VIDEODRIVER=windib");
     }
 #endif
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /* On some X servers the mouse is stuck inside the bottom right corner.
      * See http://wiki.clug.org.za/wiki/QEMU_mouse_not_working */
     setenv("SDL_VIDEO_X11_DGAMOUSE", "0", 1);
@@ -141,7 +141,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
         return;
     }
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /* NOTE: we still want Ctrl-C to work, so we undo the SDL redirections */
     signal(SIGINT, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
@@ -391,7 +391,7 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     LogFlow(("VBoxSDLFB::NotifyUpdate: x = %d, y = %d, w = %d, h = %d\n",
              x, y, w, h));
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /*
      * SDL does not allow us to make this call from any other thread than
      * the main SDL thread (which initialized the video mode). So we have
@@ -405,9 +405,9 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     event.user.data1 = (void*)(x << 16 | y);
     event.user.data2 = (void*)(w << 16 | h);
     PushNotifyUpdateEvent(&event);
-#else /* !__LINUX__ */
+#else /* !RT_OS_LINUX */
     update(x, y, w, h, true /* fGuestRelative */);
-#endif /* !__LINUX__ */
+#endif /* !RT_OS_LINUX */
 
     /*
      * The Display thread can continue as we will lock the framebuffer
@@ -795,7 +795,7 @@ void VBoxSDLFB::resizeSDL(void)
  */
 void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
 {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 #endif
     Assert(mScreen);
@@ -994,7 +994,7 @@ void VBoxSDLFB::setSecureLabelColor(uint32_t colorFG, uint32_t colorBG)
  */
 void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
 {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 #endif
     /* only when the function is present */

@@ -51,7 +51,7 @@ public:
               uint32_t u32FixedWidth = ~(uint32_t)0, uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
     virtual ~VBoxSDLFB();
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     STDMETHOD_(ULONG, AddRef)()
     {
         return ::InterlockedIncrement (&refcnt);
@@ -178,7 +178,7 @@ private:
     /** secure label height in pixels */
     uint32_t mLabelHeight;
 #endif
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     long refcnt;
 #endif
     SDL_Surface *mSurfVRAM;
@@ -199,7 +199,7 @@ public:
                      VBoxSDLFB *aParent);
     virtual ~VBoxSDLFBOverlay();
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     STDMETHOD_(ULONG, AddRef)()
     {
         return ::InterlockedIncrement (&refcnt);
@@ -284,7 +284,7 @@ private:
     SDL_Surface *mOverlayBits;
     /** Additional SDL surface used for combining the framebuffer and the overlay */
     SDL_Surface *mBlendedBits;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     long refcnt;
 #endif
 };

@@ -22,7 +22,7 @@
 #ifndef COMDefs_H
 #define COMDefs_H
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # include <Windows.h>
 #endif
 #include <stdarg.h>
@@ -42,7 +42,7 @@
 
 #define ATL_NO_VTABLE
 
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
   typedef unsigned long  HRESULT;
   typedef unsigned long  ULONG; /// @todo 64-bit: ULONG is 32-bit.
   typedef signed   long  LONG;  /// @todo 64-bit: ULONG is 32-bit.
@@ -71,6 +71,6 @@
 
 # define SUCCEEDED      NS_SUCCEEDED
 # define FAILED         NS_FAILED
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
 #endif

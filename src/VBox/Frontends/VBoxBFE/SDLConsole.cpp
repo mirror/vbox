@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 # include <Carbon/Carbon.h>
 # define OSType VBoxOSType
 # undef PAGE_SIZE
@@ -413,7 +413,7 @@ void SDLConsole::eventQuit()
     SDL_PushEvent(&event);
 }
 
-#if defined(__DARWIN__)
+#if defined(RT_OS_DARWIN)
 /**
  * Fallback keycode conversion using SDL symbols.
  *
@@ -573,7 +573,7 @@ static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
             return 0;
     }
 }
-#endif /* __DARWIN__ */
+#endif /* RT_OS_DARWIN */
 
 /**
  * Converts an SDL keyboard eventcode to a XT scancode.
@@ -674,7 +674,7 @@ uint8_t SDLConsole::keyEventToKeyCode(const SDL_KeyboardEvent *ev)
         keycode = 0;
     }
 
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
     /* This is derived partially from SDL_QuartzKeys.h and partially from testing. */
     static const uint8_t s_aMacToSet1[] =
     {
@@ -1032,7 +1032,7 @@ void SDLConsole::processKey(SDL_KeyboardEvent *ev)
         gKeyboard->PutScancode(keycode & 0x7f);
 }
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 
 __BEGIN_DECLS
 /* Private interface in 10.3 and later. */
@@ -1092,14 +1092,14 @@ static void DisableGlobalHotKeys(bool fDisable)
     if (enmNewMode == enmMode)
         g_fHotKeysDisabled = enmMode == kCGSGlobalHotKeyDisable;
 }
-#endif /* __DARWIN__ */
+#endif /* RT_OS_DARWIN */
 
 /**
  * Start grabbing the mouse.
  */
 void SDLConsole::inputGrabStart()
 {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(true);
 #endif
     if (!gMouse->getNeedsHostCursor())
@@ -1119,7 +1119,7 @@ void SDLConsole::inputGrabEnd()
     SDL_WM_GrabInput(SDL_GRAB_OFF);
     if (!gMouse->getNeedsHostCursor())
         SDL_ShowCursor(SDL_ENABLE);
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(false);
 #endif
     fInputGrab = 0;
@@ -1287,7 +1287,7 @@ void SDLConsole::setPointerShape (const PointerShapeChangeData *data)
         const uint8_t *srcAndMaskPtr = data->shape;
         const uint8_t *srcShapePtr = data->shape + ((andMaskSize + 3) & ~3);
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
         BITMAPV5HEADER bi;
         HBITMAP hBitmap;

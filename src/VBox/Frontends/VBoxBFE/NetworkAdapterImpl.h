@@ -49,7 +49,7 @@ public:
         Data()
             : mSlot (0), mEnabled (FALSE)
             ,  mCableConnected (TRUE), mTraceEnabled (FALSE)
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
             , mTAPFD (NIL_RTFILE)
 #endif
             , mInternalNetwork ("") // cannot be null
@@ -61,7 +61,7 @@ public:
         BOOL mCableConnected;
         BOOL mTraceEnabled;
         Bstr mHostInterface;
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
         Bstr mTAPSetupApplication;
         Bstr mTAPTerminateApplication;
         RTFILE mTAPFD;
@@ -89,7 +89,7 @@ public:
     //    STDMETHOD(COMGETTER(AttachmentType))(NetworkAttachmentType_T *attachmentType);
     STDMETHOD(COMGETTER(HostInterface))(BSTR *hostInterface);
     STDMETHOD(COMSETTER(HostInterface))(INPTR BSTR hostInterface);
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     STDMETHOD(COMGETTER(TAPFileDescriptor))(LONG *tapFileDescriptor);
     STDMETHOD(COMSETTER(TAPFileDescriptor))(LONG tapFileDescriptor);
     STDMETHOD(COMGETTER(TAPSetupApplication))(BSTR *tapSetupApplication);

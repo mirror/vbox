@@ -23,7 +23,7 @@
 #ifndef __H_VBOXSDL
 #define __H_VBOXSDL
 
-#ifdef __WIN__ /** @todo check why we need to do this on windows. */
+#ifdef RT_OS_WINDOWS /** @todo check why we need to do this on windows. */
 /* convince SDL to not overload main() */
 #define _SDL_main_h
 #endif
@@ -71,7 +71,7 @@ int resizeUI(uint16_t width, uint16_t height);
 int setUITitle(char *title);
 #endif /* VBOX_WIN32_UI */
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 void PushNotifyUpdateEvent(SDL_Event *event);
 #endif
 int  PushSDLEventForSure(SDL_Event *event);

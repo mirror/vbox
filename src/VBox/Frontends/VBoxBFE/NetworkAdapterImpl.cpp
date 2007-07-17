@@ -136,7 +136,7 @@ NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR macAddress)
 STDMETHODIMP
 NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR hostInterface)
 {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     // empty strings are not allowed as path names
     if (hostInterface && !(*hostInterface))
         return E_INVALIDARG;

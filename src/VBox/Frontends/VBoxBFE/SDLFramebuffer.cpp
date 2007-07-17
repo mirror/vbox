@@ -50,7 +50,7 @@ SDLFramebuffer::SDLFramebuffer()
     int rc;
     LogFlow(("SDLFramebuffer::SDLFramebuffer\n"));
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
     refcnt = 0;
 #endif
 
@@ -69,7 +69,7 @@ SDLFramebuffer::SDLFramebuffer()
     mLabelHeight = 0;
 #endif
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /* NOTE: we still want Ctrl-C to work, so we undo the SDL redirections */
     signal(SIGINT, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
@@ -232,7 +232,7 @@ HRESULT SDLFramebuffer::NotifyUpdate(ULONG x, ULONG y,
     LogFlow(("SDLFramebuffer::NotifyUpdate: x = %d, y = %d, w = %d, h = %d\n",
              x, y, w, h));
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     /*
      * SDL does not allow us to make this call from any other
      * thread. So we have to send an event to the main SDL
@@ -253,9 +253,9 @@ HRESULT SDLFramebuffer::NotifyUpdate(ULONG x, ULONG y,
               SDL_GetError()));
     /* in order to not flood the SDL event queue, yield the CPU */
     RTThreadYield();
-#else /* !__LINUX__ */
+#else /* !RT_OS_LINUX */
     update(x, y + mTopOffset, w, h);
-#endif /* !__LINUX__ */
+#endif /* !RT_OS_LINUX */
 
     /*
      * The Display thread can continue as we will lock the framebuffer
@@ -372,7 +372,7 @@ void SDLFramebuffer::resize()
     if (mfFullscreen)
     {
         sdlFlags |= SDL_FULLSCREEN;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         /* this flag causes a crash on Windows, mScreen->pixels is NULL */
         sdlFlags &= ~SDL_HWSURFACE;
         sdlFlags |= SDL_SWSURFACE;
@@ -418,7 +418,7 @@ void SDLFramebuffer::resize()
  */
 void SDLFramebuffer::update(int x, int y, int w, int h)
 {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 #endif
 
