@@ -547,6 +547,68 @@ void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
 
 
 /**
+ * Decends recursivly into a IORegistry tree locating the first object of a given class.
+ *
+ * The search is performed depth first.
+ *
+ * @returns Object reference if found, NULL if not.
+ * @param   Object      The current tree root.
+ * @param   pszClass    The name of the class we're looking for.
+ * @param   pszNameBuf  A scratch buffer for query the class name in to avoid
+ *                      wasting 128 bytes on an io_name_t object for every recursion.
+ */
+static io_object_t darwinFindObjectByClass(io_object_t Object, const char *pszClass, io_name_t pszNameBuf)
+{
+    io_iterator_t Children;
+    kern_return_t krc = IORegistryEntryGetChildIterator(Object, kIOServicePlane, &Children);
+    if (krc != KERN_SUCCESS)
+        return NULL;
+    io_object_t Child;
+    while ((Child = IOIteratorNext(Children)))
+    {
+        krc = IOObjectGetClass(Child, pszNameBuf);
+        if (    krc == KERN_SUCCESS
+            &&  !strcmp(pszNameBuf, pszClass))
+            break;
+
+        io_object_t GrandChild = darwinFindObjectByClass(Child, pszClass, pszNameBuf);
+        IOObjectRelease(Child);
+        if (GrandChild)
+        {
+            Child = GrandChild;
+            break;
+        }
+    }
+    IOObjectRelease(Children);
+    return Child;
+}
+
+
+/**
+ * Decends recursivly into IOUSBMassStorageClass tree to check whether
+ * the MSD is mounted or not.
+ *
+ * The current heuristic is to look for the IOMedia class.
+ *
+ * @returns true if mounted, false if not.
+ * @param   MSDObj      The IOUSBMassStorageClass object.
+ * @param   pszNameBuf  A scratch buffer for query the class name in to avoid
+ *                      wasting 128 bytes on an io_name_t object for every recursion.
+ */
+static bool darwinIsMassStorageInterfaceInUse(io_object_t MSDObj, io_name_t pszNameBuf)
+{
+    io_object_t MediaObj = darwinFindObjectByClass(MSDObj, "IOMedia", pszNameBuf);
+    if (MediaObj)
+    {
+        /* more checks? */
+        IOObjectRelease(MediaObj);
+        return true;
+    }
+    return false;
+}
+
+
+/**
  * Worker function for DarwinGetUSBDevices() that tries to figure out
  * what state the device is in.
  *
@@ -559,7 +621,89 @@ void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
  */
 static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice, CFMutableDictionaryRef PropsRef)
 {
-    ///@todo
+    /*
+     * Iterate the interfaces (among the children of the IOUSBDevice object).
+     */
+    io_iterator_t Interfaces;
+    kern_return_t krc = IORegistryEntryGetChildIterator(USBDevice, kIOServicePlane, &Interfaces);
+    if (krc != KERN_SUCCESS)
+        return;
+
+    bool fUserClientOnly = true;
+    bool fConfigured = false;
+    bool fInUse = false;
+    bool fSeizable = true;
+    io_object_t Interface;
+    while ((Interface = IOIteratorNext(Interfaces)))
+    {
+        io_name_t szName;
+        krc = IOObjectGetClass(Interface, szName);
+        if (    krc == KERN_SUCCESS
+            &&  !strcmp(szName, "IOUSBInterface"))
+        {
+            fConfigured = true;
+
+            /*
+             * Iterate the interface children looking for stuff other than
+             * IOUSBUserClientInit objects.
+             */
+            io_iterator_t Children1;
+            krc = IORegistryEntryGetChildIterator(Interface, kIOServicePlane, &Children1);
+            if (krc == KERN_SUCCESS)
+            {
+                io_object_t Child1;
+                while ((Child1 = IOIteratorNext(Children1)))
+                {
+                    krc = IOObjectGetClass(Child1, szName);
+                    if (    krc == KERN_SUCCESS
+                        &&  strcmp(szName, "IOUSBUserClientInit"))
+                    {
+                        fUserClientOnly = false;
+
+                        if (!strcmp(szName, "IOUSBMassStorageClass"))
+                        {
+                            /* Only permit capturing MSDs that aren't mounted, at least
+                               until the GUI starts poping up warnings about data loss
+                               and such when capturing a busy device. */
+                            fSeizable = false;
+                            fInUse |= darwinIsMassStorageInterfaceInUse(Child1, szName);
+                        }
+                        else if (!strcmp(szName, "IOUSBHIDDriver")
+                              || !strcmp(szName, "AppleHIDMouse")
+                              /** @todo more? */)
+                        {
+                            /* For now, just assume that all HID devices are inaccessible
+                               because of the greedy HID service. */
+                            fSeizable = false;
+                            fInUse = true;
+                        }
+                        else
+                            fInUse = true;
+                    }
+                    IOObjectRelease(Child1);
+                }
+                IOObjectRelease(Children1);
+            }
+        }
+        IOObjectRelease(Interface);
+    }
+    IOObjectRelease(Interfaces);
+
+    /*
+     * Calc the status.
+     */
+    if (fUserClientOnly)
+        /** @todo how to detect other user client?!? */
+        pCur->enmState = !fConfigured
+                       ? USBDEVICESTATE_UNUSED
+                       : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
+
+    else if (!fInUse)
+        pCur->enmState = USBDEVICESTATE_UNUSED;
+    else
+        pCur->enmState = fSeizable
+                       ? USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
+                       : USBDEVICESTATE_USED_BY_HOST;
 }
 
 
