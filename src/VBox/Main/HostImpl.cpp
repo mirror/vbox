@@ -1272,15 +1272,15 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
 }
 
 /**
- *  Notification from the VM process that it is going to detach (\a aDone = false) 
+ *  Notification from the VM process that it is going to detach (\a aDone = false)
  *  or that is has just detach (\a aDone = true) the given USB device.
- * 
- *  When \a aDone = false we only inform the USB Proxy about what the vm is 
+ *
+ *  When \a aDone = false we only inform the USB Proxy about what the vm is
  *  up to so it doesn't get confused and create a new USB host device object
  *  (a Darwin issue).
- * 
- *  When \a aDone = true we replay all filters against the given USB device 
- *  excluding filters of the machine the device is currently marked as 
+ *
+ *  When \a aDone = true we replay all filters against the given USB device
+ *  excluding filters of the machine the device is currently marked as
  *  captured by.
  *
  *  When the \a aDone = true request is completed,
@@ -1288,7 +1288,7 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
  *  machine object.
  *
  *  Called by Console from the VM process (throug IInternalMachineControl).
- * 
+ *
  */
 HRESULT Host::detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BOOL aDone)
 {
@@ -1347,7 +1347,7 @@ HRESULT Host::detachUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId, BO
         else
         {
             ComAssertRet (device->machine() == aMachine, E_FAIL);
-        
+
             /* re-apply filters on the device before giving it back to the host */
             device->setHeld();
             rc = applyAllUSBFilters (device, aMachine);
@@ -2128,7 +2128,7 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
         /* it was a state change request */
         if (device->pendingStateEx() == HostUSBDevice::kDetachingPendingAttachFilters)
         {
-            /* The device has completed an asynchronous detach operation, subject 
+            /* The device has completed an asynchronous detach operation, subject
                it to the filters and such if the current state permits this.
                (handlePendingStateChange will disassociate itself from the machine.) */
             ComObjPtr <SessionMachine> machine (device->machine());
@@ -2141,7 +2141,7 @@ void Host::onUSBDeviceStateChanged (HostUSBDevice *aDevice)
                 AssertComRC (rc);
             }
             else
-                Log (("USB: async detached devices reappeared in stated %d instead of %d!\n", 
+                Log (("USB: async detached devices reappeared in stated %d instead of %d!\n",
                       device->state(), USBDeviceState_USBDeviceCaptured));
         }
         else
