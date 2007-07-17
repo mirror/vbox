@@ -25,13 +25,19 @@ export LC_ALL
 # Defaults
 #
 OSE=1
+TARGET_MACHINE=""
+TARGET_CPU=""
 WITH_XPCOM=1
 WITH_LIBIDL=1
 WITH_QT=1
 WITH_SDL_TTF=1
 WITH_HAL=1
 CC="gcc"
+CC32=""
+CC64=""
 CXX="g++"
+CXX32=""
+CXX64=""
 BCC="bcc"
 YASM="yasm"
 IASL="iasl"
@@ -213,15 +219,15 @@ test_execute()
 check_environment()
 {
   test_header environment
-  CPU=`uname -m`
-  case "$CPU" in
+  BUILD_CPU=`uname -m`
+  case "$BUILD_CPU" in
     i[3456789]86|x86)
-      MACHINE='x86'
+      BUILD_MACHINE='x86'
       LIB='lib'
       ;;
     x86_64|amd64)
-      MACHINE='amd64'
-      CPU='k8'
+      BUILD_MACHINE='amd64'
+      BUILD_CPU='k8'
       # on AMD64 systems, 64bit libs are usually located in /usr/lib64
       # see http://www.pathname.com/fhs/pub/fhs-2.3.html#LIB64
       LIB='lib64'
@@ -231,6 +237,8 @@ check_environment()
       exit 1
       ;;
   esac
+  [ -z "$TARGET_MACHINE" ] && TARGET_MACHINE=$BUILD_MACHINE
+  [ -z "$TARGET_CPU"     ] && TARGET_CPU=$BUILD_CPU
   OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr 'A-Z' 'a-z'`
   case "$OS" in
     linux)
@@ -244,9 +252,9 @@ check_environment()
       exit 1
       ;;
   esac
-  DEVDIR_BIN="$DEVDIR/$OS.$MACHINE/bin"
-  KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$MACHINE"
-  log_success "Determined $OS.$MACHINE"
+  DEVDIR_BIN="$DEVDIR/$OS.$BUILD_MACHINE/bin"
+  KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$BUILD_MACHINE"
+  log_success "Determined build machine: $OS.$BUILD_MACHINE, target machine: $OS.$TARGET_MACHINE"
 
   # Automatically disable XPCOM on darwin.
   if [ "$OS" = "darwin" -a $WITH_XPCOM -eq 1 ]; then
@@ -284,17 +292,52 @@ check_gcc()
       else
         log_success "found version $cc_ver"
       fi
+      if [ "$BUILD_MACHINE" = "amd64" ]; then
+        [ -z "$CC32"  ] && CC32="$CC -m32"
+        [ -z "$CXX32" ] && CXX32="$CXX -m32"
+      else
+        [ -z "$CC32"  ] && CC32="$CC"
+        [ -z "$CXX32" ] && CXX32="$CXX"
+      fi
+      if [ "$BUILD_MACHINE" = "x86" -a "$TARGET_MACHINE" = "amd64" ]; then
+	[ -z "$CC64"  ] && CC64="$CC -m64"
+	[ -z "$CXX64" ] && CXX64="$CXX -m64"
+      fi
       if [ "$CC" != "gcc" ]; then
-        cnf_append "TOOL_GCC3_CC" "$CC"
-        cnf_append "TOOL_GCC3_AS" "$CC"
-        cnf_append "TOOL_GXX3_CC" "$CC"
-        cnf_append "TOOL_GXX3_AS" "$CC"
+        cnf_append "TOOL_GCC3_CC"   "$CC"
+        cnf_append "TOOL_GCC3_AS"   "$CC"
+        cnf_append "TOOL_GCC3_LD"   "$CC"
+        cnf_append "TOOL_GXX3_CC"   "$CC"
+        cnf_append "TOOL_GXX3_AS"   "$CC"
       fi
       if [ "$CXX" != "g++" ]; then
-        cnf_append "TOOL_GCC3_CXX" "$CXX"
-        cnf_append "TOOL_GCC3_LD"  "$CXX"
-        cnf_append "TOOL_GXX3_CXX" "$CXX"
-        cnf_append "TOOL_GXX3_LD"  "$CXX"
+        cnf_append "TOOL_GCC3_CXX"  "$CXX"
+        cnf_append "TOOL_GXX3_CXX"  "$CXX"
+        cnf_append "TOOL_GXX3_LD"   "$CXX"
+      fi
+      if [ "$CC32" != "gcc -m32" ]; then
+        cnf_append "TOOL_GCC32_CC"  "$CC32"
+        cnf_append "TOOL_GCC32_AS"  "$CC32"
+        cnf_append "TOOL_GCC32_LD"  "$CC32"
+        cnf_append "TOOL_GXX32_CC"  "$CC32"
+        cnf_append "TOOL_GXX32_AS"  "$CC32"
+      fi
+      if [ "$CXX32" != "g++ -m32" ]; then
+        cnf_append "TOOL_GCC32_CXX" "$CXX32"
+        cnf_append "TOOL_GXX32_CXX" "$CXX32"
+        cnf_append "TOOL_GXX32_LD"  "$CXX32"
+      fi
+      if [ -n "$CC64" ]; then
+        cnf_append "TOOL_GCC64_CC"  "$CC64"
+        cnf_append "TOOL_GCC64_AS"  "$CC64"
+        cnf_append "TOOL_GCC64_LD"  "$CC64"
+        cnf_append "TOOL_GXX64_CC"  "$CC64"
+        cnf_append "TOOL_GXX64_AS"  "$CC64"
+      fi
+      if [ -n "$CXX64" ]; then
+        cnf_append "TOOL_GCC64_CXX" "$CXX64"
+        cnf_append "TOOL_GXX64_CXX" "$CXX64"
+        cnf_append "TOOL_GXX64_LD"  "$CXX64"
       fi
     fi
   fi
@@ -1010,10 +1053,10 @@ check_kbuild()
   if check_avail "$KBUILDDIR_BIN/kmk" KBUILDDIR really; then
     log_success "found"
     echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
-    echo "export BUILD_PLATFORM_ARCH=\"$MACHINE\"" >> $ENV
+    echo "export BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
     echo "export BUILD_TARGET=\"$OS\"" >> $ENV
-    echo "export BUILD_TARGET_ARCH=\"$MACHINE\"" >> $ENV
-    echo "export BUILD_TARGET_CPU=\"$CPU\"" >> $ENV
+    echo "export BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
+    echo "export BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
     echo "export BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
     echo "export PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
     echo "export PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
@@ -1328,7 +1371,7 @@ echo ""
 if [ "$OS" = "linux" ]; then
     echo "To compile the kernel module, do:"
     echo ""
-    echo "  cd ./out/$OS.$MACHINE/$BUILD_TYPE/bin/src"
+    echo "  cd ./out/$OS.$TARGET_MACHINE/$BUILD_TYPE/bin/src"
     echo "  make"
     echo ""
 fi
