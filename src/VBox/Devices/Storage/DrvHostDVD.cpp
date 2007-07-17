@@ -36,7 +36,7 @@
 # include <mach/mach_error.h>
 # define USE_MEDIA_POLLING
 
-#elif defined(__L4ENV__)
+#elif defined(RT_OS_L4)
 /* nothing (yet). */
 
 #elif defined RT_OS_LINUX
@@ -352,7 +352,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
         rc = VINF_SUCCESS;
     }
 
-#elif defined(__L4ENV__)
+#elif defined(RT_OS_L4)
     /* Not really ported to L4 yet. */
     rc = VERR_INTERNAL_ERROR;
 
@@ -518,7 +518,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
          * Override stuff.
          */
 
-#ifndef __L4ENV__ /* Passthrough is not supported on L4 yet */
+#ifndef RT_OS_L4 /* Passthrough is not supported on L4 yet */
         bool fPassthrough;
         rc = CFGMR3QueryBool(pCfgHandle, "Passthrough", &fPassthrough);
         if (VBOX_SUCCESS(rc) && fPassthrough)
@@ -527,7 +527,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
             /* Passthrough requires opening the device in R/W mode. */
             pThis->fReadOnlyConfig = false;
         }
-#endif /* !__L4ENV__ */
+#endif /* !RT_OS_L4 */
 
         pThis->IMount.pfnUnmount = drvHostDvdUnmount;
         pThis->pfnDoLock         = drvHostDvdDoLock;

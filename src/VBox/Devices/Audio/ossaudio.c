@@ -44,7 +44,7 @@ typedef struct OSSVoiceOut {
     int fd;
     int nfrags;
     int fragsize;
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     int mmapped;
 #endif
     int old_optr;
@@ -60,7 +60,7 @@ typedef struct OSSVoiceIn {
 } OSSVoiceIn;
 
 static struct {
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     int try_mmap;
 #endif
     int nfrags;
@@ -69,7 +69,7 @@ static struct {
     const char *devpath_in;
     int debug;
 } conf = {
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     INIT_FIELD (try_mmap    =) 0,
 #endif
     INIT_FIELD (nfrags      =) 4,
@@ -340,7 +340,7 @@ static int oss_run_out (HWVoiceOut *hw)
     uint8_t *dst;
     st_sample_t *src;
     struct audio_buf_info abinfo;
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     struct count_info cntinfo;
 #endif
     int bufsize;
@@ -352,7 +352,7 @@ static int oss_run_out (HWVoiceOut *hw)
 
     bufsize = hw->samples << hw->info.shift;
 
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     if (oss->mmapped) {
         int bytes;
 
@@ -407,7 +407,7 @@ static int oss_run_out (HWVoiceOut *hw)
         if (!decr) {
             return 0;
         }
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     }
 #endif
 
@@ -421,7 +421,7 @@ static int oss_run_out (HWVoiceOut *hw)
         dst = advance (oss->pcm_buf, rpos << hw->info.shift);
 
         hw->clip (dst, src, convert_samples);
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
         {
 #else
         if (!oss->mmapped) {
@@ -465,7 +465,7 @@ static int oss_run_out (HWVoiceOut *hw)
         samples -= convert_samples;
     }
 
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     if (oss->mmapped) {
         oss->old_optr = cntinfo.ptr;
     }
@@ -477,7 +477,7 @@ static int oss_run_out (HWVoiceOut *hw)
 
 static void oss_fini_out (HWVoiceOut *hw)
 {
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     int err;
 #endif
     OSSVoiceOut *oss = (OSSVoiceOut *) hw;
@@ -489,7 +489,7 @@ static void oss_fini_out (HWVoiceOut *hw)
 #endif
 
     if (oss->pcm_buf) {
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
         qemu_free (oss->pcm_buf);
 #else
         if (oss->mmapped) {
@@ -554,7 +554,7 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
 
     hw->samples = (obt.nfrags * obt.fragsize) >> hw->info.shift;
 
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     oss->mmapped = 0;
     if (conf.try_mmap) {
         oss->pcm_buf = mmap (
@@ -598,7 +598,7 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
     }
 #endif
 
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     if (!oss->mmapped) {
 #endif
         oss->pcm_buf = audio_calloc (
@@ -618,7 +618,7 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
 #endif
             return -1;
         }
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     }
 #endif
 
@@ -631,7 +631,7 @@ static int oss_ctl_out (HWVoiceOut *hw, int cmd, ...)
     int trig;
     OSSVoiceOut *oss = (OSSVoiceOut *) hw;
 
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
     return 0;
 #else
     if (!oss->mmapped) {
@@ -846,7 +846,7 @@ static struct audio_option oss_options[] = {
      "Fragment size in bytes", NULL, 0},
     {"NFRAGS", AUD_OPT_INT, &conf.nfrags,
      "Number of fragments", NULL, 0},
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
     {"MMAP", AUD_OPT_BOOL, &conf.try_mmap,
      "Try using memory mapped access", NULL, 0},
 #endif

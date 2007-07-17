@@ -54,7 +54,7 @@ public:
 
     int  setAbsoluteCoordinates(bool fAbsolute);
     int  setNeedsHostCursor(bool fNeedsHostCursor);
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
     // So far L4Con does not support an own mouse pointer.
     bool getAbsoluteCoordinates() { return false; }
 #else

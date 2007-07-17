@@ -86,7 +86,7 @@ HRESULT Mouse::init (Console *parent)
 
     mParent = parent;
 
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
     /* L4 console has no own mouse cursor */
     uHostCaps = VMMDEV_MOUSEHOSTCANNOTHWPOINTER;
 #else

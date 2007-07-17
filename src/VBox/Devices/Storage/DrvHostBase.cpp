@@ -37,7 +37,7 @@
 # include <mach/mach_error.h>
 # include <VBox/scsi.h>
 
-#elif defined(__L4ENV__)
+#elif defined(RT_OS_L4)
   /* Nothing special requires... yeah, right. */
 
 #elif defined(RT_OS_LINUX)

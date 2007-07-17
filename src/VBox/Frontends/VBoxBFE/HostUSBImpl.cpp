@@ -90,7 +90,7 @@ HRESULT HostUSB::init(PVM pVM)
 #elif defined __WIN__
     mUSBProxyService = new USBProxyServiceWin32 (this);
 */
-#ifdef __L4__
+#ifdef RT_OS_L4
     mUSBProxyService = new USBProxyServiceLinux (this);
 #else
     mUSBProxyService = new USBProxyService (this);
