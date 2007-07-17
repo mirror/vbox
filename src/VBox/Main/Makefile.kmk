@@ -22,7 +22,7 @@
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-SUBDIRS_AFTER    = testcase 
+SUBDIRS_AFTER    = testcase
 
 ifndef VBOX_OSE
 SUBDIRS_AFTER += webservice
@@ -349,6 +349,10 @@ $(PATH_TARGET)/VBoxC.def: $(MAKEFILE_CURRENT)
 	$(APPEND) $@ _NSGetModule
 	$(APPEND) $@ _VBoxDriversRegister
 endif
+
+# ConsoleImpl.cpp uses VBOX_SVN_REV.
+ConsoleImpl.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+ConsoleImpl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 #
 # VBoxXML
