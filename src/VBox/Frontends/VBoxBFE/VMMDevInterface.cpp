@@ -42,7 +42,7 @@
 #include "DisplayImpl.h"
 #include "ConsoleImpl.h"
 
-#ifdef __L4__
+#ifdef RT_OS_L4
 #include <l4/util/util.h> /* for l4_sleep */
 #endif
 /**

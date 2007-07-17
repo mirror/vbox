@@ -40,7 +40,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 
-#ifdef __L4__
+#ifdef RT_OS_L4
 #include <stdio.h>
 #include <l4/util/util.h>
 #include <l4/log/l4log.h>
@@ -395,7 +395,7 @@ void VMDisplay::updateDisplayData()
 
     while(!mFramebuffer)
     {
-#if __L4__
+#if RT_OS_L4
       asm volatile ("nop":::"memory");
       l4_sleep(5);
 #else

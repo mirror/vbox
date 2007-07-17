@@ -35,11 +35,11 @@
 # include <windows.h>
 # include <dbt.h>
 
-#elif defined(__L4ENV__)
+#elif defined(RT_OS_L4)
 
-#else /* !RT_OS_WINDOWS nor RT_OS_LINUX nor __L4ENV__ */
+#else /* !RT_OS_WINDOWS nor RT_OS_LINUX nor RT_OS_L4 */
 # error "Unsupported Platform."
-#endif /* !RT_OS_WINDOWS nor RT_OS_LINUX nor __L4ENV__ */
+#endif /* !RT_OS_WINDOWS nor RT_OS_LINUX nor RT_OS_L4 */
 
 #include <VBox/pdm.h>
 #include <VBox/cfgm.h>

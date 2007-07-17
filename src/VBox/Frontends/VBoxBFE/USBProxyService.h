@@ -177,7 +177,7 @@ protected:
 };
 
 
-#if defined(RT_OS_LINUX) || defined(__L4__)
+#if defined(RT_OS_LINUX) || defined(RT_OS_L4)
 #include <stdio.h>
 
 /**

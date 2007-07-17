@@ -64,14 +64,14 @@ using namespace com;
 #include <stdlib.h> /* putenv */
 #include <errno.h>
 
-#if defined(RT_OS_LINUX) || defined(__L4__)
+#if defined(RT_OS_LINUX) || defined(RT_OS_L4)
 #include <fcntl.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <linux/if_tun.h>
 #endif
 
-#ifndef __L4ENV__
+#ifndef RT_OS_L4
 #include <vector>
 #endif
 
@@ -87,17 +87,17 @@ using namespace com;
 # include "HostUSBImpl.h"
 #endif
 
-#if defined(USE_SDL) && ! defined(__L4__)
+#if defined(USE_SDL) && ! defined(RT_OS_L4)
 #include "SDLConsole.h"
 #include "SDLFramebuffer.h"
 #endif
 
-#ifdef __L4__
+#ifdef RT_OS_L4
 #include "L4Console.h"
 #include "L4Framebuffer.h"
 #endif
 
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
 # ifndef L4API_l4v2onv4
 #  include <l4/sys/ktrace.h>
 # endif
@@ -144,7 +144,7 @@ PPDMLED     mapFDLeds[2]      = {0};
 PPDMLED     mapIDELeds[4]     = {0};
 
 /** flag whether keyboard/mouse events are grabbed */
-#ifdef __L4__
+#ifdef RT_OS_L4
 /** see <l4/input/macros.h> for key definitions */
 int gHostKey; /* not used */
 int gHostKeySym = KEY_RIGHTCTRL;
@@ -320,7 +320,7 @@ static void show_usage()
              "  -[no]patm          Enable or disable PATM\n"
              "  -[no]csam          Enable or disable CSAM\n"
 #endif
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
              "  -env <var=value>   Set the given environment variable to \"value\"\n"
 #endif
              "\n");
@@ -330,7 +330,7 @@ static void show_usage()
 /** entry point */
 int main(int argc, char **argv)
 {
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
 #ifndef L4API_l4v2onv4
     /* clear Fiasco kernel trace buffer */
     fiasco_tbuf_clear();
@@ -346,7 +346,7 @@ int main(int argc, char **argv)
             if (putenv(argv[i]) != 0)
                 return SyntaxError("Error setting environment string %s.\n", argv[i]);
         }
-#endif /* __L4ENV__ */
+#endif /* RT_OS_L4 */
 
     /*
      * Before we do *anything*, we initialize the runtime.
@@ -631,10 +631,10 @@ int main(int argc, char **argv)
         else if (strcmp(pszArg, "-nocsam") == 0)
             g_fCSAM = false;
 #endif /* VBOXSDL_ADVANCED_OPTIONS */
-#ifdef __L4__
+#ifdef RT_OS_L4
         else if (strcmp(pszArg, "-env") == 0)
             ++curArg;
-#endif /* __L4__ */
+#endif /* RT_OS_L4 */
         /* just show the help screen */
         else
         {
@@ -654,7 +654,7 @@ int main(int argc, char **argv)
     /* First console, then framebuffer!! */
     gConsole = new SDLConsole();
     gFramebuffer = new SDLFramebuffer();
-#elif defined(__L4ENV__)
+#elif defined(RT_OS_L4)
     gConsole = new L4Console();
     gFramebuffer = new L4Framebuffer();
 #else
@@ -724,7 +724,7 @@ int main(int argc, char **argv)
 
     gConsole->updateTitlebar();
 
-#ifdef __L4__
+#ifdef RT_OS_L4
     /* The L4 console provides (currently) a fixed resolution. */
     if (g_u32VRamSizeMB * _1M >=   gFramebuffer->getHostXres() 
                           * gFramebuffer->getHostYres()
@@ -995,7 +995,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     }
 #endif /* VBOXBFE_WITH_USB */
 
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
     /* L4 console cannot draw a host cursor */
     gMouse->setHostCursor(false);
 #else
@@ -1342,7 +1342,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
     rc = CFGMR3InsertInteger(pCfg,  "VRamSize",       g_u32VRamSizeMB * _1M);       UPDATE_RC();
 
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
     /* XXX hard-coded */
     rc = CFGMR3InsertInteger(pCfg,  "HeightReduction", 18);                         UPDATE_RC();
     rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", 1);                         UPDATE_RC();
@@ -1489,7 +1489,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                 else
 #endif
                 {
-#if defined (RT_OS_LINUX) || defined (__L4__)
+#if defined (RT_OS_LINUX) || defined (RT_OS_L4)
                     /*
                      * Create/Open the TAP the device.
                      */
@@ -1549,7 +1549,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     rc = CFGMR3InsertString(pCfg, "GUID", g_aNetDevs[ulInstance].pszName /*pszGUID*/);  UPDATE_RC();
 
 
-#else /* !RT_OS_LINUX && !__L4__ */
+#else /* !RT_OS_LINUX && !RT_OS_L4 */
                     FatalError("Name based HIF devices not implemented yet for this host platform\n");
                     return VERR_NOT_IMPLEMENTED;
 #endif
@@ -1603,7 +1603,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "coreaudio");             UPDATE_RC();
 #elif defined(RT_OS_LINUX)
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "oss");                   UPDATE_RC();
-#elif defined(__L4ENV__)
+#elif defined(RT_OS_L4)
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "oss");                   UPDATE_RC();
 #else /* portme */
         rc = CFGMR3InsertString(pCfg, "AudioDriver",      "none");                  UPDATE_RC();
