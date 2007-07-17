@@ -195,13 +195,13 @@ void USBProxyService::processChanges (void)
     {
         pDevices = sortDevices (pDevices);
 
-        /* 
+        /*
          * We need to lock the host object for writing because
          * a) the subsequent code may call Host methods that require a write
          *    lock
          * b) we will lock HostUSBDevice objects below and want to make sure
          *    the lock order is always the same (Host, HostUSBDevice, as
-         *    expected by Host) to avoid cross-deadlocks 
+         *    expected by Host) to avoid cross-deadlocks
          */
         AutoLock hostLock (mHost);
 
@@ -218,16 +218,16 @@ void USBProxyService::processChanges (void)
             if (It != mDevices.end())
                 DevPtr = *It;
 
-            /* 
+            /*
              * Assert that the object is still alive (we still reference it in
-             * the collection and we're the only one who calls uninit() on it 
+             * the collection and we're the only one who calls uninit() on it
              */
             HostUSBDevice::AutoCaller devCaller (DevPtr.isNull() ? NULL : DevPtr);
             AssertComRC (devCaller.rc());
 
-            /* 
+            /*
              * Lock the device object since we will read/write it's
-             * properties. All Host callbacks also imply the object is locked. 
+             * properties. All Host callbacks also imply the object is locked.
              */
             AutoLock devLock (DevPtr.isNull() ? NULL : DevPtr);
 
@@ -247,7 +247,7 @@ void USBProxyService::processChanges (void)
             if (!iDiff)
             {
                 /*
-                 * The device still there, update the state and move on. The PUSBDEVICE 
+                 * The device still there, update the state and move on. The PUSBDEVICE
                  * structure is eaten by updateDeviceState / HostUSBDevice::updateState().
                  */
                 PUSBDEVICE pCur = pDevices;
@@ -578,7 +578,14 @@ bool USBProxyService::updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSB
     AssertReturn (aDevice, false);
     AssertReturn (aDevice->isLockedOnCurrentThread(), false);
 
-    return aDevice->updateState (aUSBDevice);
+    bool fRc = aDevice->updateState (aUSBDevice);
+    /* A little hack to work around state quirks wrt detach/reattach. */
+    if (    !fRc
+        &&  aDevice->isStatePending()
+        &&  (   aDevice->pendingStateEx() == HostUSBDevice::kDetachingPendingAttach
+             || aDevice->pendingStateEx() == HostUSBDevice::kDetachingPendingAttachFilters))
+        fRc = true;
+    return fRc;
 }
 
 
