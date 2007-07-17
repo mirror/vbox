@@ -23,7 +23,7 @@
 
 BEGINCODE
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define _SP rsp
  %define _BP rbp
 %else
@@ -40,7 +40,7 @@ BEGINPROC RT_NOCRT(remainderl)
     push    _BP
     mov     _BP, _SP
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     fld     tword [rbp + 10h + RTLRD_CB]
     fld     tword [rbp + 10h]
 %else

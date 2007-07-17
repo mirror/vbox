@@ -32,7 +32,7 @@
  */
 #if !defined(VBOX_RTASSERT_WITH_GDB) \
     && !defined(IN_GUEST) \
-    && ((!defined(__OS2__) && !defined(__WIN__)) || defined(__DOXGYEN__))
+    && ((!defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)) || defined(__DOXGYEN__))
 # define VBOX_ASSERT_WITH_GDB
 #endif 
 

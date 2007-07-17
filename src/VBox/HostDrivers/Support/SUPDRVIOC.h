@@ -33,15 +33,15 @@
  * The SUP_IOCTL_FLAG macro is used to separate requests from 32-bit
  * and 64-bit processes.
  */
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # define SUP_IOCTL_FLAG     128
-#elif defined(__X86__)
+#elif defined(RT_ARCH_X86)
 # define SUP_IOCTL_FLAG     0
 #else
 # error "dunno which arch this is!"
 #endif
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # define SUP_CTL_CODE(Function)         CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 # define SUP_CTL_CODE_FAST(Function)    CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_NEITHER, FILE_WRITE_ACCESS)
 
@@ -63,14 +63,14 @@
 #  define FILE_DEVICE_UNKNOWN    0x00000022
 # endif
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 # define SUP_CTL_CATEGORY               0xc0
 # define SUP_CTL_CODE(Function)         ((unsigned char)(Function))
 # define SUP_CTL_CATEGORY_FAST          0xc1
 # define SUP_CTL_CODE_FAST(Function)    ((unsigned char)(Function))
 
-#elif defined(__LINUX__)
-# ifdef __X86__ /** @todo With the next major version change, drop this branch. */
+#elif defined(RT_OS_LINUX)
+# ifdef RT_ARCH_X86 /** @todo With the next major version change, drop this branch. */
 #  define SUP_CTL_CODE(Function) \
     ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (sizeof(SUPDRVIOCTLDATA) << 16) )
 #  define SUP_CTL_CODE_FAST(Function) \
@@ -86,7 +86,7 @@
 #  endif
 # endif
 
-#elif defined(__L4__)
+#elif defined(RT_OS_L4)
 # define SUP_CTL_CODE(Function) \
     ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (sizeof(SUPDRVIOCTLDATA) << 16) )
 # define SUP_CTL_CODE_FAST(Function) \
@@ -149,13 +149,13 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # pragma pack(8)                        /* paranoia. */
 #else
 # pragma pack(4)                        /* paranoia. */
 #endif
 
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 /**
  * Structure used by OSes with less advanced ioctl interfaces, i.e. most
  * Unix like OSes :-)
@@ -166,7 +166,7 @@ typedef struct SUPDRVIOCTLDATA
     unsigned long   cbIn;
     void           *pvOut;
     unsigned long   cbOut;
-#ifdef __OS2__
+#ifdef RT_OS_OS2
     int             rc;
 #endif
 } SUPDRVIOCTLDATA, *PSUPDRVIOCTLDATA;

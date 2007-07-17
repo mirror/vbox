@@ -120,7 +120,7 @@
 /*
  * This sucks soooo badly on x86! Why don't they export __PAGE_KERNEL_EXEC so PAGE_KERNEL_EXEC would be usable?
  */
-#if defined(__AMD64__)
+#if defined(RT_ARCH_AMD64)
 # define MY_PAGE_KERNEL_EXEC    PAGE_KERNEL_EXEC
 #elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
 # define MY_PAGE_KERNEL_EXEC    __pgprot(cpu_has_pge ? _PAGE_KERNEL_EXEC | _PAGE_GLOBAL : _PAGE_KERNEL_EXEC)
@@ -148,7 +148,7 @@
 #  endif
 # endif
 
-# ifndef __AMD64__
+# ifndef RT_ARCH_AMD64
 /* In 2.6.9-22.ELsmp we have to call change_page_attr() twice when changing
  * the page attributes from PAGE_KERNEL to something else, because there appears
  * to be a bug in one of the many patches that redhat applied.
@@ -169,7 +169,7 @@
 #endif
 
 #ifndef MY_CHANGE_PAGE_ATTR
-# ifdef __AMD64__ /** @todo This is a cheap hack, but it'll get around that 'else BUG();' in __change_page_attr().  */
+# ifdef RT_ARCH_AMD64 /** @todo This is a cheap hack, but it'll get around that 'else BUG();' in __change_page_attr().  */
 #  define MY_CHANGE_PAGE_ATTR(pPages, cPages, prot) \
     do { \
         change_page_attr(pPages, cPages, PAGE_KERNEL_NOCACHE); \
@@ -204,7 +204,7 @@
  * - Linux <  2.6.21: The watchdog is normally enabled by default on x86_64
  *                    and disabled on i386.
  */
-# if defined(__AMD64__)
+# if defined(RT_ARCH_AMD64)
 #  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 21)
 #   define DO_DISABLE_NMI 1
 #  endif
@@ -266,7 +266,7 @@ static int              g_iModuleMajor;
 /** The module name. */
 #define DEVICE_NAME    "vboxdrv"
 
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 /**
  * Memory for the executable memory heap (in IPRT).
  */
@@ -607,7 +607,7 @@ nmi_activated:
         rc = RTR0Init(0);
         if (RT_SUCCESS(rc))
         {
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
             rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
 #endif
             /*
@@ -1024,7 +1024,7 @@ int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR p
     /*
      * Allocate page pointer array.
      */
-#ifdef __AMD64__ /** @todo check out if there is a correct way of getting memory below 4GB (physically). */
+#ifdef RT_ARCH_AMD64 /** @todo check out if there is a correct way of getting memory below 4GB (physically). */
     paPages = alloc_pages(GFP_DMA, cOrder);
 #else
     paPages = alloc_pages(GFP_USER, cOrder);

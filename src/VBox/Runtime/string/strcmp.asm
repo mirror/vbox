@@ -28,7 +28,7 @@ BEGINCODE
 ; @param    psz2   gcc: rsi  msc: rdx  x86:[esp+8]
 BEGINPROC RT_NOCRT(strcmp)
         ; input
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
   %define psz1 rcx
   %define psz2 rdx

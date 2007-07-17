@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 # define pthread_yield() pthread_yield_np()
 #endif
 
@@ -365,7 +365,7 @@ static int  rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoRes
          * Get current time and calc end of wait time.
          */
         struct timespec     ts = {0,0};
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         struct timeval      tv = {0,0};
         gettimeofday(&tv, NULL);
         ts.tv_sec = tv.tv_sec;
@@ -389,7 +389,7 @@ static int  rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoRes
             pthread_yield();
 
         /* take mutex */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         int rc = pthread_mutex_lock(&pIntEventSem->Mutex);
 #else
         int rc = pthread_mutex_timedlock(&pIntEventSem->Mutex, &ts);
@@ -600,7 +600,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
          * Get current time and calc end of wait time.
          */
         struct timespec     ts = {0,0};
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         struct timeval      tv = {0,0};
         gettimeofday(&tv, NULL);
         ts.tv_sec = tv.tv_sec;
@@ -620,7 +620,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         }
 
         /* take mutex */
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         int rc = pthread_mutex_lock(&pIntEventMultiSem->Mutex);
 #else
         int rc = pthread_mutex_timedlock(&pIntEventMultiSem->Mutex, &ts);
@@ -811,10 +811,10 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     }
     else
     {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         AssertMsgFailed(("Not implemented on Darwin yet because of incomplete pthreads API."));
         return VERR_NOT_IMPLEMENTED;
-#else /* !__DARWIN__ */
+#else /* !RT_OS_DARWIN */
         /*
          * Get current time and calc end of wait time.
          */
@@ -838,7 +838,7 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
             AssertMsg(rc == ETIMEDOUT, ("Failed to lock mutex sem %p, rc=%d.\n", MutexSem, rc)); NOREF(rc);
             return RTErrConvertFromErrno(rc);
         }
-#endif /* !__DARWIN__ */
+#endif /* !RT_OS_DARWIN */
     }
 
     /*
@@ -1029,10 +1029,10 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
     }
     else
     {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         AssertMsgFailed(("Not implemented on Darwin yet because of incomplete pthreads API."));
         return VERR_NOT_IMPLEMENTED;
-#else /* !__DARWIN__ */
+#else /* !RT_OS_DARWIN */
         /*
          * Get current time and calc end of wait time.
          */
@@ -1056,7 +1056,7 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
             AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
             return RTErrConvertFromErrno(rc);
         }
-#endif /* !__DARWIN__ */
+#endif /* !RT_OS_DARWIN */
     }
 
     return VINF_SUCCESS;
@@ -1128,10 +1128,10 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     }
     else
     {
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
         AssertMsgFailed(("Not implemented on Darwin yet because of incomplete pthreads API."));
         return VERR_NOT_IMPLEMENTED;
-#else /* !__DARWIN__ */
+#else /* !RT_OS_DARWIN */
         /*
          * Get current time and calc end of wait time.
          */
@@ -1155,7 +1155,7 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
             AssertMsg(rc == ETIMEDOUT, ("Failed read lock read-write sem %p, rc=%d.\n", RWSem, rc));
             return RTErrConvertFromErrno(rc);
         }
-#endif /* !__DARWIN__ */
+#endif /* !RT_OS_DARWIN */
     }
 
     ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)pthread_self());

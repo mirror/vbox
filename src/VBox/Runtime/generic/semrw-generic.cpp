@@ -23,7 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 # include <windows.h>
 # include <psapi.h>
 # include <malloc.h>
@@ -34,7 +34,7 @@
 #  define HAVE_INTRIN
 # endif
 
-#elif defined(__LINUX__) || defined(__FREEBSD__)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 # define KPRF_USE_PTHREAD
 # include <pthread.h>
 # include <stdint.h>
@@ -47,7 +47,7 @@
 #  define O_BINARY 0
 # endif
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 # define INCL_BASE
 # include <os2s.h>
 # include <stdint.h>
@@ -63,7 +63,7 @@
  */
 #define KPRF_NAME(Suffix)               KPrf##Suffix
 #define KPRF_TYPE(Prefix,Suffix)        Prefix##KPRF##Suffix
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define KPRF_DECL_FUNC(type, name)     extern "C"  __declspec(dllexport) type __cdecl KPRF_NAME(name)
 #else
 # define KPRF_DECL_FUNC(type, name)     extern "C" type KPRF_NAME(name)
@@ -89,9 +89,9 @@
 /** Mutex lock type. */
 #if defined(KPRF_USE_PTHREAD)
 typedef pthread_mutex_t     KPRF_TYPE(,MUTEX);
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
 typedef CRITICAL_SECTION    KPRF_TYPE(,MUTEX);
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 typedef struct _fmutex      KPRF_TYPE(,MUTEX);
 #endif
 /** Pointer to a mutex lock. */
@@ -101,7 +101,7 @@ typedef KPRF_TYPE(,MUTEX)  *KPRF_TYPE(P,MUTEX);
 #if defined(KPRF_USE_PTHREAD)
 /** Read/Write lock type. */
 typedef pthread_rwlock_t    KPRF_TYPE(,RWLOCK);
-#elif defined(__OS2__) || defined(__WIN__)
+#elif defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 /** Read/Write lock state. */
 typedef enum KPRF_TYPE(,RWLOCKSTATE)
 {
@@ -127,12 +127,12 @@ typedef struct KPRF_TYPE(,RWLOCK)
     uint32_t                cReadersWaiting;
     /** The current number of waiting writers. */
     uint32_t                cWritersWaiting;
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
     /** The handle of the event object on which the waiting readers block. (manual reset). */
     HANDLE                  hevReaders;
     /** The handle of the event object on which the waiting writers block. (manual reset). */
     HANDLE                  hevWriters;
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
     /** The handle of the event semaphore on which the waiting readers block. */
     HEV                     hevReaders;
     /** The handle of the event semaphore on which the waiting writers block. */
@@ -161,11 +161,11 @@ static int kPrfMutexInit(KPRF_TYPE(P,MUTEX) pMutex)
         return 0;
     return -1;
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
     InitializeCriticalSection(pMutex);
     return 0;
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     if (!_fmutex_create(pMutex, 0))
         return 0;
     return -1;
@@ -182,10 +182,10 @@ static void kPrfMutexDelete(KPRF_TYPE(P,MUTEX) pMutex)
 #if defined(KPRF_USE_PTHREAD)
     pthread_mutex_destroy(pMutex);
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
     DeleteCriticalSection(pMutex);
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     _fmutex_close(pMutex);
 #endif
 }
@@ -196,13 +196,13 @@ static void kPrfMutexDelete(KPRF_TYPE(P,MUTEX) pMutex)
  */
 static inline void kPrfMutexAcquire(KPRF_TYPE(P,MUTEX) pMutex)
 {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     EnterCriticalSection(pMutex);
 
 #elif defined(KPRF_USE_PTHREAD)
     pthread_mutex_lock(pMutex);
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     fmutex_request(pMutex);
 #endif
 }
@@ -214,13 +214,13 @@ static inline void kPrfMutexAcquire(KPRF_TYPE(P,MUTEX) pMutex)
  */
 static inline void kPrfMutexRelease(KPRF_TYPE(P,MUTEX) pMutex)
 {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     LeaveCriticalSection(pMutex);
 
 #elif defined(KPRF_USE_PTHREAD)
     pthread_mutex_lock(pMutex);
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     fmutex_request(pMutex);
 #endif
 }
@@ -241,14 +241,14 @@ static inline int kPrfRWLockInit(KPRF_TYPE(P,RWLOCK) pRWLock)
         return 0;
     return -1;
 
-#elif defined(__WIN__) || defined(__OS2__)
+#elif defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     if (kPrfMutexInit(&pRWLock->Mutex))
         return -1;
     pRWLock->cReaders = 0;
     pRWLock->cReadersWaiting = 0;
     pRWLock->cWritersWaiting = 0;
     pRWLock->enmState = RWLOCK_STATE_SHARED;
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
     pRWLock->hevReaders = CreateEvent(NULL, TRUE, TRUE, NULL);
     pRWLock->hevWriters = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (    pRWLock->hevReaders != INVALID_HANDLE_VALUE
@@ -257,7 +257,7 @@ static inline int kPrfRWLockInit(KPRF_TYPE(P,RWLOCK) pRWLock)
     CloseHandle(pRWLock->hevReaders);
     CloseHandle(pRWLock->hevWriters);
 
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
     APIRET rc = DosCreateEventSem(NULL, &pRWLock->hevReaders, 0, TRUE);
     if (!rc)
     {
@@ -287,7 +287,7 @@ static inline void kPrfRWLockDelete(KPRF_TYPE(P,RWLOCK) pRWLock)
 #if defined(KPRF_USE_PTHREAD)
     pthread_rwlock_destroy(pRWLock);
 
-#elif defined(__WIN__) || defined(__OS2__)
+#elif defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     if (pRWLock->enmState == RWLOCK_STATE_UNINITIALIZED)
         return;
 
@@ -296,13 +296,13 @@ static inline void kPrfRWLockDelete(KPRF_TYPE(P,RWLOCK) pRWLock)
     pRWLock->cReaders = 0;
     pRWLock->cReadersWaiting = 0;
     pRWLock->cWritersWaiting = 0;
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
     CloseHandle(pRWLock->hevReaders);
     pRWLock->hevReaders = INVALID_HANDLE_VALUE;
     CloseHandle(pRWLock->hevWriters);
     pRWLock->hevWriters = INVALID_HANDLE_VALUE;
 
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
     DosCloseEventSem(pRWLock->hevReaders);
     pRWLock->hevReaders = NULLHANDLE;
     DosCloseEventSem(pRWLock->hevWriters);
@@ -321,7 +321,7 @@ static inline void kPrfRWLockAcquireRead(KPRF_TYPE(P,RWLOCK) pRWLock)
 #if defined(KPRF_USE_PTHREAD)
     pthread_rwlock_rdlock(pRWLock);
 
-#elif defined(__WIN__) || defined(__OS2__)
+#elif defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     if (pRWLock->enmState == RWLOCK_STATE_UNINITIALIZED)
         return;
 
@@ -337,11 +337,11 @@ static inline void kPrfRWLockAcquireRead(KPRF_TYPE(P,RWLOCK) pRWLock)
     {
         /* have to wait */
         KPRF_ATOMIC_INC32(&pRWLock->cReadersWaiting);
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
         HANDLE hev = pRWLock->hevReaders;
         ResetEvent(hev);
 
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
         HEV    hev = pRWLock->hevReaders;
         ULONG cIgnored;
         DosResetEventSem(hev, &cIgnored);
@@ -349,7 +349,7 @@ static inline void kPrfRWLockAcquireRead(KPRF_TYPE(P,RWLOCK) pRWLock)
 # endif
         kPrfMutexRelease(&pRWLock->Mutex);
 
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
         switch (WaitForSingleObject(hev, INFINITE))
         {
             case WAIT_IO_COMPLETION:
@@ -361,7 +361,7 @@ static inline void kPrfRWLockAcquireRead(KPRF_TYPE(P,RWLOCK) pRWLock)
                 return;
         }
 
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
         switch (DosWaitEventSem(hev, SEM_INDEFINITE_WAIT))
         {
             case NO_ERROR:
@@ -396,7 +396,7 @@ static inline void kPrfRWLockReleaseRead(KPRF_TYPE(P,RWLOCK) pRWLock)
 #if defined(KPRF_USE_PTHREAD)
     pthread_rwlock_unlock(pRWLock);
 
-#elif defined(__WIN__) || defined(__OS2__)
+#elif defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     if (pRWLock->enmState == RWLOCK_STATE_UNINITIALIZED)
         return;
 
@@ -420,9 +420,9 @@ static inline void kPrfRWLockReleaseRead(KPRF_TYPE(P,RWLOCK) pRWLock)
     /*
      * Wake up one (or more on OS/2) waiting writers.
      */
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
     SetEvent(pRWLock->hevWriters);
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
     DosPostEvent(pRWLock->hevwriters);
 # endif
     kPrfMutexRelease(&pRWLock->Mutex);
@@ -440,7 +440,7 @@ static inline void kPrfRWLockAcquireWrite(KPRF_TYPE(P,RWLOCK) pRWLock)
 #if defined(KPRF_USE_PTHREAD)
     pthread_rwlock_wrlock(pRWLock);
 
-#elif defined(__WIN__) || defined(__OS2__)
+#elif defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     if (pRWLock->enmState == RWLOCK_STATE_UNINITIALIZED)
         return;
 
@@ -463,13 +463,13 @@ static inline void kPrfRWLockAcquireWrite(KPRF_TYPE(P,RWLOCK) pRWLock)
     KPRF_ATOMIC_INC32(&pRWLock->cWritersWaiting);
     for (;;)
     {
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
         HANDLE hev = pRWLock->hevWriters;
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
         HEV    hev = pRWLock->hevWriters;
 # endif
         kPrfMutexRelease(&pRWLock->Mutex);
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
         switch (WaitForSingleObject(hev, INFINITE))
         {
             case WAIT_IO_COMPLETION:
@@ -482,7 +482,7 @@ static inline void kPrfRWLockAcquireWrite(KPRF_TYPE(P,RWLOCK) pRWLock)
                 return;
         }
 
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
         switch (DosWaitEventSem(hev, SEM_INDEFINITE_WAIT))
         {
             case NO_ERROR:
@@ -526,7 +526,7 @@ static inline void kPrfRWLockReleaseWrite(KPRF_TYPE(P,RWLOCK) pRWLock)
 #if defined(KPRF_USE_PTHREAD)
     pthread_rwlock_unlock(pRWLock);
 
-#elif defined(__WIN__) || defined(__OS2__)
+#elif defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     if (pRWLock->enmState == RWLOCK_STATE_UNINITIALIZED)
         return;
 
@@ -551,9 +551,9 @@ static inline void kPrfRWLockReleaseWrite(KPRF_TYPE(P,RWLOCK) pRWLock)
     /*
      * Someone is waiting, wake them up as we change the state.
      */
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
     HANDLE hev = INVALID_HANDLE_VALUE;
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
     HEV    hev = NULLHANDLE;
 # endif
 
@@ -567,9 +567,9 @@ static inline void kPrfRWLockReleaseWrite(KPRF_TYPE(P,RWLOCK) pRWLock)
         KPRF_RWLOCK_SETSTATE(pRWLock, RWLOCK_STATE_SHARED);
         hev = pRWLock->hevReaders;
     }
-# if defined(__WIN__)
+# if defined(RT_OS_WINDOWS)
     SetEvent(hev);
-# elif defined(__OS2__)
+# elif defined(RT_OS_OS2)
     DosPostEvent(pRWLock->hevwriters);
 # endif
     kPrfMutexRelease(&pRWLock->Mutex);

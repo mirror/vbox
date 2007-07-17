@@ -22,10 +22,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # include <Windows.h>
 
-#elif defined __L4__
+#elif defined RT_OS_L4
 
 #else /* posix */
 # include <sys/time.h>
@@ -41,12 +41,12 @@
 
 DECLINLINE(uint64_t) OSNanoTS(void)
 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     uint64_t u64; /* manual say larger integer, should be safe to assume it's the same. */
     GetSystemTimeAsFileTime((LPFILETIME)&u64);
     return u64 * 100;
 
-#elif defined __L4__
+#elif defined RT_OS_L4
     /** @todo fix a different timesource on l4. */
     return RTTimeNanoTS();
 

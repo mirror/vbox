@@ -31,7 +31,7 @@ BEGINPROC RT_NOCRT(memcmp)
         cld
 
         ; Do the bulk of the work.
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     r10, rdi                ; save
         mov     r11, rsi                ; save
@@ -62,7 +62,7 @@ BEGINPROC RT_NOCRT(memcmp)
 %endif
 
         ; The remaining bytes.
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
         test    dl, 4
         jz      .dont_cmp_dword
         cmpsd
@@ -81,7 +81,7 @@ BEGINPROC RT_NOCRT(memcmp)
 .dont_cmp_byte:
 
 .done:
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     rdi, r10
         mov     rsi, r11
@@ -95,7 +95,7 @@ BEGINPROC RT_NOCRT(memcmp)
 ;
 ; Mismatches.
 ;
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .not_equal_qword:
     mov     ecx, 8
     sub     rsi, 8
@@ -113,7 +113,7 @@ BEGINPROC RT_NOCRT(memcmp)
     sub     xSI, 4
     sub     xDI, 4
     repe cmpsb
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     jmp     .not_equal_byte
 %else
 .not_equal_byte:

@@ -42,14 +42,14 @@
 #include <stdio.h>
 #include <iprt/uuid.h>
 
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
 extern char **__environ;
 char *myenv[] = { "+all.e", NULL };
 #endif
 
 int main()
 {
-#ifdef __L4ENV__
+#ifdef RT_OS_L4
     __environ = myenv;
 #endif
     int         rcRet = 0;

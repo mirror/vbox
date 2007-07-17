@@ -61,7 +61,7 @@ static unsigned g_cErrors;
     } while (0)
 
 
-#if !defined(PIC) || !defined(__X86__)
+#if !defined(PIC) || !defined(RT_ARCH_X86)
 const char *getCacheAss(unsigned u)
 {
     if (u == 0)
@@ -542,7 +542,7 @@ static void tstASMAtomicXchgU64(void)
 }
 
 
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 static void tstASMAtomicXchgU128(void)
 {
     struct
@@ -866,14 +866,14 @@ int main(int argc, char *argv[])
     /*
      * Execute the tests.
      */
-#if !defined(PIC) || !defined(__X86__)
+#if !defined(PIC) || !defined(RT_ARCH_X86)
     tstASMCpuId();
 #endif
     tstASMAtomicXchgU8();
     tstASMAtomicXchgU16();
     tstASMAtomicXchgU32();
     tstASMAtomicXchgU64();
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     tstASMAtomicXchgU128();
 #endif
     tstASMAtomicXchgPtr();

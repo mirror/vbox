@@ -44,7 +44,7 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
     rc = rtR0InitNative();
     if (RT_SUCCESS(rc))
     {
-#if !defined(__LINUX__) && !defined(__WIN__)
+#if !defined(RT_OS_LINUX) && !defined(RT_OS_WINDOWS)
         rc = rtThreadInit();
 #endif
         if (RT_SUCCESS(rc))
@@ -61,7 +61,7 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
  */
 RTR0DECL(void) RTR0Term(void)
 {
-#if !defined(__LINUX__) && !defined(__WIN__)
+#if !defined(RT_OS_LINUX) && !defined(RT_OS_WINDOWS)
     rtThreadTerm();
 #endif
     rtR0TermNative();

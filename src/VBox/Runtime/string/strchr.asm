@@ -30,7 +30,7 @@ BEGINPROC RT_NOCRT(strchr)
         cld
 
         ; check for ch == 0 and setup normal strchr.
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         or      dl, dl
         jz near .strlen
@@ -82,7 +82,7 @@ BEGINPROC RT_NOCRT(strchr)
 %ifdef ASM_CALL64_MSC
         mov     rsi, r9
 %endif
-%ifdef __X86__
+%ifdef RT_ARCH_X86
         mov     esi, ecx
 %endif
         ret
@@ -91,7 +91,7 @@ BEGINPROC RT_NOCRT(strchr)
 %ifdef ASM_CALL64_MSC
         mov     rsi, r9
 %endif
-%ifdef __X86__
+%ifdef RT_ARCH_X86
         mov     esi, ecx
 %endif
         xor     eax, eax
@@ -102,7 +102,7 @@ BEGINPROC RT_NOCRT(strchr)
 ;
 align 16
 .strlen:
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     r9, rdi                 ; save rdi
         mov     rdi, rcx
@@ -119,7 +119,7 @@ align 16
 %ifdef ASM_CALL64_MSC
         mov     rdi, r9
 %endif
-%ifdef __X86__
+%ifdef RT_ARCH_X86
         mov     edi, edx
 %endif
         ret

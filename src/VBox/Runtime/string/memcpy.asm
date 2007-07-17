@@ -31,7 +31,7 @@ BEGINPROC RT_NOCRT(memcpy)
         cld
 
         ; Do the bulk of the work.
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     r10, rdi                ; save
         mov     r11, rsi                ; save
@@ -59,7 +59,7 @@ BEGINPROC RT_NOCRT(memcpy)
 %endif
 
         ; The remaining bytes.
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
         test    dl, 4
         jz      .dont_move_dword
         movsd
@@ -74,7 +74,7 @@ BEGINPROC RT_NOCRT(memcpy)
         movsb
 .dont_move_byte:
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     rdi, r10
         mov     rsi, r11

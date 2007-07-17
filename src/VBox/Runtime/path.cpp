@@ -51,7 +51,7 @@ RTDECL(void) RTPathStripFilename(char *pszPath)
         switch (*psz)
         {
             /* handle separators. */
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
                 pszLastSep = psz + 1;
                 break;
@@ -87,7 +87,7 @@ RTDECL(void) RTPathStripExt(char *pszPath)
         switch (*pszPath)
         {
             /* handle separators. */
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
             case '\\':
 #endif
@@ -126,7 +126,7 @@ RTDECL(char *) RTPathFilename(const char *pszPath)
         switch (*psz)
         {
             /* handle separators. */
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
                 pszLastComp = psz + 1;
                 break;
@@ -163,7 +163,7 @@ RTDECL(void) RTPathStripTrailingSlash(char *pszPath)
         switch (*pszEnd)
         {
             case '/':
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case '\\':
 #endif
                 *pszEnd = '\0';
@@ -193,7 +193,7 @@ RTDECL(char *) RTPathExt(const char *pszPath)
         switch (*psz)
         {
             /* handle separators. */
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
                 pszExt = NULL;
                 break;
@@ -242,7 +242,7 @@ RTDECL(bool) RTPathHaveExt(const char *pszPath)
  */
 RTDECL(bool) RTPathHavePath(const char *pszPath)
 {
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     return strpbrk(pszPath, "/\\:") != NULL;
 #else
     return strpbrk(pszPath, "/") != NULL;
@@ -268,7 +268,7 @@ static int rtPathCompare(const char *pszPath1, const char *pszPath2, bool fLimit
     if (!pszPath2)
         return 1;
 
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     PRTUNICP puszPath1;
     int rc = RTStrToUni(pszPath1, &puszPath1);
     if (RT_FAILURE(rc))
@@ -434,7 +434,7 @@ RTDECL(char *) RTPathAbsDup(const char *pszPath)
  */
 size_t rtPathVolumeSpecLen(const char *pszPath)
 {
-#if defined (__OS2__) || defined (__WIN__)
+#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
     if (pszPath && *pszPath)
     {
         /* UTC path. */
@@ -476,7 +476,7 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPa
 {
     if (pszBase && pszPath && !rtPathVolumeSpecLen(pszPath))
     {
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
         /* The format for very long paths is not supported. */
         if (    (pszBase[0] == '/' || pszBase[0] == '\\')
             &&  (pszBase[1] == '/' || pszBase[1] == '\\')
@@ -500,7 +500,7 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPa
             return VERR_FILENAME_TOO_LONG;
 
         bool fRootSpec = pszPath[0] == '/'
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             || pszPath[0] == '\\'
 #endif
             ;

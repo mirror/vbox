@@ -28,7 +28,7 @@
 __BEGIN_DECLS
 extern char g_szrtProgramPath[RTPATH_MAX];
 
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define HAVE_UNC 1
 # define HAVE_DRIVE 1
 #endif

@@ -23,7 +23,7 @@
 
 BEGINCODE
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define _SP rsp
  %define _BP rbp
  %define _S  8
@@ -42,7 +42,7 @@ BEGINPROC RT_NOCRT(floor)
     mov     _BP, _SP
     sub     _SP, 10h
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     movsd   [_SP], xmm0
     fld     qword [_SP]
 %else
@@ -63,7 +63,7 @@ BEGINPROC RT_NOCRT(floor)
     ; Restore the fpu control word.
     fldcw   [_BP - 10h]
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     fstp    qword [_SP]
     movsd   xmm0, [_SP]
 %endif

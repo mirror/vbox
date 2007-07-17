@@ -23,7 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 # define RTTIME_INCL_TIMESPEC
 # include <sys/time.h>
 #endif
@@ -168,7 +168,7 @@ bool rtFsModeIsValidPermissions(RTFMODE fMode)
 }
 
 
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 /**
  * Internal worker function which setups RTFSOBJINFO based on a UNIX stat struct.
  *
@@ -274,4 +274,4 @@ void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, c
     pObjInfo->Attr.u.Unix.Device          = pStat->st_rdev;
 }
 
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */

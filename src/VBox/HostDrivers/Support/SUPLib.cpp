@@ -806,7 +806,7 @@ static int suplibGenerateCallVMMR0(uint8_t u8Interrupt)
     /*
      * Generate the code.
      */
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
     /*
      * reg params:
      *      <GCC>   <MSC>   <argument>

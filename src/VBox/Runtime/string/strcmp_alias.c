@@ -26,7 +26,7 @@
 #include <iprt/nocrt/string.h>
 #undef strcmp
 
-#if defined(__DARWIN__) || defined(__WIN__)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
 # ifndef __MINGW32__
 #  pragma weak strcmp
 # endif

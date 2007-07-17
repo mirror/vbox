@@ -71,7 +71,7 @@
  * decommitted.
  * Requires RTALLOC_EFENCE_TRACE.
  */
-#if defined(__LINUX__)
+#if defined(RT_OS_LINUX)
 # define RTALLOC_EFENCE_FREE_FILL       'f'
 #endif
 
@@ -93,7 +93,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # include <Windows.h>
 #else
 # include <sys/mman.h>

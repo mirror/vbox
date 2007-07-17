@@ -42,11 +42,11 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle)
      */
     if (!RTPathHaveExt(pszFilename))
     {
-#if defined(__OS2__) || defined(__WIN__)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
         static const char s_szSuff[] = ".DLL";
-#elif defined(__L4__)
+#elif defined(RT_OS_L4)
         static const char s_szSuff[] = ".s.so";
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
         static const char s_szSuff[] = ".dylib";
 #else
         static const char s_szSuff[] = ".so";
@@ -78,7 +78,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle)
 DECLCALLBACK(int) rtldrNativeGetSymbol(PRTLDRMODINTERNAL pMod, const char *pszSymbol, void **ppvValue)
 {
     PRTLDRMODNATIVE pModNative = (PRTLDRMODNATIVE)pMod;
-#ifdef __OS2__
+#ifdef RT_OS_OS2
     /* Prefix the symbol with an underscore (assuming __cdecl/gcc-default). */
     size_t cch = strlen(pszSymbol);
     char *psz = (char *)alloca(cch + 2);

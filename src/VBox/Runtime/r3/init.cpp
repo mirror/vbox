@@ -25,7 +25,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # include <process.h>
 #else
 # include <unistd.h>

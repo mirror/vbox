@@ -29,7 +29,7 @@ BEGINCODE
 ; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
 BEGINPROC RT_NOCRT(memset)
         cld
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         int3
   %error "Port me"

@@ -40,8 +40,8 @@
 
 
 /* After including cdefs, we can check that this really is Darwin. */
-#ifndef __DARWIN__
-# error "__DARWIN__ must be defined!"
+#ifndef RT_OS_DARWIN
+# error "RT_OS_DARWIN must be defined!"
 #endif
 
 /* now we're ready for including the rest of the Darwin headers. */

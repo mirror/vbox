@@ -47,7 +47,7 @@ typedef struct RTSPINLOCKINTERNAL
     uint32_t volatile   u32Magic;
     /** The linux spinlock structure. */
     spinlock_t          Spinlock;
-#if !defined(CONFIG_SMP) || defined(__AMD64__)
+#if !defined(CONFIG_SMP) || defined(RT_ARCH_AMD64)
     /** A placeholder on Uni systems so we won't piss off RTMemAlloc(). */
     void                *pvUniDummy;
 #endif

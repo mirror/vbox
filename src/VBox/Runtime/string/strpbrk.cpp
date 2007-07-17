@@ -39,7 +39,7 @@ _CRTIMP char * __cdecl strpbrk(const char *pszStr, const char *pszChars)
 # endif
 #else
 char *strpbrk(const char *pszStr, const char *pszChars)
-# if defined(__THROW) && !defined(__WIN__) && !defined(__OS2__)
+# if defined(__THROW) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
     __THROW
 # endif
 #endif

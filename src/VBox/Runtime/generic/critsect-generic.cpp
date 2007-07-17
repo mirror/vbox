@@ -37,7 +37,7 @@
  *          in order to get the RT thread structure there and this tree is
  *          protected by a critsect atm.
  */
-#if !defined(RTCRITSECT_STRICT) && defined(RT_STRICT) && !defined(__L4ENV__)
+#if !defined(RTCRITSECT_STRICT) && defined(RT_STRICT) && !defined(RT_OS_L4)
 # define RTCRITSECT_STRICT
 #endif
 

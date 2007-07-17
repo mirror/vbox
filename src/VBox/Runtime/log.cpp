@@ -225,7 +225,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
         if (pu8Code)
         {
             pLogger->pfnLogger = *(PFNRTLOGGER*)&pu8Code;
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
             /* this wrapper will not be used on AMD64, we will be requiring C99 compilers there. */
             *pu8Code++ = 0xcc;
 #else
@@ -1467,7 +1467,7 @@ RTDECL(void) RTLogLogger(PRTLOGGER pLogger, void *pvCallerRet, const char *pszFo
 {
     va_list args;
     va_start(args, pszFormat);
-#if defined(__DARWIN__) && defined(__X86__) && defined(IN_RING3)
+#if defined(RT_OS_DARWIN) && defined(RT_ARCH_X86) && defined(IN_RING3)
     /* manually align the stack before doing the call.
      * We boldly assume that there is a stack frame here! */
     __asm__ __volatile__("andl $-32, %%esp\t\n" ::: "%esp");

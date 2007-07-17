@@ -78,7 +78,7 @@ typedef struct RTDIR
     unsigned            cchName;
 #endif
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     /** Handle to the opened directory search. */
     HANDLE              hDir;
     /** Find data buffer.

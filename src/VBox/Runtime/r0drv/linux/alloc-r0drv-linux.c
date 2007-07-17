@@ -28,7 +28,7 @@
 #include <iprt/assert.h>
 #include "r0drv/alloc-r0drv.h"
 
-#if defined(__AMD64__) || defined(__DOXYGEN__)
+#if defined(RT_ARCH_AMD64) || defined(__DOXYGEN__)
 /**
  * We need memory in the module range (~2GB to ~0) this can only be obtained
  * thru APIs that are not exported (see module_alloc()).
@@ -111,7 +111,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
     Assert(cb != sizeof(void *)); /* 99% of pointer sized allocations are wrong. */
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
-#if defined(__AMD64__)
+#if defined(RT_ARCH_AMD64)
 # ifdef RTMEMALLOC_EXEC_HEAP
         if (g_HeapExec != NIL_RTHEAPSIMPLE)
         {
@@ -226,7 +226,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     cPages = cb >> PAGE_SHIFT;
     cOrder = CalcPowerOf2Order(cPages);
-#ifdef __AMD64__ /** @todo check out if there is a correct way of getting memory below 4GB (physically). */
+#ifdef RT_ARCH_AMD64 /** @todo check out if there is a correct way of getting memory below 4GB (physically). */
     paPages = alloc_pages(GFP_DMA, cOrder);
 #else
     paPages = alloc_pages(GFP_USER, cOrder);

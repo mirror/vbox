@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <stdio.h>
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
 #endif
 
@@ -43,7 +43,7 @@
 #include "internal/path.h"
 #include "internal/fs.h"
 
-#ifdef __L4__
+#ifdef RT_OS_L4
 # include <l4/vboxserver/vboxserver.h>
 #endif
 
@@ -181,7 +181,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
     if (!psz)
     {
         if (errno == ENOENT || errno == ENOTDIR
-#ifdef __OS2__
+#ifdef RT_OS_OS2
             /// @todo realpath() returns EIO for non-existent UNC paths like
             //  //server/share/subdir (i.e. when a subdir is specified within
             //  a share). We should either fix realpath() in libc or remove
@@ -314,7 +314,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
                                 else
                                 {
                                     if (errno != ENOENT && errno != ENOTDIR
-#ifdef __OS2__
+#ifdef RT_OS_OS2
                                         /// @todo see above
                                         && errno != EIO
 #endif
@@ -407,8 +407,8 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
          * OS/2 have an api for getting the program file name.
          */
 /** @todo use RTProcGetExecutableName() */
-#if defined(__LINUX__) || defined(__FREEBSD__)
-# ifdef __LINUX__
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+# ifdef RT_OS_LINUX
         int cchLink = readlink("/proc/self/exe", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
 # else
         int cchLink = readlink("/proc/curproc/file", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
@@ -422,10 +422,10 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
         }
         g_szrtProgramPath[cchLink] = '\0';
 
-#elif defined(__OS2__) || defined(__L4__)
+#elif defined(RT_OS_OS2) || defined(RT_OS_L4)
         _execname(g_szrtProgramPath, sizeof(g_szrtProgramPath));
 
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
         const char *pszImageName = _dyld_get_image_name(0);
         AssertReturn(pszImageName, VERR_INTERNAL_ERROR);
         size_t cchImageName = strlen(pszImageName);
