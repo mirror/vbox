@@ -26,7 +26,7 @@
 #include "SysHlp.h"
 
 #include <iprt/assert.h>
-#if !defined(__WIN__) && !defined(__LINUX__)
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_LINUX)
 #include <iprt/memobj.h>
 #endif 
 
@@ -35,7 +35,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
 {
     int rc = VINF_SUCCESS;
     
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     PMDL pMdl = IoAllocateMdl (pv, u32Size, FALSE, FALSE, NULL);
 
     if (pMdl == NULL)
@@ -59,7 +59,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         }
     }
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
     NOREF(ppvCtx);
     NOREF(pv);
     NOREF(u32Size);
@@ -83,7 +83,7 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
     NOREF(pv);
     NOREF(u32Size);
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     PMDL pMdl = (PMDL)pvCtx;
 
     if (pMdl != NULL)
@@ -92,7 +92,7 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
         IoFreeMdl (pMdl);
     }
 
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
     NOREF(pvCtx);
 
 #else
@@ -106,22 +106,22 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
 
 #ifndef VBGL_VBOXGUEST
 
-#if defined (__LINUX__) && !defined (__KERNEL__)
+#if defined (RT_OS_LINUX) && !defined (__KERNEL__)
 # include <unistd.h>
 # include <errno.h>
 # include <sys/fcntl.h>
 # include <sys/ioctl.h>
 #endif
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 __BEGIN_DECLS
 extern DECLVBGL(void *) vboxadd_cmc_open (void);
 extern DECLVBGL(void) vboxadd_cmc_close (void *);
 extern DECLVBGL(int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
 __END_DECLS
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 __BEGIN_DECLS
 /* 
  * On OS/2 we'll do the connecting in the assembly code of the 
@@ -135,7 +135,7 @@ __END_DECLS
 
 int vbglDriverOpen (VBGLDRIVER *pDriver)
 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     UNICODE_STRING uszDeviceName;
     RtlInitUnicodeString (&uszDeviceName, L"\\Device\\VBoxGuest");
 
@@ -156,7 +156,7 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     Log(("vbglDriverOpen VBoxGuest failed with ntstatus=%x\n", rc));
     return rc;
 
-#elif defined (__LINUX__)
+#elif defined (RT_OS_LINUX)
     void *opaque;
 
     opaque = (void *) vboxadd_cmc_open ();
@@ -167,7 +167,7 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     pDriver->opaque = opaque;
     return VINF_SUCCESS;
 
-#elif defined (__OS2__)
+#elif defined (RT_OS_OS2)
     /* 
      * Just check whether the connection was made or not.
      */
@@ -189,7 +189,7 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
 
 int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, uint32_t cbData)
 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     IO_STATUS_BLOCK ioStatusBlock;
 
     KEVENT Event;
@@ -229,10 +229,10 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 
     return NT_SUCCESS(rc)? VINF_SUCCESS: VERR_VBGL_IOCTL_FAILED;
 
-#elif defined (__LINUX__)
+#elif defined (RT_OS_LINUX)
     return vboxadd_cmc_call (pDriver->opaque, u32Function, pvData);
 
-#elif defined (__OS2__)
+#elif defined (RT_OS_OS2)
     if (    pDriver->u32Session 
         &&  pDriver->u32Session == g_VBoxGuestIDC.u32Session)
         return g_VBoxGuestIDC.pfnServiceEP(pDriver->u32Session, u32Function, pvData, cbData, NULL);
@@ -247,14 +247,14 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 
 void vbglDriverClose (VBGLDRIVER *pDriver)
 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     Log(("vbglDriverClose pDeviceObject=%x\n", pDriver->pDeviceObject));
     ObDereferenceObject (pDriver->pFileObject);
 
-#elif defined (__LINUX__)
+#elif defined (RT_OS_LINUX)
     vboxadd_cmc_close (pDriver->opaque);
 
-#elif defined (__OS2__)
+#elif defined (RT_OS_OS2)
     pDriver->u32Session = 0;
 
 #else

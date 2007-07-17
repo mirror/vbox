@@ -25,7 +25,7 @@
 
 #include <VBox/VBoxGuestLib.h>
 #ifndef _NTIFS_
-# ifdef __WIN__
+# ifdef RT_OS_WINDOWS
 #  if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
 #   include <iprt/asm.h>
 #   define _InterlockedExchange           _InterlockedExchange_StupidDDKvsCompilerCrap
@@ -85,7 +85,7 @@ typedef struct _VBSFMAP
 #define DRIVE_FLAG_LOCKED          (0x2)
 #define DRIVE_FLAG_WRITE_PROTECTED (0x4)
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 /** Device extension structure for each drive letter we created. */
 typedef struct _VBSFDRIVE
 {
@@ -111,7 +111,7 @@ typedef struct _VBSFDRIVE
     ERESOURCE DriveResource;
 } VBSFDRIVE;
 typedef VBSFDRIVE *PVBSFDRIVE;
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 /* forward decl */
 struct _MRX_VBOX_DEVICE_EXTENSION;

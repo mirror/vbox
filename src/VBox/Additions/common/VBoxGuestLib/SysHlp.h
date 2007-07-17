@@ -23,7 +23,7 @@
 #ifndef __SYSHLP__H
 #define __SYSHLP__H
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 # if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
 #  include <iprt/asm.h>
 #  define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
@@ -48,12 +48,12 @@ __END_DECLS
 
 typedef struct _VBGLDRIVER
 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     PDEVICE_OBJECT pDeviceObject;
     PFILE_OBJECT pFileObject;
-#elif defined (__LINUX__)
+#elif defined (RT_OS_LINUX)
     void *opaque;
-#elif defined (__OS2__)
+#elif defined (RT_OS_OS2)
     uint32_t u32Session; /**< just for sanity checking. */
 #else
 # error "Port me"
