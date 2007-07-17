@@ -840,7 +840,7 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
         return false;
     }
 
-#if !defined (__WIN__)
+#if !defined (RT_OS_WINDOWS)
     // these filters are temporarily ignored on Win32
     if (!aData.mManufacturer.isMatch (Bstr (mUsb->pszManufacturer)))
         return false;
@@ -1056,7 +1056,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                 case USBDeviceState_USBDeviceAvailable:
                     isImportant = false;
                     break;
-#ifndef __WIN__ /* Only windows really knows whether the device is unavailable or captured. */
+#ifndef RT_OS_WINDOWS /* Only windows really knows whether the device is unavailable or captured. */
                 case USBDeviceState_USBDeviceCaptured:
                     if (!mIsStatePending)
                         return false;
@@ -1079,7 +1079,7 @@ bool HostUSBDevice::updateState (PCUSBDEVICE aDev)
                     isImportant = false;
                     break;
                 case USBDeviceState_USBDeviceCaptured:
-#ifndef __WIN__ /* Only Windows really knows whether the device is busy or captured. */
+#ifndef RT_OS_WINDOWS /* Only Windows really knows whether the device is busy or captured. */
                     if (!mIsStatePending)
                         return false;
 #endif
@@ -1185,7 +1185,7 @@ void HostUSBDevice::checkForAsyncTimeout()
 {
     AssertReturnVoid (isLockedOnCurrentThread());
 
-#ifndef __WIN__ /* no timeouts on windows yet since I don't have all the details here... */
+#ifndef RT_OS_WINDOWS /* no timeouts on windows yet since I don't have all the details here... */
     if (isStatePending() && mPendingSince)
     {
         uint64_t elapsedNanoseconds = RTTimeNanoTS() - mPendingSince;

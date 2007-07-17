@@ -1120,7 +1120,7 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
         if (!aData.mRevision.isMatch (revision))
             continue;
 
-#if !defined (__WIN__)
+#if !defined (RT_OS_WINDOWS)
         /* these filters are temporarily ignored on Win32 */
         if (!aData.mManufacturer.isMatch (manufacturer))
             continue;

@@ -176,7 +176,7 @@ private:
     PUSBDEVICE mUsb;
 
     friend class USBProxyService;
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     friend class USBProxyServiceLinux;
 #endif
 };

@@ -27,7 +27,7 @@
 using namespace com;
 
 class ATL_NO_VTABLE VirtualBoxErrorInfo
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
     : public CComObjectRootEx <CComMultiThreadModel>
 #else
     : public CComObjectRootEx
@@ -47,7 +47,7 @@ public:
 
     NS_DECL_ISUPPORTS
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
     HRESULT init (IErrorInfo *aInfo);
 
@@ -57,7 +57,7 @@ public:
     STDMETHOD(GetHelpFile) (BSTR *pBstrHelpFile);
     STDMETHOD(GetHelpContext) (DWORD *pdwHelpContext);
 
-#else // !defined (__WIN__)
+#else // !defined (RT_OS_WINDOWS)
 
     HRESULT init (nsIException *aInfo);
 

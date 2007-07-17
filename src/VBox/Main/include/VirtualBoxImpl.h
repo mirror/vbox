@@ -33,7 +33,7 @@
 #include <vector>
 #include <map>
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include "win32/resource.h"
 #endif
 
@@ -55,7 +55,7 @@ class ProgressCollection;
 class Host;
 class SystemProperties;
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 class SVCHlpClient;
 #endif
 
@@ -66,7 +66,7 @@ class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxXMLUtil,
     public VirtualBoxSupportErrorInfoImpl <VirtualBox, IVirtualBox>,
     public VirtualBoxSupportTranslation <VirtualBox>,
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     public IDispatchImpl<IVirtualBox, &IID_IVirtualBox, &LIBID_VirtualBox,
                          kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>,
     public CComCoClass<VirtualBox, &CLSID_VirtualBox>
@@ -185,7 +185,7 @@ public:
     HRESULT addProgress (IProgress *aProgress);
     HRESULT removeProgress (INPTR GUIDPARAM aId);
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     typedef DECLCALLBACKPTR (HRESULT, SVCHelperClientFunc)
         (SVCHlpClient *aClient, Progress *aProgress, void *aUser, int *aVrc);
     HRESULT startSVCHelperClient (bool aPrivileged,
@@ -353,9 +353,9 @@ private:
     struct ClientWatcherData
     {
         ClientWatcherData()
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
             : mUpdateReq (NULL)
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
             : mUpdateReq (NIL_RTSEMEVENT)
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
             : mUpdateReq (NIL_RTSEMEVENT)
@@ -365,9 +365,9 @@ private:
             , mThread (NIL_RTTHREAD) {}
 
         // const objects not requiring locking
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
         const HANDLE mUpdateReq;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
         const RTSEMEVENT mUpdateReq;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         const RTSEMEVENT mUpdateReq;
@@ -392,7 +392,7 @@ private:
     static DECLCALLBACK(int) ClientWatcher (RTTHREAD thread, void *pvUser);
     static DECLCALLBACK(int) AsyncEventHandler (RTTHREAD thread, void *pvUser);
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     static DECLCALLBACK(int) SVCHelperClientThread (RTTHREAD aThread, void *aUser);
 #endif
 };

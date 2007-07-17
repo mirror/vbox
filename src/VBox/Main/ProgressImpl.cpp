@@ -768,7 +768,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
         /* try to import error info from the current thread */
 
 #if !defined (VBOX_WITH_XPCOM)
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
         ComPtr <IErrorInfo> err;
         rc = ::GetErrorInfo (0, err.asOutParam());
@@ -779,7 +779,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
                 rc = E_FAIL;
         }
 
-#endif // !defined (__WIN__)
+#endif // !defined (RT_OS_WINDOWS)
 #else // !defined (VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;

@@ -765,9 +765,9 @@ public:
 
     bool checkForDeath();
 
-#if defined (__WIN__) 
+#if defined (RT_OS_WINDOWS) 
     HANDLE ipcSem() { return mIPCSem; }
-#elif defined (__OS2__)
+#elif defined (RT_OS_OS2)
     HMTX ipcSem() { return mIPCSem; }
 #endif
 
@@ -831,10 +831,10 @@ private:
     SnapshotData mSnapshotData;
 
     /** interprocess semaphore handle (id) for this machine */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     HANDLE mIPCSem;
     Bstr mIPCSemName;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     HMTX mIPCSem;
     Bstr mIPCSemName;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)

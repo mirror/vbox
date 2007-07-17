@@ -42,7 +42,7 @@ using util::AutoMultiLock;
 #include <list>
 #include <map>
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
 #include <atlcom.h>
 
@@ -118,7 +118,7 @@ public:
 	CComPtr<IUnknown> m_spObj;
 };
 
-#endif // defined (__WIN__)
+#endif // defined (RT_OS_WINDOWS)
 
 // macros
 ////////////////////////////////////////////////////////////////////////////////
@@ -380,7 +380,7 @@ namespace stdx
 ////////////////////////////////////////////////////////////////////////////////
 
 class ATL_NO_VTABLE VirtualBoxBaseNEXT_base
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     : public CComObjectRootEx <CComMultiThreadModel>
 #else
     : public CComObjectRootEx
@@ -876,7 +876,7 @@ private:
 
 /// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
 class ATL_NO_VTABLE VirtualBoxBase : public VirtualBoxBaseNEXT_base
-//#ifdef __WIN__
+//#ifdef RT_OS_WINDOWS
 //    : public CComObjectRootEx<CComMultiThreadModel>
 //#else
 //    : public CComObjectRootEx
@@ -1107,14 +1107,14 @@ protected:
 template <class C, class I>
 class ATL_NO_VTABLE VirtualBoxSupportErrorInfoImpl
     : protected VirtualBoxSupportErrorInfoImplBase
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
     , public ISupportErrorInfo
 #else
 #endif
 {
 public:
 
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
     STDMETHOD(InterfaceSupportsErrorInfo) (REFIID riid)
     {
         const _ATL_INTMAP_ENTRY* pEntries = C::_GetEntries();
@@ -1145,7 +1145,7 @@ public:
 
         return bSupports ? S_OK : S_FALSE;
     }
-#endif // defined (__WIN__)
+#endif // defined (RT_OS_WINDOWS)
 
 protected:
 

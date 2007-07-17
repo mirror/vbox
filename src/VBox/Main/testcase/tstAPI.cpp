@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-#if defined __LINUX__
+#if defined RT_OS_LINUX
         Bstr src = L"/mnt/hugaida/common/develop/innotek/images/freedos-linux.vdi";
 #else
         Bstr src = L"E:/develop/innotek/images/freedos.vdi";
@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
         ComPtr <IHardDisk> hd;
         static const wchar_t *Names[] =
         {
-#ifndef __LINUX__
+#ifndef RT_OS_LINUX
             L"E:/Develop/innotek/images/thinker/freedos.vdi",
             L"E:/Develop/innotek/images/thinker/fReeDoS.vDI",
             L"E:/Develop/innotek/images/vmdk/haiku.vmdk",
@@ -549,7 +549,7 @@ int main(int argc, char *argv[])
     do
     {
         ComPtr <IMachine> machine;
-#if defined (__LINUX__)
+#if defined (RT_OS_LINUX)
         Bstr baseDir = L"/tmp/vbox";
 #else
         Bstr baseDir = L"C:\\vbox";

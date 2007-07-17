@@ -35,13 +35,13 @@
 #define VBOX_XML_VERSION "1.2"
 
 /** VirtualBox XML settings version string */
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 #   define VBOX_XML_PLATFORM     "windows"
-#elif defined (__LINUX__)
+#elif defined (RT_OS_LINUX)
 #   define VBOX_XML_PLATFORM     "linux"
-#elif defined (__DARWIN__)
+#elif defined (RT_OS_DARWIN)
 #   define VBOX_XML_PLATFORM     "macosx"
-#elif defined (__OS2__)
+#elif defined (RT_OS_OS2)
 #   define VBOX_XML_PLATFORM     "os2"
 #else
 #   error Unsupported platform!

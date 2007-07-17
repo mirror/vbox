@@ -20,7 +20,7 @@
  */
 
 #if !defined (VBOX_WITH_XPCOM)
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 #include <windows.h>
 #include <dbghelp.h>
 #endif
@@ -508,13 +508,13 @@ void VirtualBoxBase::AutoLock::CritSectEnter (RTCRITSECT *aLock)
 {
     AssertReturn (aLock, (void) 0);
 
-#if (defined(__LINUX__) || defined(__OS2__)) && defined(__GNUC__)
+#if (defined(RT_OS_LINUX) || defined(RT_OS_OS2)) && defined(__GNUC__)
 
     RTCritSectEnterDebug (aLock,
                           "AutoLock::lock()/enter() return address >>>", 0,
                           (RTUINTPTR) __builtin_return_address (1));
 
-#elif defined(__WIN__)
+#elif defined(RT_OS_WINDOWS)
 
     STACKFRAME sf;
     memset (&sf, 0, sizeof(sf));
@@ -571,7 +571,7 @@ void VirtualBoxBase::AutoLock::CritSectEnter (RTCRITSECT *aLock)
 
     RTCritSectEnter (aLock);
 
-#endif // defined(__LINUX__)...
+#endif // defined(RT_OS_LINUX)...
 }
 
 #endif // defined(DEBUG)
@@ -673,7 +673,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
         CheckComRCBreakRC (rc);
 
 #if !defined (VBOX_WITH_XPCOM)
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
 
         ComPtr <IVirtualBoxErrorInfo> curInfo;
         if (aPreserve)

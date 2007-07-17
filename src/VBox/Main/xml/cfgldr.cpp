@@ -106,7 +106,7 @@ XALAN_CPP_NAMESPACE_USE
 #ifndef BSTR
 #define OLECHAR wchar_t
 #define BSTR void*
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 extern "C" BSTR __stdcall SysAllocString(const OLECHAR* sz);
 #else
 extern "C" BSTR SysAllocString(const OLECHAR* sz);

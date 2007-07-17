@@ -41,7 +41,7 @@ public:
             : mSlot (0), mEnabled (FALSE)
             , mAttachmentType (NetworkAttachmentType_NoNetworkAttachment)
             ,  mCableConnected (TRUE), mTraceEnabled (FALSE)
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
             , mHostInterface ("") // cannot be null
 #endif
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING

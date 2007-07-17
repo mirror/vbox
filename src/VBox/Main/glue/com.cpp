@@ -46,7 +46,7 @@
 #include "VBox/com/assert.h"
 
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 #define VBOX_USER_HOME_SUFFIX   "Library/VirtualBox"
 #else
 #define VBOX_USER_HOME_SUFFIX   ".VirtualBox"

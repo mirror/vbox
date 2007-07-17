@@ -19,7 +19,7 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 # include <prproces.h>
 #endif
 
@@ -58,11 +58,11 @@
 
 
 /// @todo move this to RT headers (and use them in MachineImpl.cpp as well)
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 #define HOSTSUFF_EXE ".exe"
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
 #define HOSTSUFF_EXE ""
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
 
 /** Name of the server executable. */
@@ -168,7 +168,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
                 startedOnce = true;
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
                 char *const args[] = { VBoxSVCPath, "--automate", 0 };
                 /* use NSPR because we want the process to be detached right
                  * at startup (it isn't possible to detach it later on) */

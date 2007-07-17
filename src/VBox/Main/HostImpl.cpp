@@ -18,7 +18,7 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -37,9 +37,9 @@
 # undef FALSE
 #endif
 #include <errno.h>
-#endif /* __LINUX __ */
+#endif /* RT_OS_LINUX */
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #define _WIN32_DCOM
 #include <windows.h>
 #include <shellapi.h>
@@ -50,7 +50,7 @@
 #include <setupapi.h>
 #include <shlobj.h>
 #include <cfgmgr32.h>
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 
 
@@ -65,11 +65,11 @@
 #include "MachineImpl.h"
 #include "Logging.h"
 
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
 #include "darwin/iokit.h"
 #endif
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include "HostNetworkInterfaceImpl.h"
 #endif
 
@@ -118,11 +118,11 @@ HRESULT Host::init (VirtualBox *parent)
 
     mParent = parent;
 
-#if defined (__DARWIN__) && defined (VBOX_WITH_USB)
+#if defined (RT_OS_DARWIN) && defined (VBOX_WITH_USB)
     mUSBProxyService = new USBProxyServiceDarwin (this);
-#elif defined (__LINUX__) && defined (VBOX_WITH_USB)
+#elif defined (RT_OS_LINUX) && defined (VBOX_WITH_USB)
     mUSBProxyService = new USBProxyServiceLinux (this);
-#elif defined (__WIN__) && defined (VBOX_WITH_USB)
+#elif defined (RT_OS_WINDOWS) && defined (VBOX_WITH_USB)
     mUSBProxyService = new USBProxyServiceWin32 (this);
 #else
     mUSBProxyService = new USBProxyService (this);
@@ -178,7 +178,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     CHECK_READY();
     std::list <ComObjPtr <HostDVDDrive> > list;
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     int sz = GetLogicalDriveStrings(0, NULL);
     TCHAR *hostDrives = new TCHAR[sz+1];
     GetLogicalDriveStrings(sz, hostDrives);
@@ -198,7 +198,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     }
     while (*p);
     delete[] hostDrives;
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
 #ifdef VBOX_USE_LIBHAL
     if (!getDVDInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
 #endif /* USE_LIBHAL defined */
@@ -245,7 +245,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
             parseMountTable((char*)"/etc/fstab", list);
         }
     }
-#elif defined(__DARWIN__)
+#elif defined(RT_OS_DARWIN)
     PDARWINDVD cur = DarwinGetDVDDrives();
     while (cur)
     {
@@ -286,7 +286,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
 
     std::list <ComObjPtr <HostFloppyDrive> > list;
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     int sz = GetLogicalDriveStrings(0, NULL);
     TCHAR *hostDrives = new TCHAR[sz+1];
     GetLogicalDriveStrings(sz, hostDrives);
@@ -306,7 +306,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     }
     while (*p);
     delete[] hostDrives;
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
 #ifdef VBOX_USE_LIBHAL
     if (!getFloppyInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
 #endif /* USE_LIBHAL defined */
@@ -362,7 +362,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     return S_OK;
 }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 
 static bool IsTAPDevice(const char *guid)
 {
@@ -501,7 +501,7 @@ RTLogPrintf("Connection name %ls\n", name.mutableRaw());
     collection.queryInterfaceTo (networkInterfaces);
     return S_OK;
 }
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
 {
@@ -685,7 +685,7 @@ STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 // IHost methods
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 
 /**
  * Returns TRUE if the Windows version is 6.0 or greater (i.e. it's Vista and
@@ -873,7 +873,7 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
     return rc;
 }
 
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter **aFilter)
 {
@@ -1457,7 +1457,7 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
 // private methods
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 # ifdef VBOX_USE_LIBHAL
 /**
  * Helper function to query the hal subsystem for information about DVD drives attached to the
@@ -1877,7 +1877,7 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
     }
     return retValue;
 }
-#endif // __LINUX__
+#endif // RT_OS_LINUX
 
 /**
  *  Applies all (golbal and VM) filters to the given USB device. The device
@@ -2205,7 +2205,7 @@ HRESULT Host::checkUSBProxyService()
 #endif
 }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 
 /* The original source of the VBoxTAP adapter creation/destruction code has the following copyright */
 /*
@@ -3070,5 +3070,5 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
     return vrc;
 }
 
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 

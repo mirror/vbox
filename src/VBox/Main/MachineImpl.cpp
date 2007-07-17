@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#if defined(__WIN__)
-#elif defined(__LINUX__)
+#if defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_LINUX)
 #endif
 
 #ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
@@ -62,11 +62,11 @@
 
 #include <algorithm>
 
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 #define HOSTSUFF_EXE ".exe"
-#else /* !__WIN__ */
+#else /* !RT_OS_WINDOWS */
 #define HOSTSUFF_EXE ""
-#endif /* !__WIN__ */
+#endif /* !RT_OS_WINDOWS */
 
 // defines / prototypes
 /////////////////////////////////////////////////////////////////////////////
@@ -2800,7 +2800,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     Bstr type (aType);
     if (type == "gui")
     {
-#ifdef __DARWIN__ /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
+#ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
         const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
 #else
         const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
@@ -2809,7 +2809,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         strcpy (cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-#ifdef __WIN__ /** @todo drop this once the RTProcCreate bug has been fixed */
+#ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
         const char * args[] = {path, "-startvm", idStr, 0 };
 #else
         Utf8Str name = mUserData->mName;
@@ -2826,7 +2826,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         strcpy (cmd, VBoxVRDP_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         const char * args[] = {path, "-startvm", idStr, 0 };
 #else
         Utf8Str name = mUserData->mName;
@@ -2843,7 +2843,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         strcpy (cmd, VBoxVRDP_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         const char * args[] = {path, "-startvm", idStr, "-capture", 0 };
 #else
         Utf8Str name = mUserData->mName;
@@ -4261,7 +4261,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                 /* Host Interface Networking */
                 Bstr name;
                 CFGLDRQueryBSTR (attachmentNode, "name", name.asOutParam());
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
                 /* @name can be empty on Win32, but not null */
                 ComAssertBreak (!name.isNull(), rc = E_FAIL);
 #endif
@@ -4353,7 +4353,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         audioDriver = AudioDriverType_NullAudioDriver;
         if      (driver == L"null")
             ; // Null has been set above
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         else if (driver == L"winmm")
 #ifdef VBOX_WITH_WINMM
             audioDriver = AudioDriverType_WINMMAudioDriver;
@@ -4363,8 +4363,8 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
 #endif
         else if (driver == L"dsound")
             audioDriver = AudioDriverType_DSOUNDAudioDriver;
-#endif // __WIN__
-#ifdef __LINUX__
+#endif // RT_OS_WINDOWS
+#ifdef RT_OS_LINUX
         else if (driver == L"oss")
             audioDriver = AudioDriverType_OSSAudioDriver;
         else if (driver == L"alsa")
@@ -4374,12 +4374,12 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             // fall back to OSS
             audioDriver = AudioDriverType_OSSAudioDriver;
 #endif
-#endif // __LINUX__
-#ifdef __DARWIN__
+#endif // RT_OS_LINUX
+#ifdef RT_OS_DARWIN
         else if (driver == L"coreaudio")
             audioDriver = AudioDriverType_CoreAudioDriver;
 #endif
-#ifdef __OS2__
+#ifdef RT_OS_OS2
         else if (driver == L"mmpm")
             audioDriver = AudioDriverType_MMPMAudioDriver;
 #endif
@@ -6087,7 +6087,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                 {
                     CFGLDRAppendChildNode (networkAdapterNode, "HostInterface", &attachmentNode);
                     const Bstr &name = mNetworkAdapters [slot]->data()->mHostInterface;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
                     Assert (!name.isNull());
 #endif
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
@@ -6168,42 +6168,42 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                 CFGLDRSetString (adapterNode, "driver", "null");
                 break;
             }
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
             case AudioDriverType_WINMMAudioDriver:
-#ifdef VBOX_WITH_WINMM
+# ifdef VBOX_WITH_WINMM
             {
                 CFGLDRSetString (adapterNode, "driver", "winmm");
                 break;
             }
-#endif
+# endif
             case AudioDriverType_DSOUNDAudioDriver:
             {
                 CFGLDRSetString (adapterNode, "driver", "dsound");
                 break;
             }
-#endif /* __WIN__ */
-#ifdef __LINUX__
+#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_LINUX
             case AudioDriverType_ALSAAudioDriver:
-#ifdef VBOX_WITH_ALSA
+# ifdef VBOX_WITH_ALSA
             {
                 CFGLDRSetString (adapterNode, "driver", "alsa");
                 break;
             }
-#endif
+# endif
             case AudioDriverType_OSSAudioDriver:
             {
                 CFGLDRSetString (adapterNode, "driver", "oss");
                 break;
             }
-#endif /* __LINUX__ */
-#ifdef __DARWIN__
+#endif /* RT_OS_LINUX */
+#ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudioDriver:
             {
                 CFGLDRSetString (adapterNode, "driver", "coreaudio");
                 break;
             }
 #endif
-#ifdef __OS2__
+#ifdef RT_OS_OS2
             case AudioDriverType_MMPMAudioDriver:
             {
                 CFGLDRSetString (adapterNode, "driver", "mmpm");
@@ -7542,9 +7542,9 @@ HRESULT SessionMachine::FinalConstruct()
     /* set the proper type to indicate we're the SessionMachine instance */
     unconst (mType) = IsSessionMachine;
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     mIPCSem = NULL;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     mIPCSem = NULLHANDLE;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     mIPCSem = -1;
@@ -7579,7 +7579,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
     /* create the interprocess semaphore */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     mIPCSemName = aMachine->mData->mConfigFileFull;
     for (size_t i = 0; i < mIPCSemName.length(); i++)
         if (mIPCSemName[i] == '\\')
@@ -7589,7 +7589,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
                      ("Cannot create IPC mutex '%ls', err=%d\n",
                       mIPCSemName.raw(), ::GetLastError()),
                      E_FAIL);
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     Utf8Str ipcSem = Utf8StrFmt ("\\SEM32\\VBOX\\VM\\{%Vuuid}",
                                  aMachine->mData->mUuid.raw());
     mIPCSemName = ipcSem;
@@ -7712,11 +7712,11 @@ void SessionMachine::uninit (Uninit::Reason aReason)
          *  below, the following is enough.
          */
         LogFlowThisFunc (("Initialization failed.\n"));
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
         if (mIPCSem)
             ::CloseHandle (mIPCSem);
         mIPCSem = NULL;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
         if (mIPCSem != NULLHANDLE)
             ::DosCloseMutexSem (mIPCSem);
         mIPCSem = NULLHANDLE;
@@ -7860,11 +7860,11 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     mData->mSession.mType.setNull();
 
     /* close the interprocess semaphore before leaving the shared lock */
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
     if (mIPCSem)
         ::CloseHandle (mIPCSem);
     mIPCSem = NULL;
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
     if (mIPCSem != NULLHANDLE)
         ::DosCloseMutexSem (mIPCSem);
     mIPCSem = NULLHANDLE;
@@ -7924,7 +7924,7 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
 
     AutoReaderLock alock (this);
 
-#if defined(__WIN__) || defined(__OS2__)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     mIPCSemName.cloneTo (id);
     return S_OK;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
@@ -8680,7 +8680,7 @@ bool SessionMachine::checkForDeath()
                  Uninit::Normal :
                  Uninit::Abnormal;
 
-#if defined(__WIN__)
+#if defined(RT_OS_WINDOWS)
 
         AssertMsg (mIPCSem, ("semaphore must be created"));
 
@@ -8691,7 +8691,7 @@ bool SessionMachine::checkForDeath()
 
         ret = true;
 
-#elif defined(__OS2__)
+#elif defined(RT_OS_OS2)
 
         AssertMsg (mIPCSem, ("semaphore must be created"));
 

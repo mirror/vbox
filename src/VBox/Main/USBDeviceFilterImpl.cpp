@@ -422,7 +422,7 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
             return setError (E_INVALIDARG,
                 tr ("Vendor ID filter string '%ls' is not valid (error at position %d)"),
                 aVendorId, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
@@ -476,7 +476,7 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
             return setError (E_INVALIDARG,
                 tr ("Product ID filter string '%ls' is not valid (error at position %d)"),
                 aProductId, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
@@ -530,7 +530,7 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
             return setError (E_INVALIDARG,
                 tr ("Revision filter string '%ls' is not valid (error at position %d)"),
                 aRevision, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
@@ -724,7 +724,7 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
             return setError (E_INVALIDARG,
                 tr ("Port number filter string '%ls' is not valid (error at position %d)"),
                 aPort, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
@@ -1148,7 +1148,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(VendorId) (INPTR BSTR aVendorId)
             return setError (E_INVALIDARG,
                 tr ("Vendor ID filter string '%ls' is not valid (error at position %d)"),
                 aVendorId, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
@@ -1197,7 +1197,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(ProductId) (INPTR BSTR aProductId)
             return setError (E_INVALIDARG,
                 tr ("Product ID filter string '%ls' is not valid (error at position %d)"),
                 aProductId, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
@@ -1246,7 +1246,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Revision) (INPTR BSTR aRevision)
             return setError (E_INVALIDARG,
                 tr ("Revision filter string '%ls' is not valid (error at position %d)"),
                 aRevision, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
@@ -1421,7 +1421,7 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Port) (INPTR BSTR aPort)
             return setError (E_INVALIDARG,
                 tr ("Port number filter string '%ls' is not valid (error at position %d)"),
                 aPort, flt.errorPosition() + 1);
-#if defined (__WIN__)
+#if defined (RT_OS_WINDOWS)
         // intervalic filters are temporarily disabled
         if (!flt.first().isNull() && flt.first().isValid())
             return setError (E_INVALIDARG,
