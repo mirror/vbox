@@ -135,6 +135,7 @@ int main( int argc, char ** argv )
 
     QIApplication a (argc, argv);
 
+#ifndef RT_OS_DARWIN
     /* some gui qt-styles has it's own different color for buttons
      * causing tool-buttons and dropped menu displayed in
      * different annoying color, so fixing palette button's color */
@@ -146,6 +147,7 @@ int main( int argc, char ** argv )
     pal.setColor (QPalette::Inactive, QColorGroup::Button,
                   pal.color (QPalette::Inactive, QColorGroup::Background));
     a.setPalette (pal);
+#endif
 
 #ifdef Q_WS_X11
     /* version check (major.minor are sensitive, fix number is ignored) */
