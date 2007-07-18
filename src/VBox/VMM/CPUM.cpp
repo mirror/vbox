@@ -169,7 +169,7 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternal(pVM, "cpumguest",    "Displays the guest cpu state.",       &cpumR3InfoGuest);
     DBGFR3InfoRegisterInternal(pVM, "cpumhyper",    "Displays the hypervisor cpu state.",  &cpumR3InfoHyper);
     DBGFR3InfoRegisterInternal(pVM, "cpumhost",     "Displays the host cpu state.",        &cpumR3InfoHost);
-    DBGFR3InfoRegisterInternal(pVM, "cpuid",        "Displays the guest cpuid leafs.",     &cpumR3CpuIdInfo);
+    DBGFR3InfoRegisterInternal(pVM, "cpuid",        "Displays the guest cpuid leaves.",     &cpumR3CpuIdInfo);
 
     /*
      * Initialize the Guest CPU state.
@@ -995,7 +995,7 @@ const char *getL2CacheAss(unsigned u)
 
 
 /**
- * Display the guest CpuId leafs.
+ * Display the guest CpuId leaves.
  *
  * @param   pVM         VM Handle.
  * @param   pHlp        The info helper functions.
