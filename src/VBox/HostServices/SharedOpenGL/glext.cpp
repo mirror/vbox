@@ -2,10 +2,13 @@
  *
  * VBox OpenGL helper functions
  *
- * OpenGL extensions 
+ * OpenGL extensions
  *
  * References:  http://oss.sgi.com/projects/ogl-sample/registry/
  *              http://icps.u-strasbg.fr/~marchesin/perso/extensions/
+ */
+
+/*
  *
  * Copyright (C) 2006-2007 innotek GmbH
  *
@@ -77,7 +80,7 @@ bool vboxwglGetProcAddress(char *pszFunctionName)
     return false;
 }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 void vboxwglSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
     Assert(pfnwglSwapIntervalEXT);
@@ -104,4 +107,4 @@ void vboxwglGetSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     pClient->fHasLastError = true;
     pClient->ulLastError   = GetLastError();
 }
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */

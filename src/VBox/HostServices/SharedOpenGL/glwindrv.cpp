@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox OpenGL
  */
 
@@ -35,7 +34,7 @@
 LRESULT CALLBACK VBoxOGLWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
-    {		
+    {
     case WM_CREATE:
         return 0;
 
@@ -47,7 +46,7 @@ LRESULT CALLBACK VBoxOGLWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         return 0;
 
     default:
-        return DefWindowProc( hWnd, message, wParam, lParam );			
+        return DefWindowProc( hWnd, message, wParam, lParam );
     }
 }
 
@@ -56,10 +55,10 @@ DECLCALLBACK(int) vboxWndThread(RTTHREAD ThreadSelf, void *pvUser)
     VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvUser;
     HWND        hwnd;
 
-    hwnd = pClient->hwnd= CreateWindow("VBoxOGL", "VirtualBox OpenGL", 
+    hwnd = pClient->hwnd= CreateWindow("VBoxOGL", "VirtualBox OpenGL",
 		                               WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE,
 		                               0, 0, 0, 0,
-        	                        NULL, NULL, 0, NULL);	
+        	                        NULL, NULL, 0, NULL);
     Assert(hwnd);
     while(true)
     {
@@ -67,7 +66,7 @@ DECLCALLBACK(int) vboxWndThread(RTTHREAD ThreadSelf, void *pvUser)
 
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            if (msg.message == WM_QUIT) 
+            if (msg.message == WM_QUIT)
                 break;
 
             TranslateMessage(&msg);
