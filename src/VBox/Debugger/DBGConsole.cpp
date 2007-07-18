@@ -784,7 +784,7 @@ static const DBGCCMD    g_aCmds[] =
     { "format",     1,        1,        &g_aArgAny[0],      ELEMENTS(g_aArgAny),        NULL,               0,          dbgcCmdFormat,      "",                     "Evaluates an expression and formats it." },
     { "g",          0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdGo,          "",                     "Continue execution." },
     { "harakiri",   0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdHarakiri,    "",                     "Kills debugger process." },
-    { "help",       0,        ~0,       &g_aArgHelp[0],     ELEMENTS(g_aArgHelp),       NULL,               0,          dbgcCmdHelp,        "[cmd/op [..]]",        "Display help. For help about info items try 'help info'." },
+    { "help",       0,        ~0,       &g_aArgHelp[0],     ELEMENTS(g_aArgHelp),       NULL,               0,          dbgcCmdHelp,        "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
     { "info",       1,        2,        &g_aArgInfo[0],     ELEMENTS(g_aArgInfo),       NULL,               0,          dbgcCmdInfo,        "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },
     { "k",          0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdStack,       "",                     "Callstack." },
     { "kg",         0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdStack,       "",                     "Callstack - guest." },
