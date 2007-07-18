@@ -47,7 +47,7 @@
 #define __USE_GNU
 #endif
 #include <ucontext.h>
-#ifdef __AMD64__
+#ifdef RT_ARCH_AMD64
 # define REG_PC REG_RIP
 #else
 # define REG_PC REG_EIP

@@ -875,7 +875,7 @@ set -x
 
 g++ -g \
     -framework IOKit -framework Carbon -framework QuickTime \
-    -D__DARWIN__ -DIN_RING3 -DQT_NO_DEBUG -DQT_THREAD_SUPPORT -DTESTING \
+    -DRT_OS_DARWIN -DIN_RING3 -DQT_NO_DEBUG -DQT_THREAD_SUPPORT -DTESTING \
     -I include/ \
     -I ../../../../include \
     -I /Developer/SDKs/MacOSX10.4u.sdk/Developer/Headers/ \

@@ -1734,12 +1734,12 @@ void VBoxConsoleView::focusEvent (bool focus)
 {
     if (focus)
     {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         if (   gs.autoCapture()
             && GetAncestor (winId(), GA_ROOT) == GetForegroundWindow())
 #else
         if (gs.autoCapture())
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
         {
             captureKbd (true);
 /// @todo (dmik)

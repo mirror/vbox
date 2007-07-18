@@ -68,7 +68,7 @@ using namespace com;
 #ifndef NS_GET_IID
 # define NS_GET_IID(I) IID_##I
 #endif
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 #define IUnknown nsISupports
 #endif
 
@@ -227,17 +227,17 @@ static void showLogo(void)
 
 static void printUsage(USAGECATEGORY u64Cmd)
 {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     bool fLinux = true;
 #else
     bool fLinux = false;
 #endif
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     bool fWin = true;
 #else
     bool fWin = false;
 #endif
-#ifdef __DARWIN__
+#ifdef RT_OS_DARWIN
     bool fDarwin = true;
 #else
     bool fDarwin = false;
@@ -1703,7 +1703,7 @@ static int handleList(int argc, char *argv[],
             }
         }
     }
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     else
     if (strcmp(argv[0], "hostifs") == 0)
     {
@@ -1729,7 +1729,7 @@ static int handleList(int argc, char *argv[],
             }
         }
     }
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
     else
     if (strcmp(argv[0], "hdds") == 0)
     {
@@ -2413,7 +2413,7 @@ static int handleCloneVDI(int argc, char *argv[],
 
 static int handleConvertDDImage(int argc, char *argv[])
 {
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     const bool fReadFromStdIn = (argc >= 1) && !strcmp(argv[0], "stdin");
 #else
     const bool fReadFromStdIn = false;
@@ -2822,7 +2822,7 @@ static int handleModifyVM(int argc, char *argv[],
     std::vector <char *> nictracefile (NetworkAdapterCount, 0);
     std::vector <char *> hostifdev (NetworkAdapterCount, 0);
     std::vector <const char *> intnet (NetworkAdapterCount, 0);
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     std::vector <char *> tapsetup (NetworkAdapterCount, 0);
     std::vector <char *> tapterm (NetworkAdapterCount, 0);
 #endif
@@ -3159,7 +3159,7 @@ static int handleModifyVM(int argc, char *argv[],
             intnet[n - 1] = argv[i + 1];
             i++;
         }
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
         else if (strncmp(argv[i], "-tapsetup", 9) == 0)
         {
             unsigned n = parseNum(&argv[i][9], NetworkAdapterCount, "NIC");
@@ -3184,7 +3184,7 @@ static int handleModifyVM(int argc, char *argv[],
             tapterm[n - 1] = argv[i + 1];
             i++;
         }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
         else if (strncmp(argv[i], "-macaddress", 11) == 0)
         {
             unsigned n = parseNum(&argv[i][11], NetworkAdapterCount, "NIC");
@@ -3306,7 +3306,7 @@ static int handleModifyVM(int argc, char *argv[],
                     return errorArgument("Third UART argument must be 'client' or 'server'");
                 uarts_server[n - 1] = argv[i];
                 i++;
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
                 if (strncmp(argv[i], "\\\\.\\pipe\\", 9))
                     return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
 #endif
@@ -3795,7 +3795,7 @@ static int handleModifyVM(int argc, char *argv[],
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_NullAudioDriver));
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
             else if (strcmp(audio, "winmm") == 0)
             {
@@ -3808,8 +3808,8 @@ static int handleModifyVM(int argc, char *argv[],
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_DSOUNDAudioDriver));
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
-#endif /* __WIN__ */
-#ifdef __LINUX__
+#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_LINUX
             else if (strcmp(audio, "oss") == 0)
             {
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSSAudioDriver));
@@ -3822,14 +3822,14 @@ static int handleModifyVM(int argc, char *argv[],
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
 # endif
-#endif /* !__LINUX__ */
-#ifdef __DARWIN__
+#endif /* !RT_OS_LINUX */
+#ifdef RT_OS_DARWIN
             else if (strcmp(audio, "coreaudio") == 0)
             {
                 CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudioDriver));
                 CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
             }
-#endif /* !__DARWIN__ */
+#endif /* !RT_OS_DARWIN */
             else
             {
                 errorArgument("Invalid -audio argument '%s'", audio);
@@ -4015,7 +4015,7 @@ static int handleModifyVM(int argc, char *argv[],
                 }
             }
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
             /* the TAP setup application? */
             if (tapsetup[n])
             {
@@ -4043,7 +4043,7 @@ static int handleModifyVM(int argc, char *argv[],
                     CHECK_ERROR_RET(nic, COMSETTER(TAPTerminateApplication)(Bstr(tapterm[n])), 1);
                 }
             }
-#endif /* __LINUX__ */
+#endif /* RT_OS_LINUX */
 
         }
         if (FAILED(rc))
@@ -5190,7 +5190,7 @@ static int handleUnregisterImage(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 static int handleCreateHostIF(int argc, char *argv[],
                               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
@@ -5276,7 +5276,7 @@ static int handleRemoveHostIF(int argc, char *argv[],
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
-#endif /* __WIN__ */
+#endif /* RT_OS_WINDOWS */
 
 static int handleGetExtraData(int argc, char *argv[],
                               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
@@ -6421,7 +6421,7 @@ int main(int argc, char *argv[])
         { "registerimage",    handleRegisterImage },
         { "unregisterimage",  handleUnregisterImage },
         { "showvdiinfo",      handleShowVDIInfo },
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
         { "createhostif",     handleCreateHostIF },
         { "removehostif",     handleRemoveHostIF },
 #endif
