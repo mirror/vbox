@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __fs_h__
-#define __fs_h__
+#ifndef ___internal_fs_h
+#define ___internal_fs_h
 
 #include <iprt/types.h>
 #ifndef RT_OS_WINDOWS

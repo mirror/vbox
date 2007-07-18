@@ -6,7 +6,6 @@
 /*
  * Copyright (c) 2007 innotek GmbH
  *
- *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
  * you can redistribute it and/or modify it under the terms of the GNU
@@ -21,10 +20,10 @@
  *
  */
 
-#ifndef ___internal_magics_h___
-#define ___internal_magics_h___
+#ifndef ___internal_magics_h
+#define ___internal_magics_h
 
-/** @name Magic Numbers. 
+/** @name Magic Numbers.
  * @{ */
 
 /** The value of RTDIR::u32Magic. (Michael Ende) */

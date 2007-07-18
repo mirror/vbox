@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __ldrPE_h__
-#define __ldrPE_h__
+#ifndef ___internal_ldrPE_h
+#define ___internal_ldrPE_h
 
 #include <iprt/types.h>
 

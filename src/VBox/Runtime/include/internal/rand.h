@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __internal_rand_h__
-#define __internal_rand_h__
+#ifndef ___internal_rand_h
+#define ___internal_rand_h
 
 #include <iprt/types.h>
 
@@ -33,7 +33,7 @@ void rtRandLazyInitNative(void);
 
 /**
  * Generate random bytes using OS facilities.
- * 
+ *
  * @returns VINF_SUCCESS on success, some error status code on failure.
  * @param   pv      Where to store the random bytes.
  * @param   cb      How many random bytes to store.

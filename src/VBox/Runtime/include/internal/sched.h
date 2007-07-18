@@ -19,9 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __internal_sched_h__
-#define __internal_sched_h__
+#ifndef ___internal_sched_h
+#define ___internal_sched_h
 
 #include <iprt/thread.h>
 #include "internal/process.h"

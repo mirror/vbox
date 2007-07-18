@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef __ldrELFCommon_h__
-#define __ldrELFCommon_h__
+#ifndef ___internal_ldrELFCommon_h
+#define ___internal_ldrELFCommon_h
 
 #include <iprt/stdint.h>
 

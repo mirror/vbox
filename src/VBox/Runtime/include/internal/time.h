@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __internal_time_h__
-#define __internal_time_h__
+#ifndef ___internal_time_h
+#define ___internal_time_h
 
 #include <iprt/types.h>
 

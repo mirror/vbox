@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __path_h__
-#define __path_h__
+#ifndef ___internal_path_h
+#define ___internal_path_h
 
 #include <iprt/cdefs.h>
 #include <iprt/param.h>

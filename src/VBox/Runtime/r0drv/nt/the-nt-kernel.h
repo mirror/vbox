@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __the_nt_kernel_h__
-#define __the_nt_kernel_h__
+#ifndef ___the_nt_kernel_h
+#define ___the_nt_kernel_h
 
 #include <iprt/cdefs.h>
 
@@ -44,9 +44,6 @@ __END_DECLS
 #endif
 
 #include <memory.h>
-#if !defined(__WIN32__) && !defined(__WIN64__)
-# error "__WIN32__ or __WIN64__ must be defined!"
-#endif
 #if !defined(RT_OS_WINDOWS)
 # error "RT_OS_WINDOWS must be defined!"
 #endif

@@ -29,8 +29,8 @@
  */
 
 
-#ifndef __the_os2_kernel_h__
-#define __the_os2_kernel_h__
+#ifndef ___the_os2_kernel_h
+#define ___the_os2_kernel_h
 
 #include <iprt/types.h>
 

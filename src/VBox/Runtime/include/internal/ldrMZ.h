@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __ldrMZ_h__
-#define __ldrMZ_h__
+#ifndef ___internal_ldrMZ_h
+#define ___internal_ldrMZ_h
 
 #pragma pack(1) /* not required */
 
