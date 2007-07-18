@@ -1371,7 +1371,7 @@ void VBoxConsoleWnd::languageChange()
     vmFullscreenAction->setMenuText (tr ("&Fullscreen Mode") + "\tHost+F");
     vmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
 
-    vmSeamlessAction->setMenuText (tr ("&Seamless Mode") + "\tHost+S");
+    vmSeamlessAction->setMenuText (tr ("Seam&less Mode") + "\tHost+L");
     vmSeamlessAction->setStatusTip (tr ("Switch to seamless mode"));
 
     vmDisMouseIntegrMenu->setToolTip (tr ("Mouse Integration",
