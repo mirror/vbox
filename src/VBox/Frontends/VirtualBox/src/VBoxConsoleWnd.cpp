@@ -1823,6 +1823,8 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         /* reparet to apply new flags and place to the top left corner of the
          * current desktop */
         reparent (parentWidget(), flags, QPoint (scrGeo.x(), scrGeo.y()), false);
+        /* reattaching application icon after window reparenting */
+        setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
         /* adjust colors and appearance */
         erase_color = centralWidget()->eraseColor();
         centralWidget()->setEraseColor (black);
@@ -1856,6 +1858,8 @@ void VBoxConsoleWnd::vmFullscreen (bool on)
         hide();
         /* reparet to restore normal flags */
         reparent (parentWidget(), normal_wflags, QPoint (0, 0), false);
+        /* reattaching application icon after window reparenting */
+        setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
         /* adjust colors and appearance */
         centralWidget()->setEraseColor (erase_color);
         console->setFrameStyle (console_style);
@@ -1903,7 +1907,6 @@ void VBoxConsoleWnd::vmSeamless (bool on)
     /* activate the auto-resize feature required for the seamless mode */
     if (!vmAutoresizeGuestAction->isOn())
         vmAutoresizeGuestAction->setOn (true);
-    mIsInSeamlessMode = on;
 
     vmAdjustWindowAction->setEnabled (!on);
     vmFullscreenAction->setEnabled (!on);
@@ -1913,9 +1916,11 @@ void VBoxConsoleWnd::vmSeamless (bool on)
 
     if (on)
     {
+        mIsInSeamlessMode = true;
+
         /* Save the previous scroll-view minimum size before entering
-         * fullscreen state to restore this minimum size before the exiting
-         * fullscreen. Required for correct scroll-view and guest display
+         * seamless state to restore this minimum size before the exiting
+         * seamless mode. Required for correct scroll-view and guest display
          * update in SDL mode. */
         prev_min_size = console->minimumSize();
         console->setMinimumSize (0, 0);
@@ -1924,6 +1929,7 @@ void VBoxConsoleWnd::vmSeamless (bool on)
         was_max = isMaximized();
         /* set the correct flags to disable unnecessary frame controls */
         int flags = WType_TopLevel | WStyle_Customize | WStyle_NoBorder;
+        /* let the widget take the whole available desktop space */
         QRect scrGeo = QApplication::desktop()->availableGeometry (this);
         /* hide early to avoid extra flicker */
         hide();
@@ -1945,6 +1951,8 @@ void VBoxConsoleWnd::vmSeamless (bool on)
         /* reparent to apply new flags and place to the top left corner of the
          * current desktop */
         reparent (parentWidget(), flags, QPoint (scrGeo.x(), scrGeo.y()), false);
+        /* reattaching application icon after window reparenting */
+        setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
         /* adjust colors and appearance */
         console_style = console->frameStyle();
         console->setFrameStyle (QFrame::NoFrame);
@@ -1959,7 +1967,7 @@ void VBoxConsoleWnd::vmSeamless (bool on)
     else
     {
         /* Restore the previous scroll-view minimum size before the exiting
-         * fullscreen. Required for correct scroll-view and guest display
+         * seamless mode. Required for correct scroll-view and guest display
          * update in SDL mode. */
         console->setMinimumSize (prev_min_size);
 
@@ -1967,6 +1975,8 @@ void VBoxConsoleWnd::vmSeamless (bool on)
         hide();
         /* reparent to restore normal flags */
         reparent (parentWidget(), normal_wflags, QPoint (0, 0), false);
+        /* reattaching application icon after window reparenting */
+        setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
         /* adjust colors and appearance */
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
@@ -1980,15 +1990,22 @@ void VBoxConsoleWnd::vmSeamless (bool on)
         /* restore normal values */
         setMinimumSize (QSize(0, 0));
         setMaximumSize (QSize (QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
-        move (normal_pos);
-        resize (normal_size);
+
+        if (was_max)
+        {
+            /* restore the maximized state */
+            setWindowState (windowState() | WindowMaximized);
+        }
+        else
+        {
+            move (normal_pos);
+            resize (normal_size);
+            QTimer::singleShot (0, console, SLOT (exitFullScreen()));
+        }
         /* let our toplevel widget calculate its sizeHint properly */
         QApplication::sendPostedEvents (0, QEvent::LayoutHint);
-        /* restore the maximized state */
-        if (was_max)
-            setWindowState (windowState() | WindowMaximized);
-        else
-            QTimer::singleShot (0, console, SLOT (exitFullScreen()));
+
+        mIsInSeamlessMode = false;
     }
 
     /* VBoxConsoleView loses focus for some reason after reparenting,
