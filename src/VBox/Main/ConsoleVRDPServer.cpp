@@ -362,9 +362,9 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
 
     Assert (mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2));
 
-    VRDPAuthResult result = mpfnAuthEntry?
-                                mpfnAuthEntry (&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain):
-                                mpfnAuthEntry2 (&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId);
+    VRDPAuthResult result = mpfnAuthEntry2?
+                                mpfnAuthEntry2 (&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId):
+                                mpfnAuthEntry (&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain);
 
     switch (result)
     {
