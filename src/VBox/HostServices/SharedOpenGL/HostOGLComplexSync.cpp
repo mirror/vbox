@@ -3,7 +3,9 @@
  * VBox OpenGL
  *
  * Simple buffered OpenGL functions
- *
+ */
+
+/*
  * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -43,7 +45,7 @@ void vboxglSelectBuffer (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 }
 
 /* Note: when in GL_FEEDBACK or GL_SELECT mode -> fill those buffers
- *       when switching to GL_FEEDBACK or GL_SELECT mode -> pass pointers 
+ *       when switching to GL_FEEDBACK or GL_SELECT mode -> pass pointers
  */
 void vboxglRenderMode (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {

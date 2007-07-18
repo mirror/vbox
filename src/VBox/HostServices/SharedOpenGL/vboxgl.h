@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox OpenGL helper functions
  */
 
@@ -19,10 +18,10 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBOGL__H
-#define __VBOGL__H
+#ifndef ___VBOGL_H
+#define ___VBOGL_H
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include <windows.h>
 #endif
 #include <GL/gl.h>
@@ -59,7 +58,7 @@ int vboxglDisconnect(PVBOXOGLCTX pClient);
  * Log to the debug output device
  *
  * @returns VBox error code
- * @param   pClient     
+ * @param   pClient
  * @param   name        glGetString name parameter
  * @param   pString     String pointer
  * @param   pcbString   String length (in/out)
@@ -359,4 +358,4 @@ void vboxwglGetSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 #include <VBox/HostServices/VBoxOpenGLSvc.h>
 #include <VBox/HostServices/VBoxOGLOp.h>
 
-#endif /* __VBOGL__H */
+#endif /* !___VBOGL_H */

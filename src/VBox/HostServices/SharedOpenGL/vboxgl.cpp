@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox OpenGL
  */
 
@@ -48,7 +47,7 @@ int vboxglGetString(VBOXOGLCTX *pClient, GLenum name, char *pString, uint32_t *p
     uint32_t cbLen;
     int      rc = VINF_SUCCESS;
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     PIXELFORMATDESCRIPTOR pfd;
     int iFormat;
     HDC hdc = GetDC(0);
@@ -87,7 +86,7 @@ int vboxglGetString(VBOXOGLCTX *pClient, GLenum name, char *pString, uint32_t *p
 
 end:
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(hRC);
     ReleaseDC(0, hdc);

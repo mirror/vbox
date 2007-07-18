@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox OpenGL windows helper functions
  */
 
@@ -19,12 +18,12 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VBOXGLWIN__H
-#define __VBOXGLWIN__H
+#ifndef ___VBOXGLWIN_H
+#define ___VBOXGLWIN_H
 
 #include <iprt/types.h>
 
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #define VBOX_OGL_DEBUG_WINDOW_OUTPUT
 #endif
 
@@ -51,7 +50,7 @@ typedef struct
 } VBOXOGLCTX, *PVBOXOGLCTX;
 
 
-#ifndef __WIN__
+#ifndef RT_OS_WINDOWS
 
 typedef uint32_t    DWORD;
 typedef uint16_t    WORD;
@@ -152,4 +151,4 @@ void vboxglDrvSwapBuffers(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
 RTUINTPTR vboxDrvIsExtensionAvailable(char *pszExtFunctionName);
 
-#endif /* __VBOXGLWIN__H */
+#endif /* !___VBOXGLWIN_H */
