@@ -37,7 +37,7 @@ tstVBoxAPILinux: tstVBoxAPILinux.o
 		-ldl -lpthread
 
 tstVBoxAPILinux.o: tstVBoxAPILinux.cpp
-	g++ -c -D__LINUX__ -g $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
+	g++ -c -DRT_OS_LINUX -D__LINUX__ -g $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
 
 clean:
 	rm -f tstVBoxAPILinux tstVBoxAPILinux.o
