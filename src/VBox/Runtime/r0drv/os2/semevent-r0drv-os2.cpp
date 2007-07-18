@@ -221,12 +221,12 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
 
 RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
 {
-    return rtSemEventWait(EventSem, cMillies, false /* not interruptable */);
+    return rtSemEventWait(EventSem, cMillies, false /* not interruptible */);
 }
 
 
 RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
 {
-    return rtSemEventWait(EventSem, cMillies, true /* interruptable */);
+    return rtSemEventWait(EventSem, cMillies, true /* interruptible */);
 }
 
