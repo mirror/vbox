@@ -1044,12 +1044,12 @@ typedef struct RTRECT
 {
     /** left X coordinate. */
     int32_t     xLeft;
-    /** bottom Y coordinate. */
-    int32_t     yBottom;
+    /** top Y coordinate. */
+    int32_t     yTop;
     /** right X coordinate. (exclusive) */
     int32_t     xRight;
-    /** top Y coordinate. (exclusive) */
-    int32_t     yTop;
+    /** bottom Y coordinate. (exclusive) */
+    int32_t     yBottom;
 } RTRECT;
 /** Pointer to a rectangle. */
 typedef RTRECT *PRTRECT;
