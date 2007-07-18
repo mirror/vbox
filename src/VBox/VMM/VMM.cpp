@@ -434,7 +434,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
  *
  * You might also wish to enable the AssertMsg1/2 overrides in VMMR0.cpp when enabling this.
  */
-# ifdef DEBUG_sandervl
+# if defined(DEBUG_sandervl) || defined(DEBUG_frank)
                     rc = MMHyperAlloc(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
                                       0, MM_TAG_VMM, (void **)&pVM->vmm.s.pR0Logger);
                     if (VBOX_SUCCESS(rc))
