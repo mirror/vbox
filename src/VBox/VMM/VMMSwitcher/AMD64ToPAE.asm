@@ -85,7 +85,7 @@ BEGINPROC vmmR0HostToGuest
     ;
     ; make r9 = pVM and rdx = pCpum.
     ; rax, rcx and r8 are scratch here after.
- %ifdef __WIN64__
+ %ifdef RT_OS_WINDOWS
     mov     r9, rcx
  %else
     mov     r9, rdi
@@ -161,7 +161,7 @@ BEGINPROC vmmR0HostToGuest
 .vmmR0HostToGuestReturn:
 
     ;
-    ; This selector reloading is probably not necessary, but we do it anyway to be quite sure 
+    ; This selector reloading is probably not necessary, but we do it anyway to be quite sure
     ; the CPU has the right idea about the selectors.
     ;
     mov     edx, ds

@@ -77,7 +77,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
         if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
         {
             u32TransactionId = pGip->aCPUs[0].u32TransactionId;
-#ifdef __L4__
+#ifdef RT_OS_L4
             Assert((u32TransactionId & 1) == 0);
 #endif
             u32UpdateIntervalTSC = pGip->aCPUs[0].u32UpdateIntervalTSC;
@@ -105,7 +105,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
             }
 
             u32TransactionId = pGipCpu->u32TransactionId;
-#ifdef __L4__
+#ifdef RT_OS_L4
             Assert((u32TransactionId & 1) == 0);
 #endif
             u32UpdateIntervalTSC = pGipCpu->u32UpdateIntervalTSC;
