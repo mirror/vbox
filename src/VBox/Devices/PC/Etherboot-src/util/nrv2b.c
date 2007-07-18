@@ -41,7 +41,7 @@
 #include <inttypes.h>
 #else
 #ifdef VBOX
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
 #include <iprt/stdint.h>
 #define __inline__
 #else
