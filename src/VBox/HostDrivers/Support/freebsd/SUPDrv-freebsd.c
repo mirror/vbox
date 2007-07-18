@@ -152,7 +152,7 @@ static int VBoxDrvFreeBSDLoad(void)
     /*
      * Initialize the runtime.
      */
-    int rc = VINF_SUCCESS;/// @todo RTR0Init(0);
+    int rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -164,7 +164,7 @@ static int VBoxDrvFreeBSDLoad(void)
             /*
              * Initialize the session hash table.
              */
-            /// @todo rc = RTSpinlockCreate(&g_Spinlock);
+            rc = RTSpinlockCreate(&g_Spinlock);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -185,6 +185,8 @@ static int VBoxDrvFreeBSDLoad(void)
 
                 printf("vboxdrv: make_dev failed\n");
                 rc = SUPDRV_ERR_ALREADY_LOADED;
+                RTSpinlockDestroy(g_Spinlock);
+                g_Spinlock = NIL_RTSPINLOCK;
             }
             else
                 printf("vboxdrv: RTSpinlockCreate failed, rc=%d\n", rc);
@@ -192,7 +194,7 @@ static int VBoxDrvFreeBSDLoad(void)
         }
         else
             printf("vboxdrv: supdrvInitDevExt failed, rc=%d\n", rc);
-        /// @todo RTR0Term();
+        RTR0Term();
     }
     else
         printf("vboxdrv: RTR0Init failed, rc=%d\n", rc);
@@ -216,13 +218,13 @@ static int VBoxDrvFreeBSDUnload(void)
     }
 
     rc = 0; /// @todo supdrvDeleteDevExt(&g_DevExt);
-    /// @todo AssertRC(rc);
+    AssertRC(rc);
 
-    /// @todo rc = RTSpinlockDestroy(g_Spinlock);
-    /// @todo AssertRC(rc);
+    rc = RTSpinlockDestroy(g_Spinlock);
+    AssertRC(rc);
     g_Spinlock = NIL_RTSPINLOCK;
 
-    /// @todo RTR0Term();
+    RTR0Term();
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
 
