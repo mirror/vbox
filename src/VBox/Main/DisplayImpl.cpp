@@ -1090,9 +1090,9 @@ void Display::vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd)
  */
 void Display::VideoAccelFlush (void)
 {
-#ifdef DEBUG_sunlover
+#ifdef DEBUG_sunlover_2
     LogFlowFunc (("mfVideoAccelEnabled = %d\n", mfVideoAccelEnabled));
-#endif /* DEBUG_sunlover */
+#endif /* DEBUG_sunlover_2 */
 
     if (!mfVideoAccelEnabled)
     {
@@ -1103,10 +1103,10 @@ void Display::VideoAccelFlush (void)
     /* Here VBVA is enabled and we have the accelerator memory pointer. */
     Assert(mpVbvaMemory);
 
-#ifdef DEBUG_sunlover
+#ifdef DEBUG_sunlover_2
     LogFlowFunc (("indexRecordFirst = %d, indexRecordFree = %d, off32Data = %d, off32Free = %d\n",
                   mpVbvaMemory->indexRecordFirst, mpVbvaMemory->indexRecordFree, mpVbvaMemory->off32Data, mpVbvaMemory->off32Free));
-#endif /* DEBUG_sunlover */
+#endif /* DEBUG_sunlover_2 */
 
     /* Quick check for "nothing to update" case. */
     if (mpVbvaMemory->indexRecordFirst == mpVbvaMemory->indexRecordFree)
@@ -1961,10 +1961,10 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     STAM_PROFILE_START(&StatDisplayRefresh, a);
 #endif /* DEBUG_sunlover */
 
-#ifdef DEBUG_sunlover
+#ifdef DEBUG_sunlover_2
     LogFlowFunc (("pDrv->pDisplay->mfVideoAccelEnabled = %d\n",
                   pDrv->pDisplay->mfVideoAccelEnabled));
-#endif /* DEBUG_sunlover */
+#endif /* DEBUG_sunlover_2 */
 
     Display *pDisplay = pDrv->pDisplay;
 
@@ -2063,8 +2063,10 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 
 #ifdef DEBUG_sunlover
     STAM_PROFILE_STOP(&StatDisplayRefresh, a);
-    LogFlowFunc (("leave\n"));
 #endif /* DEBUG_sunlover */
+#ifdef DEBUG_sunlover_2
+    LogFlowFunc (("leave\n"));
+#endif /* DEBUG_sunlover_2 */
 }
 
 /**
