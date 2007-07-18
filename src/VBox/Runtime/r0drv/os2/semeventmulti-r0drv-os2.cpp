@@ -224,12 +224,12 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
 
 RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
 {
-    return rtSemEventMultiWait(EventMultiSem, cMillies, false /* not interruptable */);
+    return rtSemEventMultiWait(EventMultiSem, cMillies, false /* not interruptible */);
 }
 
 
 RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies)
 {
-    return rtSemEventMultiWait(EventMultiSem, cMillies, true /* interruptable */);
+    return rtSemEventMultiWait(EventMultiSem, cMillies, true /* interruptible */);
 }
 
