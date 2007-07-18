@@ -41,7 +41,7 @@
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 
-#if defined(_MSC_VER) && defined(__AMD64__) /** @todo check this with with VC7! */
+#if defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
 #  pragma intrinsic(_AddressOfReturnAddress)
 #endif
 
@@ -68,7 +68,7 @@ static PVM g_pVMAssert = 0;
 #ifdef VBOX_WITH_INTERNAL_NETWORKING
 /** Pointer to the internal networking service instance. */
 PINTNET g_pIntNet = 0;
-#endif 
+#endif
 
 
 /**
@@ -457,9 +457,9 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                      */
 # if defined(__GNUC__)
                     void *pvRet = (uint8_t *)__builtin_frame_address(0) + sizeof(void *);
-# elif defined(_MSC_VER) && defined(__AMD64__) /** @todo check this with with VC7! */
+# elif defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
                     void *pvRet = (uint8_t *)_AddressOfReturnAddress();
-# elif defined(__X86__)
+# elif defined(RT_ARCH_X86)
                     void *pvRet = (uint8_t *)&pVM - sizeof(pVM);
 # else
 #  error "huh?"
@@ -698,7 +698,7 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     /*
      * Check that the jump buffer is armed.
      */
-#ifdef __X86__
+#ifdef RT_ARCH_X86
     if (!pVM->vmm.s.CallHostR0JmpBuf.eip)
 #else
     if (!pVM->vmm.s.CallHostR0JmpBuf.rip)

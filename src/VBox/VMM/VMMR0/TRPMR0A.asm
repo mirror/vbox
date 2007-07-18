@@ -40,7 +40,7 @@ BEGINPROC trpmR0DispatchHostInterrupt
     push    xBP
     mov     xBP, xSP
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     mov     r11, rsp                    ; save the RSP for the iret frame.
     and     rsp, 0fffffffffffffff0h     ; align the stack. (do it unconditionally saves some jump mess)
 
@@ -145,18 +145,18 @@ ENDPROC trpmR0DispatchHostInterrupt
 ;            0  pVM (rsp here)
 ;
 BEGINPROC trpmR0InterruptDispatcher
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     lea     rsp, [rsp + 10h]            ; skip pVM and uOperation
     swapgs
     db 48h
     retf
-%else  ; !__AMD64__
+%else  ; !RT_ARCH_AMD64
     add     esp, byte 4                 ; skip pVM
     pop     ds
     pop     fs
     pop     es
     retf
-%endif ; !__AMD64__
+%endif ; !RT_ARCH_AMD64
 ENDPROC   trpmR0InterruptDispatcher
 
 %endif ; !VBOX_WITHOUT_IDT_PATCHING
@@ -165,11 +165,11 @@ ENDPROC   trpmR0InterruptDispatcher
 ;;
 ; Issues a software interrupt to the specified interrupt vector.
 ;
-; @param   uActiveVector   x86:[esp+4]   msc:rcx  gcc:rdi   The vector number. 
+; @param   uActiveVector   x86:[esp+4]   msc:rcx  gcc:rdi   The vector number.
 ;
 ;DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
 BEGINPROC trpmR0DispatchHostInterruptSimple
-%ifdef __X86__
+%ifdef RT_ARCH_X86
     mov     eax, [esp + 4]
     jmp     dword [.jmp_table + eax * 4]
 %else
@@ -180,7 +180,7 @@ BEGINPROC trpmR0DispatchHostInterruptSimple
     jmp     qword [r9 + rdi * 8]
  %endif
 %endif
-    
+
 .jmp_table:
 %assign i 0
 %rep 256

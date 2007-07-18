@@ -147,7 +147,7 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
     AssertRCReturn(rc, rc);
     pVM->patm.s.PatchLookupTreeGC = MMHyperHC2GC(pVM, pVM->patm.s.PatchLookupTreeHC);
 
-#ifdef __AMD64__ /* see patmReinit(). */
+#ifdef RT_ARCH_AMD64 /* see patmReinit(). */
     /* Check CFGM option. */
     rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "PATMEnabled", &pVM->fPATMEnabled);
     if (VBOX_FAILURE(rc))
@@ -155,7 +155,7 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
         pVM->fPATMEnabled = false;
 # else
         pVM->fPATMEnabled = true;
-# endif 
+# endif
 #endif
 
     rc = patmReinit(pVM);
@@ -313,7 +313,7 @@ static int patmReinit(PVM pVM)
      */
     pVM->patm.s.offVM = RT_OFFSETOF(VM, patm);
 
-#ifndef __AMD64__ /* would be nice if this was changed everywhere. was driving me crazy on AMD64. */
+#ifndef RT_ARCH_AMD64 /* would be nice if this was changed everywhere. was driving me crazy on AMD64. */
 #ifndef PATM_DISABLE_ALL
     pVM->fPATMEnabled = true;
 #endif
@@ -2676,7 +2676,7 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
         }
     }
 
-    if (!(pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT|PATMFL_SYSENTER|PATMFL_INT3_REPLACEMENT_BLOCK)))   
+    if (!(pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT|PATMFL_SYSENTER|PATMFL_INT3_REPLACEMENT_BLOCK)))
         pPatch->flags |= PATMFL_MUST_INSTALL_PATCHJMP;
 
     /* If we're going to insert a patch jump, then the jump itself is not allowed to cross a page boundary. */
@@ -5767,7 +5767,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
         /* Only harmless instructions are acceptable. */
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCurPatchInstrGC, &CpuOld, 0);
-        if (    VBOX_FAILURE(rc) 
+        if (    VBOX_FAILURE(rc)
             ||  !(CpuOld.pCurInstr->optype & OPTYPE_HARMLESS))
             break;
 

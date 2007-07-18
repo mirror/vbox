@@ -136,7 +136,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
          */
         u64Delta = u32UpdateIntervalTSC;
     }
-#if !defined(_MSC_VER) || defined(__AMD64__) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
+#if !defined(_MSC_VER) || defined(RT_ARCH_AMD64) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
     u64Delta = ASMMult2xU32RetU64((uint32_t)u64Delta, u32NanoTSFactor0);
     u64Delta = ASMDivU64ByU32RetU32(u64Delta, u32UpdateIntervalTSC);
 #else

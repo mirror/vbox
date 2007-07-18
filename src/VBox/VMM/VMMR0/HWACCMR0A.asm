@@ -28,7 +28,7 @@
 %include "VBox/cpum.mac"
 %include "VBox/x86.mac"
 
-%ifdef __OS2__ ;; @todo build cvs nasm like on OS X.
+%ifdef RT_OS_OS2 ;; @todo build cvs nasm like on OS X.
  %macro vmwrite 2,
     int3
  %endmacro
@@ -53,7 +53,7 @@
 ; @param 1  full width register name
 ; @param 2  16-bit regsiter name for \a 1.
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
   %macro MYPUSHAD 0
     push    r15
@@ -105,7 +105,7 @@
     push    rdx
     push    rax
     push    gs
- %endmacro 
+ %endmacro
 
  %macro MYPOPSEGS 2
     ; Note: do not step through this code with a debugger!
@@ -125,20 +125,20 @@
     mov     es, %2
  %endmacro
 
-%else ; __X86__
+%else ; RT_ARCH_X86
   %macro MYPUSHAD 0
     pushad
-  %endmacro 
+  %endmacro
   %macro MYPOPAD 0
     popad
   %endmacro
 
   %macro MYPUSHSEGS 2
-    push    ds 
-    push    es 
-    push    fs 
+    push    ds
+    push    es
+    push    fs
     push    gs
-  %endmacro 
+  %endmacro
   %macro MYPOPSEGS 2
     pop     gs
     pop     fs
@@ -163,7 +163,7 @@ BEGINPROC VMXStartVM
     mov     xBP, xSP
 
     ;/* First we have to save some final CPU context registers. */
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     mov     rax, qword .vmlaunch_done
     push    rax
 %else
@@ -193,7 +193,7 @@ BEGINPROC VMXStartVM
     MYPUSHSEGS xAX, ax
 
     ;/* Save the Guest CPU context pointer. */
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     mov     rsi, rdi ; pCtx
  %else
@@ -249,7 +249,7 @@ ALIGNCODE(16)
     add     xSP, xS*2
 
     push    xDI
-    mov     xDI, [xSP + xS * 2]         ; pCtx 
+    mov     xDI, [xSP + xS * 2]         ; pCtx
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -257,7 +257,7 @@ ALIGNCODE(16)
     mov     [ss:xDI + CPUMCTX.edx], edx
     mov     [ss:xDI + CPUMCTX.esi], esi
     mov     [ss:xDI + CPUMCTX.ebp], ebp
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     pop     xAX                                 ; the guest edi we pushed above
     mov     dword [ss:xDI + CPUMCTX.edi], eax
 %else
@@ -338,7 +338,7 @@ BEGINPROC VMXResumeVM
     mov     xBP, xSP
 
     ;/* First we have to save some final CPU context registers. */
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     mov     rax, qword .vmresume_done
     push    rax
 %else
@@ -368,7 +368,7 @@ BEGINPROC VMXResumeVM
     MYPUSHSEGS xAX, ax
 
     ;/* Save the Guest CPU context pointer. */
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     mov     rsi, rdi        ; pCtx
  %else
@@ -424,7 +424,7 @@ ALIGNCODE(16)
     add     xSP, xS*2
 
     push    xDI
-    mov     xDI, [xSP + xS * 2]         ; pCtx 
+    mov     xDI, [xSP + xS * 2]         ; pCtx
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -432,7 +432,7 @@ ALIGNCODE(16)
     mov     [ss:xDI + CPUMCTX.edx], edx
     mov     [ss:xDI + CPUMCTX.esi], esi
     mov     [ss:xDI + CPUMCTX.ebp], ebp
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     pop     xAX                                 ; the guest edi we pushed above
     mov     dword [ss:xDI + CPUMCTX.edi], eax
 %else
@@ -499,7 +499,7 @@ ALIGNCODE(16)
 ENDPROC VMXResumeVM
 
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 ;/**
 ; * Executes VMWRITE
 ; *
@@ -568,7 +568,7 @@ ENDPROC VMXReadVMCS64
 ; */
 ;DECLASM(int) VMXEnable(RTHCPHYS HCPhysVMXOn);
 BEGINPROC VMXEnable
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     xor     rax, rax
  %ifdef ASM_CALL64_GCC
     push    rdi
@@ -589,7 +589,7 @@ BEGINPROC VMXEnable
     mov     eax, VERR_VMX_GENERIC
 
 .the_end:
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     add     rsp, 8
 %endif
     ret
@@ -614,7 +614,7 @@ ENDPROC VMXDisable
 ; */
 ;DECLASM(int) VMXClearVMCS(RTHCPHYS HCPhysVMCS);
 BEGINPROC VMXClearVMCS
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     xor     rax, rax
  %ifdef ASM_CALL64_GCC
     push    rdi
@@ -629,7 +629,7 @@ BEGINPROC VMXClearVMCS
     jnc     .the_end
     mov     eax, VERR_VMX_INVALID_VMCS_PTR
 .the_end:
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     add     rsp, 8
 %endif
     ret
@@ -644,7 +644,7 @@ ENDPROC VMXClearVMCS
 ; */
 ;DECLASM(int) VMXActivateVMCS(RTHCPHYS HCPhysVMCS);
 BEGINPROC VMXActivateVMCS
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     xor     rax, rax
  %ifdef ASM_CALL64_GCC
     push    rdi
@@ -659,13 +659,13 @@ BEGINPROC VMXActivateVMCS
     jnc     .the_end
     mov     eax, VERR_VMX_INVALID_VMCS_PTR
 .the_end:
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     add     rsp, 8
 %endif
     ret
 ENDPROC VMXActivateVMCS
 
-%endif ; __AMD64__
+%endif ; RT_ARCH_AMD64
 
 
 ;/**
@@ -677,7 +677,7 @@ ENDPROC VMXActivateVMCS
 ; * @param   pCtx           Guest context
 ; */
 BEGINPROC SVMVMRun
-%ifdef __AMD64__ ; fake a cdecl stack frame - I'm lazy, sosume.
+%ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame - I'm lazy, sosume.
  %ifdef ASM_CALL64_GCC
     push    rdx
     push    rsi
@@ -707,7 +707,7 @@ BEGINPROC SVMVMRun
 
     ;/* Save the Guest CPU context pointer. */
     mov     xSI, [xBP + xS*2 + RTHCPHYS_CB*2]   ; pCtx
-    push    xSI                     ; push for saving the state at the end 
+    push    xSI                     ; push for saving the state at the end
 
     ; Restore CR2
     mov     ebx, [xSI + CPUMCTX.cr2]
@@ -767,24 +767,24 @@ BEGINPROC SVMVMRun
     mov     eax, VINF_SUCCESS
 
     pop     xBP
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     add     xSP, 4*xS
 %endif
     ret
 ENDPROC SVMVMRun
 
-%ifdef __AMD64__
-%ifdef __WIN__
+%ifdef RT_ARCH_AMD64
+%ifdef RT_OS_WINDOWS
 
 ;;
 ; Executes INVLPGA
-; 
+;
 ; @param   pPageGC  msc:ecx  gcc:edi  x86:[esp+04]  Virtual page to invalidate
 ; @param   uASID    msc:edx  gcc:esi  x86:[esp+08]  Tagged TLB id
-; 
+;
 ;DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID);
 BEGINPROC SVMInvlpgA
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     mov     eax, edi                    ;; @todo 64-bit guest.
     mov     ecx, esi

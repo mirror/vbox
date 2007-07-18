@@ -305,7 +305,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                 pszError = N_("VirtualBox kernel driver cannot be opened");
                 break;
             case VERR_VM_DRIVER_NOT_ACCESSIBLE:
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
                 pszError = N_("The VirtualBox kernel driver is not accessible to the current "
 		              "user. Make sure that the user has write permissions for "
 			      "/dev/vboxdrv by adding them to the vboxusers groups. You "
@@ -315,7 +315,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
 #endif
                 break;
             case VERR_VM_DRIVER_NOT_INSTALLED:
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
                 pszError = N_("VirtualBox kernel driver not installed. The vboxdrv kernel module "
 		              "was either not loaded or /dev/vboxdrv was not created for some "
 			      "reason. Re-setup the kernel module by executing "

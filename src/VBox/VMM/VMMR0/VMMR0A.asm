@@ -27,7 +27,7 @@
 %include "iprt/err.mac"
 
 
-%ifdef __X86__      ; The other architecture(s) use(s) C99 variadict macros.
+%ifdef RT_ARCH_X86      ; The other architecture(s) use(s) C99 variadict macros.
 extern IMPNAME(RTLogLogger)
 %endif
 
@@ -48,7 +48,7 @@ BEGINCODE
 ; @param    pVM     msc:r8  gcc:rdx x86:[esp+c]     The argument of that function.
 ;
 BEGINPROC vmmR0CallHostSetJmp
-%ifdef __X86__
+%ifdef RT_ARCH_X86
     ;
     ; Save the registers.
     ;
@@ -125,9 +125,9 @@ BEGINPROC vmmR0CallHostSetJmp
     pop     ebp
     xor     eax, eax                    ; VINF_SUCCESS
     ret
-%endif ; __X86__
+%endif ; RT_ARCH_X86
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     ;
     ; Save the registers.
     ;
@@ -185,10 +185,10 @@ BEGINPROC vmmR0CallHostSetJmp
     mov     rsi, [rdx + VMMR0JMPBUF.rsi]
     mov     rdi, [rdx + VMMR0JMPBUF.rdi]
  %endif
-    mov     r12, [rdx + VMMR0JMPBUF.r12] 
-    mov     r13, [rdx + VMMR0JMPBUF.r13] 
-    mov     r14, [rdx + VMMR0JMPBUF.r14] 
-    mov     r15, [rdx + VMMR0JMPBUF.r15] 
+    mov     r12, [rdx + VMMR0JMPBUF.r12]
+    mov     r13, [rdx + VMMR0JMPBUF.r13]
+    mov     r14, [rdx + VMMR0JMPBUF.r14]
+    mov     r15, [rdx + VMMR0JMPBUF.r15]
     mov     eax, VERR_INTERNAL_ERROR    ; todo better return code!
     ret
 
@@ -242,7 +242,7 @@ ENDPROC vmmR0CallHostSetJmp
 ; @param    rc      msc:rdx gcc:rsi x86:[ebp+c]     The return code.
 ;
 BEGINPROC vmmR0CallHostLongJmp
-%ifdef __X86__
+%ifdef RT_ARCH_X86
     ;
     ; Save the registers on the stack.
     ;
@@ -307,9 +307,9 @@ BEGINPROC vmmR0CallHostLongJmp
     mov     ecx, [edx + VMMR0JMPBUF.eip]
     mov     esp, [edx + VMMR0JMPBUF.esp]
     jmp     ecx
-%endif ; __X86__
+%endif ; RT_ARCH_X86
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     ;
     ; Save the registers on the stack.
     ;
@@ -408,7 +408,7 @@ ENDPROC vmmR0CallHostLongJmp
 ; @cproto VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...)
 ;
 EXPORTEDNAME vmmR0LoggerWrapper
-%ifdef __X86__      ; The other architecture(s) use(s) C99 variadict macros.
+%ifdef RT_ARCH_X86      ; The other architecture(s) use(s) C99 variadict macros.
     push    0                           ; assumes we're the wrapper for a default instance.
     call    IMP(RTLogLogger)
     add     esp, byte 4

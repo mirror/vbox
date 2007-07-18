@@ -1160,8 +1160,8 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
     if (EMIsRawRing0Enabled(pVM))
     {
         /*
-         * Only replace handlers for which we are 100% certain there won't be 
-         * any host interrupts. 
+         * Only replace handlers for which we are 100% certain there won't be
+         * any host interrupts.
          *
          * 0x2E is safe on Windows because it's the system service interrupt gate. Not
          * quite certain if this is safe or not on 64-bit Vista, it probably is.
@@ -1170,19 +1170,19 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTGCPTR pHand
          * 32-bit usermode ABI. 64-bit Linux (usually) supports 32-bit processes
          * and will therefor never assign hardware interrupts to 0x80.
          *
-         * Exactly why 0x80 is safe on 32-bit Windows is a bit hazy, but it seems 
-         * to work ok... However on 64-bit Vista (SMP?) is doesn't work reliably. 
+         * Exactly why 0x80 is safe on 32-bit Windows is a bit hazy, but it seems
+         * to work ok... However on 64-bit Vista (SMP?) is doesn't work reliably.
          * Booting Linux/BSD guest will cause system lockups on most of the computers.
          *
          * PORTME - Check if your host keeps any of these gates free from hw ints.
-         * 
+         *
          * Note! SELMR3SyncTSS also has code related to this interrupt handler replacing.
          */
         /** @todo handle those dependencies better! */
         /** @todo Solve this in a proper manner. see defect #1186 */
-#if defined(__WIN__) && defined(__X86__)
+#if defined(RT_OS_WINDOWS) && defined(RT_ARCH_X86)
         if (iTrap == 0x2E || iTrap == 0x80)
-#elif defined(__LINUX__)
+#elif defined(RT_OS_LINUX)
         if (iTrap == 0x80)
 #else
         if (0)
@@ -1352,7 +1352,7 @@ TRPMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
             {
                 /* Must check pending forced actions as our IDT or GDT might be out of sync */
                 EMR3CheckRawForcedActions(pVM);
-                
+
                 /* There's a handler -> let's execute it in raw mode */
                 rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent);
                 if (rc == VINF_SUCCESS /* Don't use VBOX_SUCCESS */)
