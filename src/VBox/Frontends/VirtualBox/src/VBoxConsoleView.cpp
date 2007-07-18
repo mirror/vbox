@@ -1275,9 +1275,10 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                      * processed before Resize event, so the ignore_mainwnd_resize
                      * variable should be set to true here in case of mainwnd is
                      * maximized or in fullscreen state. */
-                    if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen()
-                                               || mainwnd->isTrueSeamless())
-                        ignore_mainwnd_resize = true;
+                    /* Not sure if it is really required */
+                    //if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen()
+                    //                           || mainwnd->isTrueSeamless())
+                    //    ignore_mainwnd_resize = true;
                 }
                 break;
             }
