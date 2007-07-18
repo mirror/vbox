@@ -26,7 +26,7 @@
 
 #include <string>
 
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -39,7 +39,7 @@
 #define _LINUX_BYTEORDER_GENERIC_H
 #include <linux/cdrom.h>
 #include <errno.h>
-#endif /* __LINUX __ */
+#endif /* RT_OS_LINUX */
 
 #include "HostUSBImpl.h"
 #include "HostUSBDeviceImpl.h"
@@ -85,9 +85,9 @@ HRESULT HostUSB::init(PVM pVM)
     mpVM = pVM;
 
 /*
-#ifdef __LINUX__
+#ifdef RT_OS_LINUX
     mUSBProxyService = new USBProxyServiceLinux (this);
-#elif defined __WIN__
+#elif defined RT_OS_WINDOWS
     mUSBProxyService = new USBProxyServiceWin32 (this);
 */
 #ifdef RT_OS_L4

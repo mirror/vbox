@@ -108,7 +108,7 @@ HRESULT COMBase::initializeCOM()
 
 #if defined (VBOX_WITH_XPCOM)
 
-#if !defined (__DARWIN__) && !defined (__OS2__)
+#if !defined (RT_OS_DARWIN) && !defined (RT_OS_OS2)
 
     if (NS_SUCCEEDED (rc))
     {
@@ -167,7 +167,7 @@ HRESULT COMBase::cleanupCOM()
             rc = eventQ->IsOnCurrentThread (&isOnMainThread);
             if (NS_SUCCEEDED (rc) && isOnMainThread)
             {
-# if !defined (__DARWIN__) && !defined (__OS2__)
+# if !defined (RT_OS_DARWIN) && !defined (RT_OS_OS2)
                 if (sSocketListener)
                 {
                     delete sSocketListener;

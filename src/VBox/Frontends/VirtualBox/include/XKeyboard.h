@@ -23,7 +23,7 @@
 #ifndef __XKeyboard_h__
 #define __XKeyboard_h__
 
-#ifndef __LINUX__
+#ifndef RT_OS_LINUX
 #error This file is X11/Linux specific!
 #endif
 

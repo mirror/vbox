@@ -170,7 +170,7 @@ HRESULT SDLFramebuffer::getAddress(uintptr_t *address)
     /* subtract the reserved extra area */
     *address = mScreen
              ? (uintptr_t)mScreen->pixels
-#ifdef __OS2__ /* Play safe for now - this is vital when we get a larger surface than requested. */
+#ifdef RT_OS_OS2 /* Play safe for now - this is vital when we get a larger surface than requested. */
                + mScreen->offset
 #endif
                + (mScreen->pitch * mTopOffset)
