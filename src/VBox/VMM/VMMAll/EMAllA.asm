@@ -28,7 +28,7 @@
 
 ;; @def MY_PTR_REG
 ; The register we use for value pointers (And,Or,Dec,Inc).
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %define MY_PTR_REG  rcx
 %else
 %define MY_PTR_REG  ecx
@@ -36,7 +36,7 @@
 
 ;; @def MY_RET_REG
 ; The register we return the result in.
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %define MY_RET_REG  rax
 %else
 %define MY_RET_REG  eax
@@ -56,7 +56,7 @@ BEGINCODE
 ;
 align 16
 BEGINPROC   EMEmulateCmp
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !__WIN64__
@@ -64,14 +64,14 @@ BEGINPROC   EMEmulateCmp
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -84,7 +84,7 @@ BEGINPROC   EMEmulateCmp
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     cmp     rcx, rdx                    ; do 8 bytes CMP
     jmp short .done
@@ -121,7 +121,7 @@ ENDPROC     EMEmulateCmp
 ;
 align 16
 BEGINPROC   EMEmulateAnd
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !__WIN64__
@@ -129,14 +129,14 @@ BEGINPROC   EMEmulateAnd
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -149,7 +149,7 @@ BEGINPROC   EMEmulateAnd
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     and     [MY_PTR_REG], rdx           ; do 8 bytes AND
     jmp short .done
@@ -186,7 +186,7 @@ ENDPROC     EMEmulateAnd
 ;
 align 16
 BEGINPROC   EMEmulateOr
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !__WIN64__
@@ -194,14 +194,14 @@ BEGINPROC   EMEmulateOr
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -214,7 +214,7 @@ BEGINPROC   EMEmulateOr
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     or      [MY_PTR_REG], rdx           ; do 8 bytes OR
     jmp short .done
@@ -250,7 +250,7 @@ ENDPROC     EMEmulateOr
 ;
 align 16
 BEGINPROC   EMEmulateXor
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !__WIN64__
@@ -258,14 +258,14 @@ BEGINPROC   EMEmulateXor
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -278,7 +278,7 @@ BEGINPROC   EMEmulateXor
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     xor     [MY_PTR_REG], rdx           ; do 8 bytes XOR
     jmp short .done
@@ -313,20 +313,20 @@ ENDPROC     EMEmulateXor
 ;
 align 16
 BEGINPROC   EMEmulateInc
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, rdx                    ; eax = size of parameters
 %else   ; !__WIN64__
     mov     rax, rsi                    ; eax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 08h]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -339,7 +339,7 @@ BEGINPROC   EMEmulateInc
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     inc     qword [MY_PTR_REG]          ; do 8 bytes INC
     jmp short .done
@@ -376,20 +376,20 @@ ENDPROC     EMEmulateInc
 ;
 align 16
 BEGINPROC   EMEmulateDec
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, rdx                    ; eax = size of parameters
 %else   ; !__WIN64__
     mov     rax, rsi                    ; eax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 08h]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -402,7 +402,7 @@ BEGINPROC   EMEmulateDec
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     dec     qword [MY_PTR_REG]          ; do 8 bytes DEC
     jmp short .done
@@ -439,7 +439,7 @@ ENDPROC     EMEmulateDec
 ;
 align 16
 BEGINPROC   EMEmulateAdd
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !__WIN64__
@@ -447,14 +447,14 @@ BEGINPROC   EMEmulateAdd
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -467,7 +467,7 @@ BEGINPROC   EMEmulateAdd
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     add     [MY_PTR_REG], rdx           ; do 8 bytes ADD
     jmp short .done
@@ -503,7 +503,7 @@ ENDPROC     EMEmulateAdd
 ;
 align 16
 BEGINPROC   EMEmulateAdcWithCarrySet
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !__WIN64__
@@ -511,14 +511,14 @@ BEGINPROC   EMEmulateAdcWithCarrySet
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -531,7 +531,7 @@ BEGINPROC   EMEmulateAdcWithCarrySet
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     stc     ; set carry flag
     adc     [MY_PTR_REG], rdx           ; do 8 bytes ADC
@@ -571,7 +571,7 @@ ENDPROC     EMEmulateAdcWithCarrySet
 ;
 align 16
 BEGINPROC   EMEmulateSub
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifdef __WIN64__
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !__WIN64__
@@ -579,14 +579,14 @@ BEGINPROC   EMEmulateSub
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
 
     ; switch on size
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -599,7 +599,7 @@ BEGINPROC   EMEmulateSub
     int3
 
     ; workers
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 .do_qword:
     sub     [MY_PTR_REG], rdx           ; do 8 bytes SUB
     jmp short .done
@@ -635,12 +635,12 @@ ENDPROC     EMEmulateSub
 ;
 align 16
 BEGINPROC   EMEmulateBtr
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifndef __WIN64__
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
@@ -665,12 +665,12 @@ ENDPROC     EMEmulateBtr
 ;
 align 16
 BEGINPROC   EMEmulateBtc
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifndef __WIN64__
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif
@@ -695,12 +695,12 @@ ENDPROC     EMEmulateBtc
 ;
 align 16
 BEGINPROC   EMEmulateBts
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 %ifndef __WIN64__
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
 %endif  ; !__WIN64__
-%else   ; !__AMD64__
+%else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
 %endif

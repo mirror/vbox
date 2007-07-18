@@ -22,7 +22,7 @@
 %include "VBox/asmdefs.mac"
 
 struc VMMR0JMPBUF
-%ifdef __X86__
+%ifdef RT_ARCH_X86
     ; traditional jmp_buf
     .ebx            resd 1
     .esi            resd 1
@@ -39,10 +39,10 @@ struc VMMR0JMPBUF
     .SpCheck        resd 1
     .SpResume       resd 1
 %endif
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     ; traditional jmp_buf
     .rbx            resq 1
-%ifdef __WIN__
+%ifdef RT_OS_WINDOWS
     .rsi            resq 1
     .rdi            resq 1
 %endif

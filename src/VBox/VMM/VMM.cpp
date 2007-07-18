@@ -180,7 +180,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM);
 static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
 {
     NULL, /* invalid entry */
-#ifndef __AMD64__
+#ifndef RT_ARCH_AMD64
     &vmmR3Switcher32BitTo32Bit_Def,
     &vmmR3Switcher32BitToPAE_Def,
     NULL,   //&vmmR3Switcher32BitToAMD64_Def,
@@ -682,7 +682,7 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
         CPUMPushHyper(pVM, (uint32_t)u64TS);            /* Param 3: The program startup TS - Lo. */
 #else /* 64-bit GC */
         CPUMPushHyper(pVM, u64TS);                      /* Param 3: The program startup TS. */
-#endif        
+#endif
         CPUMPushHyper(pVM, VBOX_VERSION);               /* Param 2: Version argument. */
         CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
         CPUMPushHyper(pVM, pVM->pVMGC);                 /* Param 0: pVM */
@@ -1254,7 +1254,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 break;
             }
 
-#if defined(__AMD64__) || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if defined(RT_ARCH_AMD64) || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
             /*
              * 64-bit HC pointer fixup to (HC) target within the code (32-bit offset).
              */
@@ -1273,7 +1273,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
             case FIX_HC_64BIT_CS:
             {
                 Assert(offSrc < pSwitcher->cbCode);
-#if defined(__DARWIN__) && defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
                 *uSrc.pu16 = 0x80; /* KERNEL64_CS from i386/seg.h */
 #else
                 AssertFatalMsgFailed(("FIX_HC_64BIT_CS not implemented for this host\n"));
@@ -1797,11 +1797,11 @@ VMMR3DECL(void) VMMR3YieldResume(PVM pVM)
 static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
     /*
-     * This really needs some careful tuning. While we shouldn't be too gready since 
+     * This really needs some careful tuning. While we shouldn't be too gready since
      * that'll cause the rest of the system to stop up, we shouldn't be too nice either
      * because that'll cause us to stop up.
      *
-     * The current logic is to use the default interval when there is no lag worth 
+     * The current logic is to use the default interval when there is no lag worth
      * mentioning, but when we start accumulating lag we don't bother yielding at all.
      *
      * (This depends on the TMCLOCK_VIRTUAL_SYNC to be scheduled before TMCLOCK_REAL

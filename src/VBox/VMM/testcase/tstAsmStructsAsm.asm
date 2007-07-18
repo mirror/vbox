@@ -22,7 +22,7 @@
 ; license agreement apply instead of the previous paragraph.
 ;
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
 BITS 64
 %endif
 

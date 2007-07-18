@@ -51,7 +51,7 @@
 
 
 
-#ifndef __AMD64__
+#ifndef RT_ARCH_AMD64
 /*
  * Shadow - 32-bit mode
  */
@@ -91,7 +91,7 @@
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
-#endif /* !__AMD64__ */
+#endif /* !RT_ARCH_AMD64 */
 
 
 /*

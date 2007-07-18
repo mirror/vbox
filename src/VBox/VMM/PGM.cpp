@@ -197,7 +197,7 @@ static const DBGCCMD    g_aCmds[] =
 
 
 
-#if 1/// @todo ndef __AMD64__
+#if 1/// @todo ndef RT_ARCH_AMD64
 /*
  * Shadow - 32-bit mode
  */
@@ -273,7 +273,7 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_SHW_NAME
 #undef PGM_SHW_NAME_GC_STR
 #undef PGM_SHW_NAME_R0_STR
-#endif /* !__AMD64__ */
+#endif /* !RT_ARCH_AMD64 */
 
 
 /*

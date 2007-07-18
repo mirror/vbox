@@ -39,7 +39,7 @@
 
 ;; @def CPUM_REG
 ; The register which we load the CPUM pointer into.
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  %define CPUM_REG   rdx
 %else
  %define CPUM_REG   edx
@@ -94,8 +94,8 @@ BEGINPROC   CPUMHandleLazyFPUAsm
     ; Before taking any of these actions we're checking if we have already
     ; loaded the GC FPU. Because if we have, this is an trap for the guest - raw ring-3.
     ;
-%ifdef __AMD64__
- %ifdef __WIN__
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
  %else
     mov     xDX, rdi
@@ -114,7 +114,7 @@ align 16
 hlfpua_not_loaded:
     mov     eax, [xDX + CPUM.Guest.cr0]
     and     eax, X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
     lea     r8, [hlfpuajmp1 wrt rip]
     jmp     qword [rax*4 + r8]
 %else
@@ -149,7 +149,7 @@ align 16
 hlfpua_switch_fpu_ctx:
 %ifndef IN_RING3 ; IN_GC or IN_RING0
     mov     xCX, cr0
- %ifdef __AMD64__
+ %ifdef RT_ARCH_AMD64
     lea     r8, [hlfpu_afFlags wrt rip]
     and     rcx, [rax*4 + r8]                   ; calc the new cr0 flags.
  %else
@@ -159,7 +159,7 @@ hlfpua_switch_fpu_ctx:
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, xAX                            ; clear flags so we don't trap here.
 %endif
-%ifndef __AMD64__
+%ifndef RT_ARCH_AMD64
     test    dword [xDX + CPUM.CPUFeatures.edx], X86_CPUID_FEATURE_EDX_FXSR
     jz short hlfpua_no_fxsave
 %endif
@@ -175,7 +175,7 @@ hlfpua_finished_switch:
     xor     eax, eax
     ret
 
-%ifndef __AMD64__
+%ifndef RT_ARCH_AMD64
 ; legacy support.
 hlfpua_no_fxsave:
     fnsave  [xDX + CPUM.Host.fpu]
@@ -190,7 +190,7 @@ hlfpua_no_fxsave:
 hlfpua_no_exceptions_pending:
     frstor  [xDX + CPUM.Guest.fpu]
     jmp near hlfpua_finished_switch
-%endif ; !__AMD64__
+%endif ; !RT_ARCH_AMD64
 
 
     ;
@@ -211,8 +211,8 @@ ENDPROC     CPUMHandleLazyFPUAsm
 ;
 align 16
 BEGINPROC CPUMRestoreHostFPUStateAsm
-%ifdef __AMD64__
- %ifdef __WIN__
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
  %else
     mov     xDX, rdi

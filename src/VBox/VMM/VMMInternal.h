@@ -112,7 +112,7 @@ typedef struct VMMR0JMPBUF
 #endif
 #if HC_ARCH_BITS == 64
     uint64_t    rbx;
-# ifdef __WIN__
+# ifdef RT_OS_WINDOWS
     uint64_t    rsi;
     uint64_t    rdi;
 # endif
