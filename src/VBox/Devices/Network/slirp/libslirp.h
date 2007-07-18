@@ -11,7 +11,7 @@ int inet_aton(const char *cp, struct in_addr *ia);
 }
 #endif
 #else
-#ifdef __OS2__ /* temporary workaround, see ticket #127 */
+#ifdef RT_OS_OS2 /* temporary workaround, see ticket #127 */
 # include <sys/time.h>
 #endif
 #include <sys/select.h>

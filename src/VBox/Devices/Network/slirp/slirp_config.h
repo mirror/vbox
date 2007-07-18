@@ -192,7 +192,7 @@
 
 /* Define if you have gethostid */
 #undef HAVE_GETHOSTID
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 # define HAVE_GETHOSTID
 #endif
 

@@ -1,5 +1,5 @@
 #include "slirp.h"
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 # include <paths.h>
 #endif
 
@@ -101,7 +101,7 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
     int found = 0;
     struct in_addr tmp_addr;
 
-#ifdef __OS2__
+#ifdef RT_OS_OS2
     /* Try various locations. */
     char *etc = getenv("ETC");
     f = NULL;

@@ -5,7 +5,7 @@
 # include <winsock2.h>
 typedef int socklen_t;
 #endif
-#ifdef __OS2__ /* temporary workaround, see ticket #127 */
+#ifdef RT_OS_OS2 /* temporary workaround, see ticket #127 */
 # define mbstat mbstat_os2
 # include <sys/socket.h>
 # undef mbstat
