@@ -57,13 +57,13 @@ BEGINCODE
 align 16
 BEGINPROC   EMEmulateCmp
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -122,13 +122,13 @@ ENDPROC     EMEmulateCmp
 align 16
 BEGINPROC   EMEmulateAnd
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -187,13 +187,13 @@ ENDPROC     EMEmulateAnd
 align 16
 BEGINPROC   EMEmulateOr
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -251,13 +251,13 @@ ENDPROC     EMEmulateOr
 align 16
 BEGINPROC   EMEmulateXor
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -314,12 +314,12 @@ ENDPROC     EMEmulateXor
 align 16
 BEGINPROC   EMEmulateInc
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, rdx                    ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rsi                    ; eax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 08h]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -377,12 +377,12 @@ ENDPROC     EMEmulateInc
 align 16
 BEGINPROC   EMEmulateDec
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, rdx                    ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rsi                    ; eax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 08h]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -440,13 +440,13 @@ ENDPROC     EMEmulateDec
 align 16
 BEGINPROC   EMEmulateAdd
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -504,13 +504,13 @@ ENDPROC     EMEmulateAdd
 align 16
 BEGINPROC   EMEmulateAdcWithCarrySet
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -572,13 +572,13 @@ ENDPROC     EMEmulateAdcWithCarrySet
 align 16
 BEGINPROC   EMEmulateSub
 %ifdef RT_ARCH_AMD64
-%ifdef __WIN64__
+%ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
-%else   ; !__WIN64__
+%else   ; !RT_OS_WINDOWS
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 0ch]            ; eax = size of parameters
     mov     ecx, [esp + 04h]            ; ecx = first parameter
@@ -636,10 +636,10 @@ ENDPROC     EMEmulateSub
 align 16
 BEGINPROC   EMEmulateBtr
 %ifdef RT_ARCH_AMD64
-%ifndef __WIN64__
+%ifndef RT_OS_WINDOWS
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
@@ -666,10 +666,10 @@ ENDPROC     EMEmulateBtr
 align 16
 BEGINPROC   EMEmulateBtc
 %ifdef RT_ARCH_AMD64
-%ifndef __WIN64__
+%ifndef RT_OS_WINDOWS
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
@@ -696,10 +696,10 @@ ENDPROC     EMEmulateBtc
 align 16
 BEGINPROC   EMEmulateBts
 %ifdef RT_ARCH_AMD64
-%ifndef __WIN64__
+%ifndef RT_OS_WINDOWS
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
-%endif  ; !__WIN64__
+%endif  ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h]            ; ecx = first parameter
     mov     edx, [esp + 08h]            ; edx = second parameter
