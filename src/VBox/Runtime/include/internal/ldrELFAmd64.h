@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef __ldrELFAmd64_h__
-#define	__ldrELFAmd64_h__
+#ifndef ___internal_ldrELFAmd64_h
+#define	___internal_ldrELFAmd64_h
 
 /*
  * ELF definitions for the AMD64 architecture.

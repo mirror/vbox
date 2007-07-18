@@ -19,9 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __internal_process_h__
-#define __internal_process_h__
+#ifndef ___internal_process_h
+#define ___internal_process_h
 
 #include <iprt/process.h>
 

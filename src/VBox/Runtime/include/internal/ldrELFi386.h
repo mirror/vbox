@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef __ldrELFi386_h__
-#define __ldrELFi386_h__
+#ifndef ___internal_ldrELFi386_h
+#define ___internal_ldrELFi386_h
 
 #if 0  /* later */
 

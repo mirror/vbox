@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __internal_memobj_h__
-#define __internal_memobj_h__
+#ifndef ___internal_memobj_h
+#define ___internal_memobj_h
 
 #include <iprt/memobj.h>
 #include <iprt/assert.h>

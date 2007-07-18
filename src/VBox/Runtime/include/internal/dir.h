@@ -19,9 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __internal_dir_h__
-#define __internal_dir_h__
+#ifndef ___internal_dir_h
+#define ___internal_dir_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __ldr_h__
-#define __ldr_h__
+#ifndef ___internal_ldr_h
+#define ___internal_ldr_h
 
 #include <iprt/types.h>
 #include "internal/magics.h"

@@ -101,9 +101,9 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
             /*
              * GetProcessId requires XP SP1 or later
              */
-#ifdef __WIN64__
+#if defined(RT_ARCH_AMD64)
             *pProcess = GetProcessId(hProcess);
-#else /* !__WIN64__ */
+#else /* !RT_ARCH_AMD64 */
             static bool           fInitialized = false;
             static DWORD (WINAPI *pfnGetProcessId)(HANDLE Thread) = NULL;
             if (!fInitialized)
@@ -139,7 +139,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
                 }
                 *pProcess = ProcInfo.UniqueProcessId;
             }
-#endif  /* !__WIN64__ */
+#endif  /* !RT_ARCH_AMD64 */
         }
         return VINF_SUCCESS;
     }

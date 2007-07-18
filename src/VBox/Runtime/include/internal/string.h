@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __internal_string_h__
-#define __internal_string_h__
+#ifndef ___internal_string_h
+#define ___internal_string_h
 
 #include <iprt/string.h>
 

@@ -19,9 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __internal_file_h__
-#define __internal_file_h__
+#ifndef ___internal_file_h
+#define ___internal_file_h
 
 #include <iprt/file.h>
 

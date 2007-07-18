@@ -19,10 +19,10 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __the_linux_kernel_h__
-#define __the_linux_kernel_h__
+#ifndef ___the_linux_kernel_h
+#define ___the_linux_kernel_h
 
-/* 
+/*
  * Include iprt/types.h to install the bool wrappers.
  * Then use the linux bool type for all the stuff include here.
  */
@@ -214,7 +214,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # define PAGE_OFFSET_MASK (PAGE_SIZE - 1)
 #endif
 
-/* 
+/*
  * Stop using the linux bool type.
  */
 #undef bool

@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __thread_h__
-#define __thread_h__
+#ifndef ___thread_h
+#define ___thread_h
 
 #include <iprt/types.h>
 #include <iprt/thread.h>

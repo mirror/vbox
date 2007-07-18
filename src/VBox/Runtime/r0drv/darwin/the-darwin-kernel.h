@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __the_darwin_kernel_h__
-#define __the_darwin_kernel_h__
+#ifndef ___the_darwin_kernel_h
+#define ___the_darwin_kernel_h
 
 /* Problematic header(s) containing conflicts with IPRT  first. */
 #define __STDC_CONSTANT_MACROS

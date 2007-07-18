@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef __ldrELF32_h__
-#define __ldrELF32_h__
+#ifndef ___internal_ldrELF32_h
+#define ___internal_ldrELF32_h
 
 #include "ldrELFCommon.h"
 

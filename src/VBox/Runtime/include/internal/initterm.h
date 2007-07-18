@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __internal_initterm_h_
-#define __internal_initterm_h_
+#ifndef ___internal_initterm_h
+#define ___internal_initterm_h
 
 #include <iprt/cdefs.h>
 

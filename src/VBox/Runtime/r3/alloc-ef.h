@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __alloc_ef_h__
-#define __alloc_ef_h__
+#ifndef ___alloc_ef_h
+#define ___alloc_ef_h
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
