@@ -104,6 +104,7 @@ int vboxglGlobalInit()
 
     PIXELFORMATDESCRIPTOR pfd;
     int iFormat;
+    /** @todo should NOT use the desktop window -> crashes the Intel OpenGL driver */
     HDC hdc = GetDC(0);
 
     ZeroMemory(&pfd, sizeof(pfd));
@@ -126,6 +127,51 @@ int vboxglGlobalInit()
     wglDeleteContext(hRC);
     ReleaseDC(0, hdc);
 
+    return VINF_SUCCESS;
+}
+
+/**
+ * Enable OpenGL
+ *
+ * @returns VBox error code
+ * @param   pClient         Client context
+ */
+int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
+{
+    PIXELFORMATDESCRIPTOR pfd;
+    int iFormat;
+
+    /** @todo should NOT use the desktop window -> crashes the Intel OpenGL driver */
+    pClient->enable.hdc = GetDC(0);
+
+    ZeroMemory(&pfd, sizeof(pfd));
+    pfd.nSize       = sizeof(pfd);
+    pfd.nVersion    = 1;
+    pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType  = PFD_TYPE_RGBA;
+    pfd.cColorBits  = 24;
+    pfd.cDepthBits  = 16;
+    pfd.iLayerType  = PFD_MAIN_PLANE;
+    iFormat         = ChoosePixelFormat(pClient->enable.hdc, &pfd);
+    SetPixelFormat(pClient->enable.hdc, iFormat, &pfd);
+
+    pClient->enable.hglrc = wglCreateContext(pClient->enable.hdc);
+    wglMakeCurrent(pClient->enable.hdc, pClient->enable.hglrc);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Disable OpenGL
+ *
+ * @returns VBox error code
+ * @param   pClient         Client context
+ */
+int vboxglDisableOpenGL(PVBOXOGLCTX pClient)
+{
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(pClient->enable.hglrc);
+    ReleaseDC(0, pClient->enable.hdc);
     return VINF_SUCCESS;
 }
 

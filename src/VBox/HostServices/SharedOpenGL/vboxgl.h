@@ -92,8 +92,9 @@ int vboxInitOpenGLExtensions();
  * @returns VBox error code
  * @param   pszFunctionName     OpenGL extension function name
  */
+#ifdef RT_OS_WINDOWS
 bool vboxwglGetProcAddress(char *pszFunctionName);
-
+#endif
 
 /* OpenGL wrappers */
 void vboxglArrayElement(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
@@ -351,8 +352,10 @@ void vboxglGetTexLevelParameterfv (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglGetTexLevelParameteriv (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglGetTexImage (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
+#ifdef RT_OS_WINDOWS
 void vboxwglSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxwglGetSwapIntervalEXT (VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
+#endif
 
 /* after the above */
 #include <VBox/HostServices/VBoxOpenGLSvc.h>

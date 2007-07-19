@@ -286,12 +286,15 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 }
                 else
                 {
+#ifdef __WIN__
                     /* Execute the function. */
                     if (vboxwglGetProcAddress(pszExtFnName))
                         rc = VINF_SUCCESS;
                     else
                         rc = VERR_FILE_NOT_FOUND;
-
+#else
+                        rc = VERR_FILE_NOT_FOUND;
+#endif
                     if (VBOX_SUCCESS(rc))
                     {
                         /* Update parameters.*/

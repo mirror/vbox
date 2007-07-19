@@ -22,16 +22,29 @@
 #define ___VBOXGLWIN_H
 
 #include <iprt/types.h>
+#include <iprt/mem.h>
 
 #ifdef RT_OS_WINDOWS
 #define VBOX_OGL_DEBUG_WINDOW_OUTPUT
+#elif defined(RT_OS_LINUX)
+#include <X11/Xlib.h>
+#include <GL/glx.h>
+#include <GL/glxext.h>
+ 
+typedef GLXContextID (*glXGetContextIDEXTProc) (const GLXContext);
+typedef GLXContext (*glXImportContextEXTProc) (Display *, GLXContextID);
+ 
+#define VBOX_OGL_DEBUG_WINDOW_OUTPUT
+#endif
+  
+#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
+#if defined(RT_OS_WINDOWS)
+#define VBOX_OGL_GUEST_TO_HOST_HDC(a)       pClient->hdc
+#elif defined(RT_OS_LINUX)
+#define VBOX_OGL_GUEST_TO_HOST_HDC(a)       pClient->glxContext
+#endif
 #endif
 
-#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-#define VBOX_OGL_GUEST_TO_HOST_HDC(a)       pClient->hdc
-#else
-#define VBOX_OGL_GUEST_TO_HOST_HDC(a)       a
-#endif
 
 typedef struct
 {
@@ -43,9 +56,39 @@ typedef struct
     uint8_t    *pLastParam;
     uint32_t    cbLastParam;
 
+    struct
+    {
+#ifdef RT_OS_WINDOWS
+        HWND        hwnd;
+        HDC         hdc;
+        HGLRC       hglrc;
+#elif defined RT_OS_LINUX
+        Display     *dpy;
+        Window      win;
+        GLXContext  ctx;
+        GLXFBConfig *fbConfig;
+        XVisualInfo *visinfo;
+#endif
+    } enable;
+
 #ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
+#ifdef RT_OS_WINDOWS
     HWND        hwnd;
     HDC         hdc;
+#elif defined RT_OS_LINUX
+    Display     *dpy;
+    Window      xWindow;
+    GLXFBConfig actFBConfig;
+    int         winWidth, winHeight;
+    GLXFBConfig *PixelFormatToFBConfigMapper;
+    int         numFBConfigs;
+    GLXContext  glxContext;
+    PFNGLXCHOOSEFBCONFIGSGIXPROC glxChooseFBConfig;
+    PFNGLXGETVISUALFROMFBCONFIGSGIXPROC glxGetVisualFromFBConfig;
+    PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC glxCreateNewContext;
+    //glXGetContextIDEXTProc getContextIDPtr;
+    //glXImportContextEXTProc importContextEXTPtr;
+#endif
 #endif
 } VBOXOGLCTX, *PVBOXOGLCTX;
 
@@ -71,6 +114,18 @@ typedef float       FLOAT; /* ??? */
 
 #define DECLARE_HANDLE(a)  typedef HANDLE a
 #define WINAPI
+
+#define PFD_DOUBLEBUFFER   0x00000001
+#define PFD_STEREO         0x00000002
+#define PFD_DRAW_TO_WINDOW 0x00000004
+#define PFD_SUPPORT_OPENGL 0x00000020
+
+#define PFD_TYPE_RGBA       0
+#define PFD_TYPE_COLORINDEX 1
+
+#define PFD_MAIN_PLANE 0
+#define PFD_OVERLAY_PLANE 1
+#define PFD_UNDERLAY_PLANE (-1)
 
 typedef struct
 {
@@ -148,6 +203,8 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 void vboxglDrvSwapBuffers(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
+int vboxglEnableOpenGL(VBOXOGLCTX *pClient);
+int vboxglDisableOpenGL(VBOXOGLCTX *pClient);
 
 RTUINTPTR vboxDrvIsExtensionAvailable(char *pszExtFunctionName);
 
