@@ -67,9 +67,9 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 #endif
 
     va_start(va, pszFormat);
-    RTStrPrintf(szMsg, sizeof(szMsg) - 1, pszFormat, va);
+    RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
     szMsg[sizeof(szMsg) - 1] = '\0';
-    printf("%s", szMsg);
     va_end(va);
+    printf("%s", szMsg);
 }
 
