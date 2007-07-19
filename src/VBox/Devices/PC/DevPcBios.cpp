@@ -76,8 +76,10 @@ typedef struct DEVPCBIOS
     char            szMsg[256];
     /** Bios message buffer index. */
     uint32_t        iMsg;
-    /** Current logo data memory bank. */
-    uint8_t         u8LogoBank;
+    /** Current logo data offset. */
+    uint32_t        offLogoData;
+    /** Use built-in or loaded logo. */
+    bool            fDefaultLogo;
     /** The size of the BIOS logo data. */
     uint32_t        cbLogo;
     /** The BIOS logo data. */
@@ -105,7 +107,7 @@ typedef struct DEVPCBIOS
 #pragma pack(2) /* pack(2) is important! (seems that bios compiled with pack(2)...) */
 typedef struct LOGOHDR
 {
-    /** Signature (0x66BB). */
+    /** Signature (LOGO_HDR_MAGIC/0x66BB). */
     uint16_t        u16Signature;
     /** Fade in - boolean. */
     uint8_t         u8FadeIn;
@@ -120,17 +122,17 @@ typedef struct LOGOHDR
 } LOGOHDR, *PLOGOHDR;
 #pragma pack()
 
-/** The value of the LOGOHDR::u16Signature field. */
-#define LOGOHDR_MAGIC   0x66BB
+/** PC port for Logo I/O */
+#define LOGO_IO_PORT        0x506
 
-/** Size of a logo bank. */
-#define LOGO_BANK_SIZE      0xffff
-/** Logo offset mask. */
-#define LOGO_BANK_OFFSET    0xffff
-/** The last bank for custom logo data. */
-#define LOGO_BANK_LAST      254
-/** The bank which will give you the default logo. */
-#define LOGO_BANK_DEFAULT_LOGO 255
+/** The value of the LOGOHDR::u16Signature field. */
+#define LOGO_HDR_MAGIC      0x66BB
+
+/** The value which will switch you the default logo. */
+#define LOGO_DEFAULT_LOGO   0xFFFF
+
+/** The maximal logo size in bytes. (640x480x8bpp + header/palette) */
+#define LOGO_MAX_SIZE       640 * 480 + 0x442
 
 #pragma pack(1)
 
@@ -258,8 +260,8 @@ AssertCompileSize(MPSIOINTERRUPTENTRY, 8);
 *******************************************************************************/
 __BEGIN_DECLS
 
-static DECLCALLBACK(int) logoMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-static DECLCALLBACK(int) logoMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
+static DECLCALLBACK(int) logoIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 
 __END_DECLS
 
@@ -641,90 +643,89 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
 
 
 /**
- * Legacy LOGO memory (0xd0000 - 0xdffff) read hook, to be called from IOM.
+ * LOGO port I/O Handler for IN operations.
  *
  * @returns VBox status code.
- * @param   pDevIns     Pointer device instance.
+ *
+ * @param   pDevIns     The device instance.
  * @param   pvUser      User argument - ignored.
- * @param   GCPhysAddr  Physical address of memory to read.
- * @param   pv          Where to store readed data.
- * @param   cb          Bytes to read.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   pu32        Where to store the result.
+ * @param   cb          Number of bytes read.
  */
-static DECLCALLBACK(int) logoMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(int) logoIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
-    Log(("logoMMIORead call GCPhysAddr:%x pv:%x cb:%d (%d)\n", GCPhysAddr, pv, cb, pData->u8LogoBank));
+    Log(("logoIOPortRead call Port:%x pu32:%x cb:%d (%d)\n", Port, pu32, cb, pData->offLogoData));
 
-    uint32_t offLogo = GCPhysAddr & LOGO_BANK_OFFSET;
-    if (pData->u8LogoBank != LOGO_BANK_DEFAULT_LOGO)
-    {
-        /*
-         * Banked logo.
-         */
-        offLogo += pData->u8LogoBank * LOGO_BANK_SIZE;
-        if (    offLogo > pData->cbLogo
-            ||  offLogo + cb > pData->cbLogo)
-        {
-            Log(("logoMMIORead: Requested address is out of Logo data!!! offLogo=%#x(%d) cbLogo=%#x(%d)\n",
-                 offLogo, offLogo, pData->cbLogo, pData->cbLogo));
-            return VINF_SUCCESS;
-        }
-
-        memcpy(pv, &pData->pu8Logo[offLogo], cb);
-        Log(("logoMMIORead: offLogo=%#x(%d) cb=%#x %.*Vhxs\n", offLogo, offLogo, cb, cb, &pData->pu8Logo[offLogo]));
-    }
-    else
+    PRTUINT64U  p;
+    if (pData->fDefaultLogo)
     {
         /*
          * Default bios logo.
          */
-        if (offLogo > g_cbPcDefBiosLogo || offLogo + cb > g_cbPcDefBiosLogo)
+        if (pData->offLogoData + cb > g_cbPcDefBiosLogo)
         {
-            Log(("logoMMIORead: Requested address is out of Logo data!!! offLogo=%#x(%d) max:%#x(%d)\n",
-                 offLogo, offLogo, g_cbPcDefBiosLogo, g_cbPcDefBiosLogo));
+            Log(("logoIOPortRead: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
+                 pData->offLogoData, pData->offLogoData, g_cbPcDefBiosLogo, g_cbPcDefBiosLogo));
             return VINF_SUCCESS;
         }
-
-        memcpy(pv, &g_abPcDefBiosLogo[offLogo], cb);
-        Log(("logoMMIORead: offLogo=%#x(%d) cb=%#x %.*Vhxs\n", offLogo, offLogo, cb, cb, &g_abPcDefBiosLogo[offLogo]));
+        p = (PRTUINT64U)&g_abPcDefBiosLogo[pData->offLogoData];
     }
+    else
+    {
+        /*
+         * Custom logo.
+         */
+        if (pData->offLogoData + cb > pData->cbLogo)
+        {
+            Log(("logoIOPortRead: Requested address is out of Logo data!!! offLogoData=%#x(%d) cbLogo=%#x(%d)\n",
+                 pData->offLogoData, pData->offLogoData, pData->cbLogo, pData->cbLogo));
+            return VINF_SUCCESS;
+        }
+        p = (PRTUINT64U)&pData->pu8Logo[pData->offLogoData];
+    }
+
+    switch (cb)
+    {
+        case 1: *pu32 = p->au8[0]; break;
+        case 2: *pu32 = p->au16[0]; break;
+        case 4: *pu32 = p->au32[0]; break;
+        //case 8: *pu32 = p->au64[0]; break;
+        default: AssertFailed(); break;
+    }
+    Log(("logoIOPortRead: LogoOffset=%#x(%d) cb=%#x %.*Vhxs\n", pData->offLogoData, pData->offLogoData, cb, cb, pu32));
+    pData->offLogoData += cb;
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * Legacy LOGO memory (0xd0000 - 0xdffff) write hook, to be called from IOM.
+ * LOGO port I/O Handler for OUT operations.
  *
  * @returns VBox status code.
- * @param   pDevIns     Pointer device instance.
+ *
+ * @param   pDevIns     The device instance.
  * @param   pvUser      User argument - ignored.
- * @param   GCPhysAddr  Physical address of memory to write.
- * @param   pv          Pointer to data.
- * @param   cb          Bytes to write.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   u32         The value to output.
+ * @param   cb          The value size in bytes.
  */
-static DECLCALLBACK(int) logoMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
-    Log(("logoMMIOWrite: GCPhysAddr=%x cb=%d pv[0]=%#04x (byte)\n", GCPhysAddr, pv, cb, *(uint8_t *)pv));
+    Log(("logoIOPortWrite: Port=%x cb=%d u32=%#04x (byte)\n", Port, cb, u32));
 
-    /*
-     * Byte write to off 0: Switch the logo bank.
-     */
-    if ((GCPhysAddr & LOGO_BANK_OFFSET) == 0 && cb == 1)
+    /* Switch to default BIOS logo or change logo data offset. */
+    if (    cb == 2
+        &&  u32 == LOGO_DEFAULT_LOGO)
     {
-        uint8_t u8Bank = *(uint8_t *)pv;
-        uint32_t off = u8Bank * LOGO_BANK_SIZE;
-
-        if (    u8Bank != LOGO_BANK_DEFAULT_LOGO
-            &&  off > pData->cbLogo)
-        {
-            Log(("logoMMIOWrite: The requested bank is outside the logo image! (cbLogo=%d off=%d)\n", pData->cbLogo, off));
-            return VINF_SUCCESS;
-        }
-
-        pData->u8LogoBank = u8Bank;
+        pData->fDefaultLogo = true;
+        pData->offLogoData = 0;
     }
+    else
+        pData->offLogoData = u32;
 
     return VINF_SUCCESS;
 }
@@ -931,7 +932,8 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     PDEVPCBIOS  pData = PDMINS2DATA(pDevIns, PDEVPCBIOS);
     LogFlow(("pcbiosReset:\n"));
 
-    pData->u8LogoBank = 0;
+    pData->fDefaultLogo = false;
+    pData->offLogoData = 0;
     /** @todo Should we perhaps do pcbiosInitComplete() on reset? */
 
 #if 1
@@ -1172,17 +1174,16 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /*
-     * Register the MMIO region for the BIOS Logo: 0x000d0000 to 0x000dffff (64k)
+     * Register the BIOS Logo port
      */
-    rc = PDMDevHlpMMIORegister(pDevIns, 0x000d0000, 0x00010000, 0,
-                               logoMMIOWrite, logoMMIORead, NULL, "PC BIOS - Logo Buffer");
+    rc = PDMDevHlpIOPortRegister(pDevIns, LOGO_IO_PORT, 1, NULL, logoIOPortWrite, logoIOPortRead, NULL, NULL, "PC BIOS - Logo port");
     if (VBOX_FAILURE(rc))
         return rc;
 
     /*
      * Construct the logo header.
      */
-    LOGOHDR LogoHdr = { LOGOHDR_MAGIC, 0, 0, 0, 0, 0 };
+    LOGOHDR LogoHdr = { LOGO_HDR_MAGIC, 0, 0, 0, 0, 0 };
 
     rc = CFGMR3QueryU8(pCfgHandle, "FadeIn", &LogoHdr.u8FadeIn);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1243,7 +1244,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             if (VBOX_SUCCESS(rc))
             {
                 if (    cbFile > 0
-                    &&  cbFile < ((LOGO_BANK_LAST + 1) * LOGO_BANK_SIZE) - sizeof(LogoHdr))
+                    &&  cbFile < LOGO_MAX_SIZE)
                     LogoHdr.cbLogo = (uint32_t)cbFile;
                 else
                     rc = VERR_TOO_MUCH_DATA;
