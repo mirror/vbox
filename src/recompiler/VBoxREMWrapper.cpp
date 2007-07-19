@@ -157,7 +157,7 @@
  * Define USE_REM_CALLING_CONVENTION_GLUE for platforms where it's necessary to
  * use calling convention wrappers.
  */
-#if (defined(__AMD64__) && defined(__WIN__)) || defined(__DOXYGEN__)
+#if (defined(RT_ARCH_AMD64) && defined(RT_OS_WINDOWS)) || defined(__DOXYGEN__)
 # define USE_REM_CALLING_CONVENTION_GLUE
 #endif
 
@@ -165,7 +165,7 @@
  * Define USE_REM_IMPORT_JUMP_GLUE for platforms where we need to
  * emit some jump glue to deal with big addresses.
  */
-#if (defined(__AMD64__) && !defined(USE_REM_CALLING_CONVENTION_GLUE) && !defined(__DARWIN__)) || defined(__DOXYGEN__)
+#if (defined(RT_ARCH_AMD64) && !defined(USE_REM_CALLING_CONVENTION_GLUE) && !defined(__DARWIN__)) || defined(__DOXYGEN__)
 # define USE_REM_IMPORT_JUMP_GLUE
 #endif
 
@@ -216,7 +216,7 @@ typedef struct REMPARMDESC
     /** Pointer to additional data.
      * For REMPARMDESC_FLAGS_PFN this is a PREMFNDESC. */
     void       *pvExtra;
-    
+
 } REMPARMDESC, *PREMPARMDESC;
 /** Pointer to a constant parameter descriptor. */
 typedef const REMPARMDESC *PCREMPARMDESC;
@@ -485,7 +485,7 @@ static const REMPARMDESC g_aArgsCSAMR3MonitorPage[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG), NULL }
 };
-#if !(defined(__WIN__) && defined(__AMD64__)) /* the callbacks are problematic */
+#if !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
 static const REMPARMDESC g_aArgsDBGCRegisterCommands[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGCCMD), NULL },
@@ -771,9 +771,9 @@ static const REMPARMDESC g_aArgsSSMIntCallback[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
 };
-static REMFNDESC g_SSMIntCallback = 
-{   
-    "SSMIntCallback", NULL, &g_aArgsSSMIntCallback[0], ELEMENTS(g_aArgsSSMIntCallback), REMFNDESC_FLAGS_RET_INT, sizeof(int),  NULL 
+static REMFNDESC g_SSMIntCallback =
+{
+    "SSMIntCallback", NULL, &g_aArgsSSMIntCallback[0], ELEMENTS(g_aArgsSSMIntCallback), REMFNDESC_FLAGS_RET_INT, sizeof(int),  NULL
 };
 
 static const REMPARMDESC g_aArgsSSMIntLoadExecCallback[] =
@@ -782,9 +782,9 @@ static const REMPARMDESC g_aArgsSSMIntLoadExecCallback[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
 };
-static REMFNDESC g_SSMIntLoadExecCallback = 
-{   
-    "SSMIntLoadExecCallback", NULL, &g_aArgsSSMIntLoadExecCallback[0], ELEMENTS(g_aArgsSSMIntLoadExecCallback), REMFNDESC_FLAGS_RET_INT, sizeof(int),  NULL 
+static REMFNDESC g_SSMIntLoadExecCallback =
+{
+    "SSMIntLoadExecCallback", NULL, &g_aArgsSSMIntLoadExecCallback[0], ELEMENTS(g_aArgsSSMIntLoadExecCallback), REMFNDESC_FLAGS_RET_INT, sizeof(int),  NULL
 };
 static const REMPARMDESC g_aArgsSSMR3RegisterInternal[] =
 {
@@ -986,7 +986,7 @@ static REMFNDESC g_aVMMImports[] =
     { "CPUMGetGuestESP",                        (void *)(uintptr_t)&CPUMGetGuestESP,                &g_aArgsVM[0],                              ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint32_t),   NULL },
     { "CPUMQueryGuestCtxPtr",                   (void *)(uintptr_t)&CPUMQueryGuestCtxPtr,           &g_aArgsCPUMQueryGuestCtxPtr[0],            ELEMENTS(g_aArgsCPUMQueryGuestCtxPtr),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "CSAMR3MonitorPage",                      (void *)(uintptr_t)&CSAMR3MonitorPage,              &g_aArgsCSAMR3MonitorPage[0],               ELEMENTS(g_aArgsCSAMR3MonitorPage),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-#if !(defined(__WIN__) && defined(__AMD64__)) /* the callbacks are problematic */
+#if !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
     { "DBGCRegisterCommands",                   (void *)(uintptr_t)&DBGCRegisterCommands,           &g_aArgsDBGCRegisterCommands[0],            ELEMENTS(g_aArgsDBGCRegisterCommands),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #endif
     { "DBGFR3DisasInstrEx",                     (void *)(uintptr_t)&DBGFR3DisasInstrEx,             &g_aArgsDBGFR3DisasInstrEx[0],              ELEMENTS(g_aArgsDBGFR3DisasInstrEx),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
@@ -1269,7 +1269,7 @@ static bool remIsFunctionUsingFP(PCREMFNDESC pDesc)
 
 /**
  * Entry logger function.
- * 
+ *
  * @param   pDesc       The description.
  */
 DECLASM(void) remLogEntry(PCREMFNDESC pDesc)
@@ -1280,7 +1280,7 @@ DECLASM(void) remLogEntry(PCREMFNDESC pDesc)
 
 /**
  * Exit logger function.
- * 
+ *
  * @param   pDesc       The description.
  * @param   pvRet       The return code.
  */
@@ -1292,7 +1292,7 @@ DECLASM(void) remLogExit(PCREMFNDESC pDesc, void *pvRet)
 
 /**
  * Creates a wrapper for the specified callback function at run time.
- * 
+ *
  * @param   pDesc       The function descriptor.
  * @param   pValue      Upon entry *pValue contains the address of the function to be wrapped.
  *                      Upon return *pValue contains the address of the wrapper glue function.
@@ -1304,13 +1304,13 @@ DECLASM(void) remWrapGCCCallback(PCREMFNDESC pDesc, PRTUINTPTR pValue, uint32_t 
     AssertPtr(pDesc);
     AssertPtr(pValue);
 
-    /* 
+    /*
      * Simple?
      */
     if (!*pValue)
         return;
 
-    /* 
+    /*
      * Locate the right function descriptor.
      */
     if (iParam != UINT32_MAX)
@@ -1327,11 +1327,11 @@ DECLASM(void) remWrapGCCCallback(PCREMFNDESC pDesc, PRTUINTPTR pValue, uint32_t 
     /*
      * Create a new glue patch.
      */
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
     int rc = remGenerateExportGlue(pValue, pDesc);
 #else
 #error "port me"
-#endif 
+#endif
     AssertReleaseRC(rc);
 
     /*
@@ -1632,7 +1632,7 @@ static int remGenerateImportGlue(PRTUINTPTR pValue, PREMFNDESC pDesc)
             remGenerateImportGlueFixup((uint8_t *)pDesc->pvWrapper, cb, pDesc);
         }
         else
-        {   
+        {
             /* custom hacks - it's simpler to make assembly templates than writing a more generic code generator... */
             static const struct { const char *pszName; PFNRT pvStart, pvEnd; } s_aTemplates[] =
             {
@@ -1659,7 +1659,7 @@ static int remGenerateImportGlue(PRTUINTPTR pValue, PREMFNDESC pDesc)
          * Generate a jump patch.
          */
         uint8_t *pb;
-#   ifdef __AMD64__
+#   ifdef RT_ARCH_AMD64
         pDesc->pvWrapper = pb = (uint8_t *)remAllocGlue(32);
         AssertReturn(pDesc->pvWrapper, VERR_NO_MEMORY);
         /**pb++ = 0xcc;*/

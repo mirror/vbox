@@ -32,7 +32,7 @@
 ;%define EXIT_LOGGING    1
 
 
-%ifdef __AMD64__
+%ifdef RT_ARCH_AMD64
  ;;
  ; 64-bit pushad
  %macro MY_PUSHAQ 0
@@ -83,7 +83,7 @@
     and     rsp, ~0fh
     sub     rsp, 20h                    ; shadow space
 
-   %ifdef __WIN__
+   %ifdef RT_OS_WINDOWS
     mov     rcx, REM_FIXUP_64_DESC
    %else
     mov     rdi, REM_FIXUP_64_DESC
@@ -108,7 +108,7 @@
     and     rsp, ~0fh
     sub     rsp, 20h                    ; shadow space
 
-   %ifdef __WIN__
+   %ifdef RT_OS_WINDOWS
     mov     rdx, rax
     mov     rcx, REM_FIXUP_64_DESC
    %else
@@ -133,8 +133,8 @@
 
 BEGINCODE
 
-%ifdef __WIN__
- %ifdef __AMD64__
+%ifdef RT_OS_WINDOWS
+ %ifdef RT_ARCH_AMD64
 
 
 BEGINPROC WrapGCC2MSC0Int
@@ -567,7 +567,7 @@ BEGINPROC WrapGCC2MSC_SSMR3RegisterInternal
     mov     [rsp + 08h], rsi            ; -> rdx
     mov     [rsp], rdi                  ; -> rcx
 
-    ; Now convert the function pointers. Have to setup a new shadow 
+    ; Now convert the function pointers. Have to setup a new shadow
     ; space here since the SSMR3RegisterInternal one is already in use.
     sub     rsp, 20h
 
@@ -877,6 +877,6 @@ BEGINPROC WrapMSC2GCC9Int
     ret
 ENDPROC WrapMSC2GCC9Int
 
- %endif ; __AMD64__
-%endif ; __WIN__
+ %endif ; RT_ARCH_AMD64
+%endif ; RT_OS_WINDOWS
 

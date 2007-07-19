@@ -90,7 +90,7 @@ static void     remR3StateUpdate(PVM pVM);
 #if defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
 DECLINLINE(target_ulong) remR3HCVirt2GCPhysInlined(PVM pVM, void *addr);
 DECLINLINE(void *) remR3GCPhys2HCVirtInlined(PVM pVM, target_ulong addr);
-#endif 
+#endif
 
 static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys);
 static uint32_t remR3MMIOReadU16(void *pvVM, target_phys_addr_t GCPhys);
@@ -126,11 +126,11 @@ static STAMPROFILEADV gStatMemWrite;
 #ifndef REM_PHYS_ADDR_IN_TLB
 static STAMPROFILEADV gStatMemReadHCPtr;
 static STAMPROFILEADV gStatMemWriteHCPtr;
-#endif 
+#endif
 #ifdef PGM_DYNAMIC_RAM_ALLOC
 static STAMPROFILE    gStatGCPhys2HCVirt;
 static STAMPROFILE    gStatHCVirt2GCPhys;
-#endif 
+#endif
 static STAMCOUNTER    gStatCpuGetTSC;
 static STAMCOUNTER    gStatRefuseTFInhibit;
 static STAMCOUNTER    gStatRefuseVM86;
@@ -187,7 +187,7 @@ CPUWriteMemoryFunc *g_apfnHandlerWrite[3] =
 };
 
 
-#if defined(VBOX_WITH_DEBUGGER) && !(defined(__WIN__) && defined(__AMD64__))
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDWS) && defined(RT_ARCH_AMD64))
 /*
  * Debugger commands.
  */
@@ -234,7 +234,7 @@ extern int testmath(void);
 
 /* Put them here to avoid unused variable warning. */
 AssertCompile(RT_SIZEOFMEMB(VM, rem.padding) >= RT_SIZEOFMEMB(VM, rem.s));
-#if !defined(IPRT_NO_CRT) && (defined(__LINUX__) || defined(__DARWIN__) || defined(__WIN__))
+#if !defined(IPRT_NO_CRT) && (defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS))
 AssertCompileMemberSize(REM, Env, REM_ENV_SIZE);
 #else
 AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
@@ -336,7 +336,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-#if defined(VBOX_WITH_DEBUGGER) && !(defined(__WIN__) && defined(__AMD64__))
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64))
     /*
      * Debugger commands.
      */
@@ -366,7 +366,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 #ifndef REM_PHYS_ADDR_IN_TLB
     STAM_REG(pVM, &gStatMemReadHCPtr,       STAMTYPE_PROFILE, "/PROF/REM/MemReadHCPtr", STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
     STAM_REG(pVM, &gStatMemWriteHCPtr,      STAMTYPE_PROFILE, "/PROF/REM/MemWriteHCPtr", STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
-#endif 
+#endif
 #ifdef PGM_DYNAMIC_RAM_ALLOC
     STAM_REG(pVM, &gStatHCVirt2GCPhys,      STAMTYPE_PROFILE, "/PROF/REM/HCVirt2GCPhys", STAMUNIT_TICKS_PER_CALL, "Profiling memory convertion.");
     STAM_REG(pVM, &gStatGCPhys2HCVirt,      STAMTYPE_PROFILE, "/PROF/REM/GCPhys2HCVirt", STAMUNIT_TICKS_PER_CALL, "Profiling memory convertion.");
@@ -1385,7 +1385,7 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pTLBEntry,  CPUTLBEntry *pTLBEntry
 #ifndef PGM_DYNAMIC_RAM_ALLOC
     if(!is_user && !(env->state & CPU_RAW_RING0))
         return; /* We are currently not interested in kernel pages */
-#endif 
+#endif
 
 #if !defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
     Log2(("tlb_set_page_raw (r=%x|w=%x)-%x prot %x is_user %d phys base %x\n",
@@ -1431,7 +1431,7 @@ void remR3SetPage(CPUState *env, CPUTLBEntry *pTLBEntry,  CPUTLBEntry *pTLBEntry
             phys_addr = remR3HCVirt2GCPhysInlined(env->pVM, (void *)(virt_addr + addend));
 # else
             phys_addr = virt_addr - (uintptr_t)phys_ram_base + addend;
-# endif 
+# endif
         else
             phys_addr = addend;
         AssertMsgFailed(("RAWEx_SetPageEntry %x %x %x %d failed!!\n", virt_addr, phys_addr, prot, is_user));
@@ -2576,7 +2576,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     {
 # ifndef REM_PHYS_ADDR_IN_TLB
         uint32_t i;
-# endif 
+# endif
 
         cpu_register_physical_memory(GCPhys, cb, GCPhys | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
 
@@ -2626,7 +2626,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
 #ifdef PGM_DYNAMIC_RAM_ALLOC
 # ifndef REM_PHYS_ADDR_IN_TLB
     uint32_t idx;
-#endif 
+#endif
 
     Log(("REMR3NotifyPhysRamChunkRegister: GCPhys=%VGp cb=%d pvRam=%p fFlags=%d\n", GCPhys, cb, pvRam, fFlags));
     VM_ASSERT_EMT(pVM);
@@ -2739,7 +2739,7 @@ DECLINLINE(void *) remR3GCPhys2HCVirtInlined(PVM pVM, target_ulong addr)
         pv = gabZeroPage;
     }
     pv = (void *)((uintptr_t)pv | (addr & PAGE_OFFSET_MASK));
-#endif 
+#endif
     return pv;
 }
 
@@ -3167,7 +3167,7 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
 # define VBOX_CHECK_ADDR(GCPhys) AssertMsg(PGMPhysIsGCPhysValid(cpu_single_env->pVM, (GCPhys)), ("%VGp\n", (GCPhys)))
 #else
 # define VBOX_CHECK_ADDR(GCPhys) do { } while (0)
-#endif 
+#endif
 
 /**
  * Read guest RAM and ROM.
@@ -3856,7 +3856,7 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 }
 
 
-#if defined(VBOX_WITH_DEBUGGER) && !(defined(__WIN__) && defined(__AMD64__))
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64))
 /**
  * External Debugger Command: .remstep [on|off|1|0]
  */
@@ -5390,7 +5390,7 @@ void remR3DumpOBsdSyscall(PVM pVM)
 }
 
 
-#if defined(IPRT_NO_CRT) && defined(__WIN__) && defined(__X86__)
+#if defined(IPRT_NO_CRT) && defined(RT_OS_WINDOWS) && defined(RT_ARCH_X86)
 /**
  * The Dll main entry point (stub).
  */
