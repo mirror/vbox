@@ -29,6 +29,10 @@
 
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
+#ifdef VRDP_NO_COM
+#include "SchemaDefs.h"
+#endif /* VRDP_NO_COM */
+
 // ConsoleVRDPServer
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -40,7 +44,18 @@ public:
     ~ConsoleVRDPServer ();
 
     int Launch (void);
+#ifdef VRDP_NO_COM
+    void NotifyAbsoluteMouse (bool fGuestWantsAbsolute)
+    {
+        m_fGuestWantsAbsolute = fGuestWantsAbsolute;
+    }
+    
+    void EnableConnections (void);
+    void MousePointerUpdate (const VRDPCOLORPOINTER *pPointer);
+    void MousePointerHide (void);
+#else
     void SetCallback (void);
+#endif /* VRDP_NO_COM */
     void Stop (void);
 
     VRDPAuthResult Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
@@ -49,7 +64,11 @@ public:
 
     void AuthDisconnect (const Guid &uuid, uint32_t u32ClientId);
 
+#ifdef VRDP_NO_COM
+    void USBBackendCreate (uint32_t u32ClientId);
+#else
     void USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
+#endif /* VRDP_NO_COM */
     void USBBackendDelete (uint32_t u32ClientId);
     
     void *USBBackendRequestPointer (uint32_t u32ClientId, const Guid *pGuid);
@@ -65,7 +84,11 @@ public:
     bool isRemoteUSBThreadRunning (void);
     void waitRemoteUSBThreadEvent (unsigned cMillies);
     
+#ifdef VRDP_NO_COM
+    void ClipboardCreate (uint32_t u32ClientId);
+#else
     void ClipboardCreate (uint32_t u32ClientId, PFNVRDPCLIPBOARDCALLBACK *ppfn, void **ppv);
+#endif /* VRDP_NO_COM */
     void ClipboardDelete (uint32_t u32ClientId);
 
     /*
@@ -74,7 +97,10 @@ public:
     void SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const;
     void SendResize (void) const;
     void SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
+#ifdef VRDP_NO_COM
+#else
     void SetFramebuffer (IFramebuffer *framebuffer, uint32_t fFlags) const;
+#endif /* VRDP_NO_COM */
 
     void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format) const;
     void SendAudioVolume (uint16_t left, uint16_t right) const;
@@ -96,6 +122,33 @@ private:
     /** Static because will never load this more than once! */
     static RTLDRMOD mVRDPLibrary;
 
+#ifdef VRDP_NO_COM
+    static PFNVRDPCREATESERVER mpfnVRDPCreateServer;
+    
+    static VRDPENTRYPOINTS_1 *mpEntryPoints;
+    static VRDPCALLBACKS_1 mCallbacks;
+
+    static DECLCALLBACK(int)  VRDPCallbackQueryProperty     (void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
+    static DECLCALLBACK(int)  VRDPCallbackClientLogon       (void *pvCallback, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
+    static DECLCALLBACK(void) VRDPCallbackClientConnect     (void *pvCallback, uint32_t u32ClientId);
+    static DECLCALLBACK(void) VRDPCallbackClientDisconnect  (void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercepted);
+    static DECLCALLBACK(int)  VRDPCallbackIntercept         (void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercept, void **ppvIntercept);
+    static DECLCALLBACK(int)  VRDPCallbackUSB               (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint8_t u8Code, const void *pvRet, uint32_t cbRet);
+    static DECLCALLBACK(int)  VRDPCallbackClipboard         (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
+    static DECLCALLBACK(bool) VRDPCallbackFramebufferQuery  (void *pvCallback, unsigned uScreenId, VRDPFRAMEBUFFERINFO *pInfo);
+    static DECLCALLBACK(void) VRDPCallbackFramebufferLock   (void *pvCallback, unsigned uScreenId);
+    static DECLCALLBACK(void) VRDPCallbackFramebufferUnlock (void *pvCallback, unsigned uScreenId);
+    static DECLCALLBACK(void) VRDPCallbackInput             (void *pvCallback, int type, const void *pvInput, unsigned cbInput);
+    static DECLCALLBACK(void) VRDPCallbackVideoModeHint     (void *pvCallback, unsigned cWidth, unsigned cHeight,  unsigned cBitsPerPixel, unsigned uScreenId);
+    
+    bool m_fGuestWantsAbsolute;
+    int m_mousex;
+    int m_mousey;
+    
+    IFramebuffer *maFramebuffers[SchemaDefs::MaxGuestMonitors];
+    
+    IConsoleCallback *mConsoleCallback;
+#else
     // VRDP API function pointers
     static int  (VBOXCALL *mpfnVRDPStartServer)     (IConsole *pConsole, IVRDPServer *pVRDPServer, HVRDPSERVER *phServer);
     static int  (VBOXCALL *mpfnVRDPSetFramebuffer)  (HVRDPSERVER hServer, IFramebuffer *pFramebuffer, uint32_t fFlags);
@@ -109,6 +162,7 @@ private:
     static void (VBOXCALL *mpfnVRDPSendUpdate)      (HVRDPSERVER hServer, unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate);
     static void (VBOXCALL *mpfnVRDPQueryInfo)       (HVRDPSERVER hserver, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
     static void (VBOXCALL *mpfnVRDPClipboard)       (HVRDPSERVER hserver, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData, uint32_t *pcbActualRead);
+#endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
     RTCRITSECT mCritSect;

@@ -440,16 +440,24 @@ void Console::uninit()
     LogFlowThisFuncLeave();
 }
 
+#ifdef VRDP_NO_COM
+int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain)
+#else
 DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
                                              uint32_t u32ClientId,
                                              const char *pszUser,
                                              const char *pszPassword,
                                              const char *pszDomain)
+#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
     LogFlowFunc (("%d, %s, %s, %s\n", u32ClientId, pszUser, pszPassword, pszDomain));
 
+#ifdef VRDP_NO_COM
+    Console *console = this;
+#else
     Console *console = static_cast <Console *> (pvUser);
+#endif /* VRDP_NO_COM */
     AssertReturn (console, VERR_INVALID_POINTER);
 
     AutoCaller autoCaller (console);
@@ -616,12 +624,20 @@ DECLCALLBACK(int) Console::vrdp_ClientLogon (void *pvUser,
     return VERR_ACCESS_DENIED;
 }
 
+#ifdef VRDP_NO_COM
+void Console::VRDPClientConnect (uint32_t u32ClientId)
+#else
 DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
                                                 uint32_t u32ClientId)
+#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
+#ifdef VRDP_NO_COM
+    Console *console = this;
+#else
     Console *console = static_cast <Console *> (pvUser);
+#endif /* VRDP_NO_COM */
     AssertReturnVoid (console);
 
     AutoCaller autoCaller (console);
@@ -638,13 +654,22 @@ DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
     return;
 }
 
+#ifdef VRDP_NO_COM
+void Console::VRDPClientDisconnect (uint32_t u32ClientId,
+                                    uint32_t fu32Intercepted)
+#else
 DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser,
                                                    uint32_t u32ClientId,
                                                    uint32_t fu32Intercepted)
+#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
+#ifdef VRDP_NO_COM
+    Console *console = this;
+#else
     Console *console = static_cast <Console *> (pvUser);
+#endif /* VRDP_NO_COM */
     AssertReturnVoid (console);
 
     AutoCaller autoCaller (console);
@@ -702,12 +727,20 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser,
     return;
 }
 
+#ifdef VRDP_NO_COM
+void Console::VRDPInterceptAudio (uint32_t u32ClientId)
+#else
 DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser,
                                                  uint32_t u32ClientId)
+#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
+#ifdef VRDP_NO_COM
+    Console *console = this;
+#else
     Console *console = static_cast <Console *> (pvUser);
+#endif /* VRDP_NO_COM */
     AssertReturnVoid (console);
 
     AutoCaller autoCaller (console);
@@ -737,14 +770,22 @@ DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser,
     return;
 }
 
+#ifdef VRDP_NO_COM
+void Console::VRDPInterceptUSB (uint32_t u32ClientId)
+#else
 DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
                                                uint32_t u32ClientId,
                                                PFNVRDPUSBCALLBACK *ppfn,
                                                void **ppv)
+#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
+#ifdef VRDP_NO_COM
+    Console *console = this;
+#else
     Console *console = static_cast <Console *> (pvUser);
+#endif /* VRDP_NO_COM */
     AssertReturnVoid (console);
 
     AutoCaller autoCaller (console);
@@ -752,20 +793,32 @@ DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
 
     AssertReturnVoid (console->mConsoleVRDPServer);
 
+#ifdef VRDP_NO_COM
+    mConsoleVRDPServer->USBBackendCreate (u32ClientId);
+#else
     console->mConsoleVRDPServer->USBBackendCreate (u32ClientId, ppfn, ppv);
+#endif /* VRDP_NO_COM */
 
     LogFlowFuncLeave();
     return;
 }
 
+#ifdef VRDP_NO_COM
+void Console::VRDPInterceptClipboard (uint32_t u32ClientId)
+#else
 DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
                                                      uint32_t u32ClientId,
                                                      PFNVRDPCLIPBOARDCALLBACK *ppfn,
                                                      void **ppv)
+#endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
 
+#ifdef VRDP_NO_COM
+    Console *console = this;
+#else
     Console *console = static_cast <Console *> (pvUser);
+#endif /* VRDP_NO_COM */
     AssertReturnVoid (console);
 
     AutoCaller autoCaller (console);
@@ -774,7 +827,11 @@ DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
     AssertReturnVoid (console->mConsoleVRDPServer);
 
 #ifdef VBOX_VRDP
+#ifdef VRDP_NO_COM
+    mConsoleVRDPServer->ClipboardCreate (u32ClientId);
+#else
     console->mConsoleVRDPServer->ClipboardCreate (u32ClientId, ppfn, ppv);
+#endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
     LogFlowFuncLeave();
@@ -782,6 +839,8 @@ DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
 }
 
 
+#ifdef VRDP_NO_COM
+#else
 // static
 VRDPSERVERCALLBACK Console::sVrdpServerCallback =
 {
@@ -792,6 +851,7 @@ VRDPSERVERCALLBACK Console::sVrdpServerCallback =
     vrdp_InterceptUSB,
     vrdp_InterceptClipboard
 };
+#endif /* VRDP_NO_COM */
 
 //static
 const char *Console::sSSMConsoleUnit = "ConsoleData";
@@ -3133,7 +3193,11 @@ HRESULT Console::onVRDPServerChange()
             }
             else
             {
+#ifdef VRDP_NO_COM
+                mConsoleVRDPServer->EnableConnections ();
+#else
                 mConsoleVRDPServer->SetCallback ();
+#endif /* VRDP_NO_COM */
             }
         }
         else
@@ -6710,7 +6774,11 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         {
             /* Enable client connections to the server. */
             ConsoleVRDPServer *server = console->consoleVRDPServer();
+#ifdef VRDP_NO_COM
+            server->EnableConnections ();
+#else
             server->SetCallback ();
+#endif /* VRDP_NO_COM */
         }
 #endif /* VBOX_VRDP */
 
