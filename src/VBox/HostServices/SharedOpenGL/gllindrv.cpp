@@ -201,10 +201,10 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
         attr.event_mask = StructureNotifyMask | ExposureMask;
         mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
         pClient->enable.win = XCreateWindow(pClient->dpy, RootWindow(pClient->dpy, screen_num), 0, 0, 100, 100,
-		           0, visinfo->depth, InputOutput,
-		           visinfo->visual, mask, &attr);
+		           0, pClient->enable.visinfo->depth, InputOutput,
+		           pClient->enable.visinfo->visual, mask, &attr);
         /* Create Context */
-        pClient->enable.ctx = pClient->glxCreateNewContext(pClient->dpy, fbConfig[0], GLX_RGBA_TYPE, NULL, True);
+        pClient->enable.ctx = pClient->glxCreateNewContext(pClient->dpy, pClient->enable.fbConfig[0], GLX_RGBA_TYPE, NULL, True);
 
         glXMakeCurrent(pClient->dpy, pClient->enable.win, pClient->enable.ctx);
     } 
