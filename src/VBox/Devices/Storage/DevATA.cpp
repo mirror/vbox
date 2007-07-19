@@ -3058,6 +3058,17 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
 #endif /* !DEBUG */
     s->fLBA48 = false;
     s->fDMA = false;
+    if (cmd == ATA_IDLE_IMMEDIATE)
+    {
+        /* Detect Linux timeout recovery, first tries IDLE IMMEDIATE (which
+         * would overwrite the failing command unfortunately), then RESET. */
+        int32_t uCmdWait = -1;
+        uint64_t uNow = RTTimeNanoTS();
+        if (s->u64CmdTS)
+            uCmdWait = (uNow - s->u64CmdTS) / 1000;
+        LogRel(("PIIX3 ATA: LUN#%d: IDLE IMMEDIATE, CmdIf=%#04x (%d usec ago)\n",
+                s->iLUN, s->uATARegCommand, uCmdWait));
+    }
     s->uATARegCommand = cmd;
     switch (cmd)
     {
