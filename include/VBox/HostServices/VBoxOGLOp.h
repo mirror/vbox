@@ -1850,10 +1850,11 @@ static PFN_VBOXGLWRAPPER pfnOGLWrapper[VBOX_OGL_OP_Last] =
     vboxglDrvSetPixelFormat,
     vboxglDrvSwapBuffers,
 
+#ifdef RT_OS_WINDOWS
     /* OpenGL Extensions */
     vboxwglSwapIntervalEXT,
     vboxwglGetSwapIntervalEXT,
-
+#endif
 };
 #endif
 
