@@ -22,59 +22,59 @@
 
 /** @page pg_vboxservice_timesync       The Time Sync Service
  *
- * The time sync service plays along with the Time Manager (TM) in the VMM 
- * to keep the guest time accurate using the host machine as reference. 
+ * The time sync service plays along with the Time Manager (TM) in the VMM
+ * to keep the guest time accurate using the host machine as reference.
  * TM will try its best to make sure all timer ticks gets delivered so that
  * there isn't normally any need to adjust the guest time.
- * 
+ *
  * There are three normal (= acceptable) cases:
  *      -# When the service starts up. This is because ticks and such might
  *         be lost during VM and OS startup. (Need to figure out exactly why!)
- *      -# When the TM is unable to deliver all the ticks and swallows a 
+ *      -# When the TM is unable to deliver all the ticks and swallows a
  *         backlog of ticks. The threshold for this is configurable with
  *         a default of 60 seconds.
- *      -# The time is adjusted on the host. This can be caused manually by 
+ *      -# The time is adjusted on the host. This can be caused manually by
  *         the user or by some time sync daemon (NTP, LAN server, etc.).
- * 
- * There are a number of very odd case where adjusting is needed. Here 
+ *
+ * There are a number of very odd case where adjusting is needed. Here
  * are some of them:
  *      -# Timer device emulation inaccurancies (like rounding).
  *      -# Inaccurancies in time source VirtualBox uses.
  *      -# The Guest and/or Host OS doesn't perform proper time keeping. This
  *         come about as a result of OS and/or hardware issues.
- * 
- * The TM is our source for the host time and will make adjustments for 
- * current timer delivery lag. The simplistic approach taken by TM is to 
+ *
+ * The TM is our source for the host time and will make adjustments for
+ * current timer delivery lag. The simplistic approach taken by TM is to
  * adjust the host time by the current guest timer delivery lag, meaning that
  * if the guest is behind 1 second with PIT/RTC/++ ticks this should be reflected
  * in the guest wall time as well.
- * 
+ *
  * Now, there is any amount of trouble we can cause by changing the time.
- * Most applications probably uses the wall time when they need to measure 
+ * Most applications probably uses the wall time when they need to measure
  * things. A walltime that is being juggled about every so often, even if just
  * a little bit, could occationally upset these measurements by for instance
  * yielding negative results.
- * 
- * This bottom line here is that the time sync service isn't really supposed 
+ *
+ * This bottom line here is that the time sync service isn't really supposed
  * to do anything and will try avoid having to do anything when possible.
- * 
+ *
  * The implementation uses the latency it takes to query host time as the
- * absolute maximum precision to avoid messing up under timer tick catchup 
+ * absolute maximum precision to avoid messing up under timer tick catchup
  * and/or heavy host/guest load. (Rational is that a *lot* of stuff may happen
  * on our way back from ring-3 and TM/VMMDev since we're taking the route
  * thru the inner EM loop with it's force action processing.)
- * 
- * But this latency has to be measured from our perspective, which means it 
- * could just as easily come out as 0. (OS/2 and Windows guest only updates 
+ *
+ * But this latency has to be measured from our perspective, which means it
+ * could just as easily come out as 0. (OS/2 and Windows guest only updates
  * the current time when the timer ticks for instance.) The good thing is
- * that this isn't really a problem since we won't ever do anything unless 
+ * that this isn't really a problem since we won't ever do anything unless
  * the drift is noticable.
- * 
- * It now boils down to these three (configuration) factors: 
+ *
+ * It now boils down to these three (configuration) factors:
  *  -# g_TimesyncMinAdjust - The minimum drift we will ever bother with.
  *  -# g_TimesyncLatencyFactor - The factor we multiply the latency by to
  *     calculate the dynamic minimum adjust factor.
- *  -# g_TimesyncMaxLatency - When to start discarding the data as utterly 
+ *  -# g_TimesyncMaxLatency - When to start discarding the data as utterly
  *     useless and take a rest (someone is too busy to give us good data).
  */
 
@@ -83,7 +83,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <unistd.h> 
+#include <unistd.h>
 #include <errno.h>
 #include <time.h>
 #include <sys/time.h>
@@ -104,16 +104,16 @@
 uint32_t g_TimeSyncInterval = 0;
 /**
  * @see pg_vboxservice_timesync
- * 
- * @remark  OS/2: There is either a 1 second resolution on the DosSetDateTime 
+ *
+ * @remark  OS/2: There is either a 1 second resolution on the DosSetDateTime
  *                API or a but in the settimeofday implementation. Thus, don't
  *                bother unless there is at least a 1 second drift.
  */
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 static uint32_t g_TimeSyncMinAdjust = 1000;
 #else
 static uint32_t g_TimeSyncMinAdjust = 100;
-#endif 
+#endif
 /** @see pg_vboxservice_timesync */
 static uint32_t g_TimeSyncLatencyFactor = 8;
 /** @see pg_vboxservice_timesync */
@@ -137,16 +137,16 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int a
     if (ppszShort)
         /* no short options */;
     else if (!strcmp(argv[*pi], "--timesync-interval"))
-        rc = VBoxServiceArgUInt32(argc, argv, "", pi, 
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_TimeSyncInterval, 1, UINT32_MAX - 1);
     else if (!strcmp(argv[*pi], "--timesync-min-adjust"))
-        rc = VBoxServiceArgUInt32(argc, argv, "", pi, 
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_TimeSyncMinAdjust, 0, 3600000);
     else if (!strcmp(argv[*pi], "--timesync-latency-factor"))
-        rc = VBoxServiceArgUInt32(argc, argv, "", pi, 
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_TimeSyncLatencyFactor, 1, 1024);
     else if (!strcmp(argv[*pi], "--timesync-max-latency"))
-        rc = VBoxServiceArgUInt32(argc, argv, "", pi, 
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_TimeSyncMaxLatency, 1, 3600000);
     return rc;
 }
@@ -155,7 +155,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int a
 /** @copydoc VBOXSERVICE::pfnInit */
 static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
 {
-    /* 
+    /*
      * If not specified, find the right interval default.
      * Then create the event sem to block on.
      */
@@ -219,9 +219,9 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                 RTTimeSpecAbsolute(&AbsDrift);
                 if (g_cVerbosity >= 3)
                 {
-                    VBoxServiceVerbose(3, "Host:    %s    (MinAdjust: %RU32 ms)\n", 
+                    VBoxServiceVerbose(3, "Host:    %s    (MinAdjust: %RU32 ms)\n",
                                        RTTimeToString(RTTimeExplode(&Time, &HostNow), sz, sizeof(sz)), MinAdjust);
-                    VBoxServiceVerbose(3, "Guest: - %s => %RDtimespec drift\n", 
+                    VBoxServiceVerbose(3, "Guest: - %s => %RDtimespec drift\n",
                                        RTTimeToString(RTTimeExplode(&Time, &GuestNow), sz, sizeof(sz)),
                                        &Drift);
                 }
@@ -229,11 +229,11 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                 {
                     /*
                      * The drift is to big, we have to make adjustments. :-/
-                     * If we've got adjtime around, try that first - most 
+                     * If we've got adjtime around, try that first - most
                      * *NIX systems have it. Fall back on settimeofday.
                      */
                     struct timeval tv;
-#if !defined(__OS2__) /* PORTME */
+#if !defined(RT_OS_OS2) /* PORTME */
                     RTTimeSpecGetTimeval(Drift, &tv);
                     if (adjtime(&tv, NULL) == 0)
                     {
@@ -242,7 +242,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                         cErrors = 0;
                     }
                     else
-#endif              
+#endif
                     {
                         errno = 0;
                         if (!gettimeofday(&tv, NULL))
@@ -252,11 +252,11 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                             if (!settimeofday(RTTimeSpecGetTimeval(&Tmp, &tv), NULL))
                             {
                                 if (g_cVerbosity >= 1)
-                                    VBoxServiceVerbose(1, "settimeofday to %s\n", 
+                                    VBoxServiceVerbose(1, "settimeofday to %s\n",
                                                        RTTimeToString(RTTimeExplode(&Time, &Tmp), sz, sizeof(sz)));
 #ifdef DEBUG
                                 if (g_cVerbosity >= 3)
-                                    VBoxServiceVerbose(2, "       new time %s\n", 
+                                    VBoxServiceVerbose(2, "       new time %s\n",
                                                        RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
 #endif
                                 cErrors = 0;
@@ -317,7 +317,7 @@ static DECLCALLBACK(void) VBoxServiceTimeSyncTerm(void)
 /**
  * The 'timesync' service description.
  */
-VBOXSERVICE g_TimeSync = 
+VBOXSERVICE g_TimeSync =
 {
     /* pszName. */
     "timesync",
