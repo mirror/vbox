@@ -905,6 +905,7 @@ typedef struct _VRDPCALLBACKS_1
      * @param cbInput         The size of the input information.
      */
     DECLCALLBACKMEMBER(void, VRDPCallbackInput)(void *pvCallback,
+                                                int type,
                                                 const void *pvInput,
                                                 unsigned cbInput);
 
@@ -945,7 +946,11 @@ VRDPDECL(int) VRDPCreateServer (const VRDPINTERFACEHDR *pCallbacks,
                                 VRDPINTERFACEHDR **ppEntryPoints,
                                 HVRDPSERVER *phServer);
 
-
+typedef VRDPDECL(int) FNVRDPCREATESERVER (const VRDPINTERFACEHDR *pCallbacks,
+                                          void *pvCallback,
+                                          VRDPINTERFACEHDR **ppEntryPoints,
+                                          HVRDPSERVER *phServer);
+typedef FNVRDPCREATESERVER *PFNVRDPCREATESERVER;
 #else
 /**
  * Start server for the specified IConsole.
