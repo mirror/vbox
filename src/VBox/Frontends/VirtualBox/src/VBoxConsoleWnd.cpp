@@ -1372,7 +1372,7 @@ void VBoxConsoleWnd::languageChange()
     vmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
 
     vmSeamlessAction->setMenuText (tr ("Seam&less Mode") + "\tHost+L");
-    vmSeamlessAction->setStatusTip (tr ("Switch to desktop integration mode"));
+    vmSeamlessAction->setStatusTip (tr ("Switch to seamless desktop integration mode"));
 
     vmDisMouseIntegrMenu->setToolTip (tr ("Mouse Integration",
                                           "enable/disable..."));
