@@ -106,8 +106,8 @@ PrintFBConfigInfo(Display *dpy, int screen, GLXFBConfig config)
    glXGetFBConfigAttrib(dpy, config, GLX_ACCUM_GREEN_SIZE, &accumGreenSize);
    glXGetFBConfigAttrib(dpy, config, GLX_ACCUM_BLUE_SIZE, &accumBlueSize);
    glXGetFBConfigAttrib(dpy, config, GLX_ACCUM_ALPHA_SIZE, &accumAlphaSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_SAMPLE_BUFFERS, &sampleBuffers);
-   glXGetFBConfigAttrib(dpy, config, GLX_SAMPLES, &samples);
+//   glXGetFBConfigAttrib(dpy, config, GLX_SAMPLE_BUFFERS, &sampleBuffers);
+//   glXGetFBConfigAttrib(dpy, config, GLX_SAMPLES, &samples);
    glXGetFBConfigAttrib(dpy, config, GLX_DRAWABLE_TYPE, &drawableType);
    glXGetFBConfigAttrib(dpy, config, GLX_RENDER_TYPE, &renderType);
    glXGetFBConfigAttrib(dpy, config, GLX_X_RENDERABLE, &xRenderable);
