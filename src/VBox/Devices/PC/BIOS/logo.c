@@ -12,6 +12,8 @@
 #define F12_SCAN_CODE   0x86
 #define F12_WAIT_TIME   (3 * WAIT_HZ)   /* 3 seconds. Used only if logo disabled. */
 
+#define LOGO_IO_PORT    0x506
+
 typedef struct
 {
     Bit8u Blue;
@@ -131,6 +133,8 @@ static unsigned char get_mode();
 static void          set_mode();
 static Bit8u         wait(ticks, stop_on_key);
 static void          write_pixel();
+static Bit8u         read_logo_byte();
+static Bit16u        read_logo_word();
 
 /**
  * Get current video mode (VGA).
@@ -330,38 +334,7 @@ ASM_END
     return scan_code;
 }
 
-void write_pixel(x,y,color)
-  unsigned short x;
-  unsigned short y;
-  unsigned char color;
-  {
-  ASM_START
-    push bp
-    mov  bp, sp
-
-      push ax
-      push bx
-      push cx
-      push dx
-
-      mov  ah, #0x0C
-      xor  bh, bh
-      mov  al, 8[bp] ; color
-      mov  cx, 4[bp] ; x
-      mov  dx, 6[bp] ; y
-      int #0x10
-
-      pop  dx
-      pop  cx
-      pop  bx
-      pop  ax
-
-    pop  bp
-  ASM_END
-  }
-
-void read_palette(bmp_seg, pal_seg, bmp_off, size, type)
-  Bit16u bmp_seg;
+void read_palette(pal_seg, bmp_off, size, type)
   Bit16u pal_seg;
   Bit16u bmp_off;
   Bit16u size;
@@ -376,15 +349,15 @@ void read_palette(bmp_seg, pal_seg, bmp_off, size, type)
     {
         Bit8u pal;
 
-        pal = read_byte(bmp_seg, bmp_off);
+        pal = read_logo_byte(bmp_off);
         write_byte(pal_seg, &palette->Blue, pal);
         bmp_off++;
 
-        pal = read_byte(bmp_seg, bmp_off);
+        pal = read_logo_byte(bmp_off);
         write_byte(pal_seg, &palette->Green, pal);
         bmp_off++;
 
-        pal = read_byte(bmp_seg, bmp_off);
+        pal = read_logo_byte(bmp_off);
         write_byte(pal_seg, &palette->Red, pal);
         bmp_off++;
 
@@ -555,11 +528,30 @@ void vesa_set_bank(bank)
   ASM_END
 }
 
+Bit8u read_logo_byte(offset)
+  Bit16u offset;
+{
+    if (offset)
+    {
+        outw(LOGO_IO_PORT, offset);
+    }
+
+    return inb(LOGO_IO_PORT);
+}
+
+Bit16u read_logo_word(offset)
+  Bit16u offset;
+{
+    if (offset)
+    {
+        outw(LOGO_IO_PORT, offset);
+    }
+
+    return inw(LOGO_IO_PORT);
+}
 
 #define VID_SEG         0xA000
-#define ROM_SEG         0xD000
 #define TMP_SEG         0x1000
-
 
 void show_logo()
 {
@@ -570,7 +562,7 @@ void show_logo()
     OS2HDR      *os2_head;
     OS22HDR     *os22_head;
     WINHDR      *win_head;
-    Bit16u       rom_seg, bmp_seg, pal_seg, logo_hdr_size, tmp, i;
+    Bit16u       rom_seg, pal_seg, logo_hdr_size, tmp, i;
     Bit32u       hdr_size;
     Bit8u        vid_mode;
 
@@ -590,23 +582,19 @@ void show_logo()
 
     is_logo_failed = 0;
 
-    // Switch to ROM bank 0
-    write_byte(ROM_SEG, 0, logo_bank);
-
-    rom_seg = bmp_seg = ROM_SEG;
     logo_hdr = 0;
     logo_hdr_size = sizeof(LOGOHDR);
 
     // Get main signature
-    tmp = read_word(rom_seg, &logo_hdr->Signature);
+    tmp = read_logo_word(&logo_hdr->Signature);
     if (tmp != 0x66BB)
         goto done;
 
     // Get options
-    is_fade_in = read_byte(rom_seg, &logo_hdr->FadeIn);
-    is_fade_out = read_byte(rom_seg, &logo_hdr->FadeOut);
-    logo_time = read_word(rom_seg, &logo_hdr->LogoTime);
-    uBootMenu = read_byte(rom_seg, &logo_hdr->ShowBootMenu);
+    is_fade_in = read_logo_byte(&logo_hdr->FadeIn);
+    is_fade_out = read_logo_byte(&logo_hdr->FadeOut);
+    logo_time = read_logo_word(&logo_hdr->LogoTime);
+    uBootMenu = read_logo_byte(&logo_hdr->ShowBootMenu);
 
     // Is Logo disabled?
     if (!is_fade_in && !is_fade_out && !logo_time)
@@ -619,7 +607,7 @@ show_bmp:
     os2_head = os22_head = win_head = logo_hdr_size + sizeof(BMPINFO);
 
     // Check bitmap ID
-    tmp = read_word(rom_seg, &bmp_info->Type);
+    tmp = read_logo_word(&bmp_info->Type);
     if (tmp != 0x4D42) // 'BM'
     {
         goto error;
@@ -634,35 +622,37 @@ show_bmp:
 
         // Check the size of the information header that indicates
         // the structure type
-        hdr_size = read_dword(bmp_seg, &win_head->Size);
+        hdr_size = read_logo_word(&win_head->Size);
+        hdr_size |= read_logo_word(0) << 16;
+
         if (hdr_size == BMP_HEADER_OS21) // OS2 1.x header
         {
-            width = read_word(bmp_seg, &os2_head->Width);
-            height = read_word(bmp_seg, &os2_head->Height);
-            planes = read_word(bmp_seg, &os2_head->Planes);
-            depth = read_word(bmp_seg, &os2_head->BitCount);
+            width = read_logo_word(&os2_head->Width);
+            height = read_logo_word(&os2_head->Height);
+            planes = read_logo_word(&os2_head->Planes);
+            depth = read_logo_word(&os2_head->BitCount);
             compr = COMPRESS_NONE;
             clr_used = 0;
         }
         else
         if (hdr_size == BMP_HEADER_OS22) // OS2 2.0 header
         {
-            width = read_word(bmp_seg, &os22_head->Width);
-            height = read_word(bmp_seg, &os22_head->Height);
-            planes = read_word(bmp_seg, &os22_head->Planes);
-            depth = read_word(bmp_seg, &os22_head->BitCount);
-            compr = read_word(bmp_seg, &os22_head->Compression);
-            clr_used = read_word(bmp_seg, &os22_head->ClrUsed);
+            width = read_logo_word(&os22_head->Width);
+            height = read_logo_word(&os22_head->Height);
+            planes = read_logo_word(&os22_head->Planes);
+            depth = read_logo_word(&os22_head->BitCount);
+            compr = read_logo_word(&os22_head->Compression);
+            clr_used = read_logo_word(&os22_head->ClrUsed);
         }
         else
         if (hdr_size == BMP_HEADER_WIN3) // Windows 3.x header
         {
-            width = read_word(bmp_seg, &win_head->Width);
-            height = read_word(bmp_seg, &win_head->Height);
-            planes = read_word(bmp_seg, &win_head->Planes);
-            depth = read_word(bmp_seg, &win_head->BitCount);
-            compr = read_word(bmp_seg, &win_head->Compression);
-            clr_used = read_word(bmp_seg, &win_head->ClrUsed);
+            width = read_logo_word(&win_head->Width);
+            height = read_logo_word(&win_head->Height);
+            planes = read_logo_word(&win_head->Planes);
+            depth = read_logo_word(&win_head->BitCount);
+            compr = read_logo_word(&win_head->Compression);
+            clr_used = read_logo_word(&win_head->ClrUsed);
         }
         else
             goto error;
@@ -709,7 +699,7 @@ show_bmp:
         pal_seg = TMP_SEG;
         palette_data = logo_hdr_size + sizeof(BMPINFO) + hdr_size;
 
-        read_palette(bmp_seg, pal_seg, palette_data, palette_size, hdr_size);
+        read_palette(pal_seg, palette_data, palette_size, hdr_size);
 
         //  Get current video mode
         vid_mode = get_mode();
@@ -727,8 +717,8 @@ show_bmp:
         vesa_set_bank(0);
 
         // Show bitmap
-        tmp = read_word(bmp_seg, &bmp_info->Offset);
-        bmp_data = logo_hdr_size + tmp;
+        tmp = read_logo_word(&bmp_info->Offset);
+        outw(LOGO_IO_PORT, logo_hdr_size + tmp);
 
         switch(depth)
         {
@@ -754,13 +744,7 @@ show_bmp:
                     {
                         Bit8u c;
 
-                        c = read_byte(bmp_seg, bmp_data++);
-
-                        if (bmp_data == 0xffff)
-                        {
-                            bmp_data = 0;
-                            write_byte(ROM_SEG, 0, ++logo_bank);
-                        }
+                        c = read_logo_byte(0);
 
                         for (z = 0; z < 2; z++)
                         {
@@ -788,11 +772,7 @@ show_bmp:
 
                     for (z = 0; z < pad_bytes; z++)
                     {
-                        if (++bmp_data == 0xffff)
-                        {
-                            bmp_data = 0;
-                            write_byte(ROM_SEG, 0, ++logo_bank);
-                        }
+                        c = read_logo_byte(0);
                     }
                 }
             break;
@@ -811,13 +791,7 @@ show_bmp:
                         Bit8u c, z;
                         Bit16u new_bank;
 
-                        c = read_byte(bmp_seg, bmp_data++);
-
-                        if (bmp_data == 0xffff)
-                        {
-                            bmp_data = 0;
-                            write_byte(ROM_SEG, 0, ++logo_bank);
-                        }
+                        c = read_logo_byte(0);
 
                         offset = (((Bit32u)start_y + (Bit32u)y) * (Bit32u)scr_width) + ((Bit32u)start_x + (Bit32u)x);
                         new_bank = (offset >> 16);
@@ -834,11 +808,7 @@ show_bmp:
 
                     for (z = 0; z < pad_bytes; z++)
                     {
-                        if (++bmp_data == 0xffff)
-                        {
-                            bmp_data = 0;
-                            write_byte(ROM_SEG, 0, ++logo_bank);
-                        }
+                        c = read_logo_byte(0);
                     }
                 }
             break;
@@ -859,13 +829,7 @@ show_bmp:
                             Bit8u color;
                             Bit16u new_bank;
 
-                            color = read_byte(bmp_seg, bmp_data++);
-
-                            if (bmp_data == 0xffff)
-                            {
-                                bmp_data = 0;
-                                write_byte(ROM_SEG, 0, ++logo_bank);
-                            }
+                            color = read_logo_byte(0);
 
                             offset = (((Bit32u)start_y + (Bit32u)y) * (Bit32u)scr_width*3) + (((Bit32u)start_x + (Bit32u)x) * (Bit32u)3 + z);
                             new_bank = (offset >> 16);
@@ -883,11 +847,7 @@ show_bmp:
 
                     for (z = 0; z < pad_bytes; z++)
                     {
-                        if (++bmp_data == 0xffff)
-                        {
-                            bmp_data = 0;
-                            write_byte(ROM_SEG, 0, ++logo_bank);
-                        }
+                        c = read_logo_byte(0);
                     }
                 }
             break;
@@ -996,13 +956,6 @@ show_bmp:
         }
     }
 
-    // Clear video memory
-#if 0 // Really need to clear VESA memory?
-    for (i = 0; i < 0x9600; i += 2)
-    {
-	write_word(VID_SEG, i, 0);
-    }
-#endif
     goto done;
 
 error:
@@ -1012,8 +965,8 @@ error:
 
         logo_hdr_size = 0;
 
-        // Switch to ROM bank 255 (default logo)
-        write_byte(ROM_SEG, 0, 255);
+        // Switch to defaul logo
+        outw(LOGO_IO_PORT, 0xFFFF);
 
         goto show_bmp;
     }
