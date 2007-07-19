@@ -1458,9 +1458,32 @@ void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
             "<b>fullscreen</b> mode. "
             "You can go back to windowed mode at any time by pressing "
             "<b>%1</b>. Note that the <i>Host</i> key is currently "
-            "defined as <b>%1</b>.</p>")
+            "defined as <b>%1</b>.</p>"
+            "<p>Note that the main menu bar is hidden fullscreen mode. You "
+            "can access it by pressing <b>Host+Home</b>.</p>")
             .arg (hotKey).arg (hostKey),
         "remindAboutGoingFullscreen");
+    NOREF(rc);
+}
+
+/**
+ *  @param  fullscreen hot key as defined in the menu
+ *  @param  current host key as in the global settings
+ *  @return true if the user has chosen to go fullscreen.
+ */
+void VBoxProblemReporter::remindAboutGoingSeamless (const QString &hotKey,
+                                                    const QString &hostKey)
+{
+    int rc = message (&vboxGlobal().consoleWnd(), Info,
+        tr ("<p>The virtual machine window will be now switched to "
+            "<b>Seamless</b> mode. "
+            "You can go back to windowed mode at any time by pressing "
+            "<b>%1</b>. Note that the <i>Host</i> key is currently "
+            "defined as <b>%1</b>.</p>"
+            "<p>Note that the main menu bar is hidden seamless mode. You "
+            "can access it by pressing <b>Host+Home</b>.</p>")
+            .arg (hotKey).arg (hostKey),
+        "remindAboutGoingSeamless");
     NOREF(rc);
 }
 
