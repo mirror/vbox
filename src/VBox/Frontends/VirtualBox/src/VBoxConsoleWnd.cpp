@@ -1372,7 +1372,7 @@ void VBoxConsoleWnd::languageChange()
     vmFullscreenAction->setStatusTip (tr ("Switch to fullscreen mode" ));
 
     vmSeamlessAction->setMenuText (tr ("Seam&less Mode") + "\tHost+L");
-    vmSeamlessAction->setStatusTip (tr ("Switch to seamless mode"));
+    vmSeamlessAction->setStatusTip (tr ("Switch to desktop integration mode"));
 
     vmDisMouseIntegrMenu->setToolTip (tr ("Mouse Integration",
                                           "enable/disable..."));
@@ -1903,6 +1903,18 @@ void VBoxConsoleWnd::vmSeamless (bool on)
     AssertReturnVoid (console);
     AssertReturnVoid (mIsInSeamlessMode != on);
     AssertReturnVoid ((hidden_children.isEmpty() == on));
+
+    if (on)
+    {
+        /* take the Seamless hot key from the menu item */
+        QString hotKey = vmSeamlessAction->menuText();
+        hotKey = QStringList::split ('\t', hotKey) [1];
+        Assert (!hotKey.isEmpty());
+        /* get the host key name */
+        QString hostKey = QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey());
+        /* show the info message */
+        vboxProblem().remindAboutGoingSeamless (hotKey, hostKey);
+    }
 
     /* activate the auto-resize feature required for the seamless mode */
     if (!vmAutoresizeGuestAction->isOn())

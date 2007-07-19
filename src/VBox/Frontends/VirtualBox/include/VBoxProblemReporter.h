@@ -215,6 +215,8 @@ public:
 
     void remindAboutGoingFullscreen (const QString &hotKey,
                                      const QString &hostKey);
+    void remindAboutGoingSeamless (const QString &hotKey,
+                                   const QString &hostKey);
 
     void cannotRunInSelectorMode();
 
