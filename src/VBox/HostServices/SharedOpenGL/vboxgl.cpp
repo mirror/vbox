@@ -30,8 +30,6 @@
 #define LOG_GROUP LOG_GROUP_SHARED_OPENGL
 #include <VBox/log.h>
 
-
-
 /**
  * glGetString implementation
  *
@@ -47,25 +45,7 @@ int vboxglGetString(VBOXOGLCTX *pClient, GLenum name, char *pString, uint32_t *p
     uint32_t cbLen;
     int      rc = VINF_SUCCESS;
 
-#ifdef RT_OS_WINDOWS
-    PIXELFORMATDESCRIPTOR pfd;
-    int iFormat;
-    HDC hdc = GetDC(0);
-
-    ZeroMemory(&pfd, sizeof(pfd));
-    pfd.nSize       = sizeof(pfd);
-    pfd.nVersion    = 1;
-    pfd.dwFlags     = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    pfd.iPixelType  = PFD_TYPE_RGBA;
-    pfd.cColorBits  = 24;
-    pfd.cDepthBits  = 16;
-    pfd.iLayerType  = PFD_MAIN_PLANE;
-    iFormat         = ChoosePixelFormat(hdc, &pfd);
-    SetPixelFormat(hdc, iFormat, &pfd);
-
-    HGLRC hRC = wglCreateContext(hdc);
-    wglMakeCurrent(hdc, hRC);
-#endif
+    vboxglEnableOpenGL(pClient);
 
     pName = glGetString(name);
     if (pName == NULL)
@@ -86,11 +66,7 @@ int vboxglGetString(VBOXOGLCTX *pClient, GLenum name, char *pString, uint32_t *p
 
 end:
 
-#ifdef RT_OS_WINDOWS
-    wglMakeCurrent(NULL, NULL);
-    wglDeleteContext(hRC);
-    ReleaseDC(0, hdc);
-#endif
+    vboxglDisableOpenGL(pClient);
     return rc;
 }
 
