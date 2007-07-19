@@ -286,7 +286,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 }
                 else
                 {
-#ifdef __WIN__
+#ifdef RT_OS_WINDOWS
                     /* Execute the function. */
                     if (vboxwglGetProcAddress(pszExtFnName))
                         rc = VINF_SUCCESS;
