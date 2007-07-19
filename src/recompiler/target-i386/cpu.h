@@ -491,7 +491,7 @@ typedef struct CPUX86State {
     uint32_t alignment3[3]; /* force the long double to start a 16 byte line. */
 #endif 
     CPU86_LDouble ft0;
-#if defined(VBOX) && defined(__X86__) && !defined(__DARWIN__)
+#if defined(VBOX) && defined(RT_ARCH_X86) && !defined(RT_OS_DARWIN)
     uint32_t alignment4; /* long double is 12 byte, pad it to 16. */
 #endif 
     union {
@@ -534,7 +534,7 @@ typedef struct CPUX86State {
     
     /* exception/interrupt handling */
     jmp_buf jmp_env;
-#if defined(VBOX) && defined(__WIN__) && defined(__X86__) 
+#if defined(VBOX) && defined(RT_OS_WINDOWS) && defined(RT_ARCH_X86) 
     /* This will be removed when switching to the no-crt code everywhere. */
     uint32_t alignment1[23];
 #endif 

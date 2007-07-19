@@ -102,7 +102,7 @@ p63:	.byte 0, 0, 0, 0, 0, 0, 0xe0, 0x43
 	.text
 //ENTRY(__ieee754_powl)
 ENTRY(RT_NOCRT(powl))
-#ifdef __DARWIN__ /* 16-byte long double with 8 byte alignment requirements */
+#ifdef RT_OS_DARWIN /* 16-byte long double with 8 byte alignment requirements */
 	fldt	20(%esp)	// y
 #else
 	fldt	16(%esp)	// y

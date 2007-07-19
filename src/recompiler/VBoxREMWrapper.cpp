@@ -165,7 +165,7 @@
  * Define USE_REM_IMPORT_JUMP_GLUE for platforms where we need to
  * emit some jump glue to deal with big addresses.
  */
-#if (defined(RT_ARCH_AMD64) && !defined(USE_REM_CALLING_CONVENTION_GLUE) && !defined(__DARWIN__)) || defined(__DOXYGEN__)
+#if (defined(RT_ARCH_AMD64) && !defined(USE_REM_CALLING_CONVENTION_GLUE) && !defined(RT_OS_DARWIN)) || defined(__DOXYGEN__)
 # define USE_REM_IMPORT_JUMP_GLUE
 #endif
 
