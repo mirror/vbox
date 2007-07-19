@@ -22,11 +22,11 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifdef __OS2__
+#ifdef RT_OS_OS2
 # define INCL_BASE
 # define INCL_ERRORS
 # include <os2.h>
-#endif 
+#endif
 #include <errno.h>
 
 #include <iprt/string.h>

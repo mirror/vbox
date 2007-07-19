@@ -23,7 +23,7 @@
 /* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
 #ifndef VBGL_VBOXGUEST
 
-#ifdef __linux__ /** @todo r=bird: Why isn't this __LINUX__ like everywhere else? */
+#ifdef RT_OS_LINUX
 # include "VBoxCalls.h"
 # define DbgPrint AssertMsg2
 #else

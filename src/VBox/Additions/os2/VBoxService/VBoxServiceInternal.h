@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxService - Guest Additions Services.
  */
@@ -18,13 +19,13 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef ___VBoxServiceInternal_h___
-#define ___VBoxServiceInternal_h___
+#ifndef ___VBoxServiceInternal_h
+#define ___VBoxServiceInternal_h
 
 /**
  * A service descriptor.
  */
-typedef struct 
+typedef struct
 {
     /** The short service name. */
     const char *pszName;
@@ -40,34 +41,34 @@ typedef struct
      * @returns VBox status code.
      */
     DECLCALLBACKMEMBER(int, pfnPreInit)(void);
-    
+
     /**
      * Tries to parse the given command line option.
      *
      * @returns 0 if we parsed, -1 if it didn't and anything else means exit.
-     * @param   ppszShort   If not NULL it points to the short option iterator. a short argument. 
+     * @param   ppszShort   If not NULL it points to the short option iterator. a short argument.
      *                      If NULL examine argv[*pi].
      * @param   argc        The argument count.
      * @param   argv        The argument vector.
      * @param   pi          The argument vector index. Update if any value(s) are eaten.
      */
     DECLCALLBACKMEMBER(int, pfnOption)(const char **ppszShort, int argc, char **argv, int *pi);
-    
+
     /**
      * Called before parsing arguments.
      * @returns VBox status code.
      */
     DECLCALLBACKMEMBER(int, pfnInit)(void);
 
-    /** Called from the worker thread. 
-     * 
+    /** Called from the worker thread.
+     *
      * @returns VBox status code.
      * @retval  VINF_SUCCESS if exitting because *pfTerminate was set.
-     * @param   pfTerminate     Pointer to a per service termination flag to check 
+     * @param   pfTerminate     Pointer to a per service termination flag to check
      *                          before and after blocking.
      */
     DECLCALLBACKMEMBER(int, pfnWorker)(bool volatile *pfTerminate);
-    
+
     /**
      * Stop an service.
      */
@@ -82,8 +83,8 @@ typedef struct
 typedef VBOXSERVICE *PVBOXSERVICE;
 /** Pointer to a const VBOXSERVICE. */
 typedef VBOXSERVICE const *PCVBOXSERVICE;
-          
-          
+
+
 __BEGIN_DECLS
 
 extern char *g_pszProgName;
@@ -97,7 +98,7 @@ extern int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi,
 
 #ifdef __OS2__
 extern int daemon(int, int);
-#endif 
+#endif
 
 extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;
