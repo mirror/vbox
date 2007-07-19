@@ -42,7 +42,6 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
-#include "x86context.h"
 
 
 /**
@@ -102,8 +101,8 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
     AssertCompile(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));    AssertRelease(sizeof(pVM->selm.s) <= sizeof(pVM->selm.padding));
     AssertCompileMemberAlignment(VM, selm.s, 32);                       AssertRelease(!(RT_OFFSETOF(VM, selm.s) & 31));
 #if 0 /* doesn't work */
-    AssertCompile((RT_OFFSETOF(VM, selm.s.Tss)       & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.Tss));       
-    AssertCompile((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08)); 
+    AssertCompile((RT_OFFSETOF(VM, selm.s.Tss)       & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.Tss));
+    AssertCompile((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08));
 #endif
     AssertRelease((RT_OFFSETOF(VM, selm.s.Tss)       & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.Tss));
     AssertRelease((RT_OFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) <= PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08));
@@ -260,7 +259,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u16BaseLow       = 0;
     pDesc->Gen.u8BaseHigh1      = 0;
     pDesc->Gen.u8BaseHigh2      = 0;
-    pDesc->Gen.u4Type           = X86_SELTYPE_MEM_EXECUTEREAD_ACC;
+    pDesc->Gen.u4Type           = X86_SEL_TYPE_ER_ACC;
     pDesc->Gen.u1DescType       = 1; /* not system, but code/data */
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
@@ -276,7 +275,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u16BaseLow       = 0;
     pDesc->Gen.u8BaseHigh1      = 0;
     pDesc->Gen.u8BaseHigh2      = 0;
-    pDesc->Gen.u4Type           = X86_SELTYPE_MEM_READWRITE_ACC;
+    pDesc->Gen.u4Type           = X86_SEL_TYPE_RW_ACC;
     pDesc->Gen.u1DescType       = 1; /* not system, but code/data */
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
@@ -292,7 +291,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u16BaseLow       = 0;
     pDesc->Gen.u8BaseHigh1      = 0;
     pDesc->Gen.u8BaseHigh2      = 0;
-    pDesc->Gen.u4Type           = X86_SELTYPE_MEM_EXECUTEREAD_ACC;
+    pDesc->Gen.u4Type           = X86_SEL_TYPE_ER_ACC;
     pDesc->Gen.u1DescType       = 1; /* not system, but code/data */
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
@@ -311,7 +310,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u8BaseHigh2      = RT_BYTE4(pGCTSS);
     pDesc->Gen.u16LimitLow      = sizeof(VBOXTSS) - 1;
     pDesc->Gen.u4LimitHigh      = 0;
-    pDesc->Gen.u4Type           = X86_SELTYPE_SYS_386_TSS_AVAIL;
+    pDesc->Gen.u4Type           = X86_SEL_TYPE_SYS_386_TSS_AVAIL;
     pDesc->Gen.u1DescType       = 0; /* system */
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
@@ -330,7 +329,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc->Gen.u16BaseLow       = RT_LOWORD(pGCTSS);
     pDesc->Gen.u8BaseHigh1      = RT_BYTE3(pGCTSS);
     pDesc->Gen.u8BaseHigh2      = RT_BYTE4(pGCTSS);
-    pDesc->Gen.u4Type           = X86_SELTYPE_SYS_386_TSS_AVAIL;
+    pDesc->Gen.u4Type           = X86_SEL_TYPE_SYS_386_TSS_AVAIL;
     pDesc->Gen.u1DescType       = 0; /* system */
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
     pDesc->Gen.u1Present        = 1;
@@ -709,10 +708,10 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
 /**
  * Sync the GDT, LDT and TSS after loading the state.
- * 
- * Just to play save, we set the FFs to force syncing before 
+ *
+ * Just to play save, we set the FFs to force syncing before
  * executing GC code.
- * 
+ *
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
@@ -721,7 +720,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("selmR3LoadDone:\n"));
 
-    /* 
+    /*
      * Don't do anything if it's a load failure.
      */
     int rc = SSMR3HandleGetStatus(pSSM);
@@ -976,7 +975,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
 
             STAM_COUNTER_INC(&pVM->selm.s.StatHyperSelsChanged);
 
-            /* 
+            /*
              * Do the relocation callbacks to let everyone update their hyper selector dependencies.
              * (SELMR3Relocate will call selmR3SetupHyperGDTSelectors() for us.)
              */
@@ -1434,9 +1433,9 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
          *       We'll assume for now that the bitmap is static.
          */
 #if 1
-        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */ 
-        if (cbTss > sizeof(VBOXTSS)) 
-            cbTss = sizeof(VBOXTSS); 
+        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */
+        if (cbTss > sizeof(VBOXTSS))
+            cbTss = sizeof(VBOXTSS);
 #endif
         /* The guest's TSS can span multiple pages now. We will monitor the whole thing. */
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
@@ -1517,7 +1516,7 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 if (CPUMGetGuestCR4(pVM) & X86_CR4_VME)
                 {
                     uint32_t offRedirBitmap = tss.offIoBitmap - sizeof(tss.IntRedirBitmap);
-                    
+
                     /** @todo not sure how the partial case is handled; probably not allowed */
                     if (offRedirBitmap + sizeof(tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
                     {
@@ -1710,9 +1709,9 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
             cbTss = (cbTss << PAGE_SHIFT) | PAGE_OFFSET_MASK;
         cbTss++;
 #if 1
-        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */ 
-        if (cbTss > sizeof(VBOXTSS)) 
-            cbTss = sizeof(VBOXTSS); 
+        /* Don't bother with anything but the core structure. (Actually all we care for is the r0 ss.) */
+        if (cbTss > sizeof(VBOXTSS))
+            cbTss = sizeof(VBOXTSS);
 #endif
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
                   ("GCPtrTss=%VGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));

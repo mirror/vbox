@@ -45,7 +45,6 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
-#include "x86context.h"
 
 
 /*******************************************************************************
@@ -284,7 +283,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
     {
         Log(("pVM->hwaccm.s.vmx.fSupported = %d\n", pVM->hwaccm.s.vmx.fSupported));
 
-        if (    pVM->hwaccm.s.fInitialized == false 
+        if (    pVM->hwaccm.s.fInitialized == false
             &&  pVM->hwaccm.s.vmx.msr.feature_ctrl != 0)
         {
             uint64_t val;
@@ -393,7 +392,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM *must* be set\n"));
             if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON)
                 LogRel(("HWACCM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON *must* be set\n"));
-    
+
             LogRel(("HWACCM: MSR_IA32_VMX_EXIT_CTLS        = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_exit));
             val = pVM->hwaccm.s.vmx.msr.vmx_exit >> 32ULL;
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64)
