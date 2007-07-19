@@ -193,11 +193,11 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
         screen_num = DefaultScreen(pClient->dpy);
         pClient->enable.fbConfig = pClient->glxChooseFBConfig(pClient->dpy, screen_num, attribs, &returnedFBConfigs);
         Log(("vboxglGetString: returned FBConfigs: %d\n", returnedFBConfigs));
-        pClient->enable.visinfo = pClient->glxGetVisualFromFBConfig(pClient->dpy, fbConfig[0]);
+        pClient->enable.visinfo = pClient->glxGetVisualFromFBConfig(pClient->dpy, pClient->enable.fbConfig[0]);
         /* Create Window */
         attr.background_pixel = 0;
         attr.border_pixel = 0;
-        attr.colormap = XCreateColormap(pClient->dpy, RootWindow(dpy, screen_num), visinfo->visual, AllocNone);
+        attr.colormap = XCreateColormap(pClient->dpy, RootWindow(dpy, screen_num), pClient->enable.visinfo->visual, AllocNone);
         attr.event_mask = StructureNotifyMask | ExposureMask;
         mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
         pClient->enable.win = XCreateWindow(pClient->dpy, RootWindow(pClient->dpy, screen_num), 0, 0, 100, 100,
