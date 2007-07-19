@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __MMInternal_h__
-#define __MMInternal_h__
+#ifndef ___MMInternal_h
+#define ___MMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

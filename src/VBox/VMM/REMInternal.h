@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __REMInternal_h__
-#define __REMInternal_h__
+#ifndef ___REMInternal_h
+#define ___REMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -181,7 +181,7 @@ typedef struct REM
 #if HC_ARCH_BITS == 64
     /** Alignment padding. */
     uint32_t                u32Padding;
-#endif 
+#endif
     /** Number of recorded invlpg instructions. */
     RTUINT                  cInvalidatedPages;
     /** Array of recorded invlpg instruction.

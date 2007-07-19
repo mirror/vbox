@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __TMInternal_h__
-#define __TMInternal_h__
+#ifndef ___TMInternal_h
+#define ___TMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

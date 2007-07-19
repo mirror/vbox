@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __PATMInternal_h__
-#define __PATMInternal_h__
+#ifndef ___PATMInternal_h
+#define ___PATMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -240,7 +240,7 @@ typedef struct _PATCHINFO
     uint32_t        uCurPatchOffset;
 #if HC_ARCH_BITS == 64
     uint32_t        Alignment0;         /**< Align flags correctly. */
-#endif 
+#endif
 
     uint64_t        flags;
 
@@ -267,7 +267,7 @@ typedef struct _PATCHINFO
     uint32_t                  nrPatch2GuestRecs;
 #if HC_ARCH_BITS == 64
     uint32_t        Alignment1;
-#endif 
+#endif
 
     // Cache record for PATMGCVirtToHCVirt
     P2GLOOKUPREC    cacheRec;
@@ -440,7 +440,7 @@ typedef struct PATM
         uint32_t            cPatches;
 #if HC_ARCH_BITS == 64
         uint32_t            Alignment0; /**< Align the structure size on a 8-byte boundrary. */
-#endif 
+#endif
     } savedstate;
 
     STAMCOUNTER             StatNrOpcodeRead;

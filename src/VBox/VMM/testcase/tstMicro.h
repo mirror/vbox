@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __tstMicro_h__
-#define __tstMicro_h__
+#ifndef ___tstMicro_h
+#define ___tstMicro_h
 
 /**
  * The testcase identifier.

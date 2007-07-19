@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __PGMInternal_h__
-#define __PGMInternal_h__
+#ifndef ___PGMInternal_h
+#define ___PGMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -696,7 +696,6 @@ typedef struct PGMPOOLPAGE
     uint16_t            iAgeNext;
     /** The previous page in the age list. */
     uint16_t            iAgePrev;
-/** @todo add more from PGMCache.h when merging with it. */
 #endif /* PGMPOOL_WITH_CACHE */
     /** Used to indicate that the page is zeroed. */
     bool                fZeroed;

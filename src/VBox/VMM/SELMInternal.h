@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __SELMInternal_h__
-#define __SELMInternal_h__
+#ifndef ___SELMInternal_h
+#define ___SELMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

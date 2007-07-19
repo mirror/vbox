@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __HWACCMInternal_h__
-#define __HWACCMInternal_h__
+#ifndef ___HWACCMInternal_h
+#define ___HWACCMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

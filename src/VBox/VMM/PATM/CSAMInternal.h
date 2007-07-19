@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __CSAMInternal_h__
-#define __CSAMInternal_h__
+#ifndef ___CSAMInternal_h
+#define ___CSAMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

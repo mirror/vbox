@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __DBGFInternal_h__
-#define __DBGFInternal_h__
+#ifndef ___DBGFInternal_h
+#define ___DBGFInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

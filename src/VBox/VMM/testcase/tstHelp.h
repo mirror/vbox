@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __tstHelp_h__
-#define __tstHelp_h__
+#ifndef ___tstHelp_h
+#define ___tstHelp_h
 
 #include <VBox/cdefs.h>
 #include <VBox/cpum.h>

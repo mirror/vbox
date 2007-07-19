@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __CFGMInternal_h__
-#define __CFGMInternal_h__
+#ifndef ___CFGMInternal_h
+#define ___CFGMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __IOMInternal_h__
-#define __IOMInternal_h__
+#ifndef ___IOMInternal_h
+#define ___IOMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -522,4 +522,4 @@ __END_DECLS
 
 /** @} */
 
-#endif /* __IOMInternal_h__ */
+#endif /* ___IOMInternal_h */

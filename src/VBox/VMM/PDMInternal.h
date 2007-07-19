@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __PDMInternal_h__
-#define __PDMInternal_h__
+#ifndef ___PDMInternal_h
+#define ___PDMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

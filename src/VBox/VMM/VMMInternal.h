@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VMMInternal_h__
-#define __VMMInternal_h__
+#ifndef ___VMMInternal_h
+#define ___VMMInternal_h
 
 #include <VBox/cdefs.h>
 #include <x86context.h>

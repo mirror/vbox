@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __X86CONTEXT_H__
-#define __X86CONTEXT_H__
+#ifndef ___X86CONTEXT_H
+#define ___X86CONTEXT_H
 
 #include <VBox/types.h>
 
@@ -60,4 +60,4 @@
 #define X86_SELTYPE_SYS_386_TRAP_GATE           0xF
 
 
-#endif //__X86CONTEXT_H__
+#endif
