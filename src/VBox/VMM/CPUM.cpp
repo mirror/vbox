@@ -43,7 +43,7 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
-#include "x86context.h"
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -888,7 +888,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
 #if HC_ARCH_BITS == 32
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     if (!(pCtx->efer & MSR_K6_EFER_LMA))
-# endif 
+# endif
     {
         pHlp->pfnPrintf(pHlp,
             "eax=xxxxxxxx ebx=%08x ecx=xxxxxxxx edx=xxxxxxxx esi=%08x edi=%08x\n"
@@ -908,7 +908,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
     }
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     else
-# endif 
+# endif
 #endif
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
     {
@@ -1729,11 +1729,11 @@ CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
 
 /**
  * API for controlling a few of the CPU features found in CR4.
- * 
+ *
  * Currently only X86_CR4_TSD is accepted as input.
- * 
+ *
  * @returns VBox status code.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   fOr     The CR4 OR mask.
  * @param   fAnd    The CR4 AND mask.

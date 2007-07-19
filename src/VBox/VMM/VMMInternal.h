@@ -23,7 +23,6 @@
 #define ___VMMInternal_h
 
 #include <VBox/cdefs.h>
-#include <x86context.h>
 #include <VBox/stam.h>
 #include <VBox/log.h>
 #include <iprt/critsect.h>
