@@ -1196,7 +1196,7 @@ void helper_sysret(int dflag)
  */
 void helper_external_event(void)
 {
-#if defined(__DARWIN__) && defined(VBOX_STRICT)
+#if defined(RT_OS_DARWIN) && defined(VBOX_STRICT)
     uintptr_t uESP;
     __asm__ __volatile__("movl %%esp, %0" : "=r" (uESP));
     AssertMsg(!(uESP & 15), ("esp=%#p\n", uESP));

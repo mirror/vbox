@@ -205,7 +205,7 @@ typedef struct TranslationBlock {
 #ifdef USE_DIRECT_JUMP
     uint16_t tb_jmp_offset[4]; /* offset of jump instruction */
 #else
-# if defined(VBOX) && defined(__DARWIN__) && defined(__AMD64__)
+# if defined(VBOX) && defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
 #  error "First 4GB aren't reachable. jmp dword [tb_next] wont work."
 # endif
     uint32_t tb_next[2]; /* address of jump generated code */

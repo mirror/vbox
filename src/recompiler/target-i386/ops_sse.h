@@ -580,7 +580,7 @@ void OPPROTO glue(op_movq_T0_mm, SUFFIX) (void)
 #if SHIFT == 0
 void OPPROTO glue(op_pshufw, SUFFIX) (void)
 {
-#if __GCC__ == 3 || defined(__AMD64__)
+#if __GCC__ == 3 || defined(RT_ARCH_AMD64) /* VBOX hack in #else */
     Reg r, *d, *s;
     int order;
     d = (Reg *)((char *)env + PARAM1);

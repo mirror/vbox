@@ -192,7 +192,7 @@ extern int testmath(void)
     CHECKLL(llrintf(-123.50), -124);
     CHECKLL(llrint(42.42), 42);
     CHECKLL(llrint(-2147483648.12343), -2147483648LL);
-#if !defined(__AMD64__) && !defined(__x86_64__)
+#if !defined(RT_ARCH_AMD64)
     CHECKLL(lrint(-21474836499.12343), -2147483648LL);
     CHECKLL(lrint(-2147483649932412.12343), -2147483648LL);
 #else
@@ -242,7 +242,7 @@ extern int testmath(void)
     CHECKL(lrintl(make_lrd_cw(0x8000000000000000ULL,0x400e,0x0a7f)), 32768L);
     CHECKL(lrintl(make_lrd_cw(0x8000000000000000ULL,0x400e,0x0e7f)), 32768L);
     CHECKL(lrintl(make_lrd_cw(0x8000000000000000ULL,0x400e,0x0e7f)), 32768L);
-#if !defined(__AMD64__) && !defined(__x86_64__)
+#if !defined(RT_ARHC_AMD64)
     CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x027f)), (long)-2147483648L);
     CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x027f)), (long)-2147483648L);
     CHECKL(lrintl(make_lrd_cw(0xad78ebc5ac620000ULL,0xc041,0x067f)), (long)-2147483648L);
