@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __PATMA_H__
-#define __PATMA_H__
+#ifndef ___PATMA_H
+#define ___PATMA_H
 
 
 #define PATM_VMFLAGS                            0xF1ABCD00
@@ -136,10 +136,7 @@ typedef struct
 } PATCHJUMPTABLE, *PPATCHJUMPTABLE;
 
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+__BEGIN_DECLS
 
 extern PATCHASMRECORD PATMCliRecord;
 extern PATCHASMRECORD PATMStiRecord;
@@ -186,8 +183,7 @@ extern PATCHASMRECORD PATMClearInhibitIRQContIF0Record;
 extern PATCHASMRECORD PATMMovFromSSRecord;
 
 extern uint32_t       PATMInterruptFlag;
-#ifdef __cplusplus
-}
-#endif
 
-#endif //__PATMA_H__
+__END_DECLS
+
+#endif

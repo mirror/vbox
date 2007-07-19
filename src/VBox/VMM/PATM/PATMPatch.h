@@ -18,8 +18,8 @@
  * distribution, then only the terms of your commercial VirtualBox
  * license agreement apply instead of the previous paragraph.
  */
-#ifndef __PATMPATCH_H__
-#define __PATMPATCH_H__
+#ifndef ___PATMPATCH_H
+#define ___PATMPATCH_H
 
 int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t uType, RTGCPTR pSource = 0, RTGCPTR pDest = 0);
 int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offset, RTGCPTR pTargetGC, uint32_t opcode);
@@ -153,4 +153,4 @@ int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTGCPTR pCurInstrGC);
  */
 int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch);
 
-#endif //__PATMPATCH_H__
+#endif

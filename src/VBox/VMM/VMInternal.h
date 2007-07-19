@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __VMInternal_h__
-#define __VMInternal_h__
+#ifndef ___VMInternal_h
+#define ___VMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/vmapi.h>

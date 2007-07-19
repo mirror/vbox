@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __EMInternal_h__
-#define __EMInternal_h__
+#ifndef ___EMInternal_h
+#define ___EMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

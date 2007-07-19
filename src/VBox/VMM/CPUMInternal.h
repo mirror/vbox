@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __CPUMInternal_h__
-#define __CPUMInternal_h__
+#ifndef ___CPUMInternal_h
+#define ___CPUMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

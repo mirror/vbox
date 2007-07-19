@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __HWVMXR0_h__
-#define __HWVMXR0_h__
+#ifndef ___HWVMXR0_h
+#define ___HWVMXR0_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

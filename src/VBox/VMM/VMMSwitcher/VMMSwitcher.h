@@ -19,9 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-
-#ifndef __VMMSwitcher_h__
-#define __VMMSwitcher_h__
+#ifndef ___VMMSwitcher_h
+#define ___VMMSwitcher_h
 
 #include <VBox/vmm.h>
 

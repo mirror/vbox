@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __STAMInternal_h__
-#define __STAMInternal_h__
+#ifndef ___STAMInternal_h
+#define ___STAMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

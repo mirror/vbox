@@ -351,7 +351,7 @@ typedef struct VM
     /** CPUM part. */
     union
     {
-#ifdef __CPUMInternal_h__
+#ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
 #ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
@@ -364,7 +364,7 @@ typedef struct VM
     /** VMM part. */
     union
     {
-#ifdef __VMMInternal_h__
+#ifdef ___VMMInternal_h
         struct VMM  s;
 #endif
         char        padding[1024];       /* multiple of 32 */
@@ -373,7 +373,7 @@ typedef struct VM
     /** PGM part. */
     union
     {
-#ifdef __PGMInternal_h__
+#ifdef ___PGMInternal_h
         struct PGM  s;
 #endif
         char        padding[50*1024];   /* multiple of 32 */
@@ -382,7 +382,7 @@ typedef struct VM
     /** HWACCM part. */
     union
     {
-#ifdef __HWACCMInternal_h__
+#ifdef ___HWACCMInternal_h
         struct HWACCM s;
 #endif
         char        padding[1024];       /* multiple of 32 */
@@ -391,7 +391,7 @@ typedef struct VM
     /** TRPM part. */
     union
     {
-#ifdef __TRPMInternal_h__
+#ifdef ___TRPMInternal_h
         struct TRPM s;
 #endif
         char        padding[5344];      /* multiple of 32 */
@@ -400,7 +400,7 @@ typedef struct VM
     /** SELM part. */
     union
     {
-#ifdef __SELMInternal_h__
+#ifdef ___SELMInternal_h
         struct SELM s;
 #endif
         char        padding[544];      /* multiple of 32 */
@@ -409,7 +409,7 @@ typedef struct VM
     /** MM part. */
     union
     {
-#ifdef __MMInternal_h__
+#ifdef ___MMInternal_h
         struct MM   s;
 #endif
         char        padding[128];       /* multiple of 32 */
@@ -418,7 +418,7 @@ typedef struct VM
     /** CFGM part. */
     union
     {
-#ifdef __CFGMInternal_h__
+#ifdef ___CFGMInternal_h
         struct CFGM s;
 #endif
         char        padding[32];        /* multiple of 32 */
@@ -427,7 +427,7 @@ typedef struct VM
     /** PDM part. */
     union
     {
-#ifdef __PDMInternal_h__
+#ifdef ___PDMInternal_h
         struct PDM s;
 #endif
         char        padding[1024];      /* multiple of 32 */
@@ -436,7 +436,7 @@ typedef struct VM
     /** IOM part. */
     union
     {
-#ifdef __IOMInternal_h__
+#ifdef ___IOMInternal_h
         struct IOM s;
 #endif
         char        padding[4544];      /* multiple of 32 */
@@ -445,7 +445,7 @@ typedef struct VM
     /** PATM part. */
     union
     {
-#ifdef __PATMInternal_h__
+#ifdef ___PATMInternal_h
         struct PATM s;
 #endif
         char        padding[768];       /* multiple of 32 */
@@ -454,7 +454,7 @@ typedef struct VM
     /** CSAM part. */
     union
     {
-#ifdef __CSAMInternal_h__
+#ifdef ___CSAMInternal_h
         struct CSAM s;
 #endif
         char        padding[3328];    /* multiple of 32 */
@@ -463,7 +463,7 @@ typedef struct VM
     /** EM part. */
     union
     {
-#ifdef __EMInternal_h__
+#ifdef ___EMInternal_h
         struct EM   s;
 #endif
         char        padding[1344];      /* multiple of 32 */
@@ -472,7 +472,7 @@ typedef struct VM
     /** TM part. */
     union
     {
-#ifdef __TMInternal_h__
+#ifdef ___TMInternal_h
         struct TM   s;
 #endif
         char        padding[1280];      /* multiple of 32 */
@@ -481,7 +481,7 @@ typedef struct VM
     /** DBGF part. */
     union
     {
-#ifdef __DBGFInternal_h__
+#ifdef ___DBGFInternal_h
         struct DBGF s;
 #endif
         char        padding[HC_ARCH_BITS == 32 ? 1888 : 1920];      /* multiple of 32 */
@@ -490,7 +490,7 @@ typedef struct VM
     /** STAM part. */
     union
     {
-#ifdef __STAMInternal_h__
+#ifdef ___STAMInternal_h
         struct STAM s;
 #endif
         char        padding[32];        /* multiple of 32 */
@@ -499,7 +499,7 @@ typedef struct VM
     /** SSM part. */
     union
     {
-#ifdef __SSMInternal_h__
+#ifdef ___SSMInternal_h
         struct SSM  s;
 #endif
         char        padding[32];        /* multiple of 32 */
@@ -508,7 +508,7 @@ typedef struct VM
     /** VM part. */
     union
     {
-#ifdef __VMInternal_h__
+#ifdef ___VMInternal_h
         struct VMINT    s;
 #endif
         char        padding[768];       /* multiple of 32 */
@@ -517,7 +517,7 @@ typedef struct VM
     /** REM part. */
     union
     {
-#ifdef __REMInternal_h__
+#ifdef ___REMInternal_h
         struct REM  s;
 #endif
         char        padding[HC_ARCH_BITS == 32 ? 0x6b00 : 0xbf00];    /* multiple of 32 */
