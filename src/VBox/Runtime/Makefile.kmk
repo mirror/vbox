@@ -752,6 +752,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
+	r0drv/darwin/assert-r0drv-darwin.cpp \
 	r0drv/darwin/memobj-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
 	r0drv/darwin/process-r0drv-darwin.cpp \
