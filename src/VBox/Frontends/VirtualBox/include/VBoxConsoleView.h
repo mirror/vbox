@@ -94,8 +94,6 @@ public:
 
     void fixModifierState (LONG *codes, uint *count);
 
-    bool isInSeamlessMode();
-
 signals:
 
     void keyboardStateChanged (int state);

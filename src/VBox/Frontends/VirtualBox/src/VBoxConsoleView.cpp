@@ -964,7 +964,8 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::SetRegionEventType:
             {
                 VBoxSetRegionEvent *sre = (VBoxSetRegionEvent*) e;
-                mainwnd->setMask (sre->region());
+                if (mainwnd->isTrueSeamless())
+                    mainwnd->setMask (sre->region());
                 return true;
             }
 
@@ -1123,7 +1124,10 @@ bool VBoxConsoleView::event (QEvent *e)
                     }
                     else if (ke->key() == Key_Home)
                     {
-                        mainwnd->menuBar()->setFocus();
+                        if (mainwnd->isTrueSeamless())
+                            mainwnd->popupSeamlessMenu();
+                        else
+                            mainwnd->menuBar()->setFocus();
                     }
                     else
                     {
@@ -1839,11 +1843,6 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 #endif
 
 
-}
-
-bool VBoxConsoleView::isInSeamlessMode()
-{
-    return mainwnd->isTrueSeamless();
 }
 
 /**
