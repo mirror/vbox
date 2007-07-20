@@ -38,6 +38,8 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
 {
     *pfStartThread = false;
 
+    dprintf(("VBoxSeamlessInit\n"));
+
     /* Will fail if SetWinEventHook is not present (version < NT4 SP6 apparently) */
     hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
     if (hModule)
@@ -45,6 +47,9 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
         *(uintptr_t *)&pfnVBoxInstallHook = (uintptr_t)GetProcAddress(hModule, "VBoxInstallHook");
         *(uintptr_t *)&pfnVBoxRemoveHook  = (uintptr_t)GetProcAddress(hModule, "VBoxRemoveHook");
     }
+    else
+        dprintf(("VBoxSeamlessInit LoadLibrary failed with %d\n", GetLastError()));
+
     if (pfnVBoxInstallHook)
     {
         /* inform the host that we support the seamless window mode */
@@ -56,7 +61,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
         if (!DeviceIoControl(pEnv->hDriver, IOCTL_VBOXGUEST_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                              &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
         {
-            SvcDebugOut2("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError());
+            dprintf(("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
             return VERR_INVALID_PARAMETER;
         }
 
@@ -66,8 +71,9 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
 }
 
 
-void VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance)
+void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
+    dprintf(("VBoxSeamlessDestroy\n"));
     /* inform the host that we no longer support the seamless window mode */
     VMMDevReqGuestCapabilities vmmreqGuestCaps = {0};
     vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqGuestCaps, VMMDevReq_ReportGuestCapabilities);
@@ -77,7 +83,7 @@ void VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance)
     if (!DeviceIoControl(pEnv->hDriver, IOCTL_VBOXGUEST_VMMREQUEST, &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                          &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
     {
-        SvcDebugOut2("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError());
+        dprintf(("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
     }
     if (pfnVBoxRemoveHook)
         pfnVBoxRemoveHook();
@@ -85,33 +91,3 @@ void VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance)
     FreeLibrary(hModule);
     return;
 }
-
-#if 0
-
-static char LogBuffer[1024];
-
-
-VBGLR3DECL(int) VbglR3GRPerform(HANDLE hDriver, VMMDevRequestHeader *pReq)
-{
-    DWORD cbReturned;
-    if (!DeviceIoControl(hDriver, IOCTL_VBOXGUEST_VMMREQUEST, pReq, pReq->size,
-                         pReq, pReq->size, &cbReturned, NULL))
-    {
-        SvcDebugOut2("error doing IOCTL, last error: %d\n", GetLastError());
-    }
-    return VINF_SUCCESS;
-}
-
-void VBoxLogString(HANDLE hDriver, char *pszStr)
-{
-    VMMDevReqLogString *pReq = (VMMDevReqLogString *)LogBuffer;
-    int rc;
-
-    vmmdevInitRequest(&pReq->header, VMMDevReq_LogString);
-    strcpy(pReq->szString, pszStr);
-    pReq->header.size += strlen(pszStr);
-    rc = VbglR3GRPerform(hDriver, &pReq->header);
-    return;
-}
-
-#endif

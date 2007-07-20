@@ -23,40 +23,7 @@
 
 #include "VBoxService.h"
 #include <VBox/HostServices/VBoxClipboardSvc.h>
-
-// #include <iprt/crc64.h>
-
-// #define LOG_ENABLED
-
-#ifdef LOG_ENABLED
-#include <stdio.h>
-
-static void _dprintf(LPSTR String, ...)
-{
-   va_list va;
-
-   va_start(va, String);
-
-   CHAR  Buffer[1024];
-   if (strlen(String) < 1000)
-   {
-      _vsntprintf (Buffer, sizeof(Buffer), String, va);
-
-      FILE *f = fopen ("c:\\inst\\clip.log", "ab");
-      if (f)
-      {
-          fprintf (f, "%s", Buffer);
-          fclose (f);
-      }
-   }
-
-   va_end (va);
-}
-#define dprintf(a) _dprintf a
-#else
-#define dprintf(a) do {} while (0)
-#endif /* LOG_ENABLED */
-
+#include "helpers.h"
 
 typedef struct _VBOXCLIPBOARDCONTEXT
 {
