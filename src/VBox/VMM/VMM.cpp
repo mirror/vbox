@@ -169,6 +169,7 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser);
 static int vmmR3ServiceCallHostRequest(PVM pVM);
+static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
 /*******************************************************************************
@@ -480,6 +481,11 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                 rc = RTCritSectInit(&pVM->vmm.s.CritSectVMLock);
                 if (VBOX_SUCCESS(rc))
                 {
+                    /*
+                     * Debug info.
+                     */
+                    DBGFR3InfoRegisterInternal(pVM, "ff", "Displays the current Forced actions Flags.", vmmR3InfoFF);
+
                     /*
                      * Statistics.
                      */
@@ -2590,5 +2596,89 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
      * Delete the output instance (flushing and restoring of flags).
      */
     vmmR3FatalDumpInfoHlpDelete(&Hlp);
+}
+
+
+
+/**
+ * Displays the Force action Flags.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The additional arguments (ignored).
+ */
+static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    const uint32_t fForcedActions = pVM->fForcedActions;
+
+    pHlp->pfnPrintf(pHlp, "Forced action Flags: %#RX32", fForcedActions);
+
+    /* show the flag mnemonics  */
+    int c = 0;
+    uint32_t f = fForcedActions;
+#define PRINT_FLAG(flag) do { \
+        if (f & (flag)) \
+        { \
+            static const char *s_psz = #flag; \
+            if (!(c % 6)) \
+                pHlp->pfnPrintf(pHlp, "%s\n    %s", c ? "," : "", s_psz + 6); \
+            else \
+                pHlp->pfnPrintf(pHlp, ", %s", s_psz + 6); \
+            c++; \
+            f &= ~(flag); \
+        } \
+    } while (0)
+    PRINT_FLAG(VM_FF_INTERRUPT_APIC);
+    PRINT_FLAG(VM_FF_INTERRUPT_PIC);
+    PRINT_FLAG(VM_FF_TIMER);
+    PRINT_FLAG(VM_FF_PDM_QUEUES);
+    PRINT_FLAG(VM_FF_PDM_DMA);
+    PRINT_FLAG(VM_FF_PDM_CRITSECT);
+    PRINT_FLAG(VM_FF_DBGF);
+    PRINT_FLAG(VM_FF_REQUEST);
+    PRINT_FLAG(VM_FF_TERMINATE);
+    PRINT_FLAG(VM_FF_RESET);
+    PRINT_FLAG(VM_FF_PGM_SYNC_CR3);
+    PRINT_FLAG(VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
+    PRINT_FLAG(VM_FF_TRPM_SYNC_IDT);
+    PRINT_FLAG(VM_FF_SELM_SYNC_TSS);
+    PRINT_FLAG(VM_FF_SELM_SYNC_GDT);
+    PRINT_FLAG(VM_FF_SELM_SYNC_LDT);
+    PRINT_FLAG(VM_FF_INHIBIT_INTERRUPTS);
+    PRINT_FLAG(VM_FF_CSAM_SCAN_PAGE);
+    PRINT_FLAG(VM_FF_CSAM_PENDING_ACTION);
+    PRINT_FLAG(VM_FF_TO_R3);
+    PRINT_FLAG(VM_FF_DEBUG_SUSPEND);
+    if (f)
+        pHlp->pfnPrintf(pHlp, "%s\n    Unknown bits: %#RX32\n", c ? "," : "", f);
+    else
+        pHlp->pfnPrintf(pHlp, "\n");
+#undef PRINT_FLAG
+
+    /* the groups */
+    c = 0;
+#define PRINT_GROUP(grp) do { \
+        if (fForcedActions & (grp)) \
+        { \
+            static const char *s_psz = #grp; \
+            if (!(c % 5)) \
+                pHlp->pfnPrintf(pHlp, "%s    %s", c ? ",\n" : "Groups:\n", s_psz + 6); \
+            else \
+                pHlp->pfnPrintf(pHlp, ", %s", s_psz + 6); \
+            c++; \
+        } \
+    } while (0)
+    PRINT_GROUP(VM_FF_EXTERNAL_SUSPENDED_MASK);
+    PRINT_GROUP(VM_FF_EXTERNAL_HALTED_MASK);
+    PRINT_GROUP(VM_FF_HIGH_PRIORITY_PRE_MASK);
+    PRINT_GROUP(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK);
+    PRINT_GROUP(VM_FF_HIGH_PRIORITY_POST_MASK);
+    PRINT_GROUP(VM_FF_NORMAL_PRIORITY_POST_MASK);
+    PRINT_GROUP(VM_FF_NORMAL_PRIORITY_MASK);
+    PRINT_GROUP(VM_FF_RESUME_GUEST_MASK);
+    PRINT_GROUP(VM_FF_ALL_BUT_RAW_MASK);
+    if (c)
+        pHlp->pfnPrintf(pHlp, "\n");
+#undef PRINT_GROUP
 }
 
