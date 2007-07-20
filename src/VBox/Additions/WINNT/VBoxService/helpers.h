@@ -27,11 +27,18 @@
 #ifndef DDCLOG
 void SvcDebugOut2(char *String, ...);
 # ifdef DEBUG_DISPLAY_CHANGE
-#  define DDCLOG(a) do { SvcDebugOut2 a; } while (0)
+#  define DDCLOG(a) dprintf(a)
 # else
 #  define DDCLOG(a) do {} while (0)
 # endif /* DEBUG_DISPLAY_CHANGE */
 #endif /* DDCLOG */
+
+#ifdef DEBUG
+void WriteLog(char *String, ...);
+#define dprintf(a) do { WriteLog a; } while (0)
+#else
+#define dprintf(a) do {} while (0)
+#endif /* DEBUG */
 
 void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iResized, int NewWidth, int NewHeight);
 

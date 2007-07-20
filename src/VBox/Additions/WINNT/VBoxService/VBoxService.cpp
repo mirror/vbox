@@ -39,7 +39,13 @@ VOID DisplayChangeThread(void *dummy);
 LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-void SvcDebugOut2(char *String, ...)
+#ifdef DEBUG
+/**
+ * Helper function to send a message to WinDbg
+ *
+ * @param String message string
+ */
+void WriteLog(char *String, ...)
 {
     DWORD cbReturned;
     CHAR Buffer[1024];
@@ -51,6 +57,7 @@ void SvcDebugOut2(char *String, ...)
 
     vmmdevInitRequest(&pReq->header, VMMDevReq_LogString);
     vsprintf(pReq->szString, String, va);
+    OutputDebugStringA(pReq->szString);
     pReq->header.size += strlen(pReq->szString);
 
     DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, pReq, pReq->header.size,
@@ -59,18 +66,9 @@ void SvcDebugOut2(char *String, ...)
     va_end (va);
     return;
 }
+#endif
 
 
-/**
- * Helper function to send a message to WinDbg
- *
- * @param String message string
- * @param Status error code, will be inserted into String's placeholder
- */
-VOID SvcDebugOut(LPSTR String, DWORD Status)
-{
-    SvcDebugOut2(String, Status);
-}
 
 /* The shared clipboard service prototypes. */
 int                VBoxClipboardInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
@@ -112,7 +110,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
     while (pTable->pszName)
     {
-        SvcDebugOut2 ("Starting %s...\n", pTable->pszName);
+        dprintf(("Starting %s...\n", pTable->pszName));
 
         int rc = VINF_SUCCESS;
 
@@ -129,7 +127,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
         if (VBOX_FAILURE (rc))
         {
-            SvcDebugOut2 ("Failed to initialize rc = %Vrc.\n", rc);
+            dprintf(("Failed to initialize rc = %Vrc.\n", rc));
         }
         else
         {
@@ -152,7 +150,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
             if (VBOX_FAILURE (rc))
             {
-                SvcDebugOut2 ("Failed to start the thread.\n");
+                dprintf(("Failed to start the thread.\n"));
 
                 if (pTable->pfnDestroy)
                 {
@@ -213,7 +211,7 @@ static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
 void WINAPI VBoxServiceStart(void)
 {
-    SvcDebugOut2("VBoxService: Start\n");
+    dprintf(("VBoxService: Start\n"));
 
     VBOXSERVICEENV svcEnv;
 
@@ -229,11 +227,11 @@ void WINAPI VBoxServiceStart(void)
                              NULL);
     if (gVBoxDriver == INVALID_HANDLE_VALUE)
     {
-        SvcDebugOut("VBoxService: could not open VBox Guest Additions driver! rc = %d\n", GetLastError());
+        dprintf(("VBoxService: could not open VBox Guest Additions driver! rc = %d\n", GetLastError()));
         status = ERROR_GEN_FAILURE;
     }
 
-    SvcDebugOut2("VBoxService: Driver h %p, st %p\n", gVBoxDriver, status);
+    dprintf(("VBoxService: Driver h %p, st %p\n", gVBoxDriver, status));
 
     if (status == NO_ERROR)
     {
@@ -248,7 +246,7 @@ void WINAPI VBoxServiceStart(void)
             status = GetLastError();
     }
 
-    SvcDebugOut2("VBoxService: Class st %p\n", status);
+    dprintf(("VBoxService: Class st %p\n", status));
 
     if (status == NO_ERROR)
     {
@@ -275,14 +273,14 @@ void WINAPI VBoxServiceStart(void)
         }
     }
 
-    SvcDebugOut2("VBoxService: Window h %p, st %p\n", gToolWindow, status);
+    dprintf(("VBoxService: Window h %p, st %p\n", gToolWindow, status));
 
     if (status == NO_ERROR)
     {
         gStopSem = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (gStopSem == NULL)
         {
-            SvcDebugOut("VBoxService: CreateEvent failed: rc = %d\n", GetLastError());
+            dprintf(("VBoxService: CreateEvent failed: rc = %d\n", GetLastError()));
             return;
         }
     }
@@ -312,7 +310,7 @@ void WINAPI VBoxServiceStart(void)
             status = ERROR_GEN_FAILURE;
     }
 
-    SvcDebugOut2("VBoxService: hDisplayChangeThread h %p, st %p\n", hDisplayChangeThread, status);
+    dprintf(("VBoxService: hDisplayChangeThread h %p, st %p\n", hDisplayChangeThread, status));
 
     /* terminate service if something went wrong */
     if (status != NO_ERROR)
@@ -334,7 +332,7 @@ void WINAPI VBoxServiceStart(void)
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
     sprintf(ndata.szTip, "innotek VirtualBox Guest Additions %d.%d.%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
 
-    SvcDebugOut2("VBoxService: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon);
+    dprintf(("VBoxService: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
 
     /*
      * Main execution loop
@@ -345,7 +343,7 @@ void WINAPI VBoxServiceStart(void)
         DWORD waitResult = MsgWaitForMultipleObjectsEx(1, &gStopSem, 500, QS_ALLINPUT, 0);
         if (waitResult == WAIT_OBJECT_0)
         {
-            SvcDebugOut2("VBoxService: exit\n");
+            dprintf(("VBoxService: exit\n"));
             /* exit */
             break;
         }
@@ -355,10 +353,10 @@ void WINAPI VBoxServiceStart(void)
             MSG msg;
             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
             {
-                SvcDebugOut2("VBoxService: msg %p\n", msg.message);
+                dprintf(("VBoxService: msg %p\n", msg.message));
                 if (msg.message == WM_QUIT)
                 {
-                    SvcDebugOut2("VBoxService: WM_QUIT!\n");
+                    dprintf(("VBoxService: WM_QUIT!\n"));
                     SetEvent(gStopSem);
                     continue;
                 }
@@ -369,30 +367,30 @@ void WINAPI VBoxServiceStart(void)
         else /* timeout */
         {
 #ifndef DEBUG_sandervl
-            SvcDebugOut2("VBoxService: timed out\n");
+            dprintf(("VBoxService: timed out\n"));
 #endif
             /* we might have to repeat this operation because the shell might not be loaded yet */
             if (!fTrayIconCreated)
             {
                 fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
-                SvcDebugOut2("VBoxService: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ());
+                dprintf(("VBoxService: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
             }
         }
     }
 
-    SvcDebugOut("VBoxService: returned from main loop, exiting...\n", 0);
+    dprintf(("VBoxService: returned from main loop, exiting...\n"));
 
     /* remove the system tray icon */
     Shell_NotifyIcon(NIM_DELETE, &ndata);
 
-    SvcDebugOut("VBoxService: waiting for display change thread...\n", 0);
+    dprintf(("VBoxService: waiting for display change thread...\n"));
 
     /* wait for the display change thread to terminate */
     WaitForSingleObject(hDisplayChangeThread, INFINITE);
 
     vboxStopServices (&svcEnv, vboxServiceTable);
 
-    SvcDebugOut("VBoxService: destroying tool window...\n", 0);
+    dprintf(("VBoxService: destroying tool window...\n"));
 
     /* destroy the tool window */
     DestroyWindow(gToolWindow);
@@ -402,7 +400,7 @@ void WINAPI VBoxServiceStart(void)
     CloseHandle(gVBoxDriver);
     CloseHandle(gStopSem);
 
-    SvcDebugOut("VBoxService: leaving service main function\n", 0);
+    dprintf(("VBoxService: leaving service main function\n"));
 
     return;
 }
@@ -413,7 +411,7 @@ void WINAPI VBoxServiceStart(void)
  */
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    SvcDebugOut2("VBoxService: WinMain\n");
+    dprintf(("VBoxService: WinMain\n"));
     gInstance = hInstance;
     VBoxServiceStart ();
     return 0;
@@ -681,7 +679,7 @@ VOID DisplayChangeThread(void *dummy)
     }
     else
     {
-        SvcDebugOut2("VBoxService: DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n");
+        dprintf(("VBoxService: DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
         return;
     }
 
@@ -765,7 +763,7 @@ VOID DisplayChangeThread(void *dummy)
                                 /* get the current screen setup */
                                 if (EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
                                 {
-                                    SvcDebugOut2("VBoxService: Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y);
+                                    dprintf(("VBoxService: Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
 
                                     /* Check whether a mode reset or a change is requested. */
                                     if (displayChangeRequest.xres || displayChangeRequest.yres || displayChangeRequest.bpp)
@@ -790,7 +788,7 @@ VOID DisplayChangeThread(void *dummy)
                                         && devMode.dmPelsHeight == displayChangeRequest.yres
                                         && devMode.dmBitsPerPel == displayChangeRequest.bpp)
                                     {
-                                        SvcDebugOut2("VBoxService: already at desired resolution.\n");
+                                        dprintf(("VBoxService: already at desired resolution.\n"));
                                         break;
                                     }
 
@@ -814,7 +812,7 @@ VOID DisplayChangeThread(void *dummy)
                                     LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
                                     if (status != DISP_CHANGE_SUCCESSFUL)
                                     {
-                                        SvcDebugOut("VBoxService: error from ChangeDisplaySettings: %d\n", status);
+                                        dprintf(("VBoxService: error from ChangeDisplaySettings: %d\n", status));
 
                                         if (status == DISP_CHANGE_BADMODE)
                                         {
@@ -830,14 +828,14 @@ VOID DisplayChangeThread(void *dummy)
                                 }
                                 else
                                 {
-                                    SvcDebugOut2("VBoxService: error from EnumDisplaySettings: %d\n", GetLastError ());
+                                    dprintf(("VBoxService: error from EnumDisplaySettings: %d\n", GetLastError ()));
                                     break;
                                 }
                             }
                         }
                         else
                         {
-                            SvcDebugOut2("VBoxService: vboxDisplayDriver is not active.\n", 0);
+                            dprintf(("VBoxService: vboxDisplayDriver is not active.\n"));
                         }
 
                         /* Retry the change a bit later. */
@@ -850,7 +848,7 @@ VOID DisplayChangeThread(void *dummy)
                     }
                     else
                     {
-                        SvcDebugOut("VBoxService: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n", 0);
+                        dprintf(("VBoxService: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
                         /* sleep a bit to not eat too much CPU while retrying */
                         /* are we supposed to stop? */
                         if (WaitForSingleObject(gStopSem, 50) == WAIT_OBJECT_0)
@@ -863,7 +861,7 @@ VOID DisplayChangeThread(void *dummy)
             }
         } else
         {
-            SvcDebugOut("VBoxService: error from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n", 0);
+            dprintf(("VBoxService: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(gStopSem, 10) == WAIT_OBJECT_0)
             {
@@ -881,10 +879,10 @@ VOID DisplayChangeThread(void *dummy)
     }
     else
     {
-        SvcDebugOut2 ("VBoxService: DeviceIOControl(CtlMask) failed\n");
+        dprintf(("VBoxService: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    SvcDebugOut2("VBoxService: finished display change request thread\n");
+    dprintf(("VBoxService: finished display change request thread\n"));
 }
 
 /**
