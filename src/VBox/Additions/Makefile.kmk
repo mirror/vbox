@@ -88,6 +88,7 @@ ifdef VBOX_WITH_WIN32_ADDITIONS
 GUESTADDITIONS_WIN32_DEPS = $(PATH_BIN)/additions/VBoxGuest.sys \
 	./WINNT/VBoxGuest/VBoxGuest.inf \
 	$(PATH_BIN)/additions/VBoxService.exe \
+	$(PATH_BIN)/additions/VBoxHook.dll \
 	$(PATH_BIN)/additions/VBoxControl.exe \
 	$(PATH_BIN)/additions/VBCoInst.dll \
 	$(PATH_BIN)/additions/VBoxMouse.sys \
@@ -112,6 +113,7 @@ GUESTADDITIONS_WIN32_FILESPEC = \
 	driver/VBoxGuest/VBoxGuest.sys=$(PATH_BIN)/additions/VBoxGuest.sys \
 	driver/VBoxGuest/VBoxGuest.inf=./WINNT/VBoxGuest/VBoxGuest.inf \
 	driver/VBoxGuest/VBoxService.exe=$(PATH_BIN)/additions/VBoxService.exe \
+	driver/VBoxGuest/VBoxHook.dll=$(PATH_BIN)/additions/VBoxHook.dll \
 	driver/VBoxGuest/VBoxControl.exe=$(PATH_BIN)/additions/VBoxControl.exe \
 	driver/VBoxGuest/VBCoInst.dll=$(PATH_BIN)/additions/VBCoInst.dll \
 	driver/VBoxGuest/VBoxMouse.sys=$(PATH_BIN)/additions/VBoxMouse.sys \
