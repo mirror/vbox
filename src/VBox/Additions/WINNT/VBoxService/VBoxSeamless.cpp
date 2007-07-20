@@ -38,6 +38,8 @@ void VBoxLogString(HANDLE hDriver, char *pszStr);
 int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
     *pfStartThread = false;
+
+    /* Will fail if SetWinEventHook is not present (version < NT4 SP6 apparently) */
     hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
     if (hModule)
     {
