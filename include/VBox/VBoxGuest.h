@@ -146,9 +146,7 @@ typedef enum
     VMMDevReq_VideoSetVisibleRegion        = 72,
     VMMDevReq_QueryCredentials           = 100,
     VMMDevReq_ReportCredentialsJudgement = 101,
-#ifdef DEBUG
     VMMDevReq_LogString                  = 200,
-#endif
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1211,10 +1209,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevVideoSetVisibleRegion);
         case VMMDevReq_QueryCredentials:
             return sizeof(VMMDevCredentials);
-#ifdef DEBUG
         case VMMDevReq_LogString:
             return sizeof(VMMDevReqLogString);
-#endif
         default:
             return 0;
     }
