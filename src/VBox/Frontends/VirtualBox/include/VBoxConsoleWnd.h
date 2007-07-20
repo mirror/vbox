@@ -70,11 +70,13 @@ public:
 
     void refreshView();
 
-    bool isTrueFullscreen() const { return full_screen; }
+    bool isTrueFullscreen() const { return mIsInFullscreenMode; }
 
     bool isTrueSeamless() const { return mIsInSeamlessMode; }
 
     void setMouseIntegrationLocked (bool);
+
+    void popupSeamlessMenu();
 
 public slots:
 
@@ -113,6 +115,8 @@ private:
     void languageChange();
 
     void updateAppearanceOf (int element);
+
+    void toggleFullscreenMode (bool, bool);
 
 private slots:
 
@@ -174,6 +178,8 @@ private slots:
     void dbgShowCommandLine();
 
 private:
+
+    QPopupMenu *mSeamlessPopupMenu;
 
     QActionGroup *runningActions;
 
@@ -281,8 +287,9 @@ private:
     QSize prev_min_size;
 
     // variables for dealing with true fullscreen
-    bool full_screen : 1;
+    bool mIsInFullscreenMode : 1;
     bool mIsInSeamlessMode : 1;
+    bool mIsSeamlessModeSupported : 1;
     int normal_wflags;
     bool was_max : 1;
     QObjectList hidden_children;

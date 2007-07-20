@@ -281,9 +281,6 @@ STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG aCount)
     if (!rects)
         return E_POINTER;
 
-    if (!mView->isInSeamlessMode())
-        return S_OK;
-
     QRegion reg;
     for (ULONG ind = 0; ind < aCount; ++ ind)
     {
