@@ -41,31 +41,25 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 void SvcDebugOut2(char *String, ...)
 {
-   va_list va;
+    DWORD cbReturned;
+    CHAR Buffer[1024];
+    VMMDevReqLogString *pReq = (VMMDevReqLogString *)Buffer;
 
-   va_start(va, String);
+    va_list va;
 
-   CHAR  Buffer[1024];
-   if (strlen(String) < 1000)
-   {
-      vsprintf (Buffer, String, va);
+    va_start(va, String);
 
-      OutputDebugStringA(Buffer);
+    vmmdevInitRequest(&pReq->header, VMMDevReq_LogString);
+    vsprintf(pReq->szString, String, va);
+    pReq->header.size += strlen(pReq->szString);
 
-#ifdef DEBUG_DISPLAY_CHANGE
-      FILE *f = fopen ("vboxservice.log", "ab");
-      if (f)
-      {
-          fprintf (f, "%s", Buffer);
-          fclose (f);
-      }
-#endif /* DEBUG_DISPLAY_CHANGE */
-   }
+    DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, pReq, pReq->header.size,
+                    pReq, pReq->header.size, &cbReturned, NULL);
 
-   SetLastError (0);
-
-   va_end (va);
+    va_end (va);
+    return;
 }
+
 
 /**
  * Helper function to send a message to WinDbg
@@ -911,3 +905,4 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     }
     return 0;
 }
+
