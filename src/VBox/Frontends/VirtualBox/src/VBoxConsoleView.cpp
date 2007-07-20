@@ -970,6 +970,9 @@ bool VBoxConsoleView::event (QEvent *e)
                     mLastVisibleRegion = sre->region();
                     mainwnd->setMask (sre->region());
                 }
+                else if (!mLastVisibleRegion.isNull() &&
+                         !mainwnd->isTrueSeamless())
+                    mLastVisibleRegion = QRegion();
                 return true;
             }
 
