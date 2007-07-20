@@ -182,6 +182,15 @@ void VBoxRecheckVisibleWindows()
                 cbSize = GetRegionData(param.hrgn, cbSize, lpRgnData);
                 if (cbSize)
                 {
+#ifdef DEBUG
+                    RECT *lpRect = (RECT *)&lpRgnData->Buffer[0];
+                    dprintf(("New visible region: \n"));
+
+                    for (DWORD i=0;i<lpRgnData->rdh.nCount;i++)
+                    {
+                        dprintf(("visible rect (%d,%d)(%d,%d)\n", lpRect->left, lpRect->top, lpRect->right, lpRect->bottom));
+                    }
+#endif
                     /* send to display driver */
                     ExtEscape(param.hdc, VBOXESC_SETVISIBLEREGION, cbSize, (LPCSTR)lpRgnData, 0, NULL);
                 }
