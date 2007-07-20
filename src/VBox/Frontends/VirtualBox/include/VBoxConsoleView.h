@@ -224,6 +224,8 @@ private:
 
     VBoxDefs::RenderMode mode;
 
+    QRegion mLastVisibleRegion;
+
 #if defined(Q_WS_WIN)
     HCURSOR mAlphaCursor;
 #endif

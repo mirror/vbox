@@ -964,8 +964,12 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::SetRegionEventType:
             {
                 VBoxSetRegionEvent *sre = (VBoxSetRegionEvent*) e;
-                if (mainwnd->isTrueSeamless())
+                if (mainwnd->isTrueSeamless() &&
+                    sre->region() != mLastVisibleRegion)
+                {
+                    mLastVisibleRegion = sre->region();
                     mainwnd->setMask (sre->region());
+                }
                 return true;
             }
 
