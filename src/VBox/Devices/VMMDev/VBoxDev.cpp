@@ -439,7 +439,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         return VINF_SUCCESS;
     }
 
-    Log(("VMMDev request issued: %d\n", requestHeader->requestType));
+    Log2(("VMMDev request issued: %d\n", requestHeader->requestType));
 
     if (requestHeader->requestType != VMMDevReq_ReportGuestInfo
         && !pData->fu32AdditionsOk)
