@@ -27,7 +27,6 @@
 #include "helpers.h"
 
 static HMODULE hModule = 0;
-/** @todo statically link in the future; dynamic linking is just testing purposes */
 
 BOOL (* pfnVBoxInstallHook)(HMODULE hDll) = NULL;
 BOOL (* pfnVBoxRemoveHook)() = NULL;
