@@ -155,26 +155,33 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
             {
                 uint64_t val;
 
-                /* Turn on SVM in the EFER MSR. */
-                val = ASMRdMsr(MSR_K6_EFER);
-                if (!(val & MSR_K6_EFER_SVME))
+                /* Check if SVM is disabled */
+                val = ASMRdMsr(MSR_K8_VM_CR);
+                if (!(val & MSR_K8_VM_CR_SVM_DISABLE))
                 {
-                    ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
-                }
-                /* Paranoia. */
-                val = ASMRdMsr(MSR_K6_EFER);
-                if (val & MSR_K6_EFER_SVME)
-                {
-                    /* Query AMD features. */
-                    ASMCpuId(0x8000000A, &pVM->hwaccm.s.svm.u32Rev, &pVM->hwaccm.s.svm.u32MaxASID, &u32Dummy, &u32Dummy);
+                    /* Turn on SVM in the EFER MSR. */
+                    val = ASMRdMsr(MSR_K6_EFER);
+                    if (!(val & MSR_K6_EFER_SVME))
+                    {
+                        ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);
+                    }
+                    /* Paranoia. */
+                    val = ASMRdMsr(MSR_K6_EFER);
+                    if (val & MSR_K6_EFER_SVME)
+                    {
+                        /* Query AMD features. */
+                        ASMCpuId(0x8000000A, &pVM->hwaccm.s.svm.u32Rev, &pVM->hwaccm.s.svm.u32MaxASID, &u32Dummy, &u32Dummy);
 
-                    pVM->hwaccm.s.svm.fSupported = true;
+                        pVM->hwaccm.s.svm.fSupported = true;
+                    }
+                    else
+                    {
+                        pVM->hwaccm.s.ulLastError = VERR_SVM_ILLEGAL_EFER_MSR;
+                        AssertFailed();
+                    }
                 }
                 else
-                {
-                    pVM->hwaccm.s.ulLastError = VERR_SVM_ILLEGAL_EFER_MSR;
-                    AssertFailed();
-                }
+                    pVM->hwaccm.s.ulLastError = VERR_SVM_DISABLED;
             }
             else
                 pVM->hwaccm.s.ulLastError = VERR_SVM_NO_SVM;
