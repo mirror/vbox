@@ -2517,7 +2517,7 @@ $(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
  ifneq ($(VBOX_SVN_DEP),)
-	$(QUIET)$(APPEND) $@ "export VBOX_SVN_REV=$(shell $(SVN) info $(PATH_ROOT) | $(SED) -e '/^Revision/!d'  -e "s/Revision\: *//")"
+	$(QUIET)$(APPEND) $@ "export VBOX_SVN_REV=$(shell $(SVN) info $(PATH_ROOT) | $(SED) -e '/^Last Changed Rev/!d'  -e "s/Last Changed Rev\: *//")"
  else
 	$(QUIET)$(APPEND) $@ "export VBOX_SVN_REV=$(VBOX_SVN_REV_FALLBACK)"
  endif

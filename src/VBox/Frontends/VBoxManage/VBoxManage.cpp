@@ -261,6 +261,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd == USAGE_ALL)
     {
+        RTPrintf("VBoxManage [-v|-version]    print version number and exit\n");
         RTPrintf("VBoxManage -nologo ...      suppress the logo\n"
                  "\n");
     }
@@ -315,7 +316,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-acpi on|off]\n"
                  "                            [-ioapic on|off]\n"
                  "                            [-hwvirtex on|off|default]\n"
-                 "                            [-monitorcount <number>\n"
+                 "                            [-monitorcount <number>]\n"
                  "                            [-bioslogofadein on|off]\n"
                  "                            [-bioslogofadeout on|off]\n"
                  "                            [-bioslogodisplaytime <msec>]\n"
@@ -6308,6 +6309,15 @@ int main(int argc, char *argv[])
             showLogo();
             printUsage(USAGE_ALL);
             return 0;
+        }
+        else if (   strcmp(argv[i], "-v") == 0
+                 || strcmp(argv[i], "-version") == 0
+                 || strcmp(argv[i], "-Version") == 0
+                 || strcmp(argv[i], "--version") == 0)
+        {
+            /* Print version number, and do nothing else. */
+            RTPrintf("%sr%d\n", VBOX_VERSION_STRING, VBOX_SVN_REV);
+            exit(0);
         }
         else if (strcmp(argv[i], "-nologo") == 0)
         {
