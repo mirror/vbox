@@ -724,6 +724,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_K8_TOP_MEM1                     0xc001001a
 #define MSR_K8_TOP_MEM2                     0xc001001d
 #define MSR_K8_VM_CR                        0xc0010114
+#define MSR_K8_VM_CR_SVM_DISABLE            BIT(4)
+
 #define MSR_K8_IGNNE                        0xc0010115
 #define MSR_K8_SMM_CTL                      0xc0010116
 /** SVM - VM_HSAVE_PA - Physical address for saving and restoring
