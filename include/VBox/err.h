@@ -1073,6 +1073,8 @@
 #define VERR_SVM_ILLEGAL_EFER_MSR                   (-4051)
 /** SVM CPU extension not available. */
 #define VERR_SVM_NO_SVM                             (-4052)
+/** SVM CPU extension disabled (by BIOS). */
+#define VERR_SVM_DISABLED                           (-4053)
 /** @} */
 
 /** @name VBox HWACCM Status Codes
