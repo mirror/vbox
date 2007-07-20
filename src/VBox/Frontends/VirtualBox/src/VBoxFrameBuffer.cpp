@@ -286,10 +286,10 @@ STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG aCount)
     {
         QRect rect;
         rect.setLeft (rects->xLeft);
-        rect.setBottom (rects->yBottom);
+        rect.setTop (rects->yTop);
         /* QRect are inclusive */
         rect.setRight (rects->xRight - 1);
-        rect.setTop (rects->yTop - 1);
+        rect.setBottom (rects->yBottom - 1);
         reg += rect;
         ++ rects;
     }
