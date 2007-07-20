@@ -2298,7 +2298,7 @@ endif
 # Tools and templates for building 32-bit linux guest additions.
 #
 TOOL_VBOXLNX32NOCPPLD = Linker tool replacing the VBOX_GCC32_TOOL linker (g++).
-TOOL_VBOXLNX32NOCPPLD_LINK_PROGRAM_OUTPUT = $(outbase).map
+TOOL_VBOXLNX32NOCPPLD_LINK_PROGRAM_OUTPUT =
 TOOL_VBOXLNX32NOCPPLD_LINK_PROGRAM_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))
 TOOL_VBOXLNX32NOCPPLD_LINK_PROGRAM_DEPORD =
 define TOOL_VBOXLNX32NOCPPLD_LINK_PROGRAM_CMDS
@@ -2307,7 +2307,7 @@ define TOOL_VBOXLNX32NOCPPLD_LINK_PROGRAM_CMDS
 		$(foreach lib,$(libs), $(if $(findstring $(lib),$(subst /,x,$(lib))), -l$(patsubst lib%,%,$(basename $(lib))), $(lib)))\
 		$(call TOOL_$(VBOX_GCC32_TOOL)_LD_MAP,$(outbase).map)
 endef
-TOOL_VBOXLNX32NOCPPLD_LINK_DLL_OUTPUT = $(outbase).map
+TOOL_VBOXLNX32NOCPPLD_LINK_DLL_OUTPUT =
 TOOL_VBOXLNX32NOCPPLD_LINK_DLL_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))
 TOOL_VBOXLNX32NOCPPLD_LINK_DLL_DEPORD =
 # (no SONAME for now)
