@@ -188,7 +188,7 @@ void VBoxRecheckVisibleWindows()
 
                     for (DWORD i=0;i<lpRgnData->rdh.nCount;i++)
                     {
-                        dprintf(("visible rect (%d,%d)(%d,%d)\n", lpRect->left, lpRect->top, lpRect->right, lpRect->bottom));
+                        dprintf(("visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
                     }
 #endif
                     /* send to display driver */
