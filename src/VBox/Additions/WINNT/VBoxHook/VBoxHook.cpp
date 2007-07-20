@@ -153,6 +153,11 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
             else
                 lpParam->hrgn = hrgn;
         }
+        else
+        {
+            dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d) (ignored)\n", hwnd, rect.left, rect.top, rect.right, rect.bottom));
+            dprintf(("title=%s style=%x\n", szWindowText, dwStyle));
+        }
     }
     return TRUE; /* continue enumeration */
 }
