@@ -42,6 +42,14 @@ static int xio_errhandler(Display *d)
     return (XIO_handler(d));
 }*/
 
+/* X11 server connection for all OpenGL clients.
+ * Neccessary because Mesa and DRI cannot handle more than one
+ * connection per thread (only hardware acceleration, software rendering
+ * runs fine with more than one connection). 
+ * Would crash in vboxglDisconnect if on every vboxglConnect
+ * a new Display is created */
+Display *glXDisplay = NULL;
+
 static Bool WaitForNotify( Display *dpy, XEvent *event, XPointer arg ) {
     return (event->type == MapNotify) && (event->xmap.window == (Window) arg);
 }
@@ -157,6 +165,8 @@ int vboxglGlobalInit()
 {
     Log(("vboxglGlobalInit\n"));
 
+    glXDisplay = XOpenDisplay(NULL);
+
     /*vboxInitOpenGLExtensions();*/
     return VINF_SUCCESS;
 }
@@ -251,7 +261,7 @@ int vboxglConnect(PVBOXOGLCTX pClient)
     pClient->PixelFormatToFBConfigMapper = NULL;
     pClient->xWindow = 0;
 
-    pClient->dpy = XOpenDisplay(NULL);
+    pClient->dpy = glXDisplay;
 
     if (pClient->dpy) {
         int  screenNum, major, minor;
@@ -297,16 +307,14 @@ int vboxglDisconnect(PVBOXOGLCTX pClient)
     Log(("vboxglDisconnect\n"));
 
 #ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    if (pClient->dpy) {
-        if (pClient->xWindow != 0) {
-            XUnmapWindow(pClient->dpy, pClient->xWindow);
-            XDestroyWindow(pClient->dpy, pClient->xWindow);
-        }
-        if (pClient->PixelFormatToFBConfigMapper) {
-            XFree(pClient->PixelFormatToFBConfigMapper);
-        }
-        XCloseDisplay(pClient->dpy);
+    if (pClient->xWindow != 0) {
+        XUnmapWindow(pClient->dpy, pClient->xWindow);
+        XDestroyWindow(pClient->dpy, pClient->xWindow);
     }
+    if (pClient->PixelFormatToFBConfigMapper) {
+        XFree(pClient->PixelFormatToFBConfigMapper);
+    }
+
     pClient->dpy = NULL;
     pClient->xWindow = 0;
     pClient->actFBConfig = NULL;
