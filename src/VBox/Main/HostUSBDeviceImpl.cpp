@@ -821,6 +821,7 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
     if (!aData.mActive)
         return false;
 
+#ifndef VBOX_WITH_USBFILTER
     if (!aData.mVendorId.isMatch (mUsb->idVendor))
     {
         LogFlowThisFunc (("vendor not match %04X\n",
@@ -891,6 +892,17 @@ bool HostUSBDevice::isMatch (const USBDeviceFilter::Data &aData)
         && aData.mProduct.string().isEmpty()
         && aData.mSerialNumber.string().isEmpty())
         return false;
+
+#else  /* VBOX_WITH_USBFILTER */
+    if (USBFilterMatchDevice (&aData.mUSBFilter, mUsb))
+    {
+        /* Don't match busy devices with a 100% wildcard filter - this will
+           later become a filter prop (ring-3 only). */
+        if (    mUsb->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
+            &&  !USBFilterHasAnySubstatialCriteria (&aData.mUSBFilter))
+            return false;
+    }
+#endif /* VBOX_WITH_USBFILTER */
 
     LogFlowThisFunc (("returns true\n"));
     return true;

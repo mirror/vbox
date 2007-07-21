@@ -1170,6 +1170,7 @@ HRESULT Host::saveSettings (CFGNODE aGlobal)
         CFGLDRSetBSTR (filter, "name", data.mName);
         CFGLDRSetBool (filter, "active", !!data.mActive);
 
+#ifndef VBOX_WITH_USBFILTER
         // all are optional
         if (data.mVendorId.string())
             CFGLDRSetBSTR (filter, "vendorid", data.mVendorId.string());
@@ -1194,6 +1195,48 @@ HRESULT Host::saveSettings (CFGNODE aGlobal)
             CFGLDRSetString (filter, "action", "Hold");
         else
             AssertMsgFailed (("Invalid action: %d\n", data.mAction));
+
+#else  /* VBOX_WITH_USBFILTER */
+        // all are optional
+        Bstr str;
+        (*it)->COMGETTER (VendorId) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "vendorid", str);
+
+        (*it)->COMGETTER (ProductId) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "productid", str);
+
+        (*it)->COMGETTER (Revision) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "revision", str);
+
+        (*it)->COMGETTER (Manufacturer) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "manufacturer", str);
+
+        (*it)->COMGETTER (Product) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "product", str);
+
+        (*it)->COMGETTER (SerialNumber) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "serialnumber", str);
+
+        (*it)->COMGETTER (Port) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "port", str);
+
+        // action is mandatory
+        ULONG action = USBDeviceFilterAction_InvalidUSBDeviceFilterAction;
+        (*it)->COMGETTER (Action) (&action);
+        if (action == USBDeviceFilterAction_USBDeviceFilterIgnore)
+            CFGLDRSetString (filter, "action", "Ignore");
+        else if (action == USBDeviceFilterAction_USBDeviceFilterHold)
+            CFGLDRSetString (filter, "action", "Hold");
+        else
+            AssertMsgFailed (("Invalid action: %d\n", action));
+#endif /* VBOX_WITH_USBFILTER */
 
         CFGLDRReleaseNode (filter);
 
@@ -1929,14 +1972,20 @@ HRESULT Host::applyAllUSBFilters (ComObjPtr <HostUSBDevice> &aDevice,
         const HostUSBDeviceFilter::Data &data = (*it)->data();
         if (aDevice->isMatch (data))
         {
-            if (data.mAction == USBDeviceFilterAction_USBDeviceFilterIgnore)
+#ifndef VBOX_WITH_USBFILTER
+            USBDeviceFilterAction_T action = data.mAction;
+#else
+            ULONG action = USBDeviceFilterAction_InvalidUSBDeviceFilterAction;
+            (*it)->COMGETTER (Action) (&action);
+#endif
+            if (action == USBDeviceFilterAction_USBDeviceFilterIgnore)
             {
                 /* request to give the device back to the host*/
                 aDevice->requestRelease();
                 /* nothing to do any more */
                 return S_OK;
             }
-            if (data.mAction == USBDeviceFilterAction_USBDeviceFilterHold)
+            if (action == USBDeviceFilterAction_USBDeviceFilterHold)
                 break;
         }
     }
