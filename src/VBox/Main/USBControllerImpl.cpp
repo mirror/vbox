@@ -367,7 +367,11 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
         ComAssertRet (service, E_FAIL);
 
         ComAssertRet (filter->id() == NULL, E_FAIL);
+#ifndef VBOX_WITH_USBFILTER
         filter->id() = service->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
+#else
+        filter->id() = service->insertFilter (&filter->data().mUSBFilter);
+#endif
     }
 
     return S_OK;
@@ -785,8 +789,12 @@ bool USBController::rollback()
                     {
                         USBDeviceFilter *flt = *it; /* resolve ambiguity */
                         ComAssertRet (flt->id() == NULL, false);
+#ifndef VBOX_WITH_USBFILTER
                         flt->id() = service->insertFilter
                             (ComPtr <IUSBDeviceFilter> (flt));
+#else
+                        flt->id() = service->insertFilter (&flt->data().mUSBFilter);
+#endif
                     }
                 }
                 ++ it;
@@ -1009,8 +1017,12 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
             if (aFilter->data().mActive)
             {
                 ComAssertRet (aFilter->id() == NULL, E_FAIL);
+#ifndef VBOX_WITH_USBFILTER
                 aFilter->id() = service->insertFilter
                     (ComPtr <IUSBDeviceFilter> (aFilter));
+#else
+                aFilter->id() = service->insertFilter (&aFilter->data().mUSBFilter);
+#endif
             }
             else
             {
@@ -1026,8 +1038,12 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
                 /* update the filter in the proxy */
                 ComAssertRet (aFilter->id() != NULL, E_FAIL);
                 service->removeFilter (aFilter->id());
+#ifndef VBOX_WITH_USBFILTER
                 aFilter->id() = service->insertFilter
                     (ComPtr <IUSBDeviceFilter> (aFilter));
+#else
+                aFilter->id() = service->insertFilter (&aFilter->data().mUSBFilter);
+#endif
             }
         }
     }
@@ -1246,8 +1262,12 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
             if (aInsertFilters)
             {
                 AssertReturn (flt->id() == NULL, E_FAIL);
+#ifndef VBOX_WITH_USBFILTER
                 flt->id() = service->insertFilter
                     (ComPtr <IUSBDeviceFilter> (flt));
+#else
+                flt->id() = service->insertFilter (&flt->data().mUSBFilter);
+#endif
             }
             else
             {

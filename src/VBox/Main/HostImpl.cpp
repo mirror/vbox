@@ -938,8 +938,12 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     if (filter->data().mActive)
     {
         ComAssertRet (filter->id() == NULL, E_FAIL);
+#ifndef VBOX_WITH_USBFILTER
         filter->id() =
             mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
+#else
+        filter->id() = mUSBProxyService->insertFilter (&filter->data().mUSBFilter);
+#endif
     }
 
     /* save the global settings */
@@ -1027,8 +1031,12 @@ HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
             if (aFilter->data().mActive)
             {
                 ComAssertRet (aFilter->id() == NULL, E_FAIL);
+#ifndef VBOX_WITH_USBFILTER
                 aFilter->id() =
                     mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
+#else
+                aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
+#endif
             }
             else
             {
@@ -1044,8 +1052,12 @@ HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
                 // update the filter in the proxy
                 ComAssertRet (aFilter->id() != NULL, E_FAIL);
                 mUSBProxyService->removeFilter (aFilter->id());
+#ifndef VBOX_WITH_USBFILTER
                 aFilter->id() =
                     mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (aFilter));
+#else
+                aFilter->id() = mUSBProxyService->insertFilter (&aFilter->data().mUSBFilter);
+#endif
             }
         }
 
@@ -1126,8 +1138,12 @@ HRESULT Host::loadSettings (CFGNODE aGlobal)
             if (filterObj->data().mActive)
             {
                 HostUSBDeviceFilter *flt = filterObj; // resolve ambiguity
+#ifndef VBOX_WITH_USBFILTER
                 flt->id() =
                     mUSBProxyService->insertFilter (ComPtr <IUSBDeviceFilter> (flt));
+#else
+                flt->id() = mUSBProxyService->insertFilter (&filterObj->data().mUSBFilter);
+#endif
             }
         }
 

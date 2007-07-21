@@ -538,14 +538,18 @@ void USBProxyService::serviceThreadTerm (void)
  *  The default implementation returns non-NULL to emulate successful insertions
  *  for those subclasses that don't reimplement this method.
  */
+#ifndef VBOX_WITH_USBFILTER
 void *USBProxyService::insertFilter (IUSBDeviceFilter * /* aFilter */)
+#else
+void *USBProxyService::insertFilter (PCUSBFILTER /* aFilter */)
+#endif
 {
     // return non-NULL to prevent failed assertions in Main
     return (void *) 1;
 }
 
 
-void USBProxyService::removeFilter (void * /* aID */)
+void USBProxyService::removeFilter (void * /* aId */)
 {
 }
 
