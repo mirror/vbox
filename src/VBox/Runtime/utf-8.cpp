@@ -33,7 +33,7 @@
 
 
 /**
- * Get get length in code points of a UTF-8 endcoded string.
+ * Get get length in code points of a UTF-8 encoded string.
  * The string is validated while doing this.
  *
  * @returns IPRT status code.
