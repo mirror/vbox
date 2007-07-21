@@ -559,6 +559,7 @@ HRESULT USBController::saveSettings (CFGNODE aMachine)
         CFGLDRSetBool (filter, "active", !!data.mActive);
 
         /* all are optional */
+#ifndef VBOX_WITH_USBFILTER
         if (data.mVendorId.string())
             CFGLDRSetBSTR (filter, "vendorid", data.mVendorId.string());
         if (data.mProductId.string())
@@ -575,6 +576,40 @@ HRESULT USBController::saveSettings (CFGNODE aMachine)
             CFGLDRSetBSTR (filter, "port", data.mPort.string());
         if (data.mRemote.string())
             CFGLDRSetBSTR (filter, "remote", data.mRemote.string());
+
+#else  /* VBOX_WITH_USBFILTER */
+        Bstr str;
+        (*it)->COMGETTER (VendorId) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "vendorid", str);
+
+        (*it)->COMGETTER (ProductId) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "productid", str);
+
+        (*it)->COMGETTER (Revision) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "revision", str);
+
+        (*it)->COMGETTER (Manufacturer) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "manufacturer", str);
+
+        (*it)->COMGETTER (Product) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "product", str);
+
+        (*it)->COMGETTER (SerialNumber) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "serialnumber", str);
+
+        (*it)->COMGETTER (Port) (str.asOutParam());
+        if (!str.isNull())
+            CFGLDRSetBSTR (filter, "port", str);
+
+        if (data.mRemote.string())
+            CFGLDRSetBSTR (filter, "remote", data.mRemote.string());
+#endif /* VBOX_WITH_USBFILTER */
 
         CFGLDRReleaseNode (filter);
 
@@ -1061,32 +1096,57 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
     HRESULT rc = S_OK;
 
     /* query fields */
+#ifdef VBOX_WITH_USBFILTER
+    USBFILTER dev;
+    USBFilterInit (&dev, USBFILTERTYPE_CAPTURE);
+#endif
 
     USHORT vendorId = 0;
     rc = aUSBDevice->COMGETTER(VendorId) (&vendorId);
     ComAssertComRCRet (rc, false);
     ComAssertRet (vendorId, false);
+#ifdef VBOX_WITH_USBFILTER
+    int vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_VENDOR_ID, vendorId, true); AssertRC(vrc);
+#endif
 
     USHORT productId = 0;
     rc = aUSBDevice->COMGETTER(ProductId) (&productId);
     ComAssertComRCRet (rc, false);
     ComAssertRet (productId, false);
+#ifdef VBOX_WITH_USBFILTER
+    vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_PRODUCT_ID, productId, true); AssertRC(vrc);
+#endif
 
     USHORT revision;
     rc = aUSBDevice->COMGETTER(Revision) (&revision);
     ComAssertComRCRet (rc, false);
+#ifdef VBOX_WITH_USBFILTER
+    vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_DEVICE, revision, true); AssertRC(vrc);
+#endif
 
     Bstr manufacturer;
     rc = aUSBDevice->COMGETTER(Manufacturer) (manufacturer.asOutParam());
     ComAssertComRCRet (rc, false);
+#ifdef VBOX_WITH_USBFILTER
+    if (!manufacturer.isNull())
+        USBFilterSetStringExact (&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer), true);
+#endif
 
     Bstr product;
     rc = aUSBDevice->COMGETTER(Product) (product.asOutParam());
     ComAssertComRCRet (rc, false);
+#ifdef VBOX_WITH_USBFILTER
+    if (!product.isNull())
+        USBFilterSetStringExact (&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product), true);
+#endif
 
     Bstr serialNumber;
     rc = aUSBDevice->COMGETTER(SerialNumber) (serialNumber.asOutParam());
     ComAssertComRCRet (rc, false);
+#ifdef VBOX_WITH_USBFILTER
+    if (!serialNumber.isNull())
+        USBFilterSetStringExact (&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber), true);
+#endif
 
     Bstr address;
     rc = aUSBDevice->COMGETTER(Address) (address.asOutParam());
@@ -1095,6 +1155,9 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
     USHORT port = 0;
     rc = aUSBDevice->COMGETTER(Port)(&port);
     ComAssertComRCRet (rc, false);
+#ifdef VBOX_WITH_USBFILTER
+    USBFilterSetNumExact (&dev, USBFILTERIDX_PORT, port, true);
+#endif
 
     BOOL remote = FALSE;
     rc = aUSBDevice->COMGETTER(Remote)(&remote);
@@ -1111,8 +1174,13 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
         AutoLock filterLock (*it);
         const USBDeviceFilter::Data &aData = (*it)->data();
 
+
         if (!aData.mActive)
             continue;
+        if (!aData.mRemote.isMatch (remote))
+            continue;
+
+#ifndef VBOX_WITH_USBFILTER
         if (!aData.mVendorId.isMatch (vendorId))
             continue;
         if (!aData.mProductId.isMatch (productId))
@@ -1132,8 +1200,10 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
             continue;
 #endif
 
-        if (!aData.mRemote.isMatch (remote))
+#else  /* VBOX_WITH_USBFILTER */
+        if (!USBFilterMatch (&aData.mUSBFilter, &dev))
             continue;
+#endif /* VBOX_WITH_USBFILTER */
 
         match = true;
         break;

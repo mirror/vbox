@@ -42,6 +42,7 @@ ifneq ($(BUILD_TARGET),win)
  DEFS           += VBOX_WITH_UNIXY_TAP_NETWORKING
 endif
 
+
 #PROGRAMS         = tstCFGLdr
 
 ifeq ($(BUILD_TARGET),win)
@@ -216,6 +217,13 @@ VBoxSVC_LDFLAGS.darwin = -framework IOKit
 ifeq ($(BUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
 endif
+
+## Alternative USB filtering.
+#ifeq ($(filter-out darwin,$(BUILD_TARGET)),)
+#VBoxSVC_DEFS += VBOX_WITH_USBFILTER
+#VBoxSVC_LIBS += $(PATH_LIB)/USBFilter$(VBOX_SUFF_LIB)
+#endif
+
 
 #
 # VBoxSVC wrapper module
