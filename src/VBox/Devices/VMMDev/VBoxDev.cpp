@@ -519,6 +519,13 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     /* make a copy of supplied information */
                     pData->guestCaps = guestCaps->caps;
 
+                    LogRel(("Guest Additions capability report: (0x%x) "
+                            "VMMDEV_GUEST_SUPPORTS_SEAMLESS: %s "
+                            "VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING: %s\n",
+                            guestCaps->caps,
+                            guestCaps->caps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
+                            guestCaps->caps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no"));
+
                     pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, guestCaps->caps);
                 }
                 requestHeader->rc = VINF_SUCCESS;
