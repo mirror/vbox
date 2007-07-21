@@ -221,7 +221,7 @@ endif
 ## Alternative USB filtering.
 #ifeq ($(filter-out darwin,$(BUILD_TARGET)),)
 #VBoxSVC_DEFS += VBOX_WITH_USBFILTER
-#VBoxSVC_LIBS += $(PATH_LIB)/USBFilter$(VBOX_SUFF_LIB)
+#VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
 #endif
 
 

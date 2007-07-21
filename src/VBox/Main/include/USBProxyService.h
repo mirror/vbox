@@ -41,14 +41,18 @@ public:
      * @param   aFilter         Pointer to the inserted filter.
      * @return  ID of the inserted filter
      */
+#ifdef VBOX_WITH_USBFILTER
+    virtual void *insertFilter (PCUSBFILTER aFilter);
+#else
     virtual void *insertFilter (IUSBDeviceFilter *aFilter);
+#endif
 
     /**
      * A filter was removed.
      *
-     * @param   aID             ID of the filter to remove
+     * @param   aId             ID of the filter to remove
      */
-    virtual void removeFilter (void *aID);
+    virtual void removeFilter (void *aId);
 
     /**
      * A VM is trying to capture a device, do necessary preperations.
@@ -259,6 +263,11 @@ public:
     USBProxyServiceDarwin (Host *aHost);
     ~USBProxyServiceDarwin();
 
+#ifdef VBOX_WITH_USBFILTER
+    virtual void *insertFilter (PCUSBFILTER aFilter);
+    virtual void removeFilter (void *aId);
+#endif
+
     virtual int captureDevice (HostUSBDevice *aDevice);
     virtual int holdDevice (HostUSBDevice *aDevice);
     virtual void detachingDevice (HostUSBDevice *aDevice);
@@ -283,6 +292,8 @@ private:
     bool mWaitABitNextTime;
     /** Whether we've got a fake async event and should return without entering the runloop. */
     bool volatile mFakeAsync;
+    /** Whether we've successfully initialized the USBLib and should call USBLibTerm in the destructor. */
+    bool mUSBLibInitialized;
 };
 # endif /* RT_OS_DARWIN */
 
