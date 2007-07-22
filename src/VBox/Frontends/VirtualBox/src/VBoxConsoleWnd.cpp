@@ -214,7 +214,7 @@ VBoxConsoleWnd::
 VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
                 WFlags aFlags)
     : QMainWindow (aParent, aName, aFlags)
-    , mSeamlessPopupMenu (0)
+    , mMainMenu (0)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
     , dbgCommandLineAction (NULL)
@@ -225,9 +225,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , mNetworkLedTip (0)
     , machine_state (CEnums::InvalidMachineState)
     , no_auto_close (false)
-    , mIsInFullscreenMode (false)
-    , mIsInSeamlessMode (false)
-    , mIsSeamlessModeSupported (false)
+    , mIsFullscreen (false)
+    , mIsSeamless (false)
+    , mIsSeamlessSupported (false)
     , normal_wflags (getWFlags())
     , was_max (false)
     , console_style (0)
@@ -376,11 +376,17 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     ///// Menubar ///////////////////////////////////////////////////////////
 
-    mSeamlessPopupMenu = new QPopupMenu (this, "mSeamlessPopupMenu");
+    mMainMenu = new QPopupMenu (this, "mMainMenu");
 
-    /* VM popup menu */
+    /* Machine submenu */
 
     QPopupMenu *vmMenu = new QPopupMenu (this, "vmMenu");
+
+    /* dynamic & status line popup menus */
+    vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction);
+    vmDisMouseIntegrMenu = new VBoxSwitchMenu (vmMenu, vmDisableMouseIntegrAction,
+                                               true /* inverted toggle state */);
+
     vmFullscreenAction->addTo (vmMenu);
     vmSeamlessAction->addTo (vmMenu);
     vmAdjustWindowAction->addTo (vmMenu);
@@ -400,20 +406,17 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     vmACPIShutdownAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmCloseAction->addTo (vmMenu);
-    menuBar()->insertItem (QString::null, vmMenu, vmMenuId);
-    vmAutoresizeMenu = new VBoxSwitchMenu (vmMenu, vmAutoresizeGuestAction);
-    vmDisMouseIntegrMenu = new VBoxSwitchMenu (vmMenu, vmDisableMouseIntegrAction,
-                                               true /* inverted toggle state */);
-    mSeamlessPopupMenu->insertItem (QString::null, vmMenu, vmMenuId);
 
-    /* Devices popup menu */
+    menuBar()->insertItem (QString::null, vmMenu, vmMenuId);
+    mMainMenu->insertItem (QString::null, vmMenu, vmMenuId);
+
+    /* Devices submenu */
 
     devicesMenu = new QPopupMenu (this, "devicesMenu");
 
-    /* two dynamic submenus */
+    /* dynamic & statusline popup menus */
     devicesMountFloppyMenu = new QPopupMenu (devicesMenu, "devicesMountFloppyMenu");
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
-
     devicesSharedFolders = new QPopupMenu (devicesMenu, "devicesSharedFolders");
     devicesNetworkMenu = new QPopupMenu (devicesMenu, "devicesNetworkMenu");
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
@@ -438,13 +441,14 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesSwitchVrdpAction->addTo (devicesMenu);
     devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
     devicesInstallGuestToolsAction->addTo (devicesMenu);
+
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
+    mMainMenu->insertItem (QString::null, devicesMenu, devicesMenuId);
 
     /* reset the "context menu" flag */
     devicesMenu->setItemParameter (devicesMountFloppyMenuId, 0);
     devicesMenu->setItemParameter (devicesMountDVDMenuId, 0);
     devicesMenu->setItemParameter (devicesUSBMenuId, 0);
-    mSeamlessPopupMenu->insertItem (QString::null, devicesMenu, devicesMenuId);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug popup menu */
@@ -454,22 +458,24 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
         dbgStatisticsAction->addTo (dbgMenu);
         dbgCommandLineAction->addTo (dbgMenu);
         menuBar()->insertItem (QString::null, dbgMenu, dbgMenuId);
-        mSeamlessPopupMenu->insertItem (QString::null, dbgMenu, dbgMenuId);
+        mMainMenu->insertItem (QString::null, dbgMenu, dbgMenuId);
     }
     else
         dbgMenu = NULL;
 #endif
 
-    /* Help popup menu */
+    /* Help submenu */
 
     QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
+
     helpWebAction->addTo( helpMenu );
     helpMenu->insertSeparator();
     helpAboutAction->addTo( helpMenu );
     helpMenu->insertSeparator();
     helpResetMessagesAction->addTo (helpMenu);
+
     menuBar()->insertItem( QString::null, helpMenu, helpMenuId );
-    mSeamlessPopupMenu->insertItem (QString::null, helpMenu, helpMenuId);
+    mMainMenu->insertItem (QString::null, helpMenu, helpMenuId);
 
     ///// Status bar ////////////////////////////////////////////////////////
 
@@ -785,7 +791,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         {
             normal_pos = QPoint (x, y);
             normal_size = QSize (w, h);
-            if (!mIsInFullscreenMode && !vmSeamlessAction->isOn())
+            if (!mIsFullscreen && !vmSeamlessAction->isOn())
             {
                 move (normal_pos);
                 resize (normal_size);
@@ -802,7 +808,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         {
             normal_pos = QPoint();
             normal_size = QSize();
-            if (!mIsInFullscreenMode && !vmSeamlessAction->isOn())
+            if (!mIsFullscreen && !vmSeamlessAction->isOn())
             {
                 console->normalizeGeometry (true /* adjustPosition */);
                 /* maximize if needed */
@@ -1038,8 +1044,8 @@ void VBoxConsoleWnd::closeView()
                                  .arg (normal_pos.x()).arg (normal_pos.y())
                                  .arg (normal_size.width())
                                  .arg (normal_size.height());
-        if (isMaximized() || (mIsInFullscreenMode && was_max)
-                          || (mIsInSeamlessMode && was_max))
+        if (isMaximized() || (mIsFullscreen && was_max)
+                          || (mIsSeamless && was_max))
             winPos += QString (",%1").arg (GUI_LastWindowPosition_Max);
 
         machine.SetExtraData (GUI_LastWindowPosition, winPos);
@@ -1081,9 +1087,32 @@ void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
     vmDisableMouseIntegrAction->setEnabled (false);
 }
 
-void VBoxConsoleWnd::popupSeamlessMenu()
+/**
+ *  Shows up and activates the popup version of the main menu.
+ *
+ *  @param aCenter If @a true, center the popup menu on the screen, otherwise
+ *                 show it at the current mouse pointer location.
+ */
+void VBoxConsoleWnd::popupMainMenu (bool aCenter)
 {
-    mSeamlessPopupMenu->popup (QCursor::pos());
+    QPoint pos = QCursor::pos();
+    if (aCenter)
+    {
+        QRect deskGeo = QApplication::desktop()->screenGeometry (this);
+        QRect popGeo = mMainMenu->frameGeometry();
+        popGeo.moveCenter (QPoint (deskGeo.width() / 2, deskGeo.height() / 2));
+        pos = popGeo.topLeft();
+    }
+    else
+    {
+        /* put the menu's bottom right corner to the pointer's hotspot point */
+        pos.setX (pos.x() - mMainMenu->frameGeometry().width());
+        pos.setY (pos.y() - mMainMenu->frameGeometry().height());
+    }
+
+    mMainMenu->popup (pos);
+    mMainMenu->setActiveWindow();
+    mMainMenu->setActiveItem (0);
 }
 
 //
@@ -1101,7 +1130,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         case QEvent::Resize:
         {
             QResizeEvent *re = (QResizeEvent *) e;
-            if (!mIsInFullscreenMode && !mIsInSeamlessMode &&
+            if (!mIsFullscreen && !mIsSeamless &&
                 (windowState() & (WindowMaximized | WindowMinimized |
                                   WindowFullScreen)) == 0)
             {
@@ -1114,7 +1143,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         }
         case QEvent::Move:
         {
-            if (!mIsInFullscreenMode && !mIsInSeamlessMode &&
+            if (!mIsFullscreen && !mIsSeamless &&
                 (windowState() & (WindowMaximized | WindowMinimized |
                                   WindowFullScreen)) == 0)
             {
@@ -1494,21 +1523,20 @@ void VBoxConsoleWnd::languageChange()
     /* main menu & seamless popup menu */
 
     menuBar()->changeItem (vmMenuId, tr ("&Machine"));
-    mSeamlessPopupMenu->changeItem (vmMenuId,
-        VBoxGlobal::iconSet ("ico16x01.png"), tr ("&Machine"));
+    mMainMenu->changeItem (vmMenuId,
+        VBoxGlobal::iconSet ("machine_16px.png"), tr ("&Machine"));
     menuBar()->changeItem (devicesMenuId, tr ("&Devices"));
-    mSeamlessPopupMenu->changeItem (devicesMenuId,
-        VBoxGlobal::iconSet ("diskim_16px.png"), tr ("&Devices"));
+    mMainMenu->changeItem (devicesMenuId,
+        VBoxGlobal::iconSet ("settings_16px.png"), tr ("&Devices"));
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
     {
         menuBar()->changeItem (dbgMenuId, tr ("De&bug"));
-        mSeamlessPopupMenu->changeItem (dbgMenuId,
-            VBoxGlobal::iconSet ("global_settings_16px.png"), tr ("De&bug"));
+        mMainMenu->changeItem (dbgMenuId, tr ("De&bug"));
     }
 #endif
     menuBar()->changeItem (helpMenuId, tr ("&Help"));
-    mSeamlessPopupMenu->changeItem (helpMenuId,
+    mMainMenu->changeItem (helpMenuId,
         VBoxGlobal::iconSet ("help_16px.png"), tr ("&Help"));
 
     /* status bar widgets */
@@ -1788,17 +1816,17 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
     if (aSeamless &&
-        (aOn && !mIsSeamlessModeSupported ||
-         aOn && mIsInFullscreenMode ||
-         !aOn && !mIsInSeamlessMode))
+        (aOn && !mIsSeamlessSupported ||
+         aOn && mIsFullscreen ||
+         !aOn && !mIsSeamless))
         return;
 
     AssertReturnVoid (console);
     AssertReturnVoid ((hidden_children.isEmpty() == aOn));
     if (aSeamless)
-        AssertReturnVoid (mIsInSeamlessMode != aOn);
+        AssertReturnVoid (mIsSeamless != aOn);
     else
-        AssertReturnVoid (mIsInFullscreenMode != aOn);
+        AssertReturnVoid (mIsFullscreen != aOn);
 
     if (aOn)
     {
@@ -1832,7 +1860,7 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     }
     else
     {
-        mIsInFullscreenMode = aOn;
+        mIsFullscreen = aOn;
         vmAdjustWindowAction->setEnabled (!aOn);
         vmSeamlessAction->setEnabled (!aOn);
     }
@@ -1842,7 +1870,7 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (aOn)
     {
         if (aSeamless)
-            mIsInSeamlessMode = true;
+            mIsSeamless = true;
 
         /* Save the previous scroll-view minimum size before entering
          * fullscreen/seamless state to restore this minimum size before
@@ -1981,7 +2009,7 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         QApplication::sendPostedEvents (0, QEvent::LayoutHint);
 
         if (aSeamless)
-            mIsInSeamlessMode = false;
+            mIsSeamless = false;
     }
 
     /* VBoxConsoleView loses focus for some reason after reparenting,
@@ -2758,7 +2786,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
 {
     vmAutoresizeGuestAction->setEnabled (aActive);
     vmSeamlessAction->setEnabled (aSeamless);
-    mIsSeamlessModeSupported = aSeamless;
+    mIsSeamlessSupported = aSeamless;
     if (aSeamless && vmSeamlessAction->isOn())
         vmSeamless (true);
 

@@ -2231,7 +2231,7 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
     }
     delete list;
 
-    /// @todo (r=dmik) not sure, we really need this
+    /// @todo (r=dmik) not sure if we really need this
 #if 0
     /* sanity check for decoration frames. With embedding, we
      * might get extraordinary values */
