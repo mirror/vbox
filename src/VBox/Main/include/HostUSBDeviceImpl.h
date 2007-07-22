@@ -83,24 +83,24 @@ public:
     STDMETHOD(COMGETTER(State))(USBDeviceState_T *aState);
 
     /** Additional internal states.
-     * The async detach stuff for Darwin is a two stage journey with a variation 
+     * The async detach stuff for Darwin is a two stage journey with a variation
      * (filters) depending on who won the race to lock the Host object.
-     * 
-     * @remark Trying out mac os x style enum naming convention here. nice or what? 
+     *
+     * @remark Trying out mac os x style enum naming convention here. nice or what?
      */
     typedef enum
-    { 
+    {
         /** Nothing is pending here, check mPendingState. */
-        kNothingPending, 
+        kNothingPending,
         /** 1st stage of the detch, waiting for the logical detach notification. */
-        kDetachingPendingDetach, 
-        /** 1st stage of the detch, waiting for the logical detach notification - re-run filters. 
+        kDetachingPendingDetach,
+        /** 1st stage of the detch, waiting for the logical detach notification - re-run filters.
          * Prev: kDetachingPendingDetach */
-        kDetachingPendingDetachFilters, 
-        /** 2nd stage of the detach, waiting for the logical attach notification. 
+        kDetachingPendingDetachFilters,
+        /** 2nd stage of the detach, waiting for the logical attach notification.
          * Prev: kDetachingPendingDetach */
         kDetachingPendingAttach,
-        /** 2nd stage of the detach, waiting for the logical attach notification - re-run filters. 
+        /** 2nd stage of the detach, waiting for the logical attach notification - re-run filters.
          * Prev: kDetachingPendingDetachFilters */
         kDetachingPendingAttachFilters
     } InternalState;
@@ -162,7 +162,7 @@ private:
     USBDeviceState_T mPendingState;
     /** Same as mPendingState but for the internal states. */
     InternalState mPendingStateEx;
-    /** RTTimeNanoTS() of when mIsStatePending was set or mDetaching changed 
+    /** RTTimeNanoTS() of when mIsStatePending was set or mDetaching changed
      * from kNotDetaching. For operations that cannot be cancelled it's 0. */
     uint64_t mPendingSince;
     ComObjPtr <SessionMachine> mMachine;
@@ -178,6 +178,12 @@ private:
     friend class USBProxyService;
 #ifdef RT_OS_LINUX
     friend class USBProxyServiceLinux;
+#endif
+#ifdef RT_OS_DARWIN
+    /** One-shot filter id. */
+    void *mOneShotId;
+
+    friend class USBProxyServiceDarwin;
 #endif
 };
 
