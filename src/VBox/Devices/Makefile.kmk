@@ -108,7 +108,9 @@ ifeq ($(BUILD_TARGET),l4)
  VBoxDD_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
-VBoxDD_LIBS.darwin      = \
+VBoxDD_LIBS.darwin     = \
+	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
+VBoxDD_LIBS.darwin     += \
 	$(LIB_REM)
 VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib \
 	-framework CoreAudio \
@@ -473,6 +475,7 @@ ifdef VBOX_WITH_USB
  endif
 
  Drivers_DEFS.darwin  += VUSB_HAVE_USBPROXY_DEVICE
+ Drivers_DEFS.darwin  += VBOX_WITH_USBFILTER
  Drivers_SOURCES.darwin += \
 	USB/USBProxyDevice.cpp \
 	USB/darwin/USBProxyDevice-darwin.cpp
