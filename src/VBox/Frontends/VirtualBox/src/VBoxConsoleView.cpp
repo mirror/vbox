@@ -2641,27 +2641,42 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
 {
     AssertMsg (attached, ("Console must be attached"));
 
-    LONG codes [2];
     CKeyboard keyboard = cconsole.GetKeyboard();
+    bool fSentRESEND = false;
 
     // send a dummy scan code (RESEND) to prevent the guest OS from recognizing
     // a single key click (for ex., Alt) and performing an unwanted action
     // (for ex., activating the menu) when we release all pressed keys below.
     // Note, that it's just a guess that sending RESEND will give the desired
     // effect :), but at least it works with NT and W2k guests.
-    /** @todo This seems to causes linux guests (in console mode) to cough a bit.
-     * We need to check if this is the cause of #1944 and/or #1949. --bird */
-    codes [0] = 0xFE;
-    keyboard.PutScancodes (codes, 1);
 
+    // @TODO Sending 0xFE is responsible for the warning 
+    //
+    //         ``atkbd.c: Spurious NAK on isa0060/serio0. Some program might
+    //           be trying access hardware directly''
+    //
+    //       on Linux guests (#1944). It might also be responsible for #1949. Don't
+    //       send this command unless we really have to release any key modifier.
+    //                                                                    --frank
     for (uint i = 0; i < SIZEOF_ARRAY (keys_pressed); i++)
     {
         if (keys_pressed [i] & IsKeyPressed)
         {
+	    if (!fSentRESEND)
+	    {
+		keyboard.PutScancode (0xFE);
+		fSentRESEND = true;
+	    }
             keyboard.PutScancode (i | 0x80);
         }
         else if (keys_pressed [i] & IsExtKeyPressed)
         {
+	    if (!fSentRESEND)
+	    {
+		keyboard.PutScancode (0xFE);
+		fSentRESEND = true;
+	    }
+	    LONG codes [2];
             codes[0] = 0xE0;
             codes[1] = i | 0x80;
             keyboard.PutScancodes (codes, 2);
