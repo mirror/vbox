@@ -55,7 +55,7 @@ static Bool WaitForNotify( Display *dpy, XEvent *event, XPointer arg ) {
 }
 
 /* from http://www.mesa3d.org/brianp/sig97/exten.htm */
-GLboolean vboxglCheckExtension(Display *dpy, int screenNum, char *extName )
+GLboolean vboxglCheckExtension(Display *dpy, int screenNum, const char *extName )
 {
    /*
     ** Search for extName in the extensions string.  Use of strstr()
@@ -95,7 +95,7 @@ PrintFBConfigInfo(Display *dpy, int screen, GLXFBConfig config)
    int redSize, greenSize, blueSize, alphaSize;
    int depthSize, stencilSize;
    int accumRedSize, accumBlueSize, accumGreenSize, accumAlphaSize;
-   int sampleBuffers, samples;
+//   int sampleBuffers, samples;
    int drawableType, renderType, xRenderable, xVisual, id;
 
    /* do queries using the GLX 1.3 tokens (same as the SGIX tokens) */
@@ -141,8 +141,8 @@ PrintFBConfigInfo(Display *dpy, int screen, GLXFBConfig config)
       printf("  Accum Green Size: %d\n", accumGreenSize);
       printf("  Accum Blue Size: %d\n", accumBlueSize);
       printf("  Accum Alpha Size: %d\n", accumAlphaSize);
-      printf("  Sample Buffers: %d\n", sampleBuffers);
-      printf("  Samples/Pixel: %d\n", samples);
+//      printf("  Sample Buffers: %d\n", sampleBuffers);
+//      printf("  Samples/Pixel: %d\n", samples);
       printf("  Drawable Types: ");
       if (drawableType & GLX_WINDOW_BIT)  printf("Window ");
       if (drawableType & GLX_PIXMAP_BIT)  printf("Pixmap ");
