@@ -70,13 +70,13 @@ public:
 
     void refreshView();
 
-    bool isTrueFullscreen() const { return mIsInFullscreenMode; }
+    bool isTrueFullscreen() const { return mIsFullscreen; }
 
-    bool isTrueSeamless() const { return mIsInSeamlessMode; }
+    bool isTrueSeamless() const { return mIsSeamless; }
 
-    void setMouseIntegrationLocked (bool);
+    void setMouseIntegrationLocked (bool aDisabled);
 
-    void popupSeamlessMenu();
+    void popupMainMenu (bool aCenter);
 
 public slots:
 
@@ -179,11 +179,12 @@ private slots:
 
 private:
 
-    QPopupMenu *mSeamlessPopupMenu;
+    /** Popup version of the main menu */
+    QPopupMenu *mMainMenu;
 
     QActionGroup *runningActions;
 
-    // VM actions
+    // Machine actions
     QAction *vmFullscreenAction;
     QAction *vmSeamlessAction;
     QAction *vmAutoresizeGuestAction;
@@ -198,10 +199,6 @@ private:
     QAction *vmCloseAction;
     QAction *vmTakeSnapshotAction;
     QAction *vmDisableMouseIntegrAction;
-
-    // VM popup menus
-    VBoxSwitchMenu *vmAutoresizeMenu;
-    VBoxSwitchMenu *vmDisMouseIntegrMenu;
 
     // Devices actions
     QAction *devicesMountFloppyImageAction;
@@ -222,6 +219,10 @@ private:
     QAction *helpWebAction;
     QAction *helpAboutAction;
     QAction *helpResetMessagesAction;
+
+    // Machine popup menus
+    VBoxSwitchMenu *vmAutoresizeMenu;
+    VBoxSwitchMenu *vmDisMouseIntegrMenu;
 
     // Devices popup menus
     QPopupMenu *devicesMenu;
@@ -287,9 +288,9 @@ private:
     QSize prev_min_size;
 
     // variables for dealing with true fullscreen
-    bool mIsInFullscreenMode : 1;
-    bool mIsInSeamlessMode : 1;
-    bool mIsSeamlessModeSupported : 1;
+    bool mIsFullscreen : 1;
+    bool mIsSeamless : 1;
+    bool mIsSeamlessSupported : 1;
     int normal_wflags;
     bool was_max : 1;
     QObjectList hidden_children;

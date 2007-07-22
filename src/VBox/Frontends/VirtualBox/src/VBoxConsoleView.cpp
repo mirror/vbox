@@ -1131,17 +1131,16 @@ bool VBoxConsoleView::event (QEvent *e)
                     }
                     else if (ke->key() == Key_Home)
                     {
-                        if (mainwnd->isTrueSeamless())
-                            mainwnd->popupSeamlessMenu();
+                        /* activate the main menu */
+                        if (mainwnd->isTrueSeamless() || mainwnd->isTrueFullscreen())
+                            mainwnd->popupMainMenu (mouse_captured);
                         else
                             mainwnd->menuBar()->setFocus();
                     }
                     else
                     {
-                        /*
-                         *  process hot keys not processed in keyEvent()
-                         *  (as in case of non-alphanumeric keys)
-                         */
+                        /* process hot keys not processed in keyEvent()
+                         * (as in case of non-alphanumeric keys) */
                         processHotKey (QKeySequence (ke->key()),
                                        mainwnd->menuBar());
                     }
@@ -1150,11 +1149,9 @@ bool VBoxConsoleView::event (QEvent *e)
                 {
                     if (isPaused())
                     {
-                        /*
-                         *  if the reminder is disabled we pass the event to
-                         *  Qt to enable normal keyboard functionality
-                         *  (for example, menu access with Alt+Letter)
-                         */
+                        /* if the reminder is disabled we pass the event to
+                         * Qt to enable normal keyboard functionality
+                         * (for example, menu access with Alt+Letter) */
                         if (!vboxProblem().remindAboutPausedVMInput())
                             break;
                     }
