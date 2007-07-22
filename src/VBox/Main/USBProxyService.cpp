@@ -455,6 +455,39 @@ void USBProxyService::processChanges (void)
 }
 
 
+#ifdef VBOX_WITH_USBFILTER
+/*static*/ void USBProxyService::initFilterFromDevice (PUSBFILTER aFilter, HostUSBDevice *aDevice)
+{
+    PCUSBDEVICE pDev = aDevice->mUsb;
+    int vrc;
+
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_VENDOR_ID,         pDev->idVendor,         true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_PRODUCT_ID,        pDev->idProduct,        true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_DEVICE_REV,        pDev->bcdDevice,        true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_DEVICE_CLASS,      pDev->bDeviceClass,     true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_DEVICE_SUB_CLASS,  pDev->bDeviceSubClass,  true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_DEVICE_PROTOCOL,   pDev->bDeviceProtocol,  true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_PORT,              pDev->bPort,            true); AssertRC(vrc);
+    vrc = USBFilterSetNumExact (aFilter, USBFILTERIDX_BUS,               pDev->bBus,            false); AssertRC(vrc); /* not available on darwin yet... */
+    if (pDev->pszSerialNumber)
+    {
+        vrc = USBFilterSetStringExact (aFilter, USBFILTERIDX_SERIAL_NUMBER_STR, pDev->pszSerialNumber, true);
+        AssertRC (vrc);
+    }
+    if (pDev->pszProduct)
+    {
+        vrc = USBFilterSetStringExact (aFilter, USBFILTERIDX_PRODUCT_STR, pDev->pszProduct, true);
+        AssertRC (vrc);
+    }
+    if (pDev->pszManufacturer)
+    {
+        vrc = USBFilterSetStringExact (aFilter, USBFILTERIDX_MANUFACTURER_STR, pDev->pszManufacturer, true);
+        AssertRC (vrc);
+    }
+}
+#endif /* VBOX_WITH_USBFILTER */
+
+
 bool USBProxyService::updateDeviceStateFake (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice)
 {
     AssertReturn (aDevice, false);
@@ -555,12 +588,6 @@ void USBProxyService::removeFilter (void * /* aId */)
 
 
 int USBProxyService::captureDevice (HostUSBDevice * /* aDevice */)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-int USBProxyService::holdDevice (HostUSBDevice * /* aDevice */)
 {
     return VERR_NOT_IMPLEMENTED;
 }

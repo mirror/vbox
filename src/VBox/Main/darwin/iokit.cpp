@@ -41,9 +41,12 @@
 #endif
 
 #include <VBox/log.h>
+#include <VBox/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/process.h>
 #include <iprt/assert.h>
+#include <iprt/thread.h>
 
 #include "iokit.h"
 
@@ -53,6 +56,13 @@
 *******************************************************************************/
 /** An attempt at catching reference leaks. */
 #define MY_CHECK_CREFS(cRefs)   do { AssertMsg(cRefs < 25, ("%ld\n", cRefs)); NOREF(cRefs); } while (0)
+
+/** Contains the pid of the current client. If 0, the kernel is the current client. */
+#define VBOXUSB_CLIENT_KEY  "VBoxUSB-Client"
+/** Contains the pid of the filter owner (i.e. the VBoxSVC pid). */
+#define VBOXUSB_OWNER_KEY   "VBoxUSB-Owner"
+/** The VBoxUSBDevice class name. */
+#define VBOXUSBDEVICE_CLASS_NAME "org_virtualbox_VBoxUSBDevice"
 
 
 /*******************************************************************************
@@ -161,6 +171,27 @@ static bool darwinDictGetU64(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
     }
     *pu64 = 0;
     return false;
+}
+
+
+/**
+ * Gets a RTPROCESS value.
+ *
+ * @returns Success indicator (true/false).
+ * @param   DictRef     The dictionary.
+ * @param   KeyStrRef   The key name.
+ * @param   pProcess    Where to store the key value.
+ */
+static bool darwinDictGetProccess(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, PRTPROCESS pProcess)
+{
+    switch (sizeof(*pProcess))
+    {
+        case sizeof(uint16_t):  return darwinDictGetU16(DictRef, KeyStrRef, (uint16_t *)pProcess);
+        case sizeof(uint32_t):  return darwinDictGetU32(DictRef, KeyStrRef, (uint32_t *)pProcess);
+        case sizeof(uint64_t):  return darwinDictGetU64(DictRef, KeyStrRef, (uint64_t *)pProcess);
+        default:
+            AssertMsgFailedReturn(("%d\n", sizeof(*pProcess)), false);
+    }
 }
 
 
@@ -629,6 +660,8 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
     if (krc != KERN_SUCCESS)
         return;
 
+    RTPROCESS Owner = NIL_RTPROCESS;
+    RTPROCESS Client = NIL_RTPROCESS;
     bool fUserClientOnly = true;
     bool fConfigured = false;
     bool fInUse = false;
@@ -685,6 +718,23 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
                 IOObjectRelease(Children1);
             }
         }
+        /*
+         * Not an interface, could it be VBoxUSBDevice?
+         * If it is, get the owner and client properties.
+         */
+        else if (    krc == KERN_SUCCESS
+                 &&  !strcmp(szName, VBOXUSBDEVICE_CLASS_NAME))
+        {
+            CFMutableDictionaryRef PropsRef = 0;
+            krc = IORegistryEntryCreateCFProperties(Interface, &PropsRef, kCFAllocatorDefault, kNilOptions);
+            if (krc == KERN_SUCCESS)
+            {
+                darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_OWNER_KEY), &Owner);
+                darwinDictGetProccess(PropsRef, CFSTR(VBOXUSB_CLIENT_KEY), &Client);
+                CFRelease(PropsRef);
+            }
+        }
+
         IOObjectRelease(Interface);
     }
     IOObjectRelease(Interfaces);
@@ -692,12 +742,21 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
     /*
      * Calc the status.
      */
-    if (fUserClientOnly)
-        /** @todo how to detect other user client?!? */
+    if (    Owner != NIL_RTPROCESS
+        &&  !Owner)
+    {
+        if (Owner == RTProcSelf())
+            pCur->enmState = Client == NIL_RTPROCESS || !Client
+                           ? USBDEVICESTATE_HELD_BY_PROXY
+                           : USBDEVICESTATE_USED_BY_GUEST;
+        else
+            pCur->enmState = USBDEVICESTATE_USED_BY_HOST;
+    }
+    else if (fUserClientOnly)
+        /** @todo how to detect other user client?!? - Look for IOUSBUserClient! */
         pCur->enmState = !fConfigured
                        ? USBDEVICESTATE_UNUSED
                        : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-
     else if (!fInUse)
         pCur->enmState = USBDEVICESTATE_UNUSED;
     else
@@ -906,6 +965,174 @@ PUSBDEVICE DarwinGetUSBDevices(void)
         pMouse->enmState = USBDEVICESTATE_USED_BY_HOST;
 
     return pHead;
+}
+
+
+/**
+ * Triggers re-enumeration of a device.
+ *
+ * @returns VBox status code.
+ * @param   pCur    The USBDEVICE structure for the device.
+ */
+int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
+{
+    int vrc;
+    const char *pszAddress = pCur->pszAddress;
+    AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
+    AssertReturn(darwinOpenMasterPort(), VERR_GENERAL_FAILURE);
+
+    /*
+     * This code is a short version of the Open method in USBProxyDevice-darwin.cpp stuff.
+     * Fixes made to this code probably applies there too!
+     */
+
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBDeviceClassName);
+    AssertReturn(RefMatchingDict, NULL);
+
+    uint64_t u64SessionId = 0;
+    uint32_t u32LocationId = 0;
+    const char *psz = pszAddress;
+    do
+    {
+        const char chValue = *psz;
+        AssertReleaseReturn(psz[1] == '=', VERR_INTERNAL_ERROR);
+        uint64_t u64Value;
+        int rc = RTStrToUInt64Ex(psz + 2, (char **)&psz, 0, &u64Value);
+        AssertReleaseRCReturn(rc, rc);
+        AssertReleaseReturn(!*psz || *psz == ';', rc);
+        switch (chValue)
+        {
+            case 'l':
+                u32LocationId = (uint32_t)u64Value;
+                break;
+            case 's':
+                u64SessionId = u64Value;
+                break;
+            case 'p':
+            case 'v':
+            {
+#if 0 /* Guess what, this doesn't 'ing work either! */
+                SInt32 i32 = (int16_t)u64Value;
+                CFNumberRef Num = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &i32);
+                AssertBreak(Num,);
+                CFDictionarySetValue(RefMatchingDict, chValue == 'p' ? CFSTR(kUSBProductID) : CFSTR(kUSBVendorID), Num);
+                CFRelease(Num);
+#endif
+                break;
+            }
+            default:
+                AssertReleaseMsgFailedReturn(("chValue=%#x\n", chValue), VERR_INTERNAL_ERROR);
+        }
+        if (*psz == ';')
+            psz++;
+    } while (*psz);
+
+    io_iterator_t USBDevices = NULL;
+    IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%#x\n", irc), NULL);
+    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
+
+    unsigned cMatches = 0;
+    io_object_t USBDevice;
+    while ((USBDevice = IOIteratorNext(USBDevices)))
+    {
+        cMatches++;
+        CFMutableDictionaryRef PropsRef = 0;
+        kern_return_t krc = IORegistryEntryCreateCFProperties(USBDevice, &PropsRef, kCFAllocatorDefault, kNilOptions);
+        if (krc == KERN_SUCCESS)
+        {
+            uint64_t u64CurSessionId;
+            uint32_t u32CurLocationId;
+            if (    (    !u64SessionId
+                     || (   darwinDictGetU64(PropsRef, CFSTR("sessionID"), &u64CurSessionId)
+                         && u64CurSessionId == u64SessionId))
+                &&  (   !u32LocationId
+                     || (   darwinDictGetU32(PropsRef, CFSTR(kUSBDevicePropertyLocationID), &u32CurLocationId)
+                         && u32CurLocationId == u32LocationId))
+                )
+            {
+                CFRelease(PropsRef);
+                break;
+            }
+            CFRelease(PropsRef);
+        }
+        IOObjectRelease(USBDevice);
+    }
+    IOObjectRelease(USBDevices);
+    USBDevices = NULL;
+    if (!USBDevice)
+    {
+        LogRel(("USB: Device '%s' not found (%d pid+vid matches)\n", pszAddress, cMatches));
+        IOObjectRelease(USBDevices);
+        return VERR_VUSB_DEVICE_NAME_NOT_FOUND;
+    }
+
+    /*
+     * Create a plugin interface for the device and query its IOUSBDeviceInterface.
+     */
+    SInt32 Score = 0;
+    IOCFPlugInInterface **ppPlugInInterface = NULL;
+    irc = IOCreatePlugInInterfaceForService(USBDevice, kIOUSBDeviceUserClientTypeID,
+                                            kIOCFPlugInInterfaceID, &ppPlugInInterface, &Score);
+    if (irc == kIOReturnSuccess)
+    {
+        IOUSBDeviceInterface245 **ppDevI = NULL;
+        HRESULT hrc = (*ppPlugInInterface)->QueryInterface(ppPlugInInterface,
+                                                           CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID245),
+                                                           (LPVOID *)&ppDevI);
+        irc = IODestroyPlugInInterface(ppPlugInInterface); Assert(irc == kIOReturnSuccess);
+        ppPlugInInterface = NULL;
+        if (hrc == S_OK)
+        {
+            /*
+             * Try open the device for exclusive access.
+             */
+            irc = (*ppDevI)->USBDeviceOpenSeize(ppDevI);
+            if (irc == kIOReturnExclusiveAccess)
+            {
+                RTThreadSleep(20);
+                irc = (*ppDevI)->USBDeviceOpenSeize(ppDevI);
+            }
+            if (irc == kIOReturnSuccess)
+            {
+                /*
+                 * Re-enumerate the device and bail out.
+                 */
+                irc = (*ppDevI)->USBDeviceReEnumerate(ppDevI, 0);
+                if (irc != kIOReturnSuccess)
+                {
+                    LogRel(("USB: Failed to open device '%s', plug-in creation failed with irc=%#x.\n", pszAddress, irc));
+                    vrc = RTErrConvertFromDarwinIO(irc);
+                }
+
+                (*ppDevI)->USBDeviceClose(ppDevI);
+            }
+            else if (irc == kIOReturnExclusiveAccess)
+            {
+                LogRel(("USB: Device '%s' is being used by another process\n", pszAddress));
+                vrc = VERR_SHARING_VIOLATION;
+            }
+            else
+            {
+                LogRel(("USB: Failed to open device '%s', irc=%#x.\n", pszAddress, irc));
+                vrc = VERR_OPEN_FAILED;
+            }
+        }
+        else
+        {
+            LogRel(("USB: Failed to create plugin interface for device '%s', hrc=%#x.\n", pszAddress, hrc));
+            vrc = VERR_OPEN_FAILED;
+        }
+
+        (*ppDevI)->Release(ppDevI);
+    }
+    else
+    {
+        LogRel(("USB: Failed to open device '%s', plug-in creation failed with irc=%#x.\n", pszAddress, irc));
+        vrc = RTErrConvertFromDarwinIO(irc);
+    }
+
+    return vrc;
 }
 
 #endif /* VBOX_WITH_USB */

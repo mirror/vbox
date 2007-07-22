@@ -50,6 +50,7 @@ void *      DarwinSubscribeUSBNotifications(void);
 void        DarwinUnsubscribeUSBNotifications(void *pvOpaque);
 PUSBDEVICE  DarwinGetUSBDevices(void);
 void        DarwinFreeUSBDeviceFromIOKit(PUSBDEVICE pCur);
+int         DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur);
 #endif
 __END_DECLS
 
