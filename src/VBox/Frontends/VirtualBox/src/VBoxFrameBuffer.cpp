@@ -374,9 +374,51 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     mWdt = re->width();
     mHgt = re->height();
 
-    mImg = QImage (mWdt, mHgt, 32, 0, QImage::LittleEndian);
-    mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
-    mUsesGuestVRAM = false;
+    bool fallback = false;
+
+    /* check if we support the pixel format and can use the guest VRAM directly */
+    if (re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
+    {
+        switch (re->bitsPerPixel())
+        {
+            case 32:
+            case 24:
+            case 16:
+                break;
+            default:
+                fallback = true;
+                break;
+        }
+
+        if (!fallback)
+        {
+            /* QImage only supports 32-bit aligned scan lines */
+            fallback = re->bytesPerLine() !=
+                ((mWdt * re->bitsPerPixel() + 31) / 32) * 4;
+            Assert (!fallback);
+
+            if (!fallback)
+            {
+                mImg = QImage ((uchar *) re->VRAM(), mWdt, mHgt,
+                               re->bitsPerPixel(), NULL, 0, QImage::LittleEndian);
+                mPixelFormat = re->pixelFormat();
+                mUsesGuestVRAM = true;
+            }
+        }
+    }
+    else
+    {
+        fallback = true;
+    }
+
+    if (fallback)
+    {
+        /* we don't support either the pixel format or the color depth,
+         * fallback to a self-provided 32bpp RGB buffer */
+        mImg = QImage (mWdt, mHgt, 32, 0, QImage::LittleEndian);
+        mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+        mUsesGuestVRAM = false;
+    }
 }
 
 #endif
