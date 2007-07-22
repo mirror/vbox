@@ -89,16 +89,18 @@ public:
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
     STDMETHOD(COMGETTER(Address))(BYTE **address);
-    STDMETHOD(COMGETTER(ColorDepth))(ULONG *colorDepth);
-    STDMETHOD(COMGETTER(LineSize))(ULONG *lineSize);
-    STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *pixelFormat);
+    STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *bitsPerPixel);
+    STDMETHOD(COMGETTER(BytesPerLine))(ULONG *bytesPerLine);
+    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *pixelFormat);
+    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
-    STDMETHOD(RequestResize)(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
-                             ULONG lineSize, ULONG w, ULONG h, BOOL *finished);
+    STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
+                             ULONG bitsPerPixel, ULONG bytesPerLine,
+                             ULONG w, ULONG h, BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation, BOOL *supported);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);
     STDMETHOD(SolidFill)(ULONG x, ULONG y, ULONG width, ULONG height,
@@ -184,8 +186,10 @@ private:
     SDL_Surface *mSurfVRAM;
 
     BYTE *mPtrVRAM;
-    ULONG mLineSize;
-    FramebufferPixelFormat_T mPixelFormat;
+    ULONG mBitsPerPixel;
+    ULONG mBytesPerLine;
+    ULONG mPixelFormat;
+    BOOL mUsesGuestVRAM;
 
     /** the application Icon */
     SDL_Surface *mWMIcon;
@@ -241,11 +245,12 @@ public:
     STDMETHOD(COMGETTER(Alpha))(ULONG *alpha);
     STDMETHOD(COMSETTER(Alpha))(ULONG alpha);
     STDMETHOD(COMGETTER(Address))(ULONG *address);
-    STDMETHOD(COMGETTER(LineSize))(ULONG *lineSize);
+    STDMETHOD(COMGETTER(BytesPerLine))(ULONG *bytesPerLine);
 
     /* These are not used, or return standard values. */
-    STDMETHOD(COMGETTER(ColorDepth))(ULONG *colorDepth);
-    STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *pixelFormat);
+    STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *bitsPerPixel);
+    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *pixelFormat);
+    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
 
@@ -254,8 +259,9 @@ public:
     STDMETHOD(Move)(ULONG x, ULONG y);
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
-    STDMETHOD(RequestResize)(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, ULONG vram,
-                             ULONG lineSize, ULONG w, ULONG h, BOOL *finished);
+    STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, ULONG vram,
+                             ULONG bitsPerPixel, ULONG bytesPerLine,
+                             ULONG w, ULONG h, BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation,
                                   BOOL *supported);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);

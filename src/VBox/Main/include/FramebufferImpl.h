@@ -50,9 +50,10 @@ public:
     STDMETHOD(COMGETTER(Address)) (BYTE **address);
     STDMETHOD(COMGETTER(Width)) (ULONG *width);
     STDMETHOD(COMGETTER(Height)) (ULONG *height);
-    STDMETHOD(COMGETTER(ColorDepth)) (ULONG *colorDepth);
-    STDMETHOD(COMGETTER(LineSize)) (ULONG *lineSize);
-    STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *pixelFormat);
+    STDMETHOD(COMGETTER(BitsPerPixel)) (ULONG *bitsPerPixel);
+    STDMETHOD(COMGETTER(BytesPerLine)) (ULONG *bytesPerLine);
+    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *pixelFormat);
+    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
 
@@ -62,8 +63,8 @@ public:
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h,
                             BOOL *finished);
-    STDMETHOD(RequestResize)(ULONG uScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
-                             ULONG lineSize, ULONG w, ULONG h,
+    STDMETHOD(RequestResize)(ULONG uScreenId, ULONG pixelFormat, BYTE *vram,
+                             ULONG bpp, ULONG bpl, ULONG w, ULONG h,
                              BOOL *finished);
     STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation,
                                   BOOL *supported);
@@ -79,8 +80,8 @@ public:
 private:
     int mWidth;
     int mHeight;
-    int mDepth;
-    int mLineSize;
+    int mBitsPerPixel;
+    int mBytesPerLine;
     uint8_t *mData;
     RTSEMMUTEX mMutex;
 };

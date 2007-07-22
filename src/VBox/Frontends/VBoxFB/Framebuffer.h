@@ -38,12 +38,15 @@ public:
     NS_IMETHOD Lock();
     NS_IMETHOD Unlock();
     NS_IMETHOD GetAddress(uint32_t *address);
-    NS_IMETHOD GetColorDepth(uint32_t *colorDepth);
-    NS_IMETHOD GetLineSize(uint32_t *lineSize);
-    NS_IMETHOD GetPixelFormat(FramebufferPixelFormat_T *pixelFormat);
+    NS_IMETHOD GetBitsPerPixel(uint32_t *bitsPerPixel);
+    NS_IMETHOD GetBytesPerLine(uint32_t *bytesPerLine);
+    NS_IMETHOD GetPixelFormat(ULONG *pixelFormat);
+    NS_IMETHOD GetUsesGuestVRAM(BOOL *usesGuestVRAM);
     NS_IMETHOD NotifyUpdate(uint32_t x, uint32_t y,
                            uint32_t w, uint32_t h, PRBool *finished);
-    NS_IMETHOD RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, uint32_t vram, uint32_t lineSize, uint32_t w, uint32_t h,
+    NS_IMETHOD RequestResize(ULONG aScreenId, ULONG pixelFormat, uint32_t vram,
+                             uint32_t bitsPerPixel, uint32_t bytesPerLine,
+                             uint32_t w, uint32_t h,
                              PRBool *finished);
 private:
     int createSurface(uint32_t w, uint32_t h);

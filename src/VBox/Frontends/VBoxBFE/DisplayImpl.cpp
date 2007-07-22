@@ -307,9 +307,9 @@ uint32_t VMDisplay::getHeight()
  * Returns the current display color depth in bits
  *
  * @returns COM status code
- * @param colorDepth Address of result variable.
+ * @param bitsPerPixel Address of result variable.
  */
-uint32_t VMDisplay::getColorDepth()
+uint32_t VMDisplay::getBitsPerPixel()
 {
     Assert(mpDrv);
     return mpDrv->Connector.cBits;
@@ -408,7 +408,7 @@ void VMDisplay::updateDisplayData()
     {
         mFramebuffer->getAddress ((uintptr_t *)&mpDrv->Connector.pu8Data);
         mFramebuffer->getLineSize ((ULONG*)&mpDrv->Connector.cbScanline);
-        mFramebuffer->getColorDepth ((ULONG*)&mpDrv->Connector.cBits);
+        mFramebuffer->getBitsPerPixel ((ULONG*)&mpDrv->Connector.cBits);
         mFramebuffer->getWidth ((ULONG*)&mpDrv->Connector.cx);
         mFramebuffer->getHeight ((ULONG*)&mpDrv->Connector.cy);
         mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort,
@@ -425,7 +425,7 @@ void VMDisplay::resetFramebuffer()
     if (mpDrv)
     {
         mFramebuffer->getAddress ((uintptr_t *)&mpDrv->Connector.pu8Data);
-        mFramebuffer->getColorDepth ((ULONG*)&mpDrv->Connector.cBits);
+        mFramebuffer->getBitsPerPixel ((ULONG*)&mpDrv->Connector.cBits);
         mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort,
                                           !!(mpDrv->Connector.pu8Data != (uint8_t*)~0UL));
     }
@@ -823,12 +823,12 @@ static void vbvaFetchBytes (VBVAMEMORY *pVbvaMemory, uint8_t *pu8Dst, uint32_t c
     return;
 }
 
-void VMDisplay::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColorDepth, ULONG aDisplay)
+void VMDisplay::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay)
 {
     PPDMIVMMDEVPORT pVMMDevPort = gVMMDev->getVMMDevPort ();
 
     if (pVMMDevPort)
-        pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aColorDepth, aDisplay);
+        pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aBitsPerPixel, aDisplay);
 }
 
 static bool vbvaPartialRead (uint8_t **ppu8, uint32_t *pcb, uint32_t cbRecord, VBVAMEMORY *pVbvaMemory)

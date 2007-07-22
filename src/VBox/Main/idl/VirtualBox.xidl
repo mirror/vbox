@@ -3285,7 +3285,7 @@
         an error may also be returned if the host computer
         refuses to release it for some reason.
 
-        <see>IUSBController::DeviceFilters, USBDeviceState</see>
+        <see>IUSBController::deviceFilters, USBDeviceState</see>
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the host USB device to attach.</desc>
@@ -3302,7 +3302,7 @@
         to the host, but filters of this machine are ignored to avoid
         a possible automatic reattachment.
 
-        <see>IUSBController::DeviceFilters, USBDeviceState</see>
+        <see>IUSBController::deviceFilters, USBDeviceState</see>
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the USB device to detach.</desc>
@@ -3776,7 +3776,7 @@
 
         Unless the device is ignored by these filters, filters of all
         currently running virtual machines
-        (<link to="IUSBController::DeviceFilters"/>) are applied to it.
+        (<link to="IUSBController::deviceFilters"/>) are applied to it.
 
         <see>IHostUSBDeviceFilter, USBDeviceState</see>
       </desc>
@@ -6141,21 +6141,33 @@
 
   <enum
      name="FramebufferPixelFormat"
-     uuid="3bd87520-2b5f-4786-a891-f8c6aeb19a1f"
+     uuid="6b27d1fc-4f2c-4e9c-a166-01d06540305d"
      >
     <desc>
-      Format of the virtual video card's memory buffer.  See
-      <link to="IFramebuffer::requestResize()"/> for more information.
+      Format of the video memory buffer. Constants represented by this enum can
+      be used to test for particular values of <link
+      to="IFramebuffer::pixelFormat"/>. See also <link
+      to="IFramebuffer::requestResize()"/>.
+
+      See also www.fourcc.org for more informantion about FOURCC pixel formats. 
     </desc>
-    <const name="PixelFormatOpaque"       value="0"/>
-    <const name="PixelFormatRGB16"        value="1"/>
-    <const name="PixelFormatRGB24"        value="2"/>
-    <const name="PixelFormatRGB32"        value="3"/>
+    <const name="PixelFormatOpaque"       value="0xFFFFFFFF">
+      <desc>
+        Unknown buffer format. The user may not assume any particular
+        format of the buffer.
+      </desc>
+    </const>
+    <const name="FOURCC_RGB"              value="0x32424752">
+      <desc>
+        Basic RGB format. <link to="IFramebuffer::bitsPerPixel"/> determines
+        the bit layout.
+      </desc>
+    </const>
   </enum>
 
   <interface
      name="IFramebuffer" extends="$unknown"
-     uuid="450058a4-fef0-4987-81c2-7b89bfc2242f"
+     uuid="af431304-5b09-40e2-94da-3c3cb03822c1"
      wsmap="suppress"
      >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
@@ -6163,23 +6175,47 @@
     </attribute>
 
     <attribute name="width" type="unsigned long" readonly="yes">
-      <desc>Framebuffer width.</desc>
+      <desc>Framebuffer width, in pixels.</desc>
     </attribute>
 
     <attribute name="height" type="unsigned long" readonly="yes">
-      <desc>Framebuffer height.</desc>
+      <desc>Framebuffer height, in pixels.</desc>
     </attribute>
 
-    <attribute name="colorDepth" type="unsigned long" readonly="yes">
-      <desc>Framebuffer color depth.</desc>
+    <attribute name="bitsPerPixel" type="unsigned long" readonly="yes">
+      <desc>
+        Color depth, in bits per pixel. When <link to="#pixelFormat"/> is <link
+        to="FramebufferPixelFormat::FOURCC_RGB">FOURCC_RGB</link>, valid values
+        are: 8, 15, 16, 24 and 32.
+      </desc>
     </attribute>
 
-    <attribute name="lineSize" type="unsigned long" readonly="yes">
-      <desc>framebuffer scan line size in bytes.</desc>
+    <attribute name="bytesPerLine" type="unsigned long" readonly="yes">
+      <desc>
+        Scan line size, in bytes. When <link to="#pixelFormat"/> is <link
+        to="FramebufferPixelFormat::FOURCC_RGB">FOURCC_RGB</link>, the
+        size of the scan line must be aligned to 32 bits.
+      </desc>
     </attribute>
 
-    <attribute name="pixelFormat" type="FramebufferPixelFormat" readonly="yes">
-      <desc>Framebuffer pixel format.</desc>
+    <attribute name="pixelFormat" type="unsigned long" readonly="yes">
+      <desc>
+        Framebuffer pixel format. It's either one of the values defined by <link
+        to="FramebufferPixelFormat"/> or a raw FOURCC code.
+        <note>
+          This attribute must never return <link
+          to="PixelFormat::PixelFormatOpaque"/> -- the format of the buffer
+          <link to="#address"/> points to must be always known. 
+        </note>
+      </desc>
+    </attribute>
+
+    <attribute name="usesGuestVRAM" type="boolean" readonly="yes">
+      <desc>
+        Defines whether this framebuffer uses the virtual video card's memory
+        buffer (guest VRAM) directly or not. See <link
+        to="IFramebuffer::requestResize()"/> for more information. 
+      </desc>
     </attribute>
 
     <attribute name="heightReduction" type="unsigned long" readonly="yes">
@@ -6240,56 +6276,56 @@
       <desc>
         Requests a size and pixel format change.
 
-        There are two strategies of working with the video buffer of the
-        virtual machine. The first strategy implies that the IFramebuffer
+        There are two modes of working with the video buffer of the virtual
+        machine. The <i>indirect</i> mode implies that the IFramebuffer
         implementation allocates a memory buffer for the requested display mode
-        and provides it to the virtual machine. In the second strategy, the
+        and provides it to the virtual machine. In <i>direct</i> mode, the
         IFramebuffer implementation uses the memory buffer allocated and owned
-        by the virtual machine. The second strategy is usually faster because
-        the implementation gets a pointer to the virtual machine video card's
-        memory which it can directly use for visualising the contents of the
-        virtual display, as opposed to the first strategy where the video
-        card's memory contents are copied to the memory buffer provided by the
-        implementation every time a display update occurs.
+        by the virtual machine. The direct mode is usually faster because the
+        implementation gets a pointer to the virtual machine video card's memory
+        which it can directly use for visualising the contents of the virtual
+        display, as opposed to the indirect mode where the video card's memory
+        contents are copied to the memory buffer provided by the implementation
+        every time a display update occurs.
 
-        It is important to note that the second strategy is really fast only
-        when the implementation uses the provided video buffer directly, for
-        example, by blitting it to the window representing the virtual
-        machine's display, which saves at least one copy operation comparing
-        to the first strategy. However, using the video card's memory directly
-        is not always possible: for example, the format and the color depth of
-        the window representing the virtual display may differ from the format
-        or the color depth of the virtual video buffer, or the format of the
-        latter may be unknown or unsupported. In this case, the first strategy
-        (that is always available) is used as a fallback: when the virtual
-        video card's memory contents are copied to the implementation-provided
-        memory buffer, color and format conversion is done authomatically by
-        the underlying code.
+        It is important to note that the direct mode is really fast only when
+        the implementation uses the provided video buffer directly, for example,
+        by blitting it to the window representing the virtual machine's display,
+        which saves at least one copy operation comparing to the indirect mode.
+        However, using the video card's memory directly is not always possible:
+        for example, the format and the color depth of the window representing
+        the virtual display may differ from the format or the color depth of the
+        virtual video buffer, or the format of the latter may be unknown or
+        unsupported. In this case, the indirect mode (that is always available)
+        should be used as a fallback: when the virtual video card's memory
+        contents are copied to the implementation-provided memory buffer, color
+        and format conversion is done authomatically by the underlying code.
 
-        The @a pixelFormat and @a VRAM parameters define whether the second
-        strategy is available or not. If @a pixelFormat is
-        <link to="PixelFormat::PixelFormatOpaque"/> (which usually indicates a
-        text mode of the virtual display) or if @a VRAM is <tt>null</tt>
-        (which means a non-linear graphical mode), then direct access to the
-        virtual card's video memory buffer is not available, the @a VRAM
-        parameter must be ignored and the implementation must use the first
-        strategy. In all other cases, @a pixelFormat together with @a lineSize
-        define the format of the video memory buffer pointed to by the @a VRAM
-        parameter and the implementation is free to choose which strategy to
-        use. To indicate that this framebuffer uses the second strategy, its
-        implementation of the <link to="#address()"/> method must return the
-        same address as it gets in the @a VRAM parameter of this method;
-        otherwise it is assumed that the first strategy is chosen.
+        The @a pixelFormat parameter defines whether the direct mode is
+        available or not. If @a pixelFormat is <link
+        to="PixelFormat::PixelFormatOpaque"/> (which usually indicates either a
+        text or a non-linear graphics mode of the virtual display), then direct
+        access to the virtual card's video memory buffer is not available, the
+        @a VRAM, @a bitsPerPixel and @a bytesPerLine parameters must be ingored
+        and the implementation must use the indirect mode when it will provide
+        its own values for the pixel format, color depth and scan line size. In
+        all other cases, @a pixelFormat together with @a bitsPerPixel and @a
+        bytesPerLine define the format of the video memory buffer pointed to by
+        the @a VRAM parameter and the implementation is free to choose which
+        mode to use. To indicate that this framebuffer uses the direct mode, the
+        implementation of the <link to="#usesGuestVRAM"/> attribute must
+        return <tt>true</tt> and <link to="#address"/> must return exactly the
+        same address that is passed in the @a VRAM parameter of this method;
+        otherwise it is assumed that the indirect strategy is chosen.
 
         The @a width and @a height parameters represent the size of the
-        requested display mode in both cases. In case of the first strategy,
-        the provided memory buffer should be enough to store data of the given
-        display mode. In case of the second strategy, it is guaranteed that
-        the given @a VRAM buffer contains enough space to represent the
-        display mode of the given size. Note that this framebuffer's
-        <link to="#width()"/> and <link to="#height()"/> properties must
-        return exactly the same values as passed to this method after the
-        resize is completed (see below).
+        requested display mode in both modes. In case of indirect mode, the
+        provided memory buffer should be big enough to store data of the given
+        display mode. In case of direct mode, it is guaranteed that the given @a
+        VRAM buffer contains enough space to represent the display mode of the
+        given size. Note that this framebuffer's <link to="#width"/> and <link
+        to="#height"/> attributes must return exactly the same values as
+        passed to this method after the resize is completed (see below).
 
         The @a finished output parameter determines if the implementation has
         finished resizing the framebuffer or not. If, for some reason, the
@@ -6300,16 +6336,16 @@
         machine will not call any framebuffer methods until
         <link to="IDisplay::resizeCompleted()"/> is called.
 
-        Note that if the second strategy is choosen, the
-        <link to="#colorDepth()"/>, <link to="#lineSize()"/> and
-        <link to="#pixelFormat()"/> properties of this framebuffer must return
-        exactly the same values as specified in the parameters of this method
-        after the resize is completed. In case of the first strategy these
-        properties must return values describing the format of the
-        implementation's own memory buffer <link to="#address()"/> points
-        to. Note also that the <link to="#colorDepth()"/> value must always
-        correlate with <link to="#pixelFormat()"/> when the latter returns any
-        value other than <link to="PixelFormat::PixelFormatOpaque"/>.
+        Note that if the direct mode is chosen, the <link to="#bitsPerPixel"/>,
+        <link to="#bytesPerLine"/> and <link to="#pixelFormat"/> attributes of
+        this framebuffer must return exactly the same values as specified in the
+        parameters of this method, after the resize is completed. If the
+        indirect mode is chosen, these attributes must return values describing
+        the format of the implementation's own memory buffer <link
+        to="#address"/> points to. Note also that the <link to="#bitsPerPixel"/>
+        value must always correlate with <link to="#pixelFormat"/>. Note that
+        the <link to="#pixelFormat"/> attribute must never return <link
+        to="PixelFormat::PixelFormatOpaque"/> regardless of the selected mode.
 
         <note>
           This method is called by the IDisplay object under the
@@ -6325,13 +6361,19 @@
           <link to="IDisplay::resizeCompleted()"/> if this call is made.
         </desc>
       </param>
-      <param name="pixelFormat" type="FramebufferPixelFormat" dir="in">
-        <desc>Pixel format of the memory buffer pointed to by @a VRAM.</desc>
+      <param name="pixelFormat" type="unsigned long" dir="in">
+        <desc>
+          Pixel format of the memory buffer pointed to by @a VRAM.
+          See also <link to="FramebufferPixelFormat"/>.
+        </desc>
       </param>
       <param name="VRAM" type="octet" mod="ptr" dir="in">
         <desc>Pointer to the virtual video card's VRAM (may be @c null).</desc>
       </param>
-      <param name="lineSize" type="unsigned long" dir="in">
+      <param name="bitsPerPixel" type="unsigned long" dir="in">
+        <desc>Color depth, bits per pixel.</desc>
+      </param>
+      <param name="bytesPerLine" type="unsigned long" dir="in">
         <desc>Size of one scan line, in bytes.</desc>
       </param>
       <param name="width" type="unsigned long" dir="in">
@@ -6511,7 +6553,7 @@
 
   <interface
      name="IDisplay" extends="$unknown"
-     uuid="e740a435-88d1-4f14-b9ca-a1b30e2c5038"
+     uuid="010b00f4-9223-4545-9db3-866809da94a0"
      wsmap="suppress"
      >
     <attribute name="width" type="unsigned long" readonly="yes">
@@ -6522,10 +6564,10 @@
       <desc>Current display height.</desc>
     </attribute>
 
-    <attribute name="colorDepth" type="unsigned long" readonly="yes">
+    <attribute name="bitsPerPixel" type="unsigned long" readonly="yes">
       <desc>
         Current guest display color depth. Note that this may differ
-        from <link to="IFramebuffer::colorDepth">IFramebuffer::colorDepth</link>.
+        from <link to="IFramebuffer::bitsPerPixel"/>.
       </desc>
     </attribute>
 
@@ -6590,7 +6632,7 @@
       </desc>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
-      <param name="colorDepth" type="unsigned long" dir="in"/>
+      <param name="bitsPerPixel" type="unsigned long" dir="in"/>
       <param name="display" type="unsigned long" dir="in"/>
     </method>
 
@@ -7010,7 +7052,7 @@
         The created filter can then be added to the list of filters using
         <link to="#insertDeviceFilter()"/>.
 
-        <see>#DeviceFilters</see>
+        <see>#deviceFilters</see>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
@@ -7038,7 +7080,7 @@
           error.
         </note>
 
-        <see>#DeviceFilters</see>
+        <see>#deviceFilters</see>
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>Position to insert the filter to.</desc>
@@ -7057,7 +7099,7 @@
         position equal to or greater than the number of elements in
         the list will produce an error.
 
-        <see>#DeviceFilters</see>
+        <see>#deviceFilters</see>
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>Position to remove the filter from.</desc>
@@ -7280,7 +7322,7 @@
         <i>any match</i> no matter what string expression is specified.
       </note>
 
-      <see>IUSBController::DeviceFilters, IHostUSBDeviceFilter</see>
+      <see>IUSBController::deviceFilters, IHostUSBDeviceFilter</see>
     </desc>
 
     <attribute name="name" type="wstring">
@@ -7384,7 +7426,7 @@
       filters (<link to="IHost::USBDeviceFilters"/>) are activated. They can
       either ignore the device, or put ot to #USBDeviceHeld state, or do
       nothing. Unless the device is ignored by global filters, filters of
-      all currently running guests (<link to="IUSBController::DeviceFilters"/>)
+      all currently running guests (<link to="IUSBController::deviceFilters"/>)
       are activated that can put it to #USBDeviceCaptured state.
 
       If the device was ignored by global filters, or didn't match
@@ -7573,7 +7615,7 @@
       <note>
         The <link to="#remote"/> attribute is ignored by this type of
         filters, because it makes sense only for
-        <link to="IUSBController::DeviceFilters">machine USB filters</link>.
+        <link to="IUSBController::deviceFilters">machine USB filters</link>.
       </note>
 
       <see>IHost::USBDeviceFilters</see>

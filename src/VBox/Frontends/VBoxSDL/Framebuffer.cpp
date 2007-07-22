@@ -107,8 +107,10 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     mGuestXRes      = 640;
     mGuestYRes      = 480;
     mPixelFormat    = FramebufferPixelFormat_PixelFormatOpaque;
+    mUsesGuestVRAM  = FALSE;
     mPtrVRAM        = NULL;
-    mLineSize       = 0;
+    mBitsPerPixel   = 0;
+    mBytesPerLine   = 0;
 #ifdef VBOX_SECURELABEL
     mLabelFont      = NULL;
     mLabelHeight    = 0;
@@ -295,16 +297,16 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(Address)(BYTE **address)
  * Return the current framebuffer color depth.
  *
  * @returns COM status code
- * @param   colorDepth Address of result variable
+ * @param   bitsPerPixel Address of result variable
  */
-STDMETHODIMP VBoxSDLFB::COMGETTER(ColorDepth)(ULONG *colorDepth)
+STDMETHODIMP VBoxSDLFB::COMGETTER(BitsPerPixel)(ULONG *bitsPerPixel)
 {
-    LogFlow(("VBoxSDLFB::GetColorDepth\n"));
-    if (!colorDepth)
+    LogFlow(("VBoxSDLFB::GetBitsPerPixel\n"));
+    if (!bitsPerPixel)
         return E_INVALIDARG;
     /* get the information directly from the surface in use */
     Assert(mSurfVRAM);
-    *colorDepth = (ULONG)(mSurfVRAM ? mSurfVRAM->format->BitsPerPixel : 0);
+    *bitsPerPixel = (ULONG)(mSurfVRAM ? mSurfVRAM->format->BitsPerPixel : 0);
     return S_OK;
 }
 
@@ -314,22 +316,30 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(ColorDepth)(ULONG *colorDepth)
  * @returns COM status code.
  * @param   lineSize Address of result variable.
  */
-STDMETHODIMP VBoxSDLFB::COMGETTER(LineSize)(ULONG *lineSize)
+STDMETHODIMP VBoxSDLFB::COMGETTER(BytesPerLine)(ULONG *bytesPerLine)
 {
-    LogFlow(("VBoxSDLFB::GetLineSize\n"));
-    if (!lineSize)
+    LogFlow(("VBoxSDLFB::GetBytesPerLine\n"));
+    if (!bytesPerLine)
         return E_INVALIDARG;
     /* get the information directly from the surface */
     Assert(mSurfVRAM);
-    *lineSize = (ULONG)(mSurfVRAM ? mSurfVRAM->pitch : 0);
+    *bytesPerLine = (ULONG)(mSurfVRAM ? mSurfVRAM->pitch : 0);
     return S_OK;
 }
 
-STDMETHODIMP VBoxSDLFB::COMGETTER(PixelFormat) (FramebufferPixelFormat_T *pixelFormat)
+STDMETHODIMP VBoxSDLFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
 {
     if (!pixelFormat)
         return E_POINTER;
     *pixelFormat = mPixelFormat;
+    return S_OK;
+}
+
+STDMETHODIMP VBoxSDLFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
+{
+    if (!usesGuestVRAM)
+        return E_POINTER;
+    *usesGuestVRAM = mUsesGuestVRAM;
     return S_OK;
 }
 
@@ -424,7 +434,8 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
  * @returns COM status code.
  * @param   pixelFormat The requested pixel format.
  * @param   vram        Pointer to the guest VRAM buffer (can be NULL).
- * @param   lineSize    Size of a scanline in bytes.
+ * @param   bitsPerPixel Color depth in bits.
+ * @param   bytesPerLine Size of a scanline in bytes.
  * @param   w           New display width in pixels.
  * @param   h           New display height in pixels.
  * @param   finished    Address of output flag whether the update
@@ -433,11 +444,13 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
  *                      for all call to the resize complete API before
  *                      continuing with display updates.
  */
-STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
-                                      ULONG lineSize, ULONG w, ULONG h, BOOL *finished)
+STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
+                                      ULONG bitsPerPixel, ULONG bytesPerLine,
+                                      ULONG w, ULONG h, BOOL *finished)
 {
-    LogFlow(("VBoxSDLFB::RequestResize: w = %d, h = %d, pixelFormat: %d, vram = %p, lineSize = %d\n",
-             w, h, pixelFormat, vram, lineSize));
+    LogFlowFunc (("w=%d, h=%d, pixelFormat=0x%08lX, vram=%p, "
+                  "bpp=%d, bpl=%d\n",
+                  w, h, pixelFormat, vram, bitsPerPixel, bytesPerLine));
 
     /*
      * SDL does not allow us to make this call from any other thread than
@@ -449,11 +462,14 @@ STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T 
         AssertMsgFailed(("RequestResize requires the finished flag!\n"));
         return E_FAIL;
     }
+
     mGuestXRes   = w;
     mGuestYRes   = h;
     mPixelFormat = pixelFormat;
     mPtrVRAM     = vram;
-    mLineSize    = lineSize;
+    mBitsPerPixel = bitsPerPixel;
+    mBytesPerLine = bytesPerLine;
+    mUsesGuestVRAM = FALSE; /* yet */
 
     SDL_Event event;
     event.type       = SDL_USEREVENT;
@@ -609,19 +625,42 @@ STDMETHODIMP VBoxSDLFB::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
  */
 void VBoxSDLFB::resizeGuest()
 {
-    LogFlow(("VBoxSDL::resizeGuest() mGuestXRes: %d, mGuestYRes: %d\n", mGuestXRes, mGuestYRes));
-    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
+    LogFlowFunc (("mGuestXRes: %d, mGuestYRes: %d\n", mGuestXRes, mGuestYRes));
+    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(),
+              ("Wrong thread! SDL is not threadsafe!\n"));
 
-    int      cBitsPerPixel = 32;
     uint32_t Rmask, Gmask, Bmask, Amask = 0;
 
-    /* pixel characteristics, default to fallback 32bpp format */
-    if (mPixelFormat == FramebufferPixelFormat_PixelFormatRGB16)
-        cBitsPerPixel = 16;
-    else if (mPixelFormat == FramebufferPixelFormat_PixelFormatRGB24)
-        cBitsPerPixel = 24;
+    mUsesGuestVRAM = FALSE;
 
-    switch (cBitsPerPixel)
+    /* pixel characteristics. if we don't support the format directly, we will
+     * fallback to the indirect 32bpp buffer (mUsesGuestVRAM will remain
+     * FALSE) */
+    if (mPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
+    {
+        switch (mBitsPerPixel)
+        {
+            case 16:
+            case 24:
+            case 32:
+                mUsesGuestVRAM = TRUE;
+                break;
+            default:
+                /* the fallback buffer is always 32bpp */
+                mBitsPerPixel = 32;
+                mBytesPerLine = mGuestXRes * 4;
+                break;
+        }
+    }
+    else
+    {
+        /* the fallback buffer is always RGB, 32bpp */
+        mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+        mBitsPerPixel = 32;
+        mBytesPerLine = mGuestXRes * 4;
+    }
+
+    switch (mBitsPerPixel)
     {
         case 16: Rmask = 0x0000F800; Gmask = 0x000007E0; Bmask = 0x0000001F; break;
         default: Rmask = 0x00FF0000; Gmask = 0x0000FF00; Bmask = 0x000000FF; break;
@@ -635,16 +674,17 @@ void VBoxSDLFB::resizeGuest()
     }
 
     /* is the guest in a linear framebuffer mode we support? */
-    if (mPixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
+    if (mUsesGuestVRAM)
     {
+
         /* Create a source surface from guest VRAM. */
-        mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, cBitsPerPixel,
-                                             mLineSize, Rmask, Gmask, Bmask, Amask);
+        mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, mBitsPerPixel,
+                                             mBytesPerLine, Rmask, Gmask, Bmask, Amask);
     }
     else
     {
         /* Create a software surface for which SDL allocates the RAM */
-        mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, cBitsPerPixel,
+        mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, mBitsPerPixel,
                                          Rmask, Gmask, Bmask, Amask);
     }
     LogFlow(("VBoxSDL:: created VRAM surface %p\n", mSurfVRAM));
@@ -1155,12 +1195,12 @@ STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Width)(ULONG *width)
  * @returns COM status code
  * @param   lineSize Address of result buffer.
  */
-STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(LineSize)(ULONG *lineSize)
+STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(BytesPerLine)(ULONG *bytesPerLine)
 {
-    LogFlow(("VBoxSDLFBOverlay::GetLineSize\n"));
-    if (!lineSize)
+    LogFlow(("VBoxSDLFBOverlay::GetBytesPerLine\n"));
+    if (!bytesPerLine)
         return E_INVALIDARG;
-    *lineSize = mOverlayBits->pitch;
+    *bytesPerLine = mOverlayBits->pitch;
     return S_OK;
 }
 
@@ -1250,29 +1290,44 @@ STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Address)(ULONG *address)
  * Returns the current colour depth.  In fact, this is always 32bpp.
  *
  * @returns COM status code
- * @param   colorDepth Address of result buffer.
+ * @param   bitsPerPixel Address of result buffer.
  */
-STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(ColorDepth)(ULONG *colorDepth)
+STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(BitsPerPixel)(ULONG *bitsPerPixel)
 {
-    LogFlow(("VBoxSDLFBOverlay::GetColorDepth\n"));
-    if (!colorDepth)
+    LogFlow(("VBoxSDLFBOverlay::GetBitsPerPixel\n"));
+    if (!bitsPerPixel)
         return E_INVALIDARG;
-    *colorDepth = 32;
+    *bitsPerPixel = 32;
     return S_OK;
 }
 
 /**
- * Returns the current pixel format.  In fact, this is always RGB32.
+ * Returns the current pixel format.  In fact, this is always RGB.
  *
  * @returns COM status code
  * @param   pixelFormat Address of result buffer.
  */
-STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(PixelFormat)(FramebufferPixelFormat_T *pixelFormat)
+STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(PixelFormat)(ULONG *pixelFormat)
 {
     LogFlow(("VBoxSDLFBOverlay::GetPixelFormat\n"));
     if (!pixelFormat)
         return E_INVALIDARG;
-    *pixelFormat = FramebufferPixelFormat_PixelFormatRGB32;
+    *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    return S_OK;
+}
+
+/**
+ * Returns whether the guest VRAM is used directly.  In fact, this is always FALSE.
+ *
+ * @returns COM status code
+ * @param   usesGuestVRAM Address of result buffer.
+ */
+STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(UsesGuestVRAM)(BOOL *usesGuestVRAM)
+{
+    LogFlow(("VBoxSDLFBOverlay::GetUsesGuestVRAM\n"));
+    if (!usesGuestVRAM)
+        return E_INVALIDARG;
+    *usesGuestVRAM = FALSE;
     return S_OK;
 }
 
@@ -1378,12 +1433,13 @@ STDMETHODIMP VBoxSDLFBOverlay::NotifyUpdate(ULONG x, ULONG y,
  * @param   h           New overlay height.
  * @retval  finished    Set if the operation has completed.
  */
-STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat,
-                                             ULONG vram, ULONG lineSize, ULONG w,
-                                             ULONG h, BOOL *finished)
+STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, ULONG pixelFormat, ULONG vram,
+                                             ULONG bitsPerPixel, ULONG bytesPerLine,
+                                             ULONG w, ULONG h, BOOL *finished)
 {
-    AssertReturn(pixelFormat == FramebufferPixelFormat_PixelFormatRGB32, E_INVALIDARG);
+    AssertReturn(pixelFormat == FramebufferPixelFormat_FOURCC_RGB, E_INVALIDARG);
     AssertReturn(vram == 0, E_INVALIDARG);
+    AssertReturn(bitsPerPixel == 32, E_INVALIDARG);
     mOverlayWidth = w;
     mOverlayHeight = h;
     SDL_FreeSurface(mOverlayBits);

@@ -1122,7 +1122,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         ULONG xRes, yRes, bpp;
         CHECK_ERROR_RET(display, COMGETTER(Width)(&xRes), rc);
         CHECK_ERROR_RET(display, COMGETTER(Height)(&yRes), rc);
-        CHECK_ERROR_RET(display, COMGETTER(ColorDepth)(&bpp), rc);
+        CHECK_ERROR_RET(display, COMGETTER(BitsPerPixel)(&bpp), rc);
         RTPrintf("Video mode:      %dx%dx%d\n", xRes, yRes, bpp);
     }
 

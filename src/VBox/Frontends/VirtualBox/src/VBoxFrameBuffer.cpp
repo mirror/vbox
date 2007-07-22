@@ -48,9 +48,6 @@ VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
 #endif
 {
     AssertMsg (mView, ("VBoxConsoleView must not be null\n"));
-
-    /* Default framebuffer render mode is normal (draw the entire framebuffer) */
-    mRenderMode = RenderModeNormal;
 }
 
 VBoxFrameBuffer::~VBoxFrameBuffer()
@@ -85,28 +82,37 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(Height) (ULONG *aHeight)
     return S_OK;
 }
 
-STDMETHODIMP VBoxFrameBuffer::COMGETTER(ColorDepth) (ULONG *aColorDepth)
+STDMETHODIMP VBoxFrameBuffer::COMGETTER(BitsPerPixel) (ULONG *aBitsPerPixel)
 {
-    if (!aColorDepth)
+    if (!aBitsPerPixel)
         return E_POINTER;
-    *aColorDepth = (ULONG) colorDepth();
+    *aBitsPerPixel = bitsPerPixel();
     return S_OK;
 }
 
-STDMETHODIMP VBoxFrameBuffer::COMGETTER(LineSize) (ULONG *aLineSize)
+STDMETHODIMP VBoxFrameBuffer::COMGETTER(BytesPerLine) (ULONG *aBytesPerLine)
 {
-    if (!aLineSize)
+    if (!aBytesPerLine)
         return E_POINTER;
-    *aLineSize = (ULONG) lineSize();
+    *aBytesPerLine = bytesPerLine();
     return S_OK;
 }
 
 STDMETHODIMP VBoxFrameBuffer::COMGETTER(PixelFormat) (
-    FramebufferPixelFormat_T *aPixelFormat)
+    ULONG *aPixelFormat)
 {
     if (!aPixelFormat)
         return E_POINTER;
     *aPixelFormat = pixelFormat();
+    return S_OK;
+}
+
+STDMETHODIMP VBoxFrameBuffer::COMGETTER(UsesGuestVRAM) (
+    BOOL *aUsesGuestVRAM)
+{
+    if (!aUsesGuestVRAM)
+        return E_POINTER;
+    *aUsesGuestVRAM = usesGuestVRAM();
     return S_OK;
 }
 
@@ -128,34 +134,6 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(Overlay) (IFramebufferOverlay **aOverlay
     return S_OK;
 }
 
-/**
- * Return the current framebuffer render mode
- *
- * @returns COM status code
- * @param   renderMode  framebuffer render mode
- */
-STDMETHODIMP VBoxFrameBuffer::COMGETTER(RenderMode) (FramebufferRenderMode *renderMode)
-{
-    if (!renderMode)
-        return E_POINTER;
-    *renderMode = mRenderMode;
-    return S_OK;
-}
-
-/**
- * Change the current framebuffer render mode
- *
- * @returns COM status code
- * @param   renderMode  framebuffer render mode
- */
-STDMETHODIMP VBoxFrameBuffer::COMSETTER(RenderMode) (FramebufferRenderMode renderMode)
-{
-    if (!renderMode)
-        return E_POINTER;
-    mRenderMode = renderMode;
-    return S_OK;
-}
-
 STDMETHODIMP VBoxFrameBuffer::Lock()
 {
     this->lock();
@@ -169,18 +147,18 @@ STDMETHODIMP VBoxFrameBuffer::Unlock()
 }
 
 /** @note This method is called on EMT from under this object's lock */
-STDMETHODIMP VBoxFrameBuffer::RequestResize (ULONG aScreenId, FramebufferPixelFormat_T aPixelFormat,
-                                             BYTE *aVRAM, ULONG aLineSize,
+STDMETHODIMP VBoxFrameBuffer::RequestResize (ULONG aScreenId, ULONG aPixelFormat,
+                                             BYTE *aVRAM, ULONG aBitsPerPixel, ULONG aBytesPerLine,
                                              ULONG aWidth, ULONG aHeight,
                                              BOOL *aFinished)
 {
     QApplication::postEvent (mView,
-                             new VBoxResizeEvent (aPixelFormat, aVRAM,
-                                                  aLineSize, aWidth, aHeight));
+                             new VBoxResizeEvent (aPixelFormat, aVRAM, aBitsPerPixel,
+                                                  aBytesPerLine, aWidth, aHeight));
 
 #ifdef DEBUG_sunlover
-    Log(("VBoxFrameBuffer::RequestResize: pixelFormat %d, vram %p, lineSize %d, w %d, h %d\n",
-          aPixelFormat, aVRAM, aLineSize, aWidth, aHeight));
+    LogFlowFunc (("pixelFormat=%d, vram=%p, bpp=%d, bpl=%d, w=%d, h=%d\n",
+          aPixelFormat, aVRAM, aBitsPerPixel, aBytesPerLine, aWidth, aHeight));
 #endif /* DEBUG_sunlover */
 
     /*
@@ -315,7 +293,7 @@ VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
     VBoxFrameBuffer (aView)
 {
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
-                                      NULL, 0, 640, 480));
+                                      NULL, 0, 0, 640, 480));
 }
 
 /** @note This method is called on EMT from under this object's lock */
@@ -348,9 +326,11 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
     if (r.isEmpty())
         return;
 
-//    LogFlowFunc (("%d,%d-%d,%d (img: %d,%d)\n",
-//                  r.x(), r.y(), r.width(), r.height(),
-//                  img.width(), img.height()));
+#if 0
+    LogFlowFunc (("%dx%d-%dx%d (img=%dx%d)\n",
+                  r.x(), r.y(), r.width(), r.height(),
+                  img.width(), img.height()));
+#endif
 
     FRAMEBUF_DEBUG_START (xxx);
 
@@ -384,10 +364,19 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
 
 void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 {
+#if 0
+    LogFlowFunc (("fmt=%d, vram=%p, bpp=%d, bpl=%d, width=%d, height=%d\n",
+                  re->pixelFormat(), re->VRAM(),
+                  re->bitsPerPixel(), re->bytesPerLine(),
+                  re->width(), re->height()));
+#endif
+
     mWdt = re->width();
     mHgt = re->height();
 
     mImg = QImage (mWdt, mHgt, 32, 0, QImage::LittleEndian);
+    mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    mUsesGuestVRAM = false;
 }
 
 #endif
@@ -408,20 +397,18 @@ VBoxSDLFrameBuffer::VBoxSDLFrameBuffer (VBoxConsoleView *aView) :
     VBoxFrameBuffer (aView)
 {
     mScreen = NULL;
-    mPixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
-    mPtrVRAM = NULL;
+    mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
     mSurfVRAM = NULL;
-    mLineSize = 0;
 
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
-                                      NULL, 0, 640, 480));
+                                      NULL, 0, 0, 640, 480));
 }
 
 VBoxSDLFrameBuffer::~VBoxSDLFrameBuffer()
 {
     if (mSurfVRAM)
     {
-        SDL_FreeSurface(mSurfVRAM);
+        SDL_FreeSurface (mSurfVRAM);
         mSurfVRAM = NULL;
     }
     SDL_QuitSubSystem (SDL_INIT_VIDEO);
@@ -469,7 +456,7 @@ void VBoxSDLFrameBuffer::paintEvent (QPaintEvent *pe)
     }
 }
 
-void VBoxSDLFrameBuffer::resizeEvent( VBoxResizeEvent *re )
+void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 {
     mWdt = re->width();
     mHgt = re->height();
@@ -491,10 +478,13 @@ void VBoxSDLFrameBuffer::resizeEvent( VBoxResizeEvent *re )
      *  client window
      */
     static char sdlHack[64];
-    sprintf (sdlHack, "SDL_WINDOWID=0x%lx", mView->viewport()->winId());
+    LogFlowFunc (("Using client window 0x%08lX to initialize SDL\n",
+                  mView->viewport()->winId()));
+    /* Note: SDL_WINDOWID must be decimal (not hex) to work on Win32 */
+    sprintf (sdlHack, "SDL_WINDOWID=%lu", mView->viewport()->winId());
     putenv (sdlHack);
     int rc = SDL_InitSubSystem (SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
-    AssertMsg (rc == 0, ("SDL initialization failed!\n"));
+    AssertMsg (rc == 0, ("SDL initialization failed: %s\n", SDL_GetError()));
     NOREF(rc);
 
 #ifdef Q_WS_X11
@@ -505,57 +495,56 @@ void VBoxSDLFrameBuffer::resizeEvent( VBoxResizeEvent *re )
 
     LogFlowFunc (("Setting SDL video mode to %d x %d\n", mWdt, mHgt));
 
-    mPixelFormat = re->pixelFormat();
-    mPtrVRAM = re->vram();
-    mLineSize = re->lineSize();
-
-    int bitsPerPixel = 0;
+    bool fallback = false;
 
     Uint32 Rmask = 0;
     Uint32 Gmask = 0;
     Uint32 Bmask = 0;
-    Uint32 Amask = 0;
-
-    switch (mPixelFormat)
+    
+    if (re->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
     {
-        case FramebufferPixelFormat_PixelFormatRGB32:
+        switch (re->bitsPerPixel())
         {
-            bitsPerPixel = 32;
-            Rmask = 0x00FF0000;
-            Gmask = 0x0000FF00;
-            Bmask = 0x000000FF;
-        } break;
+            case 32:
+                Rmask = 0x00FF0000;
+                Gmask = 0x0000FF00;
+                Bmask = 0x000000FF;
+                break;
+            case 24:
+                Rmask = 0x00FF0000;
+                Gmask = 0x0000FF00;
+                Bmask = 0x000000FF;
+                break;
+            case 16:
+                Rmask = 0xF800;
+                Gmask = 0x07E0;
+                Bmask = 0x001F;
+            default:
+                /* Unsupported format leads to the indirect buffer */
+                fallback = true;
+                break;
+        }
 
-        case FramebufferPixelFormat_PixelFormatRGB24:
+        if (!fallback)
         {
-            bitsPerPixel = 24;
-            Rmask = 0x00FF0000;
-            Gmask = 0x0000FF00;
-            Bmask = 0x000000FF;
-        } break;
-
-        case FramebufferPixelFormat_PixelFormatRGB16:
-        {
-            bitsPerPixel = 16;
-            Rmask = 0xF800;
-            Gmask = 0x07E0;
-            Bmask = 0x001F;
-        } break;
-
-        default:
-        {
-            /* Unsupported format leads to use of the default format. */
-            mPixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
+            /* Create a source surface from guest VRAM. */
+            mSurfVRAM = SDL_CreateRGBSurfaceFrom(re->VRAM(), mWdt, mHgt,
+                                                 re->bitsPerPixel(),
+                                                 re->bytesPerLine(),
+                                                 Rmask, Gmask, Bmask, 0);
+            LogFlowFunc (("Created VRAM surface %p\n", mSurfVRAM));
+            if (mSurfVRAM == NULL)
+                fallback = true;
         }
     }
-
-    if (mPixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
+    else
     {
-        /* Create a source surface from guest VRAM. */
-        mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mWdt, mHgt, bitsPerPixel,
-                                             mLineSize, Rmask, Gmask, Bmask, Amask);
-        LogFlowFunc (("Created VRAM surface %p\n", mSurfVRAM));
+        /* Unsupported format leads to the indirect buffer */
+        fallback = true;
     }
+
+    /* Pixel format is RGB in any case */
+    mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
 
     mScreen = SDL_SetVideoMode (mWdt, mHgt, 0,
                                 SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL);
