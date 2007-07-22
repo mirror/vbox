@@ -137,15 +137,15 @@ VBoxDDRAWFrameBuffer::VBoxDDRAWFrameBuffer (VBoxConsoleView *aView) :
     mClipper (NULL),
     mSurface (NULL),
     mPrimarySurface (NULL),
-    mPixelFormat (FramebufferPixelFormat_PixelFormatOpaque),
-    mGuestVRAMSurface (FALSE),
+    mPixelFormat (FramebufferPixelFormat_FOURCC_RGB),
+    mUsesGuestVRAM (false),
     mWndX (0),
     mWndY (0),
-    mSynchronousUpdates (TRUE)
+    mSynchronousUpdates (true)
 {
     memset (&mSurfaceDesc, 0, sizeof (mSurfaceDesc));
 
-    LOGDDRAW(("DDRAW: Creating\n"));
+    LOGDDRAW (("DDRAW: Creating\n"));
 
     /* Release all created objects if something will go wrong. */
     BOOL bReleaseObjects = TRUE;
@@ -166,7 +166,7 @@ VBoxDDRAWFrameBuffer::VBoxDDRAWFrameBuffer (VBoxConsoleView *aView) :
 
                 VBoxResizeEvent *re =
                     new VBoxResizeEvent (FramebufferPixelFormat_PixelFormatOpaque,
-                                         NULL, 0, 640, 480);
+                                         NULL, 0, 0, 640, 480);
 
                 if (re)
                 {
@@ -245,80 +245,67 @@ STDMETHODIMP VBoxDDRAWFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
 
 void VBoxDDRAWFrameBuffer::paintEvent (QPaintEvent *pe)
 {
-    LOGDDRAW(("DDRAW: paintEvent %d,%d %dx%d\n", pe->rect().x(), pe->rect().y(), pe->rect().width(), pe->rect().height()));
+    LOGDDRAW (("DDRAW: paintEvent %d,%d %dx%d\n",
+               pe->rect().x(), pe->rect().y(),
+               pe->rect().width(), pe->rect().height()));
 
-    drawRect (pe->rect().x(), pe->rect().y(), pe->rect().width(), pe->rect().height());
+    drawRect (pe->rect().x(), pe->rect().y(),
+              pe->rect().width(), pe->rect().height());
 }
 
 void VBoxDDRAWFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 {
-    LOGDDRAW(("DDRAW: resizeEvent %d, %p, %d %dx%d\n", re->pixelFormat (), re->vram (), re->lineSize (), re->width(), re->height()));
+    LOGDDRAW (("DDRAW: resizeEvent %d, %p, %d %d %dx%d\n",
+               re->pixelFormat(), re->VRAM(), re->bitsPerPixel(),
+               re->bytesPerLine(), re->width(), re->height()));
 
     VBoxFrameBuffer::resizeEvent (re);
 
-    setupSurface (re->pixelFormat (), re->vram (), re->lineSize (), re->width(), re->height());
+    bool ok = createSurface (re->pixelFormat(), re->VRAM (), re->bitsPerPixel(),
+                             re->bytesPerLine (), re->width(), re->height());
+    if (!ok && re->pixelFormat() != FramebufferPixelFormat_PixelFormatOpaque)
+    {
+        /* try to create a fallback surface with indirect buffer
+         * (only if haven't done so already) */
+        ok = createSurface (FramebufferPixelFormat_PixelFormatOpaque,
+                            NULL, 0, 0, re->width(), re->height());
+    }
 
-    getWindowPosition ();
+    Assert (ok);
+
+    getWindowPosition();
 
     mView->setBackgroundMode (Qt::NoBackground);
 }
 
 void VBoxDDRAWFrameBuffer::moveEvent (QMoveEvent *me)
 {
-    getWindowPosition ();
+    getWindowPosition();
 }
-
 
 /*
  * Private methods.
  */
 
-/* Setups a surface with requested format or a default surface if
- * requested format is not supportred.
- * Assigns VBoxDDRAWFrameBuffer::mSurface to the new surface
- * and VBoxDDRAWFrameBuffer::mPixelFormat to format of the created surface.
+/**
+ * Creates a new surface in the requested format.
+ * On success, returns @c true and assigns the created surface to mSurface
+ * and its definition to mSurfaceDesc. On failure, returns @c false.
+ *
+ * If @a aPixelFormat is other than FramebufferPixelFormat_PixelFormatOpaque,
+ * then the method will attempt to attach @a aVRAM directly to the created
+ * surface. If this fails, the caller may call this method again with
+ * @a aPixelFormat set to FramebufferPixelFormat_PixelFormatOpaque to try
+ * setting up an indirect fallback buffer for the surface. This opeartion may
+ * theoretically also fail.
+ *
+ * @note Deletes the existing surface before attemting to create a new one.
  */
-void VBoxDDRAWFrameBuffer::setupSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h)
+bool VBoxDDRAWFrameBuffer::createSurface (ULONG aPixelFormat, uchar *aVRAM,
+                                          ULONG aBitsPerPixel, ULONG aBytesPerLine,
+                                          ULONG aWidth, ULONG aHeight)
 {
-    /* Check requested pixel format. */
-    switch (pixelFormat)
-    {
-        case FramebufferPixelFormat_PixelFormatRGB32:
-        case FramebufferPixelFormat_PixelFormatRGB24:
-        case FramebufferPixelFormat_PixelFormatRGB16:
-        {
-            /* Supported formats. Do nothing. */
-            Assert(lineSize >= w);
-        } break;
-
-        default:
-        {
-            /* Unsupported format leads to use of the default format. */
-            pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
-        }
-    }
-
-    recreateSurface (pixelFormat, pvVRAM, lineSize, w, h);
-
-    if (!mSurface && pixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
-    {
-        /* Unable to create a new surface. Try to create a default format surface. */
-        pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
-        recreateSurface (pixelFormat, NULL, 0, w, h);
-    }
-
-    mPixelFormat = pixelFormat;
-}
-
-/* Deletes existing and creates a new surface with requested format.
- * Assigns VBoxDDRAWFrameBuffer::mSurface to the new surface if
- * the requested format is supported and the surface was successfully created.
- */
-void VBoxDDRAWFrameBuffer::recreateSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h)
-{
-    HRESULT rc;
-
-    deleteSurface ();
+    deleteSurface();
 
     DDSURFACEDESC2 sd;
 
@@ -330,97 +317,105 @@ void VBoxDDRAWFrameBuffer::recreateSurface (FramebufferPixelFormat_T pixelFormat
                  DDSD_LPSURFACE | DDSD_PITCH | DDSD_PIXELFORMAT;
 
     sd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
-    sd.dwWidth = w;
-    sd.dwHeight = h;
-
-    if (pixelFormat == FramebufferPixelFormat_PixelFormatOpaque)
-    {
-        /* Default format is a 32 bpp surface. */
-        sd.lPitch = sd.dwWidth * 4;
-    }
-    else
-    {
-        sd.lPitch = lineSize;
-    }
+    sd.dwWidth = aWidth;
+    sd.dwHeight = aHeight;
 
     /* Setup the desired pixel format on the surface. */
 
     sd.ddpfPixelFormat.dwSize = sizeof (sd.ddpfPixelFormat);
     sd.ddpfPixelFormat.dwFlags = DDPF_RGB;
 
-    switch (pixelFormat)
+    if (aPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
     {
-        case FramebufferPixelFormat_PixelFormatOpaque:
-        case FramebufferPixelFormat_PixelFormatRGB32:
+        /* Try to use the guest VRAM directly */
+
+        switch (aBitsPerPixel)
         {
-            sd.ddpfPixelFormat.dwRGBBitCount = 32;
-            sd.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
-            sd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
-            sd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
-        } break;
-
-        case FramebufferPixelFormat_PixelFormatRGB24:
-        {
-            sd.ddpfPixelFormat.dwRGBBitCount = 24;
-            sd.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
-            sd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
-            sd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
-        } break;
-
-        case FramebufferPixelFormat_PixelFormatRGB16:
-        {
-            sd.ddpfPixelFormat.dwRGBBitCount = 16;
-            sd.ddpfPixelFormat.dwRBitMask = 0xF800;
-            sd.ddpfPixelFormat.dwGBitMask = 0x07E0;
-            sd.ddpfPixelFormat.dwBBitMask = 0x001F;
-        } break;
-    }
-
-    /* Allocate surface memory. */
-    if (pvVRAM != NULL && pixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
-    {
-        sd.lpSurface = pvVRAM;
-        mGuestVRAMSurface = TRUE;
-    }
-    else
-    {
-        sd.lpSurface = RTMemAlloc (sd.lPitch * sd.dwHeight);
-    }
-
-    if (!sd.lpSurface)
-    {
-        LOGDDRAW(("DDRAW: could not allocate memory for surface.\n"));
-        return;
-    }
-
-    rc = mDDRAW->CreateSurface (&sd, &mSurface, NULL);
-
-    if (rc != DD_OK)
-    {
-        LOGDDRAW(("DDRAW: Could not create DirectDraw surface rc = 0x%08X\n", rc));
-    }
-    else
-    {
-        /* Initialize the surface description. It will be used to obtain address, lineSize and bpp. */
-        mSurfaceDesc = sd;
-
-        LOGDDRAW(("DDRAW: Created %s surface: format = %d, address = %p\n",
-                  mGuestVRAMSurface ? "GuestVRAM": "system memory",
-                  pixelFormat, address ()));
-    }
-
-    if (rc != DD_OK)
-    {
-        deleteSurface ();
-    }
-    else
-    {
-        if (!mGuestVRAMSurface)
-        {
-            /* Clear just created surface. */
-            memset (this->address (), 0, this->lineSize () * this->height ());
+            case 32:
+                sd.ddpfPixelFormat.dwRGBBitCount = 32;
+                sd.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
+                sd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
+                sd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
+                break;
+            case 24:
+                sd.ddpfPixelFormat.dwRGBBitCount = 24;
+                sd.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
+                sd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
+                sd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
+                break;
+            case 16:
+                sd.ddpfPixelFormat.dwRGBBitCount = 16;
+                sd.ddpfPixelFormat.dwRBitMask = 0xF800;
+                sd.ddpfPixelFormat.dwGBitMask = 0x07E0;
+                sd.ddpfPixelFormat.dwBBitMask = 0x001F;
+                break;
+            default:
+                /* we don't directly support any other color depth */                
+                return false;
         }
+
+        sd.lPitch = (LONG) aBytesPerLine;
+
+        sd.lpSurface = aVRAM;
+        mUsesGuestVRAM = true;
+
+        mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
     }
+    else
+    if (aPixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
+    {
+        /* we don't directly support any other pixel format */                
+        return false;
+    }
+    else
+    {
+        /* for the Opaque format, we use the indirect memory buffer as a
+         * 32 bpp surface. */
+
+        sd.ddpfPixelFormat.dwRGBBitCount = 32;
+        sd.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
+        sd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
+        sd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
+
+        sd.lPitch = sd.dwWidth * 4;
+
+        /* Allocate the memory buffer for the surface */
+        sd.lpSurface = RTMemAlloc (sd.lPitch * sd.dwHeight);
+        if (sd.lpSurface == NULL)
+        {
+            LOGDDRAW (("DDRAW: could not allocate memory for surface.\n"));
+            return false;
+        }
+        mUsesGuestVRAM = false;
+
+        mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    }
+
+    /* create the surface */
+    HRESULT rc = mDDRAW->CreateSurface (&sd, &mSurface, NULL);
+
+    if (rc != DD_OK)
+    {
+        LOGDDRAW (("DDRAW: Could not create DirectDraw surface, rc=0x%08X\n", rc));
+        deleteSurface();
+        return false;
+    }
+    
+    /* Initialize the surface description member. It will be used to obtain
+     * address, bpp and bpl. */
+    mSurfaceDesc = sd;
+    
+    LOGDDRAW(("DDRAW: Created %s surface: format = %d, address = %p\n",
+              mUsesGuestVRAM ? "GuestVRAM": "system memory",
+              aPixelFormat, address ()));
+
+    if (!mUsesGuestVRAM)
+    {
+        /* Clear just created surface. */
+        memset (address(), 0, bytesPerLine() * height());
+    }
+
+    return true;
 }
 
 void VBoxDDRAWFrameBuffer::deleteSurface ()
@@ -430,22 +425,23 @@ void VBoxDDRAWFrameBuffer::deleteSurface ()
         mSurface->Release ();
         mSurface = NULL;
 
-        if (!mGuestVRAMSurface)
+        if (!mUsesGuestVRAM)
         {
             RTMemFree (mSurfaceDesc.lpSurface);
         }
 
         memset (&mSurfaceDesc, '\0', sizeof (mSurfaceDesc));
-        mGuestVRAMSurface = FALSE;
+        mUsesGuestVRAM = false;
     }
 }
 
-/* Draw a rectangular area of guest screen DDRAW surface onto the
+/**
+ * Draws a rectangular area of guest screen DDRAW surface onto the
  * host screen primary surface.
  */
 void VBoxDDRAWFrameBuffer::drawRect (ULONG x, ULONG y, ULONG w, ULONG h)
 {
-    LOGDDRAW(("DDRAW: drawRect: %d,%d, %dx%d\n", x, y, w, h));
+    LOGDDRAW (("DDRAW: drawRect: %d,%d, %dx%d\n", x, y, w, h));
 
     if (mSurface && w > 0 && h > 0)
     {

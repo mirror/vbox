@@ -46,13 +46,13 @@ public:
     bool VideoAccelAllowed (void);
 
     void updatePointerShape(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t width, uint32_t height, void *pShape);
-    void SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColorDepth, ULONG aDisplay);
+    void SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay);
 
     static const PDMDRVREG  DrvReg;
 
     uint32_t getWidth();
     uint32_t getHeight();
-    uint32_t getColorDepth();
+    uint32_t getBitsPerPixel();
 
     STDMETHODIMP RegisterExternalFramebuffer(Framebuffer *Framebuffer);
     STDMETHODIMP InvalidateAndUpdate();

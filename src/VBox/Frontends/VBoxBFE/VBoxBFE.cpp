@@ -728,7 +728,7 @@ int main(int argc, char **argv)
     /* The L4 console provides (currently) a fixed resolution. */
     if (g_u32VRamSizeMB * _1M >=   gFramebuffer->getHostXres() 
                           * gFramebuffer->getHostYres()
-                          * (gDisplay->getColorDepth() / 8))
+                          * (gDisplay->getBitsPerPixel() / 8))
         gDisplay->SetVideoModeHint(gFramebuffer->getHostXres(), gFramebuffer->getHostYres(), 0, 0);
 #endif
 

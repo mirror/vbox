@@ -45,10 +45,10 @@ HRESULT InternalFramebuffer::init(ULONG width, ULONG height, ULONG depth)
 {
     mWidth = width;
     mHeight = height;
-    mDepth = depth;
-    mLineSize = ((width * depth + 31) / 32) * 4;
-    mData = new uint8_t[mLineSize * height];
-    memset(mData, 0, mLineSize * height);
+    mBitsPerPixel = depth;
+    mBytesPerLine = ((width * depth + 31) / 32) * 4;
+    mData = new uint8_t [mBytesPerLine * height];
+    memset (mData, 0, mBytesPerLine * height);
 
     return S_OK;
 }
@@ -80,27 +80,35 @@ STDMETHODIMP InternalFramebuffer::COMGETTER(Height) (ULONG *height)
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::COMGETTER(ColorDepth) (ULONG *colorDepth)
+STDMETHODIMP InternalFramebuffer::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
 {
-    if (!colorDepth)
+    if (!bitsPerPixel)
         return E_POINTER;
-    *colorDepth = mDepth;
+    *bitsPerPixel = mBitsPerPixel;
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::COMGETTER(LineSize) (ULONG *lineSize)
+STDMETHODIMP InternalFramebuffer::COMGETTER(BytesPerLine) (ULONG *bytesPerLine)
 {
-    if (!lineSize)
+    if (!bytesPerLine)
         return E_POINTER;
-    *lineSize = mLineSize;
+    *bytesPerLine = mBytesPerLine;
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::COMGETTER(PixelFormat) (FramebufferPixelFormat_T *pixelFormat)
+STDMETHODIMP InternalFramebuffer::COMGETTER(PixelFormat) (ULONG *pixelFormat)
 {
     if (!pixelFormat)
         return E_POINTER;
-    *pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
+    *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    return S_OK;
+}
+
+STDMETHODIMP InternalFramebuffer::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
+{
+    if (!usesGuestVRAM)
+        return E_POINTER;
+    *usesGuestVRAM = FALSE;
     return S_OK;
 }
 
@@ -150,10 +158,13 @@ STDMETHODIMP InternalFramebuffer::NotifyUpdate(ULONG x, ULONG y,
 }
 
 STDMETHODIMP
-InternalFramebuffer::RequestResize(ULONG iScreenId, FramebufferPixelFormat_T pixelFormat, BYTE *vram,
-                                   ULONG lineSize, ULONG w, ULONG h,
+InternalFramebuffer::RequestResize(ULONG iScreenId, ULONG pixelFormat, BYTE *vram,
+                                   ULONG bpp, ULONG bpl, ULONG w, ULONG h,
                                    BOOL *finished)
 {
+    NOREF (bpp);
+    NOREF (bpl);
+
     if (!finished)
         return E_POINTER;
     // no need for the caller to wait
@@ -163,9 +174,9 @@ InternalFramebuffer::RequestResize(ULONG iScreenId, FramebufferPixelFormat_T pix
     delete mData;
     mWidth = w;
     mHeight = h;
-    mLineSize = ((w * mDepth + 31) / 32) * 4;
-    mData = new uint8_t[mLineSize * h];
-    memset(mData, 0, mLineSize * h);
+    mBytesPerLine = ((w * mBitsPerPixel + 31) / 32) * 4;
+    mData = new uint8_t [mBytesPerLine * h];
+    memset (mData, 0, mBytesPerLine * h);
 
     return S_OK;
 }

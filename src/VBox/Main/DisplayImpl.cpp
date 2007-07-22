@@ -85,8 +85,8 @@ HRESULT Display::FinalConstruct()
     RTSemEventMultiCreate(&mUpdateSem);
 
     mLastAddress = NULL;
-    mLastLineSize = 0;
-    mLastColorDepth = 0,
+    mLastBytesPerLine = 0;
+    mLastBitsPerPixel = 0,
     mLastWidth = 0;
     mLastHeight = 0;
 
@@ -221,14 +221,18 @@ STDMETHODIMP Display::OnStateChange(MachineState_T machineState)
 /**
  *  @thread EMT
  */
-static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId, FramebufferPixelFormat_T pixelFormat, void *pvVRAM, uint32_t cbLine, int w, int h)
+static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId,
+                                  ULONG pixelFormat, void *pvVRAM,
+                                  uint32_t bpp, uint32_t cbLine,
+                                  int w, int h)
 {
     Assert (pFramebuffer);
 
     /* Call the framebuffer to try and set required pixelFormat. */
     BOOL finished = TRUE;
 
-    pFramebuffer->RequestResize (uScreenId, pixelFormat, (BYTE *) pvVRAM, cbLine, w, h, &finished);
+    pFramebuffer->RequestResize (uScreenId, pixelFormat, (BYTE *) pvVRAM,
+                                 bpp, cbLine, w, h, &finished);
 
     if (!finished)
     {
@@ -251,9 +255,11 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
  *
  *  @thread EMT
  */
-int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h)
+int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM,
+                                  uint32_t cbLine, int w, int h)
 {
-    LogRel (("Display::handleDisplayResize(): uScreenId = %d, pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X\n",
+    LogRel (("Display::handleDisplayResize(): uScreenId = %d, pvVRAM=%p "
+             "w=%d h=%d bpp=%d cbLine=0x%X\n",
              uScreenId, pvVRAM, w, h, bpp, cbLine));
 
     /* If there is no framebuffer, this call is not interesting. */
@@ -264,25 +270,31 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     }
 
     mLastAddress = pvVRAM;
-    mLastLineSize = cbLine;
-    mLastColorDepth = bpp,
+    mLastBytesPerLine = cbLine;
+    mLastBitsPerPixel = bpp,
     mLastWidth = w;
     mLastHeight = h;
 
-    FramebufferPixelFormat_T pixelFormat;
+    ULONG pixelFormat;
 
     switch (bpp)
     {
-        case 32:  pixelFormat = FramebufferPixelFormat_PixelFormatRGB32; break;
-        case 24:  pixelFormat = FramebufferPixelFormat_PixelFormatRGB24; break;
-        case 16:  pixelFormat = FramebufferPixelFormat_PixelFormatRGB16; break;
-        default:  pixelFormat = FramebufferPixelFormat_PixelFormatOpaque; cbLine = 0;
+        case 32:
+        case 24:
+        case 16:
+            pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+            break;
+        default:
+            pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
+            bpp = cbLine = 0;
+            break;
     }
 
     /* Atomically set the resize status before calling the framebuffer. The new InProgress status will
      * disable access to the VGA device by the EMT thread.
      */
-    bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus, ResizeStatus_InProgress, ResizeStatus_Void);
+    bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus,
+                                  ResizeStatus_InProgress, ResizeStatus_Void);
     AssertReleaseMsg(f, ("f = %d\n", f));NOREF(f);
 
     /* The framebuffer is locked in the state.
@@ -290,7 +302,8 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
      */
     maFramebuffers[uScreenId].pFramebuffer->Lock();
 
-    int rc = callFramebufferResize (maFramebuffers[uScreenId].pFramebuffer, uScreenId, pixelFormat, pvVRAM, cbLine, w, h);
+    int rc = callFramebufferResize (maFramebuffers[uScreenId].pFramebuffer, uScreenId,
+                                    pixelFormat, pvVRAM, bpp, cbLine, w, h);
     if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
     {
         /* Immediately return to the caller. ResizeCompleted will be called back by the
@@ -302,7 +315,8 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     }
 
     /* Set the status so the 'handleResizeCompleted' would work.  */
-    f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus, ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
+    f = ASMAtomicCmpXchgU32 (&maFramebuffers[uScreenId].u32ResizeStatus,
+                             ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
     AssertRelease(f);NOREF(f);
 
     /* The method also unlocks the framebuffer. */
@@ -341,10 +355,10 @@ void Display::handleResizeCompletedEMT (void)
             updateDisplayData();
     
             /* Check the framebuffer pixel format to setup the rendering in VGA device. */
-            FramebufferPixelFormat_T newPixelFormat;
-            pFBInfo->pFramebuffer->COMGETTER(PixelFormat) (&newPixelFormat);
+            BOOL usesGuestVRAM = FALSE;
+            pFBInfo->pFramebuffer->COMGETTER(UsesGuestVRAM) (&usesGuestVRAM);
 
-            pFBInfo->fDefaultFormat = (newPixelFormat == FramebufferPixelFormat_PixelFormatOpaque);
+            pFBInfo->fDefaultFormat = (usesGuestVRAM == FALSE);
 
             mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, pFBInfo->fDefaultFormat);
         }
@@ -1264,11 +1278,11 @@ STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
  * Returns the current display color depth in bits
  *
  * @returns COM status code
- * @param colorDepth Address of result variable.
+ * @param bitsPerPixel Address of result variable.
  */
-STDMETHODIMP Display::COMGETTER(ColorDepth) (ULONG *colorDepth)
+STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
 {
-    if (!colorDepth)
+    if (!bitsPerPixel)
         return E_INVALIDARG;
 
     AutoLock alock (this);
@@ -1279,7 +1293,7 @@ STDMETHODIMP Display::COMGETTER(ColorDepth) (ULONG *colorDepth)
     uint32_t cBits = 0;
     int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &cBits);
     AssertRC(rc);
-    *colorDepth = cBits;
+    *bitsPerPixel = cBits;
     return S_OK;
 }
 
@@ -1480,7 +1494,7 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuff
     return S_OK;
 }
 
-STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColorDepth, ULONG aDisplay)
+STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay)
 {
     AutoLock lock(this);
     CHECK_READY();
@@ -1496,7 +1510,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColor
     ULONG height = aHeight;
     if (!height)
         height   = mpDrv->Connector.cy;
-    ULONG bpp    = aColorDepth;
+    ULONG bpp    = aBitsPerPixel;
     if (!bpp)
     {
         uint32_t cBits = 0;
@@ -1521,7 +1535,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aColor
     /* Have to leave the lock because the pfnRequestDisplayChnage will call EMT.  */
     lock.leave ();
     if (mParent->getVMMDev())
-        mParent->getVMMDev()->getVMMDevPort()->pfnRequestDisplayChange(mParent->getVMMDev()->getVMMDevPort(), aWidth, aHeight, aColorDepth, aDisplay);
+        mParent->getVMMDev()->getVMMDevPort()->pfnRequestDisplayChange(mParent->getVMMDev()->getVMMDevPort(), aWidth, aHeight, aBitsPerPixel, aDisplay);
     return S_OK;
 }
 
@@ -1804,11 +1818,11 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
         BYTE *address = 0;
         rc = pFramebuffer->COMGETTER(Address) (&address);
         AssertComRC (rc);
-        ULONG lineSize = 0;
-        rc = pFramebuffer->COMGETTER(LineSize) (&lineSize);
+        ULONG bytesPerLine = 0;
+        rc = pFramebuffer->COMGETTER(BytesPerLine) (&bytesPerLine);
         AssertComRC (rc);
-        ULONG colorDepth = 0;
-        rc = pFramebuffer->COMGETTER(ColorDepth) (&colorDepth);
+        ULONG bitsPerPixel = 0;
+        rc = pFramebuffer->COMGETTER(BitsPerPixel) (&bitsPerPixel);
         AssertComRC (rc);
         ULONG width = 0;
         rc = pFramebuffer->COMGETTER(Width) (&width);
@@ -1825,22 +1839,22 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
          */
         if (aCheckParams &&
             (mLastAddress != address ||
-             mLastLineSize != lineSize ||
-             mLastColorDepth != colorDepth ||
+             mLastBytesPerLine != bytesPerLine ||
+             mLastBitsPerPixel != bitsPerPixel ||
              mLastWidth != (int) width ||
              mLastHeight != (int) height))
         {
-            handleDisplayResize (VBOX_VIDEO_PRIMARY_SCREEN, mLastColorDepth,
+            handleDisplayResize (VBOX_VIDEO_PRIMARY_SCREEN, mLastBitsPerPixel,
                                  mLastAddress,
-                                 mLastLineSize,
+                                 mLastBytesPerLine,
                                  mLastWidth,
                                  mLastHeight);
             return;
         }
 
         mpDrv->Connector.pu8Data = (uint8_t *) address;
-        mpDrv->Connector.cbScanline = lineSize;
-        mpDrv->Connector.cBits = colorDepth;
+        mpDrv->Connector.cbScanline = bytesPerLine;
+        mpDrv->Connector.cBits = bitsPerPixel;
         mpDrv->Connector.cx = width;
         mpDrv->Connector.cy = height;
     }
@@ -2334,8 +2348,8 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
         pData->pDisplay->mpDrv = NULL;
         pData->pDisplay->mpVMMDev = NULL;
         pData->pDisplay->mLastAddress = NULL;
-        pData->pDisplay->mLastLineSize = 0;
-        pData->pDisplay->mLastColorDepth = 0,
+        pData->pDisplay->mLastBytesPerLine = 0;
+        pData->pDisplay->mLastBitsPerPixel = 0,
         pData->pDisplay->mLastWidth = 0;
         pData->pDisplay->mLastHeight = 0;
     }

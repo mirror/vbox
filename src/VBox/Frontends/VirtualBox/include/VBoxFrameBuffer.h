@@ -72,19 +72,28 @@ class VBoxConsoleView;
 class VBoxResizeEvent : public QEvent
 {
 public:
-    VBoxResizeEvent (FramebufferPixelFormat_T f, uchar *v, unsigned l, int w, int h) :
-        QEvent ((QEvent::Type) VBoxDefs::ResizeEventType), fmt (f), vr (v), lsz (l), wdt (w), hgt (h) {}
-    FramebufferPixelFormat_T  pixelFormat() { return fmt; }
-    uchar *vram() { return vr; }
-    unsigned lineSize() { return lsz; }
-    int width() { return wdt; }
-    int height() { return hgt; }
+
+    VBoxResizeEvent (ulong aPixelFormat, uchar *aVRAM,
+                     ulong aBitsPerPixel, ulong aBytesPerLine,
+                     ulong aWidth, ulong aHeight) :
+        QEvent ((QEvent::Type) VBoxDefs::ResizeEventType),
+	    mPixelFormat (aPixelFormat), mVRAM (aVRAM), mBitsPerPixel (aBitsPerPixel),
+        mBytesPerLine (aBytesPerLine), mWidth (aWidth), mHeight (aHeight) {}
+    ulong pixelFormat() { return mPixelFormat; }
+    uchar *VRAM() { return mVRAM; }
+    ulong bitsPerPixel() { return mBitsPerPixel; }
+    ulong bytesPerLine() { return mBytesPerLine; }
+    ulong width() { return mWidth; }
+    ulong height() { return mHeight; }
+
 private:
-    FramebufferPixelFormat_T fmt;
-    uchar *vr;
-    unsigned lsz;
-    int wdt;
-    int hgt;
+
+    ulong mPixelFormat;
+    uchar *mVRAM;
+    ulong mBitsPerPixel;
+    ulong mBytesPerLine;
+    ulong mWidth;
+    ulong mHeight;
 };
 
 /**
@@ -144,7 +153,7 @@ inline bool display_to_pixmap( const CConsole &c, QPixmap &pm )
 
     bool rc = pm.convertFromImage (QImage (addr,
                                            display.GetWidth(), display.GetHeight(),
-                                           display.GetColorDepth(),
+                                           display.GetBitsPerPixel(),
                                            0, 0, QImage::LittleEndian));
     AssertMsg (rc, ("convertFromImage() must always return true"));
 
@@ -156,14 +165,6 @@ inline bool display_to_pixmap( const CConsole &c, QPixmap &pm )
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-
-/* Framebuffer render mode */
-typedef enum
-{
-    RenderModeNormal     = 0,
-    RenderModeSeamless   = 1,
-    RenderModeHostWindow = 2
-} FramebufferRenderMode;
 
 /**
  *  Common IFramebuffer implementation for all methods used by GUI to maintain
@@ -197,9 +198,12 @@ public:
     NS_DECL_ISUPPORTS
 
 #if defined (Q_OS_WIN32)
-    STDMETHOD_(ULONG, AddRef)() {
+
+    STDMETHOD_(ULONG, AddRef)()
+    {
         return ::InterlockedIncrement (&refcnt);
     }
+
     STDMETHOD_(ULONG, Release)()
     {
         long cnt = ::InterlockedDecrement (&refcnt);
@@ -207,6 +211,7 @@ public:
             delete this;
         return cnt;
     }
+
     STDMETHOD(QueryInterface) (REFIID riid , void **ppObj)
     {
         if (riid == IID_IUnknown) {
@@ -222,25 +227,25 @@ public:
         *ppObj = NULL;
         return E_NOINTERFACE;
     }
+
 #endif
 
     // IFramebuffer COM methods
     STDMETHOD(COMGETTER(Address)) (BYTE **aAddress);
     STDMETHOD(COMGETTER(Width)) (ULONG *aWidth);
     STDMETHOD(COMGETTER(Height)) (ULONG *aHeight);
-    STDMETHOD(COMGETTER(ColorDepth)) (ULONG *aColorDepth);
-    STDMETHOD(COMGETTER(LineSize)) (ULONG *aLineSize);
-    STDMETHOD(COMGETTER(PixelFormat)) (FramebufferPixelFormat_T *aPixelFormat);
+    STDMETHOD(COMGETTER(BitsPerPixel)) (ULONG *aBitsPerPixel);
+    STDMETHOD(COMGETTER(BytesPerLine)) (ULONG *aBytesPerLine);
+    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *aPixelFormat);
+    STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *aUsesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *aHeightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(RenderMode)) (FramebufferRenderMode *renderMode);
-    STDMETHOD(COMSETTER(RenderMode)) (FramebufferRenderMode  renderMode);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
 
-    STDMETHOD(RequestResize) (ULONG aScreenId, FramebufferPixelFormat_T aPixelFormat,
-                              BYTE *aVRAM, ULONG aLineSize,
+    STDMETHOD(RequestResize) (ULONG aScreenId, ULONG aPixelFormat,
+                              BYTE *aVRAM, ULONG aBitsPerPixel, ULONG aBytesPerLine,
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished);
 
@@ -256,21 +261,25 @@ public:
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
     STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount);
 
-    // Helper functions
-    int width() { return mWdt; }
-    int height() { return mHgt; }
+    ulong width() { return mWdt; }
+    ulong height() { return mHgt; }
 
-    virtual FramebufferPixelFormat_T pixelFormat()
+    virtual ulong pixelFormat()
     {
-        return FramebufferPixelFormat_PixelFormatOpaque;
+        return FramebufferPixelFormat_FOURCC_RGB;
+    }
+
+    virtual bool usesGuestVRAM()
+    {
+        return false;
     }
 
     void lock() { mMutex->lock(); }
     void unlock() { mMutex->unlock(); }
 
     virtual uchar *address() = 0;
-    virtual int colorDepth() = 0;
-    virtual int lineSize() = 0;
+    virtual ulong bitsPerPixel() = 0;
+    virtual ulong bytesPerLine() = 0;
 
     /**
      *  Called on the GUI thread (from VBoxConsoleView) when some part of the
@@ -301,9 +310,6 @@ protected:
     int mWdt;
     int mHgt;
 
-    /* Framebuffer render mode */
-    FramebufferRenderMode mRenderMode;
-
 #if defined (Q_OS_WIN32)
 private:
     long refcnt;
@@ -324,9 +330,12 @@ public:
                              ULONG aW, ULONG aH,
                              BOOL *aFinished);
 
+    ulong pixelFormat() { return mPixelFormat; }
+    bool usesGuestVRAM() { return mUsesGuestVRAM; }
+
     uchar *address() { return mImg.bits(); }
-    int colorDepth() { return mImg.depth(); }
-    int lineSize() { return mImg.bytesPerLine(); }
+    ulong bitsPerPixel() { return mImg.depth(); }
+    ulong bytesPerLine() { return mImg.bytesPerLine(); }
 
     void paintEvent (QPaintEvent *pe);
     void resizeEvent (VBoxResizeEvent *re);
@@ -335,6 +344,8 @@ private:
 
     QPixmap mPM;
     QImage mImg;
+    ulong mPixelFormat;
+    bool mUsesGuestVRAM;
 };
 
 #endif
@@ -356,31 +367,30 @@ public:
 
     uchar *address()
     {
-        if (mSurfVRAM)
-        {
-            return (uchar*) (mScreen ? (uintptr_t) mSurfVRAM->pixels : 0);
-        }
-        else
-        {
-            return (uchar*) (mScreen ? (uintptr_t) mScreen->pixels : 0);
-        }
+        SDL_Surface *surf = mSurfVRAM ? mSurfVRAM : mScreen;
+        return surf ? (uchar *) (uintptr_t) mScreen->pixels : 0;
     }
 
-    int colorDepth()
+    ulong bitsPerPixel()
     {
-        SDL_Surface *surf = mSurfVRAM ? mSurfVRAM: mScreen;
+        SDL_Surface *surf = mSurfVRAM ? mSurfVRAM : mScreen;
         return surf ? surf->format->BitsPerPixel : 0;
     }
 
-    int lineSize()
+    ulong bytesPerLine()
     {
-        SDL_Surface *surf = mSurfVRAM ? mSurfVRAM: mScreen;
+        SDL_Surface *surf = mSurfVRAM ? mSurfVRAM : mScreen;
         return surf ? surf->pitch : 0;
     }
 
-    FramebufferPixelFormat_T pixelFormat()
+    ulong pixelFormat()
     {
         return mPixelFormat;
+    }
+
+    bool usesGuestVRAM()
+    {
+        return mSurfVRAM != NULL;
     }
 
     void paintEvent (QPaintEvent *pe);
@@ -391,9 +401,7 @@ private:
     SDL_Surface *mScreen;
     SDL_Surface *mSurfVRAM;
 
-    uchar *mPtrVRAM;
-    ULONG mLineSize;
-    FramebufferPixelFormat_T mPixelFormat;
+    ulong mPixelFormat;
 };
 
 #endif
@@ -413,22 +421,26 @@ public:
                              ULONG aW, ULONG aH,
                              BOOL *aFinished);
 
-    uchar *address() { return (uchar *)mSurfaceDesc.lpSurface; }
-    int colorDepth() { return mSurfaceDesc.ddpfPixelFormat.dwRGBBitCount; }
-    int lineSize() { return mSurfaceDesc.lPitch; }
+    uchar *address() { return (uchar *) mSurfaceDesc.lpSurface; }
+    ulong bitsPerPixel() { return mSurfaceDesc.ddpfPixelFormat.dwRGBBitCount; }
+    ulong bytesPerLine() { return (ulong) mSurfaceDesc.lPitch; }
 
-    FramebufferPixelFormat_T pixelFormat() { return mPixelFormat; };
+    ulong pixelFormat() { return mPixelFormat; };
+
+    bool usesGuestVRAM() { return mUsesGuestVRAM; }
 
     void paintEvent (QPaintEvent *pe);
     void resizeEvent (VBoxResizeEvent *re);
     void moveEvent (QMoveEvent *me);
 
 private:
+
     void releaseObjects();
 
-    void setupSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h);
-    void recreateSurface (FramebufferPixelFormat_T pixelFormat, uchar *pvVRAM, ULONG lineSize, ULONG w, ULONG h);
-    void deleteSurface ();
+    bool createSurface (ULONG aPixelFormat, uchar *pvVRAM,
+                        ULONG aBitsPerPixel, ULONG aBytesPerLine,
+                        ULONG aWidth, ULONG aHeight);
+    void deleteSurface();
     void drawRect (ULONG x, ULONG y, ULONG w, ULONG h);
     void getWindowPosition (void);
 
@@ -438,14 +450,14 @@ private:
     DDSURFACEDESC2       mSurfaceDesc;
     LPDIRECTDRAWSURFACE7 mPrimarySurface;
 
-    FramebufferPixelFormat_T mPixelFormat;
+    ulong mPixelFormat;
 
-    BOOL mGuestVRAMSurface;
+    bool mUsesGuestVRAM;
 
     int mWndX;
     int mWndY;
 
-    BOOL mSynchronousUpdates;
+    bool mSynchronousUpdates;
 };
 
 #endif

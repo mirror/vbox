@@ -165,7 +165,7 @@ public:
     // IDisplay properties
     STDMETHOD(COMGETTER(Width)) (ULONG *width);
     STDMETHOD(COMGETTER(Height)) (ULONG *height);
-    STDMETHOD(COMGETTER(ColorDepth)) (ULONG *colorDepth);
+    STDMETHOD(COMGETTER(BitsPerPixel)) (ULONG *bitsPerPixel);
 
     // IDisplay methods
     STDMETHOD(SetupInternalFramebuffer)(ULONG depth);
@@ -174,7 +174,7 @@ public:
     STDMETHOD(RegisterExternalFramebuffer)(IFramebuffer *frameBuf);
     STDMETHOD(SetFramebuffer)(ULONG aScreenId, IFramebuffer *aFramebuffer);
     STDMETHOD(GetFramebuffer)(ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin);
-    STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG colorDepth, ULONG display);
+    STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG bitsPerPixel, ULONG display);
     STDMETHOD(TakeScreenShot)(BYTE *address, ULONG width, ULONG height);
     STDMETHOD(DrawToScreen)(BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
     STDMETHOD(InvalidateAndUpdate)();
@@ -225,8 +225,8 @@ private:
 
     /* arguments of the last handleDisplayResize() call */
     void *mLastAddress;
-    uint32_t mLastLineSize;
-    uint32_t mLastColorDepth;
+    uint32_t mLastBytesPerLine;
+    uint32_t mLastBitsPerPixel;
     int mLastWidth;
     int mLastHeight;
 

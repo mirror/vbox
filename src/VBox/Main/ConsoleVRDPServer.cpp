@@ -632,7 +632,7 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery (void *pvCall
         pfb->COMGETTER(LineSize) (&lineSize);
 
         ULONG bitsPerPixel = 0;
-        pfb->COMGETTER(ColorDepth) (&bitsPerPixel);
+        pfb->COMGETTER(BitsPerPixel) (&bitsPerPixel);
 
         BYTE *address = NULL;
         pfb->COMGETTER(Address) (&address);

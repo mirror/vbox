@@ -184,15 +184,15 @@ HRESULT SDLFramebuffer::getAddress(uintptr_t *address)
  * Return the current framebuffer color depth.
  *
  * @returns COM status code
- * @param   colorDepth Address of result variable
+ * @param   bitsPerPixel Address of result variable
  */
-HRESULT SDLFramebuffer::getColorDepth(ULONG *colorDepth)
+HRESULT SDLFramebuffer::getBitsPerPixel(ULONG *bitsPerPixel)
 {
-    LogFlow(("SDLFramebuffer::GetColorDepth\n"));
+    LogFlow(("SDLFramebuffer::GetBitsPerPixel\n"));
 
-    if (!colorDepth)
+    if (!bitsPerPixel)
         return E_INVALIDARG;
-    *colorDepth = (ULONG)(mScreen ? mScreen->format->BitsPerPixel : 0);
+    *bitsPerPixel = (ULONG)(mScreen ? mScreen->format->BitsPerPixel : 0);
     return S_OK;
 }
 

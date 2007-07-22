@@ -41,9 +41,9 @@ VBoxDirectFB::VBoxDirectFB(IDirectFB *aDFB, IDirectFBSurface *aSurface)
         createSurface(fbWidth, fbHeight);
     }
     fbSurfaceLocked = 0;
-    uint32_t colorDepth;
-    GetColorDepth(&colorDepth);
-    fbPitch = fbWidth * (colorDepth / 8);
+    uint32_t bitsPerPixel;
+    GetBitsPerPixel(&bitsPerPixel);
+    fbPitch = fbWidth * (bitsPerPixel / 8);
 }
 
 VBoxDirectFB::~VBoxDirectFB()
@@ -137,43 +137,51 @@ NS_IMETHODIMP VBoxDirectFB::GetAddress(uint32_t *address)
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::GetColorDepth(uint32_t *colorDepth)
+NS_IMETHODIMP VBoxDirectFB::GetBitsPerPixel(uint32_t *bitsPerPixel)
 {
-    if (!colorDepth)
+    if (!bitsPerPixel)
         return NS_ERROR_INVALID_POINTER;
     DFBSurfacePixelFormat pixelFormat;
     DFBCHECK(surface->GetPixelFormat(surface, &pixelFormat));
     switch (pixelFormat)
     {
         case DSPF_RGB16:
-            *colorDepth = 16;
+            *bitsPerPixel = 16;
             break;
         case DSPF_RGB24:
-            *colorDepth = 24;
+            *bitsPerPixel = 24;
             break;
         case DSPF_RGB32:
-            *colorDepth = 32;
+            *bitsPerPixel = 32;
             break;
         default:
             // not good! @@@AH do something!
-            *colorDepth = 16;
+            *bitsPerPixel = 16;
     }
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::GetLineSize(uint32_t *lineSize)
+NS_IMETHODIMP VBoxDirectFB::GetBytesPerLine(uint32_t *bytesPerLine)
 {
-    if (!lineSize)
+    if (!bytesPerLine)
         return NS_ERROR_INVALID_POINTER;
-    *lineSize = fbPitch;
+    *bytesPerLine = fbPitch;
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::COMGETTER(PixelFormat) (FramebufferPixelFormat_T *pixelFormat)
+NS_IMETHODIMP VBoxDirectFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
 {
-    if (!lineSize)
+    if (!pixelFormat)
         return NS_ERROR_INVALID_POINTER;
-    *pixelFormat = FramebufferPixelFormat_PixelFormatOpaque;
+    *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    return NS_OK;
+}
+
+NS_IMETHODIMP VBoxDirectFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
+{
+    if (!usesGuestVRAM)
+        return NS_ERROR_INVALID_POINTER;
+    *usesGuestVRAM = FALSE;
     return NS_OK;
 }
 
@@ -212,13 +220,15 @@ NS_IMETHODIMP VBoxDirectFB::NotifyUpdate(uint32_t x, uint32_t y,
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::RequestResize(ULONG aScreenId, FramebufferPixelFormat_T pixelFormat, uint32_t vram, uint32_t lineSize, uint32_t w, uint32_t h,
-                                           PRBool *finished)
+NS_IMETHODIMP VBoxDirectFB::RequestResize(ULONG aScreenId, ULONG pixelFormat, uint32_t vram,
+                                          uint32_t bitsPerPixel, uint32_t bytesPerLine,
+                                          uint32_t w, uint32_t h,
+                                          PRBool *finished)
 {
     uint32_t needsLocking = fbSurfaceLocked;
-    uint32_t colorDepth;
+    uint32_t bitsPerPixel;
 
-    GetColorDepth(&colorDepth);
+    GetBitsPerPixel(&bitsPerPixel);
     printf("RequestResize: w = %d, h = %d, fbSurfaceLocked = %d\n", w, h, fbSurfaceLocked);
 
     // we can't work with a locked surface
@@ -249,7 +259,7 @@ NS_IMETHODIMP VBoxDirectFB::RequestResize(ULONG aScreenId, FramebufferPixelForma
     } else
     {
         // we adopt to the guest resolution or the next higher that is available
-        int32_t bestMode = getBestVideoMode(w, h, colorDepth);
+        int32_t bestMode = getBestVideoMode(w, h, bitsPerPixel);
         if (bestMode == -1)
         {
             // oh oh oh oh
@@ -259,7 +269,7 @@ NS_IMETHODIMP VBoxDirectFB::RequestResize(ULONG aScreenId, FramebufferPixelForma
 
         // does the mode differ from what we wanted?
         if ((videoModes[bestMode].width != w) || (videoModes[bestMode].height != h) ||
-            (videoModes[bestMode].bpp != colorDepth))
+            (videoModes[bestMode].bpp != bitsPerPixel))
         {
             printf("The mode does not fit exactly!\n");
             createSurface(w, h);
