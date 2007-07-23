@@ -1907,6 +1907,17 @@ typedef struct PDMIACPICONNECTOR
                                                      PPDMACPIBATSTATE penmBatteryState, uint32_t *pu32PresentRate));
 } PDMIACPICONNECTOR;
 
+
+/** Seamless mode */
+typedef enum
+{
+    PDM_SEAMLESS_MODE_DISABLED       = 0,     /* normal mode; entire guest desktop displayed */
+    PDM_SEAMLESS_MODE_VISIBLE_REGION = 1,     /* visible region mode; only top-level guest windows displayed */
+    PDM_SEAMLESS_MODE_HOSTWINDOW     = 2      /* windowed mode; each top-level guest window is represented in a host window */
+} PDMISEAMLESSMODE;
+/** Pointer to seamless mode. */
+typedef PDMISEAMLESSMODE *PPDMISEAMLESSMODE;
+
 /** Pointer to a VMMDevice port interface. */
 typedef struct PDMIVMMDEVPORT *PPDMIVMMDEVPORT;
 /**
@@ -1985,6 +1996,17 @@ typedef struct PDMIVMMDEVPORT
      * @param   fEnabled    Current VBVA status.
      */
     DECLCALLBACKMEMBER(void, pfnVBVAChange)(PPDMIVMMDEVPORT pInterface, bool fEnabled);
+
+    /**
+     * Issue a seamless mode change request.
+     *
+     * Note that there can only one request in the queue and that in case the guest does
+     * not process it, issuing another request will overwrite the previous.
+     *
+     * @returns VBox status code
+     * @param   mode          seamless mode
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRequestSeamlessChange,(PPDMIVMMDEVPORT pInterface, PDMISEAMLESSMODE mode));
 
 } PDMIVMMDEVPORT;
 

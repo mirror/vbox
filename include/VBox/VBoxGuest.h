@@ -25,6 +25,7 @@
 #include <iprt/types.h>
 #include <VBox/err.h>
 #include <VBox/ostypes.h>
+#include <VBox/pdm.h>
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -143,7 +144,8 @@ typedef enum
 #endif
     VMMDevReq_VideoAccelEnable           = 70,
     VMMDevReq_VideoAccelFlush            = 71,
-    VMMDevReq_VideoSetVisibleRegion        = 72,
+    VMMDevReq_VideoSetVisibleRegion      = 72,
+    VMMDevReq_GetSeamlessChangeRequest   = 73,
     VMMDevReq_QueryCredentials           = 100,
     VMMDevReq_ReportCredentialsJudgement = 101,
     VMMDevReq_LogString                  = 200,
@@ -580,6 +582,20 @@ typedef struct _VMMDevVideoSetVisibleRegion
     RTRECT   Rect;
 } VMMDevVideoSetVisibleRegion;
 
+
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+
+    /** New seamless mode */
+    PDMISEAMLESSMODE    mode;
+    /** Flag that the request is an acknowlegement for the VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST.
+     *  Values: 0 - just querying, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST - event acknowledged.
+     */
+    uint32_t eventAck;
+} VMMDevSeamlessChangeRequest;
+
 #pragma pack()
 
 #pragma pack(1)
@@ -893,17 +909,17 @@ typedef struct
  */
 
 /** Host mouse capabilities has been changed. */
-#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED BIT(0)
+#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED     BIT(0)
 /** HGCM event. */
-#define VMMDEV_EVENT_HGCM                       BIT(1)
+#define VMMDEV_EVENT_HGCM                           BIT(1)
 /** A display change request has been issued. */
-#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST     BIT(2)
+#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST         BIT(2)
 /** Credentials are available for judgement. */
-#define VMMDEV_EVENT_JUDGE_CREDENTIALS          BIT(3)
+#define VMMDEV_EVENT_JUDGE_CREDENTIALS              BIT(3)
 /** The guest has been restored. */
-#define VMMDEV_EVENT_RESTORED                   BIT(4)
+#define VMMDEV_EVENT_RESTORED                       BIT(4)
 /** Seamless mode state changed */
-#define VMMDEV_EVENT_SEAMLESS_MODE              BIT(5)
+#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST   BIT(5)
 
 
 /** @} */
@@ -1209,6 +1225,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevVideoAccelFlush);
         case VMMDevReq_VideoSetVisibleRegion:
             return sizeof(VMMDevVideoSetVisibleRegion);
+        case VMMDevReq_GetSeamlessChangeRequest:
+            return sizeof(VMMDevSeamlessChangeRequest);
         case VMMDevReq_QueryCredentials:
             return sizeof(VMMDevCredentials);
         case VMMDevReq_LogString:
