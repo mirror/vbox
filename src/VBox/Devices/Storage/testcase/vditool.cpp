@@ -29,6 +29,7 @@
 #include <iprt/string.h>
 #include <iprt/runtime.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 
 #include <stdlib.h>
 
