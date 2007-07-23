@@ -6281,25 +6281,26 @@
         implementation allocates a memory buffer for the requested display mode
         and provides it to the virtual machine. In <i>direct</i> mode, the
         IFramebuffer implementation uses the memory buffer allocated and owned
-        by the virtual machine. The direct mode is usually faster because the
-        implementation gets a pointer to the virtual machine video card's memory
-        which it can directly use for visualising the contents of the virtual
-        display, as opposed to the indirect mode where the video card's memory
-        contents are copied to the memory buffer provided by the implementation
-        every time a display update occurs.
+        by the virtual machine. This buffer represents the video memory of the
+        emulated video adapter (so called <i>guest VRAM</i>). The direct mode is
+        usually faster because the implementation gets a raw pointer to the
+        guest VRAM buffer which it can directly use for visualising the contents
+        of the virtual display, as opposed to the indirect mode where the
+        contents of guest VRAM are copied to the memory buffer provided by
+        the implementation every time a display update occurs.
 
         It is important to note that the direct mode is really fast only when
-        the implementation uses the provided video buffer directly, for example,
-        by blitting it to the window representing the virtual machine's display,
-        which saves at least one copy operation comparing to the indirect mode.
-        However, using the video card's memory directly is not always possible:
-        for example, the format and the color depth of the window representing
-        the virtual display may differ from the format or the color depth of the
-        virtual video buffer, or the format of the latter may be unknown or
-        unsupported. In this case, the indirect mode (that is always available)
-        should be used as a fallback: when the virtual video card's memory
-        contents are copied to the implementation-provided memory buffer, color
-        and format conversion is done authomatically by the underlying code.
+        the implementation uses the given guest VRAM buffer directly, for
+        example, by blitting it to the window representing the virtual machine's
+        display, which saves at least one copy operation comparing to the
+        indirect mode. However, using the guest VRAM buffer directly is not
+        always possible: the format and the color depth of this buffer may be
+        not supported by the target surface, or it may be unknown (opaque) as in
+        case of text or non-linear multi-plane VGA video modes. In this case,
+        the indirect mode (that is always available) should be used as a
+        fallback: when the guest VRAM contents are copied to the
+        implementation-provided memory buffer, color and format conversion is
+        done authomatically by the underlying code.
 
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
