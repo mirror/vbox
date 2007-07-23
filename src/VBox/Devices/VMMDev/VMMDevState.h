@@ -136,7 +136,7 @@ typedef struct VMMDevState
     } credentialsJudge;
 
     /* seamless mode change request */
-    PDMISEAMLESSMODE lastSeamlessMode, SeamlessMode;
+    bool fLastSeamlessEnabled, fSeamlessEnabled;
 
 #ifdef TIMESYNC_BACKDOOR
     bool fTimesyncBackdoorLo;

@@ -1909,16 +1909,6 @@ typedef struct PDMIACPICONNECTOR
 } PDMIACPICONNECTOR;
 
 
-/** Seamless mode */
-typedef enum
-{
-    PDM_SEAMLESS_MODE_DISABLED       = 0,     /* normal mode; entire guest desktop displayed */
-    PDM_SEAMLESS_MODE_VISIBLE_REGION = 1,     /* visible region mode; only top-level guest windows displayed */
-    PDM_SEAMLESS_MODE_HOSTWINDOW     = 2      /* windowed mode; each top-level guest window is represented in a host window */
-} PDMISEAMLESSMODE;
-/** Pointer to seamless mode. */
-typedef PDMISEAMLESSMODE *PPDMISEAMLESSMODE;
-
 /** Pointer to a VMMDevice port interface. */
 typedef struct PDMIVMMDEVPORT *PPDMIVMMDEVPORT;
 /**
@@ -2005,9 +1995,9 @@ typedef struct PDMIVMMDEVPORT
      * not process it, issuing another request will overwrite the previous.
      *
      * @returns VBox status code
-     * @param   mode          seamless mode
+     * @param   fEnabled       Seamless mode enabled or not
      */
-    DECLR3CALLBACKMEMBER(int, pfnRequestSeamlessChange,(PPDMIVMMDEVPORT pInterface, PDMISEAMLESSMODE mode));
+    DECLR3CALLBACKMEMBER(int, pfnRequestSeamlessChange,(PPDMIVMMDEVPORT pInterface, bool fEnabled));
 
 } PDMIVMMDEVPORT;
 

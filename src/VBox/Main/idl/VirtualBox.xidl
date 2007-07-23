@@ -6553,7 +6553,7 @@
 
   <interface
      name="IDisplay" extends="$unknown"
-     uuid="010b00f4-9223-4545-9db3-866809da94a0"
+     uuid="09789f63-4525-48e5-a5e4-1080453b0eab"
      wsmap="suppress"
      >
     <attribute name="width" type="unsigned long" readonly="yes">
@@ -6634,6 +6634,13 @@
       <param name="height" type="unsigned long" dir="in"/>
       <param name="bitsPerPixel" type="unsigned long" dir="in"/>
       <param name="display" type="unsigned long" dir="in"/>
+    </method>
+
+    <method name="setSeamlessMode">
+      <desc>
+        Current guest seamless mode.
+      </desc>
+      <param name="enabled" type="boolean" dir="in"/>
     </method>
 
     <method name="takeScreenShot">
