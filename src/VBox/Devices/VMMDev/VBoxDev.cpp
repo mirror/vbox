@@ -25,6 +25,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define LOG_GROUP LOG_GROUP_DEV_VMM
+#include <VBox/log.h>
+
 #include <VBox/VBoxDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/param.h>
@@ -33,8 +36,6 @@
 #include <VBox/err.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
 
-#define LOG_GROUP LOG_GROUP_DEV_VMM
-#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/time.h>
 
@@ -1154,6 +1155,31 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_GetSeamlessChangeRequest:
+        {
+            if (requestHeader->size != sizeof(VMMDevSeamlessChangeRequest))
+            {
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevSeamlessChangeRequest *seamlessChangeRequest = (VMMDevSeamlessChangeRequest*)requestHeader;
+                /* just pass on the information */
+                Log(("VMMDev: returning seamless change request mode=%d\n", pData->SeamlessMode));
+                seamlessChangeRequest->mode    = pData->SeamlessMode;
+
+                if (seamlessChangeRequest->eventAck == VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
+                {
+                    /* Remember which mode the client has queried. */
+                    pData->lastSeamlessMode = pData->SeamlessMode;
+                }
+
+                requestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
+
         case VMMDevReq_QueryCredentials:
         {
             if (requestHeader->size != sizeof(VMMDevCredentials))
@@ -1562,6 +1588,27 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) vmmdevRequestSeamlessChange(PPDMIVMMDEVPORT pInterface, PDMISEAMLESSMODE mode)
+{
+    VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+
+    /* Verify that the new resolution is different and that guest does not yet know about it. */
+    bool fSameMode = (pData->lastSeamlessMode == mode);
+
+    Log(("vmmdevRequestSeamlessChange: same=%d. new=%d\n", fSameMode, mode));
+
+    if (!fSameMode)
+    {
+        /* we could validate the information here but hey, the guest can do that as well! */
+        pData->SeamlessMode = mode;
+
+        /* IRQ so the guest knows what's going on */
+        VMMDevNotifyGuest (pData, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
+    }
+
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(int) vmmdevSetCredentials(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
                                               const char *pszPassword, const char *pszDomain,
                                               uint32_t u32Flags)
@@ -1621,7 +1668,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION  4
+#define VMMDEV_SSM_VERSION  5
 
 /**
  * Saves a state of the VMM device.
@@ -1844,6 +1891,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->Port.pfnRequestDisplayChange   = vmmdevRequestDisplayChange;
     pData->Port.pfnSetCredentials         = vmmdevSetCredentials;
     pData->Port.pfnVBVAChange             = vmmdevVBVAChange;
+    pData->Port.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
 
 
 #ifdef VBOX_HGCM
@@ -1952,6 +2000,10 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     pData->guestCaps = 0;
 
     memset (&pData->lastReadDisplayChangeRequest, 0, sizeof (pData->lastReadDisplayChangeRequest));
+
+    /* disable seamless mode */
+
+    pData->lastSeamlessMode = PDM_SEAMLESS_MODE_DISABLED;
 
     /* Clear the event variables.
      *
