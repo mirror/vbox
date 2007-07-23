@@ -2531,9 +2531,6 @@ typedef struct PDMIHGCMPORT
 /** Pointer to a HGCM connector interface. */
 typedef struct PDMIHGCMCONNECTOR *PPDMIHGCMCONNECTOR;
 
-/** Pointer to a HGCM function parameter. */
-typedef struct VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
-
 /** Pointer to a HGCM service location structure. */
 typedef struct HGCMSERVICELOCATION *PHGCMSERVICELOCATION;
 
