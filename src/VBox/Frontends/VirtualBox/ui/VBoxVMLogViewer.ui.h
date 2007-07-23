@@ -107,8 +107,8 @@ public:
         mainLayout->addWidget (mButtonClose);
         mainLayout->addWidget (mSearchName);
         mainLayout->addWidget (mSearchString);
-        mainLayout->addWidget (mButtonPrev);
         mainLayout->addWidget (mButtonNext);
+        mainLayout->addWidget (mButtonPrev);
         mainLayout->addWidget (mCaseSensitive);
         mainLayout->addItem   (mWarningSpacer);
         mainLayout->addWidget (mWarningIcon);
@@ -124,7 +124,7 @@ public:
     {
         QToolTip::add (mButtonClose, tr ("Close the search panel"));
         mSearchName->setText (tr ("Find "));
-        QToolTip::add (mSearchString, tr ("Enter search string here"));
+        QToolTip::add (mSearchString, tr ("Enter a search string here"));
         mButtonPrev->setTextLabel (tr ("&Previous"));
         mButtonPrev->setAccel (QKeySequence (tr ("Alt+P")));
         QToolTip::add (mButtonPrev,
@@ -133,10 +133,10 @@ public:
         mButtonNext->setAccel (QKeySequence (tr ("Alt+N")));
         QToolTip::add (mButtonNext,
             tr ("Search for the next occurrence of the string"));
-        mCaseSensitive->setText (tr ("Cas&e Sensitive"));
+        mCaseSensitive->setText (tr ("C&ase Sensitive"));
         QToolTip::add (mCaseSensitive,
-            tr ("Check this box to perform Case Sensitive search"));
-        mWarningString->setText (tr ("Unable to find string"));
+            tr ("Perform case sensitive search (when checked)"));
+        mWarningString->setText (tr ("String not found"));
     }
 
 private slots:
