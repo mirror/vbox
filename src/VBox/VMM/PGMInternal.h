@@ -30,6 +30,7 @@
 #include <VBox/vmm.h>
 #include <VBox/mm.h>
 #include <VBox/pdm.h>
+#include <VBox/log.h>
 #include <iprt/avl.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>

@@ -25,6 +25,7 @@
 *******************************************************************************/
 #include <VBox/dbgf.h>
 #include <VBox/selm.h>
+#include <VBox/log.h>
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>

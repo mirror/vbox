@@ -137,7 +137,6 @@
 #include <VBox/dbg.h>
 #include <VBox/hwaccm.h>
 
-#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
