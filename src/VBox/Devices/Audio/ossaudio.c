@@ -21,6 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifdef VBOX
+#define LOG_GROUP LOG_GROUP_DEV_AUDIO
+#include <VBox/log.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
