@@ -25,6 +25,8 @@
 #ifndef DEBUG
 #define NDEBUG
 #endif
+#define LOG_GROUP LOG_GROUP_DEV_AUDIO
+#include <VBox/log.h>
 #endif
 
 #include <alsa/asoundlib.h>
