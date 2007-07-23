@@ -171,13 +171,13 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                         switch(seamlessChangeRequest.mode)
                         {
                         case VMMDev_Seamless_Disabled:
-                            if (pCtx->pfnVBoxInstallHook)
-                                pCtx->pfnVBoxInstallHook(pCtx->hModule);
+                            if (pCtx->pfnVBoxRemoveHook)
+                                pCtx->pfnVBoxRemoveHook();
                             break;
 
                         case VMMDev_Seamless_Visible_Region:
-                            if (pCtx->pfnVBoxRemoveHook)
-                                pCtx->pfnVBoxRemoveHook();
+                            if (pCtx->pfnVBoxInstallHook)
+                                pCtx->pfnVBoxInstallHook(pCtx->hModule);
                             break;
 
                         case VMMDev_Seamless_Host_Window:
