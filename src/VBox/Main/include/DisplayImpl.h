@@ -180,6 +180,7 @@ public:
     STDMETHOD(InvalidateAndUpdate)();
     STDMETHOD(ResizeCompleted)(ULONG aScreenId);
     STDMETHOD(UpdateCompleted)();
+    STDMETHOD(SetSeamlessMode)(BOOL enabled);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Display"; }

@@ -1165,24 +1165,16 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevSeamlessChangeRequest *seamlessChangeRequest = (VMMDevSeamlessChangeRequest*)requestHeader;
                 /* just pass on the information */
-                Log(("VMMDev: returning seamless change request mode=%d\n", pData->SeamlessMode));
-                switch(pData->SeamlessMode)
-                {
-                case PDM_SEAMLESS_MODE_DISABLED:
-                    seamlessChangeRequest->mode = VMMDev_Seamless_Disabled;
-                    break;
-                case PDM_SEAMLESS_MODE_VISIBLE_REGION:
+                Log(("VMMDev: returning seamless change request mode=%d\n", pData->fSeamlessEnabled));
+                if (pData->fSeamlessEnabled)
                     seamlessChangeRequest->mode = VMMDev_Seamless_Visible_Region;
-                    break;
-                case PDM_SEAMLESS_MODE_HOSTWINDOW:
-                    seamlessChangeRequest->mode = VMMDev_Seamless_Host_Window;
-                    break;
-                }
+                else
+                    seamlessChangeRequest->mode = VMMDev_Seamless_Disabled;
 
                 if (seamlessChangeRequest->eventAck == VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
                 {
                     /* Remember which mode the client has queried. */
-                    pData->lastSeamlessMode = pData->SeamlessMode;
+                    pData->fLastSeamlessEnabled = pData->fSeamlessEnabled;
                 }
 
                 requestHeader->rc = VINF_SUCCESS;
@@ -1599,19 +1591,19 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) vmmdevRequestSeamlessChange(PPDMIVMMDEVPORT pInterface, PDMISEAMLESSMODE mode)
+static DECLCALLBACK(int) vmmdevRequestSeamlessChange(PPDMIVMMDEVPORT pInterface, bool fEnabled)
 {
     VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
 
     /* Verify that the new resolution is different and that guest does not yet know about it. */
-    bool fSameMode = (pData->lastSeamlessMode == mode);
+    bool fSameMode = (pData->fLastSeamlessEnabled == fEnabled);
 
-    Log(("vmmdevRequestSeamlessChange: same=%d. new=%d\n", fSameMode, mode));
+    Log(("vmmdevRequestSeamlessChange: same=%d. new=%d\n", fSameMode, fEnabled));
 
     if (!fSameMode)
     {
         /* we could validate the information here but hey, the guest can do that as well! */
-        pData->SeamlessMode = mode;
+        pData->fSeamlessEnabled = fEnabled;
 
         /* IRQ so the guest knows what's going on */
         VMMDevNotifyGuest (pData, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
@@ -2013,8 +2005,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     memset (&pData->lastReadDisplayChangeRequest, 0, sizeof (pData->lastReadDisplayChangeRequest));
 
     /* disable seamless mode */
-
-    pData->lastSeamlessMode = PDM_SEAMLESS_MODE_DISABLED;
+    pData->fLastSeamlessEnabled = false;
 
     /* Clear the event variables.
      *
