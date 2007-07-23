@@ -822,7 +822,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
-                    /* Remember which resolution the client have queried. */
+                    /* Remember which resolution the client has queried. */
                     pData->lastReadDisplayChangeRequest = pData->displayChangeRequest;
                 }
 
@@ -850,7 +850,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
-                    /* Remember which resolution the client have queried. */
+                    /* Remember which resolution the client has queried. */
                     pData->lastReadDisplayChangeRequest = pData->displayChangeRequest;
                 }
 
