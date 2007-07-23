@@ -29,6 +29,7 @@
 #include <VBox/dbgf.h>
 #include <VBox/err.h>
 #include <VBox/pci.h>
+#include <VBox/hgcmsvc.h>
 
 #include <iprt/critsect.h>
 #include <iprt/stdarg.h>
