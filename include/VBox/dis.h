@@ -26,7 +26,7 @@
 #include <VBox/cpum.h>
 #include <VBox/disopcode.h>
 
-#if defined(__L4ENV__) || (!defined(VBOXLNX32GUESTR0) && defined(IN_RING0))
+#if defined(__L4ENV__)
 #include <setjmp.h>
 #endif
 
