@@ -234,9 +234,13 @@ BOOL VBoxInstallHook(HMODULE hDll)
 /* Remove the global message hook */
 BOOL VBoxRemoveHook()
 {
-    UnhookWinEvent(hEventHook[0]);
-    UnhookWinEvent(hEventHook[1]);
-    CoUninitialize();
+    if (hEventHook[0] && hEventHook[1])
+    {
+        UnhookWinEvent(hEventHook[0]);
+        UnhookWinEvent(hEventHook[1]);
+        CoUninitialize();
+    }
+    hEventHook[0] = hEventHook[1] = 0;
     return true;
 }
 
