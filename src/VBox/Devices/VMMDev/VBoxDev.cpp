@@ -1166,7 +1166,18 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevSeamlessChangeRequest *seamlessChangeRequest = (VMMDevSeamlessChangeRequest*)requestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning seamless change request mode=%d\n", pData->SeamlessMode));
-                seamlessChangeRequest->mode    = pData->SeamlessMode;
+                switch(pData->SeamlessMode)
+                {
+                case PDM_SEAMLESS_MODE_DISABLED:
+                    seamlessChangeRequest->mode = VMMDev_Seamless_Disabled;
+                    break;
+                case PDM_SEAMLESS_MODE_VISIBLE_REGION:
+                    seamlessChangeRequest->mode = VMMDev_Seamless_Visible_Region;
+                    break;
+                case PDM_SEAMLESS_MODE_HOSTWINDOW:
+                    seamlessChangeRequest->mode = VMMDev_Seamless_Host_Window;
+                    break;
+                }
 
                 if (seamlessChangeRequest->eventAck == VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
                 {
