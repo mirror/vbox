@@ -76,6 +76,7 @@ unsigned __stdcall VBoxClipboardThread  (void *pInstance);
 void               VBoxClipboardDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 /* The seamless windows service prototypes */
 int                VBoxSeamlessInit     (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
+unsigned __stdcall VBoxSeamlessThread   (void *pInstance);
 void               VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance);
 
 /* The service table. */
@@ -90,7 +91,7 @@ static VBOXSERVICEINFO vboxServiceTable[] =
     {
         "Seamless Windows",
         VBoxSeamlessInit,
-        NULL,
+        VBoxSeamlessThread,
         VBoxSeamlessDestroy
     },
     {
