@@ -2543,6 +2543,15 @@ $(VBOX_SVN_REV_KMK): $(VBOX_SVN_REV_KMK).ts
 ## @todo kbuild: Need $(CMP)!
 
  include $(VBOX_SVN_REV_KMK)
+else
+# allow to overwrite VBOX_SVN_REV externally (mainly for building .debs/.rpms)
+$(VBOX_SVN_REV_KMK):
+	$(call MSG_GENERATE,,$(VBOX_SVN_REV_KMK))
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(APPEND) $@ "export VBOX_SVN_REV=$(VBOX_SVN_REV)"
+	$(QUIET)echo '* $(VBOX_SVN_REV_KMK) was externally overwritten:'
+	$(QUIET)$(CAT_EXT) $(VBOX_SVN_REV_KMK)
 endif
 
 
