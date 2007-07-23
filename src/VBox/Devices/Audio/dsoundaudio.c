@@ -35,6 +35,8 @@
 #include "../../vl_vbox.h"
 #include "audio.h"
 #include <iprt/alloc.h>
+#include <VBox/log.h>
+
 
 #define AUDIO_CAP "dsound"
 #include "audio_int.h"
