@@ -2790,6 +2790,10 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     if (aSeamless && vmSeamlessAction->isOn())
         vmSeamless (true);
 
+    /* Check the GA version only in case of additions are active */
+    if (!aActive)
+        return;
+
     /* Check the Guest Additions version and warn the user about possible
      * compatibility issues in case if the installed version is outdated. */
     uint version = aVersion.toUInt();
