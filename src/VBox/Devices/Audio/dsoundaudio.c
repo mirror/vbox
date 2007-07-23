@@ -26,6 +26,7 @@
  * SEAL 1.07 by Carlos 'pel' Hasan was used as documentation
  */
 
+#define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #define _WIN32_DCOM
 #include <windows.h>
 #include <objbase.h>
