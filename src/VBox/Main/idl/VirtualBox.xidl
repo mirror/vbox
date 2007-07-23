@@ -6295,7 +6295,7 @@
         display, which saves at least one copy operation comparing to the
         indirect mode. However, using the guest VRAM buffer directly is not
         always possible: the format and the color depth of this buffer may be
-        not supported by the target surface, or it may be unknown (opaque) as in
+        not supported by the target window, or it may be unknown (opaque) as in
         case of text or non-linear multi-plane VGA video modes. In this case,
         the indirect mode (that is always available) should be used as a
         fallback: when the guest VRAM contents are copied to the
@@ -6304,20 +6304,19 @@
 
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
-        to="PixelFormat::PixelFormatOpaque"/> (which usually indicates either a
-        text or a non-linear graphics mode of the virtual display), then direct
-        access to the virtual card's video memory buffer is not available, the
-        @a VRAM, @a bitsPerPixel and @a bytesPerLine parameters must be ingored
-        and the implementation must use the indirect mode when it will provide
-        its own values for the pixel format, color depth and scan line size. In
-        all other cases, @a pixelFormat together with @a bitsPerPixel and @a
-        bytesPerLine define the format of the video memory buffer pointed to by
-        the @a VRAM parameter and the implementation is free to choose which
-        mode to use. To indicate that this framebuffer uses the direct mode, the
-        implementation of the <link to="#usesGuestVRAM"/> attribute must
-        return <tt>true</tt> and <link to="#address"/> must return exactly the
-        same address that is passed in the @a VRAM parameter of this method;
-        otherwise it is assumed that the indirect strategy is chosen.
+        to="PixelFormat::PixelFormatOpaque"/> then direct access to the guest
+        VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and @a
+        bytesPerLine parameters must be ingored and the implementation must use
+        the indirect mode (where it provides its own buffer in one of the
+        supported formats). In all other cases, @a pixelFormat together with @a
+        bitsPerPixel and @a bytesPerLine define the format of the video memory
+        buffer pointed to by the @a VRAM parameter and the implementation is
+        free to choose which mode to use. To indicate that this framebuffer uses
+        the direct mode, the implementation of the <link to="#usesGuestVRAM"/>
+        attribute must return <tt>true</tt> and <link to="#address"/> must
+        return exactly the same address that is passed in the @a VRAM parameter
+        of this method; otherwise it is assumed that the indirect strategy is
+        chosen.
 
         The @a width and @a height parameters represent the size of the
         requested display mode in both modes. In case of indirect mode, the
