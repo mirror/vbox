@@ -30,6 +30,9 @@ ifeq ($(BUILD_TARGET),win)
   include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
  endif
 endif
+ifeq ($(BUILD_TARGET),darwin)
+ include $(PATH_SUB_CURRENT)/VBoxUSB/darwin/Makefile.kmk
+endif
 
 # Let kBuild generate the rules.
 include $(PATH_KBUILD)/subfooter.kmk
