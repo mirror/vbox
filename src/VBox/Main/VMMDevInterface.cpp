@@ -364,7 +364,7 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
 
 static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, PHGCMSERVICELOCATION pServiceLocation, uint32_t *pu32ClientID)
 {
-    LogFlowFunc(("Enter\n"));
+    LogSunlover(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
     
@@ -380,7 +380,7 @@ static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOX
 
 static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
 {
-    LogFlowFunc(("Enter\n"));
+    LogSunlover(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
 
@@ -390,7 +390,7 @@ static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PV
 static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
                                          uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
-    LogFlowFunc(("Enter\n"));
+    LogSunlover(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
 
@@ -406,7 +406,7 @@ static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGC
  */
 static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
-    LogFlowFunc(("Enter\n"));
+    LogSunlover(("Enter\n"));
     return HGCMHostSaveState (pSSM);
 }
 

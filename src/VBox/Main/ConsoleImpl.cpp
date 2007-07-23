@@ -3423,10 +3423,12 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                         uint32_t width, uint32_t height,
                                         void *pShape)
 {
+#if 0
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("fVisible=%d, fAlpha=%d, xHot = %d, yHot = %d, width=%d, "
                       "height=%d, shape=%p\n",
                       fVisible, fAlpha, xHot, yHot, width, height, pShape));
+#endif
 
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -3482,7 +3484,9 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
         (*it++)->OnMousePointerShapeChange (fVisible, fAlpha, xHot, yHot,
                                             width, height, (BYTE *) pShape);
 
+#if 0
     LogFlowThisFuncLeave();
+#endif
 }
 
 /**

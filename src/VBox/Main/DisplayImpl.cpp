@@ -424,17 +424,17 @@ unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int 
 {
     DISPLAYFBINFO *pInfo = pInfos;
     unsigned uScreenId;
-    Log(("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
+    LogSunlover (("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
     for (uScreenId = 0; uScreenId < cInfos; uScreenId++, pInfo++)
     {
-        Log(("    [%d] %d,%d %dx%d\n", uScreenId, pInfo->xOrigin, pInfo->yOrigin, pInfo->w, pInfo->h));
+        LogSunlover (("    [%d] %d,%d %dx%d\n", uScreenId, pInfo->xOrigin, pInfo->yOrigin, pInfo->w, pInfo->h));
         if (   (pInfo->xOrigin <= *px && *px < pInfo->xOrigin + (int)pInfo->w)
             && (pInfo->yOrigin <= *py && *py < pInfo->yOrigin + (int)pInfo->h))
         {
             /* The rectangle belongs to the screen. Correct coordinates. */
             *px -= pInfo->xOrigin;
             *py -= pInfo->yOrigin;
-            Log(("    -> %d,%d", *px, *py));
+            LogSunlover (("    -> %d,%d", *px, *py));
             break;
         }
     }
@@ -443,7 +443,7 @@ unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int 
         /* Map to primary screen. */
         uScreenId = 0;
     }
-    Log((" scr %d\n", uScreenId));
+    LogSunlover ((" scr %d\n", uScreenId));
     return uScreenId;
 }
 
@@ -549,7 +549,7 @@ static void vbvaRgnInit (VBVADIRTYREGION *prgn, DISPLAYFBINFO *paFramebuffers, u
 
 static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMDHDR *phdr)
 {
-    LogFlowFunc (("x = %d, y = %d, w = %d, h = %d\n",
+    LogSunlover (("x = %d, y = %d, w = %d, h = %d\n",
                   phdr->x, phdr->y, phdr->w, phdr->h));
 
     /*
