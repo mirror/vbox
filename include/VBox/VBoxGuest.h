@@ -902,6 +902,8 @@ typedef struct
 #define VMMDEV_EVENT_JUDGE_CREDENTIALS          BIT(3)
 /** The guest has been restored. */
 #define VMMDEV_EVENT_RESTORED                   BIT(4)
+/** Seamless mode state changed */
+#define VMMDEV_EVENT_SEAMLESS_MODE              BIT(5)
 
 
 /** @} */
