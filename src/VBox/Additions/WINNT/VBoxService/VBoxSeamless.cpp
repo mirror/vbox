@@ -122,11 +122,11 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxService: DeviceIOControl(CtlMask - or) succeeded\n"));
+        dprintf(("VBoxSeamlessThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxService: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        dprintf(("VBoxSeamlessThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         return 0;
     }
 
@@ -138,13 +138,13 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            dprintf(("VBoxService: DeviceIOControl succeded\n"));
+            dprintf(("VBoxSeamlessThread: DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            dprintf(("VBoxService: checking event\n"));
+            dprintf(("VBoxSeamlessThread: checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
