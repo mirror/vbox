@@ -25,7 +25,6 @@
 #include <iprt/types.h>
 #include <VBox/err.h>
 #include <VBox/ostypes.h>
-#include <VBox/pdm.h>
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -583,13 +582,21 @@ typedef struct _VMMDevVideoSetVisibleRegion
 } VMMDevVideoSetVisibleRegion;
 
 
+/** Seamless mode */
+typedef enum
+{
+    VMMDev_Seamless_Disabled         = 0,     /* normal mode; entire guest desktop displayed */
+    VMMDev_Seamless_Visible_Region   = 1,     /* visible region mode; only top-level guest windows displayed */
+    VMMDev_Seamless_Host_Window      = 2      /* windowed mode; each top-level guest window is represented in a host window */
+} VMMDevSeamlessMode;
+
 typedef struct
 {
     /** header */
     VMMDevRequestHeader header;
 
     /** New seamless mode */
-    PDMISEAMLESSMODE    mode;
+    VMMDevSeamlessMode  mode;
     /** Flag that the request is an acknowlegement for the VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST.
      *  Values: 0 - just querying, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST - event acknowledged.
      */
