@@ -135,6 +135,9 @@ typedef struct VMMDevState
         char szDomain[VMMDEV_CREDENTIALS_STRLEN];
     } credentialsJudge;
 
+    /* seamless mode change request */
+    PDMISEAMLESSMODE lastSeamlessMode, SeamlessMode;
+
 #ifdef TIMESYNC_BACKDOOR
     bool fTimesyncBackdoorLo;
     uint64_t hostTime;
