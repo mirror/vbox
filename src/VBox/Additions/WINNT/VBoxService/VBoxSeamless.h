@@ -1,5 +1,5 @@
 /** @file
- * helpers - Guest Additions Service helper functions header
+ * VBoxSeamless - Seamless windows
  */
 
 /*
