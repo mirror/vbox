@@ -272,7 +272,7 @@ DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool f
 
     if (display)
     {
-        LogFlow(("MAIN::VMMDevInterface::iface_VideoAccelEnable: %d, %p\n", fEnable, pVbvaMemory));
+        LogSunlover(("MAIN::VMMDevInterface::iface_VideoAccelEnable: %d, %p\n", fEnable, pVbvaMemory));
         return display->VideoAccelEnable (fEnable, pVbvaMemory);
     }
 
@@ -286,7 +286,7 @@ DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
 
     if (display)
     {
-        LogFlow(("MAIN::VMMDevInterface::iface_VideoAccelFlush\n"));
+        LogSunlover(("MAIN::VMMDevInterface::iface_VideoAccelFlush\n"));
         display->VideoAccelFlush ();
     }
 }
