@@ -2989,6 +2989,50 @@ QString VBoxGlobal::removeAccelMark (const QString &aText)
     return result;
 }
 
+/**
+ *  Searches for a widget that with @a aName (if it is not NULL) which inherits
+ *  @a aClassName (if it is not NULL) and among children of @a aParent. If @a
+ *  aParent is NULL, all top-level widgets are searched. If @a aRecursive is
+ *  true, child widgets are recursively searched as well.  
+ */
+/* static */
+QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
+                                 const char *aClassName /* = NULL */,
+                                 bool aRecursive /* = false */)
+{
+    if (aParent == NULL)
+    {
+        QWidgetList *list = QApplication::topLevelWidgets();
+        QWidgetListIt it (*list);
+        QWidget *w = NULL;
+        for (; (w = it.current()) != NULL; ++ it)
+        {
+            if ((!aName || strcmp (w->name(), aName) == 0) &&
+                (!aClassName || strcmp (w->className(), aClassName) == 0))
+                break;
+            if (aRecursive)
+            {
+                w = findWidget (w, aName, aClassName, aRecursive);
+                if (w)
+                    break;
+            }
+        }
+        delete list;
+        return w;
+    }
+
+    QObjectList *list = aParent->queryList (aName, aClassName, false, true);
+    QObjectListIt it (*list);
+    QObject *obj = NULL;
+    for (; (obj = it.current()) != NULL; ++ it)
+    {
+        if (obj->isWidgetType())
+            break;
+    }
+    delete list;
+    return (QWidget *) obj;
+}
+
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -3008,6 +3052,13 @@ bool VBoxGlobal::event (QEvent *e)
             return true;
         }
 #endif
+
+        case VBoxDefs::AsyncEventType:
+        {
+            VBoxAsyncEvent *ev = (VBoxAsyncEvent *) e;
+            ev->handle();
+            return true;
+        }
 
         case VBoxDefs::EnumerateMediaEventType:
         {
