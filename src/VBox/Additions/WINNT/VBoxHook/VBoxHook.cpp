@@ -213,6 +213,9 @@ void VBoxRecheckVisibleWindows()
 /* Install the global message hook */
 BOOL VBoxInstallHook(HMODULE hDll)
 {
+    if (hEventHook[0] || hEventHook[1])
+        return TRUE;
+
     /* Check current visible region state */
     VBoxRecheckVisibleWindows();
 
