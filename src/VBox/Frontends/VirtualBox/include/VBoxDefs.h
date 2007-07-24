@@ -116,13 +116,16 @@ struct VBoxDefs
     enum DiskType { InvalidType, HD = 0x01, CD = 0x02, FD = 0x04 };
 
     /** VM display rendering mode. */
-    enum RenderMode {
+    enum RenderMode
+    {
         InvalidRenderMode, TimerMode, QImageMode, SDLMode, DDRAWMode
     };
 
     /** Additional Qt event types. */
-    enum {
-        ResizeEventType = QEvent::User,
+    enum
+    {
+        AsyncEventType = QEvent::User + 100,
+        ResizeEventType,
         RepaintEventType,
         SetRegionEventType,
         MouseCapabilityEventType,
@@ -136,7 +139,7 @@ struct VBoxDefs
         USBDeviceStateChangeEventType,
         RuntimeErrorEventType,
         ModifierKeyChangeEventType,
-        EnumerateMediaEventType = QEvent::User + 100,
+        EnumerateMediaEventType,
 #if defined (Q_WS_WIN)
         ShellExecuteEventType,
 #endif
