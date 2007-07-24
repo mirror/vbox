@@ -266,19 +266,18 @@ bool VBoxProblemReporter::isValid()
  *  @param  b3
  *      third button code or 0, see QIMessageBox
  *  @param  name
- *      name of the underlying QIMessageBox object. If null, a value of
+ *      name of the underlying QIMessageBox object. If NULL, a value of
  *      autoConfirmId is used.
  *
  *  @return
  *      code of the button pressed by the user
  */
-int VBoxProblemReporter::message (
-    QWidget *parent, Type type, const QString &msg,
-    const QString &details,
-    const char *autoConfirmId,
-    int b1, int b2, int b3,
-    const char *name
-) {
+int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg,
+                                  const QString &details,
+                                  const char *autoConfirmId,
+                                  int b1, int b2, int b3,
+                                  const char *name)
+{
     if (b1 == 0 && b2 == 0 && b3 == 0)
         b1 = QIMessageBox::Ok | QIMessageBox::Default;
 
@@ -1352,18 +1351,21 @@ bool VBoxProblemReporter::remindAboutAutoCapture()
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
 bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
 {
-    static const char *names [2] =
+    static const char *kNames [2] =
     {
         "remindAboutMouseIntegrationOff",
         "remindAboutMouseIntegrationOn"
     };
 
-    /* close the previous reminder if it is still active -- already outdated
-     * (the name of the modal window will correspond to autoConfirmId if
-     * it is our reminder) */
-    QWidget *modal = QApplication::activeModalWidget();
-    if (modal && !strcmp (modal->name(), names [int (!supportsAbsolute)]))
-        modal->close();
+    /* Close the previous (outdated) window if any. We use kName as
+     * autoConfirmId which is also used as the widget name by default. */
+    {
+        QWidget *outdated =
+            VBoxGlobal::findWidget (NULL, kNames [int (!supportsAbsolute)],
+                                    "QIMessageBox");
+        if (outdated)
+            outdated->close();
+    }
 
     if (supportsAbsolute)
     {
@@ -1387,7 +1389,7 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
                 "the current session (and enable it again) by selecting the "
                 "corresponding action from the menu bar."
                 "</p>"),
-            names [1] /* autoConfirmId */);
+            kNames [1] /* autoConfirmId */);
 
         return !(rc & AutoConfirmed);
     }
@@ -1399,7 +1401,7 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
                 "mode. You need to capture the mouse (by clicking over the VM "
                 "display or pressing the host key) in order to use the "
                 "mouse inside the guest OS.</p>"),
-            names [0] /* autoConfirmId */);
+            kNames [0] /* autoConfirmId */);
 
         return !(rc & AutoConfirmed);
     }
@@ -1482,6 +1484,31 @@ void VBoxProblemReporter::remindAboutGoingSeamless (const QString &hotKey,
             "can access it by pressing <b>Host+Home</b>.</p>")
             .arg (hotKey).arg (hostKey),
         "remindAboutGoingSeamless");
+    NOREF(rc);
+}
+
+void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
+                                                      ulong aWantedBPP)
+{
+    const char *kName = "remindAboutWrongColorDepth";
+
+    /* Close the previous (outdated) window if any. We use kName as
+     * autoConfirmId which is also used as the widget name by default. */
+    {
+        QWidget *outdated = VBoxGlobal::findWidget (NULL, kName, "QIMessageBox");
+        if (outdated)
+            outdated->close();
+    }
+
+    int rc = message (&vboxGlobal().consoleWnd(), Info,
+        tr ("<p>The virtual machine window is optimized to work in "
+            "<b>%1&nbsp;bit</b> color mode but the color quality of the "
+            "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
+            "<p>Please open the display properties dialog of the guest OS and "
+            "select a <b>%3&nbsp;bit</b> color mode to gain maximum "
+            "performance of the virtual video subsystem.</p>")
+            .arg (aWantedBPP).arg (aRealBPP).arg (aWantedBPP),
+        kName);
     NOREF(rc);
 }
 

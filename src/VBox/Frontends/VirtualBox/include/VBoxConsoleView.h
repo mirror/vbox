@@ -209,7 +209,7 @@ private:
     /** kbd_captured value during the the last host key press or release */
     bool hostkey_in_capture : 1;
 
-    bool ignore_mainwnd_resize : 1;
+    bool mIgnoreMainwndResize : 1;
     bool mAutoresizeGuest : 1;
 
     bool mIsAdditionsActive : 1;
@@ -247,8 +247,8 @@ private:
     int tid;        /**< Timer id */
 #endif
 
-    VBoxFrameBuffer *fb;
-    CConsoleCallback callback;
+    VBoxFrameBuffer *mFrameBuf;
+    CConsoleCallback mCallback;
 
     friend class VBoxConsoleCallback;
 
