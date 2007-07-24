@@ -897,10 +897,11 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
 
         case WM_VBOX_INSTALL_SEAMLESS_HOOK:
-
+            VBoxSeamlessInstallHook();
             break;
 
         case WM_VBOX_REMOVE_SEAMLESS_HOOK:
+            VBoxSeamlessRemoveHook();
             break;
 
         default:
