@@ -1857,6 +1857,8 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         vmFullscreenAction->setEnabled (!aOn);
         vmAutoresizeGuestAction->setEnabled (!aOn);
         vmDisableMouseIntegrAction->setEnabled (!aOn);
+
+        console->console().GetDisplay().SetSeamlessMode(aOn);
     }
     else
     {
