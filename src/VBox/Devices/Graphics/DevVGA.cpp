@@ -4010,7 +4010,10 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     {
         default:
         case 0:
-            AssertMsgFailed(("Unsupported BPP %d\n", s->get_bpp (s)));
+            /* A LFB mode is already disabled, but the callback is still called
+             * by Display because VBVA buffer is being flushed.
+             * Nothing to do, just return.
+             */
             return;
         case 8:
             v = VGA_DRAW_LINE8;
