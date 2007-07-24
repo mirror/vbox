@@ -22,6 +22,7 @@
  */
 
 #include "VBoxService.h"
+#include "VBoxSeamless.h"
 #include <VBoxHook.h>
 #include <VBox/VBoxDev.h>
 #include <iprt/assert.h>
@@ -106,6 +107,18 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     return;
 }
 
+void VBoxSeamlessInstallHook()
+{
+    if (gCtx.pfnVBoxInstallHook)
+        gCtx.pfnVBoxInstallHook(gCtx.hModule);
+}
+
+void VBoxSeamlessRemoveHook()
+{
+    if (gCtx.pfnVBoxRemoveHook)
+        gCtx.pfnVBoxRemoveHook();
+}
+
 /**
  * Thread function to wait for and process seamless mode change
  * requests
@@ -171,13 +184,11 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                         switch(seamlessChangeRequest.mode)
                         {
                         case VMMDev_Seamless_Disabled:
-                            if (pCtx->pfnVBoxRemoveHook)
-                                pCtx->pfnVBoxRemoveHook();
+                            PostMessage(gToolWindow, WM_VBOX_REMOVE_SEAMLESS_HOOK, 0, 0);
                             break;
 
                         case VMMDev_Seamless_Visible_Region:
-                            if (pCtx->pfnVBoxInstallHook)
-                                pCtx->pfnVBoxInstallHook(pCtx->hModule);
+                            PostMessage(gToolWindow, WM_VBOX_INSTALL_SEAMLESS_HOOK, 0, 0);
                             break;
 
                         case VMMDev_Seamless_Host_Window:

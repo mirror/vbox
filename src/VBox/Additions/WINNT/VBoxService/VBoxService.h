@@ -56,4 +56,7 @@ typedef struct _VBOXSERVICEINFO
         
 } VBOXSERVICEINFO;
 
+
+extern HWND  gToolWindow;
+
 #endif /* __VBOXSERVICE__H */

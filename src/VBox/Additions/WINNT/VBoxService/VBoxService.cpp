@@ -20,6 +20,7 @@
  */
 
 #include "VBoxService.h"
+#include "VBoxSeamless.h"
 #include "resource.h"
 #include <malloc.h>
 
@@ -74,10 +75,6 @@ void WriteLog(char *String, ...)
 int                VBoxClipboardInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
 unsigned __stdcall VBoxClipboardThread  (void *pInstance);
 void               VBoxClipboardDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
-/* The seamless windows service prototypes */
-int                VBoxSeamlessInit     (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-unsigned __stdcall VBoxSeamlessThread   (void *pInstance);
-void               VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance);
 
 /* The service table. */
 static VBOXSERVICEINFO vboxServiceTable[] =
@@ -897,6 +894,13 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
 
         case WM_DESTROY:
+            break;
+
+        case WM_VBOX_INSTALL_SEAMLESS_HOOK:
+
+            break;
+
+        case WM_VBOX_REMOVE_SEAMLESS_HOOK:
             break;
 
         default:
