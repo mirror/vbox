@@ -62,6 +62,17 @@
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
+                <widget class="QPushButton">
+                    <property name="name">
+                        <cstring>mHelpButton</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Help</string>
+                    </property>
+                    <property name="accel">
+                        <string>Alt+H</string>
+                    </property>
+                </widget>
                 <spacer>
                     <property name="name">
                         <cstring>spacer3</cstring>
@@ -79,6 +90,17 @@
                         </size>
                     </property>
                 </spacer>
+                <widget class="QPushButton">
+                    <property name="name">
+                        <cstring>mFindButton</cstring>
+                    </property>
+                    <property name="text">
+                        <string>&amp;Find</string>
+                    </property>
+                    <property name="accel">
+                        <string>Alt+F</string>
+                    </property>
+                </widget>
                 <widget class="QPushButton">
                     <property name="name">
                         <cstring>mSaveButton</cstring>
@@ -126,10 +148,16 @@
 </toolbars>
 <connections>
     <connection>
-        <sender>mCloseButton</sender>
+        <sender>mHelpButton</sender>
+        <signal>clicked()</signal>
+        <receiver>&amp;vboxProblem()</receiver>
+        <slot>showHelpHelpDialog()</slot>
+    </connection>
+    <connection>
+        <sender>mFindButton</sender>
         <signal>clicked()</signal>
         <receiver>VBoxVMLogViewer</receiver>
-        <slot>close()</slot>
+        <slot>search()</slot>
     </connection>
     <connection>
         <sender>mSaveButton</sender>
@@ -143,9 +171,16 @@
         <receiver>VBoxVMLogViewer</receiver>
         <slot>refresh()</slot>
     </connection>
+    <connection>
+        <sender>mCloseButton</sender>
+        <signal>clicked()</signal>
+        <receiver>VBoxVMLogViewer</receiver>
+        <slot>close()</slot>
+    </connection>
 </connections>
 <includes>
     <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="global" impldecl="in implementation">qsizegrip.h</include>
     <include location="global" impldecl="in implementation">qstatusbar.h</include>
     <include location="global" impldecl="in implementation">qtabwidget.h</include>
@@ -182,6 +217,7 @@
 <slots>
     <slot access="pritave">refresh()</slot>
     <slot access="private">save()</slot>
+    <slot access="private">search()</slot>
 </slots>
 <functions>
     <function specifier="static">createLogViewer( CMachine&amp; )</function>

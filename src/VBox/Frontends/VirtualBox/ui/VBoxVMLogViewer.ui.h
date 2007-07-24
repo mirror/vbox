@@ -139,6 +139,11 @@ public:
         mWarningString->setText (tr ("String not found"));
     }
 
+    void setText (const QString &aText)
+    {
+        mSearchString->setText (aText);
+    }
+
 private slots:
 
     void findNext()
@@ -247,6 +252,7 @@ private:
         QWidget::showEvent (aEvent);
         qApp->installEventFilter (this);
         mSearchString->setFocus();
+        mSearchString->selectAll();
     }
 
     void hideEvent (QHideEvent *aEvent)
@@ -333,7 +339,9 @@ void VBoxVMLogViewer::init()
     mSearchPanel->hide();
 
     /* fix the tab order to ensure the dialog keys are always the last */
-    setTabOrder (mSearchPanel->focusProxy(), mSaveButton);
+    setTabOrder (mSearchPanel->focusProxy(), mHelpButton);
+    setTabOrder (mHelpButton, mFindButton);
+    setTabOrder (mFindButton, mSaveButton);
     setTabOrder (mSaveButton, mRefreshButton);
     setTabOrder (mRefreshButton, mCloseButton);
     setTabOrder (mCloseButton, mLogList);
@@ -469,6 +477,13 @@ void VBoxVMLogViewer::keyPressEvent (QKeyEvent *aEvent)
                 break;
             }
         }
+        if (aEvent->key() >= Qt::Key_Exclam &&
+            aEvent->key() <= Qt::Key_AsciiTilde &&
+            mLogList->isEnabled())
+        {
+            mSearchPanel->show();
+            mSearchPanel->setText (aEvent->text());
+        }
     }
     else if (aEvent->state() == Qt::ControlButton &&
              aEvent->key() == Qt::Key_F)
@@ -528,6 +543,7 @@ void VBoxVMLogViewer::refresh()
     if (logFilesDir.exists())
     {
         /* reading log files folder */
+        logFilesDir.setNameFilter ("*.log *.log.*");
         QStringList logList = logFilesDir.entryList (QDir::Files);
         if (!logList.empty()) isAnyLogPresent = true;
         for (QStringList::Iterator it = logList.begin(); it != logList.end(); ++it)
@@ -555,6 +571,7 @@ void VBoxVMLogViewer::refresh()
     mLogList->showPage (mLogList->page(0));
 
     /* enable/disable save button & tab widget according log presence */
+    mFindButton->setEnabled (isAnyLogPresent);
     mSaveButton->setEnabled (isAnyLogPresent);
     mLogList->setEnabled (isAnyLogPresent);
 
@@ -636,6 +653,11 @@ void VBoxVMLogViewer::save()
         /* save log data into the new file */
         newFile.writeBlock (oldFile.readAll());
     }
+}
+
+void VBoxVMLogViewer::search()
+{
+    mSearchPanel->isHidden() ? mSearchPanel->show() : mSearchPanel->hide();
 }
 
 #include "VBoxVMLogViewer.ui.moc"
