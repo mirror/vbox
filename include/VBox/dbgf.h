@@ -24,6 +24,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/vmm.h>
+#include <VBox/log.h>                   /* LOG_ENABLED */
 
 #include <iprt/stdarg.h>
 
