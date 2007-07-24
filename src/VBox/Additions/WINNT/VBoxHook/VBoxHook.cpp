@@ -98,7 +98,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
 {
     PVBOX_ENUM_PARAM    lpParam = (PVBOX_ENUM_PARAM)lParam;
     DWORD               dwStyle, dwExStyle;
-    RECT                rect, rectVisible;
+    RECT                rectWindow, rectVisible;
 
     dwStyle   = GetWindowLong(hwnd, GWL_STYLE);
     dwExStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
@@ -108,8 +108,8 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
 
     dprintf(("VBoxEnumFunc %x\n", hwnd));
     /* Only visible windows that are present on the desktop are interesting here */
-    if (    GetWindowRect(hwnd, &rect)
-        &&  IntersectRect(&rectVisible, &lpParam->rect, &rect))
+    if (    GetWindowRect(hwnd, &rectWindow)
+        &&  IntersectRect(&rectVisible, &lpParam->rect, &rectWindow))
     {
         char szWindowText[256];
         szWindowText[0] = 0;
@@ -128,7 +128,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
         /** @todo will this suffice? The Program Manager window covers the whole screen */
         if (strcmp(szWindowText, "Program Manager"))
         {
-            dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d)\n", hwnd, rect.left, rect.top, rect.right, rect.bottom));
+            dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
             dprintf(("title=%s style=%x\n", szWindowText, dwStyle));
 
             HRGN hrgn = CreateRectRgn(0,0,0,0);
@@ -141,9 +141,10 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
                 SetRectRgn(hrgn, rectVisible.left, rectVisible.top, rectVisible.right, rectVisible.bottom);
             }
             else
+            {
                 /* this region is relative to the window origin instead of the desktop origin */
-                OffsetRgn(hrgn, rectVisible.left, rectVisible.top);
-
+                OffsetRgn(hrgn, rectWindow.left, rectWindow.top);
+            }
             if (lpParam->hrgn)
             {
                 /* create a union of the current visible region and the visible rectangle of this window. */
@@ -155,7 +156,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
         }
         else
         {
-            dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d) (ignored)\n", hwnd, rect.left, rect.top, rect.right, rect.bottom));
+            dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d) (ignored)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
             dprintf(("title=%s style=%x\n", szWindowText, dwStyle));
         }
     }
@@ -224,13 +225,13 @@ BOOL VBoxInstallHook(HMODULE hDll)
                                     hDll,
                                     VBoxHandleWinEvent,
                                     0, 0,
-                                    WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
+                                    WINEVENT_INCONTEXT);
 
     hEventHook[1] = SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_HIDE,
                                     hDll,
                                     VBoxHandleWinEvent,
                                     0, 0,
-                                    WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
+                                    WINEVENT_INCONTEXT);
     return !!hEventHook[0];
 }
 
