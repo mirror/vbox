@@ -517,7 +517,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mouse_integration (true)
     , hostkey_pressed (false)
     , hostkey_alone (false)
-    , ignore_mainwnd_resize (true)
+    , mIgnoreMainwndResize (true)
     , mAutoresizeGuest (false)
     , mIsAdditionsActive (false)
     , mfNumLock (false)
@@ -575,7 +575,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
     tid = 0;
 #endif
-    fb = 0;
+    mFrameBuf = 0;
 
     LogFlowFunc (("Rendering mode: %d\n", mode));
 
@@ -589,12 +589,12 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 #if defined (VBOX_GUI_USE_QIMAGE)
         case VBoxDefs::QImageMode:
-            fb = new VBoxQImageFrameBuffer (this);
+            mFrameBuf = new VBoxQImageFrameBuffer (this);
             break;
 #endif
 #if defined (VBOX_GUI_USE_SDL)
         case VBoxDefs::SDLMode:
-            fb = new VBoxSDLFrameBuffer (this);
+            mFrameBuf = new VBoxSDLFrameBuffer (this);
             /*
              *  disable scrollbars because we cannot correctly draw in a
              *  scrolled window using SDL
@@ -605,7 +605,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 #if defined (VBOX_GUI_USE_DDRAW)
         case VBoxDefs::DDRAWMode:
-            fb = new VBoxDDRAWFrameBuffer (this);
+            mFrameBuf = new VBoxDDRAWFrameBuffer (this);
             break;
 #endif
         default:
@@ -616,24 +616,24 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     }
 
 #if defined (VBOX_GUI_USE_DDRAW)
-    if (!fb || fb->address () == NULL)
+    if (!mFrameBuf || mFrameBuf->address () == NULL)
     {
-        if (fb)
-            delete fb;
+        if (mFrameBuf)
+            delete mFrameBuf;
         mode = VBoxDefs::QImageMode;
-        fb = new VBoxQImageFrameBuffer (this);
+        mFrameBuf = new VBoxQImageFrameBuffer (this);
     }
 #endif
 
-    if (fb)
+    if (mFrameBuf)
     {
-        fb->AddRef();
-        display.RegisterExternalFramebuffer (CFramebuffer (fb));
+        mFrameBuf->AddRef();
+        display.RegisterExternalFramebuffer (CFramebuffer (mFrameBuf));
     }
 
     /* setup the callback */
-    callback = CConsoleCallback (new VBoxConsoleCallback (this));
-    cconsole.RegisterCallback (callback);
+    mCallback = CConsoleCallback (new VBoxConsoleCallback (this));
+    cconsole.RegisterCallback (mCallback);
     AssertWrapperOk (cconsole);
 
     viewport()->setEraseColor (black);
@@ -670,17 +670,17 @@ VBoxConsoleView::~VBoxConsoleView()
     if (tid)
         killTimer (tid);
 #endif
-    if (fb)
+    if (mFrameBuf)
     {
         /* detach our framebuffer from Display */
         CDisplay display = cconsole.GetDisplay();
         Assert (!display.isNull());
         display.SetupInternalFramebuffer (0);
         /* release the reference */
-        fb->Release();
+        mFrameBuf->Release();
     }
 
-    cconsole.UnregisterCallback (callback);
+    cconsole.UnregisterCallback (mCallback);
 }
 
 //
@@ -699,8 +699,8 @@ QSize VBoxConsoleView::sizeHint() const
     else
 #endif
     {
-        return QSize (fb->width() + frameWidth() * 2,
-                      fb->height() + frameWidth() * 2);
+        return QSize (mFrameBuf->width() + frameWidth() * 2,
+                      mFrameBuf->height() + frameWidth() * 2);
     }
 }
 
@@ -873,12 +873,12 @@ void VBoxConsoleView::onFullscreenChange (bool /* on */)
  */
 void VBoxConsoleView::onViewOpened()
 {
-    /* Variable <ignore_mainwnd_resize> is initially "true" to ignore QT
+    /* Variable mIgnoreMainwndResize was initially "true" to ignore QT
      * initial resize event in case of auto-resize feature is on.
-     * Currently initial resize event is already processed, so switching
-     * the ignore_mainwnd_resize to "false" to process all further resize
-     * events as user resize events. */
-    ignore_mainwnd_resize = false;
+     * Currently, initial resize event is already processed, so we set
+     * mIgnoreMainwndResize to "false" to process all further resize
+     * events as user-initiated window resize events. */
+    mIgnoreMainwndResize = false;
 }
 
 //
@@ -905,15 +905,15 @@ bool VBoxConsoleView::event (QEvent *e)
 
             case VBoxDefs::ResizeEventType:
             {
-                bool old_ignore_mainwnd_resize = ignore_mainwnd_resize;
-                ignore_mainwnd_resize = true;
+                bool oldIgnoreMainwndResize = mIgnoreMainwndResize;
+                mIgnoreMainwndResize = true;
 
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
-                LogFlow (("VBoxDefs::ResizeEventType: %d,%d\n",
-                          re->width(), re->height()));
+                LogFlow (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
+                          re->width(), re->height(), re->bitsPerPixel()));
 
                 /* do frame buffer dependent resize */
-                fb->resizeEvent (re);
+                mFrameBuf->resizeEvent (re);
                 viewport()->unsetCursor();
 
                 /* This event appears in case of guest video was changed
@@ -946,7 +946,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* report to the VM thread that we finished resizing */
                 cconsole.GetDisplay().ResizeCompleted(0);
 
-                ignore_mainwnd_resize = old_ignore_mainwnd_resize;
+                mIgnoreMainwndResize = oldIgnoreMainwndResize;
 
                 return true;
             }
@@ -1234,8 +1234,8 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                  *  notification from our parent that it has moved. We need this
                  *  in order to possibly adjust the direct screen blitting.
                  */
-                if (fb)
-                    fb->moveEvent( (QMoveEvent *) e );
+                if (mFrameBuf)
+                    mFrameBuf->moveEvent ((QMoveEvent *) e);
                 break;
             }
 #endif
@@ -1275,18 +1275,22 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 #endif /* defined (Q_WS_MAC) */
             case QEvent::Resize:
             {
-                if (!ignore_mainwnd_resize)
+                if (!mIgnoreMainwndResize)
                 {
                     if (mIsAdditionsActive && mAutoresizeGuest)
                         resize_hint_timer->start (300, TRUE);
+                    /// @todo disabled for the time being since seems to be not
+                    //  necessary anymore
+#if 0
                     /* During window maximization WindowStateChange event is
-                     * processed before Resize event, so the ignore_mainwnd_resize
+                     * processed before Resize event, so the mIgnoreMainwndResize
                      * variable should be set to true here in case of mainwnd is
                      * maximized or in fullscreen state. */
                     /* Not sure if it is really required */
-                    //if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen()
-                    //                           || mainwnd->isTrueSeamless())
-                    //    ignore_mainwnd_resize = true;
+                    if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen()
+                                               || mainwnd->isTrueSeamless())
+                        mIgnoreMainwndResize = true;
+#endif
                 }
                 break;
             }
@@ -1867,7 +1871,7 @@ void VBoxConsoleView::exitFullScreen()
         normalizeGeo();
     }
 
-    ignore_mainwnd_resize = false;
+    mIgnoreMainwndResize = false;
 }
 
 /**
@@ -2347,13 +2351,13 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
     {
         case CEnums::Paused:
         {
-            if (mode != VBoxDefs::TimerMode && fb)
+            if (mode != VBoxDefs::TimerMode && mFrameBuf)
             {
                 /*
                  *  Take a screen snapshot. Note that TakeScreenShot() always
                  *  needs a 32bpp image
                  */
-                QImage shot = QImage (fb->width(), fb->height(), 32, 0);
+                QImage shot = QImage (mFrameBuf->width(), mFrameBuf->height(), 32, 0);
                 CDisplay dsp = cconsole.GetDisplay();
                 dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
                 /*
@@ -2378,7 +2382,7 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
         {
             if (last_state == CEnums::Paused)
             {
-                if (mode != VBoxDefs::TimerMode && fb)
+                if (mode != VBoxDefs::TimerMode && mFrameBuf)
                 {
                     /* reset the pixmap to free memory */
                     mPausedShot.resize (0, 0);
@@ -2458,7 +2462,7 @@ void VBoxConsoleView::viewportPaintEvent (QPaintEvent *pe)
         if (mPausedShot.isNull())
         {
             /* delegate the paint function to the VBoxFrameBuffer interface */
-            fb->paintEvent (pe);
+            mFrameBuf->paintEvent (pe);
             return;
         }
 
@@ -3051,7 +3055,7 @@ void VBoxConsoleView::doResizeHint()
          * and gives it all available space. */
         QSize sz (mainwnd->centralWidget()->size());
         sz -= QSize (frameWidth() * 2, frameWidth() * 2);
-        LogFlowFunc (("Will suggest %d,%d\n", sz.width(), sz.height()));
+        LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
         cconsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);
     }

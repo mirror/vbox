@@ -53,43 +53,35 @@ public:
 
     // helpers
 
-    int message (
-        QWidget *parent, Type type, const QString &msg,
-        const QString &details = QString::null,
-        const char *autoConfirmId = 0,
-        int b1 = 0, int b2 = 0, int b3 = 0,
-        const char *name = 0
-    );
+    int message (QWidget *parent, Type type, const QString &msg,
+                 const QString &details = QString::null,
+                 const char *autoConfirmId = NULL,
+                 int b1 = 0, int b2 = 0, int b3 = 0,
+                 const char *name = 0);
 
-    int message (
-        QWidget *parent, Type type, const QString &msg,
-        const char *autoConfirmId,
-        int b1 = 0, int b2 = 0, int b3 = 0,
-        const char *name = 0
-    ) {
+    int message (QWidget *parent, Type type, const QString &msg,
+                 const char *autoConfirmId,
+                 int b1 = 0, int b2 = 0, int b3 = 0,
+                 const char *name = 0)
+    {
         return message (parent, type, msg, QString::null, autoConfirmId,
                         b1, b2, b3, name);
     }
 
-    bool messageYesNo (
-        QWidget *parent, Type type, const QString &msg,
-        const QString &details = QString::null,
-        const char *autoConfirmId = 0,
-        const char *name = 0
-    );
+    bool messageYesNo (QWidget *parent, Type type, const QString &msg,
+                       const QString &details = QString::null,
+                       const char *autoConfirmId = 0,
+                       const char *name = 0);
 
-    bool messageYesNo (
-        QWidget *parent, Type type, const QString &msg,
-        const char *autoConfirmId,
-        const char *name = 0
-    ) {
+    bool messageYesNo (QWidget *parent, Type type, const QString &msg,
+                       const char *autoConfirmId,
+                       const char *name = 0)
+    {
         return messageYesNo (parent, type, msg, QString::null, autoConfirmId, name);
     }
 
-    bool showModalProgressDialog (
-        CProgress &aProgress, const QString &aTitle, QWidget *aParent,
-        int aMinDuration = 2000
-    );
+    bool showModalProgressDialog (CProgress &aProgress, const QString &aTitle,
+                                  QWidget *aParent, int aMinDuration = 2000);
 
     QWidget *mainWindowShown();
 
@@ -217,6 +209,8 @@ public:
                                      const QString &hostKey);
     void remindAboutGoingSeamless (const QString &hotKey,
                                    const QString &hostKey);
+
+    void remindAboutWrongColorDepth (ulong aRealBPP, ulong aWantedBPP);
 
     void cannotRunInSelectorMode();
 

@@ -23,6 +23,8 @@
 #include "VBoxFrameBuffer.h"
 
 #include "VBoxConsoleView.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxGlobal.h"
 
 #include <qapplication.h>
 
@@ -374,6 +376,7 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     mWdt = re->width();
     mHgt = re->height();
 
+    bool remind = false;
     bool fallback = false;
 
     /* check if we support the pixel format and can use the guest VRAM directly */
@@ -381,11 +384,15 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     {
         switch (re->bitsPerPixel())
         {
+            /* 32-, 8- and 1-bpp are the only depths suported by QImage */
             case 32:
-            case 24:
-            case 16:
+                break;
+            case 8:
+            case 1:
+                remind = true;
                 break;
             default:
+                remind = true;
                 fallback = true;
                 break;
         }
@@ -396,12 +403,11 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
             fallback = re->bytesPerLine() !=
                 ((mWdt * re->bitsPerPixel() + 31) / 32) * 4;
             Assert (!fallback);
-
             if (!fallback)
             {
                 mImg = QImage ((uchar *) re->VRAM(), mWdt, mHgt,
                                re->bitsPerPixel(), NULL, 0, QImage::LittleEndian);
-                mPixelFormat = re->pixelFormat();
+                mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
                 mUsesGuestVRAM = true;
             }
         }
@@ -418,6 +424,22 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
         mImg = QImage (mWdt, mHgt, 32, 0, QImage::LittleEndian);
         mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
         mUsesGuestVRAM = false;
+    }
+
+    if (remind)
+    {
+        class RemindEvent : public VBoxAsyncEvent
+        {
+            ulong mRealBPP;
+        public:
+            RemindEvent (ulong aRealBPP)
+                : mRealBPP (aRealBPP) {}
+            void handle()
+            {
+                vboxProblem().remindAboutWrongColorDepth (mRealBPP, 32);
+            }
+        };
+        (new RemindEvent (re->bitsPerPixel()))->post();
     }
 }
 
