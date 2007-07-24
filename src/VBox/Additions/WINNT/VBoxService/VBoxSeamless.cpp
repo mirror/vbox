@@ -195,6 +195,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                             fTerminate = true;
                             break;
                         }
+                        break;
                     }
                     else
                     {
