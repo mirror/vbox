@@ -231,7 +231,7 @@ BOOL VBoxInstallHook(HMODULE hDll)
                                     VBoxHandleWinEvent,
                                     0, 0,
                                     WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
-    return !!hEventHook;
+    return !!hEventHook[0];
 }
 
 /* Remove the global message hook */
