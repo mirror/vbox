@@ -339,7 +339,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
                                                      "cd_unmount_dis_16px.png"));
 
     devicesSFDialogAction = new QAction (runningActions, "devicesSFDialogAction");
-    devicesSFDialogAction->setToggleAction (true);
     devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("shared_folder_16px.png",
                                                             "shared_folder_disabled_16px.png"));
 
@@ -582,7 +581,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesMountDVDImageAction, SIGNAL(activated()), this, SLOT(devicesMountDVDImage()));
     connect (devicesUnmountDVDAction, SIGNAL(activated()), this, SLOT(devicesUnmountDVD()));
     connect (devicesSwitchVrdpAction, SIGNAL(toggled (bool)), this, SLOT(devicesSwitchVrdp (bool)));
-    connect (devicesSFDialogAction, SIGNAL(toggled (bool)), this, SLOT(devicesToggleSFDialog (bool)));
+    connect (devicesSFDialogAction, SIGNAL(activated()), this, SLOT(devicesOpenSFDialog()));
     connect (devicesInstallGuestToolsAction, SIGNAL(activated()), this, SLOT(devicesInstallGuestAdditions()));
 
 
@@ -595,7 +594,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
-    connect (devicesSharedFolders, SIGNAL(activated(int)), this, SLOT(activateSFMenu()));
+    connect (devicesSharedFolders, SIGNAL(activated(int)), this, SLOT(devicesOpenSFDialog()));
     connect (devicesNetworkMenu, SIGNAL(activated(int)), this, SLOT(activateNetworkMenu(int)));
 
     connect (devicesMountFloppyMenu, SIGNAL (highlighted (int)),
@@ -698,15 +697,6 @@ VBoxConsoleWnd::~VBoxConsoleWnd()
 // Public members
 /////////////////////////////////////////////////////////////////////////////
 
-static const char *GUI_LastWindowPosition = "GUI/LastWindowPostion";
-static const char *GUI_LastWindowPosition_Max = "max";
-
-static const char *GUI_Fullscreen = "GUI/Fullscreen";
-static const char *GUI_Seamless = "GUI/Seamless";
-static const char *GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
-extern const char *GUI_FirstRun = "GUI/FirstRun";
-extern const char *GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
-
 /**
  *  Opens a new console view to interact with a given VM.
  *  Does nothing if the console view is already opened.
@@ -750,30 +740,30 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     /* restore the position of the window and some options */
     {
-        QString str = cmachine.GetExtraData (GUI_Fullscreen);
+        QString str = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
         if (str == "on")
             vmFullscreenAction->setOn (true);
 
         vmSeamlessAction->setEnabled (false);
-        str = cmachine.GetExtraData (GUI_Seamless);
+        str = cmachine.GetExtraData (VBoxDefs::GUI_Seamless);
         if (str == "on")
             vmSeamlessAction->setOn (true);
 
-        str = cmachine.GetExtraData (GUI_AutoresizeGuest);
+        str = cmachine.GetExtraData (VBoxDefs::GUI_AutoresizeGuest);
         if (str != "off")
             vmAutoresizeGuestAction->setOn (true);
 
-        str = cmachine.GetExtraData (GUI_FirstRun);
+        str = cmachine.GetExtraData (VBoxDefs::GUI_FirstRun);
         if (str == "yes")
             mIsFirstTimeStarted = true;
         else if (!str.isEmpty())
-            cmachine.SetExtraData (GUI_FirstRun, QString::null);
+            cmachine.SetExtraData (VBoxDefs::GUI_FirstRun, QString::null);
 
-        str = cmachine.GetExtraData (GUI_SaveMountedAtRuntime);
+        str = cmachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
         if (str == "no")
             mIsAutoSaveMedia = false;
 
-        str = cmachine.GetExtraData (GUI_LastWindowPosition);
+        str = cmachine.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
 
         QRect ar = QApplication::desktop()->availableGeometry (this);
         bool ok = false, max = false;
@@ -786,7 +776,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         if (ok)
             h = str.section (',', 3, 3).toInt (&ok);
         if (ok)
-            max = str.section (',', 4, 4) == GUI_LastWindowPosition_Max;
+            max = str.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
         if (ok)
         {
             normal_pos = QPoint (x, y);
@@ -949,7 +939,7 @@ void VBoxConsoleWnd::finalizeOpenView()
 
         /* Remove GUI_FirstRun extra data key from the machine settings
          * file after showing the wizard once. */
-        cmachine.SetExtraData (GUI_FirstRun, QString::null);
+        cmachine.SetExtraData (VBoxDefs::GUI_FirstRun, QString::null);
     }
 
     /* start the VM */
@@ -1046,15 +1036,15 @@ void VBoxConsoleWnd::closeView()
                                  .arg (normal_size.height());
         if (isMaximized() || (mIsFullscreen && was_max)
                           || (mIsSeamless && was_max))
-            winPos += QString (",%1").arg (GUI_LastWindowPosition_Max);
+            winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
 
-        machine.SetExtraData (GUI_LastWindowPosition, winPos);
+        machine.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
 
-        machine.SetExtraData (GUI_Fullscreen,
+        machine.SetExtraData (VBoxDefs::GUI_Fullscreen,
                               vmFullscreenAction->isOn() ? "on" : "off");
-        machine.SetExtraData (GUI_Seamless,
+        machine.SetExtraData (VBoxDefs::GUI_Seamless,
                               vmSeamlessAction->isOn() ? "on" : "off");
-        machine.SetExtraData (GUI_AutoresizeGuest,
+        machine.SetExtraData (VBoxDefs::GUI_AutoresizeGuest,
                               vmAutoresizeGuestAction->isOn() ? "on" : "off");
     }
 
@@ -1171,7 +1161,6 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 {
     LogFlowFuncEnter();
 
-    static const char *GUI_LastCloseAction = "GUI/LastCloseAction";
     static const char *Save = "save";
     static const char *PowerOff = "powerOff";
     static const char *DiscardCurState = "discardCurState";
@@ -1233,7 +1222,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
             /* read the last user's choice for the given VM */
             QStringList lastAction = QStringList::split (',',
-                cmachine.GetExtraData (GUI_LastCloseAction));
+                cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction));
             AssertWrapperOk (cmachine);
             if (lastAction [0] == PowerOff)
                 dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
@@ -1324,7 +1313,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                         AssertFailed();
                     if (dlg.cbDiscardCurState->isChecked())
                         (lastAction += ",") += DiscardCurState;
-                    cmachine.SetExtraData (GUI_LastCloseAction, lastAction);
+                    cmachine.SetExtraData (VBoxDefs::GUI_LastCloseAction, lastAction);
                     AssertWrapperOk (cmachine);
                 }
             }
@@ -2292,12 +2281,12 @@ void VBoxConsoleWnd::devicesSwitchVrdp (bool aOn)
     updateAppearanceOf (VRDPStuff);
 }
 
-void VBoxConsoleWnd::devicesToggleSFDialog (bool aOn)
+void VBoxConsoleWnd::devicesOpenSFDialog()
 {
     if (!console) return;
 
-    if (aOn)
-        (new VBoxSFDialog (console, csession, devicesSFDialogAction))->show();
+    VBoxSFDialog dlg (console, csession);
+    dlg.exec();
 }
 
 void VBoxConsoleWnd::devicesInstallGuestAdditions()
@@ -2618,15 +2607,6 @@ void VBoxConsoleWnd::switchUSB (int aId)
     }
 }
 
-/**
- *  Show Shared Folders list.
- */
-void VBoxConsoleWnd::activateSFMenu()
-{
-    if (!devicesSFDialogAction->isOn())
-        devicesSFDialogAction->setOn (true);
-}
-
 void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e)
 {
     if (ind == cd_light)
@@ -2939,60 +2919,61 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 
 #endif
 
-VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession, QAction *aAction)
-    : QDialog (aParent, "VBoxSFDialog", false /* modal */,
-               WStyle_Customize | WStyle_Title | WStyle_SysMenu |
-               WStyle_MinMax | WDestructiveClose)
-    , mSettings (0), mSession (aSession), mAction (aAction)
+VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
+    : QDialog (aParent, "VBoxSFDialog", true /* modal */,
+               WType_Dialog | WShowModal)
+    , mSettings (0), mSession (aSession)
 {
-    /* Setup Dialog's title */
+    /* Setup Dialog's options */
     setCaption (tr ("Shared Folders"));
     setIcon (QPixmap::fromMimeSource ("select_file_16px.png"));
+    setSizeGripEnabled (true);
 
     /* Setup main dialog's layout */
     QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
 
     /* Setup settings layout */
     mSettings = new VBoxSharedFoldersSettings (this, "mSettings");
-    mSettings->setDialogType (VBoxSharedFoldersSettings::ConsoleType);
+    mSettings->setDialogType (VBoxSharedFoldersSettings::MachineType |
+                              VBoxSharedFoldersSettings::ConsoleType);
     mSettings->getFromMachine (aSession.GetMachine());
     mSettings->getFromConsole (aSession.GetConsole());
     mainLayout->addWidget (mSettings);
 
     /* Setup button's layout */
     QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
-    QPushButton *pbOk = new QPushButton (tr ("OK"), this, "pbOk");
+    QPushButton *pbHelp = new QPushButton (tr ("Help"), this, "pbHelp");
     QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    QPushButton *pbOk = new QPushButton (tr ("OK"), this, "pbOk");
     QPushButton *pbCancel = new QPushButton (tr ("Cancel"), this, "pbCancel");
+    connect (pbHelp, SIGNAL (clicked()), &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (pbOk, SIGNAL (clicked()), this, SLOT (accept()));
     connect (pbCancel, SIGNAL (clicked()), this, SLOT (reject()));
-    buttonLayout->addWidget (pbOk);
+    buttonLayout->addWidget (pbHelp);
     buttonLayout->addItem (spacer);
+    buttonLayout->addWidget (pbOk);
     buttonLayout->addWidget (pbCancel);
 
-    /* Setup destruction handler */
-    connect (mAction, SIGNAL (toggled (bool)), this, SLOT (suicide (bool)));
-}
-
-VBoxSFDialog::~VBoxSFDialog()
-{
-    mAction->setOn (false);
+    /* Setup the default push button */
+    pbOk->setAutoDefault (true);
+    pbOk->setDefault (true);
 }
 
 void VBoxSFDialog::accept()
 {
     mSettings->putBackToConsole();
+    mSettings->putBackToMachine();
+    CMachine machine = mSession.GetMachine();
+    machine.SaveSettings();
+    if (!machine.isOk())
+        vboxProblem().cannotSaveMachineSettings (machine);
     QDialog::accept();
-}
-
-void VBoxSFDialog::suicide (bool aNo)
-{
-    if (!aNo) close();
 }
 
 void VBoxSFDialog::showEvent (QShowEvent *aEvent)
 {
-    QDialog::showEvent (aEvent);
-    setMinimumWidth (400);
+    resize (600, 500);
     VBoxGlobal::centerWidget (this, parentWidget());
+    setMinimumWidth (400);
+    QDialog::showEvent (aEvent);
 }

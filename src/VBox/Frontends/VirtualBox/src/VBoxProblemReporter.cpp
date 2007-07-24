@@ -196,8 +196,6 @@ void VBoxProgressDialog::timerEvent (QTimerEvent *e)
 }
 
 
-static const char *GUI_SuppressMessages = "GUI/SuppressMessages";
-
 /** @class VBoxProblemReporter
  *
  *  The VBoxProblemReporter class is a central place to handle all
@@ -290,7 +288,7 @@ int VBoxProblemReporter::message (
     if (autoConfirmId)
     {
         vbox = vboxGlobal().virtualBox();
-        msgs = QStringList::split (',', vbox.GetExtraData (GUI_SuppressMessages));
+        msgs = QStringList::split (',', vbox.GetExtraData (VBoxDefs::GUI_SuppressMessages));
         if (msgs.findIndex (autoConfirmId) >= 0) {
             int rc = AutoConfirmed;
             if (b1 & QIMessageBox::Default) rc |= (b1 & QIMessageBox::ButtonMask);
@@ -351,7 +349,7 @@ int VBoxProblemReporter::message (
         if (box->isFlagChecked())
         {
             msgs << autoConfirmId;
-            vbox.SetExtraData (GUI_SuppressMessages, msgs.join (","));
+            vbox.SetExtraData (VBoxDefs::GUI_SuppressMessages, msgs.join (","));
         }
     }
 
@@ -1744,7 +1742,7 @@ void VBoxProblemReporter::showHelpHelpDialog()
 void VBoxProblemReporter::resetSuppressedMessages()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    vbox.SetExtraData (GUI_SuppressMessages, QString::null);
+    vbox.SetExtraData (VBoxDefs::GUI_SuppressMessages, QString::null);
 }
 
 /** @fn vboxProblem

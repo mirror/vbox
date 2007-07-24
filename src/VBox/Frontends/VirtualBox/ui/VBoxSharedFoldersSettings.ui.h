@@ -153,18 +153,19 @@ class VBoxAddSFDialog : public QDialog
 
 public:
 
-    enum DialogType { AddDType, EditDType };
+    enum DialogType { AddDialogType, EditDialogType };
 
-    VBoxAddSFDialog (QWidget *aParent, VBoxAddSFDialog::DialogType aType) :
+    VBoxAddSFDialog (QWidget *aParent, VBoxAddSFDialog::DialogType aType,
+                     bool aEnableSelector /* for "permanent" checkbox */) :
         QDialog (aParent, "VBoxAddSFDialog", true /* modal */),
-        mLePath (0), mLeName (0)
+        mLePath (0), mLeName (0), mCbPermanent (0)
     {
         switch (aType)
         {
-            case AddDType:
+            case AddDialogType:
                 setCaption (tr ("Add Share"));
                 break;
-            case EditDType:
+            case EditDialogType:
                 setCaption (tr ("Edit Share"));
                 break;
             default:
@@ -173,7 +174,7 @@ public:
         QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10, "mainLayout");
 
         /* Setup Input layout */
-        QGridLayout *inputLayout = new QGridLayout (mainLayout, 2, 3, 10, "inputLayout");
+        QGridLayout *inputLayout = new QGridLayout (mainLayout, 3, 3, 10, "inputLayout");
         QLabel *lbPath = new QLabel (tr ("Folder Path"), this);
         mLePath = new QLineEdit (this);
         QToolButton *tbPath = new QToolButton (this);
@@ -198,6 +199,13 @@ public:
         inputLayout->addWidget (lbName,  1, 0);
         inputLayout->addMultiCellWidget (mLeName, 1, 1, 1, 2);
 
+        if (aEnableSelector)
+        {
+            mCbPermanent = new QCheckBox ("&Make Permanent", this);
+            mCbPermanent->setChecked (true);
+            inputLayout->addMultiCellWidget (mCbPermanent, 2, 2, 0, 2);
+        }
+
         /* Setup Button layout */
         QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
         mBtOk = new QPushButton (tr ("OK"), this, "btOk");
@@ -218,9 +226,21 @@ public:
 
     QString getPath() { return mLePath->text(); }
     QString getName() { return mLeName->text(); }
+    bool getPermanent()
+    {
+        return mCbPermanent ? mCbPermanent->isChecked() : true;
+    }
 
     void setPath (const QString &aPath) { mLePath->setText (aPath); }
     void setName (const QString &aName) { mLeName->setText (aName); }
+    void setPermanent (bool aPermanent)
+    {
+        if (mCbPermanent)
+        {
+            mCbPermanent->setChecked (aPermanent);
+            mCbPermanent->setEnabled (!aPermanent);
+        }
+    }
 
 private slots:
 
@@ -271,6 +291,7 @@ private:
     QPushButton *mBtOk;
     QLineEdit *mLePath;
     QLineEdit *mLeName;
+    QCheckBox *mCbPermanent;
 };
 
 
@@ -300,8 +321,7 @@ void VBoxSharedFoldersSettings::init()
     mIsListViewChanged = false;
 }
 
-void VBoxSharedFoldersSettings::setDialogType (
-     VBoxSharedFoldersSettings::SFDialogType aType)
+void VBoxSharedFoldersSettings::setDialogType (int aType)
 {
     mDialogType = aType;
 }
@@ -455,7 +475,7 @@ void VBoxSharedFoldersSettings::putBackToMachine()
         return;
 
     /* This function is only available for MachineType dialog */
-    Assert (mDialogType == MachineType);
+    Assert (mDialogType & MachineType);
     /* Searching for MachineType item's root */
     QListViewItem *root = listView->findItem (QString::number (MachineType), 2);
     Assert (root);
@@ -469,7 +489,7 @@ void VBoxSharedFoldersSettings::putBackToConsole()
         return;
 
     /* This function is only available for ConsoleType dialog */
-    Assert (mDialogType == ConsoleType);
+    Assert (mDialogType & ConsoleType);
     /* Searching for ConsoleType item's root */
     QListViewItem *root = listView->findItem (QString::number (ConsoleType), 2);
     Assert (root);
@@ -506,26 +526,40 @@ void VBoxSharedFoldersSettings::putBackTo (CSharedFolderEnumerator &aEn,
 }
 
 
+QListViewItem* VBoxSharedFoldersSettings::searchRoot (bool aIsPermanent)
+{
+    if (!aIsPermanent)
+        return listView->findItem (QString::number (ConsoleType), 2);
+    else if (mDialogType & MachineType)
+        return listView->findItem (QString::number (MachineType), 2);
+    else
+        return listView->findItem (QString::number (GlobalType), 2);
+}
+
 void VBoxSharedFoldersSettings::tbAddPressed()
 {
     /* Invoke Add-Box Dialog */
-    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::AddDType);
+    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::AddDialogType,
+                         mDialogType & ConsoleType);
     if (dlg.exec() != QDialog::Accepted)
         return;
     QString name = dlg.getName();
     QString path = dlg.getPath();
+    bool isPermanent = dlg.getPermanent();
     /* Shared folder's name & path could not be empty */
     Assert (!name.isEmpty() && !path.isEmpty());
     /* Searching root for the new listview item */
-    QListViewItem *root = listView->findItem (QString::number (mDialogType), 2);
+    QListViewItem *root = searchRoot (isPermanent);
     Assert (root);
     /* Appending a new listview item to the root */
-    VBoxRichListItem *item = new VBoxRichListItem (VBoxRichListItem::EllipsisFile,
-                                                   root, name, path);
+    VBoxRichListItem *item = new VBoxRichListItem (
+        VBoxRichListItem::EllipsisFile, root, name, path);
+    /* Make the created item selected */
     listView->ensureItemVisible (item);
     listView->setCurrentItem (item);
     processCurrentChanged (item);
     listView->setFocus();
+
     mIsListViewChanged = true;
 }
 
@@ -533,23 +567,44 @@ void VBoxSharedFoldersSettings::tbEditPressed()
 {
     /* Check selected item */
     QListViewItem *selectedItem = listView->selectedItem();
-    VBoxRichListItem *item = 0;
-    if (selectedItem->rtti() == VBoxRichListItem::QIRichListItemId)
-        item = static_cast<VBoxRichListItem*> (selectedItem);
+    VBoxRichListItem *item =
+        selectedItem->rtti() == VBoxRichListItem::QIRichListItemId ?
+        static_cast<VBoxRichListItem*> (selectedItem) : 0;
     Assert (item);
-    /* Invoke Add-Box Dialog */
-    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::EditDType);
+    Assert (item->parent());
+    /* Invoke Edit-Box Dialog */
+    VBoxAddSFDialog dlg (this, VBoxAddSFDialog::EditDialogType,
+                         mDialogType & ConsoleType);
     dlg.setPath (item->getText (1));
     dlg.setName (item->getText (0));
+    dlg.setPermanent ((SFDialogType)item->parent()->text (2).toInt()
+                      != ConsoleType);
     if (dlg.exec() != QDialog::Accepted)
         return;
     QString name = dlg.getName();
     QString path = dlg.getPath();
+    bool isPermanent = dlg.getPermanent();
     /* Shared folder's name & path could not be empty */
     Assert (!name.isEmpty() && !path.isEmpty());
+    /* Searching new root for the selected listview item */
+    QListViewItem *root = searchRoot (isPermanent);
+    Assert (root);
     /* Updating an edited listview item */
     item->updateText (1, path);
     item->updateText (0, name);
+    if (item->parent() != root)
+    {
+        /* Move the selected item into new location */
+        item->parent()->takeItem (item);
+        root->insertItem (item);
+
+        /* Make the created item selected */
+        listView->ensureItemVisible (item);
+        listView->setCurrentItem (item);
+        processCurrentChanged (item);
+        listView->setFocus();
+    }
+
     mIsListViewChanged = true;
 }
 
@@ -590,6 +645,14 @@ void VBoxSharedFoldersSettings::processCurrentChanged (QListViewItem *aItem)
     tbRemove->setEnabled (removeEnabled);
 }
 
+void VBoxSharedFoldersSettings::processDoubleClick (QListViewItem *aItem)
+{
+    bool editEnabled = aItem && aItem->parent() &&
+        isEditable (aItem->parent()->text (2));
+    if (editEnabled)
+        tbEditPressed();
+}
+
 bool VBoxSharedFoldersSettings::isEditable (const QString &aKey)
 {
     /* mDialogType should be sutup already */
@@ -600,7 +663,7 @@ bool VBoxSharedFoldersSettings::isEditable (const QString &aKey)
     SFDialogType type = (SFDialogType)aKey.toInt();
     if (!type)
         AssertMsgFailed (("Incorrect listview item key value\n"));
-    return type == mDialogType;
+    return mDialogType & type;
 }
 
 

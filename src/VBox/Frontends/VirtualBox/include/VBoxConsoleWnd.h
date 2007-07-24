@@ -143,7 +143,7 @@ private slots:
     void devicesMountDVDImage();
     void devicesUnmountDVD();
     void devicesSwitchVrdp (bool);
-    void devicesToggleSFDialog (bool);
+    void devicesOpenSFDialog();
     void devicesInstallGuestAdditions();
 
     void prepareFloppyMenu();
@@ -156,7 +156,6 @@ private slots:
     void captureDVD (int aId);
     void activateNetworkMenu (int aId);
     void switchUSB (int aId);
-    void activateSFMenu();
 
     void statusTipChanged (const QString &);
     void clearStatusBar();
@@ -325,13 +324,11 @@ class VBoxSFDialog : public QDialog
 
 public:
 
-    VBoxSFDialog (QWidget*, CSession&, QAction*);
-    ~VBoxSFDialog();
+    VBoxSFDialog (QWidget*, CSession&);
 
 protected slots:
 
     virtual void accept();
-    virtual void suicide (bool);
 
 protected:
 
@@ -341,7 +338,6 @@ private:
 
     VBoxSharedFoldersSettings *mSettings;
     CSession &mSession;
-    QAction *mAction;
 };
 
 

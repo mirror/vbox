@@ -48,9 +48,6 @@
 #include <qvbox.h>
 
 
-static const char *GUI_LastWindowPosition = "GUI/LastWindowPostion";
-static const char *GUI_LastWindowPosition_Max = "max";
-
 // VBoxVMDetailsView class
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -528,7 +525,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     /* restore the position of the window */
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        QString winPos = vbox.GetExtraData (GUI_LastWindowPosition);
+        QString winPos = vbox.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
 
         QRect ar = QApplication::desktop()->availableGeometry (pos());
         bool ok = false, max = false;
@@ -541,7 +538,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         if (ok)
             h = winPos.section (',', 3, 3).toInt (&ok);
         if (ok)
-            max = winPos.section (',', 4, 4) == GUI_LastWindowPosition_Max;
+            max = winPos.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
         if (ok)
         {
             move (x, y);
@@ -620,9 +617,9 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
                                  .arg (normal_size.width())
                                  .arg (normal_size.height());
         if (isMaximized())
-            winPos += QString (",%1").arg (GUI_LastWindowPosition_Max);
+            winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
 
-        vbox.SetExtraData (GUI_LastWindowPosition, winPos);
+        vbox.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
     }
 }
 

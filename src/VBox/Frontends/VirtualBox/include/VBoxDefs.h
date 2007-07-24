@@ -145,6 +145,17 @@ struct VBoxDefs
         ShowWindowEventType,
 #endif
     };
+
+    static const char* GUI_LastWindowPosition;
+    static const char* GUI_LastWindowPosition_Max;
+    static const char* GUI_Fullscreen;
+    static const char* GUI_Seamless;
+    static const char* GUI_AutoresizeGuest;
+    static const char* GUI_FirstRun;
+    static const char* GUI_SaveMountedAtRuntime;
+    static const char* GUI_LastCloseAction;
+    static const char* GUI_SuppressMessages;
+    static const char* GUI_PermanentSharedFoldersAtRuntime;
 };
 
 #endif // __VBoxDefs_h__
