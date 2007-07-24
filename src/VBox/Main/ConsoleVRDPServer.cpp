@@ -629,7 +629,7 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery (void *pvCall
 
         /* Query framebuffer parameters. */
         ULONG lineSize = 0;
-        pfb->COMGETTER(LineSize) (&lineSize);
+        pfb->COMGETTER(BytesPerLine) (&lineSize);
 
         ULONG bitsPerPixel = 0;
         pfb->COMGETTER(BitsPerPixel) (&bitsPerPixel);
