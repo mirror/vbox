@@ -37,7 +37,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-const void *g_apvVBoxDDDependencies[] =
+const void *g_apvVBoxDDDependencies2[] =
 {
     (void *)&g_abPcBiosBinary,
     (void *)&g_abVgaBiosBinary,
