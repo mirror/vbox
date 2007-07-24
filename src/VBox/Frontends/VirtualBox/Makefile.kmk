@@ -130,6 +130,7 @@ VirtualBox_SOURCES = \
 	src/QIStatusBar.cpp \
 	src/QIMessageBox.cpp \
 	src/QIRichLabel.cpp \
+	src/VBoxDefs.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxGlobal.cpp \
 	src/VBoxMediaComboBox.cpp \

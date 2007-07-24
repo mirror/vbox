@@ -30,10 +30,6 @@
 *****************************************************************************/
 
 
-extern const char *GUI_SaveMountedAtRuntime;
-extern const char *GUI_FirstRun;
-
-
 /**
  *  QDialog class reimplementation to use for adding network interface.
  *  It has one line-edit field for entering network interface's name and
@@ -1523,7 +1519,7 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     cbSharedClipboard->setCurrentItem (machine.GetClipboardMode());
 
     /* other features */
-    QString saveRtimeImages = cmachine.GetExtraData (GUI_SaveMountedAtRuntime);
+    QString saveRtimeImages = cmachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
     chbRememberMedia->setChecked (saveRtimeImages != "no");
 
     /* hard disk images */
@@ -1866,7 +1862,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     cmachine.SetClipboardMode ((CEnums::ClipboardMode)cbSharedClipboard->currentItem());
 
     /* other features */
-    cmachine.SetExtraData (GUI_SaveMountedAtRuntime,
+    cmachine.SetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime,
                            chbRememberMedia->isChecked() ? "yes" : "no");
 
     /* hard disk images */
@@ -1979,7 +1975,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     /* Clear the "GUI_FirstRun" extra data key in case if the boot order
      * and/or disk configuration were changed */
     if (mResetFirstRunFlag)
-        cmachine.SetExtraData (GUI_FirstRun, QString::null);
+        cmachine.SetExtraData (VBoxDefs::GUI_FirstRun, QString::null);
 
     /* audio */
     {

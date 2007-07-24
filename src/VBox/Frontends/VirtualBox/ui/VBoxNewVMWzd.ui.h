@@ -32,8 +32,6 @@
 ** destructor.
 *****************************************************************************/
 
-/* defined in VBoxConsoleWnd.cpp */
-extern const char *GUI_FirstRun;
 
 /**
  *  Calculates a suitable page step size for the given max value.
@@ -316,7 +314,7 @@ bool VBoxNewVMWzd::constructMachine()
             return false;
         }
         if (uuidHD.isNull() || !chd.isNull())
-            cmachine.SetExtraData (GUI_FirstRun, "yes");
+            cmachine.SetExtraData (VBoxDefs::GUI_FirstRun, "yes");
     }
 
     /* name is set in CreateMachine() */
