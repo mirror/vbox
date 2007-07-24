@@ -187,26 +187,18 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                             AssertFailed();
                             break;
                         }
-
-                        /* Retry the change a bit later. */
-                        /* are we supposed to stop? */
-                        if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 1000) == WAIT_OBJECT_0)
-                        {
-                            fTerminate = true;
-                            break;
-                        }
                         break;
                     }
                     else
                     {
                         dprintf(("VBoxSeamlessThread: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
-                        /* sleep a bit to not eat too much CPU while retrying */
-                        /* are we supposed to stop? */
-                        if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
-                        {
-                            fTerminate = true;
-                            break;
-                        }
+                    }
+                    /* sleep a bit to not eat too much CPU while retrying */
+                    /* are we supposed to stop? */
+                    if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
+                    {
+                        fTerminate = true;
+                        break;
                     }
                 }
             }
