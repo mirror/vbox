@@ -447,8 +447,8 @@ void VBoxSharedFoldersSettings::getFrom (const CSharedFolderEnumerator &aEn,
                               sf.GetName(), sf.GetHostPath());
     }
     listView->setOpen (aRoot, true);
-    listView->setCurrentItem (aRoot);
-    processCurrentChanged (aRoot);
+    listView->setCurrentItem (aRoot->firstChild());
+    processCurrentChanged (aRoot->firstChild());
 }
 
 
