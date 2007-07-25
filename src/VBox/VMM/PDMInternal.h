@@ -313,8 +313,8 @@ typedef struct PDMUSB
     RTUINT                              cchName;
     /** Registration structure. */
     R3PTRTYPE(const struct PDMUSBREG *) pUsbReg;
-    /** Number of instances. */
-    RTUINT                              cInstances;
+    /** Next instance number. */
+    RTUINT                              iNextInstance;
     /** Pointer to chain of instances (R3 Ptr). */
     R3PTRTYPE(PPDMUSBINS)               pInstances;
 } PDMUSB;
@@ -783,7 +783,7 @@ typedef struct PDM
     /** The registered RTC device. */
     HCPTRTYPE(PPDMRTC)              pRtc;
     /** The registered USB HUBs. (FIFO) */
-    R3PTRTYPE(PPDMUSBHUB)           pUSBHubs;
+    R3PTRTYPE(PPDMUSBHUB)           pUsbHubs;
 
     /** Queue in which devhlp tasks are queued for R3 execution - HC Ptr. */
     HCPTRTYPE(PPDMQUEUE)            pDevHlpQueueHC;
@@ -863,7 +863,9 @@ int         pdmR3DevInit(PVM pVM);
 PPDMDEV     pdmR3DevLookup(PVM pVM, const char *pszName);
 int         pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
 
-int         pdmR3UsbInit(PVM pVM);
+int         pdmR3UsbLoadModules(PVM pVM);
+int         pdmR3UsbInstantiateDevices(PVM pVM);
+int         pdmR3UsbInitComplete(PVM pVM);
 PPDMUSB     pdmR3UsbLookup(PVM pVM, const char *pszName);
 int         pdmR3UsbFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
 

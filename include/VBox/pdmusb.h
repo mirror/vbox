@@ -35,7 +35,7 @@ __BEGIN_DECLS
 
 /** PDM USB Device Registration Structure,
  *
- * This structure is used when registering a device from VBoxUSBRegister() in HC Ring-3.
+ * This structure is used when registering a device from VBoxUsbRegister() in HC Ring-3.
  * The PDM will make use of this structure untill the VM is destroyed.
  */
 typedef struct PDMUSBREG
@@ -393,7 +393,7 @@ typedef PDMUSBHLP *PPDMUSBHLP;
 typedef const PDMUSBHLP *PCPDMUSBHLP;
 
 /** Current USBHLP version number. */
-#define PDM_USBHLP_VERSION  0xec0020000
+#define PDM_USBHLP_VERSION  0xec020000
 
 #endif /* IN_RING3 */
 
@@ -420,10 +420,10 @@ typedef struct PDMUSBINS
         uint8_t                 padding[HC_ARCH_BITS == 32 ? 48 : 96];
     } Internal;
 
-    /** Pointer the HC PDM Device API. */
-    R3PTRTYPE(PCPDMUSBHLP)      pDevHlp;
+    /** Pointer the PDM USB Device API. */
+    R3PTRTYPE(PCPDMUSBHLP)      pUsbHlp;
     /** Pointer to the USB device registration structure.  */
-    R3PTRTYPE(PCPDMUSBREG)      pDevReg;
+    R3PTRTYPE(PCPDMUSBREG)      pUsbReg;
     /** Configuration handle. */
     R3PTRTYPE(PCFGMNODE)        pCfg;
     /** The (device) global configuration handle. */
@@ -448,40 +448,40 @@ typedef struct PDMUSBINS
  * Assert that the current thread is the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMUSB_ASSERT_EMT(pDevIns)  pDevIns->pDevHlp->pfnAssertEMT(pDevIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMUSB_ASSERT_EMT(pUsbIns)  pUsbIns->pUsbHlp->pfnAssertEMT(pUsbIns, __FILE__, __LINE__, __FUNCTION__)
 #else
-# define PDMUSB_ASSERT_EMT(pDevIns)  do { } while (0)
+# define PDMUSB_ASSERT_EMT(pUsbIns)  do { } while (0)
 #endif
 
 /** @def PDMUSB_ASSERT_OTHER
  * Assert that the current thread is NOT the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMUSB_ASSERT_OTHER(pDevIns)  pDevIns->pDevHlp->pfnAssertOther(pDevIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMUSB_ASSERT_OTHER(pUsbIns)  pUsbIns->pUsbHlp->pfnAssertOther(pUsbIns, __FILE__, __LINE__, __FUNCTION__)
 #else
-# define PDMUSB_ASSERT_OTHER(pDevIns)  do { } while (0)
+# define PDMUSB_ASSERT_OTHER(pUsbIns)  do { } while (0)
 #endif
 
 /** @def PDMUSB_SET_ERROR
  * Set the VM error. See PDMDevHlpVMSetError() for printf like message formatting.
  */
-#define PDMUSB_SET_ERROR(pDevIns, rc, pszError) \
-    PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, "%s", pszError)
+#define PDMUSB_SET_ERROR(pUsbIns, rc, pszError) \
+    PDMDevHlpVMSetError(pUsbIns, rc, RT_SRC_POS, "%s", pszError)
 
 /** @def PDMUSB_SET_RUNTIME_ERROR
  * Set the VM runtime error. See PDMDevHlpVMSetRuntimeError() for printf like message formatting.
  */
-#define PDMUSB_SET_RUNTIME_ERROR(pDevIns, fFatal, pszErrorID, pszError) \
-    PDMDevHlpVMSetRuntimeError(pDevIns, fFatal, pszErrorID, "%s", pszError)
+#define PDMUSB_SET_RUNTIME_ERROR(pUsbIns, fFatal, pszErrorID, pszError) \
+    PDMDevHlpVMSetRuntimeError(pUsbIns, fFatal, pszErrorID, "%s", pszError)
 
 
 #ifdef IN_RING3
 
 /**
- * VBOX_STRICT wrapper for pDevHlp->pfnDBGFStopV.
+ * VBOX_STRICT wrapper for pUsbHlp->pfnDBGFStopV.
  *
  * @returns VBox status code which must be passed up to the VMM.
- * @param   pDevIns             Device instance.
+ * @param   pUsbIns             Device instance.
  * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
  * @param   pszFormat           Message. (optional)
  * @param   ...                 Message parameters.
@@ -492,7 +492,7 @@ DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *
     int rc;
     va_list va;
     va_start(va, pszFormat);
-    rc = pUsbIns->pDevHlp->pfnDBGFStopV(pUsbIns, RT_SRC_POS_ARGS, pszFormat, va);
+    rc = pUsbIns->pUsbHlp->pfnDBGFStopV(pUsbIns, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
     return rc;
 #else
@@ -507,7 +507,7 @@ DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *
 
 
 
-/** Pointer to callbacks provided to the VBoxUSBRegister() call. */
+/** Pointer to callbacks provided to the VBoxUsbRegister() call. */
 typedef const struct PDMUSBREGCB *PCPDMUSBREGCB;
 
 /**
@@ -545,7 +545,7 @@ typedef struct PDMUSBREGCB
 
 
 /**
- * The VBoxUSBRegister callback function.
+ * The VBoxUsbRegister callback function.
  *
  * PDM will invoke this function after loading a USB device module and letting
  * the module decide which devices to register and how to handle conflicts.
