@@ -1505,9 +1505,15 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
             "<b>%1&nbsp;bit</b> color mode but the color quality of the "
             "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
             "<p>Please open the display properties dialog of the guest OS and "
-            "select a <b>%3&nbsp;bit</b> color mode to gain maximum "
-            "performance of the virtual video subsystem.</p>")
-            .arg (aWantedBPP).arg (aRealBPP).arg (aWantedBPP),
+            "select a <b>%3&nbsp;bit</b> color mode, if it is available, to "
+            "gain maximum performance of the virtual video subsystem.</p>"
+            "<p><b>Note</b>. Some operating systems, like OS/2, may actually "
+            "work in 32&nbsp;bit mode but report it as 24&nbsp;bit "
+            "(16 million colors). You may try to select a different color "
+            "quality to see if this message disappears or you can simply "
+            "disable the message now if you are sure the required color "
+            "quality (%4&nbsp;bit) is not available in the given guest OS.</p>")
+            .arg (aWantedBPP).arg (aRealBPP).arg (aWantedBPP).arg (aWantedBPP),
         kName);
     NOREF(rc);
 }
