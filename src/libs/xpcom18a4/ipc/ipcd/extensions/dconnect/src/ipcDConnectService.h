@@ -237,6 +237,7 @@ public:
   NS_HIDDEN_(PRBool)   CheckInstanceAndAddRef(DConnectInstance *);
 
   PRLock *StubLock() { return mStubLock; }
+  PRLock *StubQILock() { return mStubQILock; }
   
   static nsRefPtr <ipcDConnectService> GetInstance() {
     return nsRefPtr <ipcDConnectService> (mInstance);
@@ -288,6 +289,11 @@ private:
   
   // global lock to protect access to DConnectStub internal data
   PRLock *mStubLock;
+
+  // global lock to protect access to protect DConnectStub::QueryInterface()
+  // (we cannot use mStubLock because it isn't supposed to be held long,
+  // like in case of an IPC call and such)
+  PRLock *mStubQILock;
 
 #if defined(DCONNECT_MULTITHREADED)
 
