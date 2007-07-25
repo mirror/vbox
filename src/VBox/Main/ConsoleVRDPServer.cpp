@@ -599,15 +599,11 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept (void *pvCallback, u
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackUSB (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint8_t u8Code, const void *pvRet, uint32_t cbRet)
 {
-    ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-
     return USBClientResponseCallback (pvIntercept, u32ClientId, u8Code, pvRet, cbRet);
 }
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackClipboard (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData)
 {
-    ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-    
     return ClipboardCallback (pvIntercept, u32ClientId, u32Function, u32Format, pvData, cbData);
 }
 
@@ -821,7 +817,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
         mConsoleCallback = NULL;
     }
 
-    int i;
+    unsigned i;
     for (i = 0; i < ELEMENTS(maFramebuffers); i++)
     {
         if (maFramebuffers[i])
@@ -925,7 +921,10 @@ void ConsoleVRDPServer::Stop (void)
 #ifdef VBOX_VRDP
     if (mhServer)
     {
+#ifdef VRDP_NO_COM
+#else
         HVRDPSERVER hServer = mhServer;
+#endif /* VRDP_NO_COM */
 
         /* Reset the handle to avoid further calls to the server. */
         mhServer = 0;
