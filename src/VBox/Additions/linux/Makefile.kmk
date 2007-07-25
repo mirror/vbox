@@ -34,8 +34,10 @@ SUBDIRS += \
 	xclient
 endif
 
+ifndef VBOX_OSE
 PACKING      = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
 OTHER_CLEAN  = $(PACKING)
+endif
 
 
 include	$(PATH_KBUILD)/footer.kmk
