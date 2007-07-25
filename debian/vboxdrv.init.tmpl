@@ -1,0 +1,179 @@
+#! /bin/bash
+#
+# innotek VirtualBox
+# Linux kernel module init script
+#
+# Copyright (C) 2006-2007 innotek GmbH
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License as published by the Free Software Foundation,
+# in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+# distribution. VirtualBox OSE is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# If you received this file as part of a commercial VirtualBox
+# distribution, then only the terms of your commercial VirtualBox
+# license agreement apply instead of the previous paragraph.
+
+
+# chkconfig: 35 30 60
+# description: VirtualBox Linux kernel module
+#
+### BEGIN INIT INFO
+# Provides:       vboxdrv
+# Required-Start: $syslog
+# Required-Stop:
+# Default-Start:  3 5
+# Default-Stop:
+# Description:    VirtualBox Linux kernel module
+### END INIT INFO
+
+KDIR="/lib/modules/`uname -r`/misc"
+DEVICE=/dev/vboxdrv
+MODNAME=vboxdrv
+GROUPNAME=vboxusers
+CONFIG="/etc/vbox/vbox.cfg"
+LOG="/var/log/vbox-install.log"
+NOLSB=%NOLSB%
+
+if [ -r /etc/default/virtualbox ]; then
+  . /etc/default/virtualbox
+fi
+
+if [ -z "$NOLSB" -a -f /lib/lsb/init-functions ]; then
+  . /lib/lsb/init-functions
+else
+  log_daemon_msg()
+  {
+    if [ -z "${1:-}" ]; then
+      return 1
+    fi
+    if [ -z "${2:-}" ]; then
+      echo -n "$1:"
+      return
+    fi
+    echo -n "$1: $2"
+  }
+  log_end_msg()
+  {
+    [ -z "${1:-}" ] && return 1
+    if [ $1 -eq 0 ]; then
+      echo "."
+    else
+      echo " failed!"
+    fi
+  }
+  log_success_msg()
+  {
+    echo "$@"
+  }
+  log_failure_msg()
+  {
+    echo "$@"
+  }
+fi
+
+failure()
+{
+  echo ""
+  log_failure_msg "$1"
+  exit 0
+}
+
+running()
+{
+  lsmod | grep -q $MODNAME[^_-]
+}
+
+start()
+{
+  log_daemon_msg "Starting VirtualBox kernel module" "$MODNAME";
+  # ensure the module is loaded
+  if ! running; then
+    if [ ! -f "$KDIR/$MODNAME.o" -a ! "$KDIR/$MODNAME.ko" ]; then
+      failure "No suitable module for running kernel found."
+    fi
+    if ! modprobe $MODNAME; then
+      failure "Modprobe $MODNAME failed. Please use 'dmesg' to find out why."
+    fi
+    sleep .2
+  fi
+  # ensure the character special exists
+  if [ ! -c $DEVICE ]; then
+    MAJOR=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/devices`
+    if [ -n "$MAJOR" ]; then
+      MINOR=0
+    else
+      MINOR=`sed -n 's;\([0-9]\+\) vboxdrv;\1;p' /proc/misc`
+      if [ -n "$MINOR" ]; then
+        MAJOR=10
+      fi
+    fi
+    if [ -z "$MAJOR" ]; then
+      rmmod $MODNAME
+      failure "Cannot locate device major."
+    fi
+    if ! mknod -m 0664 $DEVICE c $MAJOR $MINOR; then
+      rmmod $MODNAME
+      failure "Cannot create device $DEVICE with major $MAJOR and minor $MINOR."
+    fi
+  fi
+  # ensure permissions
+  if ! chown :$GROUPNAME $DEVICE; then
+    rmmod $MODNAME
+    failure "Cannot change owner $GROUPNAME for device $DEVICE."
+  fi
+  log_end_msg 0
+}
+
+stop()
+{
+  log_daemon_msg "Stopping VirtualBox kernel module" "$MODNAME";
+  killall -q VBoxSVC
+  if running; then
+    if ! rmmod $MODNAME; then
+      failure "Cannot unload module $MODNAME."
+    fi
+    if ! rm -f $DEVICE; then
+      failure "Cannot unlink $DEVICE."
+    fi
+  fi
+  log_end_msg 0
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart|reload|force-reload)
+    stop
+    start
+    ;;
+  setup)
+    . "$CONFIG"
+    stop
+    log_daemon_msg "Recompiling VirtualBox kernel module" "$MODNAME"
+    if ! $INSTALL_DIR/src/build_in_tmp install > $LOG 2>&1; then
+      failure "Look at $LOG to find out what went wrong"
+    fi
+    log_end_msg 0
+    start
+    ;;
+  status)
+    if running; then
+      log_success_msg "VirtualBox kernel module is loaded."
+    else
+      log_failure_msg "VirtualBox kernel module is not loaded."
+    fi
+    ;;
+  *)
+    log_failure_msg "Usage: $0 {start|stop|restart|status|setup}"
+    exit 3
+esac
+
+exit 0

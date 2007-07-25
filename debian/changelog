@@ -1,0 +1,5 @@
+virtualbox (1.4.1-3832-OSE) unstable; urgency=low
+
+  * rebuild Debian packet
+
+ -- innotek GmbH <info@virtualbox.org>  Wed, 25 Jul 2007 16:39:04 +0200

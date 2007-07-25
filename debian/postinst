@@ -1,0 +1,80 @@
+#!/bin/sh
+
+LOG="/var/log/vbox-install.log"
+
+# read INSTALL_DIR/src
+. /etc/vbox/vbox.cfg
+
+# for debconf
+. /usr/share/debconf/confmodule
+db_version 2.0
+
+# remove old cruft
+if [ -f /etc/init.d/vboxdrv.sh ]; then
+  echo "Found old version of /etc/init.d/vboxdrv.sh, removing."
+  rm /etc/init.d/vboxdrv.sh
+  update-rc.d vboxdrv.sh remove >/dev/null
+fi
+if [ -f /etc/init.d/virtualbox ]; then
+  echo "Found old version of /etc/init.d/virtualbox, removing."
+  rm /etc/init.d/virtualbox
+  update-rc.d virtualbox remove >/dev/null
+fi
+
+# install udev rule
+if [ -d /etc/udev/rules.d ]; then
+  udev_out=`udevinfo -V` 2>&1 > /dev/null
+  if [ "$udev_out" = "" ]; then
+    udev_out=`udevinfo -V` 2>&1 > /dev/null  # New syntax
+  fi
+  udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
+  if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
+    echo 'KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"' \
+      > /etc/udev/rules.d/60-vboxdrv.rules
+  else
+    echo 'KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"' \
+      > /etc/udev/rules.d/60-vboxdrv.rules
+  fi
+fi
+
+# create users groups
+db_input high virtualbox/group-vboxusers || true
+db_go || true
+groupadd -f vboxusers
+
+if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
+  db_get virtualbox/module-compilation-allowed
+  if [ "$RET" = "false" ]; then
+    cat << EOF
+Unable to find a precompiled module for the current kernel
+though module compilation denied by debconf setting.
+EOF
+  else
+    db_input critical virtualbox/module-compilation-allowed || true
+    db_go || true
+    db_get virtualbox/module-compilation-allowed
+    if [ "$RET" = "true" ]; then
+      # Compile module. Don't show a message box here if everything works well.
+      cat << EOF
+Messages emitted during module compilation will be logged to $LOG.
+EOF
+      if ! $INSTALL_DIR/src/build_in_tmp install > /var/log/vbox-install.log 2>&1; then
+        db_fset virtualbox/module-compilation-failed seen false
+        db_input critical virtualbox/module-compilation-failed || true
+        db_go || true
+        touch /etc/vbox/module_not_compiled
+        # don't abort the installation!
+      else
+        # success
+        cat << EOF
+Success!
+EOF
+        rm -f /etc/vbox/module_not_compiled
+      fi
+    fi
+  fi
+fi
+
+#DEBHELPER#
+
+exit 0

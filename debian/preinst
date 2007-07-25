@@ -1,0 +1,27 @@
+#!/bin/bash -e
+
+. /usr/share/debconf/confmodule
+db_version 2.0
+db_capb backup
+
+# check for old vboxdrv modules
+if find /lib/modules -name vboxdrv\* 2>/dev/null|grep -q vboxdrv; then
+  # old modules found
+  db_get virtualbox/delete-old-modules
+  if [ "$RET" = "false" ]; then
+    cat << EOF
+Old vboxdrv kernel modules found in
+EOF
+    find /lib/modules -name vboxdrv\* 2>/dev/null|sed "s+\(.*\)+  \1+g"
+    cat << EOF
+Removing of these modules denied by debconf setting
+EOF
+  else
+    db_input critical virtualbox/delete-old-modules || true
+    db_go || true
+    db_get virtualbox/delete-old-modules
+    if [ "$RET" = "true" ]; then
+      find /lib/modules -name vboxdrv\* 2>/dev/null|xargs rm -f 2>/dev/null
+    fi
+  fi
+fi

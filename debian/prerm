@@ -1,0 +1,9 @@
+#!/bin/sh
+
+rm -f /etc/udev/rules.d/60-vboxdrv.rules
+rm -f /etc/vbox/license_agreed
+rm -f /etc/vbox/module_not_compiled
+
+#DEBHELPER#
+
+exit 0
