@@ -77,7 +77,7 @@ endif
 # The packing target rule, but only if we're on the local build box.
 ifndef VBOX_ADDITIONS_XYZ_ONLY
  ifneq ($(VBOX_WITH_WIN32_ADDITIONS)$(VBOX_WITH_LINUX_ADDITIONS),)
-  PACKING += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
+  PACKING += $(if $(VBOX_OSE),,$(PATH_BIN)/additions/VBoxGuestAdditions.iso)
  endif
 endif
 
