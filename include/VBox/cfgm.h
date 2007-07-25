@@ -347,6 +347,38 @@ CFGMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvD
 
 
 /**
+ * Creates a CFGM tree.
+ *
+ * This is intended for creating device/driver configs can be
+ * passed around and later attached to the main tree in the
+ * correct location.
+ *
+ * @returns Pointer to the root node.
+ * @param   pVM         The VM handle.
+ */
+CFGMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM);
+
+/**
+ * Insert subtree.
+ *
+ * This function inserts (no duplication) a tree created by CFGMR3CreateTree()
+ * into the main tree.
+ *
+ * The root node of the inserted subtree will need to be reallocated, which
+ * effectually means that the passed in pSubTree handle becomes invalid
+ * upon successful return. Use the value returned in ppChild instead
+ * of pSubTree.
+ *
+ * @returns VBox status code.
+ * @returns VERR_CFGM_NODE_EXISTS if the final child node name component exists.
+ * @param   pNode       Parent node.
+ * @param   pszName     Name or path of the new child node.
+ * @param   pSubTree    The subtree to insert. Must be returned by CFGMR3CreateTree().
+ * @param   ppChild     Where to store the address of the new child node. (optional)
+ */
+CFGMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNODE pSubTree, PCFGMNODE *ppChild);
+
+/**
  * Insert a node.
  *
  * @returns VBox status code.
