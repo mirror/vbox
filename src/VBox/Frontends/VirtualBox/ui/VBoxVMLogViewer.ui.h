@@ -62,16 +62,6 @@ public:
         connect (mSearchString, SIGNAL (textChanged (const QString &)),
                  this, SLOT (findCurrent (const QString &)));
 
-        mButtonPrev = new QToolButton (this);
-        mButtonPrev->setEnabled (false);
-        mButtonPrev->setAutoRaise (true);
-        mButtonPrev->setFocusPolicy (QWidget::TabFocus);
-        mButtonPrev->setUsesTextLabel (true);
-        mButtonPrev->setTextPosition (QToolButton::BesideIcon);
-        connect (mButtonPrev, SIGNAL (clicked()), this, SLOT (findBack()));
-        mButtonPrev->setIconSet (VBoxGlobal::iconSet ("list_moveup_16px.png",
-                                             "list_moveup_disabled_16px.png"));
-
         mButtonNext = new QToolButton (this);
         mButtonNext->setEnabled (false);
         mButtonNext->setAutoRaise (true);
@@ -81,6 +71,16 @@ public:
         connect (mButtonNext, SIGNAL (clicked()), this, SLOT (findNext()));
         mButtonNext->setIconSet (VBoxGlobal::iconSet ("list_movedown_16px.png",
                                            "list_movedown_disabled_16px.png"));
+
+        mButtonPrev = new QToolButton (this);
+        mButtonPrev->setEnabled (false);
+        mButtonPrev->setAutoRaise (true);
+        mButtonPrev->setFocusPolicy (QWidget::TabFocus);
+        mButtonPrev->setUsesTextLabel (true);
+        mButtonPrev->setTextPosition (QToolButton::BesideIcon);
+        connect (mButtonPrev, SIGNAL (clicked()), this, SLOT (findBack()));
+        mButtonPrev->setIconSet (VBoxGlobal::iconSet ("list_moveup_16px.png",
+                                             "list_moveup_disabled_16px.png"));
 
         mCaseSensitive = new QCheckBox (this);
 
@@ -116,6 +116,7 @@ public:
         mainLayout->addItem   (spacer);
 
         setFocusProxy (mCaseSensitive);
+        qApp->installEventFilter (this);
 
         languageChange();
     }
@@ -137,11 +138,6 @@ public:
         QToolTip::add (mCaseSensitive,
             tr ("Perform case sensitive search (when checked)"));
         mWarningString->setText (tr ("String not found"));
-    }
-
-    void setText (const QString &aText)
-    {
-        mSearchString->setText (aText);
     }
 
 private slots:
@@ -172,6 +168,8 @@ private:
     void search (bool aForward, bool aStartCurrent = false)
     {
         QTextBrowser *browser = mViewer->currentLogPage();
+        if (!browser) return;
+
         int startPrg = 0, endPrg = 0;
         int startInd = 0, endInd = 0;
         if (browser->hasSelectedText())
@@ -195,6 +193,15 @@ private:
                 found = true;
                 browser->setSelection (paragraph, res, paragraph,
                                        res + mSearchString->text().length());
+                /* ensures the selected word visible */
+                int curPrg = 0, curInd = 0;
+                browser->getCursorPosition (&curPrg, &curInd);
+                QRect rect = browser->paragraphRect (curPrg);
+                QString string = browser->text (curPrg);
+                string.truncate (curInd);
+                int x = rect.x() + browser->fontMetrics().width (string);
+                int y = rect.y() + browser->pointSize() / 2;
+                browser->ensureVisible (x, y, 40, 40);
                 break;
             }
             startFrom = aForward ? 0 : -1;
@@ -235,8 +242,26 @@ private:
                  * move to the search field */
                 else if (e->state() == ControlButton && e->key() == Key_F)
                 {
-                    mSearchString->setFocus();
-                    return true;
+                    if (mViewer->currentLogPage())
+                    {
+                        if (isHidden()) show();
+                        mSearchString->setFocus();
+                        return true;
+                    }
+                }
+                /* processing the alpha-numeric keys as the shortcuts to the
+                 * search panel displaying and search activation */
+                else if (e->state() == 0 &&
+                         e->key() >= Qt::Key_Exclam &&
+                         e->key() <= Qt::Key_AsciiTilde)
+                {
+                    if (mViewer->currentLogPage())
+                    {
+                        if (isHidden()) show();
+                        mSearchString->setFocus();
+                        mSearchString->insert (e->text());
+                        return true;
+                    }
                 }
 
                 break;
@@ -250,7 +275,6 @@ private:
     void showEvent (QShowEvent *aEvent)
     {
         QWidget::showEvent (aEvent);
-        qApp->installEventFilter (this);
         mSearchString->setFocus();
         mSearchString->selectAll();
     }
@@ -259,7 +283,6 @@ private:
     {
         if (focusData()->focusWidget()->parent() == this)
            focusNextPrevChild (true);
-        qApp->removeEventFilter (this);
         QWidget::hideEvent (aEvent);
     }
 
@@ -345,6 +368,9 @@ void VBoxVMLogViewer::init()
     setTabOrder (mSaveButton, mRefreshButton);
     setTabOrder (mRefreshButton, mCloseButton);
     setTabOrder (mCloseButton, mLogList);
+
+    /* make the [Save] button focused by default */
+    mSaveButton->setFocus();
 
     /* applying language settings */
     languageChangeImp();
@@ -477,19 +503,6 @@ void VBoxVMLogViewer::keyPressEvent (QKeyEvent *aEvent)
                 break;
             }
         }
-        if (aEvent->key() >= Qt::Key_Exclam &&
-            aEvent->key() <= Qt::Key_AsciiTilde &&
-            mLogList->isEnabled())
-        {
-            mSearchPanel->show();
-            mSearchPanel->setText (aEvent->text());
-        }
-    }
-    else if (aEvent->state() == Qt::ControlButton &&
-             aEvent->key() == Qt::Key_F)
-    {
-        if (mLogList->isEnabled())
-            mSearchPanel->show();
     }
     else
         aEvent->ignore();
@@ -528,6 +541,7 @@ void VBoxVMLogViewer::refresh()
 {
     /* clearing old data if any */
     mLogFilesList.clear();
+    mLogList->setEnabled (true);
     while (mLogList->count())
     {
         QWidget *logPage = mLogList->page (0);
@@ -623,7 +637,8 @@ QTextBrowser* VBoxVMLogViewer::createLogPage (const QString &aName)
 
 QTextBrowser* VBoxVMLogViewer::currentLogPage()
 {
-    return static_cast<QTextBrowser*> (mLogList->currentPage());
+    return mLogList->isEnabled() ?
+        static_cast<QTextBrowser*> (mLogList->currentPage()) : 0;
 }
 
 
