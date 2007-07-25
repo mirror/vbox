@@ -2936,8 +2936,8 @@ VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
     mSettings = new VBoxSharedFoldersSettings (this, "mSettings");
     mSettings->setDialogType (VBoxSharedFoldersSettings::MachineType |
                               VBoxSharedFoldersSettings::ConsoleType);
-    mSettings->getFromMachine (aSession.GetMachine());
     mSettings->getFromConsole (aSession.GetConsole());
+    mSettings->getFromMachine (aSession.GetMachine());
     mainLayout->addWidget (mSettings);
 
     /* Setup button's layout */
@@ -2972,7 +2972,7 @@ void VBoxSFDialog::accept()
 
 void VBoxSFDialog::showEvent (QShowEvent *aEvent)
 {
-    resize (600, 500);
+    resize (450, 300);
     VBoxGlobal::centerWidget (this, parentWidget());
     setMinimumWidth (400);
     QDialog::showEvent (aEvent);
