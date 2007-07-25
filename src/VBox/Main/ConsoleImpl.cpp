@@ -258,6 +258,8 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     unconst (mMachine) = aMachine;
     unconst (mControl) = aControl;
 
+    memset (&mCallbackData, 0, sizeof (mCallbackData));
+
     /* Cache essential properties and objects */
 
     rc = mMachine->COMGETTER(State) (&mMachineState);
@@ -309,8 +311,6 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
 
     unconst (mAudioSniffer) = new AudioSniffer(this);
     AssertReturn (mAudioSniffer, E_FAIL);
-
-    memset (&mCallbackData, 0, sizeof (mCallbackData));
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
