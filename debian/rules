@@ -121,7 +121,7 @@ binary binary-arch binary-indep: build $(verfile)
 	$(MAKE) -f debian/rules binary
 else
 # Build architecture-dependent files here.
-binary binary-arch binary-indep: build $(if $(OSE),,modules)
+binary binary-arch binary-indep: build $(if $(ose),,modules)
 	dh_testdir
 	dh_testroot
 	dh_clean -k
@@ -141,9 +141,9 @@ binary binary-arch binary-indep: build $(if $(OSE),,modules)
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.gc $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.r0 $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.so $(prefix)/usr/$(deblib)
-	for d in $(moddir)/*; do \
+	$(if $(ose),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
-	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done
+	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done)
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxTunctl $(prefix)/usr/bin
 	dh_link \
 	    $(if $(HEADLESS),,opt/VirtualBox-$(ver)/VBox.sh usr/bin/VirtualBox) \
@@ -154,7 +154,7 @@ binary binary-arch binary-indep: build $(if $(OSE),,modules)
 	    opt/VirtualBox-$(ver)/VBoxAddIF.sh usr/bin/VBoxDeleteIF
 	dh_desktop
 	dh_installmenu
-	dh_installmodules
+	$(if $(ose),,dh_installmodules)
 	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g;' \
 	    debian/vboxdrv.init.tmpl > debian/vboxdrv.init
 #	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \

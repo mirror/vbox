@@ -1,4 +1,4 @@
-virtualbox (1.4.1-3832-OSE) unstable; urgency=low
+virtualbox (1.4.1+3832+OSE-1) unstable; urgency=low
 
   * rebuild Debian packet
 
