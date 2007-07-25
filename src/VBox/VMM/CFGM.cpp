@@ -657,12 +657,6 @@ CFGMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvD
 }
 
 
-
-/*
- *  -+- internal apis -+-
- */
-
-
 /**
  * Creates the default configuration.
  * This assumes an empty tree.
@@ -1016,6 +1010,90 @@ static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *pp
 
 
 /**
+ * Creates a CFGM tree.
+ *
+ * This is intended for creating device/driver configs can be
+ * passed around and later attached to the main tree in the
+ * correct location.
+ *
+ * @returns Pointer to the root node.
+ * @param   pVM         The VM handle.
+ */
+CFGMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM)
+{
+    PCFGMNODE pNew = (PCFGMNODE)MMR3HeapAlloc(pVM, MM_TAG_CFGM, sizeof(*pNew));
+    if (pNew)
+    {
+        pNew->pPrev         = NULL;
+        pNew->pNext         = NULL;
+        pNew->pParent       = NULL;
+        pNew->pFirstChild   = NULL;
+        pNew->pFirstLeaf    = NULL;
+        pNew->pVM           = pVM;
+        pNew->fRestrictedRoot = false;
+        pNew->cchName       = 0;
+        pNew->szName[0]     = 0;
+    }
+    return pNew;
+}
+
+
+/**
+ * Insert subtree.
+ *
+ * This function inserts (no duplication) a tree created by CFGMR3CreateTree()
+ * into the main tree.
+ *
+ * The root node of the inserted subtree will need to be reallocated, which
+ * effectually means that the passed in pSubTree handle becomes invalid
+ * upon successful return. Use the value returned in ppChild instead
+ * of pSubTree.
+ *
+ * @returns VBox status code.
+ * @returns VERR_CFGM_NODE_EXISTS if the final child node name component exists.
+ * @param   pNode       Parent node.
+ * @param   pszName     Name or path of the new child node.
+ * @param   pSubTree    The subtree to insert. Must be returned by CFGMR3CreateTree().
+ * @param   ppChild     Where to store the address of the new child node. (optional)
+ */
+CFGMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNODE pSubTree, PCFGMNODE *ppChild)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pSubTree, VERR_INVALID_POINTER);
+    AssertReturn(!pSubTree->pParent, VERR_INVALID_PARAMETER);
+    AssertReturn(pSubTree->pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pSubTree->pParent != pSubTree->pVM->cfgm.s.pRoot, VERR_INVALID_PARAMETER);
+    Assert(!pSubTree->pNext);
+    Assert(!pSubTree->pPrev);
+
+    /*
+     * Use CFGMR3InsertNode to create a new node and then
+     * re-attach the children and leafs of the subtree to it.
+     */
+    PCFGMNODE pNewChild;
+    int rc = CFGMR3InsertNode(pNode, pszName, &pNewChild);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pNewChild->pFirstChild);
+        pNewChild->pFirstChild = pSubTree->pFirstChild;
+        Assert(pNewChild->pFirstLeaf);
+        pNewChild->pFirstLeaf = pSubTree->pFirstLeaf;
+        if (ppChild)
+            *ppChild = pNewChild;
+
+        /* free the old subtree root */
+        pSubTree->pVM = NULL;
+        pSubTree->pFirstLeaf = NULL;
+        pSubTree->pFirstChild = NULL;
+        MMR3HeapFree(pSubTree);
+    }
+    return rc;
+}
+
+
+/**
  * Insert a node.
  *
  * @returns VBox status code.
@@ -1306,7 +1384,7 @@ CFGMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
         {
             if (pNode->pParent)
                 pNode->pParent->pFirstChild = pNode->pNext;
-            else
+            else if (pNode == pNode->pVM->cfgm.s.pRoot)
                 pNode->pVM->cfgm.s.pRoot = NULL;
         }
         if (pNode->pNext)
