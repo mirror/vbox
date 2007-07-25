@@ -1011,8 +1011,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, void *pv
     LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: pvReservedIn=%p ppvReservedHlp=%p\n",
              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pvReservedIn, ppvReservedHlp));
 
-//    int rc = PDMUSBRegisterHub(pDrvIns->Internal.s.pVM, pvReservedIn, ppvReservedHlp);
-    int rc = VERR_NOT_IMPLEMENTED;
+/// @todo    int rc = PDMUSBRegisterHub(pDrvIns->Internal.s.pVM, pvReservedIn, ppvReservedHlp);
+    int rc = VINF_SUCCESS;
 
     LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
