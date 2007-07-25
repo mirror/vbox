@@ -3947,11 +3947,11 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>Hårddisk för sekundär slav är redan ansluten till en annan plats.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>Avbildsfil för CD/DVD-enhet har inte valts.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>Avbildsfil för diskettenhet har inte valts.</translation>
     </message>
     <message>

@@ -4393,11 +4393,11 @@ toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC
         <translation>Discul hard Secundar Slave este ataşat deja la un slot diferit.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>Fişierul imagine de CD/DVD nu este selectat.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>Fişierul imagine dischetă nu este selectat.</translation>
     </message>
     <message>

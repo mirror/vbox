@@ -3962,11 +3962,11 @@ value.&lt;/qt&gt;</source>
         <translation>セカンダリ スレーブに指定したハードディスクはすでに他のスロットに割り当てられています。</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>CD/DVDイメージファイルが選択されていません。</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>フロッピーイメージファイルが選択されていません。</translation>
     </message>
     <message>

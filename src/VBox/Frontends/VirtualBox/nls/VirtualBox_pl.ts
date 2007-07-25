@@ -3980,11 +3980,11 @@ value.&lt;/qt&gt;</source>
         <translation>Drugi Podrzędny dysk został już podłączony do innego slotu.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>Obraz nośnika CD/DVD nie został wybrany.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>Obraz dyskietki nie został wybrany.</translation>
     </message>
     <message>

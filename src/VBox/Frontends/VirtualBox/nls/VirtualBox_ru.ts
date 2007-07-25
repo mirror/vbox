@@ -3944,11 +3944,11 @@ value.&lt;/qt&gt;</source>
         <translation>Жесткий диск &lt;i&gt;Вторичный слейв&lt;/i&gt; уже присоединен к другому разъему.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>Не выбран файл образа CD/DVD.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>Не выбран файл образа дискеты.</translation>
     </message>
     <message>

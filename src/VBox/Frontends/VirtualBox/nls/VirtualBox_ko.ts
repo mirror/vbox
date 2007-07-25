@@ -3930,11 +3930,11 @@ value.&lt;/qt&gt;</source>
         <translation>세컨더리 슬레이브 하드 디스크가 이미 다른 슬롯에 연결되어 있습니다.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>CD/DVD 이미지 파일이 선택되지 않았습니다.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>플로피 드라이브 이미지 파일이 선택되지 않았습니다.</translation>
     </message>
     <message>
