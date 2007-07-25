@@ -1,4 +1,4 @@
-/** @file
+
  * PDM - Pluggable Device Manager.
  */
 
@@ -726,7 +726,7 @@ typedef enum PDMINTERFACE
     PDMINTERFACE_VUSB_RH_PORT,
     /** VUSBIROOTHUBCONNECTOR   - VUSB RootHub connector interface.     (Up)     Coupled with PDMINTERFACE_USB_RH_PORT. */
     PDMINTERFACE_VUSB_RH_CONNECTOR,
-    /** VUSBIROOTHUBCONNECTOR   - VUSB RootHub configuration interface. (Main)   Used by the managment api. */
+    /** VUSBIRHCONFIG           - VUSB RootHub configuration interface. (Main)   Used by the managment api. */
     PDMINTERFACE_VUSB_RH_CONFIG,
 
     /** VUSBROOTHUBCONNECTOR    - VUSB Device interface.                (Up)     No coupling. */
