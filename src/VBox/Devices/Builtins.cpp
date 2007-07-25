@@ -236,3 +236,21 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     return VINF_SUCCESS;
 }
 
+
+#ifdef VBOX_WITH_USB
+/**
+ * Register builtin USB device.
+ *
+ * @returns VBox status code.
+ * @param   pCallbacks      Pointer to the callback table.
+ * @param   u32Version      VBox version number.
+ */
+extern "C" DECLEXPORT(int) VBoxUSBRegister(PCPDMUSBREGCB pCallbacks, uint32_t u32Version)
+{
+    int rc = pCallbacks->pfnRegister(pCallbacks, &g_UsbDevProxy);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    return VINF_SUCCESS;
+}
+#endif
