@@ -3889,11 +3889,11 @@ value.&lt;/qt&gt;</source>
         <translation>Das zweite Slave-Laufwerk ist bereits an einen anderen Slot gebunden.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>CD/DVD-ROM-Abbild ist nicht ausgewählt.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>Diskettenabbild ist nicht ausgewählt.</translation>
     </message>
     <message>

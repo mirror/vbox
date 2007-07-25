@@ -4403,11 +4403,11 @@ con tutti i campi impostati ai valori del dispositivo USB connesso alla macchina
         <translation>L&apos;hard disk Secondary Slave è già connesso ad uno slot diverso.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>Il file immagine CD/DVD non è stato selezionato.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>Il file immagine floppy non è stato selezionato.</translation>
     </message>
     <message>

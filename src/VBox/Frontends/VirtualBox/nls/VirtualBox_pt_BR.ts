@@ -3986,11 +3986,11 @@ qualquer valor.&lt;/qt&gt;</translation>
         <translation>O disco rígido Secundário Slave já está conectado a um conector diferente.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>O arquivo de imagem de CD/DVD não está selecionado.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>O arquivo de imagem de disquete não está selecionado.</translation>
     </message>
     <message>

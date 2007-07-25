@@ -4218,11 +4218,11 @@ with all fields set to the values of the selected USB device attached to the hos
         <translation>第二IDE控制器从通道上使用的硬盘已经连接到其它接口.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>没有指定虚拟电脑上使用的光盘映像文件.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>没有指定虚拟电脑上使用的软盘映像.</translation>
     </message>
     <message>

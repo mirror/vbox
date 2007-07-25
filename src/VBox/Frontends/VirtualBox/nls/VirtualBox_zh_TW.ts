@@ -5100,11 +5100,11 @@ with all fields set to the values of the selected USB device attached to the hos
         <translation>第二從屬硬碟已經附掛到另一個不同的插槽。</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>尚未選取光碟映像檔。</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>尚未選取軟碟映像檔。</translation>
     </message>
     <message>

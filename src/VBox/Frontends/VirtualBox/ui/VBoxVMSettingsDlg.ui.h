@@ -1420,7 +1420,7 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
         tbISODVD->setEnabled (rbISODVD->isChecked());
 
         if (!valid)
-            setWarning (tr ("CD/DVD drive image file is not selected."));
+            setWarning (tr ("CD/DVD image file is not selected."));
     }
     else if (pg == pageFloppy)
     {
@@ -1437,7 +1437,7 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
         tbISOFloppy->setEnabled (rbISOFloppy->isChecked());
 
         if (!valid)
-            setWarning (tr ("Floppy drive image file is not selected."));
+            setWarning (tr ("Floppy image file is not selected."));
     }
     else if (pg == pageNetwork)
     {

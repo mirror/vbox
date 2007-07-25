@@ -4305,11 +4305,11 @@ Timeout d&apos;authentification </translation>
         <translation>Le disque dur esclave secondaire est attaché sur un autre emplacement.</translation>
     </message>
     <message>
-        <source>CD/DVD drive image file is not selected.</source>
+        <source>CD/DVD image file is not selected.</source>
         <translation>Image CD/DVD non sélectionnée.</translation>
     </message>
     <message>
-        <source>Floppy drive image file is not selected.</source>
+        <source>Floppy image file is not selected.</source>
         <translation>Image disquette non sélectionnée.</translation>
     </message>
     <message>
