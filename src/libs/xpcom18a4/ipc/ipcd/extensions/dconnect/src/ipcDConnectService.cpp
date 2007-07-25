@@ -954,7 +954,7 @@ public:
     : mIInfo(aIInfo)
     , mInstance(aInstance)
     , mPeerID(aPeerID)
-    , mISupportsInstance(0)
+    , mCachedISupports(0)
     , mRefCntLevels(0)
     {}
 
@@ -987,8 +987,8 @@ private:
   // the "client id" of our IPC peer.  this guy owns the real object.
   PRUint32 mPeerID;
   
-  // cached nsISupports instance for this object
-  DConAddr mISupportsInstance;
+  // cached nsISupports stub for this object
+  DConnectStub *mCachedISupports;
   
   // stack of reference counter values returned by AddRef made in CreateStub
   // (access must be protected using the ipcDConnectService::stubLock())
@@ -1003,8 +1003,13 @@ DConnectStub::AddRefIPC()
   // when it is necessary to send a RELEASE request to the peer owning the
   // object in order to balance AddRef() the peer does on DConnectInstance every
   // time it passes an object over IPC.
+
+  nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
+  NS_ASSERTION(dConnect, "no ipcDConnectService (uninitialized?)");
+  if (!dConnect)
+    return 0;
   
-  nsAutoLock stubLock (ipcDConnectService::GetInstance()->StubLock()); 
+  nsAutoLock stubLock (dConnect->StubLock()); 
   
   nsrefcnt count = AddRef();
   mRefCntLevels.Push((void *) count);
@@ -1629,6 +1634,10 @@ DConnectStub::~DConnectStub()
 #endif    
     dConnect->DeleteStub(this);
   }
+
+  // release the cached nsISupports instance if it's not the same object
+  if (mCachedISupports != 0 && mCachedISupports != this)
+    NS_RELEASE(mCachedISupports);
 }
 
 NS_IMETHODIMP_(nsrefcnt)
@@ -1705,55 +1714,92 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
     return NS_OK;
   }
 
-  PRBool isISupports = aIID.Equals(NS_GET_IID(nsISupports));
-  
-  // see if we have a nsISupports stub for this object 
-  if (isISupports)
-  {
-    // according to the COM Identity Rule, an object should always return the
-    // same nsISupports pointer on every QueryInterface call. Based on this,
-    // we cache the nsISupports instance for this stub's object in order to
-    // reduce the number of IPC calls.
+  // In order to truely support the COM Identity Rule across processes,
+  // we need to make the following code work:
+  //
+  //   IFoo *foo = ...
+  //   nsISupports unk;
+  //   foo->QueryInterface(NS_GET_IID(nsISupports), (void **) &unk);
+  //   unk->Release();
+  //   nsISupports unk2;
+  //   foo->QueryInterface(NS_GET_IID(nsISupports), (void **) &unk2);
+  //   Assert (unk == unk2);
+  //
+  // I.e. querying nsISupports on the same object must always return the same
+  // pointer, even if the nsISupports object returned for the first time is
+  // released before it is requested for the second time, as long as the
+  // original object is kept alive (referenced by the client) between these
+  // two queries.
+  //
+  // This is done by remembering the nsISupports stub returned by the peer
+  // when nsISupports is queried for the first time. The remembered stub, when
+  // it is not the same as this object, is strongly referenced in order to
+  // keep it alive (and therefore have the same pointer value) as long as this
+  // object is alive.
+  //
+  // Besides supporting the Identity Rule, this also reduces the number of IPC
+  // calls, since an IPC call requesting nsISupports will be done only once
+  // per every stub object.
 
-    if (mISupportsInstance != 0)
+  nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
+  NS_ASSERTION(dConnect, "no ipcDConnectService (uninitialized?)");
+  if (!dConnect)
+    return NS_ERROR_NOT_INITIALIZED;
+
+  nsresult rv;
+  PRBool needISupports = aIID.Equals(NS_GET_IID(nsISupports));
+
+  if (needISupports)
+  {
+    // XXX it would be sufficient to use cmpxchg here to protect access to
+    // mCachedISupports, but NSPR doesn't provide cross-platform cmpxchg
+    // functionality, so we have to use a shared lock instead...
+    PR_Lock(dConnect->StubQILock());
+
+    // check if we have already got a nsISupports stub for this object
+    if (mCachedISupports != 0)
     {
-      // check that the instance is still valid by searching for a stub for it
-      nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
-      if (dConnect)
-      {
-        DConnectStub *stub = nsnull;
-        if (dConnect->FindStubAndAddRef(mPeerID, mISupportsInstance, &stub))
-        {
-            LOG(("using cached nsISupports stub for peer object\n"));
-            *aInstancePtr = stub;
-            return NS_OK;
-        }
-      }
-      
-      // the stub for the instance has already been deleted 
-      mISupportsInstance = 0;
+      *aInstancePtr = mCachedISupports;
+      NS_ADDREF(mCachedISupports);
+
+      PR_Unlock(dConnect->StubQILock());
+      return NS_OK;
     }
+
+    // check if this object is nsISupports itself
+    nsIID *iid = 0;
+    rv = mIInfo->GetInterfaceIID(&iid);
+    NS_ASSERTION(NS_SUCCEEDED(rv) && iid,
+		 "nsIInterfaceInfo::GetInterfaceIID failed");
+    if (NS_SUCCEEDED(rv) && iid &&
+        iid->Equals(NS_GET_IID(nsISupports)))
+    {
+      // nsISupports is queried on nsISupports, return ourselves
+      *aInstancePtr = this;
+      NS_ADDREF_THIS();
+      // cache ourselves weakly
+      mCachedISupports = this;
+
+      PR_Unlock(dConnect->StubQILock());
+      return NS_OK;
+    }
+
+    // stub lock remains held until we've queried the peer
   }
   
-  // else, we need to query the peer object
+  // else, we need to query the peer object by making an IPC call
 
 #ifdef IPC_LOGGING
   {
-    nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
-    if (dConnect)
-    {
-      const char *name;
-      nsCOMPtr <nsIInterfaceInfo> iinfo;
-      GetInterfaceInfo(getter_AddRefs(iinfo));
-      iinfo->GetNameShared(&name);
-      const char *nameQ;
-      nsCOMPtr <nsIInterfaceInfo> iinfoQ;
-      dConnect->GetInterfaceInfo(aIID, getter_AddRefs(iinfoQ));
-      iinfoQ->GetNameShared(&nameQ);
-      LOG(("calling QueryInterface {%s} on peer object "
-           "(stub=%p, instance=%p {%s})\n",
-           nameQ, this, mInstance, name));
-    }
+    const char *name;
+    mIInfo->GetNameShared(&name);
+    const char *nameQ;
+    nsCOMPtr <nsIInterfaceInfo> iinfoQ;
+    dConnect->GetInterfaceInfo(aIID, getter_AddRefs(iinfoQ));
+    iinfoQ->GetNameShared(&nameQ);
+    LOG(("calling QueryInterface {%s} on peer object "
+         "(stub=%p, instance=%p {%s})\n",
+         nameQ, this, mInstance, name));
   }
 #endif
 
@@ -1762,15 +1808,22 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
   msg.iid = aIID;
   msg.instance = mInstance;
 
-  nsresult rv = SetupPeerInstance(mPeerID, &msg, sizeof(msg), aInstancePtr);
-  
-  if (isISupports && NS_SUCCEEDED(rv))
+  rv = SetupPeerInstance(mPeerID, &msg, sizeof(msg), aInstancePtr);
+
+  if (needISupports)
   {
-    // cache the nsISupports instance (SetupPeerInstance returns DConnectStub)
-    DConnectStub *stub = (DConnectStub *) *aInstancePtr;
-    mISupportsInstance = stub->mInstance;
+    if (NS_SUCCEEDED(rv))
+    {
+      // cache the nsISupports object (SetupPeerInstance returns DConnectStub)
+      mCachedISupports = (DConnectStub *) *aInstancePtr;
+      // use a weak reference if nsISupports is the same object as us
+      if (this != mCachedISupports)
+        NS_ADDREF(mCachedISupports);
+    }
+
+    PR_Unlock(dConnect->StubQILock());
   }
-  
+
   return rv;
 }
 
@@ -2270,6 +2323,7 @@ ipcDConnectService::ipcDConnectService()
  : mLock(NULL)
  , mDisconnected(PR_TRUE)
  , mStubLock(NULL)
+ , mStubQILock(NULL)
 {
 }
 
@@ -2299,6 +2353,7 @@ ipcDConnectService::~ipcDConnectService()
     Shutdown();
 
   mInstance = nsnull;
+  PR_DestroyLock(mStubQILock);
   PR_DestroyLock(mStubLock);
   PR_DestroyLock(mLock);
 }
@@ -2336,6 +2391,10 @@ ipcDConnectService::Init()
 
   mStubLock = PR_NewLock();
   if (!mStubLock)
+    return NS_ERROR_OUT_OF_MEMORY;
+
+  mStubQILock = PR_NewLock();
+  if (!mStubQILock)
     return NS_ERROR_OUT_OF_MEMORY;
 
 #if defined(DCONNECT_MULTITHREADED)
