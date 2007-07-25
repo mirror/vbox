@@ -47,6 +47,11 @@ typedef struct PDMDEV *PPDMDEV;
 /** Pointer to a pointer to a PDM Device. */
 typedef PPDMDEV *PPPDMDEV;
 
+/** Pointer to a PDM USB Device. */
+typedef struct PDMUSB *PPDMUSB;
+/** Pointer to a pointer to a PDM USB Device. */
+typedef PPDMUSB *PPPDMUSB;
+
 /** Pointer to a PDM Driver. */
 typedef struct PDMDRV *PPDMDRV;
 /** Pointer to a pointer to a PDM Driver. */
@@ -64,9 +69,11 @@ typedef struct PDMDMAC *PPDMDMAC;
 /** Pointer to a RTC instance. */
 typedef struct PDMRTC *PPDMRTC;
 
+/** Pointer to an USB HUB registration record. */
+typedef struct PDMUSBHUB *PPDMUSBHUB;
 
 /**
- * Private instance data.
+ * Private device instance data.
  */
 typedef struct PDMDEVINSINT
 {
@@ -104,7 +111,41 @@ typedef struct PDMDEVINSINT
 
 
 /**
- * Private instance data.
+ * Private USB device instance data.
+ */
+typedef struct PDMUSBINSINT
+{
+    /** Pointer to the next instance.
+     * (Head is pointed to by PDM::pUsbInstances.) */
+    R3PTRTYPE(PPDMUSBINS)           pNext;
+    /** Pointer to the next per USB device instance.
+     * (Head is pointed to by PDMUSB::pInstances.) */
+    R3PTRTYPE(PPDMUSBINS)           pPerDeviceNext;
+
+    /** Pointer to device structure. */
+    R3PTRTYPE(PPDMUSB)              pUsb;
+
+    /** Pointer to the VM this instance was created for. */
+    PVMR3                           pVM;
+    /** Pointer to the list of logical units associated with the device. (FIFO) */
+    R3PTRTYPE(PPDMLUN)              pLuns;
+    /** The per instance device configuration. */
+    R3PTRTYPE(PCFGMNODE)            pCfg;
+    /** The global device configuration. */
+    R3PTRTYPE(PCFGMNODE)            pCfgGlobal;
+
+    /** Pointer to the USB hub this device is connected to. */
+    R3PTRTYPE(PPDMUSBHUB)           pHub;
+    /** The port number that we're connected to. */
+    uint32_t                        iPort;
+#if HC_ARCH_BITS == 64
+    uint32_t                        Alignment0;
+#endif
+} PDMUSBINSINT;
+
+
+/**
+ * Private driver instance data.
  */
 typedef struct PDMDRVINSINT
 {
@@ -205,6 +246,7 @@ typedef struct PDMTHREADINT
 
 /* Must be included after PDMDEVINSINT is defined. */
 #define PDMDEVINSINT_DECLARED
+#define PDMUSBINSINT_DECLARED
 #define PDMDRVINSINT_DECLARED
 #define PDMCRITSECTINT_DECLARED
 #define PDMTHREADINT_DECLARED
@@ -212,7 +254,6 @@ typedef struct PDMTHREADINT
 # error "Invalid header PDM order. Include PDMInternal.h before VBox/pdm.h!"
 #endif
 #include <VBox/pdm.h>
-
 
 
 /**
@@ -231,8 +272,11 @@ typedef struct PDMLUN
     PPDMLUN             pNext;
     /** Pointer to the top driver in the driver chain. */
     PPDMDRVINS          pTop;
-    /** Pointer to the device instance which the LUN belongs to. */
+    /** Pointer to the device instance which the LUN belongs to.
+     * Either this is set or pUsbIns is set. Both is never set at the same time. */
     PPDMDEVINS          pDevIns;
+    /** Pointer to the USB device instance which the LUN belongs to. */
+    PPDMUSBINS          pUsbIns;
     /** Pointer to the device base interface. */
     PPDMIBASE           pBase;
     /** Description of this LUN. */
@@ -255,8 +299,25 @@ typedef struct PDMDEV
     RTUINT                              cInstances;
     /** Pointer to chain of instances (HC Ptr). */
     HCPTRTYPE(PPDMDEVINS)               pInstances;
-
 } PDMDEV;
+
+
+/**
+ * PDM USB Device.
+ */
+typedef struct PDMUSB
+{
+    /** Pointer to the next device (R3 Ptr). */
+    R3PTRTYPE(PPDMUSB)                  pNext;
+    /** Device name length. (search optimization) */
+    RTUINT                              cchName;
+    /** Registration structure. */
+    R3PTRTYPE(const struct PDMUSBREG *) pUsbReg;
+    /** Number of instances. */
+    RTUINT                              cInstances;
+    /** Pointer to chain of instances (R3 Ptr). */
+    R3PTRTYPE(PPDMUSBINS)               pInstances;
+} PDMUSB;
 
 
 /**
@@ -265,12 +326,11 @@ typedef struct PDMDEV
 typedef struct PDMDRV
 {
     /** Pointer to the next device. */
-    PPDMDRV                 pNext;
+    PPDMDRV                             pNext;
     /** Registration structure. */
-    const struct PDMDRVREG *pDrvReg;
+    const struct PDMDRVREG *            pDrvReg;
     /** Number of instances. */
-    RTUINT                  cInstances;
-
+    RTUINT                              cInstances;
 } PDMDRV;
 
 
@@ -656,6 +716,27 @@ typedef const PDMDEVHLPTASK *PCPDMDEVHLPTASK;
 
 
 /**
+ * An USB hub registration record.
+ */
+typedef struct PDMUSBHUB
+{
+    /** The USB versions this hub support.
+     * Note that 1.1 hubs can take on 2.0 devices. */
+    uint32_t            fVersions;
+    /** The number of occupied ports. */
+    uint32_t            cAvailablePorts;
+    /** Pointer to the next hub in the list. */
+    struct PDMUSBHUB   *pNext;
+    /** The driver instance of the hub.. */
+    PPDMDRVINS          pDrvIns;
+
+} PDMUSBHUB;
+
+/** Pointer to a const USB HUB registration record. */
+typedef const PDMUSBHUB *PCPDMUSBHUB;
+
+
+/**
  * Converts a PDM pointer into a VM pointer.
  * @returns Pointer to the VM structure the PDM is part of.
  * @param   pPDM   Pointer to PDM instance data.
@@ -681,6 +762,10 @@ typedef struct PDM
     HCPTRTYPE(PPDMDEV)              pDevs;
     /** List of devices instances. (FIFO) */
     HCPTRTYPE(PPDMDEVINS)           pDevInstances;
+    /** List of registered USB devices. (FIFO) */
+    R3PTRTYPE(PPDMUSB)              pUsbDevs;
+    /** List of USB devices instances. (FIFO) */
+    R3PTRTYPE(PPDMUSBINS)           pUsbInstances;
     /** List of registered drivers. (FIFO) */
     HCPTRTYPE(PPDMDRV)              pDrvs;
     /** List of initialized critical sections. (LIFO) */
@@ -697,6 +782,8 @@ typedef struct PDM
     HCPTRTYPE(PPDMDMAC)             pDmac;
     /** The registered RTC device. */
     HCPTRTYPE(PPDMRTC)              pRtc;
+    /** The registered USB HUBs. (FIFO) */
+    R3PTRTYPE(PPDMUSBHUB)           pUSBHubs;
 
     /** Queue in which devhlp tasks are queued for R3 execution - HC Ptr. */
     HCPTRTYPE(PPDMQUEUE)            pDevHlpQueueHC;
@@ -718,7 +805,6 @@ typedef struct PDM
     HCPTRTYPE(struct PDMQUEUE *)    pQueueFlushHC;
     /** Pointer to the queue which should be manually flushed - GCPtr. */
     GCPTRTYPE(struct PDMQUEUE *)    pQueueFlushGC;
-
 #if HC_ARCH_BITS == 64
     uint32_t                        padding0;
 #endif
@@ -777,6 +863,10 @@ int         pdmR3DevInit(PVM pVM);
 PPDMDEV     pdmR3DevLookup(PVM pVM, const char *pszName);
 int         pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
 
+int         pdmR3UsbInit(PVM pVM);
+PPDMUSB     pdmR3UsbLookup(PVM pVM, const char *pszName);
+int         pdmR3UsbFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
+
 int         pdmR3DrvInit(PVM pVM);
 int         pdmR3DrvDetach(PPDMDRVINS pDrvIns);
 PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
@@ -789,6 +879,7 @@ int         pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName);
 void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);
 
 void        pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+void        pdmR3ThreadDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
 void        pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 void        pdmR3ThreadDestroyAll(PVM pVM);
 int         pdmR3ThreadResumeAll(PVM pVM);

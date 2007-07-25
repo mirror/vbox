@@ -92,6 +92,7 @@ static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegister(PPDMDRVINS pDrvIns, void *pvS
 static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...);
 static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegisterV(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args);
 static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned uOperation, void *pvArg, unsigned cbArg);
+static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp);
 
 /** @def PDMDRV_ASSERT_DRVINS
  * Asserts the validity of the driver instance.
@@ -137,6 +138,7 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_STAMRegisterF,
     pdmR3DrvHlp_STAMRegisterV,
     pdmR3DrvHlp_SUPCallVMMR0Ex,
+    pdmR3DrvHlp_USBRegisterHub,
     0 /* the end */
 };
 
@@ -995,7 +997,24 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned
         rc = VERR_INVALID_PARAMETER;
     }
 
-    LogFlow(("pdmR3DrvHlp_SSMDeregister: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    LogFlow(("pdmR3DrvHlp_SUPCallVMMR0Ex: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    return rc;
+}
+
+
+
+/** @copydoc PDMDRVHLP::pfnUSBRegisterHub */
+static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
+    LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: pvReservedIn=%p ppvReservedHlp=%p\n",
+             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pvReservedIn, ppvReservedHlp));
+
+//    int rc = PDMUSBRegisterHub(pDrvIns->Internal.s.pVM, pvReservedIn, ppvReservedHlp);
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
 

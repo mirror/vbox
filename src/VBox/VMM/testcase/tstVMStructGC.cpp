@@ -176,6 +176,8 @@ int main()
     GEN_CHECK_OFF(PDM, pModules);
     GEN_CHECK_OFF(PDM, pDevs);
     GEN_CHECK_OFF(PDM, pDevInstances);
+    GEN_CHECK_OFF(PDM, pUsbDevs);
+    GEN_CHECK_OFF(PDM, pUsbInstances);
     GEN_CHECK_OFF(PDM, pDrvs);
     GEN_CHECK_OFF(PDM, pCritSects);
     GEN_CHECK_OFF(PDM, aPciBuses);
@@ -232,6 +234,7 @@ int main()
     GEN_CHECK_OFF(PDM, IoApic.pfnSetIrqGC);
     GEN_CHECK_OFF(PDM, pDmac);
     GEN_CHECK_OFF(PDM, pRtc);
+    GEN_CHECK_OFF(PDM, pUSBHubs);
     GEN_CHECK_OFF(PDM, pDevHlpQueueGC);
     GEN_CHECK_OFF(PDM, pDevHlpQueueHC);
     GEN_CHECK_OFF(PDM, cQueuedCritSectLeaves);
@@ -240,6 +243,8 @@ int main()
     GEN_CHECK_OFF(PDM, pQueuesForced);
     GEN_CHECK_OFF(PDM, pQueueFlushGC);
     GEN_CHECK_OFF(PDM, pQueueFlushHC);
+    GEN_CHECK_OFF(PDM, pThreads);
+    GEN_CHECK_OFF(PDM, pThreadsTail);
     GEN_CHECK_OFF(PDM, cPollers);
     GEN_CHECK_OFF(PDM, apfnPollers);
     GEN_CHECK_OFF(PDM, aDrvInsPollers);
@@ -803,7 +808,7 @@ int main()
     GEN_CHECK_OFF(PATCHINFO, aPrivInstr[1]);
     GEN_CHECK_OFF(PATCHINFO, aPrivInstr[MAX_INSTR_SIZE - 1]);
     GEN_CHECK_OFF(PATCHINFO, cbPrivInstr);
-    GEN_CHECK_OFF(PATCHINFO, opcode);     
+    GEN_CHECK_OFF(PATCHINFO, opcode);
     GEN_CHECK_OFF(PATCHINFO, cbPatchJump);
     GEN_CHECK_OFF(PATCHINFO, pPatchJumpDestGC);
     GEN_CHECK_OFF(PATCHINFO, pPatchBlockOffset);
