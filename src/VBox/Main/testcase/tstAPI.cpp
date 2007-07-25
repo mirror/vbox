@@ -251,38 +251,76 @@ int main(int argc, char *argv[])
         break;
     }
 
-#if 0
+#if 1
     // IUnknown identity test
     ////////////////////////////////////////////////////////////////////////////
     {
-        ComPtr <IVirtualBox> virtualBox2;
-
-        printf ("Creating one more VirtualBox object...\n");
-        CHECK_RC (virtualBox2.createLocalObject (CLSID_VirtualBox));
-        if (FAILED (rc))
         {
-            CHECK_ERROR_NOCALL();
-            break;
+            ComPtr <IVirtualBox> virtualBox2;
+
+            printf ("Creating one more VirtualBox object...\n");
+            CHECK_RC (virtualBox2.createLocalObject (CLSID_VirtualBox));
+            if (FAILED (rc))
+            {
+                CHECK_ERROR_NOCALL();
+                break;
+            }
+
+            printf ("IVirtualBox(virualBox)=%p IVirtualBox(virualBox2)=%p\n",
+                    (IVirtualBox *) virtualBox, (IVirtualBox *) virtualBox2);
+            Assert ((IVirtualBox *) virtualBox == (IVirtualBox *) virtualBox2);
+
+            ComPtr <IUnknown> unk (virtualBox);
+            ComPtr <IUnknown> unk2;
+            unk2 = virtualBox2;
+
+            printf ("IUnknown(virualBox)=%p IUnknown(virualBox2)=%p\n",
+                    (IUnknown *) unk, (IUnknown *) unk2);
+            Assert ((IUnknown *) unk == (IUnknown *) unk2);
+
+            ComPtr <IVirtualBox> vb = unk;
+            ComPtr <IVirtualBox> vb2 = unk;
+
+            printf ("IVirtualBox(IUnknown(virualBox))=%p IVirtualBox(IUnknown(virualBox2))=%p\n",
+                    (IVirtualBox *) vb, (IVirtualBox *) vb2);
+            Assert ((IVirtualBox *) vb == (IVirtualBox *) vb2);
         }
 
-        printf ("IVirtualBox(virualBox)=%p IVirtualBox(virualBox2)=%p\n",
-                (IVirtualBox *) virtualBox, (IVirtualBox *) virtualBox2);
+        {
+            ComPtr <IHost> host;
+            CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
+            printf (" IHost(host)=%p\n", (IHost *) host);
+            ComPtr <IUnknown> unk = host;
+            printf (" IUnknown(host)=%p\n", (IUnknown *) unk);
+            ComPtr <IHost> host_copy = unk;
+            printf (" IHost(host_copy)=%p\n", (IHost *) host_copy);
+            ComPtr <IUnknown> unk_copy = host_copy;
+            printf (" IUnknown(host_copy)=%p\n", (IUnknown *) unk_copy);
+            Assert ((IUnknown *) unk == (IUnknown *) unk_copy);
 
-        ComPtr <IUnknown> unk (virtualBox);
-        ComPtr <IUnknown> unk2;
-        unk2 = virtualBox2;
+            /* query IUnknown on IUnknown */
+            ComPtr <IUnknown> unk_copy_copy;
+            unk_copy.queryInterfaceTo (unk_copy_copy.asOutParam());
+            printf (" IUnknown(unk_copy)=%p\n", (IUnknown *) unk_copy_copy);
+            Assert ((IUnknown *) unk_copy == (IUnknown *) unk_copy_copy);
+            /* query IUnknown on IUnknown in the opposite direction */
+            unk_copy_copy.queryInterfaceTo (unk_copy.asOutParam());
+            printf (" IUnknown(unk_copy_copy)=%p\n", (IUnknown *) unk_copy);
+            Assert ((IUnknown *) unk_copy == (IUnknown *) unk_copy_copy);
 
-        printf ("IUnknown(virualBox)=%p IUnknown(virualBox2)=%p\n",
-                (IUnknown *) unk, (IUnknown *) unk2);
+            /* query IUnknown again after releasing all previous IUnknown instances
+             * but keeping IHost -- it should remain the same (Identity Rule) */
+            IUnknown *oldUnk = unk;
+            unk.setNull();
+            unk_copy.setNull();
+            unk_copy_copy.setNull();
+            unk = host;
+            printf (" IUnknown(host)=%p\n", (IUnknown *) unk);
+            Assert (oldUnk == (IUnknown *) unk);
+        }
 
-        ComPtr <IVirtualBox> vb = unk;
-        ComPtr <IVirtualBox> vb2 = unk;
-
-        printf ("IVirtualBox(IUnknown(virualBox))=%p IVirtualBox(IUnknown(virualBox2))=%p\n",
-                (IVirtualBox *) vb, (IVirtualBox *) vb2);
-
-        printf ("Will be now released (press Enter)...");
-        getchar();
+//        printf ("Will be now released (press Enter)...");
+//        getchar();
     }
 #endif
 
@@ -704,7 +742,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 1
+#if 0
     // open a (direct) session
     ///////////////////////////////////////////////////////////////////////////
     do
