@@ -1,0 +1,21 @@
+# -*- Makefile -*-
+#
+# Overwrite some default kBuild settings
+#
+
+# shut up wine complaining about unknown locale
+EXEC_X86_WIN32          := LC_ALL=C DISPLAY= wine 2>/dev/null
+
+# don't build testcases to save time, they are not needed for the package
+VBOX_WITH_TESTCASES     :=
+VBOX_WITH_TESTSUITE     :=
+VBOX_DOCBOOK_WITH_LATEX := 1
+
+KBUILD_MSG_STYLE        := brief
+
+DEFS                    += VBOX_PATH_PRIVATE_LIBS=\"/usr/lib/virtualbox\"
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+DEFS                    += VBOX_PATH_SHARED_LIBS=\"/usr/lib64\"
+else
+DEFS                    += VBOX_PATH_SHARED_LIBS=\"/usr/lib\"
+endif

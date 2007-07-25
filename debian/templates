@@ -1,0 +1,46 @@
+Template: virtualbox/group-vboxusers
+Type: note
+Description: Creating group 'vboxusers'.
+ Users of VirtualBox must be member of that group in order to have write
+ permissions to /dev/vboxdrv. Otherwise starting of VMs will not be possible.
+
+Template: virtualbox/module-compilation-failed
+Type: note
+Description: Compilation of the kernel module FAILED!
+ VirtualBox will not start until this problem is fixed. Please consult
+ /var/log/vbox-install.log to find out why the kernel module does not compile.
+ Most probably the kernel sources were not found. Install them and execute
+   
+   /etc/init.d/vboxdrv setup
+   
+ as root.
+
+Template: virtualbox/module-compilation-allowed
+Type: boolean
+Default: true
+Description: Should the vboxdrv kernel module be compiled now?
+ Unable to find a precompiled module for the current kernel!
+ .
+ Without a suitable kernel module you will never be able to start VMs. It is
+ strongly recommended to compile a kernel module now. The kernel headers and
+ the tools to build kernel modules (gcc, make, binutils, ...) are required.
+ However, in case a suitable kernel module already exists at another place you
+ might want to override the default position by setting KDIR=<full_path_to_vboxdrv_module>
+ in /etc/default/virtualbox. The compilation can also be done later by executing
+   
+   /etc/init.d/vboxdrv setup
+   
+ as root.
+
+Template: virtualbox/delete-old-modules
+Type: boolean
+Default: true
+Description: Delete old modules?
+ Old vboxdrv modules found. It is recommended to purge these modules as they might not
+ work together with this version of VirtualBox. The module re-compilation can be
+ forced later by executing
+   
+   /etc/init.d/vboxdrv setup
+   
+ as root
+

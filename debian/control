@@ -1,0 +1,18 @@
+Source: virtualbox
+Section: misc
+Priority: optional
+Maintainer: innotek GmbH <info@virtualbox.org>
+Standards-Version: 3.2.1
+Build-Depends: libz-dev, libssl-dev, libqt3-headers, qt3-dev-tools, libsdl1.2-dev,
+  uuid-dev, libxalan110-dev, libxerces27-dev, libxcursor-dev, libidl-dev, libpam0g-dev,
+  bcc, iasl, xsltproc, linux-headers-generic, wine, java2-runtime, lsb-release
+
+Package: virtualbox
+Architecture: any
+Depends: ${shlibs:Depends}, debconf (>= 0.5) | debconf-2.0, psmisc
+Recommends: linux-headers, gcc, make, binutils, bridge-utils, uml-utilities
+Description: innotek VirtualBox
+ VirtualBox is a powerful PC virtualization solution allowing you to run a wide range
+ of PC operating systems on your Linux system. This includes Windows, Linux, FreeBSD,
+ DOS, OpenBSD and others. VirtualBox comes with a broad feature set and excellent
+ performance, making it the premier virtualization software solution on the market.

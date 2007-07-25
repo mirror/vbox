@@ -1,0 +1,181 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE=1
+export DH_COMPAT=4
+
+# possible overrides:
+#  OSE=1            force VBOX_OSE
+#  NOPARALLEL=1     compile with -j1 (-j2 is default)
+#  LINUX=<dir>      compile vboxdrv against Linux found in <dir>
+#  VERBOSE=1        verbose build
+#  DEBUG=1          debug build
+#  NOSUBVER=1       disable generation of the sub-version field (which is
+#                   either the subversion rev [if available] or the build date)
+#  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
+#                   VirtualBox.chm from $HOME
+#  HEADLESS=1       build the headless version
+#  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
+
+package  := virtualbox
+current  := $(shell pwd)
+vboxroot := $(shell pwd)
+builddir := $(current)/debian/builddir
+moddir   := $(current)/debian/modules
+prefix   := $(current)/debian/$(package)
+arch     := $(shell dpkg --print-architecture)
+verfile  := $(builddir)/version-generated.mk
+ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/Devices/USB),,1))
+
+ifneq ($(wildcard $(verfile)),)
+include $(verfile)
+ver      := $(VBOX_VERSION_STRING)
+endif
+
+ifneq ($(STAGEDISO),)
+ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
+$(error STAGEDISO='$(STAGEDISO)/VBoxGuestAdditions.iso' not found)
+endif
+endif
+
+# Hack: Xandros is actually Debian/sarge ... :(
+ifneq ($(wildcard /etc/xandros-desktop-version),)
+debrel   := _xandros4.1
+else
+ifneq ($(wildcard /etc/univention),)
+debrel   := _ucs1.3
+else
+debrel   := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),)
+endif
+endif
+deblib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
+
+# Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
+# Debian sarge: libhal-devel 0.4.7 is too old
+configure: debian/configure-stamp
+debian/configure-stamp:
+	dh_testdir
+	cd $(vboxroot) && ./configure --odir=$(current)/debian $(if \
+	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
+	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
+	    $(filter _xandros4.1 _Debian_sarge,$(debrel)),--without-hal,) $(if \
+	    $(filter _xandros4.1,$(debrel)),--build-xalan,) $(if \
+	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
+	    $(DEBUG),--build-debug,)
+	touch debian/configure-stamp
+
+build: debian/configure-stamp debian/build-stamp
+debian/build-stamp $(verfile):
+	dh_testdir
+	. debian/env.sh && kmk -C $(vboxroot) $(if \
+	    $(VERBOSE),--print-directory,--no-print-directory) $(if \
+	    $(NOPARALLEL),-j1,-j2) $(if \
+	    $(VERBOSE),KBUILD_VERBOSE=2,) $(if \
+	    $(NODOCS),VBOX_WITH_DOCS=,)\
+	    $(if $(STAGEDISO),\
+	      VBOX_WITH_LINUX_ADDITIONS= VBOX_WITH_WIN32_ADDITIONS=,) \
+	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
+	    LOCALCFG=$(current)/debian/$(if \
+	      $(HEADLESS),LocalConfig-headless.kmk,LocalConfig.kmk) \
+	    PATH_OUT=$(current)/debian/builddir \
+	    all
+	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual.pdf $(builddir)/bin,)
+	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox.chm $(builddir)/bin,)
+	mkdir -p $(builddir)/bin/additions
+	$(if $(STAGEDISO),cp $(STAGEDISO)/VBoxGuestAdditions.iso $(builddir)/bin/additions,)
+	. debian/env.sh && kmk -C $(vboxroot) $(if \
+	    $(VERBOSE),--print-directory,--no-print-directory) $(if \
+	    $(VERBOSE),KBUILD_VERBOSE=2,) $(if \
+	    $(STAGEDISO),\
+	      VBOX_WITH_LINUX_ADDITIONS= VBOX_WITH_WIN32_ADDITIONS=,) \
+	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
+	    LOCALCFG=$(current)/debian/$(if \
+	      $(HEADLESS),LocalConfig-headless.kmk,LocalConfig.kmk) \
+	    PATH_OUT=$(current)/debian/builddir \
+	    packing
+	touch debian/build-stamp
+
+# Build modules for every kernel we find in /lib/modules/*
+modules: debian/build-stamp debian/modules-stamp
+debian/modules-stamp:
+	rm -rf $(moddir)
+	mkdir $(moddir)
+	make -C $(builddir)/bin/src clean
+	for d in $(wildcard /lib/modules/*); do \
+	    make -C $(builddir)/bin/src KERN_DIR=$$d/build MODULE_DIR=$$d clean all && \
+	    install -D -m 0644 -g 0 -o 0 \
+	        $(builddir)/bin/src/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko; \
+	    done
+	make -C $(builddir)/bin/src clean
+	touch debian/modules-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f debian/virtualbox.init debian/vboxdrv.init
+	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
+	rm -f debian/build-stamp debian/configure-stamp
+	rm -rf $(builddir) $(moddir)
+	dh_clean
+
+ifeq ($(VBOX_VERSION_MAJOR),)
+binary binary-arch binary-indep: build $(verfile)
+	$(MAKE) -f debian/rules binary
+else
+# Build architecture-dependent files here.
+binary binary-arch binary-indep: build $(if $(OSE),,modules)
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	tar -xjC $(prefix)/opt -f $(builddir)/bin/VirtualBox.tar.bz2
+	echo "# VirtualBox installation directory" > $(prefix)/etc/vbox/vbox.cfg
+	echo "INSTALL_DIR=\"/opt/VirtualBox-$(ver)\"" >> $(prefix)/etc/vbox/vbox.cfg
+	install -d -g 0 -o 0 $(prefix)/usr/share/applications
+	install -d -g 0 -o 0 $(prefix)/usr/$(deblib)
+	install -d -g 0 -o 0 $(prefix)/usr/bin
+	install -d -g 0 -o 0 $(prefix)/usr/lib/virtualbox
+	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/VirtualBox.desktop \
+	   $(prefix)/usr/share/applications/VirtualBox.desktop)
+	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
+	mv $(prefix)/opt/VirtualBox-$(ver)/VBox.png \
+	   $(prefix)/usr/share/pixmaps/VBox.png
+	mv $(prefix)/opt/VirtualBox-$(ver)/*.gc $(prefix)/usr/lib/virtualbox
+	mv $(prefix)/opt/VirtualBox-$(ver)/*.r0 $(prefix)/usr/lib/virtualbox
+	mv $(prefix)/opt/VirtualBox-$(ver)/*.so $(prefix)/usr/$(deblib)
+	for d in $(moddir)/*; do \
+	    install -D -g 0 -o 0 -m 0644 \
+	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done
+	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxTunctl $(prefix)/usr/bin
+	dh_link \
+	    $(if $(HEADLESS),,opt/VirtualBox-$(ver)/VBox.sh usr/bin/VirtualBox) \
+	    opt/VirtualBox-$(ver)/VBox.sh usr/bin/VBoxManage \
+	    $(if $(HEADLESS),,opt/VirtualBox-$(ver)/VBox.sh usr/bin/VBoxSDL) \
+	    opt/VirtualBox-$(ver)/VBox.sh usr/bin/VBoxVRDP \
+	    opt/VirtualBox-$(ver)/VBoxAddIF.sh usr/bin/VBoxAddIF \
+	    opt/VirtualBox-$(ver)/VBoxAddIF.sh usr/bin/VBoxDeleteIF
+	dh_desktop
+	dh_installmenu
+	dh_installmodules
+	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g;' \
+	    debian/vboxdrv.init.tmpl > debian/vboxdrv.init
+#	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
+	    debian/vboxnet.init.tmpl > debian/vboxnet.init
+	dh_installinit --name=vboxdrv
+#	dh_installinit --name=vboxnet
+	if [ "$(debrel)" = "_Ubuntu_dapper" -o "$(debrel)" = "_Debian_sarge" ]; then \
+	    cat debian/postrm.dapper > debian/postrm; fi
+	dh_installdebconf
+	dh_installchangelogs
+	dh_link
+	[ -n "$(DEBUG)" ] || dh_strip
+	dh_compress
+	dh_fixperms
+	dh_makeshlibs
+	dh_installdeb
+	dh_perl
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+endif
+
+.PHONY: binary modules binary-arch binary-indep clean checkroot
