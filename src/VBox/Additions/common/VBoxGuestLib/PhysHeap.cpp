@@ -390,9 +390,7 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
     int rc = vbglPhysHeapEnter ();
 
     if (VBOX_FAILURE(rc))
-    {
         return NULL;
-    }
 
     dumpheap ("pre alloc");
 
@@ -491,7 +489,6 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
 DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p)
 {
     RTCCPHYS physAddr = 0;
-
     VBGLPHYSHEAPBLOCK *pBlock = vbglPhysHeapData2Block (p);
 
     if (pBlock)
@@ -499,7 +496,8 @@ DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p)
         VBGL_PH_ASSERTMsg((pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED) != 0,
                          ("pBlock = %p, pBlock->fu32Flags = %08X\n", pBlock, pBlock->fu32Flags));
 
-        physAddr = pBlock->pChunk->physAddr + ((char *)p - (char *)pBlock->pChunk);
+        if (pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED)
+            physAddr = pBlock->pChunk->physAddr + ((char *)p - (char *)pBlock->pChunk);
     }
 
     return physAddr;
@@ -509,12 +507,10 @@ DECLVBGL(void) VbglPhysHeapFree (void *p)
 {
     VBGLPHYSHEAPBLOCK *pBlock;
     VBGLPHYSHEAPBLOCK *pNeighbour;
-    int rc = vbglPhysHeapEnter ();
 
+    int rc = vbglPhysHeapEnter ();
     if (VBOX_FAILURE(rc))
-    {
         return;
-    }
 
     dumpheap ("pre free");
 
@@ -522,6 +518,7 @@ DECLVBGL(void) VbglPhysHeapFree (void *p)
 
     if (!pBlock)
     {
+        vbglPhysHeapLeave ();
         return;
     }
 
@@ -611,9 +608,7 @@ DECLVBGL(int) VbglPhysHeapInit (void)
     VBGLPHYSHEAPBLOCK *pBlock = vbglPhysHeapChunkAlloc (0);
 
     if (!pBlock)
-    {
         rc = VERR_NO_MEMORY;
-    }
 
     RTSemFastMutexCreate(&g_vbgldata.mutexHeap);
 
