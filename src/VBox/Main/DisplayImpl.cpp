@@ -1962,7 +1962,7 @@ DECLCALLBACK(void) Display::displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInterfa
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("displayUpdateCallback: mfVideoAccelEnabled = %d, %d,%d %dx%d\n",
+    LogFlowFunc (("mfVideoAccelEnabled = %d, %d,%d %dx%d\n",
                   pDrv->pDisplay->mfVideoAccelEnabled, x, y, cx, cy));
 #endif /* DEBUG_sunlover */
 
