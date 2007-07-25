@@ -48,6 +48,7 @@
 *******************************************************************************/
 /**
  * Internal callback structure pointer.
+ *
  * The main purpose is to define the extra data we associate
  * with PDMDRVREGCB so we can find the VM instance and so on.
  */

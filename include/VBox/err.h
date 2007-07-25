@@ -891,6 +891,24 @@
 /** Invalid host interface version. */
 #define VERR_PDM_HIF_INVALID_VERSION                (-2855)
 
+/** The version of the USB device registration structure is unknown
+ * to this VBox version. Either mixing incompatible versions or
+ * the structure isn't correctly initialized. */
+#define VERR_PDM_UNKNOWN_USBREG_VERSION             (-2856)
+/** Invalid entry in the device registration structure. */
+#define VERR_PDM_INVALID_USB_REGISTRATION           (-2857)
+/** Driver name clash. Another driver with the same name as the
+ * one begin registred exists. */
+#define VERR_PDM_USB_NAME_CLASH                     (-2858)
+/** The USB hub is already registered. */
+#define VERR_PDM_USB_HUB_EXISTS                     (-2859)
+/** Couldn't find any USB hubs to attach the device to. */
+#define VERR_PDM_NO_USB_HUBS                        (-2860)
+/** Couldn't find any free USB ports to attach the device to. */
+#define VERR_PDM_NO_USB_PORTS                       (-2861)
+/** Couldn't find the USB Proxy device. Using OSE? */
+#define VERR_PDM_NO_USBPROXY                        (-2862)
+
 /** @} */
 
 

@@ -234,7 +234,7 @@ int main()
     GEN_CHECK_OFF(PDM, IoApic.pfnSetIrqGC);
     GEN_CHECK_OFF(PDM, pDmac);
     GEN_CHECK_OFF(PDM, pRtc);
-    GEN_CHECK_OFF(PDM, pUSBHubs);
+    GEN_CHECK_OFF(PDM, pUsbHubs);
     GEN_CHECK_OFF(PDM, pDevHlpQueueGC);
     GEN_CHECK_OFF(PDM, pDevHlpQueueHC);
     GEN_CHECK_OFF(PDM, cQueuedCritSectLeaves);

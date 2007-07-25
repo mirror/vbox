@@ -137,6 +137,11 @@ VMMR3_SOURCES.amd64 = \
 VMMR3_SOURCES.darwin.x86 += \
 	VMMSwitcher/AMD64ToPAE.asm
 
+ifdef VBOX_WITH_USB
+VMMR3_DEFS += VBOX_WITH_USB
+VMMR3_SOURCES += PDMUsb.cpp
+endif
+
 
 #
 # The VMM DLL.
