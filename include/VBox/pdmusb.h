@@ -431,7 +431,7 @@ typedef struct PDMUSBINS
     /** Pointer to device instance data. */
     R3PTRTYPE(void *)           pvInstanceDataR3;
     /* padding to make achInstanceData aligned at 32 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 1 : 6];
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 4 : 6];
     /** Device instance data. The size of this area is defined
      * in the PDMUSBREG::cbInstanceData field. */
     char                        achInstanceData[8];
