@@ -5497,21 +5497,31 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
                     pIf->cCHSCylinders = 0;
                 }
             }
-            /* If there is no geometry, use standard physical disk geometry.
-             * This uses LCHS to LBA translation in the BIOS (which selects
-             * the logical sector count 63 and the logical head count to be
-             * the smallest of 16,32,64,128,255 which makes the logical
-             * cylinder count smaller than 1024 - if that's not possible, it
-             * uses 255 heads, so up to about 8 GByte maximum with the
-             * standard int13 interface, which supports 1024 cylinders). */
             if (!pIf->cCHSCylinders)
             {
+                /* If there is no geometry, use standard physical disk geometry.
+                 * This uses LCHS to LBA translation in the BIOS (which selects
+                 * the logical sector count 63 and the logical head count to be
+                 * the smallest of 16,32,64,128,255 which makes the logical
+                 * cylinder count smaller than 1024 - if that's not possible, it
+                 * uses 255 heads, so up to about 8 GByte maximum with the
+                 * standard int13 interface, which supports 1024 cylinders). */
                 uint64_t cCHSCylinders = pIf->cTotalSectors / (16 * 63);
                 pIf->cCHSCylinders = (uint32_t)RT_MAX(cCHSCylinders, 1);
                 pIf->cCHSHeads = 16;
                 pIf->cCHSSectors = 63;
                 /* Set the disk geometry information. */
                 rc = pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
+            }
+            else if (enmTranslation == PDMBIOSTRANSLATION_LBA)
+            {
+                /* Use the official LBA physical CHS geometry. */
+                uint64_t cCHSCylinders = pIf->cTotalSectors / (16 * 63);
+                pIf->cCHSCylinders = RT_MAX((uint32_t)RT_MIN(cCHSCylinders, 16383), 1);
+                pIf->cCHSHeads = 16;
+                pIf->cCHSSectors = 63;
+                /* DO NOT write back the disk geometry information. This
+                 * intentionally sets the ATA geometry only. */
             }
         }
         LogRel(("PIIX3 ATA: LUN#%d: disk, CHS=%d/%d/%d, total number of sectors %Ld\n", pIf->iLUN, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors, pIf->cTotalSectors));
