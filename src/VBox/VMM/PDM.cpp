@@ -626,7 +626,7 @@ PDMR3DECL(void) PDMR3PowerOn(PVM pVM)
     /*
      * Resume all threads.
      */
-    ///@todo pdmR3ThreadResumeAll(pVM);    
+    ///@todo pdmR3ThreadResumeAll(pVM);
 
     LogFlow(("PDMR3PowerOn: returns void\n"));
 }
@@ -716,7 +716,7 @@ PDMR3DECL(void) PDMR3Suspend(PVM pVM)
     /*
      * Suspend all threads.
      */
-    ///@todo pdmR3ThreadSuspendAll(pVM);    
+    ///@todo pdmR3ThreadSuspendAll(pVM);
 
     LogFlow(("PDMR3Suspend: returns void\n"));
 }
@@ -759,7 +759,7 @@ PDMR3DECL(void) PDMR3Resume(PVM pVM)
     /*
      * Resume all threads.
      */
-    ///@todo pdmR3ThreadResumeAll(pVM);    
+    ///@todo pdmR3ThreadResumeAll(pVM);
 
     LogFlow(("PDMR3Resume: returns void\n"));
 }
@@ -819,7 +819,7 @@ PDMR3DECL(void) PDMR3PowerOff(PVM pVM)
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   ppBase          Where to store the pointer to the base device interface on success.
- * @remark  We're doing any locking ATM, so don't try call this at times when the
+ * @remark  We're not doing any locking ATM, so don't try call this at times when the
  *          device chain is known to be updated.
  */
 PDMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPDMIBASE *ppBase)
@@ -876,7 +876,7 @@ PDMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstan
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
  * @param   ppBase          Where to store the base interface pointer.
- * @remark  We're doing any locking ATM, so don't try call this at times when the
+ * @remark  We're not doing any locking ATM, so don't try call this at times when the
  *          device chain is known to be updated.
  */
 PDMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
@@ -909,7 +909,7 @@ PDMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iIns
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
  * @param   ppBase          Where to store the base interface pointer.
- * @remark  We're doing any locking ATM, so don't try call this at times when the
+ * @remark  We're not doing any locking ATM, so don't try call this at times when the
  *          device chain is known to be updated.
  */
 PDMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)

@@ -132,6 +132,11 @@ typedef R0PTRTYPE(PPDMDEVINS) PPDMDEVINSR0;
 /** GC pointer to a PDM Device Instance. */
 typedef GCPTRTYPE(PPDMDEVINS) PPDMDEVINSGC;
 
+/** Pointer to a PDM USB Device Instance. */
+typedef struct PDMUSBINS *PPDMUSBINS;
+/** Pointer to a pointer to a PDM USB Device Instance. */
+typedef PPDMUSBINS *PPPDMUSBINS;
+
 /** Pointer to a PDM Driver Instance. */
 typedef struct PDMDRVINS *PPDMDRVINS;
 /** Pointer to a pointer to a PDM Driver Instance. */
