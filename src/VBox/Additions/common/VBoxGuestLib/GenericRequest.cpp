@@ -24,6 +24,7 @@
 #include "VBGLInternal.h"
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <iprt/assert.h>
 
 DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevRequestType reqType)
 {
@@ -42,7 +43,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
     pReq = (VMMDevRequestHeader *)VbglPhysHeapAlloc (cbSize);
     if (!pReq)
     {
-        dprintf(("VbglGRAlloc: no memory\n"));
+        AssertMsgFailed(("VbglGRAlloc: no memory\n"));
         rc = VERR_NO_MEMORY;
     }
     else
