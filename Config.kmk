@@ -466,7 +466,13 @@ endif
 
 ifndef DONT_USE_YASM
  VBOX_ASTOOL    = YASM
- VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
+ ifeq ($(BUILD_PLATFORM),solaris)
+   # solaris yasm bug: crashes with dwarf2 debug info.
+   # yasm 0.6.0, 0.6.99.HEAD, compiled with both suncc as well as gcc
+   VBOX_LDR_FMT_2_YASM_DBGINFO.elf   =
+ else
+   VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
+ endif
  VBOX_LDR_FMT_2_YASM_DBGINFO.lx    = -g stabs
  VBOX_LDR_FMT_2_YASM_DBGINFO.macho =
  VBOX_LDR_FMT_2_YASM_DBGINFO.pe    =
@@ -493,6 +499,8 @@ ifndef VBOX_GCC_TOOL
   VBOX_GCC_TOOL := GXX3OMF
  else ifeq ($(BUILD_TARGET),darwin)
   VBOX_GCC_TOOL := GXX4MACHO
+ else ifeq ($(BUILD_TARGET),solaris)
+  VBOX_GCC_TOOL := GXX3
  else
   VBOX_GCC_TOOL := GXX3
   ifeq ($(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH),x86.amd64)
@@ -814,7 +822,7 @@ VBOX_PATH_DIFX ?= $(PATH_DEVTOOLS)/win.x86/DIFx/v2.1
 
 # We need to export YASM for OSE, but since it was converted to .zip we need to
 # allow for the location used by the zip to be properly cleaned up first.
-ifeq ($(filter-out win.x86 linux.x86, $(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH)),)
+ifeq ($(filter-out win.x86 linux.x86 solaris.x86, $(BUILD_PLATFORM).$(BUILD_PLATFORM_ARCH)),)
  PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
 endif
 
@@ -1434,6 +1442,27 @@ TEMPLATE_VBOXR0DRV_LDFLAGS             = -static -nostdlib -r -Wl,-Y,1455 \
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
 endif
 
+ifeq ($(BUILD_TARGET),solaris)
+# x86 Solaris:
+## The location of the solaris kernel headers.
+VBOX_SOLARIS_SRC ?= /usr/include/sys
+## The Solaris /usr/include.
+VBOX_SOLARIS_SYS_INCS ?= /usr/include
+
+TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_INCS                = \
+	$(VBOX_SOLARIS_SRC) \
+	$(VBOX_SOLARIS_SYS_INCS)
+TEMPLATE_VBOXR0DRV_SYSSUFF             = .o
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -r
+# exclude -Wall because of solaris headers' #pragma ident warnings that gcc refuses to supress!!
+TEMPLATE_VBOXR0DRV_CFLAGS              = -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
+	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs\
+	-O2 -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
+## *************************** SOLARISTODO  ******************
+endif	# solaris
+
 ifeq ($(BUILD_TARGET),freebsd)
 # x86 FreeBSD:
 #  cc -O2 -fno-strict-aliasing -pipe -Werror -D_KERNEL -DKLD_MODULE \
@@ -1593,7 +1622,6 @@ TEMPLATE_VBOXR3EXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
  else ifeq ($(BUILD_TARGET),solaris)
-$(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_LIBS                = rt
  else
@@ -1612,7 +1640,7 @@ TEMPLATE_VBOXR3_EXTENDS = VBOXR3EXE
 TEMPLATE_VBOXR3_LDFLAGS.l4 = $(L4_LIBDIR)/../crt0.s.o -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 TEMPLATE_VBOXR3_DEFS.l4     = $(TEMPLATE_VBOXR3EXE_DEFS.l4) __PIC__
 TEMPLATE_VBOXR3_DEFS.darwin = $(TEMPLATE_VBOXR3EXE_DEFS.darwin) PIC
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  ifneq ($(BUILD_TARGET),win)
   TEMPLATE_VBOXR3_DEFS = $(TEMPLATE_VBOXR3EXE_DEFS) PIC
   TEMPLATE_VBOXR3_CFLAGS = $(TEMPLATE_VBOXR3EXE_CFLAGS) -fPIC
@@ -1813,7 +1841,6 @@ TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else ifeq ($(BUILD_TARGET),solaris)
-$(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
  else
@@ -2112,7 +2139,6 @@ TEMPLATE_VBOXBLDPROG_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
 TEMPLATE_VBOXBLDPROG_LIBS                =
  else ifeq ($(BUILD_PLATFORM),solaris)
-$(warning Warning: VBOX Build: Target $(BUILD_PLATFORM) is not officially supported!)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXBLDPROG_LIBS                = rt
  else

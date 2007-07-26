@@ -125,7 +125,7 @@
 #ifdef IN_RING3
 # if defined(RT_OS_WINDOWS)
 #  include <Windows.h>
-# elif defined(RT_OS_LINUX)
+# elif defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 #  include <unistd.h>
 # elif defined(RT_OS_L4)
 #  include <l4/vboxserver/vboxserver.h>
@@ -299,12 +299,20 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 # if defined(RT_OS_WINDOWS)
         RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %ls\n", GetCommandLineW());
 
-# elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+# elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
 #  ifdef RT_OS_LINUX
         FILE *pFile = fopen("/proc/self/cmdline", "r");
-#  else        
+#  elif defined(RT_OS_SOLARIS)
+        /*
+         * I have a sinking feeling solaris' psinfo format could be different from cmdline
+         * Must check at run time and possible just ignore this section for solaris
+         */
+        char szArgFileBuf[80];
+        RTStrPrintf(szArgFileBuf, sizeof(szArgFileBuf), "/proc/%ld/psinfo", (long)getpid());
+        FILE* pFile = fopen(szArgFileBuf, "r");
+#  else /* RT_OS_FREEBSD: */
         FILE *pFile = fopen("/proc/curproc/cmdline", "r");
-#  endif        
+#  endif
         if (pFile)
         {
             /* braindead */

@@ -37,6 +37,11 @@
 # define pthread_yield() pthread_yield_np()
 #endif
 
+#ifdef RT_OS_SOLARIS
+# include <sched.h>
+# define pthread_yield() sched_yield()
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *

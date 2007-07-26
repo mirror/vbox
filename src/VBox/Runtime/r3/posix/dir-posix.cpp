@@ -43,6 +43,10 @@
 #include "internal/fs.h"
 #include "internal/path.h"
 
+#if !defined(RT_OS_SOLARIS)
+# define HAVE_DIRENT_D_TYPE 1
+#endif
+
 
 RTDECL(bool) RTDirExists(const char *pszPath)
 {
@@ -224,6 +228,7 @@ static int rtDirReadMore(PRTDIR pDir)
 }
 
 
+#ifdef HAVE_DIRENT_D_TYPE
 /**
  * Converts the d_type field to IPRT directory entry type.
  *
@@ -248,6 +253,7 @@ static RTDIRENTRYTYPE rtDirType(int iType)
             return RTDIRENTRYTYPE_UNKNOWN;
     }
 }
+#endif /*HAVE_DIRENT_D_TYPE */
 
 
 RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, unsigned *pcbDirEntry)
@@ -294,7 +300,11 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, unsigned *pcbDirEntry)
              * Setup the returned data.
              */
             pDirEntry->INodeId = pDir->Data.d_ino; /* may need #ifdefing later */
+#ifdef HAVE_DIRENT_D_TYPE
             pDirEntry->enmType = rtDirType(pDir->Data.d_type);
+#else
+            pDirEntry->enmType = RTDIRENTRYTYPE_UNKNOWN;
+#endif
             pDirEntry->cbName  = (uint16_t)cchName;
             Assert(pDirEntry->cbName == cchName);
             memcpy(pDirEntry->szName, pszName, cchName + 1);
@@ -415,7 +425,11 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEn
                 rc = VERR_NO_MEMORY;
             if (RT_FAILURE(rc))
             {
+#ifdef HAVE_DIRENT_D_TYPE
                 rtDirSetDummyInfo(&pDirEntry->Info, rtDirType(pDir->Data.d_type));
+#else
+                rtDirSetDummyInfo(&pDirEntry->Info, RTDIRENTRYTYPE_UNKNOWN);
+#endif
                 rc = VWRN_NO_DIRENT_INFO;
             }
 

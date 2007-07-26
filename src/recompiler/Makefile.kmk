@@ -69,6 +69,15 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
  REM_USE_NOCRT := 1
 endif
 
+#
+# We need to figure out the solaris version.
+#
+ifeq ($(BUILD_TARGET),solaris)
+ ifndef HOST_SOLARIS
+  # fixme- HOST_SOLARIS := $(shell uname ... | $(SED_EXT)... )
+ endif
+endif
+
 
 #
 # The dyngen build tool.
@@ -196,6 +205,8 @@ else # !REM_USE_NOCRT
  $(REM_MOD)_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib -Wl,--no-undefined
  $(REM_MOD)_LDFLAGS.os2     = -Zomf
  $(REM_MOD)_LDFLAGS.debug   = -g
+ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
+ $(REM_MOD)_DEFS.solaris    += HOST_SOLARIS=$(HOST_SOLARIS)
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   $(REM_MOD)_LIBS           = $(FILE_TOOL_GCC3_LIBGCC)
  else # x86

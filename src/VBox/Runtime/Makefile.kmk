@@ -395,6 +395,37 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/utf8-posix.cpp \
 	timesup.cpp \
 
+RuntimeR3_SOURCES.solaris = \
+	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileMove-generic.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
+	generic/pathhost-generic.cpp \
+	generic/sched-generic.cpp \
+	generic/uuid-generic.cpp \
+	r3/solaris/alloc-solaris.cpp \
+	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/filelock-posix.cpp \
+	r3/posix/fs-posix.cpp \
+	r3/posix/ldrNative-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/process-posix.cpp \
+	r3/posix/rand-posix.cpp \
+	r3/posix/sems-posix.cpp \
+	r3/posix/system-posix.cpp \
+	r3/posix/thread-posix.cpp \
+	r3/posix/time-posix.cpp \
+	r3/posix/timelocal-posix.cpp \
+	r3/posix/timer-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
+	generic/utf16locale-generic.cpp \
+	r3/posix/utf8-posix.cpp \
+	timesup.cpp \
+
+
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
 
@@ -727,6 +758,13 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/semaphore-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c
+
+# SOLARISTODO - Todo for Solaris
+# RuntimeR0Drv_SOURCES.solaris = \
+#	generic/RTAssertDoBreakpoint-generic.cpp \
+#	r0drv/solaris/alloc-r0drv-solaris.c \
+#	r0drv/solaris/initterm-r0drv-solaris.c
+
 
 RuntimeR0Drv_SOURCES.win = \
 	generic/RTAssertDoBreakpoint-generic.cpp \

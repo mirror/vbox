@@ -19,8 +19,8 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef __stdio_h__
-#define __stdio_h__
+#ifndef ___InnoTek_stdio_h
+#define ___InnoTek_stdio_h
 
 #ifndef LOG_GROUP
 # define UNDO_LOG_GROUP
@@ -40,6 +40,11 @@
 __BEGIN_DECLS
 
 typedef struct FILE FILE;
+
+#if defined(RT_OS_SOLARIS)
+/** @todo check solaris' floatingpoint.h as to why we do this */
+# define _FILEDEFED
+#endif
 
 DECLINLINE(int) fprintf(FILE *ignored, const char *pszFormat, ...)
 {
