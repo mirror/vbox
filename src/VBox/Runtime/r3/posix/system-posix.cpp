@@ -27,7 +27,9 @@
 #include <iprt/assert.h>
 
 #include <unistd.h>
-#include <sys/sysctl.h>
+#if !defined(RT_OS_SOLARIS)
+# include <sys/sysctl.h>
+#endif
 
 
 /**
@@ -38,7 +40,7 @@
 RTR3DECL(unsigned) RTSystemProcessorGetCount(void)
 {
     int cCpus; NOREF(cCpus);
-    
+
     /*
      * The sysconf way (linux and others).
      */

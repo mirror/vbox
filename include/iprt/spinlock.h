@@ -61,7 +61,7 @@ typedef struct RTSPINLOCKTMP
     RTUINTREG       uFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
 
-# elif defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
+# elif defined(RT_OS_OS2) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
     /** The saved [R|E]FLAGS. (dummy) */
     RTUINTREG       uFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }

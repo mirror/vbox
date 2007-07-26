@@ -34,6 +34,9 @@
 #ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
 #endif
+#ifdef RT_OS_SOLARIS
+# define RTTIME_INCL_TIMEVAL /** @todo remove me after fixing iprt/time.h */
+#endif
 
 #include <iprt/path.h>
 #include <iprt/assert.h>
@@ -407,10 +410,15 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
          * OS/2 have an api for getting the program file name.
          */
 /** @todo use RTProcGetExecutableName() */
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
 # ifdef RT_OS_LINUX
         int cchLink = readlink("/proc/self/exe", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
-# else
+# elif defined(RT_OS_SOLARIS)
+        pid_t curProcId = getpid();
+        char szFileBuf[PATH_MAX + 1];
+        sprintf(szFileBuf, "/proc/%ld/path/a.out", curProcId);
+        int cchLink = readlink(szFileBuf, &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
+# else /* RT_OS_FREEBSD: */
         int cchLink = readlink("/proc/curproc/file", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
 # endif
         if (cchLink < 0 || cchLink == sizeof(g_szrtProgramPath) - 1)

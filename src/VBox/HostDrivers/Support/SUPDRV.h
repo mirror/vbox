@@ -95,6 +95,9 @@
 #   include <sys/libkern.h>
 #   include <iprt/string.h>
 
+#elif defined(RT_OS_SOLARIS)
+#   include <iprt/string.h>
+
 #else
 #   error "unsupported OS."
 #endif
@@ -175,6 +178,13 @@ __END_DECLS
 #elif defined(RT_OS_FREEBSD)
 
 /* No log API in OS/2 only COM port. */
+# define OSDBGPRINT(a) printf a
+
+
+/*
+ * Solaris
+ */
+#elif defined(RT_OS_SOLARIS)
 # define OSDBGPRINT(a) printf a
 
 
@@ -576,7 +586,7 @@ typedef struct SUPDRVSESSION
     uint16_t                    sfn;
     uint16_t                    Alignment; /**< Alignment */
 #endif
-#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
     /** Pointer to the next session with the same hash. */
     PSUPDRVSESSION              pNextHash;
 #endif

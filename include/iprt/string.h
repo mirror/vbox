@@ -37,6 +37,15 @@
 # define strdup strdup_string_h
 # include <string.h>
 # undef strdup
+#elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
+  /*
+   * Same case as with FreeBSD kernel:
+   * The string.h stuff clashes with sys/systm.h
+   * ffs = find first set bit.
+   */
+# define ffs ffs_string_h
+# include <string.h>
+# undef ffs
 #else
 # include <string.h>
 #endif

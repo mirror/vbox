@@ -6,7 +6,7 @@
 void set_float_rounding_mode(int val STATUS_PARAM)
 {
     STATUS(float_rounding_mode) = val;
-#if defined(_BSD) && !defined(__APPLE__) || (defined(HOST_SOLARIS) && HOST_SOLARIS < 10)
+#if defined(_BSD) && !defined(__APPLE__) || (defined(HOST_SOLARIS) && (HOST_SOLARIS < 10 || HOST_SOLARIS == 11))
     fpsetround(val);
 #elif defined(__arm__)
     /* nothing to do */

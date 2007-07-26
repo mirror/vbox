@@ -27,6 +27,9 @@
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
+#if defined(RT_OS_SOLARIS)
+# include <sched.h>
+#endif
 
 #include <iprt/thread.h>
 #include <iprt/log.h>
@@ -204,6 +207,8 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
         pthread_yield_np();
 #elif defined(RT_OS_FREEBSD) /* void pthread_yield */
         pthread_yield();
+#elif defined(RT_OS_SOLARIS)
+        sched_yield();
 #else
         if (!pthread_yield())
 #endif
@@ -237,6 +242,8 @@ RTDECL(bool) RTThreadYield(void)
     uint64_t u64TS = ASMReadTSC();
 #ifdef RT_OS_DARWIN
     pthread_yield_np();
+#elif defined(RT_OS_SOLARIS)
+    sched_yield();
 #else
     pthread_yield();
 #endif

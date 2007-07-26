@@ -441,6 +441,13 @@ Drivers_SOURCES      := $(filter-out \
 Drivers_SOURCES.os2   =
 endif
 
+ifeq ($(BUILD_TARGET),solaris)
+Drivers_SOURCES      := $(filter-out \
+	Storage/DrvHost% \
+	, $(Drivers_SOURCES))
+Drivers_SOURCES.os2   =
+endif
+
 Drivers_SOURCES.win   = \
 	Network/DrvTAPWin32.cpp \
 	Audio/dsoundaudio.c
