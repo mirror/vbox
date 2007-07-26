@@ -2,9 +2,6 @@
 
 LOG="/var/log/vbox-install.log"
 
-# read INSTALL_DIR/src
-. /etc/vbox/vbox.cfg
-
 # for debconf
 . /usr/share/debconf/confmodule
 db_version 2.0
@@ -58,7 +55,7 @@ EOF
       cat << EOF
 Messages emitted during module compilation will be logged to $LOG.
 EOF
-      if ! $INSTALL_DIR/src/build_in_tmp install > /var/log/vbox-install.log 2>&1; then
+      if ! /usr/share/virtualbox/src/build_in_tmp install > /var/log/vbox-install.log 2>&1; then
         db_fset virtualbox/module-compilation-failed seen false
         db_input critical virtualbox/module-compilation-failed || true
         db_go || true

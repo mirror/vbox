@@ -1,6 +1,6 @@
 Template: virtualbox/group-vboxusers
 Type: note
-Description: Creating group 'vboxusers'.
+Description: Creating group 'vboxusers'
  Users of VirtualBox must be member of that group in order to have write
  permissions to /dev/vboxdrv. Otherwise starting of VMs will not be possible.
 

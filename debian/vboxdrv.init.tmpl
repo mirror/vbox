@@ -27,14 +27,13 @@
 # Required-Stop:
 # Default-Start:  3 5
 # Default-Stop:
-# Description:    VirtualBox Linux kernel module
+# Short-Description: VirtualBox Linux kernel module
 ### END INIT INFO
 
 KDIR="/lib/modules/`uname -r`/misc"
 DEVICE=/dev/vboxdrv
 MODNAME=vboxdrv
 GROUPNAME=vboxusers
-CONFIG="/etc/vbox/vbox.cfg"
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
 
@@ -155,10 +154,9 @@ case "$1" in
     start
     ;;
   setup)
-    . "$CONFIG"
     stop
     log_daemon_msg "Recompiling VirtualBox kernel module" "$MODNAME"
-    if ! $INSTALL_DIR/src/build_in_tmp install > $LOG 2>&1; then
+    if ! /usr/share/virtualbox/src/build_in_tmp install > $LOG 2>&1; then
       failure "Look at $LOG to find out what went wrong"
     fi
     log_end_msg 0
