@@ -70,6 +70,9 @@
 #include <VBox/err.h>
 #endif
 
+#include <iprt/param.h>
+#include <iprt/path.h>
+
 /** class VBoxUSBLedTip
  *
  *  The VBoxUSBLedTip class is an auxiliary ToolTip class
@@ -2297,7 +2300,13 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     QString src1 = qApp->applicationDirPath() + "/../../release/bin/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/../../release/bin/additions/VBoxGuestAdditions.iso";
 #else
-    QString src1 = qApp->applicationDirPath() + "/VBoxGuestAdditions.iso";
+    char szAppPrivPath[RTPATH_MAX];
+    int rc;
+
+    rc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath));
+    Assert(RT_SUCCESS(rc));
+
+    QString src1 = QString(szAppPrivPath) + "/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/additions/VBoxGuestAdditions.iso";
 #endif
     QString src;

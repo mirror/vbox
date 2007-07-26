@@ -1765,7 +1765,7 @@ void VBoxProblemReporter::showHelpHelpDialog()
     char szDocsPath[RTPATH_MAX];
     int rc;
 
-    RTPathAppDocs(szDocsPath, sizeof(szDocsPath));
+    rc = RTPathAppDocs(szDocsPath, sizeof(szDocsPath));
     Assert(RT_SUCCESS(rc));
 
     QString fullProgPath = QString(szDocsPath);

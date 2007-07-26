@@ -2004,7 +2004,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     char szNlsPath[RTPATH_MAX];
     int rc;
 
-    RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+    rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
     Assert(RT_SUCCESS(rc));
 
     QString nlsPath = QString(szNlsPath) + gVBoxLangSubDir;
