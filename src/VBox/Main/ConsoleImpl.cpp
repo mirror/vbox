@@ -3282,6 +3282,7 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
         return S_OK;
     }
 
+#if 1
     /* Don't proceed unless we've found the usb controller. */
     PPDMIBASE pBase = NULL;
     int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
@@ -3296,6 +3297,16 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
     ComAssertRet (pRhConfig, E_FAIL);
 
     HRESULT rc = attachUSBDevice (aDevice, pRhConfig);
+#else /* PDMUsb */
+    /* Don't proceed unless there's a USB hub. */
+    if (!PDMR3USBHasHub (m_VM))
+    {
+        LogFlowThisFunc (("Attach request ignored (no USB controller).\n"));
+        return E_FAIL;
+    }
+
+    HRESULT rc = attachUSBDevice (aDevice);
+#endif /* PDMUsb */
 
     if (FAILED (rc))
     {
@@ -4282,9 +4293,15 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
  *  @note Synchronously calls EMT.
  *  @note Must be called from under this object's lock.
  */
+#if 1
 HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig)
 {
     AssertReturn (aHostDevice && aConfig, E_FAIL);
+#else /* PDMUsb */
+HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice)
+{
+    AssertReturn (aHostDevice, E_FAIL);
+#endif
 
     AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 
@@ -4323,11 +4340,17 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfi
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
+#if 1
     PVMREQ pReq = NULL;
     int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
                            (PFNRT) usbAttachCallback, 7,
                            this, aHostDevice,
                            aConfig, Uuid.ptr(), fRemote, Address.raw(), pvRemote);
+#else /* PDMUsb */
+    PVMREQ pReq = NULL;
+    int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
+                           (PFNRT) usbAttachCallback, 5, this, aHostDevice, aConfig, Uuid.ptr(), fRemote, Address.raw());
+#endif /* PDMUsb */
     if (VBOX_SUCCESS (vrc))
         vrc = pReq->iStatus;
     VMR3ReqFree (pReq);
@@ -4371,7 +4394,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfi
  *  @thread EMT
  *  @note Locks the console object for writing.
  */
-//static
+#if 1
 DECLCALLBACK(int)
 Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
                             PVUSBIRHCONFIG aConfig, PCRTUUID aUuid, bool aRemote,
@@ -4423,6 +4446,48 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
     LogFlowFuncLeave();
     return vrc;
 }
+#else /* PDMUsb */
+//static
+DECLCALLBACK(int)
+Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid, bool aRemote, const char *aAddress)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc (("that={%p}\n", that));
+
+    AssertReturn (that && aConfig && aUuid, VERR_INVALID_PARAMETER);
+
+    if (aRemote)
+    {
+        RemoteUSBDevice *pRemoteUSBDevice = static_cast <RemoteUSBDevice *> (aHostDevice);
+        Guid guid (*aUuid);
+
+        aRemoteBackend = that->consoleVRDPServer ()->USBBackendRequestPointer (pRemoteUSBDevice->clientId (), &guid);
+        if (!aRemoteBackend)
+            return VERR_INVALID_PARAMETER;  /* The clientId is invalid then. */
+    }
+
+    int vrc = PDMR3USBCreateProxyDevice (mVM, aUuid, aRemote, aAddress, aRemoteBackend);
+    if (VBOX_SUCCESS (vrc))
+    {
+        /* Create a OUSBDevice and add it to the device list */
+        ComObjPtr <OUSBDevice> device;
+        device.createObject();
+        HRESULT hrc = device->init (aHostDevice);
+        AssertComRC (hrc);
+
+        AutoLock alock (that);
+        that->mUSBDevices.push_back (device);
+        LogFlowFunc (("Attached device {%Vuuid}\n", device->id().raw()));
+
+        /* notify callbacks */
+        that->onUSBDeviceStateChange (device, true /* aAttached */, NULL);
+    }
+
+    LogFlowFunc (("vrc=%Vrc\n", vrc));
+    LogFlowFuncLeave();
+    return vrc;
+}
+#endif /* PDMUsb */
 
 /**
  *  Sends a request to VMM to detach the given host device.  After this method
