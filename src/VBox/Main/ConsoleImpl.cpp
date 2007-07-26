@@ -6639,6 +6639,12 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     HRESULT hrc = S_OK;
     int vrc = VINF_SUCCESS;
 
+    /* Set up a build identifier so that it can be seen from core dumps what
+     * exact build was used to produce the core. */
+    static char saBuildID[40];
+    RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%d %s%s%s%s",
+                "BU", "IL", "DI", "D", VBOX_VERSION_STRING, VBOX_SVN_REV, "BU", "IL", "DI", "D");
+
     ComObjPtr <Console> console = task->mConsole;
 
     /* Note: no need to use addCaller() because VMPowerUpTask does that */
