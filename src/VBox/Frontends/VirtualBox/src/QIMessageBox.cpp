@@ -44,22 +44,19 @@
  *      int, int, int, QWidget *, const char *, bool, WFlags).
  *  See QMessageBox for details.
  */
-QIMessageBox::QIMessageBox (
-    const QString &caption, const QString &text,
-    Icon icon, int button0, int button1, int button2,
-    QWidget *parent, const char *name, bool modal,
-    WFlags f
-) :
-    QDialog (
-        parent, name, modal,
-        f | WStyle_Customize | WStyle_NormalBorder | WStyle_Title | WStyle_SysMenu
-    )
+QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
+                            Icon aIcon, int aButton0, int aButton1, int aButton2,
+                            QWidget *aParent, const char *aName, bool aModal,
+                            WFlags aFlags)
+    : QDialog (aParent, aName, aModal,
+               aFlags | WStyle_Customize | WStyle_NormalBorder |
+                        WStyle_Title | WStyle_SysMenu)
 {
-    setCaption (caption);
+    setCaption (aCaption);
 
-    b0 = button0;
-    b1 = button1;
-    b2 = button2;
+    mButton0 = aButton0;
+    mButton1 = aButton1;
+    mButton2 = aButton2;
 
     QVBoxLayout *layout = new QVBoxLayout (this);
     /* setAutoAdd() behavior is really poor (it messes up with the order
@@ -73,57 +70,63 @@ QIMessageBox::QIMessageBox (
     main->setSpacing (10);
     layout->addWidget (main);
 
-    licon = new QLabel (main);
-    licon->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) icon));
-    licon->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
-    licon->setAlignment (AlignHCenter | AlignTop);
+    mIconLabel = new QLabel (main);
+    mIconLabel->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) aIcon));
+    mIconLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
+    mIconLabel->setAlignment (AlignHCenter | AlignTop);
 
-    message = new QVBox (main);
-    message->setMargin (0);
-    message->setSpacing (10);
+    mMessageVBox = new QVBox (main);
+    mMessageVBox->setMargin (0);
+    mMessageVBox->setSpacing (10);
 
-    ltext = new QLabel (text, message);
-    ltext->setAlignment (AlignAuto | AlignTop | ExpandTabs | WordBreak);
-    ltext->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Fixed, true);
+    mTextLabel = new QLabel (aText, mMessageVBox);
+    mTextLabel->setAlignment (AlignAuto | AlignTop | ExpandTabs | WordBreak);
+    mTextLabel->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Fixed, true);
 
-    dbox = new QVBox (this);
-    dbox->setMargin (0);
-    dbox->setSpacing (10);
-    layout->addWidget (dbox);
+    mFlagCB_Main = new QCheckBox (mMessageVBox);
 
-    dtext = new QTextEdit (dbox);
+    mDetailsVBox = new QVBox (this);
+    mDetailsVBox->setMargin (0);
+    mDetailsVBox->setSpacing (10);
+    layout->addWidget (mDetailsVBox);
+
+    mDetailsText = new QTextEdit (mDetailsVBox);
     {
         /* calculate the minimum size dynamically, approx. for 40 chars and
          * 6 lines */
-        QFontMetrics fm = dtext->fontMetrics();
-        dtext->setMinimumSize (40 * fm.width ('m'), fm.lineSpacing() * 6);
+        QFontMetrics fm = mDetailsText->fontMetrics();
+        mDetailsText->setMinimumSize (40 * fm.width ('m'), fm.lineSpacing() * 6);
     }
-    dtext->setReadOnly (true);
-    dtext->setWrapPolicy (QTextEdit::AtWordOrDocumentBoundary);
-    dtext->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
+    mDetailsText->setReadOnly (true);
+    mDetailsText->setWrapPolicy (QTextEdit::AtWordOrDocumentBoundary);
+    mDetailsText->setSizePolicy (QSizePolicy::Expanding,
+                                 QSizePolicy::MinimumExpanding);
 
-    /* cbflag has no parent initially, setDetailsShown() will do that */
-    cbflag = new QCheckBox (0);
-    cbflag->hide();
+    mFlagCB_Details = new QCheckBox (mDetailsVBox);
 
-    spacer = new QSpacerItem (0, 0);
-    layout->addItem (spacer);
+    mSpacer = new QSpacerItem (0, 0);
+    layout->addItem (mSpacer);
 
     QHBoxLayout *buttons = new QHBoxLayout (new QWidget (this));
     layout->addWidget (buttons->mainWidget());
     buttons->setAutoAdd (true);
     buttons->setSpacing (5);
 
-    bescape = 0;
+    mButtonEsc = 0;
 
-    pb0 = createButton (buttons->mainWidget(), button0);
-    if (pb0) connect (pb0, SIGNAL( clicked() ), SLOT( done0() ));
-    pb1 = createButton (buttons->mainWidget(), button1);
-    if (pb1) connect (pb1, SIGNAL( clicked() ), SLOT( done1() ));
-    pb2 = createButton (buttons->mainWidget(), button2);
-    if (pb2) connect (pb2, SIGNAL( clicked() ), SLOT( done2() ));
+    mButton0PB = createButton (buttons->mainWidget(), aButton0);
+    if (mButton0PB)
+        connect (mButton0PB, SIGNAL (clicked()), SLOT (done0()));
+    mButton1PB = createButton (buttons->mainWidget(), aButton1);
+    if (mButton1PB)
+        connect (mButton1PB, SIGNAL (clicked()), SLOT (done1()));
+    mButton2PB = createButton (buttons->mainWidget(), aButton2);
+    if (mButton2PB)
+        connect (mButton2PB, SIGNAL (clicked()), SLOT (done2()));
+
     buttons->setAlignment (AlignHCenter);
 
+    /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);
 }
 
@@ -140,14 +143,17 @@ QIMessageBox::QIMessageBox (
  *  displayed under the message text. Passing the null string as the argument
  *  will hide the flag. By default, the flag is hidden.
  */
-void QIMessageBox::setFlagText (const QString &text)
+void QIMessageBox::setFlagText (const QString &aText)
 {
-    if (text.isNull()) {
-        cbflag->hide();
-    } else {
-        cbflag->setText (text);
-        cbflag->show();
-        cbflag->setFocus();
+    if (aText.isNull())
+    {
+        mFlagCB->hide();
+    }
+    else
+    {
+        mFlagCB->setText (aText);
+        mFlagCB->show();
+        mFlagCB->setFocus();
     }
 }
 
@@ -168,13 +174,13 @@ void QIMessageBox::setFlagText (const QString &text)
  *  @see #setFlagText()
  */
 
-QPushButton *QIMessageBox::createButton (QWidget *parent, int button)
+QPushButton *QIMessageBox::createButton (QWidget *aParent, int aButton)
 {
-    if (button == 0)
+    if (aButton == 0)
         return 0;
 
     QString text;
-    switch (button & ButtonMask)
+    switch (aButton & ButtonMask)
     {
         case Ok:        text = tr ("OK"); break;
         case Yes:       text = tr ("Yes"); break;
@@ -182,21 +188,20 @@ QPushButton *QIMessageBox::createButton (QWidget *parent, int button)
         case Cancel:    text = tr ("Cancel"); break;
         case Ignore:    text = tr ("Ignore"); break;
         default:
-            AssertMsgFailed (("QIMessageBox::createButton(): type %d is not implemented",
-                              button));
-            return 0;
+            AssertMsgFailed (("Type %d is not implemented", aButton));
+            return NULL;
     }
 
-    QPushButton *b = new QPushButton (text, parent);
+    QPushButton *b = new QPushButton (text, aParent);
 
-    if (button & Default)
+    if (aButton & Default)
     {
         b->setDefault (true);
         b->setFocus();
     }
     else
-    if (button & Escape)
-        bescape = button & ButtonMask;
+    if (aButton & Escape)
+        mButtonEsc = aButton & ButtonMask;
 
     return b;
 }
@@ -216,9 +221,9 @@ QPushButton *QIMessageBox::createButton (QWidget *parent, int button)
  *  @see #detailsText()
  *  @see #setDetailsShown()
  */
-void QIMessageBox::setDetailsText (const QString &text)
+void QIMessageBox::setDetailsText (const QString &aText)
 {
-    dtext->setText (text);
+    mDetailsText->setText (aText);
 }
 
 /** @fn QIMessageBox::isDetailsShown() const
@@ -237,25 +242,25 @@ void QIMessageBox::setDetailsText (const QString &text)
  *  @see #isDetailsShown()
  *  @see #setDetailsText()
  */
-void QIMessageBox::setDetailsShown (bool shown)
+void QIMessageBox::setDetailsShown (bool aShown)
 {
-
-    bool cbflagShown = cbflag->isShown();
-
-    if (shown)
+    if (aShown)
     {
-        cbflag->reparent (dbox, QPoint());
-        cbflag->setShown (cbflagShown);
-        spacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Minimum);
+        mFlagCB_Details->setShown (mFlagCB->isShown());
+        mFlagCB_Details->setChecked (mFlagCB->isChecked());
+        mFlagCB_Main->setShown (false);
+        mFlagCB = mFlagCB_Details;
+        mSpacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Minimum);
     }
 
-    dbox->setShown (shown);
+    mDetailsVBox->setShown (aShown);
 
-    if (!shown)
+    if (!aShown)
     {
-        cbflag->reparent (message, QPoint(), cbflagShown);
-        cbflag->setShown (cbflagShown);
-        spacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        mFlagCB_Main->setShown (mFlagCB_Details->isShown());
+        mFlagCB_Main->setChecked (mFlagCB_Details->isChecked());
+        mFlagCB = mFlagCB_Main;
+        mSpacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
     }
 }
 

@@ -40,64 +40,65 @@ class QIMessageBox : public QDialog
 public:
 
     // for compatibility with QMessageBox
-    enum Icon {
+    enum Icon
+    {
         NoIcon = QMessageBox::NoIcon,
         Information = QMessageBox::Information,
         Warning = QMessageBox::Warning,
         Critical = QMessageBox::Critical,
 		Question = QMessageBox::Question
     };
-    enum {
+
+    enum
+    {
         NoButton = 0, Ok = 1, Cancel = 2, Yes = 3, No = 4, Abort = 5,
         Retry = 6, Ignore = 7, YesAll = 8, NoAll = 9, ButtonMask = 0xff,
         Default = 0x100, Escape = 0x200, FlagMask = 0x300
     };
 
-    QIMessageBox (
-        const QString &caption, const QString &text,
-        Icon icon, int button0, int button1 = 0, int button2 = 0,
-        QWidget *parent = 0, const char *name = 0, bool modal = TRUE,
-        WFlags f = WStyle_DialogBorder
-    );
+    QIMessageBox (const QString &aCaption, const QString &aText,
+                  Icon aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
+                  QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE,
+                  WFlags aFlags = WStyle_DialogBorder);
 
-    QString flagText() const { return cbflag->isShown() ? cbflag->text() : QString::null; }
-    void setFlagText (const QString &text);
+    QString flagText() const { return mFlagCB->isShown() ? mFlagCB->text() : QString::null; }
+    void setFlagText (const QString &aText);
 
-    bool isFlagChecked() const { return cbflag->isChecked(); }
-    void setFlagChecked (bool checked) { cbflag->setChecked (checked); }
+    bool isFlagChecked() const { return mFlagCB->isChecked(); }
+    void setFlagChecked (bool aChecked) { mFlagCB->setChecked (aChecked); }
 
-    QString detailsText () const { return dtext->text(); }
-    void setDetailsText (const QString &text);
+    QString detailsText () const { return mDetailsText->text(); }
+    void setDetailsText (const QString &aText);
 
-    bool isDetailsShown() const { return dbox->isShown(); }
-    void setDetailsShown (bool shown);
+    bool isDetailsShown() const { return mDetailsVBox->isShown(); }
+    void setDetailsShown (bool aShown);
 
 private:
 
-    QPushButton *createButton (QWidget *parent, int button);
+    QPushButton *createButton (QWidget *aParent, int aButton);
 
 private slots:
 
-    void done0() { done (b0 & ButtonMask); }
-    void done1() { done (b1 & ButtonMask); }
-    void done2() { done (b2 & ButtonMask); }
+    void done0() { done (mButton0 & ButtonMask); }
+    void done1() { done (mButton1 & ButtonMask); }
+    void done2() { done (mButton2 & ButtonMask); }
 
     void reject() {
         QDialog::reject();
-        if (bescape)
-            setResult (bescape & ButtonMask);
+        if (mButtonEsc)
+            setResult (mButtonEsc & ButtonMask);
     }
 
 private:
 
-    int b0, b1, b2, bescape;
-    QLabel *licon, *ltext;
-    QPushButton *pb0, *pb1, *pb2;
-    QVBox *message;
-    QCheckBox *cbflag;
-    QVBox *dbox;
-    QTextEdit *dtext;
-    QSpacerItem *spacer;
+    int mButton0, mButton1, mButton2, mButtonEsc;
+    QLabel *mIconLabel, *mTextLabel;
+    QPushButton *mButton0PB, *mButton1PB, *mButton2PB;
+    QVBox *mMessageVBox;
+    QCheckBox *mFlagCB, *mFlagCB_Main, *mFlagCB_Details;
+    QVBox *mDetailsVBox;
+    QTextEdit *mDetailsText;
+    QSpacerItem *mSpacer;
 };
 
 #endif
