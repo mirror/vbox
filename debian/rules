@@ -12,6 +12,7 @@ export DH_COMPAT=4
 #                   either the subversion rev [if available] or the build date)
 #  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
 #                   VirtualBox.chm from $HOME
+#  NOMODS=1         don't build any module
 #  HEADLESS=1       build the headless version
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 
@@ -24,6 +25,7 @@ prefix   := $(current)/debian/$(package)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
 ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/Devices/USB),,1))
+NOMODS   ?= $(ose)
 
 ifneq ($(wildcard $(verfile)),)
 include $(verfile)
@@ -120,7 +122,7 @@ binary binary-arch binary-indep: build $(verfile)
 	$(MAKE) -f debian/rules binary
 else
 # Build architecture-dependent files here.
-binary binary-arch binary-indep: build $(if $(ose),,modules)
+binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	dh_testdir
 	dh_testroot
 	dh_clean -k
@@ -131,6 +133,7 @@ binary binary-arch binary-indep: build $(if $(ose),,modules)
 	install -d -g 0 -o 0 $(prefix)/usr/bin
 	install -d -g 0 -o 0 $(prefix)/usr/lib/virtualbox
 	install -d -g 0 -o 0 $(prefix)/usr/share/virtualbox
+	install -d -g 0 -o 0 $(prefix)/usr/share/doc/virtualbox
 	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/VirtualBox.desktop \
 	   $(prefix)/usr/share/applications/VirtualBox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
@@ -154,10 +157,17 @@ binary binary-arch binary-indep: build $(if $(ose),,modules)
 	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/lib/virtualbox/$$i; done
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxSVC $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/tstVMM $(prefix)/usr/lib/virtualbox
-	$(if $(ose),,for d in $(moddir)/*; do \
+	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxTunctl $(prefix)/usr/bin
+	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
 	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done)
-	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxTunctl $(prefix)/usr/bin
+ifeq ($(ose),)
+	for i in kchmviewer UserManual.pdf VirtualBox.chm LICENSE; do \
+	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/share/doc/virtualbox; done
+	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
+	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/share/virtualbox; done
+	rmdir $(prefix)/opt/VirtualBox-$(ver)/additions
+endif
 	rmdir $(prefix)/opt/VirtualBox-$(ver)
 	rmdir $(prefix)/opt
 	dh_link \
@@ -169,7 +179,7 @@ binary binary-arch binary-indep: build $(if $(ose),,modules)
 	    usr/bin/VBoxTAP usr/bin/VBoxDeleteIF
 	dh_desktop
 	dh_installmenu
-	$(if $(ose),,dh_installmodules)
+	$(if $(NOMODS),,dh_installmodules)
 	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g;' \
 	    debian/vboxdrv.init.tmpl > debian/vboxdrv.init
 #	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
