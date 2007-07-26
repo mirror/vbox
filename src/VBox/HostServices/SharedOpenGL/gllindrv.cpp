@@ -23,24 +23,17 @@
  * license agreement apply instead of the previous paragraph.
  *
  */
+#define GLX_GLXEXT_PROTOTYPES
 
 #include "vboxgl.h"
 #define LOG_GROUP LOG_GROUP_SHARED_OPENGL
 #include <VBox/log.h>
 #include <string.h>
 #include <stdio.h>
+#include <GL/gl.h>
+#include <GL/glx.h>
+#include <GL/glxext.h>
 
-/*static int (*X_handler)(Display *, XErrorEvent *) = NULL;
-static int x_errhandler(Display *d, XErrorEvent *e)
-{
-    return (X_handler(d, e));
-}
-
-static int (*XIO_handler)(Display *) = NULL;
-static int xio_errhandler(Display *d)
-{
-    return (XIO_handler(d));
-}*/
 
 /* X11 server connection for all OpenGL clients.
  * Neccessary because Mesa and DRI cannot handle more than one
@@ -80,84 +73,8 @@ GLboolean vboxglCheckExtension(Display *dpy, int screenNum, const char *extName 
     return GL_FALSE;
 }
 
-
 /**
- * Print parameters for a GLXFBConfig to stdout.
- * Input:  dpy - the X display
- *         screen - the X screen number
- *         fbConfig - the fbconfig handle
- *         horizFormat - if true, print in horizontal format
- */
-void
-PrintFBConfigInfo(Display *dpy, int screen, GLXFBConfig config)
-{
-   int bufferSize, level, doubleBuffer, stereo, auxBuffers;
-   int redSize, greenSize, blueSize, alphaSize;
-   int depthSize, stencilSize;
-   int accumRedSize, accumBlueSize, accumGreenSize, accumAlphaSize;
-//   int sampleBuffers, samples;
-   int drawableType, renderType, xRenderable, xVisual, id;
-
-   /* do queries using the GLX 1.3 tokens (same as the SGIX tokens) */
-   glXGetFBConfigAttrib(dpy, config, GLX_BUFFER_SIZE, &bufferSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_LEVEL, &level);
-   glXGetFBConfigAttrib(dpy, config, GLX_DOUBLEBUFFER, &doubleBuffer);
-   glXGetFBConfigAttrib(dpy, config, GLX_STEREO, &stereo);
-   glXGetFBConfigAttrib(dpy, config, GLX_AUX_BUFFERS, &auxBuffers);
-   glXGetFBConfigAttrib(dpy, config, GLX_RED_SIZE, &redSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_GREEN_SIZE, &greenSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_BLUE_SIZE, &blueSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_ALPHA_SIZE, &alphaSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_DEPTH_SIZE, &depthSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_STENCIL_SIZE, &stencilSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_ACCUM_RED_SIZE, &accumRedSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_ACCUM_GREEN_SIZE, &accumGreenSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_ACCUM_BLUE_SIZE, &accumBlueSize);
-   glXGetFBConfigAttrib(dpy, config, GLX_ACCUM_ALPHA_SIZE, &accumAlphaSize);
-//   glXGetFBConfigAttrib(dpy, config, GLX_SAMPLE_BUFFERS, &sampleBuffers);
-//   glXGetFBConfigAttrib(dpy, config, GLX_SAMPLES, &samples);
-   glXGetFBConfigAttrib(dpy, config, GLX_DRAWABLE_TYPE, &drawableType);
-   glXGetFBConfigAttrib(dpy, config, GLX_RENDER_TYPE, &renderType);
-   glXGetFBConfigAttrib(dpy, config, GLX_X_RENDERABLE, &xRenderable);
-   glXGetFBConfigAttrib(dpy, config, GLX_X_VISUAL_TYPE, &xVisual);
-   if (!xRenderable || !(drawableType & GLX_WINDOW_BIT_SGIX))
-      xVisual = -1;
-
-   glXGetFBConfigAttrib(dpy, config, GLX_FBCONFIG_ID, &id);
-
-      printf("Id 0x%x\n", id);
-      printf("  Buffer Size: %d\n", bufferSize);
-      printf("  Level: %d\n", level);
-      printf("  Double Buffer: %s\n", doubleBuffer ? "yes" : "no");
-      printf("  Stereo: %s\n", stereo ? "yes" : "no");
-      printf("  Aux Buffers: %d\n", auxBuffers);
-      printf("  Red Size: %d\n", redSize);
-      printf("  Green Size: %d\n", greenSize);
-      printf("  Blue Size: %d\n", blueSize);
-      printf("  Alpha Size: %d\n", alphaSize);
-      printf("  Depth Size: %d\n", depthSize);
-      printf("  Stencil Size: %d\n", stencilSize);
-      printf("  Accum Red Size: %d\n", accumRedSize);
-      printf("  Accum Green Size: %d\n", accumGreenSize);
-      printf("  Accum Blue Size: %d\n", accumBlueSize);
-      printf("  Accum Alpha Size: %d\n", accumAlphaSize);
-//      printf("  Sample Buffers: %d\n", sampleBuffers);
-//      printf("  Samples/Pixel: %d\n", samples);
-      printf("  Drawable Types: ");
-      if (drawableType & GLX_WINDOW_BIT)  printf("Window ");
-      if (drawableType & GLX_PIXMAP_BIT)  printf("Pixmap ");
-      if (drawableType & GLX_PBUFFER_BIT)  printf("PBuffer");
-      printf("\n");
-      printf("  Render Types: ");
-      if (renderType & GLX_RGBA_BIT_SGIX)  printf("RGBA ");
-      if (renderType & GLX_COLOR_INDEX_BIT_SGIX)  printf("CI ");
-      printf("\n");
-      printf("  X Renderable: %s\n", xRenderable ? "yes" : "no");
-
-}
-
-/**
- * Global init of VBox OpenGL for windows
+ * Global init of VBox OpenGL
  *
  * @returns VBox error code
  */
@@ -165,12 +82,24 @@ int vboxglGlobalInit()
 {
     Log(("vboxglGlobalInit\n"));
 
-    glXDisplay = XOpenDisplay(NULL);
-
     /*vboxInitOpenGLExtensions();*/
     return VINF_SUCCESS;
 }
 
+/**
+ * Global deinit of VBox OpenGL
+ *
+ * @returns VBox error code
+ */
+int vboxglGlobalUnload()
+{
+    Log(("vboxglGlobalUnload"));
+
+    if (glXDisplay)
+        XCloseDisplay(glXDisplay);
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Enable OpenGL
@@ -183,8 +112,8 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
     static int attribs[] = {
         GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
         GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-        GLX_DOUBLEBUFFER,  True,  /* Request a double-buffered color buffer with */
-        GLX_RED_SIZE,      1,     /* the maximum number of bits per component    */
+        GLX_DOUBLEBUFFER,  GL_TRUE,  /* Request a double-buffered color buffer with */
+        GLX_RED_SIZE,      1,        /* the maximum number of bits per component    */
         GLX_GREEN_SIZE,    1, 
         GLX_BLUE_SIZE,     1,
         None
@@ -194,33 +123,25 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
     unsigned long mask;
     int returnedFBConfigs;
 
-    if (!pClient->glxContext) 
-    {
-        /* we have to set up a rendering context to be able to use glGetString
-         * a window is created but is not mapped to screen (so it's not visible') 
-         * and a GLXContext is bound to it */
-        screen_num = DefaultScreen(pClient->dpy);
-        pClient->enable.fbConfig = pClient->glxChooseFBConfig(pClient->dpy, screen_num, attribs, &returnedFBConfigs);
-        Log(("vboxglGetString: returned FBConfigs: %d\n", returnedFBConfigs));
-        pClient->enable.visinfo = pClient->glxGetVisualFromFBConfig(pClient->dpy, pClient->enable.fbConfig[0]);
-        /* Create Window */
-        attr.background_pixel = 0;
-        attr.border_pixel = 0;
-        attr.colormap = XCreateColormap(pClient->dpy, RootWindow(pClient->dpy, screen_num), pClient->enable.visinfo->visual, AllocNone);
-        attr.event_mask = StructureNotifyMask | ExposureMask;
-        mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-        pClient->enable.win = XCreateWindow(pClient->dpy, RootWindow(pClient->dpy, screen_num), 0, 0, 100, 100,
-		           0, pClient->enable.visinfo->depth, InputOutput,
-		           pClient->enable.visinfo->visual, mask, &attr);
-        /* Create Context */
-        pClient->enable.ctx = pClient->glxCreateNewContext(pClient->dpy, pClient->enable.fbConfig[0], GLX_RGBA_TYPE, NULL, True);
-
-        glXMakeCurrent(pClient->dpy, pClient->enable.win, pClient->enable.ctx);
-    } 
-    else 
-    {
-        glXMakeCurrent(pClient->dpy, pClient->xWindow, pClient->glxContext);
-    }
+    /* we have to set up a rendering context to be able to use glGetString
+     * a window is created but is not mapped to screen (so it's not visible') 
+     * and a GLXContext is bound to it */
+    screen_num = DefaultScreen(pClient->dpy);
+    pClient->enable.fbConfig = pClient->glxChooseFBConfig(pClient->dpy, screen_num, attribs, &returnedFBConfigs);
+    Log(("vboxglGetString: returned FBConfigs: %d\n", returnedFBConfigs));
+    pClient->enable.visinfo = pClient->glxGetVisualFromFBConfig(pClient->dpy, pClient->enable.fbConfig[0]);
+    /* Create Window */
+    attr.background_pixel = 0;
+    attr.border_pixel = 0;
+    attr.colormap = XCreateColormap(pClient->dpy, RootWindow(pClient->dpy, screen_num), pClient->enable.visinfo->visual, AllocNone);
+    attr.event_mask = StructureNotifyMask | ExposureMask;
+    mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+    pClient->enable.win = XCreateWindow(pClient->dpy, RootWindow(pClient->dpy, screen_num), 0, 0, 100, 100,
+                                        0, pClient->enable.visinfo->depth, InputOutput,
+                                        pClient->enable.visinfo->visual, mask, &attr);
+    /* Create Context */
+    pClient->enable.ctx = pClient->glxCreateNewContext(pClient->dpy, pClient->enable.fbConfig[0], GLX_RGBA_TYPE, NULL, GL_TRUE);
+    glXMakeCurrent(pClient->dpy, pClient->enable.win, pClient->enable.ctx);
 
     return VINF_SUCCESS;
 }
@@ -234,15 +155,16 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
 int vboxglDisableOpenGL(PVBOXOGLCTX pClient)
 {
     /* Free all data */
-    glFlush();
-    if (!pClient->glxContext) 
+    if (pClient->enable.ctx) 
     {
-        glXMakeCurrent(pClient->dpy, 0, NULL);
+        glFlush();
+        glXMakeCurrent(pClient->dpy, None, NULL);
         XDestroyWindow(pClient->dpy, pClient->enable.win);
         glXDestroyContext(pClient->dpy, pClient->enable.ctx);
         XFree(pClient->enable.visinfo);
         XFree(pClient->enable.fbConfig);
     }
+
     return VINF_SUCCESS;
 }
 
@@ -256,10 +178,12 @@ int vboxglConnect(PVBOXOGLCTX pClient)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     Log(("vboxglConnect\n"));
-    //pClient->getContextIDPtr = NULL;
-    //pClient->importContextEXTPtr = NULL;
+
     pClient->PixelFormatToFBConfigMapper = NULL;
     pClient->xWindow = 0;
+
+    if (!glXDisplay)
+        glXDisplay = XOpenDisplay(NULL);
 
     pClient->dpy = glXDisplay;
 
@@ -271,19 +195,19 @@ int vboxglConnect(PVBOXOGLCTX pClient)
 
         if ((major == 1) && (minor >= 3)) {
             Log(("Server GLX 1.3 supported\n"));
-            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddress( 
+            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddressARB( 
                                           (GLubyte *) "glXChooseFBConfig");
-            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddress( 
+            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddressARB( 
                                                  (GLubyte *) "glXGetVisualFromFBConfig");
-            pClient->glxCreateNewContext = (PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC) glXGetProcAddress(
+            pClient->glxCreateNewContext = (PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC) glXGetProcAddressARB(
                                             (GLubyte *) "glXCreateNewContext");
         } else if (vboxglCheckExtension(pClient->dpy, screenNum, "GLX_SGIX_fbconfig")) {
             Log(("GLX_SGIX_fbconfig extension supported\n"));
-            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddress( 
+            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddressARB( 
                                           (GLubyte *) "glXChooseFBConfigSGIX");
-            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddress( 
+            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddressARB( 
                                                  (GLubyte *) "glXGetVisualFromFBConfigSGIX");
-            pClient->glxCreateNewContext = (PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC) glXGetProcAddress(
+            pClient->glxCreateNewContext = (PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC) glXGetProcAddressARB(
                                             (GLubyte *) "glXCreateContextWithConfigSGIX");
         } else {
                 Log(("Error no FBConfig supported\n"));
@@ -328,7 +252,6 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     XSetWindowAttributes attr;
     XVisualInfo *visinfo = NULL;
     unsigned long mask;
-    //GLXContext ctx;
     GLXFBConfig fbConfig;
     GLXContextID glrc;
     int screen_num;
@@ -341,33 +264,6 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
     screen_num = DefaultScreen(pClient->dpy);
     fbConfig = pClient->actFBConfig;
-
-#if 0
-    if (!fbConfig) {
-        /* Create a standard fbconfig */
-        int returnedNumFBConfigs;
-        GLXFBConfig *returnedFBConfigs;
-        static int attribs[] = {
-            GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-            GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-            GLX_DOUBLEBUFFER,  True,  /* Request a double-buffered color buffer with */
-            GLX_RED_SIZE,      1,     /* the maximum number of bits per component    */
-            GLX_GREEN_SIZE,    1, 
-            GLX_BLUE_SIZE,     1,
-            None
-        };
-
-        Log(("Warning: no GLXFBConfig set creating standard one\n"));
-        returnedFBConfigs = pClient->glxChooseFBConfig(pClient->dpy, screen_num, attribs, &returnedNumFBConfigs);
-        if (!returnedNumFBConfigs) {
-            pClient->lastretval = 0;
-            pClient->fHasLastError = true;
-            pClient->ulLastError   = glGetError();
-            return;
-        }
-        fbConfig = returnedFBConfigs[0];
-    }
-#endif
 
     visinfo = pClient->glxGetVisualFromFBConfig(pClient->dpy, fbConfig);
 
@@ -386,11 +282,11 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 	                                visinfo->visual, mask, &attr);
     }
     XResizeWindow(pClient->dpy, pClient->xWindow, pClient->winWidth, pClient->winHeight);
-    pClient->glxContext = pClient->glxCreateNewContext(pClient->dpy, fbConfig, GLX_RGBA_TYPE, NULL, True);
+    pClient->glxContext = pClient->glxCreateNewContext(pClient->dpy, fbConfig, GLX_RGBA_TYPE, NULL, GL_TRUE);
 
     XMapWindow(pClient->dpy, pClient->xWindow);
     XIfEvent(pClient->dpy, &event, WaitForNotify, (XPointer)pClient->xWindow );
-    //glrc = pClient->getContextIDPtr(ctx);
+
     glrc = 1;
     Assert(glrc);
 #else
@@ -405,11 +301,10 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
 void vboxglDrvDeleteContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    //GLXContext ctx;
     OGL_CMD(DrvDeleteContext, 1);
     OGL_PARAM(HGLRC, hglrc);
     Log(("DrvDeleteContext %x\n", hglrc));
-    //ctx = pClient->importContextEXTPtr(pClient->dpy, hglrc);
+
     glXDestroyContext(pClient->dpy, VBOX_OGL_GUEST_TO_HOST_HDC(hglrc));
     pClient->lastretval = 1;
     pClient->fHasLastError = true;
@@ -418,14 +313,13 @@ void vboxglDrvDeleteContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
 void vboxglDrvSetContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    //GLXContext ctx;
     OGL_CMD(DrvSetContext, 2);
     OGL_PARAM(HDC, hdc);
     OGL_PARAM(HGLRC, hglrc);
     Log(("DrvSetContext %x %x\n", hdc, hglrc));
 #ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    //ctx = pClient->importContextEXTPtr(pClient->dpy, hglrc);
-    pClient->lastretval = glXMakeCurrent(pClient->dpy, pClient->xWindow, 
+
+    pClient->lastretval = glXMakeCurrent(pClient->dpy, pClient->xWindow,
                                          VBOX_OGL_GUEST_TO_HOST_HDC(hglrc));
     if (!pClient->lastretval)
         Log(("glXMakeCurrent failed\n"));
@@ -438,14 +332,12 @@ void vboxglDrvSetContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
 void vboxglDrvCopyContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
-    //GLXContext ctxSrc, ctxDst;
     OGL_CMD(DrvDeleteContext, 3);
     OGL_PARAM(HGLRC, hglrcSrc);
     OGL_PARAM(HGLRC, hglrcDst);
     OGL_PARAM(UINT,  mask);
     Log(("DrvCopyContext %x %x %x\n", hglrcSrc, hglrcDst, mask));
-    //ctxSrc = pClient->importContextEXTPtr(pClient->dpy, hglrcSrc);
-    //ctxDst = pClient->importContextEXTPtr(pClient->dpy, hglrcDst);
+
     glXCopyContext(pClient->dpy, VBOX_OGL_GUEST_TO_HOST_HDC(hglrc), VBOX_OGL_GUEST_TO_HOST_HDC(hglrc), mask);
     pClient->lastretval = 1;
     pClient->fHasLastError = true;
@@ -458,7 +350,7 @@ void vboxglDrvReleaseContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     OGL_PARAM(HGLRC, hglrc);
     Log(("DrvReleaseContext %x\n", hglrc));
     /* clear current selection */
-    pClient->lastretval = glXMakeCurrent(pClient->dpy, 0, NULL);
+    pClient->lastretval = glXMakeCurrent(pClient->dpy, None, NULL);
 
     if (!pClient->lastretval)
         Log(("glXMakeCurrent failed\n"));
@@ -468,13 +360,47 @@ void vboxglDrvReleaseContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 
 void vboxglDrvCreateLayerContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 {
+    XSetWindowAttributes attr;
+    XVisualInfo *visinfo = NULL;
+    unsigned long mask;
+    GLXFBConfig fbConfig;
+    GLXContextID glrc;
+    int screen_num;
+    XEvent event;
     OGL_CMD(DrvCreateLayerContext, 2);
     OGL_PARAM(HDC, hdc);
     OGL_PARAM(int, iLayerPlane);
 
     Log(("DrvCreateLayerContext %x\n", hdc));
 #ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    pClient->lastretval = 0; /** @todo */
+
+    screen_num = DefaultScreen(pClient->dpy);
+    fbConfig = pClient->actFBConfig;
+    visinfo = pClient->glxGetVisualFromFBConfig(pClient->dpy, fbConfig);
+
+    if (pClient->xWindow == 0) {
+
+	/* window attributes */
+	attr.background_pixel = 0;
+	attr.border_pixel = 0;
+	attr.colormap = XCreateColormap(pClient->dpy, RootWindow(pClient->dpy, screen_num ), visinfo->visual, AllocNone);
+	attr.event_mask = StructureNotifyMask | ExposureMask;
+	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+	pClient->xWindow = XCreateWindow(pClient->dpy, 
+	                                RootWindow(pClient->dpy, screen_num), 
+	                                0, 0, pClient->winWidth, pClient->winHeight, 0,
+	                                visinfo->depth, InputOutput,
+	                                visinfo->visual, mask, &attr);
+    }
+    XResizeWindow(pClient->dpy, pClient->xWindow, pClient->winWidth, pClient->winHeight);
+    pClient->glxContext = pClient->glxCreateNewContext(pClient->dpy, fbConfig, GLX_RGBA_TYPE, NULL, GL_TRUE);
+    XMapWindow(pClient->dpy, pClient->xWindow);
+    XIfEvent(pClient->dpy, &event, WaitForNotify, (XPointer)pClient->xWindow );
+
+    glrc = 1;
+    Assert(glrc);
+
+    pClient->lastretval = glrc;
     pClient->fHasLastError = true;
     pClient->ulLastError   = glGetError();
 #else
@@ -528,8 +454,7 @@ void vboxglDrvSetPixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     /* Get GLXFBConfig based on the given ID */
     pClient->actFBConfig = pClient->PixelFormatToFBConfigMapper[iPixelFormat-1];
     screen_num = DefaultScreen(pClient->dpy);
-    PrintFBConfigInfo(pClient->dpy, screen_num, pClient->actFBConfig);
-    Log(("Window width: %d Window height: %d\n", cx, cy));
+
     pClient->winWidth = cx;
     pClient->winHeight = cy;
     pClient->lastretval = true;

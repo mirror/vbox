@@ -131,6 +131,18 @@ int vboxglGlobalInit()
 }
 
 /**
+ * Global deinit of VBox OpenGL
+ *
+ * @returns VBox error code
+ */
+int vboxglGlobalUnload()
+{
+    Log(("vboxglGlobalUnload"));
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Enable OpenGL
  *
  * @returns VBox error code
