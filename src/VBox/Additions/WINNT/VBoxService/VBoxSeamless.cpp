@@ -244,7 +244,7 @@ void VBoxSeamlessCheckWindows()
                     }
 #endif
                     if (    !gCtx.lpRgnData 
-                        ||  lpRgnData->rdh.dwSize != gCtx.lpRgnData->rdh.dwSize
+                        ||  (lpRgnData->rdh.dwSize + lpRgnData->rdh.nRgnSize != gCtx.lpRgnData->rdh.dwSize + gCtx.lpRgnData->rdh.nRgnSize)
                         ||  memcmp(gCtx.lpRgnData, lpRgnData, lpRgnData->rdh.dwSize))
                     {
                         /* send to display driver */
