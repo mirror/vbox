@@ -130,6 +130,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
     bool fTerminate = false;
     VBoxGuestFilterMaskInfo maskInfo;
     DWORD cbReturned;
+    BOOL fWasScreenSaverActive = FALSE, ret;
 
     maskInfo.u32OrMask = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
@@ -184,10 +185,23 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                         switch(seamlessChangeRequest.mode)
                         {
                         case VMMDev_Seamless_Disabled:
+                            if (fWasScreenSaverActive)
+                            {
+                                ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, 0);
+                                if (!ret)
+                                    dprintf(("SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
+                            }
                             PostMessage(gToolWindow, WM_VBOX_REMOVE_SEAMLESS_HOOK, 0, 0);
                             break;
 
                         case VMMDev_Seamless_Visible_Region:
+                            ret = SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0, &fWasScreenSaverActive, 0);
+                            if (!ret)
+                                dprintf(("SystemParametersInfo SPI_GETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
+
+                            ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
+                            if (!ret)
+                                dprintf(("SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
                             PostMessage(gToolWindow, WM_VBOX_INSTALL_SEAMLESS_HOOK, 0, 0);
                             break;
 
