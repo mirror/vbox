@@ -1034,9 +1034,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)requestHeader;
 
-                Log(("VMMDevReq_HGCMCall: sizeof (VMMDevHGCMRequest) = %04X\n", sizeof (VMMDevHGCMCall)));
-
-                Log(("%.*Vhxd\n", requestHeader->size, requestHeader));
+                Log2(("VMMDevReq_HGCMCall: sizeof (VMMDevHGCMRequest) = %04X\n", sizeof (VMMDevHGCMCall)));
+                Log2(("%.*Vhxd\n", requestHeader->size, requestHeader));
 
                 requestHeader->rc = vmmdevHGCMCall (pData, pHGCMCall, (RTGCPHYS)u32);
             }
