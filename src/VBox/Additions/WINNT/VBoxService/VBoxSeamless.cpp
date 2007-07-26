@@ -34,11 +34,12 @@ typedef struct _VBOXSEAMLESSCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
 
-    HMODULE hModule;
+    HMODULE    hModule;
 
-    BOOL (* pfnVBoxInstallHook)(HMODULE hDll, HWND hwndPostWindow);
-    BOOL (* pfnVBoxRemoveHook)();
+    BOOL    (* pfnVBoxInstallHook)(HMODULE hDll, HWND hwndPostWindow);
+    BOOL    (* pfnVBoxRemoveHook)();
 
+    LPRGNDATA lpRgnData;
 } VBOXSEAMLESSCONTEXT;
 
 typedef struct
@@ -131,6 +132,12 @@ void VBoxSeamlessRemoveHook()
 {
     if (gCtx.pfnVBoxRemoveHook)
         gCtx.pfnVBoxRemoveHook();
+
+    if (gCtx.lpRgnData)
+    {
+        free(gCtx.lpRgnData);
+        gCtx.lpRgnData = NULL;
+    }
 }
 
 BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
@@ -220,8 +227,8 @@ void VBoxSeamlessCheckWindows()
         cbSize = GetRegionData(param.hrgn, 0, NULL);
         if (cbSize)
         {
-            LPRGNDATA lpRgnData = (LPRGNDATA)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cbSize);
-
+            LPRGNDATA lpRgnData = (LPRGNDATA)malloc(cbSize);
+            memset(lpRgnData, 0, cbSize);
             if (lpRgnData)
             {
                 cbSize = GetRegionData(param.hrgn, cbSize, lpRgnData);
@@ -236,10 +243,22 @@ void VBoxSeamlessCheckWindows()
                         dprintf(("visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
                     }
 #endif
-                    /* send to display driver */
-                    ExtEscape(param.hdc, VBOXESC_SETVISIBLEREGION, cbSize, (LPCSTR)lpRgnData, 0, NULL);
+                    if (    !gCtx.lpRgnData 
+                        ||  lpRgnData->rdh.dwSize != gCtx.lpRgnData->rdh.dwSize
+                        ||  memcmp(gCtx.lpRgnData, lpRgnData, lpRgnData->rdh.dwSize))
+                    {
+                        /* send to display driver */
+                        ExtEscape(param.hdc, VBOXESC_SETVISIBLEREGION, cbSize, (LPCSTR)lpRgnData, 0, NULL);
+
+                        if (gCtx.lpRgnData)
+                            free(gCtx.lpRgnData);
+                        gCtx.lpRgnData = lpRgnData;
+                    }
+                    else
+                        dprintf(("Visible rectangles haven't changed; ignore\n"));
                 }
-                HeapFree(GetProcessHeap(), 0, lpRgnData);
+                if (lpRgnData != gCtx.lpRgnData)
+                    free(lpRgnData);
             }
         }
 
