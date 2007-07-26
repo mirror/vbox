@@ -559,7 +559,7 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
  */
 RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath)
 {
-#ifdef RTPATH_APP_PRIVATE
+#if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE)
     char *pszUtf8Path;
     int rc;
     rc = rtPathFromNative(&pszUtf8Path, RTPATH_APP_PRIVATE);
@@ -593,7 +593,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath)
  */
 RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath)
 {
-#ifdef RTPATH_APP_PRIVATE_ARCH
+#if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE_ARCH)
     char *pszUtf8Path;
     int rc;
     rc = rtPathFromNative(&pszUtf8Path, RTPATH_APP_PRIVATE_ARCH);
@@ -628,7 +628,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath)
  */
 RTDECL(int) RTPathSharedLibs(char *pszPath, unsigned cchPath)
 {
-#ifdef RTPATH_SHARED_LIBS
+#if !defined(RT_OS_WINDOWS) && defined(RTPATH_SHARED_LIBS)
     char *pszUtf8Path;
     int rc;
     rc = rtPathFromNative(&pszUtf8Path, RTPATH_SHARED_LIBS);
@@ -661,7 +661,7 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, unsigned cchPath)
  */
 RTDECL(int) RTPathAppDocs(char *pszPath, unsigned cchPath)
 {
-#ifdef RTPATH_APP_DOCS
+#if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_DOCS)
     char *pszUtf8Path;
     int rc;
     rc = rtPathFromNative(&pszUtf8Path, RTPATH_APP_DOCS);
