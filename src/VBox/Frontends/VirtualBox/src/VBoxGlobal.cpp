@@ -836,6 +836,10 @@ QStringList VBoxGlobal::deviceTypeStrings() const
  *                  image after attaching the given image to the machine.
  *                  Otherwise, a real type of the given image is returned
  *                  (with the exception mentioned above).
+ *
+ *  @note The hard disk object may become uninitialized by a third party
+ *  while this method is reading its properties. In this case, the method will
+ *  return an empty string.
  */
 QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */)
 {
@@ -851,6 +855,24 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */)
     }
 
     CHardDisk root = aHD.GetRoot();
+
+    // @todo *** this check is rough; if aHD becomes uninitialized, any of aHD
+    // getters called afterwards will also fail. The same relates to the root
+    // object (that will be aHD itself in case of non-differencing
+    // disks). However, this check was added to fix a particular use case:
+    // when aHD is a differencing hard disk and it happens to be discarded
+    // (and uninitialized) after this method is called but before we read all
+    // its properties (yes, it's possible!), the root object will be null and
+    // calling methods on it will assert in the debug builds. This check seems
+    // to be enough as a quick solution (fresh hard disk attachments will be
+    // re-read by a state change signal after the discard operation is
+    // finished, so the user will eventually see correct data), but in order
+    // to solve the problem properly we need to use exceptions everywhere (or
+    // check the result after every method call). See also Comment #17 and
+    // below in Defect #2126.
+    if (!aHD.isOk())
+        return QString::null;
+
     QString details;
 
     CEnums::HardDiskType type = root.GetType();
@@ -1040,15 +1062,25 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         {
             CHardDiskAttachment hda = aen.GetNext();
             CHardDisk hd = hda.GetHardDisk();
-            QString src = hd.GetRoot().GetLocation();
-            hardDisks += QString (sSectionItemTpl)
-                .arg (QString ("%1 %2")
-                    .arg (toString (hda.GetController()))
-                    .arg (toString (hda.GetController(), hda.GetDeviceNumber())))
-                .arg (QString ("%1 [<nobr>%2</nobr>]")
-                    .arg (prepareFileNameForHTML (src))
-                    .arg (details (hd, isNewVM /* predict */)));
-            ++ rows;
+            /// @todo for the explaination of the below isOk() checks, see
+            /// @todo *** in #details (const CHardDisk &, bool).
+            if (hda.isOk())
+            {
+                CHardDisk root = hd.GetRoot();
+                if (hd.isOk())
+                {
+                    QString src = root.GetLocation();
+                    hardDisks += QString (sSectionItemTpl)
+                        .arg (QString ("%1 %2")
+                              .arg (toString (hda.GetController()))
+                              .arg (toString (hda.GetController(),
+                                              hda.GetDeviceNumber())))
+                        .arg (QString ("%1 [<nobr>%2</nobr>]")
+                              .arg (prepareFileNameForHTML (src))
+                              .arg (details (hd, isNewVM /* predict */)));
+                    ++ rows;
+                }
+            }
         }
 
         if (hardDisks.isNull())
