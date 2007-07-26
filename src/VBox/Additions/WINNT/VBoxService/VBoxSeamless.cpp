@@ -244,8 +244,8 @@ void VBoxSeamlessCheckWindows()
                     }
 #endif
                     if (    !gCtx.lpRgnData 
-                        ||  (lpRgnData->rdh.dwSize + lpRgnData->rdh.nRgnSize != gCtx.lpRgnData->rdh.dwSize + gCtx.lpRgnData->rdh.nRgnSize)
-                        ||  memcmp(gCtx.lpRgnData, lpRgnData, lpRgnData->rdh.dwSize))
+                        ||  (gCtx.lpRgnData->rdh.dwSize + gCtx.lpRgnData->rdh.nRgnSize != cbSize)
+                        ||  memcmp(gCtx.lpRgnData, lpRgnData, cbSize))
                     {
                         /* send to display driver */
                         ExtEscape(param.hdc, VBOXESC_SETVISIBLEREGION, cbSize, (LPCSTR)lpRgnData, 0, NULL);
