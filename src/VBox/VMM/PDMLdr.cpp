@@ -939,41 +939,18 @@ static char * pdmR3FileConstruct(const char *pszDir, const char *pszFile, const 
  */
 static char * pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fShared)
 {
-    char    *pszRet;
-
-#ifdef VBOX_PATH_PRIVATE_LIBS
-
-    /*
-     * Unix: Search in /usr/lib/virtualbox
-     */
-    pszRet = pdmR3FileConstruct(
-# ifdef VBOX_PATH_SHARED_LIBS
-                                fShared ? VBOX_PATH_SHARED_LIBS : VBOX_PATH_PRIVATE_LIBS,
-# else
-                                VBOX_PATH_PRIVATE_LIBS,
-# endif
-                                pszFile, pszDefaultExt);
-
-#else
-
-    NOREF(fShared);
-
-    /*
-     * Default: Search in the program path.
-     */
-    char     szPath[RTPATH_MAX];
-    int rc = RTPathProgram(szPath, sizeof(szPath));
+    char szPath[RTPATH_MAX];
+    int  rc;
+    
+    rc = fShared ? RTPathSharedLibs(szPath, sizeof(szPath)) 
+                 : RTPathAppPrivateArch(szPath, sizeof(szPath));
     if (!VBOX_SUCCESS(rc))
     {
         AssertMsgFailed(("RTPathProgram(,%d) failed rc=%d!\n", sizeof(szPath), rc));
         return NULL;
     }
 
-    pszRet = pdmR3FileConstruct(szPath, pszFile, pszDefaultExt);
-
-#endif
-
-    return pszRet;
+    return pdmR3FileConstruct(szPath, pszFile, pszDefaultExt);
 }
 
 

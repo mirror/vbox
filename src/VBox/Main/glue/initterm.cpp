@@ -63,12 +63,15 @@ public:
 
     DirectoryServiceProvider()
         : mCompRegLocation (NULL), mXPTIDatLocation (NULL)
+	, mComponentDirLocation (NULL), mCurrProcDirLocation (NULL)
         {}
 
     virtual ~DirectoryServiceProvider();
 
     HRESULT init (const char *aCompRegLocation,
-                  const char *aXPTIDatLocation);
+                  const char *aXPTIDatLocation,
+		  const char *aComponentDirLocation,
+		  const char *aCurrProcDirLocation);
 
     NS_DECL_NSIDIRECTORYSERVICEPROVIDER
 
@@ -76,6 +79,8 @@ private:
 
     char *mCompRegLocation;
     char *mXPTIDatLocation;
+    char *mComponentDirLocation;
+    char *mCurrProcDirLocation;
 };
 
 NS_IMPL_ISUPPORTS1 (DirectoryServiceProvider, nsIDirectoryServiceProvider)
@@ -92,6 +97,16 @@ DirectoryServiceProvider::~DirectoryServiceProvider()
         RTStrFree (mXPTIDatLocation);
         mXPTIDatLocation = NULL;
     }
+    if (mComponentDirLocation)
+    {
+        RTStrFree (mComponentDirLocation);
+        mComponentDirLocation = NULL;
+    }
+    if (mCurrProcDirLocation)
+    {
+        RTStrFree (mCurrProcDirLocation);
+        mCurrProcDirLocation = NULL;
+    }
 }
 
 /**
@@ -100,7 +115,9 @@ DirectoryServiceProvider::~DirectoryServiceProvider()
  */
 HRESULT
 DirectoryServiceProvider::init (const char *aCompRegLocation,
-                                const char *aXPTIDatLocation)
+                                const char *aXPTIDatLocation,
+				const char *aComponentDirLocation,
+				const char *aCurrProcDirLocation)
 {
     AssertReturn (aCompRegLocation, NS_ERROR_INVALID_ARG);
     AssertReturn (aXPTIDatLocation, NS_ERROR_INVALID_ARG);
@@ -108,6 +125,10 @@ DirectoryServiceProvider::init (const char *aCompRegLocation,
     int vrc = RTStrUtf8ToCurrentCP (&mCompRegLocation, aCompRegLocation);
     if (RT_SUCCESS (vrc))
         vrc = RTStrUtf8ToCurrentCP (&mXPTIDatLocation, aXPTIDatLocation);
+    if (RT_SUCCESS (vrc) && aComponentDirLocation)
+        vrc = RTStrUtf8ToCurrentCP (&mComponentDirLocation, aComponentDirLocation);
+    if (RT_SUCCESS (vrc) && aCurrProcDirLocation)
+	vrc = RTStrUtf8ToCurrentCP (&mCurrProcDirLocation, aCurrProcDirLocation);
 
     return RT_SUCCESS (vrc) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
@@ -129,6 +150,10 @@ DirectoryServiceProvider::GetFile (const char *aProp,
         fileLocation = mCompRegLocation;
     else if (strcmp (aProp, NS_XPCOM_XPTI_REGISTRY_FILE) == 0)
         fileLocation = mXPTIDatLocation;
+    else if (mComponentDirLocation && strcmp (aProp, NS_XPCOM_COMPONENT_DIR) == 0)
+	fileLocation = mComponentDirLocation;
+    else if (mCurrProcDirLocation && strcmp (aProp, NS_XPCOM_CURRENT_PROCESS_DIR) == 0)
+	fileLocation = mCurrProcDirLocation;
     else
         return NS_ERROR_FAILURE;
 
@@ -184,20 +209,26 @@ HRESULT Initialize()
 
         /* prepare paths for registry files */
         char homeDir [RTPATH_MAX];
+        char privateArchDir [RTPATH_MAX];
         int vrc = GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
+        if (RT_SUCCESS (vrc))
+            vrc = RTPathAppPrivateArch (privateArchDir, sizeof (privateArchDir));
         if (RT_SUCCESS (vrc))
         {
             char compReg [RTPATH_MAX];
             char xptiDat [RTPATH_MAX];
+            char compDir [RTPATH_MAX];
 
             RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
                          homeDir, RTPATH_DELIMITER, "compreg.dat");
             RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
                          homeDir, RTPATH_DELIMITER, "xpti.dat");
+            RTStrPrintf (compDir, sizeof (compDir), "%s%c/components",
+                         privateArchDir, RTPATH_DELIMITER);
 
             dsProv = new DirectoryServiceProvider();
             if (dsProv)
-                rc = dsProv->init (compReg, xptiDat);
+                rc = dsProv->init (compReg, xptiDat, compDir, privateArchDir);
             else
                 rc = NS_ERROR_OUT_OF_MEMORY;
         }

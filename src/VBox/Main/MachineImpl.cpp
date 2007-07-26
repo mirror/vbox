@@ -2787,7 +2787,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
     /* get the path to the executable */
     char path [RTPATH_MAX];
-    RTPathProgram (path, RTPATH_MAX);
+    RTPathAppPrivateArch (path, RTPATH_MAX);
     size_t sz = strlen (path);
     path [sz++] = RTPATH_DELIMITER;
     path [sz] = 0;

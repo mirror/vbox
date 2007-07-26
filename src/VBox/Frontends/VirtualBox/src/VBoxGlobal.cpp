@@ -64,6 +64,9 @@
 #define BOOL PRBool
 #endif
 
+#include <iprt/param.h>
+#include <iprt/path.h>
+
 #if defined (VBOX_GUI_DEBUG)
 uint64_t VMCPUTimer::ticks_per_msec = (uint64_t) -1LL; // declared in VBoxDefs.h
 #endif
@@ -1997,7 +2000,13 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     QString languageFileName;
     QString selectedLangId = gVBoxBuiltInLangName;
 
-    QString nlsPath = qApp->applicationDirPath() + gVBoxLangSubDir;
+    char szNlsPath[RTPATH_MAX];
+    int rc;
+
+    RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+    Assert(RT_SUCCESS(rc));
+
+    QString nlsPath = QString(szNlsPath) + gVBoxLangSubDir;
     QDir nlsDir (nlsPath);
 
     Assert (!langId.isEmpty());
