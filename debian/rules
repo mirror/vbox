@@ -152,17 +152,16 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	rm $(prefix)/opt/VirtualBox-$(ver)/VBox.sh
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
-	for i in VBoxManage $(if $(HEADLESS),,VBoxSDL) \
+	for i in VBoxManage VBoxSVC tstVMM $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP); do \
-	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/lib/virtualbox/$$i; done
-	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxSVC $(prefix)/usr/lib/virtualbox
-	mv $(prefix)/opt/VirtualBox-$(ver)/tstVMM $(prefix)/usr/lib/virtualbox
+	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/lib/virtualbox; done
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
 	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done)
 ifeq ($(ose),)
-	for i in kchmviewer UserManual.pdf VirtualBox.chm LICENSE; do \
+	mv $(prefix)/opt/VirtualBox-$(ver)/kchmviewer $(prefix)/usr/lib/virtualbox
+	for i in UserManual.pdf VirtualBox.chm LICENSE; do \
 	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/share/doc/virtualbox; done
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/share/virtualbox; done
@@ -192,7 +191,7 @@ endif
 	dh_installchangelogs
 	dh_link
 	[ -n "$(DEBUG)" ] || dh_strip
-	dh_compress
+	dh_compress -X.pdf -X.chm
 	dh_fixperms
 	dh_makeshlibs
 	dh_installdeb
