@@ -222,13 +222,13 @@ BOOL VBoxInstallHook(HMODULE hDll)
                                     hDll,
                                     VBoxHandleWinEvent,
                                     0, 0,
-                                    WINEVENT_INCONTEXT);
+                                    WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
     hEventHook[1] = SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_HIDE,
                                     hDll,
                                     VBoxHandleWinEvent,
                                     0, 0,
-                                    WINEVENT_INCONTEXT);
+                                    WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
     return !!hEventHook[0];
 }
 
