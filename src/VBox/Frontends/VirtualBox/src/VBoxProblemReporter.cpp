@@ -1763,13 +1763,15 @@ void VBoxProblemReporter::showHelpHelpDialog()
               HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
     char szDocsPath[RTPATH_MAX];
+    char szViewerPath[RTPATH_MAX];
     int rc;
 
-    rc = RTPathAppDocs(szDocsPath, sizeof(szDocsPath));
+    rc = RTPathAppDocs (szDocsPath, sizeof (szDocsPath));
     Assert(RT_SUCCESS(rc));
+    rc = RTPathAppPrivateArch (szViewerPath, sizeof (szViewerPath));
 
     QString fullProgPath = QString(szDocsPath);
-    QProcess kchmViewer (fullProgPath + "/kchmviewer");
+    QProcess kchmViewer (QString(szViewerPath) + "/kchmviewer");
     kchmViewer.addArgument (fullProgPath + "/VirtualBox.chm");
     kchmViewer.launch ("");
 #elif defined (Q_WS_MAC)
