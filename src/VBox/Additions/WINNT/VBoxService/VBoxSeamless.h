@@ -28,11 +28,8 @@ unsigned __stdcall VBoxSeamlessThread   (void *pInstance);
 void               VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance);
 
 
-/* custom messages as we must install the hook from the main thread */
-#define WM_VBOX_INSTALL_SEAMLESS_HOOK               0x2001
-#define WM_VBOX_REMOVE_SEAMLESS_HOOK                0x2002
-
 void VBoxSeamlessInstallHook();
 void VBoxSeamlessRemoveHook();
+void VBoxSeamlessCheckWindows();
 
 #endif /* __VBOXSERVICESEAMLESS__H */

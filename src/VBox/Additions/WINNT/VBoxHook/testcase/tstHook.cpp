@@ -24,7 +24,7 @@
 int main(int argc, char **argv)
 {
     printf("Enabling global hook\n");
-    VBoxInstallHook(GetModuleHandle("VBoxHook.dll"));
+    VBoxInstallHook(GetModuleHandle("VBoxHook.dll"), 0);
     getchar();
 
     printf("Disabling global hook\n");
