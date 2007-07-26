@@ -39,6 +39,8 @@
 #endif
 
 #include <iprt/err.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
 
 #if defined (Q_WS_WIN32)
 #include <Htmlhelp.h>
@@ -1760,7 +1762,13 @@ void VBoxProblemReporter::showHelpHelpDialog()
     HtmlHelp (GetDesktopWindow(), fullHelpFilePath.ucs2(),
               HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
-    QString fullProgPath = qApp->applicationDirPath();
+    char szDocsPath[RTPATH_MAX];
+    int rc;
+
+    RTPathAppDocs(szDocsPath, sizeof(szDocsPath));
+    Assert(RT_SUCCESS(rc));
+
+    QString fullProgPath = QString(szDocsPath);
     QProcess kchmViewer (fullProgPath + "/kchmviewer");
     kchmViewer.addArgument (fullProgPath + "/VirtualBox.chm");
     kchmViewer.launch ("");

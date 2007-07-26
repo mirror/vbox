@@ -4655,10 +4655,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertNode(pDrivers, "VBoxC", &pMod);                                   RC_CHECK();
 #ifdef VBOX_WITH_XPCOM
     // VBoxC is located in the components subdirectory
-    char szPathProgram[RTPATH_MAX + sizeof("/components/VBoxC")];
-    rc = RTPathProgram(szPathProgram, RTPATH_MAX);                                  AssertRC(rc);
-    strcat(szPathProgram, "/components/VBoxC");
-    rc = CFGMR3InsertString(pMod,   "Path",  szPathProgram);                           RC_CHECK();
+    char szPathVBoxC[RTPATH_MAX];
+    rc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX - sizeof("/components/VBoxC")); AssertRC(rc);
+    strcat(szPathVBoxC, "/components/VBoxC");
+    rc = CFGMR3InsertString(pMod,   "Path",  szPathVBoxC);                             RC_CHECK();
 #else
     rc = CFGMR3InsertString(pMod,   "Path",  "VBoxC");                                 RC_CHECK();
 #endif
