@@ -117,7 +117,7 @@ BOOL VBoxRemoveHook()
         CoUninitialize();
     }
     hEventHook[0]  = hEventHook[1] = 0;
-    hwndPostWindow = 0;
+    hwndNotification = 0;
     return true;
 }
 
