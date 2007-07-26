@@ -562,7 +562,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 }
                 mouseStatus->pointerXPos = pData->mouseXAbs;
                 mouseStatus->pointerYPos = pData->mouseYAbs;
-                Log(("returning mouse status: features = %d, absX = %d, absY = %d\n", mouseStatus->mouseFeatures,
+                Log2(("returning mouse status: features = %d, absX = %d, absY = %d\n", mouseStatus->mouseFeatures,
                       mouseStatus->pointerXPos, mouseStatus->pointerYPos));
                 requestHeader->rc = VINF_SUCCESS;
             }
@@ -1499,7 +1499,7 @@ static DECLCALLBACK(int) vmmdevQueryAbsoluteMouse(PPDMIVMMDEVPORT pInterface, ui
 static DECLCALLBACK(int) vmmdevSetAbsoluteMouse(PPDMIVMMDEVPORT pInterface, uint32_t absX, uint32_t absY)
 {
     VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
-    Log(("vmmdevSetAbsoluteMouse: settings absolute position to x = %d, y = %d\n", absX, absY));
+    Log2(("vmmdevSetAbsoluteMouse: settings absolute position to x = %d, y = %d\n", absX, absY));
     pData->mouseXAbs = absX;
     pData->mouseYAbs = absY;
     return VINF_SUCCESS;
