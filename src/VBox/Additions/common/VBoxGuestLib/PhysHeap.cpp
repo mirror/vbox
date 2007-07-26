@@ -51,8 +51,8 @@
  *
  */
 
-#define VBGL_PH_ASSERT AssertRelease
-#define VBGL_PH_ASSERTMsg AssertReleaseMsg
+#define VBGL_PH_ASSERT      AssertRelease
+#define VBGL_PH_ASSERTMsg   AssertReleaseMsg
 
 // #define DUMPHEAP
 

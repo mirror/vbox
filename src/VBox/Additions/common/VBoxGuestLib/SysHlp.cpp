@@ -41,6 +41,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
     if (pMdl == NULL)
     {
         rc = VERR_NOT_SUPPORTED;
+        AssertMsgFailed(("IoAllocateMdl %VGv %x failed!!\n", pv, u32Size));
     }
     else
     {
@@ -56,6 +57,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
 
             IoFreeMdl (pMdl);
             rc = VERR_INVALID_PARAMETER;
+            AssertMsgFailed(("MmProbeAndLockPages %VGv %x failed!!\n", pv, u32Size));
         }
     }
 
