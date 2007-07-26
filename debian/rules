@@ -46,7 +46,6 @@ else
 debrel   := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),)
 endif
 endif
-deblib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 # Debian sarge: libhal-devel 0.4.7 is too old
@@ -128,7 +127,7 @@ binary binary-arch binary-indep: build $(if $(ose),,modules)
 	dh_installdirs
 	tar -xjC $(prefix)/opt -f $(builddir)/bin/VirtualBox.tar.bz2
 	install -d -g 0 -o 0 $(prefix)/usr/share/applications
-	install -d -g 0 -o 0 $(prefix)/usr/$(deblib)
+	install -d -g 0 -o 0 $(prefix)/usr/lib
 	install -d -g 0 -o 0 $(prefix)/usr/bin
 	install -d -g 0 -o 0 $(prefix)/usr/lib/virtualbox
 	install -d -g 0 -o 0 $(prefix)/usr/share/virtualbox
@@ -143,7 +142,7 @@ binary binary-arch binary-indep: build $(if $(ose),,modules)
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.r0 $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxXPCOMIPCD $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/components $(prefix)/usr/lib/virtualbox/components
-	mv $(prefix)/opt/VirtualBox-$(ver)/*.so $(prefix)/usr/$(deblib)
+	mv $(prefix)/opt/VirtualBox-$(ver)/*.so $(prefix)/usr/lib
 	mv $(prefix)/opt/VirtualBox-$(ver)/sdk  $(prefix)/usr/share/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/nls  $(prefix)/usr/share/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/src  $(prefix)/usr/share/virtualbox

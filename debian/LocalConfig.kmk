@@ -16,8 +16,4 @@ KBUILD_MSG_STYLE        := brief
 DEFS                    += RTPATH_APP_DOCS=\"/usr/share/doc/virtualbox\"
 DEFS                    += RTPATH_APP_PRIVATE_ARCH=\"/usr/lib/virtualbox\"
 DEFS                    += RTPATH_APP_PRIVATE=\"/usr/share/virtualbox\"
-ifeq ($(BUILD_TARGET_ARCH),amd64)
-DEFS                    += RTPATH_SHARED_LIBS=\"/usr/lib64\"
-else
 DEFS                    += RTPATH_SHARED_LIBS=\"/usr/lib\"
-endif
