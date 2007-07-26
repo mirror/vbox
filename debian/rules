@@ -127,31 +127,47 @@ binary binary-arch binary-indep: build $(if $(ose),,modules)
 	dh_clean -k
 	dh_installdirs
 	tar -xjC $(prefix)/opt -f $(builddir)/bin/VirtualBox.tar.bz2
-	echo "# VirtualBox installation directory" > $(prefix)/etc/vbox/vbox.cfg
-	echo "INSTALL_DIR=\"/opt/VirtualBox-$(ver)\"" >> $(prefix)/etc/vbox/vbox.cfg
 	install -d -g 0 -o 0 $(prefix)/usr/share/applications
 	install -d -g 0 -o 0 $(prefix)/usr/$(deblib)
 	install -d -g 0 -o 0 $(prefix)/usr/bin
 	install -d -g 0 -o 0 $(prefix)/usr/lib/virtualbox
+	install -d -g 0 -o 0 $(prefix)/usr/share/virtualbox
 	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/VirtualBox.desktop \
 	   $(prefix)/usr/share/applications/VirtualBox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
+	install -D -g 0 -o 0 -m 644 debian/lintian-override \
+	    debian/virtualbox/usr/share/lintian/overrides/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBox.png \
 	   $(prefix)/usr/share/pixmaps/VBox.png
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.gc $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.r0 $(prefix)/usr/lib/virtualbox
+	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxXPCOMIPCD $(prefix)/usr/lib/virtualbox
+	mv $(prefix)/opt/VirtualBox-$(ver)/components $(prefix)/usr/lib/virtualbox/components
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.so $(prefix)/usr/$(deblib)
+	mv $(prefix)/opt/VirtualBox-$(ver)/sdk  $(prefix)/usr/share/virtualbox
+	mv $(prefix)/opt/VirtualBox-$(ver)/nls  $(prefix)/usr/share/virtualbox
+	mv $(prefix)/opt/VirtualBox-$(ver)/src  $(prefix)/usr/share/virtualbox
+	rm $(prefix)/opt/VirtualBox-$(ver)/VBox.sh
+	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
+	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
+	for i in VBoxManage $(if $(HEADLESS),,VBoxSDL) \
+	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP); do \
+	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/lib/virtualbox/$$i; done
+	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxSVC $(prefix)/usr/lib/virtualbox
+	mv $(prefix)/opt/VirtualBox-$(ver)/tstVMM $(prefix)/usr/lib/virtualbox
 	$(if $(ose),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
 	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done)
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxTunctl $(prefix)/usr/bin
+	rmdir $(prefix)/opt/VirtualBox-$(ver)
+	rmdir $(prefix)/opt
 	dh_link \
-	    $(if $(HEADLESS),,opt/VirtualBox-$(ver)/VBox.sh usr/bin/VirtualBox) \
-	    opt/VirtualBox-$(ver)/VBox.sh usr/bin/VBoxManage \
-	    $(if $(HEADLESS),,opt/VirtualBox-$(ver)/VBox.sh usr/bin/VBoxSDL) \
-	    opt/VirtualBox-$(ver)/VBox.sh usr/bin/VBoxVRDP \
-	    opt/VirtualBox-$(ver)/VBoxAddIF.sh usr/bin/VBoxAddIF \
-	    opt/VirtualBox-$(ver)/VBoxAddIF.sh usr/bin/VBoxDeleteIF
+	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VirtualBox) \
+	    usr/bin/VBox usr/bin/VBoxManage \
+	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VBoxSDL) \
+	    $(if $(ose),,usr/bin/VBox usr/bin/VBoxVRDP) \
+	    usr/bin/VBoxTAP usr/bin/VBoxAddIF \
+	    usr/bin/VBoxTAP usr/bin/VBoxDeleteIF
 	dh_desktop
 	dh_installmenu
 	$(if $(ose),,dh_installmodules)

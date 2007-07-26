@@ -13,9 +13,11 @@ VBOX_DOCBOOK_WITH_LATEX := 1
 
 KBUILD_MSG_STYLE        := brief
 
-DEFS                    += VBOX_PATH_PRIVATE_LIBS=\"/usr/lib/virtualbox\"
+DEFS                    += RTPATH_APP_DOCS=\"/usr/share/doc/virtualbox\"
+DEFS                    += RTPATH_APP_PRIVATE_ARCH=\"/usr/lib/virtualbox\"
+DEFS                    += RTPATH_APP_PRIVATE=\"/usr/share/virtualbox\"
 ifeq ($(BUILD_TARGET_ARCH),amd64)
-DEFS                    += VBOX_PATH_SHARED_LIBS=\"/usr/lib64\"
+DEFS                    += RTPATH_SHARED_LIBS=\"/usr/lib64\"
 else
-DEFS                    += VBOX_PATH_SHARED_LIBS=\"/usr/lib\"
+DEFS                    += RTPATH_SHARED_LIBS=\"/usr/lib\"
 endif
