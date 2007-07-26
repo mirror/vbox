@@ -67,6 +67,7 @@ int vboxglGetString(VBOXOGLCTX *pClient, GLenum name, char *pString, uint32_t *p
 end:
 
     vboxglDisableOpenGL(pClient);
+
     return rc;
 }
 

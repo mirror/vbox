@@ -38,6 +38,7 @@ static DECLCALLBACK(int) svcUnload (void)
 
     Log(("svcUnload\n"));
 
+    vboxglGlobalUnload();
     return rc;
 }
 

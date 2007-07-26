@@ -27,12 +27,12 @@
 #ifdef RT_OS_WINDOWS
 #define VBOX_OGL_DEBUG_WINDOW_OUTPUT
 #elif defined(RT_OS_LINUX)
+
+#define GLX_GLXEXT_PROTOTYPES
 #include <X11/Xlib.h>
+#include <GL/gl.h>
 #include <GL/glx.h>
 #include <GL/glxext.h>
- 
-typedef GLXContextID (*glXGetContextIDEXTProc) (const GLXContext);
-typedef GLXContext (*glXImportContextEXTProc) (Display *, GLXContextID);
  
 #define VBOX_OGL_DEBUG_WINDOW_OUTPUT
 #endif
@@ -86,8 +86,6 @@ typedef struct
     PFNGLXCHOOSEFBCONFIGSGIXPROC glxChooseFBConfig;
     PFNGLXGETVISUALFROMFBCONFIGSGIXPROC glxGetVisualFromFBConfig;
     PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC glxCreateNewContext;
-    //glXGetContextIDEXTProc getContextIDPtr;
-    //glXImportContextEXTProc importContextEXTPtr;
 #endif
 #endif
 } VBOXOGLCTX, *PVBOXOGLCTX;

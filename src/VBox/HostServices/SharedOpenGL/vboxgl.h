@@ -32,11 +32,18 @@
 typedef void (* PFN_VBOXGLWRAPPER)(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer);
 
 /**
- * Global init of VBox OpenGL for windows
+ * Global init of VBox OpenGL
  *
  * @returns VBox error code
  */
 int vboxglGlobalInit();
+
+/**
+ * Global deinit of VBox OpenGL
+ *
+ * @returns VBox error code
+ */
+int vboxglGlobalUnload();
 
 /**
  * Client connect init
