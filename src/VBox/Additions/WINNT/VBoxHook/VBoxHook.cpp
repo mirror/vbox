@@ -23,10 +23,7 @@
 #include <VBoxDisplay.h>
 #include <stdio.h>
 
-#pragma data_seg("SHARED")
 static HWINEVENTHOOK    hEventHook[2] = {0};
-#pragma data_seg()
-#pragma comment(linker, "/section:SHARED,RWS")
 
 static void VBoxRecheckVisibleWindows();
 
