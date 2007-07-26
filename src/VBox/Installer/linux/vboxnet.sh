@@ -143,9 +143,8 @@ valid_ifname() {
 # script has already been started and do nothing.
 start_network() {
     begin "Starting VirtualBox host networking"
-    # If there is no configuration file or if the service is already running,
-    # assume that we have successfully started.
-    if [ -f "$VARFILE" -o ! -f "$CONFIG" ]
+    # If the service is already running, return successfully.
+    if [ -f "$VARFILE" ]
     then
       succ_msg
       return 0
@@ -163,6 +162,12 @@ start_network() {
     then
       fail_msg
       return 1
+    fi
+    # If there is no configuration file, report success
+    if [ ! -f "$CONFIG" ]
+    then
+      succ_msg
+      return 0
     fi
     # Fail if we can't read our configuration
     if [ ! -r "$CONFIG" ]
