@@ -21,6 +21,7 @@
 
 #include "VBoxService.h"
 #include "VBoxSeamless.h"
+#include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
 
@@ -902,6 +903,10 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
         case WM_VBOX_REMOVE_SEAMLESS_HOOK:
             VBoxSeamlessRemoveHook();
+            break;
+
+        case WM_VBOX_SEAMLESS_UPDATE:
+            VBoxSeamlessCheckWindows();
             break;
 
         default:

@@ -20,10 +20,12 @@
  * license agreement apply instead of the previous paragraph.
  *
  */
-
+#define _WIN32_WINNT 0x0500
+#include <windows.h>
 #include "VBoxService.h"
 #include "VBoxSeamless.h"
 #include <VBoxHook.h>
+#include <VBoxDisplay.h>
 #include <VBox/VBoxDev.h>
 #include <iprt/assert.h>
 #include "helpers.h"
@@ -34,10 +36,17 @@ typedef struct _VBOXSEAMLESSCONTEXT
 
     HMODULE hModule;
 
-    BOOL (* pfnVBoxInstallHook)(HMODULE hDll);
+    BOOL (* pfnVBoxInstallHook)(HMODULE hDll, HWND hwndPostWindow);
     BOOL (* pfnVBoxRemoveHook)();
 
 } VBOXSEAMLESSCONTEXT;
+
+typedef struct
+{
+    HDC     hdc;
+    HRGN    hrgn;
+    RECT    rect;
+} VBOX_ENUM_PARAM, *PVBOX_ENUM_PARAM;
 
 static VBOXSEAMLESSCONTEXT gCtx = {0};
 
@@ -110,13 +119,134 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 void VBoxSeamlessInstallHook()
 {
     if (gCtx.pfnVBoxInstallHook)
-        gCtx.pfnVBoxInstallHook(gCtx.hModule);
+    {
+        /* Check current visible region state */
+        VBoxSeamlessCheckWindows();
+
+        gCtx.pfnVBoxInstallHook(gCtx.hModule, gToolWindow);
+    }
 }
 
 void VBoxSeamlessRemoveHook()
 {
     if (gCtx.pfnVBoxRemoveHook)
         gCtx.pfnVBoxRemoveHook();
+}
+
+BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
+{
+    PVBOX_ENUM_PARAM    lpParam = (PVBOX_ENUM_PARAM)lParam;
+    DWORD               dwStyle, dwExStyle;
+    RECT                rectWindow, rectVisible;
+
+    dwStyle   = GetWindowLong(hwnd, GWL_STYLE);
+    dwExStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+    if (   !(dwStyle & WS_VISIBLE)
+        ||  (dwStyle & WS_CHILD))
+        return TRUE;
+
+    dprintf(("VBoxEnumFunc %x\n", hwnd));
+    /* Only visible windows that are present on the desktop are interesting here */
+    if (    GetWindowRect(hwnd, &rectWindow)
+        &&  IntersectRect(&rectVisible, &lpParam->rect, &rectWindow))
+    {
+        char szWindowText[256];
+        szWindowText[0] = 0;
+        GetWindowText(hwnd, szWindowText, sizeof(szWindowText));
+
+        /* Filter out Windows XP shadow windows */
+        /** @todo still shows inside the guest */
+        if (   szWindowText[0] == 0
+            && dwStyle == (WS_POPUP|WS_VISIBLE|WS_CLIPSIBLINGS)
+            && dwExStyle == (WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_TRANSPARENT|WS_EX_TOPMOST))
+        {
+            dprintf(("Filter out shadow window style=%x exstyle=%x\n", dwStyle, dwExStyle));
+            return TRUE;
+        }
+
+        /** @todo will this suffice? The Program Manager window covers the whole screen */
+        if (strcmp(szWindowText, "Program Manager"))
+        {
+            dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
+            dprintf(("title=%s style=%x\n", szWindowText, dwStyle));
+
+            HRGN hrgn = CreateRectRgn(0,0,0,0);
+
+            int ret = GetWindowRgn(hwnd, hrgn);
+
+            if (ret == ERROR)
+            {
+                dprintf(("GetWindowRgn failed with rc=%d\n", GetLastError()));
+                SetRectRgn(hrgn, rectVisible.left, rectVisible.top, rectVisible.right, rectVisible.bottom);
+            }
+            else
+            {
+                /* this region is relative to the window origin instead of the desktop origin */
+                OffsetRgn(hrgn, rectWindow.left, rectWindow.top);
+            }
+            if (lpParam->hrgn)
+            {
+                /* create a union of the current visible region and the visible rectangle of this window. */
+                CombineRgn(lpParam->hrgn, lpParam->hrgn, hrgn, RGN_OR);
+                DeleteObject(hrgn);
+            }
+            else
+                lpParam->hrgn = hrgn;
+        }
+        else
+        {
+            dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d) (ignored)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
+            dprintf(("title=%s style=%x\n", szWindowText, dwStyle));
+        }
+    }
+    return TRUE; /* continue enumeration */
+}
+
+void VBoxSeamlessCheckWindows()
+{
+    VBOX_ENUM_PARAM param;
+
+    param.hdc       = GetDC(HWND_DESKTOP);
+    param.hrgn      = 0;
+
+    GetWindowRect(GetDesktopWindow(), &param.rect);
+    dprintf(("VBoxRecheckVisibleWindows desktop=%x rect (%d,%d) (%d,%d)\n", GetDesktopWindow(), param.rect.left, param.rect.top, param.rect.right, param.rect.bottom));
+    EnumWindows(VBoxEnumFunc, (LPARAM)&param);
+
+    if (param.hrgn)
+    {
+        DWORD cbSize;
+
+        cbSize = GetRegionData(param.hrgn, 0, NULL);
+        if (cbSize)
+        {
+            LPRGNDATA lpRgnData = (LPRGNDATA)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cbSize);
+
+            if (lpRgnData)
+            {
+                cbSize = GetRegionData(param.hrgn, cbSize, lpRgnData);
+                if (cbSize)
+                {
+#ifdef DEBUG
+                    RECT *lpRect = (RECT *)&lpRgnData->Buffer[0];
+                    dprintf(("New visible region: \n"));
+
+                    for (DWORD i=0;i<lpRgnData->rdh.nCount;i++)
+                    {
+                        dprintf(("visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
+                    }
+#endif
+                    /* send to display driver */
+                    ExtEscape(param.hdc, VBOXESC_SETVISIBLEREGION, cbSize, (LPCSTR)lpRgnData, 0, NULL);
+                }
+                HeapFree(GetProcessHeap(), 0, lpRgnData);
+            }
+        }
+
+        DeleteObject(param.hrgn);
+    }
+
+    ReleaseDC(HWND_DESKTOP, param.hdc);
 }
 
 /**
@@ -202,6 +332,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
 
                             if (fWasScreenSaverActive)
                                 dprintf(("Disabling the screensaver\n"));
+
                             ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
                             if (!ret)
                                 dprintf(("SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
@@ -258,3 +389,5 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
     dprintf(("VBoxSeamlessThread: finished seamless change request thread\n"));
     return 0;
 }
+
+
