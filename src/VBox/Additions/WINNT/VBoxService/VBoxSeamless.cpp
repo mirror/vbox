@@ -187,6 +187,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                         case VMMDev_Seamless_Disabled:
                             if (fWasScreenSaverActive)
                             {
+                                dprintf(("Re-enabling the screensaver\n"));
                                 ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, 0);
                                 if (!ret)
                                     dprintf(("SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
@@ -199,6 +200,8 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                             if (!ret)
                                 dprintf(("SystemParametersInfo SPI_GETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
 
+                            if (fWasScreenSaverActive)
+                                dprintf(("Disabling the screensaver\n"));
                             ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
                             if (!ret)
                                 dprintf(("SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
