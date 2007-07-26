@@ -33,6 +33,7 @@
 #include <iprt/err.h>
 #include <iprt/uni.h>
 #include "internal/fs.h"
+#include "internal/path.h"
 
 
 /**
@@ -546,3 +547,135 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
     return NULL;
 }
 
+
+/**
+ * Gets the directory for architecture-independent application data, for
+ * example NLS files, module sources, ...
+ *
+ * Linux:    /usr/shared/<application>
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
+ *
+ */
+RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath)
+{
+#ifdef RTPATH_APP_PRIVATE
+    char *pszUtf8Path;
+    int rc;
+    rc = rtPathFromNative(&pszUtf8Path, RTPATH_APP_PRIVATE);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchPathPrivateNoArch = strlen(pszUtf8Path);
+        if (cchPathPrivateNoArch < cchPath)
+            memcpy(pszPath, pszUtf8Path, cchPathPrivateNoArch + 1);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        RTStrFree(pszUtf8Path);
+    }
+    return rc;
+#else
+    return RTPathProgram(pszPath, cchPath);
+#endif
+}
+
+
+/**
+ * Gets the directory for architecture-dependent application data, for
+ * example modules which can be loaded at runtime.
+ *
+ * Linux:    /usr/lib/<application>
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath)
+{
+#ifdef RTPATH_APP_PRIVATE_ARCH
+    char *pszUtf8Path;
+    int rc;
+    rc = rtPathFromNative(&pszUtf8Path, RTPATH_APP_PRIVATE_ARCH);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchPathPrivateArch = strlen(pszUtf8Path);
+        if (cchPathPrivateArch < cchPath)
+            memcpy(pszPath, pszUtf8Path, cchPathPrivateArch + 1);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        RTStrFree(pszUtf8Path);
+    }
+    return rc;
+#else
+    return RTPathProgram(pszPath, cchPath);
+#endif
+}
+
+
+/**
+ * Gets the directory of shared libraries. This is not the same as
+ * RTPathAppPrivateArch() as Linux depends all shared libraries in
+ * a common global directory where ld.so can found them.
+ *
+ * Linux:    /usr/lib
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathSharedLibs(char *pszPath, unsigned cchPath)
+{
+#ifdef RTPATH_SHARED_LIBS
+    char *pszUtf8Path;
+    int rc;
+    rc = rtPathFromNative(&pszUtf8Path, RTPATH_SHARED_LIBS);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchPathSharedLibs = strlen(pszUtf8Path);
+        if (cchPathSharedLibs < cchPath)
+            memcpy(pszPath, pszUtf8Path, cchPathSharedLibs + 1);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        RTStrFree(pszUtf8Path);
+    }
+    return rc;
+#else
+    return RTPathProgram(pszPath, cchPath);
+#endif
+}
+
+
+/**
+ * Gets the directory for documentation.
+ *
+ * Linux:    /usr/share/doc/<application>
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathAppDocs(char *pszPath, unsigned cchPath)
+{
+#ifdef RTPATH_APP_DOCS
+    char *pszUtf8Path;
+    int rc;
+    rc = rtPathFromNative(&pszUtf8Path, RTPATH_APP_DOCS);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchPathAppDocs = strlen(pszUtf8Path);
+        if (cchPathAppDocs < cchPath)
+            memcpy(pszPath, pszUtf8Path, cchPathAppDocs + 1);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        RTStrFree(pszUtf8Path);
+    }
+    return rc;
+#else
+    return RTPathProgram(pszPath, cchPath);
+#endif
+}

@@ -312,37 +312,60 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath);
 RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath);
 
 /**
- * Gets the directory for architecture-independent shared data.
- * Unix:    /usr/share/<application>
- * Windows: <program files directory>/<application>
+ * Gets the directory of shared libraries. This is not the same as
+ * RTPathAppPrivateArch() as Linux depends all shared libraries in
+ * a common global directory where ld.so can found them.
+ *
+ * Linux:    /usr/lib
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathAppShared(char *pszPath, unsigned cchPath);
+RTDECL(int) RTPathSharedLibs(char *pszPath, unsigned cchPath);
 
 /**
- * Gets the directory for architecture-dependent shared data.
- * Unix:    /usr/lib/<application>.
- * Windows: same as RTPathAppShared()
+ * Gets the directory for architecture-independent application data, for
+ * example NLS files, module sources, ...
+ *
+ * Linux:    /usr/shared/<application>
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathAppSharedArch(char *pszPath, unsigned cchPath);
+RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath);
+
+/**
+ * Gets the directory for architecture-dependent application data, for
+ * example modules which can be loaded at runtime.
+ *
+ * Linux:    /usr/lib/<application>
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath);
 
 /**
  * Gets the directory for documentation.
- * Unix:    /usr/share/doc/<application>.
- * Windows: same as RTPathAppShared()
+ *
+ * Linux:    /usr/share/doc/<application>
+ * Windows:  <program files directory>/<application>
+ * Old path: same as RTPathProgram()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathAppDoc(char *pszPath, unsigned cchPath);
+RTDECL(int) RTPathAppDocs(char *pszPath, unsigned cchPath);
 
 /**
  * Query information about a file system object.
