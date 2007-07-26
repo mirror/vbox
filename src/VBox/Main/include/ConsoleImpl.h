@@ -382,6 +382,7 @@ private:
                                           DriveState_T eState, DriveState_T *peState,
                                           const char *pszPath, bool fPassthrough);
 
+#if 1
     HRESULT attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig);
     HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
 
@@ -389,6 +390,14 @@ private:
     usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
                        PVUSBIRHCONFIG aConfig, PCRTUUID aUuid, bool aRemote,
                        const char *aAddress, void *aRemoteBackend);
+#else /* PDMUsb coding. */
+    HRESULT attachUSBDevice (IUSBDevice *aHostDevice);
+    HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
+
+    static DECLCALLBACK(int)
+    usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid,
+                       bool aRemote, const char *aAddress, void *aRemoteBackend);
+#endif /* PDMUsb coding. */
     static DECLCALLBACK(int)
     usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
                        PVUSBIRHCONFIG aConfig, PCRTUUID aUuid);
@@ -534,7 +543,7 @@ private:
         klc;
     }
     mCallbackData;
-    
+
     friend struct VMTask;
 };
 
