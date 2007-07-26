@@ -328,6 +328,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSubSeconds(PRTTIMESPEC pTime, int64_t i64Secon
 }
 
 
+/* PORTME: Add struct timeval guard macro here. */
 #if defined(RTTIME_INCL_TIMEVAL) || defined(_STRUCT_TIMEVAL) || defined(TIMEVAL_TO_TIMESPEC)
 /**
  * Gets the time as POSIX timeval.
@@ -365,6 +366,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimeval(PRTTIMESPEC pTime, const struct tim
 #endif /* various ways of detecting struct timeval */
 
 
+/* PORTME: Add struct timespec guard macro here. */
 #if defined(RTTIME_INCL_TIMESPEC) || defined(_STRUCT_TIMESPEC) || defined(TIMEVAL_TO_TIMESPEC)
 /**
  * Gets the time as POSIX timespec.
@@ -741,7 +743,7 @@ RTDECL(uint32_t)  RTTimeProgramSecTS(void);
  * Get the RTTimeNanoTS() of when the program started.
  *
  * @returns Program startup timestamp.
- */ 
+ */
 RTDECL(uint64_t) RTTimeProgramStartNanoTS(void);
 
 /** @} */
