@@ -114,7 +114,6 @@ ifdef VBOX_WITH_DOCS
  endif
  LINUXSTRIPBIN += \
 	$(if $(VBOX_WITH_QTGUI),kchmviewer,)
- endif
 endif
 ifdef VBOX_WITH_VRDP
  LINUXSTRIPBIN += \
