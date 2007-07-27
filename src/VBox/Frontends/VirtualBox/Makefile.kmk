@@ -19,10 +19,6 @@
 # license agreement apply instead of the previous paragraph.
 #
 
-ifeq ($(BUILD_TARGET),linux)
-XKEYBOARD_NEW := 1
-endif
-
 # include qmake project file
 include VBoxUI.pro
 
@@ -149,8 +145,7 @@ VirtualBox_SOURCES.win += \
 
 VirtualBox_SOURCES.linux = \
 	src/linux/XKeyboard.cpp \
-	src/linux/keyboard.c \
-	src/linux/XKeyboardNew.cpp
+	src/linux/keyboard.c
 
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
