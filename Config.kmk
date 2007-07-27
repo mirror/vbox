@@ -359,6 +359,17 @@ ifdef VBOX_OSE
 endif
 
 #
+# Disable components for headless
+#
+ifdef VBOX_HEADLESS
+ VBOX_WITH_QTGUI=
+ VBOX_WITH_VBOXSDL=
+ VBOX_WITH_VBOXBFE=
+ VBOX_WITH_OGL=
+ VBOX_WITH_KCHMVIEWER=
+endif
+
+#
 # Undefined VBOX_WITH_MAIN implies exclusion of a few more items.
 #
 ifndef VBOX_WITH_MAIN

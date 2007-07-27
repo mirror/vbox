@@ -23,12 +23,6 @@ DEPTH ?= ../../../..
 SUB_DEPTH = ..
 include $(PATH_KBUILD)/subheader.kmk
 
-ifndef VBOX_WITH_VBOXSDL
- ifndef VBOX_WITH_QTGUI
-  VBOX_HEADLESS=1
- endif
-endif
-
 #
 # The shared folder service DLL.
 #
