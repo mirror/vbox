@@ -1535,7 +1535,9 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsP
     /* Have to leave the lock because the pfnRequestDisplayChange will call EMT.  */
     lock.leave ();
     if (mParent->getVMMDev())
-        mParent->getVMMDev()->getVMMDevPort()->pfnRequestDisplayChange(mParent->getVMMDev()->getVMMDevPort(), aWidth, aHeight, aBitsPerPixel, aDisplay);
+        mParent->getVMMDev()->getVMMDevPort()->
+            pfnRequestDisplayChange (mParent->getVMMDev()->getVMMDevPort(),
+                                     aWidth, aHeight, aBitsPerPixel, aDisplay);
     return S_OK;
 }
 
@@ -1547,7 +1549,9 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
     /* Have to leave the lock because the pfnRequestSeamlessChange will call EMT.  */
     lock.leave ();
     if (mParent->getVMMDev())
-        mParent->getVMMDev()->getVMMDevPort()->pfnRequestSeamlessChange(mParent->getVMMDev()->getVMMDevPort(), !!enabled);
+        mParent->getVMMDev()->getVMMDevPort()->
+            pfnRequestSeamlessChange (mParent->getVMMDev()->getVMMDevPort(),
+                                      !!enabled);
     return S_OK;
 }
 

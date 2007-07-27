@@ -205,7 +205,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
 
     Assert(!(newCapabilities & ~VMMDEV_GUEST_SUPPORTS_SEAMLESS));
 
-    guest->setSeamlessSupport(BOOL (newCapabilities & VMMDEV_GUEST_SUPPORTS_SEAMLESS));
+    guest->setSupportsSeamless(BOOL (newCapabilities & VMMDEV_GUEST_SUPPORTS_SEAMLESS));
 
     /*
      * Tell the console interface about the event

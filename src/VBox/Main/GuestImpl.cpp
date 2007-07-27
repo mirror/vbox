@@ -140,9 +140,9 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(SeamlessSupport) (BOOL *aSeamlessSupport)
+STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
 {
-    if (!aSeamlessSupport)
+    if (!aSupportsSeamless)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -150,7 +150,7 @@ STDMETHODIMP Guest::COMGETTER(SeamlessSupport) (BOOL *aSeamlessSupport)
 
     AutoReaderLock alock (this);
 
-    *aSeamlessSupport = mData.mSeamlessSupport;
+    *aSupportsSeamless = mData.mSupportsSeamless;
 
     return S_OK;
 }
@@ -200,12 +200,12 @@ void Guest::setAdditionsVersion (Bstr aVersion)
     mData.mAdditionsActive = TRUE;
 }
 
-void Guest::setSeamlessSupport(BOOL aSeamlessSupport)
+void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoLock alock (this);
 
-    mData.mSeamlessSupport = aSeamlessSupport;
+    mData.mSupportsSeamless = aSupportsSeamless;
 }
