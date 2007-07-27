@@ -246,8 +246,11 @@ void QIMessageBox::setDetailsShown (bool aShown)
 {
     if (aShown)
     {
-        mFlagCB_Details->setShown (mFlagCB->isShown());
-        mFlagCB_Details->setChecked (mFlagCB->isChecked());
+        mFlagCB_Details->setShown (mFlagCB_Main->isShown());
+        mFlagCB_Details->setChecked (mFlagCB_Main->isChecked());
+        mFlagCB_Details->setText (mFlagCB_Main->text());
+        if (mFlagCB_Main->hasFocus())
+            mFlagCB_Details->setFocus();
         mFlagCB_Main->setShown (false);
         mFlagCB = mFlagCB_Details;
         mSpacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Minimum);
@@ -259,6 +262,9 @@ void QIMessageBox::setDetailsShown (bool aShown)
     {
         mFlagCB_Main->setShown (mFlagCB_Details->isShown());
         mFlagCB_Main->setChecked (mFlagCB_Details->isChecked());
+        mFlagCB_Main->setText (mFlagCB_Details->text());
+        if (mFlagCB_Details->hasFocus())
+            mFlagCB_Main->setFocus();
         mFlagCB = mFlagCB_Main;
         mSpacer->changeSize (0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
     }
