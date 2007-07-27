@@ -84,6 +84,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mTextLabel->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Fixed, true);
 
     mFlagCB_Main = new QCheckBox (mMessageVBox);
+    mFlagCB_Main->hide();
 
     mDetailsVBox = new QVBox (this);
     mDetailsVBox->setMargin (0);
@@ -103,6 +104,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                                  QSizePolicy::MinimumExpanding);
 
     mFlagCB_Details = new QCheckBox (mDetailsVBox);
+    mFlagCB_Details->hide();
 
     mSpacer = new QSpacerItem (0, 0);
     layout->addItem (mSpacer);
