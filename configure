@@ -1162,6 +1162,7 @@ Paths:
 
 Build type:
   -d, --build-debug       build with debugging symbols and assertions
+  --build-headless        build headless (without any X11 frontend)
 EOF
   exit 0
 }
@@ -1235,6 +1236,9 @@ for option; do
     --build-xalan)
       LIBXERCES=``
       LIBXALAN=``
+      ;;
+    --build-headless)
+      HEADLESS=1
       ;;
     --ose)
       OSE=2
@@ -1314,6 +1318,11 @@ if [ $OSE -ge 1 ]; then
     cnf_append "VBOX_WITH_LINUX_ADDITIONS" ""
   fi
   echo >> $CNF
+fi
+
+# headless
+if [ -n "$HEADLESS" ]; then
+  cnf_append "VBOX_HEADLESS" "1"
 fi
 
 # emit disable directives corresponding to any --disable-xxx options.
