@@ -47,10 +47,15 @@ extern "C"
 }
 
 /*
- * This needs to be called to initialize the WINE keyboard subsystem
- * within our environment.
+ * This function builds a table mapping the X server's scan codes to PC
+ * keyboard scan codes.  The logic of the function is that while the
+ * X server may be using a different set of scan codes (if for example
+ * it is running on a non-PC machine), the keyboard layout should be similar
+ * to a PC layout.  So we look at the symbols attached to each key on the
+ * X server, find the PC layout which is closest to it and remember the
+ * mappings.
  */
-bool initXKeyboardSafe(Display *dpy)
+bool initXKeyboard(Display *dpy)
 {
     // update the global display pointer
     dpy_global = dpy;
@@ -59,10 +64,9 @@ bool initXKeyboardSafe(Display *dpy)
 }
 
 /*
- * our custom X keyboard event handler with the goal to try everything
- * possible to undo the dreaded scancode to X11 conversion. Sigh!
+ * Translate an X server scancode to a PC keyboard scancode.
  */
-void handleXKeyEventSafe(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
+void handleXKeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
 {
     // update the global display pointer
     dpy_global = dpy;
@@ -70,7 +74,7 @@ void handleXKeyEventSafe(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdI
     X11DRV_KeyEvent((XKeyEvent*)event, wineKbdInfo);
 }
 
-int getKeysymsPerKeycodeSafe()
+int getKeysymsPerKeycode()
 {
     return X11DRV_GetKeysymsPerKeycode();
 }
