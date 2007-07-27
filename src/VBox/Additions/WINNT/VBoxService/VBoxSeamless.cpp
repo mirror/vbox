@@ -175,7 +175,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
         if (strcmp(szWindowText, "Program Manager"))
         {
             dprintf(("Enum hwnd=%x rect (%d,%d) (%d,%d)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
-            dprintf(("title=%s style=%x\n", szWindowText, dwStyle));
+            dprintf(("title=%s style=%x exStyle=%x\n", szWindowText, dwStyle, dwExStyle));
 
             HRGN hrgn = CreateRectRgn(0,0,0,0);
 
