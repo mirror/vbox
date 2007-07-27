@@ -197,25 +197,41 @@ start_network() {
             (valid_ifname "$1"))
         then
           # Try to create the interface
-          if (VBoxTunctl -t "$1" -u "$2" > /dev/null 2>&1 &&
-              ifconfig "$1" up 2> /dev/null)
+          if VBoxTunctl -t "$1" -u "$2" > /dev/null 2>&1
           then
-            # Add the interface to a bridge if one was specified
-            if [ ! -z "$3" ]
-            then
-              if brctl addif "$3" "$1" 2> /dev/null
+            # On SUSE Linux Enterprise Server, the interface does not
+            # appear immediately, so we loop trying to bring it up.
+            i=1
+            while [ $i -le 10 ]
+            do
+              ifconfig "$1" up 2> /dev/null
+              if ifconfig | grep "$1" > /dev/null 2>&1
               then
-                echo "$1 $2 $3" > "$VARFILE"
+                # Add the interface to a bridge if one was specified
+                if [ ! -z "$3" ]
+                then
+                  if brctl addif "$3" "$1" 2> /dev/null
+                  then
+                    echo "$1 $2 $3" > "$VARFILE"
+                  else
+                    echo "$1 $2" > "$VARFILE"
+                    echo "Warning - failed to add interface $1 to the bridge $3"
+                  fi
+                else
+                  echo "$1 $2" > $VARFILE
+                fi
+                i=20
               else
-                echo "$1 $2" > "$VARFILE"
-                echo "Warning - failed to add interface $1 to the bridge $3"
+                i=`expr $i + 1`
+                sleep .1
               fi
-            else
-              echo "$1 $2" > $VARFILE
+            done
+            if [ $i -ne 20 ]
+            then
+              echo "Warning - failed to bring up the interface $1"
             fi
           else
-            echo "Warning - invalid line in $CONFIG:"
-            echo "  $line"
+            echo "Warning - failed to create the interface $1 for the user $2"
           fi
         else
           echo "Warning - invalid line in $CONFIG:"

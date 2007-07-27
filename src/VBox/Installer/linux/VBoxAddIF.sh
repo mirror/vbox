@@ -209,7 +209,20 @@ else
       echo 1>&2 "that you currently have sufficient permissions to do this."
       exit 1
     fi
-    ifconfig $interface up > /dev/null 2>&1
+    # On SUSE Linux Enterprise Server, the tunctl command does not take
+    # effect at once, so we loop until it does.
+    i=1
+    while [ $i -le 10 ]
+    do
+      ifconfig "$interface" up > /dev/null 2>&1
+      if ifconfig | grep "$interface" up > /dev/null 2>&1
+      then
+        i=11
+      else
+        i=`expr $i + 1`
+        sleep .1
+      fi
+    done
     if [ ! -z "$bridge" ]
     then
       # And add it to a bridge if this was requested
