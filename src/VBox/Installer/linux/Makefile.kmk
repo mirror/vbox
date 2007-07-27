@@ -111,7 +111,8 @@ ifdef VBOX_WITH_DOCS
  ifeq ($(BUILD_TARGET_ARCH),x86)
   LINUXNOSTRIP += \
 	VirtualBox.chm
-  LINUXSTRIPBIN += \
+ endif
+ LINUXSTRIPBIN += \
 	$(if $(VBOX_WITH_QTGUI),kchmviewer,)
  endif
 endif
