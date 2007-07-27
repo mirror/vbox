@@ -23,6 +23,12 @@ DEPTH ?= ../../../..
 SUB_DEPTH = ..
 include $(PATH_KBUILD)/subheader.kmk
 
+ifndef VBOX_WITH_VBOXSDL
+ ifndef VBOX_WITH_QTGUI
+  VBOX_HEADLESS=1
+ endif
+endif
+
 #
 # The shared folder service DLL.
 #
@@ -36,18 +42,25 @@ VBoxSharedClipboard_SOURCES = \
 	service.cpp
 VBoxSharedClipboard_SOURCES.win = \
 	win32.cpp
+ifndef VBOX_HEADLESS
 VBoxSharedClipboard_SOURCES.linux = \
 	linux.cpp
+else
+VBoxSharedClipboard_SOURCES.linux = \
+	linux-stub.cpp
+endif
 
-VBoxSharedClipboard_LIBPATH.linux = \
-	$(VBOX_LIBPATH_X11)
 VBoxSharedClipboard_LIBS = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME) \
 	$(LIB_REM)
+ifndef VBOX_HEADLESS
+VBoxSharedClipboard_LIBPATH.linux = \
+	$(VBOX_LIBPATH_X11)
 VBoxSharedClipboard_LIBS.linux = \
 	Xt \
 	X11
+endif
 
 include $(PATH_KBUILD)/subfooter.kmk
 
