@@ -58,7 +58,7 @@ public:
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
-    STDMETHOD(COMGETTER(SeamlessSupport)) (BOOL *aSeamlessSupport);
+    STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
 
     // IGuest methods
     STDMETHOD(SetCredentials)(INPTR BSTR aUserName, INPTR BSTR aPassword,
@@ -67,7 +67,7 @@ public:
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion);
 
-    void setSeamlessSupport(BOOL aSeamlessSupport);
+    void setSupportsSeamless (BOOL aSupportsSeamless);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }
@@ -76,12 +76,12 @@ private:
 
     struct Data
     {
-        Data() : mAdditionsActive (FALSE), mSeamlessSupport (FALSE) {}
+        Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE) {}
 
         Bstr mOSTypeId;
         BOOL mAdditionsActive;
         Bstr mAdditionsVersion;
-        BOOL mSeamlessSupport;
+        BOOL mSupportsSeamless;
     };
 
     ComObjPtr <Console, ComWeakRef> mParent;

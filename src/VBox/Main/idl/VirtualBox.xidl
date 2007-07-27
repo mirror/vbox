@@ -4149,7 +4149,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="d7a3f7cf-84c4-4628-9267-a1cff0e5f3bc"
+     uuid="4a61e982-172b-4116-b12e-024b8a9a2b9d"
      wsmap="suppress"
      >
     <desc>
@@ -4192,9 +4192,10 @@
       </desc>
     </attribute>
 
-    <attribute name="seamlessSupport" type="boolean" readonly="yes">
+    <attribute name="supportsSeamless" type="boolean" readonly="yes">
       <desc>
-        Flag whether seamless guest display rendering is supported.
+        Flag whether seamless guest display rendering (seamless desktop
+        integration) is supported.
       </desc>
     </attribute>
 
@@ -6306,7 +6307,7 @@
         available or not. If @a pixelFormat is <link
         to="PixelFormat::PixelFormatOpaque"/> then direct access to the guest
         VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and @a
-        bytesPerLine parameters must be ingored and the implementation must use
+        bytesPerLine parameters must be ignored and the implementation must use
         the indirect mode (where it provides its own buffer in one of the
         supported formats). In all other cases, @a pixelFormat together with @a
         bitsPerPixel and @a bytesPerLine define the format of the video memory
@@ -6624,11 +6625,17 @@
         are required for the request to be seen by guests. The caller
         should issue the request and wait for a resolution change and
         after a timeout retry.
-        Specifying "0" for either width and height or the color depth
-        means that the dimensions or color depth should not be changed.
-        It is possible to specify the number of the guest display
-        that has to be resized, if guest supports multimonitor configuration.
-        The display value 0 means primary display, 1 - first secondary.
+        
+        Specifying <tt>0</tt> for either @a width, @a height or @a bitsPerPixel
+        parameters means that the corresponding values should be taken from the
+        current video mode (i.e. left unchanged).
+
+        If the guest OS supports multi-monitor configuration then the @a display
+        parameter specifies the number of the guest display to send the hint to:
+        <tt>0</tt> is the primary display, <tt>1</tt> is the first secondary and
+        so on. If the multi-monitor configuration is not supported, @a display
+        must be <tt>0</tt>.
+
       </desc>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
@@ -6638,7 +6645,12 @@
 
     <method name="setSeamlessMode">
       <desc>
-        Current guest seamless mode.
+        Enables or disables seamless guest display rendering (seamless desktop
+        integration) mode.
+        <note>
+          Calling this method has no effect if <link
+          to="IGuest::supportsSeamless"/> returns <tt>false</tt>.
+        </note>
       </desc>
       <param name="enabled" type="boolean" dir="in"/>
     </method>

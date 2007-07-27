@@ -231,19 +231,19 @@ public:
     GuestAdditionsEvent (const QString &aOsTypeId,
                          const QString &aAddVersion,
                          bool aAddActive,
-                         bool aSeamlessActive) :
+                         bool aSupportsSeamless) :
         QEvent ((QEvent::Type) VBoxDefs::AdditionsStateChangeEventType),
         mOsTypeId (aOsTypeId), mAddVersion (aAddVersion),
-        mAddActive (aAddActive), mSeamlessActive (aSeamlessActive) {}
+        mAddActive (aAddActive), mSupportsSeamless (aSupportsSeamless) {}
     const QString &osTypeId() const { return mOsTypeId; }
     const QString &additionVersion() const { return mAddVersion; }
     bool additionActive() const { return mAddActive; }
-    bool seamlessActive() const { return mSeamlessActive; }
+    bool supportsSeamless() const { return mSupportsSeamless; }
 private:
     QString mOsTypeId;
     QString mAddVersion;
     bool mAddActive;
-    bool mSeamlessActive;
+    bool mSupportsSeamless;
 };
 
 /** Menu activation event */
@@ -395,7 +395,7 @@ public:
                                      guest.GetOSTypeId(),
                                      guest.GetAdditionsVersion(),
                                      guest.GetAdditionsActive(),
-                                     guest.GetSeamlessSupport()));
+                                     guest.GetSupportsSeamless()));
         return S_OK;
     }
 
@@ -1044,7 +1044,7 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 emit additionsStateChanged (ge->additionVersion(),
                                             ge->additionActive(),
-                                            ge->seamlessActive());
+                                            ge->supportsSeamless());
                 return true;
             }
 
