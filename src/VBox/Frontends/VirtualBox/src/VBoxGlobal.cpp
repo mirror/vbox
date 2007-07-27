@@ -497,8 +497,8 @@ private:
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool vboxGlobal_inited = false;
-static bool vboxGlobal_cleanup = false;
+static bool sVBoxGlobalInited = false;
+static bool sVBoxGlobalInCleanup = false;
 
 /** @internal
  *
@@ -509,8 +509,8 @@ static bool vboxGlobal_cleanup = false;
  */
 static void vboxGlobalCleanup()
 {
-    Assert (!vboxGlobal_cleanup);
-    vboxGlobal_cleanup = true;
+    Assert (!sVBoxGlobalInCleanup);
+    sVBoxGlobalInCleanup = true;
     vboxGlobal().cleanup();
 }
 
@@ -625,12 +625,12 @@ VBoxGlobal &VBoxGlobal::instance()
 {
     static VBoxGlobal vboxGlobal_instance;
 
-    if (!vboxGlobal_inited)
+    if (!sVBoxGlobalInited)
     {
         /* check that a QApplication instance is created */
         if (qApp)
         {
-            vboxGlobal_inited = true;
+            sVBoxGlobalInited = true;
             vboxGlobal_instance.init();
             /* add our cleanup handler to the list of Qt post routines */
             qAddPostRoutine (vboxGlobalCleanup);
@@ -1448,7 +1448,7 @@ void VBoxGlobal::startEnumeratingMedia()
         return;
 
     /* ignore the request during application termination */
-    if (vboxGlobal_cleanup)
+    if (sVBoxGlobalInCleanup)
         return;
 
     /* composes a list of all currently known media & their children */
@@ -1486,7 +1486,7 @@ void VBoxGlobal::startEnumeratingMedia()
             int index = 0;
             VBoxMediaList::const_iterator it;
             for (it = mList.begin();
-                 it != mList.end() && !vboxGlobal_cleanup;
+                 it != mList.end() && !sVBoxGlobalInCleanup;
                  ++ it, ++ index)
             {
                 VBoxMedia media = *it;
@@ -1550,7 +1550,7 @@ void VBoxGlobal::startEnumeratingMedia()
             }
 
             /* post the last message to indicate the end of enumeration */
-            if (!vboxGlobal_cleanup)
+            if (!sVBoxGlobalInCleanup)
                 QApplication::postEvent (target, new VBoxEnumerateMediaEvent());
 
             COMBase::cleanupCOM();
@@ -3403,7 +3403,7 @@ void VBoxGlobal::init()
 void VBoxGlobal::cleanup()
 {
     /* sanity check */
-    if (!vboxGlobal_cleanup)
+    if (!sVBoxGlobalInCleanup)
     {
         AssertMsgFailed (("Should never be called directly\n"));
         return;
@@ -3418,7 +3418,7 @@ void VBoxGlobal::cleanup()
 
     if (media_enum_thread)
     {
-        /* vboxGlobal_cleanup is true here, so just wait for the thread */
+        /* sVBoxGlobalInCleanup is true here, so just wait for the thread */
         media_enum_thread->wait();
         delete media_enum_thread;
         media_enum_thread = 0;
@@ -3435,6 +3435,11 @@ void VBoxGlobal::cleanup()
     media_list.clear();
     /* the last step to ensure we don't use COM any more */
     vbox.detach();
+
+    /* There may be VBoxEnumerateMediaEvent instances still in the message
+     * queue which reference COM objects. Remove them to release those objects
+     * before uninitializing the COM subsystem. */
+    QApplication::removePostedEvents (this);
 
     COMBase::cleanupCOM();
 
