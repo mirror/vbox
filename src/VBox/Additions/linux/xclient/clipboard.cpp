@@ -25,7 +25,6 @@
 #define USE_UTF16
 #define USE_UTF8
 #define USE_CTEXT
-#define USE_LATIN1
 
 #define LOG_GROUP LOG_GROUP_HGCM
 
@@ -80,7 +79,6 @@ enum g_eClipboardFormats
 {
     INVALID = 0,
     TARGETS,
-    LATIN1,
     CTEXT,
     UTF8,
     UTF16
@@ -659,7 +657,6 @@ static void vboxClipboardGetProc(Widget, XtPointer /* pClientData */, Atom * /* 
         vboxClipboardGetCText(pValue, cTextLen);
         break;
     case UTF8:
-    case LATIN1:
     {
         /* If we are given broken Utf-8, we treat it as Latin1.  Is this acceptable? */
         size_t cStringLen;
@@ -1246,71 +1243,6 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
 }
 
 /**
- * Satisfy a request from the guest to convert the clipboard text to Latin1.
- *
- * @returns true if we successfully convert the data to the format requested, false otherwise.
- *
- * @param atomTypeReturn The type of the data we are returning
- * @param pValReturn     A pointer to the data we are returning.  This should be to memory
- *                       allocated by XtMalloc, which will be freed by the toolkit later
- * @param pcLenReturn    The length of the data we are returning
- * @param piFormatReturn The format (8bit, 16bit, 32bit) of the data we are returning
- */
-static Boolean vboxClipboardConvertLatin1(Atom *atomTypeReturn, XtPointer *pValReturn,
-                                          unsigned long *pcLenReturn, int *piFormatReturn)
-{
-    enum { LINEFEED = 0xa, CARRIAGERETURN = 0xd };
-    PRTUTF16 pu16HostText;
-    unsigned cbHostText, cwHostText, cbGuestPos = 0, cbGuestText;
-    unsigned char *pcGuestText;
-    int rc;
-
-    LogFlowFunc(("\n"));
-    /* Get the host UTF16 data */
-    rc = vboxClipboardReadHostData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                                   reinterpret_cast<void **>(&pu16HostText), &cbHostText);
-    if ((rc != VINF_SUCCESS) || cbHostText == 0)
-    {
-        Log (("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbGuestText));
-        g_ctx.hostFormats = 0;
-        LogFlowFunc(("rc = false\n"));
-        return false;
-    }
-    cwHostText = cbHostText / 2;
-    cbGuestText = cwHostText;
-    pcGuestText = reinterpret_cast<unsigned char *>(XtMalloc(cbGuestText));
-    if (pcGuestText == 0)
-    {
-        RTMemFree(reinterpret_cast<void *>(pu16HostText));
-        LogFlowFunc(("rc = false\n"));
-        return false;
-    }
-    for (unsigned i = 0; i < cwHostText; ++i, ++cbGuestPos)
-    {
-        if (   (i + 1 < cwHostText)
-            && (pu16HostText[i] == CARRIAGERETURN)
-            && (pu16HostText[i + 1] == LINEFEED))
-            ++i;
-        if (pu16HostText[i] < 256)
-            pcGuestText[cbGuestPos] = pu16HostText[i];
-        else
-            /* Any better ideas as to how to do this? */
-            pcGuestText[cbGuestPos] = '.';
-    }
-    Log (("vboxClipboardConvertLatin1: returning Latin-1, original text is %.*ls\n", cwHostText,
-          pu16HostText));
-    Log (("vboxClipboardConvertLatin1: converted text is %.*s\n", cbGuestPos,
-          pcGuestText));
-    RTMemFree(reinterpret_cast<void *>(pu16HostText));
-    *atomTypeReturn = XA_STRING;
-    *pValReturn = reinterpret_cast<XtPointer>(pcGuestText);
-    *pcLenReturn = cbGuestPos;
-    *piFormatReturn = 8;
-    LogFlowFunc(("rc = true\n"));
-    return true;
-}
-
-/**
  * Callback to convert the hosts clipboard data for an application on the guest.  Called by the
  * X Toolkit.
  * @returns true if we successfully convert the data to the format requested, false otherwise.
@@ -1379,10 +1311,6 @@ static Boolean vboxClipboardConvertProc(Widget, Atom *atomSelection, Atom *atomT
         return rc;
     case CTEXT:
         rc = vboxClipboardConvertCText(atomTypeReturn, pValReturn, pcLenReturn, piFormatReturn);
-        LogFlowFunc(("rc=%d\n", rc));
-        return rc;
-    case LATIN1:
-        rc = vboxClipboardConvertLatin1(atomTypeReturn, pValReturn, pcLenReturn, piFormatReturn);
         LogFlowFunc(("rc=%d\n", rc));
         return rc;
     default:
@@ -1719,17 +1647,15 @@ static int vboxClipboardCreateWindow(void)
                            VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     vboxClipboardAddFormat("text/plain;charset=utf-8", UTF8,
                            VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    vboxClipboardAddFormat("STRING", UTF8,
+                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    vboxClipboardAddFormat("TEXT", UTF8,
+                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    vboxClipboardAddFormat("text/plain", UTF8,
+                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
 #endif
 #ifdef USE_CTEXT
     vboxClipboardAddFormat("COMPOUND_TEXT", CTEXT,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-#endif
-#ifdef USE_LATIN1
-    vboxClipboardAddFormat("STRING", LATIN1,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    vboxClipboardAddFormat("TEXT", LATIN1,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    vboxClipboardAddFormat("text/plain", LATIN1,
                            VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
 #endif
     return VINF_SUCCESS;
