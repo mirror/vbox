@@ -1727,7 +1727,7 @@ static int remLoadLinuxObj(void)
 {
     size_t  offFilename;
     char    szPath[RTPATH_MAX];
-    int rc = RTPathProgram(szPath, sizeof(szPath) - 32);
+    int rc = RTPathAppPrivateArch(szPath, sizeof(szPath) - 32);
     AssertRCReturn(rc, rc);
     offFilename = strlen(szPath);
 
