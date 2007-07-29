@@ -329,7 +329,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSubSeconds(PRTTIMESPEC pTime, int64_t i64Secon
 
 
 /* PORTME: Add struct timeval guard macro here. */
-#if defined(RTTIME_INCL_TIMEVAL) || defined(_STRUCT_TIMEVAL) || defined(TIMEVAL_TO_TIMESPEC)
+#if defined(RTTIME_INCL_TIMEVAL) || defined(_STRUCT_TIMEVAL) || defined(TIMEVAL_TO_TIMESPEC) || defined(_SYS_TIME_H)
 /**
  * Gets the time as POSIX timeval.
  *

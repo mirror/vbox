@@ -28,6 +28,12 @@
 
 #include <VBox/types.h>
 
+/* Workaround for Solaris sys/regset.h defining CS, DS */
+#if defined(RT_OS_SOLARIS)
+# undef CS
+# undef DS
+#endif
+
 /** @defgroup grp_x86   x86 Types and Definitions
  * @{
  */
