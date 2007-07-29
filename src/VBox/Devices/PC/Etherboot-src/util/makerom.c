@@ -50,7 +50,7 @@ int		verbose = 0;
 int		pci_vendor_id = 0, pci_device_id = 0;
 int		ispxe = 0;
 
-#if !defined(VBOX) || !defined(__SOLARIS__)
+#if !defined(VBOX) || !defined(RT_OS_SOLARIS)
 extern int getopt(int argc, char *argv[], char *options);
 #endif
 
