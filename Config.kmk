@@ -420,7 +420,7 @@ VBOX_ASFLAGS_FMT = -f elf32 -DASM_FORMAT_ELF
  else
 VBOX_ASFLAGS_FMT = -f elf64 -DASM_FORMAT_ELF
  endif
-VBOX_ASFLAGS_DBFINFO = -g dwarf2
+ VBOX_ASFLAGS_DBFINFO = -g dwarf2
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
  VBOX_ASFLAGS_FMT = -f obj -DASM_FORMAT_OMF
@@ -1455,19 +1455,16 @@ endif
 
 ifeq ($(BUILD_TARGET),solaris)
 # x86 Solaris:
-## The location of the solaris kernel headers.
-VBOX_SOLARIS_SRC ?= /usr/include/sys
 ## The Solaris /usr/include.
 VBOX_SOLARIS_SYS_INCS ?= /usr/include
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
 TEMPLATE_VBOXR0DRV_INCS                = \
-	$(VBOX_SOLARIS_SRC) \
 	$(VBOX_SOLARIS_SYS_INCS)
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .o
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r
-# exclude -Wall because of solaris headers' #pragma ident warnings that gcc refuses to supress!!
+# exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress!!
 TEMPLATE_VBOXR0DRV_CFLAGS              = -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs\
 	-O2 -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
@@ -1634,7 +1631,7 @@ TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
-TEMPLATE_VBOXR3EXE_LIBS                = rt
+TEMPLATE_VBOXR3EXE_LIBS                = rt socket
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.profile    = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.release)
