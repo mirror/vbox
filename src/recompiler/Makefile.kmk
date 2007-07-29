@@ -74,7 +74,10 @@ endif
 #
 ifeq ($(BUILD_TARGET),solaris)
  ifndef HOST_SOLARIS
-  # fixme- HOST_SOLARIS := $(shell uname ... | $(SED_EXT)... )
+  HOST_SOLARIS = $(shell uname -r | cut -f2 -d.)
+  ifneq ($(HOST_SOLARIS),11)
+    $(error Solaris $(HOST_SOLARIS) not compatible. Check src/recompiler/fpu/softfloat-native.h for details)
+  endif
  endif
 endif
 
