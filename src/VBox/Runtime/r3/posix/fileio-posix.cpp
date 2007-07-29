@@ -49,7 +49,6 @@ extern int futimes(int __fd, __const struct timeval __tvp[2]) __THROW;
 
 #ifdef RT_OS_SOLARIS
 # define futimes(filedes, timeval)   futimesat(filedes, NULL, timeval)
-# define RTTIME_INCL_TIMEVAL /** @todo remove me after fixing iprt/time.h */
 #endif
 
 #include <iprt/file.h>
