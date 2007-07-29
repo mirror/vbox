@@ -132,6 +132,10 @@ RuntimeR3_INCS.l4       = \
 RuntimeR3_INCS.freebsd  = \
 	/usr/local/include
 
+
+# RuntimeR3_INCS.solaris  = \
+#    /usr/include
+
 RuntimeR3_SOURCES       = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
@@ -400,6 +404,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \

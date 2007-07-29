@@ -34,9 +34,6 @@
 #ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
 #endif
-#ifdef RT_OS_SOLARIS
-# define RTTIME_INCL_TIMEVAL /** @todo remove me after fixing iprt/time.h */
-#endif
 
 #include <iprt/path.h>
 #include <iprt/assert.h>
