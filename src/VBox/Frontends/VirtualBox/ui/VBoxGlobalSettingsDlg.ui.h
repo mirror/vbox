@@ -588,17 +588,11 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
 
     /* usb filters page */
 
-    /// @todo currently, we always disable USB UI on XPCOM-based hosts because
-    /// QueryInterface on CUSBDeviceFilter doesn't return CHostUSBDeviceFilter
-    /// for host filters (most likely, our XPCOM/IPC/DCONNECT bug).
-
 #ifdef DEBUG_dmik
-#ifdef Q_OS_WIN32
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
     if (coll.isNull())
     {
-#endif
 #endif
         /* disable the USB host filters category if the USB is
          * not available (i.e. in VirtualBox OSE) */
@@ -611,7 +605,6 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         pageUSB->setEnabled (false);
 
 #ifdef DEBUG_dmik
-#ifdef Q_OS_WIN32
         /* Show an error message (if there is any).
          * This message box may be suppressed if the user wishes so. */
         vboxProblem().cannotAccessUSB (host);
@@ -628,7 +621,6 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
         lvUSBFilters_currentChanged (lvUSBFilters->firstChild());
     }
-#endif
 #endif
 
     /* language properties */
@@ -1034,17 +1026,11 @@ void VBoxGlobalSettingsDlg::fixLanguageChange()
 {
     /* fix for usb page */
 
-    /// @todo currently, we always disable USB UI on XPCOM-based hosts because
-    /// QueryInterface on CUSBDeviceFilter doesn't return CHostUSBDeviceFilter
-    /// for host filters (most likely, our XPCOM/IPC/DCONNECT bug).
-
 #ifdef DEBUG_dmik
-#ifdef Q_OS_WIN32
     CHost host = vboxGlobal().virtualBox().GetHost();
     CHostUSBDeviceFilterCollection coll = host.GetUSBDeviceFilters();
     if (coll.isNull())
     {
-#endif
 #endif
         /* disable the USB host filters category if the USB is
          * not available (i.e. in VirtualBox OSE) */
@@ -1057,8 +1043,6 @@ void VBoxGlobalSettingsDlg::fixLanguageChange()
         pageUSB->setEnabled (false);
 
 #ifdef DEBUG_dmik
-#ifdef Q_OS_WIN32
     }
-#endif
 #endif
 }
