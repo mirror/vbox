@@ -1,6 +1,11 @@
-/* A quick hack for freebsd where there are no separate location 
-   for compiler specific headers like on linux, mingw, os2, ++. 
-   This file will be cleaned up later...  */
+/** @file
+ * innotek Portable Runtime / No-CRT - GCC specifics.
+ *
+ * A quick hack for freebsd where there are no separate location 
+ * for compiler specific headers like on linux, mingw, os2, ++. 
+ * This file will be cleaned up later...  
+ */
+
 /*
  * Copyright (C) 2006-2007 innotek GmbH
  *
@@ -48,7 +53,7 @@ typedef uint64_t size_t;
 #ifndef __cplusplus
 # ifdef __WCHAR_TYPE__
 typedef __WCHAR_TYPE__ wchar_t;
-# elif defined(__OS2__) || defined(__WIN__) 
+# elif defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) 
 typedef uint16_t wchar_t;
 # else
 typedef int wchar_t;

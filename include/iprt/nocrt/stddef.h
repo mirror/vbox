@@ -1,3 +1,7 @@
+/** @file
+ * innotek Portable Runtime / No-CRT - stddef.h (-> iprt/types.h).
+ */
+
 /*
  * Copyright (C) 2006-2007 innotek GmbH
  *
@@ -15,3 +19,4 @@
  */
 
 #include <iprt/types.h>
+

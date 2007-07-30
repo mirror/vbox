@@ -1,3 +1,7 @@
+/** @file
+ * innotek Portable Runtime / No-CRT - stdarg.h (-> iprt/stdarg.h).
+ */
+
 /*
  * Copyright (C) 2006-2007 innotek GmbH
  *
