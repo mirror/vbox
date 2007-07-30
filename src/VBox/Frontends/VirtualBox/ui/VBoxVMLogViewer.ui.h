@@ -201,6 +201,7 @@ private:
                 string.truncate (curInd);
                 int x = rect.x() + browser->fontMetrics().width (string);
                 int y = rect.y() + browser->pointSize() / 2;
+                browser->setContentsPos (0, browser->contentsY());
                 browser->ensureVisible (x, y, 40, 40);
                 break;
             }
