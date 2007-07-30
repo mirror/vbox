@@ -194,6 +194,12 @@ public:
     void cannotRemoveSharedFolder (QWidget *, const CConsole &,
                                    const QString &, const QString &);
 
+    void cannotDonwloadGuestAdditions (const QString &aName,
+                                       const QString &aReason);
+
+    int warnAboutAdditionsDownload (const QString &aSrc1, const QString &aSrc2,
+                                    const QString &aName, ulong aSize);
+
     void warnAboutTooOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutNewAdditions (QWidget *, const QString &, const QString &);
