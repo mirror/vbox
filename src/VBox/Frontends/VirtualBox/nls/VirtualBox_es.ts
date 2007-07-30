@@ -1963,7 +1963,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleccione el tipo de Imagen de Disco Virtual que desea crear.&lt;/p&gt;
 &lt;p&gt;Una &lt;b&gt;Imagen de expansión dinámica&lt;/b&gt; ocupa inicialmente poco espacio. 
 Luego irá creciendo a medida que el OS (sistema operativo) Huésped utilice 
-espacio (hasta el tamaño máximo espeficicado).&lt;/p&gt;
+espacio (hasta el tamaño máximo especificado).&lt;/p&gt;
 &lt;p&gt;Una &lt;b&gt;Imagen de tamaño fijo&lt;/b&gt; no crece. Es almacenada en una imagen
 apenas mayor del tamaño del disco virtual.&lt;/p&gt;</translation>
     </message>
@@ -3470,63 +3470,63 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMNetworkSettings</name>
     <message>
         <source>VBoxVMNetworkSettings</source>
-        <translation type="unfinished"></translation>
+        <translation>ConfiguracionRedVMVBox</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Habilitar Adaptador de Red</translation>
     </message>
     <message>
         <source>&amp;Attached to</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Conectar a</translation>
     </message>
     <message>
         <source>&amp;MAC Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Dirección &amp;MAC</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Generar</translation>
     </message>
     <message>
         <source>Alt+G</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+G</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera una nueva dirección MAC al azar.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Ca&amp;ble Conectado</translation>
     </message>
     <message>
         <source>Alt+B</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt+B</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuración de Interface Anfitrión</translation>
     </message>
     <message>
         <source>&amp;Interface Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombre de la &amp;Interface</translation>
     </message>
     <message>
         <source>&amp;File Descriptor</source>
-        <translation type="unfinished"></translation>
+        <translation>Descriptor de &amp;Archivo</translation>
     </message>
     <message>
         <source>&amp;Setup Application</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Configurar Aplicación</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation type="unfinished">Seleccionar</translation>
+        <translation>Seleccionar</translation>
     </message>
     <message>
         <source>&amp;Terminate Application</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Terminar Aplicación</translation>
     </message>
     <message>
         <source>Add</source>
@@ -3538,11 +3538,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Select TAP setup application</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccionar aplicación de configuración TAP</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Seleccionar aplicación para </translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -3973,181 +3973,185 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
+        <translation>Define el método de autenticación VRDP.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Especifica el tiempo de espera para la autenticación del cliente en milisegundos.</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Ayuda</translation>
+        <translation>Ayuda</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Displays the dialog help.</source>
-        <translation type="unfinished">Muestra el diálogo de ayuda.</translation>
+        <translation>Muestra el diálogo de ayuda.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished">Detectada Configuración Inválida</translation>
+        <translation>Configuración inválida detectada</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation type="unfinished">Alt+O</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="unfinished">Acepta (guarda) los cambios y cierra el diálogo.</translation>
+        <translation>Acepta (guarda) los cambios y cierra el diálogo.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <source>Cancels changes and closes the dialog.</source>
-        <translation type="unfinished">Cancela los cambios y cierra el diálogo.</translation>
+        <translation>Cancela los cambios y cierra el diálogo.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si está seleccionado, conecta el disco virtual especificado en el slot Maestro del Controlador IDE primario.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si está seleccionado, conecta el disco virtual especificado en el slot Esclavo del Controlador IDE primario.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si está seleccionado, conecta el disco virtual especificado en el slot Esclavo del Controlador IDE secundario.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra el disco virtual a conectar en este slot IDE y posibilita seleccionar rápidamente otro disco.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si está seleccionado monta el medio especificado a la unidad de CD/DVD de la máquina virtual. Tenga en cuenta que la unidad de CD/DVD está siempre conectada a la controladora Maestra IDE secundaria de esta máquina.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra el archivo de imagen a montar en la unidad de CD/DVD virtual y posibilita seleccionar rápidamente otra imagen.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si está seleccionado, monta el medio especificado a la unidad de Disquet de la máquina virtual.</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra el archivo de imagen a montar en la unidad de Disquet virtual y posibilita seleccionar rápidamente otra imagen.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cuando está seleccionado, la tarjeta de sonido virtual PCI is conectada a la máquina virtual que utiliza el controlador de sonido especificado para comincarse con la placa de sonido anfitrión.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si está seleccionado, la Máquina Virtual actuará como servidor de RDP (Protocolo de Escritorio Remoto), permitiendo clientes remotos conectarse y operar la Máquina Virtual (cuando está corriendo) usando un cliente RDP estándar.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;no conectado&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco duro Maestro Primario no seleccionado.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco duro Esclavo Primario no seleccionado.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco duro Esclavo Primario ya está conectado a otro slot.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco duro Esclavo Secundario no seleccionado.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco duro Esclavo Secundario ya está conectado a otro slot.</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>No hay archivo de Imagen de CD/DVD seleccionado.</translation>
     </message>
     <message>
         <source>Floppy image file is not selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>No hay archivo de imagen de Disquet seleccionado.</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Para el adaptador %1 la Interface de red anfitrión es incorrecta.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>Puerto VRDP no está establecido.</translation>
     </message>
     <message>
         <source>VRDP Timeout is not set.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiempo de espera VRDP no está establecido.</translation>
     </message>
     <message>
         <source> - Settings</source>
-        <translation type="unfinished"></translation>
+        <translation> - Configuración</translation>
     </message>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Nuevo Filtro %1</translation>
+        <translation>Nuevo Filtro %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Portapapeles &amp;Compartido</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Directorio de &amp;Instantáneas</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra el tipo de Sistema Operativo que planea instalar en esta máquina virtual (llamado Sistema Operativo huésped).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Si está seleccionado, la máquina virtual soportará
+ACPI (&quot;Interface de Manejo de Energía y Configuración Avanzada&quot; en inglés). &lt;b&gt;Advertencia:&lt;/b&gt; ¡No deshabilite
+esta opción depués de haber instalado un sistema operativo huésped Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Si está seleccionado, la máquina virtual soportará IO APIC 
+(&quot;APIC de Entrada y Salida&quot; en inglés), podría disminuir sensiblemente el rendimiento de la máquina virtual.
+&lt;b&gt;Advertencia:&lt;/b&gt;¡No deshabilite esta opción depués de haber instalado un sistema operativo huésped Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Define el modo de préstamo del portapapeles entre el Sist. Op. anfitrión y el huésped. Tenga en cuenta que esta opción requiere la aplicaciones &quot;Guest Additions&quot; instaladas en el Sist. Op. huésped.</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra la ruta donde serán almacenadas las instantáneas de este máquina virtual. Tenga en cuenta que las instantáneas pueden ocupar mucho espacio en disco.</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reasigna al valor por omosión la ruta de instantáneas. La ruta por omosión actual será mostrada luego de aceptar los cambios y abrir este diálogo nuevamente.</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
@@ -4188,11 +4192,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">Agrega un filtro USB con todos los campos vacíos. Tenga en cuenta que tal filtro filtrará cualquier dispositivo USB conectado.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">Agrega un filtro USB nuevo para todos los dispositivos USB seleccionados, conectados a la PC Anfitriona.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Adapter %1</source>
