@@ -78,6 +78,8 @@ public:
 
     void popupMainMenu (bool aCenter);
 
+    void installGuestAdditionsFrom (const QString &aSource);
+
 public slots:
 
 protected:
