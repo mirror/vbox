@@ -307,9 +307,6 @@ void VBoxSharedFoldersSettings::init()
                                              "edit_shared_folder_disabled_16px.png"));
     tbRemove->setIconSet (VBoxGlobal::iconSet ("revome_shared_folder_16px.png",
                                                "revome_shared_folder_disabled_16px.png"));
-    QToolTip::add (tbAdd, tr ("Add a new shared folder"));
-    QToolTip::add (tbEdit, tr ("Edit the selected shared folder"));
-    QToolTip::add (tbRemove, tr ("Remove the selected shared folder"));
     connect (tbAdd, SIGNAL (clicked()), this, SLOT (tbAddPressed()));
     connect (tbEdit, SIGNAL (clicked()), this, SLOT (tbEditPressed()));
     connect (tbRemove, SIGNAL (clicked()), this, SLOT (tbRemovePressed()));

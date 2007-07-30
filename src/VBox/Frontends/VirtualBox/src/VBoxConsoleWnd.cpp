@@ -3153,11 +3153,12 @@ VBoxSFDialog::VBoxSFDialog (QWidget  *aParent, CSession &aSession)
     QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10, "buttonLayout");
     QPushButton *pbHelp = new QPushButton (tr ("Help"), this, "pbHelp");
     QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    QPushButton *pbOk = new QPushButton (tr ("OK"), this, "pbOk");
+    QPushButton *pbOk = new QPushButton (tr ("&OK"), this, "pbOk");
     QPushButton *pbCancel = new QPushButton (tr ("Cancel"), this, "pbCancel");
     connect (pbHelp, SIGNAL (clicked()), &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (pbOk, SIGNAL (clicked()), this, SLOT (accept()));
     connect (pbCancel, SIGNAL (clicked()), this, SLOT (reject()));
+    pbHelp->setAccel (Qt::Key_F1);
     buttonLayout->addWidget (pbHelp);
     buttonLayout->addItem (spacer);
     buttonLayout->addWidget (pbOk);
