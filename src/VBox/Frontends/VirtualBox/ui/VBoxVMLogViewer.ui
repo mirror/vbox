@@ -67,10 +67,10 @@
                         <cstring>mHelpButton</cstring>
                     </property>
                     <property name="text">
-                        <string>&amp;Help</string>
+                        <string>Help</string>
                     </property>
                     <property name="accel">
-                        <string>Alt+H</string>
+                        <string>F1</string>
                     </property>
                 </widget>
                 <spacer>
@@ -134,10 +134,7 @@
                         <cstring>mCloseButton</cstring>
                     </property>
                     <property name="text">
-                        <string>&amp;Close</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+C</string>
+                        <string>Close</string>
                     </property>
                 </widget>
             </hbox>
