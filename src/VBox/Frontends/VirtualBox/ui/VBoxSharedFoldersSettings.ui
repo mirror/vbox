@@ -123,7 +123,13 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
                                 <enum>TabFocus</enum>
                             </property>
                             <property name="text">
-                                <string>Add</string>
+                                <string></string>
+                            </property>
+                            <property name="accel">
+                                <string>Ins</string>
+                            </property>
+                            <property name="textLabel">
+                                <string>Add a new shared folder (Ins)</string>
                             </property>
                             <property name="autoRaise">
                                 <bool>true</bool>
@@ -140,7 +146,13 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
                                 <enum>TabFocus</enum>
                             </property>
                             <property name="text">
-                                <string>Edit</string>
+                                <string></string>
+                            </property>
+                            <property name="accel">
+                                <string>Space</string>
+                            </property>
+                            <property name="textLabel">
+                                <string>Edit the selected shared folder (Space)</string>
                             </property>
                             <property name="autoRaise">
                                 <bool>true</bool>
@@ -157,7 +169,13 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
                                 <enum>TabFocus</enum>
                             </property>
                             <property name="text">
-                                <string>Remove</string>
+                                <string></string>
+                            </property>
+                            <property name="accel">
+                                <string>Del</string>
+                            </property>
+                            <property name="textLabel">
+                                <string>Remove the selected shared folder (Del)</string>
                             </property>
                             <property name="autoRaise">
                                 <bool>true</bool>
