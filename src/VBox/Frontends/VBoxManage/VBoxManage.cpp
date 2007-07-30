@@ -338,7 +338,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-intnet<1-N> network]\n"
                  "                            [-macaddress<1-N> auto|<mac>]\n"
                  "                            [-uart<1-N> off | <I/O base> <IRQ> server|client\n"
-                 "                                              <host pipename>\n"
+                 "                                              <host pipename>]\n"
                  );
         if (fLinux)
         {
