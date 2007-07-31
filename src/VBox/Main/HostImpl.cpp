@@ -31,10 +31,11 @@
 #define _LINUX_BYTEORDER_GENERIC_H
 #include <linux/cdrom.h>
 #ifdef VBOX_USE_LIBHAL
-# include <libhal.h>
-/* These are defined by libhal.h and by VBox header files. */
-# undef TRUE
-# undef FALSE
+// # include <libhal.h>
+// /* These are defined by libhal.h and by VBox header files. */
+// # undef TRUE
+// # undef FALSE
+#include "vbox-libhal.h"
 #endif
 #include <errno.h>
 #endif /* RT_OS_LINUX */
@@ -1529,19 +1530,21 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
 {
     bool halSuccess = false;
     DBusError dbusError;
-    dbus_error_init (&dbusError);
-    DBusConnection *dbusConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
+    if (!LibHalCheckPresence())
+        return false;
+    DBusErrorInit (&dbusError);
+    DBusConnection *dbusConnection = DBusBusGet(DBUS_BUS_SYSTEM, &dbusError);
     if (dbusConnection != 0)
     {
-        LibHalContext *halContext = libhal_ctx_new();
+        LibHalContext *halContext = LibHalCtxNew();
         if (halContext != 0)
         {
-            if (libhal_ctx_set_dbus_connection (halContext, dbusConnection))
+            if (LibHalCtxSetDBusConnection (halContext, dbusConnection))
             {
-                if (libhal_ctx_init(halContext, &dbusError))
+                if (LibHalCtxInit(halContext, &dbusError))
                 {
                     int numDevices;
-                    char **halDevices = libhal_find_device_by_capability(halContext,
+                    char **halDevices = LibHalFindDeviceByCapability(halContext,
                                                 "storage.cdrom", &numDevices, &dbusError);
                     if (halDevices != 0)
                     {
@@ -1550,7 +1553,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                         halSuccess = true;
                         for (int i = 0; i < numDevices; i++)
                         {
-                            char *devNode = libhal_device_get_property_string(halContext,
+                            char *devNode = LibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "block.device", &dbusError);
                             if (devNode != 0)
                             {
@@ -1560,9 +1563,9 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                     char *vendor, *product;
                                     /* We do not check the error here, as this field may
                                        not even exist. */
-                                    vendor = libhal_device_get_property_string(halContext,
+                                    vendor = LibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "info.vendor", 0);
-                                    product = libhal_device_get_property_string(halContext,
+                                    product = LibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "info.product", &dbusError);
                                     if ((product != 0 && product[0] != 0))
                                     {
@@ -1588,7 +1591,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                         {
                                             LogRel(("Host::COMGETTER(DVDDrives): failed to get property \"info.product\" for device %s.  dbus error: %s (%s)\n",
                                                     halDevices[i], dbusError.name, dbusError.message));
-                                            dbus_error_free(&dbusError);
+                                            DBusErrorFree(&dbusError);
                                         }
                                         ComObjPtr <HostDVDDrive> hostDVDDriveObj;
                                         hostDVDDriveObj.createObject();
@@ -1598,45 +1601,45 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                     }
                                     if (vendor != 0)
                                     {
-                                        libhal_free_string(vendor);
+                                        LibHalFreeString(vendor);
                                     }
                                     if (product != 0)
                                     {
-                                        libhal_free_string(product);
+                                        LibHalFreeString(product);
                                     }
                                 }
                                 else
                                 {
                                     LogRel(("Host::COMGETTER(DVDDrives): failed to validate the block device %s as a DVD drive\n"));
                                 }
-                                libhal_free_string(devNode);
+                                LibHalFreeString(devNode);
                             }
                             else
                             {
                                 LogRel(("Host::COMGETTER(DVDDrives): failed to get property \"block.device\" for device %s.  dbus error: %s (%s)\n",
                                         halDevices[i], dbusError.name, dbusError.message));
-                                dbus_error_free(&dbusError);
+                                DBusErrorFree(&dbusError);
                             }
                         }
-                        libhal_free_string_array(halDevices);
+                        LibHalFreeStringArray(halDevices);
                     }
                     else
                     {
                         LogRel(("Host::COMGETTER(DVDDrives): failed to get devices with capability \"storage.cdrom\".  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-                        dbus_error_free(&dbusError);
+                        DBusErrorFree(&dbusError);
                     }
-                    if (!libhal_ctx_shutdown(halContext, &dbusError))  /* what now? */
+                    if (!LibHalCtxShutdown(halContext, &dbusError))  /* what now? */
                     {
                         LogRel(("Host::COMGETTER(DVDDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-                        dbus_error_free(&dbusError);
+                        DBusErrorFree(&dbusError);
                     }
                 }
                 else
                 {
                     LogRel(("Host::COMGETTER(DVDDrives): failed to initialise libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-                    dbus_error_free(&dbusError);
+                    DBusErrorFree(&dbusError);
                 }
-                libhal_ctx_free(halContext);
+                LibHalCtxFree(halContext);
             }
             else
             {
@@ -1647,12 +1650,12 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
         {
             LogRel(("Host::COMGETTER(DVDDrives): failed to get a libhal context - out of memory?\n"));
         }
-        dbus_connection_unref(dbusConnection);
+        DBusConnectionUnref(dbusConnection);
     }
     else
     {
         LogRel(("Host::COMGETTER(DVDDrives): failed to connect to dbus.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-        dbus_error_free(&dbusError);
+        DBusErrorFree(&dbusError);
     }
     return halSuccess;
 }
@@ -1669,19 +1672,21 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
 {
     bool halSuccess = false;
     DBusError dbusError;
-    dbus_error_init (&dbusError);
-    DBusConnection *dbusConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
+    if (!LibHalCheckPresence())
+        return false;
+    DBusErrorInit (&dbusError);
+    DBusConnection *dbusConnection = DBusBusGet(DBUS_BUS_SYSTEM, &dbusError);
     if (dbusConnection != 0)
     {
-        LibHalContext *halContext = libhal_ctx_new();
+        LibHalContext *halContext = LibHalCtxNew();
         if (halContext != 0)
         {
-            if (libhal_ctx_set_dbus_connection (halContext, dbusConnection))
+            if (LibHalCtxSetDBusConnection (halContext, dbusConnection))
             {
-                if (libhal_ctx_init(halContext, &dbusError))
+                if (LibHalCtxInit(halContext, &dbusError))
                 {
                     int numDevices;
-                    char **halDevices = libhal_find_device_by_capability(halContext,
+                    char **halDevices = LibHalFindDeviceByCapability(halContext,
                                                 "storage", &numDevices, &dbusError);
                     if (halDevices != 0)
                     {
@@ -1690,16 +1695,16 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                         halSuccess = true;
                         for (int i = 0; i < numDevices; i++)
                         {
-                            char *driveType = libhal_device_get_property_string(halContext,
+                            char *driveType = LibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "storage.drive_type", 0);
                             if (driveType != 0)
                             {
                                 if (strcmp(driveType, "floppy") != 0)
                                 {
-                                    libhal_free_string(driveType);
+                                    LibHalFreeString(driveType);
                                     continue;
                                 }
-                                libhal_free_string(driveType);
+                                LibHalFreeString(driveType);
                             }
                             else
                             {
@@ -1707,7 +1712,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                                    probably didn't exist. */
                                 continue;
                             }
-                            char *devNode = libhal_device_get_property_string(halContext,
+                            char *devNode = LibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "block.device", &dbusError);
                             if (devNode != 0)
                             {
@@ -1717,9 +1722,9 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                                     char *vendor, *product;
                                     /* We do not check the error here, as this field may
                                        not even exist. */
-                                    vendor = libhal_device_get_property_string(halContext,
+                                    vendor = LibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "info.vendor", 0);
-                                    product = libhal_device_get_property_string(halContext,
+                                    product = LibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "info.product", &dbusError);
                                     if ((product != 0) && (product[0] != 0))
                                     {
@@ -1745,7 +1750,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                                         {
                                             LogRel(("Host::COMGETTER(FloppyDrives): failed to get property \"info.product\" for device %s.  dbus error: %s (%s)\n",
                                                     halDevices[i], dbusError.name, dbusError.message));
-                                            dbus_error_free(&dbusError);
+                                            DBusErrorFree(&dbusError);
                                         }
                                         ComObjPtr <HostFloppyDrive> hostFloppyDrive;
                                         hostFloppyDrive.createObject();
@@ -1755,45 +1760,45 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                                     }
                                     if (vendor != 0)
                                     {
-                                        libhal_free_string(vendor);
+                                        LibHalFreeString(vendor);
                                     }
                                     if (product != 0)
                                     {
-                                        libhal_free_string(product);
+                                        LibHalFreeString(product);
                                     }
                                 }
                                 else
                                 {
                                     LogRel(("Host::COMGETTER(FloppyDrives): failed to validate the block device %s as a floppy drive\n"));
                                 }
-                                libhal_free_string(devNode);
+                                LibHalFreeString(devNode);
                             }
                             else
                             {
                                 LogRel(("Host::COMGETTER(FloppyDrives): failed to get property \"block.device\" for device %s.  dbus error: %s (%s)\n",
                                         halDevices[i], dbusError.name, dbusError.message));
-                                dbus_error_free(&dbusError);
+                                DBusErrorFree(&dbusError);
                             }
                         }
-                        libhal_free_string_array(halDevices);
+                        LibHalFreeStringArray(halDevices);
                     }
                     else
                     {
                         LogRel(("Host::COMGETTER(FloppyDrives): failed to get devices with capability \"storage.cdrom\".  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-                        dbus_error_free(&dbusError);
+                        DBusErrorFree(&dbusError);
                     }
-                    if (!libhal_ctx_shutdown(halContext, &dbusError))  /* what now? */
+                    if (!LibHalCtxShutdown(halContext, &dbusError))  /* what now? */
                     {
                         LogRel(("Host::COMGETTER(FloppyDrives): failed to shutdown the libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-                        dbus_error_free(&dbusError);
+                        DBusErrorFree(&dbusError);
                     }
                 }
                 else
                 {
                     LogRel(("Host::COMGETTER(FloppyDrives): failed to initialise libhal context.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-                    dbus_error_free(&dbusError);
+                    DBusErrorFree(&dbusError);
                 }
-                libhal_ctx_free(halContext);
+                LibHalCtxFree(halContext);
             }
             else
             {
@@ -1804,12 +1809,12 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
         {
             LogRel(("Host::COMGETTER(FloppyDrives): failed to get a libhal context - out of memory?\n"));
         }
-        dbus_connection_unref(dbusConnection);
+        DBusConnectionUnref(dbusConnection);
     }
     else
     {
         LogRel(("Host::COMGETTER(FloppyDrives): failed to connect to dbus.  dbus error: %s (%s)\n", dbusError.name, dbusError.message));
-        dbus_error_free(&dbusError);
+        DBusErrorFree(&dbusError);
     }
     return halSuccess;
 }

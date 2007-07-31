@@ -128,6 +128,8 @@ endif
 VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
 VBoxSVC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
+VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
+
 VBoxSVC_INCS = \
 	include \
 	$(PATH_VBoxSVC) \
@@ -145,17 +147,6 @@ endif
 VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
-
-ifdef VBOX_WITH_LIBHAL
-VBoxSVC_CXXFLAGS += \
-	$(LIB_HAL_CFLAGS)
-VBoxSVC_LIBPATH += \
-	$(LIB_HAL_LIBPATH)
-VBoxSVC_LIBS += \
-	$(LIB_HAL_LIBS)
-VBoxSVC_DEFS += \
-	VBOX_USE_LIBHAL
-endif
 
 VBoxSVC_SOURCES = \
 	Logging.cpp \
@@ -201,6 +192,9 @@ VBoxSVC_SOURCES.win = \
 	win32/svcmain.cpp \
 	win32/svchlp.cpp \
 	win32/VBoxSVC.rc
+
+VBoxSVC_SOURCES.linux = \
+	linux/vbox-libhal.cpp
 
 ifdef VBOX_WITH_XPCOM
 VBoxSVC_SOURCES += \
