@@ -1052,7 +1052,8 @@ static const WORD nonchar_key_vkey[256] =
     /* function keys */
     VK_F1, VK_F2,
     VK_F3, VK_F4, VK_F5, VK_F6, VK_F7, VK_F8, VK_F9, VK_F10,    /* FFC0 */
-    VK_F11, VK_F12, VK_F13, VK_F14, VK_F15, VK_F16, 0, 0,       /* FFC8 */
+    VK_F11, VK_F12, VK_LWIN /* VK_F13 */, VK_RWIN /* VK_F14 */,
+    VK_F15, VK_F16, 0, 0,                                       /* FFC8 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* FFD0 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* FFD8 */
     /* modifier keys */
@@ -1082,7 +1083,7 @@ static const WORD nonchar_key_scan[256] =
     0x147, 0x14B, 0x148, 0x14D, 0x150, 0x149, 0x151, 0x14F,      /* FF50 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF58 */
     /* misc keys */
-    /*?*/ 0, 0x137, /*?*/ 0, 0x152, 0x00, 0x00, 0x00, 0x00,      /* FF60 */
+    /*?*/ 0, 0x137, /*?*/ 0, 0x152, 0x00, 0x00, 0x00, 0x15D,      /* FF60 */
     /*?*/ 0, /*?*/ 0, 0x38, 0x146, 0x00, 0x00, 0x00, 0x00,       /* FF68 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF70 */
     /* keypad keys */
@@ -1098,7 +1099,7 @@ static const WORD nonchar_key_scan[256] =
     /* function keys */
     0x3B, 0x3C,
     0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44,              /* FFC0 */
-    0x57, 0x58, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFC8 */
+    0x57, 0x58, 0x15B, 0x15C, 0x00, 0x00, 0x00, 0x00,              /* FFC8 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD0 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD8 */
     /* modifier keys */
@@ -1823,36 +1824,43 @@ void X11DRV_InitKeyboard(void)
 
         if (!vkey)
         {
+            // @@@AH VBOX hack for AltGr
+            if (e2.keycode == 0x71)
+            {
+                TRACE("VBOX HACK, mapping keycode 0x71 to scancode %X\n", VK_MENU);
+                vkey = VK_MENU | 0x100;
+            } else {
             /* Others keys: let's assign OEM virtual key codes in the allowed range,
              * that is ([0xba,0xc0], [0xdb,0xe4], 0xe6 (given up) et [0xe9,0xf5]) */
-            do
-            {
-                switch (++OEMvkey)
+                do
                 {
-                case 0xc1 : OEMvkey=0xdb; break;
-                case 0xe5 : OEMvkey=0xe9; break;
-                case 0xf6 : OEMvkey=0xf5; WARN("No more OEM vkey available!\n");
-                }
-            } while (OEMvkey < 0xf5 && vkey_used[OEMvkey]);
+                    switch (++OEMvkey)
+                    {
+                    case 0xc1 : OEMvkey=0xdb; break;
+                    case 0xe5 : OEMvkey=0xe9; break;
+                    case 0xf6 : OEMvkey=0xf5; WARN("No more OEM vkey available!\n");
+                    }
+                } while (OEMvkey < 0xf5 && vkey_used[OEMvkey]);
 
-            vkey = VKEY_IF_NOT_USED(OEMvkey);
+                vkey = VKEY_IF_NOT_USED(OEMvkey);
 
-            if (TRACE_ON(keyboard))
-            {
-                TRACE("OEM specific virtual key %X assigned to keycode %X:\n",
-                                 OEMvkey, e2.keycode);
-                TRACE("(");
-                for (i = 0; i < keysyms_per_keycode; i += 1)
+                if (TRACE_ON(keyboard))
                 {
-                    const char *ksname;
+                    TRACE("OEM specific virtual key %X assigned to keycode %X:\n",
+                                     OEMvkey, e2.keycode);
+                    TRACE("(");
+                    for (i = 0; i < keysyms_per_keycode; i += 1)
+                    {
+                        const char *ksname;
 
-                    keysym = XLookupKeysym(&e2, i);
-                    ksname = XKeysymToString(keysym);
-                    if (!ksname)
-                        ksname = "NoSymbol";
-                    TRACE( "%lX (%s) ", keysym, ksname);
+                        keysym = XLookupKeysym(&e2, i);
+                        ksname = XKeysymToString(keysym);
+                        if (!ksname)
+                            ksname = "NoSymbol";
+                        TRACE( "%lX (%s) ", keysym, ksname);
+                    }
+                    TRACE(")\n");
                 }
-                TRACE(")\n");
             }
         }
 
