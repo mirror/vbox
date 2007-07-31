@@ -51,6 +51,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef RT_OS_L4
+#include <l4/vboxserver/file.h>
+#endif
+
 #include "Builtins.h"
 
 
@@ -565,6 +569,10 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Create the control pipe.
      */
     int fds[2];
+#ifdef RT_OS_L4
+    /* XXX We need to tell the library which interface we are using */
+    fds[0] = vboxrtLinuxFd2VBoxFd(VBOXRT_FT_TAP, 0);
+#endif
     if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
     {
         int rc = RTErrConvertFromErrno(errno);
