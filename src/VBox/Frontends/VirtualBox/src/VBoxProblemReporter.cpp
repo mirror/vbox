@@ -1253,25 +1253,25 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
              formatErrorInfo (res));
 }
 
-void VBoxProblemReporter::cannotDonwloadGuestAdditions (const QString &aName,
+void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
                                                         const QString &aReason)
 {
     QString msg = tr ("<p>Failed to download the VirtualBox Guest "
-        "Additions CD image <nobr><b>%1</b>.</nobr></p>").arg (aName);
+        "Additions CD image from <nobr><b>%1</b>.</nobr></p>").arg (aURL);
     msg += QString ("<p>%1</p>").arg (aReason);
     message (&vboxGlobal().consoleWnd(), Error, msg);
 }
 
-int VBoxProblemReporter::warnAboutAdditionsDownload (const QString &aSrc1,
-                                                     const QString &aSrc2,
-                                                     const QString &aName,
-                                                     ulong aSize)
+int VBoxProblemReporter::confirmDownloadAdditions (const QString &aSrc1,
+                                                   const QString &aSrc2,
+                                                   const QString &aURL,
+                                                   ulong aSize)
 {
     QString msg = tr ("<p>Failed to find the VirtualBox Guest Additions CD image "
                       "<nobr><b>%1</b></nobr> or "
                       "<nobr><b>%2</b></nobr></p>").arg (aSrc1).arg (aSrc2);
-    msg += tr ("<p>Do you want to download this image "
-               "<nobr><b>%1</b></nobr> (%2 bytes)?</p>").arg (aName).arg (aSize);
+    msg += tr ("<p>Do you want to download this image from "
+               "<nobr><b>%1</b></nobr> (%2 bytes)?</p>").arg (aURL).arg (aSize);
 
     return message (&vboxGlobal().consoleWnd(), Question, msg,
                     0, /* autoConfirmId */
