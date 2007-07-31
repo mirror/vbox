@@ -273,6 +273,19 @@ typedef X86CPUIDFEATEDX *PX86CPUIDFEATEDX;
 /** Pointer to const CPUID Feature Information - EDX. */
 typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 
+/** @name CPUID Vendor information.
+ * CPUID query with EAX=0.
+ * @{
+ */
+#define X86_CPUID_VENDOR_INTEL_1        0x756e6547      /* Genu */
+#define X86_CPUID_VENDOR_INTEL_2        0x49656e69      /* ineI */
+#define X86_CPUID_VENDOR_INTEL_3        0x6c65746e      /* ntel */
+
+#define X86_CPUID_VENDOR_AMD_1          0x68747541      /* Auth */
+#define X86_CPUID_VENDOR_AMD_2          0x69746e65      /* enti */
+#define X86_CPUID_VENDOR_AMD_3          0x444d4163      /* cAMD */
+/** @} */
+
 
 /** @name CPUID Feature information.
  * CPUID query with EAX=1.
