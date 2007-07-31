@@ -302,6 +302,15 @@ static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo,
         int rc = pBlockBios->pfnGetGeometry(pBlockBios, &cCylinders, &cHeads, &cSectors);
         if (VBOX_SUCCESS(rc))
         {
+            PDMBIOSTRANSLATION enmTranslation;
+            rc = pBlockBios->pfnGetTranslation(pBlockBios, &enmTranslation);
+            if (    VBOX_SUCCESS(rc) && enmTranslation == PDMBIOSTRANSLATION_LBA
+                &&  cCylinders >= 1024 && cSectors == 63 && (cHeads == 16 || cHeads == 32 || cHeads == 64 || cHeads == 128 || cHeads == 255))
+            {
+                uint32_t cTotalSectors = cCylinders * cHeads * cSectors;
+                cHeads = 16;
+                cCylinders = cTotalSectors / 16 / 63;
+            }
             Log2(("pcbiosCmosInitHardDisk: offInfo=%#x: CHS=%d/%d/%d\n", offInfo, cCylinders, cHeads, cSectors));
             pcbiosCmosWrite(pDevIns, offType, 47);                              /* 19h - First Extended Hard Disk Drive Type */
             pcbiosCmosWrite(pDevIns, offInfo + 0, RT_MIN(cCylinders, 16383) & 0xff); /* 1Bh - (AMI) First Hard Disk (type 47) user defined: # of Cylinders, LSB */
