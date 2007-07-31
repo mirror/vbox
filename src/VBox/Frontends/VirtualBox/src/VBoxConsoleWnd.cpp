@@ -288,8 +288,8 @@ private slots:
             {
                 mHttp->abort();
                 if (mStatus == 404)
-                    abortDownload (tr ("Unable to find the corresponding "
-                                       "Guest Additions Image file."));
+                    abortDownload (tr ("Could not locate the file on "
+                                       "the server."));
                 else
                     processFile (aTotal);
             }
@@ -297,7 +297,7 @@ private slots:
                 mProgressBar->setProgress (aRead, aTotal);
         }
         else
-            abortDownload (tr ("Couldn't determine file size."));
+            abortDownload (tr ("Could not determine the file size."));
     }
 
     /* This slot is used to handle the finish signal of every operation's
@@ -308,8 +308,8 @@ private slots:
         if (aError && mHttp->error() != QHttp::Aborted)
         {
             QString reason = mIsChecking ?
-                tr ("Checking Guest Additions file presence failed (%1).") :
-                tr ("Downloading Guest Additions file failed (%1).");
+                tr ("Could not connect to the server (%1).") :
+                tr ("Could not download the file (%1).");
             abortDownload (reason.arg (mHttp->errorString()));
         }
         else if (!aError && !mIsChecking)
@@ -325,7 +325,9 @@ private slots:
                 QTimer::singleShot (0, this, SLOT (suicide()));
             }
             else
-                abortDownload (tr ("Could not write the local file."));
+                abortDownload (tr ("Could not save the downloaded file as "
+                                   "<nobr><b>%1</b></nobr>.")
+                               .arg (QDir::convertSeparators (path)));
         }
     }
 
@@ -361,8 +363,9 @@ private:
     void processFile (int aSize)
     {
         /* Ask user about GA image downloading */
-        int rc = vboxProblem().warnAboutAdditionsDownload (mSrc1, mSrc2,
-                                          mHost + mPath + mFile, aSize);
+        int rc = vboxProblem().
+            confirmDownloadAdditions (mSrc1, mSrc2,
+                                      mHost + mPath + mFile, aSize);
         if (rc == QIMessageBox::Yes)
         {
             mStatusBar->addWidget (this);
@@ -379,7 +382,7 @@ private:
      * downloader to terminate himself after all the events being processed. */
     void abortDownload (const QString &aReason)
     {
-        vboxProblem().cannotDonwloadGuestAdditions (mHost + mPath + mFile,
+        vboxProblem().cannotDownloadGuestAdditions (mHost + mPath + mFile,
                                                     aReason);
         /* Allows all the queued signals to be processed before quit. */
         QTimer::singleShot (0, this, SLOT (suicide()));
