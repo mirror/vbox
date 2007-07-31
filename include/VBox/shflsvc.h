@@ -79,8 +79,8 @@
 #define SHFL_FN_INFORMATION         (9)
 /** Remove object */
 #define SHFL_FN_REMOVE              (11)
-/** Map folder */
-#define SHFL_FN_MAP_FOLDER          (12)
+/** Map folder (legacy) */
+#define SHFL_FN_MAP_FOLDER_OLD      (12)
 /** Unmap folder */
 #define SHFL_FN_UNMAP_FOLDER        (13)
 /** Rename object (possibly moving it to another directory) */
@@ -89,6 +89,8 @@
 #define SHFL_FN_FLUSH               (15)
 /** @todo macl, a description, please. */
 #define SHFL_FN_SET_UTF8            (16)
+/** Map folder */
+#define SHFL_FN_MAP_FOLDER          (17)
 
 /** @} */
 
@@ -415,6 +417,35 @@ typedef struct _VBoxSFQueryMapName
 #define SHFL_CPARMS_QUERY_MAP_NAME (2)
 
 /**
+ * SHFL_FN_MAP_FOLDER_OLD
+ */
+
+/** Parameters structure. */
+typedef struct _VBoxSFMapFolder_Old
+{
+    VBoxGuestHGCMCallInfo callInfo;
+
+    /** pointer, in:
+     * Points to SHFLSTRING buffer.
+     */
+    HGCMFunctionParameter path;
+
+    /** pointer, out: SHFLROOT
+     * Root handle of the mapping which name is queried.
+     */
+    HGCMFunctionParameter root;
+
+    /** pointer, in: RTUCS2
+     * Path delimiter
+     */
+    HGCMFunctionParameter delimiter;
+
+} VBoxSFMapFolder_Old;
+
+/** Number of parameters */
+#define SHFL_CPARMS_MAP_FOLDER_OLD (3)
+
+/**
  * SHFL_FN_MAP_FOLDER
  */
 
@@ -438,10 +469,15 @@ typedef struct _VBoxSFMapFolder
      */
     HGCMFunctionParameter delimiter;
 
+    /** pointer, in: SHFLROOT
+     * Case senstive flag
+     */
+    HGCMFunctionParameter fCaseSensitive;
+    
 } VBoxSFMapFolder;
 
 /** Number of parameters */
-#define SHFL_CPARMS_MAP_FOLDER (3)
+#define SHFL_CPARMS_MAP_FOLDER (4)
 
 /**
  * SHFL_FN_UNMAP_FOLDER

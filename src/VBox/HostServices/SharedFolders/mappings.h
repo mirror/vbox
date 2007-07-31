@@ -32,6 +32,8 @@ typedef struct
     PSHFLSTRING pMapName;
     uint32_t    cMappings;
     bool        fValid;
+    bool        fHostCaseSensitive;
+    bool        fGuestCaseSensitive;
 } MAPPING, *PMAPPING;
 
 extern MAPPING FolderMapping[SHFL_MAX_MAPPINGS];
@@ -44,10 +46,11 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName);
 int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings);
 int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pString);
 
-int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delimiter, SHFLROOT *pRoot);
+int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
 int vbsfUnmapFolder (SHFLCLIENTDATA *pClient, SHFLROOT root);
 
 const RTUCS2 *vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot);
-
+bool          vbsfIsGuestMappingCaseSensitive (SHFLROOT root);
+bool          vbsfIsHostMappingCaseSensitive (SHFLROOT root);
 
 #endif /* __MAPPINGS__H */

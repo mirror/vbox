@@ -74,6 +74,26 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName)
 
             FolderMapping[i].fValid    = true;
             FolderMapping[i].cMappings = 0;
+
+            /* Check if the host file system is case sensitive */
+            RTFSPROPERTIES prop;
+            char *utf8Root, *asciiroot;
+
+            int rc = RTUtf16ToUtf8(FolderMapping[i].pFolderName->String.ucs2, &utf8Root);
+            AssertRC(rc);
+
+            if (VBOX_SUCCESS(rc))
+            {
+                rc = RTStrUtf8ToCurrentCP(&asciiroot, utf8Root);
+                if (VBOX_SUCCESS(rc))
+                {
+                    rc = RTFsQueryProperties(asciiroot, &prop);
+                    AssertRC(rc);
+                    RTStrFree(asciiroot);
+                }
+                RTStrFree(utf8Root);
+            }
+            FolderMapping[i].fHostCaseSensitive = VBOX_SUCCESS(rc) ? prop.fCaseSensitive : false;
             break;
         }
     }
@@ -128,6 +148,28 @@ const RTUCS2 *vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot)
 
     *pcbRoot = FolderMapping[root].pFolderName->u16Size;
     return &FolderMapping[root].pFolderName->String.ucs2[0];
+}
+
+bool vbsfIsGuestMappingCaseSensitive (SHFLROOT root)
+{
+    if (root > SHFL_MAX_MAPPINGS)
+    {
+        AssertFailed();
+        return false;
+    }
+
+    return FolderMapping[root].fGuestCaseSensitive;
+}
+
+bool vbsfIsHostMappingCaseSensitive (SHFLROOT root)
+{
+    if (root > SHFL_MAX_MAPPINGS)
+    {
+        AssertFailed();
+        return false;
+    }
+
+    return FolderMapping[root].fHostCaseSensitive;
 }
 
 int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings)
@@ -202,7 +244,7 @@ static int vbsfQueryMappingIndex (PRTUTF16 utf16Name, size_t *pIndex)
     return -1;
 }
 
-int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delimiter, SHFLROOT *pRoot)
+int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delimiter, bool fCaseSensitive, SHFLROOT *pRoot)
 {
     size_t index;
 
@@ -254,6 +296,8 @@ int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUCS2 delim
     }
 
     FolderMapping[index].cMappings++;
+    Assert(FolderMapping[index].cMappings == 1 || FolderMapping[index].fGuestCaseSensitive == fCaseSensitive);
+    FolderMapping[index].fGuestCaseSensitive = fCaseSensitive;
     *pRoot = index;
     return VINF_SUCCESS;
 }
