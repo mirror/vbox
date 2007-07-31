@@ -221,8 +221,8 @@ private:
             {
                 QKeyEvent *e = static_cast<QKeyEvent*> (aEvent);
 
-                /* processing the return keypress for the mSearchString
-                 * widget as the search next string action */
+                /* handle the Enter keypress for mSearchString
+                 * widget as a search next string action */
                 if (aObject == mSearchString &&
                     (e->state() == 0 || e->state() & Keypad) &&
                     (e->key() == Key_Enter || e->key() == Key_Return))
@@ -230,7 +230,7 @@ private:
                     findNext();
                     return true;
                 }
-                /* processing other search next/previous shortcuts */
+                /* handle other search next/previous shortcuts */
                 else if (e->key() == Key_F3)
                 {
                     if (e->state() == 0)
@@ -239,7 +239,7 @@ private:
                         findBack();
                     return true;
                 }
-                /* processing ctrl-f key combination as the shortcut to
+                /* handle ctrl-f key combination as a shortcut to
                  * move to the search field */
                 else if (e->state() == ControlButton && e->key() == Key_F)
                 {
@@ -250,9 +250,9 @@ private:
                         return true;
                     }
                 }
-                /* processing the alpha-numeric keys as the shortcuts to the
-                 * search panel displaying and search activation */
-                else if (e->state() == 0 &&
+                /* handle alpha-numeric keys to implement the
+                 * "find as you type" feature */
+                else if ((e->state() & ~ShiftButton) == 0 &&
                          e->key() >= Qt::Key_Exclam &&
                          e->key() <= Qt::Key_AsciiTilde)
                 {
