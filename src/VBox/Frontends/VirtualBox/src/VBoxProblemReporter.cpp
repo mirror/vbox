@@ -1258,9 +1258,9 @@ int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
 {
     return message (&vboxGlobal().consoleWnd(), Question,
                     tr ("<p>Failed to find the VirtualBox Guest Additions "
-                        "CD image <nobr><b>%1</b></nobr> or "
+                        "CD image file <nobr><b>%1</b></nobr> or "
                         "<nobr><b>%2</b>.</nobr></p><p>Do you want to "
-                        "download this image from the Internet?</p>")
+                        "download this CD image from the Internet?</p>")
                         .arg (aSrc1).arg (aSrc2),
                     0, /* autoConfirmId */
                     QIMessageBox::Yes | QIMessageBox::Default,
@@ -1293,7 +1293,7 @@ int VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
                                                 const QString &aSrc)
 {
     return message (&vboxGlobal().consoleWnd(), Question,
-                    tr ("<p>The VirtualBox Guest Additions CD image was "
+                    tr ("<p>The VirtualBox Guest Additions CD image has been "
                         "successfully downloaded from "
                         "<nobr><a href=\"%1\">%2</a></nobr> "
                         "and saved locally as <nobr><b>%3</b>.</nobr></p>"

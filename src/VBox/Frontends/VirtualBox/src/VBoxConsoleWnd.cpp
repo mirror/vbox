@@ -239,9 +239,6 @@ public:
         mainLayout->addWidget (mCancelButton);
         mainLayout->addItem (spacer);
 
-        languageChange();
-        mStatusBar->addWidget (this);
-
         /* Select the product version */
         QString version = vboxGlobal().virtualBox().GetVersion();
 
@@ -264,6 +261,9 @@ public:
         connect (mCancelButton, SIGNAL (clicked()),
                  this, SLOT (processAbort()));
 
+        languageChange();
+        mStatusBar->addWidget (this);
+
         /* Try to get the required file for the information */
         mHttp->get (mPath + mFile);
     }
@@ -271,10 +271,11 @@ public:
     void languageChange()
     {
         mCancelButton->setText (tr ("Cancel"));
-        QToolTip::add (mProgressBar, tr ("VirtualBox Guest Additions Image "
-                                         "downloading progress"));
-        QToolTip::add (mCancelButton, tr ("Press to cancel VirtualBox Guest "
-                                          "Additions Image downloading process"));
+        QToolTip::add (mProgressBar, tr ("Downloading the VirtualBox Guest Additions CD image "
+                                         "from <nobr><b>%1</b>...</nobr>")
+                                     .arg (mProtocol + mHost + mPath + mFile));
+        QToolTip::add (mCancelButton, tr ("Cancel the VirtualBox Guest "
+                                          "Additions CD image download"));
     }
 
 private slots:
@@ -348,7 +349,8 @@ private slots:
     void processAbort()
     {
         mHttp->abort();
-        abortDownload (tr ("Download aborted by user."));
+        abortDownload (tr ("The download process has been cancelled "
+                           "by the user."));
     }
 
     /* This slot is used to terminate the downloader, activate the
