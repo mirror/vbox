@@ -40,8 +40,14 @@ DEPTH = ../../../..
 include $(PATH_KBUILD)/header.kmk
 
 PROGRAMS = VirtualBox
+DLLS.linux = VBoxKeyboard
 
 INSTALLS = VirtualBox.nls
+
+VBoxKeyboard_TEMPLATE = VBOXR3
+VBoxKeyboard_SOURCES  = \
+	src/linux/keyboard.c
+VBoxKeyboard_CFLAGS   = -fPIC
 
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
@@ -145,8 +151,7 @@ VirtualBox_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp
 
 VirtualBox_SOURCES.linux = \
-	src/linux/XKeyboard.cpp \
-	src/linux/keyboard.c
+	src/linux/XKeyboard.cpp
 
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
@@ -205,6 +210,8 @@ VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
+VirtualBox_LIBS.linux     = $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+
 
 ifdef VBOX_WITH_DEBUGGER_GUI
  ifeq ($(BUILD_TARGET),win)

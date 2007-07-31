@@ -31,18 +31,11 @@ typedef void *HWND;
 typedef unsigned char BYTE;
 #endif
 
-//
-// global variables
-//
-
-Display *dpy_global;
-BYTE InputKeyStateTable[256];
-
 // WINE keyboard prototypes
 extern "C"
 {
-    void X11DRV_InitKeyboard( BYTE *key_state_table );
-    void X11DRV_KeyEvent(XKeyEvent *event, WINEKEYBOARDINFO *wKbInfo);
+    void X11DRV_InitKeyboard(Display *dpy);
+    void X11DRV_KeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wKbInfo);
     int X11DRV_GetKeysymsPerKeycode();
 }
 
@@ -57,9 +50,7 @@ extern "C"
  */
 bool initXKeyboard(Display *dpy)
 {
-    // update the global display pointer
-    dpy_global = dpy;
-    X11DRV_InitKeyboard(InputKeyStateTable);
+    X11DRV_InitKeyboard(dpy);
     return true;
 }
 
@@ -68,10 +59,8 @@ bool initXKeyboard(Display *dpy)
  */
 void handleXKeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo)
 {
-    // update the global display pointer
-    dpy_global = dpy;
     // call the WINE event handler
-    X11DRV_KeyEvent((XKeyEvent*)event, wineKbdInfo);
+    X11DRV_KeyEvent(dpy, event, wineKbdInfo);
 }
 
 int getKeysymsPerKeycode()

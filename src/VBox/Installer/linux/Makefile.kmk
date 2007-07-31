@@ -47,6 +47,7 @@ linux-doc_SOURCES = \
 LINUXSTRIPBIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
+	VBoxKeyboard.so \
 	VBoxManage \
 	VBoxREM.so \
 	VBoxRT.so \

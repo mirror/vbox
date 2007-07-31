@@ -19,7 +19,37 @@
 #ifndef __H_KEYBOARD_OUTOFWINE
 #define __H_KEYBOARD_OUTOFWINE
 
-// type definitions
+#define HAVE_X11_XKBLIB_H
+
+#include <X11/Xatom.h>
+#include <X11/keysym.h>
+#include <X11/Xlib.h>
+#include <X11/Xresource.h>
+#include <X11/Xutil.h>
+#ifdef HAVE_X11_XKBLIB_H
+#include <X11/XKBlib.h>
+#endif
+
+#include <ctype.h>
+#include <stdarg.h>
+#include <string.h>
+
+/** Our structure used to return keyboard event information */
+typedef struct _WINEKEYBOARDINFO
+{
+    unsigned short wVk;
+    unsigned short wScan;
+    unsigned long dwFlags;
+    unsigned long time;
+} WINEKEYBOARDINFO;
+
+/* Exported definitions */
+extern __attribute__((visibility("default"))) void X11DRV_InitKeyboard(Display *dpy);
+extern __attribute__((visibility("default"))) void X11DRV_KeyEvent(Display *dpy, XEvent *event,
+                                                                   WINEKEYBOARDINFO *wKbInfo);
+extern __attribute__((visibility("default"))) int X11DRV_GetKeysymsPerKeycode(void);
+
+/* type definitions */
 typedef unsigned char BYTE, *LPBYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
@@ -31,35 +61,39 @@ typedef void *HWND;
 #define FALSE 0
 #define TRUE 1
 
-// debug macros
-#define TRACE
-//#define TRACE printf
-#define TRACE_(a)
-//#define TRACE_(ch) printf
-#define TRACE_ON(a) 0
-#define WARN
-#define ERR
+/* debug macros */
+inline static void noop(char *arg, ...)
+{
+}
 
-// @@@AH do we need semaphore protection?
+#define TRACE(...)
+/* #define TRACE printf */
+#define TRACE_(a) noop
+/* #define TRACE_(ch) printf */
+#define TRACE_ON(a) 0
+#define WARN(...)
+#define ERR(...)
+
+/* @@@AH do we need semaphore protection? */
 #define wine_tsx11_lock(a)
 #define wine_tsx11_unlock(a)
 
-// global wine defines
+/* global wine defines */
 #define HAVE_XKB
 
-//
-// x11drv.h
-//
+/*
+ * x11drv.h
+ */
 
 
-//
-// user.h
-//
+/*
+ * user.h
+ */
 
 
-//
-// winuser.h
-//
+/*
+ * winuser.h
+ */
 
 
 /* WM_KEYUP/DOWN/CHAR HIWORD(lParam) flags */
@@ -245,13 +279,13 @@ typedef void *HWND;
 #define VK_PA1              0xFD
 #define VK_OEM_CLEAR        0xFE
 
-// ...
+/* ... */
 
   /* keybd_event flags */
 #define KEYEVENTF_EXTENDEDKEY        0x0001
 #define KEYEVENTF_KEYUP              0x0002
 
-// end of winuser.h
+/* end of winuser.h */
 
 
-#endif // __H_KEYBOARD_OUTOFWINE
+#endif /* __H_KEYBOARD_OUTOFWINE */

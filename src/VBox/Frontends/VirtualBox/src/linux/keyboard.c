@@ -22,18 +22,18 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-// our master define to make this module usable outside wine
+/* our master define to make this module usable outside wine */
 
 #define OUTOFWINE
 
 #ifdef OUTOFWINE
 #include "keyboard_outofwine.h"
 int use_xkb = 1;
-#endif // OUTOFWINE defined
+#endif /* OUTOFWINE defined */
 
 #ifndef OUTOFWINE
 #include "config.h"
-#endif // OUTOFWINE not defined
+#endif /* OUTOFWINE not defined */
 
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
@@ -65,7 +65,6 @@ int use_xkb = 1;
 
 WINE_DEFAULT_DEBUG_CHANNEL(keyboard);
 WINE_DECLARE_DEBUG_CHANNEL(key);
-#endif // OUTOFWINE not defined
 
 typedef union
 {
@@ -87,6 +86,8 @@ typedef union
     } lp1;
     unsigned long lp2;
 } KEYLP;
+#endif /* OUTOFWINE not defined */
+
 
 /* key state table bits:
   0x80 -> key is pressed
@@ -95,8 +96,10 @@ typedef union
 */
 BYTE key_state_table[256];
 
+#ifndef OUTOFWINE
 static BYTE TrackSysKey = 0; /* determine whether ALT key up will cause a WM_SYSKEYUP
                                 or a WM_KEYUP message */
+#endif
 
 static int min_keycode, max_keycode, keysyms_per_keycode;
 static WORD keyc2vkey[256], keyc2scan[256];
@@ -107,22 +110,15 @@ static int kcControl, kcAlt, kcShift, kcNumLock, kcCapsLock; /* keycodes */
 static char KEYBOARD_MapDeadKeysym(KeySym keysym);
 
 #ifdef OUTOFWINE
-// Global variable to store the current display pointer which is defined
-// and updated in XKeyboard.cpp.
-// The wine keyboard handler isn't reentrant anyway...
-extern Display *dpy_global;
+/* Global variable to store the current display pointer which is defined
+ * and updated in XKeyboard.cpp.
+ * The wine keyboard handler isn't reentrant anyway... */
+Display *dpy_global;
+
 inline static Display *thread_display(void) { return dpy_global; }
-// @@@AH without this, the event time calculations are all wrong. To fix it,
-// we also gotta supply GetCurrentTime
+/* @@@AH without this, the event time calculations are all wrong. To fix it,
+ * we also gotta supply GetCurrentTime */
 unsigned int X11DRV_server_startticks = 0;
-// our structure used to return keyboard event information
-typedef struct _WINEKEYBOARDINFO
-{
-    unsigned short wVk;
-    unsigned short wScan;
-    unsigned long dwFlags;
-    unsigned long time;
-} WINEKEYBOARDINFO;
 static WINEKEYBOARDINFO *wineKeyboardInfo = NULL;
 #endif
 
@@ -1175,13 +1171,15 @@ static WORD EVENT_event_to_vkey( XIC xic, XKeyEvent *e)
     return keyc2vkey[e->keycode];
 }
 
+#ifndef OUTOFWINE
 static BOOL NumState=FALSE, CapsState=FALSE;
+#endif
 
 
 /***********************************************************************
  *           X11DRV_send_keyboard_input
  */
-void X11DRV_send_keyboard_input( WORD wVk, WORD wScan, DWORD dwFlags, DWORD time,
+static void X11DRV_send_keyboard_input( WORD wVk, WORD wScan, DWORD dwFlags, DWORD time,
                                  DWORD dwExtraInfo, UINT injected_flags )
 {
 #ifndef OUTOFWINE
@@ -1271,16 +1269,17 @@ void X11DRV_send_keyboard_input( WORD wVk, WORD wScan, DWORD dwFlags, DWORD time
         wine_server_call( req );
     }
     SERVER_END_REQ;
-#else // OUTOFWINE defined
-    // fill out our global structure
+#else /* OUTOFWINE defined */
+    /* fill out our global structure */
     wineKeyboardInfo->wVk = wVk;
     wineKeyboardInfo->wScan = wScan;
     wineKeyboardInfo->dwFlags = dwFlags;
     wineKeyboardInfo->time = time;
-#endif // OUTOFWINE defined
+#endif /* OUTOFWINE defined */
 }
 
 
+#ifndef OUTOFWINE
 /**********************************************************************
  *		KEYBOARD_GenerateMsg
  *
@@ -1327,6 +1326,7 @@ static void KEYBOARD_GenerateMsg( WORD vkey, WORD scan, int Evtype, DWORD event_
 	    }
     }
 }
+#endif /* OUTOFWINE not defined */
 
 /***********************************************************************
  *           KEYBOARD_UpdateOneState
@@ -1349,6 +1349,7 @@ inline static void KEYBOARD_UpdateOneState ( int vkey, int state, DWORD time )
     }
 }
 
+#ifndef OUTOFWINE
 /***********************************************************************
  *           X11DRV_KeymapNotify
  *
@@ -1361,12 +1362,7 @@ inline static void KEYBOARD_UpdateOneState ( int vkey, int state, DWORD time )
 void X11DRV_KeymapNotify( HWND hwnd, XEvent *event )
 {
     int i, j, alt, control, shift;
-#ifndef OUTOFWINE
     DWORD time = GetCurrentTime();
-#else // OUTOFWINE defined
-    // @@@AH todo!
-    DWORD time = 0;
-#endif // OUTOFWINE defined
 
     alt = control = shift = 0;
     /* the minimum keycode is always greater or equal to 8, so we can
@@ -1390,6 +1386,7 @@ void X11DRV_KeymapNotify( HWND hwnd, XEvent *event )
     KEYBOARD_UpdateOneState( VK_CONTROL, control, time );
     KEYBOARD_UpdateOneState( VK_SHIFT, shift, time );
 }
+#endif /* OUTOFWINE defined */
 
 /***********************************************************************
  *           X11DRV_KeyEvent
@@ -1398,9 +1395,9 @@ void X11DRV_KeymapNotify( HWND hwnd, XEvent *event )
  */
 #ifndef OUTOFWINE
 void X11DRV_KeyEvent( HWND hwnd, XEvent *xev )
-#else // OUTOFWINE defined
-void X11DRV_KeyEvent(XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
-#endif // OUTOFWINE defined
+#else /* OUTOFWINE defined */
+void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
+#endif /* OUTOFWINE defined */
 {
     XKeyEvent *event = &xev->xkey;
     char Str[24];
@@ -1411,18 +1408,20 @@ void X11DRV_KeyEvent(XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
 #ifndef OUTOFWINE
     XIC xic = X11DRV_get_ic( hwnd );
     DWORD event_time = EVENT_x11_time_to_win32_time(event->time);
-#else // OUTOFWINE defined
-    // @@@AH do we need support for XIM?
+    Status status = 0;
+#else /* OUTOFWINE defined */
+    Status status = 0;
+    /* @@@AH do we need support for XIM? */
     XIC xic = 0;
-    // set our global pointer for the return data structure
-    // and initialize it with zeroes for the case of early return
-    // (this will mean that the event cannot be converted to a scancode)
+    /* We don't use this anyway. */
+    DWORD event_time = 0;
+    dpy_global = dpy;
+    /* set our global pointer for the return data structure
+     * and initialize it with zeroes for the case of early return
+     * (this will mean that the event cannot be converted to a scancode) */
     wineKeyboardInfo = wKbInfo;
     memset( wineKeyboardInfo, 0, sizeof( wineKeyboardInfo ) );
-    // We don't use this anyway.
-    DWORD event_time = 0;
-#endif // OUTOFWINE defined
-    Status status = 0;
+#endif /* OUTOFWINE defined */
 
     TRACE_(key)("type %d, window %lx, state 0x%04x, keycode 0x%04x\n",
 		event->type, event->window, event->state, event->keycode);
@@ -1446,7 +1445,7 @@ void X11DRV_KeyEvent(XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
         X11DRV_XIMLookupChars( Str, ascii_chars );
         return;
     }
-#endif // OUTOFWINE not defined
+#endif /* OUTOFWINE not defined */
 
     /* If XKB extensions are used, the state mask for AltGr will use the group
        index instead of the modifier mask. The group index is set in bits
@@ -1485,40 +1484,42 @@ void X11DRV_KeyEvent(XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
 
    if (vkey)
    {
-    /// @todo (dmik):
-    //      KEYBOARD_GenerateMsg() does not work property because
-    //      send_keyboard_input() modifies our static WINEKEYBOARDINFO struct
-    //      directly, w/o any buffering. Moreover the purpose of
-    //      KEYBOARD_GenerateMsg() is not completely clear for me; in our case
-    //      it seems to be unnecessary, so disable the code below.
-//    switch (vkey & 0xff)
-//    {
-//    case VK_NUMLOCK:
-//      KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, event->type, event_time );
-//      break;
-//    case VK_CAPITAL:
-//      TRACE("Caps Lock event. (type %d). State before : %#.2x\n",event->type,key_state_table[vkey]);
-//      KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, event->type, event_time );
-//      TRACE("State after : %#.2x\n",key_state_table[vkey]);
-//      break;
-//    default:
-//        /* Adjust the NUMLOCK state if it has been changed outside wine */
-//	if (!(key_state_table[VK_NUMLOCK] & 0x01) != !(event->state & NumLockMask))
-//	  {
-//	    TRACE("Adjusting NumLock state.\n");
-//	    KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, KeyPress, event_time );
-//	    KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, KeyRelease, event_time );
-//	  }
-//        /* Adjust the CAPSLOCK state if it has been changed outside wine */
-//	if (!(key_state_table[VK_CAPITAL] & 0x01) != !(event->state & LockMask))
-//	  {
-//              TRACE("Adjusting Caps Lock state.\n");
-//	    KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, KeyPress, event_time );
-//	    KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, KeyRelease, event_time );
-//	  }
-//	/* Not Num nor Caps : end of intermediary states for both. */
-//	NumState = FALSE;
-//	CapsState = FALSE;
+    /** @todo (dmik):
+     *      KEYBOARD_GenerateMsg() does not work property because
+     *      send_keyboard_input() modifies our static WINEKEYBOARDINFO struct
+     *      directly, w/o any buffering. Moreover the purpose of
+     *      KEYBOARD_GenerateMsg() is not completely clear for me; in our case
+     *      it seems to be unnecessary, so disable the code below. */
+#ifndef OUTOFWINE
+      switch (vkey & 0xff)
+      {
+      case VK_NUMLOCK:
+        KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, event->type, event_time );
+        break;
+      case VK_CAPITAL:
+        TRACE("Caps Lock event. (type %d). State before : %#.2x\n",event->type,key_state_table[vkey]);
+        KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, event->type, event_time );
+        TRACE("State after : %#.2x\n",key_state_table[vkey]);
+        break;
+      default:
+          /* Adjust the NUMLOCK state if it has been changed outside wine */
+      	  if (!(key_state_table[VK_NUMLOCK] & 0x01) != !(event->state & NumLockMask))
+  	  {
+	    TRACE("Adjusting NumLock state.\n");
+	    KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, KeyPress, event_time );
+	    KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, KeyRelease, event_time );
+	  }
+        /* Adjust the CAPSLOCK state if it has been changed outside wine */
+  	  if (!(key_state_table[VK_CAPITAL] & 0x01) != !(event->state & LockMask))
+	  {
+              TRACE("Adjusting Caps Lock state.\n");
+	    KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, KeyPress, event_time );
+	    KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, KeyRelease, event_time );
+	  }
+	  /* Not Num nor Caps : end of intermediary states for both. */
+	  NumState = FALSE;
+	  CapsState = FALSE;
+#endif /* OUTOFWINE not defined */
 
 	bScan = keyc2scan[event->keycode] & 0xFF;
 	TRACE_(key)("bScan = 0x%02x.\n", bScan);
@@ -1528,7 +1529,9 @@ void X11DRV_KeyEvent(XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
 	if ( vkey & 0x100 )              dwFlags |= KEYEVENTF_EXTENDEDKEY;
 
         X11DRV_send_keyboard_input( vkey & 0xff, bScan, dwFlags, event_time, 0, 0 );
-//    }
+#ifndef OUTOFWINE
+      }
+#endif
    }
 }
 
@@ -1597,7 +1600,7 @@ X11DRV_KEYBOARD_DetectLayout (void)
 	/* search for a match in layout table */
 	/* right now, we just find an absolute match for defined positions */
 	/* (undefined positions are ignored, so if it's defined as "3#" in */
-	/* the table, it's okay that the X server has "3#ï¿½", for example) */
+	/* the table, it's okay that the X server has "3#£", for example) */
 	/* however, the score will be higher for longer matches */
 	for (key = 0; key < MAIN_LEN; key++) {
 	  for (ok = 0, i = 0; (ok >= 0) && (i < syms); i++) {
@@ -1650,9 +1653,8 @@ X11DRV_KEYBOARD_DetectLayout (void)
 /**********************************************************************
  *		X11DRV_InitKeyboard
  */
-void X11DRV_InitKeyboard(void)
+void X11DRV_InitKeyboard(Display *display)
 {
-    Display *display = thread_display();
     KeySym *ksp;
     XModifierKeymap *mmp;
     KeySym keysym;
@@ -1664,6 +1666,7 @@ void X11DRV_InitKeyboard(void)
     const char (*lkey)[MAIN_LEN][4];
     char vkey_used[256] = { 0 };
 
+    dpy_global = display;
     wine_tsx11_lock();
     XDisplayKeycodes(display, &min_keycode, &max_keycode);
     ksp = XGetKeyboardMapping(display, min_keycode,
@@ -1824,7 +1827,7 @@ void X11DRV_InitKeyboard(void)
 
         if (!vkey)
         {
-            // @@@AH VBOX hack for AltGr
+            /* @@@AH VBOX hack for AltGr */
             if (e2.keycode == 0x71)
             {
                 TRACE("VBOX HACK, mapping keycode 0x71 to scancode %X\n", VK_MENU);
@@ -1880,7 +1883,7 @@ void X11DRV_InitKeyboard(void)
 	ksname = XKeysymToString(keysym);
 	if (!ksname) ksname = "NoSymbol";
 
-    // @@@AH VBOX hack for AltGr
+    /* @@@AH VBOX hack for AltGr */
     if (keyc == 0x71)
     {
         TRACE("VBOX HACK for AltGr: mapping 0x71 to scancode 0x38");
@@ -2368,7 +2371,7 @@ INT X11DRV_GetKeyNameText(LONG lParam, LPWSTR lpBuffer, INT nSize)
     *lpBuffer = 0;
   return 0;
 }
-#endif // OUTOFWINE not defined
+#endif /* OUTOFWINE not defined */
 
 /***********************************************************************
  *		X11DRV_KEYBOARD_MapDeadKeysym
@@ -2387,7 +2390,7 @@ static char KEYBOARD_MapDeadKeysym(KeySym keysym)
 	    case XK_dead_acute :
 #endif
 	    case 0x1000FE27 : /* Xfree's XK_Dacute_accent */
-		return 0xb4;	/* '' */
+		return (char)0xb4;	/* '' */
 #ifdef XK_dead_circumflex
 	    case XK_dead_circumflex:
 #endif
@@ -2402,10 +2405,10 @@ static char KEYBOARD_MapDeadKeysym(KeySym keysym)
 	    case XK_dead_diaeresis :
 #endif
 	    case 0x1000FE22 : /* Xfree's XK_Ddiaeresis */
-		return 0xa8;	/* ': */
+		return (char)0xa8;	/* ': */
 #ifdef XK_dead_cedilla
 	    case XK_dead_cedilla :
-	        return 0xb8;	/* ', */
+	        return (char)0xb8;	/* ', */
 #endif
 #ifdef XK_dead_macron
 	    case XK_dead_macron :
@@ -2413,11 +2416,11 @@ static char KEYBOARD_MapDeadKeysym(KeySym keysym)
 #endif
 #ifdef XK_dead_breve
 	    case XK_dead_breve :
-	        return 0xa2;	/* '( */
+	        return (char)0xa2;	/* '( */
 #endif
 #ifdef XK_dead_abovedot
 	    case XK_dead_abovedot :
-	        return 0xff;	/* '. */
+	        return (char)0xff;	/* '. */
 #endif
 #ifdef XK_dead_abovering
 	    case XK_dead_abovering :
@@ -2425,15 +2428,15 @@ static char KEYBOARD_MapDeadKeysym(KeySym keysym)
 #endif
 #ifdef XK_dead_doubleacute
 	    case XK_dead_doubleacute :
-	        return 0xbd;	/* '" */
+	        return (char)0xbd;	/* '" */
 #endif
 #ifdef XK_dead_caron
 	    case XK_dead_caron :
-	        return 0xb7;	/* '< */
+	        return (char)0xb7;	/* '< */
 #endif
 #ifdef XK_dead_ogonek
 	    case XK_dead_ogonek :
-	        return 0xb2;	/* '; */
+	        return (char)0xb2;	/* '; */
 #endif
 /* FIXME: I don't know this three.
 	    case XK_dead_iota :
@@ -2707,9 +2710,9 @@ void X11DRV_Beep(void)
     XBell(thread_display(), 0);
     wine_tsx11_unlock();
 }
-#else // OUTOFWINE defined
+#else /* OUTOFWINE defined */
 int X11DRV_GetKeysymsPerKeycode()
 {
     return keysyms_per_keycode;
 }
-#endif // OUTOFWINE defined
+#endif /* OUTOFWINE defined */
