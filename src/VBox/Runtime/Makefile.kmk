@@ -65,8 +65,10 @@ endif
 INCS += include
 
 ifneq ($(wildcard ./kLdr/kLdrModMachO.c),)
+ ifeq ($(filter-out darwin win os2,$(BUILD_TARGET)),)
    IPRT_WITH_KLDR=1
    IPRT_PATH_KLDR=./kLdr
+ endif
 endif
 
 #
