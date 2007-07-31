@@ -396,7 +396,8 @@ void QIRichLabel::mousePressEvent (QMouseEvent *aEvent)
     if (!doc) return;
 
     QString link = doc->anchorAt (aEvent->pos());
-    if (!link.isEmpty()) /* Mouse clicked on the link */
+    /* Check for mouse left button clicked on the link */
+    if (!link.isEmpty() && aEvent->button() == LeftButton)
         emit clickedOnLink (link);
 }
 
@@ -483,17 +484,22 @@ void QIRichLabel::keyPressEvent (QKeyEvent *aEvent)
 
 void QIRichLabel::contextMenuEvent (QContextMenuEvent *aEvent)
 {
-   if (hasFocus())
-      popupMenu->popup(aEvent->globalPos());
+    popupBuffer = doc->anchorAt (aEvent->pos());
+    if (hasFocus() || !popupBuffer.isEmpty())
+        popupMenu->popup (aEvent->globalPos());
 }
 
 
 void QIRichLabel::putToClipBoard()
 {
-   QClipboard *appClipboard = QApplication::clipboard();
-   QString toClipBoard = ltext;
-   toClipBoard.remove (QRegExp ("<[^>]*>"));
-   appClipboard->setText (toClipBoard);
+    QString toClipBoard = ltext;
+
+    if (popupBuffer.isEmpty())
+        toClipBoard.remove (QRegExp ("<[^>]*>"));
+    else
+        toClipBoard = popupBuffer;
+
+    QApplication::clipboard()->setText (toClipBoard);
 }
 
 

@@ -29,6 +29,7 @@
 #include <qcheckbox.h>
 #include <qtextedit.h>
 
+class QIRichLabel;
 class QLabel;
 class QPushButton;
 class QSpacerItem;
@@ -46,7 +47,7 @@ public:
         Information = QMessageBox::Information,
         Warning = QMessageBox::Warning,
         Critical = QMessageBox::Critical,
-		Question = QMessageBox::Question
+        Question = QMessageBox::Question
     };
 
     enum
@@ -92,7 +93,8 @@ private slots:
 private:
 
     int mButton0, mButton1, mButton2, mButtonEsc;
-    QLabel *mIconLabel, *mTextLabel;
+    QLabel *mIconLabel;
+    QIRichLabel *mTextLabel;
     QPushButton *mButton0PB, *mButton1PB, *mButton2PB;
     QVBox *mMessageVBox;
     QCheckBox *mFlagCB, *mFlagCB_Main, *mFlagCB_Details;

@@ -124,6 +124,7 @@ private:
    QPicture   *lpicture;
    QMovie     *lmovie;
    QPopupMenu *popupMenu;
+   QString     popupBuffer;
    QWidget    *lbuddy;
    ushort      align;
    short       extraMargin;
