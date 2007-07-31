@@ -31,7 +31,6 @@ WITH_XPCOM=1
 WITH_LIBIDL=1
 WITH_QT=1
 WITH_SDL_TTF=1
-WITH_HAL=1
 CC="gcc"
 CC32=""
 CC64=""
@@ -57,9 +56,6 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
-CFLAGSHAL="-I/usr/include/hal -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
-LIBPATHHAL=""
-LIBHAL="-lhal -ldbus-1"
 QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3 /usr/X11R6"
 KBUILDDIR="`cd $(dirname $0); pwd`/kBuild"
 DEVDIR="`cd $(dirname $0); pwd`/tools"
@@ -1092,46 +1088,6 @@ check_compiler_h()
 
 
 #
-# Check for the libhal library for obtaining hardware information on Linux
-#
-check_libhal()
-{
-  test_header libhal
-  pc_cflagshal=`pkg-config hal --cflags 2>/dev/null`
-  pc_libhal=`pkg-config hal --libs-only-l 2>/dev/null`
-  pc_libpathhal=`pkg-config hal --libs-only-L 2>/dev/null`
-  pc_verhal=`pkg-config hal --modversion 2>/dev/null`
-  if [ ! -z "$pc_cflagshal" ]; then # is this acceptable?
-    CFLAGSHAL=$pc_cflagshal
-    LIBPATHHAL=$pc_libpathhal
-    LIBHAL=$pc_libhal
-  fi
-  cat > .tmp_src.cc << EOF
-#include <cstdio>
-#include <libhal.h>
-extern "C" int main(void)
-{
-  DBusError dbusError;
-  dbus_error_init (&dbusError);
-  LibHalContext *halContext = libhal_ctx_new();
-  if (halContext != 0)
-  {
-      libhal_ctx_free(halContext);
-  }
-  return 0;
-}
-EOF
-  if test_compile "$CFLAGSHAL $LIBPATHHAL $LIBHAL" libhal libhal; then
-    log_success "found version $pc_verhal"
-    cnf_append "LIB_HAL_CFLAGS"   "$CFLAGSHAL"
-    cnf_append "LIB_HAL_LIBS"     "`strip_l "$LIBHAL"`"
-    cnf_append "LIB_HAL_LIBPATH"  "`strip_L "$LIBPATHHAL"`"
-    cnf_append "VBOX_WITH_LIBHAL" "1"
-  fi
-}
-
-
-#
 # Show help
 #
 show_help()
@@ -1145,15 +1101,12 @@ Configuration:
   --disable-xpcom         disable XPCOM and related stuff
   --disable-sdl-ttf       disable SDL_ttf detection
   --build-xalan           build xalan & xerces from shipped sources
-  --without-hal           do not use libhal, even if it is available
 
 Paths:
   --with-gcc=PATH         location of the gcc compiler [$CC]
   --with-g++=PATH         location of the g++ compiler [$CXX]
   --with-kbuild=DIR       kbuild directory [$KBUILDDIR]
   --with-iasl=PATH        location of the iasl compiler [$IASL]
-  --with-hal-cflags=FLAGS cflags for libhal [$CFLAGSHAL]
-  --with-hal=LIB          location of the libhal libraries [$LIBHAL]
   --with-linux=DIR        Linux kernel source directory [$LINUX]
   --with-mkisofs=PATH     location of mkisofs [$MKISOFS]
   --with-qt-dir=DIR       directory for QT headers/libraries [$QTDIR]
@@ -1197,12 +1150,6 @@ for option; do
     --with-qt-dir=*)
       QTDIR=`echo $option | cut -d'=' -f2`
       ;;
-    --with-hal-dir=*)
-      INCHAL=`echo $option | cut -d'=' -f2`
-      ;;
-    --with-hal=*)
-      LIBHAL=`echo $option | cut -d'=' -f2`
-      ;;
     --with-iasl=*)
       IASL=`echo $option | cut -d'=' -f2`
       ;;
@@ -1226,9 +1173,6 @@ for option; do
       ;;
     --disable-qt)
       WITH_QT=0
-      ;;
-    --without-hal)
-      WITH_HAL=0
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
@@ -1366,7 +1310,6 @@ if [ "$OS" = "linux" ]; then
   check_linux
   check_alsa
   check_compiler_h
-  [ "$WITH_HAL" = "1" ] && check_libhal
 fi
 
 # success!
