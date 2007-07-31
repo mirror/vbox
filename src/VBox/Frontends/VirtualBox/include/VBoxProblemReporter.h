@@ -217,6 +217,8 @@ public:
 
     void remindAboutWrongColorDepth (ulong aRealBPP, ulong aWantedBPP);
 
+    int remindAboutUnsetHD (QWidget *aParent);
+
     void cannotRunInSelectorMode();
 
     void showRuntimeError (const CConsole &console, bool fatal,

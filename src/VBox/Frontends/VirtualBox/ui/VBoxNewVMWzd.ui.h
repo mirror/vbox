@@ -242,6 +242,13 @@ void VBoxNewVMWzd::showPage (QWidget *page)
 {
     if (page == pageSummary)
     {
+        if (!mediaCombo->currentItem())
+        {
+            int result = vboxProblem().remindAboutUnsetHD (this);
+            if (result == QIMessageBox::No)
+                return;
+        }
+
         /* compose summary */
         QString summary = QString (tr (
             "<tr><td>Name:</td><td>%1</td></tr>"

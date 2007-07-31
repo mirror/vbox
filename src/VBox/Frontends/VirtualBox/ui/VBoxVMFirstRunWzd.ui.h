@@ -64,7 +64,7 @@ void VBoxVMFirstRunWzd::init()
     teSummary->setFrameShape (QTextEdit::NoFrame);
     teSummary->setReadOnly (TRUE);
     teSummary->setPaper (pageSummary->backgroundBrush());
-    ltSummary->insertWidget (1, teSummary);
+    ltSummary->insertWidget (2, teSummary);
 
     /* setup connections and set validation for pages
      * --------------------------------------------------------------------- */
@@ -87,12 +87,17 @@ void VBoxVMFirstRunWzd::init()
     setFinishEnabled (pageSummary, true);
 
     /* setup minimum width for the sizeHint to be calculated correctly */
-    int wid = widthSpacer->minimumSize().width();
+    int wid = widthSpacer->minimumSize().width() + 50;
     txWelcome->setMinimumWidth (wid);
     txType->setMinimumWidth (wid);
     txSource->setMinimumWidth (wid);
     txSummaryHdr->setMinimumWidth (wid);
     txSummaryFtr->setMinimumWidth (wid);
+    txWelcomeHD->setMinimumWidth (wid);
+    txTypeHD->setMinimumWidth (wid);
+    txSourceHD->setMinimumWidth (wid);
+    txSummaryHdrHD->setMinimumWidth (wid);
+    txSummaryFtrHD->setMinimumWidth (wid);
 
     /* media page */
     rbCdType->animateClick();
@@ -100,9 +105,27 @@ void VBoxVMFirstRunWzd::init()
 }
 
 
-void VBoxVMFirstRunWzd::setup (CMachine &aMachine)
+void VBoxVMFirstRunWzd::setup (const CMachine &aMachine)
 {
     machine = aMachine;
+
+    CHardDiskAttachmentEnumerator en = machine.GetHardDiskAttachments().Enumerate();
+    if (en.HasMore())
+    {
+        txWelcomeHD->setHidden (true);
+        txTypeHD->setHidden (true);
+        txSourceHD->setHidden (true);
+        txSummaryHdrHD->setHidden (true);
+        txSummaryFtrHD->setHidden (true);
+    }
+    else
+    {
+        txWelcome->setHidden (true);
+        txType->setHidden (true);
+        txSource->setHidden (true);
+        txSummaryHdr->setHidden (true);
+        txSummaryFtr->setHidden (true);
+    }
 }
 
 

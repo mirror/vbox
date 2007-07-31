@@ -1572,6 +1572,21 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
     NOREF(rc);
 }
 
+int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
+{
+    return message (
+        aParent,
+        Warning,
+        tr ("<p>You didn't attach any hard disk to the created virtual machine. "
+            "As a result, the machine will not be able to boot unless you attach "
+            "a hard disk with the guest operating system or some other bootable "
+            "media to it later using the machine settings dialog or the First "
+            "Run Wizard.</p><p>Do you want to continue?</p>"),
+        0, /* autoConfirmId */
+        QIMessageBox::Yes | QIMessageBox::Default,
+        QIMessageBox::No | QIMessageBox::Escape);
+}
+
 void VBoxProblemReporter::cannotRunInSelectorMode()
 {
     message (mainWindowShown(), Critical,
