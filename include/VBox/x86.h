@@ -277,13 +277,13 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  * CPUID query with EAX=0.
  * @{
  */
-#define X86_CPUID_VENDOR_INTEL_1        0x756e6547      /* Genu */
-#define X86_CPUID_VENDOR_INTEL_2        0x49656e69      /* ineI */
-#define X86_CPUID_VENDOR_INTEL_3        0x6c65746e      /* ntel */
+#define X86_CPUID_VENDOR_INTEL_EBX      0x756e6547      /* Genu */
+#define X86_CPUID_VENDOR_INTEL_ECX      0x6c65746e      /* ntel */
+#define X86_CPUID_VENDOR_INTEL_EDX      0x49656e69      /* ineI */
 
-#define X86_CPUID_VENDOR_AMD_1          0x68747541      /* Auth */
-#define X86_CPUID_VENDOR_AMD_2          0x69746e65      /* enti */
-#define X86_CPUID_VENDOR_AMD_3          0x444d4163      /* cAMD */
+#define X86_CPUID_VENDOR_AMD_EBX        0x68747541      /* Auth */
+#define X86_CPUID_VENDOR_AMD_ECX        0x444d4163      /* cAMD */
+#define X86_CPUID_VENDOR_AMD_EDX        0x69746e65      /* enti */
 /** @} */
 
 

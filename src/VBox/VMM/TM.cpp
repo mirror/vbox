@@ -511,9 +511,9 @@ static bool tmR3HasFixedTSC(void)
         uint32_t uEAX, uEBX, uECX, uEDX;
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
         if (    uEAX >= 1
-            &&  uEBX == 0x68747541
-            &&  uECX == 0x444d4163
-            &&  uEDX == 0x69746e65)
+            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  uECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
         {
             /*
              * AuthenticAMD - Check for APM support and that TscInvariant is set.
@@ -531,9 +531,9 @@ static bool tmR3HasFixedTSC(void)
             }
         }
         else if (    uEAX >= 1
-                 &&  uEBX == 0x756e6547
-                 &&  uECX == 0x6c65746e
-                 &&  uEDX == 0x49656e69)
+                 &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
+                 &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
+                 &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
         {
             /*
              * GenuineIntel - Check the model number.

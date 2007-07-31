@@ -71,16 +71,16 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
         uint32_t u32FeaturesECX;
         uint32_t u32Dummy;
         uint32_t u32FeaturesEDX;
-        uint32_t u32Vendor1, u32Vendor2, u32Vendor3;
+        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX;
 
-        ASMCpuId(0, &u32Dummy, &u32Vendor1, &u32Vendor3, &u32Vendor2);
+        ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
         ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
         /* Query AMD features. */
         ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &pVM->hwaccm.s.cpuid.u32AMDFeatureECX, &pVM->hwaccm.s.cpuid.u32AMDFeatureEDX);
 
-        if (    u32Vendor1 == 0x756e6547 /* Genu */
-            &&  u32Vendor2 == 0x49656e69 /* ineI */
-            &&  u32Vendor3 == 0x6c65746e /* ntel */
+        if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
            )
         {
             /*
@@ -139,9 +139,9 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                 pVM->hwaccm.s.ulLastError = VERR_VMX_NO_VMX;
         }
         else
-        if (    u32Vendor1 == 0x68747541 /* Auth */
-            &&  u32Vendor2 == 0x69746e65 /* enti */
-            &&  u32Vendor3 == 0x444d4163 /* cAMD */
+        if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
            )
         {
             /*

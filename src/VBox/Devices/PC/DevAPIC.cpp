@@ -1741,9 +1741,16 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (u32Eax >= 1)
     {
         if (   fIOAPIC                       /* If IOAPIC is enabled, enable Local APIC in any case */
-            || u32Ebx == 0x756e6547 && u32Ecx == 0x6c65746e && u32Edx == 0x49656e69 /* GenuineIntel */
-            || u32Ebx == 0x68747541 && u32Ecx == 0x69746e65 && u32Edx == 0x444d4163 /* AuthenticAMD */)
+            ||    u32Ebx == X86_CPUID_VENDOR_INTEL_EBX
+               && u32Ecx == X86_CPUID_VENDOR_INTEL_ECX
+               && u32Edx == X86_CPUID_VENDOR_INTEL_EDX /* GenuineIntel */
+            ||    u32Ebx == X86_CPUID_VENDOR_AMD_EBX
+               && u32Ecx == X86_CPUID_VENDOR_AMD_ECX
+               && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */)
+        {
+            LogRel(("Activating Local APIC\n"));
             pData->pApicHlpR3->pfnChangeFeature(pDevIns, true);
+        }
     }
 
     /*
