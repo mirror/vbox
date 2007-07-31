@@ -211,11 +211,10 @@ class VBoxGADownloader : public QWidget
 
 public:
 
-    VBoxGADownloader (QStatusBar *aStatusBar, QAction *aAction,
-                      const QString &aSrc1, const QString &aSrc2)
+    VBoxGADownloader (QStatusBar *aStatusBar, QAction *aAction)
         : QWidget (0, "VBoxGADownloader")
         , mStatusBar (aStatusBar)
-        , mSrc1 (aSrc1), mSrc2 (aSrc2)
+        , mProtocol ("http://")
         , mHost (QString::null), mPath (QString::null), mFile (QString::null)
         , mHttp (0), mIsChecking (true)
         , mProgressBar (0), mCancelButton (0)
@@ -225,6 +224,8 @@ public:
         mAction->setEnabled (false);
 
         /* Drawing itself */
+        setFixedHeight (16);
+
         mProgressBar = new QProgressBar (this);
         mProgressBar->setFixedWidth (100);
         mCancelButton = new QToolButton (this);
@@ -239,6 +240,7 @@ public:
         mainLayout->addItem (spacer);
 
         languageChange();
+        mStatusBar->addWidget (this);
 
         /* Select the product version */
         QString version = vboxGlobal().virtualBox().GetVersion();
@@ -314,6 +316,7 @@ private slots:
         }
         else if (!aError && !mIsChecking)
         {
+            mHttp->abort();
             /* Serialize the incoming buffer into the .iso image. */
             QString path = QDir (QDir::home()).absFilePath (mFile);
             QFile file (path);
@@ -321,7 +324,10 @@ private slots:
             {
                 file.writeBlock (mHttp->readAll());
                 file.close();
-                vboxGlobal().consoleWnd().installGuestAdditionsFrom (path);
+                int rc = vboxProblem().confirmMountAdditions (mProtocol + mHost +
+                                  mPath + mFile, QDir::convertSeparators (path));
+                if (rc == QIMessageBox::Yes)
+                    vboxGlobal().consoleWnd().installGuestAdditionsFrom (path);
                 QTimer::singleShot (0, this, SLOT (suicide()));
             }
             else
@@ -364,12 +370,9 @@ private:
     {
         /* Ask user about GA image downloading */
         int rc = vboxProblem().
-            confirmDownloadAdditions (mSrc1, mSrc2,
-                                      mHost + mPath + mFile, aSize);
+            confirmDownloadAdditions (mProtocol + mHost + mPath + mFile, aSize);
         if (rc == QIMessageBox::Yes)
         {
-            mStatusBar->addWidget (this);
-            setFixedHeight (16);
             mIsChecking = false;
             mHttp->get (mPath + mFile);
         }
@@ -382,15 +385,14 @@ private:
      * downloader to terminate himself after all the events being processed. */
     void abortDownload (const QString &aReason)
     {
-        vboxProblem().cannotDownloadGuestAdditions (mHost + mPath + mFile,
-                                                    aReason);
+        vboxProblem().cannotDownloadGuestAdditions (mProtocol + mHost +
+                                                    mPath + mFile, aReason);
         /* Allows all the queued signals to be processed before quit. */
         QTimer::singleShot (0, this, SLOT (suicide()));
     }
 
     QStatusBar *mStatusBar;
-    QString mSrc1;
-    QString mSrc2;
+    QString mProtocol;
     QString mHost;
     QString mPath;
     QString mFile;
@@ -2519,8 +2521,12 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     else if (QFile::exists (src2))
         installGuestAdditionsFrom (src2);
     else
-        new VBoxGADownloader (statusBar(), devicesInstallGuestToolsAction,
-                              src1, src2);
+    {
+        int rc = vboxProblem().cannotFindGuestAdditions (
+            QDir::convertSeparators (src1), QDir::convertSeparators (src2));
+        if (rc == QIMessageBox::Yes)
+            new VBoxGADownloader (statusBar(), devicesInstallGuestToolsAction);
+    }
 }
 
 void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)

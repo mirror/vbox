@@ -1253,27 +1253,53 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
              formatErrorInfo (res));
 }
 
+int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
+                                                   const QString &aSrc2)
+{
+    return message (&vboxGlobal().consoleWnd(), Question,
+                    tr ("<p>Failed to find the VirtualBox Guest Additions "
+                        "CD image <nobr><b>%1</b></nobr> or "
+                        "<nobr><b>%2</b>.</nobr></p><p>Do you want to "
+                        "download this image from the Internet?</p>")
+                        .arg (aSrc1).arg (aSrc2),
+                    0, /* autoConfirmId */
+                    QIMessageBox::Yes | QIMessageBox::Default,
+                    QIMessageBox::No | QIMessageBox::Escape);
+}
+
 void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
                                                         const QString &aReason)
 {
-    QString msg = tr ("<p>Failed to download the VirtualBox Guest "
-        "Additions CD image from <nobr><b>%1</b>.</nobr></p>").arg (aURL);
-    msg += QString ("<p>%1</p>").arg (aReason);
-    message (&vboxGlobal().consoleWnd(), Error, msg);
+    message (&vboxGlobal().consoleWnd(), Error,
+             tr ("<p>Failed to download the VirtualBox Guest Additions CD "
+                 "image from <nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
+                 .arg (aURL).arg (aURL).arg (aReason));
 }
 
-int VBoxProblemReporter::confirmDownloadAdditions (const QString &aSrc1,
-                                                   const QString &aSrc2,
-                                                   const QString &aURL,
+int VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
                                                    ulong aSize)
 {
-    QString msg = tr ("<p>Failed to find the VirtualBox Guest Additions CD image "
-                      "<nobr><b>%1</b></nobr> or "
-                      "<nobr><b>%2</b></nobr></p>").arg (aSrc1).arg (aSrc2);
-    msg += tr ("<p>Do you want to download this image from "
-               "<nobr><b>%1</b></nobr> (%2 bytes)?</p>").arg (aURL).arg (aSize);
+    return message (&vboxGlobal().consoleWnd(), Question,
+                    tr ("<p>Are you sure you want to download the VirtualBox "
+                        "Guest Additions CD image from "
+                        "<nobr><a href=\"%1\">%2</a></nobr> "
+                        "(size %3 bytes)?</p>").arg (aURL).arg (aURL).arg (aSize),
+                    0, /* autoConfirmId */
+                    QIMessageBox::Yes | QIMessageBox::Default,
+                    QIMessageBox::No | QIMessageBox::Escape);
+}
 
-    return message (&vboxGlobal().consoleWnd(), Question, msg,
+int VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
+                                                const QString &aSrc)
+{
+    return message (&vboxGlobal().consoleWnd(), Question,
+                    tr ("<p>The VirtualBox Guest Additions CD image was "
+                        "successfully downloaded from "
+                        "<nobr><a href=\"%1\">%2</a></nobr> "
+                        "and saved locally as <nobr><b>%3</b>.</nobr></p>"
+                        "<p>Do you want to register this CD image and mount it "
+                        "on the virtual CD/DVD drive?</p>")
+                        .arg (aURL).arg (aURL).arg (aSrc),
                     0, /* autoConfirmId */
                     QIMessageBox::Yes | QIMessageBox::Default,
                     QIMessageBox::No | QIMessageBox::Escape);

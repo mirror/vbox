@@ -22,6 +22,7 @@
 
 #include "QIMessageBox.h"
 #include "VBoxDefs.h"
+#include "QIRichLabel.h"
 
 #include <qpixmap.h>
 #include <qlabel.h>
@@ -79,7 +80,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mMessageVBox->setMargin (0);
     mMessageVBox->setSpacing (10);
 
-    mTextLabel = new QLabel (aText, mMessageVBox);
+    mTextLabel = new QIRichLabel (aText, mMessageVBox);
     mTextLabel->setAlignment (AlignAuto | AlignTop | ExpandTabs | WordBreak);
     mTextLabel->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Fixed, true);
 
