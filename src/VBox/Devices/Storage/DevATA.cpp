@@ -5513,7 +5513,15 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
                 /* Set the disk geometry information. */
                 rc = pIf->pDrvBlockBios->pfnSetGeometry(pIf->pDrvBlockBios, pIf->cCHSCylinders, pIf->cCHSHeads, pIf->cCHSSectors);
             }
-            else if (enmTranslation == PDMBIOSTRANSLATION_LBA)
+        }
+        else
+        {
+            PDMBIOSTRANSLATION enmTranslation;
+            rc = pIf->pDrvBlockBios->pfnGetTranslation(pIf->pDrvBlockBios, &enmTranslation);
+            if ((   rc == VERR_PDM_TRANSLATION_NOT_SET
+                 || enmTranslation == PDMBIOSTRANSLATION_LBA)
+                &&  pIf->cCHSSectors == 63
+                && (pIf->cCHSHeads != 16 || pIf->cCHSCylinders >= 1024))
             {
                 /* Use the official LBA physical CHS geometry. */
                 uint64_t cCHSCylinders = pIf->cTotalSectors / (16 * 63);
