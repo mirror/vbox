@@ -47,7 +47,6 @@ INSTALLS = VirtualBox.nls
 VBoxKeyboard_TEMPLATE = VBOXR3
 VBoxKeyboard_SOURCES  = \
 	src/linux/keyboard.c
-VBoxKeyboard_CFLAGS   = -fPIC
 
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
