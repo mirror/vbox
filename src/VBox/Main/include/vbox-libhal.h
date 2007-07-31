@@ -49,21 +49,21 @@ struct LibHalContext_s;
 typedef struct LibHalContext_s LibHalContext;
 
 /** The following are the symbols which we need from libdbus and libhal. */
-extern void (*DBusErrorInit)(DBusError *);
-extern DBusConnection *(*DBusBusGet)(DBusBusType, DBusError *);
-extern void (*DBusErrorFree)(DBusError *);
-extern void (*DBusConnectionUnref)(DBusConnection *);
-extern LibHalContext *(*LibHalCtxNew)(void);
-extern dbus_bool_t (*LibHalCtxSetDBusConnection)(LibHalContext *, DBusConnection *);
-extern dbus_bool_t (*LibHalCtxInit)(LibHalContext *, DBusError *);
-extern char **(*LibHalFindDeviceByCapability)(LibHalContext *, const char *, int *, DBusError *);
-extern char *(*LibHalDeviceGetPropertyString)(LibHalContext *, const char *, const char *,
+extern void (*gDBusErrorInit)(DBusError *);
+extern DBusConnection *(*gDBusBusGet)(DBusBusType, DBusError *);
+extern void (*gDBusErrorFree)(DBusError *);
+extern void (*gDBusConnectionUnref)(DBusConnection *);
+extern LibHalContext *(*gLibHalCtxNew)(void);
+extern dbus_bool_t (*gLibHalCtxSetDBusConnection)(LibHalContext *, DBusConnection *);
+extern dbus_bool_t (*gLibHalCtxInit)(LibHalContext *, DBusError *);
+extern char **(*gLibHalFindDeviceByCapability)(LibHalContext *, const char *, int *, DBusError *);
+extern char *(*gLibHalDeviceGetPropertyString)(LibHalContext *, const char *, const char *,
                                               DBusError *);
-extern void (*LibHalFreeString)(char *);
-extern void (*LibHalFreeStringArray)(char **);
-extern dbus_bool_t (*LibHalCtxShutdown)(LibHalContext *, DBusError *);
-extern dbus_bool_t (*LibHalCtxFree)(LibHalContext *);
+extern void (*gLibHalFreeString)(char *);
+extern void (*gLibHalFreeStringArray)(char **);
+extern dbus_bool_t (*gLibHalCtxShutdown)(LibHalContext *, DBusError *);
+extern dbus_bool_t (*gLibHalCtxFree)(LibHalContext *);
 
-extern bool LibHalCheckPresence(void);
+extern bool gLibHalCheckPresence(void);
 
 #endif /* ____H_VBOX_LIBHAL not defined */

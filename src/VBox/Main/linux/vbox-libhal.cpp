@@ -43,21 +43,21 @@ static RTLDRMOD ghLibDBus = 0;
 static RTLDRMOD ghLibHal = 0;
 
 /** The following are the symbols which we need from libdbus and libhal. */
-void (*DBusErrorInit)(DBusError *);
-DBusConnection *(*DBusBusGet)(DBusBusType, DBusError *);
-void (*DBusErrorFree)(DBusError *);
-void (*DBusConnectionUnref)(DBusConnection *);
-LibHalContext *(*LibHalCtxNew)(void);
-dbus_bool_t (*LibHalCtxSetDBusConnection)(LibHalContext *, DBusConnection *);
-dbus_bool_t (*LibHalCtxInit)(LibHalContext *, DBusError *);
-char **(*LibHalFindDeviceByCapability)(LibHalContext *, const char *, int *, DBusError *);
-char *(*LibHalDeviceGetPropertyString)(LibHalContext *, const char *, const char *, DBusError *);
-void (*LibHalFreeString)(char *);
-void (*LibHalFreeStringArray)(char **);
-dbus_bool_t (*LibHalCtxShutdown)(LibHalContext *, DBusError *);
-dbus_bool_t (*LibHalCtxFree)(LibHalContext *);
+void (*gDBusErrorInit)(DBusError *);
+DBusConnection *(*gDBusBusGet)(DBusBusType, DBusError *);
+void (*gDBusErrorFree)(DBusError *);
+void (*gDBusConnectionUnref)(DBusConnection *);
+LibHalContext *(*gLibHalCtxNew)(void);
+dbus_bool_t (*gLibHalCtxSetDBusConnection)(LibHalContext *, DBusConnection *);
+dbus_bool_t (*gLibHalCtxInit)(LibHalContext *, DBusError *);
+char **(*gLibHalFindDeviceByCapability)(LibHalContext *, const char *, int *, DBusError *);
+char *(*gLibHalDeviceGetPropertyString)(LibHalContext *, const char *, const char *, DBusError *);
+void (*gLibHalFreeString)(char *);
+void (*gLibHalFreeStringArray)(char **);
+dbus_bool_t (*gLibHalCtxShutdown)(LibHalContext *, DBusError *);
+dbus_bool_t (*gLibHalCtxFree)(LibHalContext *);
 
-bool LibHalCheckPresence(void)
+bool gLibHalCheckPresence(void)
 {
     RTLDRMOD hLibDBus;
     RTLDRMOD hLibHal;
@@ -73,24 +73,24 @@ bool LibHalCheckPresence(void)
         RTLdrClose(hLibDBus);
         return false;
     }
-    if (   RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_error_init", (void **) &DBusErrorInit))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_bus_get", (void **) &DBusBusGet))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_error_free", (void **) &DBusErrorFree))
+    if (   RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_error_init", (void **) &gDBusErrorInit))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_bus_get", (void **) &gDBusBusGet))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_error_free", (void **) &gDBusErrorFree))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_unref",
-                                     (void **) &DBusConnectionUnref))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_new", (void **) &LibHalCtxNew))
+                                     (void **) &gDBusConnectionUnref))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_new", (void **) &gLibHalCtxNew))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_set_dbus_connection",
-                                     (void **) &LibHalCtxSetDBusConnection))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_init", (void **) &LibHalCtxInit))
+                                     (void **) &gLibHalCtxSetDBusConnection))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_init", (void **) &gLibHalCtxInit))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_find_device_by_capability",
-                                     (void **) &LibHalFindDeviceByCapability))
+                                     (void **) &gLibHalFindDeviceByCapability))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_device_get_property_string",
-                                     (void **) &LibHalDeviceGetPropertyString))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_free_string", (void **) &LibHalFreeString))
+                                     (void **) &gLibHalDeviceGetPropertyString))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_free_string", (void **) &gLibHalFreeString))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_free_string_array",
-                                     (void **) &LibHalFreeStringArray))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_shutdown", (void **) &LibHalCtxShutdown))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_free", (void **) &LibHalCtxFree))
+                                     (void **) &gLibHalFreeStringArray))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_shutdown", (void **) &gLibHalCtxShutdown))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_free", (void **) &gLibHalCtxFree))
        )
     {
         ghLibDBus = hLibDBus;
