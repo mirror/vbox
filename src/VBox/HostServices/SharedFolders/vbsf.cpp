@@ -239,6 +239,59 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 
     if (VBOX_SUCCESS (rc))
     {
+#if 0
+        /* When the host file system is case sensitive and the guest expects a case insensitive fs, then problems can occur */
+        if (    vbsfIsHostMappingCaseSensitive (root)
+            &&  !vbsfIsGuestMappingCaseSensitive(root))
+        {
+            RTFSOBJINFO info;
+            rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
+            if (rc != VINF_SUCCESS)
+            {
+                char *src = pszFullPath;
+                
+                Assert(rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
+                Log(("Handle case insenstive guest fs on top of host case sensitive fs for %ws\n", pszFullPath));
+                while(*src)
+                {
+                    if (*src == RTPATH_DELIMITER)
+                        break;
+                    src++;
+                }
+                Assert(*src);
+                if (*src)
+                {
+                    src++;
+                    for(;;)
+                    {
+                        char *end = src;
+
+                        while(*end)
+                        {
+                            if (*end == RTPATH_DELIMITER)
+                                break;
+                            end++;
+                        }
+                        if (!*end)
+                            break;
+
+                        *end = 0;
+                    
+                        rc = RTPathQueryInfo(src, &info, RTFSOBJATTRADD_NOTHING);
+                        if (rc != VINF_SUCCESS)
+                        {
+                            Assert(rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
+                        }
+
+                        *end = RTPATH_DELIMITER;
+                        src = end + 1;
+                    }
+                }
+
+            }
+            rc = VINF_SUCCESS;
+        }
+#endif
         *ppszFullPath = pszFullPath;
 
         LogFlow(("vbsfBuildFullPath: %s\n", pszFullPath));

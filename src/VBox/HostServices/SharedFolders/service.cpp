@@ -30,6 +30,8 @@
 #include <iprt/assert.h>
 #include <VBox/ssm.h>
 
+#define SHFL_SSM_VERSION        2
+
 
 /* Shared Folders Host Service.
  *
@@ -116,7 +118,10 @@ static DECLCALLBACK(int) svcSaveState(uint32_t u32ClientID, void *pvClient, PSSM
 
     Log(("svcSaveState: u32ClientID = %d\n", u32ClientID));
 
-    int rc = SSMR3PutU32(pSSM, SHFL_MAX_MAPPINGS);
+    int rc = SSMR3PutU32(pSSM, SHFL_SSM_VERSION);
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3PutU32(pSSM, SHFL_MAX_MAPPINGS);
     AssertRCReturn(rc, rc);
 
     /* Save client structure length & contents */
@@ -152,6 +157,12 @@ static DECLCALLBACK(int) svcSaveState(uint32_t u32ClientID, void *pvClient, PSSM
 
             rc = SSMR3PutMem(pSSM, FolderMapping[i].pMapName, len);
             AssertRCReturn(rc, rc);
+
+            rc = SSMR3PutBool(pSSM, FolderMapping[i].fHostCaseSensitive);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3PutBool(pSSM, FolderMapping[i].fGuestCaseSensitive);
+            AssertRCReturn(rc, rc);
         }
     }
     
@@ -162,11 +173,17 @@ static DECLCALLBACK(int) svcLoadState(uint32_t u32ClientID, void *pvClient, PSSM
 {
     uint32_t        nrMappings;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
-    uint32_t        len;
+    uint32_t        len, version;
 
     Log(("svcLoadState: u32ClientID = %d\n", u32ClientID));
 
-    int rc = SSMR3GetU32(pSSM, &nrMappings);
+    int rc = SSMR3GetU32(pSSM, &version);
+    AssertRCReturn(rc, rc);
+
+    if (version != SHFL_SSM_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    rc = SSMR3GetU32(pSSM, &nrMappings);
     AssertRCReturn(rc, rc);
     if (nrMappings != SHFL_MAX_MAPPINGS)
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -244,6 +261,15 @@ static DECLCALLBACK(int) svcLoadState(uint32_t u32ClientID, void *pvClient, PSSM
             }
             RTMemFree(pName);
 
+            bool fCaseSensitive;
+
+            rc = SSMR3GetBool(pSSM, &fCaseSensitive);
+            AssertRCReturn(rc, rc);
+            if (FolderMapping[i].fHostCaseSensitive != fCaseSensitive)
+                return VERR_SSM_UNEXPECTED_DATA;
+
+            rc = SSMR3GetBool(pSSM, &FolderMapping[i].fGuestCaseSensitive);
+            AssertRCReturn(rc, rc);
         }
     }
     return VINF_SUCCESS;
@@ -702,17 +728,19 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             break;
         }
 
-        case SHFL_FN_MAP_FOLDER:
+        /* Legacy interface */
+        case SHFL_FN_MAP_FOLDER_OLD:
         {
-            Log(("svcCall: SHFL_FN_MAP_FOLDER\n"));
+            Log(("svcCall: SHFL_FN_MAP_FOLDER_OLD\n"));
 
             /* Verify parameter count and types. */
-            if (cParms != SHFL_CPARMS_MAP_FOLDER)
+            if (cParms != SHFL_CPARMS_MAP_FOLDER_OLD)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
             else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* path */
                      || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT   /* root */
+                     || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* delimiter */
                     )
             {
                 rc = VERR_INVALID_PARAMETER;
@@ -725,7 +753,44 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 RTUCS2      delimiter  = (RTUCS2)paParms[2].u.uint32;
 
                 /* Execute the function. */
-                rc = vbsfMapFolder (pClient, pszMapName, delimiter, &root);
+                rc = vbsfMapFolder (pClient, pszMapName, delimiter, false,  &root);
+
+                if (VBOX_SUCCESS(rc))
+                {
+                    /* Update parameters.*/
+                    paParms[1].u.uint32 = root;
+                }
+            }
+            break;
+        }
+
+        case SHFL_FN_MAP_FOLDER:
+        {
+            Log(("svcCall: SHFL_FN_MAP_FOLDER\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHFL_CPARMS_MAP_FOLDER)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* path */
+                     || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT   /* root */
+                     || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* delimiter */
+                     || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT   /* fCaseSensitive */
+                    )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                PSHFLSTRING pszMapName = (PSHFLSTRING)paParms[0].u.pointer.addr;
+                SHFLROOT    root       = (SHFLROOT)paParms[1].u.uint32;
+                RTUCS2      delimiter  = (RTUCS2)paParms[2].u.uint32;
+                bool        fCaseSensitive = !!paParms[3].u.uint32;
+
+                /* Execute the function. */
+                rc = vbsfMapFolder (pClient, pszMapName, delimiter, fCaseSensitive, &root);
 
                 if (VBOX_SUCCESS(rc))
                 {
