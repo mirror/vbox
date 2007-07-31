@@ -44,10 +44,17 @@ typedef struct _WINEKEYBOARDINFO
 } WINEKEYBOARDINFO;
 
 /* Exported definitions */
+#ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 extern __attribute__((visibility("default"))) void X11DRV_InitKeyboard(Display *dpy);
 extern __attribute__((visibility("default"))) void X11DRV_KeyEvent(Display *dpy, XEvent *event,
                                                                    WINEKEYBOARDINFO *wKbInfo);
 extern __attribute__((visibility("default"))) int X11DRV_GetKeysymsPerKeycode(void);
+#else
+extern void X11DRV_InitKeyboard(Display *dpy);
+extern void X11DRV_KeyEvent(Display *dpy, XEvent *event,
+                                                                   WINEKEYBOARDINFO *wKbInfo);
+extern int X11DRV_GetKeysymsPerKeycode(void);
+#endif
 
 /* type definitions */
 typedef unsigned char BYTE, *LPBYTE;
@@ -66,13 +73,13 @@ inline static void noop(char *arg, ...)
 {
 }
 
-#define TRACE(...)
+#define TRACE noop
 /* #define TRACE printf */
 #define TRACE_(a) noop
 /* #define TRACE_(ch) printf */
 #define TRACE_ON(a) 0
-#define WARN(...)
-#define ERR(...)
+#define WARN noop
+#define ERR noop
 
 /* @@@AH do we need semaphore protection? */
 #define wine_tsx11_lock(a)
