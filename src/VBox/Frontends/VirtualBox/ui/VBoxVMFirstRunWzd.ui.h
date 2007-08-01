@@ -87,7 +87,7 @@ void VBoxVMFirstRunWzd::init()
     setFinishEnabled (pageSummary, true);
 
     /* setup minimum width for the sizeHint to be calculated correctly */
-    int wid = widthSpacer->minimumSize().width() + 50;
+    int wid = widthSpacer->minimumSize().width();
     txWelcome->setMinimumWidth (wid);
     txType->setMinimumWidth (wid);
     txSource->setMinimumWidth (wid);
