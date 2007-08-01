@@ -158,7 +158,7 @@ end:
 }
 
 static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath,
-                              uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot)
+                              uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot, bool fWildCard = false)
 {
     int rc = VINF_SUCCESS;
 
@@ -304,10 +304,31 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
     {
 #if 0
         /* When the host file system is case sensitive and the guest expects a case insensitive fs, then problems can occur */
-        if (    vbsfIsHostMappingCaseSensitive (root)
+        if (     vbsfIsHostMappingCaseSensitive (root)
             &&  !vbsfIsGuestMappingCaseSensitive(root))
         {
             RTFSOBJINFO info;
+            char *pszWildCardComponent = NULL;
+
+            if (fWildCard)
+            {
+                /* strip off the last path component, that contains the wildcard(s) */
+                uint32_t len = strlen(pszFullPath);
+                char    *src = pszFullPath + len - 1;
+
+                while(src > pszFullPath)
+                {
+                    if (*src == RTPATH_DELIMITER)
+                        break;
+                    src--;
+                }
+                if (*src == RTPATH_DELIMITER)
+                {
+                    pszWildCardComponent = src;
+                    *pszWildCardComponent = 0;
+                }
+            }
+
             rc = RTPathQueryInfo(pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
             {
@@ -384,6 +405,11 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                     rc = VERR_FILE_NOT_FOUND;
 
             }
+        }
+        if (fWildCard)
+        {
+            Assert(pszWildCardComponent);
+            *pszWildCardComponent = RTPATH_DELIMITER;
         }
 #endif
         *ppszFullPath = pszFullPath;
@@ -1094,7 +1120,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 
             Assert(pHandle->dir.pLastValidEntry == 0);
 
-            rc = vbsfBuildFullPath (pClient, root, pPath, pPath->u16Size, &pszFullPath, NULL);
+            rc = vbsfBuildFullPath (pClient, root, pPath, pPath->u16Size, &pszFullPath, NULL, true);
 
             if (VBOX_SUCCESS (rc))
             {
