@@ -202,7 +202,7 @@ QPushButton *QIMessageBox::createButton (QWidget *aParent, int aButton)
         b->setDefault (true);
         b->setFocus();
     }
-    else
+
     if (aButton & Escape)
         mButtonEsc = aButton & ButtonMask;
 
