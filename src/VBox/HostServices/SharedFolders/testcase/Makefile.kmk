@@ -27,11 +27,17 @@ ifdef VBOX_WITH_TESTCASES
 #
 # Structure size testcase.
 #
-PROGRAMS += tstShflSizes
+PROGRAMS += tstShflSizes tstShflCase
 tstShflSizes_TEMPLATE = VBOXR3TSTEXE
 tstShflSizes_DEFS     = VBOX_HGCM
 tstShflSizes_SOURCES  = tstShflSizes.cpp
 tstShflSizes_LIBS     = $(LIB_RUNTIME)
+
+tstShflCase_TEMPLATE = VBOXR3TSTEXE
+tstShflCase_DEFS     = VBOX_HGCM
+tstShflCase_SOURCES  = tstShflCase.cpp
+tstShflCase_LIBS     = $(LIB_RUNTIME)
+
 endif # VBOX_WITH_TESTCASES
 
 include $(PATH_KBUILD)/subfooter.kmk
