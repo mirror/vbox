@@ -181,11 +181,6 @@ DevicesR3_SOURCES       = \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
 
-ifeq (0,1)
-DevicesR3_SOURCES += \
-	Network/ne2000.c
-endif
-
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 DevicesR3_SOURCES      += \
