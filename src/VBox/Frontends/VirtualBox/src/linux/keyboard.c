@@ -86,8 +86,6 @@ typedef union
     } lp1;
     unsigned long lp2;
 } KEYLP;
-#endif /* OUTOFWINE not defined */
-
 
 /* key state table bits:
   0x80 -> key is pressed
@@ -96,31 +94,22 @@ typedef union
 */
 BYTE key_state_table[256];
 
-#ifndef OUTOFWINE
 static BYTE TrackSysKey = 0; /* determine whether ALT key up will cause a WM_SYSKEYUP
                                 or a WM_KEYUP message */
 #endif
 
 static int min_keycode, max_keycode, keysyms_per_keycode;
+
+#ifndef OUTOFWINE
 static WORD keyc2vkey[256], keyc2scan[256];
 
 static int NumLockMask, AltGrMask; /* mask in the XKeyEvent state */
 static int kcControl, kcAlt, kcShift, kcNumLock, kcCapsLock; /* keycodes */
+#else
+static WORD keyc2scan[256];
+#endif
 
 static char KEYBOARD_MapDeadKeysym(KeySym keysym);
-
-#ifdef OUTOFWINE
-/* Global variable to store the current display pointer which is defined
- * and updated in XKeyboard.cpp.
- * The wine keyboard handler isn't reentrant anyway... */
-Display *dpy_global;
-
-inline static Display *thread_display(void) { return dpy_global; }
-/* @@@AH without this, the event time calculations are all wrong. To fix it,
- * we also gotta supply GetCurrentTime */
-unsigned int X11DRV_server_startticks = 0;
-static WINEKEYBOARDINFO *wineKeyboardInfo = NULL;
-#endif
 
 /* Keyboard translation tables */
 #define MAIN_LEN 49
@@ -1009,6 +998,7 @@ static unsigned kbd_layout=0; /* index into above table of layouts */
                 /* Yes, to distinguish based on scan codes, also
                    for PrtScn key ... GA */
 
+#ifndef OUTOFWINE
 static const WORD nonchar_key_vkey[256] =
 {
     /* unused */
@@ -1048,8 +1038,7 @@ static const WORD nonchar_key_vkey[256] =
     /* function keys */
     VK_F1, VK_F2,
     VK_F3, VK_F4, VK_F5, VK_F6, VK_F7, VK_F8, VK_F9, VK_F10,    /* FFC0 */
-    VK_F11, VK_F12, VK_LWIN /* VK_F13 */, VK_RWIN /* VK_F14 */,
-    VK_F15, VK_F16, 0, 0,                                       /* FFC8 */
+    VK_F11, VK_F12, VK_F13, VK_F14, VK_F15, VK_F16, 0, 0,       /* FFC8 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* FFD0 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* FFD8 */
     /* modifier keys */
@@ -1059,6 +1048,7 @@ static const WORD nonchar_key_vkey[256] =
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* FFF0 */
     0, 0, 0, 0, 0, 0, 0, VK_DELETE                              /* FFF8 */
 };
+#endif /* OUTOFWINE not defined */
 
 static const WORD nonchar_key_scan[256] =
 {
@@ -1095,12 +1085,12 @@ static const WORD nonchar_key_scan[256] =
     /* function keys */
     0x3B, 0x3C,
     0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44,              /* FFC0 */
-    0x57, 0x58, 0x15B, 0x15C, 0x00, 0x00, 0x00, 0x00,              /* FFC8 */
+    0x57, 0x58, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFC8 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD0 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD8 */
     /* modifier keys */
     0x00, 0x2A, 0x36, 0x1D, 0x11D, 0x3A, 0x00, 0x38,             /* FFE0 */
-    0x138, 0x38, 0x138, 0x00, 0x00, 0x00, 0x00, 0x00,            /* FFE8 */
+    0x138, 0x38, 0x138, 0x15B, 0x15C, 0x00, 0x00, 0x00,            /* FFE8 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFF0 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x153              /* FFF8 */
 };
@@ -1145,6 +1135,7 @@ static const WORD xfree86_vendor_key_vkey[256] =
     0, 0, 0, 0, 0, 0, 0, 0                                      /* 1008FFF8 */
 };
 
+#ifndef OUTOFWINE
 /* Returns the Windows virtual key code associated with the X event <e> */
 /* x11 lock must be held */
 static WORD EVENT_event_to_vkey( XIC xic, XKeyEvent *e)
@@ -1171,18 +1162,15 @@ static WORD EVENT_event_to_vkey( XIC xic, XKeyEvent *e)
     return keyc2vkey[e->keycode];
 }
 
-#ifndef OUTOFWINE
 static BOOL NumState=FALSE, CapsState=FALSE;
-#endif
 
 
 /***********************************************************************
  *           X11DRV_send_keyboard_input
  */
-static void X11DRV_send_keyboard_input( WORD wVk, WORD wScan, DWORD dwFlags, DWORD time,
+void X11DRV_send_keyboard_input( WORD wVk, WORD wScan, DWORD dwFlags, DWORD time,
                                  DWORD dwExtraInfo, UINT injected_flags )
 {
-#ifndef OUTOFWINE
     UINT message;
     KEYLP keylp;
     KBDLLHOOKSTRUCT hook;
@@ -1269,17 +1257,9 @@ static void X11DRV_send_keyboard_input( WORD wVk, WORD wScan, DWORD dwFlags, DWO
         wine_server_call( req );
     }
     SERVER_END_REQ;
-#else /* OUTOFWINE defined */
-    /* fill out our global structure */
-    wineKeyboardInfo->wVk = wVk;
-    wineKeyboardInfo->wScan = wScan;
-    wineKeyboardInfo->dwFlags = dwFlags;
-    wineKeyboardInfo->time = time;
-#endif /* OUTOFWINE defined */
 }
 
 
-#ifndef OUTOFWINE
 /**********************************************************************
  *		KEYBOARD_GenerateMsg
  *
@@ -1326,7 +1306,6 @@ static void KEYBOARD_GenerateMsg( WORD vkey, WORD scan, int Evtype, DWORD event_
 	    }
     }
 }
-#endif /* OUTOFWINE not defined */
 
 /***********************************************************************
  *           KEYBOARD_UpdateOneState
@@ -1349,7 +1328,6 @@ inline static void KEYBOARD_UpdateOneState ( int vkey, int state, DWORD time )
     }
 }
 
-#ifndef OUTOFWINE
 /***********************************************************************
  *           X11DRV_KeymapNotify
  *
@@ -1386,18 +1364,13 @@ void X11DRV_KeymapNotify( HWND hwnd, XEvent *event )
     KEYBOARD_UpdateOneState( VK_CONTROL, control, time );
     KEYBOARD_UpdateOneState( VK_SHIFT, shift, time );
 }
-#endif /* OUTOFWINE defined */
 
 /***********************************************************************
  *           X11DRV_KeyEvent
  *
  * Handle a X key event
  */
-#ifndef OUTOFWINE
 void X11DRV_KeyEvent( HWND hwnd, XEvent *xev )
-#else /* OUTOFWINE defined */
-void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
-#endif /* OUTOFWINE defined */
 {
     XKeyEvent *event = &xev->xkey;
     char Str[24];
@@ -1405,23 +1378,9 @@ void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
     WORD vkey = 0, bScan;
     DWORD dwFlags;
     int ascii_chars;
-#ifndef OUTOFWINE
     XIC xic = X11DRV_get_ic( hwnd );
     DWORD event_time = EVENT_x11_time_to_win32_time(event->time);
     Status status = 0;
-#else /* OUTOFWINE defined */
-    Status status = 0;
-    /* @@@AH do we need support for XIM? */
-    XIC xic = 0;
-    /* We don't use this anyway. */
-    DWORD event_time = 0;
-    dpy_global = dpy;
-    /* set our global pointer for the return data structure
-     * and initialize it with zeroes for the case of early return
-     * (this will mean that the event cannot be converted to a scancode) */
-    wineKeyboardInfo = wKbInfo;
-    memset( wineKeyboardInfo, 0, sizeof( wineKeyboardInfo ) );
-#endif /* OUTOFWINE defined */
 
     TRACE_(key)("type %d, window %lx, state 0x%04x, keycode 0x%04x\n",
 		event->type, event->window, event->state, event->keycode);
@@ -1439,13 +1398,11 @@ void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
     if (status == XBufferOverflow)
         ERR("Buffer Overflow need %i!\n",ascii_chars);
 
-#ifndef OUTOFWINE
     if (status == XLookupChars)
     {
         X11DRV_XIMLookupChars( Str, ascii_chars );
         return;
     }
-#endif /* OUTOFWINE not defined */
 
     /* If XKB extensions are used, the state mask for AltGr will use the group
        index instead of the modifier mask. The group index is set in bits
@@ -1484,42 +1441,34 @@ void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
 
    if (vkey)
    {
-    /** @todo (dmik):
-     *      KEYBOARD_GenerateMsg() does not work property because
-     *      send_keyboard_input() modifies our static WINEKEYBOARDINFO struct
-     *      directly, w/o any buffering. Moreover the purpose of
-     *      KEYBOARD_GenerateMsg() is not completely clear for me; in our case
-     *      it seems to be unnecessary, so disable the code below. */
-#ifndef OUTOFWINE
-      switch (vkey & 0xff)
-      {
-      case VK_NUMLOCK:
-        KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, event->type, event_time );
-        break;
-      case VK_CAPITAL:
-        TRACE("Caps Lock event. (type %d). State before : %#.2x\n",event->type,key_state_table[vkey]);
-        KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, event->type, event_time );
-        TRACE("State after : %#.2x\n",key_state_table[vkey]);
-        break;
-      default:
-          /* Adjust the NUMLOCK state if it has been changed outside wine */
-      	  if (!(key_state_table[VK_NUMLOCK] & 0x01) != !(event->state & NumLockMask))
-  	  {
+    switch (vkey & 0xff)
+    {
+    case VK_NUMLOCK:
+      KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, event->type, event_time );
+      break;
+    case VK_CAPITAL:
+      TRACE("Caps Lock event. (type %d). State before : %#.2x\n",event->type,key_state_table[vkey]);
+      KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, event->type, event_time );
+      TRACE("State after : %#.2x\n",key_state_table[vkey]);
+      break;
+    default:
+        /* Adjust the NUMLOCK state if it has been changed outside wine */
+	if (!(key_state_table[VK_NUMLOCK] & 0x01) != !(event->state & NumLockMask))
+	  {
 	    TRACE("Adjusting NumLock state.\n");
 	    KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, KeyPress, event_time );
 	    KEYBOARD_GenerateMsg( VK_NUMLOCK, 0x45, KeyRelease, event_time );
 	  }
         /* Adjust the CAPSLOCK state if it has been changed outside wine */
-  	  if (!(key_state_table[VK_CAPITAL] & 0x01) != !(event->state & LockMask))
+	if (!(key_state_table[VK_CAPITAL] & 0x01) != !(event->state & LockMask))
 	  {
               TRACE("Adjusting Caps Lock state.\n");
 	    KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, KeyPress, event_time );
 	    KEYBOARD_GenerateMsg( VK_CAPITAL, 0x3A, KeyRelease, event_time );
 	  }
-	  /* Not Num nor Caps : end of intermediary states for both. */
-	  NumState = FALSE;
-	  CapsState = FALSE;
-#endif /* OUTOFWINE not defined */
+	/* Not Num nor Caps : end of intermediary states for both. */
+	NumState = FALSE;
+	CapsState = FALSE;
 
 	bScan = keyc2scan[event->keycode] & 0xFF;
 	TRACE_(key)("bScan = 0x%02x.\n", bScan);
@@ -1529,11 +1478,20 @@ void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
 	if ( vkey & 0x100 )              dwFlags |= KEYEVENTF_EXTENDEDKEY;
 
         X11DRV_send_keyboard_input( vkey & 0xff, bScan, dwFlags, event_time, 0, 0 );
-#ifndef OUTOFWINE
-      }
-#endif
+    }
    }
 }
+
+#else /* OUTOFWINE defined */
+
+void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
+{
+    XKeyEvent *event = &xev->xkey;
+    wKbInfo->wScan = keyc2scan[event->keycode] & 0xFF;
+    wKbInfo->dwFlags = keyc2scan[event->keycode] >> 8;
+}
+
+#endif /* OUTOFWINE defined */
 
 /**********************************************************************
  *		X11DRV_KEYBOARD_DetectLayout
@@ -1543,10 +1501,17 @@ void X11DRV_KeyEvent(Display *dpy, XEvent *xev, WINEKEYBOARDINFO *wKbInfo)
  *  whichever matches most closely.
  * X11 lock must be held.
  */
+#ifndef OUTOFWINE
 static void
 X11DRV_KEYBOARD_DetectLayout (void)
+#else
+static void
+X11DRV_KEYBOARD_DetectLayout (Display *display)
+#endif
 {
+#ifndef OUTOFWINE
   Display *display = thread_display();
+#endif
   unsigned current, match, mismatch, seq, i, syms;
   int score, keyc, key, pkey, ok;
   KeySym keysym = 0;
@@ -1653,20 +1618,33 @@ X11DRV_KEYBOARD_DetectLayout (void)
 /**********************************************************************
  *		X11DRV_InitKeyboard
  */
+#ifndef OUTOFWINE
+void X11DRV_InitKeyboard(void)
+#else
 void X11DRV_InitKeyboard(Display *display)
+#endif
 {
+#ifndef OUTOFWINE
+    Display *display = thread_display();
     KeySym *ksp;
     XModifierKeymap *mmp;
     KeySym keysym;
     KeyCode *kcp;
     XKeyEvent e2;
     WORD scan, vkey, OEMvkey;
+#else
+    KeySym *ksp;
+    KeySym keysym;
+    XKeyEvent e2;
+    WORD scan;
+#endif
     int keyc, i, keyn, syms;
     char ckey[4]={0,0,0,0};
     const char (*lkey)[MAIN_LEN][4];
+#ifndef OUTOFWINE
     char vkey_used[256] = { 0 };
+#endif
 
-    dpy_global = display;
     wine_tsx11_lock();
     XDisplayKeycodes(display, &min_keycode, &max_keycode);
     ksp = XGetKeyboardMapping(display, min_keycode,
@@ -1675,6 +1653,7 @@ void X11DRV_InitKeyboard(Display *display)
        There is no need to hold a local copy of the keysyms table */
     XFree(ksp);
 
+#ifndef OUTOFWINE
     mmp = XGetModifierMapping(display);
     kcp = mmp->modifiermap;
     for (i = 0; i < 8; i += 1) /* There are 8 modifier keys */
@@ -1698,6 +1677,10 @@ void X11DRV_InitKeyboard(Display *display)
 
     /* Detect the keyboard layout */
     X11DRV_KEYBOARD_DetectLayout();
+#else
+    /* Detect the keyboard layout */
+    X11DRV_KEYBOARD_DetectLayout(display);
+#endif
     lkey = main_key_tab[kbd_layout].key;
     syms = (keysyms_per_keycode > 4) ? 4 : keysyms_per_keycode;
 
@@ -1708,8 +1691,10 @@ void X11DRV_InitKeyboard(Display *display)
     e2.display = display;
     e2.state = 0;
 
+#ifndef OUTOFWINE
     OEMvkey = VK_OEM_8; /* next is available.  */
     memset(keyc2vkey, 0, sizeof(keyc2vkey));
+#endif
     for (keyc = min_keycode; keyc <= max_keycode; keyc++)
     {
         char buf[30];
@@ -1718,23 +1703,42 @@ void X11DRV_InitKeyboard(Display *display)
         keysym = 0;
         e2.keycode = (KeyCode)keyc;
         have_chars = XLookupString(&e2, buf, sizeof(buf), &keysym, NULL);
+#ifndef OUTOFWINE
         vkey = 0; scan = 0;
+#else
+        scan = 0;
+#endif
         if (keysym)  /* otherwise, keycode not used */
         {
             if ((keysym >> 8) == 0xFF)         /* non-character key */
             {
+#ifndef OUTOFWINE
                 vkey = nonchar_key_vkey[keysym & 0xff];
+#endif
                 scan = nonchar_key_scan[keysym & 0xff];
 		/* set extended bit when necessary */
+#ifndef OUTOFWINE
 		if (scan & 0x100) vkey |= 0x100;
+#endif
             } else if ((keysym >> 8) == 0x1008FF) { /* XFree86 vendor keys */
+#ifndef OUTOFWINE
                 vkey = xfree86_vendor_key_vkey[keysym & 0xff];
                 /* All vendor keys are extended with a scan code of 0 per testing on WinXP */
                 scan = 0x100;
 		vkey |= 0x100;
+#else
+                /* @michael: this needs to be investigated and improved on. */
+                scan = 0x100;
+#endif
             } else if (keysym == 0x20) {                 /* Spacebar */
+#ifndef OUTOFWINE
 	        vkey = VK_SPACE;
+#endif
 		scan = 0x39;
+#ifdef OUTOFWINE
+            } else if (keysym == 0xFE03) {               /* ISO level3 shift, aka AltGr */
+		scan = 0x138;
+#endif /* OUTOFWINE defined */
 	    } else if (have_chars) {
 	      /* we seem to need to search the layout-dependent scancodes */
 	      int maxlen=0,maxval=-1,ok;
@@ -1768,21 +1772,31 @@ void X11DRV_InitKeyboard(Display *display)
 	      }
 	      if (maxval>=0) {
 		/* got it */
+#ifndef OUTOFWINE
 		const WORD (*lscan)[MAIN_LEN] = main_key_tab[kbd_layout].scan;
 		const WORD (*lvkey)[MAIN_LEN] = main_key_tab[kbd_layout].vkey;
 		scan = (*lscan)[maxval];
 		vkey = (*lvkey)[maxval];
+#else
+		const WORD (*lscan)[MAIN_LEN] = main_key_tab[kbd_layout].scan;
+		scan = (*lscan)[maxval];
+#endif
 	      }
 	    }
         }
+#ifndef OUTOFWINE
         TRACE("keycode %04x => vkey %04x\n", e2.keycode, vkey);
         keyc2vkey[e2.keycode] = vkey;
         keyc2scan[e2.keycode] = scan;
         if ((vkey & 0xff) && vkey_used[(vkey & 0xff)])
             WARN("vkey %04x is being used by more than one keycode\n", vkey);
         vkey_used[(vkey & 0xff)] = 1;
+#else
+        keyc2scan[e2.keycode] = scan;
+#endif
     } /* for */
 
+#ifndef OUTOFWINE
 #define VKEY_IF_NOT_USED(vkey) (vkey_used[(vkey)] ? 0 : (vkey_used[(vkey)] = 1, (vkey)))
     for (keyc = min_keycode; keyc <= max_keycode; keyc++)
     {
@@ -1827,43 +1841,36 @@ void X11DRV_InitKeyboard(Display *display)
 
         if (!vkey)
         {
-            /* @@@AH VBOX hack for AltGr */
-            if (e2.keycode == 0x71)
-            {
-                TRACE("VBOX HACK, mapping keycode 0x71 to scancode %X\n", VK_MENU);
-                vkey = VK_MENU | 0x100;
-            } else {
             /* Others keys: let's assign OEM virtual key codes in the allowed range,
              * that is ([0xba,0xc0], [0xdb,0xe4], 0xe6 (given up) et [0xe9,0xf5]) */
-                do
+            do
+            {
+                switch (++OEMvkey)
                 {
-                    switch (++OEMvkey)
-                    {
-                    case 0xc1 : OEMvkey=0xdb; break;
-                    case 0xe5 : OEMvkey=0xe9; break;
-                    case 0xf6 : OEMvkey=0xf5; WARN("No more OEM vkey available!\n");
-                    }
-                } while (OEMvkey < 0xf5 && vkey_used[OEMvkey]);
-
-                vkey = VKEY_IF_NOT_USED(OEMvkey);
-
-                if (TRACE_ON(keyboard))
-                {
-                    TRACE("OEM specific virtual key %X assigned to keycode %X:\n",
-                                     OEMvkey, e2.keycode);
-                    TRACE("(");
-                    for (i = 0; i < keysyms_per_keycode; i += 1)
-                    {
-                        const char *ksname;
-
-                        keysym = XLookupKeysym(&e2, i);
-                        ksname = XKeysymToString(keysym);
-                        if (!ksname)
-                            ksname = "NoSymbol";
-                        TRACE( "%lX (%s) ", keysym, ksname);
-                    }
-                    TRACE(")\n");
+                case 0xc1 : OEMvkey=0xdb; break;
+                case 0xe5 : OEMvkey=0xe9; break;
+                case 0xf6 : OEMvkey=0xf5; WARN("No more OEM vkey available!\n");
                 }
+            } while (OEMvkey < 0xf5 && vkey_used[OEMvkey]);
+
+            vkey = VKEY_IF_NOT_USED(OEMvkey);
+
+            if (TRACE_ON(keyboard))
+            {
+                TRACE("OEM specific virtual key %X assigned to keycode %X:\n",
+                                 OEMvkey, e2.keycode);
+                TRACE("(");
+                for (i = 0; i < keysyms_per_keycode; i += 1)
+                {
+                    const char *ksname;
+
+                    keysym = XLookupKeysym(&e2, i);
+                    ksname = XKeysymToString(keysym);
+                    if (!ksname)
+                        ksname = "NoSymbol";
+                    TRACE( "%lX (%s) ", keysym, ksname);
+                }
+                TRACE(")\n");
             }
         }
 
@@ -1883,20 +1890,11 @@ void X11DRV_InitKeyboard(Display *display)
 	ksname = XKeysymToString(keysym);
 	if (!ksname) ksname = "NoSymbol";
 
-    /* @@@AH VBOX hack for AltGr */
-    if (keyc == 0x71)
-    {
-        TRACE("VBOX HACK for AltGr: mapping 0x71 to scancode 0x38");
-        keyc2scan[keyc] = 0x38;
-    } else
-    {
-
 	/* should make sure the scancode is unassigned here, but >=0x60 currently always is */
 
 	TRACE_(key)("assigning scancode %02x to unidentified keycode %02x (%s)\n",scan,keyc,ksname);
 	keyc2scan[keyc]=scan++;
       }
-    }
 
     /* Now store one keycode for each modifier. Used to simulate keypresses. */
     kcControl = XKeysymToKeycode(display, XK_Control_L);
@@ -1905,6 +1903,7 @@ void X11DRV_InitKeyboard(Display *display)
     kcShift = XKeysymToKeycode(display, XK_Shift_L);
     kcNumLock = XKeysymToKeycode(display, XK_Num_Lock);
     kcCapsLock = XKeysymToKeycode(display, XK_Caps_Lock);
+#endif /* OUTOFWINE not defined */
     wine_tsx11_unlock();
 }
 
