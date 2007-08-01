@@ -383,6 +383,9 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                             Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
                         }
                         else
+                        if (end == src)
+                            rc = VINF_SUCCESS;  /* trailing delimiter */
+                        else
                             rc = VERR_FILE_NOT_FOUND;
             
                         if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
