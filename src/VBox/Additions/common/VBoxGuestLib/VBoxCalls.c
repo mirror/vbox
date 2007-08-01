@@ -216,6 +216,32 @@ DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
         pMap->root = data.root.u.value32;
         rc         = data.callInfo.result;
     }
+    else
+    if (rc == VERR_NOT_IMPLEMENTED)
+    {
+        /* try the legacy interface too; temporary to assure backwards compatibility */
+        VBoxSFMapFolder_Old data;
+
+        VBOX_INIT_CALL(&data.callInfo, MAP_FOLDER_OLD, pClient);
+
+        data.path.type                    = VMMDevHGCMParmType_LinAddr;
+        data.path.u.Pointer.size          = ShflStringSizeOfBuffer (szFolderName);
+        data.path.u.Pointer.u.linearAddr  = (VBOXGCPTR)szFolderName;
+
+        data.root.type                    = VMMDevHGCMParmType_32bit;
+        data.root.u.value32               = 0;
+
+        data.delimiter.type               = VMMDevHGCMParmType_32bit;
+        data.delimiter.u.value32          = RTPATH_DELIMITER;
+
+        rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
+
+        if (VBOX_SUCCESS (rc))
+        {
+            pMap->root = data.root.u.value32;
+            rc         = data.callInfo.result;
+        }
+    }
     return rc;
 }
 
