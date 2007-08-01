@@ -201,7 +201,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     *(pszStartComponent-1) = 0;
     strcpy(pDirEntry->szName, pszFullPath);
     strcat(pDirEntry->szName, "\\*");
-    rc = rtDirOpenFiltered (&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT);
+    rc = RTDirOpenFiltered (&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT);
     *(pszStartComponent-1) = RTPATH_DELIMITER;
     if (VBOX_FAILURE(rc))
         goto end;
@@ -210,7 +210,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     {
         uint32_t cbDirEntrySize = cbDirEntry;
 
-        rc = rtDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING);
+        rc = RTDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING);
         if (rc == VERR_NO_MORE_FILES)
             break;
 
@@ -237,7 +237,7 @@ end:
     if (pDirEntry)
         RTMemFree(pDirEntry);
 
-    rtDirClose(hSearch);
+    RTDirClose(hSearch);
     return rc;
 }
 
