@@ -34,6 +34,10 @@
 #include <iprt/uni.h>
 #include <stdio.h>
 
+/* override for linux host */
+#undef RTPATH_DELIMITER
+#define RTPATH_DELIMITER       '\\'
+
 #undef Log
 #define Log(a)  printf a
 
