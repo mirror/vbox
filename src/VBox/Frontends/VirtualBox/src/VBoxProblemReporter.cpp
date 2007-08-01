@@ -1257,7 +1257,7 @@ int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
                                                    const QString &aSrc2)
 {
     return message (&vboxGlobal().consoleWnd(), Question,
-                    tr ("<p>Failed to find the VirtualBox Guest Additions "
+                    tr ("<p>Could not find the VirtualBox Guest Additions "
                         "CD image file <nobr><b>%1</b></nobr> or "
                         "<nobr><b>%2</b>.</nobr></p><p>Do you want to "
                         "download this CD image from the Internet?</p>")
@@ -1583,8 +1583,8 @@ int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
             "media to it later using the machine settings dialog or the First "
             "Run Wizard.</p><p>Do you want to continue?</p>"),
         0, /* autoConfirmId */
-        QIMessageBox::Yes | QIMessageBox::Default,
-        QIMessageBox::No | QIMessageBox::Escape);
+        QIMessageBox::Yes,
+        QIMessageBox::No | QIMessageBox::Default | QIMessageBox::Escape);
 }
 
 void VBoxProblemReporter::cannotRunInSelectorMode()
