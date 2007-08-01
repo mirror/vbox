@@ -41,7 +41,10 @@
 #undef Log
 #define Log(a)  printf a
 
-#define RTPathQueryInfo rtPathQueryInfo
+#define RTPathQueryInfo     rtPathQueryInfo
+#define RTDirOpenFiltered   rtDirOpenFiltered
+#define RTDirClose          rtDirClose
+#define RTDirReadEx         rtDirReadEx
 
 static int iDirList = 0;
 static int iDirFile = 0;
@@ -247,10 +250,31 @@ end:
 
 
 
-int testCase(char *pszFullPath)
+int testCase(char *pszFullPath, bool fWildCard = false)
 {
     int rc;
     RTFSOBJINFO info;
+    char *pszWildCardComponent = NULL;
+
+    if (fWildCard)
+    {
+        /* strip off the last path component, that contains the wildcard(s) */
+        uint32_t len = strlen(pszFullPath);
+        char    *src = pszFullPath + len - 1;
+
+        while(src > pszFullPath)
+        {
+            if (*src == RTPATH_DELIMITER)
+                break;
+            src--;
+        }
+        if (*src == RTPATH_DELIMITER)
+        {
+            pszWildCardComponent = src;
+            *pszWildCardComponent = 0;
+        }
+    }
+
     rc = RTPathQueryInfo(pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
     if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
     {
@@ -327,6 +351,11 @@ int testCase(char *pszFullPath)
             rc = VERR_FILE_NOT_FOUND;
 
     }
+    if (fWildCard)
+    {
+        Assert(pszWildCardComponent);
+        *pszWildCardComponent = RTPATH_DELIMITER;
+    }
 
     if (VBOX_SUCCESS(rc))
         Log(("New valid path %s\n", pszFullPath));
@@ -348,5 +377,8 @@ int main(int argc, char **argv)
     testCase(szTest);
     strcpy(szTest, "c:\\TEST dir\\subDiR\\aTestje.baT");
     testCase(szTest);
+    _asm int 3;
+    strcpy(szTest, "c:\\TEST dir\\subDiR\\*");
+    testCase(szTest, true);
     return 0;
 }
