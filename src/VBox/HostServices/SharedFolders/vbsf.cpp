@@ -93,16 +93,18 @@ void vbsfStripLastComponent (char *pszFullPath, uint32_t cbFullPathRoot)
 
     LogFlowFunc(("%s, %s, %s\n", pszFullPath, delimLast, delimSecondLast));
 }
-#if 0
+
 static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 {
-    PRTDIRENTRYEX  pDirEntry = 0, pDirEntryOrg;
-    uint32_t       cbDirEntry, cbBufferOrg;
+    PRTDIRENTRYEX  pDirEntry = NULL;
+    uint32_t       cbDirEntry, cbComponent;
     int            rc = VERR_FILE_NOT_FOUND;
-    RTDIR          hSearch;
+    PRTDIR         hSearch;
+
+    cbComponent = strlen(pszStartComponent);
 
     cbDirEntry = 4096;
-    pDirEntryOrg = pDirEntry  = (PRTDIRENTRYEX)RTMemAlloc(cbDirEntry);
+    pDirEntry  = (PRTDIRENTRYEX)RTMemAlloc(cbDirEntry);
     if (pDirEntry == 0)
     {
         AssertFailed();
@@ -110,23 +112,23 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     }
 
     /** @todo this is quite inefficient, especially for directories with many files */
-    rc = RTDirOpenFiltered (&hSearch, pszFullPath, RTDIRFILTER_WINNT);
+    Assert(pszFullPath < pszStartComponent-1);
+    Assert(*(pszStartComponent-1) == RTPATH_DELIMITER);
+    *(pszStartComponent-1) = 0;
+    strcpy(pDirEntry->szName, pszFullPath);
+    strcat(pDirEntry->szName, "\\*");
+    rc = RTDirOpenFiltered (&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT);
+    *(pszStartComponent-1) = RTPATH_DELIMITER;
     if (VBOX_FAILURE(rc))
         goto end;
 
     for(;;)
     {
         uint32_t cbDirEntrySize = cbDirEntry;
-        uint32_t cbNeeded;
 
-        pDirEntry = pDirEntryOrg;
-
-        rc = RTDirReadEx(DirHandle, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING);
+        rc = RTDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING);
         if (rc == VERR_NO_MORE_FILES)
-        {
-            *pIndex = 0; /* listing completed */
             break;
-        }
 
         if (VINF_SUCCESS != rc && rc != VWRN_NO_DIRENT_INFO)
         {
@@ -136,9 +138,16 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
             else
                 continue;
         }
-
+        if (    pDirEntry->cbName == cbComponent
+            &&  !RTStrICmp(pszStartComponent, &pDirEntry->szName[0]))
+        {
+            Log(("Found original name %s (%s)\n", &pDirEntry->szName[0], pszStartComponent));
+            strcpy(pszStartComponent, &pDirEntry->szName[0]);
+            rc = VINF_SUCCESS;
+            break;
+        }
     }
-    Assert(rc != VINF_SUCCESS);
+    Assert(VBOX_SUCCESS(rc));
 
 end:
     if (pDirEntry)
@@ -147,7 +156,6 @@ end:
     RTDirClose(hSearch);
     return rc;
 }
-#endif
 
 static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath,
                               uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot)
@@ -300,12 +308,12 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             &&  !vbsfIsGuestMappingCaseSensitive(root))
         {
             RTFSOBJINFO info;
-            rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
+            rc = RTPathQueryInfo(pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
             {
                 uint32_t len = strlen(pszFullPath);
                 char    *src = pszFullPath + len - 1;
-                
+        
                 Log(("Handle case insenstive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
 
                 /* Find partial path that's valid */
@@ -337,6 +345,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                     for(;;)
                     {
                         char *end = src;
+                        bool fEndOfString = true;
 
                         while(*end)
                         {
@@ -344,13 +353,17 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                                 break;
                             end++;
                         }
-                        if (!*end)
-                            break;
 
-                        *end = 0;
-                    
-                        rc = RTPathQueryInfo(src, &info, RTFSOBJATTRADD_NOTHING);
-                        Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
+                        if (*end == RTPATH_DELIMITER)
+                        {
+                            fEndOfString = false;
+                            *end = 0;
+                            rc = RTPathQueryInfo(src, &info, RTFSOBJATTRADD_NOTHING);
+                            Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
+                        }
+                        else
+                            rc = VERR_FILE_NOT_FOUND;
+            
                         if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
                         {
                             /* path component is invalid; try to correct the casing */
@@ -358,6 +371,9 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                             if (VBOX_FAILURE(rc))
                                 break;
                         }
+
+                        if (fEndOfString)
+                            break;
 
                         *end = RTPATH_DELIMITER;
                         src = end + 1;
