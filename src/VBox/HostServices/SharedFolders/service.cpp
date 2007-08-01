@@ -1031,6 +1031,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
         default:
         {
             rc = VERR_NOT_IMPLEMENTED;
+            break;
         }
     }
 
