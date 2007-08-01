@@ -147,7 +147,8 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
             break;
         }
     }
-    Assert(VBOX_SUCCESS(rc));
+    if (VBOX_FAILURE(rc))
+        Log(("vbsfCorrectCasing %s failed with %d\n", pszStartComponent, rc));
 
 end:
     if (pDirEntry)
@@ -401,7 +402,8 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                         *end = RTPATH_DELIMITER;
                         src = end + 1;
                     }
-                    Assert(rc == VINF_SUCCESS);
+                    if (VBOX_FAILURE(rc))
+                        Log(("Unable to find suitable component rc=%d\n", rc));
                 }
                 else
                     rc = VERR_FILE_NOT_FOUND;
