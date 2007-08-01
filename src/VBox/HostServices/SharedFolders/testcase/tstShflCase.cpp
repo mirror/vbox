@@ -377,7 +377,6 @@ int main(int argc, char **argv)
     testCase(szTest);
     strcpy(szTest, "c:\\TEST dir\\subDiR\\aTestje.baT");
     testCase(szTest);
-    _asm int 3;
     strcpy(szTest, "c:\\TEST dir\\subDiR\\*");
     testCase(szTest, true);
     return 0;
