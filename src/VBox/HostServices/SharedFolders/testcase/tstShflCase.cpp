@@ -271,8 +271,26 @@ int testCase(char *pszFullPath, bool fWildCard = false)
         }
         if (*src == RTPATH_DELIMITER)
         {
-            pszWildCardComponent = src;
-            *pszWildCardComponent = 0;
+            bool fHaveWildcards = false;
+            char *temp = src;
+
+            while(*temp)
+            {
+                char uc = *temp;
+                /** @todo should depend on the guest OS */
+                if (uc == '*' || uc == '?' || uc == '>' || uc == '<' || uc == '"')
+                {
+                    fHaveWildcards = true;
+                    break;
+                }
+                temp++;
+            }
+
+            if (fHaveWildcards)
+            {
+                pszWildCardComponent = src;
+                *pszWildCardComponent = 0;
+            }
         }
     }
 
@@ -356,11 +374,8 @@ int testCase(char *pszFullPath, bool fWildCard = false)
             rc = VERR_FILE_NOT_FOUND;
 
     }
-    if (fWildCard)
-    {
-        Assert(pszWildCardComponent);
+    if (pszWildCardComponent)
         *pszWildCardComponent = RTPATH_DELIMITER;
-    }
 
     if (VBOX_SUCCESS(rc))
         Log(("New valid path %s\n", pszFullPath));
@@ -385,7 +400,7 @@ int main(int argc, char **argv)
     strcpy(szTest, "c:\\TEST dir\\subDiR\\*");
     testCase(szTest, true);
     strcpy(szTest, "c:\\TEST dir\\subDiR\\");
-    testCase(szTest);
+    testCase(szTest ,true);
     strcpy(szTest, "c:\\test dir\\SUBDIR\\");
     testCase(szTest);
     return 0;
