@@ -324,8 +324,25 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                 }
                 if (*src == RTPATH_DELIMITER)
                 {
-                    pszWildCardComponent = src;
-                    *pszWildCardComponent = 0;
+                    bool fHaveWildcards = false;
+                    char *temp = src;
+
+                    while(*temp)
+                    {
+                        char uc = *temp;
+                        if (uc == '*' || uc == '?' || uc == '>' || uc == '<' || uc == '"')
+                        {
+                            fHaveWildcards = true;
+                            break;
+                        }
+                        temp++;
+                    }
+
+                    if (fHaveWildcards)
+                    {
+                        pszWildCardComponent = src;
+                        *pszWildCardComponent = 0;
+                    }
                 }
             }
 
@@ -409,11 +426,8 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                     rc = VERR_FILE_NOT_FOUND;
 
             }
-            if (fWildCard)
-            {
-                Assert(pszWildCardComponent);
+            if (pszWildCardComponent)
                 *pszWildCardComponent = RTPATH_DELIMITER;
-            }
         }
         *ppszFullPath = pszFullPath;
 
