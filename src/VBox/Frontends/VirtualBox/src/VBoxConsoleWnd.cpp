@@ -229,6 +229,9 @@ public:
 
         mProgressBar = new QProgressBar (this);
         mProgressBar->setFixedWidth (100);
+        mProgressBar->setPercentageVisible (true);
+        mProgressBar->setProgress (0);
+
         mCancelButton = new QToolButton (this);
         mCancelButton->setAutoRaise (true);
         mCancelButton->setFocusPolicy (TabFocus);
@@ -272,8 +275,8 @@ public:
     void languageChange()
     {
         mCancelButton->setText (tr ("Cancel"));
-        QToolTip::add (mProgressBar, tr ("Downloading the VirtualBox Guest Additions CD image "
-                                         "from <nobr><b>%1</b>...</nobr>")
+        QToolTip::add (mProgressBar, tr ("Downloading the VirtualBox Guest Additions "
+                                         "CD image from <nobr><b>%1</b>...</nobr>")
                                      .arg (mProtocol + mHost + mPath + mFile));
         QToolTip::add (mCancelButton, tr ("Cancel the VirtualBox Guest "
                                           "Additions CD image download"));
@@ -294,7 +297,8 @@ private slots:
                 mHttp->abort();
                 if (mStatus == 404)
                     abortDownload (tr ("Could not locate the file on "
-                                       "the server."));
+                                       "the server (response: %1).")
+                                   .arg (mStatus));
                 else
                     processFile (aTotal);
             }
@@ -351,10 +355,10 @@ private slots:
     /* This slot is used to control the connection timeout. */
     void processTimeout()
     {
-        if (mConnectDone) return;
+        if (mConnectDone)
+            return;
         mHttp->abort();
-        abortDownload (tr ("The download process has been cancelled "
-                           "due to connection timeout."));
+        abortDownload (tr ("Connection timed out."));
     }
 
     /* This slot is used to process cancel-button clicking signal. */
@@ -400,20 +404,23 @@ private:
             getFile();
         }
         else
-            abortDownload (tr ("Download rejected by user."));
+            abortDownload();
     }
 
-    /* This wrapper displays the error message box with the root cause of the
-     * download procedure termination. It is also used to command the
-     * downloader to terminate himself after all the events being processed. */
-    void abortDownload (const QString &aReason)
+    /* This wrapper displays an error message box (unless @aReason is
+     * QString::null) with the cause of the download procedure
+     * termination. After the message box is dismissed, the downloader signals
+     * to close itself on the next event loop iteration. */
+    void abortDownload (const QString &aReason = QString::null)
     {
         /* Protect against double kill request. */
-        if (mSuicide) return;
+        if (mSuicide)
+            return;
         mSuicide = true;
 
-        vboxProblem().cannotDownloadGuestAdditions (mProtocol + mHost +
-                                                    mPath + mFile, aReason);
+        if (!aReason.isNull())
+            vboxProblem().cannotDownloadGuestAdditions (mProtocol + mHost +
+                                                        mPath + mFile, aReason);
         /* Allows all the queued signals to be processed before quit. */
         QTimer::singleShot (0, this, SLOT (suicide()));
     }
