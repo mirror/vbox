@@ -329,6 +329,9 @@ int testCase(char *pszFullPath, bool fWildCard = false)
                     Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
                 }
                 else
+                if (end == src)
+                    rc = VINF_SUCCESS;  /* trailing delimiter */
+                else
                     rc = VERR_FILE_NOT_FOUND;
             
                 if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
@@ -379,5 +382,9 @@ int main(int argc, char **argv)
     testCase(szTest);
     strcpy(szTest, "c:\\TEST dir\\subDiR\\*");
     testCase(szTest, true);
+    strcpy(szTest, "c:\\TEST dir\\subDiR\\");
+    testCase(szTest);
+    strcpy(szTest, "c:\\test dir\\SUBDIR\\");
+    testCase(szTest);
     return 0;
 }
