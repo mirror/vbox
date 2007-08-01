@@ -219,6 +219,7 @@ public:
         , mHttp (0), mIsChecking (true)
         , mProgressBar (0), mCancelButton (0)
         , mAction (aAction), mStatus (0)
+        , mConnectDone (false), mSuicide (false)
     {
         /* Disable Install Guest Additions action */
         mAction->setEnabled (false);
@@ -265,7 +266,7 @@ public:
         mStatusBar->addWidget (this);
 
         /* Try to get the required file for the information */
-        mHttp->get (mPath + mFile);
+        getFile();
     }
 
     void languageChange()
@@ -285,6 +286,7 @@ private slots:
      * presence verifying purposes. */
     void processProgress (int aRead, int aTotal)
     {
+        mConnectDone = true;
         if (aTotal != -1)
         {
             if (mIsChecking)
@@ -310,6 +312,7 @@ private slots:
     {
         if (aError && mHttp->error() != QHttp::Aborted)
         {
+            mConnectDone = true;
             QString reason = mIsChecking ?
                 tr ("Could not connect to the server (%1).") :
                 tr ("Could not download the file (%1).");
@@ -345,9 +348,19 @@ private slots:
         mStatus = aHeader.statusCode();
     }
 
+    /* This slot is used to control the connection timeout. */
+    void processTimeout()
+    {
+        if (mConnectDone) return;
+        mHttp->abort();
+        abortDownload (tr ("The download process has been cancelled "
+                           "due to connection timeout."));
+    }
+
     /* This slot is used to process cancel-button clicking signal. */
     void processAbort()
     {
+        mConnectDone = true;
         mHttp->abort();
         abortDownload (tr ("The download process has been cancelled "
                            "by the user."));
@@ -365,6 +378,14 @@ private slots:
 
 private:
 
+    /* This function is used to make a request to get a file */
+    void getFile()
+    {
+        mConnectDone = false;
+        mHttp->get (mPath + mFile);
+        QTimer::singleShot (5000, this, SLOT (processTimeout()));
+    }
+
     /* This function is used to ask the user about he wants to download the
      * founded Guest Additions image or not. It also shows the progress-bar
      * and Cancel-button widgets. */
@@ -376,7 +397,7 @@ private:
         if (rc == QIMessageBox::Yes)
         {
             mIsChecking = false;
-            mHttp->get (mPath + mFile);
+            getFile();
         }
         else
             abortDownload (tr ("Download rejected by user."));
@@ -387,6 +408,10 @@ private:
      * downloader to terminate himself after all the events being processed. */
     void abortDownload (const QString &aReason)
     {
+        /* Protect against double kill request. */
+        if (mSuicide) return;
+        mSuicide = true;
+
         vboxProblem().cannotDownloadGuestAdditions (mProtocol + mHost +
                                                     mPath + mFile, aReason);
         /* Allows all the queued signals to be processed before quit. */
@@ -404,6 +429,8 @@ private:
     QToolButton *mCancelButton;
     QAction *mAction;
     int mStatus;
+    bool mConnectDone;
+    bool mSuicide;
 };
 
 /** \class VBoxConsoleWnd
