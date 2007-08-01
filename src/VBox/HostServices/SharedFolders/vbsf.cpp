@@ -93,7 +93,7 @@ void vbsfStripLastComponent (char *pszFullPath, uint32_t cbFullPathRoot)
 
     LogFlowFunc(("%s, %s, %s\n", pszFullPath, delimLast, delimSecondLast));
 }
-
+#if 0
 static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 {
     PRTDIRENTRYEX  pDirEntry = 0, pDirEntryOrg;
@@ -147,6 +147,7 @@ end:
     RTDirClose(hSearch);
     return rc;
 }
+#endif
 
 static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath,
                               uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot)
