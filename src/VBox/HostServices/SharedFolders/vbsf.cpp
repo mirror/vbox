@@ -405,11 +405,11 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                     rc = VERR_FILE_NOT_FOUND;
 
             }
-        }
-        if (fWildCard)
-        {
-            Assert(pszWildCardComponent);
-            *pszWildCardComponent = RTPATH_DELIMITER;
+            if (fWildCard)
+            {
+                Assert(pszWildCardComponent);
+                *pszWildCardComponent = RTPATH_DELIMITER;
+            }
         }
 #endif
         *ppszFullPath = pszFullPath;
