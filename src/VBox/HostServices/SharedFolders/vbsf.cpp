@@ -302,7 +302,6 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 
     if (VBOX_SUCCESS (rc))
     {
-#if 0
         /* When the host file system is case sensitive and the guest expects a case insensitive fs, then problems can occur */
         if (     vbsfIsHostMappingCaseSensitive (root)
             &&  !vbsfIsGuestMappingCaseSensitive(root))
@@ -414,7 +413,6 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                 *pszWildCardComponent = RTPATH_DELIMITER;
             }
         }
-#endif
         *ppszFullPath = pszFullPath;
 
         LogFlow(("vbsfBuildFullPath: %s\n", pszFullPath));
