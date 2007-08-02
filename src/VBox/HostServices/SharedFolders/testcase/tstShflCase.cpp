@@ -40,6 +40,8 @@
 
 #undef Log
 #define Log(a)  printf a
+#undef Log2
+#define Log2    Log
 
 #define RTPathQueryInfo     rtPathQueryInfo
 #define RTDirOpenFiltered   rtDirOpenFiltered
@@ -191,6 +193,9 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     uint32_t       cbDirEntry, cbComponent;
     int            rc = VERR_FILE_NOT_FOUND;
     PRTDIR         hSearch;
+    char           szWildCard[4];
+
+    Log2(("vbsfCorrectCasing: %s %s\n", pszFullPath, pszStartComponent));
 
     cbComponent = strlen(pszStartComponent);
 
@@ -207,7 +212,11 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     Assert(*(pszStartComponent-1) == RTPATH_DELIMITER);
     *(pszStartComponent-1) = 0;
     strcpy(pDirEntry->szName, pszFullPath);
-    strcat(pDirEntry->szName, "\\*");
+    szWildCard[0] = RTPATH_DELIMITER;
+    szWildCard[1] = '*';
+    szWildCard[2] = 0;
+    strcat(pDirEntry->szName, szWildCard);
+
     rc = RTDirOpenFiltered (&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT);
     *(pszStartComponent-1) = RTPATH_DELIMITER;
     if (VBOX_FAILURE(rc))
@@ -229,6 +238,8 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
             else
                 continue;
         }
+
+        Log2(("vbsfCorrectCasing: found %s\n", &pDirEntry->szName[0]));
         if (    pDirEntry->cbName == cbComponent
             &&  !RTStrICmp(pszStartComponent, &pDirEntry->szName[0]))
         {
