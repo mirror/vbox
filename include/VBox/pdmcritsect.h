@@ -18,12 +18,11 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef ___VBox_pdm_h
-# include <VBox/pdm.h>
-#endif
-
 #ifndef ___VBox_pdmcritsect_h
 #define ___VBox_pdmcritsect_h
+
+#include <VBox/types.h>
+#include <iprt/critsect.h>
 
 __BEGIN_DECLS
 
