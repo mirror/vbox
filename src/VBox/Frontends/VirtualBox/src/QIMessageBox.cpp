@@ -82,7 +82,8 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     mTextLabel = new QIRichLabel (aText, mMessageVBox);
     mTextLabel->setAlignment (AlignAuto | AlignTop | ExpandTabs | WordBreak);
-    mTextLabel->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Fixed, true);
+    mTextLabel->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred, true);
+    mTextLabel->setMinimumWidth (mTextLabel->sizeHint().width());
 
     mFlagCB_Main = new QCheckBox (mMessageVBox);
     mFlagCB_Main->hide();
