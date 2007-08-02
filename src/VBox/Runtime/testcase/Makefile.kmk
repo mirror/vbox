@@ -66,9 +66,11 @@ PROGRAMS.linux = \
 	tstInlineAsmPIC3
 PROGRAMS.l4 = \
 	tstIoCtl
+ifneq ($(BUILD_TARGET),solaris)
 SYSMODS = \
 	tstLdrObj \
 	tstLdrObjR0
+endif
 ifeq ($(filter-out lx pe,$(VBOX_LDR_FMT)), )
 LIBRARIES += \
 	tstLdr-4Imp
