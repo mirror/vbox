@@ -819,9 +819,11 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         /** r=bird: This is likely to create race conditions.
          * What is a file now can be a directory when you open it. */
         rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
+        Log2(("RTPathQueryInfo returned %Vrc\n", rc));
 
         if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_LOOKUP))
         {
+            Log2(("SHFL_CF_LOOKUP\n"));
             /* Client just wants to know if the object exists. */
             switch (rc)
             {
@@ -919,6 +921,8 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         /* Note: In Linux we sometimes get VERR_PATH_NOT_FOUND when only the file is not present (sigh) */
         if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
         {
+            Log2(("pParms->CreateFlags = %x\n", pParms->CreateFlags));
+
             rc = VINF_SUCCESS;
 
             /* File object does not exist. */
