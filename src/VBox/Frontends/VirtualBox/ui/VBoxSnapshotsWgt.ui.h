@@ -582,7 +582,21 @@ void VBoxSnapshotsWgt::takeSnapshot()
     QString typeId = mMachine.GetOSTypeId();
     dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
-    dlg.leName->setText (tr ("Snapshot %1").arg (mMachine.GetSnapshotCount() + 1));
+    /* search for the max available filter index */
+    int maxSnapShotIndex = 0;
+    QString snapShotName = tr ("Snapshot %1");
+    QRegExp regExp (QString ("^") + snapShotName.arg ("([0-9]+)") + QString ("$"));
+    QListViewItemIterator iterator (listView);
+    while (*iterator)
+    {
+        QString snapShot = (*iterator)->text (0);
+        int pos = regExp.search (snapShot);
+        if (pos != -1)
+            maxSnapShotIndex = regExp.cap (1).toInt() > maxSnapShotIndex ?
+                               regExp.cap (1).toInt() : maxSnapShotIndex;
+        ++ iterator;
+    }
+    dlg.leName->setText (snapShotName.arg (maxSnapShotIndex + 1));
 
     if (dlg.exec() == QDialog::Accepted)
     {

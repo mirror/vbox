@@ -271,6 +271,7 @@
     <include location="global" impldecl="in implementation">qdatetime.h</include>
     <include location="global" impldecl="in implementation">qtooltip.h</include>
     <include location="global" impldecl="in implementation">qmetaobject.h</include>
+    <include location="global" impldecl="in implementation">qregexp.h</include>
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
     <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
