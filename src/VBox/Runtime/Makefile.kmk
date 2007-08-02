@@ -859,6 +859,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
 	r0drv/freebsd/initterm-r0drv-freebsd.c \
+	r0drv/freebsd/memobj-r0drv-freebsd.c \
 	r0drv/freebsd/process-r0drv-freebsd.c \
 	r0drv/freebsd/semevent-r0drv-freebsd.c \
 	r0drv/freebsd/semeventmulti-r0drv-freebsd.c \
@@ -866,10 +867,9 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/freebsd/spinlock-r0drv-freebsd.c \
 	r0drv/freebsd/thread-r0drv-freebsd.c \
 	r0drv/freebsd/thread2-r0drv-freebsd.c \
+	r0drv/freebsd/time-r0drv-freebsd.c \
+	r0drv/freebsd/timer-r0drv-freebsd.c \
 	generic/RTTimerCreate-generic.cpp
-#	r0drv/freebsd/memobj-r0drv-freebsd.cpp \
-#	r0drv/freebsd/time-r0drv-freebsd.cpp \
-#	generic/timer-generic.cpp ??
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
