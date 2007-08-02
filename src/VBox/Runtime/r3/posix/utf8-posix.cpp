@@ -34,6 +34,9 @@
 #include <iconv.h>
 #include <wctype.h>
 
+#ifdef RT_OS_SOLARIS
+#include <langinfo.h>
+#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -85,7 +88,14 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
         /*
          * Create conversion object.
          */
-        iconv_t icHandle = iconv_open(pszOutputCS, pszInputCS);
+#ifdef RT_OS_SOLARIS
+        /* Solaris doesn't grok empty codeset strings, so help it find the current codeset. */
+        if (!*pszInputCS)
+            pszInputCS = nl_langinfo(CODESET);
+        if (!*pszOutputCS)
+            pszOutputCS = nl_langinfo(CODESET);
+#endif
+        iconv_t icHandle = iconv_open(pszOutputCS, pszInputCS);        
         if (icHandle != (iconv_t)-1)
         {
             /*
