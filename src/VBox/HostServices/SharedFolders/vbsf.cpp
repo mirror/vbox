@@ -915,7 +915,9 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                 }
             }
         }
-        else if (rc == VERR_FILE_NOT_FOUND)
+        else 
+        /* Note: In Linux we sometimes get VERR_PATH_NOT_FOUND when only the file is not present (sigh) */
+        if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
         {
             rc = VINF_SUCCESS;
 
@@ -968,12 +970,6 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                     }
                 }
             }
-        }
-        else if (rc == VERR_PATH_NOT_FOUND)
-        {
-            rc = VINF_SUCCESS;
-
-            pParms->Result = SHFL_PATH_NOT_FOUND;
         }
 
         if (rc == VINF_SUCCESS && pParms->Handle != SHFL_HANDLE_NIL)
