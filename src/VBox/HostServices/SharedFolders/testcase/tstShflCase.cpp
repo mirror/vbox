@@ -115,6 +115,7 @@ int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter)
     else
         AssertFailed();
 
+    *ppDir = (PRTDIR)1;
     return VINF_SUCCESS;
 }
 
@@ -370,7 +371,11 @@ int testCase(char *pszFullPath, bool fWildCard = false)
                     /* path component is invalid; try to correct the casing */
                     rc = vbsfCorrectCasing(pszFullPath, src);
                     if (VBOX_FAILURE(rc))
+                    {
+                        if (!fEndOfString)
+                              *end = RTPATH_DELIMITER;
                         break;
+                    }
                 }
 
                 if (fEndOfString)
@@ -391,6 +396,8 @@ int testCase(char *pszFullPath, bool fWildCard = false)
 
     if (VBOX_SUCCESS(rc))
         Log(("New valid path %s\n", pszFullPath));
+    else
+        Log(("Old invalid path %s\n", pszFullPath));
     return rc;
 }
 
@@ -414,6 +421,8 @@ int main(int argc, char **argv)
     strcpy(szTest, "c:\\TEST dir\\subDiR\\");
     testCase(szTest ,true);
     strcpy(szTest, "c:\\test dir\\SUBDIR\\");
+    testCase(szTest);
+    strcpy(szTest, "c:\\test dir\\invalid\\SUBDIR\\test.bat");
     testCase(szTest);
     return 0;
 }
