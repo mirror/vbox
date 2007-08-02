@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Ring-0 Driver, The FreeBSD Kernel Headers.
+ * innotek Portable Runtime - Time, Ring-0 Driver, FreeBSD.
  */
 
 /*
@@ -28,35 +28,46 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___the_freebsd_kernel_h
-#define ___the_freebsd_kernel_h
 
-#include <iprt/types.h>
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include "the-freebsd-kernel.h"
+#define RTTIME_INCL_TIMESPEC
 
-/* Deal with conflicts first. */
-#include <sys/param.h>
-#undef PVM
-#include <sys/types.h>
-#include <sys/errno.h>
-#include <sys/kernel.h>
-#include <sys/uio.h>
-#include <sys/libkern.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/pcpu.h>
-#include <sys/proc.h>
-#include <sys/limits.h>
-#include <sys/unistd.h>
-#include <sys/kthread.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/sched.h>
-#include <sys/callout.h>
-#include <vm/vm.h>              /* for vtophys */
-#include <vm/pmap.h>            /* for vtophys */
+#include <iprt/time.h>
 
-/*#ifdef __cplusplus
-# error "This header doesn't work for C++ code. Sorry, typical kernel crap."
-#endif*/
 
-#endif
+RTDECL(uint64_t) RTTimeNanoTS(void)
+{
+    struct timespec tsp;
+    nanouptime(&tsp);
+    return tsp.tv_sec * UINT64_C(1000000000)
+         + tsp.tv_nsec;
+}
+
+
+RTDECL(uint64_t) RTTimeMilliTS(void)
+{
+    return RTTimeNanoTS() / 1000;
+}
+
+
+RTDECL(uint64_t) RTTimeSystemNanoTS(void)
+{
+    return RTTimeNanoTS();
+}
+
+
+RTDECL(uint64_t) RTTimeSystemMilliTS(void)
+{
+    return RTTimeMilliTS();
+}
+
+
+RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
+{
+    struct timespec tsp;
+    nanotime(&tsp);
+    return RTTimeSpecSetTimespec(pTime, &tsp);
+}

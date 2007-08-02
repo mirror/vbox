@@ -26,6 +26,7 @@
 #include <iprt/assert.h>
 #include "internal/magics.h"
 
+__BEGIN_DECLS
 
 /** @defgroup grp_rt_memobj_int Internals.
  * @ingroup grp_rt_memobj
@@ -360,6 +361,8 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
 void rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem);
 
 /** @} */
+
+__END_DECLS
 
 #endif
 
