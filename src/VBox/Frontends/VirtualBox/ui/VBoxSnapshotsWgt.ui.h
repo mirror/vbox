@@ -305,7 +305,7 @@ void VBoxSnapshotsWgt::init()
     VBoxSnapshotsWgtLayout->insertWidget (0, toolBar);
 #ifdef Q_WS_MAC
     toolBar->setMacStyle();
-#endif 
+#endif
 
     /* context menu */
     mContextMenu = new QPopupMenu (this);
@@ -470,8 +470,13 @@ void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &snapshot, QListViewIt
 
 void VBoxSnapshotsWgt::listView_currentChanged (QListViewItem *item)
 {
+    /* Make the selected item visible */
     if (item)
+    {
         listView->ensureItemVisible (item);
+        listView->setContentsPos (item->height() * item->depth(),
+                                  listView->contentsY());
+    }
 
     /* whether another direct session is open or not */
     bool busy = mSessionState != CEnums::SessionClosed;
