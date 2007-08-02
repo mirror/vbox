@@ -424,7 +424,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                             if (VBOX_FAILURE(rc))
                             {
                                 if (!fEndOfString)
-                                    *end = RTPATH_DELIMITER;
+                                    *end = RTPATH_DELIMITER; /* restore the original full path */
                                 break;
                             }
                         }
