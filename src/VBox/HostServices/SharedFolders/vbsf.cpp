@@ -156,10 +156,11 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
             break;
         }
     }
+
+end:
     if (VBOX_FAILURE(rc))
         Log(("vbsfCorrectCasing %s failed with %d\n", pszStartComponent, rc));
 
-end:
     if (pDirEntry)
         RTMemFree(pDirEntry);
 
