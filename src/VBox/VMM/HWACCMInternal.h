@@ -254,7 +254,7 @@ typedef struct HWACCM
     } Event;
 
     /** Saved error from detection */
-    uint32_t                ulLastError;
+    int32_t                 lLastError;
 
     /** HWACCMR0Init was run */
     bool                    fHWACCMR0Init;

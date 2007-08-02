@@ -61,7 +61,7 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
 #ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
 
     pVM->hwaccm.s.fHWACCMR0Init = true;
-    pVM->hwaccm.s.ulLastError   = VINF_SUCCESS;
+    pVM->hwaccm.s.lLastError    = VINF_SUCCESS;
 
     /*
      * Check for VMX capabilities
@@ -133,10 +133,10 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                     }
                 }
                 else
-                    pVM->hwaccm.s.ulLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
+                    pVM->hwaccm.s.lLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
             }
             else
-                pVM->hwaccm.s.ulLastError = VERR_VMX_NO_VMX;
+                pVM->hwaccm.s.lLastError = VERR_VMX_NO_VMX;
         }
         else
         if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
@@ -176,21 +176,21 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                     }
                     else
                     {
-                        pVM->hwaccm.s.ulLastError = VERR_SVM_ILLEGAL_EFER_MSR;
+                        pVM->hwaccm.s.lLastError = VERR_SVM_ILLEGAL_EFER_MSR;
                         AssertFailed();
                     }
                 }
                 else
-                    pVM->hwaccm.s.ulLastError = VERR_SVM_DISABLED;
+                    pVM->hwaccm.s.lLastError = VERR_SVM_DISABLED;
             }
             else
-                pVM->hwaccm.s.ulLastError = VERR_SVM_NO_SVM;
+                pVM->hwaccm.s.lLastError = VERR_SVM_NO_SVM;
         }
         else
-            pVM->hwaccm.s.ulLastError = VERR_HWACCM_UNKNOWN_CPU;
+            pVM->hwaccm.s.lLastError = VERR_HWACCM_UNKNOWN_CPU;
     }
     else
-        pVM->hwaccm.s.ulLastError = VERR_HWACCM_NO_CPUID;
+        pVM->hwaccm.s.lLastError = VERR_HWACCM_NO_CPUID;
 
 #endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
 
