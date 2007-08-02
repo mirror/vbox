@@ -60,7 +60,7 @@ static void VMXR0CheckError(PVM pVM, int rc)
     {
         Log(("VMXR0CheckError failed with %Vrc\n", rc));
     }
-    pVM->hwaccm.s.ulLastError = rc;
+    pVM->hwaccm.s.lLastError = rc;
 }
 
 /**
