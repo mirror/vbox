@@ -96,13 +96,30 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
  * @param   u64NanoInterval     The interval between timer ticks specified in nanoseconds if it's
  *                              a recurring timer. This is rounded to the fit the system timer granularity.
  *                              For one shot timers, pass 0.
- * @param   fFlags              Timer flags. No flags has been defined yet, pass 0.
+ * @param   fFlags              Timer flags.
  * @param   pfnTimer            Callback function which shall be scheduled for execution
  *                              on every timer tick.
  * @param   pvUser              User argument for the callback.
  * @see     RTTimerStart, RTTimerStop, RTTimerDestroy, RTTimerGetSystemGranularity
  */
 RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser);
+
+/** @name RTTimerCreateEx flags
+ * @{ */
+/** Any CPU is fine. (Must be 0.) */
+#define RTTIMER_FLAGS_CPU_ANY        0
+/** One specific CPU */
+#define RTTIMER_FLAGS_CPU_SPECIFIC   BIT(8)
+/** All online CPUs. */
+#define RTTIMER_FLAGS_CPU_ALL        ( RTTIMER_FLAGS_CPU_MASK | RTTIMER_FLAGS_CPU_SPECIFIC )
+/** CPU mask. */
+#define RTTIMER_FLAGS_CPU_MASK       0xff
+/** Convert a CPU number (0-based) to RTTimerCreateEx flags. 
+ * This will automatically OR in the RTTIMER_FLAG_CPU_SPECIFIC flag. */
+#define RTTIMER_FLAGS_CPU(iCpu)      ( (iCpu) | RTTIMER_FLAG_CPU_SPECIFIC )
+/** Macro that validates the flags. */
+#define RTTIMER_FLAGS_IS_VALID(fFlags) ( !((fFlags) & ((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? 0x1ff : 0x100)) )
+/** @} */
 
 /**
  * Stops and destroys a running timer.
