@@ -67,6 +67,10 @@ static DECLCALLBACK(int) pdmR3ThreadWakeup(PPDMTHREAD pThread)
         case PDMTHREADTYPE_DEVICE:
             rc = pThread->u.Dev.pfnWakeup(pThread->u.Dev.pDevIns, pThread);
             break;
+            
+        case PDMTHREADTYPE_USB:
+            rc = pThread->u.Usb.pfnWakeup(pThread->u.Usb.pUsbIns, pThread);
+            break;
 
         case PDMTHREADTYPE_DRIVER:
             rc = pThread->u.Drv.pfnWakeup(pThread->u.Drv.pDrvIns, pThread);
@@ -167,9 +171,23 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
 }
 
 
-
-PDMR3DECL(int) PDMR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
-                                       PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+/**
+ * Device Helper for creating a thread associated with a device.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle. 
+ * @param   pDevIns     The device instance.
+ * @param   ppThread    Where to store the thread 'handle'.
+ * @param   pvUser      The user argument to the thread function.
+ * @param   pfnThread   The thread function.
+ * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ *                      a state change is pending.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   pszName     See RTThreadCreate.
+ */
+int pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
+                            PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
@@ -179,6 +197,130 @@ PDMR3DECL(int) PDMR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD 
         (*ppThread)->u.Dev.pDevIns = pDevIns;
         (*ppThread)->u.Dev.pfnThread = pfnThread;
         (*ppThread)->u.Dev.pfnWakeup = pfnWakeup;
+        rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
+    }
+    return rc;
+}
+
+
+/**
+ * USB Device Helper for creating a thread associated with an USB device.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle. 
+ * @param   pUsbIns     The USB device instance.
+ * @param   ppThread    Where to store the thread 'handle'.
+ * @param   pvUser      The user argument to the thread function.
+ * @param   pfnThread   The thread function.
+ * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ *                      a state change is pending.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   pszName     See RTThreadCreate.
+ */
+int pdmR3ThreadCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADUSB pfnThread,
+                         PFNPDMTHREADWAKEUPUSB pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+{
+    int rc = pdmR3ThreadNew(pVM, ppThread);
+    if (RT_SUCCESS(rc))
+    {
+        (*ppThread)->pvUser = pvUser;
+        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_USB;
+        (*ppThread)->u.Usb.pUsbIns = pUsbIns;
+        (*ppThread)->u.Usb.pfnThread = pfnThread;
+        (*ppThread)->u.Usb.pfnWakeup = pfnWakeup;
+        rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
+    }
+    return rc;
+}
+
+
+/**
+ * Driver Helper for creating a thread associated with a driver.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle. 
+ * @param   pDrvIns     The driver instance.
+ * @param   ppThread    Where to store the thread 'handle'.
+ * @param   pvUser      The user argument to the thread function.
+ * @param   pfnThread   The thread function.
+ * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ *                      a state change is pending.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   pszName     See RTThreadCreate.
+ */
+int pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                            PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+{
+    int rc = pdmR3ThreadNew(pVM, ppThread);
+    if (RT_SUCCESS(rc))
+    {
+        (*ppThread)->pvUser = pvUser;
+        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_DRIVER;
+        (*ppThread)->u.Drv.pDrvIns = pDrvIns;
+        (*ppThread)->u.Drv.pfnThread = pfnThread;
+        (*ppThread)->u.Drv.pfnWakeup = pfnWakeup;
+        rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
+    }
+    return rc;
+}
+
+
+/**
+ * Creates a PDM thread for internal use in the VM.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle. 
+ * @param   ppThread    Where to store the thread 'handle'.
+ * @param   pvUser      The user argument to the thread function.
+ * @param   pfnThread   The thread function.
+ * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ *                      a state change is pending.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   pszName     See RTThreadCreate.
+ */
+PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
+                                 PFNPDMTHREADWAKEUPINT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+{
+    int rc = pdmR3ThreadNew(pVM, ppThread);
+    if (RT_SUCCESS(rc))
+    {
+        (*ppThread)->pvUser = pvUser;
+        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_INTERNAL;
+        (*ppThread)->u.Int.pfnThread = pfnThread;
+        (*ppThread)->u.Int.pfnWakeup = pfnWakeup;
+        rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
+    }
+    return rc;
+}
+
+
+/**
+ * Creates a PDM thread for VM use by some external party.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle. 
+ * @param   ppThread    Where to store the thread 'handle'.
+ * @param   pvUser      The user argument to the thread function.
+ * @param   pfnThread   The thread function.
+ * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ *                      a state change is pending.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   pszName     See RTThreadCreate.
+ */
+PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
+                                         PFNPDMTHREADWAKEUPEXT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+{
+    int rc = pdmR3ThreadNew(pVM, ppThread);
+    if (RT_SUCCESS(rc))
+    {
+        (*ppThread)->pvUser = pvUser;
+        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_EXTERNAL;
+        (*ppThread)->u.Ext.pfnThread = pfnThread;
+        (*ppThread)->u.Ext.pfnWakeup = pfnWakeup;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -287,8 +429,17 @@ PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
 }
 
 
-
-PDMR3DECL(int) PDMR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
+/**
+ * Destroys all threads associated with a device.
+ *
+ * This function is called by PDMDevice when a device is 
+ * destroyed (not currently implemented).
+ * 
+ * @returns VBox status code of the first failure.
+ * @param   pVM         The VM handle.
+ * @param   pDevIns     the device instance.
+ */
+int pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
 {
     int rc = VINF_SUCCESS;
 
@@ -311,7 +462,48 @@ PDMR3DECL(int) PDMR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
 }
 
 
-PDMR3DECL(int) PDMR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
+/**
+ * Destroys all threads associated with an USB device.
+ *
+ * This function is called by PDMUsb when a device is destroyed.
+ * 
+ * @returns VBox status code of the first failure.
+ * @param   pVM         The VM handle.
+ * @param   pUsbIns     The USB device instance.
+ */
+int pdmR3ThreadDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
+{
+    int rc = VINF_SUCCESS;
+
+    AssertPtr(pUsbIns);
+    PPDMTHREAD pThread = pVM->pdm.s.pThreads;
+    while (pThread)
+    {
+        PPDMTHREAD pNext = pThread->Internal.s.pNext;
+        if (    pThread->Internal.s.enmType == PDMTHREADTYPE_DEVICE
+            &&  pThread->u.Usb.pUsbIns == pUsbIns)
+        {
+            int rc2 = PDMR3ThreadDestroy(pThread, NULL);
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        pThread = pNext;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Destroys all threads associated with a driver.
+ *
+ * This function is called by PDMDriver when a driver is destroyed.
+ * 
+ * @returns VBox status code of the first failure.
+ * @param   pVM         The VM handle.
+ * @param   pDrvIns     The driver instance.
+ */
+int pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
 {
     int rc = VINF_SUCCESS;
 
@@ -349,10 +541,8 @@ void pdmR3ThreadDestroyAll(PVM pVM)
         AssertRC(rc2);
         pThread = pNext;
     }
-    Assert(pVM->pdm.s.pThreads || pVM->pdm.s.pThreadsTail);
+    Assert(!pVM->pdm.s.pThreads && !pVM->pdm.s.pThreadsTail);
 }
-
-
 
 
 /**
@@ -503,6 +693,10 @@ static DECLCALLBACK(int) pdmR3ThreadMain(RTTHREAD Thread, void *pvUser)
                 rc = pThread->u.Dev.pfnThread(pThread->u.Dev.pDevIns, pThread);
                 break;
 
+            case PDMTHREADTYPE_USB:
+                rc = pThread->u.Usb.pfnThread(pThread->u.Usb.pUsbIns, pThread);
+                break;
+
             case PDMTHREADTYPE_DRIVER:
                 rc = pThread->u.Drv.pfnThread(pThread->u.Drv.pDrvIns, pThread);
                 break;
@@ -613,10 +807,10 @@ static void pdmR3ThreadBailOut(PPDMTHREAD pThread)
 /**
  * Suspends the thread.
  *
- * This can be called the power off / suspend notifications to suspend the
+ * This can be called at the power off / suspend notifications to suspend the
  * PDM thread a bit early. The thread will be automatically suspend upon
- * return from these two notification callbacks (devices/drivers).
- *
+ * completion of the device/driver notification cycle.
+ * 
  * The caller is responsible for serializing the control operations on the
  * thread. That basically means, always do these calls from the EMT.
  *

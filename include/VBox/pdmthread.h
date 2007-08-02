@@ -273,6 +273,112 @@ typedef struct PDMTHREAD
 /** PDMTHREAD::u32Version value. */
 #define PDMTHREAD_VERSION   0xef010000
 
+#ifdef IN_RING3
+/**
+ * Creates a PDM thread for internal use in the VM.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle. 
+ * @param   ppThread    Where to store the thread 'handle'.
+ * @param   pvUser      The user argument to the thread function.
+ * @param   pfnThread   The thread function.
+ * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ *                      a state change is pending.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   pszName     See RTThreadCreate.
+ */
+PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
+                                 PFNPDMTHREADWAKEUPINT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+
+/**
+ * Creates a PDM thread for VM use by some external party.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle. 
+ * @param   ppThread    Where to store the thread 'handle'.
+ * @param   pvUser      The user argument to the thread function.
+ * @param   pfnThread   The thread function.
+ * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ *                      a state change is pending.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   pszName     See RTThreadCreate.
+ */
+PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
+                                         PFNPDMTHREADWAKEUPEXT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+
+/**
+ * Destroys a PDM thread.
+ *
+ * This will wakeup the thread, tell it to terminate, and wait for it terminate.
+ *
+ * @returns VBox status code.
+ *          This reflects the success off destroying the thread and not the exit code
+ *          of the thread as this is stored in *pRcThread.
+ * @param   pThread         The thread to destroy.
+ * @param   pRcThread       Where to store the thread exit code. Optional.
+ * @thread  The emulation thread (EMT).
+ */
+PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread);
+
+/**
+ * Called by the PDM thread in response to a wakeup call with
+ * suspending as the new state.
+ *
+ * The thread will block in side this call until the state is changed in
+ * response to a VM state change or to the device/driver/whatever calling the
+ * PDMR3ThreadResume API.
+ *
+ * @returns VBox status code.
+ *          On failure, terminate the thread.
+ * @param   pThread     The PDM thread.
+ */
+PDMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread);
+
+/**
+ * Called by the PDM thread in response to a resuming state.
+ *
+ * The purpose of this API is to tell the PDMR3ThreadResume caller that
+ * the the PDM thread has successfully resumed. It will also do the
+ * state transition from the resuming to the running state.
+ *
+ * @returns VBox status code.
+ *          On failure, terminate the thread.
+ * @param   pThread     The PDM thread.
+ */
+PDMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread);
+
+/**
+ * Suspends the thread.
+ *
+ * This can be called at the power off / suspend notifications to suspend the
+ * PDM thread a bit early. The thread will be automatically suspend upon
+ * completion of the device/driver notification cycle.
+ *
+ * The caller is responsible for serializing the control operations on the
+ * thread. That basically means, always do these calls from the EMT.
+ *
+ * @returns VBox status code.
+ * @param   pThread     The PDM thread.
+ */
+PDMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread);
+
+/**
+ * Resumes the thread.
+ *
+ * This can be called the power on / resume notifications to resume the
+ * PDM thread a bit early. The thread will be automatically resumed upon
+ * return from these two notification callbacks (devices/drivers).
+ *
+ * The caller is responsible for serializing the control operations on the
+ * thread. That basically means, always do these calls from the EMT.
+ *
+ * @returns VBox status code.
+ * @param   pThread     The PDM thread.
+ */
+PDMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread);
+#endif /* IN_RING3 */
 
 /** @} */
 

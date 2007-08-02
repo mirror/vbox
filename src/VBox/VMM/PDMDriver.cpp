@@ -94,6 +94,8 @@ static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegisterF(PPDMDRVINS pDrvIns, void *pv
 static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegisterV(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args);
 static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned uOperation, void *pvArg, unsigned cbArg);
 static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp);
+static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                                     PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
 
 /** @def PDMDRV_ASSERT_DRVINS
  * Asserts the validity of the driver instance.
@@ -140,6 +142,7 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_STAMRegisterV,
     pdmR3DrvHlp_SUPCallVMMR0Ex,
     pdmR3DrvHlp_USBRegisterHub,
+    pdmR3DrvHlp_PDMThreadCreate,
     0 /* the end */
 };
 
@@ -505,7 +508,7 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
         rc = SSMR3DeregisterDriver(pCur->Internal.s.pVM, pCur, NULL, 0);
         AssertRC(rc);
         /* PDM threads. */
-        ///@todo rc = pdmR3DestroyDriver(pCur->Internal.s.pVM, pCur);
+        rc = pdmR3ThreadDestroyDriver(pCur->Internal.s.pVM, pCur);
         AssertRC(rc);
         /* Finally, the driver it self. */
         ASMMemFill32(pCur, RT_OFFSETOF(PDMDRVINS, achInstanceData[pCur->pDrvReg->cbInstance]), 0xdeadd0d0);
@@ -1003,7 +1006,6 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned
 }
 
 
-
 /** @copydoc PDMDRVHLP::pfnUSBRegisterHub */
 static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp)
 {
@@ -1016,6 +1018,23 @@ static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, void *pv
     int rc = VINF_SUCCESS;
 
     LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @copydoc PDMDRVHLP::pfnPDMThreadCreate */
+static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                                     PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
+    LogFlow(("pdmR3DrvHlp_PDMThreadCreate: caller='%s'/%d: ppThread=%p pvUser=%p pfnThread=%p pfnWakeup=%p cbStack=%#zx enmType=%d pszName=%p:{%s}\n",
+             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName, pszName));
+
+    int rc = pdmR3ThreadCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+
+    LogFlow(("pdmR3DrvHlp_PDMThreadCreate: caller='%s'/%d: returns %Vrc *ppThread=%RTthrd\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, 
+            rc, *ppThread));
     return rc;
 }
 

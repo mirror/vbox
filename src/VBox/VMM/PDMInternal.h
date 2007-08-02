@@ -28,6 +28,9 @@
 #include <VBox/cfgm.h>
 #include <VBox/stam.h>
 #include <iprt/critsect.h>
+#ifdef IN_RING3
+# include <iprt/thread.h>
+#endif
 
 __BEGIN_DECLS
 
@@ -216,6 +219,8 @@ typedef enum
     PDMTHREADTYPE_INVALID = 0,
     /** Device type. */
     PDMTHREADTYPE_DEVICE,
+    /** USB Device type. */
+    PDMTHREADTYPE_USB,
     /** Driver type. */
     PDMTHREADTYPE_DRIVER,
     /** Internal type. */
@@ -253,8 +258,9 @@ typedef struct PDMTHREADINT
 #ifdef ___VBox_pdm_h
 # error "Invalid header PDM order. Include PDMInternal.h before VBox/pdm.h!"
 #endif
+__END_DECLS
 #include <VBox/pdm.h>
-
+__BEGIN_DECLS
 
 /**
  * PDM Logical Unit.
@@ -853,6 +859,7 @@ extern const PDMDRVHLP g_pdmR3DrvHlp;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifdef IN_RING3
 int         pdmR3CritSectInit(PVM pVM);
 int         pdmR3CritSectTerm(PVM pVM);
 void        pdmR3CritSectRelocate(PVM pVM);
@@ -880,12 +887,20 @@ int         pdmR3LoadR3(PVM pVM, const char *pszFilename, const char *pszName);
 
 void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);
 
-void        pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
-void        pdmR3ThreadDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
-void        pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
+int         pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
+                                    PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+int         pdmR3ThreadCreateUsb(PVM pVM, PPDMDRVINS pUsbIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADUSB pfnThread,
+                                 PFNPDMTHREADWAKEUPUSB pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+int         pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                    PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+int         pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+int         pdmR3ThreadDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
+int         pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 void        pdmR3ThreadDestroyAll(PVM pVM);
 int         pdmR3ThreadResumeAll(PVM pVM);
 int         pdmR3ThreadSuspendAll(PVM pVM);
+
+#endif /* IN_RING3 */
 
 #ifdef VBOX_WITH_PDM_LOCK
 void        pdmLock(PVM pVM);
