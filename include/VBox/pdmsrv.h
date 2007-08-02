@@ -18,12 +18,12 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef ___VBox_pdm_h
-# include <VBox/pdm.h>
-#endif
-
 #ifndef ___VBox_pdmsrv_h
 #define ___VBox_pdmsrv_h
+
+#include <VBox/pdmifs.h>
+#include <VBox/ssm.h>
+#include <VBox/cfgm.h>
 
 __BEGIN_DECLS
 

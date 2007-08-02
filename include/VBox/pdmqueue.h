@@ -18,12 +18,10 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef ___VBox_pdm_h
-# include <VBox/pdm.h>
-#endif
-
 #ifndef ___VBox_pdmqueue_h
 #define ___VBox_pdmqueue_h
+
+#include <VBox/types.h>
 
 __BEGIN_DECLS
 
