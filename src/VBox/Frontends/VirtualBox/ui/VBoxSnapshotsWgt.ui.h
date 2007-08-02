@@ -444,7 +444,6 @@ VBoxSnapshotsWgt::ListViewItem *VBoxSnapshotsWgt::curStateItem()
 
 void VBoxSnapshotsWgt::populateSnapshots (const CSnapshot &snapshot, QListViewItem *item)
 {
-
     ListViewItem *si = 0;
     if (item)
         si = new ListViewItem (item, snapshot);
@@ -473,9 +472,14 @@ void VBoxSnapshotsWgt::listView_currentChanged (QListViewItem *item)
     /* Make the selected item visible */
     if (item)
     {
+        QPoint oldPos (listView->contentsX(), listView->contentsY());
         listView->ensureItemVisible (item);
-        listView->setContentsPos (item->height() * item->depth(),
+        listView->setContentsPos (listView->treeStepSize() * item->depth(),
                                   listView->contentsY());
+        /* Sometimes (here, when both X and Y are changed), affected items
+         * are not properly updated after moving the contents. Fix it. */
+        if (oldPos != QPoint (listView->contentsX(), listView->contentsY()))
+            listView->triggerUpdate();
     }
 
     /* whether another direct session is open or not */
