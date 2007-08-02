@@ -355,6 +355,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                 }
             }
 
+            /** @todo don't check when creating files or directories; waste of time */
             rc = RTPathQueryInfo(pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
             {
@@ -437,6 +438,9 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             }
             if (pszWildCardComponent)
                 *pszWildCardComponent = RTPATH_DELIMITER;
+
+            /* might be a new file so don't fail here! */
+            rc = VINF_SUCCESS;
         }
         *ppszFullPath = pszFullPath;
 
