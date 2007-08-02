@@ -99,7 +99,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     PRTDIRENTRYEX  pDirEntry = NULL;
     uint32_t       cbDirEntry, cbComponent;
     int            rc = VERR_FILE_NOT_FOUND;
-    PRTDIR         hSearch;
+    PRTDIR         hSearch = 0;
     char           szWildCard[4];
 
     Log2(("vbsfCorrectCasing: %s %s\n", pszFullPath, pszStartComponent));
@@ -164,7 +164,8 @@ end:
     if (pDirEntry)
         RTMemFree(pDirEntry);
 
-    RTDirClose(hSearch);
+    if (hSearch)
+        RTDirClose(hSearch);
     return rc;
 }
 
