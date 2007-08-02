@@ -554,6 +554,26 @@ typedef struct PDMDRVHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnUSBRegisterHub,(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp));
 
+    /**
+     * Creates a PDM thread.
+     * 
+     * This differs from the RTThreadCreate() API in that PDM takes care of suspending, 
+     * resuming, and destroying the thread as the VM state changes.
+     * 
+     * @returns VBox status code.
+     * @param   pDrvIns     The driver instance.
+     * @param   ppThread    Where to store the thread 'handle'.
+     * @param   pvUser      The user argument to the thread function.
+     * @param   pfnThread   The thread function.
+     * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+     *                      a state change is pending.
+     * @param   cbStack     See RTThreadCreate.
+     * @param   enmType     See RTThreadCreate.
+     * @param   pszName     See RTThreadCreate.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                                  PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLP;
@@ -700,6 +720,15 @@ DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAM
 DECLINLINE(int) PDMDrvHlpUSBRegisterHub(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp)
 {
     return pDrvIns->pDrvHlp->pfnUSBRegisterHub(pDrvIns, pvReservedIn, ppvReservedHlp);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnPDMThreadCreate
+ */
+DECLINLINE(int) PDMDrvHlpPDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                         PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+{
+    return pDrvIns->pDrvHlp->pfnPDMThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
 #endif /* IN_RING3 */
 

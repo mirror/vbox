@@ -2182,9 +2182,29 @@ typedef struct PDMDEVHLP
      */
     DECLR3CALLBACKMEMBER(PRTTIMESPEC, pfnUTCNow,(PPDMDEVINS pDevIns, PRTTIMESPEC pTime));
 
+    /**
+     * Creates a PDM thread.
+     * 
+     * This differs from the RTThreadCreate() API in that PDM takes care of suspending, 
+     * resuming, and destroying the thread as the VM state changes.
+     * 
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   ppThread    Where to store the thread 'handle'.
+     * @param   pvUser      The user argument to the thread function.
+     * @param   pfnThread   The thread function.
+     * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+     *                      a state change is pending.
+     * @param   cbStack     See RTThreadCreate.
+     * @param   enmType     See RTThreadCreate.
+     * @param   pszName     See RTThreadCreate.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
+                                                  PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
+
+   
     /** Space reserved for future members.
      * @{ */
-    DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved2,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved3,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
@@ -3294,6 +3314,15 @@ DECLINLINE(int) PDMDevHlpCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu
 DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     pDevIns->pDevHlp->pfnGetCpuId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnPDMThreadCreate
+ */
+DECLINLINE(int) PDMDevHlpPDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
+                                         PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+{
+    return pDevIns->pDevHlp->pfnPDMThreadCreate(pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
 #endif /* IN_RING3 */
 
