@@ -18,12 +18,14 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#ifndef ___VBox_pdm_h
-# include <VBox/pdm.h>
-#endif
-
 #ifndef ___VBox_pdmthread_h
 #define ___VBox_pdmthread_h
+
+#include <VBox/cdefs.h>
+#include <VBox/types.h>
+#ifdef IN_RING3
+# include <iprt/thread.h>
+#endif 
 
 __BEGIN_DECLS
 
@@ -88,6 +90,17 @@ typedef int FNPDMTHREADDEV(PPDMDEVINS pDevIns, PPDMTHREAD pThread);
 typedef FNPDMTHREADDEV *PFNPDMTHREADDEV;
 
 /**
+ * PDM thread, USB device variation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns     The USB device instance.
+ * @param   pThread     The PDM thread data.
+ */
+typedef int FNPDMTHREADUSB(PPDMUSBINS pUsbIns, PPDMTHREAD pThread);
+/** Pointer to a FNPDMTHREADUSB(). */
+typedef FNPDMTHREADUSB *PFNPDMTHREADUSB;
+
+/**
  * PDM thread, driver variation.
  *
  * @returns VBox status code.
@@ -122,7 +135,7 @@ typedef FNPDMTHREADEXT *PFNPDMTHREADEXT;
 
 
 /**
- * PDM thread wakup call, device variation.
+ * PDM thread wakeup call, device variation.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
@@ -133,7 +146,18 @@ typedef int FNPDMTHREADWAKEUPDEV(PPDMDEVINS pDevIns, PPDMTHREAD pThread);
 typedef FNPDMTHREADWAKEUPDEV *PFNPDMTHREADWAKEUPDEV;
 
 /**
- * PDM thread wakup call, driver variation.
+ * PDM thread wakeup call, device variation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns     The USB device instance.
+ * @param   pThread     The PDM thread data.
+ */
+typedef int FNPDMTHREADWAKEUPUSB(PPDMUSBINS pUsbIns, PPDMTHREAD pThread);
+/** Pointer to a FNPDMTHREADUSB(). */
+typedef FNPDMTHREADWAKEUPUSB *PFNPDMTHREADWAKEUPUSB;
+
+/**
+ * PDM thread wakeup call, driver variation.
  *
  * @returns VBox status code.
  * @param   pDrvIns     The driver instance.
@@ -144,7 +168,7 @@ typedef int FNPDMTHREADWAKEUPDRV(PPDMDRVINS pDrvIns, PPDMTHREAD pThread);
 typedef FNPDMTHREADWAKEUPDRV *PFNPDMTHREADWAKEUPDRV;
 
 /**
- * PDM thread wakup call, internal variation.
+ * PDM thread wakeup call, internal variation.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
@@ -155,7 +179,7 @@ typedef int FNPDMTHREADWAKEUPINT(PVM pVM, PPDMTHREAD pThread);
 typedef FNPDMTHREADWAKEUPINT *PFNPDMTHREADWAKEUPINT;
 
 /**
- * PDM thread wakup call, external variation.
+ * PDM thread wakeup call, external variation.
  *
  * @returns VBox status code.
  * @param   pThread     The PDM thread data.
@@ -194,6 +218,17 @@ typedef struct PDMTHREAD
             /** Thread. */
             R3PTRTYPE(PFNPDMTHREADWAKEUPDEV)    pfnWakeup;
         } Dev;
+
+        /** PDMTHREADTYPE_USB data. */
+        struct
+        {
+            /** The device instance. */
+            PPDMUSBINS                          pUsbIns;
+            /** The thread function. */
+            R3PTRTYPE(PFNPDMTHREADUSB)          pfnThread;
+            /** Thread. */
+            R3PTRTYPE(PFNPDMTHREADWAKEUPUSB)    pfnWakeup;
+        } Usb;
 
         /** PDMTHREADTYPE_DRIVER data. */
         struct
