@@ -422,7 +422,11 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                             /* path component is invalid; try to correct the casing */
                             rc = vbsfCorrectCasing(pszFullPath, src);
                             if (VBOX_FAILURE(rc))
+                            {
+                                if (!fEndOfString)
+                                    *end = RTPATH_DELIMITER;
                                 break;
+                            }
                         }
 
                         if (fEndOfString)
