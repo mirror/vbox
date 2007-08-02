@@ -1367,7 +1367,11 @@ int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, u
         {
             rc = RTFileSetMode((RTFILE)pHandle->file.Handle, pSFDEntry->Attr.fMode);
             if (rc != VINF_SUCCESS)
-                AssertFailed();
+            {
+                Log(("RTFileSetMode %x failed with %Vrc\n", pSFDEntry->Attr.fMode, rc));
+                /* silent failure, because this tends to fail with e.g. windows guest & linux host */
+                rc = VINF_SUCCESS;
+            }
         }
     }
 
