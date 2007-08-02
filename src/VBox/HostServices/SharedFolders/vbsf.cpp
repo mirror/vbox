@@ -101,6 +101,8 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     int            rc = VERR_FILE_NOT_FOUND;
     PRTDIR         hSearch;
 
+    Log2(("vbsfCorrectCasing: %s %s\n", pszFullPath, pszStartComponent));
+
     cbComponent = strlen(pszStartComponent);
 
     cbDirEntry = 4096;
@@ -138,6 +140,8 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
             else
                 continue;
         }
+
+        Log2(("vbsfCorrectCasing: found %s\n", &pDirEntry->szName[0]));
         if (    pDirEntry->cbName == cbComponent
             &&  !RTStrICmp(pszStartComponent, &pDirEntry->szName[0]))
         {
