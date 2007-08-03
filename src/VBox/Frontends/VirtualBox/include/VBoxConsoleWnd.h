@@ -264,7 +264,7 @@ private:
 
     // widgets
     VBoxConsoleView *console;
-    QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light;
+    QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light, *sf_light;
     QIStateIndicator *mouse_state, *hostkey_state;
     QIStateIndicator *autoresize_state;
     QIStateIndicator *vrdp_state;
