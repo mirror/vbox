@@ -493,6 +493,7 @@ private:
     PPDMLED     mapFDLeds[2];
     PPDMLED     mapIDELeds[4];
     PPDMLED     mapNetworkLeds[8];
+    PPDMLED     mapSharedFolderLed;
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     Utf8Str     maTAPDeviceName[8];
     RTFILE      maTapFD[8];
