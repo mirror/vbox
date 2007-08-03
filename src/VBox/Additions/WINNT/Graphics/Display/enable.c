@@ -11,9 +11,6 @@
 *
 * Copyright (c) 1992-1998 Microsoft Corporation
 \**************************************************************************/
-#ifdef DEBUG
-#define LOG_ENABLED 1
-#endif
 
 #include "driver.h"
 #include "dd.h"
