@@ -483,57 +483,85 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
 }
 
 
-RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
-{
-    int rc;
 #ifndef RT_OS_L4
-    /*
-     * We make an exception for the root user and use the system call
-     * getpwuid_r to determine their initial home path instead of
-     * reading it from the $HOME variable.  This is because the $HOME
-     * variable does not get changed by sudo (and possibly su and others)
-     * which can cause root-owned files to appear in user's home folders.
+/** 
+ * Worker for RTPathUserHome that looks up the home directory
+ * using the getpwuid_r api. 
+ * 
+ * @returns IPRT status code.
+ * @param   pszPath     The path buffer.
+ * @param   cchPath     The size of the buffer.
+ * @param   uid         The User ID to query the home directory of.
+ */ 
+static int rtPathUserHomeByPasswd(char *pszPath, size_t cchPath, uid_t uid)
+{
+    /* 
+     * The getpwuid_r function uses the passed in buffer to "allocate" any 
+     * extra memory it needs. On some systems we should probably use the 
+     * sysconf function to find the appropriate buffer size, but since it won't
+     * work everywhere we'll settle with a 5KB buffer and ASSUME that it'll 
+     * suffice for even the lengthiest user descriptions... 
      */
-     uid_t uid = geteuid();
-     if (uid == 0)
-     {
-         /* The getpwuid_r function "allocates" any pointer memory it
-            needs from here.  In theory one should use the sysconf
-            function to find the appropriate size, but sysconf is
-            unreliable by design.  This should definitely be enough. */
-         char buffer[5120];
-         struct passwd sPasswd, *psPasswd;
-         rc = getpwuid_r(0, &sPasswd, buffer, sizeof(buffer), &psPasswd);
-         if (rc != 0)
-             return RTErrConvertFromErrno(rc);
-         /*
-          * Convert it to UTF-8 and copy it to the return buffer.
-          */
-         char *pszUtf8Path;
-         rc = rtPathFromNative(&pszUtf8Path, psPasswd->pw_dir);
-         if (RT_SUCCESS(rc))
-         {
-             size_t cchHome = strlen(pszUtf8Path);
-             if (cchHome < cchPath)
-                 memcpy(pszPath, pszUtf8Path, cchHome + 1);
-             else
-                 rc = VERR_BUFFER_OVERFLOW;
-             RTStrFree(pszUtf8Path);
-         }
-         LogFlow(("RTPathUserHome(%p:{%s}, %u): returns %Rrc\n", pszPath,
-                  RT_SUCCESS(rc) ? pszPath : "<failed>",  cchPath, rc));
-         return rc;
-     }
+    char            achBuffer[5120];
+    struct passwd   Passwd;
+    struct passwd  *pPasswd;
+    memset(&Passwd, 0, sizeof(Passwd));
+    int rc = getpwuid_r(uid, &Passwd, &achBuffer[0], sizeof(achBuffer), &pPasswd);
+    if (rc != 0)
+        return RTErrConvertFromErrno(rc);
+    if (!pPasswd) /* uid not found in /etc/passwd */
+        return VERR_PATH_NOT_FOUND;
+    
+    /*
+     * Check that it isn't empty and that it exists.
+     */
+    struct stat st;
+    if (    !pPasswd->pw_dir
+        ||  !*pPasswd->pw_dir
+        ||  stat(pPasswd->pw_dir, &st)
+        ||  !S_ISDIR(st.st_mode))
+        return VERR_PATH_NOT_FOUND;
+
+    /*
+     * Convert it to UTF-8 and copy it to the return buffer.
+     */
+    char *pszUtf8Path;
+    rc = rtPathFromNative(&pszUtf8Path, pPasswd->pw_dir);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cchHome = strlen(pszUtf8Path);
+        if (cchHome < cchPath)
+            memcpy(pszPath, pszUtf8Path, cchHome + 1);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        RTStrFree(pszUtf8Path);
+    }
+    return rc;
+}
 #endif
+
+
+/** 
+ * Worker for RTPathUserHome that looks up the home directory
+ * using the HOME environment variable. 
+ * 
+ * @returns IPRT status code.
+ * @param   pszPath     The path buffer.
+ * @param   cchPath     The size of the buffer.
+ */ 
+static int rtPathUserHomeByEnv(char *pszPath, size_t cchPath)
+{
     /*
      * Get HOME env. var it and validate it's existance.
      */
-    struct stat s;
+    int rc = VERR_PATH_NOT_FOUND;
     const char *pszHome = getenv("HOME");
-    if (pszHome)
+    if (!pszHome)
+        
     {
-        if (    !stat(pszHome, &s)
-            &&  S_ISDIR(s.st_mode))
+        struct stat st;
+        if (    !stat(pszHome, &st)
+            &&  S_ISDIR(st.st_mode))
         {
             /*
              * Convert it to UTF-8 and copy it to the return buffer.
@@ -550,12 +578,43 @@ RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
                 RTStrFree(pszUtf8Path);
             }
         }
-        else
-            rc = VERR_PATH_NOT_FOUND;
-
     }
-    else
-        rc = VERR_PATH_NOT_FOUND;
+    return rc;
+}
+
+
+RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
+{
+    int rc;
+#ifndef RT_OS_L4
+    /*
+     * We make an exception for the root user and use the system call
+     * getpwuid_r to determine their initial home path instead of
+     * reading it from the $HOME variable.  This is because the $HOME
+     * variable does not get changed by sudo (and possibly su and others)
+     * which can cause root-owned files to appear in user's home folders.
+     */
+     uid_t uid = geteuid();
+     if (!uid)
+         rc = rtPathUserHomeByPasswd(pszPath, cchPath, uid);
+     else
+         rc = rtPathUserHomeByEnv(pszPath, cchPath);
+     
+     /* 
+      * On failure, retry using the alternative method.
+      * (Should perhaps restrict the retry cases a bit more here...)
+      */
+     if (   RT_FAILURE(rc)
+         && rc != VERR_BUFFER_OVERFLOW)
+     {
+         if (!uid)
+             rc = rtPathUserHomeByEnv(pszPath, cchPath);
+         else
+             rc = rtPathUserHomeByPasswd(pszPath, cchPath, uid);
+     }
+#else  /* RT_OS_L4 */
+    rc = rtPathUserHomeByEnv(pszPath, cchPath);
+#endif /* RT_OS_L4 */
 
     LogFlow(("RTPathUserHome(%p:{%s}, %u): returns %Rrc\n", pszPath,
              RT_SUCCESS(rc) ? pszPath : "<failed>",  cchPath, rc));
