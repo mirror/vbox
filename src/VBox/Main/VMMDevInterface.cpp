@@ -26,11 +26,9 @@
 
 #include "Logging.h"
 
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 #include <VBox/VBoxDev.h>
 #include <VBox/VBoxGuest.h>
-#include <VBox/cfgm.h>
-#include <VBox/err.h>
 #include <iprt/asm.h>
 
 #ifdef VBOX_HGCM

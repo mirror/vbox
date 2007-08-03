@@ -25,7 +25,7 @@
 #include "VirtualBoxBase.h"
 #include "ConsoleEvents.h"
 #include "ConsoleImpl.h"
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 
 /** Simple mouse event class. */
 class MouseEvent

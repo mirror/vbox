@@ -39,7 +39,7 @@ class ConsoleVRDPServer;
 class VMMDev;
 
 #include <VBox/vrdpapi.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 
 struct VUSBIRHCONFIG;
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;

@@ -31,10 +31,10 @@
 #include <iprt/thread.h>
 #include <iprt/asm.h>
 
-#include <VBox/pdm.h>
-#include <VBox/cfgm.h>
-#include <VBox/err.h>
-#include <VBox/vm.h>
+#include <VBox/pdmdrv.h>
+#ifdef DEBUG /* for VM_ASSERT_EMT(). */
+# include <VBox/vm.h>
+#endif
 
 /**
  * Display driver instance data.
