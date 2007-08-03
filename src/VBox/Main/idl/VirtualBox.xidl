@@ -262,7 +262,7 @@
 
   <enum
      name="DeviceType"
-     uuid="8B7F8ADE-E8F7-42a4-9661-9F5092C4DB4C"
+     uuid="6d9420f7-0b56-4636-99f9-7346f1b01e57"
      >
     <desc>
       Device type.
@@ -287,6 +287,9 @@
     </const>
     <const name="USBDevice"         value="5">
       <desc>USB device.</desc>
+    </const>
+    <const name="SharedFolderDevice" value="6">
+      <desc>Shared folder device.</desc>
     </const>
   </enum>
 
