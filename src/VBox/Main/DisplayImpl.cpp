@@ -2209,7 +2209,7 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
              }
              else
              {
-                 LogRel(("Guest adapter information contains unsupported type %d\n", pHdr->u8Type));
+                 LogRel(("Guest adapter information contains unsupported type %d. The block has been skipped.\n", pHdr->u8Type));
              }
 
              pu8 += pHdr->u16Length;

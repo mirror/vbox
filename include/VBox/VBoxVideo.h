@@ -31,10 +31,17 @@
  * Last 4096 bytes of each chunk contain chunk specific data: framebuffer info,
  * etc. This is used exclusively by the corresponding instance of a display driver.
  *
+ * The VRAM layout: 
+ *     Last 4096 bytes - Adapter information area.
+ *     4096 bytes aligned miniport heap (value specified in the config rouded up).
+ *     Slack - what left after dividing the VRAM.
+ *     4096 bytes aligned framebuffers:
+ *       last 4096 bytes of each framebuffer is the display information area.
+ *
  * The Virtual Graphics Adapter information in the guest VRAM is stored by the
  * guest video driver using structures prepended by VBOXVIDEOINFOHDR.
  *
- * When the guest driver writes dword 0 to the VBE_DISPI_INDEX_CMONITORS,
+ * When the guest driver writes dword 0 to the VBE_DISPI_INDEX_VBOX_VIDEO
  * the host starts to process the info. The first element at the start of
  * the 4096 bytes region should be normally be a LINK that points to
  * actual information chain. That way the guest driver can have some
@@ -47,14 +54,26 @@
  * All data that will be needed later must be copied from these 4096 bytes.
  * But other VRAM can be used by host until the mode is disabled.
  *
- * The guest driver writes dword 0xffffffff to the VBE_DISPI_INDEX_CMONITORS
+ * The guest driver writes dword 0xffffffff to the VBE_DISPI_INDEX_VBOX_VIDEO
  * to disable the mode.
  *
+ * VBE_DISPI_INDEX_VBOX_VIDEO is used to read the configuration information
+ * from the host and issue commands to the host.
+ * 
+ * The guest writes the VBE_DISPI_INDEX_VBOX_VIDEO index register, the the
+ * following operations with the VBE data register can be performed:
+ * 
+ * Operation            Result
+ * write 16 bit value   NOP
+ * read 16 bit value    count of monitors
+ * write 32 bit value   sets the vbox command value and the command processed by the host
+ * read 32 bit value    result of the last vbox command is returned
  */
 
 #define VBOX_VIDEO_PRIMARY_SCREEN 0
 #define VBOX_VIDEO_NO_SCREEN ~0
 
+#define VBOX_VIDEO_MAX_SCREENS 64
 
 /* The size of the information. */
 #define VBOX_VIDEO_ADAPTER_INFORMATION_SIZE  4096
@@ -72,6 +91,14 @@
  */
 #define VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE 0x00010000
 
+/* The value for port IO to read the number of monitors.
+ */
+#define VBOX_VIDEO_QUERY_MONITOR_COUNT           0x00020000
+
+/* The value for port IO to read the offscreen heap size value.
+ */
+#define VBOX_VIDEO_QUERY_OFFSCREEN_HEAP_SIZE     0x00020001
+
 /* The end of the information. */
 #define VBOX_VIDEO_INFO_TYPE_END          0
 /* Instructs the host to fetch the next VBOXVIDEOINFOHDR at the given offset of VRAM. */
@@ -82,6 +109,8 @@
 #define VBOX_VIDEO_INFO_TYPE_SCREEN       3
 /* Information about host notifications for the driver. */
 #define VBOX_VIDEO_INFO_TYPE_HOST_EVENTS  4
+/* Information about non-volatile guest VRAM heap. */
+#define VBOX_VIDEO_INFO_TYPE_NV_HEAP      5
 
 
 #pragma pack(1)
@@ -160,6 +189,17 @@ typedef struct _VBOXVIDEOINFOHOSTEVENTS
     /* Host events. */
     uint32_t fu32Events;
 } VBOXVIDEOINFOHOSTEVENTS;
+
+/* Resides in adapter info memory. Describes the non-volatile VRAM heap. */
+typedef struct _VBOXVIDEOINFONVHEAP
+{
+    /* Absolute offset in VRAM of the start of the heap. */
+    uint32_t u32HeapOffset;
+
+    /* The size of the heap. */
+    uint32_t u32HeapSize;
+
+} VBOXVIDEOINFONVHEAP;
 #pragma pack()
 
 #endif

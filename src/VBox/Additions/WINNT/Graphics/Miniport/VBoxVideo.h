@@ -42,9 +42,9 @@ __END_DECLS
 #define VBE_DISPI_INDEX_ENABLE          0x4
 #define VBE_DISPI_INDEX_VIRT_WIDTH      0x6
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
-#define VBE_DISPI_INDEX_CMONITORS       0xa
+#define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
 #define VBE_DISPI_ID2                   0xB0C2
-/* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_CMONITORS. */
+/* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_VBOX_VIDEO. */
 #define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
@@ -54,28 +54,65 @@ __END_DECLS
 #define VBE_DISPI_TOTAL_VIDEO_MEMORY_KB	        (VBE_DISPI_TOTAL_VIDEO_MEMORY_MB * 1024)
 #define VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES      (VBE_DISPI_TOTAL_VIDEO_MEMORY_KB * 1024)
 
-typedef struct
+typedef struct _DEVICE_EXTENSION
 {
-   // Saved information about video modes
-   ULONG CurrentMode;
+   struct _DEVICE_EXTENSION *pNext;            /* Next extension in the DualView extension list.
+                                                * The primary extension is the first one.
+                                                */
 
-   /* Pointer to preallocated generic request structure for VMMDevReq_VideoAccelFlush.
-    * Allocated when VBVA status is changed. Deallocated on HwReset.
-    */
-   void *pvReqFlush;
+   struct _DEVICE_EXTENSION *pPrimary;         /* Pointer to the primary device extension. */
 
-   ULONG iDevice;       /* Device index (0 for primary) */
-   PVOID pvPrimaryExt;  /* Pointer to primary device extension */
-   BOOLEAN bEnabled;    /* Device enabled flag */
+   ULONG iDevice;                              /* Device index: 0 for primary, otherwise a secondary device. */
 
-   ULONG ulFrameBufferOffset;
-   ULONG ulMaxFrameBufferSize;
 
-   BOOLEAN bDualViewSupported;
+   ULONG CurrentMode;                          /* Saved information about video modes */
+
+   ULONG ulFrameBufferOffset;                  /* The framebuffer position in the VRAM. */
+   ULONG ulFrameBufferSize;                    /* The size of the current framebuffer. */
+
+   union {
+       /* Information that is only relevant to the primary device or is the same for all devices. */
+       struct {
+           
+           void *pvReqFlush;                   /* Pointer to preallocated generic request structure for
+                                                * VMMDevReq_VideoAccelFlush. Allocated when VBVA status
+                                                * is changed. Deallocated on HwReset.
+                                                */
+
+           
+           ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
+           
+           BOOLEAN bVBoxVideoSupported;        /* TRUE if VBoxVideo extensions, including DualView, are supported by the host. */
+           
+           int cDisplays;                      /* Number of displays. */
+
+           ULONG cbVRAM;                       /* The VRAM size. */
+
+           ULONG cbMiniportHeap;               /* The size of reserved VRAM for miniport driver heap.
+                                                * It is at offset:
+                                                *   cbAdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE - cbMiniportHeap
+                                                */
+           PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM. 
+                                                * This is mapped by miniport as one block together with adapter info.
+                                                */
+
+           PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM. Calculated as 
+                                                *   (uint8_t *)pvMiniportHeap + cbMiniportHeap
+                                                */
+           
+           ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
+           
+           ULONG ulDisplayInformationSize;     /* The size of the Display information, which is at offset:
+                                                * ulFrameBufferOffset + ulMaxFrameBufferSize.
+                                                */
+           
+       } primary;
    
-   PVOID AdapterInformation;
-   
-   ULONG ulVbvaEnabled;
+       /* Secondary device information. */
+       struct {
+           BOOLEAN bEnabled;                   /* Device enabled flag */
+       } secondary;
+   } u;
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 extern "C"

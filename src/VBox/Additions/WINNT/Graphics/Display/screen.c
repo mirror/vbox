@@ -65,10 +65,12 @@ static void vboxSetupDisplayInfo (PPDEV ppdev, VIDEO_MEMORY_INFORMATION *pMemory
         DISPDBG((1, "DISP bInitSURF failed DispInfo.u32DisplayInfoSize 0x%x >= pMemoryInformation->VideoRamLength 0x%x\n",
                  DispInfo.u32DisplayInfoSize, pMemoryInformation->VideoRamLength));
         ppdev->pInfo = NULL;
+        ppdev->cbDisplayInformation = 0;
         return;
     }
     
     ppdev->iDevice = DispInfo.iDevice;
+    ppdev->cbDisplayInformation = DispInfo.u32DisplayInfoSize;
 
     pu8 = (uint8_t *)pMemoryInformation->VideoRamBase;
     pu8 += pMemoryInformation->VideoRamLength - DispInfo.u32DisplayInfoSize;
@@ -194,8 +196,6 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
             return(FALSE);
         }
 
-        ppdev->cScreenSize = videoMemoryInformation.VideoRamLength;
-        
         //
         // Initialize the head of the offscreen list to NULL.
         //
@@ -245,6 +245,9 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
 
         /* Setup the display information. */
         vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
+        
+        ppdev->cScreenSize = videoMemoryInformation.VideoRamLength - ppdev->cbDisplayInformation;
+        ppdev->cFrameBufferSize = videoMemoryInformation.FrameBufferLength;
     }
 
         
