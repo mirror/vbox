@@ -69,6 +69,7 @@ struct  _PDEV
     LONG    lDeltaScreen;               // Distance from one scan to the next.
     ULONG   cScreenSize;                // size of video memory, including
                                         // offscreen memory.
+    ULONG   cFrameBufferSize;           // size of screen video memory
     PVOID   pOffscreenList;             // linked list of DCI offscreen surfaces.
     FLONG   flRed;                      // For bitfields device, Red Mask
     FLONG   flGreen;                    // For bitfields device, Green Mask
@@ -97,9 +98,12 @@ struct  _PDEV
 
     VBOXDISPLAYINFO *pInfo;
     ULONG iDevice;
+    ULONG cbDisplayInformation;
 #ifdef VBOX_WITH_DDRAW
     BOOL             bDdExclusiveMode;
     DWORD            dwNewDDSurfaceOffset;
+    DWORD            cHeaps;
+    VIDEOMEMORY*     pvmList;
 #endif
 };
 

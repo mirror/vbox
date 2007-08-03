@@ -14,7 +14,7 @@
 
 #include "driver.h"
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
 
 #ifdef VBOX
 #include <VBox/log.h>

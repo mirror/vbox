@@ -12,7 +12,7 @@
 * Copyright (c) 1992-1998 Microsoft Corporation
 \**************************************************************************/
 #ifdef DEBUG
-#define LOG_ENABLED
+#define LOG_ENABLED 1
 #endif
 
 #include "driver.h"
@@ -999,9 +999,9 @@ PVOID pvData)
 HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* pSurface)
 {
     PPDEV               pDev = (PPDEV)pDirectDraw->dhpdev;
-    HBITMAP             hbmDevice;
+//    HBITMAP             hbmDevice;
     DD_SURFACE_GLOBAL*  pSurfaceGlobal;
-    SIZEL               sizl;
+//    SIZEL               sizl;
 
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 

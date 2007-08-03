@@ -15,7 +15,7 @@
 \*****************************************************************************/
 
 #ifdef DEBUG
-#define LOG_ENABLED
+#define LOG_ENABLED 1
 #endif
 
 #include "driver.h"
@@ -64,6 +64,9 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     )
 {
     PPDEV pDev = (PPDEV)dhpdev;
+    BOOL bDefineDDrawHeap = FALSE;
+    DWORD cHeaps = 0;
+    VIDEOMEMORY *pVm = NULL;
 
     DISPDBG((0, "%s: %p, %p, %p, %p, %p. %p\n", __FUNCTION__, dhpdev, pHalInfo, pdwNumHeaps, pvmList, pdwNumFourCCCodes, pdwFourCC));
 
@@ -76,6 +79,19 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
 
     if (!(pvmList && pdwFourCC)) 
     {
+        memset(&pHalInfo->ddCaps, 0, sizeof(DDNTCORECAPS));
+        pHalInfo->ddCaps.dwSize         = sizeof(DDNTCORECAPS);
+        pHalInfo->ddCaps.dwVidMemTotal  = pDev->cScreenSize - pDev->cFrameBufferSize;
+        pHalInfo->ddCaps.dwVidMemFree   = pHalInfo->ddCaps.dwVidMemTotal;
+
+        pHalInfo->ddCaps.dwCaps         = 0;
+        pHalInfo->ddCaps.dwCaps2        = 0;
+
+        /* Declare we can handle textures wider than the primary */
+        pHalInfo->ddCaps.dwCaps2 |= DDCAPS2_WIDESURFACES;
+
+        pHalInfo->ddCaps.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+        
         /* Create primary surface attributes */
         pHalInfo->vmiData.pvPrimary                 = pDev->pjScreen;
         pHalInfo->vmiData.fpPrimary                 = 0;
@@ -107,18 +123,47 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         pHalInfo->vmiData.dwZBufferAlign            = 4;
         pHalInfo->vmiData.dwTextureAlign            = 4;
     }
-    memset(&pHalInfo->ddCaps, 0, sizeof(DDNTCORECAPS));
-    pHalInfo->ddCaps.dwSize         = sizeof(DDNTCORECAPS);
-    pHalInfo->ddCaps.dwVidMemTotal  = pDev->cScreenSize;
-    pHalInfo->ddCaps.dwVidMemFree   = pDev->cScreenSize;
+    
+    cHeaps = 0;
 
-    pHalInfo->ddCaps.dwCaps         = 0;
-    pHalInfo->ddCaps.dwCaps2        = 0;
+    /* Do we have sufficient videomemory to create an off-screen heap for DDraw? */
+    if (pDev->cScreenSize > pDev->cFrameBufferSize)
+    {
+        bDefineDDrawHeap = TRUE;
+        cHeaps++;
+    }
 
-    /* Declare we can handle textures wider than the primary */
-    pHalInfo->ddCaps.dwCaps2 |= DDCAPS2_WIDESURFACES;
+    pDev->cHeaps = cHeaps;
+    *pdwNumHeaps  = cHeaps;
 
-    pHalInfo->ddCaps.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+    // If pvmList is not NULL then we can go ahead and fill out the VIDEOMEMORY
+    // structures which define our requested heaps.
+
+    if(pvmList) {
+
+        pVm=pvmList;
+
+        //
+        // Snag a pointer to the video-memory list so that we can use it to
+        // call back to DirectDraw to allocate video memory:
+        //
+        pDev->pvmList = pVm;
+
+        //
+        // Define the heap for DirectDraw
+        //
+        if ( bDefineDDrawHeap )
+        {
+            pVm->dwFlags        = VIDMEM_ISLINEAR ;
+            pVm->fpStart        = pDev->cFrameBufferSize;
+            pVm->fpEnd          = pDev->cScreenSize;
+
+            pVm->ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+            DISPDBG((0, "fpStart %ld fpEnd %ld\n", pVm->fpStart, pVm->fpEnd));
+
+            pVm++;
+        }
+    }
 
 #if 0 /* not mandatory */
     /* DX5 and up */
@@ -171,15 +216,13 @@ BOOL APIENTRY DrvEnableDirectDraw(
     pCallBacks->dwSize                = sizeof(DD_CALLBACKS);
     pCallBacks->dwFlags               = 0;
 
-    /*
     pCallBacks->dwFlags               = DDHAL_CB32_CREATESURFACE | DDHAL_CB32_CANCREATESURFACE;
     pCallBacks->CreateSurface         = DdCreateSurface;
     pCallBacks->CanCreateSurface      = DdCanCreateSurface;
-    pCallBacks->WaitForVerticalBlank  = DdWaitForVerticalBlank;
-    pCallBacks->GetScanLine           = DdGetScanLine;
-    pCallBacks->MapMemory             = DdMapMemory;
-    DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_MAPMEMORY | DDHAL_CB32_GETSCANLINE 
-    */
+    // pCallBacks->WaitForVerticalBlank  = DdWaitForVerticalBlank;
+    // pCallBacks->GetScanLine           = DdGetScanLine;
+    // pCallBacks->MapMemory             = DdMapMemory;
+    // DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_MAPMEMORY | DDHAL_CB32_GETSCANLINE 
     /* Note: pCallBacks->SetMode & pCallBacks->DestroyDriver are unused in Windows 2000 and up */
 
     /* Fill in the Surface Callback pointers */
@@ -651,7 +694,7 @@ DWORD APIENTRY DdSetExclusiveMode(PDD_SETEXCLUSIVEMODEDATA lpSetExclusiveMode)
     PPDEV pDev = (PPDEV)lpSetExclusiveMode->lpDD->dhpdev;
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
-    // remember setting of exclusive mode in ppdev,
+    // remember setting of exclusive mode in pDev,
     // so GDI can stop to promote DeviceBitmaps into
     // video memory
 

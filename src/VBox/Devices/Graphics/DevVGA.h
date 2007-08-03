@@ -73,7 +73,7 @@
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
 #define VBE_DISPI_INDEX_X_OFFSET        0x8
 #define VBE_DISPI_INDEX_Y_OFFSET        0x9
-#define VBE_DISPI_INDEX_CMONITORS       0xa
+#define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
 #define VBE_DISPI_INDEX_NB              0xb
 
 #define VBE_DISPI_ID0                   0xB0C0
@@ -81,7 +81,7 @@
 #define VBE_DISPI_ID2                   0xB0C2
 
 #ifdef VBOX
-/* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_CMONITORS. */
+/* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_VBOX_VIDEO. */
 #define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
 #endif /* VBOX */
 
@@ -283,7 +283,8 @@ typedef struct VGAState {
 
     /** Number of virtual monitors */
     uint32_t                    monitor_count;
-    uint32_t                    Padding0;   /* May be removed if more data is added */
+    /** The VBoxVideo extension command issued by guest. */
+    uint32_t                    vbox_video_command;
 
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     uint32_t                    fRenderVRAM;
