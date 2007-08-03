@@ -753,10 +753,12 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     usb_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("usb_read_16px.png"));
     usb_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("usb_write_16px.png"));
     usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
-    /// @todo add proper read/write states for shared folders when it is implemented
-    sf_state = new QIStateIndicator (0, indicatorBox, "sf_state", WNoAutoErase);
-    sf_state->setStateIcon (0, QPixmap::fromMimeSource ("shared_folder_16px.png"));
-    sf_state->setStateIcon (1, QPixmap::fromMimeSource ("shared_folder_disabled_16px.png"));
+    /** @todo missing pictures for read & write shared folder states */
+    sf_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "sf_light", WNoAutoErase);
+    sf_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("shared_folder_16px.png"));
+    sf_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("shared_folder_read_16px.png"));
+    sf_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("shared_folder_write_16px.png"));
+    sf_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("shared_folder_disabled_16px.png"));
 
     (new QFrame (indicatorBox))->setFrameStyle (QFrame::VLine | QFrame::Sunken);
 
@@ -875,7 +877,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (usb_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
-    connect (sf_state, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
+    connect (sf_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
     connect (net_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
@@ -1098,7 +1100,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         /* hide shared folders menu action & sf_separator & sf_status_icon */
         devicesSFDialogAction->setVisible (false);
         devicesMenu->setItemVisible (devicesSFMenuSeparatorId, false);
-        sf_state->setHidden (true);
+        sf_light->setHidden (true);
     }
 
     /* start an idle timer that will update device lighths */
@@ -1799,7 +1801,7 @@ void VBoxConsoleWnd::languageChange()
             "This key, when pressed alone, toggles the the keyboard and mouse "
             "capture state. It can also be used in combination with other keys "
             "to quickly perform actions from the main menu." ));
-    QToolTip::add (sf_state,
+    QToolTip::add (sf_light,
 /// @todo add later, when activity is actually reported
 //        tr ("Indicates the activity of shared folders."));
         tr ("Provides quick access to shared folders (by a right mouse button click).<br>"
@@ -2905,7 +2907,7 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
         vmDisMouseIntegrMenu->exec (e->globalPos());
     }
     else
-    if (ind == sf_state)
+    if (ind == sf_light)
     {
         devicesSharedFolders->exec (e->globalPos());
     }
@@ -2948,6 +2950,11 @@ void VBoxConsoleWnd::updateDeviceLights()
             st = cconsole.GetDeviceActivity (CEnums::USBDevice);
             if (usb_light->state() != st)
                 usb_light->setState (st);
+        }
+        if (sf_light->state() != CEnums::InvalidActivity) {
+            st = cconsole.GetDeviceActivity (CEnums::SharedFolderDevice);
+            if (sf_light->state() != st)
+                sf_light->setState (st);
         }
     }
 }
