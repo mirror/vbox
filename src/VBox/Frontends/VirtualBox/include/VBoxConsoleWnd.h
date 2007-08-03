@@ -268,7 +268,6 @@ private:
     QIStateIndicator *mouse_state, *hostkey_state;
     QIStateIndicator *autoresize_state;
     QIStateIndicator *vrdp_state;
-    QIStateIndicator *sf_state;
     QHBox *hostkey_hbox;
     QLabel *hostkey_name;
 
