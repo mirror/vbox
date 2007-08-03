@@ -53,7 +53,6 @@
 #include <iprt/log.h>
 
 
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -106,7 +105,7 @@ static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
 /** Hash table */
 static PSUPDRVSESSION       g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
-#define SESSION_HASH(sfn) ((sfn) % RT_ELEMENTS(g_apSessionHashTab))
+#define SESSION_HASH(sfn) 	((sfn) % RT_ELEMENTS(g_apSessionHashTab))
 
 
 
@@ -158,7 +157,7 @@ static int VBoxDrvFreeBSDLoad(void)
         /*
          * Initialize the device extension.
          */
-        /// @todo rc = supdrvInitDevExt(&g_DevExt);
+        rc = supdrvInitDevExt(&g_DevExt);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -190,7 +189,7 @@ static int VBoxDrvFreeBSDLoad(void)
             }
             else
                 printf("vboxdrv: RTSpinlockCreate failed, rc=%d\n", rc);
-            /// @todo supdrvDeleteDevExt(&g_DevExt);
+            supdrvDeleteDevExt(&g_DevExt);
         }
         else
             printf("vboxdrv: supdrvInitDevExt failed, rc=%d\n", rc);
@@ -217,7 +216,7 @@ static int VBoxDrvFreeBSDUnload(void)
         g_pVBoxDrvFreeBSDChrDev = NULL;
     }
 
-    rc = 0; /// @todo supdrvDeleteDevExt(&g_DevExt);
+    rc = supdrvDeleteDevExt(&g_DevExt);
     AssertRC(rc);
 
     rc = RTSpinlockDestroy(g_Spinlock);
@@ -239,11 +238,13 @@ static int VBoxDrvFreeBSDOpen(struct cdev *dev, int oflags, struct thread *td, i
     return EOPNOTSUPP;
 }
 
+
 static int VBoxDrvFreeBSDClose(struct cdev *dev, int fflag, int devtype, struct thread *td)
 {
     dprintf(("VBoxDrvFreeBSDClose:\n"));
     return EBADF;
 }
+
 
 static int VBoxDrvFreeBSDIOCtl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread *td)
 {
@@ -275,5 +276,38 @@ static int VBoxDrvFreeBsdErr2Native(int rc)
     }
 
     return EPERM;
+}
+
+
+void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession)
+{
+    NOREF(pObj);
+    NOREF(pSession);
+}
+
+
+bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc)
+{
+    NOREF(pObj);
+    NOREF(pSession);
+    NOREF(pszObjName);
+    NOREF(prc);
+    return false;
+}
+
+
+SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
+{
+    va_list va;
+    char szMsg[256];
+    int cch;
+
+    va_start(va, pszFormat);
+    cch = RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, va);
+    va_end(va);
+    
+    printf("%s", szMsg);
+
+    return cch;
 }
 
