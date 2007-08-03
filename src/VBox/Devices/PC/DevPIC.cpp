@@ -23,7 +23,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PIC
-#include <VBox/pdm.h>
+#include <VBox/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 

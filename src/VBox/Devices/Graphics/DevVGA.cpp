@@ -90,13 +90,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VGA
-#include <VBox/pdm.h>
-#include <VBox/stam.h>
+#include <VBox/pdmdev.h>
 #include <VBox/pgm.h>
-#include <VBox/mm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>

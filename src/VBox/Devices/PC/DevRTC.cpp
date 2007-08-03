@@ -49,7 +49,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_RTC
-#include <VBox/pdm.h>
+#include <VBox/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>

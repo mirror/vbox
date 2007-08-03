@@ -97,12 +97,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 # error "Unsupported Platform."
 #endif
 
-#include <VBox/pdm.h>
-#include <VBox/cfgm.h>
-#include <VBox/mm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/path.h>

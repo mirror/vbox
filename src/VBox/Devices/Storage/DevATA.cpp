@@ -25,11 +25,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_IDE
-#include <VBox/pdm.h>
-#include <VBox/vmm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #ifdef IN_RING3

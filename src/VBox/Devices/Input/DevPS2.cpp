@@ -54,10 +54,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_KBD
 #include "vl_vbox.h"
-#include <VBox/pdm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdev.h>
 #include <iprt/assert.h>
 
 #include "Builtins.h"

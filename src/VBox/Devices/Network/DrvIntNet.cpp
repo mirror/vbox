@@ -25,7 +25,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_INTNET
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 #include <VBox/cfgm.h>
 #include <VBox/intnet.h>
 #include <VBox/vmm.h>

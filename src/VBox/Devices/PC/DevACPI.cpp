@@ -21,7 +21,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_ACPI
 
-#include <VBox/pdm.h>
+#include <VBox/pdmdev.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>

@@ -50,7 +50,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/pdm.h>
+#include <VBox/pdmdev.h>
 #include <VBox/err.h>
 
 #define LOG_GROUP LOG_GROUP_DEFAULT ///@todo LOG_GROUP_DEV_DMA

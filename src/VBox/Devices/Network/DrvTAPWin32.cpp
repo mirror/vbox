@@ -27,10 +27,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_TUN
-#include <VBox/pdm.h>
-#include <VBox/cfgm.h>
-#include <VBox/mm.h>
-#include <VBox/err.h>
+#include <VBox/pdmdrv.h>
 #include <VBox/stam.h>
 
 #include <VBox/log.h>

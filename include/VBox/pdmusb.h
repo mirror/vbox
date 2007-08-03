@@ -29,6 +29,7 @@
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
 #include <VBox/dbgf.h>
+#include <VBox/mm.h>
 #include <VBox/err.h>
 #include <iprt/stdarg.h>
 

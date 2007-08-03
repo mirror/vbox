@@ -26,10 +26,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_CHAR
-#include <VBox/pdm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdrv.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/stream.h>

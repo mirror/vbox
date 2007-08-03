@@ -52,10 +52,7 @@
 /* Hack to get PCIDEVICEINT declare at the right point - include "PCIInternal.h". */
 #define PCI_INCLUDE_PRIVATE
 #include <VBox/pci.h>
-#include <VBox/pdm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
