@@ -14,10 +14,6 @@
 * Copyright (c) 1995-1999 Microsoft Corporation.  All rights reserved.
 \*****************************************************************************/
 
-#ifdef DEBUG
-#define LOG_ENABLED 1
-#endif
-
 #include "driver.h"
 #include "dd.h"
 #undef CO_E_NOTINITIALIZED
