@@ -198,6 +198,11 @@ public:
     QString mTip;
 };
 
+#ifdef RT_OS_DARWIN
+class QHttp;
+class QHttpResponseHeader;
+#endif
+
 /** class VBoxGADownloader
  *
  *  The VBoxGADownloader class is an QWidget class for Guest Additions
@@ -251,6 +256,7 @@ public:
         mPath = QString ("/download/%1/").arg (version);
         mFile = QString ("VBoxGuestAdditions_%1.iso").arg (version);
 
+#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
         /* Initialize url operator */
         mHttp = new QHttp (this, "mHttp");
         mHttp->setHost (mHost);
@@ -262,6 +268,7 @@ public:
                  this, SLOT (processFinished (int, bool)));
         connect (mHttp, SIGNAL (responseHeaderReceived (const QHttpResponseHeader&)),
                  this, SLOT (processResponse (const QHttpResponseHeader&)));
+#endif /* !RT_OS_DARWIN */ /// @todo fix the qt build on darwin.    
         connect (mCancelButton, SIGNAL (clicked()),
                  this, SLOT (processAbort()));
 
@@ -294,7 +301,9 @@ private slots:
         {
             if (mIsChecking)
             {
+#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
                 mHttp->abort();
+#endif                
                 if (mStatus == 404)
                     abortDownload (tr ("Could not locate the file on "
                                        "the server (response: %1).")
@@ -314,6 +323,7 @@ private slots:
      * operation and for the received-buffer serialization procedure. */
     void processFinished (int, bool aError)
     {
+#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
         if (aError && mHttp->error() != QHttp::Aborted)
         {
             mConnectDone = true;
@@ -343,13 +353,20 @@ private slots:
                                    "<nobr><b>%1</b></nobr>.")
                                .arg (QDir::convertSeparators (path)));
         }
+#else
+        NOREF (aError);
+#endif /* !RT_OS_DARWIN */        
     }
 
     /* This slot is used to handle the header responses about the
      * requested operations. Watches for the header's status-code. */
     void processResponse (const QHttpResponseHeader &aHeader)
     {
+#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
         mStatus = aHeader.statusCode();
+#else
+        NOREF(aHeader);
+#endif
     }
 
     /* This slot is used to control the connection timeout. */
@@ -357,17 +374,21 @@ private slots:
     {
         if (mConnectDone)
             return;
+#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
         mHttp->abort();
         abortDownload (tr ("Connection timed out."));
+#endif        
     }
 
     /* This slot is used to process cancel-button clicking signal. */
     void processAbort()
     {
+#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
         mConnectDone = true;
         mHttp->abort();
         abortDownload (tr ("The download process has been cancelled "
                            "by the user."));
+#endif        
     }
 
     /* This slot is used to terminate the downloader, activate the
@@ -386,7 +407,9 @@ private:
     void getFile()
     {
         mConnectDone = false;
+#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
         mHttp->get (mPath + mFile);
+#endif        
         QTimer::singleShot (5000, this, SLOT (processTimeout()));
     }
 
