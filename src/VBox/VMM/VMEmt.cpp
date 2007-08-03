@@ -27,7 +27,7 @@
 #include <VBox/tm.h>
 #include <VBox/dbgf.h>
 #include <VBox/em.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmapi.h>
 #include <VBox/rem.h>
 #include "VMInternal.h"
 #include <VBox/vm.h>

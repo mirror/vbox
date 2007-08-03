@@ -29,7 +29,6 @@
 #include <VBox/iom.h>
 #include <VBox/sup.h>
 #include <VBox/mm.h>
-#include <VBox/pdm.h>
 #include <VBox/stam.h>
 #include <VBox/rem.h>
 #include <VBox/csam.h>

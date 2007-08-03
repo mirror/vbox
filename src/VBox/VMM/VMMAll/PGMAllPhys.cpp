@@ -35,6 +35,7 @@
 #include <VBox/pgm.h>
 #include <VBox/trpm.h>
 #include <VBox/vmm.h>
+#include <VBox/iom.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/param.h>
