@@ -59,11 +59,23 @@ typedef struct DRVMAINVMMDEV
     PPDMIVMMDEVPORT             pUpPort;
     /** Our VMM device connector interface. */
     PDMIVMMDEVCONNECTOR         Connector;
+
 #ifdef VBOX_HGCM
     /** Pointer to the HGCM port interface of the driver/device above us. */
     PPDMIHGCMPORT               pHGCMPort;
     /** Our HGCM connector interface. */
     PDMIHGCMCONNECTOR           HGCMConnector;
+
+    struct
+    {
+        /** The LED. */
+        PDMLED                              Led;
+        /** The LED ports. */
+        PDMILEDPORTS                        ILeds;
+        /** Partner of ILeds. */
+        HCPTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
+    } SharedFolders;
+
 #endif
 } DRVMAINVMMDEV, *PDRVMAINVMMDEV;
 
@@ -462,11 +474,32 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
         case PDMINTERFACE_HGCM_CONNECTOR:
             return &pDrv->HGCMConnector;
 #endif
+        case PDMINTERFACE_LED_PORTS:
+            /* Currently only for shared folders */
+            return &pDrv->SharedFolders.ILeds;
         default:
             return NULL;
     }
 }
 
+/**
+ * Gets the pointer to the status LED of a unit.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   iLUN            The unit which status LED we desire.
+ * @param   ppLed           Where to store the LED pointer.
+ */
+static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    if (iLUN == 0)
+    {
+        *ppLed = &pDrv->SharedFolders.Led;
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
+}
 
 /**
  * Destruct a VMMDev driver instance.
@@ -546,6 +579,10 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->Connector.pfnSetVisibleRegion              = vmmdevSetVisibleRegion;
     pData->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
 
+    pData->SharedFolders.Led.u32Magic                 = PDMLED_MAGIC;
+    /* ILeds */
+    pData->SharedFolders.ILeds.pfnQueryStatusLed      = vmmdevQueryStatusLed;
+
 
 #ifdef VBOX_HGCM
     pData->HGCMConnector.pfnConnect                   = iface_hgcmConnect;
@@ -591,7 +628,23 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
     if (VBOX_SUCCESS(rc))
     {
+        PPDMIBASE pBase;
+
         LogRel(("Shared Folders service loaded.\n"));
+#if 0
+        /*
+         * Attach status driver (optional).
+         */
+        rc = PDMDrvHlpDriverAttach(pDrvIns, PDM_STATUS_LUN, &pDrvIns->IBase, &pBase, "Status Port");
+        if (VBOX_SUCCESS(rc))
+            pData->SharedFolders.pLedsConnector = (PPDMILEDCONNECTORS)
+                pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
+        else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
+        {
+            AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
+            return rc;
+        }
+#endif
     }
     else
     {

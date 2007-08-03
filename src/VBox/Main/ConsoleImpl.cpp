@@ -218,6 +218,7 @@ HRESULT Console::FinalConstruct()
     memset(mapFDLeds, 0, sizeof(mapFDLeds));
     memset(mapIDELeds, 0, sizeof(mapIDELeds));
     memset(mapNetworkLeds, 0, sizeof(mapNetworkLeds));
+    memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
 
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     Assert(ELEMENTS(maTapFD) == ELEMENTS(maTAPDeviceName));
@@ -1870,6 +1871,12 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
         {
             /// @todo (r=dmik)
             //  USB_DEVICE_ACTIVITY
+            break;
+        }
+
+        case DeviceType_SharedFolderDevice:
+        {
+            SumLed.u32 |= readAndClearLed(mapSharedFolderLed);
             break;
         }
 
@@ -5641,6 +5648,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
     VMMDev *pVMMDev = pConsole->mVMMDev;
     rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pVMMDev);                  RC_CHECK();
+
+    /*
+     * Attach the status driver.
+     */
+    rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapSharedFolderLed); RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                                 RC_CHECK();
 
     /*
      * Audio Sniffer Device
