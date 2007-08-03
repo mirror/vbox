@@ -53,7 +53,7 @@
  * "VBoxInternal/Devices/piix3ide/0/LUN#<x>/Config/IgnoreFlush". <x>
  * must be replaced with the correct LUN number of the disk that should
  * ignore flush requests. The value of the key is a boolean. The default
- * is to honor flushes, i.e. false. */
+ * is to ignore flushes, i.e. true. */
 #define VBOX_IGNORE_FLUSH
 
 /*******************************************************************************
