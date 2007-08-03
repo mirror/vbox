@@ -124,7 +124,6 @@
 #include <VBox/iom.h>
 #include <VBox/sup.h>
 #include <VBox/mm.h>
-#include <VBox/pdm.h>
 #include <VBox/em.h>
 #include <VBox/stam.h>
 #include <VBox/rem.h>

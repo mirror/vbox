@@ -125,7 +125,8 @@
 #include <VBox/vmapi.h>
 #include <VBox/pgm.h>
 #include <VBox/cfgm.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmqueue.h>
+#include <VBox/pdmapi.h>
 #include <VBox/cpum.h>
 #include <VBox/mm.h>
 #include <VBox/iom.h>

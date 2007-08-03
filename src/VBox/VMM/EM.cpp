@@ -45,7 +45,10 @@
 #include <VBox/rem.h>
 #include <VBox/tm.h>
 #include <VBox/mm.h>
-#include <VBox/pdm.h>
+#include <VBox/ssm.h>
+#include <VBox/pdmapi.h>
+#include <VBox/pdmcritsect.h>
+#include <VBox/pdmqueue.h>
 #include <VBox/hwaccm.h>
 #include <VBox/patm.h>
 #include "EMInternal.h"

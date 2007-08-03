@@ -118,6 +118,11 @@ typedef enum VMSTATE
 } VMSTATE;
 
 
+/** Pointer to a PDM Driver Base Interface. */
+typedef struct PDMIBASE *PPDMIBASE;
+/** Pointer to a pointer to a PDM Driver Base Interface. */
+typedef PPDMIBASE *PPPDMIBASE;
+
 /** Pointer to a PDM Device Instance. */
 typedef struct PDMDEVINS *PPDMDEVINS;
 /** Pointer to a pointer to a PDM Device Instance. */

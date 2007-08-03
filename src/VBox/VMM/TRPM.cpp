@@ -54,8 +54,10 @@
 #include <VBox/trpm.h>
 #include <VBox/cpum.h>
 #include <VBox/selm.h>
-#include <VBox/pdm.h>
+#include <VBox/ssm.h>
+#include <VBox/pdmapi.h>
 #include <VBox/pgm.h>
+#include <VBox/dbgf.h>
 #include <VBox/mm.h>
 #include <VBox/stam.h>
 #include <VBox/csam.h>

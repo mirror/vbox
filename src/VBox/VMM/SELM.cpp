@@ -27,7 +27,7 @@
 #include <VBox/cpum.h>
 #include <VBox/stam.h>
 #include <VBox/mm.h>
-#include <VBox/pdm.h>
+#include <VBox/ssm.h>
 #include <VBox/pgm.h>
 #include <VBox/trpm.h>
 #include <VBox/dbgf.h>

@@ -29,7 +29,10 @@
 #include <VBox/param.h>
 #include <VBox/vmm.h>
 #include <VBox/mm.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmcritsect.h>
+#include <VBox/pdmapi.h>
+#include <VBox/dis.h>
+#include <VBox/dbgf.h>
 #include <VBox/log.h>
 #include <iprt/avl.h>
 #include <iprt/assert.h>

@@ -152,8 +152,6 @@ typedef struct PDMIBASE
      */
     DECLR3CALLBACKMEMBER(void *, pfnQueryInterface,(struct PDMIBASE *pInterface, PDMINTERFACE enmInterface));
 } PDMIBASE;
-/** Pointer to a PDM Driver Base Interface. */
-typedef PDMIBASE *PPDMIBASE;
 
 
 /**

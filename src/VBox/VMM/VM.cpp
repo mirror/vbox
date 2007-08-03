@@ -32,7 +32,8 @@
 #include <VBox/trpm.h>
 #include <VBox/dbgf.h>
 #include <VBox/pgm.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmapi.h>
+#include <VBox/pdmcritsect.h>
 #include <VBox/em.h>
 #include <VBox/rem.h>
 #include <VBox/tm.h>
@@ -40,6 +41,7 @@
 #include <VBox/patm.h>
 #include <VBox/csam.h>
 #include <VBox/iom.h>
+#include <VBox/ssm.h>
 #include <VBox/hwaccm.h>
 #include "VMInternal.h"
 #include <VBox/vm.h>
