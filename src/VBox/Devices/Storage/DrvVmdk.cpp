@@ -51,11 +51,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_VBOXHDD
-#include <VBox/pdm.h>
-#include <VBox/mm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdrv.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>

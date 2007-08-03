@@ -55,12 +55,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PCNET
-#include <VBox/err.h>
-#include <VBox/log.h>
-#include <VBox/mm.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmdev.h>
 #include <VBox/pgm.h>
-#include <VBox/stam.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -68,8 +64,8 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 #ifdef IN_RING3
-#include <iprt/mem.h>
-#include <iprt/semaphore.h>
+# include <iprt/mem.h>
+# include <iprt/semaphore.h>
 #endif
 
 #include "Builtins.h"

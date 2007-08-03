@@ -25,23 +25,19 @@
 #define LOG_GROUP LOG_GROUP_DRV_ACPI
 
 #ifdef RT_OS_WINDOWS
-#include <windows.h>
+# include <windows.h>
 #endif
 
-#include <VBox/pdm.h>
-#include <VBox/cfgm.h>
-#include <VBox/mm.h>
-#include <VBox/err.h>
-
+#include <VBox/pdmdrv.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
 #ifdef RT_OS_LINUX
-#include <iprt/string.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <stdio.h>
+# include <iprt/string.h>
+# include <sys/types.h>
+# include <dirent.h>
+# include <stdio.h>
 #endif
 
 #include "Builtins.h"

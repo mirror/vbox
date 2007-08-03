@@ -21,15 +21,11 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_MOUSE_QUEUE
-#include <VBox/pdm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
 #include "Builtins.h"

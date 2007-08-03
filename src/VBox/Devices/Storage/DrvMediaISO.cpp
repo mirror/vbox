@@ -24,12 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_ISO
-#include <VBox/pdm.h>
-#include <VBox/cfgm.h>
-#include <VBox/mm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 

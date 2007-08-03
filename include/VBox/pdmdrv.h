@@ -25,10 +25,12 @@
 #include <VBox/pdmcritsect.h>
 #include <VBox/pdmthread.h>
 #include <VBox/pdmifs.h>
+#include <VBox/pdmins.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
 #include <VBox/dbgf.h>
+#include <VBox/mm.h>
 #include <VBox/err.h>
 #include <iprt/stdarg.h>
 

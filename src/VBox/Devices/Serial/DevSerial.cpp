@@ -52,10 +52,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_SERIAL
-#include <VBox/pdm.h>
-#include <VBox/err.h>
-
-#include <VBox/log.h>
+#include <VBox/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>

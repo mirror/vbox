@@ -50,7 +50,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PIT
-#include <VBox/pdm.h>
+#include <VBox/pdmdev.h>
 #include <VBox/log.h>
 #include <VBox/stam.h>
 #include <iprt/assert.h>

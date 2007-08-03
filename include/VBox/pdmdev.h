@@ -25,11 +25,13 @@
 #include <VBox/pdmcritsect.h>
 #include <VBox/pdmthread.h>
 #include <VBox/pdmifs.h>
+#include <VBox/pdmins.h>
 #include <VBox/iom.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
 #include <VBox/dbgf.h>
+#include <VBox/mm.h>
 #include <VBox/err.h>
 #include <VBox/pci.h>
 #include <iprt/stdarg.h>
@@ -40,16 +42,6 @@ __BEGIN_DECLS
  * @ingroup grp_pdm
  * @{
  */
-
-/** @def PDMBOTHCBDECL
- * Macro for declaring a callback which is static in HC and exported in GC.
- */
-#if defined(IN_GC) || defined(IN_RING0)
-# define PDMBOTHCBDECL(type)    DECLEXPORT(type)
-#else
-# define PDMBOTHCBDECL(type)    static type
-#endif
-
 
 /**
  * Construct a device instance for a VM.
@@ -2902,26 +2894,6 @@ typedef struct PDMDEVINS
  */
 #define PDMDEV_SET_RUNTIME_ERROR(pDevIns, fFatal, pszErrorID, pszError) \
     PDMDevHlpVMSetRuntimeError(pDevIns, fFatal, pszErrorID, "%s", pszError)
-
-/** @def PDMINS2DATA
- * Converts a PDM Device or Driver instance pointer to a pointer to the instance data.
- */
-#define PDMINS2DATA(pIns, type)     ( (type)(void *)&(pIns)->achInstanceData[0] )
-
-/** @def PDMINS2DATA_GCPTR
- * Converts a PDM Device or Driver instance pointer to a GC pointer to the instance data.
- */
-#define PDMINS2DATA_GCPTR(pIns)     ( (pIns)->pvInstanceDataGC )
-
-/** @def PDMINS2DATA_R3PTR
- * Converts a PDM Device or Driver instance pointer to a HC pointer to the instance data.
- */
-#define PDMINS2DATA_R3PTR(pIns)     ( (pIns)->pvInstanceDataR3 )
-
- /** @def PDMINS2DATA_R0PTR
- * Converts a PDM Device or Driver instance pointer to a R0 pointer to the instance data.
- */
-#define PDMINS2DATA_R0PTR(pIns)     ( (pIns)->pvInstanceDataR0 )
 
 /** @def PDMDEVINS_2_GCPTR
  * Converts a PDM Device instance pointer a GC PDM Device instance pointer.
