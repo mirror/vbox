@@ -25,7 +25,7 @@
 
 #include "Logging.h"
 
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 #include <VBox/vrdpapi.h>
 #include <VBox/cfgm.h>
 #include <VBox/err.h>

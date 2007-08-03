@@ -23,7 +23,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-
 #include "MouseImpl.h"
 #include "KeyboardImpl.h"
 #include "DisplayImpl.h"
@@ -33,10 +32,8 @@
 
 #include "Logging.h"
 
-#include <VBox/pdm.h>
-
+#include <VBox/pdmdrv.h>
 #include <VBox/version.h>
-#include <VBox/err.h>
 
 /**
  * Register the main drivers.

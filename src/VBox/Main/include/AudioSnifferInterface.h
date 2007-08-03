@@ -23,7 +23,7 @@
 #define ____H_AUDIOSNIFFERINTERFACE
 
 #include <VBox/com/ptr.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 
 class Console;
 

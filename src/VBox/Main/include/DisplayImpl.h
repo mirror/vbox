@@ -25,7 +25,7 @@
 #include "VirtualBoxBase.h"
 #include "SchemaDefs.h"
 #include <iprt/semaphore.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxVideo.h>
 

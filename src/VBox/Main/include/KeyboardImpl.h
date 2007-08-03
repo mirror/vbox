@@ -24,7 +24,7 @@
 
 #include "VirtualBoxBase.h"
 #include "ConsoleEvents.h"
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 
 /** Simple keyboard event class. */
 class KeyboardEvent

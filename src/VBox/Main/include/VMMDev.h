@@ -23,7 +23,7 @@
 #define ____H_VMMDEV
 
 #include "VirtualBoxBase.h"
-#include <VBox/pdm.h>
+#include <VBox/pdmdrv.h>
 
 class Console;
 
