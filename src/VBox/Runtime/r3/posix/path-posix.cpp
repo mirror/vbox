@@ -31,6 +31,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <pwd.h>
 #ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
 #endif
@@ -483,10 +485,49 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
 
 RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
 {
+    int rc;
+#ifndef RT_OS_L4
+    /*
+     * We make an exception for the root user and use the system call
+     * getpwuid_r to determine their initial home path instead of
+     * reading it from the $HOME variable.  This is because the $HOME
+     * variable does not get changed by sudo (and possibly su and others)
+     * which can cause root-owned files to appear in user's home folders.
+     */
+     uid_t uid = geteuid();
+     if (uid == 0)
+     {
+         /* The getpwuid_r function "allocates" any pointer memory it
+            needs from here.  In theory one should use the sysconf
+            function to find the appropriate size, but sysconf is
+            unreliable by design.  This should definitely be enough. */
+         char buffer[5120];
+         struct passwd sPasswd, *psPasswd;
+         rc = getpwuid_r(0, &sPasswd, buffer, sizeof(buffer), &psPasswd);
+         if (rc != 0)
+             return RTErrConvertFromErrno(rc);
+         /*
+          * Convert it to UTF-8 and copy it to the return buffer.
+          */
+         char *pszUtf8Path;
+         rc = rtPathFromNative(&pszUtf8Path, psPasswd->pw_dir);
+         if (RT_SUCCESS(rc))
+         {
+             size_t cchHome = strlen(pszUtf8Path);
+             if (cchHome < cchPath)
+                 memcpy(pszPath, pszUtf8Path, cchHome + 1);
+             else
+                 rc = VERR_BUFFER_OVERFLOW;
+             RTStrFree(pszUtf8Path);
+         }
+         LogFlow(("RTPathUserHome(%p:{%s}, %u): returns %Rrc\n", pszPath,
+                  RT_SUCCESS(rc) ? pszPath : "<failed>",  cchPath, rc));
+         return rc;
+     }
+#endif
     /*
      * Get HOME env. var it and validate it's existance.
      */
-    int rc;
     struct stat s;
     const char *pszHome = getenv("HOME");
     if (pszHome)
