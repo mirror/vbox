@@ -1876,9 +1876,7 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
 
         case DeviceType_SharedFolderDevice:
         {
-#if 0 /* not yet working */
             SumLed.u32 |= readAndClearLed(mapSharedFolderLed);
-#endif
             break;
         }
 
