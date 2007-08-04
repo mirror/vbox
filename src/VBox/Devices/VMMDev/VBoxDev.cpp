@@ -1468,6 +1468,25 @@ static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, PDMIN
     }
 }
 
+/**
+ * Gets the pointer to the status LED of a unit.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   iLUN            The unit which status LED we desire.
+ * @param   ppLed           Where to store the LED pointer.
+ */
+static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+{
+    VMMDevState *pData = (VMMDevState*)((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, Base));
+    if (iLUN == 0) /* LUN 0 is shared folders */
+    {
+        *ppLed = &pData->SharedFolders.Led;
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
+}
+
 /* -=-=-=-=-=- IVMMDevPort -=-=-=-=-=- */
 
 /** Converts a VMMDev port interface pointer to a VMMDev state pointer. */
@@ -1663,25 +1682,6 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
     }
 
     return;
-}
-
-/**
- * Gets the pointer to the status LED of a unit.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   iLUN            The unit which status LED we desire.
- * @param   ppLed           Where to store the LED pointer.
- */
-static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
-{
-    VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
-    if (iLUN == 0) /* LUN 0 is shared folders */
-    {
-        *ppLed = &pData->SharedFolders.Led;
-        return VINF_SUCCESS;
-    }
-    return VERR_PDM_LUN_NOT_FOUND;
 }
 
 
@@ -1952,6 +1952,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     else
         AssertMsgFailedReturn(("Failed to attach LUN #0! rc=%Vrc\n", rc), rc);
 
+#if 0
     /*
      * Attach status driver for shared folders (optional).
      */
@@ -1965,6 +1966,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
         return rc;
     }
+#endif
 
     /* 
      * Register saved state and init the HGCM CmdList critsect.
