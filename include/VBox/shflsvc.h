@@ -102,6 +102,8 @@
 #define SHFL_FN_ADD_MAPPING         (1)
 /** Remove shared folder mapping. */
 #define SHFL_FN_REMOVE_MAPPING      (2)
+/** Set the led status light address */
+#define SHFL_FN_SET_STATUS_LED      (3)
 
 /** @} */
 
@@ -957,6 +959,25 @@ typedef struct _VBoxSFRemoveMapping
 } VBoxSFRemoveMapping;
 
 #define SHFL_CPARMS_REMOVE_MAPPING (1)
+
+
+/**
+ * SHFL_FN_SET_STATUS_LED
+ */
+
+/** Parameters structure. */
+typedef struct _VBoxSFSetStatusLed
+{
+    VBoxGuestHGCMCallInfo callInfo;
+
+    /** pointer, in: LED address
+     * Points to PPDMLED buffer.
+     */
+    HGCMFunctionParameter led;
+
+} VBoxSFSetStatusLed;
+
+#define SHFL_CPARMS_SET_STATUS_LED (1)
 
 /** @} */
 

@@ -158,6 +158,17 @@ typedef struct VMMDevState
     uint32_t u32HGCMEnabled;
 #endif /* VBOX_HGCM */
 
+    /* Shared folders LED */
+    struct
+    {
+        /** The LED. */
+        PDMLED                              Led;
+        /** The LED ports. */
+        PDMILEDPORTS                        ILeds;
+        /** Partner of ILeds. */
+        HCPTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
+    } SharedFolders;
+
 } VMMDevState;
 
 void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask);

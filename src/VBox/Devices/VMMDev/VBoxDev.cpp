@@ -1460,6 +1460,9 @@ static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, PDMIN
         case PDMINTERFACE_HGCM_PORT:
             return &pData->HGCMPort;
 #endif
+        case PDMINTERFACE_LED_PORTS:
+            /* Currently only for shared folders */
+            return &pData->SharedFolders.ILeds;
         default:
             return NULL;
     }
@@ -1660,6 +1663,25 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
     }
 
     return;
+}
+
+/**
+ * Gets the pointer to the status LED of a unit.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   iLUN            The unit which status LED we desire.
+ * @param   ppLed           Where to store the LED pointer.
+ */
+static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+{
+    VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+    if (iLUN == 0) /* LUN 0 is shared folders */
+    {
+        *ppLed = &pData->SharedFolders.Led;
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
 }
 
 
@@ -1895,6 +1917,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->Port.pfnVBVAChange             = vmmdevVBVAChange;
     pData->Port.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
 
+    /* Shared folder LED */
+    pData->SharedFolders.Led.u32Magic                 = PDMLED_MAGIC;
+    pData->SharedFolders.ILeds.pfnQueryStatusLed      = vmmdevQueryStatusLed;
 
 #ifdef VBOX_HGCM
     /* HGCM port */
@@ -1926,6 +1951,20 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
     else
         AssertMsgFailedReturn(("Failed to attach LUN #0! rc=%Vrc\n", rc), rc);
+
+    /*
+     * Attach status driver for shared folders (optional).
+     */
+    PPDMIBASE pBase;
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pData->Base, &pBase, "Status Port");
+    if (VBOX_SUCCESS(rc))
+        pData->SharedFolders.pLedsConnector = (PPDMILEDCONNECTORS)
+            pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
+    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
+        return rc;
+    }
 
     /* 
      * Register saved state and init the HGCM CmdList critsect.

@@ -56,5 +56,4 @@ typedef struct _SHFLCLIENTDATA
 } SHFLCLIENTDATA;
 
 
-
 #endif /* __SHFL__H */
