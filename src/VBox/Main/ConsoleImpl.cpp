@@ -218,6 +218,7 @@ HRESULT Console::FinalConstruct()
     memset(mapFDLeds, 0, sizeof(mapFDLeds));
     memset(mapIDELeds, 0, sizeof(mapIDELeds));
     memset(mapNetworkLeds, 0, sizeof(mapNetworkLeds));
+    memset(&mapUSBLed, 0, sizeof(mapUSBLed));
     memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
 
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
@@ -1869,8 +1870,7 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
 
         case DeviceType_USBDevice:
         {
-            /// @todo (r=dmik)
-            //  USB_DEVICE_ACTIVITY
+            SumLed.u32 |= readAndClearLed(mapUSBLed);
             break;
         }
 
@@ -5764,6 +5764,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
             rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
             rc = CFGMR3InsertString(pLunL0, "Driver",               "VUSBRootHub");     RC_CHECK();
             rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+
+            /*
+             * Attach the status driver.
+             */
+            rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed);RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
         }
     }
 
