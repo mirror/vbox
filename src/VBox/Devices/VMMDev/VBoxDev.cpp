@@ -1478,7 +1478,7 @@ static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, PDMIN
  */
 static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    VMMDevState *pData = (VMMDevState*)((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, Base));
+    VMMDevState *pData = (VMMDevState *)( (uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, SharedFolders.ILeds) );
     if (iLUN == 0) /* LUN 0 is shared folders */
     {
         *ppLed = &pData->SharedFolders.Led;
@@ -1952,7 +1952,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     else
         AssertMsgFailedReturn(("Failed to attach LUN #0! rc=%Vrc\n", rc), rc);
 
-#if 0
     /*
      * Attach status driver for shared folders (optional).
      */
@@ -1966,7 +1965,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertMsgFailed(("Failed to attach to status driver. rc=%Vrc\n", rc));
         return rc;
     }
-#endif
 
     /* 
      * Register saved state and init the HGCM CmdList critsect.
