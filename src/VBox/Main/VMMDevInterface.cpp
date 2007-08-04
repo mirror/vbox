@@ -29,6 +29,7 @@
 #include <VBox/pdmdrv.h>
 #include <VBox/VBoxDev.h>
 #include <VBox/VBoxGuest.h>
+#include <VBox/shflsvc.h>
 #include <iprt/asm.h>
 
 #ifdef VBOX_HGCM
@@ -590,7 +591,29 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
     if (VBOX_SUCCESS(rc))
     {
+        PPDMLED       pLed;
+        PPDMILEDPORTS pLedPort;
+
         LogRel(("Shared Folders service loaded.\n"));
+        pLedPort = (PPDMILEDPORTS)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_LED_PORTS);
+        if (!pLedPort)
+        {
+            AssertMsgFailed(("Configuration error: No LED port interface above!\n"));
+            return VERR_PDM_MISSING_INTERFACE_ABOVE;
+        }
+        rc = pLedPort->pfnQueryStatusLed(pLedPort, 0, &pLed);
+        if (VBOX_SUCCESS(rc) && pLed)
+        {
+            VBOXHGCMSVCPARM  parm;
+
+            parm.type = VBOX_HGCM_SVC_PARM_PTR;
+            parm.u.pointer.addr = pLed;
+            parm.u.pointer.size = sizeof(*pLed);
+
+            rc = HGCMHostCall("VBoxSharedFolders", SHFL_FN_SET_STATUS_LED, 1, &parm);
+        }
+        else
+            AssertMsgFailed(("pfnQueryStatusLed failed with %Vrc (pLed=%x)\n", rc, pLed));
     }
     else
     {

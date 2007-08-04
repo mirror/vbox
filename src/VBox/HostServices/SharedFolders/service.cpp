@@ -29,6 +29,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <VBox/ssm.h>
+#include <VBox/pdm.h>
 
 #define SHFL_SSM_VERSION        2
 
@@ -72,7 +73,7 @@
 
 
 PVBOXHGCMSVCHELPERS g_pHelpers;
-
+static PPDMLED      pStatusLed = NULL;
 
 static DECLCALLBACK(int) svcUnload (void)
 {
@@ -535,8 +536,15 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 else
                 {
                     /* Execute the function. */
+                    if (pStatusLed)
+                    {
+                        Assert(pStatusLed->u32Magic == PDMLED_MAGIC);
+                        pStatusLed->Asserted.s.fReading = pStatusLed->Actual.s.fReading = 1;
+                    }
 
                     rc = vbsfRead (pClient, root, Handle, offset, &count, pBuffer);
+                    if (pStatusLed)
+                        pStatusLed->Actual.s.fReading = 0;
 
                     if (VBOX_SUCCESS(rc))
                     {
@@ -592,8 +600,15 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 else
                 {
                     /* Execute the function. */
-
+                    if (pStatusLed)
+                    {
+                        Assert(pStatusLed->u32Magic == PDMLED_MAGIC);
+                        pStatusLed->Asserted.s.fWriting = pStatusLed->Actual.s.fWriting = 1;
+                    }
+                    
                     rc = vbsfWrite (pClient, root, Handle, offset, &count, pBuffer);
+                    if (pStatusLed)
+                        pStatusLed->Actual.s.fWriting = 0;
 
                     if (VBOX_SUCCESS(rc))
                     {
@@ -1152,6 +1167,43 @@ static DECLCALLBACK(int) svcHostCall (uint32_t u32Function, uint32_t cParms, VBO
         }
         break;
     }
+
+    case SHFL_FN_SET_STATUS_LED:
+    {
+        Log(("svcCall: SHFL_FN_SET_STATUS_LED\n"));
+
+        /* Verify parameter count and types. */
+        if (cParms != SHFL_CPARMS_SET_STATUS_LED)
+        {
+            rc = VERR_INVALID_PARAMETER;
+        }
+        else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* folder name */
+                )
+        {
+            rc = VERR_INVALID_PARAMETER;
+        }
+        else
+        {
+            /* Fetch parameters. */
+            PPDMLED  pLed     = (PPDMLED)paParms[0].u.pointer.addr;
+            uint32_t cbLed    = paParms[0].u.pointer.size;
+
+            /* Verify parameters values. */
+            if (   (cbLed != sizeof (PDMLED))
+               )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Execute the function. */
+                pStatusLed = pLed;
+                rc = VINF_SUCCESS;
+            }
+        }
+        break;
+    }
+
     default:
         rc = VERR_NOT_IMPLEMENTED;
         break;
