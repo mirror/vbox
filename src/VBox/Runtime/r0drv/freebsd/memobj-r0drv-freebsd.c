@@ -65,6 +65,8 @@ typedef struct RTR0MEMOBJFREEBSD
 } RTR0MEMOBJFREEBSD, *PRTR0MEMOBJFREEBSD;
 
 
+MALLOC_DEFINE(M_IPRTMOBJ, "iprtmobj", "innotek Portable Runtime - R0MemObj");
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -77,18 +79,23 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
     switch (pMemFreeBSD->Core.enmType)
     {
+        case RTR0MEMOBJTYPE_CONT:
+            contigfree(pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb, M_IPRTCONT);
+            break;
+
+#if 0
         case RTR0MEMOBJTYPE_PHYS:
-            if (!pMemFreeBSD->Core.pv)
-                break;
+            //if (!pMemFreeBSD->Core.pv)
+            //    break;
+            break
 
         case RTR0MEMOBJTYPE_MAPPING:
-            if (pMemFreeBSD->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
-                break; 
-
-            /* fall thru */
+            //if (pMemFreeBSD->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
+            //    break;
+            break;
+            
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_LOW:
-        case RTR0MEMOBJTYPE_CONT:
             //rc = KernVMFree(pMemFreeBSD->Core.pv);
             //AssertMsg(!rc, ("rc=%d type=%d pv=%p cb=%#zx\n", rc, pMemFreeBSD->Core.enmType, pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb));
             break;
@@ -99,6 +106,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
+#endif
         default:
             AssertMsgFailed(("enmType=%d\n", pMemFreeBSD->Core.enmType));
             return VERR_INTERNAL_ERROR;
@@ -110,12 +118,11 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    NOREF(fExecutable);
-
-#if 0
+    /* malloc or like the linker: http://fxr.watson.org/fxr/source/kern/link_elf.c?v=RELENG62#L701 */
+#if 0    
     /* create the object. */
     const ULONG cPages = cb >> PAGE_SHIFT;
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, aPages[cPages]), RTR0MEMOBJTYPE_PAGE, NULL, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_PAGE, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
@@ -134,14 +141,17 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
         KernVMFree(pMemFreeBSD->Core.pv);
     }
     rtR0MemObjDelete(&pMemFreeBSD->Core);
+    NOREF(fExecutable);
     return RTErrConvertFromOS2(rc);
-#endif
+#else
     return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
+    /* same as Alloc and hope we're lucky, make sure to verify the physical addresses */
     NOREF(fExecutable);
 
 #if 0
@@ -174,28 +184,29 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
 
 int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    NOREF(fExecutable);
-
-#if 0
     /* create the object. */
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_CONT, NULL, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_CONT, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
     /* do the allocation. */
-    ULONG ulPhys = ~0UL;
-    int rc = KernVMAlloc(cb, VMDHA_FIXED | VMDHA_CONTIG, &pMemFreeBSD->Core.pv, (PPVOID)&ulPhys, NULL);
-    if (!rc)
+    pMemFreeBSD->Core.pv = contigmalloc(cb,                   /* size */
+                                        M_IPRTMOBJ,           /* type */
+                                        M_NOWAIT | M_ZERO,    /* flags */
+                                        0,                    /* lowest physical address*/
+                                        _4G-1,                /* highest physical address */
+                                        PAGE_SIZE,            /* alignment. */
+                                        0);                   /* boundrary */
+    if (pMemFreeBSD->Core.pv)
     {
-        Assert(ulPhys != ~0UL);
-        pMemFreeBSD->Core.u.Cont.Phys = ulPhys;
+        pMemFreeBSD->Core.u.Cont.Phys = vtophys(pMemFreeBSD->Core.pv);
         *ppMem = &pMemFreeBSD->Core;
         return VINF_SUCCESS;
     }
+    
+    NOREF(fExecutable);
     rtR0MemObjDelete(&pMemFreeBSD->Core);
-    return RTErrConvertFromOS2(rc);
-#endif
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NO_MEMORY;
 }
 
 
@@ -229,24 +240,22 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 
 int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
 {
-#if 0	
     /* create the object. */
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_PHYS, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    /* there is no allocation here, right? it needs to be mapped somewhere first. */
+    /* there is no allocation here, it needs to be mapped somewhere first. */
     pMemFreeBSD->Core.u.Phys.fAllocated = false;
     pMemFreeBSD->Core.u.Phys.PhysBase = Phys;
     *ppMem = &pMemFreeBSD->Core;
     return VINF_SUCCESS;
-#endif
-    return VERR_NOT_IMPLEMENTED;    
 }
 
 
 int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
 {
+    /* see vslock and vsunlock */
 #if 0
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
 
@@ -303,12 +312,14 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 
 int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
 {
+    /* see kmem_alloc_nofault */
     return VERR_NOT_IMPLEMENTED;
 }
 
 
 int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
+    /* see kmem_alloc_nofault */
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -317,6 +328,8 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 {
     AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
 
+/* Phys: see pmap_mapdev in i386/i386/pmap.c (http://fxr.watson.org/fxr/source/i386/i386/pmap.c?v=RELENG62#L2860) */
+    
 #if 0
 /** @todo finish the implementation. */
 
