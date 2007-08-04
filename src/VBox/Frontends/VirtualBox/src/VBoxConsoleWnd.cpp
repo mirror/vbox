@@ -776,7 +776,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     usb_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("usb_read_16px.png"));
     usb_light->setStateIcon (CEnums::DeviceWriting, QPixmap::fromMimeSource ("usb_write_16px.png"));
     usb_light->setStateIcon (CEnums::InvalidActivity, QPixmap::fromMimeSource ("usb_disabled_16px.png"));
-    /** @todo missing pictures for read & write shared folder states */
     sf_light = new QIStateIndicator (CEnums::DeviceIdle, indicatorBox, "sf_light", WNoAutoErase);
     sf_light->setStateIcon (CEnums::DeviceIdle, QPixmap::fromMimeSource ("shared_folder_16px.png"));
     sf_light->setStateIcon (CEnums::DeviceReading, QPixmap::fromMimeSource ("shared_folder_read_16px.png"));
