@@ -170,8 +170,9 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   pInterface  Pointer to this struct.
      * @param   pUrb        Pointer to the URB returned by pfnNewUrb.
      *                      The URB will be freed in case of failure.
+     * @param   pLed        Pointer to USB Status LED
      */
-    DECLR3CALLBACKMEMBER(int, pfnSubmitUrb,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb));
+    DECLR3CALLBACKMEMBER(int, pfnSubmitUrb,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb, PPDMLED pLed));
 
     /**
      * Call to service asynchronous URB completions in a polling fashion.
@@ -228,9 +229,9 @@ DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t D
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnSubmitUrb */
-DECLINLINE(int) VUSBIRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb)
+DECLINLINE(int) VUSBIRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb, PPDMLED pLed)
 {
-    return pInterface->pfnSubmitUrb(pInterface, pUrb);
+    return pInterface->pfnSubmitUrb(pInterface, pUrb, pLed);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnReapAsyncUrbs */
