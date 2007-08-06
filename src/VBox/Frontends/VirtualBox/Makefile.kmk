@@ -81,11 +81,11 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxSelectorWnd.h \
 	include/VBoxConsoleWnd.h \
 	include/VBoxConsoleView.h \
-	include/VBoxProblemReporter.h
+	include/VBoxProblemReporter.h \
+	include/VBoxDownloaderWgt.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
-VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp \
-						src/VBoxConsoleWnd.cpp
+VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
 ifdef VBOX_WITH_XPCOM
 VirtualBox_QT_MOCSRCS += src/COMDefs.cpp
 endif
@@ -140,6 +140,7 @@ VirtualBox_SOURCES = \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleView.cpp \
 	src/VBoxConsoleWnd.cpp \
+	src/VBoxDownloaderWgt.cpp \
 	src/VBoxVMListBox.cpp \
 	src/VBoxFrameBuffer.cpp
 
