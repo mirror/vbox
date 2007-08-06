@@ -2304,13 +2304,15 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     {
         /* Check for the already registered required image: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        QString iName = QString ("VBoxGuestAdditions_%1.iso")
+        QString name = QString ("VBoxGuestAdditions_%1.iso")
                                  .arg (vbox.GetVersion());
         CDVDImageEnumerator en = vbox.GetDVDImages().Enumerate();
         while (en.HasMore())
         {
             QString path = en.GetNext().GetFilePath();
-            if (path.find (iName) != -1 && QFile::exists (path))
+            /* compare the name part ignoring the file case*/
+            QString fn = QFileInfo (path).fileName();
+            if (RTPathCompare (name.utf8(), fn.utf8()) == 0)
                 return installGuestAdditionsFrom (path);
         }
         /* Download required image: */
@@ -2319,9 +2321,9 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
         if (rc == QIMessageBox::Yes)
         {
             QString url = QString ("http://www.virtualbox.org/download/%1/")
-                                   .arg (vbox.GetVersion()) + iName;
+                                   .arg (vbox.GetVersion()) + name;
             QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
-                                   .absFilePath (iName);
+                                   .absFilePath (name);
 
             new VBoxDownloaderWgt (statusBar(), devicesInstallGuestToolsAction,
                                    url, target);
