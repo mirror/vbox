@@ -33,6 +33,15 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
+SharedFolder::SharedFolder()
+    : mParent (NULL)
+{
+}
+
+SharedFolder::~SharedFolder()
+{
+}
+
 HRESULT SharedFolder::FinalConstruct()
 {
     return S_OK;
@@ -58,11 +67,19 @@ void SharedFolder::FinalRelease()
 HRESULT SharedFolder::init (Machine *aMachine,
                             const BSTR aName, const BSTR aHostPath)
 {
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mMachine = aMachine;
-    return protectedInit (aMachine, aName, aHostPath);
+    unconst (mMachine) = aMachine;
+
+    HRESULT rc = protectedInit (aMachine, aName, aHostPath);
+
+    /* Confirm a successful initialization when it's the case */
+    if (SUCCEEDED (rc))
+        autoInitSpan.setSucceeded();
+
+    return rc;
 }
 
 /**
@@ -79,11 +96,20 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 {
     ComAssertRet (aThat, E_INVALIDARG);
 
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mMachine = aMachine;
-    return protectedInit (aMachine, aThat->mName, aThat->mHostPath);
+    unconst (mMachine) = aMachine;
+
+    HRESULT rc = protectedInit (aMachine, aThat->mData.mName,
+                                aThat->mData.mHostPath);
+
+    /* Confirm a successful initialization when it's the case */
+    if (SUCCEEDED (rc))
+        autoInitSpan.setSucceeded();
+
+    return rc;
 }
 
 /**
@@ -98,11 +124,19 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 HRESULT SharedFolder::init (Console *aConsole,
                             const BSTR aName, const BSTR aHostPath)
 {
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mConsole = aConsole;
-    return protectedInit (aConsole, aName, aHostPath);
+    unconst (mConsole) = aConsole;
+
+    HRESULT rc = protectedInit (aConsole, aName, aHostPath);
+
+    /* Confirm a successful initialization when it's the case */
+    if (SUCCEEDED (rc))
+        autoInitSpan.setSucceeded();
+
+    return rc;
 }
 
 /**
@@ -117,11 +151,19 @@ HRESULT SharedFolder::init (Console *aConsole,
 HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
                             const BSTR aName, const BSTR aHostPath)
 {
-    AutoLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mVirtualBox = aVirtualBox;
-    return protectedInit (aVirtualBox, aName, aHostPath);
+    unconst (mVirtualBox) = aVirtualBox;
+
+    HRESULT rc = protectedInit (aVirtualBox, aName, aHostPath);
+
+    /* Confirm a successful initialization when it's the case */
+    if (SUCCEEDED (rc))
+        autoInitSpan.setSucceeded();
+
+    return rc;
 }
 
 /**
@@ -130,7 +172,7 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
  *  @note
  *      Must be called from under the object's lock!
  */
-HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildren *aParent,
+HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
                                      const BSTR aName, const BSTR aHostPath)
 {
     LogFlowThisFunc (("aName={%ls}, aHostPath={%ls}\n", aName, aHostPath));
@@ -170,13 +212,14 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildren *aParent,
         return setError (E_INVALIDARG,
             tr ("Shared folder path '%s' is not absolute"), hostPath.raw());
 
-    mParent = aParent;
-    unconst (mName) = aName;
-    unconst (mHostPath) = hostPath;
+    unconst (mParent) = aParent;
 
+    /* register with parent */
     mParent->addDependentChild (this);
 
-    setReady (true);
+    unconst (mData.mName) = aName;
+    unconst (mData.mHostPath) = hostPath;
+
     return S_OK;
 }
 
@@ -186,18 +229,21 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildren *aParent,
  */
 void SharedFolder::uninit()
 {
-    LogFlowMember (("SharedFolder::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoLock alock (this);
-
-    LogFlowMember (("SharedFolder::uninit(): isReady=%d\n", isReady()));
-    if (!isReady())
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
         return;
 
-    setReady (false);
+    if (mParent)
+        mParent->removeDependentChild (this);
 
-    alock.leave();
-    mParent->removeDependentChild (this);
+    unconst (mParent) = NULL;
+
+    unconst (mMachine).setNull();
+    unconst (mConsole).setNull();
+    unconst (mVirtualBox).setNull();
 }
 
 // ISharedFolder properties
@@ -208,10 +254,12 @@ STDMETHODIMP SharedFolder::COMGETTER(Name) (BSTR *aName)
     if (!aName)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mName.cloneTo (aName);
+    /* mName is constant during life time, no need to lock */
+    mData.mName.cloneTo (aName);
+
     return S_OK;
 }
 
@@ -220,10 +268,12 @@ STDMETHODIMP SharedFolder::COMGETTER(HostPath) (BSTR *aHostPath)
     if (!aHostPath)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    mHostPath.cloneTo (aHostPath);
+    /* mHostPath is constant during life time, no need to lock */
+    mData.mHostPath.cloneTo (aHostPath);
+
     return S_OK;
 }
 
@@ -232,13 +282,16 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     if (!aAccessible)
         return E_POINTER;
 
-    AutoLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    // check whether the host path exists
-    Utf8Str hostPath = Utf8Str (mHostPath);
+    /* mName and mHostPath are constant during life time, no need to lock */
+
+    /* check whether the host path exists */
+    Utf8Str hostPath = Utf8Str (mData.mHostPath);
     char hostPathFull [RTPATH_MAX];
-    int vrc = RTPathExists(hostPath) ? RTPathReal (hostPath, hostPathFull, sizeof (hostPathFull))
+    int vrc = RTPathExists(hostPath) ? RTPathReal (hostPath, hostPathFull,
+                                                   sizeof (hostPathFull))
                                      : VERR_PATH_NOT_FOUND;
     if (VBOX_SUCCESS (vrc))
     {
@@ -251,8 +304,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
         rc = setError (E_FAIL,
             tr ("Invalid shared folder path: '%s' (%Vrc)"), hostPath.raw(), vrc);
 
-    Log (("SharedFolder::COMGETTER(Accessible): WARNING: '%s' "
-          "is not accessible (%Vrc)\n", hostPath.raw(), vrc));
+    LogWarningThisFunc (("'%s' is not accessible (%Vrc)\n", hostPath.raw(), vrc));
 
     *aAccessible = FALSE;
     return S_OK;

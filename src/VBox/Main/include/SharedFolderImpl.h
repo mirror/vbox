@@ -31,15 +31,22 @@ class Console;
 class VirtualBox;
 
 class ATL_NO_VTABLE SharedFolder :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <SharedFolder, ISharedFolder>,
     public VirtualBoxSupportTranslation <SharedFolder>,
-    public VirtualBoxBase,
     public ISharedFolder
 {
 public:
 
-    // to satisfy the ComObjPtr template (we have const members)
-    SharedFolder() {}
+    struct Data
+    {
+        Data() {}
+
+        const Bstr mName;
+        const Bstr mHostPath;
+    };
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SharedFolder)
 
     DECLARE_NOT_AGGREGATABLE(SharedFolder)
 
@@ -51,6 +58,8 @@ public:
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (SharedFolder)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -68,29 +77,32 @@ public:
     STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
 
     // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
 
-    const Bstr &name() const { return mName; }
-    const Bstr &hostPath() const { return mHostPath; }
+    // public methods that don't need a lock (because access constant data)
+    // (ensure there is a caller added before calling them!)
+
+    const Bstr &name() const { return mData.mName; }
+    const Bstr &hostPath() const { return mData.mHostPath; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SharedFolder"; }
 
 protected:
 
-    HRESULT protectedInit (VirtualBoxBaseWithChildren *aParent,
+    HRESULT protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
                            const BSTR aName, const BSTR aHostPath);
 
 private:
 
-    VirtualBoxBaseWithChildren *mParent;
+    VirtualBoxBaseWithChildrenNEXT *const mParent;
 
     /* weak parents (only one of them is not null) */
-    ComObjPtr <Machine, ComWeakRef> mMachine;
-    ComObjPtr <Console, ComWeakRef> mConsole;
-    ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
+    const ComObjPtr <Machine, ComWeakRef> mMachine;
+    const ComObjPtr <Console, ComWeakRef> mConsole;
+    const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
 
-    const Bstr mName;
-    const Bstr mHostPath;
+    Data mData;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (SharedFolder)
@@ -116,7 +128,7 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (SharedFolder)
 
         if (!found)
             return setError (E_INVALIDARG, SharedFolderCollection::tr (
-                "Shared folder named '%ls' could not be found"), aName);
+                "Could not find the shared folder '%ls'"), aName);
 
         return found.queryInterfaceTo (aSharedFolder);
     }
