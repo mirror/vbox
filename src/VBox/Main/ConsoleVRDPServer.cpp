@@ -277,7 +277,7 @@ static void findTopLeftBorder (uint8_t *pu8Shape, uint32_t width, uint32_t heigh
 STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
                                                              ULONG width, ULONG height, BYTE *shape)
 {
-    Log(("VRDPConsoleCallback::OnMousePointerShapeChange: %d, %d, %dx%d, @%d,%d\n", visible, alpha, width, height, xHot, yHot));
+    LogSunlover(("VRDPConsoleCallback::OnMousePointerShapeChange: %d, %d, %dx%d, @%d,%d\n", visible, alpha, width, height, xHot, yHot));
 
     if (m_server)
     {
