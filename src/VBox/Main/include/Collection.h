@@ -216,7 +216,7 @@ public:
     void init (const std::map <Key, CollItem> &m)
     {
         // create a copy of the map
-        for (std::map <Key, CollItem>::const_iterator it = m.begin();
+        for (typename std::map <Key, CollItem>::const_iterator it = m.begin();
              it != m.end(); ++ it)
             vec.push_back (it->second);
     }
