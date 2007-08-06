@@ -175,6 +175,7 @@ public:
     HRESULT onParallelPortChange(IParallelPort *parallelPort);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
+    HRESULT onSharedFolderChange (BOOL aGlobal);
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError);
     HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
 
@@ -287,6 +288,19 @@ private:
     typedef AutoVMCallerBase <true, false> AutoVMCallerQuiet;
 
     /**
+     *  Same as AutoVMCaller but allows a null VM pointer (to trigger an error
+     *  instead of assertion).
+     */
+    typedef AutoVMCallerBase <false, true> AutoVMCallerWeak;
+
+    /**
+     *  Same as AutoVMCaller but doesn't set extended error info on failure
+     *  and allows a null VM pointer (to trigger an error instead of
+     *  assertion).
+     */
+    typedef AutoVMCallerBase <true, true> AutoVMCallerQuietWeak;
+
+    /**
      *  Base template for SaveVMPtr and SaveVMPtrQuiet.
      */
     template <bool taQuiet = false>
@@ -343,11 +357,13 @@ public:
      */
     typedef SafeVMPtrBase <true> SafeVMPtrQuiet;
 
+    typedef std::map <Bstr, ComObjPtr <SharedFolder> > SharedFolderMap;
+    typedef std::map <Bstr, Bstr> SharedFolderDataMap;
+
 private:
 
     typedef std::list <ComObjPtr <OUSBDevice> > USBDeviceList;
     typedef std::list <ComObjPtr <RemoteUSBDevice> > RemoteUSBDeviceList;
-    typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
 
     HRESULT addVMCaller (bool aQuiet = false, bool aAllowNullVM = false);
     void releaseVMCaller();
@@ -369,6 +385,13 @@ private:
     HRESULT findSharedFolder (const BSTR aName,
                               ComObjPtr <SharedFolder> &aSharedFolder,
                               bool aSetError = false);
+
+    HRESULT fetchSharedFolders (BOOL aGlobal);
+    bool findOtherSharedFolder (INPTR BSTR aName, 
+                                SharedFolderDataMap::const_iterator &aIt);
+
+    HRESULT createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath);
+    HRESULT removeSharedFolder (INPTR BSTR aName);
 
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
@@ -469,7 +492,10 @@ private:
 
     USBDeviceList mUSBDevices;
     RemoteUSBDeviceList mRemoteUSBDevices;
-    SharedFolderList mSharedFolders;
+
+    SharedFolderMap mSharedFolders;
+    SharedFolderDataMap mMachineSharedFolders;
+    SharedFolderDataMap mGlobalSharedFolders;
 
     /** The VM instance handle. */
     PVM mpVM;

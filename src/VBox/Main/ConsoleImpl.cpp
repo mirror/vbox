@@ -173,7 +173,7 @@ struct VMPowerUpTask : public VMProgressTask
     PFNVMATERROR mSetVMErrorCallback;
     PFNCFGMCONSTRUCTOR mConfigConstructor;
     Utf8Str mSavedStateFile;
-    std::map <Bstr, ComPtr <ISharedFolder> > mSharedFolders;
+    Console::SharedFolderDataMap mSharedFolders;
 };
 
 struct VMSaveTask : public VMProgressTask
@@ -265,40 +265,47 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     /* Cache essential properties and objects */
 
     rc = mMachine->COMGETTER(State) (&mMachineState);
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
 #ifdef VBOX_VRDP
     rc = mMachine->COMGETTER(VRDPServer) (unconst (mVRDPServer).asOutParam());
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 #endif
 
     rc = mMachine->COMGETTER(DVDDrive) (unconst (mDVDDrive).asOutParam());
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
     rc = mMachine->COMGETTER(FloppyDrive) (unconst (mFloppyDrive).asOutParam());
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
     /* Create associated child COM objects */
 
     unconst (mGuest).createObject();
     rc = mGuest->init (this);
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
     unconst (mKeyboard).createObject();
     rc = mKeyboard->init (this);
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
     unconst (mMouse).createObject();
     rc = mMouse->init (this);
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
     unconst (mDisplay).createObject();
     rc = mDisplay->init (this);
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
 
     unconst (mRemoteDisplayInfo).createObject();
     rc = mRemoteDisplayInfo->init (this);
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturnRC (rc);
+
+    /* Grab global and machine shared folder lists */
+
+    rc = fetchSharedFolders (true /* aGlobal */);
+    AssertComRCReturnRC (rc);
+    rc = fetchSharedFolders (false /* aGlobal */);
+    AssertComRCReturnRC (rc);
 
     /* Create other child objects */
 
@@ -377,6 +384,9 @@ void Console::uninit()
         delete mVMMDev;
         unconst (mVMMDev) = NULL;
     }
+
+    mGlobalSharedFolders.clear();
+    mMachineSharedFolders.clear();
 
     mSharedFolders.clear();
     mRemoteUSBDevices.clear();
@@ -935,12 +945,12 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
     int vrc = SSMR3PutU32 (pSSM, that->mSharedFolders.size());
     AssertRC (vrc);
 
-    for (SharedFolderList::const_iterator it = that->mSharedFolders.begin();
+    for (SharedFolderMap::const_iterator it = that->mSharedFolders.begin();
          it != that->mSharedFolders.end();
          ++ it)
     {
-        ComObjPtr <SharedFolder> folder = (*it);
-        AutoLock folderLock (folder);
+        ComObjPtr <SharedFolder> folder = (*it).second;
+        // don't lock the folder because methods we access are const
 
         Utf8Str name = folder->name();
         vrc = SSMR3PutU32 (pSSM, name.length() + 1 /* term. 0 */);
@@ -1026,10 +1036,8 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
         sharedFolder.createObject();
         HRESULT rc = sharedFolder->init (that, name, hostPath);
         AssertComRCReturn (rc, VERR_INTERNAL_ERROR);
-        if (FAILED (rc))
-            return rc;
 
-        that->mSharedFolders.push_back (sharedFolder);
+        that->mSharedFolders.insert (std::make_pair (name, sharedFolder));
     }
 
     return VINF_SUCCESS;
@@ -1235,7 +1243,9 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
     AutoLock alock (this);
 
     if (mMachineState >= MachineState_Running)
-        return setError(E_FAIL, tr ("Cannot power up the machine as it is already running.  (Machine state: %d)"), mMachineState);
+        return setError(E_FAIL, tr ("Cannot power up the machine as it is "
+                                    "already running (machine state: %d)"),
+                        mMachineState);
 
     /*
      * First check whether all disks are accessible. This is not a 100%
@@ -1371,63 +1381,22 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
     }
 
     /* Check all types of shared folders and compose a single list */
-    std::map <Bstr, ComPtr <ISharedFolder> > sharedFolders;
+    SharedFolderDataMap sharedFolders;
     {
-        /// @todo (dmik) check and add globally shared folders when they are
-        //  done
+        /* first, insert global folders */
+        for (SharedFolderDataMap::const_iterator it = mGlobalSharedFolders.begin();
+             it != mGlobalSharedFolders.end(); ++ it)
+            sharedFolders [it->first] = it->second;
 
-        ComPtr <ISharedFolderCollection> coll;
-        HRESULT rc = mMachine->COMGETTER(SharedFolders) (coll.asOutParam());
-        CheckComRCReturnRC (rc);
-        ComPtr <ISharedFolderEnumerator> en;
-        rc = coll->Enumerate (en.asOutParam());
-        CheckComRCReturnRC (rc);
+        /* second, insert machine folders */
+        for (SharedFolderDataMap::const_iterator it = mMachineSharedFolders.begin();
+             it != mMachineSharedFolders.end(); ++ it)
+            sharedFolders [it->first] = it->second;
 
-        BOOL hasMore = FALSE;
-        while (SUCCEEDED (en->HasMore (&hasMore)) && hasMore)
-        {
-            ComPtr <ISharedFolder> folder;
-            en->GetNext (folder.asOutParam());
-
-            Bstr name;
-            rc = folder->COMGETTER(Name) (name.asOutParam());
-            CheckComRCReturnRC (rc);
-
-            BOOL accessible = FALSE;
-            rc = folder->COMGETTER(Accessible) (&accessible);
-            CheckComRCReturnRC (rc);
-
-            if (!accessible)
-            {
-                Bstr hostPath;
-                folder->COMGETTER(HostPath) (hostPath.asOutParam());
-                return setError (E_FAIL,
-                    tr ("Host path '%ls' of the shared folder '%ls' is not accessible"),
-                    hostPath.raw(), name.raw());
-            }
-
-            sharedFolders.insert (std::make_pair (name, folder));
-            /// @todo (dmik) later, do this:
-//            if (!sharedFolders.insert (std::pair <name, folder>).second)
-//                return setError (E_FAIL,
-//                    tr ("Could not accept a permanently shared folder named '%ls' "
-//                       "because a globally shared folder with the same name "
-//                       "already exists"),
-//                    name.raw());
-        }
-
-        for (SharedFolderList::const_iterator it = mSharedFolders.begin();
+        /* third, insert console folders */
+        for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
              it != mSharedFolders.end(); ++ it)
-        {
-            ComPtr <ISharedFolder> folder = static_cast <SharedFolder *> (*it);
-
-            if (!sharedFolders.insert (std::make_pair ((*it)->name(), folder)).second)
-                return setError (E_FAIL,
-                    tr ("Could not create a transient shared folder named '%ls' "
-                       "because a global or a permanent shared folder with "
-                       "the same name already exists"),
-                    (*it)->name().raw());
-        }
+            sharedFolders [it->first] = it->second->hostPath();
     }
 
     Bstr savedStateFile;
@@ -1508,7 +1477,9 @@ STDMETHODIMP Console::PowerDown()
         if (mMachineState == MachineState_Saved)
             return setError(E_FAIL, tr ("Cannot power off a saved machine"));
         else
-            return setError(E_FAIL, tr ("Cannot power off the machine as it is not running or paused.  (Machine state: %d)"), mMachineState);
+            return setError(E_FAIL, tr ("Cannot power off the machine as it is "
+                                        "not running or paused (machine state: %d)"),
+                            mMachineState);
     }
 
     LogFlowThisFunc (("Sending SHUTDOWN request...\n"));
@@ -1531,7 +1502,9 @@ STDMETHODIMP Console::Reset()
     AutoLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError(E_FAIL, tr ("Cannot reset the machine as it is not running.  (Machine state: %d)"), mMachineState);
+        return setError(E_FAIL, tr ("Cannot reset the machine as it is "
+                                    "not running (machine state: %d)"),
+                        mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1543,7 +1516,7 @@ STDMETHODIMP Console::Reset()
     int vrc = VMR3Reset (mpVM);
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL, tr ("Could not reset the machine.  (Error: %Vrc)"), vrc);
+        setError (E_FAIL, tr ("Could not reset the machine (%Vrc)"), vrc);
 
     LogFlowThisFunc (("mMachineState=%d, rc=%08X\n", mMachineState, rc));
     LogFlowThisFuncLeave();
@@ -1560,7 +1533,9 @@ STDMETHODIMP Console::Pause()
     AutoLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError (E_FAIL, tr ("Cannot pause the machine as it is not running.  (Machine state: %d)"), mMachineState);
+        return setError (E_FAIL, tr ("Cannot pause the machine as it is "
+                                     "not running (machine state: %d)"),
+                         mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1575,7 +1550,7 @@ STDMETHODIMP Console::Pause()
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Could not suspend the machine execution.  (Error: %Vrc)"), vrc);
+            tr ("Could not suspend the machine execution (%Vrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -1592,7 +1567,9 @@ STDMETHODIMP Console::Resume()
     AutoLock alock (this);
 
     if (mMachineState != MachineState_Paused)
-        return setError (E_FAIL, tr ("Cannot resume the machine as it is not paused.  (Machine state: %d)"), mMachineState);
+        return setError (E_FAIL, tr ("Cannot resume the machine as it is "
+                                     "not paused (machine state: %d)"),
+                         mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1607,7 +1584,7 @@ STDMETHODIMP Console::Resume()
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Could not resume the machine execution.  (Error: %Vrc)"), vrc);
+            tr ("Could not resume the machine execution (%Vrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -1624,7 +1601,9 @@ STDMETHODIMP Console::PowerButton()
     AutoLock lock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError (E_FAIL, tr ("Cannot power off the machine as it is not running.  (Machine state: %d)"), mMachineState);
+        return setError (E_FAIL, tr ("Cannot power off the machine as it is "
+                                     "not running (machine state: %d)"),
+                         mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1642,7 +1621,7 @@ STDMETHODIMP Console::PowerButton()
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Controlled power off failed.  (Error: %Vrc)"), vrc);
+            tr ("Controlled power off failed (%Vrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -1733,7 +1712,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
                 if (VBOX_FAILURE (vrc))
                 {
                     rc = setError (E_FAIL,
-                        tr ("Could not create a directory '%s' to save the state to.  (Error: %Vrc)"),
+                        tr ("Could not create a directory '%s' to save the state to (%Vrc)"),
                         dir.raw(), vrc);
                     break;
                 }
@@ -1801,7 +1780,9 @@ STDMETHODIMP Console::DiscardSavedState()
 
     if (mMachineState != MachineState_Saved)
         return setError (E_FAIL,
-            tr ("Cannot discard the machine state as the machine is not in the saved state.  (Machine state: %d"), mMachineState);
+            tr ("Cannot discard the machine state as the machine is "
+                "not in the saved state (machine state: %d)"),
+            mMachineState);
 
     /*
      *  Saved -> PoweredOff transition will be detected in the SessionMachine
@@ -2024,30 +2005,13 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
     if (mMachineState == MachineState_Saved)
         return setError (E_FAIL,
             tr ("Cannot create a transient shared folder on a "
-                "machine in the saved state."));
-
-    /// @todo (dmik) check globally shared folders when they are done
-
-    /* check machine's shared folders */
-    {
-        ComPtr <ISharedFolderCollection> coll;
-        HRESULT rc = mMachine->COMGETTER(SharedFolders) (coll.asOutParam());
-        if (FAILED (rc))
-            return rc;
-
-        ComPtr <ISharedFolder> machineSharedFolder;
-        rc = coll->FindByName (aName, machineSharedFolder.asOutParam());
-        if (SUCCEEDED (rc))
-            return setError (E_FAIL,
-                tr ("A permanent shared folder named '%ls' already "
-                    "exists."), aName);
-    }
+                "machine in the saved state"));
 
     ComObjPtr <SharedFolder> sharedFolder;
     HRESULT rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
     if (SUCCEEDED (rc))
         return setError (E_FAIL,
-            tr ("A shared folder named '%ls' already exists."), aName);
+            tr ("Shared folder named '%ls' already exists"), aName);
 
     sharedFolder.createObject();
     rc = sharedFolder->init (this, aName, aHostPath);
@@ -2059,63 +2023,32 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 
     if (!accessible)
         return setError (E_FAIL,
-            tr ("The shared folder path '%ls' on the host is not accessible."), aHostPath);
+            tr ("Shared folder host path '%ls' is not accessible"), aHostPath);
 
-    /// @todo (r=sander?) should move this into the shared folder class */
-    if (mpVM && mVMMDev->isShFlActive())
+    /* protect mpVM (if not NULL) */
+    AutoVMCallerQuietWeak autoVMCaller (this);
+
+    if (mpVM && autoVMCaller.isOk() && mVMMDev->isShFlActive())
     {
-        /*
-         *  if the VM is online and supports shared folders, share this folder
-         *  under the specified name. On error, return it to the caller.
-         */
+        /* If the VM is online and supports shared folders, share this folder
+         * under the specified name. */
 
-        /* protect mpVM */
-        AutoVMCaller autoVMCaller (this);
-        CheckComRCReturnRC (autoVMCaller.rc());
+        /* first, remove the machine or the global folder if there is any */
+        SharedFolderDataMap::const_iterator it;
+        if (findOtherSharedFolder (aName, it))
+        {
+            rc = removeSharedFolder (aName);
+            CheckComRCReturnRC (rc);
+        }
 
-        VBOXHGCMSVCPARM  parms[2];
-        SHFLSTRING      *pFolderName, *pMapName;
-        int              cbString;
-
-        Log (("Add shared folder %ls -> %ls\n", aName, aHostPath));
-
-        cbString = (RTStrUcs2Len(aHostPath) + 1) * sizeof(RTUCS2);
-        pFolderName = (SHFLSTRING *)RTMemAllocZ(sizeof(SHFLSTRING) + cbString);
-        Assert(pFolderName);
-        memcpy(pFolderName->String.ucs2, aHostPath, cbString);
-
-        pFolderName->u16Size   = cbString;
-        pFolderName->u16Length = cbString - sizeof(RTUCS2);
-
-        parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
-        parms[0].u.pointer.addr = pFolderName;
-        parms[0].u.pointer.size = sizeof(SHFLSTRING) + cbString;
-
-        cbString = (RTStrUcs2Len(aName) + 1) * sizeof(RTUCS2);
-        pMapName = (SHFLSTRING *)RTMemAllocZ(sizeof(SHFLSTRING) + cbString);
-        Assert(pMapName);
-        memcpy(pMapName->String.ucs2, aName, cbString);
-
-        pMapName->u16Size   = cbString;
-        pMapName->u16Length = cbString - sizeof(RTUCS2);
-
-        parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
-        parms[1].u.pointer.addr = pMapName;
-        parms[1].u.pointer.size = sizeof(SHFLSTRING) + cbString;
-
-        int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
-                                         SHFL_FN_ADD_MAPPING,
-                                         2, &parms[0]);
-        RTMemFree(pFolderName);
-        RTMemFree(pMapName);
-        if (vrc != VINF_SUCCESS)
-            return setError (E_FAIL,
-                tr ("Could not create a shared folder '%ls' mapped to '%ls' (%Vrc)"),
-                aName, aHostPath, vrc);
+        /* second, create the given folder */
+        rc = createSharedFolder (aName, aHostPath);
+        CheckComRCReturnRC (rc);
     }
 
-    mSharedFolders.push_back (sharedFolder);
-    return S_OK;
+    mSharedFolders.insert (std::make_pair (aName, sharedFolder));
+
+    return rc;
 }
 
 STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
@@ -2137,43 +2070,30 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
     HRESULT rc = findSharedFolder (aName, sharedFolder, true /* aSetError */);
     CheckComRCReturnRC (rc);
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC (autoVMCaller.rc());
+    /* protect mpVM (if not NULL) */
+    AutoVMCallerQuietWeak autoVMCaller (this);
 
-    if (mpVM && mVMMDev->isShFlActive())
+    if (mpVM && autoVMCaller.isOk() && mVMMDev->isShFlActive())
     {
-        /*
-         *  if the VM is online and supports shared folders, UNshare this folder.
-         *  On error, return it to the caller.
-         */
-        VBOXHGCMSVCPARM  parms;
-        SHFLSTRING      *pMapName;
-        int              cbString;
+        /* if the VM is online and supports shared folders, UNshare this
+         * folder. */
 
-        cbString = (RTStrUcs2Len(aName) + 1) * sizeof(RTUCS2);
-        pMapName = (SHFLSTRING *)RTMemAllocZ(sizeof(SHFLSTRING) + cbString);
-        Assert(pMapName);
-        memcpy(pMapName->String.ucs2, aName, cbString);
+        /* first, remove the given folder */
+        rc = removeSharedFolder (aName);
+        CheckComRCReturnRC (rc);
 
-        pMapName->u16Size   = cbString;
-        pMapName->u16Length = cbString - sizeof(RTUCS2);
-
-        parms.type = VBOX_HGCM_SVC_PARM_PTR;
-        parms.u.pointer.addr = pMapName;
-        parms.u.pointer.size = sizeof(SHFLSTRING) + cbString;
-
-        int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
-                                         SHFL_FN_REMOVE_MAPPING,
-                                         1, &parms);
-        RTMemFree(pMapName);
-        if (vrc != VINF_SUCCESS)
-            rc = setError (E_FAIL,
-                tr ("Could not remove the shared folder '%ls' (%Vrc)"),
-                aName, vrc);
+        /* first, remove the machine or the global folder if there is any */
+        SharedFolderDataMap::const_iterator it;
+        if (findOtherSharedFolder (aName, it))
+        {
+            rc = createSharedFolder (aName, it->second);
+            /* don't check rc here because we need to remove the console
+             * folder from the collection even on failure */
+        }
     }
 
-    mSharedFolders.remove (sharedFolder);
+    mSharedFolders.erase (aName);
+
     return rc;
 }
 
@@ -3249,6 +3169,23 @@ HRESULT Console::onUSBControllerChange()
 }
 
 /**
+ *  Called by IInternalSessionControl::OnSharedFolderChange().
+ *
+ *  @note Locks this object for writing.
+ */
+HRESULT Console::onSharedFolderChange (BOOL aGlobal)
+{
+    LogFlowThisFunc (("aGlobal=%RTbool\n", aGlobal));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    return fetchSharedFolders (aGlobal);
+}
+
+/**
  *  Called by IInternalSessionControl::OnUSBDeviceAttach() or locally by
  *  processRemoteUSBDevices() after IInternalMachineControl::RunUSBDeviceFilters()
  *  returns TRUE for a given remote USB device.
@@ -4065,23 +4002,274 @@ HRESULT Console::findSharedFolder (const BSTR aName,
     /* sanity check */
     AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 
-    bool found = false;
-    for (SharedFolderList::const_iterator it = mSharedFolders.begin();
-        !found && it != mSharedFolders.end();
-        ++ it)
+    SharedFolderMap::const_iterator it = mSharedFolders.find (aName);
+    if (it != mSharedFolders.end())
     {
-        AutoLock alock (*it);
-        found = (*it)->name() == aName;
-        if (found)
-            aSharedFolder = *it;
+        aSharedFolder = it->second;
+        return S_OK;
     }
 
-    HRESULT rc = found ? S_OK : E_INVALIDARG;
+    if (aSetError)
+        setError (E_INVALIDARG,
+                  tr ("Could not find a shared folder named '%ls'."), aName);
 
-    if (aSetError && !found)
-        setError (rc, tr ("Could not find a shared folder named '%ls'."), aName);
+    return E_INVALIDARG;
+}
+
+/** 
+ *  Fetches the list of global or machine shared folders from the server.
+ * 
+ *  @param aGlobal true to fetch global folders.
+ *
+ *  @note The caller must lock this object for writing.
+ */
+HRESULT Console::fetchSharedFolders (BOOL aGlobal)
+{
+    /* sanity check */
+    AssertReturn (AutoCaller (this).state() == InInit ||
+                  isLockedOnCurrentThread(), E_FAIL);
+
+    /* protect mpVM (if not NULL) */
+    AutoVMCallerQuietWeak autoVMCaller (this);
+
+    HRESULT rc = S_OK;
+
+    bool online = mpVM && autoVMCaller.isOk() && mVMMDev->isShFlActive();
+
+    if (aGlobal)
+    {
+        /// @todo grab & process global folders when they are done
+    }
+    else
+    {
+        SharedFolderDataMap oldFolders;
+        if (online)
+            oldFolders = mMachineSharedFolders;
+        
+        mMachineSharedFolders.clear();
+
+        ComPtr <ISharedFolderCollection> coll;
+        rc = mMachine->COMGETTER(SharedFolders) (coll.asOutParam());
+        AssertComRCReturnRC (rc);
+
+        ComPtr <ISharedFolderEnumerator> en;
+        rc = coll->Enumerate (en.asOutParam());
+        AssertComRCReturnRC (rc);
+
+        BOOL hasMore = FALSE;
+        while (SUCCEEDED (rc = en->HasMore (&hasMore)) && hasMore)
+        {
+            ComPtr <ISharedFolder> folder;
+            rc = en->GetNext (folder.asOutParam());
+            CheckComRCBreakRC (rc);
+
+            Bstr name;
+            Bstr hostPath;
+
+            rc = folder->COMGETTER(Name) (name.asOutParam());
+            CheckComRCBreakRC (rc);
+            rc = folder->COMGETTER(HostPath) (hostPath.asOutParam());
+            CheckComRCBreakRC (rc);
+
+            mMachineSharedFolders.insert (std::make_pair (name, hostPath));
+
+            /* send changes to HGCM if the VM is running */
+            /// @todo report errors as runtime warnings through VMSetError
+            if (online)
+            {
+                SharedFolderDataMap::iterator it = oldFolders.find (name);
+                if (it == oldFolders.end() || it->second != hostPath)
+                {
+                    /* a new machine folder is added or
+                    /* the existing machine folder is changed */
+                    if (mSharedFolders.find (name) != mSharedFolders.end())
+                        ; /* the console folder exists, nothing to do */
+                    else
+                    {
+                        /* remove the old machhine folder (when changed)
+                         * or the global folder if any (when new) */
+                        if (it != oldFolders.end() ||
+                            mGlobalSharedFolders.find (name) !=
+                                mGlobalSharedFolders.end())
+                            rc = removeSharedFolder (name);
+                        /* create the new machine folder */
+                        rc = createSharedFolder (name, hostPath);
+                    }
+                }
+                /* forget the processed (or identical) folder */
+                if (it != oldFolders.end())
+                    oldFolders.erase (it);
+
+                rc = S_OK;
+            }
+        }
+
+        AssertComRCReturnRC (rc);
+
+        /* process outdated (removed) folders */
+        /// @todo report errors as runtime warnings through VMSetError
+        if (online)
+        {
+            for (SharedFolderDataMap::const_iterator it = oldFolders.begin();
+                 it != oldFolders.end(); ++ it)
+            {
+                if (mSharedFolders.find (it->first) != mSharedFolders.end())
+                    ; /* the console folder exists, nothing to do */
+                else
+                {
+                    /* remove the outdated machine folder */
+                    rc = removeSharedFolder (it->first);
+                    /* create the global folder if there is any */
+                    SharedFolderDataMap::const_iterator it =
+                        mGlobalSharedFolders.find (it->first);
+                    if (it != mGlobalSharedFolders.end())
+                        rc = createSharedFolder (it->first, it->second);
+                }
+            }
+
+            rc = S_OK;
+        }
+    }
 
     return rc;
+}
+
+/** 
+ *  Searches for a shared folder with the given name in the list of machine
+ *  shared folders and then in the list of the global shared folders.
+ * 
+ *  @param aName    Name of the folder to search for.
+ *  @param aIt      Where to store the pointer to the found folder.
+ *  @return         @c true if the folder was found and @c false otherwise.
+ *
+ *  @note The caller must lock this object for reading.
+ */
+bool Console::findOtherSharedFolder (INPTR BSTR aName,
+                                     SharedFolderDataMap::const_iterator &aIt)
+{
+    /* sanity check */
+    AssertReturn (isLockedOnCurrentThread(), false);
+
+    /* first, search machine folders */
+    aIt = mMachineSharedFolders.find (aName);
+    if (aIt != mMachineSharedFolders.end())
+        return true;
+
+    /* second, search machine folders */
+    aIt = mGlobalSharedFolders.find (aName);
+    if (aIt != mGlobalSharedFolders.end())
+        return true;
+
+    return false;
+}
+
+/** 
+ *  Calls the HGCM service to add a shared folder definition.
+ * 
+ *  @param aName        Shared folder name.
+ *  @param aHostPath    Shared folder path.
+ *
+ *  @note Must be called from under AutoVMCaller and when mpVM != NULL!
+ *  @note Doesn't lock anything.
+ */
+HRESULT Console::createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
+{
+    ComAssertRet (aName && *aName, E_FAIL);
+    ComAssertRet (aHostPath && *aHostPath, E_FAIL);
+
+    /* sanity checks */
+    AssertReturn (mpVM, E_FAIL);
+    AssertReturn (mVMMDev->isShFlActive(), E_FAIL);
+
+    VBOXHGCMSVCPARM  parms[2];
+    SHFLSTRING      *pFolderName, *pMapName;
+    int              cbString;
+
+    Log (("Adding shared folder '%ls' -> '%ls'\n", aName, aHostPath));
+
+    cbString = (RTStrUcs2Len (aHostPath) + 1) * sizeof (RTUCS2);
+    pFolderName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
+    Assert (pFolderName);
+    memcpy (pFolderName->String.ucs2, aHostPath, cbString);
+
+    pFolderName->u16Size   = cbString;
+    pFolderName->u16Length = cbString - sizeof(RTUCS2);
+
+    parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[0].u.pointer.addr = pFolderName;
+    parms[0].u.pointer.size = sizeof (SHFLSTRING) + cbString;
+
+    cbString = (RTStrUcs2Len (aName) + 1) * sizeof (RTUCS2);
+    pMapName = (SHFLSTRING *) RTMemAllocZ (sizeof(SHFLSTRING) + cbString);
+    Assert (pMapName);
+    memcpy (pMapName->String.ucs2, aName, cbString);
+
+    pMapName->u16Size   = cbString;
+    pMapName->u16Length = cbString - sizeof (RTUCS2);
+
+    parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[1].u.pointer.addr = pMapName;
+    parms[1].u.pointer.size = sizeof (SHFLSTRING) + cbString;
+
+    int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
+                                     SHFL_FN_ADD_MAPPING,
+                                     2, &parms[0]);
+    RTMemFree (pFolderName);
+    RTMemFree (pMapName);
+
+    if (VBOX_FAILURE (vrc))
+        return setError (E_FAIL,
+                         tr ("Could not create a shared folder '%ls' "
+                             "mapped to '%ls' (%Vrc)"),
+                         aName, aHostPath, vrc);
+
+    return S_OK;
+}
+
+/** 
+ *  Calls the HGCM service to remove the shared folder definition.
+ * 
+ *  @param aName        Shared folder name.
+ *
+ *  @note Must be called from under AutoVMCaller and when mpVM != NULL!
+ *  @note Doesn't lock anything.
+ */
+HRESULT Console::removeSharedFolder (INPTR BSTR aName)
+{
+    ComAssertRet (aName && *aName, E_FAIL);
+
+    /* sanity checks */
+    AssertReturn (mpVM, E_FAIL);
+    AssertReturn (mVMMDev->isShFlActive(), E_FAIL);
+
+    VBOXHGCMSVCPARM  parms;
+    SHFLSTRING      *pMapName;
+    int              cbString;
+
+    Log (("Removing shared folder '%ls'\n", aName));
+
+    cbString = (RTStrUcs2Len (aName) + 1) * sizeof (RTUCS2);
+    pMapName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
+    Assert (pMapName);
+    memcpy (pMapName->String.ucs2, aName, cbString);
+
+    pMapName->u16Size   = cbString;
+    pMapName->u16Length = cbString - sizeof (RTUCS2);
+
+    parms.type = VBOX_HGCM_SVC_PARM_PTR;
+    parms.u.pointer.addr = pMapName;
+    parms.u.pointer.size = sizeof (SHFLSTRING) + cbString;
+
+    int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
+                                     SHFL_FN_REMOVE_MAPPING,
+                                     1, &parms);
+    RTMemFree(pMapName);
+    if (VBOX_FAILURE (vrc))
+        return setError (E_FAIL,
+                         tr ("Could not remove the shared folder '%ls' (%Vrc)"),
+                         aName, vrc);
+
+    return S_OK;
 }
 
 /**
@@ -6909,6 +7097,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                     machineDebugger->flushQueuedSettings();
                 }
 
+                /*
+                 * Shared Folders
+                 */
                 if (console->getVMMDev()->isShFlActive())
                 {
                     /// @todo (dmik)
@@ -6916,68 +7107,13 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                     //      Not sure, so leave the lock just in case
                     alock.leave();
 
-                    /*
-                     * Shared Folders
-                     */
-                    for (std::map <Bstr, ComPtr <ISharedFolder> >::const_iterator
-                         it = task->mSharedFolders.begin();
+                    for (SharedFolderDataMap::const_iterator
+                             it = task->mSharedFolders.begin();
                          it != task->mSharedFolders.end();
                          ++ it)
                     {
-                        Bstr name = (*it).first;
-                        ComPtr <ISharedFolder> folder = (*it).second;
-
-                        Bstr hostPath;
-                        hrc = folder->COMGETTER(HostPath) (hostPath.asOutParam());
+                        hrc = console->createSharedFolder ((*it).first, (*it).second);
                         CheckComRCBreakRC (hrc);
-
-                        LogFlowFunc (("Adding shared folder '%ls' -> '%ls'\n",
-                                      name.raw(), hostPath.raw()));
-                        ComAssertBreak (!name.isEmpty() && !hostPath.isEmpty(),
-                                        hrc = E_FAIL);
-
-                        /** @todo should move this into the shared folder class */
-                        VBOXHGCMSVCPARM  parms[2];
-                        SHFLSTRING      *pFolderName, *pMapName;
-                        int              cbString;
-
-                        cbString = (hostPath.length() + 1) * sizeof(RTUCS2);
-                        pFolderName = (SHFLSTRING *)RTMemAllocZ(sizeof(SHFLSTRING) + cbString);
-                        Assert(pFolderName);
-                        memcpy(pFolderName->String.ucs2, hostPath.raw(), cbString);
-
-                        pFolderName->u16Size   = cbString;
-                        pFolderName->u16Length = cbString - sizeof(RTUCS2);
-
-                        parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
-                        parms[0].u.pointer.addr = pFolderName;
-                        parms[0].u.pointer.size = sizeof(SHFLSTRING) + cbString;
-
-                        cbString = (name.length() + 1) * sizeof(RTUCS2);
-                        pMapName = (SHFLSTRING *)RTMemAllocZ(sizeof(SHFLSTRING) + cbString);
-                        Assert(pMapName);
-                        memcpy(pMapName->String.ucs2, name.raw(), cbString);
-
-                        pMapName->u16Size   = cbString;
-                        pMapName->u16Length = cbString - sizeof(RTUCS2);
-
-                        parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
-                        parms[1].u.pointer.addr = pMapName;
-                        parms[1].u.pointer.size = sizeof(SHFLSTRING) + cbString;
-
-                        vrc = console->getVMMDev()->hgcmHostCall("VBoxSharedFolders",
-                            SHFL_FN_ADD_MAPPING, 2, &parms[0]);
-
-                        RTMemFree(pFolderName);
-                        RTMemFree(pMapName);
-
-                        if (VBOX_FAILURE (vrc))
-                        {
-                            hrc = setError (E_FAIL,
-                                tr ("Could not create a shared folder '%ls' mapped to '%ls' (%Vrc)"),
-                                name.raw(), hostPath.raw(), vrc);
-                            break;
-                        }
                     }
 
                     /* enter the lock again */

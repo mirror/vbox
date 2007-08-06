@@ -734,13 +734,12 @@
 
     <attribute name="sharedFolders" type="ISharedFolderCollection" readonly="yes">
       <desc>
-        Collection of globally shared folders. These folders
-        are shared automatically upon VirtualBox server startup and
-        available only to every virtual machine.
+        Collection of global shared folders. Global shared folders are
+        available to all virtual machines.
 
-        New folders to share are added to the collection using
-        <link to="#createSharedFolder"/>. An existing shared folder can
-        be removed using <link to="#removeSharedFolder"/>.
+        New shared folders are added to the collection using
+        <link to="#createSharedFolder"/>. Existing shared folders can be
+        removed using <link to="#removeSharedFolder"/>.
       </desc>
     </attribute>
 
@@ -1382,11 +1381,10 @@
 
     <method name="createSharedFolder">
       <desc>
-        Creates a new shared folder by associating the given logical
-        name with the given host path, adds it to the collection of
-        shared folders and starts sharing it.
-        Refer to the description of <link to="ISharedFolder"/> to read
-        about logical name unicity.
+        Creates a new shared folder by associating the given logical name with
+        the given host path, adds it to the collection of shared folders and
+        starts sharing it. Refer to the description of
+        <link to="ISharedFolder"/> to read more about logical names.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Unique logical name of the shared folder.</desc>
@@ -2283,13 +2281,13 @@
 
     <attribute name="sharedFolders" type="ISharedFolderCollection" readonly="yes">
       <desc>
-        Collection of shared folders for this machine. These folders
-        are shared automatically upon machine startup and available only
-        to the guest OS installed within this machine.
+        Collection of shared folders for this machine (permanent shared
+        folders). These folders are shared automatically at machine startup
+        and available only to the guest OS installed within this machine.
 
-        New folders to share are added to the collection using
-        <link to="#createSharedFolder"/>. An existing shared folder can
-        be removed using <link to="#removeSharedFolder"/>.
+        New shared folders are added to the collection using
+        <link to="#createSharedFolder"/>. Existing shared folders can be
+        removed using <link to="#removeSharedFolder"/>.
       </desc>
     </attribute>
 
@@ -2601,11 +2599,10 @@
 
     <method name="createSharedFolder">
       <desc>
-        Creates a new shared folder by associating the given logical
-        name with the given host path, adds it to the collection of
-        shared folders and starts sharing it.
-        Refer to the description of <link to="ISharedFolder"/> to read
-        about logical name unicity.
+        Creates a new shared folder by associating the given logical name with
+        the given host path, adds it to the collection of shared folders and
+        starts sharing it. Refer to the description of
+        <link to="ISharedFolder"/> to read more about logical names.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Unique logical name of the shared folder.</desc>
@@ -3151,15 +3148,17 @@
 
     <attribute name="sharedFolders" type="ISharedFolderCollection" readonly="yes">
       <desc>
-        Collection of shared folders for the current session.
-        This collection is initially empty and is cleared once the
-        session is closed. On other words, this collection represents
-        transient shares (as opposed to <link to="IMachine::sharedFolders"/>
-        that stores permanent shares stored in the settings file).
+        Collection of shared folders for the current session.  These folders
+        are called transient shared folders because they are available to the
+        guest OS running inside the associated virtual machine only for the
+        duration of the session (as opposed to
+        <link to="IMachine::sharedFolders"/> which represent permanent shared
+        folders). When the session is closed (e.g. the machine is powered down),
+        these folders are automatically discarded.
 
-        New folders to share are added to the collection using
-        <link to="#createSharedFolder"/>. An existing shared folder can
-        be removed using <link to="#removeSharedFolder"/>.
+        New shared folders are added to the collection using
+        <link to="#createSharedFolder"/>. Existing shared folders can be
+        removed using <link to="#removeSharedFolder"/>.
       </desc>
     </attribute>
 
@@ -3317,11 +3316,10 @@
 
     <method name="createSharedFolder">
       <desc>
-        Creates a new shared folder by associating the given logical
-        name with the given host path, adds it to the collection of
-        shared folders and starts sharing it.
-        Refer to the description of <link to="ISharedFolder"/> to read
-        about logical name unicity.
+        Creates a new shared folder by associating the given logical name with
+        the given host path, adds it to the collection of shared folders and
+        starts sharing it. Refer to the description of
+        <link to="ISharedFolder"/> to read more about logical names.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Unique logical name of the shared folder.</desc>
@@ -7767,11 +7765,11 @@
 
     <method name="findByName">
       <desc>
-        Searches this collection for a shared folder drive with the
-        given logical name.
+        Searches this collection for a shared folder with the given logical
+        name.
         <note>
-          The method returns an error if the given name does not
-          correspond to any shared folder in the collection.
+          The method returns an error if the given name does not correspond to
+          any shared folder in the collection.
         </note>
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -7790,23 +7788,53 @@
      wsmap="struct"
      >
     <desc>
-      The ISharedFolder interface represents a folder in the host
-      computer's file system accessible from a guest OS running inside a
-      virtual machine using an associated logical name.
+      The ISharedFolder interface represents a folder in the host computer's
+      file system accessible from the guest OS running inside a virtual
+      machine using an associated logical name.
 
       There are three types of shared folders:
       <ul>
-        <li>permanent (<link to="IMachine::sharedFolders"/>)</li>
-        <li>transient (<link to="IConsole::sharedFolders"/>)</li>
-        <li>global (<link to="IVirtualBox::sharedFolders"/>)</li>
+        <li><i>Global</i> (<link to="IVirtualBox::sharedFolders"/>), shared
+        folders available to all virtual machines.</li>
+        <li><i>Permanent</i> (<link to="IMachine::sharedFolders"/>),
+        VM-specific shared folders available to the given virtual machine at
+        startup.</li>
+        <li><i>Transient</i> (<link to="IConsole::sharedFolders"/>),
+        VM-specific shared folders created in the session context (for
+        example, when the virtual machine is running) and automatically
+        discarded when the session is closed (the VM is powered off).</li>
       </ul>
 
-      For a given virtual machine, both permanently and transiently
-      shared folders have the same logical name space which also includes
-      all globally shared folders. Thus, every folder in this name space
-      must have an unique logical name. Note that permanent and transient
-      shares of other machines are in different name spaces, so they don't
-      have to have unique names.
+      Logical names of shared folders must be unique within the given scope
+      (global, permanent or transient). However, they do not need to be unique
+      across scopes. In this case, the definitioin of the shared folder in a
+      more specific scope takes precedence over definitions in all other
+      scopes. The order of precedence is (more specific to more general):
+      <ol>
+        <li>Transient definitions</li>
+        <li>Permanent definitions</li>
+        <li>Global definitions</li>
+      </ol>
+      
+      For example, if MyMachine has a shared folder named
+      <tt>C_DRIVE</tt> (that points to <tt>C:\\</tt>), then cretaing a
+      transient shared folder named <tt>C_DRIVE</tt> (that points
+      to <tt>C:\\\\WINDOWS</tt>) will change the definition
+      of <tt>C_DRIVE</tt> in the guest OS so
+      that <tt>\\\\VBOXSVR\\C_DRIVE</tt> will give access
+      to <tt>C:\\WINDOWS</tt> instead of <tt>C:\\</tt> on the host
+      PC. Removing the transient shared folder <tt>C_DRIVE</tt> will restore
+      the prevoious (permanent) definition of <tt>C_DRIVE</tt> that points
+      to <tt>C:\\</tt> if it still exists.
+      
+      Note that permanent and transient shared folders of different machines
+      are in different name spaces, so they don't overlap and don't need to
+      have unique logical names.
+
+      <note>
+        Global shared folders are not implemented in the current vesion of the
+        product.
+      </note>
     </desc>
 
     <attribute name="name" type="wstring" readonly="yes">
@@ -7836,7 +7864,7 @@
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="80a9b698-cc60-48cf-ab88-a7c2ea4013a6"
+     uuid="e25a28b0-a58a-4582-b7c8-40abaa1f5d5b"
      internal="yes"
      wsmap="suppress"
      >
@@ -7936,6 +7964,20 @@
         Triggered when settings of the USB controller object of the
         associated virtual machine have changed.
       </desc>
+    </method>
+
+    <method name="onSharedFolderChange">
+      <desc>
+        Triggered when a permanent (global or machine) shared folder has been
+        created or removed.
+        <note>
+          We don't pass shared folder parameters in this notification because
+          the order in which parallel notifications are delivered is not defined,
+          therefore it could happen that these parameters were outdated by the
+          time of processing this notification.
+        </note>
+      </desc>
+      <param name="global" type="boolean" dir="in"/>
     </method>
 
     <method name="onUSBDeviceAttach">
