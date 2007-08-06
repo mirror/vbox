@@ -113,7 +113,7 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
-int main( int argc, char ** argv )
+int main (int argc, char **argv)
 {
     /* initialize VBox Runtime */
     RTR3Init (true, ~(size_t)0);
@@ -134,6 +134,16 @@ int main( int argc, char ** argv )
     qInstallMsgHandler (QtMessageOutput);
 
     QIApplication a (argc, argv);
+
+#ifdef Q_WS_WIN
+    /* Drag in the sound drivers and DLLs early to get rid of the delay taking
+     * place when the main menu bar (or any action from that menu bar) is
+     * activated for the first time. This delay is especially annoying if it
+     * happens when the VM is executing in real mode (which gives 100% CPU
+     * load and slows down the load process that happens on the main GUI
+     * thread to several seconds). */
+    PlaySound (NULL, NULL, 0);
+#endif
 
 #ifndef RT_OS_DARWIN
     /* some gui qt-styles has it's own different color for buttons
