@@ -199,6 +199,7 @@ public:
                                        const QString &aReason);
     int confirmDownloadAdditions (const QString &aURL, ulong aSize);
     int confirmMountAdditions (const QString &aURL, const QString &aSrc);
+    void warnAboutCouldNotSaveAdditions (const QString &aSrc);
     void warnAboutTooOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutNewAdditions (QWidget *, const QString &, const QString &);
