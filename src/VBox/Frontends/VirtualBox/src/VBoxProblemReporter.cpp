@@ -1305,13 +1305,6 @@ int VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
                     QIMessageBox::No | QIMessageBox::Escape);
 }
 
-void VBoxProblemReporter::warnAboutCouldNotSaveAdditions (const QString &aSrc)
-{
-    message (&vboxGlobal().consoleWnd(), Error,
-             tr ("<p>Could not save the downloaded file as "
-             "<nobr><b>%1</b>.</nobr></p>").arg (aSrc));
-}
-
 void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
                                                     const QString &aInstalledVer,
                                                     const QString &aExpectedVer)
