@@ -2338,8 +2338,6 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
 
-    /// @todo (dmik) check global shared folders when they are done
-
     ComObjPtr <SharedFolder> sharedFolder;
     rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
     if (SUCCEEDED (rc))
@@ -2356,10 +2354,14 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 
     if (!accessible)
         return setError (E_FAIL,
-            tr ("Shared folder path '%ls' is not accessible"), aHostPath);
+            tr ("Shared folder host path '%ls' is not accessible"), aHostPath);
 
     mHWData.backup();
     mHWData->mSharedFolders.push_back (sharedFolder);
+
+    /* inform the direct session if any */
+    alock.leave();
+    onSharedFolderChange();
 
     return S_OK;
 }
@@ -2383,6 +2385,10 @@ STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
 
     mHWData.backup();
     mHWData->mSharedFolders.remove (sharedFolder);
+
+    /* inform the direct session if any */
+    alock.leave();
+    onSharedFolderChange();
 
     return S_OK;
 }
@@ -7277,6 +7283,38 @@ void Machine::rollback (bool aNotify)
 
     AutoLock alock (this);
 
+    /* check for changes in own data */
+
+    bool sharedFoldersChanged = false;
+
+    if (aNotify && mHWData.isBackedUp())
+    {
+        if (mHWData->mSharedFolders.size() !=
+            mHWData.backedUpData()->mSharedFolders.size())
+            sharedFoldersChanged = true;
+        else
+        {
+            for (HWData::SharedFolderList::iterator rit =
+                     mHWData->mSharedFolders.begin();
+                 rit != mHWData->mSharedFolders.end() && !sharedFoldersChanged;
+                 ++ rit)
+            {
+                for (HWData::SharedFolderList::iterator cit =
+                         mHWData.backedUpData()->mSharedFolders.begin();
+                     cit != mHWData.backedUpData()->mSharedFolders.end();
+                     ++ cit)
+                {
+                    if ((*cit)->name() != (*rit)->name() ||
+                        (*cit)->hostPath() != (*rit)->hostPath())
+                    {
+                        sharedFoldersChanged = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     mUserData.rollback();
 
     mHWData.rollback();
@@ -7284,8 +7322,11 @@ void Machine::rollback (bool aNotify)
     if (mHDData.isBackedUp())
         fixupHardDisks (false /* aCommit */);
 
+    /* check for changes in child objects */
+
     bool vrdpChanged = false, dvdChanged = false, floppyChanged = false,
          usbChanged = false;
+
     ComPtr <INetworkAdapter> networkAdapters [ELEMENTS (mNetworkAdapters)];
     ComPtr <ISerialPort> serialPorts [ELEMENTS (mSerialPorts)];
     ComPtr <IParallelPort> parallelPorts [ELEMENTS (mParallelPorts)];
@@ -7327,10 +7368,13 @@ void Machine::rollback (bool aNotify)
 
     if (aNotify)
     {
-        // inform the direct session about changes
+        /* inform the direct session about changes */
 
         ComObjPtr <Machine> that = this;
         alock.leave();
+
+        if (sharedFoldersChanged)
+            that->onSharedFolderChange();
 
         if (vrdpChanged)
             that->onVRDPServerChange();
@@ -7340,6 +7384,7 @@ void Machine::rollback (bool aNotify)
             that->onFloppyDriveChange();
         if (usbChanged)
             that->onUSBControllerChange();
+
         for (ULONG slot = 0; slot < ELEMENTS (networkAdapters); slot ++)
             if (networkAdapters [slot])
                 that->onNetworkAdapterChange (networkAdapters [slot]);
@@ -8886,6 +8931,29 @@ HRESULT SessionMachine::onUSBControllerChange()
         return S_OK;
 
     return directControl->OnUSBControllerChange();
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onSharedFolderChange()
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr <IInternalSessionControl> directControl;
+    {
+        AutoReaderLock alock (this);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnSharedFolderChange (FALSE /* aGlobal */);
 }
 
 /**

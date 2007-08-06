@@ -594,6 +594,20 @@ STDMETHODIMP Session::OnUSBControllerChange()
     return mConsole->onUSBControllerChange();
 }
 
+STDMETHODIMP Session::OnSharedFolderChange (BOOL aGlobal)
+{
+    LogFlowThisFunc (("\n"));
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoReaderLock alock (this);
+    AssertReturn (mState == SessionState_SessionOpen &&
+                  mType == SessionType_DirectSession, E_FAIL);
+
+    return mConsole->onSharedFolderChange (aGlobal);
+}
+
 STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
                                          IVirtualBoxErrorInfo *aError)
 {

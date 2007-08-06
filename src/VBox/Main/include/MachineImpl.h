@@ -533,6 +533,7 @@ public:
     virtual HRESULT onParallelPortChange(IParallelPort *ParallelPort) { return S_OK; }
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
+    virtual HRESULT onSharedFolderChange() { return S_OK; }
 
     int calculateFullPath (const char *aPath, Utf8Str &aResult);
     void calculateRelativePath (const char *aPath, Utf8Str &aResult);
@@ -782,6 +783,7 @@ public:
                                IVirtualBoxErrorInfo *aError);
     HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId,
                                IVirtualBoxErrorInfo *aError);
+    HRESULT onSharedFolderChange();
 
 private:
 
