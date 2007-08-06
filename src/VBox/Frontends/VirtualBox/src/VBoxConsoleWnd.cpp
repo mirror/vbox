@@ -20,47 +20,27 @@
  * license agreement apply instead of the previous paragraph.
  */
 
-#include "VBoxGlobal.h"
-
 #include "VBoxConsoleWnd.h"
-
-#include "VBoxDefs.h"
 #include "VBoxConsoleView.h"
-#include "VBoxProblemReporter.h"
 #include "VBoxCloseVMDlg.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxDiskImageManagerDlg.h"
 #include "VBoxVMFirstRunWzd.h"
 #include "VBoxSharedFoldersSettings.h"
-#include "VBoxUtils.h"
-#include "VBoxMediaComboBox.h"
+#include "VBoxDownloaderWgt.h"
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
 #include "QIHotKeyEdit.h"
 
-#include <qlabel.h>
 #include <qaction.h>
 #include <qmenubar.h>
-#include <qpopupmenu.h>
 #include <qbuttongroup.h>
 #include <qradiobutton.h>
-#include <qtooltip.h>
-#include <qlineedit.h>
-#include <qtextedit.h>
-#include <qtooltip.h>
 #include <qdir.h>
 #include <qpushbutton.h>
-#include <qtoolbutton.h>
 #include <qcursor.h>
-#include <qhttp.h>
-#include <qprogressbar.h>
-
-#include <qeventloop.h>
-
-#include <qlayout.h>
-#include <qhbox.h>
-
 #include <qtimer.h>
+#include <qeventloop.h>
 
 #include <VBox/VBoxGuest.h>
 
@@ -202,266 +182,6 @@ public:
 class QHttp;
 class QHttpResponseHeader;
 #endif
-
-/** class VBoxGADownloader
- *
- *  The VBoxGADownloader class is an QWidget class for Guest Additions
- *  http backgroung downloading. This class is also used to display the
- *  Guest Additions download state through the progress dialog integrated
- *  into the VM console status bar.
- */
-class VBoxGADownloader : public QWidget
-{
-    Q_OBJECT
-
-public:
-
-    VBoxGADownloader (QStatusBar *aStatusBar, QAction *aAction)
-        : QWidget (0, "VBoxGADownloader")
-        , mStatusBar (aStatusBar)
-        , mProtocol ("http://")
-        , mHost (QString::null), mPath (QString::null), mFile (QString::null)
-        , mHttp (0), mIsChecking (true)
-        , mProgressBar (0), mCancelButton (0)
-        , mAction (aAction), mStatus (0)
-        , mConnectDone (false), mSuicide (false)
-    {
-        /* Disable Install Guest Additions action */
-        mAction->setEnabled (false);
-
-        /* Drawing itself */
-        setFixedHeight (16);
-
-        mProgressBar = new QProgressBar (this);
-        mProgressBar->setFixedWidth (100);
-        mProgressBar->setPercentageVisible (true);
-        mProgressBar->setProgress (0);
-
-        mCancelButton = new QToolButton (this);
-        mCancelButton->setAutoRaise (true);
-        mCancelButton->setFocusPolicy (TabFocus);
-        QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Expanding,
-                                                     QSizePolicy::Fixed);
-
-        QHBoxLayout *mainLayout = new QHBoxLayout (this);
-        mainLayout->addWidget (mProgressBar);
-        mainLayout->addWidget (mCancelButton);
-        mainLayout->addItem (spacer);
-
-        /* Select the product version */
-        QString version = vboxGlobal().virtualBox().GetVersion();
-
-        /* Select the Guest Additions image file */
-        mHost = "www.virtualbox.org";
-        mPath = QString ("/download/%1/").arg (version);
-        mFile = QString ("VBoxGuestAdditions_%1.iso").arg (version);
-
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
-        /* Initialize url operator */
-        mHttp = new QHttp (this, "mHttp");
-        mHttp->setHost (mHost);
-
-        /* Setup connections */
-        connect (mHttp, SIGNAL (dataReadProgress (int, int)),
-                 this, SLOT (processProgress (int, int)));
-        connect (mHttp, SIGNAL (requestFinished (int, bool)),
-                 this, SLOT (processFinished (int, bool)));
-        connect (mHttp, SIGNAL (responseHeaderReceived (const QHttpResponseHeader&)),
-                 this, SLOT (processResponse (const QHttpResponseHeader&)));
-#endif /* !RT_OS_DARWIN */ /// @todo fix the qt build on darwin.    
-        connect (mCancelButton, SIGNAL (clicked()),
-                 this, SLOT (processAbort()));
-
-        languageChange();
-        mStatusBar->addWidget (this);
-
-        /* Try to get the required file for the information */
-        getFile();
-    }
-
-    void languageChange()
-    {
-        mCancelButton->setText (tr ("Cancel"));
-        QToolTip::add (mProgressBar, tr ("Downloading the VirtualBox Guest Additions "
-                                         "CD image from <nobr><b>%1</b>...</nobr>")
-                                     .arg (mProtocol + mHost + mPath + mFile));
-        QToolTip::add (mCancelButton, tr ("Cancel the VirtualBox Guest "
-                                          "Additions CD image download"));
-    }
-
-private slots:
-
-    /* This slot is used to handle the progress of the file-downloading
-     * procedure. It also checks the downloading status for the file
-     * presence verifying purposes. */
-    void processProgress (int aRead, int aTotal)
-    {
-        mConnectDone = true;
-        if (aTotal != -1)
-        {
-            if (mIsChecking)
-            {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
-                mHttp->abort();
-#endif                
-                if (mStatus == 404)
-                    abortDownload (tr ("Could not locate the file on "
-                                       "the server (response: %1).")
-                                   .arg (mStatus));
-                else
-                    processFile (aTotal);
-            }
-            else
-                mProgressBar->setProgress (aRead, aTotal);
-        }
-        else
-            abortDownload (tr ("Could not determine the file size."));
-    }
-
-    /* This slot is used to handle the finish signal of every operation's
-     * response. It is used to display the errors occurred during the download
-     * operation and for the received-buffer serialization procedure. */
-    void processFinished (int, bool aError)
-    {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
-        if (aError && mHttp->error() != QHttp::Aborted)
-        {
-            mConnectDone = true;
-            QString reason = mIsChecking ?
-                tr ("Could not connect to the server (%1).") :
-                tr ("Could not download the file (%1).");
-            abortDownload (reason.arg (mHttp->errorString()));
-        }
-        else if (!aError && !mIsChecking)
-        {
-            mHttp->abort();
-            /* Serialize the incoming buffer into the .iso image. */
-            QString path = QDir (QDir::home()).absFilePath (mFile);
-            QFile file (path);
-            if (file.open (IO_WriteOnly))
-            {
-                file.writeBlock (mHttp->readAll());
-                file.close();
-                int rc = vboxProblem().confirmMountAdditions (mProtocol + mHost +
-                                  mPath + mFile, QDir::convertSeparators (path));
-                if (rc == QIMessageBox::Yes)
-                    vboxGlobal().consoleWnd().installGuestAdditionsFrom (path);
-                QTimer::singleShot (0, this, SLOT (suicide()));
-            }
-            else
-                abortDownload (tr ("Could not save the downloaded file as "
-                                   "<nobr><b>%1</b></nobr>.")
-                               .arg (QDir::convertSeparators (path)));
-        }
-#else
-        NOREF (aError);
-#endif /* !RT_OS_DARWIN */        
-    }
-
-    /* This slot is used to handle the header responses about the
-     * requested operations. Watches for the header's status-code. */
-    void processResponse (const QHttpResponseHeader &aHeader)
-    {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
-        mStatus = aHeader.statusCode();
-#else
-        NOREF(aHeader);
-#endif
-    }
-
-    /* This slot is used to control the connection timeout. */
-    void processTimeout()
-    {
-        if (mConnectDone)
-            return;
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
-        mHttp->abort();
-        abortDownload (tr ("Connection timed out."));
-#endif        
-    }
-
-    /* This slot is used to process cancel-button clicking signal. */
-    void processAbort()
-    {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
-        mConnectDone = true;
-        mHttp->abort();
-        abortDownload (tr ("The download process has been cancelled "
-                           "by the user."));
-#endif        
-    }
-
-    /* This slot is used to terminate the downloader, activate the
-     * Install Guest Additions action and removing the downloader's
-     * sub-widgets from the VM Console status-bar. */
-    void suicide()
-    {
-        mAction->setEnabled (true);
-        mStatusBar->removeWidget (this);
-        delete this;
-    }
-
-private:
-
-    /* This function is used to make a request to get a file */
-    void getFile()
-    {
-        mConnectDone = false;
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.    
-        mHttp->get (mPath + mFile);
-#endif        
-        QTimer::singleShot (5000, this, SLOT (processTimeout()));
-    }
-
-    /* This function is used to ask the user about he wants to download the
-     * founded Guest Additions image or not. It also shows the progress-bar
-     * and Cancel-button widgets. */
-    void processFile (int aSize)
-    {
-        /* Ask user about GA image downloading */
-        int rc = vboxProblem().
-            confirmDownloadAdditions (mProtocol + mHost + mPath + mFile, aSize);
-        if (rc == QIMessageBox::Yes)
-        {
-            mIsChecking = false;
-            getFile();
-        }
-        else
-            abortDownload();
-    }
-
-    /* This wrapper displays an error message box (unless @aReason is
-     * QString::null) with the cause of the download procedure
-     * termination. After the message box is dismissed, the downloader signals
-     * to close itself on the next event loop iteration. */
-    void abortDownload (const QString &aReason = QString::null)
-    {
-        /* Protect against double kill request. */
-        if (mSuicide)
-            return;
-        mSuicide = true;
-
-        if (!aReason.isNull())
-            vboxProblem().cannotDownloadGuestAdditions (mProtocol + mHost +
-                                                        mPath + mFile, aReason);
-        /* Allows all the queued signals to be processed before quit. */
-        QTimer::singleShot (0, this, SLOT (suicide()));
-    }
-
-    QStatusBar *mStatusBar;
-    QString mProtocol;
-    QString mHost;
-    QString mPath;
-    QString mFile;
-    QHttp *mHttp;
-    bool mIsChecking;
-    QProgressBar *mProgressBar;
-    QToolButton *mCancelButton;
-    QAction *mAction;
-    int mStatus;
-    bool mConnectDone;
-    bool mSuicide;
-};
 
 /** \class VBoxConsoleWnd
  *
@@ -2566,13 +2286,13 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     QString src1 = qApp->applicationDirPath() + "/../../release/bin/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/../../release/bin/additions/VBoxGuestAdditions.iso";
 #else
-    char szAppPrivPath[RTPATH_MAX];
+    char szAppPrivPath [RTPATH_MAX];
     int rc;
 
-    rc = RTPathAppPrivateNoArch(szAppPrivPath, sizeof(szAppPrivPath));
-    Assert(RT_SUCCESS(rc));
+    rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
+    Assert (RT_SUCCESS (rc));
 
-    QString src1 = QString(szAppPrivPath) + "/VBoxGuestAdditions.iso";
+    QString src1 = QString (szAppPrivPath) + "/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/additions/VBoxGuestAdditions.iso";
 #endif
 
@@ -2582,36 +2302,57 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
         installGuestAdditionsFrom (src2);
     else
     {
+        /* Check for the already registered required image: */
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        QString iName = QString ("VBoxGuestAdditions_%1.iso")
+                                 .arg (vbox.GetVersion());
+        CDVDImageEnumerator en = vbox.GetDVDImages().Enumerate();
+        while (en.HasMore())
+        {
+            QString path = en.GetNext().GetFilePath();
+            if (path.find (iName) != -1 && QFile::exists (path))
+                return installGuestAdditionsFrom (path);
+        }
+        /* Download required image: */
         int rc = vboxProblem().cannotFindGuestAdditions (
             QDir::convertSeparators (src1), QDir::convertSeparators (src2));
         if (rc == QIMessageBox::Yes)
-            new VBoxGADownloader (statusBar(), devicesInstallGuestToolsAction);
+        {
+            QString url = QString ("http://www.virtualbox.org/download/%1/")
+                                   .arg (vbox.GetVersion()) + iName;
+            QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
+                                   .absFilePath (iName);
+
+            new VBoxDownloaderWgt (statusBar(), devicesInstallGuestToolsAction,
+                                   url, target);
+        }
     }
 }
 
 void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-
-    QString src (aSource);
     QUuid uuid;
-    CDVDImage newImage = vbox.OpenDVDImage (src, uuid);
-    if (vbox.isOk())
+
+    CDVDImage image = vbox.FindDVDImage (aSource);
+    if (image.isNull())
     {
-        src = newImage.GetFilePath();
-        CDVDImage oldImage = vbox.FindDVDImage(src);
-        if (oldImage.isNull())
-            vbox.RegisterDVDImage (newImage);
-        else
-            newImage = oldImage;
+        image = vbox.OpenDVDImage (aSource, uuid);
         if (vbox.isOk())
-            uuid = newImage.GetId();
+            vbox.RegisterDVDImage (image);
+        if (vbox.isOk())
+            uuid = image.GetId();
     }
+    else
+        uuid = image.GetId();
+
     if (!vbox.isOk())
     {
-        vboxProblem().cannotRegisterMedia (this, vbox, VBoxDefs::CD, src);
+        vboxProblem().cannotRegisterMedia (this, vbox, VBoxDefs::CD, aSource);
         return;
     }
+
+    Assert (!uuid.isNull());
     CDVDDrive drv = csession.GetMachine().GetDVDDrive();
     drv.MountImage (uuid);
     /// @todo (r=dmik) use VBoxProblemReporter::cannotMountMedia...
@@ -3261,5 +3002,3 @@ void VBoxSFDialog::showEvent (QShowEvent *aEvent)
     setMinimumWidth (400);
     QDialog::showEvent (aEvent);
 }
-
-#include "VBoxConsoleWnd.moc"
