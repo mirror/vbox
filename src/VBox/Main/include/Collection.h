@@ -205,10 +205,20 @@ public:
     END_COM_MAP()
 
     // public initializer/uninitializer for internal purposes only
+
     void init (const List &l)
     {
         // create a copy of the list
         vec = Vector (l.begin(), l.end());
+    }
+
+    template <class Key>
+    void init (const std::map <Key, CollItem> &m)
+    {
+        // create a copy of the map
+        for (std::map <Key, CollItem>::const_iterator it = m.begin();
+             it != m.end(); ++ it)
+            vec.push_back (it->second);
     }
 
     STDMETHOD(COMGETTER(Count)) (ULONG *count)
