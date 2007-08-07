@@ -173,12 +173,14 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
     /*
      * Init VMXM.
      */
-    HWACCMR0Init(pVM);
+    int rc = HWACCMR0Init(pVM);
+    if (VBOX_FAILURE(rc))
+        return rc;
 
     /*
      * Init CPUM.
      */
-    int rc = CPUMR0Init(pVM);
+    rc = CPUMR0Init(pVM);
 
     if (RT_FAILURE(rc))
         RTLogSetDefaultInstanceThread(NULL, 0);
