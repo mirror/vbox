@@ -580,8 +580,8 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
                 break;
           }
       } else if (s->vbe_index == VBE_DISPI_INDEX_VBOX_VIDEO) {
-        /* Reading from the port yields nothing. */
-        val = 0;
+        /* Reading from the port means that the old additions are requesting the number of monitors. */
+        val = 1;
       } else {
         val = s->vbe_regs[s->vbe_index];
       }
