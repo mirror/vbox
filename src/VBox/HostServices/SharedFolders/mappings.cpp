@@ -37,6 +37,8 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName)
 
     Assert(pFolderName && pMapName);
 
+    Log(("vbsfMappingsAdd %ls\n", pMapName->String.ucs2));
+
     /* check for duplicates */
     for (i=0;i<SHFL_MAX_MAPPINGS;i++)
     {
@@ -113,6 +115,7 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
 
     Assert(pMapName);
 
+    Log(("vbsfMappingsRemove %ls\n", pMapName->String.ucs2));
     for (i=0;i<SHFL_MAX_MAPPINGS;i++)
     {
         if (FolderMapping[i].fValid == true)
@@ -137,10 +140,10 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
 
     if (i == SHFL_MAX_MAPPINGS)
     {
-        AssertMsgFailed(("vbsfMappingsRemove: mapping %ls not found!!!!\n", pMapName->String));
+        AssertMsgFailed(("vbsfMappingsRemove: mapping %ls not found!!!!\n", pMapName->String.ucs2));
         return VERR_FILE_NOT_FOUND;
     }
-    Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String));
+    Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String.ucs2));
     return VINF_SUCCESS;
 }
 
