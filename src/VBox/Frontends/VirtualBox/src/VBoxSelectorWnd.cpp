@@ -847,7 +847,13 @@ void VBoxSelectorWnd::vmStart()
     AllowSetForegroundWindow (ASFW_ANY);
 #endif
 
-    CProgress progress = vbox.OpenRemoteSession (session, id, "gui");
+    QString env;
+#if defined (Q_WS_X11)
+    /* make sure the VM process will start on the same display as the Selector */
+    env.sprintf ("DISPLAY=%s", getenv ("DISPLAY"));
+#endif
+
+    CProgress progress = vbox.OpenRemoteSession (session, id, "gui", env);
     if (!vbox.isOk())
     {
         vboxProblem().cannotOpenSession (vbox, item->machine());

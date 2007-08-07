@@ -542,7 +542,8 @@ public:
 
     HRESULT openSession (IInternalSessionControl *aControl);
     HRESULT openRemoteSession (IInternalSessionControl *aControl,
-                               INPTR BSTR aType, Progress *aProgress);
+                               INPTR BSTR aType, INPTR BSTR aEnvironment,
+                               Progress *aProgress);
     HRESULT openExistingSession (IInternalSessionControl *aControl);
 
     HRESULT trySetRegistered (BOOL aRegistered);

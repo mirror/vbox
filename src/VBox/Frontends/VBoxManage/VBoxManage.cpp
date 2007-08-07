@@ -4235,8 +4235,14 @@ static int handleStartVM(int argc, char *argv[],
             }
         }
 
+        Bstr env;
+#ifdef RT_OS_LINUX
+        /* make sure the VM process will start on the same display as VBoxManage */
+        env = Utf8StrFmt ("DISPLAY=%s", getenv ("DISPLAY"));
+#endif
         ComPtr<IProgress> progress;
-        CHECK_ERROR_RET(virtualBox, OpenRemoteSession(session, uuid, sessionType, progress.asOutParam()), rc);
+        CHECK_ERROR_RET(virtualBox, OpenRemoteSession(session, uuid, sessionType,
+                                                      env, progress.asOutParam()), rc);
         RTPrintf("Waiting for the remote session to open...\n");
         CHECK_ERROR_RET(progress, WaitForCompletion (-1), 1);
 
