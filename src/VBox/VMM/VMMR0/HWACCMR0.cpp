@@ -127,6 +127,27 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                          */
                         ASMSetCR4(pVM->hwaccm.s.vmx.hostCR4 | X86_CR4_VMXE);
                     }
+
+                    if (    pVM->hwaccm.s.vmx.pVMXONPhys 
+                        &&  pVM->hwaccm.s.vmx.pVMXON)
+                    {
+                        /* Set revision dword at the beginning of the structure. */
+                        *(uint32_t *)pVM->hwaccm.s.vmx.pVMXON = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+
+                        /* Enter VMX Root Mode */
+                        int rc = VMXEnable(pVM->hwaccm.s.vmx.pVMXONPhys);
+                        if (VBOX_FAILURE(rc))
+                        {
+                            /* KVM leaves the CPU in VMX operation. Not only is this not allowed, it will crash the host when we enter raw mode, because
+                             * (a) clearing X86_CR4_VMXE in CR4 causes a #GP
+                             * (b) turning off paging causes a #GP
+                             *
+                             * They should fix their code, but until they do we simply refuse to run.
+                             */
+                            return VERR_VMX_IN_VMX_ROOT_MODE;
+                        }
+                        VMXDisable();
+                    }
                 }
                 else
                     pVM->hwaccm.s.lLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
