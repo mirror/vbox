@@ -179,7 +179,9 @@ STAMR3DECL(int) STAMR3Term(PVM pVM)
         RTMemFree(pvFree);
     }
 
-    RTSemRWDestroy(pVM->stam.s.RWSem);
+    if (pVM->stam.s.RWSem)
+        RTSemRWDestroy(pVM->stam.s.RWSem);
+    pVM->stam.s.RWSem = 0;
     return VINF_SUCCESS;
 }
 
