@@ -69,6 +69,18 @@ public:
 
     int rtti() const { return QIRichListItemId; }
 
+    int compare (QListViewItem *aItem, int aColumn, bool aAscending) const
+    {
+        /* Sorting the children always by name: */
+        if (parent() && aItem->parent())
+            return QListViewItem::compare (aItem, 0, aAscending);
+        /* Sorting the root items always by key: */
+        else if (!parent() && !aItem->parent())
+            return QListViewItem::compare (aItem, 2, aAscending);
+        else
+            return QListViewItem::compare (aItem, aColumn, aAscending);
+    }
+
     VBoxRichListItem* nextSibling() const
     {
         QListViewItem *item = QListViewItem::nextSibling();
@@ -329,7 +341,7 @@ private:
 void VBoxSharedFoldersSettings::init()
 {
     mDialogType = WrongType;
-    listView->setSorting (-1);
+    listView->setSorting (0);
     new QIListViewSelectionPreserver (this, listView);
     listView->setShowToolTips (false);
     listView->setRootIsDecorated (true);
