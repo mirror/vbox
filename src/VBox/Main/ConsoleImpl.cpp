@@ -4016,9 +4016,9 @@ HRESULT Console::findSharedFolder (const BSTR aName,
     return E_INVALIDARG;
 }
 
-/** 
+/**
  *  Fetches the list of global or machine shared folders from the server.
- * 
+ *
  *  @param aGlobal true to fetch global folders.
  *
  *  @note The caller must lock this object for writing.
@@ -4045,7 +4045,7 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
         SharedFolderDataMap oldFolders;
         if (online)
             oldFolders = mMachineSharedFolders;
-        
+
         mMachineSharedFolders.clear();
 
         ComPtr <ISharedFolderCollection> coll;
@@ -4081,7 +4081,7 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
                 if (it == oldFolders.end() || it->second != hostPath)
                 {
                     /* a new machine folder is added or
-                    /* the existing machine folder is changed */
+                     * the existing machine folder is changed */
                     if (mSharedFolders.find (name) != mSharedFolders.end())
                         ; /* the console folder exists, nothing to do */
                     else
@@ -4134,10 +4134,10 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
     return rc;
 }
 
-/** 
+/**
  *  Searches for a shared folder with the given name in the list of machine
  *  shared folders and then in the list of the global shared folders.
- * 
+ *
  *  @param aName    Name of the folder to search for.
  *  @param aIt      Where to store the pointer to the found folder.
  *  @return         @c true if the folder was found and @c false otherwise.
@@ -4163,9 +4163,9 @@ bool Console::findOtherSharedFolder (INPTR BSTR aName,
     return false;
 }
 
-/** 
+/**
  *  Calls the HGCM service to add a shared folder definition.
- * 
+ *
  *  @param aName        Shared folder name.
  *  @param aHostPath    Shared folder path.
  *
@@ -4226,9 +4226,9 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
     return S_OK;
 }
 
-/** 
+/**
  *  Calls the HGCM service to remove the shared folder definition.
- * 
+ *
  *  @param aName        Shared folder name.
  *
  *  @note Must be called from under AutoVMCaller and when mpVM != NULL!
