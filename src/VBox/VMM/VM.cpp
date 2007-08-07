@@ -438,7 +438,7 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
                         }
                         //..
                     }
-                    //..
+                    vmR3Destroy(pVM);
                 }
                 //..
             }
