@@ -77,7 +77,7 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     {
         memset(&pHalInfo->ddCaps, 0, sizeof(DDNTCORECAPS));
         pHalInfo->ddCaps.dwSize         = sizeof(DDNTCORECAPS);
-        pHalInfo->ddCaps.dwVidMemTotal  = pDev->cScreenSize - pDev->cFrameBufferSize;
+        pHalInfo->ddCaps.dwVidMemTotal  = pDev->layout.cbDDRAWHeap;
         pHalInfo->ddCaps.dwVidMemFree   = pHalInfo->ddCaps.dwVidMemTotal;
 
         pHalInfo->ddCaps.dwCaps         = 0;
@@ -123,7 +123,7 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     cHeaps = 0;
 
     /* Do we have sufficient videomemory to create an off-screen heap for DDraw? */
-    if (pDev->cScreenSize > pDev->cFrameBufferSize)
+    if (pDev->layout.cbDDRAWHeap > 0)
     {
         bDefineDDrawHeap = TRUE;
         cHeaps++;
@@ -151,8 +151,8 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         if ( bDefineDDrawHeap )
         {
             pVm->dwFlags        = VIDMEM_ISLINEAR ;
-            pVm->fpStart        = pDev->cFrameBufferSize;
-            pVm->fpEnd          = pDev->cScreenSize;
+            pVm->fpStart        = pDev->layout.offDDRAWHeap;
+            pVm->fpEnd          = pDev->layout.offDDRAWHeap + pDev->layout.cbDDRAWHeap;
 
             pVm->ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
             DISPDBG((0, "fpStart %ld fpEnd %ld\n", pVm->fpStart, pVm->fpEnd));

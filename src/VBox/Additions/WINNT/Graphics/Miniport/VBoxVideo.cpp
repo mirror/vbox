@@ -809,7 +809,7 @@ static void vboxQueryConf (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32Index
     p->hdrEnd.u8Reserved = 0;
     p->hdrEnd.u16Length  = 0;
     
-    /* Inform the host about the display configuration. */
+    /* Let the host to process the commands. */
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
     VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_ADAPTER_MEMORY);
     

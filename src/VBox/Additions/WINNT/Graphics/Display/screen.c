@@ -37,43 +37,121 @@ const DEVINFO gDevInfoFrameBuffer = {
     0                 /* Default palette to use for this device */
 };
 
+static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMemoryInformation)
+{
+    ULONG cbAvailable = 0;
+
+    DWORD returnedDataLength;
+
+    QUERYDISPLAYINFORESULT DispInfo;
+    RtlZeroMemory(&DispInfo, sizeof (DispInfo));
+
+    ppdev->bVBoxVideoSupported = !EngDeviceIoControl(ppdev->hDriver,
+                                                     IOCTL_VIDEO_QUERY_DISPLAY_INFO,
+                                                     NULL,
+                                                     0,
+                                                     &DispInfo,
+                                                     sizeof(DispInfo),
+                                                     &returnedDataLength);
+
+    if (ppdev->bVBoxVideoSupported)
+    {
+        ppdev->iDevice = DispInfo.iDevice;
+    
+        ppdev->layout.cbVRAM = pMemoryInformation->VideoRamLength;
+    
+        ppdev->layout.offFrameBuffer = 0;
+        ppdev->layout.cbFrameBuffer  = RT_ALIGN_32(pMemoryInformation->FrameBufferLength, 0x1000);
+    
+        cbAvailable = ppdev->layout.cbVRAM - ppdev->layout.cbFrameBuffer;
+        
+        if (cbAvailable <= DispInfo.u32DisplayInfoSize)
+        {
+            ppdev->bVBoxVideoSupported = FALSE;
+        }
+        else
+        {
+            ppdev->layout.offDisplayInformation = ppdev->layout.cbVRAM - DispInfo.u32DisplayInfoSize;
+            ppdev->layout.cbDisplayInformation  = DispInfo.u32DisplayInfoSize;
+            
+            cbAvailable -= ppdev->layout.cbDisplayInformation;
+            
+            /* Use minimum 64K and maximum the cbFrameBuffer for the VBVA buffer. */
+            for (ppdev->layout.cbVBVABuffer = ppdev->layout.cbFrameBuffer;
+                 ppdev->layout.cbVBVABuffer >= 0x10000;
+                 ppdev->layout.cbVBVABuffer /= 2)
+            {
+                if (ppdev->layout.cbVBVABuffer < cbAvailable)
+                {
+                    break;
+                }
+            }
+            
+            if (ppdev->layout.cbVBVABuffer >= cbAvailable)
+            {
+                ppdev->bVBoxVideoSupported = FALSE;
+            }
+            else
+            {
+                ppdev->layout.offVBVABuffer = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
+                
+                cbAvailable -= ppdev->layout.cbVBVABuffer;
+                
+                ppdev->layout.offDDRAWHeap = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
+                ppdev->layout.cbDDRAWHeap  = cbAvailable;
+            }
+        }
+    }
+    
+    if (!ppdev->bVBoxVideoSupported)
+    {
+        ppdev->iDevice = 0;
+
+        /* Setup a layout without both the VBVA buffer and the display information. */
+        ppdev->layout.cbVRAM = pMemoryInformation->VideoRamLength;
+    
+        ppdev->layout.offFrameBuffer = 0;
+        ppdev->layout.cbFrameBuffer  = RT_ALIGN_32(pMemoryInformation->FrameBufferLength, 0x1000);
+    
+        ppdev->layout.offVBVABuffer = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
+        ppdev->layout.cbVBVABuffer  = 0;
+    
+        ppdev->layout.offDDRAWHeap = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
+        ppdev->layout.cbDDRAWHeap  = ppdev->layout.cbVRAM - ppdev->layout.offDDRAWHeap;
+    
+        ppdev->layout.offDisplayInformation = ppdev->layout.offDDRAWHeap + ppdev->layout.cbDDRAWHeap;
+        ppdev->layout.cbDisplayInformation  = 0;
+    }
+
+    DISPDBG((0, "vboxInitVBoxVideo:\n"
+                "    cbVRAM = 0x%X\n"
+                "    offFrameBuffer = 0x%X\n"
+                "    cbFrameBuffer = 0x%X\n"
+                "    offVBVABuffer = 0x%X\n"
+                "    cbVBVABuffer = 0x%X\n"
+                "    offDDRAWHeap = 0x%X\n"
+                "    cbDDRAWHeap = 0x%X\n"
+                "    offDisplayInformation = 0x%X\n"
+                "    cbDisplayInformation = 0x%X\n",
+                ppdev->layout.cbVRAM,
+                ppdev->layout.offFrameBuffer,
+                ppdev->layout.cbFrameBuffer,
+                ppdev->layout.offVBVABuffer,
+                ppdev->layout.cbVBVABuffer,
+                ppdev->layout.offDDRAWHeap,
+                ppdev->layout.cbDDRAWHeap,
+                ppdev->layout.offDisplayInformation,
+                ppdev->layout.cbDisplayInformation
+                ));
+}
+
 /* Setup display information after remapping. */
 static void vboxSetupDisplayInfo (PPDEV ppdev, VIDEO_MEMORY_INFORMATION *pMemoryInformation)
 {
     VBOXDISPLAYINFO *pInfo;
     uint8_t *pu8;
     
-    DWORD returnedDataLength;
-    QUERYDISPLAYINFORESULT DispInfo;
-    RtlZeroMemory(&DispInfo, sizeof (DispInfo));
-    if (EngDeviceIoControl(ppdev->hDriver,
-                           IOCTL_VIDEO_QUERY_DISPLAY_INFO,
-                           NULL,
-                           0,
-                           &DispInfo,
-                           sizeof(DispInfo),
-                           &returnedDataLength))
-    {
-        DISPDBG((1, "DISP bInitSURF failed IOCTL_VIDEO_QUERY_DISPLAY_INFO\n"));
-        ppdev->pInfo = NULL;
-        return;
-    }
-    
-    if (returnedDataLength != sizeof (QUERYDISPLAYINFORESULT)
-        || DispInfo.u32DisplayInfoSize >= pMemoryInformation->VideoRamLength)
-    {
-        DISPDBG((1, "DISP bInitSURF failed DispInfo.u32DisplayInfoSize 0x%x >= pMemoryInformation->VideoRamLength 0x%x\n",
-                 DispInfo.u32DisplayInfoSize, pMemoryInformation->VideoRamLength));
-        ppdev->pInfo = NULL;
-        ppdev->cbDisplayInformation = 0;
-        return;
-    }
-    
-    ppdev->iDevice = DispInfo.iDevice;
-    ppdev->cbDisplayInformation = DispInfo.u32DisplayInfoSize;
-
-    pu8 = (uint8_t *)pMemoryInformation->VideoRamBase;
-    pu8 += pMemoryInformation->VideoRamLength - DispInfo.u32DisplayInfoSize;
+    pu8 = (uint8_t *)ppdev->pjScreen + ppdev->layout.offDisplayInformation;
 
     pInfo = (VBOXDISPLAYINFO *)pu8;
     pu8 += sizeof (VBOXDISPLAYINFO);
@@ -242,12 +320,14 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         ppdev->pPointerAttributes->Column = 0;
         ppdev->pPointerAttributes->Row = 0;
         ppdev->pPointerAttributes->Enable = 0;
-
-        /* Setup the display information. */
-        vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
         
-        ppdev->cScreenSize = videoMemoryInformation.VideoRamLength - ppdev->cbDisplayInformation;
-        ppdev->cFrameBufferSize = videoMemoryInformation.FrameBufferLength;
+        vboxInitVBoxVideo (ppdev, &videoMemoryInformation);
+
+        if (ppdev->bVBoxVideoSupported)
+        {
+            /* Setup the display information. */
+            vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
+        }
     }
 
         
