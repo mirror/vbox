@@ -29,7 +29,13 @@
 #include <iprt/string.h>
 #include <iprt/err.h>
 
-#include <stdlib.h>
+#if defined(RT_OS_WINDOWS)
+# include <stdlib.h>
+#else
+# include <unistd.h>
+#endif
+
+#include <string.h>
 
 struct RTENVINTERNAL
 {
