@@ -4120,10 +4120,10 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
                     /* remove the outdated machine folder */
                     rc = removeSharedFolder (it->first);
                     /* create the global folder if there is any */
-                    SharedFolderDataMap::const_iterator it =
+                    SharedFolderDataMap::const_iterator git =
                         mGlobalSharedFolders.find (it->first);
-                    if (it != mGlobalSharedFolders.end())
-                        rc = createSharedFolder (it->first, it->second);
+                    if (git != mGlobalSharedFolders.end())
+                        rc = createSharedFolder (git->first, git->second);
                 }
             }
 
