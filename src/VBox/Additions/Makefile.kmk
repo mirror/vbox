@@ -136,6 +136,16 @@ GUESTADDITIONS_LINUX_DEPS = $(LINUXINSTALLER)
 GUESTADDITIONS_LINUX_FILESPEC = VBoxLinuxAdditions.run=$(LINUXINSTALLER)
 endif
 
+ifdef VBOX_WITH_OS2_ADDITIONS
+GUESTADDITIONS_OS2_FILESPEC = \
+	os2/VBoxGuest.sys=./os2/Bin/VBoxGuest.sys \
+	os2/VBoxService.exe=./os2/Bin/VBoxService.exe \
+	os2/gengradd.dll=./os2/Bin/gengradd.dll \
+	os2/libc063.dll=./os2/Bin/libc063.dll \
+	os2/readme.txt=./os2/Bin/readme.txt \
+	os2/vboxmouse.sys=./os2/Bin/vboxmouse.sys
+endif
+
 #
 # Build the Guest Additions ISO image.
 #
@@ -144,7 +154,7 @@ $(PATH_BIN)/additions/VBoxGuestAdditions.iso: \
 		Makefile.kmk
 	$(call MSG_TOOL,mkisofs,,$@)
 	$(QUIET)$(VBOX_MKISOFS) -rational-rock -joliet -iso-level 4 -volid "VBOXADDITIONS_$(VBOX_VERSION_STRING)_$(VBOX_SVN_REV)" -l -graft-points -o $@ \
-		$(GUESTADDITIONS_WIN32_FILESPEC) $(GUESTADDITIONS_LINUX_FILESPEC)
+		$(GUESTADDITIONS_WIN32_FILESPEC) $(GUESTADDITIONS_LINUX_FILESPEC) $(GUESTADDITIONS_OS2_FILESPEC)
 
 #
 # Remote building.
