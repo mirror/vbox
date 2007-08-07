@@ -54,14 +54,12 @@ typedef struct RTR0MEMOBJFREEBSD
 {
     /** The core structure. */
     RTR0MEMOBJINTERNAL  Core;
-#if 0
-    /** Lock for the ring-3 / ring-0 pinned objectes.
-     * This member might not be allocated for some object types. */
-    KernVMLock_t        Lock;
-    /** Array of physical pages.
-     * This array can be 0 in length for some object types. */
-    KernPageList_t      aPages[1];
-#endif
+    /** The VM object associated with the allocation. */   
+    vm_object_t         pObject;
+    /** the VM object associated with the mapping.
+     * In mapping mem object, this is the shadow object?
+     * In a allocation/enter mem object, this is the shared object we constructed (contig, perhaps alloc). */
+    vm_object_t         pMappingObject;
 } RTR0MEMOBJFREEBSD, *PRTR0MEMOBJFREEBSD;
 
 
@@ -75,42 +73,81 @@ MALLOC_DEFINE(M_IPRTMOBJ, "iprtmobj", "innotek Portable Runtime - R0MemObj");
 int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 {
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)pMem;
-//    int rc;
+    int rc;
 
     switch (pMemFreeBSD->Core.enmType)
     {
         case RTR0MEMOBJTYPE_CONT:
-            contigfree(pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb, M_IPRTCONT);
+            contigfree(pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb, M_IPRTMOBJ);
+            if (pMemFreeBSD->pMappingObject)
+            {
+                rc = vm_map_remove(kernel_map,
+                                   (vm_offset_t)pMemFreeBSD->Core.pv, 
+                                   (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
+                AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
+            }
             break;
 
-#if 0
-        case RTR0MEMOBJTYPE_PHYS:
-            //if (!pMemFreeBSD->Core.pv)
-            //    break;
-            break
-
-        case RTR0MEMOBJTYPE_MAPPING:
-            //if (pMemFreeBSD->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
-            //    break;
-            break;
-            
         case RTR0MEMOBJTYPE_PAGE:
-        case RTR0MEMOBJTYPE_LOW:
-            //rc = KernVMFree(pMemFreeBSD->Core.pv);
-            //AssertMsg(!rc, ("rc=%d type=%d pv=%p cb=%#zx\n", rc, pMemFreeBSD->Core.enmType, pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb));
+            if (pMemFreeBSD->pObject)
+            {
+                rc = vm_map_remove(kernel_map,
+                                   (vm_offset_t)pMemFreeBSD->Core.pv, 
+                                   (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
+                AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
+            }
+            else
+            {
+                free(pMemFreeBSD->Core.pv, M_IPRTMOBJ);
+                if (pMemFreeBSD->pMappingObject)
+                {
+                    rc = vm_map_remove(kernel_map,
+                                       (vm_offset_t)pMemFreeBSD->Core.pv, 
+                                       (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
+                    AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
+                }
+            }
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
-            //rc = KernVMUnlock(&pMemFreeBSD->Lock);
-            //AssertMsg(!rc, ("rc=%d\n", rc));
+        {
+            vm_map_t pMap = kernel_map;
+            if (pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
+                pMap = &((struct proc *)pMemFreeBSD->Core.u.Lock.R0Process)->p_vmspace->vm_map;
+            rc = vm_map_unwire(pMap, 
+                               (vm_offset_t)pMemFreeBSD->Core.pv, 
+                               (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb, 
+                               VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
+            AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             break;
+        }
 
         case RTR0MEMOBJTYPE_RES_VIRT:
-#endif
+        {
+            vm_map_t pMap = kernel_map;
+            if (pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
+                pMap = &((struct proc *)pMemFreeBSD->Core.u.Lock.R0Process)->p_vmspace->vm_map;
+            rc = vm_map_remove(pMap,
+                               (vm_offset_t)pMemFreeBSD->Core.pv, 
+                               (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
+            AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
+            break;
+        }
+        
+        case RTR0MEMOBJTYPE_MAPPING:
+        {
+            /** @todo Figure out mapping... */
+        }
+            
+        /* unused: */    
+        case RTR0MEMOBJTYPE_LOW:
+        case RTR0MEMOBJTYPE_PHYS:
         default:
             AssertMsgFailed(("enmType=%d\n", pMemFreeBSD->Core.enmType));
             return VERR_INTERNAL_ERROR;
     }
+    
+    Assert(!pMemFreeBSD->pMappingObject);
 
     return VINF_SUCCESS;
 }
@@ -118,67 +155,97 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    /* malloc or like the linker: http://fxr.watson.org/fxr/source/kern/link_elf.c?v=RELENG62#L701 */
-#if 0    
+    int rc;
+
     /* create the object. */
-    const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_PAGE, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
-
-    /* do the allocation. */
-    int rc = KernVMAlloc(cb, VMDHA_FIXED, &pMemFreeBSD->Core.pv, (PPVOID)-1, NULL);
-    if (!rc)
+    
+    /* 
+     * We've two options here both expressed nicely by how kld allocates 
+     * memory for the module bits: 
+     *      http://fxr.watson.org/fxr/source/kern/link_elf.c?v=RELENG62#L701 
+     */
+#if 0
+    pMemFreeBSD->Core.pv = malloc(cb, M_IPRTMOBJ, M_ZERO);
+    if (pMemFreeBSD->Core.pv)
     {
-        ULONG cPagesRet = cPages;
-        rc = KernLinToPageList(pMemFreeBSD->Core.pv, cb, &pMemFreeBSD->aPages[0], &cPagesRet);
-        if (!rc)
-        {
-            rtR0MemObjFixPageList(&pMemFreeBSD->aPages[0], cPages, cPagesRet);
-            *ppMem = &pMemFreeBSD->Core;
-            return VINF_SUCCESS;
-        }
-        KernVMFree(pMemFreeBSD->Core.pv);
+        *ppMem = &pMemFreeBSD->Core;
+        return VINF_SUCCESS;
     }
-    rtR0MemObjDelete(&pMemFreeBSD->Core);
+    rc = VERR_NO_MEMORY;
     NOREF(fExecutable);
-    return RTErrConvertFromOS2(rc);
+
 #else
-    return VERR_NOT_IMPLEMENTED;
+    pMemFreeBSD->pObject = vm_object_allocate(OBJT_DEFAULT, cb >> PAGE_SHIFT);
+    if (pMemFreeBSD->pObject)
+    {
+        vm_offset_t MapAddress = vm_map_min(kernel_map);
+        rc = vm_map_find(kernel_map,                    /* map */ 
+                         pMemFreeBSD->pObject,          /* object */
+                         0,                             /* offset */
+                         &MapAddress,                   /* addr (IN/OUT) */
+                         cb,                            /* length */
+                         TRUE,                          /* find_space */
+                         fExecutable                    /* protection */
+                         ? VM_PROT_ALL
+                         : VM_PROT_RW,
+                         VM_PROT_ALL,                   /* max(_prot) */
+                         FALSE);                        /* cow (copy-on-write) */
+        if (rc == KERN_SUCCESS)
+        {
+            rc = vm_map_wire(kernel_map,                /* map */
+                             MapAddress,                /* start */
+                             MapAddress + cb,           /* end */
+                             VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
+            if (rc == KERN_SUCCESS)
+            {
+                pMemFreeBSD->Core.pv = (void *)MapAddress;
+                *ppMem = &pMemFreeBSD->Core;
+                return VINF_SUCCESS;
+            }
+            
+           vm_map_remove(kernel_map,
+                         MapAddress,
+                         MapAddress + cb);
+        }
+        else
+            vm_object_deallocate(pMemFreeBSD->pObject);
+        rc = VERR_NO_MEMORY; /** @todo fix translation (borrow from darwin) */
+    }
+    else
+        rc = VERR_NO_MEMORY;
 #endif
+    
+    rtR0MemObjDelete(&pMemFreeBSD->Core);
+    return rc;
 }
 
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    /* same as Alloc and hope we're lucky, make sure to verify the physical addresses */
-    NOREF(fExecutable);
-
-#if 0
-  /* create the object. */
-    const ULONG cPages = cb >> PAGE_SHIFT;
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, aPages[cPages]), RTR0MEMOBJTYPE_LOW, NULL, cb);
-    if (!pMemFreeBSD)
-        return VERR_NO_MEMORY;
-
-    /* do the allocation. */
-    int rc = KernVMAlloc(cb, VMDHA_FIXED, &pMemFreeBSD->Core.pv, (PPVOID)-1, NULL);
-    if (!rc)
+    /*
+     * Try a Alloc first and see if we get luck, if not try contigmalloc.
+     * Might wish to try find our own pages or something later if this 
+     * turns into a problemspot on AMD64 boxes. 
+     */
+    int rc = rtR0MemObjNativeAllocPage(ppMem, cb, fExecutable);
+    if (RT_SUCCESS(rc))
     {
-        ULONG cPagesRet = cPages;
-        rc = KernLinToPageList(pMemFreeBSD->Core.pv, cb, &pMemFreeBSD->aPages[0], &cPagesRet);
-        if (!rc)
-        {
-            rtR0MemObjFixPageList(&pMemFreeBSD->aPages[0], cPages, cPagesRet);
-            *ppMem = &pMemFreeBSD->Core;
-            return VINF_SUCCESS;
-        }
-        KernVMFree(pMemFreeBSD->Core.pv);
+        size_t iPage = cb >> PAGE_SHIFT;
+        while (iPage-- > 0)
+            if (rtR0MemObjNativeGetPagePhysAddr(*ppMem, iPage) > (_4G - PAGE_SIZE))
+            {
+                RTR0MemObjFree(*ppMem, false);
+                *ppMem = NULL;
+                rc = VERR_NO_MEMORY;
+                break;
+            }
     }
-    rtR0MemObjDelete(&pMemFreeBSD->Core);
-    return RTErrConvertFromOS2(rc);
-#endif
-    return VERR_NOT_IMPLEMENTED;
+    if (RT_FAILURE(rc))
+        rc = rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
+    return rc;
 }
 
 
@@ -212,29 +279,30 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
-    AssertMsgReturn(PhysHighest >= 16 *_1M, ("PhysHigest=%VHp\n", PhysHighest), VERR_NOT_IMPLEMENTED);
+    /** @todo check if there is a more appropriate API somewhere.. */
     
-#if 0
     /* create the object. */
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_CONT, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
     /* do the allocation. */
-    ULONG ulPhys = ~0UL;
-    int rc = KernVMAlloc(cb, VMDHA_FIXED | VMDHA_CONTIG | (PhysHighest < _4G ? VMDHA_16M : 0), &pMemFreeBSD->Core.pv, (PPVOID)&ulPhys, NULL);
-    if (!rc)
+    pMemFreeBSD->Core.pv = contigmalloc(cb,                   /* size */
+                                        M_IPRTMOBJ,           /* type */
+                                        M_NOWAIT | M_ZERO,    /* flags */
+                                        0,                    /* lowest physical address*/
+                                        PhysHighest,          /* highest physical address */
+                                        PAGE_SIZE,            /* alignment. */
+                                        0);                   /* boundrary */
+    if (pMemFreeBSD->Core.pv)
     {
-        Assert(ulPhys != ~0UL);
-        pMemFreeBSD->Core.u.Phys.fAllocated = true;
-        pMemFreeBSD->Core.u.Phys.PhysBase = ulPhys;
+        pMemFreeBSD->Core.u.Cont.Phys = vtophys(pMemFreeBSD->Core.pv);
         *ppMem = &pMemFreeBSD->Core;
         return VINF_SUCCESS;
     }
+    
     rtR0MemObjDelete(&pMemFreeBSD->Core);
-    return RTErrConvertFromOS2(rc);
-#endif
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NO_MEMORY;
 }
 
 
@@ -255,72 +323,139 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 
 int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
 {
-    /* see vslock and vsunlock */
-#if 0
-    AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
+    int rc;
 
     /* create the object. */
-    const ULONG cPages = cb >> PAGE_SHIFT;
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, aPages[cPages]), RTR0MEMOBJTYPE_LOCK, pv, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_LOCK, pv, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
-
-    /* lock it. */
-    ULONG cPagesRet = cPages;
-    int rc = KernVMLock(VMDHL_LONG | VMDHL_WRITE, pv, cb, &pMemFreeBSD->Lock, &pMemFreeBSD->aPages[0], &cPagesRet);
-    if (!rc)
+    
+    /*
+     * We could've used vslock here, but we don't wish to be subject to 
+     * resource usage restrictions, so we'll call vm_map_wire directly.
+     */
+    rc = vm_map_wire(&((struct proc *)R0Process)->p_vmspace->vm_map, /* the map */ 
+                     (vm_offset_t)pv,                               /* start */
+                     (vm_offset_t)pv + cb,                          /* end */
+                     VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);     /* flags - SYSTEM? */
+    if (rc == KERN_SUCCESS)
     {
-        rtR0MemObjFixPageList(&pMemFreeBSD->aPages[0], cPages, cPagesRet);
-        Assert(cb == pMemFreeBSD->Core.cb);
-        Assert(pv == pMemFreeBSD->Core.pv);
         pMemFreeBSD->Core.u.Lock.R0Process = R0Process;
         *ppMem = &pMemFreeBSD->Core;
         return VINF_SUCCESS;
     }
     rtR0MemObjDelete(&pMemFreeBSD->Core);
-    return RTErrConvertFromOS2(rc);
-#endif
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NO_MEMORY;/** @todo fix mach -> vbox error conversion for freebsd. */
 }
 
 
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-#if 0
+    int rc;
+
     /* create the object. */
-    const ULONG cPages = cb >> PAGE_SHIFT;
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, aPages[cPages]), RTR0MEMOBJTYPE_LOCK, pv, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_LOCK, pv, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    /* lock it. */
-    ULONG cPagesRet = cPages;
-    int rc = KernVMLock(VMDHL_LONG | VMDHL_WRITE, pv, cb, &pMemFreeBSD->Lock, &pMemFreeBSD->aPages[0], &cPagesRet);
-    if (!rc)
+    /* lock the memory */
+    rc = vm_map_wire(kernel_map,                                    /* the map */ 
+                     (vm_offset_t)pv,                               /* start */
+                     (vm_offset_t)pv + cb,                          /* end */
+                     VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);     /* flags - SYSTEM? */
+    if (rc == KERN_SUCCESS)
     {
-        rtR0MemObjFixPageList(&pMemFreeBSD->aPages[0], cPages, cPagesRet);
         pMemFreeBSD->Core.u.Lock.R0Process = NIL_RTR0PROCESS;
         *ppMem = &pMemFreeBSD->Core;
         return VINF_SUCCESS;
     }
     rtR0MemObjDelete(&pMemFreeBSD->Core);
-    return RTErrConvertFromOS2(rc);
-#endif
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NO_MEMORY;/** @todo fix mach -> vbox error conversion for freebsd. */
 }
 
 
+/**
+ * Worker for the two virtual address space reservers.
+ * 
+ * We're leaning on the examples provided by mmap and vm_mmap in vm_mmap.c here.
+ */
+static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process, vm_map_t pMap)
+{
+    int rc;
+    
+    /* 
+     * The pvFixed address range must be within the VM space when specified.
+     */
+    if (pvFixed != (void *)-1
+        && (    (vm_offset_t)pvFixed      < vm_map_min(pMap)
+            ||  (vm_offset_t)pvFixed + cb > vm_map_max(pMap)))
+        return VERR_INVALID_PARAMETER;
+    
+    /* 
+     * Create the object. 
+     */
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_RES_VIRT, NULL, cb);
+    if (!pMemFreeBSD)
+        return VERR_NO_MEMORY;
+
+    /*
+     * Allocate an empty VM object and map it into the requested map.
+     */
+    pMemFreeBSD->pObject = vm_object_allocate(OBJT_DEFAULT, cb >> PAGE_SHIFT);
+    if (pMemFreeBSD->pObject)
+    {
+        vm_offset_t MapAddress = pvFixed != (void *)-1
+                               ? (vm_offset_t)pvFixed
+                               : vm_map_min(kernel_map);
+        if (pvFixed)
+            vm_map_remove(pMap,
+                          MapAddress,
+                          MapAddress + cb);
+                               
+        rc = vm_map_find(pMap,                          /* map */ 
+                         pMemFreeBSD->pObject,          /* object */
+                         0,                             /* offset */
+                         &MapAddress,                   /* addr (IN/OUT) */
+                         cb,                            /* length */
+                         pvFixed == (void *)-1,         /* find_space */
+                         VM_PROT_NONE,                  /* protection */
+                         VM_PROT_ALL,                   /* max(_prot) ?? */
+                         FALSE);                        /* cow (copy-on-write) */
+        if (rc == KERN_SUCCESS)
+        {
+            if (R0Process != NIL_RTR0PROCESS)
+            {    
+                rc = vm_map_inherit(pMap,
+                                    MapAddress,
+                                    MapAddress + cb,
+                                    VM_INHERIT_SHARE);
+                AssertMsg(rc == KERN_SUCCESS, ("%#x\n", rc));
+            }
+            pMemFreeBSD->Core.pv = (void *)MapAddress;
+            pMemFreeBSD->Core.u.ResVirt.R0Process = R0Process;
+            *ppMem = &pMemFreeBSD->Core;
+            return VINF_SUCCESS;
+        }
+        vm_object_deallocate(pMemFreeBSD->pObject);
+        rc = VERR_NO_MEMORY; /** @todo fix translation (borrow from darwin) */
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    rtR0MemObjDelete(&pMemFreeBSD->Core);
+    return rc;
+    
+}
+
 int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
 {
-    /* see kmem_alloc_nofault */
-    return VERR_NOT_IMPLEMENTED;
+    return rtR0MemObjNativeReserveInMap(ppMem, pvFixed, cb, uAlignment, NIL_RTR0PROCESS, kernel_map);
 }
 
 
 int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
-    /* see kmem_alloc_nofault */
-    return VERR_NOT_IMPLEMENTED;
+    return rtR0MemObjNativeReserveInMap(ppMem, pvFixed, cb, uAlignment, R0Process,
+                                        &((struct proc *)R0Process)->p_vmspace->vm_map);
 }
 
 
@@ -490,12 +625,21 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPag
 
     switch (pMemFreeBSD->Core.enmType)
     {
-        case RTR0MEMOBJTYPE_PAGE:
-        case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_LOCK:
-//            return pMemFreeBSD->aPages[iPage].Addr;
-return NIL_RTHCPHYS;
-
+        {
+            if (    pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS
+                &&  pMemFreeBSD->Core.u.Lock.R0Process != (RTR0PROCESS)curproc)
+            {
+                /* later */
+                return NIL_RTHCPHYS;
+            }  
+        }
+        case RTR0MEMOBJTYPE_PAGE:
+        {
+            uint8_t *pb = (uint8_t *)pMemFreeBSD->Core.pv + ((size_t)iPage << PAGE_SHIFT);
+            return vtophys(pb);
+        }
+            
         case RTR0MEMOBJTYPE_CONT:
             return pMemFreeBSD->Core.u.Cont.Phys + (iPage << PAGE_SHIFT);
 
@@ -504,6 +648,7 @@ return NIL_RTHCPHYS;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
         case RTR0MEMOBJTYPE_MAPPING:
+        case RTR0MEMOBJTYPE_LOW:
         default:
             return NIL_RTHCPHYS;
     }

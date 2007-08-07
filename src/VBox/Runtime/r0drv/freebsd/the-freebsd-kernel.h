@@ -52,8 +52,12 @@
 #include <sys/mutex.h>
 #include <sys/sched.h>
 #include <sys/callout.h>
-#include <vm/vm.h>              /* for vtophys */
+#include <vm/vm.h>
 #include <vm/pmap.h>            /* for vtophys */
+#include <vm/vm_map.h>
+#include <vm/vm_object.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_param.h>        /* KERN_SUCCESS ++ */
 
 /*#ifdef __cplusplus
 # error "This header doesn't work for C++ code. Sorry, typical kernel crap."
