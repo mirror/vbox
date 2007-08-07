@@ -249,9 +249,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
 
                     const char *pszError;
                     /*
-                     * An error occurred at support library initialization time (before the
-                     * VM could be created). Set the error message directly using the
-                     * initial callback, as the callback list doesn't exist yet.
+                     * An error occurred during VM creation. Set the error message directly 
+                     * using the initial callback, as the callback list doesn't exist yet.
                      */
                     switch (rc)
                     {
