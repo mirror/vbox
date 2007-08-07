@@ -50,6 +50,27 @@ typedef struct _SSB
     BYTE *pBuffer; /* Buffer where screen bits are saved. */
 } SSB;
 
+/* VRAM
+ *  |           |           |          |           |
+ * 0+framebuffer+VBVA buffer+ddraw heap+displayinfo=cScreenSize
+ */
+typedef struct _VRAMLAYOUT
+{
+    ULONG cbVRAM;
+    
+    ULONG offFrameBuffer;
+    ULONG cbFrameBuffer;
+    
+    ULONG offVBVABuffer;
+    ULONG cbVBVABuffer;
+    
+    ULONG offDDRAWHeap;
+    ULONG cbDDRAWHeap;
+    
+    ULONG offDisplayInformation;
+    ULONG cbDisplayInformation;
+} VRAMLAYOUT;
+
 struct  _PDEV
 {
     HANDLE  hDriver;                    // Handle to \Device\Screen
@@ -67,9 +88,7 @@ struct  _PDEV
     POINTL  ptlDevOrg;                  // Device origin for DualView (0,0 for primary view).
     ULONG   ulMode;                     // Mode the mini-port driver is in.
     LONG    lDeltaScreen;               // Distance from one scan to the next.
-    ULONG   cScreenSize;                // size of video memory, including
-                                        // offscreen memory.
-    ULONG   cFrameBufferSize;           // size of screen video memory
+    
     PVOID   pOffscreenList;             // linked list of DCI offscreen surfaces.
     FLONG   flRed;                      // For bitfields device, Red Mask
     FLONG   flGreen;                    // For bitfields device, Green Mask
@@ -97,8 +116,10 @@ struct  _PDEV
     SSB aSSB[4];                // LIFO type stack for saved screen areas.
 
     VBOXDISPLAYINFO *pInfo;
+    BOOLEAN bVBoxVideoSupported;
     ULONG iDevice;
-    ULONG cbDisplayInformation;
+    VRAMLAYOUT layout;
+
 #ifdef VBOX_WITH_DDRAW
     BOOL             bDdExclusiveMode;
     DWORD            dwNewDDSurfaceOffset;
