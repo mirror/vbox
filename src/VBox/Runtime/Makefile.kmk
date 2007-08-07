@@ -172,6 +172,7 @@ RuntimeR3_SOURCES       = \
 	generic/RTLogWriteUser-generic.cpp \
 	generic/semfastmutex-generic.cpp \
 	generic/spinlock-generic.cpp \
+	generic/env-generic.cpp \
 	ldr.cpp \
 	ldrFile.cpp \
 	ldrNative.cpp \

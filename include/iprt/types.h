@@ -934,6 +934,13 @@ typedef RTHEAPSIMPLE                               *PRTHEAPSIMPLE;
 /** NIL simple heap handle. */
 #define NIL_RTHEAPSIMPLE                            ((RTHEAPSIMPLE)0)
 
+/** Handle to an environment block. */
+typedef HCPTRTYPE(struct RTENVINTERNAL *)           RTENV;
+/** Pointer to a handle to an environment block. */
+typedef RTENV                                      *PRTENV;
+/** NIL simple heap handle. */
+#define NIL_RTENV                                   ((RTENV)0)
+
 
 /**
  * UUID data type.
