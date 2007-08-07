@@ -614,10 +614,6 @@ int PrintHeader(const char *argv0)
            " * distribution. VirtualBox OSE is distributed in the hope that it will\n"
            " * be useful, but WITHOUT ANY WARRANTY of any kind.\n"
            " *\n"
-           " * If you received this file as part of a commercial VirtualBox\n"
-           " * distribution, then only the terms of your commercial VirtualBox\n"
-           " * license agreement apply instead of the previous paragraph.\n"
-           " */\n"
            "\n"
            "#include <iprt/uni.h>\n"
            "\n",
