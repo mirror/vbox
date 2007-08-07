@@ -1080,6 +1080,8 @@
 #define VERR_VMX_NO_VMX                             (-4009)
 /** VMXON failed; possibly because it was already run before */
 #define VERR_VMX_VMXON_FAILED                       (-4010)
+/** CPU was incorrectly left in VMX operation mode; incompatible with VirtualBox */
+#define VERR_VMX_IN_VMX_OPERATION_MODE              (-4011)
 /** @} */
 
 /** @name VBox SVM Status Codes
