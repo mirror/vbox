@@ -93,11 +93,11 @@ typedef struct _DEVICE_EXTENSION
                                                 *   cbAdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE - cbMiniportHeap
                                                 */
            PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM. 
-                                                * This is mapped by miniport as one block together with adapter info.
+                                                * This is mapped by miniport separately.
                                                 */
 
-           PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM. Calculated as 
-                                                *   (uint8_t *)pvMiniportHeap + cbMiniportHeap
+           PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM.
+                                                * This is mapped by miniport separately.
                                                 */
            
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */

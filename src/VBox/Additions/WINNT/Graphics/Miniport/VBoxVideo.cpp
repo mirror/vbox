@@ -739,7 +739,7 @@ static void vboxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
         Extension->ulFrameBufferSize = 0;
         
         dprintf(("VBoxVideo::vboxComputeFrameBufferSizes: [%d] ulFrameBufferOffset 0x%08X\n",
-                 ulFrameBufferOffset));
+                 Extension->iDevice, ulFrameBufferOffset));
         
         ulFrameBufferOffset += PrimaryExtension->u.primary.ulMaxFrameBufferSize
                                + PrimaryExtension->u.primary.ulDisplayInformationSize;
@@ -748,20 +748,16 @@ static void vboxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
     }
 }
 
-static int vboxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension)
+static int vboxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG ulOffset, ULONG ulSize)
 {
-    dprintf(("VBoxVideo::vboxMapAdapterMemory\n"));
+    dprintf(("VBoxVideo::vboxMapAdapterMemory 0x%08X[0x%X]\n", ulOffset, ulSize));
 
     PHYSICAL_ADDRESS FrameBuffer;
-    FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS
-                           + PrimaryExtension->u.primary.cbVRAM
-                           - PrimaryExtension->u.primary.cbMiniportHeap
-                           - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
+    FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + ulOffset;
 
     PVOID VideoRamBase = NULL;
     ULONG inIoSpace = 0;
-    ULONG VideoRamLength = PrimaryExtension->u.primary.cbMiniportHeap
-                           + VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
+    ULONG VideoRamLength = ulSize;
 
     VP_STATUS Status = VideoPortMapMemory (PrimaryExtension, FrameBuffer,
                                            &VideoRamLength, &inIoSpace,
@@ -769,9 +765,7 @@ static int vboxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension)
 
     if (Status == NO_ERROR)
     {
-        PrimaryExtension->u.primary.pvMiniportHeap       = VideoRamBase;
-        PrimaryExtension->u.primary.pvAdapterInformation = (uint8_t *)VideoRamBase
-                                                           + PrimaryExtension->u.primary.cbMiniportHeap;
+        *ppv = VideoRamBase;
     }
     
     dprintf(("VBoxVideo::vboxMapAdapterMemory rc = %d\n", Status));
@@ -779,17 +773,49 @@ static int vboxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension)
     return Status;
 }
 
-static void vboxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension)
+static void vboxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv)
 {
     dprintf(("VBoxVideo::vboxMapAdapterMemory\n"));
     
-    if (PrimaryExtension->u.primary.pvMiniportHeap)
+    if (*ppv)
     {
-        VideoPortUnmapMemory(PrimaryExtension, PrimaryExtension->u.primary.pvMiniportHeap, NULL);
+        VideoPortUnmapMemory(PrimaryExtension, *ppv, NULL);
     }
     
-    PrimaryExtension->u.primary.pvMiniportHeap       = NULL;
-    PrimaryExtension->u.primary.pvAdapterInformation = NULL;
+    *ppv = NULL;
+}
+
+static void vboxQueryConf (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32Index, ULONG *pulValue)
+{
+    dprintf(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
+    
+    typedef struct _VBOXVIDEOQCONF32
+    {
+        VBOXVIDEOINFOHDR hdrQuery;
+        VBOXVIDEOINFOQUERYCONF32 query;
+        VBOXVIDEOINFOHDR hdrEnd;
+    } VBOXVIDEOQCONF32;
+
+    VBOXVIDEOQCONF32 *p = (VBOXVIDEOQCONF32 *)PrimaryExtension->u.primary.pvAdapterInformation;
+
+    p->hdrQuery.u8Type     = VBOX_VIDEO_INFO_TYPE_QUERY_CONF32;
+    p->hdrQuery.u8Reserved = 0;
+    p->hdrQuery.u16Length  = sizeof (VBOXVIDEOINFOQUERYCONF32);
+    
+    p->query.u32Index = u32Index;
+    p->query.u32Value = 0;
+    
+    p->hdrEnd.u8Type     = VBOX_VIDEO_INFO_TYPE_END;
+    p->hdrEnd.u8Reserved = 0;
+    p->hdrEnd.u16Length  = 0;
+    
+    /* Inform the host about the display configuration. */
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
+    VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_ADAPTER_MEMORY);
+    
+    *pulValue = (ULONG)p->query.u32Value;
+    
+    dprintf(("VBoxVideo::vboxQueryConf: u32Value = %d\n", p->query.u32Value));
 }
 
 static void vboxSetupAdapterInfo (PDEVICE_EXTENSION PrimaryExtension)
@@ -882,7 +908,6 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
     PrimaryExtension->u.primary.ulMaxFrameBufferSize     = 0;
     PrimaryExtension->u.primary.ulDisplayInformationSize = 0;
 
-    
     /* Verify whether the HW supports VirtualBox extensions. */
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA,  VBE_DISPI_ID_VBOX_VIDEO);
@@ -895,14 +920,29 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
     dprintf(("VBoxVideo::VBoxSetupDisplays: bVBoxVideoSupported = %d\n",
              PrimaryExtension->u.primary.bVBoxVideoSupported));
     
+    if (PrimaryExtension->u.primary.bVBoxVideoSupported)
+    {
+        /* Map the adapter information. It will be needed to query some configuration values. */
+        rc = vboxMapAdapterMemory (PrimaryExtension,
+                                   &PrimaryExtension->u.primary.pvAdapterInformation,
+                                   PrimaryExtension->u.primary.cbVRAM - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE,
+                                   VBOX_VIDEO_ADAPTER_INFORMATION_SIZE
+                                  );
+        if (rc != NO_ERROR)
+        {
+            dprintf(("VBoxVideo::VBoxSetupDisplays: vboxMapAdapterMemory pvAdapterInfoirrmation failed rc = %d\n",
+                     rc));
+    
+            PrimaryExtension->u.primary.bVBoxVideoSupported = FALSE;
+        }
+    }
+    
     /* Setup the non-volatile heap and the adapter memory. */
     if (PrimaryExtension->u.primary.bVBoxVideoSupported)
     {
         /* Query the size of the non-volatile heap. */
-        VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
-        VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_QUERY_OFFSCREEN_HEAP_SIZE);
-        
-        ULONG cbMiniportHeap = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+        ULONG cbMiniportHeap = 0;
+        vboxQueryConf (PrimaryExtension, VBOX_VIDEO_QCI32_OFFSCREEN_HEAP_SIZE, &cbMiniportHeap);
         
         /* Do not allow too big heap. 50% of VRAM should be enough. */
         ULONG cbMiniportHeapMaxSize = AdapterMemorySize / 2 - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
@@ -926,7 +966,13 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
          *       virtual address space.
          * 
          */
-        rc = vboxMapAdapterMemory (PrimaryExtension);
+        rc = vboxMapAdapterMemory (PrimaryExtension,
+                                   &PrimaryExtension->u.primary.pvMiniportHeap,
+                                   PrimaryExtension->u.primary.cbVRAM
+                                   - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE
+                                   - PrimaryExtension->u.primary.cbMiniportHeap,
+                                   PrimaryExtension->u.primary.cbMiniportHeap
+                                  );
         
         if (rc != NO_ERROR)
         {
@@ -953,9 +999,9 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
         if (pfnCreateSecondaryDisplay != NULL)
         {
             /* Query the configured number of displays. */
-            VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
-            int cDisplays = VideoPortReadPortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
-            
+            ULONG cDisplays = 0;
+            vboxQueryConf (PrimaryExtension, VBOX_VIDEO_QCI32_MONITOR_COUNT, &cDisplays);
+        
             dprintf(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
                      cDisplays));
                      
@@ -967,7 +1013,7 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
 
             PDEVICE_EXTENSION pPrev = PrimaryExtension;
             
-            int iDisplay;
+            ULONG iDisplay;
             for (iDisplay = 1; iDisplay < cDisplays; iDisplay++)
             {
                PDEVICE_EXTENSION SecondaryExtension = NULL;
@@ -1010,6 +1056,12 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
     {
         /* Setup the information for the host. */
         vboxSetupAdapterInfo (PrimaryExtension);
+    }
+    else
+    {
+        /* Unmap the memory if VBoxVideo is not supported. */
+        vboxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvMiniportHeap);
+        vboxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvAdapterInformation);
     }
     
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
@@ -1666,7 +1718,8 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 
     VbglTerminate ();
     
-    vboxUnmapAdapterMemory (pDevExt);
+    vboxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvMiniportHeap);
+    vboxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvAdapterInformation);
 
     return TRUE;
 }

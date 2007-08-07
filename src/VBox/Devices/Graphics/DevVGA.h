@@ -281,11 +281,6 @@ typedef struct VGAState {
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
 
-    /** Number of virtual monitors */
-    uint32_t                    monitor_count;
-    /** The VBoxVideo extension command issued by guest. */
-    uint32_t                    vbox_video_command;
-
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     uint32_t                    fRenderVRAM;
 

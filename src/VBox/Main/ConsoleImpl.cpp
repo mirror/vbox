@@ -4834,7 +4834,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     char           *psz = NULL;
     BSTR            str = NULL;
     ULONG           cRamMBs;
-    ULONG           cMonitors;
     unsigned        i;
 
 #define STR_CONV()  do { rc = RTStrUcs2ToUtf8(&psz, str); RC_CHECK(); } while (0)
@@ -5234,8 +5233,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
     hrc = pMachine->COMGETTER(VRAMSize)(&cRamMBs);                                  H();
     rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             cRamMBs * _1M);         RC_CHECK();
-    hrc = pMachine->COMGETTER(MonitorCount)(&cMonitors);                            H();
-    rc = CFGMR3InsertInteger(pCfg,  "MonitorCount",         cMonitors);             RC_CHECK();
 
     /* Custom VESA mode list */
     unsigned cModes = 0;
