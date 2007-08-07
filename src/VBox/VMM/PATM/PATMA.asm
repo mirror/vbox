@@ -737,7 +737,7 @@ PATMPopf32_Log:
 
 PATMPopf32_Ok:
     ; Note: we don't allow popf instructions to change the current IOPL; we simply ignore such changes (!!!)
-    ; In this particular patch it's rather unlikely the pushf was included, so we have no way to check if the flags on the stack are correctly synched
+    ; In this particular patch it's rather unlikely the pushf was included, so we have no way to check if the flags on the stack were correctly synched
     ; PATMPopf32Replacement_NoExit is different, because it's only used in IDT and function patches
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
