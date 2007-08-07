@@ -55,8 +55,6 @@
 #define VGA_VRAM_MAX        (128 * _1M)
 /** The minimum amount of VRAM. */
 #define VGA_VRAM_MIN        (_1M)
-/** The maximum number of monitors. */
-#define VGA_MONITORS_MAX    64
 
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
@@ -582,16 +580,8 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
                 break;
           }
       } else if (s->vbe_index == VBE_DISPI_INDEX_VBOX_VIDEO) {
-            switch (s->vbox_video_command)
-            {
-                case VBOX_VIDEO_QUERY_MONITOR_COUNT:
-                    val = s->monitor_count;
-                    break;
-                case VBOX_VIDEO_QUERY_OFFSCREEN_HEAP_SIZE:
-                    val = _1M; /* @todo make configurable */
-                    break;
-            }
-            Log(("VBE: s->vbox_video_command = 0x%x, s->monitor_count = %d read index=0x%x val=0x%x\n", s->monitor_count, s->vbe_index, val));
+        /* Reading from the port yields nothing. */
+        val = 0;
       } else {
         val = s->vbe_regs[s->vbe_index];
       }
@@ -858,7 +848,6 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             {
                 s->pDrv->pfnProcessDisplayData(s->pDrv, s->CTXSUFF(vram_ptr), val & 0xFFFF);
             }
-            s->vbox_video_command = val;
 #endif /* IN_RING3 */
 #endif /* VBOX */
             break;
@@ -2897,29 +2886,14 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 #endif
     if (cb == 2)
     {
-        /* Reading 16 bit value always reads the count of monitor.
-         * That is for compatibility with old additions. 
-         */
-        VGAState *s = PDMINS2DATA(pDevIns, PVGASTATE);
-        if (s->vbe_index == VBE_DISPI_INDEX_VBOX_VIDEO)
-        {
-            s->vbox_video_command = VBOX_VIDEO_QUERY_MONITOR_COUNT;
-        }
         *pu32 = vbe_ioport_read_data(PDMINS2DATA(pDevIns, PVGASTATE), Port);
         return VINF_SUCCESS;
     }
     else if (cb == 4)
     {
         VGAState *s = PDMINS2DATA(pDevIns, PVGASTATE);
-        if (s->vbe_index == VBE_DISPI_INDEX_VBOX_VIDEO)
-        {
-            *pu32 = vbe_ioport_read_data(PDMINS2DATA(pDevIns, PVGASTATE), Port);
-        }
-        else
-        {
-           /* Quick hack for getting the vram size. */
-           *pu32 = s->vram_size;
-        }
+        /* Quick hack for getting the vram size. */
+        *pu32 = s->vram_size;
         return VINF_SUCCESS;
     }
     AssertMsgFailed(("vgaIOPortReadVBEData: Port=%#x cb=%d\n", Port, cb));
@@ -4344,7 +4318,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     pData->graphic_mode   = -1;         /* Force full update. */
 #ifdef CONFIG_BOCHS_VBE
     pData->vbe_regs[VBE_DISPI_INDEX_ID] = VBE_DISPI_ID0;
-    pData->vbe_regs[VBE_DISPI_INDEX_VBOX_VIDEO] = pData->monitor_count;
+    pData->vbe_regs[VBE_DISPI_INDEX_VBOX_VIDEO] = 0;
     pData->vbe_bank_mask    = ((pData->vram_size >> 16) - 1);
 #endif /* CONFIG_BOCHS_VBE */
 
@@ -4530,7 +4504,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "VRamSize\0"
-                                          "MonitorCount\0"
                                           "GCEnabled\0"
                                           "R0Enabled\0"
                                           "CustomVideoModes\0"
@@ -4571,17 +4544,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         pData->vram_size = RT_ALIGN_32(pData->vram_size, _1M);
     }
     Log(("VGA: VRamSize=%#x\n", pData->vram_size));
-
-    rc = CFGMR3QueryU32(pCfgHandle, "MonitorCount", &pData->monitor_count);
-    if (VBOX_FAILURE(rc) || !pData->monitor_count)
-        pData->monitor_count = 1;
-    else if (pData->monitor_count > VGA_MONITORS_MAX)
-    {
-        AssertMsgFailed(("monitor_count=%d max=%d\n", pData->monitor_count, VGA_MONITORS_MAX));
-        pData->monitor_count = 1;
-    }
-    pData->vbe_regs[VBE_DISPI_INDEX_VBOX_VIDEO] = pData->monitor_count;
-    Log(("VGA: MonitorCount=%d\n", pData->monitor_count));
 
     pData->fGCEnabled = true;
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &f);

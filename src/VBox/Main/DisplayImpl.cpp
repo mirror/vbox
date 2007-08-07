@@ -2197,6 +2197,33 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
 
                  LogFlow(("VBOX_VIDEO_INFO_TYPE_DISPLAY: %d: at 0x%08X, size 0x%08X, info 0x%08X\n", pDisplay->u32Index, pDisplay->u32Offset, pDisplay->u32FramebufferSize, pDisplay->u32InformationSize));
              }
+             else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_QUERY_CONF32)
+             {
+                 if (pHdr->u16Length != sizeof (VBOXVIDEOINFOQUERYCONF32))
+                 {
+                     LogRel(("VBoxVideo: Guest adapter information %s invalid length %d!!!\n", "CONF32", pHdr->u16Length));
+                     break;
+                 }
+
+                 VBOXVIDEOINFOQUERYCONF32 *pConf32 = (VBOXVIDEOINFOQUERYCONF32 *)pu8;
+
+                 switch (pConf32->u32Index)
+                 {
+                     case VBOX_VIDEO_QCI32_MONITOR_COUNT:
+                     {
+                         pConf32->u32Value = pDrv->pDisplay->mcMonitors;
+                     } break;
+                     
+                     case VBOX_VIDEO_QCI32_OFFSCREEN_HEAP_SIZE:
+                     {
+                         /* @todo make configurable. */
+                         pConf32->u32Value = _1M;
+                     } break;
+                     
+                     default:
+                         LogRel(("VBoxVideo: CONF32 %d not supported!!! Skipping.\n", pConf32->u32Index));
+                 }
+             }
              else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_END)
              {
                  if (pHdr->u16Length != 0)

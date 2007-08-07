@@ -91,13 +91,6 @@
  */
 #define VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE 0x00010000
 
-/* The value for port IO to read the number of monitors.
- */
-#define VBOX_VIDEO_QUERY_MONITOR_COUNT           0x00020000
-
-/* The value for port IO to read the offscreen heap size value.
- */
-#define VBOX_VIDEO_QUERY_OFFSCREEN_HEAP_SIZE     0x00020001
 
 /* The end of the information. */
 #define VBOX_VIDEO_INFO_TYPE_END          0
@@ -111,6 +104,12 @@
 #define VBOX_VIDEO_INFO_TYPE_HOST_EVENTS  4
 /* Information about non-volatile guest VRAM heap. */
 #define VBOX_VIDEO_INFO_TYPE_NV_HEAP      5
+/* VBVA enable/disable. */
+#define VBOX_VIDEO_INFO_TYPE_VBVA_STATUS  6
+/* VBVA flush. */
+#define VBOX_VIDEO_INFO_TYPE_VBVA_FLUSH   7
+/* Query configuration value. */
+#define VBOX_VIDEO_INFO_TYPE_QUERY_CONF32 8
 
 
 #pragma pack(1)
@@ -200,6 +199,36 @@ typedef struct _VBOXVIDEOINFONVHEAP
     uint32_t u32HeapSize;
 
 } VBOXVIDEOINFONVHEAP;
+
+/* Display information area. */
+typedef struct _VBOXVIDEOINFOVBVASTATUS
+{
+    /* Absolute offset in VRAM of the start of the VBVA QUEUE. 0 to disable VBVA. */
+    uint32_t u32QueueOffset;
+
+    /* The size of the VBVA QUEUE. 0 to disable VBVA. */
+    uint32_t u32QueueSize;
+
+} VBOXVIDEOINFOVBVASTATUS;
+
+typedef struct _VBOXVIDEOINFOVBVAFLUSH
+{
+    uint32_t u32DataStart;
+
+    uint32_t u32DataEnd;
+
+} VBOXVIDEOINFOVBVAFLUSH;
+
+#define VBOX_VIDEO_QCI32_MONITOR_COUNT       0
+#define VBOX_VIDEO_QCI32_OFFSCREEN_HEAP_SIZE 1
+
+typedef struct _VBOXVIDEOINFOQUERYCONF32
+{
+    uint32_t u32Index;
+
+    uint32_t u32Value;
+
+} VBOXVIDEOINFOQUERYCONF32;
 #pragma pack()
 
 #endif
