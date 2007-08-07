@@ -1756,6 +1756,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
         bool fGenerateJmpBack = (pCurInstrGC + pCpu->opsize - pInstrGC >= SIZEOF_NEARJUMP32);
 
         /* Not an exit point for IDT handler or function replacement patches */
+        /* Note: keep IOPL in mind when changing any of this!! (see comments in PATMA.asm, PATMPopf32Replacement) */
         if (pPatch->flags & (PATMFL_IDTHANDLER|PATMFL_DUPLICATE_FUNCTION))
             fGenerateJmpBack = false;
 
