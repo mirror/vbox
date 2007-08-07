@@ -247,6 +247,29 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                     else
                         AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
 
+                    const char *pszError;
+                    /*
+                     * An error occurred at support library initialization time (before the
+                     * VM could be created). Set the error message directly using the
+                     * initial callback, as the callback list doesn't exist yet.
+                     */
+                    switch (rc)
+                    {
+                    case VERR_VMX_IN_VMX_ROOT_MODE:
+#ifdef __LINUX
+                        pszError = N_("VirtualBox can't operate in VMX root mode. "
+        		              "Please disable the KVM kernel extension, recompile "
+                                      "your kernel and reboot. ");
+#else
+                        pszError = N_("VirtualBox can't operate in VMX root mode.");
+#endif
+                        break;
+                    default:
+                        pszError = N_("Unknown error creating VM (%Vrc)");
+                        AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
+                    }
+                    vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
+
                     /* Forcefully terminate the emulation thread. */
                     VM_FF_SET(pVM, VM_FF_TERMINATE);
                     VMR3NotifyFF(pVM, false);
