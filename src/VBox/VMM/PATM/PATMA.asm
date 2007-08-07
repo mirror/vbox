@@ -739,6 +739,7 @@ PATMPopf32_Ok:
     ; Note: we don't allow popf instructions to change the current IOPL; we simply ignore such changes (!!!)
     ; In this particular patch it's rather unlikely the pushf was included, so we have no way to check if the flags on the stack were correctly synched
     ; PATMPopf32Replacement_NoExit is different, because it's only used in IDT and function patches
+    or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
     test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
@@ -776,9 +777,9 @@ GLOBALNAME PATMPopf32Record
     DD      0
     DD      PATMPopf32End - PATMPopf32Start
 %ifdef PATM_LOG_PATCHINSTR
-    DD      11
+    DD      12
 %else
-    DD      10
+    DD      11
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
@@ -787,6 +788,8 @@ GLOBALNAME PATMPopf32Record
     DD      0
 %endif
     DD      PATM_INTERRUPTFLAG
+    DD      0
+    DD      PATM_VMFLAGS
     DD      0
     DD      PATM_VM_FORCEDACTIONS
     DD      0
