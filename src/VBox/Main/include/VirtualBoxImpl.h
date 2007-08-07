@@ -173,7 +173,8 @@ public:
     STDMETHOD(SetExtraData) (INPTR BSTR aKey, INPTR BSTR aValue);
     STDMETHOD(OpenSession) (ISession *aSession, INPTR GUIDPARAM aMachineId);
     STDMETHOD(OpenRemoteSession) (ISession *aSession, INPTR GUIDPARAM aMachineId,
-                                  INPTR BSTR aType, IProgress **aProgress);
+                                  INPTR BSTR aType, INPTR BSTR aEnvironment,
+                                  IProgress **aProgress);
     STDMETHOD(OpenExistingSession) (ISession *aSession, INPTR GUIDPARAM aMachineId);
     STDMETHOD(RegisterCallback) (IVirtualBoxCallback *callback);
     STDMETHOD(UnregisterCallback) (IVirtualBoxCallback *callback);

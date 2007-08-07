@@ -1913,6 +1913,7 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, INPTR GUIDPARAM aMachi
 STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
                                             INPTR GUIDPARAM aMachineId,
                                             INPTR BSTR aType,
+                                            INPTR BSTR aEnvironment,
                                             IProgress **aProgress)
 {
     if (!aSession || !aType)
@@ -1950,7 +1951,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
                     Bstr (tr ("Spawning session")),
                     FALSE /* aCancelable */);
 
-    rc = machine->openRemoteSession (control, aType, progress);
+    rc = machine->openRemoteSession (control, aType, aEnvironment, progress);
 
     if (SUCCEEDED (rc))
     {

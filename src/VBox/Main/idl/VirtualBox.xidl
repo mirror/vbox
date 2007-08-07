@@ -663,7 +663,7 @@
 
   <interface
      name="IVirtualBox" extends="$dispatched"
-     uuid="d1a2295c-d257-4a4c-a9a6-843d87db6f45"
+     uuid="76b25f3c-15d4-4785-a9d3-adc6a462beec"
      wsmap="global"
      >
     <desc> The main interface exposed by the product that provides virtual
@@ -1381,9 +1381,9 @@
 
     <method name="createSharedFolder">
       <desc>
-        Creates a new shared folder by associating the given logical name with
-        the given host path, adds it to the collection of shared folders and
-        starts sharing it. Refer to the description of
+        Creates a new global shared folder by associating the given logical
+        name with the given host path, adds it to the collection of shared
+        folders and starts sharing it. Refer to the description of
         <link to="ISharedFolder"/> to read more about logical names.
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -1396,8 +1396,8 @@
 
     <method name="removeSharedFolder">
       <desc>
-        Removes a shared folder with the given name previously created
-        by <link to="#createSharedFolder"/> from the collection of
+        Removes the global shared folder with the given name previously
+        created by <link to="#createSharedFolder"/> from the collection of
         shared folders and stops sharing it.
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -1461,14 +1461,15 @@
 
     <method name="openSession">
       <desc>
-        <p>Opens a new direct session with the given virtual machine.
-          Within the direct session context, it is possible to change
-          all VM settings, as well as to execute the VM in the process
-          space of the session object. There can be only one direct
-          session open at a time for every virtual machine.</p>
-        <p>Upon successful return, the session object can be used to
-          get access to the machine and to the VM console.
-        </p>
+        Opens a new direct session with the given virtual machine.
+
+        Within the direct session context, it is possible to change
+        all VM settings, as well as to execute the VM in the process
+        space of the session object. There can be only one direct
+        session open at a time for every virtual machine.
+      
+        Upon successful return, the session object can be used to
+        get access to the machine and to the VM console.
       </desc>
       <param name="session" type="ISession" dir="in">
         <desc>
@@ -1488,29 +1489,46 @@
 
     <method name="openRemoteSession">
       <desc>
-        <p>Opens a new remote session with the given virtual
-          machine. Opening the remote session causes the server to start
-          a new process that opens a direct session with the given VM.
-          The remote session provides some level of control over the VM
-          execution (using the IConsole interface) to the caller. Within
-          the remote session context, it is not possible to change any
-          static VM settings (such as name, HDD configuration, etc.).</p>
-        <p>This operation can take some time, so the progress object
-          is returned to let the caller be informed when the session is
-          actually open. Until then, the remote session object remains in
-          the closed state and accessing the machine or its console through
-          it is invalid.
-        </p>
+        Opens a new remote session with the given virtual
+        machine.
+
+        Opening a remote session causes the VirtualBox server to start a new
+        process that opens a direct session with the given VM.  The remote
+        session provides some level of control over the VM execution to the
+        caller (using the IConsole interface); however, within the remote
+        session context, not all VM settings are available for modification.
+        
+        This operation can take some time, so the progress object
+        is returned to let the caller be informed when the session is
+        actually open. Until then, the remote session object remains in
+        the closed state and accessing the machine or its console through
+        it is invalid.
 
         Currently supported session types (values of the @a type
-        parameter) are:
+        argument) are:
         <ul>
           <li><tt>gui</tt>: VirtualBox Qt GUI session</li>
           <li><tt>vrdp</tt>: VirtualBox VRDP Server session</li>
         </ul>
 
+        The @a environment argument is a string containing definitions of
+        environment variables in the following format:
+        @code
+          NAME[=VALUE]\n
+          NAME[=VALUE]\n
+          ...
+        @endcode
+        where <tt>\\n</tt> is the new line character. These environment
+        variables will be appended to the environment of the VirtualBox server
+        process. If an environment variable exists both in the server process
+        and in this list, the value from this list takes precedence over the
+        server's variable. If the value of the environment variable is
+        omitted, this variable will be removed from the resulting environment.
+        If the environment string is @c null, the server environment is
+        inherited by the started process as is.
+
         <note>
-          It is impossible to open a remote session with the machine
+          It is an error to open a remote session with the machine
           that already has an open direct session or waits until the
           previous request to open the remote session is completed
           (see <link to="IMachine::sessionState"/>).
@@ -1538,6 +1556,11 @@
           Type of the remote session (case sensitive).
         </desc>
       </param>
+      <param name="environment" type="wstring" dir="in">
+        <desc>
+          Environment to pass to the opened session (may be @c null).
+        </desc>
+      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
@@ -1545,18 +1568,22 @@
 
     <method name="openExistingSession">
       <desc>
-        <p>Opens a new remote session with the virtual machine for
-          which a direct session is already open.
-          The remote session provides some level of control over the VM
-          execution (using the IConsole interface) to the caller. Within
-          the remote session context, it is not possible to change any
-          static VM settings (such as name, HDD configuration, etc.).</p>
-        <p>As opposed to <link to="#openRemoteSession()"/>, the number of
-          remote sessions opened this way is not limited by the API.</p>
+        Opens a new remote session with the virtual machine for
+        which a direct session is already open.
+
+        The remote session provides some level of control over the VM
+        execution (using the IConsole interface) to the caller; however,
+        within the remote session context, not all VM settings are available
+        for modification.
+
+        As opposed to <link to="#openRemoteSession()"/>, the number of
+        remote sessions opened this way is not limited by the API
+
         <note>
-          It is impossible to open a remote session with the machine
-          that doesn't have an open direct session.
+          It is an error to open a remote session with the machine that
+          doesn't have an open direct session.
         </note>
+
         <see>openRemoteSession</see>
       </desc>
       <param name="session" type="ISession" dir="in">
@@ -2599,9 +2626,9 @@
 
     <method name="createSharedFolder">
       <desc>
-        Creates a new shared folder by associating the given logical name with
-        the given host path, adds it to the collection of shared folders and
-        starts sharing it. Refer to the description of
+        Creates a new permanent shared folder by associating the given logical
+        name with the given host path, adds it to the collection of shared
+        folders and starts sharing it. Refer to the description of
         <link to="ISharedFolder"/> to read more about logical names.
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -2614,8 +2641,8 @@
 
     <method name="removeSharedFolder">
       <desc>
-        Removes a shared folder with the given name previously created
-        by <link to="#createSharedFolder"/> from the collection of
+        Removes the permanent shared folder with the given name previously
+        created by <link to="#createSharedFolder"/> from the collection of
         shared folders and stops sharing it.
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -3316,9 +3343,9 @@
 
     <method name="createSharedFolder">
       <desc>
-        Creates a new shared folder by associating the given logical name with
-        the given host path, adds it to the collection of shared folders and
-        starts sharing it. Refer to the description of
+        Creates a transient new shared folder by associating the given logical
+        name with the given host path, adds it to the collection of shared
+        folders and starts sharing it. Refer to the description of
         <link to="ISharedFolder"/> to read more about logical names.
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -3331,8 +3358,8 @@
 
     <method name="removeSharedFolder">
       <desc>
-        Removes a shared folder with the given name previously created
-        by <link to="#createSharedFolder"/> from the collection of
+        Removes a transient shared folder with the given name previously
+        created by <link to="#createSharedFolder"/> from the collection of
         shared folders and stops sharing it.
       </desc>
       <param name="name" type="wstring" dir="in">

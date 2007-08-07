@@ -51,13 +51,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <VBox/err.h>
-#include <VBox/cfgldr.h>
+
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/asm.h>
 #include <iprt/process.h>
 #include <iprt/cpputils.h>
+#include <iprt/env.h>
+
+#include <VBox/err.h>
+#include <VBox/cfgldr.h>
 #include <VBox/param.h>
 
 #include <algorithm>
@@ -2762,7 +2765,8 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
  *        (inside the lock).
  */
 HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
-                                    INPTR BSTR aType, Progress *aProgress)
+                                    INPTR BSTR aType, INPTR BSTR aEnvironment,
+                                    Progress *aProgress)
 {
     LogFlowThisFuncEnter();
 
@@ -2803,6 +2807,47 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     int vrc = VINF_SUCCESS;
     RTPROCESS pid = NIL_RTPROCESS;
 
+    RTENV env = NIL_RTENV;
+
+    if (aEnvironment)
+    {
+        char *newEnvStr = NULL;
+
+        do
+        {
+            /* clone the current environment */
+            int vrc = RTEnvClone(&env, NULL);
+            AssertRCBreak (vrc, vrc = vrc);
+
+            vrc = RTStrUtf8ToCurrentCP (&newEnvStr, Utf8Str (aEnvironment));
+            AssertRCBreak (vrc, vrc = vrc);
+
+            /* put new variables to the environment
+             * (ignore empty variable names here since RTEnv API
+             * intentionally doesn't do that) */
+            char *var = newEnvStr;
+            for (char *p = newEnvStr; *p; ++ p)
+            {
+                if (*p == '\n' && (p == newEnvStr || *(p - 1) != '\\'))
+                {
+                    *p = '\0';
+                    if (*var)
+                        if (VBOX_FAILURE (vrc = RTEnvPutEx(env, var)))
+                            break;
+                    var = p + 1;
+                }
+            }
+            if (VBOX_SUCCESS (vrc) && *var)
+                vrc = RTEnvPutEx(env, var);
+
+            AssertRCBreak (vrc, vrc = vrc);
+        }
+        while (0);
+
+        if (newEnvStr != NULL)
+            RTStrFree(newEnvStr);
+    }
+
     Bstr type (aType);
     if (type == "gui")
     {
@@ -2821,7 +2866,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
-        vrc = RTProcCreate (path, args, NULL, 0, &pid);
+        vrc = RTProcCreate (path, args, RTEnvGetArray (env), 0, &pid);
     }
     else
 #ifdef VBOX_VRDP
@@ -2838,7 +2883,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
-        vrc = RTProcCreate (path, args, NULL, 0, &pid);
+        vrc = RTProcCreate (path, args, RTEnvGetArray (env), 0, &pid);
     }
     else
 #endif /* VBOX_VRDP */
@@ -2855,13 +2900,18 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, "-capture", 0 };
 #endif
-        vrc = RTProcCreate (path, args, NULL, 0, &pid);
+        vrc = RTProcCreate (path, args, RTEnvGetArray (env), 0, &pid);
     }
     else
     {
+        if (env != NIL_RTENV)
+            RTEnvDestroy (env);
         return setError (E_INVALIDARG,
             tr ("Invalid session type: '%ls'"), aType);
     }
+
+    if (env != NIL_RTENV)
+        RTEnvDestroy (env);
 
     if (VBOX_FAILURE (vrc))
         return setError (E_FAIL,

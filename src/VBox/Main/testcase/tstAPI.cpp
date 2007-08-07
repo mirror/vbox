@@ -822,7 +822,7 @@ int main(int argc, char *argv[])
         printf ("Opening a remote session for this machine...\n");
         ComPtr <IProgress> progress;
         CHECK_RC_BREAK (virtualBox->OpenRemoteSession (session, guid, Bstr("gui"),
-                                                       progress.asOutParam()));
+                                                       NULL, progress.asOutParam()));
         printf ("Waiting for the session to open...\n");
         CHECK_RC_BREAK (progress->WaitForCompletion (-1));
         ComPtr <IMachine> sessionMachine;
