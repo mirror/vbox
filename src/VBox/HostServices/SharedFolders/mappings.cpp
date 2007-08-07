@@ -119,6 +119,12 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
         {
             if (!RTUtf16LocaleICmp(FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2))
             {
+                if (FolderMapping[i].cMappings != 0)
+                {
+                    Log(("vbsfMappingsRemove: trying to remove active share %ls\n", pMapName->String.ucs2));
+                    return VERR_PERMISSION_DENIED;
+                }   
+
                 RTMemFree(FolderMapping[i].pFolderName);
                 RTMemFree(FolderMapping[i].pMapName);
                 FolderMapping[i].pFolderName = NULL;
