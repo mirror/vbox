@@ -169,7 +169,7 @@ STAMR3DECL(void) STAMR3Relocate(PVM pVM)
 STAMR3DECL(int) STAMR3Term(PVM pVM)
 {
     /*
-     * Free used memory and RWLock.
+     * Free used memory and the RWLock.
      */
     PSTAMDESC   pCur = pVM->stam.s.pHead;
     while (pCur)
@@ -179,9 +179,10 @@ STAMR3DECL(int) STAMR3Term(PVM pVM)
         RTMemFree(pvFree);
     }
 
-    if (pVM->stam.s.RWSem)
+    /* careful here as we might be called twice in on some failure paths (?) */
+    if (pVM->stam.s.RWSem != NIL_RTSEMRW)
         RTSemRWDestroy(pVM->stam.s.RWSem);
-    pVM->stam.s.RWSem = 0;
+    pVM->stam.s.RWSem = NIL_RTSEMRW;
     return VINF_SUCCESS;
 }
 
