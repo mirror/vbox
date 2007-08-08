@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * VirtualBox Parallel Device Emulation.
+ *
+ * Contributed by: Alexander Eichner
  */
 
 /*
