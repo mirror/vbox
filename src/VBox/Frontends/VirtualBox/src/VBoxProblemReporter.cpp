@@ -840,6 +840,25 @@ void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
     );
 }
 
+void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG aWidth,
+                                                   ULONG aHeight,
+                                                   ULONG aBpp, ULONG aVRam)
+{
+    message (&vboxGlobal().consoleWnd(), Error,
+             tr ("<p>Could not enter seamless in <b><nobr>%1x%2x"
+                 "%3 bpp</nobr></b> mode due to lack of Guest OS Video memory. "
+                 "You should have at least <b>%4</b> of Video Memory to enter "
+                 "the Seamless Mode with such desktop parameters but "
+                 "currently you have only <b>%5</b> available.</p>"
+                 "<p>Increase the amount of Guest OS Video Memory "
+                 "with using of Machine Settings Dialog to overcome "
+                 "this prohibition.</p>")
+             .arg (aWidth).arg (aHeight).arg (aBpp)
+             .arg (VBoxGlobal::formatSize ((ULONG64) aWidth*aHeight*aBpp/8))
+             .arg (VBoxGlobal::formatSize ((ULONG64) aVRam*_1M))
+    );
+}
+
 bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
 {
     QString msg;

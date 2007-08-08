@@ -128,6 +128,9 @@ public:
 
     void cannotFindMachineByName (const CVirtualBox &vbox, const QString &name);
 
+    void cannotEnterSeamlessMode (ULONG aWidth, ULONG aHeight,
+                                  ULONG aBpp, ULONG aVRam);
+
     bool confirmMachineDeletion (const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);
 
