@@ -239,6 +239,7 @@ start_network() {
     if ls -g "$TAPDEV" 2>/dev/null | grep root
     then
       chgrp vboxusers "$TAPDEV"
+      chmod 0660 "$TAPDEV"
     fi
     return 0
 }
