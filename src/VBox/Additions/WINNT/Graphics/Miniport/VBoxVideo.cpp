@@ -234,7 +234,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         VideoModes[gNumVideoModes].ScreenStride                 = resolutionMatrix[matrixIndex].xRes * 1;
         VideoModes[gNumVideoModes].NumberOfPlanes               = 1;
         VideoModes[gNumVideoModes].BitsPerPlane                 = 8;
-        VideoModes[gNumVideoModes].Frequency                    = 1;
+        VideoModes[gNumVideoModes].Frequency                    = 60;
         VideoModes[gNumVideoModes].XMillimeter                  = 320;
         VideoModes[gNumVideoModes].YMillimeter                  = 240;
         VideoModes[gNumVideoModes].NumberRedBits                = 6;
@@ -289,7 +289,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         VideoModes[gNumVideoModes].ScreenStride                 = resolutionMatrix[matrixIndex].xRes * 2;
         VideoModes[gNumVideoModes].NumberOfPlanes               = 1;
         VideoModes[gNumVideoModes].BitsPerPlane                 = 16;
-        VideoModes[gNumVideoModes].Frequency                    = 1;
+        VideoModes[gNumVideoModes].Frequency                    = 60;
         VideoModes[gNumVideoModes].XMillimeter                  = 320;
         VideoModes[gNumVideoModes].YMillimeter                  = 240;
         VideoModes[gNumVideoModes].NumberRedBits                = 5;
@@ -342,7 +342,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         VideoModes[gNumVideoModes].ScreenStride                 = resolutionMatrix[matrixIndex].xRes * 3;
         VideoModes[gNumVideoModes].NumberOfPlanes               = 1;
         VideoModes[gNumVideoModes].BitsPerPlane                 = 24;
-        VideoModes[gNumVideoModes].Frequency                    = 1;
+        VideoModes[gNumVideoModes].Frequency                    = 60;
         VideoModes[gNumVideoModes].XMillimeter                  = 320;
         VideoModes[gNumVideoModes].YMillimeter                  = 240;
         VideoModes[gNumVideoModes].NumberRedBits                = 8;
@@ -395,7 +395,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         VideoModes[gNumVideoModes].ScreenStride                 = resolutionMatrix[matrixIndex].xRes * 4;
         VideoModes[gNumVideoModes].NumberOfPlanes               = 1;
         VideoModes[gNumVideoModes].BitsPerPlane                 = 32;
-        VideoModes[gNumVideoModes].Frequency                    = 1;
+        VideoModes[gNumVideoModes].Frequency                    = 60;
         VideoModes[gNumVideoModes].XMillimeter                  = 320;
         VideoModes[gNumVideoModes].YMillimeter                  = 240;
         VideoModes[gNumVideoModes].NumberRedBits                = 8;
@@ -490,7 +490,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         VideoModes[gNumVideoModes].ScreenStride                 = xres * (bpp / 8);
         VideoModes[gNumVideoModes].NumberOfPlanes               = 1;
         VideoModes[gNumVideoModes].BitsPerPlane                 = bpp;
-        VideoModes[gNumVideoModes].Frequency                    = 1;
+        VideoModes[gNumVideoModes].Frequency                    = 60;
         VideoModes[gNumVideoModes].XMillimeter                  = 320;
         VideoModes[gNumVideoModes].YMillimeter                  = 240;
         switch (bpp)
@@ -607,7 +607,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].ScreenStride                 = xres * (bpp / 8);
                 VideoModes[gNumVideoModes].NumberOfPlanes               = 1;
                 VideoModes[gNumVideoModes].BitsPerPlane                 = bpp;
-                VideoModes[gNumVideoModes].Frequency                    = 1;
+                VideoModes[gNumVideoModes].Frequency                    = 60;
                 VideoModes[gNumVideoModes].XMillimeter                  = 320;
                 VideoModes[gNumVideoModes].YMillimeter                  = 240;
                 switch (bpp)
