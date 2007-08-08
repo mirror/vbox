@@ -845,17 +845,9 @@ void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG aWidth,
                                                    ULONG aBpp, ULONG aVRam)
 {
     message (&vboxGlobal().consoleWnd(), Error,
-             tr ("<p>Could not enter seamless in <b><nobr>%1x%2x"
-                 "%3 bpp</nobr></b> mode due to lack of Guest OS Video memory. "
-                 "You should have at least <b>%4</b> of Video Memory to enter "
-                 "the Seamless Mode with such desktop parameters but "
-                 "currently you have only <b>%5</b> available.</p>"
-                 "<p>Increase the amount of Guest OS Video Memory "
-                 "with using of Machine Settings Dialog to overcome "
-                 "this prohibition.</p>")
-             .arg (aWidth).arg (aHeight).arg (aBpp)
-             .arg (VBoxGlobal::formatSize ((ULONG64) aWidth*aHeight*aBpp/8))
-             .arg (VBoxGlobal::formatSize ((ULONG64) aVRam*_1M))
+             tr ("<p>Could not enter seamless mode due to insufficient guest video memory.</p>"
+                 "<p>You should configure the VM to have at least <b>%4</b> of video memory.</p>")
+             .arg (VBoxGlobal::formatSize ((ULONG64) (aWidth*aHeight*aBpp/8+_1M-1)))
     );
 }
 
