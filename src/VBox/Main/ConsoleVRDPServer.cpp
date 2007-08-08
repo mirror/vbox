@@ -145,14 +145,75 @@ NS_DECL_CLASSINFO(VRDPConsoleCallback)
 NS_IMPL_ISUPPORTS1_CI(VRDPConsoleCallback, IConsoleCallback)
 #endif /* VBOX_WITH_XPCOM */
 
-static void findTopLeftBorder (uint8_t *pu8Shape, uint32_t width, uint32_t height, uint32_t *pxSkip, uint32_t *pySkip)
+#ifdef DEBUG_sunlover
+#define LOGDUMPPTR Log
+void dumpPointer (const uint8_t *pu8Shape, uint32_t width, uint32_t height, bool fXorMaskRGB32)
+{
+    unsigned i;
+
+    const uint8_t *pu8And = pu8Shape;
+
+    for (i = 0; i < height; i++)
+    {
+        unsigned j;
+        LOGDUMPPTR(("%p: ", pu8And));
+        for (j = 0; j < (width + 7) / 8; j++)
+        {
+            unsigned k;
+            for (k = 0; k < 8; k++)
+            {
+                LOGDUMPPTR(("%d", ((*pu8And) & (1 << (7 - k)))? 1: 0));
+            }
+
+            pu8And++;
+        }
+        LOGDUMPPTR(("\n"));
+    }
+
+    if (fXorMaskRGB32)
+    {
+        uint32_t *pu32Xor = (uint32_t *)(pu8Shape + ((((width + 7) / 8) * height + 3) & ~3));
+
+        for (i = 0; i < height; i++)
+        {
+            unsigned j;
+            LOGDUMPPTR(("%p: ", pu32Xor));
+            for (j = 0; j < width; j++)
+            {
+                LOGDUMPPTR(("%08X", *pu32Xor++));
+            }
+            LOGDUMPPTR(("\n"));
+        }
+    }
+    else
+    {
+        /* RDP 24 bit RGB mask. */
+        uint8_t *pu8Xor = (uint8_t *)(pu8Shape + ((((width + 7) / 8) * height + 3) & ~3));
+        for (i = 0; i < height; i++)
+        {
+            unsigned j;
+            LOGDUMPPTR(("%p: ", pu8Xor));
+            for (j = 0; j < width; j++)
+            {
+                LOGDUMPPTR(("%02X%02X%02X", pu8Xor[2], pu8Xor[1], pu8Xor[0]));
+                pu8Xor += 3;
+            }
+            LOGDUMPPTR(("\n"));
+        }
+    }
+}
+#else
+#define dumpPointer(a, b, c, d) do {} while (0)
+#endif /* DEBUG_sunlover */
+
+static void findTopLeftBorder (const uint8_t *pu8AndMask, const uint8_t *pu8XorMask, uint32_t width, uint32_t height, uint32_t *pxSkip, uint32_t *pySkip)
 {
     /*
      * Find the top border of the AND mask. First assign to special value.
      */
     uint32_t ySkipAnd = ~0;
 
-    uint8_t *pu8And = pu8Shape;
+    const uint8_t *pu8And = pu8AndMask;
     const uint32_t cbAndRow = (width + 7) / 8;
     const uint8_t maskLastByte = (uint8_t)( 0xFF << (cbAndRow * 8 - width) );
 
@@ -196,7 +257,7 @@ static void findTopLeftBorder (uint8_t *pu8Shape, uint32_t width, uint32_t heigh
     /* For all bit columns. */
     for (x = 0; x < width && xSkipAnd == ~(uint32_t)0; x++)
     {
-        pu8And = pu8Shape + x/8;       /* Currently checking byte. */
+        pu8And = pu8AndMask + x/8;       /* Currently checking byte. */
         uint8_t mask = 1 << (7 - x%8); /* Currently checking bit in the byte. */
 
         for (y = ySkipAnd; y < height; y++, pu8And += cbAndRow)
@@ -219,7 +280,7 @@ static void findTopLeftBorder (uint8_t *pu8Shape, uint32_t width, uint32_t heigh
      */
     uint32_t ySkipXor = ~0;
 
-    uint32_t *pu32XorStart = (uint32_t *)( pu8Shape + ((cbAndRow * height + 3) & ~3) );
+    uint32_t *pu32XorStart = (uint32_t *)pu8XorMask;
 
     uint32_t *pu32Xor = pu32XorStart;
 
@@ -269,6 +330,41 @@ static void findTopLeftBorder (uint8_t *pu8Shape, uint32_t width, uint32_t heigh
     *pySkip = RT_MIN (ySkipAnd, ySkipXor);
 }
 
+/* Generate an AND mask for alpha pointers here, because
+ * guest driver does not do that correctly for Vista pointers.
+ * Similar fix, changing the alpha threshold, could be applied
+ * for the guest driver, but then additions reinstall would be
+ * necessary, which we try to avoid.
+ */
+static void mousePointerGenerateANDMask (uint8_t *pu8DstAndMask, int cbDstAndMask, const uint8_t *pu8SrcAlpha, int w, int h)
+{
+    memset (pu8DstAndMask, 0xFF, cbDstAndMask);
+    
+    int y;
+    for (y = 0; y < h; y++)
+    {
+        uint8_t bitmask = 0x80;
+            
+        int x;
+        for (x = 0; x < w; x++, bitmask >>= 1)
+        {
+            if (bitmask == 0)
+            {
+                bitmask = 0x80;
+            }
+            
+            /* Whether alpha channel value is not transparent enough for the pixel to be seen. */
+            if (pu8SrcAlpha[x * 4 + 3] > 0x7f)
+            {
+                pu8DstAndMask[x / 8] &= ~bitmask;
+            }
+        }
+    
+        /* Point to next source and dest scans. */
+        pu8SrcAlpha += w * 4;
+        pu8DstAndMask += (w + 7) / 8;
+    }
+}
 
 STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
                                                              ULONG width, ULONG height, BYTE *shape)
@@ -303,6 +399,20 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
              * because most pointers are 32x32.
              */
 
+            dumpPointer (shape, width, height, true);
+
+            int cbDstAndMask = (((width + 7) / 8) * height + 3) & ~3;
+
+            uint8_t *pu8AndMask = shape;
+            uint8_t *pu8XorMask = shape + cbDstAndMask;
+
+            if (alpha)
+            {
+                pu8AndMask = (uint8_t *)alloca (cbDstAndMask);
+
+                mousePointerGenerateANDMask (pu8AndMask, cbDstAndMask, pu8XorMask, width, height);
+            }
+
             /* Windows guest alpha pointers are wider than 32 pixels.
              * Try to find out the top-left border of the pointer and
              * then copy only meaningful bits. All complete top rows
@@ -312,7 +422,7 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
             uint32_t ySkip = 0; /* How many rows to skip at the top. */
             uint32_t xSkip = 0; /* How many columns to skip at the left. */
 
-            findTopLeftBorder (shape, width, height, &xSkip, &ySkip);
+            findTopLeftBorder (pu8AndMask, pu8XorMask, width, height, &xSkip, &ySkip);
 
             /* Must not skip the hot spot. */
             xSkip = RT_MIN (xSkip, xHot);
@@ -348,7 +458,7 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
                 uint32_t srcdatawidth = width * 4;
 
                 /* Copy AND mask. */
-                uint8_t *src = shape + ySkip * srcmaskwidth;
+                uint8_t *src = pu8AndMask + ySkip * srcmaskwidth;
                 uint8_t *dst = maskarray + (dstheight - 1) * rdpmaskwidth;
 
                 uint32_t minheight = RT_MIN (height - ySkip, dstheight);
@@ -379,7 +489,7 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
                 }
 
                 /* Point src to XOR mask */
-                src = shape + ((srcmaskwidth * height + 3) & ~3) + ySkip * srcdatawidth;
+                src = pu8XorMask + ySkip * srcdatawidth;
                 dst = dataarray + (dstheight - 1) * rdpdatawidth;
 
                 for (y = 0; y < minheight ; y++)
@@ -401,6 +511,8 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
 
                 pointer->u16MaskLen = (uint16_t)rdpmasklen;
                 pointer->u16DataLen = (uint16_t)rdpdatalen;
+
+                dumpPointer ((uint8_t *)pointer + sizeof (*pointer), dstwidth, dstheight, false);
 
                 m_server->MousePointerUpdate (pointer);
 
