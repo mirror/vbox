@@ -1240,9 +1240,11 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
     COMResult res (aConsole);
 
     message (aParent, Error,
-             tr ("Failed to remove the shared folder <b>%1</b> "
+             tr ("<p>Failed to remove the shared folder <b>%1</b> "
                  "(pointing to <nobr><b>%2</b></nobr>) "
-                 "from the virtual machine <b>%3</b>.")
+                 "from the virtual machine <b>%3</b>.</p>"
+                 "<p>Please close all programs in the guest OS that "
+                 "may use this shared folder and try again.</p>")
                  .arg (aName)
                  .arg (aPath)
                  .arg (aConsole.GetMachine().GetName()),
