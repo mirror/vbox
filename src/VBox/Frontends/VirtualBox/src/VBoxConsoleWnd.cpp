@@ -1797,6 +1797,19 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
          !aOn && !mIsSeamless))
         return;
 
+    /* Check if the Guest Video RAM enough for the seamless mode */
+    QRect screen = QApplication::desktop()->screenGeometry (this);
+    ULONG vRamSize = csession.GetMachine().GetVRAMSize();
+    if (aSeamless && aOn &&
+        (ULONG64) vRamSize * _1M * 8 <
+        (ULONG64) screen.width() * screen.height() * QColor::numBitPlanes())
+    {
+        vboxProblem().cannotEnterSeamlessMode (screen.width(),
+            screen.height(), QColor::numBitPlanes(), vRamSize);
+        vmSeamlessAction->setOn (false);
+        return;
+    }
+
     AssertReturnVoid (console);
     AssertReturnVoid ((hidden_children.isEmpty() == aOn));
     if (aSeamless)
