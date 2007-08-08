@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * VirtualBox Host Parallel Port Driver.
+ *
+ * Contributed by: Alexander Eichner
  */
 
 /*

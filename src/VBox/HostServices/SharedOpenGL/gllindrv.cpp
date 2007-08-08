@@ -4,7 +4,7 @@
  *
  * Simple buffered OpenGL functions
  *
- * Contributor: Alexander Eichner
+ * Contributed by: Alexander Eichner
  */
 
 /*
@@ -33,7 +33,7 @@
 /* X11 server connection for all OpenGL clients.
  * Neccessary because Mesa and DRI cannot handle more than one
  * connection per thread (only hardware acceleration, software rendering
- * runs fine with more than one connection). 
+ * runs fine with more than one connection).
  * Would crash in vboxglDisconnect if on every vboxglConnect
  * a new Display is created */
 Display *glXDisplay = NULL;
@@ -109,7 +109,7 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
         GLX_RENDER_TYPE,   GLX_RGBA_BIT,
         GLX_DOUBLEBUFFER,  GL_TRUE,  /* Request a double-buffered color buffer with */
         GLX_RED_SIZE,      1,        /* the maximum number of bits per component    */
-        GLX_GREEN_SIZE,    1, 
+        GLX_GREEN_SIZE,    1,
         GLX_BLUE_SIZE,     1,
         None
     };
@@ -119,7 +119,7 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
     int returnedFBConfigs;
 
     /* we have to set up a rendering context to be able to use glGetString
-     * a window is created but is not mapped to screen (so it's not visible') 
+     * a window is created but is not mapped to screen (so it's not visible')
      * and a GLXContext is bound to it */
     screen_num = DefaultScreen(pClient->dpy);
     pClient->enable.fbConfig = pClient->glxChooseFBConfig(pClient->dpy, screen_num, attribs, &returnedFBConfigs);
@@ -150,7 +150,7 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
 int vboxglDisableOpenGL(PVBOXOGLCTX pClient)
 {
     /* Free all data */
-    if (pClient->enable.ctx) 
+    if (pClient->enable.ctx)
     {
         glFlush();
         glXMakeCurrent(pClient->dpy, None, NULL);
@@ -190,17 +190,17 @@ int vboxglConnect(PVBOXOGLCTX pClient)
 
         if ((major == 1) && (minor >= 3)) {
             Log(("Server GLX 1.3 supported\n"));
-            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddressARB( 
+            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddressARB(
                                           (GLubyte *) "glXChooseFBConfig");
-            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddressARB( 
+            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddressARB(
                                                  (GLubyte *) "glXGetVisualFromFBConfig");
             pClient->glxCreateNewContext = (PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC) glXGetProcAddressARB(
                                             (GLubyte *) "glXCreateNewContext");
         } else if (vboxglCheckExtension(pClient->dpy, screenNum, "GLX_SGIX_fbconfig")) {
             Log(("GLX_SGIX_fbconfig extension supported\n"));
-            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddressARB( 
+            pClient->glxChooseFBConfig = (PFNGLXCHOOSEFBCONFIGSGIXPROC) glXGetProcAddressARB(
                                           (GLubyte *) "glXChooseFBConfigSGIX");
-            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddressARB( 
+            pClient->glxGetVisualFromFBConfig = (PFNGLXGETVISUALFROMFBCONFIGSGIXPROC) glXGetProcAddressARB(
                                                  (GLubyte *) "glXGetVisualFromFBConfigSGIX");
             pClient->glxCreateNewContext = (PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC) glXGetProcAddressARB(
                                             (GLubyte *) "glXCreateContextWithConfigSGIX");
@@ -270,8 +270,8 @@ void vboxglDrvCreateContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 	attr.colormap = XCreateColormap(pClient->dpy, RootWindow(pClient->dpy, screen_num ), visinfo->visual, AllocNone);
 	attr.event_mask = StructureNotifyMask | ExposureMask;
 	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-	pClient->xWindow = XCreateWindow(pClient->dpy, 
-	                                RootWindow(pClient->dpy, screen_num), 
+	pClient->xWindow = XCreateWindow(pClient->dpy,
+	                                RootWindow(pClient->dpy, screen_num),
 	                                0, 0, pClient->winWidth, pClient->winHeight, 0,
 	                                visinfo->depth, InputOutput,
 	                                visinfo->visual, mask, &attr);
@@ -381,8 +381,8 @@ void vboxglDrvCreateLayerContext(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
 	attr.colormap = XCreateColormap(pClient->dpy, RootWindow(pClient->dpy, screen_num ), visinfo->visual, AllocNone);
 	attr.event_mask = StructureNotifyMask | ExposureMask;
 	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-	pClient->xWindow = XCreateWindow(pClient->dpy, 
-	                                RootWindow(pClient->dpy, screen_num), 
+	pClient->xWindow = XCreateWindow(pClient->dpy,
+	                                RootWindow(pClient->dpy, screen_num),
 	                                0, 0, pClient->winWidth, pClient->winHeight, 0,
 	                                visinfo->depth, InputOutput,
 	                                visinfo->visual, mask, &attr);
@@ -533,7 +533,7 @@ void vboxglDrvDescribePixelFormat(VBOXOGLCTX *pClient, uint8_t *pCmdBuffer)
     if (!pClient->PixelFormatToFBConfigMapper) {
         /* First get number of all visuals for the return value */
         screenNum = DefaultScreen(pClient->dpy);
-        allFBConfigs = glXGetFBConfigs(pClient->dpy, screenNum, 
+        allFBConfigs = glXGetFBConfigs(pClient->dpy, screenNum,
                                             &pClient->numFBConfigs);
         pClient->PixelFormatToFBConfigMapper = allFBConfigs;
     }

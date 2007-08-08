@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * VBox parallel device, Private Driver IOCtls.
+ *
+ * Contributed by: Alexander Eichner
  */
 
 /*
