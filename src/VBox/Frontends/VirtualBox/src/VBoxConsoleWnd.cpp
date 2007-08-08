@@ -37,6 +37,7 @@
 #include <qcursor.h>
 #include <qtimer.h>
 #include <qeventloop.h>
+#include <qregexp.h>
 
 #include <VBox/VBoxGuest.h>
 
@@ -2138,7 +2139,23 @@ void VBoxConsoleWnd::vmTakeSnapshot()
     QString typeId = cmachine.GetOSTypeId();
     dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
-    dlg.leName->setText (tr ("Snapshot %1").arg (cmachine.GetSnapshotCount() + 1));
+    /* search for the max available filter index */
+    int maxSnapShotIndex = 0;
+    QString snapShotName = tr ("Snapshot %1");
+    QRegExp regExp (QString ("^") + snapShotName.arg ("([0-9]+)") + QString ("$"));
+    CSnapshot index = cmachine.GetSnapshot (QUuid());
+    while (!index.isNull())
+    {
+        /* Check the current snapshot name */
+        QString name = index.GetName();
+        int pos = regExp.search (name);
+        if (pos != -1)
+            maxSnapShotIndex = regExp.cap (1).toInt() > maxSnapShotIndex ?
+                               regExp.cap (1).toInt() : maxSnapShotIndex;
+        /* Traversing to the next child */
+        index = index.GetChildren().GetItemAt (0);
+    }
+    dlg.leName->setText (snapShotName.arg (maxSnapShotIndex + 1));
 
     if (dlg.exec() == QDialog::Accepted)
     {
