@@ -2526,12 +2526,20 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                     case 2: /* 10 - Eject media */
                         /* This must be done from EMT. */
                         {
+                        PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
                         PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
                         PVMREQ pReq;
+
+                        PDMCritSectLeave(&pCtl->lock);
                         rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), &pReq, RT_INDEFINITE_WAIT,
                                          (PFNRT)s->pDrvMount->pfnUnmount, 2, s->pDrvMount, false);
                         AssertReleaseRC(rc);
                         VMR3ReqFree(pReq);
+                        {
+                            STAM_PROFILE_START(&pCtl->StatLockWait, a);
+                            PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
+                            STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+                        }
                         }
                         break;
                     case 3: /* 11 - Load media */
