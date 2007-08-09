@@ -213,6 +213,8 @@ VBoxSVC_DEFS += VBOX_WITH_USBFILTER
 VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
 endif
 
+win32/VBoxSVC.rc_DEPS = $(PATH_TARGET)/VBoxSVC.rgs
+
 
 #
 # VBoxSVC wrapper module
@@ -243,6 +245,7 @@ $(PATH_TARGET)/VBoxSVCM.def:
 endif
 
 endif # VBOX_WITH_XPCOM
+
 
 #
 # VBoxC module
@@ -353,6 +356,9 @@ endif
 # ConsoleImpl.cpp uses VBOX_SVN_REV.
 ConsoleImpl.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 ConsoleImpl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
+win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs
+
 
 #
 # VBoxXML
@@ -541,6 +547,12 @@ $(IDLFILE): idl/midl.xsl $(XIDLFILE)
 	$(call MSG_TOOL,xsltproc,VBoxXML,$<,$@)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
+
+$(PATH_TARGET)/VBoxSVC.rgs: win32/VirtualBox_rgs.xsl $(XIDLFILE)
+	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $^
+
+$(PATH_TARGET)/VBoxC.rgs: win32/VirtualBox_rgs.xsl $(XIDLFILE)
+	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $^
 
 ## @todo r=bird: last changes to this rule showed incorrect dependencies here as it broke testcase (see testboxwin2).
 # This is kind of obvious when looking at the rule, because it's (a) not specifing all it output
