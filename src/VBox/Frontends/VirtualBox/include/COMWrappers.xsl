@@ -101,13 +101,15 @@
 
 <xsl:text>
 /*
- * This contains Qt-based wrapper classes for [XP]COM interfaces.
+ *  DO NOT EDIT! This is a generated file.
  *
- * DO NOT EDIT! This is a generated file.
- * Generated from: src/VBox/Main/idl/VirtualBox.xidl (VirtualBox's interface definitions in XML)
- * Generator: src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl
+ *  Qt-based wrapper classes for VirualBox Main API (COM interfaces)
+ *  generated from XIDL (XML interface definition).
  *
- * Note: this header must be included from COMDefs.h, never directly.
+ *  Source    : src/VBox/Main/idl/VirtualBox.xidl
+ *  Generator : src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl
+ *
+ *  Note: this header must be included from COMDefs.h, never directly.
  */
 </xsl:text>
 
@@ -221,7 +223,7 @@ public:
 <!--
  *  libraries
 -->
-<xsl:template match="module">
+<xsl:template match="library">
     <!-- forward declarations -->
     <xsl:text>// forward declarations&#x0A;&#x0A;</xsl:text>
     <xsl:for-each select="interface | collection | enumerator">
@@ -314,7 +316,7 @@ public:
                 </xsl:if>
             </xsl:for-each>
         </xsl:if>
-        <!-- for definitions outside <if> (i.e. inside <module>) -->
+        <!-- for definitions outside <if> (i.e. inside <library>) -->
         <xsl:if test="name(..)!='if'">
             <xsl:for-each select="
                 preceding-sibling::collection | following-sibling::collection
@@ -404,7 +406,7 @@ public:
             </xsl:if>
         </xsl:for-each>
     </xsl:if>
-    <!-- for definitions outside <if> (i.e. inside <module>) -->
+    <!-- for definitions outside <if> (i.e. inside <library>) -->
     <xsl:if test="name(..)!='if'">
         <xsl:for-each select="
             preceding-sibling::*[self::interface or self::collection or self::enumerator] |
@@ -575,7 +577,7 @@ public:
 <!--
  *  co-classes
 -->
-<xsl:template match="class"/>
+<xsl:template match="module/class"/>
 
 
 <!--
@@ -824,7 +826,7 @@ public:
          ancestor-or-self::collection |
          ancestor-or-self::enumerator)[1]/@supportsErrorInfo
     "/>
-    <xsl:variable name="moduleSupportsErrorInfo" select="ancestor::module/@supportsErrorInfo"/>
+    <xsl:variable name="librarySupportsErrorInfo" select="ancestor::library/@supportsErrorInfo"/>
     <xsl:choose>
         <xsl:when test="$ifaceSupportsErrorInfo">
             <xsl:call-template name="composeFetchErrorInfo">
@@ -832,9 +834,9 @@ public:
                 <xsl:with-param name="mode" select="$mode"/>
             </xsl:call-template>
         </xsl:when>
-        <xsl:when test="$moduleSupportsErrorInfo">
+        <xsl:when test="$librarySupportsErrorInfo">
             <xsl:call-template name="composeFetchErrorInfo">
-                <xsl:with-param name="supports" select="string($moduleSupportsErrorInfo)"/>
+                <xsl:with-param name="supports" select="string($librarySupportsErrorInfo)"/>
                 <xsl:with-param name="mode" select="$mode"/>
             </xsl:call-template>
         </xsl:when>
@@ -915,8 +917,8 @@ public:
         </xsl:when>
         <!-- enum types -->
         <xsl:when test="
-            (ancestor::module/enum[@name=current()/@type]) or
-            (ancestor::module/if[@target=$self_target]/enum[@name=current()/@type])
+            (ancestor::library/enum[@name=current()/@type]) or
+            (ancestor::library/if[@target=$self_target]/enum[@name=current()/@type])
         ">
             <xsl:choose>
                 <xsl:when test="$isIn">
@@ -945,14 +947,14 @@ public:
         <!-- interface types -->
         <xsl:when test="
             @type='$unknown' or
-            ((ancestor::module/enumerator[@name=current()/@type]) or
-             (ancestor::module/if[@target=$self_target]/enumerator[@name=current()/@type])
+            ((ancestor::library/enumerator[@name=current()/@type]) or
+             (ancestor::library/if[@target=$self_target]/enumerator[@name=current()/@type])
             ) or
-            ((ancestor::module/interface[@name=current()/@type]) or
-             (ancestor::module/if[@target=$self_target]/interface[@name=current()/@type])
+            ((ancestor::library/interface[@name=current()/@type]) or
+             (ancestor::library/if[@target=$self_target]/interface[@name=current()/@type])
             ) or
-            ((ancestor::module/collection[@name=current()/@type]) or
-             (ancestor::module/if[@target=$self_target]/collection[@name=current()/@type])
+            ((ancestor::library/collection[@name=current()/@type]) or
+             (ancestor::library/if[@target=$self_target]/collection[@name=current()/@type])
             )
         ">
             <xsl:choose>
@@ -1106,22 +1108,22 @@ public:
                     <xsl:choose>
                         <!-- enum types -->
                         <xsl:when test="
-                            (ancestor::module/enum[@name=current()]) or
-                            (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+                            (ancestor::library/enum[@name=current()]) or
+                            (ancestor::library/if[@target=$self_target]/enum[@name=current()])
                         ">
                             <xsl:value-of select="concat('CEnums::',string(.))"/>
                         </xsl:when>
                         <!-- custom interface types -->
                         <xsl:when test="
                             (name(current())='enumerator' and
-                             ((ancestor::module/enumerator[@name=current()]) or
-                              (ancestor::module/if[@target=$self_target]/enumerator[@name=current()]))
+                             ((ancestor::library/enumerator[@name=current()]) or
+                              (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
                             ) or
-                            ((ancestor::module/interface[@name=current()]) or
-                             (ancestor::module/if[@target=$self_target]/interface[@name=current()])
+                            ((ancestor::library/interface[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/interface[@name=current()])
                             ) or
-                            ((ancestor::module/collection[@name=current()]) or
-                             (ancestor::module/if[@target=$self_target]/collection[@name=current()])
+                            ((ancestor::library/collection[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/collection[@name=current()])
                             )
                         ">
                             <xsl:value-of select="concat('C',substring(.,2))"/>
@@ -1219,8 +1221,8 @@ public:
                     <xsl:choose>
                         <!-- enum types initialized with 0 -->
                         <xsl:when test="
-                            (ancestor::module/enum[@name=current()]) or
-                            (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+                            (ancestor::library/enum[@name=current()]) or
+                            (ancestor::library/if[@target=$self_target]/enum[@name=current()])
                         ">
                             <xsl:value-of select="concat(' = (CEnums::',string(.),') 0')"/>
                         </xsl:when>
@@ -1244,18 +1246,18 @@ public:
         <xsl:when test="
             .='string' or
             .='wstring' or
-            ((ancestor::module/enum[@name=current()]) or
-             (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+            ((ancestor::library/enum[@name=current()]) or
+             (ancestor::library/if[@target=$self_target]/enum[@name=current()])
             ) or
             .='$unknown' or
-            ((ancestor::module/enumerator[@name=current()]) or
-             (ancestor::module/if[@target=$self_target]/enumerator[@name=current()])
+            ((ancestor::library/enumerator[@name=current()]) or
+             (ancestor::library/if[@target=$self_target]/enumerator[@name=current()])
             ) or
-            ((ancestor::module/interface[@name=current()]) or
-             (ancestor::module/if[@target=$self_target]/interface[@name=current()])
+            ((ancestor::library/interface[@name=current()]) or
+             (ancestor::library/if[@target=$self_target]/interface[@name=current()])
             ) or
-            ((ancestor::module/collection[@name=current()]) or
-             (ancestor::module/if[@target=$self_target]/collection[@name=current()])
+            ((ancestor::library/collection[@name=current()]) or
+             (ancestor::library/if[@target=$self_target]/collection[@name=current()])
             )
         ">
             <xsl:choose>

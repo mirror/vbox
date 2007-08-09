@@ -70,9 +70,13 @@
 <xsl:template match="/idl">
     <xsl:text>
 /*
-# DO NOT EDIT! This is a generated file.
-# Generated from: src/VBox/Main/idl/VirtualBox.xidl (VirtualBox's interface definitions in XML)
-# Generator: src/VBox/Main/idl/xpidl.xsl
+ *  DO NOT EDIT! This is a generated file.
+ *
+ *  XPCOM IDL (XPIDL) definition for VirualBox Main API (COM interfaces)
+ *  generated from XIDL (XML interface definition).
+ *
+ *  Source    : src/VBox/Main/idl/VirtualBox.xidl
+ *  Generator : src/VBox/Main/idl/xpidl.xsl
  */
 
 #include "nsISupports.idl"
@@ -155,7 +159,7 @@
 <!--
  *  libraries
 -->
-<xsl:template match="module">
+<xsl:template match="library">
     <!-- forward declarations -->
     <xsl:apply-templates select="if | interface | collection | enumerator" mode="forward"/>
     <xsl:text>&#x0A;</xsl:text>
@@ -260,7 +264,7 @@
 <!--
  *  co-classes
 -->
-<xsl:template match="class">
+<xsl:template match="module/class">
     <!-- class and contract id -->
     <xsl:text>%{C++&#x0A;</xsl:text>
     <xsl:text>#define NS_</xsl:text>
@@ -558,22 +562,22 @@
                     <xsl:choose>
                         <!-- enum types -->
                         <xsl:when test="
-                            (ancestor::module/enum[@name=current()]) or
-                            (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+                            (ancestor::library/enum[@name=current()]) or
+                            (ancestor::library/if[@target=$self_target]/enum[@name=current()])
                         ">
                             <xsl:text>PRUint32</xsl:text>
                         </xsl:when>
                         <!-- custom interface types -->
                         <xsl:when test="
                             (name(current())='enumerator' and
-                             ((ancestor::module/enumerator[@name=current()]) or
-                              (ancestor::module/if[@target=$self_target]/enumerator[@name=current()]))
+                             ((ancestor::library/enumerator[@name=current()]) or
+                              (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
                             ) or
-                            ((ancestor::module/interface[@name=current()]) or
-                             (ancestor::module/if[@target=$self_target]/interface[@name=current()])
+                            ((ancestor::library/interface[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/interface[@name=current()])
                             ) or
-                            ((ancestor::module/collection[@name=current()]) or
-                             (ancestor::module/if[@target=$self_target]/collection[@name=current()])
+                            ((ancestor::library/collection[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/collection[@name=current()])
                             )
                         ">
                             <xsl:value-of select="."/>
