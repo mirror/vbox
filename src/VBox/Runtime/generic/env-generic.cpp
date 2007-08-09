@@ -129,12 +129,16 @@ RTDECL(int) RTEnvDestroy(RTENV Env)
  */
 RTDECL(int) RTEnvClone(PRTENV pEnv, char const *const *apszEnv)
 {
+#ifndef RT_OS_L4  /* So far, our L4 libraries do not include environment support. */
     if (apszEnv == NULL)
         apszEnv = environ;
 
     /* count the number of varialbes to clone */
     size_t cEnv = 0;
     for (; apszEnv[cEnv]; ++cEnv) {}
+#else
+    size_t cEnv = 0;
+#endif
 
     struct RTENVINTERNAL *pIntEnv;
 
@@ -142,6 +146,7 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, char const *const *apszEnv)
     if (RT_FAILURE(rc))
         return rc;
 
+#ifndef RT_OS_L4
     for (size_t i = 0; i < cEnv; ++i)
     {
         char *pszVar = RTStrDup(environ[i]);
@@ -154,6 +159,7 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, char const *const *apszEnv)
         pIntEnv->apszEnv[i] = pszVar;
         ++pIntEnv->cCount;
     }
+#endif
 
     if (RT_SUCCESS(rc))
     {
