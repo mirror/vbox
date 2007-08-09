@@ -4961,28 +4961,26 @@ static int handleShowVDIInfo(int argc, char *argv[],
         CHECK_ERROR_RET (hardDisk, COMGETTER(Accessible)(&accessible), 1);
         RTPrintf("Accessible:           %s\n", accessible ? "yes" : "no");
 
-        if (accessible)
-        {
-            Bstr description;
-            hardDisk->COMGETTER(Description)(description.asOutParam());
-            if (description)
-            {
-                RTPrintf("Description:          %lS\n", description.raw());
-            }
-
-            ULONG64 size;
-            hardDisk->COMGETTER(Size)(&size);
-            RTPrintf("Size:                 %llu MBytes\n", size);
-            ULONG64 actualSize;
-            hardDisk->COMGETTER(ActualSize)(&actualSize);
-            RTPrintf("Current size on disk: %llu MBytes\n", actualSize >> 20);
-        }
-        else
+        if (!accessible)
         {
             Bstr err;
             CHECK_ERROR_RET (hardDisk, COMGETTER(LastAccessError)(err.asOutParam()), 1);
             RTPrintf("Access Error:         %lS\n", err.raw());
         }
+
+        Bstr description;
+        hardDisk->COMGETTER(Description)(description.asOutParam());
+        if (description)
+        {
+            RTPrintf("Description:          %lS\n", description.raw());
+        }
+
+        ULONG64 size;
+        hardDisk->COMGETTER(Size)(&size);
+        RTPrintf("Size:                 %llu MBytes\n", size);
+        ULONG64 actualSize;
+        hardDisk->COMGETTER(ActualSize)(&actualSize);
+        RTPrintf("Current size on disk: %llu MBytes\n", actualSize >> 20);
 
         HardDiskType_T type;
         hardDisk->COMGETTER(Type)(&type);
