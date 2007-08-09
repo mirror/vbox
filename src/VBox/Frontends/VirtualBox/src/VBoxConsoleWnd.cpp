@@ -2418,7 +2418,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 
     /* Set the current visible region and clean the previous */
     SetWindowRgn (winId(), newReg, FALSE);
-    ValidateRgn (winId(), newReg);
+    RedrawWindow (winId(), NULL, newReg, RDW_INVALIDATE | RDW_UPDATENOW);
     RedrawWindow (NULL, NULL, oldReg, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 
     mPrevRegion = aRegion;
