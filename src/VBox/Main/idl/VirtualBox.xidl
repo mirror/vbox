@@ -8,22 +8,37 @@
  * by COM/XPCOM and web service interfaces.
  *
  * From this document, the build system generates several files
- * via XSLT that are then used during the build process:
+ * via XSLT that are then used during the build process.
  *
- *   -  out/<platform>/bin/sdk/idl/VirtualBox[_XPCOM].idl, a
- *      COM/XPCOM interface definition file (IDL)
+ * Below is the list of XSL templates that operate on this file and
+ * output files they generate. These XSL templates must be updated
+ * whenever the schema of this file changes:
  *
- *   -  out/<platform>/bin/sdk/include/VirtualBox[_XPCOM].h, which
- *      gets included from the include/VBox/com/VirtualBox.h
- *      wrapper, to allow clients to access the COM/XPCOM API;
+ * 1. src/VBox/Main/idl/midl.xsl =>
+ *    out/<platform>/bin/sdk/idl/VirtualBox.idl
+ *    (MS COM interface definition file for Main API)
+ * 
+ * 2. src/VBox/Main/idl/xpidl.xsl =>
+ *    out/<platform>/bin/sdk/idl/VirtualBox_XPCOM.idl
+ *    (XPCOM interface definition file for Main API)
  *
- *   -  also, another intermediate file that is then used to
- *      produce the official Doxygen documentation of the API.
+ * 3. src/VBox/Main/idl/doxygen.xsl =>
+ *    out/<platform>/obj/src/VBox/Main/VirtualBox.idl
+ *    (pseudo-IDL for Doxygen to generate the official Main API
+ *     documentation)
  *
- *   -  a lot of files for the web service by XSLT stylesheets
- *      in the ../webservice directory; the targets include a
- *      WSDL file that describes the web service and C++ method
- *      mappers that map SOAP messages to COM calls.
+ * 4. src/VBox/Main/idl/webservice/*.xsl =>
+ *    a bunch of WSDL and C++ files
+ *    (VirtualBox web service sources and SOAP mappers)
+ *
+ * 5. src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl =>
+ *    out/<platform>/obj/src/VBox/Frontends/VirtualBox/VirtualBox/include/COMWrappers.h
+ *    (smart Qt-based C++ wrapper classes for COM interfaces
+ *     of the Main API)
+ *
+ * 6. src/VBox/Installer/win32/VirtualBox_TypeLib.xsl =>
+ *    out/<platform>/obj/src/VBox/Installer/win32/VirtualBox_TypeLib.wxi
+ *    (Main API TypeLib block for the WiX installer)
  *
      Copyright (C) 2006-2007 innotek GmbH
     
@@ -66,11 +81,12 @@
   </cpp>
 </if>
 
-<module
+<library
    name="VirtualBox"
    uuid="46137EEC-703B-4fe5-AFD4-7C9BBBBA0259"
    version="1.3"
    desc="innotek VirtualBox Type Library"
+   appUuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
    supportsErrorInfo="yes"
 >
 
@@ -1607,11 +1623,6 @@
     </method>
 
   </interface>
-
-  <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
-         namespace="virtualbox.org">
-    <interface name="IVirtualBox" default="yes"/>
-  </class>
 
   <!--
   // IMachine
@@ -8083,11 +8094,6 @@
 
   </interface>
 
-  <class name="Session" uuid="3C02F46D-C9D2-4f11-A384-53F0CF917214"
-         namespace="virtualbox.org">
-    <interface name="ISession" default="yes"/>
-  </class>
-
 <if target="wsdl">
 
   <!--
@@ -8120,6 +8126,20 @@
 
 </if>
 
-</module>
+  <module name="VBoxSVC" context="LocalServer">
+    <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
+           namespace="virtualbox.org">
+      <interface name="IVirtualBox" default="yes"/>
+    </class>
+  </module>
+
+  <module name="VBoxC" context="InprocServer" threadingModel="Free">
+    <class name="Session" uuid="3C02F46D-C9D2-4f11-A384-53F0CF917214"
+           namespace="virtualbox.org">
+      <interface name="ISession" default="yes"/>
+    </class>
+  </module>
+
+</library>
 
 </idl>

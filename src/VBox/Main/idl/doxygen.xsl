@@ -268,11 +268,17 @@ owns the object will most likely fail or crash your application.
 -->
 <xsl:template match="/idl">
 /*
- *  DO NOT EDIT.
+ *  DO NOT EDIT! This is a generated file.
  *
- *  This IDL is automatically generated from the generic interface definition
- *  using some generic OMG IDL-like syntax SOLELY for the purpose of generating
- *  the documentation using Doxygen and is not syntactically valid.
+ *  Doxygen IDL definition for VirualBox Main API (COM interfaces)
+ *  generated from XIDL (XML interface definition).
+ *
+ *  Source    : src/VBox/Main/idl/VirtualBox.xidl
+ *  Generator : src/VBox/Main/idl/doxygen.xsl
+ *
+ *  This IDL is generated using some generic OMG IDL-like syntax SOLELY
+ *  for the purpose of generating the documentation using Doxygen and
+ *  is not syntactically valid.
  *
  *  DO NOT USE THIS HEADER IN ANY OTHER WAY!
  */
@@ -339,7 +345,7 @@ owns the object will most likely fail or crash your application.
 <!--
  *  libraries
 -->
-<xsl:template match="module">
+<xsl:template match="library">
     <!-- all enums go first -->
     <xsl:apply-templates select="enum | if/enum"/>
     <!-- everything else but enums -->
@@ -419,7 +425,7 @@ owns the object will most likely fail or crash your application.
 <!--
  *  co-classes
 -->
-<xsl:template match="class">
+<xsl:template match="module/class">
     <!-- class and contract id: later -->
     <!-- CLSID_xxx declarations for XPCOM, for compatibility with Win32: later -->
 </xsl:template>
@@ -632,22 +638,22 @@ owns the object will most likely fail or crash your application.
                     <xsl:choose>
                         <!-- enum types -->
                         <xsl:when test="
-                            (ancestor::module/enum[@name=current()]) or
-                            (ancestor::module/if[@target=$self_target]/enum[@name=current()])
+                            (ancestor::library/enum[@name=current()]) or
+                            (ancestor::library/if[@target=$self_target]/enum[@name=current()])
                         ">
                             <xsl:value-of select="."/>
                         </xsl:when>
                         <!-- custom interface types -->
                         <xsl:when test="
                             (name(current())='enumerator' and
-                             ((ancestor::module/enumerator[@name=current()]) or
-                              (ancestor::module/if[@target=$self_target]/enumerator[@name=current()]))
+                             ((ancestor::library/enumerator[@name=current()]) or
+                              (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
                             ) or
-                            ((ancestor::module/interface[@name=current()]) or
-                             (ancestor::module/if[@target=$self_target]/interface[@name=current()])
+                            ((ancestor::library/interface[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/interface[@name=current()])
                             ) or
-                            ((ancestor::module/collection[@name=current()]) or
-                             (ancestor::module/if[@target=$self_target]/collection[@name=current()])
+                            ((ancestor::library/collection[@name=current()]) or
+                             (ancestor::library/if[@target=$self_target]/collection[@name=current()])
                             )
                         ">
                             <xsl:value-of select="."/>
