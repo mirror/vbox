@@ -990,7 +990,7 @@ int main (int argc, char **argv)
 #ifdef RT_OS_OS2
 
     /* nothing to do here, the process is supposed to be already
-     * started daemonized when it is necessary */  
+     * started daemonized when it is necessary */
     NOREF(fDaemonize);
 
 #else // ifdef RT_OS_OS2
@@ -1046,6 +1046,22 @@ int main (int argc, char **argv)
         {
             printf("ERROR: setsid() failed (errno = %d)\n", errno);
             return 1;
+        }
+
+        /* Need to do another for to get rid of the session leader status.
+         * Otherwise any accidentally opened tty will automatically become a
+         * controlling tty for the daemon process. */
+        childpid = fork();
+        if (childpid == -1)
+        {
+            printf("ERROR: second fork() failed (errno = %d)\n", errno);
+            return 1;
+        }
+
+        if (childpid != 0)
+        {
+            /* we're the parent process, just a dummy so terminate now */
+            exit(0);
         }
 
         /* Redirect standard i/o streams to /dev/null */
