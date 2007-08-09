@@ -76,6 +76,10 @@ public:
 
     void installGuestAdditionsFrom (const QString &aSource);
 
+#ifdef Q_WS_WIN32
+    void setMask (const QRegion &aRegion);
+#endif
+
 public slots:
 
 protected:
@@ -282,6 +286,10 @@ private:
     QPoint normal_pos;
     QSize normal_size;
     QSize prev_min_size;
+
+#ifdef Q_WS_WIN32
+    QRegion mPrevRegion;
+#endif
 
     // variables for dealing with true fullscreen
     bool mIsFullscreen : 1;

@@ -1884,6 +1884,10 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             QApplication::desktop()->availableGeometry (this) :
             QApplication::desktop()->screenGeometry (this);
 
+#ifdef Q_WS_WIN32
+        mPrevRegion = scrGeo;
+#endif
+
         /* hide early to avoid extra flicker */
         hide();
         /* hide all but the central widget containing the console view */
@@ -2388,6 +2392,38 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     if (drv.isOk())
         updateAppearanceOf (DVDStuff);
 }
+
+#ifdef Q_WS_WIN32
+void VBoxConsoleWnd::setMask (const QRegion &aRegion)
+{
+    QRegion diff = mPrevRegion.subtract (aRegion);
+
+    /* Region offset calculation */
+    int fleft = 0, ftop = 0;
+    if (isTopLevel())
+    {
+        ftop = topData()->ftop;
+        fleft = topData()->fleft;
+    }
+
+    /* Visible region calculation */
+    HRGN newReg = CreateRectRgn (0, 0, 0, 0);
+    CombineRgn (newReg, aRegion.handle(), 0, RGN_COPY);
+    OffsetRgn (newReg, fleft, ftop);
+
+    /* Invisible region calculation */
+    HRGN oldReg = CreateRectRgn (0, 0, 0, 0);
+    CombineRgn (oldReg, diff.handle(), 0, RGN_COPY);
+    OffsetRgn (oldReg, fleft, ftop);
+
+    /* Set the current visible region and clean the previous */
+    SetWindowRgn (winId(), newReg, FALSE);
+    ValidateRgn (winId(), newReg);
+    RedrawWindow (NULL, NULL, oldReg, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+
+    mPrevRegion = aRegion;
+}
+#endif
 
 /**
  *  Prepares the "Mount Floppy..." menu by populating the existent host
