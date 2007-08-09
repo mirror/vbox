@@ -2256,7 +2256,7 @@ HRESULT Host::checkUSBProxyService()
         Assert (VBOX_FAILURE (mUSBProxyService->getLastError()));
         if (mUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
             return setError (E_FAIL,
-                tr ("Could not load the Host USB Proxy Service (%Vrc)."
+                tr ("Could not load the Host USB Proxy Service (%Vrc). "
                     "The service might be not installed on the host computer"),
                 mUSBProxyService->getLastError());
         else
