@@ -23,6 +23,7 @@
 #include "VBGLInternal.h"
 #include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/alloca.h>
 
 /* These functions can be only used by VBoxGuest. */
 
@@ -127,7 +128,10 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     int rc;
 
     if (!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS)
+    {
+        AssertFailed();
         return VERR_INVALID_PARAMETER;
+    }
 
     dprintf (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
 
@@ -142,8 +146,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
     if (VBOX_SUCCESS(rc))
     {
-        void *apvCtx[VBOX_HGCM_MAX_PARMS];
-        memset (apvCtx, 0, sizeof (apvCtx));
+        void **apvCtx = (void **)alloca(sizeof(void *) * pCallInfo->cParms);
+        memset (apvCtx, 0, sizeof(void *) * pCallInfo->cParms);
 
         /* Initialize request memory */
         pHGCMCall->header.fu32Flags = 0;
@@ -250,6 +254,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                     vbglUnlockLinear (apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
                 }
             }
+            else
+                Assert(!apvCtx[iParm]);
         }
 
         if ((pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_CANCELLED) == 0)
