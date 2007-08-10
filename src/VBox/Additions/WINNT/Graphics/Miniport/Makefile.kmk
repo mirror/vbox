@@ -36,6 +36,7 @@ VBoxVideo_SOURCES     = \
 	VBoxVideo.def \
 	VBoxVideo.rc
 VBoxVideo_LIBS        = \
+	$(PATH_SDK_W2K3DDKX86_LIB)/exsup.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/videoprt.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/ntoskrnl.lib \
