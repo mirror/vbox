@@ -166,19 +166,21 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
             for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
             {
-                if (pParm->type == VMMDevHGCMParmType_LinAddr_Locked_In)
-                    pParm->type = VMMDevHGCMParmType_LinAddr_In;
-                else
-                if (pParm->type == VMMDevHGCMParmType_LinAddr_Locked_Out)
-                    pParm->type = VMMDevHGCMParmType_LinAddr_Out;
-                else
-                if (pParm->type == VMMDevHGCMParmType_LinAddr_Locked)
-                    pParm->type = VMMDevHGCMParmType_LinAddr;
-                else
-                if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
-                    || pParm->type == VMMDevHGCMParmType_LinAddr_Out
-                    || pParm->type == VMMDevHGCMParmType_LinAddr)
+                switch (pParm->type)
                 {
+                case VMMDevHGCMParmType_LinAddr_Locked_In:
+                    pParm->type = VMMDevHGCMParmType_LinAddr_In;
+                    break;
+                case VMMDevHGCMParmType_LinAddr_Locked_Out:
+                    pParm->type = VMMDevHGCMParmType_LinAddr_Out;
+                    break;
+                case VMMDevHGCMParmType_LinAddr_Locked:
+                    pParm->type = VMMDevHGCMParmType_LinAddr;
+                    break;
+
+                case VMMDevHGCMParmType_LinAddr_In:
+                case VMMDevHGCMParmType_LinAddr_Out:
+                case VMMDevHGCMParmType_LinAddr:
                     /* PORTME: When porting this to Darwin and other systems where the entire kernel isn't mapped
                        into every process, all linear address will have to be converted to physical SG lists at
                        this point. Care must also be taken on these guests to not mix kernel and user addresses
@@ -187,13 +189,11 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
                        These kind of problems actually applies to some patched linux kernels too, including older
                        fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
-                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size, (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */);
-                    
-                    if (VBOX_FAILURE (rc))
-                    {
-                        break;
-                    }
+                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size, (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */);                   
+                    break;
                 }
+                if (VBOX_FAILURE (rc))
+                    break;
             }
         }
 
