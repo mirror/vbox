@@ -258,9 +258,9 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
 #ifdef RT_OS_LINUX
                         pszError = N_("VirtualBox can't operate in VMX root mode. "
         		                      "Please disable the KVM kernel extension, recompile "
-                                      "your kernel and reboot. ");
+                                      "your kernel and reboot");
 #else
-                        pszError = N_("VirtualBox can't operate in VMX root mode.");
+                        pszError = N_("VirtualBox can't operate in VMX root mode");
 #endif
                         break;
                     default:
@@ -291,7 +291,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
         {
             rc = VERR_NO_MEMORY;
             vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS,
-                              N_("Failed to allocate %d bytes of contiguous memory for the VM structure!\n"),
+                              N_("Failed to allocate %d bytes of contiguous memory for the VM structure"),
                               RT_ALIGN(sizeof(*pVM), PAGE_SIZE));
             AssertMsgFailed(("Failed to allocate %d bytes of contiguous memory for the VM structure!\n", RT_ALIGN(sizeof(*pVM), PAGE_SIZE)));
         }
