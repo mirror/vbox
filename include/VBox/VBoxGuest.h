@@ -486,8 +486,8 @@ typedef enum
     VMMDevHGCMParmType_64bit      = 2,
     VMMDevHGCMParmType_PhysAddr   = 3,
     VMMDevHGCMParmType_LinAddr    = 4, /**< In and Out */
-    VMMDevHGCMParmType_LinAddr_In = 5, /**< In (read) */
-    VMMDevHGCMParmType_LinAddr_Out= 6, /**< Out (write) */
+    VMMDevHGCMParmType_LinAddr_In = 5, /**< In  (read;  host<-guest) */
+    VMMDevHGCMParmType_LinAddr_Out= 6, /**< Out (write; host->guest) */
     VMMDevHGCMParmType_SizeHack   = 0x7fffffff
 } HGCMFunctionParameterType;
 
