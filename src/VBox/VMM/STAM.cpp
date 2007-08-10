@@ -178,6 +178,7 @@ STAMR3DECL(int) STAMR3Term(PVM pVM)
         pCur = pCur->pNext;
         RTMemFree(pvFree);
     }
+    pVM->stam.s.pHead = NULL;
 
     /* careful here as we might be called twice in on some failure paths (?) */
     if (pVM->stam.s.RWSem != NIL_RTSEMRW)
