@@ -528,7 +528,7 @@ typedef struct
 
 #define VMMDEV_HGCM_CALL_PARMS(a) ((HGCMFunctionParameter *)((char *)a + sizeof (VMMDevHGCMCall)))
 
-#define VBOX_HGCM_MAX_PARMS 256
+#define VBOX_HGCM_MAX_PARMS 32
 
 #endif /* VBOX_HGCM */
 
