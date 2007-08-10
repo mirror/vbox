@@ -52,8 +52,8 @@
 
 // #define DUMPHEAP
 
-#if 1 //def DUMPHEAP
-#define VBGL_PH_dprintf(a) RTLogBackdoorPrintf a
+#ifdef DUMPHEAP
+#define VBGL_PH_dprintf(a) AssertMsg2 a
 #else
 #define VBGL_PH_dprintf(a)
 #endif
@@ -495,8 +495,6 @@ DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p)
         if (pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED)
             physAddr = pBlock->pChunk->physAddr + ((char *)p - (char *)pBlock->pChunk);
     }
-
-    VBGL_PH_dprintf(("VbglPhysHeapGetPhysAddr %x -> %x\n", p, physAddr));
 
     return physAddr;
 }
