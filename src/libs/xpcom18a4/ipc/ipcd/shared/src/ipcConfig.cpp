@@ -69,12 +69,15 @@ void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
     buf    += (sizeof(kDefaultSocketPrefix) - 1);
     bufLen -= (sizeof(kDefaultSocketPrefix) - 1);
 
-    logName = PR_GetEnv("LOGNAME");
+    logName = PR_GetEnv("VBOX_IPC_SOCKETID");
     if (!logName || !logName[0]) {
-        logName = PR_GetEnv("USER");
+        logName = PR_GetEnv("LOGNAME");
         if (!logName || !logName[0]) {
-            LOG(("could not determine username from environment\n"));
-            goto end;
+            logName = PR_GetEnv("USER");
+            if (!logName || !logName[0]) {
+                LOG(("could not determine username from environment\n"));
+                goto end;
+            }
         }
     }
     PL_strncpyz(buf, logName, bufLen);
