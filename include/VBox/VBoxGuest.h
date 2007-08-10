@@ -481,14 +481,17 @@ typedef struct
 
 typedef enum
 {
-    VMMDevHGCMParmType_Invalid    = 0,
-    VMMDevHGCMParmType_32bit      = 1,
-    VMMDevHGCMParmType_64bit      = 2,
-    VMMDevHGCMParmType_PhysAddr   = 3,
-    VMMDevHGCMParmType_LinAddr    = 4, /**< In and Out */
-    VMMDevHGCMParmType_LinAddr_In = 5, /**< In  (read;  host<-guest) */
-    VMMDevHGCMParmType_LinAddr_Out= 6, /**< Out (write; host->guest) */
-    VMMDevHGCMParmType_SizeHack   = 0x7fffffff
+    VMMDevHGCMParmType_Invalid            = 0,
+    VMMDevHGCMParmType_32bit              = 1,
+    VMMDevHGCMParmType_64bit              = 2,
+    VMMDevHGCMParmType_PhysAddr           = 3,
+    VMMDevHGCMParmType_LinAddr            = 4, /**< In and Out */
+    VMMDevHGCMParmType_LinAddr_In         = 5, /**< In  (read;  host<-guest) */
+    VMMDevHGCMParmType_LinAddr_Out        = 6, /**< Out (write; host->guest) */
+    VMMDevHGCMParmType_LinAddr_Locked     = 7, /**< Locked In and Out */
+    VMMDevHGCMParmType_LinAddr_Locked_In  = 8, /**< Locked In  (read;  host<-guest) */
+    VMMDevHGCMParmType_LinAddr_Locked_Out = 9, /**< Locked Out (write; host->guest) */
+    VMMDevHGCMParmType_SizeHack           = 0x7fffffff
 } HGCMFunctionParameterType;
 
 typedef struct _HGCMFUNCTIONPARAMETER
