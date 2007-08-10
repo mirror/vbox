@@ -1293,7 +1293,7 @@
     <message>
         <source>Immutable</source>
         <comment>DiskType</comment>
-        <translation>Неизменный</translation>
+        <translation>Неизменяемый</translation>
     </message>
     <message>
         <source>Writethrough</source>
