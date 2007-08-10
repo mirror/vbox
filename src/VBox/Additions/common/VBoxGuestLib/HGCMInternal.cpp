@@ -146,7 +146,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
     if (VBOX_SUCCESS(rc))
     {
-        void **apvCtx = (void **)alloca(sizeof(void *) * pCallInfo->cParms);
+        void *apvCtx[VBOX_HGCM_MAX_PARMS];
         memset (apvCtx, 0, sizeof(void *) * pCallInfo->cParms);
 
         /* Initialize request memory */
