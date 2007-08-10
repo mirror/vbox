@@ -29,7 +29,7 @@ sf_reg_read_aux (const char *caller, struct sf_glob_info *sf_g,
                  uint64_t pos)
 {
         int rc = vboxCallRead (&client_handle, &sf_g->map, sf_r->handle,
-                               pos, nread, buf);
+                               pos, nread, buf, false /* already locked? */);
         if (VBOX_FAILURE (rc)) {
                 elog3 ("%s: %s: vboxCallRead failed rc=%d\n",
                        caller, __func__, rc);
@@ -154,7 +154,7 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
                 }
 
                 rc = vboxCallWrite (&client_handle, &sf_g->map, sf_r->handle,
-                                    pos, &nwritten, tmp);
+                                    pos, &nwritten, tmp, false /* already locked? */);
                 if (VBOX_FAILURE (rc)) {
                         err = -EPROTO;
                         elog ("vboxCallWrite(%s) failed rc=%d\n",
