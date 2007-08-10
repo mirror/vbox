@@ -392,7 +392,7 @@ DECLVBGL(int) vboxCallRename (PVBSFCLIENT pClient, PVBSFMAP pMap,
 }
 
 DECLVBGL(int) vboxCallRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
-                           uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
+                           uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
     int rc = VINF_SUCCESS;
 
@@ -409,7 +409,7 @@ DECLVBGL(int) vboxCallRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
     data.offset.u.value64               = offset;
     data.cb.type                        = VMMDevHGCMParmType_32bit;
     data.cb.u.value32                   = *pcbBuffer;
-    data.buffer.type                    = VMMDevHGCMParmType_LinAddr_Out;
+    data.buffer.type                    = (fLocked) ? VMMDevHGCMParmType_LinAddr_Locked_Out : VMMDevHGCMParmType_LinAddr_Out;
     data.buffer.u.Pointer.size          = *pcbBuffer;
     data.buffer.u.Pointer.u.linearAddr  = (VBOXGCPTR)pBuffer;
 
@@ -427,7 +427,7 @@ DECLVBGL(int) vboxCallRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
 }
 
 DECLVBGL(int) vboxCallWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
-                            uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
+                            uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
     int rc = VINF_SUCCESS;
 
@@ -444,7 +444,7 @@ DECLVBGL(int) vboxCallWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile
     data.offset.u.value64               = offset;
     data.cb.type                        = VMMDevHGCMParmType_32bit;
     data.cb.u.value32                   = *pcbBuffer;
-    data.buffer.type                    = VMMDevHGCMParmType_LinAddr_In;
+    data.buffer.type                    = (fLocked) ? VMMDevHGCMParmType_LinAddr_Locked_In : VMMDevHGCMParmType_LinAddr_In;
     data.buffer.u.Pointer.size          = *pcbBuffer;
     data.buffer.u.Pointer.u.linearAddr  = (VBOXGCPTR)pBuffer;
 

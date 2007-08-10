@@ -166,6 +166,15 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
             for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
             {
+                if (pParm->type == VMMDevHGCMParmType_LinAddr_Locked_In)
+                    pParm->type = VMMDevHGCMParmType_LinAddr_In;
+                else
+                if (pParm->type == VMMDevHGCMParmType_LinAddr_Locked_Out)
+                    pParm->type = VMMDevHGCMParmType_LinAddr_Out;
+                else
+                if (pParm->type == VMMDevHGCMParmType_LinAddr_Locked)
+                    pParm->type = VMMDevHGCMParmType_LinAddr;
+                else
                 if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
                     || pParm->type == VMMDevHGCMParmType_LinAddr_Out
                     || pParm->type == VMMDevHGCMParmType_LinAddr)
