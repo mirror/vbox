@@ -142,7 +142,7 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, char const *const *apszEnv)
 
     struct RTENVINTERNAL *pIntEnv;
 
-    int rc = rtEnvCreate(&pIntEnv, cEnv);
+    int rc = rtEnvCreate(&pIntEnv, cEnv + 1 /* NULL */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -206,7 +206,7 @@ static int rtEnvInsertVars(struct RTENVINTERNAL *pIntEnv, size_t iAt, size_t cVa
 
     int rc;
 
-    size_t cCapacity = (pIntEnv->cCount + cVars + RTENV_GROW_SIZE - 1)
+    size_t cCapacity = (pIntEnv->cCount + cVars + 1 /* NULL */ + RTENV_GROW_SIZE - 1)
                        / RTENV_GROW_SIZE * RTENV_GROW_SIZE;
     bool needAlloc = cCapacity != pIntEnv->cCapacity;
 
