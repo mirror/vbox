@@ -84,6 +84,7 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
 #ifdef RT_OS_WINDOWS
     PMDL pMdl = (PMDL)pvCtx;
 
+    Assert(pMdl);
     if (pMdl != NULL)
     {
         MmUnlockPages (pMdl);
