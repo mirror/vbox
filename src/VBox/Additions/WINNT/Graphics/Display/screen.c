@@ -487,8 +487,7 @@ DEVINFO *pDevInfo)
     ppdev->flBlue = pVideoModeSelected->BlueMask;
 
 
-    if (    giEngineVersion == DDI_DRIVER_VERSION_NT4
-        ||  giEngineVersion == DDI_DRIVER_VERSION_SP3)
+    if (g_bOnNT40)
     {
         DISPDBG((0,"DISP bInitPDEV pGdiInfo->ulVersion = %x\n", GDI_DRIVER_VERSION));
         pGdiInfo->ulVersion = GDI_DRIVER_VERSION; /* 0x4000 -> NT4 */
