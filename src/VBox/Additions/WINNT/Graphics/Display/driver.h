@@ -140,6 +140,8 @@ typedef struct
 /* The global semaphore handle for all driver instances. */
 extern HSEMAPHORE ghsemHwBuffer;
 
+/* Global DDI version of guest */
+extern ULONG giEngineVersion;
 
 DWORD getAvailableModes(HANDLE, PVIDEO_MODE_INFORMATION *, DWORD *);
 BOOL bInitPDEV(PPDEV, PDEVMODEW, GDIINFO *, DEVINFO *);

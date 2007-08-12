@@ -272,6 +272,7 @@ DRVFN gadrvfn_nt5[] = {
 
 // Required hook bits will be set up according to DDI version
 static ULONG gflHooks = 0;
+       ULONG giEngineVersion = DDI_DRIVER_VERSION_NT4;
 
 #define HOOKS_BMF8BPP  gflHooks
 #define HOOKS_BMF16BPP gflHooks
@@ -305,6 +306,8 @@ PDRVENABLEDATA pded)
     gflHooks = HOOK_BITBLT | HOOK_TEXTOUT | HOOK_FILLPATH |
                HOOK_COPYBITS | HOOK_STROKEPATH | HOOK_LINETO |
                HOOK_PAINT | HOOK_STRETCHBLT | HOOK_SYNCHRONIZEACCESS;
+
+    giEngineVersion = iEngineVersion;
 
 // Fill in as much as we can.
 

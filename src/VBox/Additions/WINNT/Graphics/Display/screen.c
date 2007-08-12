@@ -487,7 +487,18 @@ DEVINFO *pDevInfo)
     ppdev->flBlue = pVideoModeSelected->BlueMask;
 
 
-    pGdiInfo->ulVersion    = GDI_DRIVER_VERSION;
+    if (    giEngineVersion == DDI_DRIVER_VERSION_NT4
+        ||  giEngineVersion == DDI_DRIVER_VERSION_SP3)
+    {
+        DISPDBG((0,"DISP bInitPDEV pGdiInfo->ulVersion = %x\n", GDI_DRIVER_VERSION));
+        pGdiInfo->ulVersion = GDI_DRIVER_VERSION; /* 0x4000 -> NT4 */
+    }
+    else
+    {
+        DISPDBG((0,"DISP bInitPDEV pGdiInfo->ulVersion = %x\n", 0x5000));
+        pGdiInfo->ulVersion = 0x5000;
+    }
+
     pGdiInfo->ulTechnology = DT_RASDISPLAY;
     pGdiInfo->ulHorzSize   = pVideoModeSelected->XMillimeter;
     pGdiInfo->ulVertSize   = pVideoModeSelected->YMillimeter;
