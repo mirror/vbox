@@ -621,7 +621,7 @@ DHPDEV dhpdev)
     {
         ppdev->hsurfScreenBitmap = hsurf;
          
-        if (!EngAssociateSurface(hsurf, ppdev->hdevEng, flHooks))
+        if (!EngAssociateSurface(hsurf, ppdev->hdevEng, 0))
         {
             DISPDBG((0, "DISP DrvEnableSurface failed EngAssociateSurface for ScreenBitmap.\n"));
             goto l_Failure;
