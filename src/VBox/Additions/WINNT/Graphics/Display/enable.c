@@ -272,7 +272,7 @@ DRVFN gadrvfn_nt5[] = {
 
 // Required hook bits will be set up according to DDI version
 static ULONG gflHooks = 0;
-       ULONG giEngineVersion = DDI_DRIVER_VERSION_NT4;
+       BOOL  g_bOnNT40 = TRUE;      /* assume NT4 guest by default */
 
 #define HOOKS_BMF8BPP  gflHooks
 #define HOOKS_BMF16BPP gflHooks
@@ -298,8 +298,6 @@ PDRVENABLEDATA pded)
 // and new engine conventions if told what version of engine it is
 // working with.  For the first version the driver does nothing with it.
 
-    iEngineVersion;
-
     DISPDBG((0, "VBoxDisp::DrvEnableDriver called. iEngine version = %08X\n", iEngineVersion));
 
     // Set up hook flags to intercept all functions which can generate VRDP orders
@@ -307,7 +305,9 @@ PDRVENABLEDATA pded)
                HOOK_COPYBITS | HOOK_STROKEPATH | HOOK_LINETO |
                HOOK_PAINT | HOOK_STRETCHBLT | HOOK_SYNCHRONIZEACCESS;
 
-    giEngineVersion = iEngineVersion;
+    // Set up g_bOnNT40 based on the value in iEngineVersion
+    if(iEngineVersion >= DDI_DRIVER_VERSION_NT5)
+        g_bOnNT40 = FALSE;
 
 // Fill in as much as we can.
 
@@ -621,7 +621,7 @@ DHPDEV dhpdev)
     {
         ppdev->hsurfScreenBitmap = hsurf;
          
-        if (!EngAssociateSurface(hsurf, ppdev->hdevEng, 0))
+        if (!EngAssociateSurface(hsurf, ppdev->hdevEng, flHooks))
         {
             DISPDBG((0, "DISP DrvEnableSurface failed EngAssociateSurface for ScreenBitmap.\n"));
             goto l_Failure;
@@ -644,7 +644,9 @@ DHPDEV dhpdev)
             else
             {
                 ppdev->hsurfScreen = hsurf;
-                
+                /* Must set dhsurf to make sure GDI doesn't ignore our hooks */
+                ppdev->psoScreenBitmap->dhsurf = (DHSURF)hsurf;
+
                 if (!EngAssociateSurface(hsurf, ppdev->hdevEng, flHooks))
                 {
                     DISPDBG((0, "DISP DrvEnableSurface failed EngAssociateSurface for Screen.\n"));
