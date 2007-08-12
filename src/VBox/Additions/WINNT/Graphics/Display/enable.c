@@ -303,8 +303,11 @@ PDRVENABLEDATA pded)
     // Set up hook flags to intercept all functions which can generate VRDP orders
     gflHooks = HOOK_BITBLT | HOOK_TEXTOUT | HOOK_FILLPATH |
                HOOK_COPYBITS | HOOK_STROKEPATH | HOOK_LINETO |
+#ifdef VBOX_NEW_SURFACE_CODE
+               HOOK_PAINT | HOOK_STRETCHBLT | HOOK_SYNCHRONIZE;
+#else
                HOOK_PAINT | HOOK_STRETCHBLT | HOOK_SYNCHRONIZEACCESS;
-
+#endif
     // Set up g_bOnNT40 based on the value in iEngineVersion
     if(iEngineVersion >= DDI_DRIVER_VERSION_NT5)
         g_bOnNT40 = FALSE;
@@ -552,15 +555,16 @@ FLONG       flReserved)
 *
 \**************************************************************************/
 
-HSURF DrvEnableSurface(
-DHPDEV dhpdev)
+HSURF DrvEnableSurface(DHPDEV dhpdev)
 {
     PPDEV ppdev;
     HSURF hsurf;
     SIZEL sizl;
     ULONG ulBitmapType;
     FLONG flHooks;
-
+#ifdef VBOX_NEW_SURFACE_CODE
+    PVBOXSURF psurf;
+#endif
     DISPDBG((0, "DISP DrvEnableSurface called\n"));
         
     // Create engine bitmap around frame buffer.
@@ -606,6 +610,109 @@ DHPDEV dhpdev)
         flHooks = HOOKS_BMF32BPP;
     }
 
+#ifdef VBOX_NEW_SURFACE_CODE
+    psurf = (PVBOXSURF)EngAllocMem(0, sizeof(VBOXSURF), ALLOC_TAG);
+    if (psurf == NULL)
+    {
+        DISPDBG((0, "DrvEnableSurface: failed pdsurf memory allocation\n"));
+        goto l_Failure;
+    }
+    ppdev->pdsurfScreen = psurf;
+    psurf->ppdev        = ppdev;
+
+    //
+    // On NT4.0 we create a GDI managed bitmap as the primay surface. But
+    // on NT5.0 we create a device managed primary.
+    //
+    // On NT4.0 we still use our driver's accleration capabilities by
+    // doing a trick with EngLockSurface on the GDI managed primary.
+    //
+
+    if(g_bOnNT40)
+    {
+        hsurf = (HSURF) EngCreateBitmap(sizl,
+                                        ppdev->lDeltaScreen,
+                                        ulBitmapType,
+                                        (ppdev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
+                                        (PVOID)(ppdev->pjScreen));
+    }
+    else
+    {
+        hsurf = (HSURF)EngCreateDeviceSurface((DHSURF)psurf, sizl,
+                                              ulBitmapType);
+    }
+ 
+    if ( hsurf == 0 )
+    {
+        DISPDBG((0, "DrvEnableSurface: failed EngCreateDeviceBitmap\n"));
+        goto l_Failure;
+    }
+
+    //
+    // On NT5.0 we call EngModifSurface to expose our device surface to
+    // GDI. We cant do this on NT4.0 hence we call EngAssociateSurface.
+    //
+     
+    if(g_bOnNT40)
+    {
+        //
+        // We have to associate the surface we just created with our physical
+        // device so that GDI can get information related to the PDEV when
+        // it's drawing to the surface (such as, for example, the length of 
+        // styles on the device when simulating styled lines).
+        //
+
+        //
+        // On NT4.0 we dont want to be called to Synchronize Access
+        //
+        LONG myflHooks = flHooks;
+        myflHooks &= ~HOOK_SYNCHRONIZE;
+
+        if (!EngAssociateSurface(hsurf, ppdev->hdevEng, myflHooks))
+        {
+            DISPDBG((0, "DrvEnableSurface: failed EngAssociateSurface\n"));
+            goto l_Failure; 
+        }
+
+        //
+        // Jam in the value of dhsurf into screen SURFOBJ. We do this to
+        // make sure the driver acclerates Drv calls we hook and not
+        // punt them back to GDI as the SURFOBJ's dhsurf = 0. 
+        //
+        ppdev->psoScreenBitmap = EngLockSurface(hsurf);
+        if(ppdev->psoScreenBitmap == 0)
+        {
+            DISPDBG((0, "DrvEnableSurface: failed EngLockSurface\n"));
+            goto l_Failure; 
+        }
+
+        ppdev->psoScreenBitmap->dhsurf = (DHSURF)hsurf;
+
+    }
+    else
+    {
+        //
+        // Tell GDI about the screen surface.  This will enable GDI to render
+        // directly to the screen.
+        //
+
+        if ( !EngModifySurface(hsurf,
+                               ppdev->hdevEng,
+                               flHooks,
+                               MS_NOTSYSTEMMEMORY,
+                               (DHSURF)psurf,
+                               ppdev->pjScreen,
+                               ppdev->lDeltaScreen,
+                               NULL))
+        {
+            DISPDBG((0, "DrvEnableSurface: failed EngModifySurface"));
+            goto l_Failure;
+        }
+    }
+    ppdev->hsurfScreen  = hsurf;
+    ppdev->flHooks      = flHooks;
+    ppdev->ulBitmapType = ulBitmapType;
+#else
     hsurf = (HSURF) EngCreateBitmap(sizl,
                                     ppdev->lDeltaScreen,
                                     ulBitmapType,
@@ -660,7 +767,7 @@ DHPDEV dhpdev)
             }
         }
     }
-    
+#endif /* VBOX_NEW_SURFACE_CODE */    
     return ppdev->hsurfScreen;
      
 l_Failure:
@@ -694,13 +801,19 @@ DHPDEV dhpdev)
         EngDeleteSurface(ppdev->hsurfScreen);
         ppdev->hsurfScreen = (HSURF)0;
     }
-    
+#ifdef VBOX_NEW_SURFACE_CODE
+    if (ppdev->pdsurfScreen)
+    {
+        EngFreeMem(ppdev->pdsurfScreen);
+        ppdev->pdsurfScreen = NULL;
+    }
+#else
     if (ppdev->hsurfScreenBitmap)
     {
         EngDeleteSurface(ppdev->hsurfScreenBitmap);
         ppdev->hsurfScreenBitmap = (HSURF)0;
     }
-    
+#endif    
     vDisableSURF(ppdev);
 }
 
@@ -731,6 +844,9 @@ BOOL bEnable)
             return (FALSE);
         }
 
+#ifdef VBOX_NEW_SURFACE_CODE
+        todo
+#endif
         if (pjScreen != ppdev->pjScreen)
         {
             HSURF hsurf;

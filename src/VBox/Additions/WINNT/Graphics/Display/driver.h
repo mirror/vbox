@@ -71,6 +71,11 @@ typedef struct _VRAMLAYOUT
     ULONG cbDisplayInformation;
 } VRAMLAYOUT;
 
+typedef struct
+{
+    PPDEV   ppdev;
+} VBOXSURF, *PVBOXSURF;
+
 struct  _PDEV
 {
     HANDLE  hDriver;                    // Handle to \Device\Screen
@@ -119,6 +124,8 @@ struct  _PDEV
     BOOLEAN bVBoxVideoSupported;
     ULONG iDevice;
     VRAMLAYOUT layout;
+
+    PVBOXSURF   pdsurfScreen;
 
 #ifdef VBOX_WITH_DDRAW
     BOOL             bDdExclusiveMode;
@@ -200,7 +207,7 @@ __inline SURFOBJ *getSurfObj (SURFOBJ *pso)
     
         if (ppdev)
         {
-            if (bIsScreenSurface(pso))
+            if (ppdev->psoScreenBitmap && bIsScreenSurface(pso))
             {
                 pso = ppdev->psoScreenBitmap;
             }
