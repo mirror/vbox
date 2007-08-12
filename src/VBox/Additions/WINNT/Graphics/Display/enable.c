@@ -53,10 +53,7 @@ DRVFN gadrvfn_nt4[] = {
 #endif
 };
 /* Experimental begin */
-BOOL APIENTRY DrvResetPDEV(
-    DHPDEV dhpdevOld,
-    DHPDEV dhpdevNew
-    )
+BOOL APIENTRY DrvResetPDEV(DHPDEV dhpdevOld, DHPDEV dhpdevNew)
 {
     DISPDBG((0, "Experimental %s: %p, %p\n", __FUNCTION__, dhpdevOld, dhpdevNew));
     return TRUE;
@@ -68,8 +65,7 @@ BOOL DrvNineGrid (PVOID x1, PVOID x2, PVOID x3, PVOID x4, PVOID x5, PVOID x6, PV
     return FALSE;
 }
 
-VOID APIENTRY DrvDestroyFont(
-    FONTOBJ *pfo)
+VOID APIENTRY DrvDestroyFont(FONTOBJ *pfo)
 {
     DISPDBG((0, "Experimental %s: %p\n", __FUNCTION__, pfo));
 }
@@ -288,10 +284,7 @@ HSEMAPHORE ghsemHwBuffer = 0;
 *
 \**************************************************************************/
 
-BOOL DrvEnableDriver(
-ULONG iEngineVersion,
-ULONG cj,
-PDRVENABLEDATA pded)
+BOOL DrvEnableDriver(ULONG iEngineVersion, ULONG cj, PDRVENABLEDATA pded)
 {
 // Engine Version is passed down so future drivers can support previous
 // engine versions.  A next generation driver can support both the old
@@ -484,9 +477,7 @@ error_free:
 *
 \**************************************************************************/
 
-VOID DrvCompletePDEV(
-DHPDEV dhpdev,
-HDEV  hdev)
+VOID DrvCompletePDEV(DHPDEV dhpdev, HDEV hdev)
 {
     DISPDBG((0, "VBoxDisp::DrvCompletePDEV called\n"));
     ((PPDEV) dhpdev)->hdevEng = hdev;
@@ -500,8 +491,7 @@ HDEV  hdev)
 *
 \**************************************************************************/
 
-VOID DrvDisablePDEV(
-DHPDEV dhpdev)
+VOID DrvDisablePDEV(DHPDEV dhpdev)
 {
     DISPDBG((0, "VBoxDisp::DrvDisablePDEV called\n"));
 //    vStopNotificationThread ((PPDEV) dhpdev);
@@ -520,13 +510,11 @@ DHPDEV dhpdev)
 *
 \**************************************************************************/
 
-BOOL DrvOffset(
-SURFOBJ*    pso,
-LONG        x,
-LONG        y,
-FLONG       flReserved)
+BOOL DrvOffset(SURFOBJ *pso, LONG x, LONG y, FLONG flReserved)
 {
     PDEV*   ppdev = (PDEV*) pso->dhpdev;
+
+    DISPDBG((0, "VBoxDisp::DrvOffset %x %x %x\n", x, y, flReserved));
 
     // Add back last offset that we subtracted.  I could combine the next
     // two statements, but I thought this was more clear.  It's not
@@ -784,8 +772,7 @@ l_Failure:
 *
 \**************************************************************************/
 
-VOID DrvDisableSurface(
-DHPDEV dhpdev)
+VOID DrvDisableSurface(DHPDEV dhpdev)
 {
     PPDEV ppdev = (PPDEV)dhpdev;
     
@@ -824,9 +811,7 @@ DHPDEV dhpdev)
 *
 \**************************************************************************/
 
-BOOL DrvAssertMode(
-DHPDEV dhpdev,
-BOOL bEnable)
+BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
 {
     PPDEV   ppdev = (PPDEV) dhpdev;
     ULONG   ulReturn;
@@ -934,11 +919,7 @@ BOOL bEnable)
 *
 \**************************************************************************/
 
-ULONG DrvGetModes(
-HANDLE hDriver,
-ULONG cjSize,
-DEVMODEW *pdm)
-
+ULONG DrvGetModes(HANDLE hDriver, ULONG cjSize, DEVMODEW *pdm)
 {
 
     DWORD cModes;
@@ -1038,10 +1019,9 @@ DEVMODEW *pdm)
 
 }
 
-VOID DrvSynchronize(
-IN DHPDEV dhpdev,
-IN RECTL *prcl)
+VOID DrvSynchronize(IN DHPDEV dhpdev,IN RECTL *prcl)
 {
+    DISPDBG((0, "VBoxDisp::DrvSynchronize\n"));
 }
 
 /******************************Public*Routine******************************\
