@@ -218,6 +218,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , normal_wflags (getWFlags())
     , was_max (false)
     , console_style (0)
+    , mIsOpenViewFinished (false)
     , mIsFirstTimeStarted (false)
     , mIsAutoSaveMedia (true)
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -992,6 +993,11 @@ void VBoxConsoleWnd::finalizeOpenView()
     }
 #endif
 
+    /* If seamless mode should be enabled then check if it is enabled
+     * currently and re-enable it if seamless is supported */
+    if (vmSeamlessAction->isOn() && mIsSeamlessSupported)
+        vmSeamless (true);
+    mIsOpenViewFinished = true;
     LogFlowFuncLeave();
 }
 
@@ -2852,13 +2858,15 @@ void VBoxConsoleWnd::updateMouseState (int state)
 
 void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
                                            bool aActive,
-                                           bool aSeamless)
+                                           bool aSeamlessSupported)
 {
     vmAutoresizeGuestAction->setEnabled (aActive);
-    vmSeamlessAction->setEnabled (aSeamless);
-    mIsSeamlessSupported = aSeamless;
-    if (aSeamless && vmSeamlessAction->isOn())
-        vmSeamless (true);
+    vmSeamlessAction->setEnabled (aSeamlessSupported);
+    mIsSeamlessSupported = aSeamlessSupported;
+    /* If seamless mode should be enabled then check if it is enabled
+     * currently and re-enable it if open-view procedure is finished */
+    if (vmSeamlessAction->isOn() && mIsOpenViewFinished)
+        aSeamlessSupported ? vmSeamless (true) : vmSeamless (false);
 
     /* Check the GA version only in case of additions are active */
     if (!aActive)

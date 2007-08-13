@@ -301,6 +301,7 @@ private:
     int console_style;
     QColor erase_color;
 
+    bool mIsOpenViewFinished : 1;
     bool mIsFirstTimeStarted : 1;
     bool mIsAutoSaveMedia : 1;
 
