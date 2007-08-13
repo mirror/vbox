@@ -846,7 +846,11 @@ void VBoxSelectorWnd::vmStart()
     QString env;
 #if defined (Q_WS_X11)
     /* make sure the VM process will start on the same display as the Selector */
-    env.sprintf ("DISPLAY=%s", getenv ("DISPLAY"));
+    {
+        const char *display = getenv ("DISPLAY");
+        if (display)
+            env.sprintf ("DISPLAY=%s", display);
+    }
 #endif
 
     CProgress progress = vbox.OpenRemoteSession (session, id, "gui", env);

@@ -4234,7 +4234,11 @@ static int handleStartVM(int argc, char *argv[],
         Bstr env;
 #ifdef RT_OS_LINUX
         /* make sure the VM process will start on the same display as VBoxManage */
-        env = Utf8StrFmt ("DISPLAY=%s", getenv ("DISPLAY"));
+        {
+            const char *display = getenv ("DISPLAY");
+            if (display)
+                env = Utf8StrFmt ("DISPLAY=%s", display);
+        }
 #endif
         ComPtr<IProgress> progress;
         CHECK_ERROR_RET(virtualBox, OpenRemoteSession(session, uuid, sessionType,
