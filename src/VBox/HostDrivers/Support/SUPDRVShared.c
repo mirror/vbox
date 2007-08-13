@@ -3862,6 +3862,41 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
  */
 int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPagesOut)
 {
+#if defined(USB_NEW_OS_INTERFACE_FOR_LOW)  /* a temp hack */
+    int rc = RTR0MemObjAllocLow(&pMem->u.iprt.MemObj, pMem->cb, true /* executable ring-0 mapping */);
+    if (RT_SUCCESS(rc))
+    {
+        int rc2;
+        rc = RTR0MemObjMapUser(&pMem->u.iprt.MapObjR3, pMem->u.iprt.MemObj, (void *)-1, 0,
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+        if (RT_SUCCESS(rc))
+        {
+            pMem->eType = MEMREF_TYPE_LOW;
+            pMem->pvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
+            pMem->pvR3 = (RTR3PTR)RTR0MemObjAddress(pMem->u.iprt.MapObjR3);
+            if (!rc)
+            {
+                size_t  cPages = pMem->cb >> PAGE_SHIFT;
+                size_t  iPage;
+                for (iPage = 0; iPage < cPages; iPage++)
+                {
+                    paPagesOut[iPage].Phys = RTR0MemObjGetPagePhysAddr(pMem->u.iprt.MemObj, iPage);
+                    paPagesOut[iPage].uReserved = 0;
+                    AssertMsg(!(paPagesOut[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPagesOut[iPage].Phys));
+                }
+                *ppvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
+                *ppvR3 = (RTR3PTR)RTR0MemObjAddress(pMem->u.iprt.MapObjR3);
+                return 0;
+            }
+
+            rc2 = RTR0MemObjFree(pMem->u.iprt.MapObjR3, false);
+            AssertRC(rc2);
+        }
+
+        rc2 = RTR0MemObjFree(pMem->u.iprt.MemObj, false);
+        AssertRC(rc2);
+    }
+#else
     RTHCPHYS HCPhys;
     int rc = supdrvOSContAllocOne(pMem, ppvR0, ppvR3, &HCPhys);
     if (!rc)
@@ -3874,6 +3909,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
         }
     }
     return rc;
+#endif
 }
 
 
@@ -3883,8 +3919,21 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
  * @param   pMem    Memory reference record of the memory to be freed.
  */
 void VBOXCALL supdrvOSLowFreeOne(PSUPDRVMEMREF pMem)
-{
+{                               
+# if defined(USB_NEW_OS_INTERFACE_FOR_LOW)
+    if (pMem->u.iprt.MapObjR3)
+    {
+        int rc = RTR0MemObjFree(pMem->u.iprt.MapObjR3, false);
+        AssertRC(rc); /** @todo figure out how to handle this. */
+    }
+    if (pMem->u.iprt.MemObj)
+    {
+        int rc = RTR0MemObjFree(pMem->u.iprt.MemObj, false);
+        AssertRC(rc); /** @todo figure out how to handle this. */
+    }
+# else
     supdrvOSContFreeOne(pMem);
+# endif
 }
 #endif /* !SUPDRV_OS_HAVE_LOW */
 
