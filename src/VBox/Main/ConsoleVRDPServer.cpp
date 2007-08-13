@@ -88,6 +88,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnStateChange)(MachineState_T machineState)
     {
         return S_OK;
@@ -98,13 +103,48 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+    STDMETHOD(OnDVDDriveChange)()
     {
         return S_OK;
     }
 
-    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *device, BOOL attached,
-                                      IVirtualBoxErrorInfo *message)
+    STDMETHOD(OnFloppyDriveChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnVRDPServerChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnUSBControllerChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
+                                      IVirtualBoxErrorInfo *aError)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
     {
         return S_OK;
     }

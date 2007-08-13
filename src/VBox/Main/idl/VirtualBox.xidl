@@ -366,6 +366,21 @@
     <const name="ClipBidirectional"    value="3"/>
   </enum>
 
+  <enum
+     name="Scope"
+     uuid="7c91096e-499e-4eca-9f9b-9001438d7855"
+     >
+    <desc>
+      Scope of the operation.
+      
+      A generic enumeration used in various methods to define the action or
+      argument scope.
+    </desc>
+    <const name="GlobalScope"         value="0"/>
+    <const name="MachineScope"        value="1"/>
+    <const name="SessionScope"        value="2"/>
+  </enum>
+
   <!--
   // IVirtualBoxErrorInfo
   /////////////////////////////////////////////////////////////////////////
@@ -752,6 +767,11 @@
         New shared folders are added to the collection using
         <link to="#createSharedFolder"/>. Existing shared folders can be
         removed using <link to="#removeSharedFolder"/>.
+
+        <note>
+          In the current version of the product, global shared folders are not
+          implemented and therefore this collection is always empty.
+        </note>
       </desc>
     </attribute>
 
@@ -2712,7 +2732,7 @@
 
   <interface
      name="IConsoleCallback" extends="$unknown"
-     uuid="ebd0c5f2-7b11-4508-803f-012099caee03"
+     uuid="13dfbef3-b74d-487d-bada-2304529aefa6"
      wsmap="suppress"
      >
 
@@ -2791,8 +2811,8 @@
 
     <method name="onKeyboardLedsChange">
       <desc>
-        Notification of the host if the guest executed the KBD_CMD_SET_LEDS
-        command to alter the state of the keyboard LEDs.
+        Notification when the guest OS executes the KBD_CMD_SET_LEDS command
+        to alter the state of the keyboard LEDs.
       </desc>
       <param name="numLock" type="boolean" dir="in"/>
       <param name="capsLock" type="boolean" dir="in"/>
@@ -2810,7 +2830,79 @@
     <method name="onAdditionsStateChange">
       <desc>
         Notification when a Guest Additions property changes.
-        Interested callees should query IGuest's properties to
+        Interested callees should query IGuest attributes to
+        find out what has changed.
+      </desc>
+    </method>
+
+    <method name="onDVDDriveChange">
+      <desc>
+        Notification when a property of the
+        virtual <link to="IMachine::DVDDrive">DVD drive</link> changes.
+        Interested callees should use IDVDDrive methods to find out what has
+        changed.
+      </desc>
+    </method>
+
+    <method name="onFloppyDriveChange">
+      <desc>
+        Notification when a property of the
+        virtual <link to="IMachine::FloppyDrive">floppy drive</link> changes.
+        Interested callees should use IFloppyDrive methods to find out what
+        has changed.
+      </desc>
+    </method>
+
+    <method name="onNetworkAdapterChange">
+      <desc>
+        Notification when a property of one of the
+        virtual <link to="IMachine::getNetworkAdapter">network adapters</link>
+        changes.  Interested callees should use INetworkAdapter methods and
+        attributes to find out what has changed.
+      </desc>
+      <param name="networkAdapter" type="INetworkAdapter" dir="in">
+        <desc>Network adapter that is subject to change.</desc>
+      </param>
+    </method>
+
+    <method name="onSerialPortChange">
+      <desc>
+        Notification when a property of one of the
+        virtual <link to="IMachine::getSerialPort">serial ports</link> changes.
+        Interested callees should use ISerialPort methods and attributes
+        to find out what has changed.
+      </desc>
+      <param name="serialPort" type="ISerialPort" dir="in">
+        <desc>Serial port that is subject to change.</desc>
+      </param>
+    </method>
+
+    <method name="onParallelPortChange">
+      <desc>
+        Notification when a property of one of the
+        virtual <link to="IMachine::getParallelPort">parallel ports</link>
+        changes.  Interested callees should use ISerialPort methods and
+        attributes to find out what has changed.
+      </desc>
+      <param name="parallelPort" type="IParallelPort" dir="in">
+        <desc>Parallel port that is subject to change.</desc>
+      </param>
+    </method>
+
+    <method name="onVRDPServerChange">
+      <desc>
+        Notification when a property of the
+        <link to="IMachine::VRDPServer">VRDP server</link> changes.
+        Interested callees should use IVRDPServer methods and attributes to
+        find out what has changed.
+      </desc>
+    </method>
+
+    <method name="onUSBControllerChange">
+      <desc>
+        Notification when a property of the virtual
+        <link to="IMachine::USBController">USB controller</link> changes.
+        Interested callees should use IUSBController methods and attributes to
         find out what has changed.
       </desc>
     </method>
@@ -2850,6 +2942,25 @@
           <tt>null</tt> on success or an error message object on
           failure.
         </desc>
+      </param>
+    </method>
+
+    <method name="onSharedFolderChange">
+      <desc>
+        Notification when a shared folder is added or removed.
+        The @a scope argument defines one of three scopes:
+        <link to="IVirtualBox::sharedFolders">global shared folders</link>
+        (<link to="Scope::GlobalScope">GlobalScope</link>),
+        <link to="IMachine::sharedFolders">permanent shared folders</link> of
+        the machine (<link to="Scope::MachineScope">MachineScope</link>)
+        or <link to="IConsole::sharedFolders">transient shared folders</link>
+        of the machine
+        (<link to="Scope::SessionScope">SessionScope</link>). Interested
+        callees should use query the corresponding collections to find out
+        what has changed.
+      </desc>
+      <param name="scope" type="Scope" dir="in">
+        <desc>Sope of the notification.</desc>
       </param>
     </method>
 

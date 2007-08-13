@@ -434,6 +434,19 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+    {
+        /* Don't bother the guest with NumLock scancodes if he doesn't set the NumLock LED */
+        if (gfGuestNumLockPressed != fNumLock)
+            gcGuestNumLockAdaptions = 2;
+        if (gfGuestCapsLockPressed != fCapsLock)
+            gcGuestCapsLockAdaptions = 2;
+        gfGuestNumLockPressed    = fNumLock;
+        gfGuestCapsLockPressed   = fCapsLock;
+        gfGuestScrollLockPressed = fScrollLock;
+        return S_OK;
+    }
+
     STDMETHOD(OnStateChange)(MachineState_T machineState)
     {
         LogFlow(("OnStateChange: machineState = %d (%s)\n", machineState, GetStateName(machineState)));
@@ -470,21 +483,48 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+    STDMETHOD(OnDVDDriveChange)()
     {
-        /* Don't bother the guest with NumLock scancodes if he doesn't set the NumLock LED */
-        if (gfGuestNumLockPressed != fNumLock)
-            gcGuestNumLockAdaptions = 2;
-        if (gfGuestCapsLockPressed != fCapsLock)
-            gcGuestCapsLockAdaptions = 2;
-        gfGuestNumLockPressed    = fNumLock;
-        gfGuestCapsLockPressed   = fCapsLock;
-        gfGuestScrollLockPressed = fScrollLock;
         return S_OK;
     }
 
-    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *device, BOOL attached,
-                                      IVirtualBoxErrorInfo *message)
+    STDMETHOD(OnFloppyDriveChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnVRDPServerChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnUSBControllerChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnUSBDeviceStateChange) (IUSBDevice *aDevice, BOOL aAttached,
+                                      IVirtualBoxErrorInfo *aError)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
     {
         return S_OK;
     }
