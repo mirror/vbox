@@ -6742,7 +6742,7 @@ Console::setVMRuntimeErrorCallback (PVM pVM, void *pvUser, bool fFatal,
     Console *that = static_cast <Console *> (pvUser);
     AssertReturnVoid (that);
 
-    Utf8Str message = Utf8StrFmt (pszFormat, args);
+    Utf8Str message = Utf8StrFmtVA (pszFormat, args);
 
     LogRel (("Console: VM runtime error: fatal=%RTbool, "
              "errorID=%s message=\"%s\"\n",
