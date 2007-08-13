@@ -27,7 +27,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <VBox/sup.h>
-#ifdef USE_NEW_OS_INTERFACE
+#if defined(USE_NEW_OS_INTERFACE) || defined(USB_NEW_OS_INTERFACE_FOR_LOW)
 # include <iprt/memobj.h>
 # include <iprt/time.h>
 # include <iprt/timer.h>
@@ -423,6 +423,15 @@ typedef struct SUPDRVMEMREF
 # error "Either no target was defined or we haven't ported the driver to the target yet."
 #endif
         } mem;
+#if defined(USB_NEW_OS_INTERFACE_FOR_LOW)
+        struct 
+        {
+            /** The memory object handle. */
+            RTR0MEMOBJ          MemObj;
+            /** The ring-3 mapping memory object handle. */
+            RTR0MEMOBJ          MapObjR3;
+        } iprt;
+#endif
     } u;
 #endif /* !USE_NEW_OS_INTERFACE */
 } SUPDRVMEMREF, *PSUPDRVMEMREF;
