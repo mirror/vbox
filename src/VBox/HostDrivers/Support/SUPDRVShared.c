@@ -656,7 +656,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             if (    pIn->u32MinVersion > SUPDRVIOC_VERSION
                 ||  (pIn->u32MinVersion & 0xffff0000) != (SUPDRVIOC_VERSION & 0xffff0000))
             {
-                OSDBGPRINT(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n", 
+                OSDBGPRINT(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
                             pIn->u32ReqVersion, pIn->u32MinVersion, SUPDRVIOC_VERSION));
                 pOut->u32Cookie         = 0xffffffff;
                 pOut->u32SessionCookie  = 0xffffffff;
@@ -670,14 +670,14 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
 
             /*
              * Fill in return data and be gone.
-             * N.B. The first one to change SUPDRVIOC_VERSION shall makes sure that 
+             * N.B. The first one to change SUPDRVIOC_VERSION shall makes sure that
              *      u32SessionVersion <= u32ReqVersion!
              */
             /** @todo A more secure cookie negotiation? */
             pOut->u32Cookie         = pDevExt->u32Cookie;
             pOut->u32SessionCookie  = pSession->u32Cookie;
             pOut->u32SessionVersion = SUPDRVIOC_VERSION;
-            pOut->u32DriverVersion  = SUPDRVIOC_VERSION; 
+            pOut->u32DriverVersion  = SUPDRVIOC_VERSION;
             pOut->pSession          = pSession;
             pOut->cFunctions        = sizeof(g_aFunctions) / sizeof(g_aFunctions[0]);
             *pcbReturned = sizeof(*pOut);
@@ -2338,7 +2338,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
     OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGip=%p GipMapObjR3\n", rc, (unsigned long)HCPhys, pGip, pSession->GipMapObjR3));
 #else
     dprintf(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)(uintptr_t)pGip));
-#endif 
+#endif
     return rc;
 }
 
@@ -2356,13 +2356,13 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
     int                     rc = 0;
     PSUPDRVDEVEXT           pDevExt = pSession->pDevExt;
 #ifdef DEBUG_DARWIN_GIP
-    OSDBGPRINT(("SUPR0GipUnmap: pSession=%p pGip=%p GipMapObjR3=%p\n", 
-                pSession, 
-                pSession->GipMapObjR3 != NIL_RTR0MEMOBJ ? RTR0MemObjAddress(pSession->GipMapObjR3) : NULL, 
+    OSDBGPRINT(("SUPR0GipUnmap: pSession=%p pGip=%p GipMapObjR3=%p\n",
+                pSession,
+                pSession->GipMapObjR3 != NIL_RTR0MEMOBJ ? RTR0MemObjAddress(pSession->GipMapObjR3) : NULL,
                 pSession->GipMapObjR3));
 #else
     dprintf(("SUPR0GipUnmap: pSession=%p\n", pSession));
-#endif 
+#endif
 
     RTSemFastMutexRequest(pDevExt->mtxGip);
 
@@ -3896,6 +3896,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
         rc2 = RTR0MemObjFree(pMem->u.iprt.MemObj, false);
         AssertRC(rc2);
     }
+    return rc;
 #else
     RTHCPHYS HCPhys;
     int rc = supdrvOSContAllocOne(pMem, ppvR0, ppvR3, &HCPhys);
@@ -3919,7 +3920,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
  * @param   pMem    Memory reference record of the memory to be freed.
  */
 void VBOXCALL supdrvOSLowFreeOne(PSUPDRVMEMREF pMem)
-{                               
+{
 # if defined(USB_NEW_OS_INTERFACE_FOR_LOW)
     if (pMem->u.iprt.MapObjR3)
     {
@@ -4025,8 +4026,8 @@ static int supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
 {
     int rc;
 #ifdef DEBUG_DARWIN_GIP
-    OSDBGPRINT(("supdrvGipDestroy: pDevExt=%p pGip=%p pGipTimer=%p GipMemObj=%p\n", pDevExt, 
-                pDevExt->GipMemObj != NIL_RTR0MEMOBJ ? RTR0MemObjAddress(pDevExt->GipMemObj) : NULL, 
+    OSDBGPRINT(("supdrvGipDestroy: pDevExt=%p pGip=%p pGipTimer=%p GipMemObj=%p\n", pDevExt,
+                pDevExt->GipMemObj != NIL_RTR0MEMOBJ ? RTR0MemObjAddress(pDevExt->GipMemObj) : NULL,
                 pDevExt->pGipTimer, pDevExt->GipMemObj));
 #endif
 
@@ -4153,12 +4154,12 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
 #ifndef USE_NEW_OS_INTERFACE
     /*
      * The problem here is that AMD processors with power management features
-     * may easily end up with different TSCs because the CPUs or even cores 
+     * may easily end up with different TSCs because the CPUs or even cores
      * on the same physical chip run at different frequencies to save power.
      *
-     * It is rumoured that this will be corrected with Barcelona and it's 
-     * expected that this will be indicated by the TscInvariant bit in 
-     * cpuid(0x80000007). So, the "difficult" bit here is to correctly 
+     * It is rumoured that this will be corrected with Barcelona and it's
+     * expected that this will be indicated by the TscInvariant bit in
+     * cpuid(0x80000007). So, the "difficult" bit here is to correctly
      * identify the older CPUs which don't do different frequency and
      * can be relied upon to have somewhat uniform TSC between the cpus.
      */
@@ -4169,7 +4170,7 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
         /* Permit user users override. */
         if (supdrvOSGetForcedAsyncTscMode())
             return SUPGIPMODE_ASYNC_TSC;
-    
+
         /* Check for "AuthenticAMD" */
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
         if (uEAX >= 1 && uEBX == 0x68747541 && uECX == 0x444d4163 && uEDX == 0x69746e65)
