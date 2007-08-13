@@ -506,6 +506,15 @@ public:
      *  of the arguments for the format string.
      *
      *  @param format   printf-like format string (in UTF-8 encoding)
+     *  @param args     list of arguments for the format string
+     */
+    explicit Utf8StrFmt (const char *format, va_list args) { init (format, args); }
+
+    /**
+     *  Constructs a new string given the format string and the list
+     *  of the arguments for the format string.
+     *
+     *  @param format   printf-like format string (in UTF-8 encoding)
      *  @param ...      list of the arguments for the format string
      *
      *  @note  Be extremely careful when passing exactly one argument in the
@@ -520,15 +529,6 @@ public:
         init (format, args);
         va_end (args);
     }
-
-    /**
-     *  Constructs a new string given the format string and the list
-     *  of the arguments for the format string.
-     *
-     *  @param format   printf-like format string (in UTF-8 encoding)
-     *  @param args     list of arguments for the format string
-     */
-    Utf8StrFmt (const char *format, va_list args) { init (format, args); }
 
 private:
 
