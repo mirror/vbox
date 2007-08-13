@@ -371,6 +371,14 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+    {
+        QApplication::postEvent (mView,
+                                 new ModifierKeyChangeEvent (fNumLock, fCapsLock,
+                                                             fScrollLock));
+        return S_OK;
+    }
+
     STDMETHOD(OnStateChange)(MachineState_T machineState)
     {
         LogFlowFunc (("machineState=%d\n", machineState));
@@ -395,22 +403,55 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+    STDMETHOD(OnDVDDriveChange)()
     {
-        QApplication::postEvent (mView,
-                                 new ModifierKeyChangeEvent (fNumLock, fCapsLock,
-                                                             fScrollLock));
+        LogTrace();
         return S_OK;
     }
 
-    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *device, BOOL attached,
-                                      IVirtualBoxErrorInfo *error)
+    STDMETHOD(OnFloppyDriveChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnVRDPServerChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnUSBControllerChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
+                                      IVirtualBoxErrorInfo *aError)
     {
         QApplication::postEvent (mView,
                                  new USBDeviceStateChangeEvent (
-                                     CUSBDevice (device),
-                                     bool (attached),
-                                     CVirtualBoxErrorInfo (error)));
+                                     CUSBDevice (aDevice),
+                                     bool (aAttached),
+                                     CVirtualBoxErrorInfo (aError)));
+        return S_OK;
+    }
+
+    STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
+    {
         return S_OK;
     }
 

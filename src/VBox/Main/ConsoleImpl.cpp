@@ -2044,6 +2044,13 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 
     mSharedFolders.insert (std::make_pair (aName, sharedFolder));
 
+    /* notify console callbacks after the folder is added to the list */
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnSharedFolderChange (Scope_SessionScope);
+    }
+
     return rc;
 }
 
@@ -2089,6 +2096,13 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
     }
 
     mSharedFolders.erase (aName);
+
+    /* notify console callbacks after the folder is removed to the list */
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnSharedFolderChange (Scope_SessionScope);
+    }
 
     return rc;
 }
@@ -2478,8 +2492,18 @@ HRESULT Console::onDVDDriveChange()
         return rc;
     }
 
-    return doDriveChange ("piix3ide", 0, 2, eState, &meDVDState,
-                          Utf8Str (Path).raw(), fPassthrough);
+    rc = doDriveChange ("piix3ide", 0, 2, eState, &meDVDState,
+                        Utf8Str (Path).raw(), fPassthrough);
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnDVDDriveChange();
+    }
+
+    return rc;
 }
 
 
@@ -2569,8 +2593,18 @@ HRESULT Console::onFloppyDriveChange()
         return rc;
     }
 
-    return doDriveChange ("i82078", 0, 0, eState, &meFloppyState,
-                          Utf8Str (Path).raw(), false);
+    rc = doDriveChange ("i82078", 0, 0, eState, &meFloppyState,
+                        Utf8Str (Path).raw(), false);
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnFloppyDriveChange();
+    }
+
+    return rc;
 }
 
 
@@ -2978,7 +3012,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
+HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
 {
     LogFlowThisFunc (("\n"));
 
@@ -2997,33 +3031,50 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
 
     /* Get the properties we need from the adapter */
     BOOL fCableConnected;
-    HRESULT rc = networkAdapter->COMGETTER(CableConnected)(&fCableConnected);
+    HRESULT rc = aNetworkAdapter->COMGETTER(CableConnected) (&fCableConnected);
     AssertComRC(rc);
     if (SUCCEEDED(rc))
     {
         ULONG ulInstance;
-        rc = networkAdapter->COMGETTER(Slot)(&ulInstance);
-        AssertComRC(rc);
-        if (SUCCEEDED(rc))
+        rc = aNetworkAdapter->COMGETTER(Slot) (&ulInstance);
+        AssertComRC (rc);
+        if (SUCCEEDED (rc))
         {
             /*
-             * Find the pcnet instance, get the config interface and update the link state.
+             * Find the pcnet instance, get the config interface and update
+             * the link state.
              */
             PPDMIBASE pBase;
-            int rcVBox = PDMR3QueryDeviceLun(mpVM, "pcnet", (unsigned)ulInstance, 0, &pBase);
-            ComAssertRC(rcVBox);
-            if (VBOX_SUCCESS(rcVBox))
+            int vrc = PDMR3QueryDeviceLun (mpVM, "pcnet", (unsigned) ulInstance,
+                                           0, &pBase);
+            ComAssertRC (vrc);
+            if (VBOX_SUCCESS (vrc))
             {
                 Assert(pBase);
-                PPDMINETWORKCONFIG pINetCfg = (PPDMINETWORKCONFIG)pBase->pfnQueryInterface(pBase, PDMINTERFACE_NETWORK_CONFIG);
+                PPDMINETWORKCONFIG pINetCfg = (PPDMINETWORKCONFIG) pBase->
+                    pfnQueryInterface(pBase, PDMINTERFACE_NETWORK_CONFIG);
                 if (pINetCfg)
                 {
-                    Log(("Console::onNetworkAdapterChange: setting link state to %d\n", fCableConnected));
-                    rcVBox = pINetCfg->pfnSetLinkState(pINetCfg, fCableConnected ? PDMNETWORKLINKSTATE_UP : PDMNETWORKLINKSTATE_DOWN);
-                    ComAssertRC(rcVBox);
+                    Log (("Console::onNetworkAdapterChange: setting link state to %d\n",
+                          fCableConnected));
+                    vrc = pINetCfg->pfnSetLinkState (pINetCfg,
+                                                     fCableConnected ? PDMNETWORKLINKSTATE_UP 
+                                                                     : PDMNETWORKLINKSTATE_DOWN);
+                    ComAssertRC (vrc);
                 }
             }
+
+            if (VBOX_FAILURE (vrc))
+                rc = E_FAIL;
         }
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnNetworkAdapterChange (aNetworkAdapter);
     }
 
     LogFlowThisFunc (("Leaving rc=%#x\n", rc));
@@ -3035,7 +3086,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onSerialPortChange(ISerialPort *serialPort)
+HRESULT Console::onSerialPortChange (ISerialPort *aSerialPort)
 {
     LogFlowThisFunc (("\n"));
 
@@ -3048,12 +3099,24 @@ HRESULT Console::onSerialPortChange(ISerialPort *serialPort)
     if (!mpVM)
         return S_OK;
 
+    HRESULT rc = S_OK;
+
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
 
-    LogFlowThisFunc (("Leaving rc=%#x\n", S_OK));
-    return S_OK;
+    /* nothing to do so far */
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnSerialPortChange (aSerialPort);
+    }
+
+    LogFlowThisFunc (("Leaving rc=%#x\n", rc));
+    return rc;
 }
 
 /**
@@ -3061,7 +3124,7 @@ HRESULT Console::onSerialPortChange(ISerialPort *serialPort)
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onParallelPortChange(IParallelPort *parallelPort)
+HRESULT Console::onParallelPortChange (IParallelPort *aParallelPort)
 {
     LogFlowThisFunc (("\n"));
 
@@ -3074,12 +3137,24 @@ HRESULT Console::onParallelPortChange(IParallelPort *parallelPort)
     if (!mpVM)
         return S_OK;
 
+    HRESULT rc = S_OK;
+
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
 
-    LogFlowThisFunc (("Leaving rc=%#x\n", S_OK));
-    return S_OK;
+    /* nothing to do so far */
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnParallelPortChange (aParallelPort);
+    }
+
+    LogFlowThisFunc (("Leaving rc=%#x\n", rc));
+    return rc;
 }
 
 /**
@@ -3129,6 +3204,14 @@ HRESULT Console::onVRDPServerChange()
         }
     }
 
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnVRDPServerChange();
+    }
+
     return rc;
 }
 
@@ -3150,6 +3233,8 @@ HRESULT Console::onUSBControllerChange()
     if (!mpVM)
         return S_OK;
 
+    HRESULT rc = S_OK;
+
 /// @todo (dmik)
 //  check for the Enabled state and disable virtual USB controller??
 //  Anyway, if we want to query the machine's USB Controller we need to cache
@@ -3161,7 +3246,15 @@ HRESULT Console::onUSBControllerChange()
 //    AutoVMCaller autoVMCaller (this);
 //    CheckComRCReturnRC (autoVMCaller.rc());
 
-    return S_OK;
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnUSBControllerChange();
+    }
+
+    return rc;
 }
 
 /**
@@ -3178,7 +3271,18 @@ HRESULT Console::onSharedFolderChange (BOOL aGlobal)
 
     AutoLock alock (this);
 
-    return fetchSharedFolders (aGlobal);
+    HRESULT rc = fetchSharedFolders (aGlobal);
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED (rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnSharedFolderChange (aGlobal ? Scope_GlobalScope
+                                                   : Scope_MachineScope);
+    }
+
+    return rc;
 }
 
 /**

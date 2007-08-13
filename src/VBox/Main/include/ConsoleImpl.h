@@ -166,9 +166,9 @@ public:
     // events from IInternalSessionControl
     HRESULT onDVDDriveChange();
     HRESULT onFloppyDriveChange();
-    HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter);
-    HRESULT onSerialPortChange(ISerialPort *serialPort);
-    HRESULT onParallelPortChange(IParallelPort *parallelPort);
+    HRESULT onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter);
+    HRESULT onSerialPortChange (ISerialPort *aSerialPort);
+    HRESULT onParallelPortChange (IParallelPort *aParallelPort);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);
@@ -191,7 +191,8 @@ public:
 
     void processRemoteUSBDevices (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevList, uint32_t cbDevList);
 
-    // callback callers
+    // callback callers (partly; for some events console callbacks are notified
+    // directly from IInternalSessionControl event handlers declared above)
     void onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                    uint32_t xHot, uint32_t yHot,
                                    uint32_t width, uint32_t height,
