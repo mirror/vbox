@@ -506,21 +506,7 @@ public:
      *  of the arguments for the format string.
      *
      *  @param format   printf-like format string (in UTF-8 encoding)
-     *  @param args     list of arguments for the format string
-     */
-    explicit Utf8StrFmt (const char *format, va_list args) { init (format, args); }
-
-    /**
-     *  Constructs a new string given the format string and the list
-     *  of the arguments for the format string.
-     *
-     *  @param format   printf-like format string (in UTF-8 encoding)
      *  @param ...      list of the arguments for the format string
-     *
-     *  @note  Be extremely careful when passing exactly one argument in the
-     *         ellipsis. If this is a string the C++ could decide to use the
-     *         other constructor since va_list is defined as char * on some
-     *         platforms. If unsure, add an extra dummy argument.
      */
     explicit Utf8StrFmt (const char *format, ...)
     {
@@ -530,15 +516,46 @@ public:
         va_end (args);
     }
 
-private:
+protected:
+
+    Utf8StrFmt() {}
 
     void init (const char *format, va_list args);
+
+private:
 
     static DECLCALLBACK(size_t) strOutput (void *pvArg, const char *pachChars,
                                            size_t cbChars);
 };
 
+/**
+ *  This class is a vprintf-like formatter for Utf8Str strings. It is
+ *  identical to Utf8StrFmt except that its constructor takes a va_list
+ *  argument instead of ellipsis.
+ *
+ *  Note that a separate class is necessary because va_list is defined as
+ *  |char *| on most platforms. For this reason, if we had two overloaded
+ *  constructors in Utf8StrFmt (one taking ellipsis and another one taking
+ *  va_list) then composing a constructor call using exactly two |char *|
+ *  arguments would cause the compiler to use the va_list overload instead of
+ *  the ellipsis one which is obviously wrong. The compiler would choose
+ *  va_list because ellipsis has the lowest rank when it comes to resolving
+ *  overloads, as opposed to va_list which is an exact match for |char *|.
+ */
+class Utf8StrFmtVA : public Utf8StrFmt
+{
+public:
+
+    /**
+     *  Constructs a new string given the format string and the list
+     *  of the arguments for the format string.
+     *
+     *  @param format   printf-like format string (in UTF-8 encoding)
+     *  @param args     list of arguments for the format string
+     */
+    Utf8StrFmtVA (const char *format, va_list args) { init (format, args); }
+};
+
 } // namespace com
 
 #endif
-

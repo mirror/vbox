@@ -1063,7 +1063,7 @@ protected:
                              const char *aText, va_list aArgs)
     {
         return setErrorInternal (aResultCode, aIID, aComponent,
-                                 Utf8StrFmt (aText, aArgs),
+                                 Utf8StrFmtVA (aText, aArgs),
                                  false /* aPreserve */);
     }
 
@@ -1072,7 +1072,7 @@ protected:
                              const char *aText, va_list aArgs)
     {
         return setErrorInternal (aResultCode, aIID, aComponent,
-                                 Utf8StrFmt (aText, aArgs),
+                                 Utf8StrFmtVA (aText, aArgs),
                                  true /* aPreserve */);
     }
 };

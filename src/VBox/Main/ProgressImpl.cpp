@@ -838,7 +838,7 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
 {
     va_list args;
     va_start (args, aText);
-    Bstr text = Utf8StrFmt (aText, args);
+    Bstr text = Utf8StrFmtVA (aText, args);
     va_end (args);
     
     return notifyCompleteBstr (aResultCode, aIID, aComponent, text);
