@@ -1774,7 +1774,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
     rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTR0ProcHandleSelf());
     if (RT_SUCCESS(rc))
     {
-        AssertMsg(RTR0MemObjAddress(Mem.MemObj) == pvR3, ("%p == %p\n", RTR0MemObjAddress(Mem.MemObj), pvR3));
+        AssertMsg(RTR0MemObjAddressR3(Mem.MemObj) == pvR3, ("%p == %p\n", RTR0MemObjAddressR3(Mem.MemObj), pvR3));
         AssertMsg(RTR0MemObjSize(Mem.MemObj) == cb, ("%x == %x\n", RTR0MemObjSize(Mem.MemObj), cb));
 
         unsigned iPage = cPages;
@@ -1888,7 +1888,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
             if (!rc)
             {
                 *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
-                *ppvR3 = (RTR3PTR)RTR0MemObjAddress(Mem.MapObjR3);
+                *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
                 *pHCPhys = RTR0MemObjGetPagePhysAddr(Mem.MemObj, 0);
                 return 0;
             }
@@ -1999,7 +1999,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
                     AssertMsg(!(paPages[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPages[iPage].Phys));
                 }
                 *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
-                *ppvR3 = RTR0MemObjAddress(Mem.MapObjR3);
+                *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
                 return 0;
             }
 
@@ -2104,7 +2104,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
             if (!rc)
             {
                 *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
-                *ppvR3 = (RTR3PTR)RTR0MemObjAddress(Mem.MapObjR3);
+                *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
                 return 0;
             }
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
@@ -2186,7 +2186,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
                          || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                             && (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MapObjR3) == uPtr)
+                             && RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == uPtr)
                         )
                    )
                 {
@@ -2275,7 +2275,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                                        RTMEM_PROT_READ, RTR0ProcHandleSelf());
             if (RT_SUCCESS(rc))
             {
-                pGip = (RTR3PTR)RTR0MemObjAddress(pSession->GipMapObjR3);
+                pGip = RTR0MemObjAddressR3(pSession->GipMapObjR3);
                 rc = VINF_SUCCESS; /** @todo remove this and replace the !rc below with RT_SUCCESS(rc). */
             }
 #else /* !USE_NEW_OS_INTERFACE */
@@ -2519,7 +2519,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
                          || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                             && (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MapObjR3) == uPtr))
+                             && RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == uPtr))
                    )
                 {
                     /* Make a copy of it and release it outside the spinlock. */
@@ -3873,7 +3873,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
         {
             pMem->eType = MEMREF_TYPE_LOW;
             pMem->pvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
-            pMem->pvR3 = (RTR3PTR)RTR0MemObjAddress(pMem->u.iprt.MapObjR3);
+            pMem->pvR3 = RTR0MemObjAddressR3(pMem->u.iprt.MapObjR3);
             if (!rc)
             {
                 size_t  cPages = pMem->cb >> PAGE_SHIFT;
@@ -3885,7 +3885,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
                     AssertMsg(!(paPagesOut[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPagesOut[iPage].Phys));
                 }
                 *ppvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
-                *ppvR3 = (RTR3PTR)RTR0MemObjAddress(pMem->u.iprt.MapObjR3);
+                *ppvR3 = RTR0MemObjAddressR3(pMem->u.iprt.MapObjR3);
                 return 0;
             }
 
