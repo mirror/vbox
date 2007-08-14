@@ -75,8 +75,9 @@ __END_DECLS
 #pragma alloc_text (PAGE, VBoxGuestDeviceControl)
 #pragma alloc_text (PAGE, VBoxGuestShutdown)
 #pragma alloc_text (PAGE, VBoxGuestNotSupportedStub)
-#pragma alloc_text (PAGE, VBoxGuestDpcHandler)
-#pragma alloc_text (PAGE, VBoxGuestIsrHandler)
+/* Note: at least the isr handler should be in non-pagable memory! */
+/*#pragma alloc_text (PAGE, VBoxGuestDpcHandler)
+ #pragma alloc_text (PAGE, VBoxGuestIsrHandler) */
 #pragma alloc_text (PAGE, vboxWorkerThread)
 #pragma alloc_text (PAGE, reserveHypervisorMemory)
 #pragma alloc_text (PAGE, vboxIdleThread)
