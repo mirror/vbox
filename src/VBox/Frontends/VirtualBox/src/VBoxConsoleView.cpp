@@ -242,6 +242,18 @@ private:
     bool mSupportsSeamless;
 };
 
+/** DVD/FD change event */
+class DVDFDChangeEvent : public QEvent
+{
+public:
+    DVDFDChangeEvent (VBoxDefs::DiskType aType)
+        : QEvent ((QEvent::Type) VBoxDefs::DVDFDChangeEventType)
+        , mType (aType) {}
+    VBoxDefs::DiskType diskType() const { return mType; }
+private:
+    VBoxDefs::DiskType mType;
+};
+
 /** Menu activation event */
 class ActivateMenuEvent : public QEvent
 {
@@ -405,12 +417,15 @@ public:
 
     STDMETHOD(OnDVDDriveChange)()
     {
-        LogTrace();
+        LogFlowFunc (("DVD Drive changed\n"));
+        QApplication::postEvent (mView, new DVDFDChangeEvent (VBoxDefs::CD));
         return S_OK;
     }
 
     STDMETHOD(OnFloppyDriveChange)()
     {
+        LogFlowFunc (("Floppy Drive changed\n"));
+        QApplication::postEvent (mView, new DVDFDChangeEvent (VBoxDefs::FD));
         return S_OK;
     }
 
@@ -1082,6 +1097,15 @@ bool VBoxConsoleView::event (QEvent *e)
                 emit additionsStateChanged (ge->additionVersion(),
                                             ge->additionActive(),
                                             ge->supportsSeamless());
+                return true;
+            }
+
+            case VBoxDefs::DVDFDChangeEventType:
+            {
+                DVDFDChangeEvent *ev = (DVDFDChangeEvent *) e;
+                LogFlowFunc (("DVDFDChangeEvent\n"));
+
+                emit dvdfdChanged (ev->diskType());
                 return true;
             }
 

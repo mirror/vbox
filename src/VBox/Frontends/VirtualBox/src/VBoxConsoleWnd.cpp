@@ -855,6 +855,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateMachineState (CEnums::MachineState)));
     connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool)),
              this, SLOT (updateAdditionsState (const QString &, bool, bool)));
+    connect (console, SIGNAL (dvdfdChanged (VBoxDefs::DiskType)),
+             this, SLOT (updateDVDFDState (VBoxDefs::DiskType)));
 
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
@@ -2224,7 +2226,6 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
                 if (!m.isOk())
                     vboxProblem().cannotSaveMachineSettings (m);
             }
-            updateAppearanceOf (FloppyStuff);
         }
     }
 }
@@ -2244,7 +2245,6 @@ void VBoxConsoleWnd::devicesUnmountFloppy()
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
         }
-        updateAppearanceOf (FloppyStuff);
     }
 }
 
@@ -2270,7 +2270,6 @@ void VBoxConsoleWnd::devicesMountDVDImage()
                 if (!m.isOk())
                     vboxProblem().cannotSaveMachineSettings (m);
             }
-            updateAppearanceOf (DVDStuff);
         }
     }
 }
@@ -2292,7 +2291,6 @@ void VBoxConsoleWnd::devicesUnmountDVD()
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
         }
-        updateAppearanceOf (DVDStuff);
     }
 }
 
@@ -2395,8 +2393,6 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     drv.MountImage (uuid);
     /// @todo (r=dmik) use VBoxProblemReporter::cannotMountMedia...
     AssertWrapperOk (drv);
-    if (drv.isOk())
-        updateAppearanceOf (DVDStuff);
 }
 
 #ifdef Q_WS_WIN32
@@ -2606,7 +2602,6 @@ void VBoxConsoleWnd::captureFloppy (int aId)
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
         }
-        updateAppearanceOf (FloppyStuff);
     }
 }
 
@@ -2634,7 +2629,6 @@ void VBoxConsoleWnd::captureDVD (int aId)
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
         }
-        updateAppearanceOf (DVDStuff);
     }
 }
 
@@ -2893,6 +2887,13 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     {
         vboxProblem().warnAboutNewAdditions (this, verisonStr, expectedStr);
     }
+}
+
+void VBoxConsoleWnd::updateDVDFDState (VBoxDefs::DiskType aType)
+{
+    Assert (aType == VBoxDefs::CD || aType == VBoxDefs::FD);
+    updateAppearanceOf (aType == VBoxDefs::CD ? DVDStuff :
+                        aType == VBoxDefs::FD ? FloppyStuff : AllStuff);
 }
 
 /**
