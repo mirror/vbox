@@ -5,7 +5,7 @@
 
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -52,7 +52,6 @@ linux-doc_SOURCES = \
 LINUXSTRIPBIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
-	VBoxKeyboard.so \
 	VBoxManage \
 	VBoxREM.so \
 	VBoxRT.so \
@@ -63,6 +62,7 @@ LINUXSTRIPBIN = \
 	VBoxXML.so \
 	VBoxXPCOM.so \
 	VBoxXPCOMIPCD \
+	$(if $(VBOX_WITH_QTGUI),VBoxKeyboard.so) \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
 	tstVMM \
 	VBoxTunctl \
