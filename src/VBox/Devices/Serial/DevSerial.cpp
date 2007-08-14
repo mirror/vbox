@@ -174,7 +174,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
 PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 __END_DECLS
 
-
+#ifdef IN_RING3
 static void serial_update_irq(SerialState *s)
 {
     if ((s->lsr & UART_LSR_DR) && (s->ier & UART_IER_RDI)) {
@@ -222,7 +222,9 @@ static void serial_update_parameters(SerialState *s)
         return;
     speed = 115200 / s->divider;
     Log(("speed=%d parity=%c data=%d stop=%d\n", speed, parity, data_bits, stop_bits));
+    s->pDrvChar->pfnSetParameters(s->pDrvChar, speed, parity, data_bits, stop_bits);
 }
+#endif
 
 static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 {
@@ -231,6 +233,12 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 
     addr &= 7;
     LogFlow(("serial: write addr=0x%02x val=0x%02x\n", addr, val));
+
+#ifndef IN_RING3
+    NOREF(ch);
+    NOREF(s);
+    return VINF_IOM_HC_IOPORT_WRITE;
+#else
     switch(addr) {
     default:
     case 0:
@@ -238,10 +246,6 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             s->divider = (s->divider & 0xff00) | val;
             serial_update_parameters(s);
         } else {
-#ifndef IN_RING3
-            NOREF(ch);
-            return VINF_IOM_HC_IOPORT_WRITE;
-#else
             s->thr_ipending = 0;
             s->lsr &= ~UART_LSR_THRE;
             serial_update_irq(s);
@@ -256,7 +260,6 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             s->lsr |= UART_LSR_THRE;
             s->lsr |= UART_LSR_TEMT;
             serial_update_irq(s);
-#endif
         }
         break;
     case 1:
@@ -296,6 +299,7 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         break;
     }
     return VINF_SUCCESS;
+#endif
 }
 
 static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
@@ -334,11 +338,15 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
         }
         break;
     case 2:
+#ifndef IN_RING3
+        *pRC = VINF_IOM_HC_IOPORT_READ;
+#else
         ret = s->iir;
         /* reset THR pending bit */
         if ((ret & 0x7) == UART_IIR_THRI)
             s->thr_ipending = 0;
         serial_update_irq(s);
+#endif
         break;
     case 3:
         ret = s->lcr;
