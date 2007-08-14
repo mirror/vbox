@@ -2,6 +2,8 @@
  *
  * VBox stream I/O devices:
  * Host serial driver
+ *
+ * Contributed by: Alexander Eichner
  */
 
 /*
