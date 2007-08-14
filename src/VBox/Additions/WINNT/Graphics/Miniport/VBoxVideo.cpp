@@ -747,6 +747,12 @@ static int vboxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv,
 {
     dprintf(("VBoxVideo::vboxMapAdapterMemory 0x%08X[0x%X]\n", ulOffset, ulSize));
 
+    if (!ulSize)
+    {
+        dprintf(("Illegal length 0!\n"));
+        return ERROR_INVALID_PARAMETER;
+    }
+
     PHYSICAL_ADDRESS FrameBuffer;
     FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + ulOffset;
 
