@@ -422,7 +422,8 @@ endif # l4
 Drivers_SOURCES.linux = \
 	Network/DrvTAP.cpp \
 	Audio/ossaudio.c \
-	Parallel/DrvHostParallel.cpp
+	Parallel/DrvHostParallel.cpp \
+	Serial/DrvHostSerial.cpp
 
 ifeq ($(BUILD_TARGET),os2)
 Drivers_SOURCES      := $(filter-out \

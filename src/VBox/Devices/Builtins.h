@@ -72,6 +72,7 @@ extern const PDMDRVREG g_DrvVUSBRootHub;
 extern const PDMDRVREG g_DrvChar;
 extern const PDMDRVREG g_DrvNamedPipe;
 extern const PDMDRVREG g_DrvHostParallel;
+extern const PDMDRVREG g_DrvHostSerial;
 
 #ifdef VBOX_WITH_USB
 extern const PDMUSBREG g_UsbDevProxy;
