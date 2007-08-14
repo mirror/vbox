@@ -127,11 +127,11 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, s
 }
 
 /** @copydoc PDMICHAR::pfnSetParameters */
-static DECLCALLBACK(int) drvCharSetParameters(PPDMICHAR pInterface, int speed, int parity, int data_bits, int stop_bits)
+static DECLCALLBACK(int) drvCharSetParameters(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
 {
-    PDRVCHAR pData = PDMICHAR_2_DRVCHAR(pInterface);
+    /*PDRVCHAR pData = PDMICHAR_2_DRVCHAR(pInterface); - unused*/
 
-    LogFlow(("%s: speed=%d parity=%c data_bits=%d stop_bits=%d\n", __FUNCTION__, speed, parity, data_bits, stop_bits));
+    LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
     return VINF_SUCCESS;
 }
 
@@ -158,7 +158,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
         /*
          * Write the character to the attached stream (if present).
          */
-        if (    !pData->fShutdown 
+        if (    !pData->fShutdown
             &&  pData->pDrvStream)
         {
             while (pData->iSendQueueTail != pData->iSendQueueHead)
@@ -328,7 +328,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
 
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/Char%d/Read", pDrvIns->iInstance);
-    
+
     return VINF_SUCCESS;
 }
 

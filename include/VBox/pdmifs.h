@@ -1125,13 +1125,13 @@ typedef struct PDMICHAR
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   speed           Speed of the serial connection.
-     * @param   parity          Enable parity
-     * @param   data_bits       Number of data bits
-     * @param   stop_bits       Number of stop bits
+     * @param   Bps             Speed of the serial connection. (bits per second)
+     * @param   chParity        Parity method: 'E' - even, 'O' - odd, 'N' - none.
+     * @param   cDataBits       Number of data bits.
+     * @param   cStopBits       Number of stop bits.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParameters,(PPDMICHAR pInterface, int speed, int parity, int data_bits, int stop_bits));
+    DECLR3CALLBACKMEMBER(int, pfnSetParameters,(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits));
 
 } PDMICHAR;
 
