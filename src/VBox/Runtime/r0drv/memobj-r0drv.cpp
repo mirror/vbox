@@ -486,7 +486,7 @@ RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
 
 
 /**
- * Allocates page aligned physical memory without (necessarily) any kernel mapping.
+ * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
@@ -506,6 +506,30 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest);
+}
+
+
+/**
+ * Allocates non-contiguous page aligned physical memory without (necessarily) any kernel mapping.
+ *
+ * @returns IPRT status code.
+ * @param   pMemObj         Where to store the ring-0 memory object handle.
+ * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
+ * @param   PhysHighest     The highest permittable address (inclusive).
+ *                          Pass NIL_RTHCPHYS if any address is acceptable.
+ */
+RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest)
+{
+    /* sanity checks. */
+    AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
+    *pMemObj = NIL_RTR0MEMOBJ;
+    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+    AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
+    AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
+
+    /* do the allocation. */
+    return rtR0MemObjNativeAllocPhysNC(pMemObj, cbAligned, PhysHighest);
 }
 
 
@@ -570,13 +594,13 @@ RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
+ * @param   R3PtrFixed      Requested address. (RTR3PTR)-1 means any address. This must match the alignment.
  * @param   cb              The number of bytes to reserve. This is rounded up to nearest PAGE_SIZE.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
  * @param   R0Process       The process to reserve the memory in. NIL_R0PROCESS is an alias for the current one.
  */
-RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
+RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
@@ -587,13 +611,13 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t c
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
-    if (pvFixed != (void *)-1)
-        AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
+    if (R3PtrFixed != (RTR3PTR)-1)
+        AssertReturn(!(R3PtrFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
 
     /* do the reservation. */
-    return rtR0MemObjNativeReserveUser(pMemObj, pvFixed, cbAligned, uAlignment, R0Process);
+    return rtR0MemObjNativeReserveUser(pMemObj, R3PtrFixed, cbAligned, uAlignment, R0Process);
 }
 
 
@@ -658,13 +682,13 @@ RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, v
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
  * @param   MemObjToMap     The object to be map.
- * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
+ * @param   R3PtrFixed      Requested address. (RTR3PTR)-1 means any address. This must match the alignment.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
  * @param   R0Process       The process to map the memory into. NIL_R0PROCESS is an alias for the current one.
  */
-RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
+RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
@@ -678,8 +702,8 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, voi
     if (uAlignment == 0)
         uAlignment = PAGE_SIZE;
     AssertReturn(uAlignment == PAGE_SIZE || uAlignment == _2M || uAlignment == _4M, VERR_INVALID_PARAMETER);
-    if (pvFixed != (void *)-1)
-        AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
+    if (R3PtrFixed != (RTR3PTR)-1)
+        AssertReturn(!(R3PtrFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
     AssertReturn(fProt != RTMEM_PROT_NONE, VERR_INVALID_PARAMETER);
     AssertReturn(!(fProt & ~(RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
     if (R0Process == NIL_RTR0PROCESS)
@@ -687,7 +711,7 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, voi
 
     /* do the mapping. */
     PRTR0MEMOBJINTERNAL pNew;
-    int rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, pvFixed, uAlignment, fProt, R0Process);
+    int rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process);
     if (RT_SUCCESS(rc))
     {
         /* link it. */
