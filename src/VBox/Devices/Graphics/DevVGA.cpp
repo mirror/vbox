@@ -595,7 +595,7 @@ static void vbe_ioport_write_index(void *opaque, uint32_t addr, uint32_t val)
     s->vbe_index = val;
 }
 
-static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
+static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 {
     VGAState *s = (VGAState*)opaque;
 
@@ -673,6 +673,9 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             s->bank_offset = (val << 16);
             break;
         case VBE_DISPI_INDEX_ENABLE:
+#ifndef IN_RING3
+            return VINF_IOM_HC_IOPORT_WRITE;
+#else
             if (val & VBE_DISPI_ENABLED) {
                 int h, shift_control;
 #ifdef VBOX
@@ -690,7 +693,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 {
                     AssertMsgFailed(("XRES=%d YRES=%d cb=%d vram_size=%d\n",
                                      s->vbe_regs[VBE_DISPI_INDEX_XRES], s->vbe_regs[VBE_DISPI_INDEX_YRES], cb, s->vram_size));
-                    return;
+                    return VINF_SUCCESS; /* Note: silent failure like before */
                 }
 #else  /* KEEP_SCAN_LINE_LENGTH defined */
                 if (    !s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH]
@@ -699,7 +702,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 {
                     AssertMsgFailed(("VIRT WIDTH=%d YRES=%d cb=%d vram_size=%d\n",
                                      s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH], s->vbe_regs[VBE_DISPI_INDEX_YRES], cb, s->vram_size));
-                    return;
+                    return VINF_SUCCESS; /* Note: silent failure like before */
                 }
 #endif  /* KEEP_SCAN_LINE_LENGTH defined */
 #endif /* VBOX */
@@ -783,22 +786,19 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 s->bank_offset = 0;
             }
             s->vbe_regs[s->vbe_index] = val;
-#ifdef VBOX
-#ifdef IN_RING3
             /*
              * LFB video mode is either disabled or changed. This notification
              * is used by the display to disable VBVA.
              */
             s->pDrv->pfnLFBModeChange(s->pDrv, (val & VBE_DISPI_ENABLED) != 0);
-#endif /* IN_RING3 */
-#endif /* VBOX */
             break;
+#endif /* IN_RING3 */
         case VBE_DISPI_INDEX_VIRT_WIDTH:
             {
                 int w, h, line_offset;
 
                 if (val < s->vbe_regs[VBE_DISPI_INDEX_XRES])
-                    return;
+                    return VINF_SUCCESS;
                 w = val;
                 if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4)
                     line_offset = w >> 1;
@@ -807,7 +807,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 h = s->vram_size / line_offset;
                 /* XXX: support weird bochs semantics ? */
                 if (h < s->vbe_regs[VBE_DISPI_INDEX_YRES])
-                    return;
+                    return VINF_SUCCESS;
                 s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = w;
                 s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = h;
                 s->vbe_line_offset = line_offset;
@@ -829,7 +829,9 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             break;
         case VBE_DISPI_INDEX_VBOX_VIDEO:
 #ifdef VBOX
-#ifdef IN_RING3
+#ifndef IN_RING3
+            return VINF_IOM_HC_IOPORT_WRITE;
+#else
             /* Changes in the VGA device are minimal. The device is bypassed. The driver does all work. */
             if (val == VBOX_VIDEO_DISABLE_ADAPTER_MEMORY)
             {
@@ -850,6 +852,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             break;
         }
     }
+    return VINF_SUCCESS;
 }
 #endif
 
@@ -2763,8 +2766,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 &&  (u32 & VBE_DISPI_ENABLED))
             {
                 s->fWriteVBEData = false;
-                vbe_ioport_write_data(s, Port, u32 & 0xFF);
-                return VINF_SUCCESS;
+                return vbe_ioport_write_data(s, Port, u32 & 0xFF);
             }
             else
             {
@@ -2796,7 +2798,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 //            return VINF_IOM_HC_IOPORT_WRITE;
 //        }
 //#endif
-        vbe_ioport_write_data(s, Port, u32);
+        return vbe_ioport_write_data(s, Port, u32);
     }
     else
         AssertMsgFailed(("vgaIOPortWriteVBEData: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
