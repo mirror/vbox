@@ -1879,7 +1879,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void *)-1, 0,
+        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
                                RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
@@ -1984,7 +1984,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void *)-1, 0,
+        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
                                RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
@@ -2095,7 +2095,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (void*)-1, 0,
+        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
                                RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
@@ -2271,7 +2271,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
         {
 #ifdef USE_NEW_OS_INTERFACE
             if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
-                rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (void*)-1, 0,
+                rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (RTR3PTR)-1, 0,
                                        RTMEM_PROT_READ, RTR0ProcHandleSelf());
             if (RT_SUCCESS(rc))
             {
@@ -3867,7 +3867,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&pMem->u.iprt.MapObjR3, pMem->u.iprt.MemObj, (void *)-1, 0,
+        rc = RTR0MemObjMapUser(&pMem->u.iprt.MapObjR3, pMem->u.iprt.MemObj, (RTR3PTR)-1, 0,
                                RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
