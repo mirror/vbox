@@ -126,6 +126,15 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, s
     return VINF_SUCCESS;
 }
 
+/** @copydoc PDMICHAR::pfnSetParameters */
+static DECLCALLBACK(int) drvCharSetParameters(PPDMICHAR pInterface, int speed, int parity, int data_bits, int stop_bits)
+{
+    PDRVCHAR pData = PDMICHAR_2_DRVCHAR(pInterface);
+
+    LogFlow(("%s: speed=%d parity=%c data_bits=%d stop_bits=%d\n", __FUNCTION__, speed, parity, data_bits, stop_bits));
+    return VINF_SUCCESS;
+}
+
 
 /* -=-=-=-=- receive thread -=-=-=-=- */
 
@@ -184,7 +193,6 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
 
     return VINF_SUCCESS;
 }
-
 
 /* -=-=-=-=- receive thread -=-=-=-=- */
 
@@ -286,7 +294,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     pDrvIns->IBase.pfnQueryInterface        = drvCharQueryInterface;
     /* IChar. */
     pData->IChar.pfnWrite                   = drvCharWrite;
-
+    pData->IChar.pfnSetParameters           = drvCharSetParameters;
 
     /*
      * Get the ICharPort interface of the above driver/device.
