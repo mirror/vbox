@@ -54,7 +54,7 @@ typedef struct RTR0MEMOBJFREEBSD
 {
     /** The core structure. */
     RTR0MEMOBJINTERNAL  Core;
-    /** The VM object associated with the allocation. */   
+    /** The VM object associated with the allocation. */
     vm_object_t         pObject;
     /** the VM object associated with the mapping.
      * In mapping mem object, this is the shadow object?
@@ -82,7 +82,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             if (pMemFreeBSD->pMappingObject)
             {
                 rc = vm_map_remove(kernel_map,
-                                   (vm_offset_t)pMemFreeBSD->Core.pv, 
+                                   (vm_offset_t)pMemFreeBSD->Core.pv,
                                    (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
                 AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             }
@@ -92,7 +92,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             if (pMemFreeBSD->pObject)
             {
                 rc = vm_map_remove(kernel_map,
-                                   (vm_offset_t)pMemFreeBSD->Core.pv, 
+                                   (vm_offset_t)pMemFreeBSD->Core.pv,
                                    (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
                 AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             }
@@ -102,7 +102,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 if (pMemFreeBSD->pMappingObject)
                 {
                     rc = vm_map_remove(kernel_map,
-                                       (vm_offset_t)pMemFreeBSD->Core.pv, 
+                                       (vm_offset_t)pMemFreeBSD->Core.pv,
                                        (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
                     AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
                 }
@@ -114,9 +114,9 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             vm_map_t pMap = kernel_map;
             if (pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
                 pMap = &((struct proc *)pMemFreeBSD->Core.u.Lock.R0Process)->p_vmspace->vm_map;
-            rc = vm_map_unwire(pMap, 
-                               (vm_offset_t)pMemFreeBSD->Core.pv, 
-                               (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb, 
+            rc = vm_map_unwire(pMap,
+                               (vm_offset_t)pMemFreeBSD->Core.pv,
+                               (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb,
                                VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
             AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             break;
@@ -128,25 +128,25 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             if (pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
                 pMap = &((struct proc *)pMemFreeBSD->Core.u.Lock.R0Process)->p_vmspace->vm_map;
             rc = vm_map_remove(pMap,
-                               (vm_offset_t)pMemFreeBSD->Core.pv, 
+                               (vm_offset_t)pMemFreeBSD->Core.pv,
                                (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
             AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             break;
         }
-        
+
         case RTR0MEMOBJTYPE_MAPPING:
         {
             /** @todo Figure out mapping... */
         }
-            
-        /* unused: */    
+
+        /* unused: */
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PHYS:
         default:
             AssertMsgFailed(("enmType=%d\n", pMemFreeBSD->Core.enmType));
             return VERR_INTERNAL_ERROR;
     }
-    
+
     Assert(!pMemFreeBSD->pMappingObject);
 
     return VINF_SUCCESS;
@@ -161,11 +161,11 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_PAGE, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
-    
-    /* 
-     * We've two options here both expressed nicely by how kld allocates 
-     * memory for the module bits: 
-     *      http://fxr.watson.org/fxr/source/kern/link_elf.c?v=RELENG62#L701 
+
+    /*
+     * We've two options here both expressed nicely by how kld allocates
+     * memory for the module bits:
+     *      http://fxr.watson.org/fxr/source/kern/link_elf.c?v=RELENG62#L701
      */
 #if 0
     pMemFreeBSD->Core.pv = malloc(cb, M_IPRTMOBJ, M_ZERO);
@@ -182,7 +182,7 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     if (pMemFreeBSD->pObject)
     {
         vm_offset_t MapAddress = vm_map_min(kernel_map);
-        rc = vm_map_find(kernel_map,                    /* map */ 
+        rc = vm_map_find(kernel_map,                    /* map */
                          pMemFreeBSD->pObject,          /* object */
                          0,                             /* offset */
                          &MapAddress,                   /* addr (IN/OUT) */
@@ -205,7 +205,7 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                 *ppMem = &pMemFreeBSD->Core;
                 return VINF_SUCCESS;
             }
-            
+
            vm_map_remove(kernel_map,
                          MapAddress,
                          MapAddress + cb);
@@ -217,7 +217,7 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     else
         rc = VERR_NO_MEMORY;
 #endif
-    
+
     rtR0MemObjDelete(&pMemFreeBSD->Core);
     return rc;
 }
@@ -227,8 +227,8 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
 {
     /*
      * Try a Alloc first and see if we get luck, if not try contigmalloc.
-     * Might wish to try find our own pages or something later if this 
-     * turns into a problemspot on AMD64 boxes. 
+     * Might wish to try find our own pages or something later if this
+     * turns into a problemspot on AMD64 boxes.
      */
     int rc = rtR0MemObjNativeAllocPage(ppMem, cb, fExecutable);
     if (RT_SUCCESS(rc))
@@ -270,7 +270,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
         *ppMem = &pMemFreeBSD->Core;
         return VINF_SUCCESS;
     }
-    
+
     NOREF(fExecutable);
     rtR0MemObjDelete(&pMemFreeBSD->Core);
     return VERR_NO_MEMORY;
@@ -280,7 +280,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
     /** @todo check if there is a more appropriate API somewhere.. */
-    
+
     /* create the object. */
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_CONT, NULL, cb);
     if (!pMemFreeBSD)
@@ -300,7 +300,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
         *ppMem = &pMemFreeBSD->Core;
         return VINF_SUCCESS;
     }
-    
+
     rtR0MemObjDelete(&pMemFreeBSD->Core);
     return VERR_NO_MEMORY;
 }
@@ -329,12 +329,12 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RT
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_LOCK, pv, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
-    
+
     /*
-     * We could've used vslock here, but we don't wish to be subject to 
+     * We could've used vslock here, but we don't wish to be subject to
      * resource usage restrictions, so we'll call vm_map_wire directly.
      */
-    rc = vm_map_wire(&((struct proc *)R0Process)->p_vmspace->vm_map, /* the map */ 
+    rc = vm_map_wire(&((struct proc *)R0Process)->p_vmspace->vm_map, /* the map */
                      (vm_offset_t)pv,                               /* start */
                      (vm_offset_t)pv + cb,                          /* end */
                      VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);     /* flags - SYSTEM? */
@@ -359,7 +359,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
         return VERR_NO_MEMORY;
 
     /* lock the memory */
-    rc = vm_map_wire(kernel_map,                                    /* the map */ 
+    rc = vm_map_wire(kernel_map,                                    /* the map */
                      (vm_offset_t)pv,                               /* start */
                      (vm_offset_t)pv + cb,                          /* end */
                      VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);     /* flags - SYSTEM? */
@@ -376,23 +376,23 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 
 /**
  * Worker for the two virtual address space reservers.
- * 
+ *
  * We're leaning on the examples provided by mmap and vm_mmap in vm_mmap.c here.
  */
 static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process, vm_map_t pMap)
 {
     int rc;
-    
-    /* 
+
+    /*
      * The pvFixed address range must be within the VM space when specified.
      */
     if (pvFixed != (void *)-1
         && (    (vm_offset_t)pvFixed      < vm_map_min(pMap)
             ||  (vm_offset_t)pvFixed + cb > vm_map_max(pMap)))
         return VERR_INVALID_PARAMETER;
-    
-    /* 
-     * Create the object. 
+
+    /*
+     * Create the object.
      */
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_RES_VIRT, NULL, cb);
     if (!pMemFreeBSD)
@@ -411,8 +411,8 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
             vm_map_remove(pMap,
                           MapAddress,
                           MapAddress + cb);
-                               
-        rc = vm_map_find(pMap,                          /* map */ 
+
+        rc = vm_map_find(pMap,                          /* map */
                          pMemFreeBSD->pObject,          /* object */
                          0,                             /* offset */
                          &MapAddress,                   /* addr (IN/OUT) */
@@ -424,7 +424,7 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
         if (rc == KERN_SUCCESS)
         {
             if (R0Process != NIL_RTR0PROCESS)
-            {    
+            {
                 rc = vm_map_inherit(pMap,
                                     MapAddress,
                                     MapAddress + cb,
@@ -443,7 +443,7 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
         rc = VERR_NO_MEMORY;
     rtR0MemObjDelete(&pMemFreeBSD->Core);
     return rc;
-    
+
 }
 
 int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
@@ -464,7 +464,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
 
 /* Phys: see pmap_mapdev in i386/i386/pmap.c (http://fxr.watson.org/fxr/source/i386/i386/pmap.c?v=RELENG62#L2860) */
-    
+
 #if 0
 /** @todo finish the implementation. */
 
@@ -514,7 +514,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     /*
      * Create a dummy mapping object for it.
      *
-     * All mappings are read/write/execute in OS/2 and there isn't 
+     * All mappings are read/write/execute in OS/2 and there isn't
      * any cache options, so sharing is ok. And the main memory object
      * isn't actually freed until all the mappings have been freed up
      * (reference counting).
@@ -568,7 +568,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
                     return RTErrConvertFromOS2(rc);
             }
             break;
-#endif 
+#endif
             return VERR_NOT_SUPPORTED;
 
         case RTR0MEMOBJTYPE_LOCK:
@@ -619,7 +619,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
 }
 
 
-RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPage)
+RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
 {
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)pMem;
 
@@ -632,14 +632,14 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPag
             {
                 /* later */
                 return NIL_RTHCPHYS;
-            }  
+            }
         }
         case RTR0MEMOBJTYPE_PAGE:
         {
             uint8_t *pb = (uint8_t *)pMemFreeBSD->Core.pv + ((size_t)iPage << PAGE_SHIFT);
             return vtophys(pb);
         }
-            
+
         case RTR0MEMOBJTYPE_CONT:
             return pMemFreeBSD->Core.u.Cont.Phys + (iPage << PAGE_SHIFT);
 

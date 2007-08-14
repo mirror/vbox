@@ -98,8 +98,8 @@ typedef struct RTR0MEMOBJINTERNAL
     size_t          cb;
     /** The memory address.
      * What this really is varies with the type.
-     * For PAGE, CONT, LOW, RES_VIRT, LOCK/R0 and MAP/R0 it's the ring-0 mapping.
-     * For LOCK/R3 and MAP/R3 it is the ring-3 mapping.
+     * For PAGE, CONT, LOW, RES_VIRT/R0, LOCK/R0 and MAP/R0 it's the ring-0 mapping.
+     * For LOCK/R3, RES_VIRT/R3 and MAP/R3 it is the ring-3 mapping.
      * For PHYS this might actually be NULL if there isn't any mapping.
      */
     void           *pv;
@@ -351,7 +351,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
  * @param   pMem            The ring-0 memory object handle.
  * @param   iPage           The page number within the object (valid).
  */
-RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPage);
+RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage);
 
 PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb);
 void rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem);
