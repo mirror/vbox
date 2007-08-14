@@ -855,8 +855,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateMachineState (CEnums::MachineState)));
     connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool)),
              this, SLOT (updateAdditionsState (const QString &, bool, bool)));
-    connect (console, SIGNAL (dvdfdChanged (VBoxDefs::DiskType)),
-             this, SLOT (updateDVDFDState (VBoxDefs::DiskType)));
+    connect (console, SIGNAL (mediaChanged (VBoxDefs::DiskType)),
+             this, SLOT (updateMediaState (VBoxDefs::DiskType)));
 
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
@@ -2889,7 +2889,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     }
 }
 
-void VBoxConsoleWnd::updateDVDFDState (VBoxDefs::DiskType aType)
+void VBoxConsoleWnd::updateMediaState (VBoxDefs::DiskType aType)
 {
     Assert (aType == VBoxDefs::CD || aType == VBoxDefs::FD);
     updateAppearanceOf (aType == VBoxDefs::CD ? DVDStuff :

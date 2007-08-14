@@ -96,7 +96,7 @@ signals:
     void mouseStateChanged (int state);
     void machineStateChanged (CEnums::MachineState state);
     void additionsStateChanged (const QString &, bool, bool);
-    void dvdfdChanged (VBoxDefs::DiskType aType);
+    void mediaChanged (VBoxDefs::DiskType aType);
 
 protected:
 
