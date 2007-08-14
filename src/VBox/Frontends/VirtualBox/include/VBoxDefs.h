@@ -128,6 +128,7 @@ struct VBoxDefs
         MousePointerChangeEventType,
         MachineStateChangeEventType,
         AdditionsStateChangeEventType,
+        DVDFDChangeEventType,
         MachineDataChangeEventType,
         MachineRegisteredEventType,
         SessionStateChangeEventType,

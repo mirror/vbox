@@ -171,6 +171,8 @@ private slots:
 
     void updateAdditionsState (const QString&, bool, bool);
 
+    void updateDVDFDState (VBoxDefs::DiskType aType);
+
     void tryClose();
 
     void processGlobalSettingChange (const char *publicName, const char *name);
