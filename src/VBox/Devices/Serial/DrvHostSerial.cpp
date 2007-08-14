@@ -146,20 +146,20 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, int speed, int parity, int data_bits, int stop_bits)
+static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
 {
     PDRVHOSTSERIAL pData = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
     struct termios termiosSetup;
     int baud_rate;
 
-    LogFlow(("%s: speed=%d parity=%c data_bits=%d stop_bits=%d\n", __FUNCTION__, speed, parity, data_bits, stop_bits));
+    LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
 
     memset(&termiosSetup, 0, sizeof(termiosSetup));
 
     /* Enable receiver */
     termiosSetup.c_cflag |= (CLOCAL | CREAD);
 
-    switch (speed) {
+    switch (Bps) {
         case 50:
             baud_rate = B50;
             break;
@@ -218,7 +218,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, int sp
     cfsetispeed(&termiosSetup, baud_rate);
     cfsetospeed(&termiosSetup, baud_rate);
 
-    switch (parity) {
+    switch (chParity) {
         case 'E':
             termiosSetup.c_cflag |= PARENB;
             break;
@@ -231,7 +231,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, int sp
             break;
     }
 
-    switch (data_bits) {
+    switch (cDataBits) {
         case 5:
             termiosSetup.c_cflag |= CS5;
             break;
@@ -248,7 +248,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, int sp
             break;
     }
 
-    switch (stop_bits) {
+    switch (cStopBits) {
         case 2:
             termiosSetup.c_cflag |= CSTOPB;
         default:
@@ -256,9 +256,11 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, int sp
     }
 
     /* set serial port to raw input */
-    termiosSetup.c_lflag = ~(ICANON | ECHO | ECHOE | ISIG); 
+    termiosSetup.c_lflag = ~(ICANON | ECHO | ECHOE | ISIG);
 
     tcsetattr(pData->DeviceFile, TCSANOW, &termiosSetup);
+
+    return VINF_SUCCESS;
 }
 
 /* -=-=-=-=- receive thread -=-=-=-=- */
@@ -283,7 +285,7 @@ static DECLCALLBACK(int) drvHostSerialSendLoop(RTTHREAD ThreadSelf, void *pvUser
         /*
          * Write the character to the host device.
          */
-        if (!pData->fShutdown) 
+        if (!pData->fShutdown)
         {
             while (pData->iSendQueueTail != pData->iSendQueueHead)
             {
@@ -425,7 +427,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     pData->DeviceFile = open(pData->pszDevicePath, O_RDWR | O_NONBLOCK);
     if (pData->DeviceFile < 0) {
-        
+
     }
 
     /*
@@ -449,7 +451,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/Char%d/Read", pDrvIns->iInstance);
-    
+
     return VINF_SUCCESS;
 }
 
