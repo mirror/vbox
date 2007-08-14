@@ -76,6 +76,11 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
     switch (pMemOs2->Core.enmType)
     {
+        case RTR0MEMOBJTYPE_PHYS_NC:
+            AssertMsgFailed(("RTR0MEMOBJTYPE_PHYS_NC\n"));
+            return VERR_INTERNAL_ERROR;
+            break;
+
         case RTR0MEMOBJTYPE_PHYS:
             if (!pMemOs2->Core.pv)
                 break;
@@ -214,6 +219,13 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 }
 
 
+int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
+{
+    /** @todo rtR0MemObjNativeAllocPhys / darwin. */
+    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest);
+}
+
+
 int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
 {
     /* create the object. */
@@ -285,7 +297,7 @@ int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, siz
 }
 
 
-int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
+int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -327,6 +339,11 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
             }
             break;
 
+        case RTR0MEMOBJTYPE_PHYS_NC:
+            AssertMsgFailed(("RTR0MEMOBJTYPE_PHYS_NC\n"));
+            return VERR_NOT_IMPLEMENTED;
+            break;
+
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
                 return VERR_NOT_SUPPORTED; /** @todo implement this... */
@@ -359,10 +376,10 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 }
 
 
-int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
+int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
-    AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
+    AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
 
     int rc;
     void *pvR0;
@@ -396,6 +413,11 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
             break;
 #endif
             return VERR_NOT_SUPPORTED;
+
+        case RTR0MEMOBJTYPE_PHYS_NC:
+            AssertMsgFailed(("RTR0MEMOBJTYPE_PHYS_NC\n"));
+            return VERR_NOT_IMPLEMENTED;
+            break;
 
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
@@ -452,6 +474,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_LOCK:
+        case RTR0MEMOBJTYPE_PHYS_NC:
             return pMemOs2->aPages[iPage].Addr;
 
         case RTR0MEMOBJTYPE_CONT:

@@ -142,6 +142,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         /* unused: */
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PHYS:
+        case RTR0MEMOBJTYPE_PHYS_NC:
         default:
             AssertMsgFailed(("enmType=%d\n", pMemFreeBSD->Core.enmType));
             return VERR_INTERNAL_ERROR;
@@ -306,6 +307,13 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 }
 
 
+int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
+{
+    /** @todo rtR0MemObjNativeAllocPhys / freebsd */
+    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest);
+}
+
+
 int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
 {
     /* create the object. */
@@ -452,9 +460,9 @@ int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, siz
 }
 
 
-int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
+int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
-    return rtR0MemObjNativeReserveInMap(ppMem, pvFixed, cb, uAlignment, R0Process,
+    return rtR0MemObjNativeReserveInMap(ppMem, (void *)R3PtrFixed, cb, uAlignment, R0Process,
                                         &((struct proc *)R0Process)->p_vmspace->vm_map);
 }
 
@@ -482,6 +490,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
             pvR0 = pMemToMapOs2->Core.pv;
             break;
 
+        case RTR0MEMOBJTYPE_PHYS_NC:
         case RTR0MEMOBJTYPE_PHYS:
             pvR0 = pMemToMapOs2->Core.pv;
             if (!pvR0)
@@ -532,10 +541,10 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 }
 
 
-int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
+int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
-    AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
+    AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
 
 #if 0
     int rc;
@@ -577,6 +586,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
             pvR0 = pMemToMapOs2->Core.pv;
             break;
 
+        case RTR0MEMOBJTYPE_PHYS_NC:
         case RTR0MEMOBJTYPE_RES_VIRT:
         case RTR0MEMOBJTYPE_MAPPING:
         default:
@@ -646,6 +656,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         case RTR0MEMOBJTYPE_PHYS:
             return pMemFreeBSD->Core.u.Phys.PhysBase + (iPage << PAGE_SHIFT);
 
+        case RTR0MEMOBJTYPE_PHYS_NC:
         case RTR0MEMOBJTYPE_RES_VIRT:
         case RTR0MEMOBJTYPE_MAPPING:
         case RTR0MEMOBJTYPE_LOW:
