@@ -1869,7 +1869,8 @@ DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pData)
     PDMCritSectLeave(&pData->CritSect);
 
     STAM_PROFILE_ADV_START(&pData->StatTransmitSend, a);
-    pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
+    if (pData->SendFrame.cb > 70) /* unqualified guess */
+        pData->Led.Asserted.s.fWriting = pData->Led.Actual.s.fWriting = 1;
     pData->pDrv->pfnSend(pData->pDrv, pData->SendFrame.pvBuf, pData->SendFrame.cb);
     pData->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&pData->StatTransmitSend, a);
