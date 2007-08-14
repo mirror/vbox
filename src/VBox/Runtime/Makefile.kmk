@@ -5,7 +5,7 @@
 
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -774,6 +774,10 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/thread-r0drv-nt.cpp \
 	string/strncmp.cpp
 
+#RuntimeR0Drv_SOURCES.win += \
+#	r0drv/memobj-r0drv.cpp \
+#	r0drv/nt/memobj-r0drv-nt.cpp
+
 RuntimeR0Drv_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
 
@@ -877,7 +881,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/spinlock-r0drv-solaris.c \
 	r0drv/solaris/thread-r0drv-solaris.c \
 	r0drv/solaris/thread2-r0drv-solaris.c
-    
+
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
 #

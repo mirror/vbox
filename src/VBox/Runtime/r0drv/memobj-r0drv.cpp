@@ -47,6 +47,7 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
     if (!cbSelf)
         cbSelf = sizeof(*pNew);
     Assert(cbSelf >= sizeof(*pNew));
+    Assert(cbSelf == (uint32_t)cbSelf);
 
     /*
      * Allocate and initialize the object.
@@ -55,7 +56,7 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
     if (pNew)
     {
         pNew->u32Magic  = RTR0MEMOBJ_MAGIC;
-        pNew->cbSelf    = cbSelf;
+        pNew->cbSelf    = (uint32_t)cbSelf;
         pNew->enmType   = enmType;
         pNew->cb        = cb;
         pNew->pv        = pv;
@@ -159,6 +160,38 @@ RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
 
 
 /**
+ * Gets the ring-3 address of a ring-0 memory object.
+ *
+ * This only applies to ring-0 memory object with ring-3 mappings of some kind, i.e.
+ * locked user memory, reserved user address space and user mappings. This API should
+ * not be used on any other objects.
+ *
+ * @returns The address of the memory object.
+ * @returns NULL if the handle is invalid or if it's not an object with a ring-3 mapping.
+ *          Strict builds will assert in both cases.
+ * @param   MemObj  The ring-0 memory object handle.
+ */
+RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
+{
+    /* Validate the object handle. */
+    AssertPtrReturn(MemObj, NIL_RTR3PTR);
+    PRTR0MEMOBJINTERNAL pMem = (PRTR0MEMOBJINTERNAL)MemObj;
+    AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), NIL_RTR3PTR);
+    AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), NIL_RTR3PTR);
+    AssertMsgReturn(    (   pMem->enmType == RTR0MEMOBJTYPE_MAPPING
+                         && pMem->u.Mapping.R0Process != NIL_RTR0PROCESS)
+                    ||  (   pMem->enmType == RTR0MEMOBJTYPE_LOCK
+                         && pMem->u.Lock.R0Process != NIL_RTR0PROCESS)
+                    ||  (   pMem->enmType == RTR0MEMOBJTYPE_RES_VIRT
+                         && pMem->u.ResVirt.R0Process != NIL_RTR0PROCESS),
+                    ("%p: %d\n", pMem, pMem->enmType), NIL_RTR3PTR);
+
+    /* return the mapping address. */
+    return (RTR3PTR)pMem->pv;
+}
+
+
+/**
  * Gets the size of a ring-0 memory object.
  *
  * @returns The address of the memory object.
@@ -188,7 +221,7 @@ RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
  * @param   MemObj  The ring-0 memory object handle.
  * @param   iPage   The page number within the object.
  */
-RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, unsigned iPage)
+RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage)
 {
     /* Validate the object handle. */
     AssertPtrReturn(MemObj, NIL_RTHCPHYS);
@@ -197,7 +230,7 @@ RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, unsigned iPage)
     AssertReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, NIL_RTHCPHYS);
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), NIL_RTHCPHYS);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), NIL_RTHCPHYS);
-    const unsigned cPages = (pMem->cb >> PAGE_SHIFT);
+    const size_t cPages = (pMem->cb >> PAGE_SHIFT);
     if (iPage >= cPages)
     {
         /* permit: while (RTR0MemObjGetPagePhysAddr(pMem, iPage++) != NIL_RTHCPHYS) {} */
@@ -407,7 +440,7 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
  *
- * @remark  RTR0MemObjGetAddress() will return the rounded down address.
+ * @remark  RTR0MemGetAddressR3() and RTR0MemGetAddress() will return the rounded down address.
  */
 RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, RTR0PROCESS R0Process)
 {
@@ -434,7 +467,7 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, RTR0P
  * @param   pv              Kernel virtual address. This is rounded down to a page boundrary.
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
  *
- * @remark  RTR0MemObjGetAddress() will return the rounded down address.
+ * @remark  RTR0MemGetAddress() will return the rounded down address.
  */
 RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
 {

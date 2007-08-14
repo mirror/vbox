@@ -65,7 +65,7 @@ RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj);
  * @param   MemObj  The ring-0 memory object handle.
  * @param   iPage   The page number within the object.
  */
-RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, unsigned iPage);
+RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage);
 
 /**
  * Frees a ring-0 memory object.
@@ -122,7 +122,7 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
  *
- * @remark  RTR0MemObjGetAddress() will return the rounded down address.
+ * @remark  RTR0MemGetAddressR3() and RTR0MemGetAddress() will return the rounded down address.
  */
 RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, RTR0PROCESS R0Process);
 
@@ -134,7 +134,7 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, RTR0P
  * @param   pv              Kernel virtual address. This is rounded down to a page boundrary.
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
  *
- * @remark  RTR0MemObjGetAddress() will return the rounded down address.
+ * @remark  RTR0MemGetAddress() will return the rounded down address.
  */
 RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb);
 

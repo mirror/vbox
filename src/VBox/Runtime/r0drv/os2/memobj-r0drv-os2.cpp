@@ -82,7 +82,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_MAPPING:
             if (pMemOs2->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
-                break; 
+                break;
 
             /* fall thru */
         case RTR0MEMOBJTYPE_PAGE:
@@ -343,7 +343,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     /*
      * Create a dummy mapping object for it.
      *
-     * All mappings are read/write/execute in OS/2 and there isn't 
+     * All mappings are read/write/execute in OS/2 and there isn't
      * any cache options, so sharing is ok. And the main memory object
      * isn't actually freed until all the mappings have been freed up
      * (reference counting).
@@ -394,7 +394,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
                     return RTErrConvertFromOS2(rc);
             }
             break;
-#endif 
+#endif
             return VERR_NOT_SUPPORTED;
 
         case RTR0MEMOBJTYPE_LOCK:
@@ -443,7 +443,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
 }
 
 
-RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPage)
+RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
 {
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)pMem;
 

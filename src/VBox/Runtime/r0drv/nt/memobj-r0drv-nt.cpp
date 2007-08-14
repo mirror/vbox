@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * innotek Portable Runtime - Ring-0 Memory Objects, Darwin.
+ * innotek Portable Runtime - Ring-0 Memory Objects, NT.
  */
 
 /*
@@ -19,7 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-darwin-kernel.h"
+#include "the-nt-kernel.h"
 
 #include <iprt/memobj.h>
 #include <iprt/alloc.h>
@@ -30,80 +30,62 @@
 #include <iprt/process.h>
 #include "internal/memobj.h"
 
-#define USE_VM_MAP_WIRE
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Maximum number of bytes we try to lock down in one go.
+ * This is supposed to have a limit right below 256MB, but this appears
+ * to actually be much lower. The values here have been determined experimentally.
+ */
+#ifdef RT_ARCH_X86
+# define MAX_LOCK_MEM_SIZE   (32*1024*1024) /* 32MB */
+#endif
+#ifdef RT_ARCH_AMD64
+# define MAX_LOCK_MEM_SIZE   (24*1024*1024) /* 24MB */
+#endif
 
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
- * The Darwin version of the memory object structure.
+ * The NT version of the memory object structure.
  */
-typedef struct RTR0MEMOBJDARWIN
+typedef struct RTR0MEMOBJNT
 {
     /** The core structure. */
     RTR0MEMOBJINTERNAL  Core;
-    /** Pointer to the memory descriptor created for allocated and locked memory. */
-    IOMemoryDescriptor *pMemDesc;
-    /** Pointer to the memory mapping object for mapped memory. */
-    IOMemoryMap        *pMemMap;
-} RTR0MEMOBJDARWIN, *PRTR0MEMOBJDARWIN;
+    /** The number of PMDLs (memory descriptor lists) in the array. */
+    unsigned            cMdls;
+    /** Array of MDL pointers. (variable size) */
+    PMDL                apMdls[1];
+} RTR0MEMOBJNT, *PRTR0MEMOBJNT;
 
 
 int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 {
-    PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)pMem;
-
-    /*
-     * Release the IOMemoryDescriptor/IOMemoryMap associated with the object.
-     */
-    if (pMemDarwin->pMemDesc)
-    {
-        if (pMemDarwin->Core.enmType == RTR0MEMOBJTYPE_LOCK)
-            pMemDarwin->pMemDesc->complete(); /* paranoia */
-        pMemDarwin->pMemDesc->release();
-        pMemDarwin->pMemDesc = NULL;
-        Assert(!pMemDarwin->pMemMap);
-    }
-    else if (pMemDarwin->pMemMap)
-    {
-        pMemDarwin->pMemMap->release();
-        pMemDarwin->pMemMap = NULL;
-    }
+    PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)pMem;
 
     /*
      * Release any memory that we've allocated or locked.
      */
-    switch (pMemDarwin->Core.enmType)
+    switch (pMemNt->Core.enmType)
     {
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PAGE:
-            IOFreeAligned(pMemDarwin->Core.pv, pMemDarwin->Core.cb);
             break;
 
         case RTR0MEMOBJTYPE_CONT:
-            IOFreeContiguous(pMemDarwin->Core.pv, pMemDarwin->Core.cb);
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
-        {
-#ifdef USE_VM_MAP_WIRE
-            vm_map_t Map = pMemDarwin->Core.u.Lock.R0Process != NIL_RTR0PROCESS
-                         ? get_task_map((task_t)pMemDarwin->Core.u.Lock.R0Process)
-                         : kernel_map;
-            kern_return_t kr = vm_map_unwire(Map,
-                                             (vm_map_offset_t)pMemDarwin->Core.pv,
-                                             (vm_map_offset_t)pMemDarwin->Core.pv + pMemDarwin->Core.cb,
-                                             0 /* not user */);
-            AssertRC(kr == KERN_SUCCESS); /** @todo don't ignore... */
-#endif
+            for (unsigned i = 0; i < pMemNt->cMdls; i++)
+                MmUnlockPages(pMemNt->apMdl[i]);
             break;
-        }
 
         case RTR0MEMOBJTYPE_PHYS:
-            /*if (pMemDarwin->Core.u.Phys.fAllocated)
-                IOFreePhysical(pMemDarwin->Core.u.Phys.PhysBase, pMemDarwin->Core.cb);*/
-            Assert(!pMemDarwin->Core.u.Phys.fAllocated);
+            Assert(!pMemNt->Core.u.Phys.fAllocated);
             break;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
@@ -116,10 +98,18 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         default:
-            AssertMsgFailed(("enmType=%d\n", pMemDarwin->Core.enmType));
+            AssertMsgFailed(("enmType=%d\n", pMemNt->Core.enmType));
             return VERR_INTERNAL_ERROR;
     }
 
+    /*
+     * Free any MDLs.
+     */
+    for (unsigned i = 0; i < pMemNt->cMdls; i++)
+    {
+        MmUnlockPages(pMemNt->apMdl[i]);
+        IoFreeMdl(pMemNt->u.locked.papMdl[i]);
+    }
     return VINF_SUCCESS;
 }
 
@@ -140,11 +130,11 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
             /*
              * Create the IPRT memory object.
              */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PAGE, pv, cb);
-            if (pMemDarwin)
+            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PAGE, pv, cb);
+            if (pMemNt)
             {
-                pMemDarwin->pMemDesc = pMemDesc;
-                *ppMem = &pMemDarwin->Core;
+                pMemNt->pMemDesc = pMemDesc;
+                *ppMem = &pMemNt->Core;
                 return VINF_SUCCESS;
             }
 
@@ -195,11 +185,11 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
             /*
              * Create the IPRT memory object.
              */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOW, pv, cb);
-            if (pMemDarwin)
+            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOW, pv, cb);
+            if (pMemNt)
             {
-                pMemDarwin->pMemDesc = pMemDesc;
-                *ppMem = &pMemDarwin->Core;
+                pMemNt->pMemDesc = pMemDesc;
+                *ppMem = &pMemNt->Core;
                 return VINF_SUCCESS;
             }
 
@@ -245,12 +235,12 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                 /*
                  * Create the IPRT memory object.
                  */
-                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_CONT, pv, cb);
-                if (pMemDarwin)
+                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb);
+                if (pMemNt)
                 {
-                    pMemDarwin->Core.u.Cont.Phys = PhysAddr;
-                    pMemDarwin->pMemDesc = pMemDesc;
-                    *ppMem = &pMemDarwin->Core;
+                    pMemNt->Core.u.Cont.Phys = PhysAddr;
+                    pMemNt->pMemDesc = pMemDesc;
+                    *ppMem = &pMemNt->Core;
                     return VINF_SUCCESS;
                 }
 
@@ -309,13 +299,13 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
                 /*
                  * Create the IPRT memory object.
                  */
-                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PHYS, NULL, cb);
-                if (pMemDarwin)
+                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+                if (pMemNt)
                 {
-                    pMemDarwin->Core.u.Phys.PhysBase = PhysAddr;
-                    pMemDarwin->Core.u.Phys.fAllocated = true;
-                    pMemDarwin->pMemDesc = pMemDesc;
-                    *ppMem = &pMemDarwin->Core;
+                    pMemNt->Core.u.Phys.PhysBase = PhysAddr;
+                    pMemNt->Core.u.Phys.fAllocated = true;
+                    pMemNt->pMemDesc = pMemDesc;
+                    *ppMem = &pMemNt->Core;
                     return VINF_SUCCESS;
                 }
 
@@ -372,13 +362,13 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
             /*
              * Create the IPRT memory object.
              */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PHYS, NULL, cb);
-            if (pMemDarwin)
+            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+            if (pMemNt)
             {
-                pMemDarwin->Core.u.Phys.PhysBase = PhysAddr;
-                pMemDarwin->Core.u.Phys.fAllocated = false;
-                pMemDarwin->pMemDesc = pMemDesc;
-                *ppMem = &pMemDarwin->Core;
+                pMemNt->Core.u.Phys.PhysBase = PhysAddr;
+                pMemNt->Core.u.Phys.fAllocated = false;
+                pMemNt->pMemDesc = pMemDesc;
+                *ppMem = &pMemNt->Core;
                 return VINF_SUCCESS;
             }
 
@@ -422,11 +412,11 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
         /*
          * Create the IPRT memory object.
          */
-        PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
-        if (pMemDarwin)
+        PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOCK, pv, cb);
+        if (pMemNt)
         {
-            pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
-            *ppMem = &pMemDarwin->Core;
+            pMemNt->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
+            *ppMem = &pMemNt->Core;
             return VINF_SUCCESS;
         }
 
@@ -450,12 +440,12 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
             /*
              * Create the IPRT memory object.
              */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
-            if (pMemDarwin)
+            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOCK, pv, cb);
+            if (pMemNt)
             {
-                pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
-                pMemDarwin->pMemDesc = pMemDesc;
-                *ppMem = &pMemDarwin->Core;
+                pMemNt->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
+                pMemNt->pMemDesc = pMemDesc;
+                *ppMem = &pMemNt->Core;
                 return VINF_SUCCESS;
             }
 
@@ -501,7 +491,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
      * Must have a memory descriptor.
      */
     int rc = VERR_INVALID_PARAMETER;
-    PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
+    PRTR0MEMOBJNT pMemToMapDarwin = (PRTR0MEMOBJNT)pMemToMap;
     if (pMemToMapDarwin->pMemDesc)
     {
         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map(kernel_task, kIOMapAnywhere,
@@ -515,13 +505,13 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
                 /*
                  * Create the IPRT memory object.
                  */
-                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
+                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING,
                                                                                 pv, pMemToMapDarwin->Core.cb);
-                if (pMemDarwin)
+                if (pMemNt)
                 {
-                    pMemDarwin->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
-                    pMemDarwin->pMemMap = pMemMap;
-                    *ppMem = &pMemDarwin->Core;
+                    pMemNt->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
+                    pMemNt->pMemMap = pMemMap;
+                    *ppMem = &pMemNt->Core;
                     return VINF_SUCCESS;
                 }
 
@@ -544,7 +534,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
      * Must have a memory descriptor.
      */
     int rc = VERR_INVALID_PARAMETER;
-    PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
+    PRTR0MEMOBJNT pMemToMapDarwin = (PRTR0MEMOBJNT)pMemToMap;
     if (pMemToMapDarwin->pMemDesc)
     {
         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map((task_t)R0Process, kIOMapAnywhere,
@@ -558,13 +548,13 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
                 /*
                  * Create the IPRT memory object.
                  */
-                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
+                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING,
                                                                                 pv, pMemToMapDarwin->Core.cb);
-                if (pMemDarwin)
+                if (pMemNt)
                 {
-                    pMemDarwin->Core.u.Mapping.R0Process = R0Process;
-                    pMemDarwin->pMemMap = pMemMap;
-                    *ppMem = &pMemDarwin->Core;
+                    pMemNt->Core.u.Mapping.R0Process = R0Process;
+                    pMemNt->pMemMap = pMemMap;
+                    *ppMem = &pMemNt->Core;
                     return VINF_SUCCESS;
                 }
 
@@ -581,21 +571,21 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, vo
 }
 
 
-RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
+RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPage)
 {
     RTHCPHYS            PhysAddr;
-    PRTR0MEMOBJDARWIN   pMemDarwin = (PRTR0MEMOBJDARWIN)pMem;
+    PRTR0MEMOBJNT   pMemNt = (PRTR0MEMOBJNT)pMem;
 
 #ifdef USE_VM_MAP_WIRE
     /*
      * Locked memory doesn't have a memory descriptor and
      * needs to be handled differently.
      */
-    if (pMemDarwin->Core.enmType == RTR0MEMOBJTYPE_LOCK)
+    if (pMemNt->Core.enmType == RTR0MEMOBJTYPE_LOCK)
     {
         ppnum_t PgNo;
-        if (pMemDarwin->Core.u.Lock.R0Process == NIL_RTR0PROCESS)
-            PgNo = pmap_find_phys(kernel_pmap, (uintptr_t)pMemDarwin->Core.pv + iPage * PAGE_SIZE);
+        if (pMemNt->Core.u.Lock.R0Process == NIL_RTR0PROCESS)
+            PgNo = pmap_find_phys(kernel_pmap, (uintptr_t)pMemNt->Core.pv + iPage * PAGE_SIZE);
         else
         {
             /*
@@ -623,8 +613,8 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
                     }
                 AssertReturn(s_offPmap >= 0, NIL_RTHCPHYS);
             }
-            pmap_t Pmap = *(pmap_t *)((uintptr_t)get_task_map((task_t)pMemDarwin->Core.u.Lock.R0Process) + s_offPmap);
-            PgNo = pmap_find_phys(Pmap, (uintptr_t)pMemDarwin->Core.pv + iPage * PAGE_SIZE);
+            pmap_t Pmap = *(pmap_t *)((uintptr_t)get_task_map((task_t)pMemNt->Core.u.Lock.R0Process) + s_offPmap);
+            PgNo = pmap_find_phys(Pmap, (uintptr_t)pMemNt->Core.pv + iPage * PAGE_SIZE);
         }
 
         AssertReturn(PgNo, NIL_RTHCPHYS);
@@ -637,9 +627,9 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         /*
          * Get the memory descriptor.
          */
-        IOMemoryDescriptor *pMemDesc = pMemDarwin->pMemDesc;
+        IOMemoryDescriptor *pMemDesc = pMemNt->pMemDesc;
         if (!pMemDesc)
-            pMemDesc = pMemDarwin->pMemMap->getMemoryDescriptor();
+            pMemDesc = pMemNt->pMemMap->getMemoryDescriptor();
         AssertReturn(pMemDesc, NIL_RTHCPHYS);
 
         /*
