@@ -56,6 +56,10 @@ typedef struct RTR0MEMOBJNT
 {
     /** The core structure. */
     RTR0MEMOBJINTERNAL  Core;
+#ifndef IPRT_TARGET_NT4
+    /** Used MmAllocatePagesForMdl(). */
+    bool                fAllocatedPagesForMdl;
+#endif
     /** The number of PMDLs (memory descriptor lists) in the array. */
     unsigned            cMdls;
     /** Array of MDL pointers. (variable size) */
@@ -68,48 +72,96 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
     PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)pMem;
 
     /*
-     * Release any memory that we've allocated or locked.
+     * Deal with it on a per type basis (just as a variation).
      */
     switch (pMemNt->Core.enmType)
     {
         case RTR0MEMOBJTYPE_LOW:
+#ifdef IPRT_TARGET_NT4
+            if (pMemNt->fAllocatedPagesForMdl)
+            {
+                Assert(pMemNt->Core.pv && pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+                MmUnmapLockedPages(pMemNt->Core.pv, pMemNt->apMdls[0]);
+                pMemNt->Core.pv = NULL;
+
+                MmFreePagesFromMdl(pMemNt->apMdls[0]);
+                pMemNt->apMdls[0] = NULL;
+                pMemNt->cMdls = 0;
+                break;
+            }
+#endif
+            /* fall thru */
         case RTR0MEMOBJTYPE_PAGE:
+            Assert(pMemNt->Core.pv);
+            ExFreePool(pMemNt->Core.pv);
+            pMemNt->Core.pv = NULL;
+
+            Assert(pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+            IoFreeMdl(pMemNt->apMdls[0]);
+            pMemNt->apMdls[0] = NULL;
+            pMemNt->cMdls = 0;
             break;
 
         case RTR0MEMOBJTYPE_CONT:
+            Assert(pMemNt->Core.pv);
+            MmFreeContiguousMemory(pMemNt->Core.pv);
+            pMemNt->Core.pv = NULL;
+
+            Assert(pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+            IoFreeMdl(pMemNt->apMdls[0]);
+            pMemNt->apMdls[0] = NULL;
+            pMemNt->cMdls = 0;
+            break;
+
+        case RTR0MEMOBJTYPE_PHYS:
+        case RTR0MEMOBJTYPE_PHYS_NC:
+#ifdef IPRT_TARGET_NT4
+            if (pMemNt->fAllocatedPagesForMdl)
+            {
+                MmFreePagesFromMdl(pMemNt->apMdls[0]);
+                pMemNt->apMdls[0] = NULL;
+                pMemNt->cMdls = 0;
+            }
+#endif
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
             for (unsigned i = 0; i < pMemNt->cMdls; i++)
+            {
                 MmUnlockPages(pMemNt->apMdl[i]);
-            break;
-
-        case RTR0MEMOBJTYPE_PHYS:
-            Assert(!pMemNt->Core.u.Phys.fAllocated);
+                IoFreeMdl(pMemNt->apMdl[i]);
+                pMemNt->apMdl[i] = NULL;
+            }
             break;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
+            if (pMemNt->Core.u.ResVirt.R0Process == NIL_RTR0PROCESS)
+            {
+                MmMapIoSpace
+            }
+            else
+            {
+            }
             AssertMsgFailed(("RTR0MEMOBJTYPE_RES_VIRT\n"));
             return VERR_INTERNAL_ERROR;
             break;
 
         case RTR0MEMOBJTYPE_MAPPING:
-            /* nothing to do here. */
+        {
+            Assert(pMemNt->Core.pv && pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+            PRTR0MEMOBJNT pMemNtParent = (PRTR0MEMOBJNT)pMemNt->Core.uRel.Child.pParent;
+            Assert(pMemNtParent);
+            Assert(pMemNtParent->cMdls == 1 && pMemNtParent->apMdls[0]);
+            MmUnmapLockedPages(pMemNt->Core.pv, pMemNtParent->apMdls);
+            pMemNt->Core.pv = NULL;
             break;
+        }
 
         default:
             AssertMsgFailed(("enmType=%d\n", pMemNt->Core.enmType));
             return VERR_INTERNAL_ERROR;
     }
 
-    /*
-     * Free any MDLs.
-     */
-    for (unsigned i = 0; i < pMemNt->cMdls; i++)
-    {
-        MmUnlockPages(pMemNt->apMdl[i]);
-        IoFreeMdl(pMemNt->u.locked.papMdl[i]);
-    }
     return VINF_SUCCESS;
 }
 
@@ -117,33 +169,36 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
     /*
-     * Try allocate the memory and create it's IOMemoryDescriptor first.
+     * Try allocate the memory and create an MDL for them so
+     * we can query the physical addresses and do mappings later
+     * without running into out-of-memory conditions and similar problems.
      */
     int rc = VERR_NO_PAGE_MEMORY;
-    AssertCompile(sizeof(IOPhysicalAddress) == 4);
-    void *pv = IOMallocAligned(cb, PAGE_SIZE);
+    void *pv = ExAllocatePoolWithTag(NonPagedPool, cb, IPRT_NT_POOL_TAG);
     if (pv)
     {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
-        if (pMemDesc)
+        PMDL pMdl = IoAllocateMdl(pv, cb, FALSE, FALSE, NULL);
+        if (pMdl)
         {
+            MmBuildMdlForNonPagedPool(pMdl);
+            /** @todo if (fExecutable) */
+
             /*
              * Create the IPRT memory object.
              */
             PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PAGE, pv, cb);
             if (pMemNt)
             {
-                pMemNt->pMemDesc = pMemDesc;
+                pMemNt->cMdls = 1;
+                pMemNt->apMdls[0] = pMdl;
                 *ppMem = &pMemNt->Core;
                 return VINF_SUCCESS;
             }
 
             rc = VERR_NO_MEMORY;
-            pMemDesc->release();
+            IoFreeMdl(pMdl);
         }
-        else
-            rc = VERR_MEMOBJ_INIT_FAILED;
-        IOFreeAligned(pv, cb);
+        ExFreePool(pv);
     }
     return rc;
 }
@@ -151,204 +206,205 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-#if 1
     /*
-     * Allocating 128KB for the low page pool can bit a bit exhausting on the kernel,
-     * it frequnetly causes the entire box to lock up on startup.
-     *
-     * So, try allocate the memory using IOMallocAligned first and if we get any high
-     * physical memory we'll release it and fall back on IOMAllocContiguous.
+     * Try see if we get lucky first...
+     * (We could probably just assume we're lucky on NT4.)
      */
-    int rc = VERR_NO_PAGE_MEMORY;
-    AssertCompile(sizeof(IOPhysicalAddress) == 4);
-    void *pv = IOMallocAligned(cb, PAGE_SIZE);
-    if (pv)
+    int rc = rtR0MemObjNativeAllocPage(ppMem, cb, fExecutable);
+    if (RT_SUCCESS(rc))
     {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
-        if (pMemDesc)
-        {
-            /*
-             * Check if it's all below 4GB.
-             */
-            for (IOByteCount off = 0; off < cb; off += PAGE_SIZE)
+        size_t iPage = cb >> PAGE_SHIFT;
+        while (iPage-- > 0)
+            if (rtR0MemObjNativeGetPagePhysAddr(*ppMem, iPage) >= _4G)
             {
-                addr64_t Addr = pMemDesc->getPhysicalSegment64(off, NULL);
-                if (Addr > (uint32_t)(_4G - PAGE_SIZE))
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        /* The following ASSUMES that rtR0MemObjNativeAllocPage returns a completed object. */
+        RTR0MemObjFree(*ppMem, false);
+        *ppMem = NULL;
+    }
+
+#ifndef IPRT_TARGET_NT4
+    /*
+     * Use MmAllocatePagesForMdl to specify the range of physical addresses we wish to use.
+     */
+    PHYSICAL_ADDRESS Zero;
+    PHYSICAL_ADDRESS HighAddr;
+    Zero.QuadPart = 0;
+    High.QuadPart = _4G - 1;
+    PMDL pMdl = MmAllocatePagesForMdl(Zero, HighAddr, Zero, cb);
+    if (pMdl)
+    {
+        if (MmGetMdlByteCount(pMdl) >= cb)
+        {
+            __try
+            {
+                void *pv = MmMapLockedPagesSpecifyCache(pMdl, KernelMode, MmCached, NULL /* no base address */,
+                                                        FALSE /* no bug check on failure */, NormalPagePriority);
+                if (pv)
                 {
-                    /* Ok, we failed, fall back on contiguous allocation. */
-                    pMemDesc->release();
-                    IOFreeAligned(pv, cb);
-                    return rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
+                    PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOW, pv, cb);
+                    if (pMemNt)
+                    {
+                        pMemNt->fAllocatedPagesForMdl = true;
+                        pMemNt->cMdls = 1;
+                        pMemNt->apMdls[0] = pMdl;
+                        *ppMem = &pMemNt->Core;
+                        return VINF_SUCCESS;
+                    }
+                    MmUnmapLockedPages(pv, pMdl);
                 }
             }
-
-            /*
-             * Create the IPRT memory object.
-             */
-            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOW, pv, cb);
-            if (pMemNt)
+            __except(EXCEPTION_EXECUTE_HANDLER)
             {
-                pMemNt->pMemDesc = pMemDesc;
-                *ppMem = &pMemNt->Core;
-                return VINF_SUCCESS;
+                /* nothing */
             }
-
-            rc = VERR_NO_MEMORY;
-            pMemDesc->release();
         }
-        else
-            rc = VERR_MEMOBJ_INIT_FAILED;
-        IOFreeAligned(pv, cb);
+        MmFreePagesFromMdl(pMdl);
     }
-    return rc;
-
-#else
+#endif /* !IPRT_TARGET_NT4 */
 
     /*
-     * IOMallocContiguous is the most suitable API.
+     * Fall back on contiguous memory...
      */
     return rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
-#endif
+}
+
+
+/**
+ * Internal worker for rtR0MemObjNativeAllocCont(), rtR0MemObjNativeAllocPhys()
+ * and rtR0MemObjNativeAllocPhysNC() that takes a max physical address in addition
+ * to what rtR0MemObjNativeAllocCont() does.
+ *
+ * @returns IPRT status code.
+ * @param   ppMem           Where to store the pointer to the ring-0 memory object.
+ * @param   cb              The size.
+ * @param   fExecutable     Whether the mapping should be executable or not.
+ * @param   PhysHighest     The highest physical address for the pages in allocation.
+ */
+static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, RTHCPHYS PhysHighest)
+{
+    /*
+     * Allocate the memory and create an MDL for it.
+     */
+    PHYSICAL_ADDRESS PhysAddrHighest;
+    PhysAddrHighest.QuadPart = PhysHighest;
+    void *pv = MmAllocateContiguousMemory(cb, PhysAddrHighest);
+    if (!pv)
+        return VERR_NO_MEMORY;
+
+    PMDL pMdl = IoAllocateMdl(pv, cb, FALSE, FALSE, NULL);
+    if (pMdl)
+    {
+        MmBuildMdlForNonPagedPool(pMdl);
+        /** @todo fExecutable */
+
+        PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb);
+        if (pMemNt)
+        {
+            pMemNt->Core.u.Cont.Phys = (RTHCPHYS)*MmGetMdlPfnArray(pMdl) << PAGE_SHIFT;
+            pMemNt->cMdls = 1;
+            pMemNt->apMdls[0] = pMdl;
+            *ppMem = &pMemNt->Core;
+            return VINF_SUCCESS;
+        }
+
+        IoFreeMdl(pMdl);
+    }
+    MmFreeContiguousMemory(pv);
+    return VERR_NO_MEMORY;
 }
 
 
 int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    /*
-     * Try allocate the memory and create it's IOMemoryDescriptor first.
-     */
-    int rc = VERR_NO_CONT_MEMORY;
-    AssertCompile(sizeof(IOPhysicalAddress) == 4);
-    void *pv = IOMallocContiguous(cb, PAGE_SIZE, NULL);
-    if (pv)
-    {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, kernel_task);
-        if (pMemDesc)
-        {
-            /* a bit of useful paranoia. */
-            addr64_t PhysAddr = pMemDesc->getPhysicalSegment64(0, NULL);
-            Assert(PhysAddr == pMemDesc->getPhysicalAddress());
-            if (    PhysAddr > 0
-                &&  PhysAddr <= _4G
-                &&  PhysAddr + cb <= _4G)
-            {
-                /*
-                 * Create the IPRT memory object.
-                 */
-                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb);
-                if (pMemNt)
-                {
-                    pMemNt->Core.u.Cont.Phys = PhysAddr;
-                    pMemNt->pMemDesc = pMemDesc;
-                    *ppMem = &pMemNt->Core;
-                    return VINF_SUCCESS;
-                }
-
-                rc = VERR_NO_MEMORY;
-            }
-            else
-            {
-                AssertMsgFailed(("PhysAddr=%llx\n", (unsigned long long)PhysAddr));
-                rc = VERR_INTERNAL_ERROR;
-            }
-            pMemDesc->release();
-        }
-        else
-            rc = VERR_MEMOBJ_INIT_FAILED;
-        IOFreeContiguous(pv, cb);
-    }
-    return rc;
+    return rtR0MemObjNativeAllocContEx(ppMem, cb, fExecutable, _4G-1);
 }
 
 
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
-#if 0 /* turned out IOMallocPhysical isn't exported yet. sigh. */
+#ifndef IPRT_TARGET_NT4
     /*
-     * Try allocate the memory and create it's IOMemoryDescriptor first.
-     * Note that IOMallocPhysical is not working correctly (it's ignoring the mask).
+     * Try and see if we're lucky and get a contiguous chunk from MmAllocatePagesForMdl.
+     *
+     * If the allocation is big, the chances are *probably* not very good. The current
+     * max limit is kind of random.
      */
-
-    /* first calc the mask (in the hope that it'll be used) */
-    IOPhysicalAddress PhysMask = ~(IOPhysicalAddress)PAGE_OFFSET_MASK;
-    if (PhysHighest != NIL_RTHCPHYS)
+    if (cb < _128K)
     {
-        PhysMask = ~(IOPhysicalAddress)0;
-        while (PhysMask > PhysHighest)
-            PhysMask >>= 1;
-        AssertReturn(PhysMask + 1 < cb, VERR_INVALID_PARAMETER);
-        PhysMask &= ~(IOPhysicalAddress)PAGE_OFFSET_MASK;
-    }
-
-    /* try allocate physical memory. */
-    int rc = VERR_NO_PHYS_MEMORY;
-    mach_vm_address_t PhysAddr64 = IOMallocPhysical(cb, PhysMask);
-    if (PhysAddr64)
-    {
-        IOPhysicalAddress PhysAddr = PhysAddr64;
-        if (    PhysAddr == PhysAddr64
-            &&  PhysAddr < PhysHighest
-            &&  PhysAddr + cb <= PhysHighest)
+        PHYSICAL_ADDRESS Zero;
+        PHYSICAL_ADDRESS HighAddr;
+        Zero.QuadPart = 0;
+        High.QuadPart = _4G - 1;
+        PMDL pMdl = MmAllocatePagesForMdl(Zero, HighAddr, Zero, cb);
+        if (pMdl)
         {
-            /* create a descriptor. */
-            IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withPhysicalAddress(PhysAddr, cb, kIODirectionInOut);
-            if (pMemDesc)
+            if (MmGetMdlByteCount(pMdl) >= cb)
             {
-                Assert(PhysAddr == pMemDesc->getPhysicalAddress());
-
-                /*
-                 * Create the IPRT memory object.
-                 */
-                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb);
-                if (pMemNt)
+                PPFN_NUMBER paPfns = MmGetMdlPfnArray(pMdl);
+                PFN_NUMBER Pfn = paPfns[0] + 1;
+                const size_t cPages = cb >> PAGE_SIZE;
+                size_t iPage;
+                for (iPage = 1; iPage < cPages; iPage++, Pfn++)
+                    if (paPfns[iPage] != Pfn)
+                        break;
+                if (iPage >= cPages)
                 {
-                    pMemNt->Core.u.Phys.PhysBase = PhysAddr;
-                    pMemNt->Core.u.Phys.fAllocated = true;
-                    pMemNt->pMemDesc = pMemDesc;
-                    *ppMem = &pMemNt->Core;
-                    return VINF_SUCCESS;
+                    PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+                    if (pMemNt)
+                    {
+                        pMemNt->Core.u.Phys.fAllocated = true;
+                        pMemNt->Core.u.Phys.PhysBase = (RTHCPHYS)paPfns[0] << PAGE_SHIFT;
+                        pMemNt->fAllocatedPagesForMdl = true;
+                        pMemNt->cMdls = 1;
+                        pMemNt->apMdls[0] = pMdl;
+                        *ppMem = &pMemNt->Core;
+                        return VINF_SUCCESS;
+                    }
                 }
-
-                rc = VERR_NO_MEMORY;
-                pMemDesc->release();
             }
-            else
-                rc = VERR_MEMOBJ_INIT_FAILED;
+            MmFreePagesFromMdl(pMdl);
         }
-        else
-        {
-            AssertMsgFailed(("PhysAddr=%#llx PhysAddr64=%#llx PhysHigest=%#llx\n", (unsigned long long)PhysAddr,
-                             (unsigned long long)PhysAddr64, (unsigned long long)PhysHighest));
-            rc = VERR_INTERNAL_ERROR;
-        }
-
-        IOFreePhysical(PhysAddr64, cb);
     }
-
-    /*
-     * Just in case IOMallocContiguous doesn't work right, we can try fall back
-     * on a contiguous allcation.
-     */
-    if (rc == VERR_INTERNAL_ERROR || rc == VERR_NO_PHYS_MEMORY)
-    {
-        int rc2 = rtR0MemObjNativeAllocCont(ppMem, cb, false);
-        if (RT_SUCCESS(rc2))
-            rc = rc2;
-    }
-
-    return rc;
-
-#else
-
-    return rtR0MemObjNativeAllocCont(ppMem, cb, false);
 #endif
+
+    return rtR0MemObjNativeAllocContEx(ppMem, cb, false, PhysHighest);
 }
 
 
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
-    /** @todo rtR0MemObjNativeAllocPhys / darwin. */
-    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest);
+#ifndef IPRT_TARGET_NT4
+    PHYSICAL_ADDRESS Zero;
+    PHYSICAL_ADDRESS HighAddr;
+    Zero.QuadPart = 0;
+    High.QuadPart = _4G - 1;
+    PMDL pMdl = MmAllocatePagesForMdl(Zero, HighAddr, Zero, cb);
+    if (pMdl)
+    {
+        if (MmGetMdlByteCount(pMdl) >= cb)
+        {
+            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb);
+            if (pMemNt)
+            {
+                pMemNt->fAllocatedPagesForMdl = true;
+                pMemNt->cMdls = 1;
+                pMemNt->apMdls[0] = pMdl;
+                *ppMem = &pMemNt->Core;
+                return VINF_SUCCESS;
+            }
+        }
+        MmFreePagesFromMdl(pMdl);
+    }
+    return VERR_NO_MEMORY;
+#else   /* IPRT_TARGET_NT4 */
+    return VERR_NOT_SUPPORTED;
+#endif  /* IPRT_TARGET_NT4 */
 }
 
 
@@ -357,35 +413,23 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
     /*
      * Validate the address range and create a descriptor for it.
      */
-    int rc = VERR_ADDRESS_TOO_BIG;
-    IOPhysicalAddress PhysAddr = Phys;
-    if (PhysAddr == Phys)
+    PFN_NUMBER Pfn = Phys >> PAGE_SHIFT;
+    if (((RTHCPHYS)Pfn << PAGE_SHIFT) != Phys)
+        return VERR_ADDRESS_TOO_BIG;
+
+    /*
+     * Create the IPRT memory object.
+     */
+    PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+    if (pMemNt)
     {
-        IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withPhysicalAddress(PhysAddr, cb, kIODirectionInOut);
-        if (pMemDesc)
-        {
-            Assert(PhysAddr == pMemDesc->getPhysicalAddress());
-
-            /*
-             * Create the IPRT memory object.
-             */
-            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb);
-            if (pMemNt)
-            {
-                pMemNt->Core.u.Phys.PhysBase = PhysAddr;
-                pMemNt->Core.u.Phys.fAllocated = false;
-                pMemNt->pMemDesc = pMemDesc;
-                *ppMem = &pMemNt->Core;
-                return VINF_SUCCESS;
-            }
-
-            rc = VERR_NO_MEMORY;
-            pMemDesc->release();
-        }
+        pMemNt->Core.u.Phys.PhysBase = PhysAddr;
+        pMemNt->Core.u.Phys.fAllocated = false;
+        pMemNt->pMemDesc = pMemDesc;
+        *ppMem = &pMemNt->Core;
+        return VINF_SUCCESS;
     }
-    else
-        AssertMsgFailed(("%#llx\n", (unsigned long long)Phys));
-    return rc;
+    return VERR_NO_MEMORY;
 }
 
 
@@ -399,84 +443,95 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  * @param cb        Number of bytes.
  * @param Task      The task \a pv and \a cb refers to.
  */
-static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, task_t Task)
+static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
 {
-#ifdef USE_VM_MAP_WIRE
-    vm_map_t Map = get_task_map(Task);
-    Assert(Map);
+    /*
+     * Calc the number of MDLs we need and allocate the memory object structure.
+     */
+    unsigned cMdls = pMem->cb / MAX_LOCK_MEM_SIZE;
+    if ((pMem->cb % MAX_LOCK_MEM_SIZE) > 0)
+        cMdls++;
+    PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJNT, apMdls[cMdls]),
+                                                        RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb);
+    if (!pMemNt)
+        return VERR_NO_MEMORY;
 
     /*
-     * First try lock the memory.
+     * Loop locking down the sub parts of the memory.
      */
-    int rc = VERR_LOCK_FAILED;
-    kern_return_t kr = vm_map_wire(get_task_map(Task),
-                                   (vm_map_offset_t)pv,
-                                   (vm_map_offset_t)pv + cb,
-                                   VM_PROT_DEFAULT,
-                                   0 /* not user */);
-    if (kr == KERN_SUCCESS)
+    int         rc = VINF_SUCCESS;
+    size_t      cbTotal = 0;
+    uint8_t    *pb = pv;
+    unsigned    iMdl;
+    for (iMdl = 0; iMdl < cMdls; iMdl++)
     {
         /*
-         * Create the IPRT memory object.
+         * Calc the Mdl size and allocate it.
          */
-        PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOCK, pv, cb);
-        if (pMemNt)
+        size_t cbCur = cb - cbTotal;
+        if (cbCur > MAX_LOCK_MEM_SIZE)
+            cbCur = MAX_LOCK_MEM_SIZE;
+        AssertMsg(cbCur, ("cbCur: 0!\n"));
+        PMDL pMdl = IoAllocateMdl(pb, cbCur, FALSE, FALSE, NULL);
+        if (!pMdl)
         {
-            pMemNt->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
-            *ppMem = &pMemNt->Core;
-            return VINF_SUCCESS;
+            rc = VERR_NO_MEMORY;
+            break;
         }
 
-        kr = vm_map_unwire(get_task_map(Task), (vm_map_offset_t)pv, (vm_map_offset_t)pv + cb, 0 /* not user */);
-        Assert(kr == KERN_SUCCESS);
-        rc = VERR_NO_MEMORY;
-    }
+        /*
+         * Lock the pages.
+         */
+        __try
+        {
+            MmProbeAndLockPages(pMdl, R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode, IoModifyAccess);
+            pMemNt->apMdls[iMdl] = pMdl;
+            pMemNt->cMdls++;
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            IoFreeMdl(pMdl);
+            rc = VERR_LOCK_FAILED;
+            break;
+        }
 
-#else
+        /* next */
+        cbTotal += cbCur;
+        pb      += cbCur;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pMemNt->cMdls == cMdls);
+        pMemNt->Core.u.Lock.R0Process = R0Process;
+        *ppMem = &pMemNt->Core;
+        return rc;
+    }
 
     /*
-     * Create a descriptor and try lock it (prepare).
+     * We failed, perform cleanups.
      */
-    int rc = VERR_MEMOBJ_INIT_FAILED;
-    IOMemoryDescriptor *pMemDesc = IOMemoryDescriptor::withAddress((vm_address_t)pv, cb, kIODirectionInOut, Task);
-    if (pMemDesc)
+    while (iMdl-- > 0)
     {
-        IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
-        if (IORet == kIOReturnSuccess)
-        {
-            /*
-             * Create the IPRT memory object.
-             */
-            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOCK, pv, cb);
-            if (pMemNt)
-            {
-                pMemNt->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
-                pMemNt->pMemDesc = pMemDesc;
-                *ppMem = &pMemNt->Core;
-                return VINF_SUCCESS;
-            }
-
-            pMemDesc->complete();
-            rc = VERR_NO_MEMORY;
-        }
-        else
-            rc = VERR_LOCK_FAILED;
-        pMemDesc->release();
+        MmUnlockPages(pMemNt->apMdl[iMdl]);
+        IoFreeMdl(pMemNt->apMdl[iMdl]);
+        pMemNt->apMdl[iMdl] = NULL;
     }
-#endif
-    return rc;
+    rtR0MemObjDelete(pMemNt);
+    return SUPDRV_ERR_LOCK_FAILED;
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
-    return rtR0MemObjNativeLock(ppMem, pv, cb, (task_t)R0Process);
+    AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
+    /* ( Can use MmProbeAndLockProcessPages if we need to mess with other processes later.) */
+    return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, R0Process);
 }
 
 
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-    return rtR0MemObjNativeLock(ppMem, pv, cb, kernel_task);
+    return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, NIL_RTR0PROCESS);
 }
 
 
