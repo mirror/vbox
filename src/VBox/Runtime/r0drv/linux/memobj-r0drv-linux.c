@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Revision$ */
 /** @file
  * innotek Portable Runtime - Ring-0 Memory Objects, Linux.
  */
@@ -209,7 +209,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
             BUG();
     }
 
-    fPageByPage = false;
+    fContiguous = true;
 #endif /* < 2.4.22 */
     pMemLnx->fContiguous = fContiguous;
 
