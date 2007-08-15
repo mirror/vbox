@@ -47,6 +47,20 @@ RTR0DECL(bool) RTR0MemObjIsMapping(RTR0MEMOBJ MemObj);
 RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj);
 
 /**
+ * Gets the ring-3 address of a ring-0 memory object.
+ *
+ * This only applies to ring-0 memory object with ring-3 mappings of some kind, i.e.
+ * locked user memory, reserved user address space and user mappings. This API should
+ * not be used on any other objects.
+ *
+ * @returns The address of the memory object.
+ * @returns NIL_RTR3PTR if the handle is invalid or if it's not an object with a ring-3 mapping.
+ *          Strict builds will assert in both cases.
+ * @param   MemObj  The ring-0 memory object handle.
+ */
+RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj);
+
+/**
  * Gets the size of a ring-0 memory object.
  *
  * @returns The address of the memory object.
@@ -118,13 +132,13 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   pv              User virtual address. This is rounded down to a page boundrary.
+ * @param   R3Ptr           User virtual address. This is rounded down to a page boundrary.
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
  *
  * @remark  RTR0MemGetAddressR3() and RTR0MemGetAddress() will return the rounded down address.
  */
-RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, RTR0PROCESS R0Process);
+RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process);
 
 /**
  * Locks a range of kernel virtual memory.

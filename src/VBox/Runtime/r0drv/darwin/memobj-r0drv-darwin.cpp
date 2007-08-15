@@ -483,9 +483,9 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
-    return rtR0MemObjNativeLock(ppMem, pv, cb, (task_t)R0Process);
+    return rtR0MemObjNativeLock(ppMem, (void *)R3Ptr, cb, (task_t)R0Process);
 }
 
 

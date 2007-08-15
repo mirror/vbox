@@ -167,7 +167,7 @@ RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
  * not be used on any other objects.
  *
  * @returns The address of the memory object.
- * @returns NULL if the handle is invalid or if it's not an object with a ring-3 mapping.
+ * @returns NIL_RTR3PTR if the handle is invalid or if it's not an object with a ring-3 mapping.
  *          Strict builds will assert in both cases.
  * @param   MemObj  The ring-0 memory object handle.
  */
@@ -436,26 +436,26 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   pv              User virtual address. This is rounded down to a page boundrary.
+ * @param   R3Ptr           User virtual address. This is rounded down to a page boundrary.
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
  *
  * @remark  RTR0MemGetAddressR3() and RTR0MemGetAddress() will return the rounded down address.
  */
-RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, RTR0PROCESS R0Process)
+RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb + ((uintptr_t)pv & PAGE_OFFSET_MASK), PAGE_SIZE);
+    const size_t cbAligned = RT_ALIGN_Z(cb + (R3Ptr & PAGE_OFFSET_MASK), PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
-    void * const pvAligned = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
+    RTR3PTR const R3PtrAligned = (R3Ptr & ~(RTR3PTR)PAGE_OFFSET_MASK);
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
 
     /* do the allocation. */
-    return rtR0MemObjNativeLockUser(pMemObj, pvAligned, cbAligned, R0Process);
+    return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, R0Process);
 }
 
 

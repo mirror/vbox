@@ -241,24 +241,24 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
 
     /* create the object. */
     const ULONG cPages = cb >> PAGE_SHIFT;
-    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, aPages[cPages]), RTR0MEMOBJTYPE_LOCK, pv, cb);
+    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, aPages[cPages]), RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
     /* lock it. */
     ULONG cPagesRet = cPages;
-    int rc = KernVMLock(VMDHL_LONG | VMDHL_WRITE, pv, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
+    int rc = KernVMLock(VMDHL_LONG | VMDHL_WRITE, (void *)R3Ptr, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
     if (!rc)
     {
         rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
         Assert(cb == pMemOs2->Core.cb);
-        Assert(pv == pMemOs2->Core.pv);
+        Assert(R3Ptr == (RTR3PTR)pMemOs2->Core.pv);
         pMemOs2->Core.u.Lock.R0Process = R0Process;
         *ppMem = &pMemOs2->Core;
         return VINF_SUCCESS;
