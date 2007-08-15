@@ -27,7 +27,12 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <VBox/sup.h>
-#if defined(USE_NEW_OS_INTERFACE) || defined(USB_NEW_OS_INTERFACE_FOR_LOW)
+#ifdef USE_NEW_OS_INTERFACE
+# define USE_NEW_OS_INTERFACE_FOR_MM
+# define USE_NEW_OS_INTERFACE_FOR_GIP
+# undef  USE_NEW_OS_INTERFACE_FOR_LOW
+#endif
+#if defined(USE_NEW_OS_INTERFACE) || defined(USE_NEW_OS_INTERFACE_FOR_LOW) || defined(USE_NEW_OS_INTERFACE_FOR_MM) || defined(USE_NEW_OS_INTERFACE_FOR_GIP)
 # include <iprt/memobj.h>
 # include <iprt/time.h>
 # include <iprt/timer.h>
@@ -361,7 +366,7 @@ typedef enum
  */
 typedef struct SUPDRVMEMREF
 {
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /** The memory object handle. */
     RTR0MEMOBJ          MemObj;
     /** The ring-3 mapping memory object handle. */
@@ -369,7 +374,7 @@ typedef struct SUPDRVMEMREF
     /** Type of memory. */
     SUPDRVMEMREFTYPE    eType;
 
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
     /** Pointer to the R0 mapping of the memory.
      * Set to NULL if N/A. */
     void               *pvR0;
@@ -423,7 +428,7 @@ typedef struct SUPDRVMEMREF
 # error "Either no target was defined or we haven't ported the driver to the target yet."
 #endif
         } mem;
-#if defined(USB_NEW_OS_INTERFACE_FOR_LOW)
+#if defined(USE_NEW_OS_INTERFACE_FOR_LOW)
         struct
         {
             /** The memory object handle. */
@@ -433,7 +438,7 @@ typedef struct SUPDRVMEMREF
         } iprt;
 #endif
     } u;
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
 } SUPDRVMEMREF, *PSUPDRVMEMREF;
 
 
@@ -565,7 +570,7 @@ typedef struct SUPDRVSESSION
 
     /** Spinlock protecting the bundles and the GIP members. */
     RTSPINLOCK                  Spinlock;
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     /** The ring-3 mapping of the GIP (readonly). */
     RTR0MEMOBJ                  GipMapObjR3;
 #else
@@ -650,7 +655,7 @@ typedef struct SUPDRVDEVEXT
     /** Number of processes using the GIP.
      * (The updates are suspend while cGipUsers is 0.)*/
     uint32_t volatile       cGipUsers;
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     /** The ring-0 memory object handle for the GIP page. */
     RTR0MEMOBJ              GipMemObj;
     /** The GIP timer handle. */
@@ -702,7 +707,7 @@ __BEGIN_DECLS
 *******************************************************************************/
 void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession);
 bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc);
-#ifndef USE_NEW_OS_INTERFACE
+#ifndef USE_NEW_OS_INTERFACE_FOR_MM
 int  VBOXCALL   supdrvOSLockMemOne(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
 void VBOXCALL   supdrvOSUnlockMemOne(PSUPDRVMEMREF pMem);
 int  VBOXCALL   supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
@@ -712,6 +717,8 @@ void VBOXCALL   supdrvOSLowFreeOne(PSUPDRVMEMREF pMem);
 int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
 void VBOXCALL   supdrvOSMemGetPages(PSUPDRVMEMREF pMem, PSUPPAGE paPages);
 void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem);
+#endif
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
 int  VBOXCALL   supdrvOSGipMap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE *ppGip);
 int  VBOXCALL   supdrvOSGipUnmap(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip);
 void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt);
