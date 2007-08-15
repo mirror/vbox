@@ -6,7 +6,7 @@
 #
 #
 #  Copyright (C) 2006 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -55,7 +55,6 @@ OBJS   = \
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 OBJS  += alloc/heapsimple.o
 endif
-
 
 ifneq ($(MAKECMDGOALS),clean)
 
@@ -129,6 +128,14 @@ endif
 #ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
 #KFLAGS   += -DDEBUG
 #endif
+
+#
+# Use the RTR0MemObj API - testing.
+# If this makes testboxes crash/burn/leak disable it and add a comment to defect #2116.
+#
+KFLAGS += -DUSE_NEW_OS_INTERFACE_FOR_MM
+OBJS += r0drv/memobj-r0drv.o \
+	r0drv/linux/memobj-r0drv-linux.o
 
 ifeq ($(KERN_VERSION), 24)
 # 2.4
