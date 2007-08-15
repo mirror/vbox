@@ -24,13 +24,13 @@
 #include <iprt/assert.h>
 #if !defined(RT_OS_WINDOWS) && !defined(RT_OS_LINUX)
 #include <iprt/memobj.h>
-#endif 
+#endif
 
 
 int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess)
 {
     int rc = VINF_SUCCESS;
-    
+
 #ifdef RT_OS_WINDOWS
     PMDL pMdl = IoAllocateMdl (pv, u32Size, FALSE, FALSE, NULL);
 
@@ -46,7 +46,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
             MmProbeAndLockPages (pMdl,
                                  KernelMode,
                                  (fWriteAccess) ? IoModifyAccess : IoReadAccess);
-                                 
+
             *ppvCtx = pMdl;
 
         } __except(EXCEPTION_EXECUTE_HANDLER) {
@@ -65,14 +65,14 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
 #else
     /* Default to IPRT - this ASSUMES that it is USER addresses we're locking. */
     RTR0MEMOBJ MemObj;
-    rc = RTR0MemObjLockUser(&MemObj, pv, u32Size, NIL_RTR0PROCESS);
+    rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
         *ppvCtx = MemObj;
     else
         *ppvCtx = NIL_RTR0MEMOBJ;
 
 #endif
-    
+
     return rc;
 }
 
@@ -122,14 +122,14 @@ __END_DECLS
 
 #ifdef RT_OS_OS2
 __BEGIN_DECLS
-/* 
- * On OS/2 we'll do the connecting in the assembly code of the 
+/*
+ * On OS/2 we'll do the connecting in the assembly code of the
  * client driver, exporting a g_VBoxGuestIDC symbol containing
  * the connection information obtained from the 16-bit IDC.
  */
 extern VBOXGUESTOS2IDCCONNECT g_VBoxGuestIDC;
 __END_DECLS
-#endif 
+#endif
 
 
 int vbglDriverOpen (VBGLDRIVER *pDriver)
@@ -167,7 +167,7 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     return VINF_SUCCESS;
 
 #elif defined (RT_OS_OS2)
-    /* 
+    /*
      * Just check whether the connection was made or not.
      */
     if (    g_VBoxGuestIDC.u32Version == VMMDEV_VERSION
@@ -220,8 +220,8 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
                                    FALSE,
                                    NULL);
 
-        rc = ioStatusBlock.Status;                     
-    }    
+        rc = ioStatusBlock.Status;
+    }
 
     if (!NT_SUCCESS(rc))
         Log(("vbglDriverIOCtl: IoCallDriver failed with ntstatus=%x\n", rc));
@@ -232,7 +232,7 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
     return vboxadd_cmc_call (pDriver->opaque, u32Function, pvData);
 
 #elif defined (RT_OS_OS2)
-    if (    pDriver->u32Session 
+    if (    pDriver->u32Session
         &&  pDriver->u32Session == g_VBoxGuestIDC.u32Session)
         return g_VBoxGuestIDC.pfnServiceEP(pDriver->u32Session, u32Function, pvData, cbData, NULL);
 

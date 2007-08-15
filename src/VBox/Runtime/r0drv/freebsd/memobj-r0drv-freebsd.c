@@ -329,12 +329,12 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
     int rc;
 
     /* create the object. */
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_LOCK, pv, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
@@ -343,8 +343,8 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RT
      * resource usage restrictions, so we'll call vm_map_wire directly.
      */
     rc = vm_map_wire(&((struct proc *)R0Process)->p_vmspace->vm_map, /* the map */
-                     (vm_offset_t)pv,                               /* start */
-                     (vm_offset_t)pv + cb,                          /* end */
+                     (vm_offset_t)R3Ptr,                            /* start */
+                     (vm_offset_t)R3Ptr + cb,                       /* end */
                      VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);     /* flags - SYSTEM? */
     if (rc == KERN_SUCCESS)
     {

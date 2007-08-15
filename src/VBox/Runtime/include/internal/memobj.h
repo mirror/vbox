@@ -217,6 +217,28 @@ DECLINLINE(bool) rtR0MemObjIsMapping(PRTR0MEMOBJINTERNAL pMem)
 
 
 /**
+ * Checks if RTR0MEMOBJ::pv is a ring-3 pointer or not.
+ *
+ * @returns true if it's a object with a ring-3 address, otherwise false.
+ * @param   MemObj  The ring-0 memory object handle.
+ */
+DECLINLINE(bool) rtR0MemObjIsRing3(PRTR0MEMOBJINTERNAL pMem)
+{
+    switch (pMem->enmType)
+    {
+        case RTR0MEMOBJTYPE_RES_VIRT:
+            return pMem->u.ResVirt.R0Process != NIL_RTR0PROCESS;
+        case RTR0MEMOBJTYPE_LOCK:
+            return pMem->u.Lock.R0Process    != NIL_RTR0PROCESS;
+        case RTR0MEMOBJTYPE_MAPPING:
+            return pMem->u.Mapping.R0Process != NIL_RTR0PROCESS;
+        default:
+            return false;
+    }
+}
+
+
+/**
  * Frees the memory object (but not the handle).
  * Any OS specific handle resources will be freed by this call.
  *
@@ -266,11 +288,11 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
  *
  * @returns IPRT status code.
  * @param   ppMem           Where to store the ring-0 memory object handle.
- * @param   pv              User virtual address, page aligned.
+ * @param   R3Ptr           User virtual address, page aligned.
  * @param   cb              Number of bytes to lock, page aligned.
  * @param   R0Process       The process to lock pages in.
  */
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process);
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process);
 
 /**
  * Locks a range of kernel virtual memory.
