@@ -25,7 +25,6 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
-//#include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/process.h>
 #include "internal/memobj.h"
@@ -163,7 +162,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
     if (    fContiguous
         ||  cb <= PAGE_SIZE * 2)
     {
-        paPages = alloc_pages(fFlagsLnx, rtR0MemObjLinuxOrder(cb));
+        paPages = alloc_pages(fFlagsLnx, rtR0MemObjLinuxOrder(cb >> PAGE_SHIFT));
         if (paPages)
         {
             fContiguous = true;
@@ -194,7 +193,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
 
 #else /* < 2.4.22 */
     /** @todo figure out why we didn't allocate page-by-page on 2.4.21 and older... */
-    paPages = alloc_pages(fFlagsLnx, rtR0MemObjLinuxOrder(cb));
+    paPages = alloc_pages(fFlagsLnx, rtR0MemObjLinuxOrder(cb >> PAGE_SHIFT));
     if (!paPages)
     {
         rtR0MemObjDelete(&pMemLnx->Core);
@@ -384,9 +383,11 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemLnx->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
             {
-                struct task_struct *pTask = rtR0ProcessToLinuxTask(pMemLnx->Core.u.Lock.R0Process);
                 size_t iPage;
-                down_read(&pTask->mm->mmap_sem);
+                struct task_struct *pTask = rtR0ProcessToLinuxTask(pMemLnx->Core.u.Lock.R0Process);
+                Assert(pTask);
+                if (pTask && pTask->mm)
+                    down_read(&pTask->mm->mmap_sem);
 
                 iPage = pMemLnx->cPages;
                 while (iPage-- > 0)
@@ -396,7 +397,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                     page_cache_release(pMemLnx->apPages[iPage]);
                 }
 
-                up_read(&pTask->mm->mmap_sem);
+                if (pTask && pTask->mm)
+                    up_read(&pTask->mm->mmap_sem);
             }
             else
                 AssertFailed(); /* not implemented for R0 */
@@ -407,9 +409,13 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             if (pMemLnx->Core.u.ResVirt.R0Process != NIL_RTR0PROCESS)
             {
                 struct task_struct *pTask = rtR0ProcessToLinuxTask(pMemLnx->Core.u.Lock.R0Process);
-                down_write(&pTask->mm->mmap_sem);
-                MY_DO_MUNMAP(pTask->mm, (unsigned long)pMemLnx->Core.pv, pMemLnx->Core.cb);
-                up_write(&pTask->mm->mmap_sem);
+                Assert(pTask);
+                if (pTask && pTask->mm)
+                {
+                    down_write(&pTask->mm->mmap_sem);
+                    MY_DO_MUNMAP(pTask->mm, (unsigned long)pMemLnx->Core.pv, pMemLnx->Core.cb);
+                    up_write(&pTask->mm->mmap_sem);
+                }
             }
             else
             {
@@ -428,9 +434,13 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             if (pMemLnx->Core.u.ResVirt.R0Process != NIL_RTR0PROCESS)
             {
                 struct task_struct *pTask = rtR0ProcessToLinuxTask(pMemLnx->Core.u.Lock.R0Process);
-                down_write(&pTask->mm->mmap_sem);
-                MY_DO_MUNMAP(pTask->mm, (unsigned long)pMemLnx->Core.pv, pMemLnx->Core.cb);
-                up_write(&pTask->mm->mmap_sem);
+                Assert(pTask);
+                if (pTask && pTask->mm)
+                {
+                    down_write(&pTask->mm->mmap_sem);
+                    MY_DO_MUNMAP(pTask->mm, (unsigned long)pMemLnx->Core.pv, pMemLnx->Core.cb);
+                    up_write(&pTask->mm->mmap_sem);
+                }
             }
             else
                 vunmap(pMemLnx->Core.pv);
@@ -480,9 +490,9 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
 #ifdef RT_ARCH_AMD64
 # ifdef GFP_DMA32
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA32, false /* non-contiguous */);
-# else
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA, false /* non-contiguous */);
+    if (RT_FAILURE(rc))
 # endif
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA, false /* non-contiguous */);
 #else
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_USER, false /* non-contiguous */);
 #endif
@@ -511,9 +521,9 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 #ifdef RT_ARCH_AMD64
 # ifdef GFP_DMA32
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_DMA32, true /* contiguous */);
-# else
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_DMA, true /* contiguous */);
+    if (RT_FAILURE(rc))
 # endif
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_DMA, true /* contiguous */);
 #else
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_USER, true /* contiguous */);
 #endif
@@ -541,7 +551,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
 
 /**
- * Worker for rtR0MemObjNativeAllocPhys and rtR0MemObjNativeAllocPhysNC.
+ * Worker for rtR0MemObjLinuxAllocPhysSub that tries one allocation strategy.
  *
  * @returns IPRT status.
  * @param   ppMemLnx    Where to
@@ -550,7 +560,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
  * @param   PhysHighest See rtR0MemObjNativeAllocPhys.
  * @param   fGfp        The Linux GFP flags to use for the allocation.
  */
-static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYPE enmType, size_t cb, RTHCPHYS PhysHighest, unsigned fGfp)
+static int rtR0MemObjLinuxAllocPhysSub2(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYPE enmType, size_t cb, RTHCPHYS PhysHighest, unsigned fGfp)
 {
     PRTR0MEMOBJLNX pMemLnx;
     int rc;
@@ -588,65 +598,60 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
 }
 
 
-int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
+/**
+ * Worker for rtR0MemObjNativeAllocPhys and rtR0MemObjNativeAllocPhysNC.
+ *
+ * @returns IPRT status.
+ * @param   ppMem       Where to store the memory object pointer on success.
+ * @param   enmType     The object type.
+ * @param   cb          The size of the allocation.
+ * @param   PhysHighest See rtR0MemObjNativeAllocPhys.
+ */
+static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYPE enmType, size_t cb, RTHCPHYS PhysHighest)
 {
-    unsigned fGfp;
-    unsigned fGfp2;
     int rc;
 
     /*
-     * Calc the allocation flags for the first and second allocation attempt
-     * and perform the allocation(s).
+     * There are two clear cases and that's the <=16MB and anything-goes ones.
+     * When the physical address limit is somewhere inbetween those two we'll
+     * just have to try, starting with HIGHUSER and working our way thru the
+     * different types, hoping we'll get lucky.
+     *
+     * We should probably move this physical address restriction logic up to
+     * the page alloc function as it would be more efficient there. But since
+     * we don't expect this to be a performance issue just yet it can wait.
      */
     if (PhysHighest == NIL_RTHCPHYS)
-        fGfp2 = fGfp = GFP_HIGHUSER;
-#ifdef GFP_DMA32
-    else if (PhysHighest >= _4G)
-        fGfp2 = fGfp = GFP_DMA32;
-#endif
+        rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_HIGHUSER);
     else if (PhysHighest <= _1M * 16)
-        fGfp2 = fGfp = GFP_DMA;
+        rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_DMA);
     else
     {
-        fGfp = GFP_USER;
-        fGfp2 = GFP_DMA;
+        rc = VERR_NO_MEMORY;
+        if (RT_FAILURE(rc))
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_HIGHUSER);
+        if (RT_FAILURE(rc))
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_USER);
+#ifdef GFP_DMA32
+        if (RT_FAILURE(rc))
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_DMA32);
+#endif
+        if (RT_FAILURE(rc))
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_DMA);
     }
-    rc = rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest, fGfp);
-    if (    RT_FAILURE(rc)
-        &&  fGfp2 != fGfp)
-        rc = rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest, fGfp2);
     return rc;
+}
+
+
+int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
+{
+    return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest);
 }
 
 
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
-    unsigned fGfp;
-    unsigned fGfp2;
-    int rc;
-
-    /*
-     * Calc the allocation flags for the first and second allocation attempt
-     * and perform the allocation(s).
-     */
-    if (PhysHighest == NIL_RTHCPHYS)
-        fGfp2 = fGfp = GFP_HIGHUSER;
-#ifdef GFP_DMA32
-    else if (PhysHighest >= _4G)
-        fGfp2 = fGfp = GFP_DMA32;
-#endif
-    else if (PhysHighest <= _1M * 16)
-        fGfp2 = fGfp = GFP_DMA;
-    else
-    {
-        fGfp = GFP_USER;
-        fGfp2 = GFP_DMA;
-    }
-    rc = rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PhysHighest, fGfp);
-    if (    RT_FAILURE(rc)
-        &&  fGfp2 != fGfp)
-        rc = rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PhysHighest, fGfp2);
-    return rc;
+    return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PhysHighest);
 }
 
 
