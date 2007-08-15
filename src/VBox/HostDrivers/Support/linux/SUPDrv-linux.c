@@ -286,7 +286,9 @@ static int      VBoxSupDrvCreate(struct inode *pInode, struct file *pFilp);
 static int      VBoxSupDrvClose(struct inode *pInode, struct file *pFilp);
 static int      VBoxSupDrvDeviceControl(struct inode *pInode, struct file *pFilp,
                                         unsigned int IOCmd, unsigned long IOArg);
+#ifndef USE_NEW_OS_INTERFACE_FOR_MM
 static RTR3PTR  VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags);
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
 static int      VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt);
 static void     VBoxSupGipTimer(unsigned long ulUser);
@@ -294,7 +296,6 @@ static void     VBoxSupGipTimer(unsigned long ulUser);
 static void     VBoxSupGipTimerPerCpu(unsigned long ulUser);
 static void     VBoxSupGipResumePerCpu(void *pvUser);
 #endif
-static int      VBoxSupDrvOrder(unsigned long size);
 static int      VBoxSupDrvErr2LinuxErr(int);
 
 
@@ -860,6 +861,8 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     return false;
 }
 
+
+#ifndef USE_NEW_OS_INTERFACE_FOR_MM
 
 /**
  * Compute order. Some functions allocate 2^order pages.
@@ -1427,6 +1430,8 @@ static RTR3PTR VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsign
 
     return NIL_RTR3PTR;
 }
+
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
 
 /**
