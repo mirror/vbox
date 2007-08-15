@@ -159,7 +159,7 @@ static void     supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImag
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static int      supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut);
 static SUPGIPMODE supdrvGipDeterminTscMode(void);
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static int      supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser);
@@ -191,7 +191,7 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
             rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
             if (!rc)
             {
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
                 rc = supdrvGipCreate(pDevExt);
                 if (RT_SUCCESS(rc))
                 {
@@ -276,7 +276,7 @@ int VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
         RTMemFree(pvFree);
     }
 
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     /* kill the GIP */
     supdrvGipDestroy(pDevExt);
 #endif
@@ -455,7 +455,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
          */
         for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
         {
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
             if (pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ)
             {
                 int rc;
@@ -471,7 +471,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                 pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
             }
 
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
             if (    pBundle->aMem[i].pvR0
                 ||  pBundle->aMem[i].pvR3)
             {
@@ -496,7 +496,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                 }
                 pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
             }
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
         }
 
         /*
@@ -541,14 +541,14 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
      * Unmap the GIP.
      */
     dprintf2(("umapping GIP:\n"));
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     if (pSession->GipMapObjR3 != NIL_RTR0MEMOBJ)
 #else
     if (pSession->pGip)
 #endif
     {
         SUPR0GipUnmap(pSession);
-#ifndef USE_NEW_OS_INTERFACE
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
         pSession->pGip = NULL;
 #endif
         pSession->fGipReferenced = 0;
@@ -1766,7 +1766,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
         return SUPDRV_ERR_INVALID_PARAM;
     }
 
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /*
      * Let IPRT do the job.
      */
@@ -1774,10 +1774,10 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
     rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTR0ProcHandleSelf());
     if (RT_SUCCESS(rc))
     {
+        unsigned iPage = cPages;
         AssertMsg(RTR0MemObjAddressR3(Mem.MemObj) == pvR3, ("%p == %p\n", RTR0MemObjAddressR3(Mem.MemObj), pvR3));
         AssertMsg(RTR0MemObjSize(Mem.MemObj) == cb, ("%x == %x\n", RTR0MemObjSize(Mem.MemObj), cb));
 
-        unsigned iPage = cPages;
         while (iPage-- > 0)
         {
             paPages[iPage].uReserved = 0;
@@ -1798,7 +1798,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
         }
     }
 
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
     /*
      * Let the OS specific code have a go.
@@ -1817,7 +1817,7 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
     rc = supdrvMemAdd(&Mem, pSession);
     if (rc)
         supdrvOSUnlockMemOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
     return rc;
 }
 
@@ -1871,7 +1871,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
         return SUPDRV_ERR_INVALID_PARAM;
     }
 
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /*
      * Let IPRT do the job.
      */
@@ -1900,7 +1900,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
         AssertRC(rc2);
     }
 
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
     /*
      * Let the OS specific code have a go.
@@ -1921,7 +1921,7 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     rc = supdrvMemAdd(&Mem, pSession);
     if (rc)
         supdrvOSContFreeOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
     return rc;
 }
@@ -1976,7 +1976,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
         return SUPDRV_ERR_INVALID_PARAM;
     }
 
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /*
      * Let IPRT do the work.
      */
@@ -2011,7 +2011,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
         AssertRC(rc2);
     }
 
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
     /*
      * Let the OS specific code have a go.
@@ -2034,7 +2034,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
     rc = supdrvMemAdd(&Mem, pSession);
     if (rc)
         supdrvOSLowFreeOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
     return rc;
 }
 
@@ -2087,7 +2087,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
         return SUPDRV_ERR_INVALID_PARAM;
     }
 
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /*
      * Let IPRT do the work.
      */
@@ -2115,7 +2115,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
         AssertRC(rc2);
     }
 
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
     /*
      * Let the OS specific code have a go.
@@ -2136,7 +2136,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
     rc = supdrvMemAdd(&Mem, pSession);
     if (rc)
         supdrvOSMemFreeOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
     return rc;
 }
 
@@ -2181,7 +2181,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
             unsigned i;
             for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
             {
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
@@ -2200,7 +2200,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
                     return 0;
                 }
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
                     &&  (   (RTHCUINTPTR)pBundle->aMem[i].pvR0 == uPtr
                          || (RTHCUINTPTR)pBundle->aMem[i].pvR3 == uPtr))
@@ -2269,7 +2269,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
          */
         if (ppGipR3)
         {
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
             if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
                 rc = RTR0MemObjMapUser(&pSession->GipMapObjR3, pDevExt->GipMemObj, (RTR3PTR)-1, 0,
                                        RTMEM_PROT_READ, RTR0ProcHandleSelf());
@@ -2278,12 +2278,12 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                 pGip = RTR0MemObjAddressR3(pSession->GipMapObjR3);
                 rc = VINF_SUCCESS; /** @todo remove this and replace the !rc below with RT_SUCCESS(rc). */
             }
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_GIP */
             if (!pSession->pGip)
                 rc = supdrvOSGipMap(pSession->pDevExt, &pSession->pGip);
             if (!rc)
                 pGip = (RTR3PTR)pSession->pGip;
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_GIP */
         }
 
         /*
@@ -2310,7 +2310,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                     ASMAtomicXchgU32(&pGip->aCPUs[i].u32TransactionId, pGip->aCPUs[i].u32TransactionId & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
                 ASMAtomicXchgU64(&pGip->u64NanoTSLastUpdateHz, 0);
 
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
                 rc = RTTimerStart(pDevExt->pGipTimer, 0);
                 AssertRC(rc); rc = 0;
 #else
@@ -2369,7 +2369,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
     /*
      * Unmap anything?
      */
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
     if (pSession->GipMapObjR3 != NIL_RTR0MEMOBJ)
     {
         rc = RTR0MemObjFree(pSession->GipMapObjR3, false);
@@ -2396,7 +2396,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
             &&  !--pDevExt->cGipUsers)
         {
             dprintf(("SUPR0GipUnmap: Suspends GIP updating\n"));
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
             rc = RTTimerStop(pDevExt->pGipTimer); AssertRC(rc); rc = 0;
 #else
             supdrvOSGipSuspend(pDevExt);
@@ -2435,12 +2435,12 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
             unsigned i;
             for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
             {
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (pBundle->aMem[i].MemObj == NIL_RTR0MEMOBJ)
-#else  /* !USE_NEW_OS_INTERFACE */
+#else  /* !USE_NEW_OS_INTERFACE_FOR_MM */
                 if (    !pBundle->aMem[i].pvR0
                     &&  !pBundle->aMem[i].pvR3)
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
                 {
                     pBundle->cUsed++;
                     pBundle->aMem[i] = *pMem;
@@ -2514,7 +2514,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
             unsigned i;
             for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
             {
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (    pBundle->aMem[i].eType == eType
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
@@ -2541,7 +2541,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                     }
                     return 0;
                 }
-#else /* !USE_NEW_OS_INTERFACE */
+#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
                 if (    pBundle->aMem[i].eType == eType
                     &&  (   (RTHCUINTPTR)pBundle->aMem[i].pvR0 == uPtr
                          || (RTHCUINTPTR)pBundle->aMem[i].pvR3 == uPtr))
@@ -2575,7 +2575,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                     }
                     return 0;
                }
-#endif /* !USE_NEW_OS_INTERFACE */
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
             }
         }
     }
@@ -3847,7 +3847,7 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
 }
 
 
-#if !defined(SUPDRV_OS_HAVE_LOW) && !defined(USE_NEW_OS_INTERFACE)  /* Use same backend as the contiguous stuff */
+#if !defined(SUPDRV_OS_HAVE_LOW) && !defined(USE_NEW_OS_INTERFACE_FOR_MM)  /* Use same backend as the contiguous stuff */
 /**
  * OS Specific code for allocating page aligned memory with fixed
  * physical backing below 4GB.
@@ -3862,7 +3862,7 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
  */
 int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPagesOut)
 {
-#if defined(USB_NEW_OS_INTERFACE_FOR_LOW)  /* a temp hack */
+#if defined(USE_NEW_OS_INTERFACE_FOR_LOW)  /* a temp hack */
     int rc = RTR0MemObjAllocLow(&pMem->u.iprt.MemObj, pMem->cb, true /* executable ring-0 mapping */);
     if (RT_SUCCESS(rc))
     {
@@ -3921,7 +3921,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
  */
 void VBOXCALL supdrvOSLowFreeOne(PSUPDRVMEMREF pMem)
 {
-# if defined(USB_NEW_OS_INTERFACE_FOR_LOW)
+# if defined(USE_NEW_OS_INTERFACE_FOR_LOW)
     if (pMem->u.iprt.MapObjR3)
     {
         int rc = RTR0MemObjFree(pMem->u.iprt.MapObjR3, false);
@@ -3936,10 +3936,10 @@ void VBOXCALL supdrvOSLowFreeOne(PSUPDRVMEMREF pMem)
     supdrvOSContFreeOne(pMem);
 # endif
 }
-#endif /* !SUPDRV_OS_HAVE_LOW */
+#endif /* !SUPDRV_OS_HAVE_LOW && !USE_NEW_OS_INTERFACE_FOR_MM */
 
 
-#ifdef USE_NEW_OS_INTERFACE
+#ifdef USE_NEW_OS_INTERFACE_FOR_GIP
 /**
  * Creates the GIP.
  *
@@ -4078,7 +4078,7 @@ static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser)
     PSUPDRVDEVEXT pDevExt  = (PSUPDRVDEVEXT)pvUser;
     supdrvGipUpdate(pDevExt->pGip, RTTimeSystemNanoTS());
 }
-#endif /* USE_NEW_OS_INTERFACE */
+#endif /* USE_NEW_OS_INTERFACE_FOR_GIP */
 
 
 /**
@@ -4151,7 +4151,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
  */
 static SUPGIPMODE supdrvGipDeterminTscMode(void)
 {
-#ifndef USE_NEW_OS_INTERFACE
+#ifndef USE_NEW_OS_INTERFACE_FOR_GIP
     /*
      * The problem here is that AMD processors with power management features
      * may easily end up with different TSCs because the CPUs or even cores
