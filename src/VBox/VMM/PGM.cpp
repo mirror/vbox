@@ -1587,8 +1587,21 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
                     "State    : %VGp-%VGp %VGp bytes %s\n",
                     pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvHC ? "bits" : "nobits",
                     GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits"));
-            AssertFailed();
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+            /* 
+             * If we're loading a state for debugging purpose, don't make a fuss if 
+             * the MMIO[2] and ROM stuff isn't 100% right, just skip the mismatches.
+             */
+            if (    SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT
+                ||  GCPhys < 8 * _1M)
+                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+
+            RTGCPHYS cPages = ((GCPhysLast - GCPhys) + 1) >> PAGE_SHIFT;
+            while (cPages-- > 0)
+            {
+                uint16_t u16Ignore;
+                SSMR3GetU16(pSSM, &u16Ignore);
+            }
+            continue;
         }
 
         /* Flags. */
