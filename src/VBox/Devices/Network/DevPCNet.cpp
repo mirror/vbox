@@ -3716,7 +3716,8 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3GetU16(pSSMHandle, &pData->u16CSR0LastSeenByGuest);
     SSMR3GetU64(pSSMHandle, &pData->u64LastPoll);
     SSMR3GetMem(pSSMHandle, &Mac, sizeof(Mac));
-    Assert(!memcmp(&Mac, &pData->MacConfigured, sizeof(Mac)));
+    Assert(     !memcmp(&Mac, &pData->MacConfigured, sizeof(Mac)) 
+           ||   SSMR3HandleGetAfter(pSSMHandle) == SSMAFTER_DEBUG_IT);
     SSMR3GetBool(pSSMHandle, &pData->fAm79C973);
 #ifndef PCNET_NO_POLLING
     TMR3TimerLoad(pData->CTXSUFF(pTimerPoll), pSSMHandle);
