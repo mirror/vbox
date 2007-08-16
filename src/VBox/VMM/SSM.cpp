@@ -90,6 +90,10 @@ typedef struct SSMHANDLE
     RTFILE          File;
     /** The VM handle. */
     PVM             pVM;
+    /** The size of the file header. 
+     * Because the file header was incorrectly aligned there we've ended up with 
+     * differences between the 64-bit and 32-bit file header. */
+    size_t          cbFileHdr;
     /** The current operation. */
     SSMSTATE        enmOp;
     /** What to do after save completes. (move the enum) */
@@ -138,14 +142,43 @@ typedef struct SSMFILEHDR
     uint64_t    cbFile;
     /** File checksum. The actual calculation skips past the u32CRC field. */
     uint32_t    u32CRC;
+    /** Padding. */
+    uint32_t    u32Reserved;
     /** The machine UUID. (Ignored if NIL.) */
     RTUUID      MachineUuid;
 } SSMFILEHDR, *PSSMFILEHDR;
+AssertCompileSize(SSMFILEHDR, 64);
+
+
+/**
+ * The x86 edition of the 1.0 header.
+ */
+#pragma pack(1) /* darn, MachineUuid got missaligned! */
+typedef struct SSMFILEHDRV10X86
+{
+    /** Magic string which identifies this file as a version of VBox saved state file format. */
+    char        achMagic[32];
+    /** The size of this file. Used to check
+     * whether the save completed and that things are fine otherwise. */
+    uint64_t    cbFile;
+    /** File checksum. The actual calculation skips past the u32CRC field. */
+    uint32_t    u32CRC;
+    /** The machine UUID. (Ignored if NIL.) */
+    RTUUID      MachineUuid;
+} SSMFILEHDRV10X86, *PSSMFILEHDRV10X86;
+#pragma pack()
+
+/**
+ * The amd64 edition of the 1.0 header.
+ */
+typedef SSMFILEHDR SSMFILEHDRV10AMD64, *PSSMFILEHDRV10AMD64;
 
 /** Saved state file magic base string. */
 #define SSMFILEHDR_MAGIC_BASE   "\177VirtualBox SavedState "
 /** Saved state file v1.0 magic. */
-#define SSMFILEHDR_MAGIC_V1     "\177VirtualBox SavedState V1.0\n"
+#define SSMFILEHDR_MAGIC_V1_0   "\177VirtualBox SavedState V1.0\n"
+/** Saved state file v1.1 magic. */
+#define SSMFILEHDR_MAGIC_V1_1   "\177VirtualBox SavedState V1.1\n"
 
 
 
@@ -182,7 +215,7 @@ typedef struct SSMFILEUNITHDR
 static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit);
 static int ssmr3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
 static void ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
-static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr);
+static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr);
 static PSSMUNIT ssmr3Find(PVM pVM, const char *pszName, uint32_t u32Instance);
 static int ssmr3WriteFinish(PSSMHANDLE pSSM);
 static int ssmr3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf);
@@ -743,7 +776,8 @@ SSMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Validate input.
      */
-    if (enmAfter != SSMAFTER_DESTROY && enmAfter != SSMAFTER_CONTINUE)
+    if (    enmAfter != SSMAFTER_DESTROY 
+        &&  enmAfter != SSMAFTER_CONTINUE)
     {
         AssertMsgFailed(("Invalid enmAfter=%d!\n", enmAfter));
         return VERR_INVALID_PARAMETER;
@@ -755,6 +789,7 @@ SSMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     SSMHANDLE Handle   = {0};
     Handle.enmAfter    = enmAfter;
     Handle.pVM         = pVM;
+    Handle.cbFileHdr   = sizeof(SSMFILEHDR);
     Handle.pfnProgress = pfnProgress;
     Handle.pvUser      = pvUser;
     /*
@@ -777,7 +812,7 @@ SSMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Write header.
      */
-    SSMFILEHDR Hdr = { SSMFILEHDR_MAGIC_V1, 0, 0 };
+    SSMFILEHDR Hdr = { SSMFILEHDR_MAGIC_V1_1, 0, 0, 0 };
     rc = RTFileWrite(Handle.File, &Hdr, sizeof(Hdr), NULL);
     if (VBOX_SUCCESS(rc))
     {
@@ -1070,11 +1105,12 @@ SSMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  * Validates the integrity of a saved state file.
  *
  * @returns VBox status.
- * @param   File    File to validate.
- *                  The file position is undefined on return.
- * @param   pHdr    Where to store the file header.
+ * @param   File        File to validate.
+ *                      The file position is undefined on return.
+ * @param   pHdr        Where to store the file header.
+ * @param   pcbFileHdr  Where to store the file header size.
  */
-static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr)
+static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
 {
     /*
      * Read the header.
@@ -1087,14 +1123,45 @@ static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr)
     }
 
     /*
-     * Verify the magic.
+     * Verify the magic and make adjustments for versions differences.
      */
     if (memcmp(pHdr->achMagic, SSMFILEHDR_MAGIC_BASE, sizeof(SSMFILEHDR_MAGIC_BASE) - 1))
     {
         Log(("SSM: Not a saved state file. magic=%.*s\n", sizeof(pHdr->achMagic) - 1, pHdr->achMagic));
         return VERR_SSM_INTEGRITY_MAGIC;
     }
-    if (memcmp(pHdr->achMagic, SSMFILEHDR_MAGIC_V1, sizeof(SSMFILEHDR_MAGIC_V1)))
+
+    size_t offCrc32 = RT_OFFSETOF(SSMFILEHDR, u32CRC) + sizeof(pHdr->u32CRC);
+    *pcbFileHdr = sizeof(*pHdr);
+    if (!memcmp(pHdr->achMagic, SSMFILEHDR_MAGIC_V1_0, sizeof(SSMFILEHDR_MAGIC_V1_0)))
+    {
+        if (pHdr->MachineUuid.au32[3])
+        {
+            SSMFILEHDRV10X86 OldHdr;
+            memcpy(&OldHdr, pHdr, sizeof(OldHdr));
+            pHdr->cbFile = OldHdr.cbFile;
+            pHdr->u32CRC = OldHdr.u32CRC;
+            pHdr->u32Reserved = 0;
+            pHdr->MachineUuid = OldHdr.MachineUuid;
+
+            offCrc32 = RT_OFFSETOF(SSMFILEHDRV10X86, u32CRC) + sizeof(pHdr->u32CRC);
+            *pcbFileHdr = sizeof(OldHdr);
+        }
+        else
+        {
+            /* (It's identical, but this doesn't harm us and will continue working after future changes.) */
+            SSMFILEHDRV10AMD64 OldHdr;
+            memcpy(&OldHdr, pHdr, sizeof(OldHdr));
+            pHdr->cbFile = OldHdr.cbFile;
+            pHdr->u32CRC = OldHdr.u32CRC;
+            pHdr->u32Reserved = 0;
+            pHdr->MachineUuid = OldHdr.MachineUuid;
+
+            offCrc32 = RT_OFFSETOF(SSMFILEHDRV10AMD64, u32CRC) + sizeof(pHdr->u32CRC);
+            *pcbFileHdr = sizeof(OldHdr);
+        }
+    }
+    else if (memcmp(pHdr->achMagic, SSMFILEHDR_MAGIC_V1_1, sizeof(SSMFILEHDR_MAGIC_V1_1)))
     {
         Log(("SSM: Unknown file format version. magic=%.*s\n", sizeof(pHdr->achMagic) - 1, pHdr->achMagic));
         return VERR_SSM_INTEGRITY_VERSION;
@@ -1119,14 +1186,14 @@ static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr)
     /*
      * Verify the checksum.
      */
-    rc = RTFileSeek(File, RT_OFFSETOF(SSMFILEHDR, u32CRC) + sizeof(pHdr->u32CRC), RTFILE_SEEK_BEGIN, NULL);
+    rc = RTFileSeek(File, offCrc32, RTFILE_SEEK_BEGIN, NULL);
     if (VBOX_FAILURE(rc))
     {
         Log(("SSM: Failed to seek to crc start. rc=%Vrc\n", rc));
         return rc;
     }
     uint32_t u32CRC;
-    rc = ssmr3CalcChecksum(File, pHdr->cbFile - sizeof(*pHdr), &u32CRC);
+    rc = ssmr3CalcChecksum(File, pHdr->cbFile - *pcbFileHdr, &u32CRC);
     if (VBOX_FAILURE(rc))
         return rc;
     if (u32CRC != pHdr->u32CRC)
@@ -1138,7 +1205,7 @@ static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr)
     /*
      * Verify Virtual Machine UUID.
      */
-    RTUUID    Uuid;
+    RTUUID  Uuid;
     memset(&Uuid, 0, sizeof(Uuid));
 /** @todo get machine uuids  CFGGetUuid(, &Uuid); */
     if (    RTUuidCompare(&pHdr->MachineUuid, &Uuid)
@@ -1181,7 +1248,8 @@ static PSSMUNIT ssmr3Find(PVM pVM, const char *pszName, uint32_t u32Instance)
  * @returns VBox status.
  * @param   pVM             The VM handle.
  * @param   pszFilename     Name of the file to save the state in.
- * @param   enmAfter        What is planned after a successful save operation.
+ * @param   enmAfter        What is planned after a successful load operation.
+ *                          Only acceptable values are SSMAFTER_RESUME and SSMAFTER_DEBUG_IT.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
@@ -1192,7 +1260,8 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Validate input.
      */
-    if (enmAfter != SSMAFTER_RESUME)
+    if (    enmAfter != SSMAFTER_RESUME
+        &&  enmAfter != SSMAFTER_DEBUG_IT)
     {
         AssertMsgFailed(("Invalid enmAfter=%d!\n", enmAfter));
         return VERR_INVALID_PARAMETER;
@@ -1204,6 +1273,7 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     SSMHANDLE Handle       = {0};
     Handle.enmAfter        = enmAfter;
     Handle.pVM             = pVM;
+    Handle.cbFileHdr       = sizeof(SSMFILEHDR);
     Handle.pfnProgress     = pfnProgress;
     Handle.pvUser          = pvUser;
     Handle.uPercentPrepare = 20; /* reserve substantial time for validating the image */
@@ -1219,7 +1289,7 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * Read file header and validate it.
      */
     SSMFILEHDR Hdr;
-    rc = ssmr3Validate(Handle.File, &Hdr);
+    rc = ssmr3Validate(Handle.File, &Hdr, &Handle.cbFileHdr);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1284,7 +1354,7 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
          * Do the execute run.
          */
         if (VBOX_SUCCESS(rc))
-            rc = RTFileSeek(Handle.File, sizeof(Hdr), RTFILE_SEEK_BEGIN, NULL);
+            rc = RTFileSeek(Handle.File, Handle.cbFileHdr, RTFILE_SEEK_BEGIN, NULL);
         if (VBOX_SUCCESS(rc))
         {
             char   *pszName = NULL;
@@ -1395,6 +1465,8 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
 
                                         pUnit->fCalled = true;
                                         if (VBOX_SUCCESS(rc))
+                                            rc = Handle.rc;
+                                        if (VBOX_SUCCESS(rc))
                                         {
                                             /*
                                              * Now, we'll check the current position to see if all, or
@@ -1422,8 +1494,16 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                         }
                                         else
                                         {
+                                            /* 
+                                             * We failed, but if loading for the debugger ignore certain failures
+                                             * just to get it all loaded (big hack).
+                                             */
                                             LogRel(("SSM: LoadExec failed with rc=%Vrc for unit '%s'!\n", rc, pszName));
-                                            break;
+                                            if (    Handle.enmAfter != SSMAFTER_DEBUG_IT
+                                                ||  rc != VERR_SSM_LOADED_TOO_MUCH)
+                                                break;
+                                            Handle.rc = rc = VINF_SUCCESS; 
+                                            ssmR3Progress(&Handle, Handle.offEstUnitEnd - Handle.offEst);
                                         }
                                     }
                                     else
@@ -1435,9 +1515,14 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                 }
                                 else
                                 {
+                                    /* 
+                                     * SSM unit wasn't found - ignore this when loading for the debugger.
+                                     */
                                     LogRel(("SSM: Found no handler for unit '%s'!\n", pszName));
                                     rc = VERR_SSM_INTEGRITY_UNIT_NOT_FOUND;
-                                    break;
+                                    if (Handle.enmAfter != SSMAFTER_DEBUG_IT)
+                                        break;
+                                    rc = RTFileSeek(Handle.File, offUnit + UnitHdr.cbUnit, RTFILE_SEEK_BEGIN, NULL);
                                 }
                             }
                             else
@@ -1559,8 +1644,9 @@ SSMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
     int rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (VBOX_SUCCESS(rc))
     {
+        size_t cbFileHdr;
         SSMFILEHDR Hdr;
-        rc = ssmr3Validate(File, &Hdr);
+        rc = ssmr3Validate(File, &Hdr, &cbFileHdr);
         RTFileClose(File);
     }
     else
@@ -1601,10 +1687,12 @@ SSMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
     if (VBOX_SUCCESS(rc))
     {
         SSMFILEHDR Hdr;
-        rc = ssmr3Validate(pSSM->File, &Hdr);
+        size_t cbFileHdr;
+        rc = ssmr3Validate(pSSM->File, &Hdr, &cbFileHdr);
         if (VBOX_SUCCESS(rc))
         {
             //pSSM->pVM           = NULL;
+            pSSM->cbFileHdr       = cbFileHdr;
             pSSM->enmOp           = SSMSTATE_OPEN_READ;
             pSSM->enmAfter        = SSMAFTER_OPENED;
             pSSM->uPercentPrepare = 20; /* reserve substantial time for validating the image */
@@ -1708,7 +1796,7 @@ SSMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
     char   *pszName = NULL;
     size_t  cchName = 0;
     SSMFILEUNITHDR  UnitHdr;
-    for (RTFOFF off = sizeof(SSMFILEHDR); ; off += UnitHdr.cbUnit)
+    for (RTFOFF off = pSSM->cbFileHdr; ; off += UnitHdr.cbUnit)
     {
         /*
          * Read the unit header and verify it.
@@ -2387,7 +2475,9 @@ static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, siz
         return rc;
     }
 
-    AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
+    /** @todo weed out lazy saving */
+    if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
+        AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
     return VERR_SSM_LOADED_TOO_MUCH;
 }
 
@@ -2863,7 +2953,7 @@ SSMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
  * @returns SSMAFTER enum value.
  * @param   pSSM            SSM operation handle.
  */
-SSMR3DECL(int) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
+SSMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
 {
     return pSSM->enmAfter;
 }
