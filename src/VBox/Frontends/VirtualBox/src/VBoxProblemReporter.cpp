@@ -752,12 +752,16 @@ void VBoxProblemReporter::cannotDiscardSavedState (const CConsole &console)
         formatErrorInfo (res));
 }
 
-void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine)
+void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
+                                                   const QString &aPath)
 {
     message (
         mainWindowShown(),
         Error,
-        tr ("Failed to change the snapshot folder path."),
+        tr ("Failed to change the snapshot folder path of the "
+            "virtual machine <b>%1<b> to <nobr><b>%2</b></nobr>.")
+            .arg (aMachine.GetName())
+            .arg (aPath),
         formatErrorInfo (aMachine));
 }
 
