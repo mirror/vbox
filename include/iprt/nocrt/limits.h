@@ -41,12 +41,12 @@
 #define INT_MAX         0x7fffffff
 #define INT_MIN         (-0x7fffffff - 1)
 
-#if defined(__X86__) || defined(RT_OS_WINDOWS)
+#if defined(RT_ARCH_X86) || defined(RT_OS_WINDOWS)
 # define LONG_BIT       32
 # define ULONG_MAX      0xffffffffU
 # define LONG_MAX       0x7fffffff
 # define LONG_MIN       (-0x7fffffff - 1)
-#elif defined(__AMD64__)
+#elif defined(RT_ARCH_AMD64)
 # define LONG_BIT       64
 # define ULONG_MAX      UINT64_C(0xffffffffffffffff)
 # define LONG_MAX       INT64_C(0x7fffffffffffffff)
