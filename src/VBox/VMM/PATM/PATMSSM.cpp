@@ -293,6 +293,8 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         ||  pVM->patm.s.pCPUMCtxGC != patmInfo.pCPUMCtxGC
         ||  pVM->patm.s.pStatsGC   != patmInfo.pStatsGC)
     {
+        if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT) /* hack for x86 / amd64 mix. */
+            return VINF_SUCCESS;
         AssertMsgFailed(("GC state, stat or cpum ptrs don't match!!!\n"));
         return VERR_SSM_INVALID_STATE;
     }
