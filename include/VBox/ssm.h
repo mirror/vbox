@@ -45,6 +45,10 @@ typedef enum SSMAFTER
     SSMAFTER_DESTROY,
     /** Will continue execution after saving the VM. */
     SSMAFTER_CONTINUE,
+    /** Will debug the saved state. 
+     * This is used to drop some of the stricter consitentcy checks so it'll 
+     * load fine in the debugger or animator. */
+    SSMAFTER_DEBUG_IT,
     /** The file was opened using SSMR3Open() and we have no idea what the plan is. */
     SSMAFTER_OPENED
 } SSMAFTER;
@@ -532,7 +536,8 @@ SSMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  * @returns VBox status.
  * @param   pVM             The VM handle.
  * @param   pszFilename     Name of the file to save the state in.
- * @param   enmAfter        What is planned after a successful save operation.
+ * @param   enmAfter        What is planned after a successful load operation.
+ *                          Only acceptable values are SSMAFTER_RESUME and SSMAFTER_DEBUG_IT.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
@@ -1108,7 +1113,7 @@ SSMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
  * @returns SSMAFTER enum value.
  * @param   pSSM            SSM operation handle.
  */
-SSMR3DECL(int) SSMR3HandleGetAfter(PSSMHANDLE pSSM);
+SSMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM);
 
 
 #endif /* IN_RING3 */
