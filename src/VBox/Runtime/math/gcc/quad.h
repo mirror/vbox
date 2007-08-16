@@ -60,7 +60,7 @@
 #endif
 #else /* iprt */
 # include <iprt/types.h>
-# include <limits.h>
+# include <iprt/nocrt/limits.h>
 # undef __P
 # define __P(a) a
 # undef __GNUC_PREREQ__
@@ -72,7 +72,9 @@
 #  define _QUAD_HIGHWORD        0
 #  define _QUAD_LOWWORD         1
 # endif
+# if !defined(RT_OS_LINUX) || !defined(__KERNEL__) /* (linux/types.h defines u_int) */
    typedef unsigned int	u_int;
+# endif
    typedef int64_t quad_t;
    typedef uint64_t u_quad_t;
    typedef quad_t *qaddr_t;
