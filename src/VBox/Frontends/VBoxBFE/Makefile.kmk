@@ -79,6 +79,9 @@ VBoxBFE_SOURCES.l4    = \
 VBoxBFE_SOURCES.darwin = \
 	SDLConsole.cpp \
 	SDLFramebuffer.cpp
+VBoxBFE_SOURCES.solaris = \
+    SDLConsole.cpp \
+    SDLFramebuffer.cpp
 
 VBoxBFE_INCS = \
 	$(PATH_VBoxBFE) \

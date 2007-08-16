@@ -41,7 +41,7 @@ typedef struct RTSEMFASTMUTEXINTERNAL
     /** Magic value (RTSEMFASTMUTEX_MAGIC). */
     uint32_t            u32Magic;
     /** The Solaris mutex. */
-    struct mutex        Mtx;
+    kmutex_t            Mtx;
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
 

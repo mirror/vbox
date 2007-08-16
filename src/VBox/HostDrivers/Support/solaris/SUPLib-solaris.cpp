@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox host drivers - Ring-0 support drivers - Solaris host:
@@ -36,16 +37,18 @@
 
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
+
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define DEVICE_NAME     "/dev/vboxdrv"
+#define DEVICE_NAME     "/devices/pseudo/vboxdrv@0:0"
 
 
 /*******************************************************************************
@@ -149,17 +152,20 @@ int suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, size
     Args.cbOut = cbOut;
 
     if (ioctl(g_hDevice, uFunction, &Args) >= 0)
-	return 0;
-    /* This is the reverse operation of the one found in SUPDrv-linux.c */
+        return 0;
+	
+    /* This is the reverse operation of the one found in SUPDrv-solaris.c */
     switch (errno)
     {
         case EACCES: return VERR_GENERAL_FAILURE;
         case EINVAL: return VERR_INVALID_PARAMETER;
-        case ENOSYS: return VERR_INVALID_MAGIC;
+        case EILSEQ: return VERR_INVALID_MAGIC;
+        case ENOSYS: return VERR_VERSION_MISMATCH;
         case ENXIO:  return VERR_INVALID_HANDLE;
         case EFAULT: return VERR_INVALID_POINTER;
         case ENOLCK: return VERR_LOCK_FAILED;
         case EEXIST: return VERR_ALREADY_LOADED;
+        case EPERM:  return VERR_PERMISSION_DENIED;
     }
 
     return RTErrConvertFromErrno(errno);

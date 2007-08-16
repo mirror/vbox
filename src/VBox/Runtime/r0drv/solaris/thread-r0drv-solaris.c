@@ -34,7 +34,8 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 RTDECL(int) RTThreadSleep(unsigned cMillies)
 {
     int cTicks;
-
+    unsigned long timeout;
+    
     if (!cMillies)
     {
         RTThreadYield();
@@ -45,16 +46,33 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
         cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
     else
         cTicks = 0;
-    
-    /* hm, maybe we could also use nanosleep() */
+#if 0
+    timeout = ddi_get_lbolt();
+    timeout += cTicks; 
+ 
+    kcondvar_t cnd;
+    kmutex_t mtx;
+    mutex_init(&mtx, "IPRT Sleep Mutex", MUTEX_DRIVER, NULL);
+    cv_init(&cnd, "IPRT Sleep CV", CV_DRIVER, NULL);
+    mutex_enter(&mtx);
+    cv_timedwait (&cnd, &mtx, 9000 * timeout);
+    mutex_exit(&mtx);
+    cv_destroy(&cnd);
+    mutex_destroy(&mtx);
+#endif
+
+#if 1
     delay(cTicks);
-    
-/*   Hmm, no same effect as using delay()
+#endif
+
+#if 0
+    /*   Hmm, no same effect as using delay() */
     struct timespec t;
     t.tv_sec = 0;
     t.tv_nsec = cMillies * 1000000L;
     nanosleep (&t, NULL);
-*/    
+#endif
+
     return VINF_SUCCESS;
 }
 

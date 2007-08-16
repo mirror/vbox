@@ -1237,10 +1237,14 @@ ifeq ($(VBOX_LDR_FMT32),elf)
 TEMPLATE_VBOXGC_TOOL                = $(VBOX_GCC32_TOOL)
 TEMPLATE_VBOXGC_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
 TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
-TEMPLATE_VBOXGC_LDFLAGS             = -nostdlib -Bsymbolic
-# temporarily, must fix the loader.
-TEMPLATE_VBOXGC_LDFLAGS            += -S
-TEMPLATE_VBOXGC_LDFLAGS.release     = -S
+ifeq ($(BUILD_TARGET),solaris)
+ TEMPLATE_VBOXGC_LDFLAGS            = -B symbolic
+else
+ TEMPLATE_VBOXGC_LDFLAGS             = -nostdlib -Bsymbolic
+ # temporarily, must fix the loader.
+ TEMPLATE_VBOXGC_LDFLAGS            += -S
+ TEMPLATE_VBOXGC_LDFLAGS.release     = -S
+endif
 TEMPLATE_VBOXGC_LIBS                = \
 	$(VBOX_GCC32_LIBGCC) # instricts
 endif
@@ -1334,10 +1338,15 @@ TEMPLATE_VBOXR0_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-tri
 TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -fno-rtti -fno-exceptions $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables -ffreestanding
 TEMPLATE_VBOXR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables
-TEMPLATE_VBOXR0_LDFLAGS             = -nostdlib -Bsymbolic
-# temporarily, must fix the loader.
-TEMPLATE_VBOXR0_LDFLAGS            += -S
-TEMPLATE_VBOXR0_LDFLAGS.release     = -S
+ifeq ($(BUILD_TARGET),solaris)
+ TEMPLATE_VBOXR0_LDFLAGS             = -B symbolic
+else
+ TEMPLATE_VBOXR0_LDFLAGS             = -nostdlib -Bsymbolic
+ # temporarily, must fix the loader.
+ TEMPLATE_VBOXR0_LDFLAGS            += -S
+ TEMPLATE_VBOXR0_LDFLAGS.release     = -S
+endif
+
 TEMPLATE_VBOXR0_LIBS                = \
 	$(VBOX_GCC_LIBGCC) # instricts
 endif
@@ -1455,7 +1464,6 @@ ifeq ($(BUILD_TARGET),solaris)
 # x86 Solaris:
 ## The Solaris /usr/include.
 VBOX_SOLARIS_SYS_INCS ?= /usr/include
-
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
 #TEMPLATE_VBOXR0DRV_INCS                = \
@@ -1464,7 +1472,7 @@ TEMPLATE_VBOXR0DRV_SYSSUFF             = .o
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r
 # exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress!!
 TEMPLATE_VBOXR0DRV_CFLAGS              = -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
-	-Wmissing-prototypes -Wstrict-prototypes \
+	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
 	-O2 -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
 ## *************************** SOLARISTODO  ******************
 endif	# solaris

@@ -38,7 +38,6 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 }
 
 
-/** @todo Solaris native threading, when more info. on priority etc. (namely default prio value) is available */
 int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     int iPriority;    
@@ -55,7 +54,8 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
             return VERR_INVALID_PARAMETER;
     }
 
-    THREAD_CHANGE_PRI(curthread, iPriority);
+    pri_t threadPrio = iPriority;
+    curthread->t_pri = threadPrio;
     return VINF_SUCCESS;
 }
 
@@ -87,11 +87,11 @@ static void rtThreadNativeMain(void *pvThreadInt)
 int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     int rc;
-    /** @todo passing hardcoded priority: 52. Find what default priority to pass */
+    /** @todo Passing hardcoded priority of 52, Find correct default priority */
     /* We know its from 0 to 127 priority, but what's the default?? */
     kthread_t* pKernThread = thread_create(NULL, NULL, rtThreadNativeMain, pThreadInt, 0,
                                            curproc, LMS_USER, 52);
-    if (rc == 0)
+    if (pKernThread)
     {
         *pNativeThread = (RTNATIVETHREAD)pKernThread;
         return VINF_SUCCESS;
