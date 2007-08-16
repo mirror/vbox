@@ -158,9 +158,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         pHGCMCall->cParms      = pCallInfo->cParms;
 
         if (cbParms)
-        {
-            memcpy (VMMDEV_HGCM_CALL_PARMS(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), cbParms);
-            
+        {           
             /* Lock user buffers. */
             pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
 
@@ -195,6 +193,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                 if (VBOX_FAILURE (rc))
                     break;
             }
+            memcpy (VMMDEV_HGCM_CALL_PARMS(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), cbParms);
         }
 
         /* Check that the parameter locking was ok. */
