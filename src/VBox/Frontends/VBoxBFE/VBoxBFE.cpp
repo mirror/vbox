@@ -293,7 +293,9 @@ static void show_usage()
              "  -[no]acpi          Enable or disable ACPI (default: enabled)\n"
              "  -[no]ioapic        Enable or disable the IO-APIC (default: disabled)\n"
              "  -audio             Enable audio\n"
+#ifndef RT_OS_L4
              "  -natdev<1-N>       Configure NAT for network device N\n"
+#endif
              "  -hifdev<1-N> <dev> <mac> Use existing Host Interface Network Device with the given name and MAC address\n"
 #if 0
              "  -netsniff<1-N>     Enable packet sniffer\n"
@@ -501,10 +503,18 @@ int main(int argc, char **argv)
             if (!g_pszCdromFile)
                 return SyntaxError("The path to the specified cdrom, '%s', could not be resolved.\n", argv[curArg]);
         }
+#ifdef RT_OS_L4
+        /* This is leaving a lot of dead code in the L4 version of course,
+           but I don't think that that is a major problem.  We may even
+           activate it sometime... */
+        else if (   strncmp(pszArg, "-hifdev", 7) == 0
+                 || strncmp(pszArg, "-nonetd", 7) == 0)
+#else
         else if (   strncmp(pszArg, "-natdev", 7) == 0
                  || strncmp(pszArg, "-hifdev", 7) == 0
                  || strncmp(pszArg, "-nonetd", 7) == 0
                  || strncmp(pszArg, "-intnet", 7) == 0)
+#endif
         {
             int i = networkArg2Index(pszArg, 7);
             if (i < 0)
