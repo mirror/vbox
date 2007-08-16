@@ -25,8 +25,10 @@
 #include <VBox/cfgm.h>
 #include <VBox/pgm.h>
 #include <VBox/rem.h>
+#include <VBox/ssm.h>
 #include <VBox/dbgf.h>
 #include <VBox/err.h>
+#include <VBox/pdmifs.h>
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -321,6 +323,7 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     uint64_t cbMem = *(uint64_t *)pvUser;
     int rc;
     int rcAll = VINF_SUCCESS;
+    bool fIOAPIC = false;
 #define UPDATERC() do { if (VBOX_FAILURE(rc) && VBOX_SUCCESS(rcAll)) rcAll = rc; } while (0)
 
     /*
@@ -411,7 +414,8 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     UPDATERC();
     rc = CFGMR3InsertString(pCfg,   "HardDiskDevice",       "piix3ide");
     UPDATERC();
-    rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "");
+    rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "i82078");
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         UPDATERC();
     UPDATERC();
     /* Bios logo. */
     rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               0);
@@ -424,6 +428,25 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     UPDATERC();
 
     /*
+     * ACPI
+     */
+    rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              cbMem);             UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 UPDATERC();
+
+    /*
+     * DMA
+     */
+    rc = CFGMR3InsertNode(pDevices, "8237A", &pDev);                            UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted", 1);             /* boolean */    UPDATERC();
+
+    /*
      * PCI bus.
      */
     rc = CFGMR3InsertNode(pDevices, "pci", &pDev); /* piix3 */
@@ -434,6 +457,7 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     UPDATERC();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
     UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         UPDATERC();
 
     /*
      * PS/2 keyboard & mouse
@@ -442,8 +466,21 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     UPDATERC();
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);
     UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted", 1); /* boolean */                UPDATERC();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
     UPDATERC();
+
+    /*
+     * Floppy
+     */
+    rc = CFGMR3InsertNode(pDevices, "i82078",    &pDev);                        UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0",         &pInst);                       UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",   1);                            UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config",    &pCfg);                        UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "IRQ",       6);                            UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "DMA",       2);                            UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "MemMapped", 0 );                           UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x3f0);                        UPDATERC();
 
     /*
      * i8254 Programmable Interval Timer And Dummy Speaker
@@ -468,28 +505,46 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     UPDATERC();
 
     /*
+     * APIC.
+     */
+    rc = CFGMR3InsertNode(pDevices, "apic", &pDev);                                 UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             UPDATERC();
+
+    if (fIOAPIC)
+    {
+        /*
+         * I/O Advanced Programmable Interrupt Controller.
+         */
+        rc = CFGMR3InsertNode(pDevices, "ioapic", &pDev);                           UPDATERC();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               UPDATERC();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */   UPDATERC();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           UPDATERC();
+    }
+
+
+    /*
      * RTC MC146818.
      */
-    rc = CFGMR3InsertNode(pDevices, "mc146818", &pDev);
-    UPDATERC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);
-    UPDATERC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
-    UPDATERC();
+    rc = CFGMR3InsertNode(pDevices, "mc146818", &pDev);                             UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATERC();
 
     /*
      * VGA.
      */
-    rc = CFGMR3InsertNode(pDevices, "vga", &pDev);
-    UPDATERC();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);         /* boolean */
-    UPDATERC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             4 * _1M);
-    UPDATERC();
+    rc = CFGMR3InsertNode(pDevices, "vga", &pDev);                                  UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          2);                     UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             8 * _1M);               UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes",     0);
+    rc = CFGMR3InsertInteger(pCfg,  "HeightReduction",      0);                     UPDATERC();
+    //rc = CFGMR3InsertInteger(pCfg,  "MonitorCount",         1);                     UPDATERC();
 
     /*
      * IDE controller.
@@ -500,10 +555,34 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     UPDATERC();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);         /* boolean */
     UPDATERC();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
-    UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          1);                     UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        1);                     UPDATERC();
 
+    /*
+     * Network card.
+     */
+    rc = CFGMR3InsertNode(pDevices, "pcnet", &pDev);                                UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);      /* boolean */  UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          3);                     UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATERC();
+    rc = CFGMR3InsertInteger(pCfg,  "Am79C973",             1);                     UPDATERC();
+    PDMMAC Mac;
+    Mac.au16[0] = 0x0080;
+    Mac.au16[2] = Mac.au16[1] = 0x8086;
+    rc = CFGMR3InsertBytes(pCfg,    "MAC", &Mac, sizeof(Mac));                      UPDATERC();
 
+    /*
+     * VMM Device
+     */
+    rc = CFGMR3InsertNode(pDevices, "VMMDev", &pDev);                               UPDATERC();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   UPDATERC();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          4);                     UPDATERC();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     UPDATERC();
 
     /*
      * ...
@@ -515,7 +594,11 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
 
 static void syntax(void)
 {
-    RTPrintf("Syntax: tstAnimate <-r <raw-mem-file>> [-o <rawmem offset>] [-s <script file>] [-m <bytes>]\n"
+    RTPrintf("Syntax: tstAnimate < -r <raw-mem-file> | -z <saved-state> > \n"
+             "              [-o <rawmem offset>]\n"
+             "              [-s <script file>]\n"
+             "              [-m <memory size>]\n"
+             "              [-p]\n"
              "\n"
              "The script is on the form:\n"
              "<reg>=<value>\n");
@@ -525,6 +608,7 @@ static void syntax(void)
 int main(int argc, char **argv)
 {
     int rcRet = 1;
+    int rc;
     RTR3Init();
 
     /*
@@ -536,7 +620,9 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    bool        fPowerOn = false;
     uint64_t    cbMem = ~0ULL;
+    const char *pszSavedState = NULL;
     const char *pszRawMem = NULL;
     uint64_t    offRawMem = 0;
     const char *pszScript = NULL;
@@ -562,6 +648,7 @@ int main(int argc, char **argv)
                 case 'o':
                 case 'c':
                 case 'm':
+                case 'z':
                     if (i + 1 < argc)
                         break;
                     RTPrintf("tstAnimate: Syntax error: '%s' takes a 2nd argument.\n", argv[i]);
@@ -573,6 +660,10 @@ int main(int argc, char **argv)
             {
                 case 'r':
                     pszRawMem = argv[++i];
+                    break;
+
+                case 'z':
+                    pszSavedState = argv[++i];
                     break;
 
                 case 'o':
@@ -588,10 +679,26 @@ int main(int argc, char **argv)
 
                 case 'm':
                 {
-                    int rc = RTStrToUInt64Ex(argv[++i], NULL, 0, &cbMem);
+                    char *pszNext;
+                    int rc = RTStrToUInt64Ex(argv[++i], &pszNext, 0, &cbMem);
                     if (VBOX_FAILURE(rc))
                     {
-                        RTPrintf("tstAnimate: Syntax error: Invalid offset given to -m.\n");
+                        RTPrintf("tstAnimate: Syntax error: Invalid memory size given to -m.\n");
+                        return 1;
+                    }
+                    switch (*pszNext)
+                    {
+                        case 'G':   cbMem *= _1G; pszNext++; break;
+                        case 'M':   cbMem *= _1M; pszNext++; break;
+                        case 'K':   cbMem *= _1K; pszNext++; break;
+                        case '\0':  break;
+                        default:
+                            RTPrintf("tstAnimate: Syntax error: Invalid memory size given to -m.\n");
+                            return 1;
+                    }
+                    if (*pszNext)
+                    {
+                        RTPrintf("tstAnimate: Syntax error: Invalid memory size given to -m.\n");
                         return 1;
                     }
                     break;
@@ -599,6 +706,10 @@ int main(int argc, char **argv)
 
                 case 's':
                     pszScript = argv[++i];
+                    break;
+
+                case 'p':
+                    fPowerOn = true;
                     break;
 
                 case 'h':
@@ -623,7 +734,12 @@ int main(int argc, char **argv)
     /*
      * Check that the basic requirements are met.
      */
-    if (!pszRawMem)
+    if (pszRawMem && pszSavedState)
+    {
+        RTPrintf("tstAnimate: Syntax error: Either -z or -r, not both.\n");
+        return 1;
+    }
+    if (!pszRawMem && !pszSavedState)
     {
         RTPrintf("tstAnimate: Syntax error: The -r argument is compulsory.\n");
         return 1;
@@ -632,12 +748,15 @@ int main(int argc, char **argv)
     /*
      * Open the files.
      */
-    RTFILE FileRawMem;
-    int rc = RTFileOpen(&FileRawMem, pszRawMem, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (VBOX_FAILURE(rc))
+    RTFILE FileRawMem = NIL_RTFILE;
+    if (pszRawMem)
     {
-        RTPrintf("tstAnimate: error: Failed to open '%s': %Vrc\n", pszRawMem, rc);
-        return 1;
+        rc = RTFileOpen(&FileRawMem, pszRawMem, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        if (VBOX_FAILURE(rc))
+        {
+            RTPrintf("tstAnimate: error: Failed to open '%s': %Vrc\n", pszRawMem, rc);
+            return 1;
+        }
     }
     RTFILE FileScript = NIL_RTFILE;
     if (pszScript)
@@ -655,12 +774,32 @@ int main(int argc, char **argv)
      */
     if (cbMem == ~0ULL)
     {
-        rc = RTFileGetSize(FileRawMem, &cbMem);
-        AssertReleaseRC(rc);
-        cbMem -= offRawMem;
-        cbMem &= ~(PAGE_SIZE - 1);
+        if (FileRawMem != NIL_RTFILE)
+        {
+            int rc = RTFileGetSize(FileRawMem, &cbMem);
+            AssertReleaseRC(rc);
+            cbMem -= offRawMem;
+            cbMem &= ~(PAGE_SIZE - 1);
+        }
+        else
+        {
+            RTPrintf("tstAnimate: error: too lazy to figure out the memsize in a saved state.\n");
+            return 1;
+        }
     }
     RTPrintf("tstAnimate: info: cbMem=0x%llx bytes\n", cbMem);
+
+    /*
+     * Open a release log.
+     */
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    PRTLOGGER pRelLogger;
+    rc = RTLogCreate(&pRelLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all", "VBOX_RELEASE_LOG", 
+                     RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE, "./tstAnimate.log");
+    if (VBOX_SUCCESS(rc))
+        RTLogRelSetDefaultInstance(pRelLogger);
+    else
+        RTPrintf("tstAnimate: rtLogCreateEx failed - %Vrc\n", rc);
 
     /*
      * Create empty VM.
@@ -673,7 +812,10 @@ int main(int argc, char **argv)
          * Load memory.
          */
         PVMREQ pReq1 = NULL;
-        rc = VMR3ReqCall(pVM, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)loadMem, 3, pVM, FileRawMem, &offRawMem);
+        if (FileRawMem != NIL_RTFILE)
+            rc = VMR3ReqCall(pVM, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)loadMem, 3, pVM, FileRawMem, &offRawMem);
+        else
+            rc = VMR3ReqCall(pVM, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)SSMR3Load, 4, pVM, pszSavedState, SSMAFTER_DEBUG_IT, NULL, NULL);
         AssertReleaseRC(rc);
         rc = pReq1->iStatus;
         VMR3ReqFree(pReq1);
@@ -691,33 +833,49 @@ int main(int argc, char **argv)
             }
             if (VBOX_SUCCESS(rc))
             {
-                /*
-                 * Start the thing.
-                 */
-                RTPrintf("info: powering on the VM...\n");
-                RTLogGroupSettings(NULL, "+REM_DISAS.e.l.f");
-                rc = REMR3DisasEnableStepping(pVM, true);
-                if (VBOX_SUCCESS(rc))
+                if (fPowerOn)
                 {
-                    DBGFR3InfoLog(pVM, "cpumguest", "verbose");
-                    rc = VMR3PowerOn(pVM);
+                    /*
+                     * Start the thing with single stepping and stuff enabled.
+                     */
+                    RTPrintf("info: powering on the VM...\n");
+                    RTLogGroupSettings(NULL, "+REM_DISAS.e.l.f");
+                    rc = REMR3DisasEnableStepping(pVM, true);
                     if (VBOX_SUCCESS(rc))
                     {
-                        RTPrintf("info: VM is running\n");
-                        signal(SIGINT, SigInterrupt);
-                        while (!g_fSignaled)
-                            RTThreadSleep(1000);
+                        DBGFR3InfoLog(pVM, "cpumguest", "verbose");
+                        if (fPowerOn)
+                            rc = VMR3PowerOn(pVM);
+                        if (VBOX_SUCCESS(rc))
+                        {
+                            RTPrintf("info: VM is running\n");
+                            signal(SIGINT, SigInterrupt);
+                            while (!g_fSignaled)
+                                RTThreadSleep(1000);
+                        }
+                        else
+                            RTPrintf("error: Failed to power on the VM: %Vrc\n", rc);
                     }
                     else
-                        RTPrintf("error: Failed to power on the VM: %Vrc\n", rc);
+                        RTPrintf("error: Failed to enabled singlestepping: %Vrc\n", rc);
                 }
                 else
-                    RTPrintf("error: Failed to enabled singlestepping: %Vrc\n", rc);
+                {
+                    /*
+                     * Don't start it, just enter the debugger.
+                     */
+                    RTPrintf("info: entering debugger...\n");
+                    DBGFR3InfoLog(pVM, "cpumguest", "verbose");
+                    signal(SIGINT, SigInterrupt);
+                    while (!g_fSignaled)
+                        RTThreadSleep(1000);
+                }
                 RTPrintf("info: shutting down the VM...\n");
             }
             /* execScript complains */
         }
-        /* loadMem complains */
+        else if (FileRawMem == NIL_RTFILE) /* loadMem complains, SSMR3Load doesn't */
+            RTPrintf("tstAnimate: error: SSMR3Load failed: rc=%Vrc\n", rc);
         rcRet = VBOX_SUCCESS(rc) ? 0 : 1;
 
         /*
@@ -726,13 +884,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!VBOX_SUCCESS(rc))
         {
-            RTPrintf("tstAnimate: error: failed to destroy vm! rc=%d\n", rc);
+            RTPrintf("tstAnimate: error: failed to destroy vm! rc=%Vrc\n", rc);
             rcRet++;
         }
     }
     else
     {
-        RTPrintf("tstAnimate: fatal error: failed to create vm! rc=%d\n", rc);
+        RTPrintf("tstAnimate: fatal error: failed to create vm! rc=%Vrc\n", rc);
         rcRet++;
     }
 
