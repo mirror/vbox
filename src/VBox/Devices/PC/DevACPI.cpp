@@ -895,6 +895,8 @@ static void acpiFetchBatteryStatus (ACPIState *s)
     uint32_t           hostPresentRate;       /* 0..1000 */
     int                rc;
 
+    if (!s->pDrv)
+        return;
     rc = s->pDrv->pfnQueryBatteryStatus (s->pDrv, &fPresent, &hostRemainingCapacity,
                                          &hostBatteryState, &hostPresentRate);
     AssertRC (rc);
@@ -942,6 +944,8 @@ static uint32_t acpiGetBatteryDeviceStatus (ACPIState *s)
     uint32_t           hostPresentRate;       /* 0..1000 */
     int                rc;
 
+    if (!s->pDrv)
+        return 0;
     rc = s->pDrv->pfnQueryBatteryStatus (s->pDrv, &fPresent, &hostRemainingCapacity,
                                          &hostBatteryState, &hostPresentRate);
     AssertRC (rc);
@@ -960,6 +964,8 @@ static uint32_t acpiGetPowerSource (ACPIState *s)
     PDMACPIPOWERSOURCE ps;
 
     /* query the current power source from the host driver */
+    if (!s->pDrv)
+        return AC_ONLINE;
     int rc = s->pDrv->pfnQueryPowerSource (s->pDrv, &ps);
     AssertRC (rc);
     return ps == PDM_ACPI_POWER_SOURCE_BATTERY ? AC_OFFLINE : AC_ONLINE;
