@@ -112,7 +112,7 @@ public:
         mainLayout->addItem   (spacer);
 
         setFocusProxy (mCaseSensitive);
-        qApp->installEventFilter (this);
+        topLevelWidget()->installEventFilter (this);
 
         languageChange();
     }
@@ -334,7 +334,7 @@ void VBoxVMLogViewer::init()
 
     /* search the default button */
     mDefaultButton = searchDefaultButton();
-    qApp->installEventFilter (this);
+    topLevelWidget()->installEventFilter (this);
 
     /* setup a dialog icon */
     setIcon (QPixmap::fromMimeSource ("show_logs_16px.png"));
