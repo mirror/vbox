@@ -5845,7 +5845,21 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             SSMR3GetMem(pSSMHandle, &pData->aCts[i].aIfs[j].Led, sizeof(pData->aCts[i].aIfs[j].Led));
             SSMR3GetU32(pSSMHandle, &pData->aCts[i].aIfs[j].cbIOBuffer);
             if (pData->aCts[i].aIfs[j].cbIOBuffer)
-                SSMR3GetMem(pSSMHandle, pData->aCts[i].aIfs[j].CTXSUFF(pbIOBuffer), pData->aCts[i].aIfs[j].cbIOBuffer);
+            {
+                if (pData->aCts[i].aIfs[j].CTXSUFF(pbIOBuffer))
+                    SSMR3GetMem(pSSMHandle, pData->aCts[i].aIfs[j].CTXSUFF(pbIOBuffer), pData->aCts[i].aIfs[j].cbIOBuffer);
+                else
+                {
+                    LogRel(("ATA: No buffer for %d/%d\n", i, j));
+                    if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
+                        break;
+                    /* skip the buffer if we're loading for the debugger / animator. */
+                    uint8_t u8Ignored;
+                    size_t cbLeft = pData->aCts[i].aIfs[j].cbIOBuffer;
+                    while (cbLeft-- > 0)
+                        SSMR3GetU8(pSSMHandle, &u8Ignored);
+                }
+            }
             else
                 Assert(pData->aCts[i].aIfs[j].CTXSUFF(pbIOBuffer) == NULL);
         }
