@@ -205,15 +205,35 @@ DECLINLINE(void) PCIDevSetVendorId(PPCIDEVICE pPciDev, uint16_t u16VendorId)
 }
 
 /**
- * Sets the vendor id config register.
+ * Gets the vendor id config register.
+ * @returns the vendor id.
  * @param   pPciDev         The PCI device.
- * @param   u16VendorId     The vendor id.
+ */
+DECLINLINE(uint16_t) PCIDevGetVendorId(PPCIDEVICE pPciDev)
+{
+    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_VENDOR_ID], pPciDev->config[VBOX_PCI_VENDOR_ID + 1]));
+}
+
+/**
+ * Sets the device id config register.
+ * @param   pPciDev         The PCI device.
+ * @param   u16DeviceId     The device id.
  */
 DECLINLINE(void) PCIDevSetDeviceId(PPCIDEVICE pPciDev, uint16_t u16DeviceId)
 {
     u16DeviceId = RT_H2LE_U16(u16DeviceId);
     pPciDev->config[VBOX_PCI_DEVICE_ID]     = u16DeviceId & 0xff;
     pPciDev->config[VBOX_PCI_DEVICE_ID + 1] = u16DeviceId >> 8;
+}
+
+/**
+ * Gets the device id config register.
+ * @returns the device id.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint16_t) PCIDevGetDeviceId(PPCIDEVICE pPciDev)
+{
+    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_DEVICE_ID], pPciDev->config[VBOX_PCI_DEVICE_ID + 1]));
 }
 
 
