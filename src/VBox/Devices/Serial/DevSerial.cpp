@@ -222,7 +222,8 @@ static void serial_update_parameters(SerialState *s)
         return;
     speed = 115200 / s->divider;
     Log(("speed=%d parity=%c data=%d stop=%d\n", speed, parity, data_bits, stop_bits));
-    s->pDrvChar->pfnSetParameters(s->pDrvChar, speed, parity, data_bits, stop_bits);
+    if (RT_LIKELY(s->pDrvChar))
+        s->pDrvChar->pfnSetParameters(s->pDrvChar, speed, parity, data_bits, stop_bits);
 }
 #endif
 
