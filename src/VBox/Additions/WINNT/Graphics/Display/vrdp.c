@@ -152,7 +152,7 @@ static void vrdpOrderRect (RECTL *prcl)
 
     if (prcl->top > prcl->bottom)
     {
-        DISPDBG((1, "vrdpAdjustRect: Inverse Y coordinates!!!\n"));
+        DISPDBG((1, "vrdpOrderRect: Inverse Y coordinates!!!\n"));
 
         tmp = prcl->top;
         prcl->top = prcl->bottom;
@@ -161,7 +161,7 @@ static void vrdpOrderRect (RECTL *prcl)
 }
 
 
-static void vrdpAdjustRect (SURFOBJ *pso, RECTL *prcl)
+void vrdpAdjustRect (SURFOBJ *pso, RECTL *prcl)
 {
     int x;
     int y;
