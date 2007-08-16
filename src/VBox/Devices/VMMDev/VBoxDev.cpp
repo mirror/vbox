@@ -1767,10 +1767,12 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
      * that listeners can sync their state again
      */
     Log(("vmmdevLoadState: capabilities changed (%x), informing connector\n", pData->mouseCapabilities));
-    pData->pDrv->pfnUpdateMouseCapabilities(pData->pDrv, pData->mouseCapabilities);
+    if (pData->pDrv)
+        pData->pDrv->pfnUpdateMouseCapabilities(pData->pDrv, pData->mouseCapabilities);
 
     /* Reestablish the acceleration status. */
-    if (pData->u32VideoAccelEnabled)
+    if (    pData->u32VideoAccelEnabled
+        &&  pData->pDrv)
     {
         pData->pDrv->pfnVideoAccelEnable (pData->pDrv, !!pData->u32VideoAccelEnabled, &pData->pVMMDevRAMHC->vbvaMemory);
     }
@@ -1780,9 +1782,11 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
         LogRel(("Guest Additions information report: additionsVersion = 0x%08X  osType = 0x%08X\n",
                 pData->guestInfo.additionsVersion,
                 pData->guestInfo.osType));
-        pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
+        if (pData->pDrv)
+            pData->pDrv->pfnUpdateGuestVersion(pData->pDrv, &pData->guestInfo);
     }
-    pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
+    if (pData->pDrv)
+        pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, pData->guestCaps);
 
     return VINF_SUCCESS;
 }
