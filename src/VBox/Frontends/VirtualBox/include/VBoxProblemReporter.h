@@ -119,6 +119,7 @@ public:
     void cannotDeleteMachine (const CVirtualBox &vbox, const CMachine &machine);
     void cannotDiscardSavedState (const CConsole &console);
 
+    void cannotSetSnapshotFolder (const CMachine &aMachine);
     void cannotDiscardSnapshot (const CConsole &console, const CSnapshot &snapshot);
     void cannotDiscardSnapshot (const CProgress &progress, const CSnapshot &snapshot);
     void cannotDiscardCurrentState (const CConsole &console);
@@ -128,8 +129,7 @@ public:
 
     void cannotFindMachineByName (const CVirtualBox &vbox, const QString &name);
 
-    void cannotEnterSeamlessMode (ULONG aWidth, ULONG aHeight,
-                                  ULONG aBpp, ULONG aVRam);
+    void cannotEnterSeamlessMode (ULONG aWidth, ULONG aHeight, ULONG aBpp);
 
     bool confirmMachineDeletion (const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);

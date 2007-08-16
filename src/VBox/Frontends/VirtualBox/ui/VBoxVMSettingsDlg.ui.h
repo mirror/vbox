@@ -1849,7 +1849,11 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* Saved state folder */
     if (leSnapshotFolder->isModified())
+    {
         cmachine.SetSnapshotFolder (leSnapshotFolder->text());
+        if (!cmachine.isOk())
+            vboxProblem().cannotSetSnapshotFolder (cmachine);
+    }
 
     /* Description */
     cmachine.SetDescription (teDescription->text());
