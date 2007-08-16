@@ -49,7 +49,7 @@ typedef struct RTSEMEVENTINTERNAL
     /** The number of threads in the process of waking up. */
     uint32_t volatile   cWaking;
     /** The Solaris mutex protecting this structure and pairing up the with the cv. */
-    struct mutex        Mtx;
+    kmutex_t            Mtx;
     /** The Solaris condition variable. */
     kcondvar_t          Cnd;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
@@ -103,8 +103,8 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     else
     {
         mutex_exit(&pEventInt->Mtx);
-        mutex_destroy(&pEventInt->Mtx);
         cv_destroy(&pEventInt->Cnd);
+        mutex_destroy(&pEventInt->Mtx);
         RTMemFree(pEventInt);
     }
 
@@ -165,7 +165,7 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
             cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
         else
             cTicks = 0;
-        cTicks += timeout;
+        timeout += cTicks;
         
         ASMAtomicIncU32(&pEventInt->cWaiters);
 
@@ -177,12 +177,14 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
             if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
             {
                 rc = VERR_SEM_DESTROYED;
-                /** @todo r=bird: better make sure you're the last guy out before doing the cleanup.... */
-                mutex_exit(&pEventInt->Mtx);
-                cv_destroy(&pEventInt->Cnd);
-                mutex_destroy(&pEventInt->Mtx);
-                RTMemFree(pEventInt);
-                return rc;
+                if (!ASMAtomicDecU32(&pEventInt->cWaking))
+                {
+                    mutex_exit(&pEventInt->Mtx);
+                    cv_destroy(&pEventInt->Cnd);
+                    mutex_destroy(&pEventInt->Mtx);
+                    RTMemFree(pEventInt);
+                    return rc;
+                }
             }
 
             ASMAtomicDecU32(&pEventInt->cWaking);

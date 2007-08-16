@@ -28,12 +28,11 @@
 #include <sys/condvar.h>
 #include <sys/sdt.h>
 #include <sys/schedctl.h>
+#include <sys/time.h>
 
-/* commented for now
+/* commented for now 
 #include <iprt/cdefs.h>
-
 __BEGIN_DECLS
-extern int nanosleep(const struct timespec *, struct timespec *);
 
 __END_DECLS
 */

@@ -31,11 +31,13 @@
 #include <sys/stat.h>
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
+#include <sys/file.h>
 
 #include "SUPDRV.h"
 #include <iprt/spinlock.h>
 #include <iprt/process.h>
 #include <iprt/initterm.h>
+#include <iprt/alloc.h>
 
 
 /*******************************************************************************
@@ -53,12 +55,13 @@ static int VBoxDrvSolarisOpen(dev_t* pDev, int fFlag, int fType, cred_t* pCred);
 static int VBoxDrvSolarisClose(dev_t Dev, int fFlag, int fType, cred_t* pCred);
 static int VBoxDrvSolarisRead(dev_t Dev, struct uio* pUio, cred_t* pCred);
 static int VBoxDrvSolarisWrite(dev_t Dev, struct uio* pUio, cred_t* pCred);
-static int VBoxDrvSolarisIoctl (dev_t Dev, int Cmd, intptr_t Arg, int mode,cred_t* pCred, int* pVal);
+static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int mode, cred_t* pCred, int* pVal);
 
 static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t Cmd);
 static int VBoxDrvSolarisDetach(dev_info_t* pDip, ddi_detach_cmd_t Cmd);
 
-static int VBoxDrvSolarisErr2Native(int rc);
+static int VBoxSupDrvErr2SolarisErr(int rc);
+static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, intptr_t pArgs);
 
 
 /*******************************************************************************
@@ -76,7 +79,7 @@ static struct cb_ops g_VBoxDrvSolarisCbOps =
     nodev,                  /* b print */
     VBoxDrvSolarisRead,
     VBoxDrvSolarisWrite,
-    VBoxDrvSolarisIoctl,
+    VBoxDrvSolarisIOCtl,
     nodev,                  /* c devmap */
     nodev,                  /* c mmap */
     nodev,                  /* c segmap */
@@ -99,7 +102,7 @@ static struct dev_ops g_VBoxDrvSolarisDevOps =
     nulldev,                /* probe */
     VBoxDrvSolarisAttach,
     VBoxDrvSolarisDetach,
-    nodev,          /* reset */
+    nodev,                  /* reset */
     &g_VBoxDrvSolarisCbOps,
     (struct bus_ops *)0,
     nodev                   /* power */
@@ -125,8 +128,11 @@ static struct modlinkage g_VBoxDrvSolarisModLinkage =
     NULL                    /* terminate array of linkage structures */
 };
 
-/** Track module instances */
-dev_info_t* g_pVBoxDrvSolarisDip;
+/** State info. each our kernel module instances */
+typedef struct
+{
+    dev_info_t*     pDip;   /* Device handle */
+} vbox_devstate_t;
 
 /** Opaque pointer to state */
 static void* g_pVBoxDrvSolarisState;
@@ -151,7 +157,7 @@ int _init (void)
 {
     cmn_err(CE_CONT, "VBoxDrvSolaris _init");
 
-    int e = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof (g_pVBoxDrvSolarisDip), 1);
+    int e = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof (vbox_devstate_t), 1);
     if (e != 0)
         return e;
 
@@ -174,7 +180,7 @@ int _fini (void)
     return e;
 }
 
-int _info (struct modinfo* pModInfo)
+int _info (struct modinfo *pModInfo)
 {
     cmn_err(CE_CONT, "VBoxDrvSolaris _info");
     return mod_info (&g_VBoxDrvSolarisModLinkage, pModInfo);
@@ -183,7 +189,7 @@ int _info (struct modinfo* pModInfo)
 /**
  * User context entry points
  */
-static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t* pCred)
+static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
     cmn_err(CE_CONT, "VBoxDrvSolarisOpen");
 
@@ -192,13 +198,13 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t* pCred)
 
     /*
      * Create a new session.
+     * Sessions in Solaris driver are mostly useless. It's however needed
+     * in VBoxDrvSolarisIOCtlSlow() while calling supdrvIOCtl()
      */
-#if 1
-    rc = VINF_SUCCESS;
-#else
     rc = supdrvCreateSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
+        cmn_err(CE_NOTE,"supdrvCreateSession success");
         RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
         unsigned        iHash;
 
@@ -215,14 +221,64 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t* pCred)
         pSession->pNextHash = g_apSessionHashTab[iHash];
         g_apSessionHashTab[iHash] = pSession;
         RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+        cmn_err(CE_NOTE,"VBoxDrvSolarisOpen success");
     }
-#endif
-    return VBoxDrvSolarisErr2Native(rc);
+
+    return VBoxSupDrvErr2SolarisErr(rc);
 }
 
-static int VBoxDrvSolarisClose(dev_t pDev, int flag, int otyp, cred_t* cred)
+static int VBoxDrvSolarisClose(dev_t pDev, int flag, int otyp, cred_t *cred)
 {
     cmn_err(CE_CONT, "VBoxDrvSolarisClose");
+
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    const RTPROCESS Process = RTProcSelf();
+    const unsigned  iHash = SESSION_HASH(Process);
+    PSUPDRVSESSION  pSession;
+
+    /*
+     * Remove from the hash table.
+     */
+    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    pSession = g_apSessionHashTab[iHash];
+    if (pSession)
+    {
+        if (pSession->Process == Process)
+        {
+            g_apSessionHashTab[iHash] = pSession->pNextHash;
+            pSession->pNextHash = NULL;
+        }
+        else
+        {
+            PSUPDRVSESSION pPrev = pSession;
+            pSession = pSession->pNextHash;
+            while (pSession)
+            {
+                if (pSession->Process == Process)
+                {
+                    pPrev->pNextHash = pSession->pNextHash;
+                    pSession->pNextHash = NULL;
+                    break;
+                }
+
+                /* next */
+                pPrev = pSession;
+                pSession = pSession->pNextHash;
+            }
+        }
+    }
+    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    if (!pSession)
+    {
+        OSDBGPRINT(("VBoxDrvSolarisClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n", 
+                    (int)Process));
+        return DDI_FAILURE;
+    }
+
+    /*
+     * Close the session.
+     */
+    supdrvCloseSession(&g_DevExt, pSession);
     return DDI_SUCCESS;
 }
 
@@ -251,20 +307,22 @@ static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t enmCmd)
     cmn_err(CE_CONT, "VBoxDrvSolarisAttach");
     int rc = VINF_SUCCESS;
     int instance = 0;
-
+    vbox_devstate_t* pState;
+    
     switch (enmCmd)
     {
         case DDI_ATTACH:
         {
             instance = ddi_get_instance (pDip);
-            g_pVBoxDrvSolarisDip = pDip;
 
             if (ddi_soft_state_zalloc(g_pVBoxDrvSolarisState, instance) != DDI_SUCCESS)
             {
                 cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: state alloc failed");
                 return DDI_FAILURE;
             }
-
+            
+            pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
+            
             /*
              * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
              */
@@ -280,30 +338,33 @@ static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t enmCmd)
                     /*
                      * Initialize the session hash table.
                      */
-                    //memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
-                    //rc = RTSpinlockCreate(&g_Spinlock);
+                    memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
+                    rc = RTSpinlockCreate(&g_Spinlock);
                     if (RT_SUCCESS(rc))
                     {
                         /*
                          * Register ourselves as a character device, pseudo-driver
                          */
-                        if (ddi_create_minor_node(g_pVBoxDrvSolarisDip, "0", S_IFCHR,
+                        if (ddi_create_minor_node(pDip, "0", S_IFCHR,
                                 instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
                         {
+                            pState->pDip = pDip;
+                            ddi_report_dev(pDip);
+                            
                             cmn_err(CE_CONT, "VBoxDrvSolarisAttach: successful.");
                             return DDI_SUCCESS;
                         }
 
                         /* Is this really necessary? */
-                        ddi_remove_minor_node(g_pVBoxDrvSolarisDip, NULL);
+                        ddi_remove_minor_node(pDip, NULL);
                         cmn_err(CE_NOTE,"VBoxDrvSolarisAttach: ddi_create_minor_node failed.");
 
-                        //RTSpinlockDestroy(g_Spinlock);
-                        //g_Spinlock = NIL_RTSPINLOCK;
+                        RTSpinlockDestroy(g_Spinlock);
+                        g_Spinlock = NIL_RTSPINLOCK;
                     }
                     else
                         cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: RTSpinlockCreate failed");
-                    //supdrvDeleteDevExt(&g_DevExt);
+                    supdrvDeleteDevExt(&g_DevExt);
                 }
                 else
                     cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: supdrvInitDevExt failed");
@@ -311,7 +372,7 @@ static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t enmCmd)
             }
             else
                 cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: failed to init R0Drv");
-            //memset(&g_DevExt, 0, sizeof(g_DevExt));
+            memset(&g_DevExt, 0, sizeof(g_DevExt));
             break;
         }
 
@@ -330,33 +391,34 @@ static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t enmCmd)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxDrvSolarisDetach(dev_info_t* pDip, ddi_detach_cmd_t enmCmd)
+static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
     int rc = VINF_SUCCESS;
-    int instance = ddi_get_instance(pDip);
+    int instance;
+    register vbox_devstate_t* pState;
 
     cmn_err(CE_CONT, "VBoxDrvSolarisDetach");
     switch (enmCmd)
     {
         case DDI_DETACH:
         {
-            g_pVBoxDrvSolarisDip = NULL;
-            ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
+            instance = ddi_get_instance(pDip);
+            pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
+
             ddi_remove_minor_node(pDip, NULL);
             ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
-            cmn_err(CE_CONT, "VBoxDrvSolarisDetach: Clean Up Done.");
             
-            //rc = supdrvDeleteDevExt(&g_DevExt);
-            //AssertRC(rc);
+            rc = supdrvDeleteDevExt(&g_DevExt);
+            AssertRC(rc);
 
-            //rc = RTSpinlockDestroy(g_Spinlock);
-            //AssertRC(rc);
-            //g_Spinlock = NIL_RTSPINLOCK;
+            rc = RTSpinlockDestroy(g_Spinlock);
+            AssertRC(rc);
+            g_Spinlock = NIL_RTSPINLOCK;
 
             RTR0Term();
 
             memset(&g_DevExt, 0, sizeof(g_DevExt));
-
+            cmn_err(CE_CONT, "VBoxDrvSolarisDetach: Clean Up Done.");
             return DDI_SUCCESS;
         }
 
@@ -370,26 +432,134 @@ static int VBoxDrvSolarisDetach(dev_info_t* pDip, ddi_detach_cmd_t enmCmd)
  *
  * @param   Dev             Device number
  * @param   Cmd             Operation identifier
- * @param   Arg             Arguments from user to driver
- * @param   Mode            Information bitfield (read/write, address space etc)
+ * @param   pArg            Arguments from user to driver
+ * @param   Mode            Information bitfield (read/write, address space etc.)
  * @param   pCred           User credentials
  * @param   pVal            Return value for calling process.
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxDrvSolarisIoctl(dev_t Dev, int Cmd, intptr_t Arg, int Mode, cred_t* pCred, int* pVal)
+static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cred_t* pCred, int* pVal)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolarisIoctl");
-    return DDI_SUCCESS;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
+    const RTPROCESS     Process = RTProcSelf();
+    const unsigned      iHash = SESSION_HASH(Process);
+    PSUPDRVSESSION      pSession;
+
+    cmn_err(CE_CONT, "VBoxDrvSolarisIOCtl\n");
+    /*
+     * Find the session.
+     */
+    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    pSession = g_apSessionHashTab[iHash];
+    if (pSession && pSession->Process != Process)
+    {
+        do pSession = pSession->pNextHash;
+        while (pSession && pSession->Process != Process);
+    }
+    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    if (!pSession)
+    {
+        OSDBGPRINT(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n", 
+                    (int)Process, Cmd));
+        return EINVAL;
+    }
+
+    /*
+     * Deal with the two high-speed IOCtl that takes it's arguments from
+     * the session and iCmd, and only returns a VBox status code.
+     */
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+    if (    Cmd == SUP_IOCTL_FAST_DO_RAW_RUN
+        ||  Cmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+        ||  Cmd == SUP_IOCTL_FAST_DO_NOP)
+        return supdrvIOCtlFast(Cmd, &g_DevExt, pSession);
+#endif
+
+    return VBoxDrvSolarisIOCtlSlow(pSession, Cmd, Mode, pArgs);
 }
 
 /**
- * Converts an supdrv error code to a Solaris error code.
+ * Worker for VBoxSupDrvIOCtl that takes the slow IOCtl functions.
  *
- * @returns corresponding Solaris error code.
+ * @returns Solaris errno.
+ *
+ * @param pSession  The session.
+ * @param Cmd       The IOCtl command.
+ * @param Mode      Information bitfield (for specifying ownership of data)
+ * @param pArgs     Pointer to the kernel copy of the SUPDRVIOCTLDATA buffer.
+ */
+static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, intptr_t pArgs)
+{
+    int                 rc;
+    void               *pvBuf = NULL;
+    unsigned long       cbBuf = 0;
+    unsigned            cbOut = 0;
+    PSUPDRVIOCTLDATA    pArgData = (PSUPDRVIOCTLDATA)pArgs;
+
+    cmn_err(CE_CONT, "VBoxDrvSolarisIOCtlSlow\n");
+   /*
+     * Allocate and copy user space input data buffer to kernel space.
+     */
+    if (pArgData->cbIn > 0 || pArgData->cbOut > 0)
+    {
+        cbBuf = max(pArgData->cbIn, pArgData->cbOut);
+        pvBuf = RTMemTmpAlloc(cbBuf);
+
+        if (pvBuf == NULL)
+        {
+            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: failed to allocate buffer of %d bytes.\n", cbBuf));
+            return ENOMEM;
+        }
+        
+        rc = ddi_copyin(pArgData->pvIn, pvBuf, cbBuf, Mode);
+        
+        if (rc != 0)
+        {
+            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(%p,%d) failed.\n", pArgData->pvIn, cbBuf));
+
+            RTMemTmpFree(pvBuf);
+            return EFAULT;
+        }
+    }
+    
+    /*
+     * Process the IOCtl.
+     */
+    rc = supdrvIOCtl(Cmd, &g_DevExt, pSession, pvBuf, pArgData->cbIn, pvBuf, pArgData->cbOut, &cbOut);
+    
+    /*
+     * Copy ioctl data and output buffer back to user space.
+     */
+    if (rc != 0)
+        rc = VBoxSupDrvErr2SolarisErr(rc);
+    else if (cbOut > 0)
+    {
+        if (pvBuf != NULL && cbOut <= cbBuf)
+        {
+            rc = ddi_copyout(pvBuf, pArgData->pvOut, cbOut, Mode);
+            if (rc != 0)
+                OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyout(,%p,%d) failed.\n", pArgData->pvOut, cbBuf));
+        }
+        else
+        {
+            OSDBGPRINT(("WHAT!?! supdrvIOCtl messed up! cbOut=%d cbBuf=%d pvBuf=%p\n", cbOut, cbBuf, pvBuf));
+            rc = EPERM;
+        }
+    }
+
+    OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: returns %d cbOut=%d\n", rc, cbOut));
+    return rc;
+}
+
+
+/**
+ * Converts an supdrv error code to a solaris error code.
+ *
+ * @returns corresponding solaris error code.
  * @param   rc  supdrv error code (SUPDRV_ERR_* defines).
  */
-static int VBoxDrvSolarisErr2Native(int rc)
+static int VBoxSupDrvErr2SolarisErr(int rc)
 {
     switch (rc)
     {
@@ -406,4 +576,48 @@ static int VBoxDrvSolarisErr2Native(int rc)
     }
 
     return EPERM;
+}
+
+/**
+ * Initializes any OS specific object creator fields.
+ */
+void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession)
+{
+    NOREF(pObj);
+    NOREF(pSession);
+}
+
+
+/**
+ * Checks if the session can access the object.
+ *
+ * @returns true if a decision has been made.
+ * @returns false if the default access policy should be applied.
+ *
+ * @param   pObj        The object in question.
+ * @param   pSession    The session wanting to access the object.
+ * @param   pszObjName  The object name, can be NULL.
+ * @param   prc         Where to store the result when returning true.
+ */
+bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc)
+{
+    NOREF(pObj);
+    NOREF(pSession);
+    NOREF(pszObjName);
+    NOREF(prc);
+    return false;
+}
+
+RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
+{
+    va_list     args;
+    char        szMsg[512];
+
+    va_start(args, pszFormat);
+    vsnprintf(szMsg, sizeof(szMsg) - 1, pszFormat, args);
+    va_end(args);
+
+    szMsg[sizeof(szMsg) - 1] = '\0';
+    printf("%s", szMsg);
+    return 0;
 }

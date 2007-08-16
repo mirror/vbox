@@ -40,7 +40,7 @@ typedef struct RTSPINLOCKINTERNAL
     /** Spinlock magic value (RTSPINLOCK_MAGIC). */
     uint32_t volatile   u32Magic;
     /** A Solaris spinlock. */
-    struct mutex        Mtx;
+    kmutex_t            Mtx;
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
 
 
@@ -58,7 +58,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
      * Initialize & return.
      */
     pSpinlockInt->u32Magic = RTSPINLOCK_MAGIC;
-    mutex_init(&pSpinlockInt->Mtx, "iprt-spinlock", MUTEX_SPIN, NULL);
+    mutex_init(&pSpinlockInt->Mtx, "IPRT Spinlock", MUTEX_SPIN, NULL);
     *pSpinlock = pSpinlockInt;
     return VINF_SUCCESS;
 }

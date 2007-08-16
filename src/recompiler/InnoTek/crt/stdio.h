@@ -38,7 +38,7 @@ __BEGIN_DECLS
 typedef struct FILE FILE;
 
 #if defined(RT_OS_SOLARIS)
-/** @todo check solaris' floatingpoint.h as to why we do this */
+/** @todo Check solaris' floatingpoint.h as to why we do this */
 # define _FILEDEFED
 #endif
 
