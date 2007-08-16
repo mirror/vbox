@@ -2398,7 +2398,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 #ifdef Q_WS_WIN32
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 {
-    QRegion diff = mPrevRegion.subtract (aRegion);
+    QRegion difference = mPrevRegion.subtract (aRegion);
 
     /* Region offset calculation */
     int fleft = 0, ftop = 0;
@@ -2414,14 +2414,14 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
     OffsetRgn (newReg, fleft, ftop);
 
     /* Invisible region calculation */
-    HRGN oldReg = CreateRectRgn (0, 0, 0, 0);
-    CombineRgn (oldReg, diff.handle(), 0, RGN_COPY);
-    OffsetRgn (oldReg, fleft, ftop);
+    HRGN diffReg = CreateRectRgn (0, 0, 0, 0);
+    CombineRgn (diffReg, difference.handle(), 0, RGN_COPY);
+    OffsetRgn (diffReg, fleft, ftop);
 
     /* Set the current visible region and clean the previous */
     SetWindowRgn (winId(), newReg, FALSE);
-    RedrawWindow (winId(), NULL, newReg, RDW_INVALIDATE | RDW_UPDATENOW);
-    RedrawWindow (NULL, NULL, oldReg, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+    RedrawWindow (NULL, NULL, diffReg, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+    RedrawWindow (console->viewport()->winId(), NULL, NULL, RDW_INVALIDATE);
 
     mPrevRegion = aRegion;
 }
