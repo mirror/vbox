@@ -1,0 +1,34 @@
+;; @file
+; VBoxGuest - VirtualBox Guest Additions Interface, NASM/YASM header.
+;
+
+;
+;  Copyright (C) 2006-2007 innotek GmbH
+; 
+;  innotek GmbH confidential
+;  All rights reserved
+
+
+%ifndef ___VBox_VBoxGuest_mac___
+%define ___VBox_VBoxGuest_mac___
+
+%define VMMDEV_VERSION_MAJOR    1
+%define VMMDEV_VERSION_MINOR    4
+%define VMMDEV_VERSION          000010004h
+
+%ifdef RT_OS_OS2
+%define VBOXGUEST_DEVICE_NAME   "vboxgst$"
+
+;; aka VBOXGUESTOS2IDCCONNECT 
+struc VBGOS2IDC
+    .u32Version         resd 1
+    .u32Session         resd 1
+    .pfnServiceEP       resd 1
+    .fpfnServiceEP      resd 1
+    .fpfnServiceAsmEP   resd 1
+endstruc    
+
+%endif ; RT_OS_OS2
+
+%endif
+
