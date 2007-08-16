@@ -1852,7 +1852,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     {
         cmachine.SetSnapshotFolder (leSnapshotFolder->text());
         if (!cmachine.isOk())
-            vboxProblem().cannotSetSnapshotFolder (cmachine);
+            vboxProblem()
+                .cannotSetSnapshotFolder (cmachine,
+                    QDir::convertSeparators (leSnapshotFolder->text()));
     }
 
     /* Description */
