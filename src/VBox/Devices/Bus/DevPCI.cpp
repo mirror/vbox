@@ -1053,10 +1053,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
     if (VBOX_FAILURE(rc))
         return rc;
     if (u32 != (uint32_t)~0)
-    {
-        AssertMsgFailed(("u32=%#x\n", u32));
-        return rc;
-    }
+        AssertMsgFailedReturn(("u32=%#x\n", u32), rc);
 
     /*
      * Iterate all the devices.
@@ -1084,26 +1081,29 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         {
             if (pData->devices[i])
             {
-                LogRel(("New device in slot %#x, %s\n", i, pData->devices[i]->name));
-                AssertFailed();
-                return VERR_SSM_LOAD_CONFIG_MISMATCH;
+                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pData->devices[i]->name, 
+                        PCIDevGetVendorId(pData->devices[i]), PCIDevGetDeviceId(pData->devices[i])));
+                if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
+                    AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
             }
         }
+
+        /* get the data */
+        SSMR3GetMem(pSSMHandle, DevTmp.config, sizeof(DevTmp.config));
+        rc = SSMR3GetS32(pSSMHandle, &DevTmp.Int.s.iIrq);
+        if (VBOX_FAILURE(rc))
+            return rc;
 
         /* check that it's still around. */
         pDev = pData->devices[i];
         if (!pDev)
         {
-            LogRel(("Device in slot %#x has been removed!\n", i, pDev->name));
-            AssertFailed();
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i, 
+                    PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
+            if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
+                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+            continue;
         }
-
-        /* restore it */
-        SSMR3GetMem(pSSMHandle, DevTmp.config, sizeof(DevTmp.config));
-        rc = SSMR3GetS32(pSSMHandle, &DevTmp.Int.s.iIrq);
-        if (VBOX_FAILURE(rc))
-            return rc;
 
         /* match the vendor id assuming that this will never be changed. */
         if (    DevTmp.config[0] != pDev->config[0]
@@ -1111,16 +1111,15 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         {
             LogRel(("Device in slot %#x (%s) vendor id mismatch! saved=%.4Vhxs current=%.4Vhxs\n",
                     i, pDev->name, DevTmp.config, pDev->config));
-            AssertFailed();
-            return VERR_SSM_LOAD_CONFIG_MISMATCH;
+            AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
         }
 
         /* commit the loaded device config. */
         memcpy(pDev->config, DevTmp.config, sizeof(pDev->config));
-        if (DevTmp.Int.s.iIrq >= PCI_DEVICES_MAX) {
-            AssertMsgFailed (("Device %s: Too many devices %d (max=%d)\n",
-                              pDev->name, DevTmp.Int.s.iIrq, PCI_DEVICES_MAX));
-            return VERR_TOO_MUCH_DATA;
+        if (DevTmp.Int.s.iIrq >= PCI_DEVICES_MAX) 
+        {
+            LogRel(("Device %s: Too many devices %d (max=%d)\n", pDev->name, DevTmp.Int.s.iIrq, PCI_DEVICES_MAX));
+            AssertFailedReturn(VERR_TOO_MUCH_DATA);
         }
 
         pDev->Int.s.iIrq = DevTmp.Int.s.iIrq;
