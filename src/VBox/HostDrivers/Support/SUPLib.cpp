@@ -413,7 +413,11 @@ SUPR3DECL(SUPPAGINGMODE) SUPGetPagingMode(void)
             Out.enmMode = SUPPAGINGMODE_INVALID;
     }
     else
+#ifdef RT_ARCH_AMD64
+        Out.enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
+#else
         Out.enmMode = SUPPAGINGMODE_32_BIT_GLOBAL;
+#endif 
 
     return Out.enmMode;
 }
