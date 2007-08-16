@@ -1638,6 +1638,8 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
     LogRel(("The stack is not in the same place and it's not empty! GCPtrStackBottom=%VGv pbGCStackBottom=%VGv ESP=%VGv\n",
             GCPtrStackBottom, pVM->vmm.s.pbGCStackBottom, GCPtrESP));
+    if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT)
+        return VINF_SUCCESS; /* ignore this */
     AssertFailed();
     return VERR_SSM_LOAD_CONFIG_MISMATCH;
 }
