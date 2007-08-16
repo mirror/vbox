@@ -231,6 +231,12 @@ __inline int format2BytesPerPixel(const SURFOBJ *pso)
     return 0;
 }
 
+#ifdef VBOX_VBVA_ADJUST_RECT
+void vrdpAdjustRect (SURFOBJ *pso, RECTL *prcl);
+BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, POINTL *pptlSrc);
+#endif /* VBOX_VBVA_ADJUST_RECT */
+
+
 #include <iprt/assert.h>
 
 #define VBVA_ASSERT(expr) \

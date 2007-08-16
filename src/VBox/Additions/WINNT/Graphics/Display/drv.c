@@ -268,7 +268,11 @@ BOOL APIENTRY DrvCopyBits(
     POINTL   *pptlSrc
     )
 {
+    RECTL rclDest = *prclDest;
+    POINTL ptlSrc = *pptlSrc;
+
     BOOL bRc;
+    BOOL bDo = TRUE;
 
     DISPDBG((1, "%s\n", __FUNCTION__));
 
@@ -281,12 +285,58 @@ BOOL APIENTRY DrvCopyBits(
     dumpsurf(psoDest, "psoDest");
 
     STATPRINT;
+    
+#ifdef VBOX_VBVA_ADJUST_RECT
+    /* Experimental fix for too large bitmap updates. 
+     *
+     * Some application do a large bitmap update event if only
+     * a small part of the bitmap is actually changed.
+     *
+     * The driver will find the changed rectangle by comparing
+     * the current framebuffer content with the source bitmap.
+     *
+     * The optimization is only active when: 
+     *  - the VBVA extension is enabled;
+     *  - the source bitmap is not cacheable;
+     *  - the bitmap formats of both the source and the screen surfaces are equal.
+     *
+     */
+    if (   psoSrc
+        && !bIsScreenSurface(psoSrc)
+        && bIsScreenSurface(psoDest))
+    {
+        PPDEV ppdev = (PPDEV)psoDest->dhpdev;
 
-    bRc = EngCopyBits(CONV_SURF(psoDest), CONV_SURF(psoSrc), pco, pxlo, prclDest, pptlSrc);
+        VBVAMEMORY *pVbvaMemory = ppdev->vbva.pVbvaMemory;
+
+        DISPDBG((1, "offscreen->screen\n"));
+
+        if (   pVbvaMemory
+            && (pVbvaMemory->fu32ModeFlags & VBVA_F_MODE_ENABLED))
+        {
+            if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
+                || psoSrc->iUniq == 0)
+            {
+                DISPDBG((1, "non-cacheable %d->%d (ppdev %p)\n", psoSrc->iBitmapFormat, psoDest->iBitmapFormat, ppdev));
+
+                /* It is possible to apply the fix. */
+                bDo = vbvaFindChangedRect (CONV_SURF(psoDest), CONV_SURF(psoSrc), &rclDest, &ptlSrc);
+            }
+        }
+    }
+
+    if (!bDo)
+    {
+        /* The operation is a NOP. Just return success. */
+        return TRUE;
+    }
+#endif /* VBOX_VBVA_ADJUST_RECT */
+
+    bRc = EngCopyBits(CONV_SURF(psoDest), CONV_SURF(psoSrc), pco, pxlo, &rclDest, &ptlSrc);
 
     VBVA_OPERATION(psoDest,
                    CopyBits,
-                   (psoDest, psoSrc, pco, pxlo, prclDest, pptlSrc));
+                   (psoDest, psoSrc, pco, pxlo, &rclDest, &ptlSrc));
 
     return bRc;
 }
