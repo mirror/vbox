@@ -136,6 +136,10 @@ endif
 KFLAGS += -DUSE_NEW_OS_INTERFACE_FOR_MM
 OBJS += r0drv/memobj-r0drv.o \
 	r0drv/linux/memobj-r0drv-linux.o
+ifeq ($(BUILD_TARGET_ARCH),x86) # Some gcc versions ends up needing __divdi3.
+OBJS += math/gcc/qdivrem.o \
+	math/gcc/divdi3.o
+endif
 
 ifeq ($(KERN_VERSION), 24)
 # 2.4
