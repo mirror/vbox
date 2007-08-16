@@ -752,6 +752,15 @@ void VBoxProblemReporter::cannotDiscardSavedState (const CConsole &console)
         formatErrorInfo (res));
 }
 
+void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine)
+{
+    message (
+        mainWindowShown(),
+        Error,
+        tr ("Failed to change the snapshot folder path."),
+        formatErrorInfo (aMachine));
+}
+
 void VBoxProblemReporter::cannotDiscardSnapshot (const CConsole &console,
                                                  const CSnapshot &snapshot)
 {
@@ -842,7 +851,7 @@ void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
 
 void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG aWidth,
                                                    ULONG aHeight,
-                                                   ULONG aBpp, ULONG aVRam)
+                                                   ULONG aBpp)
 {
     message (&vboxGlobal().consoleWnd(), Error,
              tr ("<p>Could not enter seamless mode due to insufficient guest "

@@ -1814,7 +1814,7 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         (ULONG64) screen.width() * screen.height() * QColor::numBitPlanes())
     {
         vboxProblem().cannotEnterSeamlessMode (screen.width(),
-            screen.height(), QColor::numBitPlanes(), vRamSize);
+            screen.height(), QColor::numBitPlanes());
         vmSeamlessAction->setOn (false);
         return;
     }
