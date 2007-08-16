@@ -315,7 +315,7 @@ ifeq ($(VBOX_LDR_FMT),pe)
 VMMR0_LDFLAGS   = -Entry:VMMR0Entry
 endif
 ifeq ($(VBOX_LDR_FMT),elf)
-VMMR0_LDFLAGS   = -entry=VMMR0Entry
+ VMMR0_LDFLAGS   = -e VMMR0Entry
 endif
 VMMR0_SYSSUFF   = .r0
 VMMR0_SOURCES   = \
