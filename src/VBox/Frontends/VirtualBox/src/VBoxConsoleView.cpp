@@ -249,7 +249,7 @@ public:
     MediaChangeEvent (VBoxDefs::DiskType aType)
         : QEvent ((QEvent::Type) VBoxDefs::MediaChangeEventType)
         , mType (aType) {}
-    VBoxDefs::DiskType type() const { return mType; }
+    VBoxDefs::DiskType diskType() const { return mType; }
 private:
     VBoxDefs::DiskType mType;
 };
@@ -297,6 +297,26 @@ public:
     bool scrollLock() const { return mfScrollLock; }
 private:
     bool mfNumLock, mfCapsLock, mfScrollLock;
+};
+
+/** Network adapter change event */
+class NetworkAdapterChangeEvent : public QEvent
+{
+public:
+    NetworkAdapterChangeEvent (INetworkAdapter *aAdapter) :
+        QEvent ((QEvent::Type) VBoxDefs::NetworkAdapterChangeEventType),
+        mAdapter (aAdapter) {}
+    INetworkAdapter* networkAdapter() { return mAdapter; }
+private:
+    INetworkAdapter *mAdapter;
+};
+
+/** USB controller state change event */
+class USBControllerStateChangeEvent : public QEvent
+{
+public:
+    USBControllerStateChangeEvent()
+        : QEvent ((QEvent::Type) VBoxDefs::USBCtlStateChangeEventType) {}
 };
 
 /** USB device state change event */
@@ -431,6 +451,8 @@ public:
 
     STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
     {
+        QApplication::postEvent (mView,
+            new NetworkAdapterChangeEvent (aNetworkAdapter));
         return S_OK;
     }
 
@@ -451,6 +473,8 @@ public:
 
     STDMETHOD(OnUSBControllerChange)()
     {
+        QApplication::postEvent (mView,
+                                 new USBControllerStateChangeEvent());
         return S_OK;
     }
 
@@ -999,7 +1023,7 @@ bool VBoxConsoleView::event (QEvent *e)
                     normalizeGeometry (true /* adjustPosition */);
 
                 /* report to the VM thread that we finished resizing */
-                cconsole.GetDisplay().ResizeCompleted(0);
+                cconsole.GetDisplay().ResizeCompleted (0);
 
                 mIgnoreMainwndResize = oldIgnoreMainwndResize;
 
@@ -1108,7 +1132,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 MediaChangeEvent *mce = (MediaChangeEvent *) e;
                 LogFlowFunc (("MediaChangeEvent\n"));
 
-                emit mediaChanged (mce->type());
+                emit mediaChanged (mce->diskType());
                 return true;
             }
 
@@ -1132,6 +1156,20 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 
+            case VBoxDefs::NetworkAdapterChangeEventType:
+            {
+                /* no specific adapter information stored in this
+                 * event is currently used */
+                emit networkStateChange();
+                return true;
+            }
+
+            case VBoxDefs::USBCtlStateChangeEventType:
+            {
+                emit usbStateChange();
+                return true;
+            }
+
             case VBoxDefs::USBDeviceStateChangeEventType:
             {
                 USBDeviceStateChangeEvent *ue = (USBDeviceStateChangeEvent *)e;
@@ -1150,6 +1188,7 @@ bool VBoxConsoleView::event (QEvent *e)
                             vboxGlobal().details (ue->device()), ue->error());
                 }
 
+                emit usbStateChange();
                 /// @todo update menu entries
 
                 return true;

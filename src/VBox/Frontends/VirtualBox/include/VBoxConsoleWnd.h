@@ -47,8 +47,6 @@ class QIStateIndicator;
 
 class VBoxUSBMenu;
 class VBoxSwitchMenu;
-class VBoxUSBLedTip;
-class VBoxNetworkLedTip;
 
 class VBoxConsoleWnd : public QMainWindow
 {
@@ -169,6 +167,8 @@ private slots:
     void updateMachineState (CEnums::MachineState state);
     void updateMouseState (int state);
     void updateAdditionsState (const QString&, bool, bool);
+    void updateNetworkAdarptersState();
+    void updateUsbState();
     void updateMediaState (VBoxDefs::DiskType aType);
     void updateSharedFoldersState();
 
@@ -271,9 +271,6 @@ private:
     QIStateIndicator *vrdp_state;
     QHBox *hostkey_hbox;
     QLabel *hostkey_name;
-
-    VBoxUSBLedTip *mUsbLedTip;
-    VBoxNetworkLedTip *mNetworkLedTip;
 
     QTimer *idle_timer;
     CEnums::MachineState machine_state;

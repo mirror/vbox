@@ -52,111 +52,6 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 
-/** class VBoxUSBLedTip
- *
- *  The VBoxUSBLedTip class is an auxiliary ToolTip class
- *  for the USB LED indicator.
- */
-class VBoxUSBLedTip : public QToolTip
-{
-public:
-
-    VBoxUSBLedTip (QWidget *aWidget, const CConsole &aConsole, bool aUSBEnabled) :
-        QToolTip (aWidget), mConsole (aConsole), mUSBEnabled (aUSBEnabled) {}
-
-    ~VBoxUSBLedTip() { remove (parentWidget()); }
-
-    bool isUSBEnabled() const { return mUSBEnabled; }
-
-protected:
-
-    void maybeTip (const QPoint &/* aPoint */)
-    {
-        QString ttip = VBoxConsoleWnd::tr (
-            "<qt><nobr>Indicates the activity of "
-            "attached USB devices:</nobr>"
-            "%1</qt>",
-            "USB device indicator");
-
-        QString info;
-
-        if (mUSBEnabled)
-        {
-            CUSBDeviceEnumerator en = mConsole.GetUSBDevices().Enumerate();
-            while (en.HasMore())
-            {
-                CUSBDevice usb = en.GetNext();
-                info += QString ("<br><b><nobr>%1</nobr></b>")
-                                    .arg (vboxGlobal().details (usb));
-            }
-            if (info.isNull())
-                info = VBoxConsoleWnd::tr ("<br><nobr><b>No USB devices attached</b></nobr>",
-                                           "USB device indicator");
-        }
-        else
-            info = VBoxConsoleWnd::tr ("<br><nobr><b>USB Controller is disabled</b></nobr>",
-                                       "USB device indicator");
-
-        tip (parentWidget()->rect(), ttip.arg (info));
-    }
-
-private:
-
-    CConsole mConsole;
-    bool mUSBEnabled;
-};
-
-/** class VBoxNetworkLedTip
- *
- *  The VBoxNetworkLedTip class is an auxiliary ToolTip class
- *  for the Network LED indicator.
- */
-class VBoxNetworkLedTip : public QToolTip
-{
-public:
-
-    VBoxNetworkLedTip (QWidget *aWidget, const CMachine &aMachine) :
-        QToolTip (aWidget), mMachine (aMachine) {}
-
-    ~VBoxNetworkLedTip() { remove (parentWidget()); }
-
-protected:
-
-    void maybeTip (const QPoint &/* aPoint */)
-    {
-        QString ttip = VBoxConsoleWnd::tr (
-            "<qt><nobr>Indicates the activity of the network interfaces:</nobr>"
-            "%1</qt>",
-            "Network adapters indicator");
-
-        QString info;
-
-        ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
-        for (ulong slot = 0; slot < count; ++ slot)
-        {
-            CNetworkAdapter adapter = mMachine.GetNetworkAdapter (slot);
-            if (adapter.GetEnabled())
-                info += VBoxConsoleWnd::tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
-                                            "Network adapters indicator")
-                    .arg (slot)
-                    .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
-                    .arg (adapter.GetCableConnected() ?
-                          VBoxConsoleWnd::tr ("connected", "Network adapters indicator") :
-                          VBoxConsoleWnd::tr ("disconnected", "Network adapters indicator"));
-        }
-
-        if (info.isNull())
-            info = VBoxConsoleWnd::tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
-                                       "Network adapters indicator");
-
-        tip (parentWidget()->rect(), ttip.arg (info));
-    }
-
-private:
-
-    CMachine mMachine;
-};
-
 /** class StatusTipEvent
  *
  *  The StatusTipEvent class is an auxiliary QEvent class
@@ -208,8 +103,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , dbgMenu (NULL)
 #endif
     , console (0)
-    , mUsbLedTip (0)
-    , mNetworkLedTip (0)
     , machine_state (CEnums::InvalidMachineState)
     , no_auto_close (false)
     , mIsFullscreen (false)
@@ -659,10 +552,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
 {
-    if (mUsbLedTip)
-        delete mUsbLedTip;
-    if (mNetworkLedTip)
-        delete mNetworkLedTip;
 #ifdef Q_WS_MAC
     /* release the dock images */
     if (dockImgStateRunning)
@@ -815,11 +704,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         devicesUSBMenu->setConsole (cconsole);
         usb_light->setState (isUSBEnabled ? CEnums::DeviceIdle
                                           : CEnums::InvalidActivity);
-        mUsbLedTip = new VBoxUSBLedTip (usb_light, cconsole, isUSBEnabled);
     }
-
-    /* initialize network stuff */
-    mNetworkLedTip = new VBoxNetworkLedTip (net_light, cmachine);
 
     /* initialize vrdp stuff */
     CVRDPServer vrdpsrv = cmachine.GetVRDPServer();
@@ -857,6 +742,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateAdditionsState (const QString &, bool, bool)));
     connect (console, SIGNAL (mediaChanged (VBoxDefs::DiskType)),
              this, SLOT (updateMediaState (VBoxDefs::DiskType)));
+    connect (console, SIGNAL (usbStateChange()),
+             this, SLOT (updateUsbState()));
+    connect (console, SIGNAL (networkStateChange()),
+             this, SLOT (updateNetworkAdarptersState()));
     connect (console, SIGNAL (sharedFoldersChanged()),
              this, SLOT (updateSharedFoldersState()));
 
@@ -1697,13 +1586,68 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                 count++;
         net_light->setState (count > 0 ? CEnums::DeviceIdle
                                          : CEnums::InvalidActivity);
+
+        /* update tooltip */
+        QString ttip = VBoxConsoleWnd::tr (
+            "<qt><nobr>Indicates the activity of the network interfaces:</nobr>"
+            "%1</qt>",
+            "Network adapters indicator");
+        QString info;
+
+        for (ulong slot = 0; slot < maxCount; ++ slot)
+        {
+            CNetworkAdapter adapter = cmachine.GetNetworkAdapter (slot);
+            if (adapter.GetEnabled())
+                info += VBoxConsoleWnd::tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
+                                            "Network adapters indicator")
+                    .arg (slot)
+                    .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
+                    .arg (adapter.GetCableConnected() ?
+                          VBoxConsoleWnd::tr ("connected", "Network adapters indicator") :
+                          VBoxConsoleWnd::tr ("disconnected", "Network adapters indicator"));
+        }
+
+        if (info.isNull())
+            info = VBoxConsoleWnd::tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
+                                       "Network adapters indicator");
+
+        QToolTip::add (net_light, ttip.arg (info));
     }
     if (element & USBStuff)
     {
         /// @todo (r=dmik) do we really need to disable the control while
         //  in Pause? Check the same for CD/DVD above.
-        if (mUsbLedTip && mUsbLedTip->isUSBEnabled())
+        if (!usb_light->isHidden())
+        {
             devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
+
+            /* update tooltip */
+            QString ttip = VBoxConsoleWnd::tr (
+                "<qt><nobr>Indicates the activity of "
+                "attached USB devices:</nobr>"
+                "%1</qt>",
+                "USB device indicator");
+            QString info;
+
+            if (cmachine.GetUSBController().GetEnabled())
+            {
+                CUSBDeviceEnumerator en = cconsole.GetUSBDevices().Enumerate();
+                while (en.HasMore())
+                {
+                    CUSBDevice usb = en.GetNext();
+                    info += QString ("<br><b><nobr>%1</nobr></b>")
+                                     .arg (vboxGlobal().details (usb));
+                }
+                if (info.isNull())
+                    info = VBoxConsoleWnd::tr ("<br><nobr><b>No USB devices attached</b></nobr>",
+                                               "USB device indicator");
+            }
+            else
+                info = VBoxConsoleWnd::tr ("<br><nobr><b>USB Controller is disabled</b></nobr>",
+                                           "USB device indicator");
+
+            QToolTip::add (usb_light, ttip.arg (info));
+        }
     }
     if (element & VRDPStuff)
     {
@@ -2939,6 +2883,16 @@ void VBoxConsoleWnd::updateMediaState (VBoxDefs::DiskType aType)
 void VBoxConsoleWnd::updateSharedFoldersState()
 {
     updateAppearanceOf (SharedFolderStuff);
+}
+
+void VBoxConsoleWnd::updateUsbState()
+{
+    updateAppearanceOf (USBStuff);
+}
+
+void VBoxConsoleWnd::updateNetworkAdarptersState()
+{
+    updateAppearanceOf (NetworkStuff);
 }
 
 /**
