@@ -111,7 +111,8 @@ private:
         Caption                     = 0x40,
         USBStuff                    = 0x80,
         VRDPStuff                   = 0x100,
-        AllStuff                    = 0xFF,
+        SharedFolderStuff           = 0x200,
+        AllStuff                    = 0xFFFF,
     };
 
     void languageChange();
@@ -166,12 +167,10 @@ private slots:
 
     void updateDeviceLights();
     void updateMachineState (CEnums::MachineState state);
-
     void updateMouseState (int state);
-
     void updateAdditionsState (const QString&, bool, bool);
-
     void updateMediaState (VBoxDefs::DiskType aType);
+    void updateSharedFoldersState();
 
     void tryClose();
 

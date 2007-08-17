@@ -72,13 +72,13 @@ protected:
 
     void maybeTip (const QPoint &/* aPoint */)
     {
-        QString toolTip = VBoxConsoleWnd::tr (
-            "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;"
-            "attached&nbsp;USB&nbsp;devices<br>"
+        QString ttip = VBoxConsoleWnd::tr (
+            "<qt><nobr>Indicates the activity of "
+            "attached USB devices:</nobr>"
             "%1</qt>",
             "USB device indicator");
 
-        QString devices;
+        QString info;
 
         if (mUSBEnabled)
         {
@@ -86,18 +86,18 @@ protected:
             while (en.HasMore())
             {
                 CUSBDevice usb = en.GetNext();
-                devices += QString ("[<b><nobr>%1</nobr></b>]<br>")
+                info += QString ("<br><b><nobr>%1</nobr></b>")
                                     .arg (vboxGlobal().details (usb));
             }
-            if (devices.isNull())
-                devices = VBoxConsoleWnd::tr ("<nobr>[<b>not attached</b>]</nobr>",
-                                              "USB device indicator");
+            if (info.isNull())
+                info = VBoxConsoleWnd::tr ("<br><nobr><b>No USB devices attached</b></nobr>",
+                                           "USB device indicator");
         }
         else
-            devices = VBoxConsoleWnd::tr ("<nobr>[<b>USB Controller is disabled</b>]</nobr>",
-                                          "USB device indicator");
+            info = VBoxConsoleWnd::tr ("<br><nobr><b>USB Controller is disabled</b></nobr>",
+                                       "USB device indicator");
 
-        tip (parentWidget()->rect(), toolTip.arg (devices));
+        tip (parentWidget()->rect(), ttip.arg (info));
     }
 
 private:
@@ -124,20 +124,20 @@ protected:
 
     void maybeTip (const QPoint &/* aPoint */)
     {
-        QString toolTip = VBoxConsoleWnd::tr (
-            "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;the&nbsp;network&nbsp;interfaces",
-            "Network adapters indicator"
-        );
+        QString ttip = VBoxConsoleWnd::tr (
+            "<qt><nobr>Indicates the activity of the network interfaces:</nobr>"
+            "%1</qt>",
+            "Network adapters indicator");
 
-        QString devices;
+        QString info;
 
         ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
         for (ulong slot = 0; slot < count; ++ slot)
         {
             CNetworkAdapter adapter = mMachine.GetNetworkAdapter (slot);
             if (adapter.GetEnabled())
-                devices += VBoxConsoleWnd::tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
-                                               "Network adapters indicator")
+                info += VBoxConsoleWnd::tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
+                                            "Network adapters indicator")
                     .arg (slot)
                     .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
                     .arg (adapter.GetCableConnected() ?
@@ -145,11 +145,11 @@ protected:
                           VBoxConsoleWnd::tr ("disconnected", "Network adapters indicator"));
         }
 
-        if (devices.isNull())
-            devices = VBoxConsoleWnd::tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
-                                          "Network adapters indicator");
+        if (info.isNull())
+            info = VBoxConsoleWnd::tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
+                                       "Network adapters indicator");
 
-        tip (parentWidget()->rect(), toolTip + devices);
+        tip (parentWidget()->rect(), ttip.arg (info));
     }
 
 private:
@@ -857,6 +857,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateAdditionsState (const QString &, bool, bool)));
     connect (console, SIGNAL (mediaChanged (VBoxDefs::DiskType)),
              this, SLOT (updateMediaState (VBoxDefs::DiskType)));
+    connect (console, SIGNAL (sharedFoldersChanged()),
+             this, SLOT (updateSharedFoldersState()));
 
 #ifdef Q_WS_MAC
     QString osTypeId = cmachine.GetOSTypeId();
@@ -1542,17 +1544,12 @@ void VBoxConsoleWnd::languageChange()
             "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
     QToolTip::add (hostkey_state,
         tr ("Indicates whether the keyboard is captured by the guest OS "
-            "(<img src=hostkey_captured_16px.png/>) or not (<img src=hostkey_16px.png/>)"));
+            "(<img src=hostkey_captured_16px.png/>) or not (<img src=hostkey_16px.png/>)."));
     QToolTip::add (hostkey_name,
         tr ("Shows the currently assigned Host key.<br>"
             "This key, when pressed alone, toggles the the keyboard and mouse "
             "capture state. It can also be used in combination with other keys "
-            "to quickly perform actions from the main menu." ));
-    QToolTip::add (sf_light,
-/// @todo add later, when activity is actually reported
-//        tr ("Indicates the activity of shared folders."));
-        tr ("Provides quick access to shared folders (by a right mouse button click).<br>"
-            "Note that the shared folders feature requires Guest Additions to be installed in the guest OS."));
+            "to quickly perform actions from the main menu."));
 
     updateAppearanceOf (AllStuff);
 }
@@ -1585,10 +1582,9 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         bool mounted = state != CEnums::NotMounted;
         devicesUnmountFloppyAction->setEnabled (machine_state == CEnums::Running && mounted);
         fd_light->setState (mounted ? CEnums::DeviceIdle : CEnums::InvalidActivity);
-        QString tip = tr (
-            "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;the&nbsp;floppy&nbsp;media"
-            "<br>[<b>%1</b>]</qt>"
-        );
+        QString tip = tr ("<qt><nobr>Indicates the activity of the floppy media:</nobr>"
+                          "%1</qt>",
+                          "Floppy tooltip");
         QString name;
         switch (state)
         {
@@ -1599,17 +1595,24 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                 QString description = drv.GetDescription();
                 QString fullName = description.isEmpty() ?
                     drvName :
-                    QString ("<nobr>%1 (%2)</nobr>").arg (description, drvName);
-                name = tr ("Host&nbsp;Drive&nbsp;", "Floppy tooltip") +
-                    fullName;
+                    QString ("%1 (%2)").arg (description, drvName);
+                name = tr ("<br><nobr><b>Host Drive</b>: %1</nobr>",
+                           "Floppy tooltip").arg (fullName);
                 break;
             }
             case CEnums::ImageMounted:
-                name = floppy.GetImage().GetFilePath();
+            {
+                name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
+                           "Floppy tooltip")
+                    .arg (QDir::convertSeparators (floppy.GetImage().GetFilePath()));
                 break;
+            }
             case CEnums::NotMounted:
-                name = tr ("not&nbsp;mounted", "Floppy tooltip");
+            {
+                name = tr ("<br><nobr><b>No media mounted</b></nobr>",
+                           "Floppy tooltip");
                 break;
+            }
             default:
                 AssertMsgFailed (("Invalid floppy drive state: %d\n", state));
         }
@@ -1623,10 +1626,9 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         bool mounted = state != CEnums::NotMounted;
         devicesUnmountDVDAction->setEnabled (machine_state == CEnums::Running && mounted);
         cd_light->setState (mounted ? CEnums::DeviceIdle : CEnums::InvalidActivity);
-        QString tip = tr (
-            "<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;the&nbsp;CD/DVD-ROM&nbsp;media"
-            "<br>[<b>%1</b>]</qt>"
-        );
+        QString tip = tr ("<qt><nobr>Indicates the activity of the CD/DVD-ROM media:</nobr>"
+                          "%1</qt>",
+                          "DVD-ROM tooltip");
         QString name;
         switch (state)
         {
@@ -1637,63 +1639,52 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                 QString description = drv.GetDescription();
                 QString fullName = description.isEmpty() ?
                     drvName :
-                    QString ("<nobr>%1 (%2)</nobr>").arg (description, drvName);
-                name = tr ("Host&nbsp;Drive&nbsp;", "DVD-ROM tooltip") +
-                    fullName;
+                    QString ("%1 (%2)").arg (description, drvName);
+                name = tr ("<br><nobr><b>Host Drive</b>: %1</nobr>",
+                           "DVD-ROM tooltip").arg (fullName);
                 break;
             }
             case CEnums::ImageMounted:
             {
-                name = dvd.GetImage().GetFilePath();
+                name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
+                           "DVD-ROM tooltip")
+                    .arg (QDir::convertSeparators (dvd.GetImage().GetFilePath()));
                 break;
             }
             case CEnums::NotMounted:
             {
-                name = tr ("not&nbsp;mounted", "DVD-ROM tooltip");
+                name = tr ("<br><nobr><b>No media mounted</b></nobr>",
+                           "DVD-ROM tooltip");
                 break;
             }
             default:
-                AssertMsgFailed (("Invalid dvd drive state: %d\n", state));
+                AssertMsgFailed (("Invalid DVD drive state: %d\n", state));
         }
         QToolTip::add (cd_light, tip.arg (name));
     }
     if (element & HardDiskStuff)
     {
-        QString info =
-            tr ("<qt>Indicates&nbsp;the&nbsp;activity&nbsp;of&nbsp;virtual&nbsp;hard&nbsp;disks");
-        const char *ctlNames[] = { "IDE0", "IDE1", "Controller%1" };
-        const char *devNames[] = { "Master", "Slave", "Device%1" };
+        QString tip = tr ("<qt><nobr>Indicates the activity of virtual hard disks:</nobr>"
+                          "%1</qt>",
+                          "HDD tooltip");
+        QString data;
         bool hasDisks = false;
         CHardDiskAttachmentEnumerator aen = cmachine.GetHardDiskAttachments().Enumerate();
-        while (aen.HasMore()) {
+        while (aen.HasMore())
+        {
             CHardDiskAttachment hda = aen.GetNext();
-            QString ctl, dev;
-            switch (hda.GetController()) {
-                case CEnums::IDE0Controller:
-                    ctl = ctlNames[0];
-                    break;
-                case CEnums::IDE1Controller:
-                    ctl = ctlNames[1];
-                    break;
-                default:
-                    break;
-            }
-            if (!ctl.isNull()) {
-                dev = devNames[hda.GetDeviceNumber()];
-            } else {
-                ctl = QString (ctlNames[2]).arg (hda.GetController());
-                dev = QString (devNames[2]).arg (hda.GetDeviceNumber());
-            }
             CHardDisk hd = hda.GetHardDisk();
-            info += QString ("<br>[%1&nbsp;%2:&nbsp;<b>%3</b>]")
-                .arg (ctl).arg (dev)
-                .arg (hd.GetLocation().replace (' ', "&nbsp;"));
+            data += QString ("<br><nobr><b>%1 %2</b>: %3</nobr>")
+                .arg (vboxGlobal().toString (hda.GetController()))
+                .arg (vboxGlobal().toString (hda.GetController(),
+                                hda.GetDeviceNumber()))
+                .arg (QDir::convertSeparators (hd.GetLocation()));
             hasDisks = true;
         }
         if (!hasDisks)
-            info += tr ("<br>[<b>not attached</b>]", "HDD tooltip");
-        info += "</qt>";
-        QToolTip::add (hd_light, info);
+            data += tr ("<br><nobr><b>No hard disks attached</b></nobr>",
+                        "HDD tooltip");
+        QToolTip::add (hd_light, tip.arg (data));
         hd_light->setState (hasDisks ? CEnums::DeviceIdle : CEnums::InvalidActivity);
     }
     if (element & NetworkStuff)
@@ -1729,12 +1720,61 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         /* compose status icon tooltip */
         QString tip = tr ("Indicates whether the Remote Display (VRDP Server) "
                           "is enabled (<img src=vrdp_16px.png/>) or not "
-                          "(<img src=vrdp_disabled_16px.png/>)"
+                          "(<img src=vrdp_disabled_16px.png/>)."
         );
         if (vrdpsrv.GetEnabled())
             tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
         QToolTip::add (vrdp_state, tip);
 #endif
+    }
+    if (element & SharedFolderStuff)
+    {
+        QString tip = tr ("<qt><nobr>Indicates the activity of shared folders:</nobr>"
+                          "%1</qt>",
+                          "Shared folders tooltip");
+
+        QString data;
+        QMap <QString, QString> sfs;
+
+        /// @todo later: add global folders
+
+        /* permanent folders */
+        CSharedFolderEnumerator en = cmachine.GetSharedFolders().Enumerate();
+        while (en.HasMore())
+        {
+            CSharedFolder sf = en.GetNext();
+            sfs.insert (sf.GetName(), sf.GetHostPath());
+        }
+        /* transient folders */
+        en = cconsole.GetSharedFolders().Enumerate();
+        while (en.HasMore())
+        {
+            CSharedFolder sf = en.GetNext();
+            sfs.insert (sf.GetName(), sf.GetHostPath());
+        }
+
+        for (QMap <QString, QString>::ConstIterator it = sfs.begin();
+             it != sfs.end(); ++ it)
+        {
+            /* select slashes depending on the OS type */
+            if (VBoxGlobal::isDOSType (cconsole.GetGuest().GetOSTypeId()))
+                data += QString ("<tr><td><nobr><b>\\\\vboxsvr\\%1</b></nobr></td>"
+                                 "<td><nobr>%2</nobr></td>")
+                    .arg (it.key(), it.data());
+            else
+                data += QString ("<tr><td><nobr><b>%1</b></nobr></td>"
+                                 "<td><nobr>%2</nobr></td></tr>")
+                    .arg (it.key(), it.data());
+        }
+
+        if (sfs.count() == 0)
+            data = tr ("<br><nobr><b>No shared folders</b></nobr>",
+                       "Shared folders tooltip");
+        else
+            data = QString ("<br><table border=0 cellspacing=0 cellpadding=0 "
+                            "width=100%>%1</table>").arg (data);
+
+        QToolTip::add (sf_light, tip.arg (data));
     }
     if (element & PauseAction)
     {
@@ -2894,6 +2934,11 @@ void VBoxConsoleWnd::updateMediaState (VBoxDefs::DiskType aType)
     Assert (aType == VBoxDefs::CD || aType == VBoxDefs::FD);
     updateAppearanceOf (aType == VBoxDefs::CD ? DVDStuff :
                         aType == VBoxDefs::FD ? FloppyStuff : AllStuff);
+}
+
+void VBoxConsoleWnd::updateSharedFoldersState()
+{
+    updateAppearanceOf (SharedFolderStuff);
 }
 
 /**

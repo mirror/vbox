@@ -385,6 +385,8 @@ public:
 
     /* public static stuff */
 
+    static bool isDOSType (const QString &aOSTypeId);
+
     static void adoptLabelPixmap (QLabel *);
 
     static QString languageId();

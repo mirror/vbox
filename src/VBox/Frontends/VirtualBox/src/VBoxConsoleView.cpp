@@ -467,6 +467,9 @@ public:
 
     STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
     {
+        QApplication::postEvent (mView,
+                                 new QEvent ((QEvent::Type)
+                                             VBoxDefs::SharedFolderChangeEventType));
         return S_OK;
     }
 
@@ -1149,6 +1152,12 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 /// @todo update menu entries
 
+                return true;
+            }
+
+            case VBoxDefs::SharedFolderChangeEventType:
+            {
+                emit sharedFoldersChanged();
                 return true;
             }
 
