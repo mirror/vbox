@@ -911,15 +911,22 @@ QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */)
 QString VBoxGlobal::details (const CUSBDevice &aDevice) const
 {
     QString details;
-    QString m = aDevice.GetManufacturer();
-    QString p = aDevice.GetProduct();
+    QString m = aDevice.GetManufacturer().stripWhiteSpace();
+    QString p = aDevice.GetProduct().stripWhiteSpace();
     if (m.isEmpty() && p.isEmpty())
+    {
         details =
             tr ("Unknown device %1:%2", "USB device details")
             .arg (QString().sprintf ("%04hX", aDevice.GetVendorId()))
             .arg (QString().sprintf ("%04hX", aDevice.GetProductId()));
+    }
     else
-        details = m + " " + p;
+    {
+        if (p.upper().startsWith (m.upper()))
+            details = p;
+        else
+            details = m + " " + p;
+    }
     ushort r = aDevice.GetRevision();
     if (r != 0)
         details += QString().sprintf (" [%04hX]", r);
@@ -1337,12 +1344,10 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 /* the VRDP server may be unavailable (i.e. in VirtualBox OSE) */
 
                 if (srv.GetEnabled())
-                {
                     item = QString (sSectionItemTpl)
                         .arg (tr ("VRDP Server Port", "details report (VRDP)"),
                               tr ("%1", "details report (VRDP)")
                                   .arg (srv.GetPort()));
-                }
                 else
                     item = QString (sSectionItemTpl)
                         .arg (tr ("Disabled", "details report (VRDP)"), "");
@@ -1354,6 +1359,27 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                           tr ("Remote Display", "details report"), /* title */
                           item); /* items */
             }
+        }
+        /* Shared folders */
+        {
+            ulong count = m.GetSharedFolders().GetCount();
+            if (count > 0)
+            {
+                item = QString (sSectionItemTpl)
+                    .arg (tr ("Shared Folders", "details report (shared folders)"),
+                          tr ("%1", "details report (shadef folders)")
+                              .arg (count));
+            }
+            else
+                item = QString (sSectionItemTpl)
+                    .arg (tr ("None", "details report (shared folders)"), "");
+
+            detailsReport += sectionTpl
+                .arg (2 + 1) /* rows */
+                .arg ("shared_folder_16px.png", /* icon */
+                      "#sfolders", /* link */
+                      tr ("Shared Folders", "details report"), /* title */
+                      item); /* items */
         }
     }
 
@@ -1901,6 +1927,17 @@ void VBoxGlobal::languageChange()
 
 // public static stuff
 ////////////////////////////////////////////////////////////////////////////////
+
+/* static */
+bool VBoxGlobal::isDOSType (const QString &aOSTypeId)
+{
+    if (aOSTypeId.left (3) == "dos" ||
+        aOSTypeId.left (3) == "win" ||
+        aOSTypeId.left (3) == "os2")
+        return true;
+
+    return false;
+}
 
 /**
  *  Sets the QLabel background and frame colors according tho the pixmap

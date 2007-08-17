@@ -134,6 +134,7 @@ struct VBoxDefs
         SessionStateChangeEventType,
         SnapshotEventType,
         USBDeviceStateChangeEventType,
+        SharedFolderChangeEventType,
         RuntimeErrorEventType,
         ModifierKeyChangeEventType,
         EnumerateMediaEventType,

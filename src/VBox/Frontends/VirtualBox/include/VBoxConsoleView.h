@@ -97,6 +97,7 @@ signals:
     void machineStateChanged (CEnums::MachineState state);
     void additionsStateChanged (const QString &, bool, bool);
     void mediaChanged (VBoxDefs::DiskType aType);
+    void sharedFoldersChanged();
 
 protected:
 
