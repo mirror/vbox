@@ -398,6 +398,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
             } break;
             default:
             {
+                AssertMsgFailed(("vmmdevHGCMCall: invalid parameter type %x\n", pGuestParm->type));
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
