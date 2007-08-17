@@ -1270,7 +1270,7 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
                  "(pointing to <nobr><b>%2</b></nobr>) "
                  "from the virtual machine <b>%3</b>.</p>"
                  "<p>Please close all programs in the guest OS that "
-                 "may use this shared folder and try again.</p>")
+                 "may be using this shared folder and try again.</p>")
                  .arg (aName)
                  .arg (aPath)
                  .arg (aConsole.GetMachine().GetName()),
@@ -1583,8 +1583,8 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
             "<b>%1&nbsp;bit</b> color mode but the color quality of the "
             "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
             "<p>Please open the display properties dialog of the guest OS and "
-            "select a <b>%3&nbsp;bit</b> color mode, if it is available, to "
-            "gain maximum performance of the virtual video subsystem.</p>"
+            "select a <b>%3&nbsp;bit</b> color mode, if it is available, for "
+            "best possible performance of the virtual video subsystem.</p>"
             "<p><b>Note</b>. Some operating systems, like OS/2, may actually "
             "work in 32&nbsp;bit mode but report it as 24&nbsp;bit "
             "(16 million colors). You may try to select a different color "
@@ -1601,9 +1601,9 @@ int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
     return message (
         aParent,
         Warning,
-        tr ("<p>You didn't attach any hard disk to the created virtual machine. "
-            "As a result, the machine will not be able to boot unless you attach "
-            "a hard disk with the guest operating system or some other bootable "
+        tr ("<p>You didn't attach a hard disk to the new virtual machine. "
+            "The machine will not be able to boot unless you attach "
+            "a hard disk with a guest operating system or some other bootable "
             "media to it later using the machine settings dialog or the First "
             "Run Wizard.</p><p>Do you want to continue?</p>"),
         0, /* autoConfirmId */
