@@ -133,6 +133,8 @@ struct VBoxDefs
         MachineRegisteredEventType,
         SessionStateChangeEventType,
         SnapshotEventType,
+        NetworkAdapterChangeEventType,
+        USBCtlStateChangeEventType,
         USBDeviceStateChangeEventType,
         SharedFolderChangeEventType,
         RuntimeErrorEventType,
