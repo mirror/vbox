@@ -1588,28 +1588,28 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                                          : CEnums::InvalidActivity);
 
         /* update tooltip */
-        QString ttip = VBoxConsoleWnd::tr (
-            "<qt><nobr>Indicates the activity of the network interfaces:</nobr>"
-            "%1</qt>",
-            "Network adapters indicator");
+        QString ttip = tr ("<qt><nobr>Indicates the activity of the network "
+                           "interfaces:</nobr>"
+                           "%1</qt>",
+                           "Network adapters tooltip");
         QString info;
 
         for (ulong slot = 0; slot < maxCount; ++ slot)
         {
             CNetworkAdapter adapter = cmachine.GetNetworkAdapter (slot);
             if (adapter.GetEnabled())
-                info += VBoxConsoleWnd::tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
-                                            "Network adapters indicator")
+                info += tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
+                            "Network adapters tooltip")
                     .arg (slot)
                     .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
                     .arg (adapter.GetCableConnected() ?
-                          VBoxConsoleWnd::tr ("connected", "Network adapters indicator") :
-                          VBoxConsoleWnd::tr ("disconnected", "Network adapters indicator"));
+                          tr ("connected", "Network adapters tooltip") :
+                          tr ("disconnected", "Network adapters tooltip"));
         }
 
         if (info.isNull())
-            info = VBoxConsoleWnd::tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
-                                       "Network adapters indicator");
+            info = tr ("<br><nobr><b>All network adapters are disabled</b></nobr>",
+                       "Network adapters tooltip");
 
         QToolTip::add (net_light, ttip.arg (info));
     }
@@ -1622,11 +1622,10 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
 
             /* update tooltip */
-            QString ttip = VBoxConsoleWnd::tr (
-                "<qt><nobr>Indicates the activity of "
-                "attached USB devices:</nobr>"
-                "%1</qt>",
-                "USB device indicator");
+            QString ttip = tr ("<qt><nobr>Indicates the activity of the "
+                               "attached USB devices:</nobr>"
+                               "%1</qt>",
+                               "USB device tooltip");
             QString info;
 
             if (cmachine.GetUSBController().GetEnabled())
@@ -1639,12 +1638,12 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                                      .arg (vboxGlobal().details (usb));
                 }
                 if (info.isNull())
-                    info = VBoxConsoleWnd::tr ("<br><nobr><b>No USB devices attached</b></nobr>",
-                                               "USB device indicator");
+                    info = tr ("<br><nobr><b>No USB devices attached</b></nobr>",
+                               "USB device tooltip");
             }
             else
-                info = VBoxConsoleWnd::tr ("<br><nobr><b>USB Controller is disabled</b></nobr>",
-                                           "USB device indicator");
+                info = tr ("<br><nobr><b>USB Controller is disabled</b></nobr>",
+                           "USB device tooltip");
 
             QToolTip::add (usb_light, ttip.arg (info));
         }

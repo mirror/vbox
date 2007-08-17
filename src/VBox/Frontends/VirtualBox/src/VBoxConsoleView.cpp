@@ -1189,7 +1189,6 @@ bool VBoxConsoleView::event (QEvent *e)
                 }
 
                 emit usbStateChange();
-                /// @todo update menu entries
 
                 return true;
             }
