@@ -4304,7 +4304,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult
 /**
  * Flat address (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -4320,20 +4320,19 @@ static DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
     switch (pArg->enmType)
     {
         case DBGCVAR_TYPE_GC_FLAT:
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_GC_FAR:
         {
-            PCPUMCTX        pCtx;
-            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
-
             Assert(pDbgc->pVM);
-
-            pResult->enmType    = DBGCVAR_TYPE_GC_FLAT;
-            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off, NULL,
-                              SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
+            DBGFADDRESS Address;
+            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
             if (VBOX_SUCCESS(rc))
-                return 0;
+            {
+                pResult->enmType = DBGCVAR_TYPE_GC_FLAT;
+                pResult->u.GCFlat = Address.FlatPtr;
+                return VINF_SUCCESS;
+            }
             return VERR_PARSE_CONVERSION_FAILED;
         }
 
@@ -4342,7 +4341,7 @@ static DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
             return VERR_PARSE_INCORRECT_ARG_TYPE;
 
         case DBGCVAR_TYPE_HC_FLAT:
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_HC_FAR:
             return VERR_PARSE_INCORRECT_ARG_TYPE;
@@ -4352,13 +4351,13 @@ static DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
             pResult->enmType        = DBGCVAR_TYPE_HC_FLAT;
             rc = MMR3HCPhys2HCVirt(pDbgc->pVM, pResult->u.HCPhys, &pResult->u.pvHCFlat);
             if (VBOX_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_NUMBER:
             pResult->enmType    = DBGCVAR_TYPE_GC_FLAT;
             pResult->u.GCFlat   = (RTGCPTR)pResult->u.u64Number;
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_STRING:
             return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_GC_FLAT, pResult);
@@ -4399,15 +4398,13 @@ static DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
 
         case DBGCVAR_TYPE_GC_FAR:
         {
-            PCPUMCTX        pCtx;
-            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
             Assert(pDbgc->pVM);
-            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off, NULL,
-                              SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
+            DBGFADDRESS Address;
+            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
             if (VBOX_SUCCESS(rc))
             {
                 pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
-                rc = PGMPhysGCPtr2GCPhys(pDbgc->pVM, pResult->u.GCFlat, &pResult->u.GCPhys);
+                rc = PGMPhysGCPtr2GCPhys(pDbgc->pVM, Address.FlatPtr, &pResult->u.GCPhys);
                 if (VBOX_SUCCESS(rc))
                     return 0;
                 /** @todo more memory types! */
@@ -4478,16 +4475,13 @@ static DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVA
 
         case DBGCVAR_TYPE_GC_FAR:
         {
-            PCPUMCTX        pCtx;
-            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
-
             Assert(pDbgc->pVM);
-            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off, NULL,
-                              SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
+            DBGFADDRESS Address;
+            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
             if (VBOX_SUCCESS(rc))
             {
                 pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
-                rc = PGMPhysGCPtr2HCPhys(pDbgc->pVM, pResult->u.GCFlat, &pResult->u.HCPhys);
+                rc = PGMPhysGCPtr2HCPhys(pDbgc->pVM, Address.FlatPtr, &pResult->u.HCPhys);
                 if (VBOX_SUCCESS(rc))
                     return 0;
                 /** @todo more memory types. */
@@ -4563,16 +4557,13 @@ static DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pR
 
         case DBGCVAR_TYPE_GC_FAR:
         {
-            PCPUMCTX        pCtx;
-            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
-
             Assert(pDbgc->pVM);
-            rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, pResult->u.GCFar.sel, pResult->u.GCFar.off, NULL,
-                              SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &pResult->u.GCFlat, NULL);
+            DBGFADDRESS Address;
+            rc = DBGFR3AddrFromSelOff(pDbgc->pVM, &Address, pArg->u.GCFar.sel, pArg->u.GCFar.off);
             if (VBOX_SUCCESS(rc))
             {
                 pResult->enmType = DBGCVAR_TYPE_HC_FLAT;
-                rc = PGMPhysGCPtr2HCPtr(pDbgc->pVM, pResult->u.GCFlat, &pResult->u.pvHCFlat);
+                rc = PGMPhysGCPtr2HCPtr(pDbgc->pVM, Address.FlatPtr, &pResult->u.pvHCFlat);
                 if (VBOX_SUCCESS(rc))
                     return 0;
                 /** @todo more memory types. */
@@ -5764,33 +5755,62 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
 
     /*
      * Convert Far addresses getting size and the correct base address.
+     * Getting and checking the size is what makes this messy and slow.
      */
     DBGCVAR Var = *pVarPointer;
     switch (pVarPointer->enmType)
     {
         case DBGCVAR_TYPE_GC_FAR:
         {
-            uint32_t    cb;
-            PCPUMCTX    pCtx;
-            CPUMQueryGuestCtxPtr(pDbgc->pVM, &pCtx);
-
-            Var.enmType = DBGCVAR_TYPE_GC_FLAT;
-            int rc = SELMToFlatEx(pDbgc->pVM, pCtx->eflags, Var.u.GCFar.sel, Var.u.GCFar.off, NULL,
-                                  SELMTOFLAT_FLAGS_NO_PL | SELMTOFLAT_FLAGS_HYPER, &Var.u.GCFlat, &cb);
+            /* Use DBGFR3AddrFromSelOff for the conversion. */
+            Assert(pDbgc->pVM);
+            DBGFADDRESS Address;
+            int rc = DBGFR3AddrFromSelOff(pDbgc->pVM, &Address, Var.u.GCFar.sel, Var.u.GCFar.off);
             if (VBOX_FAILURE(rc))
                 return rc;
-            if (cbRead > cb)
+
+            /* don't bother with flat selectors (for now). */
+            if (!DBGFADDRESS_IS_FLAT(&Address))
             {
-                if (!pcbRead)
-                    return VERR_OUT_OF_SELECTOR_BOUNDS;
-                cbRead = cb;
+                SELMSELINFO SelInfo;
+                rc = SELMR3GetSelectorInfo(pDbgc->pVM, Address.Sel, &SelInfo);
+                if (VBOX_SUCCESS(rc))
+                {
+                    RTGCUINTPTR cb;
+                    /** @todo Add SELMSelInfoIsExpandDown() */
+                    if (    (SelInfo.Raw.Gen.u4Type & X86_SEL_TYPE_DOWN)
+                        &&  SelInfo.Raw.Gen.u1DescType
+                        &&  (   SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN
+                             || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN_ACC
+                             || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN
+                             || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN_ACC))
+                    {
+                        if (    !SelInfo.Raw.Gen.u1Granularity
+                            &&  Address.off > UINT16_C(0xffff))
+                            return VERR_OUT_OF_SELECTOR_BOUNDS;
+                        if (Address.off <= SelInfo.cbLimit)
+                            return VERR_OUT_OF_SELECTOR_BOUNDS;
+                        cb = (SelInfo.Raw.Gen.u1Granularity ? UINT32_C(0xffffffff) : UINT32_C(0xffff)) - Address.off;
+                    }
+                    else 
+                    {
+                        if (Address.off >= SelInfo.cbLimit)
+                            return VERR_OUT_OF_SELECTOR_BOUNDS;
+                        cb = SelInfo.cbLimit - Address.off;
+                    }
+                    if (cbRead - 1 > cb)
+                    {
+                        if (!pcbRead)
+                            return VERR_OUT_OF_SELECTOR_BOUNDS;
+                        cbRead = cb;
+                    }
+                }
+
+                Var.enmType = DBGCVAR_TYPE_GC_FLAT;
+                Var.u.GCFlat = Address.FlatPtr;
             }
             break;
         }
-
-        case DBGCVAR_TYPE_HC_FAR:
-            /* not supported yet! */
-            return VERR_NOT_IMPLEMENTED;
 
         case DBGCVAR_TYPE_GC_FLAT:
         case DBGCVAR_TYPE_GC_PHYS:
@@ -5798,6 +5818,7 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
         case DBGCVAR_TYPE_HC_PHYS:
             break;
 
+        case DBGCVAR_TYPE_HC_FAR: /* not supported yet! */
         default:
             return VERR_NOT_IMPLEMENTED;
     }
