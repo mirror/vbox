@@ -706,7 +706,7 @@ typedef enum CPUMMODE
  * @returns The CPU mode.
  * @param   pVM         The VM handle.
  */
-CPUMDECL(uint32_t) CPUMGetGuestMode(PVM pVM);
+CPUMDECL(CPUMMODE) CPUMGetGuestMode(PVM pVM);
 
 
 #ifdef IN_RING3
