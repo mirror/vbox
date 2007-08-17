@@ -23,6 +23,7 @@
 #include <VBox/vmm.h>
 #include <VBox/cpum.h>
 #include <VBox/cfgm.h>
+#include <VBox/em.h>
 #include <VBox/pgm.h>
 #include <VBox/rem.h>
 #include <VBox/ssm.h>
@@ -598,6 +599,7 @@ static void syntax(void)
              "              [-o <rawmem offset>]\n"
              "              [-s <script file>]\n"
              "              [-m <memory size>]\n"
+             "              [-w <warp drive percent>]\n"
              "              [-p]\n"
              "\n"
              "The script is on the form:\n"
@@ -621,6 +623,7 @@ int main(int argc, char **argv)
     }
 
     bool        fPowerOn = false;
+    uint32_t    u32WarpDrive = 100; /* % */
     uint64_t    cbMem = ~0ULL;
     const char *pszSavedState = NULL;
     const char *pszRawMem = NULL;
@@ -648,6 +651,7 @@ int main(int argc, char **argv)
                 case 'o':
                 case 'c':
                 case 'm':
+                case 'w':
                 case 'z':
                     if (i + 1 < argc)
                         break;
@@ -711,6 +715,17 @@ int main(int argc, char **argv)
                 case 'p':
                     fPowerOn = true;
                     break;
+
+                case 'w':
+                {
+                    int rc = RTStrToUInt32Ex(argv[++i], NULL, 0, &u32WarpDrive);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        RTPrintf("tstAnimate: Syntax error: Invalid number given to -w.\n");
+                        return 1;
+                    }
+                    break;
+                }
 
                 case 'h':
                 case 'H':
@@ -834,16 +849,31 @@ int main(int argc, char **argv)
             if (VBOX_SUCCESS(rc))
             {
                 if (fPowerOn)
-                {
+                {   
+                    /*
+                     * Adjust warpspeed?
+                     */
+                    if (u32WarpDrive != 100)
+                    {
+                        rc = TMVirtualSetWarpDrive(pVM, u32WarpDrive);
+                        if (VBOX_FAILURE(rc))
+                            RTPrintf("warning: TMVirtualSetWarpDrive(,%u) -> %Vrc\n", u32WarpDrive, rc);
+                    }
+
                     /*
                      * Start the thing with single stepping and stuff enabled.
+                     * (Try make sure we don't execute anything in raw mode.)
                      */
                     RTPrintf("info: powering on the VM...\n");
                     RTLogGroupSettings(NULL, "+REM_DISAS.e.l.f");
                     rc = REMR3DisasEnableStepping(pVM, true);
                     if (VBOX_SUCCESS(rc))
                     {
-                        DBGFR3InfoLog(pVM, "cpumguest", "verbose");
+                        rc = VMR3ReqCall(pVM, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)EMR3RawSetMode, 2, pVM, EMRAW_NONE);
+                        AssertReleaseRC(rc);
+                        VMR3ReqFree(pReq1);
+
+                        DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
                         if (fPowerOn)
                             rc = VMR3PowerOn(pVM);
                         if (VBOX_SUCCESS(rc))
@@ -865,7 +895,7 @@ int main(int argc, char **argv)
                      * Don't start it, just enter the debugger.
                      */
                     RTPrintf("info: entering debugger...\n");
-                    DBGFR3InfoLog(pVM, "cpumguest", "verbose");
+                    DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
                     signal(SIGINT, SigInterrupt);
                     while (!g_fSignaled)
                         RTThreadSleep(1000);
