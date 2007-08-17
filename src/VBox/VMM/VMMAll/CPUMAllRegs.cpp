@@ -1514,7 +1514,7 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
  * @returns The CPU mode.
  * @param   pVM         The VM handle.
  */
-CPUMDECL(uint32_t) CPUMGetGuestMode(PVM pVM)
+CPUMDECL(CPUMMODE) CPUMGetGuestMode(PVM pVM)
 {
     CPUMMODE enmMode;
     if (!(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
