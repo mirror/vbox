@@ -62,17 +62,32 @@ DBGFR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, PDBGFADDRESS pAddress, RTSEL Sel, 
         int rc = SELMR3GetSelectorInfo(pVM, Sel, &SelInfo);
         if (VBOX_FAILURE(rc))
             return rc;
-        if (off > SelInfo.cbLimit)
+
+        /* check limit. */
+        if (    (SelInfo.Raw.Gen.u4Type & X86_SEL_TYPE_DOWN)
+            &&  SelInfo.Raw.Gen.u1DescType
+            &&  (   SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN
+                 || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN_ACC
+                 || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN
+                 || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN_ACC))
+        {
+            if (!SelInfo.Raw.Gen.u1Granularity && off > UINT32_C(0xffff))
+                return VERR_OUT_OF_SELECTOR_BOUNDS;
+            if (off <= SelInfo.cbLimit)
+                return VERR_OUT_OF_SELECTOR_BOUNDS;
+        }
+        else if (off > SelInfo.cbLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
+
         pAddress->FlatPtr = SelInfo.GCPtrBase + off;
         /** @todo fix this flat selector test! */
         if (    !SelInfo.GCPtrBase
             &&  SelInfo.Raw.Gen.u1Granularity
             &&  SelInfo.Raw.Gen.u1DefBig)
             pAddress->fFlags = DBGFADDRESS_FLAGS_FLAT;
-        else if (SelInfo.cbLimit <= 0xffff)
+        else if (SelInfo.cbLimit <= UINT32_C(0xffff))
             pAddress->fFlags = DBGFADDRESS_FLAGS_FAR16;
-        else if (SelInfo.cbLimit <= 0xffffffff)
+        else if (SelInfo.cbLimit <= UINT32_C(0xffffffff))
             pAddress->fFlags = DBGFADDRESS_FLAGS_FAR32;
         else
             pAddress->fFlags = DBGFADDRESS_FLAGS_FAR64;
