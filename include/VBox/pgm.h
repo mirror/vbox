@@ -575,6 +575,8 @@ PGMDECL(int) PGMChangeMode(PVM pVM, uint32_t cr0, uint32_t cr4, uint64_t efer);
 /**
  * Gets the current guest paging mode.
  *
+ * If you just need the CPU mode (real/protected/long), use CPUMGetGuestMode().
+ *
  * @returns The current paging mode.
  * @param   pVM             The VM handle.
  */

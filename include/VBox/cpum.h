@@ -683,6 +683,31 @@ CPUMDECL(void) CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid);
  */
 CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore);
 
+/**
+ * CPU modes.
+ */
+typedef enum CPUMMODE
+{
+    /** The usual invalid zero entry. */
+    CPUMMODE_INVALID = 0,
+    /** Real mode. */
+    CPUMMODE_REAL,
+    /** Protected mode (32-bit). */
+    CPUMMODE_PROTECTED,
+    /** Long mode (64-bit). */
+    CPUMMODE_LONG
+} CPUMMODE;
+
+/**
+ * Gets the current guest CPU mode.
+ *
+ * If paging mode is what you need, check out PGMGetGuestMode().
+ *
+ * @returns The CPU mode.
+ * @param   pVM         The VM handle.
+ */
+CPUMDECL(uint32_t) CPUMGetGuestMode(PVM pVM);
+
 
 #ifdef IN_RING3
 /** @defgroup grp_cpum_r3    The CPU Monitor(/Manager) API
@@ -748,11 +773,11 @@ CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM);
 
 /**
  * API for controlling a few of the CPU features found in CR4.
- * 
+ *
  * Currently only X86_CR4_TSD is accepted as input.
- * 
+ *
  * @returns VBox status code.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   fOr     The CR4 OR mask.
  * @param   fAnd    The CR4 AND mask.
