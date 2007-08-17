@@ -1871,7 +1871,7 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>Lage und Größe der virtuelle Festplatte</translation>
+        <translation>Lage und Größe der virtuellen Festplatte</translation>
     </message>
     <message>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
