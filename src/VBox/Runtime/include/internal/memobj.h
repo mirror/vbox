@@ -319,6 +319,8 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
  * Allocates non-contiguous page aligned physical memory without (necessarily) any kernel mapping.
  *
  * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if it's not possible to allocated unmapped
+ *          physical memory on this platform.
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate, page aligned.
  * @param   PhysHighest     The highest permittable address (inclusive).
@@ -340,6 +342,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  * Reserves kernel virtual address space.
  *
  * @returns IPRT status code.
+ *          Return VERR_NOT_SUPPORTED to indicate that the user should employ fallback strategies.
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   pvFixed         Requested address. (void *)-1 means any address. This matches uAlignment if specified.
  * @param   cb              The number of bytes to reserve, page aligned.
