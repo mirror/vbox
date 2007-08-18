@@ -916,7 +916,7 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	$(QUIET)$(RM) -f "$@"
 	$(QUIET)$(MKDIR) -p $(@D)
 
-	@# HC compiler switch detction.
+	@# HC compiler switch detection.
 	$(APPEND) "$@" "VBOX_GCC_VERSION_CC            ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CC))"
 	$(APPEND) "$@" "VBOX_GCC_VERSION_CXX           ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))"
 	$(APPEND) "$@" "VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)"
