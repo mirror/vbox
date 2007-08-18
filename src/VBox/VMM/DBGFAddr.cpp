@@ -64,14 +64,10 @@ DBGFR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, PDBGFADDRESS pAddress, RTSEL Sel, 
             return rc;
 
         /* check limit. */
-        if (    (SelInfo.Raw.Gen.u4Type & X86_SEL_TYPE_DOWN)
-            &&  SelInfo.Raw.Gen.u1DescType
-            &&  (   SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN
-                 || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN_ACC
-                 || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN
-                 || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN_ACC))
+        if (SELMSelInfoIsExpandDown(&SelInfo))
         {
-            if (!SelInfo.Raw.Gen.u1Granularity && off > UINT32_C(0xffff))
+            if (    !SelInfo.Raw.Gen.u1Granularity
+                &&  off > UINT32_C(0xffff))
                 return VERR_OUT_OF_SELECTOR_BOUNDS;
             if (off <= SelInfo.cbLimit)
                 return VERR_OUT_OF_SELECTOR_BOUNDS;
