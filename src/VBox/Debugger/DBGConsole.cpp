@@ -875,6 +875,9 @@ static const DBGCOP g_aOps[] =
     { {'T'},            1,       true,       24,             NULL,               dbgcOpRangeTo,              "Range to." }
 };
 
+/** Bitmap where set bits indicates the characters the may start an operator name. */
+static uint32_t g_bmOperatorChars[256 / (4*8)];
+
 /** Register symbol uUser value.
  * @{
  */
@@ -3056,7 +3059,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
             /* chars column */
             if (pDbgc->cbDumpElement == 1)
             {
-                while (i < sizeof(achBuffer))
+                while (i++ < sizeof(achBuffer))
                     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "   ");
                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "  ");
                 for (i = 0; i < cb; i += cbElement)
@@ -5435,8 +5438,10 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
          * Numbers (see start of function)
          */
         case DBGCVAR_TYPE_NUMBER:
+            *pResult = *pArg1;
             switch (pArg2->enmType)
             {
+                case DBGCVAR_TYPE_SYMBOL:
                 case DBGCVAR_TYPE_STRING:
                     rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
                     if (VBOX_FAILURE(rc))
@@ -5691,8 +5696,10 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
          * Numbers (see start of function)
          */
         case DBGCVAR_TYPE_NUMBER:
+            *pResult = *pArg1;
             switch (pArg2->enmType)
             {
+                case DBGCVAR_TYPE_SYMBOL:
                 case DBGCVAR_TYPE_STRING:
                     rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
                     if (VBOX_FAILURE(rc))
@@ -7293,6 +7300,28 @@ static PCDBGCOP dbgcOperatorLookup(PDBGC pDbgc, const char *pszExpr, bool fPrefe
 }
 
 
+/**
+ * Initalizes g_bmOperatorChars.
+ */
+static void dbgcInitOpCharBitMap(void)
+{
+    memset(g_bmOperatorChars, 0, sizeof(g_bmOperatorChars));
+    for (unsigned iOp = 0; iOp < RT_ELEMENTS(g_aOps); iOp++)
+        ASMBitSet(&g_bmOperatorChars[0], (uint8_t)g_aOps[iOp].szName[0]);
+}
+
+
+/**
+ * Checks whether the character may be the start of an operator.
+ *
+ * @returns true/false.
+ * @param   ch      The character.
+ */
+DECLINLINE(bool) dbgcIsOpChar(char ch)
+{
+    return ASMBitTest(&g_bmOperatorChars[0], (uint8_t)ch);
+}
+
 
 static int dbgcEvalSubString(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pArg)
 {
@@ -7932,7 +7961,9 @@ static int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pRes
          */
         else if (cPar == 0 && !isblank(ch))
         {
-            PCDBGCOP pOp = dbgcOperatorLookup(pDbgc, psz, fBinary, chPrev);
+            PCDBGCOP pOp = dbgcIsOpChar(ch)
+                         ? dbgcOperatorLookup(pDbgc, psz, fBinary, chPrev)
+                         : NULL;
             if (pOp)
             {
                 /* If not the right kind of operator we've got a syntax error. */
@@ -8087,6 +8118,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
         char   *pszEnd  = NULL;
         char   *psz     = pszArgs;
         char    ch;
+        bool    fBinary = false;
         for (;;)
         {
             /*
@@ -8125,32 +8157,56 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
              * Parenthesis can of course be nested.
              */
             else if (ch == '(')
+            {
                 cPar++;
+                fBinary = false;
+            }
             else if (ch == ')')
             {
                 if (!cPar)
                     return VERR_PARSE_UNBALANCED_PARENTHESIS;
                 cPar--;
+                fBinary = true;
             }
-            /*
-             * Encountering blanks may mean the end of it all. But of course not
-             * while inside a quotation or paranthesis. A binary operator will
-             * also force continued parsing.
-             */
-            else if (isblank(ch) && !cPar && !chQuote)
+            else if (!chQuote && !cPar)
             {
-                pszEnd = psz++;         /* just in case. */
-                while (isblank(*psz))
-                    psz++;
-                PCDBGCOP pOp = dbgcOperatorLookup(pDbgc, psz, true, ' ');
-                if (!pOp || !pOp->fBinary)
-                    break;              /* the end. */
-                if (pOp)
+                /*
+                 * Encountering blanks may mean the end of it all. A binary operator
+                 * will force continued parsing.
+                 */
+                if (isblank(*psz))
+                {
+                    pszEnd = psz++;         /* just in case. */
+                    while (isblank(*psz))
+                        psz++;
+                    PCDBGCOP pOp = dbgcOperatorLookup(pDbgc, psz, fBinary, ' ');
+                    if (!pOp || pOp->fBinary != fBinary)
+                        break;              /* the end. */
                     psz += pOp->cchName;
+                    while (isblank(*psz))   /* skip blanks so we don't get here again */
+                        psz++;
+                    fBinary = false;
+                    continue;
+                }
 
-                while (isblank(*psz))   /* skip blanks so we don't get here again */
-                    psz++;
-                continue;
+                /*
+                 * Look for operators without a space up front.
+                 */
+                if (dbgcIsOpChar(*psz))
+                {
+                    PCDBGCOP pOp = dbgcOperatorLookup(pDbgc, psz, fBinary, ' ');
+                    if (pOp)
+                    {
+                        if (pOp->fBinary != fBinary)
+                            break;              /* the end. */
+                        psz += pOp->cchName;
+                        while (isblank(*psz))   /* skip blanks so we don't get here again */
+                            psz++;
+                        fBinary = false;
+                        continue;
+                    }
+                    fBinary = true;
+                }
             }
 
             /* next char */
@@ -8696,6 +8752,8 @@ DBGDECL(int)    DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
     pDbgc->fReady           = true;
     pDbgc->fInputOverflow   = false;
     pDbgc->cInputLines      = 0;
+
+    dbgcInitOpCharBitMap();
 
     /*
      * Print welcome message.
