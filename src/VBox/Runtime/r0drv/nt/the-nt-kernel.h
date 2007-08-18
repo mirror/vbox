@@ -44,6 +44,7 @@ __END_DECLS
 # error "RT_OS_WINDOWS must be defined!"
 #endif
 
+#include <iprt/param.h>
 #ifndef PAGE_OFFSET_MASK
 # define PAGE_OFFSET_MASK (PAGE_SIZE - 1)
 #endif
