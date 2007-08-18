@@ -601,7 +601,7 @@ static const DBGCVARDESC    g_aArgDumpMem[] =
 };
 
 
-/** 'dg', 'dga', 'dl', 'dla', 'dt' arguments. */
+/** 'dg', 'dga', 'dl', 'dla' arguments. */
 static const DBGCVARDESC    g_aArgDumpDT[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
@@ -648,6 +648,15 @@ static const DBGCVARDESC    g_aArgDumpPTAddr[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  1,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address of the page table entry to start dumping from." },
+};
+
+
+/** 'dt' arguments. */
+static const DBGCVARDESC    g_aArgDumpTSS[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "tss",          "TSS selector number." },
+    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "tss:ign|addr", "TSS address. If the selector is a TSS selector, the offset will be ignored." }
 };
 
 
@@ -801,7 +810,7 @@ static const DBGCCMD    g_aCmds[] =
     { "dptg",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the guest." },
     { "dpth",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the hypervisor." },
     { "dq",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in quad words." },
-    { "dt",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpTSS,     "[sel [..]]",           "Dump the task switch segment (TSS)." },
+    { "dt",         0,        1,        &g_aArgDumpTSS[0],  ELEMENTS(g_aArgDumpTSS),    NULL,               0,          dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the task state segment (TSS)." },
     { "dw",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in words." },
     { "exit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
     { "format",     1,        1,        &g_aArgAny[0],      ELEMENTS(g_aArgAny),        NULL,               0,          dbgcCmdFormat,      "",                     "Evaluates an expression and formats it." },
@@ -3514,6 +3523,10 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pC
  */
 static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, PVM /*pVM*/, PCDBGCVAR /*paArgs*/, unsigned /*cArgs*/, PDBGCVAR /*pResult*/)
 {
+    /*
+     * We can get a TSS selector (number), a far pointer using a TSS selector, or some kind of TSS pointer.
+     */
+
     /** @todo */
     return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "dt is not implemented yet, feel free to do it. \n");
 }
