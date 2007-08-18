@@ -1968,9 +1968,9 @@ static DECLCALLBACK(int) dbgcCmdDisasm(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
             iRangeLeft--;
         else
             iRangeLeft -= cbInstr;
-        rc = pCmdHlp->pfnEval(pCmdHlp, &pDbgc->DisasmPos, "%Dv + %x", &pDbgc->DisasmPos, cbInstr);
+        rc = pCmdHlp->pfnEval(pCmdHlp, &pDbgc->DisasmPos, "(%Dv) + %x", &pDbgc->DisasmPos, cbInstr);
         if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: %DV + %x\n", &pDbgc->DisasmPos, cbInstr);
+            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: (%Dv) + %x\n", &pDbgc->DisasmPos, cbInstr);
         if (iRangeLeft <= 0)
             break;
         fFlags &= ~(DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_CURRENT_HYPER);
@@ -2160,9 +2160,9 @@ static DECLCALLBACK(int) dbgcCmdSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
             iRangeLeft -= cLines;
         else
             iRangeLeft -= 1;
-        rc = pCmdHlp->pfnEval(pCmdHlp, &pDbgc->SourcePos, "%Dv + %x", &pDbgc->SourcePos, 1);
+        rc = pCmdHlp->pfnEval(pCmdHlp, &pDbgc->SourcePos, "(%Dv) + %x", &pDbgc->SourcePos, 1);
         if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: %Dv + %x\n", &pDbgc->SourcePos, 1);
+            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: (%Dv) + %x\n", &pDbgc->SourcePos, 1);
         if (iRangeLeft <= 0)
             break;
     }
@@ -3104,9 +3104,9 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
          * Advance
          */
         cbLeft -= cb;
-        rc = pCmdHlp->pfnEval(pCmdHlp, &pDbgc->DumpPos, "%Dv + %x", &pDbgc->DumpPos, cb);
+        rc = pCmdHlp->pfnEval(pCmdHlp, &pDbgc->DumpPos, "(%Dv) + %x", &pDbgc->DumpPos, cb);
         if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: %Dv + %x\n", &pDbgc->DumpPos, cb);
+            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: (%Dv) + %x\n", &pDbgc->DumpPos, cb);
         if (cbLeft <= 0)
             break;
     }
@@ -3379,9 +3379,9 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
         if (VBOX_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%%(%Dv)", &paArgs[0]);
 
-        rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, "%Dv + %#x", &VarPTEAddr, (VarGCPtr.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPDE));
+        rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, "(%Dv) + %#x", &VarPTEAddr, (VarGCPtr.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPDE));
         if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%Dv + %#x", &VarPTEAddr, (VarGCPtr.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPDE));
+            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "(%Dv) + %#x", &VarPTEAddr, (VarGCPtr.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPDE));
 
 
         /*
@@ -7924,7 +7924,7 @@ static int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pRes
         {
             if (cPar <= 0)
                 return VERR_PARSE_UNBALANCED_PARENTHESIS;
-            cPar++;
+            cPar--;
             fBinary = true;
         }
         /*
