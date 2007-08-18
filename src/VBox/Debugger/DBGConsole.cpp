@@ -852,12 +852,12 @@ static const DBGCOP g_aOps[] =
     { {'+'},            1,       false,      1,              dbgcOpPluss,        NULL,                       "Unary pluss." },
     { {'!'},            1,       false,      1,              dbgcOpBooleanNot,   NULL,                       "Boolean not." },
     { {'~'},            1,       false,      1,              dbgcOpBitwiseNot,   NULL,                       "Bitwise complement." },
-    { {'%'},            1,       false,      1,              dbgcOpAddrFlat,     NULL,                       "Flat address." },
-    { {'%','%'},        2,       false,      1,              dbgcOpAddrPhys,     NULL,                       "Physical address." },
-    { {'#'},            1,       false,      1,              dbgcOpAddrHost,     NULL,                       "Flat host address." },
-    { {'#','%','%'},    3,       false,      1,              dbgcOpAddrHostPhys, NULL,                       "Physical host address." },
-    { {'$'},            1,       false,      1,              dbgcOpVar,          NULL,                       "Reference a variable." },
-    { {':'},            1,       true,       9,              NULL,               dbgcOpAddrFar,              "Far pointer." },
+    { {':'},            1,       true,       2,              NULL,               dbgcOpAddrFar,              "Far pointer." },
+    { {'%'},            1,       false,      3,              dbgcOpAddrFlat,     NULL,                       "Flat address." },
+    { {'%','%'},        2,       false,      3,              dbgcOpAddrPhys,     NULL,                       "Physical address." },
+    { {'#'},            1,       false,      3,              dbgcOpAddrHost,     NULL,                       "Flat host address." },
+    { {'#','%','%'},    3,       false,      3,              dbgcOpAddrHostPhys, NULL,                       "Physical host address." },
+    { {'$'},            1,       false,      3,              dbgcOpVar,          NULL,                       "Reference a variable." },
     { {'*'},            1,       true,       10,             NULL,               dbgcOpMult,                 "Multiplication." },
     { {'/'},            1,       true,       11,             NULL,               dbgcOpDiv,                  "Division." },
     { {'%'},            1,       true,       12,             NULL,               dbgcOpMod,                  "Modulus." },
@@ -5139,7 +5139,6 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 }
 
 
-
 /**
  * Multiplication operator (binary).
  *
@@ -5153,9 +5152,78 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
  */
 static DECLCALLBACK(int) dbgcOpMult(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-    LogFlow(("dbgcOpMult\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+//    LogFlow(("dbgcOpMult\n"));
+    int     rc;
+
+    /*
+     * Switch the factors so we preserve pointers, far pointers are considered more
+     * important that physical and flat pointers.
+     */
+    if (    DBGCVAR_ISPOINTER(pArg2->enmType)
+        &&  (   !DBGCVAR_ISPOINTER(pArg1->enmType)
+             || (   DBGCVAR_IS_FAR_PTR(pArg2->enmType)
+                 && !DBGCVAR_IS_FAR_PTR(pArg1->enmType))))
+    {
+        PCDBGCVAR pTmp = pArg1;
+        pArg2 = pArg1;
+        pArg1 = pTmp;
+    }
+
+    /*
+     * Convert the 2nd number into a number we use multiply the first with.
+     */
+    DBGCVAR Factor2 = *pArg2;
+    if (    Factor2.enmType == DBGCVAR_TYPE_STRING
+        ||  Factor2.enmType == DBGCVAR_TYPE_SYMBOL)
+    {
+        rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Factor2);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+    uint64_t u64Factor;
+    switch (Factor2.enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:  u64Factor = Factor2.u.GCFlat; break;
+        case DBGCVAR_TYPE_GC_FAR:   u64Factor = Factor2.u.GCFar.off; break;
+        case DBGCVAR_TYPE_GC_PHYS:  u64Factor = Factor2.u.GCPhys; break;
+        case DBGCVAR_TYPE_HC_FLAT:  u64Factor = (uintptr_t)Factor2.u.pvHCFlat; break;
+        case DBGCVAR_TYPE_HC_FAR:   u64Factor = Factor2.u.HCFar.off; break;
+        case DBGCVAR_TYPE_HC_PHYS:  u64Factor = Factor2.u.HCPhys; break;
+        case DBGCVAR_TYPE_NUMBER:   u64Factor = Factor2.u.u64Number; break;
+        default:
+            return VERR_PARSE_INCORRECT_ARG_TYPE;
+    }
+
+    /*
+     * Fix symbols in the 1st factor.
+     */
+    *pResult = *pArg1;
+    if (    pResult->enmType == DBGCVAR_TYPE_STRING
+        ||  pResult->enmType == DBGCVAR_TYPE_SYMBOL)
+    {
+        rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_ANY, pResult);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Do the multiplication.
+     */
+    switch (pArg1->enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:  pResult->u.GCFlat *= u64Factor; break;
+        case DBGCVAR_TYPE_GC_FAR:   pResult->u.GCFar.off *= u64Factor; break;
+        case DBGCVAR_TYPE_GC_PHYS:  pResult->u.GCPhys *= u64Factor; break;
+        case DBGCVAR_TYPE_HC_FLAT:
+            pResult->u.pvHCFlat = (void *)(uintptr_t)((uintptr_t)pResult->u.pvHCFlat * u64Factor);
+            break;
+        case DBGCVAR_TYPE_HC_FAR:   pResult->u.HCFar.off *= u64Factor; break;
+        case DBGCVAR_TYPE_HC_PHYS:  pResult->u.HCPhys *= u64Factor; break;
+        case DBGCVAR_TYPE_NUMBER:   pResult->u.u64Number *= u64Factor; break;
+        default:
+            return VERR_PARSE_INCORRECT_ARG_TYPE;
+    }
+    return 0;
 }
 
 
@@ -7602,7 +7670,7 @@ static int dbgcEvalSubMatchVars(PDBGC pDbgc, unsigned cVarsMin, unsigned cVarsMa
 
 
 /**
- * Evaluates one argument with though of unary operators.
+ * Evaluates one argument with respect to unary operators.
  *
  * @returns 0 on success. pResult contains the result.
  * @returns VBox error code on parse or other evaluation error.
@@ -7834,7 +7902,6 @@ static int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pRes
      */
     char       *pszOpSplit = NULL;
     PCDBGCOP    pOpSplit = NULL;
-    unsigned    iOpSplit = 0;
     unsigned    cBinaryOps = 0;
     unsigned    cPar = 0;
     char        ch;
@@ -7875,15 +7942,22 @@ static int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pRes
                 /*
                  * Update the parse state and skip the operator.
                  */
-                if (fBinary)
+                if (!pOpSplit)
+                {
+                    pOpSplit = pOp;
+                    pszOpSplit = psz;
+                    cBinaryOps = fBinary;
+                }
+                else if (fBinary)
                 {
                     cBinaryOps++;
-                    if (iOpSplit < pOp->iPrecedence)
+                    if (pOp->iPrecedence >= pOpSplit->iPrecedence)
                     {
                         pOpSplit = pOp;
                         pszOpSplit = psz;
                     }
                 }
+
                 psz += pOp->cchName - 1;
                 fBinary = false;
             }
@@ -7904,7 +7978,8 @@ static int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pRes
      * needs dealing with its unary operators if any.
      */
     int rc;
-    if (cBinaryOps)
+    if (    cBinaryOps
+        &&  pOpSplit->fBinary)
     {
         /* process 1st sub expression. */
         *pszOpSplit = '\0';
@@ -7920,6 +7995,16 @@ static int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pRes
                 /* apply the operator. */
                 rc = pOpSplit->pfnHandlerBinary(pDbgc, &Arg1, &Arg2, pResult);
         }
+    }
+    else if (cBinaryOps)
+    {
+        /* process sub expression. */
+        pszOpSplit += pOpSplit->cchName;
+        DBGCVAR     Arg;
+        rc = dbgcEvalSub(pDbgc, pszOpSplit, cchExpr - (pszOpSplit - pszExpr), &Arg);
+        if (VBOX_SUCCESS(rc))
+            /* apply the operator. */
+            rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, pResult);
     }
     else
         /* plain expression or using unary operators perhaps with paratheses. */

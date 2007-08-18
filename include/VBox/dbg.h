@@ -98,12 +98,16 @@ typedef enum DBGCVARTYPE
     DBGCVAR_TYPE_ANY
 } DBGCVARTYPE;
 
+/** @todo Rename to DBGCVAR_IS_xyz. */
+
 /** Checks if the specified variable type is of a pointer persuasion. */
-#define DBGCVAR_ISPOINTER(enmType)      (enmType >= DBGCVAR_TYPE_GC_FLAT && enmType <= DBGCVAR_TYPE_HC_PHYS)
+#define DBGCVAR_ISPOINTER(enmType)      ((enmType) >= DBGCVAR_TYPE_GC_FLAT && enmType <= DBGCVAR_TYPE_HC_PHYS)
+/** Checks if the specified variable type is of a pointer persuasion. */
+#define DBGCVAR_IS_FAR_PTR(enmType)     ((enmType) == DBGCVAR_TYPE_GC_FAR || (enmType) == DBGCVAR_TYPE_HC_FAR)
 /** Checks if the specified variable type is of a pointer persuasion and of the guest context sort. */
-#define DBGCVAR_ISGCPOINTER(enmType)    (enmType >= DBGCVAR_TYPE_GC_FLAT && enmType <= DBGCVAR_TYPE_GC_PHYS)
+#define DBGCVAR_ISGCPOINTER(enmType)    ((enmType) >= DBGCVAR_TYPE_GC_FLAT && (enmType) <= DBGCVAR_TYPE_GC_PHYS)
 /** Checks if the specified variable type is of a pointer persuasion and of the host context sort. */
-#define DBGCVAR_ISHCPOINTER(enmType)    (enmType >= DBGCVAR_TYPE_HC_FLAT && enmType <= DBGCVAR_TYPE_HC_PHYS)
+#define DBGCVAR_ISHCPOINTER(enmType)    ((enmType) >= DBGCVAR_TYPE_HC_FLAT && (enmType) <= DBGCVAR_TYPE_HC_PHYS)
 
 
 /**
