@@ -155,7 +155,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
     uint32_t    u1Present, u1DescType, u1Granularity, u4Type;
 
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
-    if (    pHiddenSel 
+    if (    pHiddenSel
         &&  CPUMAreHiddenSelRegsValid(pVM))
     {
         u1Present     = pHiddenSel->Attr.n.u1Present;
@@ -280,7 +280,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
                 if (ppvGC)
                     *ppvGC = pvFlat;
                 if (pcb)
-                    *pcb = (u1Granularity ? 0xffffffff : 0xffff) - (RTGCUINTPTR)Addr + 1;
+                    *pcb = (RTGCUINTPTR)(u1Granularity ? 0xffffffff : 0xffff) - (RTGCUINTPTR)Addr + 1;
                 return VINF_SUCCESS;
 
             case BOTH(0,X86_SEL_TYPE_SYS_286_TSS_AVAIL):
@@ -605,7 +605,7 @@ l_tryagain:
                 /* Shadow page might be out of sync. Sync and try again */
                 /** @todo might cross page boundary */
                 fTriedAlready = true;
-                rc = PGMPrefetchPage(pVM, GCPtrTss); 
+                rc = PGMPrefetchPage(pVM, GCPtrTss);
                 if (rc != VINF_SUCCESS)
                     return rc;
                 goto l_tryagain;
