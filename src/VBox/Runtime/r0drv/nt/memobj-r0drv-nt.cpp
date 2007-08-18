@@ -61,7 +61,7 @@ typedef struct RTR0MEMOBJNT
     bool                fAllocatedPagesForMdl;
 #endif
     /** The number of PMDLs (memory descriptor lists) in the array. */
-    unsigned            cMdls;
+    uint32_t            cMdls;
     /** Array of MDL pointers. (variable size) */
     PMDL                apMdls[1];
 } RTR0MEMOBJNT, *PRTR0MEMOBJNT;
@@ -77,7 +77,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
     switch (pMemNt->Core.enmType)
     {
         case RTR0MEMOBJTYPE_LOW:
-#ifdef IPRT_TARGET_NT4
+#ifndef IPRT_TARGET_NT4
             if (pMemNt->fAllocatedPagesForMdl)
             {
                 Assert(pMemNt->Core.pv && pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
@@ -90,7 +90,9 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 break;
             }
 #endif
-            /* fall thru */
+            AssertFailed();
+            break;
+
         case RTR0MEMOBJTYPE_PAGE:
             Assert(pMemNt->Core.pv);
             ExFreePool(pMemNt->Core.pv);
@@ -115,44 +117,57 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_PHYS:
         case RTR0MEMOBJTYPE_PHYS_NC:
-#ifdef IPRT_TARGET_NT4
+#ifndef IPRT_TARGET_NT4
             if (pMemNt->fAllocatedPagesForMdl)
             {
                 MmFreePagesFromMdl(pMemNt->apMdls[0]);
                 pMemNt->apMdls[0] = NULL;
                 pMemNt->cMdls = 0;
+                break;
             }
 #endif
+            AssertFailed();
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
-            for (unsigned i = 0; i < pMemNt->cMdls; i++)
+            for (uint32_t i = 0; i < pMemNt->cMdls; i++)
             {
-                MmUnlockPages(pMemNt->apMdl[i]);
-                IoFreeMdl(pMemNt->apMdl[i]);
-                pMemNt->apMdl[i] = NULL;
+                MmUnlockPages(pMemNt->apMdls[i]);
+                IoFreeMdl(pMemNt->apMdls[i]);
+                pMemNt->apMdls[i] = NULL;
             }
             break;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
-            if (pMemNt->Core.u.ResVirt.R0Process == NIL_RTR0PROCESS)
+/*            if (pMemNt->Core.u.ResVirt.R0Process == NIL_RTR0PROCESS)
             {
-                MmMapIoSpace
             }
             else
             {
-            }
+            }*/
             AssertMsgFailed(("RTR0MEMOBJTYPE_RES_VIRT\n"));
             return VERR_INTERNAL_ERROR;
             break;
 
         case RTR0MEMOBJTYPE_MAPPING:
         {
-            Assert(pMemNt->Core.pv && pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+            Assert(pMemNt->Core.pv);
             PRTR0MEMOBJNT pMemNtParent = (PRTR0MEMOBJNT)pMemNt->Core.uRel.Child.pParent;
             Assert(pMemNtParent);
-            Assert(pMemNtParent->cMdls == 1 && pMemNtParent->apMdls[0]);
-            MmUnmapLockedPages(pMemNt->Core.pv, pMemNtParent->apMdls);
+            if (pMemNtParent->cMdls)
+            {
+                Assert(pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
+                Assert(pMemNtParent->cMdls == 1 && pMemNtParent->apMdls[0]);
+                Assert(     pMemNt->Core.u.Mapping.R0Process == NIL_RTR0PROCESS
+                       ||   pMemNt->Core.u.Mapping.R0Process == RTR0ProcHandleSelf());
+                MmUnmapLockedPages(pMemNt->Core.pv, pMemNtParent->apMdls[0]);
+            }
+            else
+            {
+                Assert(     pMemNtParent->Core.enmType == RTR0MEMOBJTYPE_PHYS
+                       &&   !pMemNtParent->Core.u.Phys.fAllocated);
+                MmUnmapIoSpace(pMemNt->Core.pv, pMemNt->Core.cb);
+            }
             pMemNt->Core.pv = NULL;
             break;
         }
@@ -168,6 +183,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
+    AssertMsgReturn(cb > _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
+
     /*
      * Try allocate the memory and create an MDL for them so
      * we can query the physical addresses and do mappings later
@@ -177,11 +194,13 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     void *pv = ExAllocatePoolWithTag(NonPagedPool, cb, IPRT_NT_POOL_TAG);
     if (pv)
     {
-        PMDL pMdl = IoAllocateMdl(pv, cb, FALSE, FALSE, NULL);
+        PMDL pMdl = IoAllocateMdl(pv, (ULONG)cb, FALSE, FALSE, NULL);
         if (pMdl)
         {
             MmBuildMdlForNonPagedPool(pMdl);
-            /** @todo if (fExecutable) */
+#ifdef RT_ARCH_AMD64
+            MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
+#endif
 
             /*
              * Create the IPRT memory object.
@@ -206,6 +225,8 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
+    AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
+
     /*
      * Try see if we get lucky first...
      * (We could probably just assume we're lucky on NT4.)
@@ -233,9 +254,9 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
      * Use MmAllocatePagesForMdl to specify the range of physical addresses we wish to use.
      */
     PHYSICAL_ADDRESS Zero;
-    PHYSICAL_ADDRESS HighAddr;
     Zero.QuadPart = 0;
-    High.QuadPart = _4G - 1;
+    PHYSICAL_ADDRESS HighAddr;
+    HighAddr.QuadPart = _4G - 1;
     PMDL pMdl = MmAllocatePagesForMdl(Zero, HighAddr, Zero, cb);
     if (pMdl)
     {
@@ -288,6 +309,8 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
  */
 static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, RTHCPHYS PhysHighest)
 {
+    AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
+
     /*
      * Allocate the memory and create an MDL for it.
      */
@@ -297,11 +320,13 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
     if (!pv)
         return VERR_NO_MEMORY;
 
-    PMDL pMdl = IoAllocateMdl(pv, cb, FALSE, FALSE, NULL);
+    PMDL pMdl = IoAllocateMdl(pv, (ULONG)cb, FALSE, FALSE, NULL);
     if (pMdl)
     {
         MmBuildMdlForNonPagedPool(pMdl);
-        /** @todo fExecutable */
+#ifdef RT_ARCH_AMD64
+        MmProtectMdlSystemAddress(pMdl, PAGE_EXECUTE_READWRITE);
+#endif
 
         PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb);
         if (pMemNt)
@@ -332,15 +357,21 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
     /*
      * Try and see if we're lucky and get a contiguous chunk from MmAllocatePagesForMdl.
      *
-     * If the allocation is big, the chances are *probably* not very good. The current
-     * max limit is kind of random.
+     * This is preferable to using MmAllocateContiguousMemory because there are
+     * a few situations where the memory shouldn't be mapped, like for instance
+     * VT-x control memory. Since these are rather small allocations (one or
+     * two pages) MmAllocatePagesForMdl will probably be able to satisfy the
+     * request.
+     *
+     * If the allocation is big, the chances are *probably* not very good. The
+     * current limit is kind of random...
      */
     if (cb < _128K)
     {
         PHYSICAL_ADDRESS Zero;
-        PHYSICAL_ADDRESS HighAddr;
         Zero.QuadPart = 0;
-        High.QuadPart = _4G - 1;
+        PHYSICAL_ADDRESS HighAddr;
+        HighAddr.QuadPart = PhysHighest == NIL_RTHCPHYS ? MAXLONGLONG : PhysHighest;
         PMDL pMdl = MmAllocatePagesForMdl(Zero, HighAddr, Zero, cb);
         if (pMdl)
         {
@@ -348,7 +379,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
             {
                 PPFN_NUMBER paPfns = MmGetMdlPfnArray(pMdl);
                 PFN_NUMBER Pfn = paPfns[0] + 1;
-                const size_t cPages = cb >> PAGE_SIZE;
+                const size_t cPages = cb >> PAGE_SHIFT;
                 size_t iPage;
                 for (iPage = 1; iPage < cPages; iPage++, Pfn++)
                     if (paPfns[iPage] != Pfn)
@@ -371,7 +402,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
             MmFreePagesFromMdl(pMdl);
         }
     }
-#endif
+#endif /* !IPRT_TARGET_NT4 */
 
     return rtR0MemObjNativeAllocContEx(ppMem, cb, false, PhysHighest);
 }
@@ -381,15 +412,15 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
 {
 #ifndef IPRT_TARGET_NT4
     PHYSICAL_ADDRESS Zero;
-    PHYSICAL_ADDRESS HighAddr;
     Zero.QuadPart = 0;
-    High.QuadPart = _4G - 1;
+    PHYSICAL_ADDRESS HighAddr;
+    HighAddr.QuadPart = PhysHighest == NIL_RTHCPHYS ? MAXLONGLONG : PhysHighest;
     PMDL pMdl = MmAllocatePagesForMdl(Zero, HighAddr, Zero, cb);
     if (pMdl)
     {
         if (MmGetMdlByteCount(pMdl) >= cb)
         {
-            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb);
+            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS_NC, NULL, cb);
             if (pMemNt)
             {
                 pMemNt->fAllocatedPagesForMdl = true;
@@ -423,9 +454,8 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
     PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb);
     if (pMemNt)
     {
-        pMemNt->Core.u.Phys.PhysBase = PhysAddr;
+        pMemNt->Core.u.Phys.PhysBase = Phys;
         pMemNt->Core.u.Phys.fAllocated = false;
-        pMemNt->pMemDesc = pMemDesc;
         *ppMem = &pMemNt->Core;
         return VINF_SUCCESS;
     }
@@ -448,11 +478,13 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
     /*
      * Calc the number of MDLs we need and allocate the memory object structure.
      */
-    unsigned cMdls = pMem->cb / MAX_LOCK_MEM_SIZE;
-    if ((pMem->cb % MAX_LOCK_MEM_SIZE) > 0)
+    size_t cMdls = cb / MAX_LOCK_MEM_SIZE;
+    if (cb % MAX_LOCK_MEM_SIZE)
         cMdls++;
+    if (cMdls >= UINT32_MAX)
+        return VERR_OUT_OF_RANGE;
     PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJNT, apMdls[cMdls]),
-                                                        RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb);
+                                                        RTR0MEMOBJTYPE_LOCK, pv, cb);
     if (!pMemNt)
         return VERR_NO_MEMORY;
 
@@ -461,8 +493,8 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
      */
     int         rc = VINF_SUCCESS;
     size_t      cbTotal = 0;
-    uint8_t    *pb = pv;
-    unsigned    iMdl;
+    uint8_t    *pb = (uint8_t *)pv;
+    uint32_t    iMdl;
     for (iMdl = 0; iMdl < cMdls; iMdl++)
     {
         /*
@@ -472,7 +504,7 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
         if (cbCur > MAX_LOCK_MEM_SIZE)
             cbCur = MAX_LOCK_MEM_SIZE;
         AssertMsg(cbCur, ("cbCur: 0!\n"));
-        PMDL pMdl = IoAllocateMdl(pb, cbCur, FALSE, FALSE, NULL);
+        PMDL pMdl = IoAllocateMdl(pb, (ULONG)cbCur, FALSE, FALSE, NULL);
         if (!pMdl)
         {
             rc = VERR_NO_MEMORY;
@@ -512,26 +544,26 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
      */
     while (iMdl-- > 0)
     {
-        MmUnlockPages(pMemNt->apMdl[iMdl]);
-        IoFreeMdl(pMemNt->apMdl[iMdl]);
-        pMemNt->apMdl[iMdl] = NULL;
+        MmUnlockPages(pMemNt->apMdls[iMdl]);
+        IoFreeMdl(pMemNt->apMdls[iMdl]);
+        pMemNt->apMdls[iMdl] = NULL;
     }
-    rtR0MemObjDelete(pMemNt);
-    return SUPDRV_ERR_LOCK_FAILED;
+    rtR0MemObjDelete(&pMemNt->Core);
+    return VERR_LOCK_FAILED;
 }
 
 
 int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
-    /* ( Can use MmProbeAndLockProcessPages if we need to mess with other processes later.) */
+    /* (Can use MmProbeAndLockProcessPages if we need to mess with other processes later.) */
     return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, R0Process);
 }
 
 
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-    return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, NIL_RTR0PROCESS);
+    return rtR0MemObjNtLock(ppMem, pv, cb, NIL_RTR0PROCESS);
 }
 
 
@@ -546,163 +578,160 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
     return VERR_NOT_IMPLEMENTED;
 }
 
-
-int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+/**
+ * Internal worker for rtR0MemObjNativeMapKernel and rtR0MemObjNativeMapUser.
+ *
+ * @returns IPRT status code.
+ * @param   ppMem       Where to store the memory object for the mapping.
+ * @param   pMemToMap   The memory object to map.
+ * @param   pvFixed     Where to map it. (void *)-1 if anywhere is fine.
+ * @param   uAlignment  The alignment requirement for the mapping.
+ * @param   fProt       The desired page protection for the mapping.
+ * @param   R0Process   If NIL_RTR0PROCESS map into system (kernel) memory.
+ *                      If not nil, it's the current process.
+ */
+static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
+                           unsigned fProt, RTR0PROCESS R0Process)
 {
+    int rc = VERR_MAP_FAILED;
+
     /*
-     * Must have a memory descriptor.
+     * There are two basic cases here, either we've got an MDL and can
+     * map it using MmMapLockedPages, or we've got a contiguous physical
+     * range (MMIO most likely) and can use MmMapIoSpace.
      */
-    int rc = VERR_INVALID_PARAMETER;
-    PRTR0MEMOBJNT pMemToMapDarwin = (PRTR0MEMOBJNT)pMemToMap;
-    if (pMemToMapDarwin->pMemDesc)
+    PRTR0MEMOBJNT pMemNtToMap = (PRTR0MEMOBJNT)pMemToMap;
+    if (pMemNtToMap->cMdls)
     {
-        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map(kernel_task, kIOMapAnywhere,
-                                                              kIOMapAnywhere | kIOMapDefaultCache);
-        if (pMemMap)
+        /* don't attempt map locked regions with more than one mdl. */
+        if (pMemNtToMap->cMdls != 1)
+            return VERR_NOT_SUPPORTED;
+
+        /* we can't map anything to the first page, sorry. */
+        if (pvFixed == 0)
+            return VERR_NOT_SUPPORTED;
+
+        /* only one system mapping for now - no time to figure out MDL restrictions right now. */
+        if (    pMemNtToMap->Core.uRel.Parent.cMappings
+            &&  R0Process == NIL_RTR0PROCESS)
+            return VERR_NOT_SUPPORTED;
+
+        __try
         {
-            IOVirtualAddress VirtAddr = pMemMap->getVirtualAddress();
-            void *pv = (void *)(uintptr_t)VirtAddr;
-            if ((uintptr_t)pv == VirtAddr)
+            /** @todo uAlignment */
+            /** @todo How to set the protection on the pages? */
+            void *pv = MmMapLockedPagesSpecifyCache(pMemNtToMap->apMdls[0],
+                                                    R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode,
+                                                    MmCached,
+                                                    pvFixed == (void *)-1 ? pvFixed : NULL,
+                                                    FALSE /* no bug check on failure */,
+                                                    NormalPagePriority);
+            if (pv)
             {
-                /*
-                 * Create the IPRT memory object.
-                 */
-                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING,
-                                                                                pv, pMemToMapDarwin->Core.cb);
+                NOREF(fProt);
+
+                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING, pv,
+                                                                    pMemNtToMap->Core.cb);
                 if (pMemNt)
                 {
-                    pMemNt->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
-                    pMemNt->pMemMap = pMemMap;
+                    pMemNt->Core.u.Mapping.R0Process = R0Process;
                     *ppMem = &pMemNt->Core;
                     return VINF_SUCCESS;
                 }
 
                 rc = VERR_NO_MEMORY;
+                MmUnmapLockedPages(pv, pMemNtToMap->apMdls[0]);
             }
-            else
-                rc = VERR_ADDRESS_TOO_BIG;
-            pMemMap->release();
         }
-        else
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            /* nothing */
             rc = VERR_MAP_FAILED;
+        }
     }
+    else
+    {
+        AssertReturn(   pMemNtToMap->Core.enmType == RTR0MEMOBJTYPE_PHYS
+                     && !pMemNtToMap->Core.u.Phys.fAllocated, VERR_INTERNAL_ERROR);
+
+        /* cannot map phys mem to user space (yet). */
+        if (R0Process != NIL_RTR0PROCESS)
+            return VERR_NOT_SUPPORTED;
+
+        /** @todo uAlignment */
+        /** @todo How to set the protection on the pages? */
+        PHYSICAL_ADDRESS Phys;
+        Phys.QuadPart = pMemNtToMap->Core.u.Phys.PhysBase;
+        void *pv = MmMapIoSpace(Phys, pMemNtToMap->Core.cb, MmCached); /** @todo add cache type to fProt. */
+        if (pv)
+        {
+            PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING, pv,
+                                                                pMemNtToMap->Core.cb);
+            if (pMemNt)
+            {
+                pMemNt->Core.u.Mapping.R0Process = R0Process;
+                *ppMem = &pMemNt->Core;
+                return VINF_SUCCESS;
+            }
+
+            rc = VERR_NO_MEMORY;
+            MmUnmapIoSpace(pv, pMemNtToMap->Core.cb);
+        }
+    }
+
+    NOREF(uAlignment); NOREF(fProt);
     return rc;
+}
+
+
+int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+{
+    return rtR0MemObjNtMap(ppMem, pMemToMap, pvFixed, uAlignment, fProt, NIL_RTR0PROCESS);
 }
 
 
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
-    /*
-     * Must have a memory descriptor.
-     */
-    int rc = VERR_INVALID_PARAMETER;
-    PRTR0MEMOBJNT pMemToMapDarwin = (PRTR0MEMOBJNT)pMemToMap;
-    if (pMemToMapDarwin->pMemDesc)
-    {
-        IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map((task_t)R0Process, kIOMapAnywhere,
-                                                              kIOMapAnywhere | kIOMapDefaultCache);
-        if (pMemMap)
-        {
-            IOVirtualAddress VirtAddr = pMemMap->getVirtualAddress();
-            void *pv = (void *)(uintptr_t)VirtAddr;
-            if ((uintptr_t)pv == VirtAddr)
-            {
-                /*
-                 * Create the IPRT memory object.
-                 */
-                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING,
-                                                                                pv, pMemToMapDarwin->Core.cb);
-                if (pMemNt)
-                {
-                    pMemNt->Core.u.Mapping.R0Process = R0Process;
-                    pMemNt->pMemMap = pMemMap;
-                    *ppMem = &pMemNt->Core;
-                    return VINF_SUCCESS;
-                }
-
-                rc = VERR_NO_MEMORY;
-            }
-            else
-                rc = VERR_ADDRESS_TOO_BIG;
-            pMemMap->release();
-        }
-        else
-            rc = VERR_MAP_FAILED;
-    }
-    return rc;
+    AssertReturn(R0Process == RTR0ProcHandleSelf(), VERR_NOT_SUPPORTED);
+    return rtR0MemObjNtMap(ppMem, pMemToMap, (void *)R3PtrFixed, uAlignment, fProt, R0Process);
 }
 
 
-RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPage)
+RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
 {
-    RTHCPHYS            PhysAddr;
-    PRTR0MEMOBJNT   pMemNt = (PRTR0MEMOBJNT)pMem;
+    PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)pMem;
 
-#ifdef USE_VM_MAP_WIRE
-    /*
-     * Locked memory doesn't have a memory descriptor and
-     * needs to be handled differently.
-     */
-    if (pMemNt->Core.enmType == RTR0MEMOBJTYPE_LOCK)
+    if (pMemNt->cMdls)
     {
-        ppnum_t PgNo;
-        if (pMemNt->Core.u.Lock.R0Process == NIL_RTR0PROCESS)
-            PgNo = pmap_find_phys(kernel_pmap, (uintptr_t)pMemNt->Core.pv + iPage * PAGE_SIZE);
-        else
+        if (pMemNt->cMdls == 1)
         {
-            /*
-             * From what I can tell, Apple seems to have locked up the all the
-             * available interfaces that could help us obtain the pmap_t of a task
-             * or vm_map_t.
-
-             * So, we'll have to figure out where in the vm_map_t  structure it is
-             * and read it our selves. ASSUMING that kernel_pmap is pointed to by
-             * kernel_map->pmap, we scan kernel_map to locate the structure offset.
-             * Not nice, but it will hopefully do the job in a reliable manner...
-             *
-             * (get_task_pmap, get_map_pmap or vm_map_pmap is what we really need btw.)
-             */
-            static int s_offPmap = -1;
-            if (RT_UNLIKELY(s_offPmap == -1))
-            {
-                pmap_t const *p = (pmap_t *)kernel_map;
-                pmap_t const * const pEnd = p + 64;
-                for (; p < pEnd; p++)
-                    if (*p == kernel_pmap)
-                    {
-                        s_offPmap = (uintptr_t)p - (uintptr_t)kernel_map;
-                        break;
-                    }
-                AssertReturn(s_offPmap >= 0, NIL_RTHCPHYS);
-            }
-            pmap_t Pmap = *(pmap_t *)((uintptr_t)get_task_map((task_t)pMemNt->Core.u.Lock.R0Process) + s_offPmap);
-            PgNo = pmap_find_phys(Pmap, (uintptr_t)pMemNt->Core.pv + iPage * PAGE_SIZE);
+            PPFN_NUMBER paPfns = MmGetMdlPfnArray(pMemNt->apMdls[0]);
+            return (RTHCPHYS)paPfns[iPage] << PAGE_SHIFT;
         }
 
-        AssertReturn(PgNo, NIL_RTHCPHYS);
-        PhysAddr = (RTHCPHYS)PgNo << PAGE_SHIFT;
-        Assert((PhysAddr >> PAGE_SHIFT) == PgNo);
+        size_t iMdl = iPage / (MAX_LOCK_MEM_SIZE >> PAGE_SHIFT);
+        size_t iMdlPfn = iPage % (MAX_LOCK_MEM_SIZE >> PAGE_SHIFT);
+        PPFN_NUMBER paPfns = MmGetMdlPfnArray(pMemNt->apMdls[iMdl]);
+        return (RTHCPHYS)paPfns[iMdlPfn] << PAGE_SHIFT;
     }
-    else
-#endif /* USE_VM_MAP_WIRE */
+
+    switch (pMemNt->Core.enmType)
     {
-        /*
-         * Get the memory descriptor.
-         */
-        IOMemoryDescriptor *pMemDesc = pMemNt->pMemDesc;
-        if (!pMemDesc)
-            pMemDesc = pMemNt->pMemMap->getMemoryDescriptor();
-        AssertReturn(pMemDesc, NIL_RTHCPHYS);
+        case RTR0MEMOBJTYPE_MAPPING:
+            return rtR0MemObjNativeGetPagePhysAddr(pMemNt->Core.uRel.Child.pParent, iPage);
 
-        /*
-         * If we've got a memory descriptor, use getPhysicalSegment64().
-         */
-        addr64_t Addr = pMemDesc->getPhysicalSegment64(iPage * PAGE_SIZE, NULL);
-        AssertMsgReturn(Addr, ("iPage=%u\n", iPage), NIL_RTHCPHYS);
-        PhysAddr = Addr;
-        AssertMsgReturn(PhysAddr == Addr, ("PhysAddr=%VHp Addr=%RX64\n", PhysAddr, (uint64_t)Addr), NIL_RTHCPHYS);
+        case RTR0MEMOBJTYPE_PHYS:
+            return pMemNt->Core.u.Phys.PhysBase + (iPage << PAGE_SHIFT);
+
+        case RTR0MEMOBJTYPE_PAGE:
+        case RTR0MEMOBJTYPE_PHYS_NC:
+        case RTR0MEMOBJTYPE_LOW:
+        case RTR0MEMOBJTYPE_CONT:
+        case RTR0MEMOBJTYPE_LOCK:
+        default:
+            AssertMsgFailed(("%d\n", pMemNt->Core.enmType));
+        case RTR0MEMOBJTYPE_RES_VIRT:
+            return NIL_RTHCPHYS;
     }
-
-    return PhysAddr;
 }
 
