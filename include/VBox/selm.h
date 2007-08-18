@@ -256,6 +256,19 @@ typedef const SELMSELINFO *PCSELMSELINFO;
  */
 SELMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL);
 
+/** @def SELMSelInfoIsExpandDown
+ * Tests whether the selector info describes an expand-down selector or now.
+ *
+ * @returns true / false.
+ * @param   pSelInfo        The selector info.
+ *
+ * @remark  Realized as a macro for reasons of speed/lazyness and to avoid
+ *          dragging in VBox/x86.h for now.
+ */
+#define SELMSelInfoIsExpandDown(pSelInfo) \
+    (   (pSelInfo)->Raw.Gen.u1DescType \
+     && ((pSelInfo)->Raw.Gen.u4Type & (X86_SEL_TYPE_DOWN | X86_SEL_TYPE_CODE)) == X86_SEL_TYPE_DOWN)
+
 
 
 #ifdef IN_RING3

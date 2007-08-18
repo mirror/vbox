@@ -1,6 +1,6 @@
+/** $Id$ */
 /** @file
- *
- * Debugger Console.
+ * DBGC - Debugger Console.
  */
 
 /*
@@ -6234,14 +6234,8 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
                 rc = SELMR3GetSelectorInfo(pDbgc->pVM, Address.Sel, &SelInfo);
                 if (VBOX_SUCCESS(rc))
                 {
-                    RTGCUINTPTR cb;
-                    /** @todo Add SELMSelInfoIsExpandDown() */
-                    if (    (SelInfo.Raw.Gen.u4Type & X86_SEL_TYPE_DOWN)
-                        &&  SelInfo.Raw.Gen.u1DescType
-                        &&  (   SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN
-                             || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RO_DOWN_ACC
-                             || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN
-                             || SelInfo.Raw.Gen.u4Type == X86_SEL_TYPE_RW_DOWN_ACC))
+                    RTGCUINTPTR cb; /* -1 byte */
+                    if (SELMSelInfoIsExpandDown(&SelInfo))
                     {
                         if (    !SelInfo.Raw.Gen.u1Granularity
                             &&  Address.off > UINT16_C(0xffff))
@@ -6252,7 +6246,7 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
                     }
                     else
                     {
-                        if (Address.off >= SelInfo.cbLimit)
+                        if (Address.off > SelInfo.cbLimit)
                             return VERR_OUT_OF_SELECTOR_BOUNDS;
                         cb = SelInfo.cbLimit - Address.off;
                     }
@@ -6260,7 +6254,7 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
                     {
                         if (!pcbRead)
                             return VERR_OUT_OF_SELECTOR_BOUNDS;
-                        cbRead = cb;
+                        cbRead = cb + 1;
                     }
                 }
 
