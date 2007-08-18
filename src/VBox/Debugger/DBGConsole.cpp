@@ -439,11 +439,14 @@ static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
 static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdLog(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdLogDest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
@@ -595,6 +598,23 @@ static const DBGCVARDESC    g_aArgDumpMem[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start dumping memory." },
+};
+
+
+/** 'dg', 'dga', 'dl', 'dla', 'dt' arguments. */
+static const DBGCVARDESC    g_aArgDumpDT[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "sel",          "Selector or selector range." },
+    {  0,           ~0,         DBGCVAR_CAT_POINTER,    0,                              "address",      "Far address which selector should be dumped." },
+};
+
+
+/** 'di', 'dia' arguments. */
+static const DBGCVARDESC    g_aArgDumpIDT[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "int",          "The interrupt vector or interrupt vector range." },
 };
 
 
@@ -764,6 +784,12 @@ static const DBGCCMD    g_aCmds[] =
     { "da",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory as ascii string." },
     { "db",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in bytes." },
     { "dd",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in double words." },
+    { "dg",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT)." },
+    { "dga",        0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT) including not-present entries." },
+    { "di",         0,       ~0,        &g_aArgDumpIDT[0],  ELEMENTS(g_aArgDumpIDT),    NULL,               0,          dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT)." },
+    { "dia",        0,       ~0,        &g_aArgDumpIDT[0],  ELEMENTS(g_aArgDumpIDT),    NULL,               0,          dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT) including not-present entries." },
+    { "dl",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT)." },
+    { "dla",        0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT) including not-present entries." },
     { "dpd",        0,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the default context." },
     { "dpda",       0,        1,        &g_aArgDumpPDAddr[0],ELEMENTS(g_aArgDumpPDAddr),NULL,               0,          dbgcCmdDumpPageDir, "[addr]",               "Dumps specified page directory." },
     { "dpdb",       1,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDirBoth, "[addr] [index]",   "Dumps page directory entries of the guest and the hypervisor. " },
@@ -775,6 +801,7 @@ static const DBGCCMD    g_aCmds[] =
     { "dptg",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the guest." },
     { "dpth",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the hypervisor." },
     { "dq",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in quad words." },
+    { "dt",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpTSS,     "[sel [..]]",           "Dump the task switch segment (TSS)." },
     { "dw",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in words." },
     { "exit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
     { "format",     1,        1,        &g_aArgAny[0],      ELEMENTS(g_aArgAny),        NULL,               0,          dbgcCmdFormat,      "",                     "Evaluates an expression and formats it." },
@@ -2490,9 +2517,410 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
 }
 
 
+static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP /*pCmdHlp*/, PCX86DESC64 /*pDesc*/, unsigned /*iEntry*/, bool /* fHyper */, bool * /*fDblEntry*/)
+{
+    /* GUEST64 */
+    return VINF_SUCCESS;
+}
+
 
 /**
- * The 'dd', 'dw' and 'db' commands.
+ * Wroker function that displays one descriptor entry (GDT, LDT, IDT).
+ *
+ * @returns pfnPrintf status code.
+ * @param   pCmdHlp     The DBGC command helpers.
+ * @param   pDesc       The descriptor to display.
+ * @param   iEntry      The descriptor entry number.
+ * @param   fHyper      Whether the selector belongs to the hypervisor or not.
+ */
+static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned iEntry, bool fHyper)
+{
+    int rc;
+
+    const char *pszHyper = fHyper ? " HYPER" : "";
+    const char *pszPresent = pDesc->Gen.u1Present ? "P " : "NP";
+    if (pDesc->Gen.u1DescType)
+    {
+        static const char * const s_apszTypes[] =
+        {
+            "DataRO", /* 0 Read-Only */
+            "DataRO", /* 1 Read-Only - Accessed */
+            "DataRW", /* 2 Read/Write  */
+            "DataRW", /* 3 Read/Write - Accessed  */
+            "DownRO", /* 4 Expand-down, Read-Only  */
+            "DownRO", /* 5 Expand-down, Read-Only - Accessed */
+            "DownRW", /* 6 Expand-down, Read/Write  */
+            "DownRO", /* 7 Expand-down, Read/Write - Accessed */
+            "CodeEO", /* 8 Execute-Only */
+            "CodeEO", /* 9 Execute-Only - Accessed */
+            "CodeER", /* A Execute/Readable */
+            "CodeER", /* B Execute/Readable - Accessed */
+            "ConfE0", /* C Conforming, Execute-Only */
+            "ConfE0", /* D Conforming, Execute-Only - Accessed */
+            "ConfER", /* E Conforming, Execute/Readable */
+            "ConfER"  /* F Conforming, Execute/Readable - Accessed */
+        };
+        const char *pszAccessed = pDesc->Gen.u4Type & BIT(0) ? "A " : "NA";
+        const char *pszGranularity = pDesc->Gen.u1Granularity ? "G" : " ";
+        const char *pszBig = pDesc->Gen.u1DefBig ? "BIG" : "   ";
+        uint32_t u32Base = pDesc->Gen.u16BaseLow
+                         | ((uint32_t)pDesc->Gen.u8BaseHigh1 << 16)
+                         | ((uint32_t)pDesc->Gen.u8BaseHigh2 << 24);
+        uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+        if (pDesc->Gen.u1Granularity)
+            cbLimit <<= PAGE_SHIFT;
+
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d R=%d%s\n",
+                                iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
+                                pDesc->Gen.u2Dpl, pszPresent, pszAccessed, pszGranularity, pszBig,
+                                pDesc->Gen.u1Available, pDesc->Gen.u1Reserved, pszHyper);
+    }
+    else
+    {
+        static const char * const s_apszTypes[] =
+        {
+            "Ill-0 ", /* 0 0000 Reserved (Illegal) */
+            "Tss16A", /* 1 0001 Available 16-bit TSS */
+            "LDT   ", /* 2 0010 LDT */
+            "Tss16B", /* 3 0011 Busy 16-bit TSS */
+            "Call16", /* 4 0100 16-bit Call Gate */
+            "TaskG ", /* 5 0101 Task Gate */
+            "Int16 ", /* 6 0110 16-bit Interrupt Gate */
+            "Trap16", /* 7 0111 16-bit Trap Gate */
+            "Ill-8 ", /* 8 1000 Reserved (Illegal) */
+            "Tss32A", /* 9 1001 Available 32-bit TSS */
+            "Ill-A ", /* A 1010 Reserved (Illegal) */
+            "Tss32B", /* B 1011 Busy 32-bit TSS */
+            "Call32", /* C 1100 32-bit Call Gate */
+            "Ill-D ", /* D 1101 Reserved (Illegal) */
+            "Int32 ", /* E 1110 32-bit Interrupt Gate */
+            "Trap32"  /* F 1111 32-bit Trap Gate */
+        };
+        switch (pDesc->Gen.u4Type)
+        {
+            /* raw */
+            case X86_SEL_TYPE_SYS_UNDEFINED:
+            case X86_SEL_TYPE_SYS_UNDEFINED2:
+            case X86_SEL_TYPE_SYS_UNDEFINED4:
+            case X86_SEL_TYPE_SYS_UNDEFINED3:
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s %.8Rhxs   DPL=%d %s%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], pDesc,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper);
+                break;
+
+            case X86_SEL_TYPE_SYS_286_TSS_AVAIL:
+            case X86_SEL_TYPE_SYS_386_TSS_AVAIL:
+            case X86_SEL_TYPE_SYS_286_TSS_BUSY:
+            case X86_SEL_TYPE_SYS_386_TSS_BUSY:
+            case X86_SEL_TYPE_SYS_LDT:
+            {
+                const char *pszGranularity = pDesc->Gen.u1Granularity ? "G" : " ";
+                const char *pszBusy = pDesc->Gen.u4Type & BIT(1) ? "B " : "NB";
+                const char *pszBig = pDesc->Gen.u1DefBig ? "BIG" : "   ";
+                uint32_t u32Base = pDesc->Gen.u16BaseLow
+                                 | ((uint32_t)pDesc->Gen.u8BaseHigh1 << 16)
+                                 | ((uint32_t)pDesc->Gen.u8BaseHigh2 << 24);
+                uint32_t cbLimit = pDesc->Gen.u16LimitLow | (pDesc->Gen.u4LimitHigh << 16);
+                if (pDesc->Gen.u1Granularity)
+                    cbLimit <<= PAGE_SHIFT;
+
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d R=%d%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszBusy, pszGranularity, pszBig,
+                                        pDesc->Gen.u1Available, pDesc->Gen.u1Reserved | (pDesc->Gen.u1DefBig << 1),
+                                        pszHyper);
+                break;
+            }
+
+            case X86_SEL_TYPE_SYS_TASK_GATE:
+            {
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s TSS=%04x                  DPL=%d %s%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], pDesc->au16[1],
+                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper);
+                break;
+            }
+
+            case X86_SEL_TYPE_SYS_286_CALL_GATE:
+            case X86_SEL_TYPE_SYS_386_CALL_GATE:
+            {
+                unsigned cParams = pDesc->au8[0] & 0x1f;
+                const char *pszCountOf = pDesc->Gen.u4Type & BIT(3) ? "DC" : "WC";
+                RTSEL sel = pDesc->au16[1];
+                uint32_t off = pDesc->au16[0] | ((uint32_t)pDesc->au16[3] << 16);
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s %s=%d%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
+                break;
+            }
+
+            case X86_SEL_TYPE_SYS_286_INT_GATE:
+            case X86_SEL_TYPE_SYS_386_INT_GATE:
+            case X86_SEL_TYPE_SYS_286_TRAP_GATE:
+            case X86_SEL_TYPE_SYS_386_TRAP_GATE:
+            {
+                RTSEL sel = pDesc->au16[1];
+                uint32_t off = pDesc->au16[0] | ((uint32_t)pDesc->au16[3] << 16);
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s%s\n",
+                                        iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
+                                        pDesc->Gen.u2Dpl, pszPresent, pszHyper);
+                break;
+            }
+
+            /* impossible, just it's necessary to keep gcc happy. */
+            default:
+                return VINF_SUCCESS;
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * The 'dg', 'dga', 'dl' and 'dla' commands.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+
+    /*
+     * Get the CPU mode, check which command variation this is
+     * and fix a default parameter if needed.
+     */
+    CPUMMODE enmMode = CPUMGetGuestMode(pVM);
+    bool fGdt = pCmd->pszCmd[1] == 'g';
+    bool fAll = pCmd->pszCmd[2] == 'a';
+
+    DBGCVAR Var;
+    if (!cArgs)
+    {
+        cArgs = 1;
+        paArgs = &Var;
+        Var.enmType = DBGCVAR_TYPE_NUMBER;
+        Var.u.u64Number = fGdt ? 0 : 4;
+        Var.enmRangeType = DBGCVAR_RANGE_ELEMENTS;
+        Var.u64Range = 1024;
+    }
+
+    /*
+     * Process the arguments.
+     */
+    for (unsigned i = 0; i < cArgs; i++)
+    {
+         /*
+          * Retrive the selector value from the argument.
+          * The parser may confuse pointers and numbers if more than one
+          * argument is given, that that into account.
+          */
+        /* check that what've got makes sense as we don't trust the parser yet. */
+        if (    paArgs[i].enmType != DBGCVAR_TYPE_NUMBER
+            &&  !DBGCVAR_ISPOINTER(paArgs[i].enmType))
+            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number or pointer type but %d.\n", i, paArgs[i].enmType);
+        unsigned u64;
+        unsigned cSels = 1;
+        switch (paArgs[i].enmType)
+        {
+            case DBGCVAR_TYPE_NUMBER:
+                u64 = paArgs[i].u.u64Number;
+                if (paArgs[i].enmRangeType != DBGCVAR_RANGE_NONE)
+                    cSels = RT_MIN(paArgs[i].u64Range, 1024);
+                break;
+            case DBGCVAR_TYPE_GC_FAR:   u64 = paArgs[i].u.GCFar.sel; break;
+            case DBGCVAR_TYPE_GC_FLAT:  u64 = paArgs[i].u.GCFlat; break;
+            case DBGCVAR_TYPE_GC_PHYS:  u64 = paArgs[i].u.GCPhys; break;
+            case DBGCVAR_TYPE_HC_FAR:   u64 = paArgs[i].u.HCFar.sel; break;
+            case DBGCVAR_TYPE_HC_FLAT:  u64 = (uintptr_t)paArgs[i].u.pvHCFlat; break;
+            case DBGCVAR_TYPE_HC_PHYS:  u64 = paArgs[i].u.HCPhys; break;
+            default:                    u64 = _64K; break;
+        }
+        if (u64 < _64K)
+        {
+            unsigned Sel = (RTSEL)u64;
+
+            /*
+             * Dump the specified range.
+             */
+            bool fSingle = cSels == 1;
+            while (     cSels-- > 0
+                   &&   Sel < _64K)
+            {
+                SELMSELINFO SelInfo;
+                int rc = SELMR3GetSelectorInfo(pVM, Sel, &SelInfo);
+                if (RT_SUCCESS(rc))
+                {
+                    if (SelInfo.fRealMode)
+                        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x RealM   Bas=%04x     Lim=%04x\n",
+                                                Sel, (unsigned)SelInfo.GCPtrBase, (unsigned)SelInfo.cbLimit);
+                    else if (fAll || fSingle || SelInfo.Raw.Gen.u1Present)
+                    {
+                        if (enmMode == CPUMMODE_PROTECTED)
+                            rc = dbgcCmdDumpDTWorker32(pCmdHlp, (PX86DESC)&SelInfo.Raw, Sel, SelInfo.fHyper);
+                        else
+                        {
+                            bool fDblSkip = false;
+                            rc = dbgcCmdDumpDTWorker64(pCmdHlp, (PX86DESC64)&SelInfo.Raw, Sel, SelInfo.fHyper, &fDblSkip);
+                            if (fDblSkip)
+                                Sel += 4;
+                        }
+                    }
+                }
+                else
+                {
+                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %Vrc\n", Sel, rc);
+                    if (!fAll)
+                        return rc;
+                }
+                if (RT_FAILURE(rc))
+                    return rc;
+
+                /* next */
+                Sel += 4;
+            }
+        }
+        else
+            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: %llx is out of bounds\n", u64);
+    }
+
+    NOREF(pResult);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The 'di' and 'dia' commands.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+
+    /*
+     * Establish some stuff like the current IDTR and CPU mode,
+     * and fix a default parameter.
+     */
+    uint16_t cbLimit;
+    RTGCUINTPTR GCPtrBase = CPUMGetGuestIDTR(pVM, &cbLimit);
+    CPUMMODE enmMode = CPUMGetGuestMode(pVM);
+    size_t cbEntry;
+    switch (enmMode)
+    {
+        case CPUMMODE_REAL:         cbEntry = sizeof(RTFAR16); break;
+        case CPUMMODE_PROTECTED:    cbEntry = sizeof(X86DESC); break;
+        case CPUMMODE_LONG:         cbEntry = sizeof(X86DESC64); break;
+        default:
+            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid CPU mode %d.\n", enmMode);
+    }
+
+    bool fAll = pCmd->pszCmd[2] == 'a';
+    DBGCVAR Var;
+    if (!cArgs)
+    {
+        cArgs = 1;
+        paArgs = &Var;
+        Var.enmType = DBGCVAR_TYPE_NUMBER;
+        Var.u.u64Number = 0;
+        Var.enmRangeType = DBGCVAR_RANGE_ELEMENTS;
+        Var.u64Range = 256;
+    }
+
+    /*
+     * Process the arguments.
+     */
+    for (unsigned i = 0; i < cArgs; i++)
+    {
+        /* check that what've got makes sense as we don't trust the parser yet. */
+        if (paArgs[i].enmType != DBGCVAR_TYPE_NUMBER)
+            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number type but %d.\n", i, paArgs[i].enmType);
+        if (paArgs[i].u.u64Number < 256)
+        {
+            RTGCUINTPTR iInt = paArgs[i].u.u64Number;
+            unsigned cInts = paArgs[i].enmRangeType != DBGCVAR_RANGE_NONE
+                           ? paArgs[i].u64Range
+                           : 1;
+            bool fSingle = cInts == 1;
+            while (     cInts-- > 0
+                   &&   iInt < 256)
+            {
+                /*
+                 * Try read it.
+                 */
+                union
+                {
+                    RTFAR16 Real;
+                    X86DESC Prot;
+                    X86DESC64 Long;
+                } u;
+                if (iInt * cbEntry  + (cbEntry - 1) > cbLimit)
+                {
+                    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x not within the IDT\n", (unsigned)iInt);
+                    if (!fAll && !fSingle)
+                        return VINF_SUCCESS;
+                }
+                DBGCVAR AddrVar;
+                AddrVar.enmType = DBGCVAR_TYPE_GC_FLAT;
+                AddrVar.u.GCFlat = GCPtrBase + iInt * cbEntry;
+                AddrVar.enmRangeType = DBGCVAR_RANGE_NONE;
+                int rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &u, cbEntry, &AddrVar, NULL);
+                if (VBOX_FAILURE(rc))
+                    return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading IDT entry %#04x.\n", (unsigned)iInt);
+
+                /*
+                 * Display it.
+                 */
+                switch (enmMode)
+                {
+                    case CPUMMODE_REAL:
+                        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %RTfp16\n", (unsigned)iInt, u.Real);
+                        /** @todo resolve 16:16 IDTE to a symbol */
+                        break;
+                    case CPUMMODE_PROTECTED:
+                        if (fAll || fSingle || u.Prot.Gen.u1Present)
+                            rc = dbgcCmdDumpDTWorker32(pCmdHlp, &u.Prot, iInt, false);
+                        break;
+                    case CPUMMODE_LONG:
+                        if (fAll || fSingle || u.Long.Gen.u1Present)
+                            rc = dbgcCmdDumpDTWorker64(pCmdHlp, &u.Long, iInt, false, NULL);
+                        break;
+                    default: break; /* to shut up gcc */
+                }
+                if (RT_FAILURE(rc))
+                    return rc;
+
+                /* next */
+                iInt++;
+            }
+        }
+        else
+            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: %llx is out of bounds (max 256)\n", paArgs[i].u.u64Number);
+    }
+
+    NOREF(pResult);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The 'da', 'dq', 'dd', 'dw' and 'db' commands.
  *
  * @returns VBox status.
  * @param   pCmd        Pointer to the command descriptor (as registered).
@@ -3071,6 +3499,23 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pC
         return rc1;
     NOREF(pCmd); NOREF(cArgs); NOREF(pResult);
     return rc2;
+}
+
+
+/**
+ * The 'dt' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, PVM /*pVM*/, PCDBGCVAR /*paArgs*/, unsigned /*cArgs*/, PDBGCVAR /*pResult*/)
+{
+    /** @todo */
+    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "dt is not implemented yet, feel free to do it. \n");
 }
 
 
@@ -5792,7 +6237,7 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBu
                             return VERR_OUT_OF_SELECTOR_BOUNDS;
                         cb = (SelInfo.Raw.Gen.u1Granularity ? UINT32_C(0xffffffff) : UINT32_C(0xffff)) - Address.off;
                     }
-                    else 
+                    else
                     {
                         if (Address.off >= SelInfo.cbLimit)
                             return VERR_OUT_OF_SELECTOR_BOUNDS;
