@@ -166,7 +166,14 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
 /**
  * Allocates non-contiguous page aligned physical memory without (necessarily) any kernel mapping.
  *
+ * This API is for allocating huge amounts of pages and will return
+ * VERR_NOT_SUPPORTED if this cannot be implemented in a satisfactory
+ * manner.
+ *
  * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if it's not possible to allocated unmapped
+ *          physical memory on this platform. The caller should expect
+ *          this error and have a fallback strategy for it.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
  * @param   PhysHighest     The highest permittable address (inclusive).
@@ -189,6 +196,10 @@ RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb)
 
 /**
  * Reserves kernel virtual address space.
+ *
+ * If this function fails with VERR_NOT_SUPPORTED, the idea is that you
+ * can use RTR0MemObjEnterPhys() + RTR0MemObjMapKernel() as a fallback if
+ * you have a safe physical address range to make use of...
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
