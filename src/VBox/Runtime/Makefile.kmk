@@ -763,6 +763,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/semaphore-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c
+## @todo thread2-r0drv-linux.c, timer-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
@@ -778,7 +779,9 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/thread-r0drv-nt.cpp \
 	r0drv/nt/thread2-r0drv-nt.cpp \
 	r0drv/nt/time-r0drv-nt.cpp \
+	thread.cpp \
 	string/strncmp.cpp
+## @todo timer-r0drv-nt.cpp and assert-r0drv-nt.cpp
 
 RuntimeR0Drv_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
