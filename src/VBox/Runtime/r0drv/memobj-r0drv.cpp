@@ -94,12 +94,14 @@ void rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem)
  */
 static int rtR0MemObjLink(PRTR0MEMOBJINTERNAL pParent, PRTR0MEMOBJINTERNAL pChild)
 {
+    uint32_t i;
+
     /* sanity */
     Assert(rtR0MemObjIsMapping(pChild));
     Assert(!rtR0MemObjIsMapping(pParent));
 
     /* expand the array? */
-    const uint32_t i = pParent->uRel.Parent.cMappings;
+    i = pParent->uRel.Parent.cMappings;
     if (i >= pParent->uRel.Parent.cMappingsAllocated)
     {
         void *pv = RTMemRealloc(pParent->uRel.Parent.papMappings,
@@ -129,8 +131,9 @@ static int rtR0MemObjLink(PRTR0MEMOBJINTERNAL pParent, PRTR0MEMOBJINTERNAL pChil
 RTR0DECL(bool) RTR0MemObjIsMapping(RTR0MEMOBJ MemObj)
 {
     /* Validate the object handle. */
+    PRTR0MEMOBJINTERNAL pMem;
     AssertPtrReturn(MemObj, false);
-    PRTR0MEMOBJINTERNAL pMem = (PRTR0MEMOBJINTERNAL)MemObj;
+    pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), false);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), false);
 
@@ -149,8 +152,9 @@ RTR0DECL(bool) RTR0MemObjIsMapping(RTR0MEMOBJ MemObj)
 RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
 {
     /* Validate the object handle. */
+    PRTR0MEMOBJINTERNAL pMem;
     AssertPtrReturn(MemObj, 0);
-    PRTR0MEMOBJINTERNAL pMem = (PRTR0MEMOBJINTERNAL)MemObj;
+    pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), 0);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), 0);
 
@@ -174,8 +178,9 @@ RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
 RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
 {
     /* Validate the object handle. */
+    PRTR0MEMOBJINTERNAL pMem;
     AssertPtrReturn(MemObj, NIL_RTR3PTR);
-    PRTR0MEMOBJINTERNAL pMem = (PRTR0MEMOBJINTERNAL)MemObj;
+    pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), NIL_RTR3PTR);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), NIL_RTR3PTR);
     AssertMsgReturn(    (   pMem->enmType == RTR0MEMOBJTYPE_MAPPING
@@ -201,8 +206,9 @@ RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
 RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
 {
     /* Validate the object handle. */
+    PRTR0MEMOBJINTERNAL pMem;
     AssertPtrReturn(MemObj, 0);
-    PRTR0MEMOBJINTERNAL pMem = (PRTR0MEMOBJINTERNAL)MemObj;
+    pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), 0);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), 0);
 
@@ -224,13 +230,15 @@ RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
 RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage)
 {
     /* Validate the object handle. */
+    PRTR0MEMOBJINTERNAL pMem;
+    size_t cPages;
     AssertPtrReturn(MemObj, NIL_RTHCPHYS);
-    PRTR0MEMOBJINTERNAL pMem = (PRTR0MEMOBJINTERNAL)MemObj;
+    pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, NIL_RTHCPHYS);
     AssertReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, NIL_RTHCPHYS);
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), NIL_RTHCPHYS);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), NIL_RTHCPHYS);
-    const size_t cPages = (pMem->cb >> PAGE_SHIFT);
+    cPages = (pMem->cb >> PAGE_SHIFT);
     if (iPage >= cPages)
     {
         /* permit: while (RTR0MemObjGetPagePhysAddr(pMem, iPage++) != NIL_RTHCPHYS) {} */
@@ -267,10 +275,13 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
     /*
      * Validate the object handle.
      */
+    PRTR0MEMOBJINTERNAL pMem;
+    int rc;
+
     if (MemObj == NIL_RTR0MEMOBJ)
         return VINF_SUCCESS;
     AssertPtrReturn(MemObj, VERR_INVALID_HANDLE);
-    PRTR0MEMOBJINTERNAL pMem = (PRTR0MEMOBJINTERNAL)MemObj;
+    pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, VERR_INVALID_HANDLE);
 
@@ -296,7 +307,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
             AssertFatal(rtR0MemObjIsMapping(pChild));
 
             /* free the mapping. */
-            int rc = rtR0MemObjNativeFree(pChild);
+            rc = rtR0MemObjNativeFree(pChild);
             if (RT_FAILURE(rc))
             {
                 Log(("RTR0MemObjFree: failed to free mapping %p: %p %#zx; rc=%Vrc\n", pChild, pChild->pv, pChild->cb, rc));
@@ -309,7 +320,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
     /*
      * Free this object.
      */
-    int rc = rtR0MemObjNativeFree(pMem);
+    rc = rtR0MemObjNativeFree(pMem);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -318,6 +329,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
         if (rtR0MemObjIsMapping(pMem))
         {
             PRTR0MEMOBJINTERNAL pParent = pMem->uRel.Child.pParent;
+            uint32_t i;
 
             /* sanity checks */
             AssertPtr(pParent);
@@ -328,7 +340,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
             AssertPtr(pParent->uRel.Parent.papMappings);
 
             /* locate and remove from the array of mappings. */
-            uint32_t i = pParent->uRel.Parent.cMappings;
+            i = pParent->uRel.Parent.cMappings;
             while (i-- > 0)
             {
                 if (pParent->uRel.Parent.papMappings[i] == pMem)
@@ -372,10 +384,10 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
 RTR0DECL(int) RTR0MemObjAllocPage(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
 
     /* do the allocation. */
@@ -396,10 +408,10 @@ RTR0DECL(int) RTR0MemObjAllocPage(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
 RTR0DECL(int) RTR0MemObjAllocLow(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
 
     /* do the allocation. */
@@ -420,10 +432,10 @@ RTR0DECL(int) RTR0MemObjAllocLow(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutabl
 RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
 
     /* do the allocation. */
@@ -445,12 +457,12 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
 RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb + (R3Ptr & PAGE_OFFSET_MASK), PAGE_SIZE);
+    RTR3PTR const R3PtrAligned = (R3Ptr & ~(RTR3PTR)PAGE_OFFSET_MASK);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb + (R3Ptr & PAGE_OFFSET_MASK), PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
-    RTR3PTR const R3PtrAligned = (R3Ptr & ~(RTR3PTR)PAGE_OFFSET_MASK);
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
 
@@ -472,12 +484,12 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, 
 RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb + ((uintptr_t)pv & PAGE_OFFSET_MASK), PAGE_SIZE);
+    void * const pvAligned = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb + ((uintptr_t)pv & PAGE_OFFSET_MASK), PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
-    void * const pvAligned = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
     AssertPtrReturn(pvAligned, VERR_INVALID_POINTER);
 
     /* do the allocation. */
@@ -497,10 +509,10 @@ RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
 RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
 
@@ -521,10 +533,10 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
 RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
 
@@ -547,13 +559,13 @@ RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
 RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb + (Phys & PAGE_OFFSET_MASK), PAGE_SIZE);
+    const RTHCPHYS PhysAligned = Phys & ~(RTHCPHYS)PAGE_OFFSET_MASK;
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb + (Phys & PAGE_OFFSET_MASK), PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(Phys != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
-    const RTHCPHYS PhysAligned = Phys & ~(RTHCPHYS)PAGE_OFFSET_MASK;
 
     /* do the allocation. */
     return rtR0MemObjNativeEnterPhys(pMemObj, PhysAligned, cbAligned);
@@ -573,13 +585,13 @@ RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb)
 RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t cb, size_t uAlignment)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     if (uAlignment == 0)
         uAlignment = PAGE_SIZE;
     AssertReturn(uAlignment == PAGE_SIZE || uAlignment == _2M || uAlignment == _4M, VERR_INVALID_PARAMETER);
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     if (pvFixed != (void *)-1)
         AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
@@ -603,13 +615,13 @@ RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t
 RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     if (uAlignment == 0)
         uAlignment = PAGE_SIZE;
     AssertReturn(uAlignment == PAGE_SIZE || uAlignment == _2M || uAlignment == _4M, VERR_INVALID_PARAMETER);
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     if (R3PtrFixed != (RTR3PTR)-1)
         AssertReturn(!(R3PtrFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
@@ -635,10 +647,13 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
 RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
     /* sanity checks. */
+    PRTR0MEMOBJINTERNAL pMemToMap;
+    PRTR0MEMOBJINTERNAL pNew;
+    int rc;
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertPtrReturn(MemObjToMap, VERR_INVALID_HANDLE);
-    PRTR0MEMOBJINTERNAL pMemToMap = (PRTR0MEMOBJINTERNAL)MemObjToMap;
+    pMemToMap = (PRTR0MEMOBJINTERNAL)MemObjToMap;
     AssertReturn(pMemToMap->u32Magic == RTR0MEMOBJ_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pMemToMap->enmType > RTR0MEMOBJTYPE_INVALID && pMemToMap->enmType < RTR0MEMOBJTYPE_END, VERR_INVALID_HANDLE);
     AssertReturn(!rtR0MemObjIsMapping(pMemToMap), VERR_INVALID_PARAMETER);
@@ -653,8 +668,7 @@ RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, v
 
 
     /* do the mapping. */
-    PRTR0MEMOBJINTERNAL pNew;
-    int rc = rtR0MemObjNativeMapKernel(&pNew, pMemToMap, pvFixed, uAlignment, fProt);
+    rc = rtR0MemObjNativeMapKernel(&pNew, pMemToMap, pvFixed, uAlignment, fProt);
     if (RT_SUCCESS(rc))
     {
         /* link it. */
@@ -691,10 +705,13 @@ RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, v
 RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     /* sanity checks. */
+    PRTR0MEMOBJINTERNAL pMemToMap;
+    PRTR0MEMOBJINTERNAL pNew;
+    int rc;
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
+    pMemToMap = (PRTR0MEMOBJINTERNAL)MemObjToMap;
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertPtrReturn(MemObjToMap, VERR_INVALID_HANDLE);
-    PRTR0MEMOBJINTERNAL pMemToMap = (PRTR0MEMOBJINTERNAL)MemObjToMap;
     AssertReturn(pMemToMap->u32Magic == RTR0MEMOBJ_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pMemToMap->enmType > RTR0MEMOBJTYPE_INVALID && pMemToMap->enmType < RTR0MEMOBJTYPE_END, VERR_INVALID_HANDLE);
     AssertReturn(!rtR0MemObjIsMapping(pMemToMap), VERR_INVALID_PARAMETER);
@@ -710,8 +727,7 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR
         R0Process = RTR0ProcHandleSelf();
 
     /* do the mapping. */
-    PRTR0MEMOBJINTERNAL pNew;
-    int rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process);
+    rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process);
     if (RT_SUCCESS(rc))
     {
         /* link it. */
