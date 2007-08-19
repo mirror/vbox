@@ -419,6 +419,8 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 }
 
 
+#ifndef USE_NEW_OS_INTERFACE_FOR_MM
+
 /**
  * OS Specific code for locking down memory.
  *
@@ -786,6 +788,8 @@ void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem)
     }
 }
 
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
+
 
 /**
  * Gets the monotone timestamp (nano seconds).
@@ -1070,6 +1074,8 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
 }
 
 
+#ifndef USE_NEW_OS_INTERFACE_FOR_MM
+
 /**
  * Allocate small amounts of memory which is does not have the NX bit set.
  *
@@ -1129,6 +1135,8 @@ void *VBOXCALL  supdrvOSExecAlloc(size_t cb)
     return pv;
 #endif
 }
+
+#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
 
 /**
