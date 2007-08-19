@@ -183,7 +183,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    AssertMsgReturn(cb > _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
+    AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
 
     /*
      * Try allocate the memory and create an MDL for them so
