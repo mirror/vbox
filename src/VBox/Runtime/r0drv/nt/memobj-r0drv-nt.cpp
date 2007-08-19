@@ -444,7 +444,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
     /*
      * Validate the address range and create a descriptor for it.
      */
-    PFN_NUMBER Pfn = Phys >> PAGE_SHIFT;
+    PFN_NUMBER Pfn = (PFN_NUMBER)(Phys >> PAGE_SHIFT);
     if (((RTHCPHYS)Pfn << PAGE_SHIFT) != Phys)
         return VERR_ADDRESS_TOO_BIG;
 
