@@ -84,7 +84,7 @@ typedef struct RTTHREADINT
     /** The current thread state. */
     RTTHREADSTATE volatile  enmState;
 #if defined(RT_OS_WINDOWS) && defined(IN_RING3)
-    /** The thread handle.
+    /** The thread handle
      * This is not valid until the create function has returned! */
     uintptr_t               hThread;
 #endif
