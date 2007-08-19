@@ -151,12 +151,11 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_MAPPING:
         {
-            Assert(pMemNt->Core.pv);
+            Assert(pMemNt->cMdls == 0 && pMemNt->Core.pv);
             PRTR0MEMOBJNT pMemNtParent = (PRTR0MEMOBJNT)pMemNt->Core.uRel.Child.pParent;
             Assert(pMemNtParent);
             if (pMemNtParent->cMdls)
             {
-                Assert(pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
                 Assert(pMemNtParent->cMdls == 1 && pMemNtParent->apMdls[0]);
                 Assert(     pMemNt->Core.u.Mapping.R0Process == NIL_RTR0PROCESS
                        ||   pMemNt->Core.u.Mapping.R0Process == RTR0ProcHandleSelf());
@@ -166,6 +165,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             {
                 Assert(     pMemNtParent->Core.enmType == RTR0MEMOBJTYPE_PHYS
                        &&   !pMemNtParent->Core.u.Phys.fAllocated);
+                Assert(pMemNt->Core.u.Mapping.R0Process == NIL_RTR0PROCESS);
                 MmUnmapIoSpace(pMemNt->Core.pv, pMemNt->Core.cb);
             }
             pMemNt->Core.pv = NULL;
@@ -630,7 +630,7 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
             void *pv = MmMapLockedPagesSpecifyCache(pMemNtToMap->apMdls[0],
                                                     R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode,
                                                     MmCached,
-                                                    pvFixed == (void *)-1 ? pvFixed : NULL,
+                                                    pvFixed != (void *)-1 ? pvFixed : NULL,
                                                     FALSE /* no bug check on failure */,
                                                     NormalPagePriority);
             if (pv)
