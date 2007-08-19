@@ -30,6 +30,7 @@
 #include <iprt/param.h>
 #include <iprt/err.h>
 #include "internal/ldr.h"
+#define KLDR_ALREADY_INCLUDE_STD_TYPES
 #define KLDR_NO_KLDR_H_INCLUDES
 #include <kLdr.h>
 #include "kLdrHlp.h"
