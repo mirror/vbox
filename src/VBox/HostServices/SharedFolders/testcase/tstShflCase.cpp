@@ -47,21 +47,21 @@
 static int iDirList = 0;
 static int iDirFile = 0;
 
-static char *pszDirList[] = 
+static const char *pszDirList[] = 
 {
 "c:",
 "c:\\test dir",
 "c:\\test dir\\SUBDIR",
 };
 
-static char *pszDirListC[] = 
+static const char *pszDirListC[] = 
 {
 ".",
 "..",
 "test dir"
 };
 
-static char *pszDirListTestdir[] = 
+static const char *pszDirListTestdir[] = 
 {
 ".",
 "..",
@@ -80,7 +80,7 @@ static char *pszDirListTestdir[] =
 "z.bat",
 };
 
-static char *pszDirListSUBDIR[] = 
+static const char *pszDirListSUBDIR[] = 
 {
 ".",
 "..",
@@ -150,10 +150,10 @@ int rtDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEntry, RTF
 int rtPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
     int cMax;
-    char **ppszDirList;
+    const char **ppszDirList;
 
     /* first try pszDirList */
-    for (int i=0;i<RT_ELEMENTS(pszDirList);i++)
+    for (unsigned int i=0;i<RT_ELEMENTS(pszDirList);i++)
     {
         if(!strcmp(pszPath, pszDirList[i]))
             return VINF_SUCCESS;
