@@ -569,14 +569,21 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 
 int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
 {
+    /*
+     * MmCreateSection(SEC_RESERVE) + MmMapViewInSystemSpace perhaps?
+     */
     return VERR_NOT_IMPLEMENTED;
 }
 
 
 int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
+    /*
+     * ZeCreateSection(SEC_RESERVE) + ZwMapViewOfSection perhaps?
+     */
     return VERR_NOT_IMPLEMENTED;
 }
+
 
 /**
  * Internal worker for rtR0MemObjNativeMapKernel and rtR0MemObjNativeMapUser.
