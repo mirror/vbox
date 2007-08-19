@@ -3874,7 +3874,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
             pMem->eType = MEMREF_TYPE_LOW;
             pMem->pvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
             pMem->pvR3 = RTR0MemObjAddressR3(pMem->u.iprt.MapObjR3);
-            if (!rc)
+            /*if (RT_SUCCESS(rc))*/
             {
                 size_t  cPages = pMem->cb >> PAGE_SHIFT;
                 size_t  iPage;
