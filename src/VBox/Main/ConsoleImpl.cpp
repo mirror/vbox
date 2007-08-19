@@ -3278,8 +3278,8 @@ HRESULT Console::onSharedFolderChange (BOOL aGlobal)
     {
         CallbackList::iterator it = mCallbacks.begin();
         while (it != mCallbacks.end())
-            (*it++)->OnSharedFolderChange (aGlobal ? Scope_GlobalScope
-                                                   : Scope_MachineScope);
+            (*it++)->OnSharedFolderChange (aGlobal ? (Scope_T)Scope_GlobalScope
+                                                   : (Scope_T)Scope_MachineScope);
     }
 
     return rc;
