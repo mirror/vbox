@@ -53,7 +53,15 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
+/** @def DEBUG_NO_RING0_ASSERTIONS
+ * Define this if you don't wish to BSOD on debug assertions in
+ * the VMMR0.r0 code. If would of course be nice to have this
+ * feature enabled by default of course, but it's not currently
+ * safe when more than one VM is running or when using internal
+ * networking. */
+#if defined(DEBUG_sandervl)
 #define DEBUG_NO_RING0_ASSERTIONS
+#endif
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
 #endif
