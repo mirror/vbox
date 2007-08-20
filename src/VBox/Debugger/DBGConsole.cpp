@@ -8318,15 +8318,19 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
                     if (pOp)
                     {
                         if (pOp->fBinary != fBinary)
+                        {
+                            pszEnd = psz;
+                            /** @todo this is a parsing error really. */
                             break;              /* the end. */
+                        }
                         psz += pOp->cchName;
                         while (isblank(*psz))   /* skip blanks so we don't get here again */
                             psz++;
                         fBinary = false;
                         continue;
                     }
-                    fBinary = true;
                 }
+                fBinary = true;
             }
 
             /* next char */
