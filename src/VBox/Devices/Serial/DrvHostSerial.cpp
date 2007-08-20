@@ -224,15 +224,15 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
             baud_rate = B9600;
     }
 
-    cfsetispeed(&termiosSetup, baud_rate);
-    cfsetospeed(&termiosSetup, baud_rate);
+    cfsetispeed(termiosSetup, baud_rate);
+    cfsetospeed(termiosSetup, baud_rate);
 
     switch (chParity) {
         case 'E':
-            termiosSetup.c_cflag |= PARENB;
+            termiosSetup->c_cflag |= PARENB;
             break;
         case 'O':
-            termiosSetup.c_cflag |= (PARENB | PARODD);
+            termiosSetup->c_cflag |= (PARENB | PARODD);
             break;
         case 'N':
             break;
@@ -259,13 +259,13 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
 
     switch (cStopBits) {
         case 2:
-            termiosSetup.c_cflag |= CSTOPB;
+            termiosSetup->c_cflag |= CSTOPB;
         default:
             break;
     }
 
     /* set serial port to raw input */
-    termiosSetup.c_lflag = ~(ICANON | ECHO | ECHOE | ISIG);
+    termiosSetup->c_lflag = ~(ICANON | ECHO | ECHOE | ISIG);
 
     tcsetattr(pData->DeviceFile, TCSANOW, &termiosSetup);
     RTMemFree(termiosSetup);
