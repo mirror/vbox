@@ -459,7 +459,7 @@ int main(int argc, char **argv)
                 return SyntaxError("missing argument for memory size!\n");
             rc = RTStrToUInt32Ex(argv[curArg], NULL, 0, &g_u32MemorySizeMB);
             if (VBOX_FAILURE(rc))
-                return SyntaxError("cannot grok the memory size: %s (%Vrc)\n",
+                return SyntaxError("bad memory size: %s (error %Vrc)\n",
                                    argv[curArg], rc);
         }
         else if (strcmp(pszArg, "-vram") == 0)
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
                 return SyntaxError("missing argument for vram size!\n");
             rc = RTStrToUInt32Ex(argv[curArg], NULL, 0, &g_u32VRamSizeMB);
             if (VBOX_FAILURE(rc))
-                return SyntaxError("cannot grok the vram size: %s (%Vrc)\n",
+                return SyntaxError("bad video ram size: %s (error %Vrc)\n",
                                    argv[curArg], rc);
         }
         else if (strcmp(pszArg, "-fullscreen") == 0)
@@ -584,8 +584,8 @@ int main(int argc, char **argv)
             {
                 rc = GenerateMACAddress(szMacGen);
                 if (RT_FAILURE(rc))
-                    return SyntaxError("Failed to generate a hardware address for network device %d\n",
-                                       i);
+                    return SyntaxError("failed to generate a hardware address for network device %d (error %Vrc)\n",
+                                       i, rc);
                 pszMac = szMacGen;
             }
             if (strlen(pszMac) != MAC_STRING_LEN)
@@ -619,7 +619,7 @@ int main(int argc, char **argv)
                 return SyntaxError("missing argument for %s!\n", pszArg);
             rc = RTStrToInt32Ex(argv[curArg], NULL, 0, &g_aNetDevs[i].fd);
             if (VBOX_FAILURE(rc))
-                return SyntaxError("cannot grok tap fd: %s (%VRc)\n", argv[curArg], rc);
+                return SyntaxError("bad tap file descriptor: %s (error %VRc)\n", argv[curArg], rc);
             g_aNetDevs[i].fHaveFd = true;
         }
 #endif /* RT_OS_LINUX */
