@@ -134,6 +134,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_HOST_HDD,
     /** Host Parallel Driver group */
     LOG_GROUP_DRV_HOST_PARALLEL,
+    /** Host Serial Driver Group */
+    LOG_GROUP_DRV_HOST_SERIAL,
     /** The internal networking transport driver group. */
     LOG_GROUP_DRV_INTNET,
     /** iSCSI Initiator driver group. */
@@ -323,6 +325,7 @@ typedef enum LOGGROUP
     "DRV_HOST_FLOPPY", \
     "DRV_HOST_HDD", \
     "DRV_HOST_PARALLEL", \
+    "DRV_HOST_SERIAL", \
     "DRV_INTNET",   \
     "DRV_ISCSI",    \
     "DRV_ISCSI_TRANSPORT_TCP", \

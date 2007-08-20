@@ -27,7 +27,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_CHAR
+#define LOG_GROUP LOG_GROUP_DRV_HOST_SERIAL
 #include <VBox/pdm.h>
 #include <VBox/err.h>
 
@@ -36,13 +36,17 @@
 #include <iprt/assert.h>
 #include <iprt/stream.h>
 #include <iprt/semaphore.h>
+#include <iprt/file.h>
+#include <iprt/alloc.h>
 
 #ifdef RT_OS_LINUX
-#include <termios.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
+# include <termios.h>
+# include <sys/types.h>
+# include <fcntl.h>
+# include <string.h>
+# include <unistd.h>
+#elif defined(RT_OS_WINDOWS)
+# include <windows.h>
 #endif
 
 #include "Builtins.h"
@@ -79,7 +83,7 @@ typedef struct DRVHOSTSERIAL
     /** the device path */
     char                        *pszDevicePath;
     /** the device handle */
-    int                         DeviceFile;
+    RTFILE                      DeviceFile;
 
     /** Internal send FIFO queue */
     uint8_t                     aSendQueue[CHAR_MAX_SEND_QUEUE];
@@ -149,15 +153,20 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
 static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
 {
     PDRVHOSTSERIAL pData = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
-    struct termios termiosSetup;
+#ifdef RT_OS_LINUX
+    struct termios *termiosSetup;
     int baud_rate;
+#elif defined(RT_OS_WINDOWS)
+    LPDCB comSetup;
+#endif
 
     LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
-
-    memset(&termiosSetup, 0, sizeof(termiosSetup));
-
+ 
+#ifdef RT_OS_LINUX
+    termiosSetup = (struct termios *)RTMemTmpAllocZ(sizeof(struct termios));
+  
     /* Enable receiver */
-    termiosSetup.c_cflag |= (CLOCAL | CREAD);
+    termiosSetup->c_cflag |= (CLOCAL | CREAD);
 
     switch (Bps) {
         case 50:
@@ -233,16 +242,16 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
 
     switch (cDataBits) {
         case 5:
-            termiosSetup.c_cflag |= CS5;
+            termiosSetup->c_cflag |= CS5;
             break;
         case 6:
-            termiosSetup.c_cflag |= CS6;
+            termiosSetup->c_cflag |= CS6;
             break;
         case 7:
-            termiosSetup.c_cflag |= CS7;
+            termiosSetup->c_cflag |= CS7;
             break;
         case 8:
-            termiosSetup.c_cflag |= CS8;
+            termiosSetup->c_cflag |= CS8;
             break;
         default:
             break;
@@ -259,6 +268,104 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
     termiosSetup.c_lflag = ~(ICANON | ECHO | ECHOE | ISIG);
 
     tcsetattr(pData->DeviceFile, TCSANOW, &termiosSetup);
+    RTMemFree(termiosSetup);
+#elif defined(RT_OS_WINDOWS)
+    comSetup = (LPDCB)RTMemTmpAllocZ(sizeof(DCB));
+
+    comSetup->DCBlength = sizeof(DCB);
+
+    switch (Bps) {
+        case 110:
+            comSetup->BaudRate = CBR_110;
+            break;
+        case 300:
+            comSetup->BaudRate = CBR_300;
+            break;
+        case 600:
+            comSetup->BaudRate = CBR_600;
+            break;
+        case 1200:
+            comSetup->BaudRate = CBR_1200;
+            break;
+        case 2400:
+            comSetup->BaudRate = CBR_2400;
+            break;
+        case 4800:
+            comSetup->BaudRate = CBR_4800;
+            break;
+        case 9600:
+            comSetup->BaudRate = CBR_9600;
+            break;
+        case 14400:
+            comSetup->BaudRate = CBR_14400;
+            break;
+        case 19200:
+            comSetup->BaudRate = CBR_19200;
+            break;
+        case 38400:
+            comSetup->BaudRate = CBR_38400;
+            break;
+        case 57600:
+            comSetup->BaudRate = CBR_57600;
+            break;
+        case 115200:
+            comSetup->BaudRate = CBR_115200;
+            break;
+        default:
+            comSetup->BaudRate = CBR_9600;
+    }
+
+    comSetup->fBinary = TRUE;
+    comSetup->fOutxCtsFlow = FALSE;
+    comSetup->fOutxDsrFlow = FALSE;
+    comSetup->fDtrControl = DTR_CONTROL_DISABLE;
+    comSetup->fDsrSensitivity = FALSE;
+    comSetup->fTXContinueOnXoff = TRUE;
+    comSetup->fOutX = FALSE;
+    comSetup->fInX = FALSE;
+    comSetup->fErrorChar = FALSE;
+    comSetup->fNull = FALSE;
+    comSetup->fRtsControl = RTS_CONTROL_DISABLE;
+    comSetup->fAbortOnError = FALSE;
+    comSetup->wReserved = 0;
+    comSetup->XonLim = 5;
+    comSetup->XoffLim = 5;
+    comSetup->ByteSize = cDataBits;
+
+    switch (chParity) {
+        case 'E':
+            comSetup->Parity = EVENPARITY;
+            break;
+        case 'O':
+            comSetup->Parity = ODDPARITY;
+            break;
+        case 'N':
+            comSetup->Parity = NOPARITY;
+            break;
+        default:
+            break;
+    }
+ 
+    switch (cStopBits) {
+        case 1:
+            comSetup->StopBits = ONESTOPBIT;
+            break;
+        case 2:
+            comSetup->StopBits = TWOSTOPBITS;
+            break;
+        default:
+            break;
+    }
+
+    comSetup->XonChar = 0;
+    comSetup->XoffChar = 0;
+    comSetup->ErrorChar = 0;
+    comSetup->EofChar = 0;
+    comSetup->EvtChar = 0;
+
+    SetCommState((HANDLE)pData->DeviceFile, comSetup);
+    RTMemFree(comSetup);
+#endif /* RT_OS_WINDOWS */
 
     return VINF_SUCCESS;
 }
@@ -291,14 +398,14 @@ static DECLCALLBACK(int) drvHostSerialSendLoop(RTTHREAD ThreadSelf, void *pvUser
             {
                 size_t cbProcessed = 1;
 
-                rc = write(pData->DeviceFile, &pData->aSendQueue[pData->iSendQueueTail], cbProcessed);
-                if (rc > 0)
+                rc = RTFileWrite(pData->DeviceFile, &pData->aSendQueue[pData->iSendQueueTail], cbProcessed, NULL);
+                if (VBOX_SUCCESS(rc))
                 {
                     Assert(cbProcessed);
                     pData->iSendQueueTail++;
                     pData->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
                 }
-                else if (rc < 0)
+                else if (VBOX_FAILURE(rc))
                 {
                     LogFlow(("Write failed with %Vrc; skipping\n", rc));
                     break;
@@ -328,7 +435,7 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
 {
     PDRVHOSTSERIAL pData = (PDRVHOSTSERIAL)pvUser;
     char aBuffer[256], *pBuffer;
-    size_t cbRemaining, cbProcessed;
+    size_t cbRemaining, cbProcessed, cbRead;
     int rc;
 
     cbRemaining = 0;
@@ -337,15 +444,15 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
     {
         if (!cbRemaining)
         {
-            /* Get block of data from stream driver. */
+            /* Get block of data from serial device. */
             cbRemaining = sizeof(aBuffer);
-            rc = read(pData->DeviceFile, aBuffer, cbRemaining);
-            if (rc < 0)
+            rc = RTFileRead(pData->DeviceFile, aBuffer, cbRemaining, &cbRead);
+            if (VBOX_FAILURE(rc))
             {
                 LogFlow(("Read failed with %Vrc\n", rc));
                 break;
             } else {
-                cbRemaining = rc;
+                cbRemaining = cbRead;
             }
             pBuffer = aBuffer;
         }
@@ -425,32 +532,68 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Open the device
      */
-    pData->DeviceFile = open(pData->pszDevicePath, O_RDWR | O_NONBLOCK);
-    if (pData->DeviceFile < 0) {
+    rc = RTFileOpen(&pData->DeviceFile, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
 
+    if (VBOX_FAILURE(rc)) {
+        pData->DeviceFile = NIL_RTFILE;
+        AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pData->pszDevicePath, rc));
+        switch (rc) {
+            case VERR_ACCESS_DENIED:
+                return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+#ifdef RT_OS_LINUX
+                                           N_("Cannot open host device '%s' for read/write access. Check the permissions "
+                                              "of that device ('/bin/ls -l %s'): Most probably you need to be member "
+                                              "of the device group. Make sure that you logout/login after changing "
+                                              "the group settings of the current user"),
+#else
+                                           N_("Cannot open host device '%s' for read/write access. Check the permissions "
+                                              "of that device"),
+#endif
+                                           pData->pszDevicePath, pData->pszDevicePath);
+           default:
+                return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                           N_("Failed to open host device '%s'"), 
+                                           pData->pszDevicePath);
+        }
     }
+
+    /* Set to non blocking I/O */
+#ifdef RT_OS_LINUX
+    fcntl(pData->DeviceFile, F_SETFL, O_NONBLOCK);
+#elif defined(RT_OS_WINDOWS)
+    /* Set the COMMTIMEOUTS to get non blocking I/O */
+    COMMTIMEOUTS comTimeout;
+
+    comTimeout.ReadIntervalTimeout         = MAXDWORD; 
+    comTimeout.ReadTotalTimeoutMultiplier  = 0;
+    comTimeout.ReadTotalTimeoutConstant    = 0;
+    comTimeout.WriteTotalTimeoutMultiplier = 0;
+    comTimeout.WriteTotalTimeoutConstant   = 0;
+
+    SetCommTimeouts((HANDLE)pData->DeviceFile, &comTimeout);
+#endif
 
     /*
      * Get the ICharPort interface of the above driver/device.
      */
     pData->pDrvCharPort = (PPDMICHARPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_CHAR_PORT);
     if (!pData->pDrvCharPort)
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Char#%d has no char port interface above"), pDrvIns->iInstance);
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no char port interface above"), pDrvIns->iInstance);
 
     rc = RTThreadCreate(&pData->ReceiveThread, drvHostSerialReceiveLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Char Receive");
     if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create receive thread"), pDrvIns->iInstance);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create receive thread"), pDrvIns->iInstance);
 
     rc = RTSemEventCreate(&pData->SendSem);
     AssertRC(rc);
 
-    rc = RTThreadCreate(&pData->SendThread, drvHostSerialSendLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Char Send");
+    rc = RTThreadCreate(&pData->SendThread, drvHostSerialSendLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Serial Send");
     if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create send thread"), pDrvIns->iInstance);
-
-
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/Char%d/Read", pDrvIns->iInstance);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create send thread"), pDrvIns->iInstance);
+  
+  
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/HostSerial%d/Written", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/HostSerial%d/Read", pDrvIns->iInstance);
 
     return VINF_SUCCESS;
 }
@@ -475,7 +618,7 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     {
         RTThreadWait(pData->ReceiveThread, 1000, NULL);
         if (pData->ReceiveThread != NIL_RTTHREAD)
-            LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
+            LogRel(("HostSerial%d: receive thread did not terminate\n", pDrvIns->iInstance));
     }
 
     /* Empty the send queue */
@@ -489,7 +632,7 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     {
         RTThreadWait(pData->SendThread, 1000, NULL);
         if (pData->SendThread != NIL_RTTHREAD)
-            LogRel(("Char%d: send thread did not terminate\n", pDrvIns->iInstance));
+            LogRel(("HostSerial%d: send thread did not terminate\n", pDrvIns->iInstance));
     }
 }
 
