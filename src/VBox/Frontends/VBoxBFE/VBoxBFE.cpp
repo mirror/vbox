@@ -105,6 +105,7 @@ using namespace com;
 *******************************************************************************/
 
 #define VBOXSDL_ADVANCED_OPTIONS
+#define MAC_STRING_LEN 12
 
 
 /*******************************************************************************
@@ -235,6 +236,33 @@ static int networkArg2Index(const char *pszArg, int cchRoot)
     return n;
 }
 
+/**
+ *  Generates a new unique MAC address based on our vendor ID and
+ *  parts of a GUID.
+ *
+ * @returns iprt status code
+ * @param pAddress An array into which to store the newly generated address
+ */
+int GenerateMACAddress(char pAddress[MAC_STRING_LEN + 1])
+{
+    /*
+     * Our strategy is as follows: the first three bytes are our fixed
+     * vendor ID (080027). The remaining 3 bytes will be taken from the
+     * start of a GUID. This is a fairly safe algorithm.
+     */
+    LogFlowFunc(("called\n"));
+    RTUUID uuid;
+    int rc = RTUuidCreate(&uuid);
+    if (RT_FAILURE(rc))
+    {
+        LogFlowFunc(("RTUuidCreate failed, returning %Vrc\n", rc));
+        return rc;
+    }
+    RTStrPrintf (pAddress, MAC_STRING_LEN + 1, "080027%02X%02X%02X",
+                 uuid.au8[0], uuid.au8[1], uuid.au8[2]);
+    LogFlowFunc(("generated MAC: '%s'\n", pAddress));
+    return VINF_SUCCESS;
+}                         
 
 /**
  * Print a syntax error.
@@ -294,9 +322,16 @@ static void show_usage()
              "  -[no]ioapic        Enable or disable the IO-APIC (default: disabled)\n"
              "  -audio             Enable audio\n"
 #ifndef RT_OS_L4
-             "  -natdev<1-N>       Configure NAT for network device N\n"
+             "  -natdev<1-N> [mac] Use NAT networking on network adapter <N>.  Use hardware\n"
+             "                     address <mac> if specified.\n"
 #endif
-             "  -hifdev<1-N> <dev> <mac> Use existing Host Interface Network Device with the given name and MAC address\n"
+             "  -hifdev<1-N>       Use Host Interface Networking with host interface <int>\n"
+             "      <int> [mac]    on network adapter <N>.  Use hardware address <mac> if\n"
+             "                     specified.\n"
+#ifndef RT_OS_L4
+             "  -intnet<1-N>       Attach network adapter <N> to internal network <net>.  Use\n"
+             "      <net> [mac]    hardware address <mac> if specified.\n"
+#endif
 #if 0
              "  -netsniff<1-N>     Enable packet sniffer\n"
 #endif
@@ -541,11 +576,20 @@ int main(int argc, char **argv)
             }
 
             /* The MAC address. */
-            if (++curArg >= argc)
-                return SyntaxError("The network MAC address is missing! (%s)\n", pszArg);
-            if (strlen(argv[curArg]) != 12)
-                return SyntaxError("The network MAC address has an invalid length: %s (%s)\n", argv[curArg], pszArg);
-            const char *pszMac = argv[curArg];
+            const char *pszMac;
+            char szMacGen[MAC_STRING_LEN + 1];
+            if ((curArg + 1 < argc) && (argv[curArg + 1][0] != '-'))
+                pszMac = argv[++curArg];
+            else
+            {
+                rc = GenerateMACAddress(szMacGen);
+                if (RT_FAILURE(rc))
+                    return SyntaxError("Failed to generate a hardware address for network device %d\n",
+                                       i);
+                pszMac = szMacGen;
+            }
+            if (strlen(pszMac) != MAC_STRING_LEN)
+                return SyntaxError("The network MAC address has an invalid length: %s (%s)\n", pszMac, pszArg);
             for (unsigned j = 0; j < RT_ELEMENTS(g_aNetDevs[i].Mac.au8); j++)
             {
                 char c1 = toupper(*pszMac++) - '0';
