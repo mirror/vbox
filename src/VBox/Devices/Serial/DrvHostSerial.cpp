@@ -267,7 +267,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
     /* set serial port to raw input */
     termiosSetup->c_lflag = ~(ICANON | ECHO | ECHOE | ISIG);
 
-    tcsetattr(pData->DeviceFile, TCSANOW, &termiosSetup);
+    tcsetattr(pData->DeviceFile, TCSANOW, termiosSetup);
     RTMemFree(termiosSetup);
 #elif defined(RT_OS_WINDOWS)
     comSetup = (LPDCB)RTMemTmpAllocZ(sizeof(DCB));
