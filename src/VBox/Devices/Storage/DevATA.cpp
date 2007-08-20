@@ -5852,7 +5852,8 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
                 {
                     LogRel(("ATA: No buffer for %d/%d\n", i, j));
                     if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
-                        break;
+                        return VERR_SSM_LOAD_CONFIG_MISMATCH;
+
                     /* skip the buffer if we're loading for the debugger / animator. */
                     uint8_t u8Ignored;
                     size_t cbLeft = pData->aCts[i].aIfs[j].cbIOBuffer;
