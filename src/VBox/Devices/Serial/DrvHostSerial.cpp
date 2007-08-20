@@ -435,7 +435,7 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
 {
     PDRVHOSTSERIAL pData = (PDRVHOSTSERIAL)pvUser;
     char aBuffer[256], *pBuffer;
-    size_t cbRemaining, cbProcessed, cbRead;
+    unsigned cbRemaining, cbProcessed, cbRead;
     int rc;
 
     cbRemaining = 0;
