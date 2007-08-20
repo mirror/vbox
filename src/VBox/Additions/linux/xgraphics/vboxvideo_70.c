@@ -491,18 +491,22 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (pScrn->display->modes == NULL)
     {
         /* The user specified no modes at all - specify 1024x768 as a default. */
-        pScrn->display->modes    = xnfalloc(2 * sizeof(char*));
+        pScrn->display->modes    = xnfalloc(4 * sizeof(char*));
         pScrn->display->modes[0] = "1024x768";
-        pScrn->display->modes[1] = NULL;
+        pScrn->display->modes[1] = "800x600";
+        pScrn->display->modes[2] = "640x480";
+        pScrn->display->modes[3] = NULL;
     }
     else
     {
         /* Add 1024x768 to the end of the mode list in case the others are all invalid. */
         for (i = 0; pScrn->display->modes[i] != NULL; i++);
-        pScrn->display->modes      = xnfrealloc(pScrn->display->modes, (i + 2)
+        pScrn->display->modes      = xnfrealloc(pScrn->display->modes, (i + 4)
                                    * sizeof(char *));
         pScrn->display->modes[i  ] = "1024x768";
-        pScrn->display->modes[i+1] = NULL;
+        pScrn->display->modes[i+1] = "800x600";
+        pScrn->display->modes[i+2] = "640x480";
+        pScrn->display->modes[i+3] = NULL;
     }
 
     /* Determine the virtual screen resolution from the first mode (which will be selected) */
