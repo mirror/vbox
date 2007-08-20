@@ -182,7 +182,7 @@ private:
 #ifdef VBOX_WITH_XPCOM
 #include <nsMemory.h>
 NS_DECL_CLASSINFO(VRDPConsoleCallback)
-NS_IMPL_ISUPPORTS1_CI(VRDPConsoleCallback, IConsoleCallback)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDPConsoleCallback, IConsoleCallback)
 #endif /* VBOX_WITH_XPCOM */
 
 #ifdef DEBUG_sunlover
