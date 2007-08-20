@@ -23,6 +23,8 @@ ifdef VBOX_WITH_TESTCASES
  PROGRAMS.win   = tstVBoxAPIWin
 else ifeq ($(USERNAME),dmik)
  PROGRAMS       = tstAPI
+ PROGRAMS.linux = tstVBoxAPILinux
+ PROGRAMS.win   = tstVBoxAPIWin
 endif # VBOX_WITH_TESTCASES
 
 INSTALLS = samples
@@ -55,7 +57,7 @@ tstAPI_SOURCES  = tstAPI.cpp
 #
 tstVBoxAPILinux_TEMPLATE = VBOXR3
 tstVBoxAPILinux_SOURCES  = tstVBoxAPILinux.cpp
-tstVBoxAPILinux_CXXFLAGS = -Wno-non-virtual-dtor
+tstVBoxAPILinux_CXXFLAGS = -Wno-non-virtual-dtor -fshort-wchar
 tstVBoxAPILinux_INCS     = \
 	$(VBOX_XPCOM_INCS) \
 	$(PATH_BIN)/sdk/include

@@ -28,26 +28,13 @@
 /*
  * Include the XPCOM headers
  */
-#include <nsIServiceManager.h>
-#include <nsIComponentRegistrar.h>
 #include <nsXPCOMGlue.h>
 #include <nsMemory.h>
 #include <nsString.h>
-#include <nsIProgrammingLanguage.h>
-#include <ipcIService.h>
-#include <ipcCID.h>
-#include <ipcIDConnectService.h>
-#include <nsIEventQueueService.h>
+#include <nsIServiceManager.h>
+#include <nsEventQueueUtils.h>
 
-/*
- * Some XPCOM declarations that haven't made it
- * into the official headers yet
- */
-#define IPC_DCONNECTSERVICE_CONTRACTID \
-    "@mozilla.org/ipc/dconnect-service;1"
-static NS_DEFINE_CID(kEventQueueServiceCID, NS_EVENTQUEUESERVICE_CID);
-static nsIEventQueue* gEventQ = nsnull;
-
+#include <nsIExceptionService.h>
 
 /*
  * VirtualBox XPCOM interface. This header is generated
@@ -59,7 +46,7 @@ static nsIEventQueue* gEventQ = nsnull;
  * Prototypes
  */
 char *nsIDToString(nsID *guid);
-
+void printErrorInfo();
 
 
 /**
@@ -149,18 +136,23 @@ void createVM(IVirtualBox *virtualBox)
 {
     nsresult rc;
     /*
-     * First create a new VM. It will be unconfigured and not be saved
+     * First create a unnamed new VM. It will be unconfigured and not be saved
      * in the configuration until we explicitely choose to do so.
      */
-    IMachine *machine;
-    rc = virtualBox->CreateMachine(nsnull, NS_LITERAL_STRING("A brand new VM").get(), &machine);
+    nsCOMPtr <IMachine> machine;
+    rc = virtualBox->CreateMachine(nsnull, NS_LITERAL_STRING("A brand new name").get(),
+                                   getter_AddRefs(machine));
+    if (NS_FAILED(rc))
+    {
+        printf("Error: could not create machine! rc=%08X\n", rc);
+        return;
+    }
 
     /*
      * Set some properties
      */
     /* alternative to illustrate the use of string classes */
-    char vmName[] = "A new name";
-    rc = machine->SetName(NS_ConvertUTF8toUTF16((char*)vmName).get());
+    rc = machine->SetName(NS_ConvertUTF8toUTF16("A new name").get());
     rc = machine->SetMemorySize(128);
 
     /*
@@ -173,37 +165,98 @@ void createVM(IVirtualBox *virtualBox)
      * its description (win2k would be "Windows 2000") by getting the
      * guest OS type collection and enumerating it.
      */
-    IGuestOSType *osType = nsnull;
-    char win2k[] = "win2k";
-    rc = virtualBox->GetGuestOSType(NS_ConvertUTF8toUTF16((char*) win2k).get(), &osType);
-    if (NS_FAILED(rc) || !osType)
+    nsCOMPtr <IGuestOSType> osType;
+    rc = virtualBox->GetGuestOSType(NS_LITERAL_STRING("win2k").get(),
+                                    getter_AddRefs(osType));
+    if (NS_FAILED(rc))
     {
-        printf("Error: could not find guest OS type! rc = 0x%x\n", rc);
+        printf("Error: could not find guest OS type! rc=%08X\n", rc);
     }
     else
     {
-        machine->SetOSTypeId (NS_ConvertUTF8toUTF16((char*) win2k).get());
-        osType->Release();
+        machine->SetOSTypeId (NS_LITERAL_STRING("win2k").get());
+    }
+
+    /*
+     * Register the VM. Note that this call also saves the VM config
+     * to disk. It is also possible to save the VM settings but not
+     * register the VM.
+     *
+     * Also note that due to current VirtualBox limitations, the machine
+     * must be registered *before* we can attach hard disks to it.
+     */
+    rc = virtualBox->RegisterMachine(machine);
+    if (NS_FAILED(rc))
+    {
+        printf("Error: could not register machine! rc=%08X\n", rc);
+        printErrorInfo();
+        return;
+    }
+
+    /*
+     * In order to manipulate the registered machine, we must open a session
+     * for that machine. Do it now.
+     */
+    nsCOMPtr<ISession> session;
+    {
+        nsCOMPtr<nsIComponentManager> manager;
+        rc = NS_GetComponentManager (getter_AddRefs (manager));
+        if (NS_FAILED(rc))
+        {
+            printf("Error: could not get component manager! rc=%08X\n", rc);
+            return;
+        }
+        rc = manager->CreateInstanceByContractID (NS_SESSION_CONTRACTID,
+                                                  nsnull,
+                                                  NS_GET_IID(ISession),
+                                                  getter_AddRefs(session));
+        if (NS_FAILED(rc))
+        {
+            printf("Error, could not instantiate Session object! rc=0x%x\n", rc);
+            return;
+        }
+
+        nsID *machineUUID = nsnull;
+        machine->GetId(&machineUUID);
+        rc = virtualBox->OpenSession(session, *machineUUID);
+        nsMemory::Free(machineUUID);
+        if (NS_FAILED(rc))
+        {
+            printf("Error, could not open session! rc=0x%x\n", rc);
+            return;
+        }
+
+        /*
+         * After the machine is registered, the initial machine object becomes
+         * immutable. In order to get a mutable machine object, we must query
+         * it from the opened session object.
+         */
+        rc = session->GetMachine(getter_AddRefs(machine));
+        if (NS_FAILED(rc))
+        {
+            printf("Error, could not get sessioned machine! rc=0x%x\n", rc);
+            return;
+        }
     }
 
     /*
      * Create a virtual harddisk
      */
-    IHardDisk *hardDisk = 0;
-    IVirtualDiskImage *vdi = 0;
-    char vdiName[] = "TestHardDisk.vdi";
+    nsCOMPtr<IHardDisk> hardDisk = 0;
+    nsCOMPtr<IVirtualDiskImage> vdi = 0;
     rc = virtualBox->CreateHardDisk(HardDiskStorageType::VirtualDiskImage,
-                                    &hardDisk);
+                                    getter_AddRefs(hardDisk));
     if (NS_SUCCEEDED (rc))
     {
-        rc = hardDisk->QueryInterface(NS_GET_IID(IVirtualDiskImage), (void **)&vdi);
+        rc = hardDisk->QueryInterface(NS_GET_IID(IVirtualDiskImage),
+                                      (void **)(getter_AddRefs(vdi)));
         if (NS_SUCCEEDED (rc))
-            rc = vdi->SetFilePath(NS_ConvertUTF8toUTF16((char*)vdiName).get());
+            rc = vdi->SetFilePath(NS_LITERAL_STRING("TestHardDisk.vdi").get());
     }
 
-    if (NS_FAILED(rc) || !hardDisk || !vdi)
+    if (NS_FAILED(rc))
     {
-        printf("Failed creating a hard disk object!\n");
+        printf("Failed creating a hard disk object! rc=%08X\n", rc);
     }
     else
     {
@@ -212,12 +265,12 @@ void createVM(IVirtualBox *virtualBox)
          * because none of its properties has been set so far. Let's continue creating
          * a dynamically expanding image.
          */
-        IProgress *progress;
+        nsCOMPtr <IProgress> progress;
         rc = vdi->CreateDynamicImage(100,                                             // size in megabytes
-                                     &progress);                                      // optional progress object
-        if (NS_FAILED(rc) || !progress)
+                                     getter_AddRefs(progress));                       // optional progress object
+        if (NS_FAILED(rc))
         {
-            printf("Failed creating hard disk image!\n");
+            printf("Failed creating hard disk image! rc=%08X\n", rc);
         }
         else
         {
@@ -229,10 +282,10 @@ void createVM(IVirtualBox *virtualBox)
             rc = progress->WaitForCompletion(-1);
             nsresult resultCode;
             progress->GetResultCode(&resultCode);
-            progress->Release();
-            if (NS_FAILED(rc) || (resultCode != 0))
+            if (NS_FAILED(rc) || NS_FAILED(resultCode))
             {
-                printf("Error: could not create hard disk!\n");
+                printf("Error: could not create hard disk! rc=%08X\n",
+                       NS_FAILED(rc) ? rc : resultCode);
             }
             else
             {
@@ -242,7 +295,7 @@ void createVM(IVirtualBox *virtualBox)
                 rc = virtualBox->RegisterHardDisk(hardDisk);
                 if (NS_FAILED(rc))
                 {
-                    printf("Error: could not register hard disk!\n");
+                    printf("Error: could not register hard disk! rc=%08X\n", rc);
                 }
                 else
                 {
@@ -259,16 +312,12 @@ void createVM(IVirtualBox *virtualBox)
                     nsMemory::Free(vdiUUID);
                     if (NS_FAILED(rc))
                     {
-                        printf("Error: could not attach hard disk!\n");
+                        printf("Error: could not attach hard disk! rc=%08X\n", rc);
                     }
                 }
             }
         }
     }
-    if (vdi)
-        vdi->Release();
-    if (hardDisk)
-        hardDisk->Release();
 
     /*
      * It's got a hard disk but that one is new and thus not bootable. Make it
@@ -277,15 +326,14 @@ void createVM(IVirtualBox *virtualBox)
      * as the boot device.
      */
     nsID uuid = {0};
-    IDVDImage *dvdImage = nsnull;
-    char isoFile[] = "/home/achimha/isoimages/winnt4ger.iso";
+    nsCOMPtr<IDVDImage> dvdImage;
 
-    rc = virtualBox->OpenDVDImage(NS_ConvertUTF8toUTF16((char*)isoFile).get(),
+    rc = virtualBox->OpenDVDImage(NS_LITERAL_STRING("/home/achimha/isoimages/winnt4ger.iso").get(),
                                   uuid, /* NULL UUID, i.e. a new one will be created */
-                                  &dvdImage);
-    if (NS_FAILED(rc) || !dvdImage)
+                                  getter_AddRefs(dvdImage));
+    if (NS_FAILED(rc))
     {
-        printf("Error: could not open CD image!\n");
+        printf("Error: could not open CD image! rc=%08X\n", rc);
     }
     else
     {
@@ -293,9 +341,9 @@ void createVM(IVirtualBox *virtualBox)
          * Register it with VBox
          */
         rc = virtualBox->RegisterDVDImage(dvdImage);
-        if (NS_FAILED(rc) || !dvdImage)
+        if (NS_FAILED(rc))
         {
-            printf("Error: could not register CD image!\n");
+            printf("Error: could not register CD image! rc=%08X\n", rc);
         }
         else
         {
@@ -304,13 +352,13 @@ void createVM(IVirtualBox *virtualBox)
              */
             nsID *isoUUID = nsnull;
             dvdImage->GetId(&isoUUID);
-            IDVDDrive *dvdDrive = nsnull;
-            machine->GetDVDDrive(&dvdDrive);
+            nsCOMPtr<IDVDDrive> dvdDrive;
+            machine->GetDVDDrive(getter_AddRefs(dvdDrive));
             rc = dvdDrive->MountImage(*isoUUID);
             nsMemory::Free(isoUUID);
             if (NS_FAILED(rc))
             {
-                printf("Error: could not mount ISO image!\n");
+                printf("Error: could not mount ISO image! rc=%08X\n", rc);
             }
             else
             {
@@ -320,22 +368,26 @@ void createVM(IVirtualBox *virtualBox)
                 rc = machine->SetBootOrder (1, DeviceType::DVDDevice);
                 if (NS_FAILED(rc))
                 {
-                    printf("Could not set boot device!\n");
+                    printf("Could not set boot device! rc=%08X\n", rc);
                 }
             }
-            dvdDrive->Release();
-            dvdImage->Release();
         }
     }
 
     /*
-     * Register the VM. Note that this call also saves the VM config
-     * to disk. It is also possible to save the VM settings but not
-     * register the VM.
+     * Save all changes we've just made.
      */
-    virtualBox->RegisterMachine(machine);
+    rc = machine->SaveSettings();
+    if (NS_FAILED(rc))
+    {
+        printf("Could not save machine settings! rc=%08X\n", rc);
+    }
 
-    machine->Release();
+    /*
+     * It is always important to close the open session when it becomes not
+     * necessary any more.
+     */
+    session->Close();
 }
 
 // main
@@ -343,128 +395,129 @@ void createVM(IVirtualBox *virtualBox)
 
 int main(int argc, char *argv[])
 {
+    /*
+     * Check that PRUnichar is equal in size to what compiler composes L""
+     * strings from; otherwise NS_LITERAL_STRING macros won't work correctly
+     * and we will get a meaningless SIGSEGV. This, of course, must be checked
+     * at compile time in xpcom/string/nsTDependentString.h, but XPCOM lacks
+     * compile-time assert macros and I'm not going to add them now.
+     */
+    if (sizeof(PRUnichar) != sizeof(wchar_t))
+    {
+        printf("Error: sizeof(PRUnichar) {%d} != sizeof(wchar_t) {%d}!\n"
+               "Probably, you forgot the -fshort-wchar compiler option.\n",
+               sizeof(PRUnichar), sizeof(wchar_t));
+        return -1;
+    }
+
     nsresult rc;
 
     /*
-     * This is the standard XPCOM init processing.
+     * This is the standard XPCOM init procedure.
      * What we do is just follow the required steps to get an instance
-     * of our main interface, which is IVirtualBox
+     * of our main interface, which is IVirtualBox.
      */
     XPCOMGlueStartup(nsnull);
-    nsCOMPtr<nsIServiceManager> serviceManager;
-    rc = NS_InitXPCOM2(getter_AddRefs(serviceManager), nsnull, nsnull);
-    if (NS_FAILED(rc))
-    {
-        printf("Error: XPCOM could not be initialized! rc=0x%x\n", rc);
-        return -1;
-    }
-
-    // register our component
-    nsCOMPtr<nsIComponentRegistrar> registrar = do_QueryInterface(serviceManager);
-    if (!registrar)
-    {
-        printf("Error: could not query nsIComponentRegistrar interface!\n");
-        return -1;
-    }
-    registrar->AutoRegister(nsnull);
-
-    // Create the Event Queue for this thread
-    nsCOMPtr<nsIEventQueueService> eqs = do_GetService(kEventQueueServiceCID, &rc);
-    if (NS_FAILED( rc ))
-    {
-        printf("Error: could not get event queue service! rc=%08X\n", rc);
-        return -1;
-    }
-
-    rc = eqs->CreateThreadEventQueue();
-    if (NS_FAILED( rc ))
-    {
-        printf("Error: could not create thread event queue! rc=%08X\n", rc);
-        return -1;
-    }
-
-    rc = eqs->GetThreadEventQueue(NS_CURRENT_THREAD, &gEventQ);
-    if (NS_FAILED( rc ))
-    {
-        printf("Error: could not get tread event queue! rc=%08X\n", rc);
-        return -1;
-    }
-
-    // get ipc service
-    nsCOMPtr<ipcIService> ipcServ = do_GetService(IPC_SERVICE_CONTRACTID, &rc);
-    if (NS_FAILED( rc ))
-    {
-        printf("Error: could not get ipc service! rc=%08X\n", rc);
-        return -1;
-    }
-
-    // get dconnect service
-    nsCOMPtr<ipcIDConnectService> dcon = do_GetService(IPC_DCONNECTSERVICE_CONTRACTID, &rc);
-    if (NS_FAILED( rc ))
-    {
-        printf("Error: could not get dconnect service! rc=%08X\n", rc);
-        return -1;
-    }
-
-    PRUint32 serverID = 0;
-    rc = ipcServ->ResolveClientName("VirtualBoxServer", &serverID);
-    if (NS_FAILED( rc ))
-    {
-        printf("Error: could not get VirtualBox server ID! rc=%08X\n", rc);
-        return -1;
-    }
-
-    nsCOMPtr<nsIComponentManager> manager = do_QueryInterface(registrar);
-    if (!manager)
-    {
-        printf("Error: could not query nsIComponentManager interface!\n");
-        return -1;
-    }
 
     /*
-     * Now XPCOM is ready and we can start to do real work.
-     * IVirtualBox is the root interface of VirtualBox and will be
-     * retrieved from the XPCOM component registrar. We use the
-     * XPCOM provided smart pointer nsCOMPtr for all objects because
-     * that's very convenient and removes the need deal with reference
-     * counting and freeing.
+     * Note that we scope all nsCOMPtr variables in order to have all XPCOM
+     * objects automatically released before we call NS_ShutdownXPCOM at the
+     * end. This is an XPCOM requirement.
      */
-    nsCOMPtr<IVirtualBox> virtualBox;
-    rc = dcon->CreateInstanceByContractID(serverID, NS_VIRTUALBOX_CONTRACTID,
-                                          NS_GET_IID(IVirtualBox),
-                                          getter_AddRefs(virtualBox));
-    if (NS_FAILED(rc))
     {
-        printf("Error, could not instantiate VirtualBox object! rc=0x%x\n", rc);
-        return -1;
+        nsCOMPtr<nsIServiceManager> serviceManager;
+        rc = NS_InitXPCOM2(getter_AddRefs(serviceManager), nsnull, nsnull);
+        if (NS_FAILED(rc))
+        {
+            printf("Error: XPCOM could not be initialized! rc=0x%x\n", rc);
+            return -1;
+        }
+
+#if 0
+        /*
+         * Register our components. This step is only necessary if this executable
+         * implements XPCOM components itself which is not the case for this
+         * simple example.
+         */
+        nsCOMPtr<nsIComponentRegistrar> registrar = do_QueryInterface(serviceManager);
+        if (!registrar)
+        {
+            printf("Error: could not query nsIComponentRegistrar interface!\n");
+            return -1;
+        }
+        registrar->AutoRegister(nsnull);
+#endif
+
+        /*
+         * Make sure the main event queue is created. This event queue is
+         * responsible for dispatching incoming XPCOM IPC messages. The main
+         * thread should run this event queue's loop during lengthy non-XPCOM
+         * operations to ensure messages from the VirtualBox server and other
+         * XPCOM IPC clients are processed. This use case doesn't perform such
+         * operations so it doesn't run the event loop.
+         */
+        nsCOMPtr<nsIEventQueue> eventQ;
+        rc = NS_GetMainEventQ(getter_AddRefs (eventQ));
+        if (NS_FAILED(rc))
+        {
+            printf("Error: could not get main event queue! rc=%08X\n", rc);
+            return -1;
+        }
+
+        /*
+         * Now XPCOM is ready and we can start to do real work.
+         * IVirtualBox is the root interface of VirtualBox and will be
+         * retrieved from the XPCOM component manager. We use the
+         * XPCOM provided smart pointer nsCOMPtr for all objects because
+         * that's very convenient and removes the need deal with reference
+         * counting and freeing.
+         */
+        nsCOMPtr<nsIComponentManager> manager;
+        rc = NS_GetComponentManager (getter_AddRefs (manager));
+        if (NS_FAILED(rc))
+        {
+            printf("Error: could not get component manager! rc=%08X\n", rc);
+            return -1;
+        }
+
+        nsCOMPtr<IVirtualBox> virtualBox;
+        rc = manager->CreateInstanceByContractID (NS_VIRTUALBOX_CONTRACTID,
+                                                  nsnull,
+                                                  NS_GET_IID(IVirtualBox),
+                                                  getter_AddRefs(virtualBox));
+        if (NS_FAILED(rc))
+        {
+            printf("Error, could not instantiate VirtualBox object! rc=0x%x\n", rc);
+            return -1;
+        }
+        printf("VirtualBox object created\n");
+
+        ////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////
+
+
+        listVMs(virtualBox);
+
+        createVM(virtualBox);
+
+
+        ////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////
+
+        /* this is enough to free the IVirtualBox instance -- smart pointers rule! */
+        virtualBox = nsnull;
+
+        /*
+         * Process events that might have queued up in the XPCOM event
+         * queue. If we don't process them, the server might hang.
+         */
+        eventQ->ProcessPendingEvents();
     }
-    printf("VirtualBox object created\n");
-
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
-
-
-    listVMs(virtualBox);
-
-    createVM(virtualBox);
-
-
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
-
-    /* this is enough to free the IVirtualBox instance -- smart pointers rule! */
-    virtualBox = nsnull;
 
     /*
-     * Process events that might have queued up in the XPCOM event
-     * queue. If we don't process them, the server might hang.
-     */
-    gEventQ->ProcessPendingEvents();
-
-    /*
-     * Perform the standard XPCOM shutdown procedure
+     * Perform the standard XPCOM shutdown procedure.
      */
     NS_ShutdownXPCOM(nsnull);
     XPCOMGlueShutdown();
@@ -496,4 +549,62 @@ char *nsIDToString(nsID *guid)
                  (PRUint32)guid->m3[6], (PRUint32)guid->m3[7]);
     }
     return res;
+}
+
+/**
+ * Helper function to print XPCOM exception information set on the current
+ * thread after a failed XPCOM method call. This function will also print
+ * extended VirtualBox error info if it is available.
+ */
+void printErrorInfo()
+{
+    nsresult rc;
+
+    nsCOMPtr <nsIExceptionService> es;
+    es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+    if (NS_SUCCEEDED (rc))
+    {
+        nsCOMPtr <nsIExceptionManager> em;
+        rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+        if (NS_SUCCEEDED (rc))
+        {
+            nsCOMPtr<nsIException> ex;
+            rc = em->GetCurrentException (getter_AddRefs (ex));
+            if (NS_SUCCEEDED (rc) && ex)
+            {
+                nsCOMPtr <IVirtualBoxErrorInfo> info;
+                info = do_QueryInterface(ex, &rc);
+                if (NS_SUCCEEDED(rc) && info)
+                {
+                    /* got extended error info */
+                    printf ("Extended error info (IVirtualBoxErrorInfo):\n");
+                    nsresult resultCode = NS_OK;
+                    info->GetResultCode (&resultCode);
+                    printf ("  resultCode=%08X\n", resultCode);
+                    nsXPIDLString component;
+                    info->GetComponent (getter_Copies (component));
+                    printf ("  component=%s\n", NS_ConvertUTF16toUTF8(component).get());
+                    nsXPIDLString text;
+                    info->GetText (getter_Copies (text));
+                    printf ("  text=%s\n", NS_ConvertUTF16toUTF8(text).get());
+                }
+                else
+                {
+                    /* got basic error info */
+                    printf ("Basic error info (nsIException):\n");
+                    nsresult resultCode = NS_OK;
+                    ex->GetResult (&resultCode);
+                    printf ("  resultCode=%08X\n", resultCode);
+                    nsXPIDLCString message;
+                    ex->GetMessage (getter_Copies (message));
+                    printf ("  message=%s\n", message.get());
+                }
+
+                /* reset the exception to NULL to indicate we've processed it */
+                em->SetCurrentException (NULL);
+
+                rc = NS_OK;
+            }
+        }
+    }
 }
