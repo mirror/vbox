@@ -174,7 +174,7 @@ typedef struct SUPDRVIOCTLDATA
 /** Current interface version.
  * The upper 16-bit is the major version, the the lower the minor version.
  * When incompatible changes are made, the upper major number has to be changed. */
-#define SUPDRVIOC_VERSION           0x00050000
+#define SUPDRVIOC_VERSION           0x00050001
 
 /** SUP_IOCTL_COOKIE Input. */
 typedef struct SUPCOOKIE_IN

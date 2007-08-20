@@ -131,6 +131,8 @@ static SUPFUNC g_aFunctions[] =
     { "RTLogLogger",                            (void *)RTLogLogger },
     { "RTLogLoggerEx",                          (void *)RTLogLoggerEx },
     { "RTLogLoggerExV",                         (void *)RTLogLoggerExV },
+    { "RTLogPrintf",                            (void *)RTLogPrintf },
+    { "RTLogPrintfV",                           (void *)RTLogPrintfV },
     { "AssertMsg1",                             (void *)AssertMsg1 },
     { "AssertMsg2",                             (void *)AssertMsg2 },
 };
@@ -4447,6 +4449,20 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, 
  * Stub function for non-debug builds.
  */
 RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args)
+{
+}
+
+/**
+ * Stub function for non-debug builds.
+ */
+RTDECL(void) RTLogPrintf(const char *pszFormat, ...)
+{
+}
+
+/**
+ * Stub function for non-debug builds.
+ */
+RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
 {
 }
 #endif /* !DEBUG */
