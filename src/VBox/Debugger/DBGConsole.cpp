@@ -460,6 +460,8 @@ static DECLCALLBACK(int) dbgcCmdUnset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
 static DECLCALLBACK(int) dbgcCmdLoadVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdShowVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdHarakiri(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 
 static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
@@ -812,6 +814,7 @@ static const DBGCCMD    g_aCmds[] =
     { "dq",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in quad words." },
     { "dt",         0,        1,        &g_aArgDumpTSS[0],  ELEMENTS(g_aArgDumpTSS),    NULL,               0,          dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the task state segment (TSS)." },
     { "dw",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in words." },
+    { "echo",       1,        ~0,       &g_aArgMultiStr[0], ELEMENTS(g_aArgMultiStr),   NULL,               0,          dbgcCmdEcho,        "<str1> [str2..[strN]]", "Displays the strings separated by one blank space and the last one followed by a newline." },
     { "exit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
     { "format",     1,        1,        &g_aArgAny[0],      ELEMENTS(g_aArgAny),        NULL,               0,          dbgcCmdFormat,      "",                     "Evaluates an expression and formats it." },
     { "g",          0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdGo,          "",                     "Continue execution." },
@@ -833,6 +836,7 @@ static const DBGCCMD    g_aCmds[] =
     { "rg",         0,        2,        &g_aArgReg[0],      ELEMENTS(g_aArgReg),        NULL,               0,          dbgcCmdRegGuest,    "[reg [newval]]",       "Show or set register(s) - guest reg set." },
     { "rh",         0,        2,        &g_aArgReg[0],      ELEMENTS(g_aArgReg),        NULL,               0,          dbgcCmdRegHyper,    "[reg [newval]]",       "Show or set register(s) - hypervisor reg set." },
     { "rt",         0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
+    { "runscript",  1,        1,        &g_aArgFilename[0], ELEMENTS(g_aArgFilename),   NULL,               0,          dbgcCmdRunScript,   "<filename>",           "Runs the command listed in the script. Lines starting with '#' (after removing blanks) are comment. blank lines are ignored. Stops on failure." },
     { "s",          0,        1,        &g_aArgSource[0],   ELEMENTS(g_aArgSource),     NULL,               0,          dbgcCmdSource,      "[addr]",               "Source." },
     { "set",        2,        2,        &g_aArgSet[0],      ELEMENTS(g_aArgSet),        NULL,               0,          dbgcCmdSet,         "<var> <value>",        "Sets a global variable." },
     { "showvars",   0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdShowVars,    "",                     "List all the defined variables." },
@@ -3563,6 +3567,122 @@ static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     NOREF(pCmd); NOREF(cArgs); NOREF(pResult);
     return rc4;
 }
+
+
+/**
+ * The 'echo' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Loop thru the arguments and print them with one space between.
+     */
+    int rc = 0;
+    for (unsigned i = 0; i < cArgs; i++)
+    {
+        if (paArgs[i].enmType == DBGCVAR_TYPE_STRING)
+            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, i ? " %s" : "%s", paArgs[i].u.pszString);
+        else
+            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, i ? " <parser error>" : "<parser error>");
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+    NOREF(pCmd); NOREF(pResult); NOREF(pVM);
+    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
+}
+
+
+/**
+ * The 'echo' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /* check that the parser did what it's supposed to do. */
+    if (    cArgs != 1
+        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
+
+    /*
+     * Try open the script.
+     */
+    const char *pszFilename = paArgs[0].u.pszString;
+    FILE *pFile = fopen(pszFilename, "r");
+    if (!pFile)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Failed to open '%s'.\n", pszFilename);
+
+    /*
+     * Execute it line by line.
+     */
+    int rc = 0;
+    unsigned iLine = 0;
+    char szLine[8192];
+    while (fgets(szLine, sizeof(szLine), pFile))
+    {
+        /* check that the line isn't too long. */
+        char *pszEnd = strchr(szLine, '\0');
+        if (pszEnd == &szLine[sizeof(szLine) - 1])
+        {
+            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "runscript error: Line #%u is too long\n", iLine);
+            break;
+        }
+        iLine++;
+
+        /* strip leading blanks and check for comment / blank line. */
+        char *psz = RTStrStripL(szLine);
+        if (    *psz == '\0'
+            ||  *psz == '\n'
+            ||  *psz == '#')
+            continue;
+
+        /* strip trailing blanks and check for empty line (\r case). */
+        while (     pszEnd > psz
+               &&   isspace(pszEnd[-1])) /* isspace includes \n and \r normally. */
+            *++pszEnd = '\0';
+
+        /** @todo check for Control-C / Cancel at this point... */
+
+        /*
+         * Execute the command.
+         *
+         * This is a bit wasteful with scratch space btw., can fix it later.
+         * The whole return code crap should be fixed too, so that it's possible
+         * to know whether a command succeeded (VBOX_SUCCESS()) or failed, and
+         * more importantly why it failed.
+         */
+        rc = pCmdHlp->pfnExec(pCmdHlp, "%s", szLine);
+        if (VBOX_FAILURE(rc))
+        {
+            if (rc == VERR_BUFFER_OVERFLOW)
+                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "runscript error: Line #%u is too long (exec overflowed)\n", iLine);
+            break;
+        }
+        if (rc == VWRN_DBGC_CMD_PENDING)
+        {
+            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "runscript error: VWRN_DBGC_CMD_PENDING on line #%u, script terminated\n", iLine);
+            break;
+        }
+    }
+
+    fclose(pFile);
+
+    NOREF(pCmd); NOREF(pResult); NOREF(pVM);
+    return rc;
+}
+
 
 
 /**
