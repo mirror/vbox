@@ -16,6 +16,7 @@
 #define __VBoxDisplay_h__
 
 #define VBOXESC_SETVISIBLEREGION            0xABCD9001
+#define VBOXESC_ISVRDPACTIVE                0xABCD9002
 
 
 #define IOCTL_VIDEO_VBOX_SETVISIBLEREGION \
