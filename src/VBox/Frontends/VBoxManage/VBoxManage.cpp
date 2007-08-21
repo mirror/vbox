@@ -1054,18 +1054,19 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             }
             else
             {
-                ULONG uIRQ, uIOBase, uHostMode;
+                ULONG uIRQ, uIOBase;
+                SerialHostMode_T HostMode;
                 Bstr path;
                 BOOL fServer;
                 uart->COMGETTER(IRQ)(&uIRQ);
                 uart->COMGETTER(IOBase)(&uIOBase);
                 uart->COMGETTER(Path)(path.asOutParam());
                 uart->COMGETTER(Server)(&fServer);
-                uart->COMGETTER(HostMode)(&uHostMode);
+                uart->COMGETTER(HostMode)(&HostMode);
 
                 RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d",
                          currentUART + 1, uIOBase, uIRQ);
-                switch (uHostMode)
+                switch (HostMode)
                 {
                     default:
                     case SerialHostMode_Disconnected:
