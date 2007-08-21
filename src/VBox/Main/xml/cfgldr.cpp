@@ -1082,6 +1082,10 @@ int CfgLoader::Save (const char *pszFilename, RTFILE hFileHandle,
 
     writer->release();
 
+    if (hFileHandle != NIL_RTFILE || hOriginalFileHandle != NIL_RTFILE)
+        (void)RTFileFlush(hFileHandle != NIL_RTFILE ? hFileHandle :
+                          hOriginalFileHandle);
+
     return rc;
 }
 
