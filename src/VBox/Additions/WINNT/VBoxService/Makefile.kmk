@@ -29,7 +29,6 @@ VBoxService_SOURCES  = \
 	VBoxService.cpp \
 	VBoxSeamless.cpp \
 	VBoxClipboard.cpp \
-	VBoxDisplay.cpp \
 	helpers.cpp \
 	VBoxService.rc
 VBoxService_LIBS     = \
