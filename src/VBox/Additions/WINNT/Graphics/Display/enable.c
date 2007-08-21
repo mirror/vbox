@@ -112,7 +112,7 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
     {
         ULONG ret = 0;
 
-        if (ppdev->pInfo && vboxHwBufferBeginUpdate (ppdev))
+        if (ppdev && ppdev->pInfo && vboxHwBufferBeginUpdate (ppdev))
         {
             if (ppdev->vbva.pVbvaMemory->fu32ModeFlags
                 & VBVA_F_MODE_VRDP)
