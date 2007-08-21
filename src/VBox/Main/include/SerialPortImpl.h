@@ -90,8 +90,8 @@ public:
     STDMETHOD(COMGETTER(Slot))     (ULONG     *aSlot);
     STDMETHOD(COMGETTER(Enabled))  (BOOL      *aEnabled);
     STDMETHOD(COMSETTER(Enabled))  (BOOL       aEnabled);
-    STDMETHOD(COMGETTER(HostMode)) (ULONG    *aHostMode);
-    STDMETHOD(COMSETTER(HostMode)) (ULONG     aHostMode);
+    STDMETHOD(COMGETTER(HostMode)) (SerialHostMode_T *aHostMode);
+    STDMETHOD(COMSETTER(HostMode)) (SerialHostMode_T  aHostMode);
     STDMETHOD(COMGETTER(IRQ))      (ULONG     *aIRQ);
     STDMETHOD(COMSETTER(IRQ))      (ULONG      aIRQ);
     STDMETHOD(COMGETTER(IOBase) )  (ULONG     *aIOBase);
