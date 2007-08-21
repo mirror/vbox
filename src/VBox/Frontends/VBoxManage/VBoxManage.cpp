@@ -331,10 +331,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nictrace<1-N> on|off]\n"
                  "                            [-nictracefile<1-N> <filename>]\n"
                  "                            [-hostifdev<1-N> none|<devicename>]\n"
-                 "                            [-intnet<1-N> network]\n"
+                 "                            [-intnet<1-N> <network>]\n"
                  "                            [-macaddress<1-N> auto|<mac>]\n"
-                 "                            [-uart<1-N> off | <I/O base> <IRQ> server|client\n"
-                 "                                              <host pipename>]\n"
+                 "                            [-uart<1-N> off|<I/O base> <IRQ>]\n"
+                 "                            [-uartmode<1-N> server|client <pipe name>|\n"
+                 "                                            <device name>]\n"
                  );
         if (fLinux)
         {
@@ -1053,17 +1054,31 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             }
             else
             {
-                ULONG uIRQ, uIOBase;
-                Bstr pipe;
+                ULONG uIRQ, uIOBase, uHostMode;
+                Bstr path;
                 BOOL fServer;
                 uart->COMGETTER(IRQ)(&uIRQ);
                 uart->COMGETTER(IOBase)(&uIOBase);
-                uart->COMGETTER(Pipe)(pipe.asOutParam());
+                uart->COMGETTER(Path)(path.asOutParam());
                 uart->COMGETTER(Server)(&fServer);
+                uart->COMGETTER(HostMode)(&uHostMode);
 
-                RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d, %s, pipe '%lS'\n",
-                         currentUART + 1, uIOBase, uIRQ, fServer ? "isServer" : "isClient",
-                         pipe.raw());
+                RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d",
+                         currentUART + 1, uIOBase, uIRQ);
+                switch (uHostMode)
+                {
+                    default:
+                    case SerialHostMode_Disconnected:
+                        RTPrintf(", disconnected\n");
+                        break;
+                    case SerialHostMode_HostPipe:
+                        RTPrintf(", attached to pipe (%s) '%lS'\n",
+                                fServer ? "server" : "client", path.raw());
+                        break;
+                    case SerialHostMode_HostDevice:
+                        RTPrintf(", attached to device '%lS'\n", path.raw());
+                        break;
+                }
             }
         }
     }
@@ -2824,10 +2839,10 @@ static int handleModifyVM(int argc, char *argv[],
     std::vector <char *> tapterm (NetworkAdapterCount, 0);
 #endif
     std::vector <char *> macs (NetworkAdapterCount, 0);
+    std::vector <char *> uarts_mode (SerialPortCount, 0);
     std::vector <ULONG>  uarts_base (SerialPortCount, 0);
     std::vector <ULONG>  uarts_irq (SerialPortCount, 0);
-    std::vector <char *> uarts_pipe (SerialPortCount, 0);
-    std::vector <char *> uarts_server (SerialPortCount, 0);
+    std::vector <char *> uarts_path (SerialPortCount, 0);
 
     for (int i = 1; i < argc; i++)
     {
@@ -3267,6 +3282,31 @@ static int handleModifyVM(int argc, char *argv[],
             i++;
             snapshotFolder = argv[i];
         }
+        else if (strncmp(argv[i], "-uartmode", 9) == 0)
+        {
+            unsigned n = parseNum(&argv[i][9], SerialPortCount, "UART");
+            if (!n)
+                return 1;
+            i++;
+            if (strcmp(argv[i], "server") == 0 || strcmp(argv[i], "client") == 0)
+            {
+                uarts_mode[n - 1] = argv[i];
+                i++;
+#ifdef RT_OS_WINDOWS
+                if (strncmp(argv[i], "\\\\.\\pipe\\", 9))
+                    return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
+#endif
+            }
+            else
+            {
+                uarts_mode[n - 1] = (char*)"device";
+            }
+            if (argc <= i)
+            {
+                return errorArgument("Missing argument to -uartmode");
+            }
+            uarts_path[n - 1] = argv[i];
+        }
         else if (strncmp(argv[i], "-uart", 5) == 0)
         {
             unsigned n = parseNum(&argv[i][5], SerialPortCount, "UART");
@@ -3283,7 +3323,7 @@ static int handleModifyVM(int argc, char *argv[],
             }
             else
             {
-                if (argc <= i + 2)
+                if (argc <= i + 1)
                 {
                     return errorArgument("Missing argument to '%s'", argv[i-1]);
                 }
@@ -3298,16 +3338,6 @@ static int handleModifyVM(int argc, char *argv[],
                 if (vrc != VINF_SUCCESS)
                     return errorArgument("Error parsing UART IRQ '%s'", argv[i]);
                 uarts_irq[n - 1]  = uVal;
-                i++;
-                if (strcmp(argv[i], "server") && strcmp(argv[i], "client"))
-                    return errorArgument("Third UART argument must be 'client' or 'server'");
-                uarts_server[n - 1] = argv[i];
-                i++;
-#ifdef RT_OS_WINDOWS
-                if (strncmp(argv[i], "\\\\.\\pipe\\", 9))
-                    return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
-#endif
-                uarts_pipe[n - 1] = argv[i];
             }
         }
         else
@@ -4054,7 +4084,6 @@ static int handleModifyVM(int argc, char *argv[],
 
             ASSERT(uart);
 
-            /* something about the NIC? */
             if (uarts_base[n])
             {
                 if (uarts_base[n] == (ULONG)-1)
@@ -4065,11 +4094,26 @@ static int handleModifyVM(int argc, char *argv[],
                 {
                     CHECK_ERROR_RET(uart, COMSETTER(IOBase) (uarts_base[n]), 1);
                     CHECK_ERROR_RET(uart, COMSETTER(IRQ) (uarts_irq[n]), 1);
-                    CHECK_ERROR_RET(uart, COMSETTER(Pipe) (Bstr(uarts_pipe[n])), 1);
-                    CHECK_ERROR_RET(uart, COMSETTER(Server)
-                                          (0 == strcmp(uarts_server[n], "server")), 1);
                     CHECK_ERROR_RET(uart, COMSETTER(Enabled) (TRUE), 1);
                 }
+            }
+            if (uarts_mode[n])
+            {
+                if (strcmp(uarts_mode[n], "server") == 0)
+                {
+                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(Server) (TRUE), 1);
+                }
+                else if (strcmp(uarts_mode[n], "client") == 0)
+                {
+                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(Server) (FALSE), 1);
+                }
+                else
+                {
+                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostDevice), 1);
+                }
+                CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
             }
         }
         if (FAILED(rc))

@@ -255,24 +255,36 @@ HRESULT SerialPort::loadSettings (CFGNODE aNode, ULONG aSlot)
     /* enabled (required) */
     bool fEnabled = false;
     CFGLDRQueryBool (portNode, "enabled", &fEnabled);
-    /* I/O base (required) */
+    Bstr mode;
     uint32_t uIOBase;
+    /* I/O base (required) */
     CFGLDRQueryUInt32 (portNode, "IOBase", &uIOBase);
     /* IRQ (required) */
     uint32_t uIRQ;
     CFGLDRQueryUInt32 (portNode, "IRQ", &uIRQ);
+    /* host mode (required) */
+    CFGLDRQueryBSTR (portNode, "HostMode", mode.asOutParam());
+    if (mode == L"HostPipe")
+        mData->mHostMode = SerialHostMode_HostPipe;
+    else if (mode == L"HostDevice")
+        mData->mHostMode = SerialHostMode_HostDevice;
+    else
+        mData->mHostMode = SerialHostMode_Disconnected;
     /* name of the pipe (required) */
-    Bstr pipe;
-    CFGLDRQueryBSTR   (portNode, "pipe", pipe.asOutParam());
+    Bstr path;
+    int rc = CFGLDRQueryBSTR(portNode, "path", path.asOutParam());
+    /* backward compatibility */
+    if (rc == VERR_CFG_NO_VALUE)
+        CFGLDRQueryBSTR(portNode, "pipe", path.asOutParam());
     bool fServer = true;
     CFGLDRQueryBool   (portNode, "server", &fServer);
 
-    mData->mEnabled = fEnabled;
-    mData->mSlot    = uSlot;
-    mData->mIOBase  = uIOBase;
-    mData->mIRQ     = uIRQ;
-    mData->mPipe    = pipe;
-    mData->mServer  = fServer;
+    mData->mEnabled  = fEnabled;
+    mData->mSlot     = uSlot;
+    mData->mIOBase   = uIOBase;
+    mData->mIRQ      = uIRQ;
+    mData->mPath     = path;
+    mData->mServer   = fServer;
 
     return S_OK;
 }
@@ -290,12 +302,31 @@ HRESULT SerialPort::saveSettings (CFGNODE aNode)
     int vrc = CFGLDRAppendChildNode (aNode, "Port", &portNode);
     ComAssertRCRet (vrc, E_FAIL);
 
+    const char *mode;
+    switch (mData->mHostMode)
+    {
+        default:
+        case SerialHostMode_Disconnected:
+            mode = "Disconnected";
+            break;
+        case SerialHostMode_HostPipe:
+            mode = "HostPipe";
+            break;
+        case SerialHostMode_HostDevice:
+            mode = "HostDevice";
+            break;
+    }
     CFGLDRSetUInt32 (portNode, "slot",    mData->mSlot);
     CFGLDRSetBool   (portNode, "enabled", !!mData->mEnabled);
-    CFGLDRSetUInt32 (portNode, "IOBase",  mData->mIOBase);
-    CFGLDRSetUInt32 (portNode, "IRQ",     mData->mIRQ);
-    CFGLDRSetBSTR   (portNode, "pipe",    mData->mPipe);
-    CFGLDRSetBool   (portNode, "server",  !!mData->mServer);
+    if (mData->mEnabled)
+    {
+        CFGLDRSetUInt32 (portNode, "IOBase",  mData->mIOBase);
+        CFGLDRSetUInt32 (portNode, "IRQ",     mData->mIRQ);
+        CFGLDRSetString (portNode, "HostMode", mode);
+        CFGLDRSetBSTR   (portNode, "path",    mData->mPath);
+        if (mData->mHostMode == SerialHostMode_HostPipe)
+            CFGLDRSetBool   (portNode, "server",  !!mData->mServer);
+    }
 
     return S_OK;
 }
@@ -343,6 +374,53 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
     }
 
     return S_OK;
+}
+
+STDMETHODIMP SerialPort::COMGETTER(HostMode) (ULONG *aHostMode)
+{
+    if (!aHostMode)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aHostMode = mData->mHostMode;
+
+    return S_OK;
+}
+
+STDMETHODIMP SerialPort::COMSETTER(HostMode) (ULONG aHostMode)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    HRESULT rc = S_OK;
+    bool emitChangeEvent = false;
+
+    if (mData->mHostMode != aHostMode)
+    {
+        mData.backup();
+        mData->mHostMode = aHostMode;
+        emitChangeEvent = true;
+    }
+
+    if (emitChangeEvent)
+    {
+        /* leave the lock before informing callbacks */
+        alock.unlock();
+
+        mParent->onSerialPortChange (this);
+    }
+
+    return rc;
 }
 
 STDMETHODIMP SerialPort::COMGETTER(Slot) (ULONG *aSlot)
@@ -454,9 +532,9 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
     return rc;
 }
 
-STDMETHODIMP SerialPort::COMGETTER(Pipe) (BSTR *aPipe)
+STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
 {
-    if (!aPipe)
+    if (!aPath)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -464,14 +542,14 @@ STDMETHODIMP SerialPort::COMGETTER(Pipe) (BSTR *aPipe)
 
     AutoReaderLock alock (this);
 
-    mData->mPipe.cloneTo (aPipe);
+    mData->mPath.cloneTo (aPath);
 
     return S_OK;
 }
 
-STDMETHODIMP SerialPort::COMSETTER(Pipe) (INPTR BSTR aPipe)
+STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 {
-    if (!aPipe || *aPipe == 0)
+    if (!aPath || *aPath == 0)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -483,10 +561,10 @@ STDMETHODIMP SerialPort::COMSETTER(Pipe) (INPTR BSTR aPipe)
 
     AutoLock alock (this);
 
-    if (mData->mPipe != aPipe)
+    if (mData->mPath != aPath)
     {
         mData.backup();
-        mData->mPipe = aPipe;
+        mData->mPath = aPath;
 
         /* leave the lock before informing callbacks */
         alock.unlock();

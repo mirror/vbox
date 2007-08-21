@@ -5866,22 +5866,35 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
-        ULONG uIRQ, uIOBase;
-        Bstr  pipe;
+        ULONG uIRQ, uIOBase, uHostMode;
+        Bstr  path;
         BOOL  fServer;
+        hrc = serialPort->COMGETTER(HostMode)(&uHostMode);                          H();
         hrc = serialPort->COMGETTER(IRQ)(&uIRQ);                                    H();
         hrc = serialPort->COMGETTER(IOBase)(&uIOBase);                              H();
-        hrc = serialPort->COMGETTER(Pipe)(pipe.asOutParam());                       H();
+        hrc = serialPort->COMGETTER(Path)(path.asOutParam());                       H();
         hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", uIRQ);                              RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,   "IOBase", uIOBase);                        RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                         RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                         RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);                RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1,  "Driver", "NamedPipe");                    RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                        RC_CHECK();
-        rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(pipe));                RC_CHECK();
-        rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);                      RC_CHECK();
+        if (uHostMode != SerialHostMode_Disconnected)
+        {
+            rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                     RC_CHECK();
+            if (uHostMode == SerialHostMode_HostPipe)
+            {
+                rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1,  "Driver", "NamedPipe");            RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                RC_CHECK();
+                rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(path));        RC_CHECK();
+                rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);              RC_CHECK();
+            }
+            else if (uHostMode == SerialHostMode_HostDevice)
+            {
+                rc = CFGMR3InsertString(pLunL0,  "Driver", "Host Serial");          RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,    "Config", &pLunL1);                RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1,  "DevicePath", Utf8Str(path));      RC_CHECK();
+            }
+        }
     }
 
     /*

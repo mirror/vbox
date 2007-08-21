@@ -171,6 +171,14 @@
     </xsd:restriction>
 </xsd:simpleType>
 
+<xsd:simpleType name="TUartHostModeType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="Disconnected"/>
+      <xsd:enumeration value="HostPipe"/>
+      <xsd:enumeration value="HostDevice"/>
+    </xsd:restriction>
+</xsd:simpleType>
+
 <!--
 // Complex types
 /////////////////////////////////////////////////////////////////////////
@@ -522,7 +530,9 @@
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
   <xsd:attribute name="IRQ" type="xsd:unsignedInt" default="4"/>
   <xsd:attribute name="IOBase" type="xsd:unsignedInt" default="1016"/>
+  <xsd:attribute name="HostMode" type="TUartHostModeType" default="Disconnected"/>
   <xsd:attribute name="pipe" type="xsd:string"/>
+  <xsd:attribute name="path" type="xsd:string"/>
   <xsd:attribute name="server" type="xsd:boolean"/>
 </xsd:complexType>
 

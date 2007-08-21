@@ -7005,6 +7005,15 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+     name="SerialHostMode"
+     uuid="5ac6ae50-30d4-4c89-8f9c-35b4500a5b9f"
+     >
+    <const name="Disconnected"        value="0"/>
+    <const name="HostPipe"            value="1"/>
+    <const name="HostDevice"          value="2"/>
+  </enum>
+
   <interface
      name="ISerialPort" extends="$unknown"
      uuid="a5ab0989-0ca9-4d5e-b565-f7739b92bb0c"
@@ -7034,11 +7043,15 @@
       <desc>Gets the IRQ of the serial port.</desc>
     </attribute>
 
-    <attribute name="pipe" type="wstring">
-      <desc>Gets the name of the host pipe connected to the serial port.</desc>
+    <attribute name="HostMode" type="SerialHostMode">
+      <desc>How is this port connected to the host.</desc>
     </attribute>
 
     <attribute name="server" type="boolean">
+      <desc>Flag whether this serial port acts as a server or a client.</desc>
+    </attribute>
+
+    <attribute name="path" type="wstring">
       <desc>Flag whether this serial port acts as a server or a client.</desc>
     </attribute>
 
