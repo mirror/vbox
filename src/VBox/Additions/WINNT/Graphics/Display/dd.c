@@ -152,10 +152,10 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         {
             pVm->dwFlags        = VIDMEM_ISLINEAR ;
             pVm->fpStart        = pDev->layout.offDDRAWHeap;
-            pVm->fpEnd          = pDev->layout.offDDRAWHeap + pDev->layout.cbDDRAWHeap;
+            pVm->fpEnd          = pDev->layout.offDDRAWHeap + pDev->layout.cbDDRAWHeap - 1; /* inclusive */
 
             pVm->ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-            DISPDBG((0, "fpStart %ld fpEnd %ld\n", pVm->fpStart, pVm->fpEnd));
+            DISPDBG((0, "fpStart %x fpEnd %x\n", pVm->fpStart, pVm->fpEnd));
 
             pVm++;
         }
@@ -507,8 +507,8 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
     DISPDBG((0, "New surface (%d,%d)\n", lpSurfaceGlobal->wWidth, lpSurfaceGlobal->wHeight));
     DISPDBG((0, "BPP %d lPitch=%d\n", lBpp, lPitch));
 
-    lpSurfaceGlobal->dwBlockSizeX   = lPitch * lpSurfaceGlobal->wHeight;
-    lpSurfaceGlobal->dwBlockSizeY   = 1;
+    lpSurfaceGlobal->dwBlockSizeX   = lPitch;
+    lpSurfaceGlobal->dwBlockSizeY   = lpSurfaceGlobal->wHeight;
     lpSurfaceGlobal->lPitch         = lPitch;
 
     //
@@ -523,7 +523,6 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
     else
     {
         DISPDBG((0, "-> secondary surface\n"));
-        lpSurfaceGlobal->dwUserMemSize  = lPitch * (DWORD)(lpSurfaceGlobal->wHeight);
         lpSurfaceGlobal->fpVidMem       = DDHAL_PLEASEALLOC_BLOCKSIZE;
     }
     
