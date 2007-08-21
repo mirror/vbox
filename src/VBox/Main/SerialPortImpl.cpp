@@ -376,7 +376,7 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP SerialPort::COMGETTER(HostMode) (ULONG *aHostMode)
+STDMETHODIMP SerialPort::COMGETTER(HostMode) (SerialHostMode_T *aHostMode)
 {
     if (!aHostMode)
         return E_POINTER;
@@ -391,7 +391,7 @@ STDMETHODIMP SerialPort::COMGETTER(HostMode) (ULONG *aHostMode)
     return S_OK;
 }
 
-STDMETHODIMP SerialPort::COMSETTER(HostMode) (ULONG aHostMode)
+STDMETHODIMP SerialPort::COMSETTER(HostMode) (SerialHostMode_T aHostMode)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
