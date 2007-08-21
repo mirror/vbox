@@ -1253,7 +1253,7 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
     }
 
     DISPDBG((0, "DrvDeriveSurface return NULL\n"));
-    DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch\n));
+    DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld\n", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch));
     
     return(0);
 }
