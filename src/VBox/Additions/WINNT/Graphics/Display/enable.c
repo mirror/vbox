@@ -254,7 +254,8 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
     {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
     {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
-    {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85
+    /** @todo */
+////    {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85
 #endif
     {   INDEX_DrvNotify,                (PFN) DrvNotify             },	// 87 0x57
 //     /* Experimental. */
@@ -1242,17 +1243,17 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
                 surfobj->iType = STYPE_DEVBITMAP;
                 EngUnlockSurface(surfobj);
 
-                DISPDBG((0, "DrvDeriveSurface return succeed"));
+                DISPDBG((0, "DrvDeriveSurface return succeed\n"));
                 return(hbmDevice);
             }
 
-            DISPDBG((0, "DrvDeriveSurface: EngModifySurface failed"));
+            DISPDBG((0, "DrvDeriveSurface: EngModifySurface failed\n"));
             EngDeleteSurface((HSURF)hbmDevice);
         }
     }
 
-    DISPDBG((0, "DrvDeriveSurface return NULL"));
-    DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch));
+    DISPDBG((0, "DrvDeriveSurface return NULL\n"));
+    DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch\n));
     
     return(0);
 }
