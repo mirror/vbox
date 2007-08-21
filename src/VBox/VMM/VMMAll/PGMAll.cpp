@@ -525,10 +525,24 @@ PGMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
  */
 PGMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
+    int rc;
+
     LogFlow(("PGMInvalidatePage: GCPtrPage=%VGv\n", GCPtrPage));
 
+    /** @todo merge PGMGCInvalidatePage with this one */
+
+#ifndef IN_RING3
+    /*
+     * Notify the recompiler so it can record this instruction.
+     * Failure happens when it's out of space. We'll return to HC in that case.
+     */
+    rc = REMNotifyInvalidatePage(pVM, GCPtrPage);
+    if (VBOX_FAILURE(rc))
+        return rc;
+#endif
+
     STAM_PROFILE_START(&CTXMID(pVM->pgm.s.Stat,InvalidatePage), a);
-    int rc = PGM_BTH_PFN(InvalidatePage, pVM)(pVM, GCPtrPage);
+    rc = PGM_BTH_PFN(InvalidatePage, pVM)(pVM, GCPtrPage);
     STAM_PROFILE_STOP(&CTXMID(pVM->pgm.s.Stat,InvalidatePage), a);
 
 #ifndef IN_RING0

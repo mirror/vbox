@@ -49,6 +49,7 @@ REMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
         pVM->rem.s.aGCPtrInvalidatedPages[pVM->rem.s.cInvalidatedPages++] = GCPtrPage;
         return VINF_SUCCESS;
     }
+    /* Note: another option is to signal a TLB flush for the recompiler */
     return VERR_REM_FLUSHED_PAGES_OVERFLOW;
 }
 
