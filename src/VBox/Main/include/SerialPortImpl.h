@@ -55,9 +55,9 @@ public:
 
         ULONG mSlot;
         BOOL  mEnabled;
-        ULONG mHostMode;
         ULONG mIRQ;
         ULONG mIOBase;
+        SerialHostMode_T mHostMode;
         Bstr  mPath;
         BOOL  mServer;
     };
