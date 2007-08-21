@@ -5866,20 +5866,21 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
-        ULONG uIRQ, uIOBase, uHostMode;
+        ULONG uIRQ, uIOBase;
+        SerialHostMode_T HostMode;
         Bstr  path;
         BOOL  fServer;
-        hrc = serialPort->COMGETTER(HostMode)(&uHostMode);                          H();
+        hrc = serialPort->COMGETTER(HostMode)(&HostMode);                           H();
         hrc = serialPort->COMGETTER(IRQ)(&uIRQ);                                    H();
         hrc = serialPort->COMGETTER(IOBase)(&uIOBase);                              H();
         hrc = serialPort->COMGETTER(Path)(path.asOutParam());                       H();
         hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", uIRQ);                              RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,   "IOBase", uIOBase);                        RC_CHECK();
-        if (uHostMode != SerialHostMode_Disconnected)
+        if (HostMode != SerialHostMode_Disconnected)
         {
             rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                     RC_CHECK();
-            if (uHostMode == SerialHostMode_HostPipe)
+            if (HostMode == SerialHostMode_HostPipe)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
@@ -5888,7 +5889,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(path));        RC_CHECK();
                 rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);              RC_CHECK();
             }
-            else if (uHostMode == SerialHostMode_HostDevice)
+            else if (HostMode == SerialHostMode_HostDevice)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Host Serial");          RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "Config", &pLunL1);                RC_CHECK();
