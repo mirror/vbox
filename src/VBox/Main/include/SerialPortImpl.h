@@ -37,9 +37,9 @@ public:
         Data()
             : mSlot (0)
             , mEnabled (FALSE)
-            , mHostMode (SerialHostMode_Disconnected)
             , mIRQ (4)
             , mIOBase (0x3f8)
+            , mHostMode (SerialHostMode_Disconnected)
             , mServer (FALSE)
         {}
 
