@@ -1,7 +1,6 @@
+/** $Id: $ */
 /** @file
- *
- * VBox stream I/O devices:
- * Host serial driver
+ * VBox stream I/O devices: Host serial driver
  *
  * Contributed by: Alexander Eichner
  */
@@ -132,7 +131,7 @@ static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, PD
 static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pvBuf, size_t cbWrite)
 {
     PDRVHOSTSERIAL pData = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
-    const char *pBuffer = (const char *)pvBuf;
+    const uint8_t *pbBuffer = (const uint8_t *)pvBuf;
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
@@ -140,7 +139,7 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
     {
         uint32_t idx = pData->iSendQueueHead;
 
-        pData->aSendQueue[idx] = pBuffer[i];
+        pData->aSendQueue[idx] = pbBuffer[i];
         idx = (idx + 1) & CHAR_MAX_SEND_QUEUE_MASK;
 
         STAM_COUNTER_INC(&pData->StatBytesWritten);
@@ -161,10 +160,10 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
 #endif
 
     LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
- 
+
 #ifdef RT_OS_LINUX
     termiosSetup = (struct termios *)RTMemTmpAllocZ(sizeof(struct termios));
-  
+
     /* Enable receiver */
     termiosSetup->c_cflag |= (CLOCAL | CREAD);
 
@@ -345,7 +344,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
         default:
             break;
     }
- 
+
     switch (cStopBits) {
         case 1:
             comSetup->StopBits = ONESTOPBIT;
@@ -375,7 +374,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
 /**
  * Send thread loop.
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS.
  * @param   ThreadSelf  Thread handle to this thread.
  * @param   pvUser      User argument.
  */
@@ -383,7 +382,7 @@ static DECLCALLBACK(int) drvHostSerialSendLoop(RTTHREAD ThreadSelf, void *pvUser
 {
     PDRVHOSTSERIAL pData = (PDRVHOSTSERIAL)pvUser;
 
-    for(;;)
+    while (!pData->fShutdown)
     {
         int rc = RTSemEventWait(pData->SendSem, RT_INDEFINITE_WAIT);
         if (VBOX_FAILURE(rc))
@@ -392,31 +391,25 @@ static DECLCALLBACK(int) drvHostSerialSendLoop(RTTHREAD ThreadSelf, void *pvUser
         /*
          * Write the character to the host device.
          */
-        if (!pData->fShutdown)
+        while (     !pData->fShutdown
+               &&   pData->iSendQueueTail != pData->iSendQueueHead)
         {
-            while (pData->iSendQueueTail != pData->iSendQueueHead)
-            {
-                size_t cbProcessed = 1;
+            unsigned cbProcessed = 1;
 
-                rc = RTFileWrite(pData->DeviceFile, &pData->aSendQueue[pData->iSendQueueTail], cbProcessed, NULL);
-                if (VBOX_SUCCESS(rc))
-                {
-                    Assert(cbProcessed);
-                    pData->iSendQueueTail++;
-                    pData->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
-                }
-                else if (VBOX_FAILURE(rc))
-                {
-                    LogFlow(("Write failed with %Vrc; skipping\n", rc));
-                    break;
-                }
+            rc = RTFileWrite(pData->DeviceFile, &pData->aSendQueue[pData->iSendQueueTail], cbProcessed, NULL);
+            if (VBOX_SUCCESS(rc))
+            {
+                Assert(cbProcessed);
+                pData->iSendQueueTail++;
+                pData->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
+            }
+            else if (VBOX_FAILURE(rc))
+            {
+                LogFlow(("Write failed with %Vrc; skipping\n", rc));
+                break;
             }
         }
-        else
-            break;
     }
-
-    pData->SendThread = NIL_RTTHREAD;
 
     return VINF_SUCCESS;
 }
@@ -427,44 +420,45 @@ static DECLCALLBACK(int) drvHostSerialSendLoop(RTTHREAD ThreadSelf, void *pvUser
 /**
  * Receive thread loop.
  *
- * @returns 0 on success.
+ * This thread pushes data from the host serial device up the driver
+ * chain toward the serial device.
+ *
+ * @returns VINF_SUCCESS.
  * @param   ThreadSelf  Thread handle to this thread.
  * @param   pvUser      User argument.
  */
 static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
 {
     PDRVHOSTSERIAL pData = (PDRVHOSTSERIAL)pvUser;
-    char aBuffer[256], *pBuffer;
-    unsigned cbRemaining, cbProcessed, cbRead;
-    int rc;
+    uint8_t abBuffer[256];
+    uint8_t *pbBuffer = NULL;
+    size_t cbRemaining = 0; /* start by reading host data */
+    int rc = VINF_SUCCESS;
 
-    cbRemaining = 0;
-    pBuffer = aBuffer;
     while (!pData->fShutdown)
     {
         if (!cbRemaining)
         {
-            /* Get block of data from serial device. */
-            cbRemaining = sizeof(aBuffer);
-            rc = RTFileRead(pData->DeviceFile, aBuffer, cbRemaining, &cbRead);
+            /* Get a block of data from the host serial device. */
+            unsigned cbRead;
+            rc = RTFileRead(pData->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
             if (VBOX_FAILURE(rc))
             {
-                LogFlow(("Read failed with %Vrc\n", rc));
+                LogRel(("Host Serial Driver: Read failed with %Vrc, terminating the worker thread.\n", rc));
                 break;
-            } else {
-                cbRemaining = cbRead;
             }
-            pBuffer = aBuffer;
+            cbRemaining = cbRead;
+            pbBuffer = abBuffer;
         }
         else
         {
-            /* Send data to guest. */
-            cbProcessed = cbRemaining;
-            rc = pData->pDrvCharPort->pfnNotifyRead(pData->pDrvCharPort, pBuffer, &cbProcessed);
+            /* Send data to the guest. */
+            size_t cbProcessed = cbRemaining;
+            rc = pData->pDrvCharPort->pfnNotifyRead(pData->pDrvCharPort, pbBuffer, &cbProcessed);
             if (VBOX_SUCCESS(rc))
             {
-                Assert(cbProcessed);
-                pBuffer += cbProcessed;
+                Assert(cbProcessed); Assert(cbProcessed <= cbRemaining);
+                pbBuffer += cbProcessed;
                 cbRemaining -= cbProcessed;
                 STAM_COUNTER_ADD(&pData->StatBytesRead, cbProcessed);
             }
@@ -476,13 +470,11 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
             }
             else
             {
-                LogFlow(("NotifyRead failed with %Vrc\n", rc));
+                LogRel(("Host Serial Driver: NotifyRead failed with %Vrc, terminating the worker thread.\n", rc));
                 break;
             }
         }
     }
-
-    pData->ReceiveThread = NIL_RTTHREAD;
 
     return VINF_SUCCESS;
 }
@@ -511,6 +503,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Init basic data members and interfaces.
      */
     pData->ReceiveThread                    = NIL_RTTHREAD;
+    pData->SendThread                       = NIL_RTTHREAD;
     pData->fShutdown                        = false;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvHostSerialQueryInterface;
@@ -552,7 +545,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
                                            pData->pszDevicePath, pData->pszDevicePath);
            default:
                 return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                           N_("Failed to open host device '%s'"), 
+                                           N_("Failed to open host device '%s'"),
                                            pData->pszDevicePath);
         }
     }
@@ -564,7 +557,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* Set the COMMTIMEOUTS to get non blocking I/O */
     COMMTIMEOUTS comTimeout;
 
-    comTimeout.ReadIntervalTimeout         = MAXDWORD; 
+    comTimeout.ReadIntervalTimeout         = MAXDWORD;
     comTimeout.ReadTotalTimeoutMultiplier  = 0;
     comTimeout.ReadTotalTimeoutConstant    = 0;
     comTimeout.WriteTotalTimeoutMultiplier = 0;
@@ -590,8 +583,8 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     rc = RTThreadCreate(&pData->SendThread, drvHostSerialSendLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Serial Send");
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create send thread"), pDrvIns->iInstance);
-  
-  
+
+
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/HostSerial%d/Written", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/HostSerial%d/Read", pDrvIns->iInstance);
 
@@ -613,12 +606,13 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
-    pData->fShutdown = true;
-    if (pData->ReceiveThread)
+    ASMAtomicXchgBool(&pData->fShutdown, true);
+    if (pData->ReceiveThread != NIL_RTTHREAD)
     {
-        RTThreadWait(pData->ReceiveThread, 1000, NULL);
-        if (pData->ReceiveThread != NIL_RTTHREAD)
-            LogRel(("HostSerial%d: receive thread did not terminate\n", pDrvIns->iInstance));
+        int rc = RTThreadWait(pData->ReceiveThread, 15000, NULL);
+        if (RT_FAILURE(rc))
+            LogRel(("HostSerial%d: receive thread did not terminate (rc=%Rrc)\n", pDrvIns->iInstance, rc));
+        pData->ReceiveThread = NIL_RTTHREAD;
     }
 
     /* Empty the send queue */
@@ -628,11 +622,12 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     RTSemEventDestroy(pData->SendSem);
     pData->SendSem = NIL_RTSEMEVENT;
 
-    if (pData->SendThread)
+    if (pData->SendThread != NIL_RTTHREAD)
     {
-        RTThreadWait(pData->SendThread, 1000, NULL);
-        if (pData->SendThread != NIL_RTTHREAD)
-            LogRel(("HostSerial%d: send thread did not terminate\n", pDrvIns->iInstance));
+        int rc = RTThreadWait(pData->SendThread, 15000, NULL);
+        if (RT_FAILURE(rc))
+            LogRel(("HostSerial%d: send thread did not terminate (rc=%Rrc)\n", pDrvIns->iInstance, rc));
+        pData->SendThread = NIL_RTTHREAD;
     }
 }
 
