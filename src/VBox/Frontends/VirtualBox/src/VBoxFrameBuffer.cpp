@@ -150,6 +150,7 @@ STDMETHODIMP VBoxFrameBuffer::RequestResize (ULONG aScreenId, ULONG aPixelFormat
                                              ULONG aWidth, ULONG aHeight,
                                              BOOL *aFinished)
 {
+    NOREF(aScreenId);
     QApplication::postEvent (mView,
                              new VBoxResizeEvent (aPixelFormat, aVRAM, aBitsPerPixel,
                                                   aBytesPerLine, aWidth, aHeight));
