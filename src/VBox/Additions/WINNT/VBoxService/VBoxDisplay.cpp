@@ -232,7 +232,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         && paRects[Id].bottom - paRects[Id].top == Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
     {
-        dprintf(("VBoxService: already at desired resolution.\n"));
+        dprintf(("VBoxDisplayThread : already at desired resolution.\n"));
         return FALSE;
     }
 
@@ -306,11 +306,11 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxService: DeviceIOControl(CtlMask - or) succeeded\n"));
+        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxService: DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
+        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
         return -1;
     }
 
@@ -322,18 +322,18 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            dprintf(("VBoxService: DeviceIOControl succeded\n"));
+            dprintf(("VBoxDisplayThread : DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            dprintf(("VBoxService: checking event\n"));
+            dprintf(("VBoxDisplayThread : checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
             {
-                dprintf(("VBoxService: going to get display change information.\n"));
+                dprintf(("VBoxDisplayThread : going to get display change information.\n"));
 
                 /* We got at least one event. Read the requested resolution
                  * and try to set it until success. New events will not be seen
@@ -363,7 +363,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
                     if (fDisplayChangeQueried)
                     {
-                        dprintf(("VBoxService: VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
+                        dprintf(("VBoxDisplayThread : VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
                         /* Horizontal resolution must be a multiple of 8, round down. */
                         displayChangeRequest.xres &= 0xfff8;
@@ -394,7 +394,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                 /* get the current screen setup */
                                 if (EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
                                 {
-                                    dprintf(("VBoxService: Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
+                                    dprintf(("VBoxDisplayThread : Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
 
                                     /* Check whether a mode reset or a change is requested. */
                                     if (displayChangeRequest.xres || displayChangeRequest.yres || displayChangeRequest.bpp)
@@ -419,7 +419,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                         && devMode.dmPelsHeight == displayChangeRequest.yres
                                         && devMode.dmBitsPerPel == displayChangeRequest.bpp)
                                     {
-                                        dprintf(("VBoxService: already at desired resolution.\n"));
+                                        dprintf(("VBoxDisplayThread : already at desired resolution.\n"));
                                         break;
                                     }
 
@@ -437,13 +437,13 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                     if (displayChangeRequest.bpp)
                                         devMode.dmBitsPerPel = displayChangeRequest.bpp;
 
-                                    dprintf(("VBoxService: setting the new mode %dx%dx%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
+                                    dprintf(("VBoxDisplayThread : setting the new mode %dx%dx%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
 
                                     /* set the new mode */
                                     LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
                                     if (status != DISP_CHANGE_SUCCESSFUL)
                                     {
-                                        dprintf(("VBoxService: error from ChangeDisplaySettings: %d\n", status));
+                                        dprintf(("VBoxDisplayThread : error from ChangeDisplaySettings: %d\n", status));
 
                                         if (status == DISP_CHANGE_BADMODE)
                                         {
@@ -459,14 +459,14 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                 }
                                 else
                                 {
-                                    dprintf(("VBoxService: error from EnumDisplaySettings: %d\n", GetLastError ()));
+                                    dprintf(("VBoxDisplayThread : error from EnumDisplaySettings: %d\n", GetLastError ()));
                                     break;
                                 }
                             }
                         }
                         else
                         {
-                            dprintf(("VBoxService: vboxDisplayDriver is not active.\n"));
+                            dprintf(("VBoxDisplayThread : vboxDisplayDriver is not active.\n"));
                         }
 
                         /* Retry the change a bit later. */
@@ -479,7 +479,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                     }
                     else
                     {
-                        dprintf(("VBoxService: error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
+                        dprintf(("VBoxDisplayThread : error from DeviceIoControl IOCTL_VBOXGUEST_VMMREQUEST\n"));
                         /* sleep a bit to not eat too much CPU while retrying */
                         /* are we supposed to stop? */
                         if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
@@ -492,7 +492,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
             }
         } else
         {
-            dprintf(("VBoxService: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxDisplayThread : error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
@@ -506,13 +506,13 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
     if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxService: DeviceIOControl(CtlMask - not) succeeded\n"));
+        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxService: DeviceIOControl(CtlMask) failed\n"));
+        dprintf(("VBoxDisplayThread : DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxService: finished display change request thread\n"));
+    dprintf(("VBoxDisplayThread : finished display change request thread\n"));
     return 0;
 }
