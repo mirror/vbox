@@ -3651,7 +3651,7 @@ static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         /* strip trailing blanks and check for empty line (\r case). */
         while (     pszEnd > psz
                &&   isspace(pszEnd[-1])) /* isspace includes \n and \r normally. */
-            *++pszEnd = '\0';
+            *--pszEnd = '\0';
 
         /** @todo check for Control-C / Cancel at this point... */
 
@@ -3663,7 +3663,7 @@ static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
          * to know whether a command succeeded (VBOX_SUCCESS()) or failed, and
          * more importantly why it failed.
          */
-        rc = pCmdHlp->pfnExec(pCmdHlp, "%s", szLine);
+        rc = pCmdHlp->pfnExec(pCmdHlp, "%s", psz);
         if (VBOX_FAILURE(rc))
         {
             if (rc == VERR_BUFFER_OVERFLOW)
@@ -7938,8 +7938,9 @@ static int dbgcEvalSubUnary(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR
                 rc = dbgcEvalSubNum(pszExpr + 2, 10, pResult);
             else if (ch == '0' && (ch2 == 't' || ch2 == 'T'))
                 rc = dbgcEvalSubNum(pszExpr + 2, 8, pResult);
-            else if (ch == '0' && (ch2 == 'b' || ch2 == 'b'))
-                rc = dbgcEvalSubNum(pszExpr + 2, 2, pResult);
+            /// @todo 0b doesn't work as a binary prefix, we confuse it with 0bf8:0123 and stuff.
+            //else if (ch == '0' && (ch2 == 'b' || ch2 == 'b'))
+            //    rc = dbgcEvalSubNum(pszExpr + 2, 2, pResult);
             else
             {
                 /*
