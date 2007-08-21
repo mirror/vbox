@@ -29,6 +29,8 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5
     {   INDEX_DrvOffset,                (PFN) DrvOffset             },  //  6
     {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8
+    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
+    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
     {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12
     {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13
     {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14
@@ -229,6 +231,8 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },	//  4 0x4
     {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5 0x5
     {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8 0x8
+    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
+    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
     {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12 0xc
     {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13 0xd
     {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14 0xe
@@ -912,6 +916,44 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
     }
 }
 
+/******************************Public*Routine**********************************\
+ * HBITMAP DrvCreateDeviceBitmap
+ *
+ * Function called by GDI to create a device-format-bitmap (DFB).  We will
+ * always try to allocate the bitmap in off-screen; if we can't, we simply
+ * fail the call and GDI will create and manage the bitmap itself.
+ *
+ * Note: We do not have to zero the bitmap bits.  GDI will automatically
+ *       call us via DrvBitBlt to zero the bits (which is a security
+ *       consideration).
+ *
+\******************************************************************************/
+
+HBITMAP 
+DrvCreateDeviceBitmap(
+    DHPDEV      dhpdev,
+    SIZEL       sizl,
+    ULONG       iFormat)
+{
+    DISPDBG((0, "DISP DrvCreateDeviceBitmap %x (%d,%d) %x\n", dhpdev, sizl.cx, sizl.cy, iFormat));
+    /* Let GDI manage the bitmap */
+    return (HBITMAP)0;
+}
+
+/******************************Public*Routine**********************************\
+ * VOID DrvDeleteDeviceBitmap
+ *
+ * Deletes a DFB.
+ *
+\******************************************************************************/
+
+VOID 
+DrvDeleteDeviceBitmap(
+    DHSURF      dhsurf)
+{
+    DISPDBG((0, "DISP DrvDeleteDeviceBitmap %x", dhsurf));
+}
+
 /******************************Public*Routine******************************\
 * DrvGetModes
 *
@@ -1097,9 +1139,8 @@ PVOID pvData)
 HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* pSurface)
 {
     PPDEV               pDev = (PPDEV)pDirectDraw->dhpdev;
-//    HBITMAP             hbmDevice;
+    HBITMAP             hbmDevice;
     DD_SURFACE_GLOBAL*  pSurfaceGlobal;
-//    SIZEL               sizl;
 
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
@@ -1111,7 +1152,6 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
     //
     AssertMsg(!(pSurfaceGlobal->ddpfSurface.dwFlags & DDPF_FOURCC), ("GDI called us with a non-RGB surface!"));
 
-#if 0
     // The GDI driver does not accelerate surfaces in AGP memory,
     // thus we fail the call
 
@@ -1147,15 +1187,11 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
         SIZEL sizel;
         DWORD ulBitmapType, flHooks;        
 
-        sizl.cx = pSurfaceGlobal->wWidth;
-        sizl.cy = pSurfaceGlobal->wHeight;
+        sizel.cx = pSurfaceGlobal->wWidth;
+        sizel.cy = pSurfaceGlobal->wHeight;
 
         if (pDev->ulBitCount == 8)
         {
-            if (!bInit256ColorPalette(pDev)) {
-                DISPDBG((0, "DISP DrvEnableSurface failed to init the 8bpp palette\n"));
-                return(FALSE);
-            }
             ulBitmapType = BMF_8BPP;
             flHooks = HOOKS_BMF8BPP;
         }
@@ -1175,7 +1211,7 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
             flHooks = HOOKS_BMF32BPP;
         }
 
-        hbmDevice = EngCreateBitmap(sizl,
+        hbmDevice = EngCreateBitmap(sizel,
                                     pDev->lDeltaScreen,
                                     ulBitmapType,
                                     (pDev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
@@ -1217,7 +1253,6 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
 
     DISPDBG((0, "DrvDeriveSurface return NULL"));
     DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch));
-#endif
     
     return(0);
 }
