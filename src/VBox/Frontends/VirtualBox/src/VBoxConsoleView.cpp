@@ -458,11 +458,13 @@ public:
 
     STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
     {
+        NOREF(aSerialPort);
         return S_OK;
     }
 
     STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
     {
+        NOREF(aParallelPort);
         return S_OK;
     }
 
@@ -491,6 +493,7 @@ public:
 
     STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
     {
+        NOREF(aScope);
         QApplication::postEvent (mView,
                                  new QEvent ((QEvent::Type)
                                              VBoxDefs::SharedFolderChangeEventType));
