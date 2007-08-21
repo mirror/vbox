@@ -207,8 +207,9 @@ __inline SURFOBJ *getSurfObj (SURFOBJ *pso)
     
         if (ppdev)
         {
-            if (ppdev->psoScreenBitmap && bIsScreenSurface(pso))
+            if (ppdev->psoScreenBitmap && pso->hsurf == ppdev->hsurfScreen)
             {
+                /* Convert the device PSO to the bitmap PSO which can be passed to Eng*. */
                 pso = ppdev->psoScreenBitmap;
             }
         }

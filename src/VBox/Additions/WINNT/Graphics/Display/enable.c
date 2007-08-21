@@ -29,8 +29,8 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5
     {   INDEX_DrvOffset,                (PFN) DrvOffset             },  //  6
     {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8
-    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
-    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
+//    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
+//    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
     {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12
     {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13
     {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14
@@ -52,6 +52,7 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
     {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
     {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
+    {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85 0x55
 #endif
 };
 /* Experimental begin */
@@ -247,8 +248,8 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },	//  4 0x4
     {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5 0x5
     {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8 0x8
-    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
-    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
+//    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
+//    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
     {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12 0xc
     {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13 0xd
     {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14 0xe
@@ -270,8 +271,7 @@ DRVFN gadrvfn_nt5[] = {
     {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
     {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
     {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
-    /** @todo */
-////    {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85
+    {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85 0x55
 #endif
     {   INDEX_DrvNotify,                (PFN) DrvNotify             },	// 87 0x57
 //     /* Experimental. */
@@ -481,7 +481,7 @@ HANDLE      hDriver)        // Handle to base driver
 
     memcpy(pGdiInfo, &GdiInfo, min(cjGdiInfo, sizeof(GDIINFO)));
 
-    DISPDBG((0, "VBoxDisp::DrvEnablePDEV completed\n"));
+    DISPDBG((0, "VBoxDisp::DrvEnablePDEV completed %x\n", ppdev));
     
     return((DHPDEV) ppdev);
 
@@ -500,7 +500,7 @@ error_free:
 
 VOID DrvCompletePDEV(DHPDEV dhpdev, HDEV hdev)
 {
-    DISPDBG((0, "VBoxDisp::DrvCompletePDEV called\n"));
+    DISPDBG((0, "VBoxDisp::DrvCompletePDEV called %x\n", dhpdev));
     ((PPDEV) dhpdev)->hdevEng = hdev;
 }
 
@@ -514,7 +514,7 @@ VOID DrvCompletePDEV(DHPDEV dhpdev, HDEV hdev)
 
 VOID DrvDisablePDEV(DHPDEV dhpdev)
 {
-    DISPDBG((0, "VBoxDisp::DrvDisablePDEV called\n"));
+    DISPDBG((0, "VBoxDisp::DrvDisablePDEV called %x\n", dhpdev));
 //    vStopNotificationThread ((PPDEV) dhpdev);
     vDisablePalette((PPDEV) dhpdev);
     
@@ -933,6 +933,7 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
     }
 }
 
+#if 0
 /******************************Public*Routine**********************************\
  * HBITMAP DrvCreateDeviceBitmap
  *
@@ -970,6 +971,7 @@ DrvDeleteDeviceBitmap(
 {
     DISPDBG((0, "DISP DrvDeleteDeviceBitmap %x", dhsurf));
 }
+#endif /* 0 */
 
 /******************************Public*Routine******************************\
 * DrvGetModes
@@ -1174,7 +1176,7 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
 
     if (pSurface->ddsCaps.dwCaps & DDSCAPS_NONLOCALVIDMEM)
     {
-        DISPDBG((0, "DrvDeriveSurface return NULL, surface in AGP memory"));
+        DISPDBG((0, "DrvDeriveSurface return NULL, surface in AGP memory\n"));
         return 0;
     }
 
@@ -1182,7 +1184,7 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
     // thus we fail the call
     if (pSurface->lpSurfMore->ddsCapsEx.dwCaps2 & DDSCAPS2_TEXTUREMANAGE)
     {
-        DISPDBG((0, "DrvDeriveSurface return NULL, surface is managed"));
+        DISPDBG((0, "DrvDeriveSurface return NULL, surface is managed\n"));
         return 0;
     }
 
@@ -1228,42 +1230,42 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
             flHooks = HOOKS_BMF32BPP;
         }
 
+        /* Create a bitmap that represents the DDRAW bits.
+         * Important is to calculate the address of the bitmap.
+         */
         hbmDevice = EngCreateBitmap(sizel,
-                                    pDev->lDeltaScreen,
+                                    pSurfaceGlobal->lPitch,
                                     ulBitmapType,
                                     (pDev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
-                                    (PVOID) (pDev->pjScreen));
+                                    (PVOID) (pDev->pjScreen + pSurfaceGlobal->fpVidMem));
         if (hbmDevice)
         {
-            VOID* pvScan0 = pDev->pjScreen + pSurfaceGlobal->fpVidMem;
-
-            //
-            // Note that HOOK_SYNCHRONIZE must always be hooked when we
-            // give GDI a pointer to the bitmap bits. We don't need to
-            // do it here since HOOK_SYNCHRONIZE is always set in our
-            // pdev->flHooks
-            //
-            ULONG   flags = MS_NOTSYSTEMMEMORY;
-
-            if ( EngModifySurface((HSURF)hbmDevice,
-                                  pDev->hdevEng,
-                                  pDev->flHooks,
-                                  flags,
-                                  (DHSURF)hbmDevice,
-                                  pvScan0,
-                                  pSurfaceGlobal->lPitch,
-                                  NULL) )
+            if (pSurfaceGlobal->fpVidMem == 0)
             {
-                SURFOBJ*    surfobj = EngLockSurface((HSURF) hbmDevice);
-                AssertMsg(surfobj->iType == STYPE_BITMAP, ("expected STYPE_BITMAP"));
-                surfobj->iType = STYPE_DEVBITMAP;
-                EngUnlockSurface(surfobj);
+                /* Screen surface, mark it so it will be recognized by the driver.
+                 * and so the driver will be called on any operations on the surface
+                 * (required for VBVA and VRDP).
+                 */
+                if (EngAssociateSurface((HSURF)hbmDevice, pDev->hdevEng, flHooks))
+                {
+                    SURFOBJ *surfobj = EngLockSurface ((HSURF)hbmDevice);
+                    DISPDBG((0, "DrvDeriveSurface surfobj %x, hsurf = %x\n", surfobj, surfobj->hsurf));
+                
+                    surfobj->dhpdev = (DHPDEV)pDev;
+                
+                    EngUnlockSurface(surfobj);
 
-                DISPDBG((0, "DrvDeriveSurface return succeed\n"));
+                    DISPDBG((0, "DrvDeriveSurface return succeed %x at %x\n", hbmDevice, pSurfaceGlobal->fpVidMem));
+                    return(hbmDevice);
+                }
+            }
+            else
+            {
+                DISPDBG((0, "DrvDeriveSurface return succeed %x at %x\n", hbmDevice, pSurfaceGlobal->fpVidMem));
                 return(hbmDevice);
             }
 
-            DISPDBG((0, "DrvDeriveSurface: EngModifySurface failed\n"));
+            DISPDBG((0, "DrvDeriveSurface: EngAssociateSurface failed\n"));
             EngDeleteSurface((HSURF)hbmDevice);
         }
     }

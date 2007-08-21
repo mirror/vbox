@@ -82,7 +82,19 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
     if (pso)
     {
         PPDEV ppdev = (PPDEV)pso->dhpdev;
-        return (ppdev && pso->hsurf == ppdev->hsurfScreen);
+        
+        /* The screen surface has the 'pso->dhpdev' field, 
+         * and is either the screen device surface with handle = hsurfScreen,
+         * or a surface derived from DDRAW with address equal to the framebuffer.
+         */
+        if (   ppdev
+            && (   pso->hsurf == ppdev->hsurfScreen
+                || pso->pvBits == ppdev->pjScreen
+               )
+           )
+        {
+            return TRUE;
+        }
     }
 
     return FALSE;
