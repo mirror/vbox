@@ -108,6 +108,22 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
     }
 #endif
 
+    case VBOXESC_ISVRDPACTIVE:
+    {
+        ULONG ret = 0;
+
+        if (ppdev->pInfo && vboxHwBufferBeginUpdate (ppdev))
+        {
+            if (ppdev->vbva.pVbvaMemory->fu32ModeFlags
+                & VBVA_F_MODE_VRDP)
+            {
+                ret = 1;
+            }
+            vboxHwBufferEndUpdate (ppdev);
+        }
+        return ret;
+    }
+
     case VBOXESC_SETVISIBLEREGION:
     {
         LPRGNDATA lpRgnData = (LPRGNDATA)pvIn;
