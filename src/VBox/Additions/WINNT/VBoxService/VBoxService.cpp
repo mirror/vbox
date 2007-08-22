@@ -18,6 +18,7 @@
 #include "VBoxSeamless.h"
 #include "VBoxClipboard.h"
 #include "VBoxDisplay.h"
+#include "VBoxRestore.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -89,6 +90,12 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxSeamlessInit,
         VBoxSeamlessThread,
         VBoxSeamlessDestroy
+    },
+    {
+        "Restore",
+        VBoxRestoreInit,
+        VBoxRestoreThread,
+        VBoxRestoreDestroy,
     },
     {
         NULL
@@ -423,6 +430,10 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
         case WM_VBOX_SEAMLESS_UPDATE:
             VBoxSeamlessCheckWindows();
+            break;
+
+        case WM_VBOX_RESTORED:
+            VBoxRestoreSession();
             break;
 
         default:

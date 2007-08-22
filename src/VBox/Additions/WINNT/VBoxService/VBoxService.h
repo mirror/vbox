@@ -28,6 +28,10 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
 
+
+#define WM_VBOX_RESTORED                     0x2005
+
+
 /* The environment information for services. */
 typedef struct _VBOXSERVICEENV
 {
