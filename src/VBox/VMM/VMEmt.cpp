@@ -138,6 +138,8 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
         {
             rc = EMR3ExecuteVM(pVM);
             Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Vrc, enmVMState=%d\n", rc, pVM->enmVMState));
+            if (EMGetState(pVM) == EMSTATE_GURU_MEDITATION)
+                vmR3SetState(pVM, VMSTATE_GURU_MEDITATION);
         }
 
     } /* forever */
