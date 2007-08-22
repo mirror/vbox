@@ -154,7 +154,7 @@ PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
  * Array for accessing 32-bit general registers in VMMREGFRAME structure
  * by register's index from disasm.
  */
-static unsigned g_aReg32Index[] =
+static const unsigned g_aReg32Index[] =
 {
     RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_EAX */
     RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_ECX */
@@ -176,7 +176,7 @@ static unsigned g_aReg32Index[] =
  * Array for accessing 16-bit general registers in CPUMCTXCORE structure
  * by register's index from disasm.
  */
-static unsigned g_aReg16Index[] =
+static const unsigned g_aReg16Index[] =
 {
     RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AX */
     RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CX */
@@ -198,7 +198,7 @@ static unsigned g_aReg16Index[] =
  * Array for accessing 8-bit general registers in CPUMCTXCORE structure
  * by register's index from disasm.
  */
-static unsigned g_aReg8Index[] =
+static const unsigned g_aReg8Index[] =
 {
     RT_OFFSETOF(CPUMCTXCORE, eax),        /* USE_REG_AL */
     RT_OFFSETOF(CPUMCTXCORE, ecx),        /* USE_REG_CL */
@@ -220,7 +220,7 @@ static unsigned g_aReg8Index[] =
  * Array for accessing segment registers in CPUMCTXCORE structure
  * by register's index from disasm.
  */
-static unsigned g_aRegSegIndex[] =
+static const unsigned g_aRegSegIndex[] =
 {
     RT_OFFSETOF(CPUMCTXCORE, es),         /* USE_REG_ES */
     RT_OFFSETOF(CPUMCTXCORE, cs),         /* USE_REG_CS */
@@ -230,7 +230,7 @@ static unsigned g_aRegSegIndex[] =
     RT_OFFSETOF(CPUMCTXCORE, gs)          /* USE_REG_GS */
 };
 
-static unsigned g_aRegHidSegIndex[] =
+static const unsigned g_aRegHidSegIndex[] =
 {
     RT_OFFSETOF(CPUMCTXCORE, esHid),         /* USE_REG_ES */
     RT_OFFSETOF(CPUMCTXCORE, csHid),         /* USE_REG_CS */
