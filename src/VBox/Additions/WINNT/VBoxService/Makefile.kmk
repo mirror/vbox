@@ -30,6 +30,7 @@ VBoxService_SOURCES  = \
 	VBoxSeamless.cpp \
 	VBoxClipboard.cpp \
 	VBoxDisplay.cpp \
+        VBoxRestore.cpp \
 	helpers.cpp \
 	VBoxService.rc
 VBoxService_LIBS     = \
