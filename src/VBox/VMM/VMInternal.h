@@ -411,6 +411,7 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
 DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list *args);
 void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list args);
 void vmR3DestroyFinalBit(PVM pVM);
+void vmR3SetState(PVM pVM, VMSTATE enmStateNew);
 
 
 /** @} */

@@ -106,7 +106,6 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRES
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
 static void vmR3AtDtor(PVM pVM);
-static void vmR3SetState(PVM pVM, VMSTATE enmStateNew);
 static int  vmR3AtReset(PVM pVM);
 static DECLCALLBACK(int) vmR3Reset(PVM pVM);
 static DECLCALLBACK(int) vmR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
@@ -2142,7 +2141,7 @@ VMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
  * @param   pVM             VM handle.
  * @param   enmStateNew     The new state.
  */
-static void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
+void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
 {
     VMSTATE enmStateOld = pVM->enmVMState;
     pVM->enmVMState = enmStateNew;
