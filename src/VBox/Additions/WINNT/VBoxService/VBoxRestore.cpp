@@ -109,11 +109,8 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_RESTORED)
-            {
-                dprintf(("VBoxService: going to get seamless change information.\n"));
-
                 PostMessage(gToolWindow, WM_VBOX_RESTORED, 0, 0);
-            }
+
         } 
         else
         {
