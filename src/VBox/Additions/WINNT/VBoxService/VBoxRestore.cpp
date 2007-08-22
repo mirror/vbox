@@ -58,10 +58,10 @@ void VBoxRestoreSession()
     
 
     /* Check VRDP activity */
-    hrc = GetDC(HWND_DESKTOP);
+    hdc = GetDC(HWND_DESKTOP);
 
     /* send to display driver */
-    ret = ExtEscape(param.hdc, VBOXESC_ISVRDPACTIVE, 0, NULL, 0, NULL);
+    ret = ExtEscape(hdc, VBOXESC_ISVRDPACTIVE, 0, NULL, 0, NULL);
     dprintf(("VBoxRestoreSession -> VRDP activate state = %d\n", ret));
 
     ReleaseDC(HWND_DESKTOP, hdc);
