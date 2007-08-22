@@ -335,7 +335,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-macaddress<1-N> auto|<mac>]\n"
                  "                            [-uart<1-N> off|<I/O base> <IRQ>]\n"
                  "                            [-uartmode<1-N> disconnected|<device name>|\n"
-                 "                                            server|client <pipe name>\n"
+                 "                                            server|client <pipe name>]\n"
                  );
         if (fLinux)
         {
