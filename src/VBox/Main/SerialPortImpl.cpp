@@ -412,6 +412,11 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (SerialHostMode_T aHostMode)
     {
         mData.backup();
         mData->mHostMode = aHostMode;
+        if (aHostMode == SerialHostMode_Disconnected)
+        {
+            mData->mPath   = "";
+            mData->mServer = false;
+        }
         emitChangeEvent = true;
     }
 
