@@ -319,10 +319,10 @@ static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE
     int   prefix_seg, rc;
     RTSEL sel;
     CPUMSELREGHID *pSelHidReg;
-    
+
     prefix_seg = DISDetectSegReg(pCpu, pParam);
     rc = DISFetchRegSegEx(pRegFrame, prefix_seg, &sel, &pSelHidReg);
-    if (RT_UNLIKELY(VBOX_FAILURE(rc)))
+    if (VBOX_FAILURE(rc))
         return pvAddr;
 
     return SELMToFlat(pVM, pRegFrame->eflags, sel, pSelHidReg, pvAddr);
@@ -581,7 +581,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
 
                 pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-                
+
 #ifdef IN_GC
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
                 AssertMsgReturn(pParam1 == pvFault || (RTGCPTR)pRegFrame->esp == pvFault, ("%VGv != %VGv ss:esp=%04X:%VGv\n", pParam1, pvFault, pRegFrame->ss, pRegFrame->esp), VERR_EM_INTERPRETER);
@@ -1172,7 +1172,7 @@ EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     pRegFrame->eip = eip & 0xffff;
     pRegFrame->cs  = cs;
-    
+
     /* Mask away all reserved bits */
     uMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM | X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_ID;
     eflags &= uMask;
@@ -1747,7 +1747,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 
 #ifdef IN_GC
     if (    (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP))
-        ||  (   (pCpu->prefix & PREFIX_LOCK) 
+        ||  (   (pCpu->prefix & PREFIX_LOCK)
              && (pCpu->pCurInstr->opcode != OP_CMPXCHG)
             )
        )
