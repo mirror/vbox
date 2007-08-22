@@ -35,9 +35,21 @@ static VBOXRESTORECONTEXT gCtx = {0};
 
 int VBoxRestoreInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
+    HDC  hdc;
+    BOOL ret;
+
     dprintf(("VBoxRestoreInit\n"));
 
     gCtx.pEnv = pEnv;
+
+    /* Check VRDP activity */
+    hdc = GetDC(HWND_DESKTOP);
+
+    /* send to display driver */
+    ret = ExtEscape(hdc, VBOXESC_ISVRDPACTIVE, 0, NULL, 0, NULL);
+    dprintf(("VBoxRestoreInit -> VRDP activate state = %d\n", ret));
+
+    ReleaseDC(HWND_DESKTOP, hdc);
 
     *pfStartThread = true;
     *ppInstance = &gCtx;
