@@ -227,7 +227,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostParallel);
     if (VBOX_FAILURE(rc))
         return rc;
+#endif
 
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostSerial);
     if (VBOX_FAILURE(rc))
         return rc;
