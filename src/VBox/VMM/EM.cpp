@@ -3439,7 +3439,6 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     if (rc2 == VERR_DBGF_NOT_ATTACHED)
                     {
                         VMMR3Unlock(pVM);
-                        /** @todo change the VM state! */
                         STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
                         return rc;
                     }
