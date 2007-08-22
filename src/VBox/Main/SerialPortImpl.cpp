@@ -323,9 +323,12 @@ HRESULT SerialPort::saveSettings (CFGNODE aNode)
         CFGLDRSetUInt32 (portNode, "IOBase",  mData->mIOBase);
         CFGLDRSetUInt32 (portNode, "IRQ",     mData->mIRQ);
         CFGLDRSetString (portNode, "HostMode", mode);
-        CFGLDRSetBSTR   (portNode, "path",    mData->mPath);
-        if (mData->mHostMode == SerialHostMode_HostPipe)
-            CFGLDRSetBool   (portNode, "server",  !!mData->mServer);
+        if (mData->mHostMode != SerialHostMode_Disconnected)
+        {
+            CFGLDRSetBSTR   (portNode, "path",    mData->mPath);
+            if (mData->mHostMode == SerialHostMode_HostPipe)
+                CFGLDRSetBool   (portNode, "server",  !!mData->mServer);
+        }
     }
 
     return S_OK;
