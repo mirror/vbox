@@ -42,6 +42,7 @@
 # define ffs ffs_string_h
 # include <string.h>
 # undef ffs
+# undef strpbrk
 #else
 # include <string.h>
 #endif

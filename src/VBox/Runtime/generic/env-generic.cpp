@@ -33,6 +33,13 @@
 
 #include <string.h>
 
+#if defined(RT_OS_SOLARIS)
+/* It's an implementation detail in Solaris, see 
+ * http://cvs.opensolaris.org/source/xref/onnv/onnv-gate/usr/src/lib/libc/port/gen/getenv.c line 50.
+ */
+extern const char		**environ;
+#endif
+
 struct RTENVINTERNAL
 {
     /* Array of environment variables. */

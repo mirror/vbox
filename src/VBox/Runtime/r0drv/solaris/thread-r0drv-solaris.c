@@ -46,6 +46,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
         cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
     else
         cTicks = 0;
+
 #if 0
     timeout = ddi_get_lbolt();
     timeout += cTicks; 
@@ -55,7 +56,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
     mutex_init(&mtx, "IPRT Sleep Mutex", MUTEX_DRIVER, NULL);
     cv_init(&cnd, "IPRT Sleep CV", CV_DRIVER, NULL);
     mutex_enter(&mtx);
-    cv_timedwait (&cnd, &mtx, 9000 * timeout);
+    cv_timedwait (&cnd, &mtx, timeout);
     mutex_exit(&mtx);
     cv_destroy(&cnd);
     mutex_destroy(&mtx);

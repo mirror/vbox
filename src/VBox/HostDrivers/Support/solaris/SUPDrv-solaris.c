@@ -44,8 +44,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The module name. */
-#define DEVICE_NAME    "vboxdrv"
-#define DEVICE_DESC    "VirtualBox Driver"
+#define DEVICE_NAME              "vboxdrv"
+#define DEVICE_DESC              "VirtualBox Driver"
+#define DEVICE_MAXINSTANCES      16
 
 
 /*******************************************************************************
@@ -224,6 +225,22 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         cmn_err(CE_NOTE,"VBoxDrvSolarisOpen success");
     }
 
+    int instance;
+    for (instance = 0; instance < DEVICE_MAXINSTANCES; instance++)
+    {
+        vbox_devstate_t *pState = ddi_get_soft_state (g_pVBoxDrvSolarisState, instance);
+        if (pState)
+            break;
+    }
+    
+    if (instance >= DEVICE_MAXINSTANCES)
+    {
+        cmn_err(CE_NOTE, "All instances exhausted\n");
+        return ENXIO;
+    }
+    
+    *pDev = makedevice(getmajor(*pDev), instance);
+        
     return VBoxSupDrvErr2SolarisErr(rc);
 }
 
@@ -350,8 +367,6 @@ static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t enmCmd)
                         {
                             pState->pDip = pDip;
                             ddi_report_dev(pDip);
-                            
-                            cmn_err(CE_CONT, "VBoxDrvSolarisAttach: successful.");
                             return DDI_SUCCESS;
                         }
 
