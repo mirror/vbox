@@ -171,6 +171,13 @@ struct ACPIState
     /** Current ACPI S* state. We support S0 and S5 */
     uint32_t            uSleepState;
     uint8_t             au8RSDPPage[0x1000];
+    /** This is a workaround for incorrect index field handling by Intels ACPICA.
+     *  The system info _INI method writes to offset 0x200. We either observe a
+     *  write request to index 0x80 (in that case we don't change the index) or a
+     *  write request to offset 0x200 (in that case we divide the index value by
+     *  4. Note that the _STA method is sometimes called prior to the _INI method
+     *  (ACPI spec 6.3.7, _STA). See the special case for BAT_DEVICE_STATUS in
+     *  acpiBatIndexWrite() for handling this. */
     uint8_t             u8IndexShift;
     uint8_t             u8UseIOApic;
 
@@ -979,6 +986,12 @@ IO_WRITE_PROTO (acpiBatIndexWrite)
     {
         case 4:
             u32 >>= s->u8IndexShift;
+            /* see comment at the declaration of u8IndexShift */
+            if (s->u8IndexShift == 0 && u32 == (BAT_DEVICE_STATUS << 2))
+            {
+                s->u8IndexShift = 2;
+                u32 >>= 2;
+            }
             Assert (u32 < BAT_INDEX_LAST);
             s->uBatteryIndex = u32;
             break;
