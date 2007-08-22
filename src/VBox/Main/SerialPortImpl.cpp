@@ -552,7 +552,7 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
 
 STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 {
-    if (!aPath || *aPath == 0)
+    if (!aPath)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
