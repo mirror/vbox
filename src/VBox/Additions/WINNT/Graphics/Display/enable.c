@@ -120,8 +120,11 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
             {
                 ret = 1;
             }
+            DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> %d (%x)\n", ret, ppdev->vbva.pVbvaMemory->fu32ModeFlags));
             vboxHwBufferEndUpdate (ppdev);
         }
+        else
+            DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> 0\n"));
         return ret;
     }
 
