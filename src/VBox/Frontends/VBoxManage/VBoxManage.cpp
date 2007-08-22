@@ -334,8 +334,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-intnet<1-N> <network>]\n"
                  "                            [-macaddress<1-N> auto|<mac>]\n"
                  "                            [-uart<1-N> off|<I/O base> <IRQ>]\n"
-                 "                            [-uartmode<1-N> server|client <pipe name>|\n"
-                 "                                            <device name>]\n"
+                 "                            [-uartmode<1-N> disconnected|<device name>|\n"
+                 "                                            server|client <pipe name>\n"
                  );
         if (fLinux)
         {
@@ -3289,24 +3289,31 @@ static int handleModifyVM(int argc, char *argv[],
             if (!n)
                 return 1;
             i++;
-            if (strcmp(argv[i], "server") == 0 || strcmp(argv[i], "client") == 0)
+            if (strcmp(argv[i], "disconnected") == 0)
             {
                 uarts_mode[n - 1] = argv[i];
-                i++;
-#ifdef RT_OS_WINDOWS
-                if (strncmp(argv[i], "\\\\.\\pipe\\", 9))
-                    return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
-#endif
             }
             else
             {
-                uarts_mode[n - 1] = (char*)"device";
+                if (strcmp(argv[i], "server") == 0 || strcmp(argv[i], "client") == 0)
+                {
+                    uarts_mode[n - 1] = argv[i];
+                    i++;
+#ifdef RT_OS_WINDOWS
+                    if (strncmp(argv[i], "\\\\.\\pipe\\", 9))
+                        return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
+#endif
+                }
+                else
+                {
+                    uarts_mode[n - 1] = (char*)"device";
+                }
+                if (argc <= i)
+                {
+                    return errorArgument("Missing argument to -uartmode");
+                }
+                uarts_path[n - 1] = argv[i];
             }
-            if (argc <= i)
-            {
-                return errorArgument("Missing argument to -uartmode");
-            }
-            uarts_path[n - 1] = argv[i];
         }
         else if (strncmp(argv[i], "-uart", 5) == 0)
         {
@@ -4100,21 +4107,28 @@ static int handleModifyVM(int argc, char *argv[],
             }
             if (uarts_mode[n])
             {
-                if (strcmp(uarts_mode[n], "server") == 0)
+                if (strcmp(uarts_mode[n], "disconnected") == 0)
                 {
-                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
-                    CHECK_ERROR_RET(uart, COMSETTER(Server) (TRUE), 1);
-                }
-                else if (strcmp(uarts_mode[n], "client") == 0)
-                {
-                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
-                    CHECK_ERROR_RET(uart, COMSETTER(Server) (FALSE), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_Disconnected), 1);
                 }
                 else
                 {
-                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostDevice), 1);
+                    if (strcmp(uarts_mode[n], "server") == 0)
+                    {
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(Server) (TRUE), 1);
+                    }
+                    else if (strcmp(uarts_mode[n], "client") == 0)
+                    {
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(Server) (FALSE), 1);
+                    }
+                    else
+                    {
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostDevice), 1);
+                    }
+                    CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
                 }
-                CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
             }
         }
         if (FAILED(rc))
