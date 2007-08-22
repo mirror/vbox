@@ -34,7 +34,7 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
- * Wrapper for the FreeBSD (sleep) mutex.
+ * Wrapper for the Solaris mutex.
  */
 typedef struct RTSEMFASTMUTEXINTERNAL
 {

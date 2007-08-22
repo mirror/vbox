@@ -25,62 +25,30 @@
 #include <iprt/time.h>
 
 
-/**
- * Gets the current nanosecond timestamp.
- *
- * @returns nanosecond timestamp.
- */
 RTDECL(uint64_t) RTTimeNanoTS(void)
 {
     return gethrtime();
 }
 
 
-/**
- * Gets the current millisecond timestamp.
- *
- * @returns millisecond timestamp.
- */
 RTDECL(uint64_t) RTTimeMilliTS(void)
 {
-    return RTTimeNanoTS() / 1000;
+    return RTTimeNanoTS() / 1000000;
 }
 
 
-/**
- * Gets the current nanosecond timestamp.
- *
- * This differs from RTTimeNanoTS in that it will use system APIs and not do any
- * resolution or performance optimizations.
- *
- * @returns nanosecond timestamp.
- */
 RTDECL(uint64_t) RTTimeSystemNanoTS(void)
 {
     return RTTimeNanoTS();
 }
 
 
-/**
- * Gets the current millisecond timestamp.
- *
- * This differs from RTTimeNanoTS in that it will use system APIs and not do any
- * resolution or performance optimizations.
- *
- * @returns millisecond timestamp.
- */
 RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 {
-    return RTTimeMilliTS();
+    return RTTimeNanoTS() / 1000000;
 }
 
 
-/**
- * Gets the current system time.
- *
- * @returns pTime.
- * @param   pTime   Where to store the time.
- */
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     /* timestruc_t is actually just a typedef struct timespec */

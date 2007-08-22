@@ -20,11 +20,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-#include <malloc.h>
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/types.h>
+#include <iprt/param.h>
 #include "r0drv/alloc-r0drv.h"
 
 
@@ -73,19 +73,22 @@ void rtMemFree(PRTMEMHDR pHdr)
  */
 RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 {
-    /** @todo: implement RTMemContAlloc in Solaris */
-    /* ddi_umem_alloc without PAGEABLE flag might produce contiguous physical memory, but
-        the documentation doesn't talk about contiguous at all :( 
-       If we can use ddi_umem_alloc we need to keep track of the ddi_umem_cookie
-       which kernel allocates, but the ContFree() function only passes us back
-       the address. Maybe we could for each ContAlloc build a linked list of
-       structures that have the cookie and corresponding virtual address. */
-    return NULL;
+    AssertPtr(pPhys);
+    Assert(cb > 0);
+
+    /* Allocate physically contiguous page-aligned memory. */
+    caddr_t virtAddr;
+    int rc = i_ddi_mem_alloc(NULL, &g_SolarisX86PhysMemLimits, cb, 1, 0, NULL, &virtAddr, NULL, NULL);
+    if (rc != DDI_SUCCESS)
+        return NULL;
+
+    *pPhys = PAGE_SIZE * hat_getpfnum(kas.a_hat, virtAddr);
+    return virtAddr;
 }
 
 RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
 {
-    /** @todo implement RTMemContFree on solaris, see RTMemContAlloc() for details. */
-    NOREF(pv);
     NOREF(cb);
+    if (pv)
+        i_ddi_mem_free(pv, NULL);
 }

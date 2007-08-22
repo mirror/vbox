@@ -25,9 +25,7 @@
 
 RTDECL(RTPROCESS) RTProcSelf(void)
 {
-    struct proc *pCurProc = curproc;
-    struct pid *pPidInfo = pCurProc->p_pidp;
-    
+    struct pid *pPidInfo = curproc->p_pidp;
     return pPidInfo->pid_id;
 }
 
