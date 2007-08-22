@@ -5,7 +5,7 @@
 
 ;
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
