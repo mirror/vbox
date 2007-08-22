@@ -575,6 +575,7 @@ VBoxGlobal::VBoxGlobal()
     , diskTypes (CEnums::HardDiskType_COUNT)
     , diskStorageTypes (CEnums::HardDiskStorageType_COUNT)
     , vrdpAuthTypes (CEnums::VRDPAuthType_COUNT)
+    , serialHostModeTypes (CEnums::SerialHostMode_COUNT)
     , usbFilterActionTypes (CEnums::USBDeviceFilterAction_COUNT)
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
@@ -1861,6 +1862,13 @@ void VBoxGlobal::languageChange()
     vrdpAuthTypes [CEnums::VRDPAuthGuest] =
         tr ("Guest", "VRDPAuthType");
 
+    serialHostModeTypes [CEnums::Disconnected] =
+        tr ("Disconnected", "SerialHostMode");
+    serialHostModeTypes [CEnums::HostPipe] =
+        tr ("Host Pipe", "SerialHostMode");
+    serialHostModeTypes [CEnums::HostDevice] =
+        tr ("Host Device", "SerialHostMode");
+
     usbFilterActionTypes [CEnums::USBDeviceFilterIgnore] =
         tr ("Ignore", "USBFilterActionType");
     usbFilterActionTypes [CEnums::USBDeviceFilterHold] =
@@ -3068,7 +3076,7 @@ QString VBoxGlobal::removeAccelMark (const QString &aText)
  *  Searches for a widget that with @a aName (if it is not NULL) which inherits
  *  @a aClassName (if it is not NULL) and among children of @a aParent. If @a
  *  aParent is NULL, all top-level widgets are searched. If @a aRecursive is
- *  true, child widgets are recursively searched as well.  
+ *  true, child widgets are recursively searched as well.
  */
 /* static */
 QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
