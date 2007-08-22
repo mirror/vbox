@@ -267,6 +267,26 @@
                 <pixmap></pixmap>
             </property>
         </item>
+        <item>
+            <property name="text">
+                <string> Serial Port </string>
+            </property>
+            <property name="text">
+                <string>9</string>
+            </property>
+            <property name="text">
+                <string>#serial</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>refresh_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
             <property name="name">
                 <cstring>listView</cstring>
             </property>
@@ -2684,6 +2704,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <number>8</number>
                 </attribute>
             </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageSerial</cstring>
+                </property>
+                <attribute name="id">
+                    <number>9</number>
+                </attribute>
+            </widget>
         </widget>
         <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
             <property name="name">
@@ -3037,6 +3065,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <forward>class VBoxDiskImageManagerDlg</forward>
     <forward>class VBoxUSBMenu</forward>
     <forward>class VBoxSharedFoldersSettings</forward>
+    <forward>class VBoxVMSerialPortSettings</forward>
     <forward>class QIRichLabel</forward>
     <forward>class BootItemsList</forward>
 </forwards>
@@ -3061,7 +3090,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QStringList mInterfaceList;</variable>
     <variable access="private">QWidgetStack *wstUSBFilters;</variable>
     <variable access="private">bool mUSBFilterListModified;</variable>
-    <variable access="private">VBoxSharedFoldersSettings* mSharedFolders;</variable>
+    <variable access="private">VBoxSharedFoldersSettings *mSharedFolders;</variable>
+    <variable access="private">VBoxVMSerialPortSettings *mSerialPorts;</variable>
     <variable access="private">QString warningString;</variable>
     <variable access="private">VBoxMediaComboBox *cbHDA;</variable>
     <variable access="private">VBoxMediaComboBox *cbHDB;</variable>
