@@ -456,8 +456,8 @@
         <translation>열기</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>공유 폴더(&amp;S)</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>공유 폴더(&amp;S)...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

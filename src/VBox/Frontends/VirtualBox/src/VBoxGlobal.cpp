@@ -1819,6 +1819,7 @@ void VBoxGlobal::languageChange()
     machineStates [CEnums::Aborted] =       tr ("Aborted", "MachineState");
     machineStates [CEnums::Running] =       tr ("Running", "MachineState");
     machineStates [CEnums::Paused] =        tr ("Paused", "MachineState");
+    machineStates [CEnums::Stuck] =         tr ("Stuck", "MachineState");
     machineStates [CEnums::Starting] =      tr ("Starting", "MachineState");
     machineStates [CEnums::Stopping] =      tr ("Stopping", "MachineState");
     machineStates [CEnums::Saving] =        tr ("Saving", "MachineState");
@@ -3308,6 +3309,7 @@ void VBoxGlobal::init()
         {CEnums::Aborted, "state_aborted_16px.png"},
         {CEnums::Running, "state_running_16px.png"},
         {CEnums::Paused, "state_paused_16px.png"},
+        {CEnums::Stuck, "state_paused_16px.png"}, /// @todo (dmik) separate icon?
         {CEnums::Starting, "state_running_16px.png"}, /// @todo (dmik) separate icon?
         {CEnums::Stopping, "state_running_16px.png"}, /// @todo (dmik) separate icon?
         {CEnums::Saving, "state_saving_16px.png"},
@@ -3333,6 +3335,7 @@ void VBoxGlobal::init()
     vm_state_color.insert (CEnums::Aborted,             &Qt::darkRed);
     vm_state_color.insert (CEnums::Running,             &Qt::green);
     vm_state_color.insert (CEnums::Paused,              &Qt::darkGreen);
+    vm_state_color.insert (CEnums::Stuck,               &Qt::darkMagenta);
     vm_state_color.insert (CEnums::Starting,            &Qt::green);
     vm_state_color.insert (CEnums::Stopping,            &Qt::green);
     vm_state_color.insert (CEnums::Saving,              &Qt::green);

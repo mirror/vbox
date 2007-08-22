@@ -455,8 +455,8 @@
         <translation>Avaa</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>&amp;Jaetut Kansiot</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>&amp;Jaetut Kansiot...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

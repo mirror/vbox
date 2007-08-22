@@ -1467,7 +1467,8 @@ STDMETHODIMP Console::PowerDown()
     AutoLock alock (this);
 
     if (mMachineState != MachineState_Running &&
-        mMachineState != MachineState_Paused)
+        mMachineState != MachineState_Paused &&
+        mMachineState != MachineState_Stuck)
     {
         /* extra nice error message for a common case */
         if (mMachineState == MachineState_Saved)
@@ -1890,18 +1891,25 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     /// @todo (r=dmik) is it legal to attach USB devices when the machine is
     //  Paused, Starting, Saving, Stopping, etc? if not, we should make a
     //  stricter check (mMachineState != MachineState_Running).
-    /* bird: It is not permitted to attach or detach while the VM is saving, is restoring
-     * or has stopped - definintly not.
+    //
+    //  I'm changing it to the semi-strict check for the time being. We'll
+    //  consider the below later.
+    //
+    /* bird: It is not permitted to attach or detach while the VM is saving,
+     * is restoring or has stopped - definintly not.
      *
-     * Attaching while starting, well, if you don't create any deadlock it should work...
-     * Paused should work I guess, but we shouldn't push our luck if we're pausing because an
-     * runtime error condition was raised (which is one of the reasons there better be a separate
-     * state for that in the VMM).
+     * Attaching while starting, well, if you don't create any deadlock it
+     * should work...  Paused should work I guess, but we shouldn't push our
+     * luck if we're pausing because an runtime error condition was raised
+     * (which is one of the reasons there better be a separate state for that
+     * in the VMM).
      */
-    if (mMachineState < MachineState_Running)
+    if (mMachineState != MachineState_Running &&
+        mMachineState != MachineState_Paused)
         return setError (E_FAIL,
-            tr ("Cannot attach a USB device to a machine which is not running "
-                "(machine state: %d)"), mMachineState);
+            tr ("Cannot attach a USB device to the machine which is not running"
+                "(machine state: %d)"),
+            mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1998,10 +2006,16 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 
     AutoLock alock (this);
 
+    /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
         return setError (E_FAIL,
-            tr ("Cannot create a transient shared folder on a "
+            tr ("Cannot create a transient shared folder on the "
                 "machine in the saved state"));
+    if (mMachineState > MachineState_Paused)
+        return setError (E_FAIL,
+            tr ("Cannot create a transient shared folder on the "
+                "machine while it is changing the state (machine state: %d)"),
+            mMachineState);
 
     ComObjPtr <SharedFolder> sharedFolder;
     HRESULT rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
@@ -2064,10 +2078,16 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
 
     AutoLock alock (this);
 
+    /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
         return setError (E_FAIL,
-            tr ("Cannot remove a transient shared folder when the "
-                "machine is in the saved state."));
+            tr ("Cannot remove a transient shared folder from the "
+                "machine in the saved state"));
+    if (mMachineState > MachineState_Paused)
+        return setError (E_FAIL,
+            tr ("Cannot remove a transient shared folder from the "
+                "machine while it is changing the state (machine state: %d)"),
+            mMachineState);
 
     ComObjPtr <SharedFolder> sharedFolder;
     HRESULT rc = findSharedFolder (aName, sharedFolder, true /* aSetError */);
@@ -2123,11 +2143,12 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
 
     AutoLock alock (this);
 
-    if (mMachineState > MachineState_Running &&
-        mMachineState != MachineState_Paused)
+    if (mMachineState > MachineState_Paused)
     {
         return setError (E_FAIL,
-            tr ("Cannot take a snapshot of a machine while it is changing state.  (Machine state: %d)"), mMachineState);
+            tr ("Cannot take a snapshot of the machine "
+                "while it is changing the state (machine state: %d)"),
+            mMachineState);
     }
 
     /* memorize the current machine state */
@@ -2295,7 +2316,9 @@ STDMETHODIMP Console::DiscardSnapshot (INPTR GUIDPARAM aId, IProgress **aProgres
 
     if (mMachineState >= MachineState_Running)
         return setError (E_FAIL,
-            tr ("Cannot discard a snapshot on a running machine (Machine state: %d)"), mMachineState);
+            tr ("Cannot discard a snapshot of the running machine "
+                "(machine state: %d)"),
+            mMachineState);
 
     MachineState_T machineState = MachineState_InvalidMachineState;
     HRESULT rc = mControl->DiscardSnapshot (this, aId, &machineState, aProgress);
@@ -2314,7 +2337,9 @@ STDMETHODIMP Console::DiscardCurrentState (IProgress **aProgress)
 
     if (mMachineState >= MachineState_Running)
         return setError (E_FAIL,
-            tr ("Cannot discard the current state of a running machine.  (Machine state: %d)"), mMachineState);
+            tr ("Cannot discard the current state of the running machine "
+                "(nachine state: %d)"),
+            mMachineState);
 
     MachineState_T machineState = MachineState_InvalidMachineState;
     HRESULT rc = mControl->DiscardCurrentState (this, &machineState, aProgress);
@@ -2333,7 +2358,9 @@ STDMETHODIMP Console::DiscardCurrentSnapshotAndState (IProgress **aProgress)
 
     if (mMachineState >= MachineState_Running)
         return setError (E_FAIL,
-            tr ("Cannot discard the current snapshot and state on a running machine.  (Machine state: %d)"), mMachineState);
+            tr ("Cannot discard the current snapshot and state of the "
+                "running machine (machine state: %d)"),
+            mMachineState);
 
     MachineState_T machineState = MachineState_InvalidMachineState;
     HRESULT rc =
@@ -3868,6 +3895,7 @@ HRESULT Console::powerDown()
 
     AssertMsg (mMachineState == MachineState_Running ||
                mMachineState == MachineState_Paused ||
+               mMachineState == MachineState_Stuck ||
                mMachineState == MachineState_Saving ||
                mMachineState == MachineState_Starting ||
                mMachineState == MachineState_Restoring ||
@@ -4547,6 +4575,8 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                 Assert (that->mMachineState == MachineState_Running);
                 that->setMachineState (MachineState_Paused);
             }
+
+            break;
         }
 
         case VMSTATE_RUNNING:
@@ -4571,6 +4601,23 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
 
                 that->setMachineState (MachineState_Running);
             }
+
+            break;
+        }
+
+        case VMSTATE_GURU_MEDITATION:
+        {
+            AutoLock alock (that);
+
+            if (that->mVMStateChangeCallbackDisabled)
+                break;
+
+            /* Guru respects only running VMs */
+            Assert ((that->mMachineState >= MachineState_Running));
+
+            that->setMachineState (MachineState_Stuck);
+
+            break;
         }
 
         default: /* shut up gcc */

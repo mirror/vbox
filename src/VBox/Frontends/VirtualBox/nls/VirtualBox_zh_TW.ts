@@ -763,8 +763,8 @@
         <translation>開啟</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>分享資料夾(&amp;S)</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>分享資料夾(&amp;S)…</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

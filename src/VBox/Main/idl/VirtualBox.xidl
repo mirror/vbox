@@ -110,14 +110,20 @@
 
   <enum
      name="MachineState"
-     uuid="b8bb15f7-4fa2-4e84-87a8-b4677dd87deb"
+     uuid="73bf04d0-7c4f-4684-9abf-d65a9ad74343"
      >
     <desc>
       Virtual machine execution state. This enumeration represents possible
       values of the <link to="IMachine::state"/> attribute.
     </desc>
 
-    <const name="InvalidMachineState"   value="0"/>
+    <const name="InvalidMachineState"   value="0">
+      <desc>
+        Invalid machine state. This state is never used by the virtual machine
+        and may be used as a <tt>null</tt> value for state
+        variables.
+      </desc>
+    </const>
     <const name="PoweredOff"            value="1">
       <desc>
         The machine is not running.
@@ -149,34 +155,53 @@
           not currently being executed (i.e., it is completely out of
           action).
         </note>
+        <note>
+          For whoever decides to touch this enum: In order to keep the
+          aforementioned comparisons valid, this state must immediately
+          preceed the Paused state.
+        </note>
       </desc>
     </const>
     <const name="Paused"                value="5">
       <desc>
         The execution of the machine has been paused.
         <note>
-          This value can be used in comparison expressions:
-          all state values above it represent unstable states of the
-          virtual machine. No any settings can be altered when the
-          VM is in one of the unstable sates.
+          This value can be used in comparison expressions: all state values
+          above it represent unstable states of the running virtual
+          machine. Unless explicitly stated otherwise, no machine settings can
+          be altered when it is in one of the unstable sates.
+        </note>
+        <note>
+          For whoever decides to touch this enum: In order to keep the
+          aforementioned comparisons valid, this state must immediately
+          follow the Running state.
         </note>
       </desc>
     </const>
-    <const name="Starting"              value="6">
+    <const name="Stuck"                 value="6">
+      <desc>
+        The execution of the machine has reached the Guru Meditaion
+        condition. This condition indicates an internal VMM failure which may
+        happen as a result of either an unhandled low-level virtual hardware
+        exception or one of the recompiler exceptions (such as
+        the <i>too-many-traps</i> condition).
+      </desc>
+    </const>
+    <const name="Starting"              value="7">
       <desc>
         The machine is being started after
         <link to="IConsole::powerUp">powering it on</link> from a
         zero execution state.
       </desc>
     </const>
-    <const name="Stopping"              value="7">
+    <const name="Stopping"              value="8">
       <desc>
         The machine is being normally stopped
         (after explicitly <link to="IConsole::powerDown">powering it off</link>,
         or after the guest OS has initiated a shutdown sequence).
       </desc>
     </const>
-    <const name="Saving"                value="8">
+    <const name="Saving"                value="9">
       <desc>
         The machine is saving its execution state to a file as a
         result of calling <link to="IConsole::saveState"/> or an online
@@ -184,14 +209,14 @@
         <link to="IConsole::takeSnapshot"/>.
       </desc>
     </const>
-    <const name="Restoring"             value="9">
+    <const name="Restoring"             value="10">
       <desc>
         The execution state of the machine is being restored from a file
         after <link to="IConsole::powerUp">powering it on</link> from
         a saved execution state.
       </desc>
     </const>
-    <const name="Discarding"            value="10">
+    <const name="Discarding"            value="11">
       <desc>
         A snapshot of the machine is being discarded after calling
         <link to="IConsole::discardSnapshot"/> or its current state is

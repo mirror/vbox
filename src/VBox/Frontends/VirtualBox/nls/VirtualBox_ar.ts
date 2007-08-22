@@ -494,7 +494,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
+        <source>&amp;Shared Folders...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -32,6 +32,7 @@
 #include <qmenubar.h>
 #include <qbuttongroup.h>
 #include <qradiobutton.h>
+#include <qfile.h>
 #include <qdir.h>
 #include <qpushbutton.h>
 #include <qcursor.h>
@@ -140,13 +141,17 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     ///// Actions ///////////////////////////////////////////////////////////
 
-    /*
-     *  a group for all actions that are enabled only when the VM is running.
-     *  note that only actions whose enabled state depends exclusively on the
-     *  running state of the VM are added to this group.
-     */
-    runningActions = new QActionGroup (this);
-    runningActions->setExclusive (false);
+    /* a group for all actions that are enabled only when the VM is running.
+     * Note that only actions whose enabled state depends exclusively on the
+     * execution state of the VM are added to this group. */
+    mRunningActions = new QActionGroup (this);
+    mRunningActions->setExclusive (false);
+
+    /* a group for all actions that are enabled when the VM is running or
+     * paused. Note that only actions whose enabled state depends exclusively
+     * on the execution state of the VM are added to this group. */
+    mRunningOrPausedActions = new QActionGroup (this);
+    mRunningOrPausedActions->setExclusive (false);
 
     /* VM menu actions */
 
@@ -160,7 +165,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
         VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"));
     vmSeamlessAction->setToggleAction (true);
 
-    vmAutoresizeGuestAction = new QAction (runningActions, "vmAutoresizeGuestAction");
+    vmAutoresizeGuestAction = new QAction (mRunningActions, "vmAutoresizeGuestAction");
     vmAutoresizeGuestAction->setIconSet (
         VBoxGlobal::iconSet ("auto_resize_on_16px.png", "auto_resize_on_disabled_16px.png"));
     vmAutoresizeGuestAction->setToggleAction (true);
@@ -171,32 +176,32 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
         VBoxGlobal::iconSet ("adjust_win_size_16px.png",
                              "adjust_win_size_disabled_16px.png"));
 
-    vmTypeCADAction = new QAction (runningActions, "vmTypeCADAction");
+    vmTypeCADAction = new QAction (mRunningActions, "vmTypeCADAction");
     vmTypeCADAction->setIconSet (VBoxGlobal::iconSet ("hostkey_16px.png",
                                                       "hostkey_disabled_16px.png"));
 
 #if defined(Q_WS_X11)
-    vmTypeCABSAction = new QAction (runningActions, "vmTypeCABSAction");
+    vmTypeCABSAction = new QAction (mRunningActions, "vmTypeCABSAction");
     vmTypeCABSAction->setIconSet (VBoxGlobal::iconSet ("hostkey_16px.png",
                                                        "hostkey_disabled_16px.png"));
 #endif
 
-    vmResetAction = new QAction (runningActions, "vmResetAction");
+    vmResetAction = new QAction (mRunningActions, "vmResetAction");
     vmResetAction->setIconSet (VBoxGlobal::iconSet ("reset_16px.png",
-                                           "reset_disabled_16px.png"));
+                                                    "reset_disabled_16px.png"));
 
-    vmPauseAction = new QAction( this, "vmPauseAction" );
+    vmPauseAction = new QAction (this, "vmPauseAction");
     vmPauseAction->setIconSet (VBoxGlobal::iconSet ("pause_16px.png"));
-    vmPauseAction->setToggleAction( true );
+    vmPauseAction->setToggleAction (true);
 
-    vmACPIShutdownAction = new QAction (this, "vmACPIShutdownAction");
+    vmACPIShutdownAction = new QAction (mRunningActions, "vmACPIShutdownAction");
     vmACPIShutdownAction->setIconSet (
         VBoxGlobal::iconSet ("acpi_16px.png", "acpi_disabled_16px.png"));
 
     vmCloseAction = new QAction (this, "vmCloseAction");
     vmCloseAction->setIconSet (VBoxGlobal::iconSet ("exit_16px.png"));
 
-    vmTakeSnapshotAction = new QAction (this, "vmTakeSnapshotAction");
+    vmTakeSnapshotAction = new QAction (mRunningOrPausedActions, "vmTakeSnapshotAction");
     vmTakeSnapshotAction->setIconSet (VBoxGlobal::iconSet (
         "take_snapshot_16px.png", "take_snapshot_dis_16px.png"));
 
@@ -207,28 +212,33 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Devices menu actions */
 
-    devicesMountFloppyImageAction = new QAction (runningActions, "devicesMountFloppyImageAction");
+    devicesMountFloppyImageAction = new QAction (mRunningOrPausedActions,
+                                                 "devicesMountFloppyImageAction");
 
     devicesUnmountFloppyAction = new QAction (this, "devicesUnmountFloppyAction");
     devicesUnmountFloppyAction->setIconSet (VBoxGlobal::iconSet ("fd_unmount_16px.png",
-                                                        "fd_unmount_dis_16px.png"));
+                                                                 "fd_unmount_dis_16px.png"));
 
-    devicesMountDVDImageAction = new QAction (runningActions, "devicesMountISOImageAction");
+    devicesMountDVDImageAction = new QAction (mRunningOrPausedActions,
+                                              "devicesMountISOImageAction");
 
     devicesUnmountDVDAction = new QAction (this, "devicesUnmountDVDAction");
     devicesUnmountDVDAction->setIconSet (VBoxGlobal::iconSet ("cd_unmount_16px.png",
                                                      "cd_unmount_dis_16px.png"));
 
-    devicesSFDialogAction = new QAction (runningActions, "devicesSFDialogAction");
+    devicesSFDialogAction = new QAction (mRunningOrPausedActions,
+                                         "devicesSFDialogAction");
     devicesSFDialogAction->setIconSet (VBoxGlobal::iconSet ("shared_folder_16px.png",
                                                             "shared_folder_disabled_16px.png"));
 
-    devicesSwitchVrdpAction = new QAction (runningActions, "devicesSwitchVrdpAction");
+    devicesSwitchVrdpAction = new QAction (mRunningOrPausedActions,
+                                           "devicesSwitchVrdpAction");
     devicesSwitchVrdpAction->setIconSet (VBoxGlobal::iconSet ("vrdp_16px.png",
                                                               "vrdp_disabled_16px.png"));
     devicesSwitchVrdpAction->setToggleAction (true);
 
-    devicesInstallGuestToolsAction = new QAction (runningActions, "devicesInstallGuestToolsAction");
+    devicesInstallGuestToolsAction = new QAction (mRunningActions,
+                                                  "devicesInstallGuestToolsAction");
     devicesInstallGuestToolsAction->setIconSet (VBoxGlobal::iconSet ("guesttools_16px.png",
                                                                      "guesttools_disabled_16px.png"));
 
@@ -247,11 +257,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Help menu actions */
 
-    helpWebAction = new QAction( this, "helpWebAction" );
+    helpWebAction = new QAction (this, "helpWebAction");
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
-    helpAboutAction = new QAction( this, "helpAboutAction" );
+    helpAboutAction = new QAction (this, "helpAboutAction");
     helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
-    helpResetMessagesAction = new QAction( this, "helpResetMessagesAction" );
+    helpResetMessagesAction = new QAction (this, "helpResetMessagesAction");
     helpResetMessagesAction->setIconSet (VBoxGlobal::iconSet ("reset_16px.png"));
 
     ///// Menubar ///////////////////////////////////////////////////////////
@@ -297,7 +307,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     /* dynamic & statusline popup menus */
     devicesMountFloppyMenu = new QPopupMenu (devicesMenu, "devicesMountFloppyMenu");
     devicesMountDVDMenu = new QPopupMenu (devicesMenu, "devicesMountDVDMenu");
-    devicesSharedFolders = new QPopupMenu (devicesMenu, "devicesSharedFolders");
+    devicesSFMenu = new QPopupMenu (devicesMenu, "devicesSFMenu");
     devicesNetworkMenu = new QPopupMenu (devicesMenu, "devicesNetworkMenu");
     devicesUSBMenu = new VBoxUSBMenu (devicesMenu);
     devicesVRDPMenu = new VBoxSwitchMenu (devicesMenu, devicesSwitchVrdpAction);
@@ -306,20 +316,27 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
         QString::null, devicesMountDVDMenu, devicesMountDVDMenuId);
     devicesUnmountDVDAction->addTo (devicesMenu);
     devicesMenu->insertSeparator();
+
     devicesMenu->insertItem (VBoxGlobal::iconSet ("fd_16px.png", "fd_disabled_16px.png"),
         QString::null, devicesMountFloppyMenu, devicesMountFloppyMenuId);
     devicesUnmountFloppyAction->addTo (devicesMenu);
     devicesMenu->insertSeparator();
+
     devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
     devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
+
     devicesSFDialogAction->addTo (devicesMenu);
     devicesSFMenuSeparatorId = devicesMenu->insertSeparator();
+    devicesSFDialogAction->addTo (devicesSFMenu);
+
     devicesMenu->insertItem (VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"),
         QString::null, devicesNetworkMenu, devicesNetworkMenuId);
     devicesMenu->insertSeparator();
+
     devicesSwitchVrdpAction->addTo (devicesMenu);
     devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
+
     devicesInstallGuestToolsAction->addTo (devicesMenu);
 
     menuBar()->insertItem (QString::null, devicesMenu, devicesMenuId);
@@ -476,7 +493,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesMountFloppyMenu, SIGNAL(activated(int)), this, SLOT(captureFloppy(int)));
     connect (devicesMountDVDMenu, SIGNAL(activated(int)), this, SLOT(captureDVD(int)));
     connect (devicesUSBMenu, SIGNAL(activated(int)), this, SLOT(switchUSB(int)));
-    connect (devicesSharedFolders, SIGNAL(activated(int)), this, SLOT(devicesOpenSFDialog()));
     connect (devicesNetworkMenu, SIGNAL(activated(int)), this, SLOT(activateNetworkMenu(int)));
 
     connect (devicesMountFloppyMenu, SIGNAL (highlighted (int)),
@@ -1060,7 +1076,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
         return;
     }
 
-    if (machine_state > CEnums::Paused)
+    if (machine_state > CEnums::Paused &&
+        machine_state != CEnums::Stuck)
     {
         /*
          *  The machine is in some temporary state like Saving or Stopping.
@@ -1090,7 +1107,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
         bool success = true;
 
-        bool wasPaused = machine_state == CEnums::Paused;
+        bool wasPaused = machine_state == CEnums::Paused ||
+                         machine_state == CEnums::Stuck;
         if (!wasPaused)
         {
             /* Suspend the VM and ignore the close event if failed to do so.
@@ -1107,21 +1125,31 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             QString typeId = cmachine.GetOSTypeId();
             dlg.pmIcon->setPixmap (vboxGlobal().vmGuestOSTypeIcon (typeId));
 
-            /* read the last user's choice for the given VM */
-            QStringList lastAction = QStringList::split (',',
-                cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction));
-            AssertWrapperOk (cmachine);
-            if (lastAction [0] == PowerOff)
-                dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
-            else if (lastAction [0] == Save)
-                dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbSave));
-            else
-                dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
-            dlg.cbDiscardCurState->setChecked (
-                lastAction.count() > 1 && lastAction [1] == DiscardCurState);
-
             /* make the Discard checkbox invisible if there are no snapshots */
             dlg.cbDiscardCurState->setShown ((cmachine.GetSnapshotCount() > 0));
+
+            if (machine_state != CEnums::Stuck)
+            {
+                /* read the last user's choice for the given VM */
+                QStringList lastAction = QStringList::split (',',
+                                                             cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction));
+                AssertWrapperOk (cmachine);
+                if (lastAction [0] == PowerOff)
+                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
+                else if (lastAction [0] == Save)
+                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbSave));
+                else
+                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
+                dlg.cbDiscardCurState->setChecked (
+                    lastAction.count() > 1 && lastAction [1] == DiscardCurState);
+            }
+            else
+            {
+                /* The stuck VM can only be powered off; disable anything
+                 * else and choose PowerOff */
+                dlg.rbSave->setEnabled (false);
+                dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
+            }
 
             if (dlg.exec() == QDialog::Accepted)
             {
@@ -1358,8 +1386,7 @@ void VBoxConsoleWnd::languageChange()
     devicesSwitchVrdpAction->setStatusTip (
         tr ("Enable or disable remote desktop (RDP) connections to this machine"));
 
-    devicesSharedFolders->insertItem (tr ("Open"));
-    devicesSFDialogAction->setMenuText (tr ("&Shared Folders"));
+    devicesSFDialogAction->setMenuText (tr ("&Shared Folders..."));
     devicesSFDialogAction->setStatusTip (
         tr ("Open the dialog to operate on shared folders"));
 
@@ -1451,6 +1478,9 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     CMachine cmachine = csession.GetMachine();
     CConsole cconsole = console->console();
 
+    bool isRunningOrPaused = machine_state == CEnums::Running ||
+                             machine_state == CEnums::Paused;
+
     if (element & Caption)
     {
         QString snapshotName;
@@ -1465,11 +1495,11 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & FloppyStuff)
     {
-        devicesMountFloppyMenu->setEnabled (machine_state == CEnums::Running);
+        devicesMountFloppyMenu->setEnabled (isRunningOrPaused);
         CFloppyDrive floppy = cmachine.GetFloppyDrive();
         CEnums::DriveState state = floppy.GetState();
         bool mounted = state != CEnums::NotMounted;
-        devicesUnmountFloppyAction->setEnabled (machine_state == CEnums::Running && mounted);
+        devicesUnmountFloppyAction->setEnabled (isRunningOrPaused && mounted);
         fd_light->setState (mounted ? CEnums::DeviceIdle : CEnums::InvalidActivity);
         QString tip = tr ("<qt><nobr>Indicates the activity of the floppy media:</nobr>"
                           "%1</qt>",
@@ -1509,11 +1539,11 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & DVDStuff)
     {
-        devicesMountDVDMenu->setEnabled (machine_state == CEnums::Running);
+        devicesMountDVDMenu->setEnabled (isRunningOrPaused);
         CDVDDrive dvd = cmachine.GetDVDDrive();
         CEnums::DriveState state = dvd.GetState();
         bool mounted = state != CEnums::NotMounted;
-        devicesUnmountDVDAction->setEnabled (machine_state == CEnums::Running && mounted);
+        devicesUnmountDVDAction->setEnabled (isRunningOrPaused && mounted);
         cd_light->setState (mounted ? CEnums::DeviceIdle : CEnums::InvalidActivity);
         QString tip = tr ("<qt><nobr>Indicates the activity of the CD/DVD-ROM media:</nobr>"
                           "%1</qt>",
@@ -1585,7 +1615,9 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             if (cmachine.GetNetworkAdapter (slot).GetEnabled())
                 count++;
         net_light->setState (count > 0 ? CEnums::DeviceIdle
-                                         : CEnums::InvalidActivity);
+                                       : CEnums::InvalidActivity);
+
+        devicesNetworkMenu->setEnabled (isRunningOrPaused && count > 0);
 
         /* update tooltip */
         QString ttip = tr ("<qt><nobr>Indicates the activity of the network "
@@ -1615,12 +1647,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     }
     if (element & USBStuff)
     {
-        /// @todo (r=dmik) do we really need to disable the control while
-        //  in Pause? Check the same for CD/DVD above.
         if (!usb_light->isHidden())
         {
-            devicesUSBMenu->setEnabled (machine_state == CEnums::Running);
-
             /* update tooltip */
             QString ttip = tr ("<qt><nobr>Indicates the activity of the "
                                "attached USB devices:</nobr>"
@@ -1628,8 +1656,11 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                                "USB device tooltip");
             QString info;
 
-            if (cmachine.GetUSBController().GetEnabled())
+            bool isUSBEnabled = cmachine.GetUSBController().GetEnabled();
+            if (isUSBEnabled)
             {
+                devicesUSBMenu->setEnabled (isRunningOrPaused);
+
                 CUSBDeviceEnumerator en = cconsole.GetUSBDevices().Enumerate();
                 while (en.HasMore())
                 {
@@ -1642,8 +1673,12 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                                "USB device tooltip");
             }
             else
+            {
+                devicesUSBMenu->setEnabled (false);
+
                 info = tr ("<br><nobr><b>USB Controller is disabled</b></nobr>",
                            "USB device tooltip");
+            }
 
             QToolTip::add (usb_light, ttip.arg (info));
         }
@@ -1733,8 +1768,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             vmPauseAction->setStatusTip (
                 tr ("Resume the execution of the virtual machine" ) );
         }
-        vmPauseAction->setEnabled (machine_state == CEnums::Running ||
-                                   machine_state == CEnums::Paused);
+        vmPauseAction->setEnabled (isRunningOrPaused);
     }
     if (element & DisableMouseIntegrAction)
     {
@@ -2437,7 +2471,7 @@ void VBoxConsoleWnd::prepareFloppyMenu()
         int id = devicesMountFloppyMenu->insertItem (
             tr ("Host Drive ") + fullName);
         hostFloppyMap [id] = hostFloppy;
-        if (machine_state != CEnums::Running)
+        if (machine_state != CEnums::Running && machine_state != CEnums::Paused)
             devicesMountFloppyMenu->setItemEnabled (id, false);
         else if (!selected.isNull())
             if (!selected.GetName().compare (hostFloppy.GetName()))
@@ -2483,7 +2517,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
         int id = devicesMountDVDMenu->insertItem (
             tr ("Host Drive ") + fullName);
         hostDVDMap [id] = hostDVD;
-        if (machine_state != CEnums::Running)
+        if (machine_state != CEnums::Running && machine_state != CEnums::Paused)
             devicesMountDVDMenu->setItemEnabled (id, false);
         else if (!selected.isNull())
             if (!selected.GetName().compare (hostDVD.GetName()))
@@ -2719,15 +2753,27 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     else
     if (ind == sf_light)
     {
-        devicesSharedFolders->exec (e->globalPos());
+        /* Showing the context menu that always contains a single item is a
+         * bit stupid; let's better execute this item's action directly. The
+         * menu itself is kept just in case if we need more than one item in
+         * the future. */
+#if 0
+        devicesSFMenu->exec (e->globalPos());
+#else
+        if (devicesSFDialogAction->isEnabled())
+            devicesSFDialogAction->activate();
+#endif
     }
     else
     if (ind == net_light)
     {
-        /* set "this is a context menu" flag */
-        devicesMenu->setItemParameter (devicesNetworkMenuId, 1);
-        devicesNetworkMenu->exec (e->globalPos());
-        devicesMenu->setItemParameter (devicesNetworkMenuId, 0);
+        if (devicesNetworkMenu->isEnabled())
+        {
+            /* set "this is a context menu" flag */
+            devicesMenu->setItemParameter (devicesNetworkMenuId, 1);
+            devicesNetworkMenu->exec (e->globalPos());
+            devicesMenu->setItemParameter (devicesNetworkMenuId, 0);
+        }
     }
 }
 
@@ -2771,12 +2817,19 @@ void VBoxConsoleWnd::updateDeviceLights()
 
 void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
 {
+    bool guruMeditation = false;
+
     if (console && machine_state != state)
     {
         if (state >= CEnums::Running)
         {
             switch (state)
             {
+                case CEnums::Stuck:
+                {
+                    guruMeditation = true;
+                    break;
+                }
                 case CEnums::Paused:
                 {
                     if (!vmPauseAction->isOn())
@@ -2794,13 +2847,20 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
             }
         }
 
-        runningActions->setEnabled (state == CEnums::Running);
+        bool isRunningOrPaused = state == CEnums::Running ||
+                                 state == CEnums::Paused;
+
+        /* enable/disable actions that are not managed by
+         * updateAppearanceOf() */
+
+        mRunningActions->setEnabled (state == CEnums::Running);
+        mRunningOrPausedActions->setEnabled (isRunningOrPaused);
 
         machine_state = state;
 
         updateAppearanceOf (Caption | FloppyStuff | DVDStuff |
                             USBStuff | VRDPStuff | PauseAction |
-                            DisableMouseIntegrAction );
+                            DisableMouseIntegrAction);
 
         if (state < CEnums::Running)
         {
@@ -2811,6 +2871,30 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
              */
             if (!no_auto_close)
                 tryClose();
+        }
+    }
+
+    if (guruMeditation)
+    {
+        CConsole cconsole = console->console();
+        QString logFolder = cconsole.GetMachine().GetLogFolder();
+
+        /* Take the screenshot for debugging purposes and save it */
+        QString fname = logFolder + "/VBox.png";
+
+        /// @todo for some reason, IDisplay::takeScreenShot() may not work
+        /// properly on a VM which is Stuck -- investigate it.
+        CDisplay dsp = cconsole.GetDisplay();
+        QImage shot = QImage (dsp.GetWidth(), dsp.GetHeight(), 32, 0);
+        dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
+        shot.save (QFile::encodeName (fname), "PNG");
+
+        if (vboxProblem().remindAboutGuruMeditation (
+                cconsole, QDir::convertSeparators (logFolder)))
+        {
+            cconsole.PowerDown();
+            if (!cconsole.isOk())
+                vboxProblem().cannotStopMachine (cconsole);
         }
     }
 }

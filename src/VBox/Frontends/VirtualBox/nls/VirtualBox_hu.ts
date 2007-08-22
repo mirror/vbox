@@ -460,8 +460,8 @@
         <translation>Megnyitás</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>&amp;Osztott mappák</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>&amp;Osztott mappák...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

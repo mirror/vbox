@@ -456,8 +456,8 @@
         <translation>Öppna</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>&amp;Delade mappar</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>&amp;Delade mappar...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

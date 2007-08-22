@@ -483,8 +483,8 @@
         <translation>打开</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>共享文件夹(&amp;S)</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>共享文件夹(&amp;S)...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

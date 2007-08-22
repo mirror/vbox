@@ -216,6 +216,9 @@ public:
 
     void remindAboutWrongColorDepth (ulong aRealBPP, ulong aWantedBPP);
 
+    bool remindAboutGuruMeditation (const CConsole &aConsole,
+                                    const QString &aLogFolder);
+
     int remindAboutUnsetHD (QWidget *aParent);
 
     void cannotRunInSelectorMode();

@@ -452,8 +452,8 @@
         <translation>Öffnen</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>&amp;Gemeinsame Ordner</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>&amp;Gemeinsame Ordner...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>
