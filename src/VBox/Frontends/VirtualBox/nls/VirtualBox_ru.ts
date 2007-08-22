@@ -456,8 +456,8 @@
         <translation>Открыть</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>О&amp;бщие папки</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>О&amp;бщие папки...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

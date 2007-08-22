@@ -483,8 +483,8 @@
         <translation>Apri</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>Cartelle Condivi&amp;se</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>Cartelle Condivi&amp;se...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

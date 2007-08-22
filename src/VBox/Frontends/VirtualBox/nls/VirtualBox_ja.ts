@@ -455,8 +455,8 @@
         <translation>開く</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>共有フォルダ(&amp;S)</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>共有フォルダ(&amp;S)...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

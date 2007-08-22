@@ -1596,6 +1596,43 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
     NOREF(rc);
 }
 
+/** 
+ *  Returns @c true if the user has selected to power off the machine.
+ */
+bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
+                                                     const QString &aLogFolder)
+{
+    Q_UNUSED (aConsole);
+
+    int rc = message (&vboxGlobal().consoleWnd(), Critical,
+        tr ("<p>A critical error has been detected while running the virtual "
+            "machine and the machine execution has been stopped.</p>"
+            ""
+            "<p>Please go to "
+            "<a href=http://www.virtualbox.org>http://www.virtualbox.org</a> "
+            "and search through forums and mailing lists for "
+            "similar problems. If nothing similar is found, please open a "
+            "new ticket and attach the <tt>VBox.log</tt> and <tt>VBox.png</tt> "
+            "files which you can find in the <nobr><b>%1</b></nobr> directory "
+            "to this ticket together with the description of what you were "
+            "doing when this error happened. "
+            ""
+            "Note that you can also access the above files by selecting "
+            "<b>Show Log</b> from the <b>Machine</b> menu of the main "
+            "VirualBox window.</p>"
+            ""
+            "<p>Press <b>OK</b> if you want to power off the machine "
+            "or press <b>Ignore</b> if you want to leave it as is for debugging. "
+            "Please note that debugging requires special knowledge and tools, so "
+            "it is recommended to press <b>OK</b> now.</p>")
+            .arg (aLogFolder),
+        0, /* autoConfirmId */
+        QIMessageBox::Ok | QIMessageBox::Default,
+        QIMessageBox::Ignore | QIMessageBox::Escape);
+
+    return rc == QIMessageBox::Ok;
+}
+
 int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
 {
     return message (

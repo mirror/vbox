@@ -456,8 +456,8 @@
         <translation>Abrir</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>Pastas Compartilhada&amp;s</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>Pastas Compartilhada&amp;s...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

@@ -2484,6 +2484,10 @@ void VBoxConsoleView::onStateChange (CEnums::MachineState state)
                     viewport()->repaint();
                 }
             }
+            /* fall through */
+        }
+        case CEnums::Stuck:
+        {
             /* reuse the focus event handler to uncapture everything */
             if (hasFocus())
                 focusEvent (false);

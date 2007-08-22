@@ -483,8 +483,8 @@
         <translation>Deschide</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>Directoare &amp;partajate</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>Directoare &amp;partajate...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>

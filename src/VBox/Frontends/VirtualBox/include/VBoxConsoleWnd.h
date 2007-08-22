@@ -184,7 +184,8 @@ private:
     /** Popup version of the main menu */
     QPopupMenu *mMainMenu;
 
-    QActionGroup *runningActions;
+    QActionGroup *mRunningActions;
+    QActionGroup *mRunningOrPausedActions;
 
     // Machine actions
     QAction *vmFullscreenAction;
@@ -230,7 +231,7 @@ private:
     QPopupMenu *devicesMenu;
     QPopupMenu *devicesMountFloppyMenu;
     QPopupMenu *devicesMountDVDMenu;
-    QPopupMenu *devicesSharedFolders;
+    QPopupMenu *devicesSFMenu;
     QPopupMenu *devicesNetworkMenu;
     VBoxUSBMenu *devicesUSBMenu;
     VBoxSwitchMenu *devicesVRDPMenu;

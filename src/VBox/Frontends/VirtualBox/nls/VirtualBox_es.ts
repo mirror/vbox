@@ -483,8 +483,8 @@
         <translation>Abrir</translation>
     </message>
     <message>
-        <source>&amp;Shared Folders</source>
-        <translation>&amp;Directorios Compartidos</translation>
+        <source>&amp;Shared Folders...</source>
+        <translation>&amp;Directorios Compartidos...</translation>
     </message>
     <message>
         <source>Open the dialog to operate on shared folders</source>
