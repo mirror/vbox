@@ -32,8 +32,6 @@ typedef struct _VBOXRESTORECONTEXT
 
 static VBOXRESTORECONTEXT gCtx = {0};
 
-static void VBoxRestoreCheckVRDP();
-
 
 int VBoxRestoreInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
@@ -60,12 +58,11 @@ void VBoxRestoreSession()
     VBoxRestoreCheckVRDP();
 }
 
-static void VBoxRestoreCheckVRDP()
+void VBoxRestoreCheckVRDP()
 {
     HDC  hdc;
     BOOL ret;
     
-
     /* Check VRDP activity */
     hdc = GetDC(HWND_DESKTOP);
 
@@ -124,6 +121,9 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         else
         {
             dprintf(("VBoxService: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+
+            /** @todo Don't poll, but wait for connect/disconnect events */
+            PostMessage(gToolWindow, WM_VBOX_CHECK_VRDP, 0, 0);
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {

@@ -30,6 +30,7 @@
 
 
 #define WM_VBOX_RESTORED                     0x2005
+#define WM_VBOX_CHECK_VRDP                   0x2006
 
 
 /* The environment information for services. */

@@ -22,6 +22,7 @@
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
+#include <VBoxGuestInternal.h>
 
 #include "helpers.h"
 
@@ -91,12 +92,14 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxSeamlessThread,
         VBoxSeamlessDestroy
     },
+#ifdef VBOX_WITH_VRDP_SESSION_HANDLING
     {
         "Restore",
         VBoxRestoreInit,
         VBoxRestoreThread,
         VBoxRestoreDestroy,
     },
+#endif
     {
         NULL
     }
@@ -434,6 +437,10 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
         case WM_VBOX_RESTORED:
             VBoxRestoreSession();
+            break;
+
+        case WM_VBOX_CHECK_VRDP:
+            VBoxRestoreCheckVRDP();
             break;
 
         default:

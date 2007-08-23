@@ -22,6 +22,7 @@ int                VBoxRestoreInit    (const VBOXSERVICEENV *pEnv, void **ppInst
 unsigned __stdcall VBoxRestoreThread  (void *pInstance);
 void               VBoxRestoreDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
-void               VBoxRestoreSession ();
+void VBoxRestoreSession();
+void VBoxRestoreCheckVRDP();
 
 #endif /* __VBOXSERVICERESTORE__H */
