@@ -1605,7 +1605,7 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
     Q_UNUSED (aConsole);
 
     int rc = message (&vboxGlobal().consoleWnd(), Critical,
-        tr ("<p>A critical error has been occurred while running the virtual "
+        tr ("<p>A critical error has occurred while running the virtual "
             "machine and the machine execution has been stopped.</p>"
             ""
             "<p>For help, please see the Community section on "
