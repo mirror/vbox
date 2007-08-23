@@ -130,14 +130,14 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_RESTORED)
                 PostMessage(gToolWindow, WM_VBOX_RESTORED, 0, 0);
-
+            else
+                /** @todo Don't poll, but wait for connect/disconnect events */
+                PostMessage(gToolWindow, WM_VBOX_CHECK_VRDP, 0, 0);
         } 
         else
         {
             dprintf(("VBoxService: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
 
-            /** @todo Don't poll, but wait for connect/disconnect events */
-            PostMessage(gToolWindow, WM_VBOX_CHECK_VRDP, 0, 0);
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
