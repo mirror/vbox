@@ -1612,7 +1612,7 @@ static int vboxClipboardCreateWindow(void)
     /* Create a window and make it a clipboard viewer. */
     int cArgc = 0;
     char *pcArgv = 0;
-    String szFallbackResources[] = { "*.width: 1", "*.height: 1", 0 };
+    String szFallbackResources[] = { (char*)"*.width: 1", (char*)"*.height: 1", 0 };
 
     /* Set up the Clipbard application context and main window. */
     g_ctx.widget = XtOpenApplication(&g_ctx.appContext, "VBoxClipboard", 0, 0, &cArgc, &pcArgv,
