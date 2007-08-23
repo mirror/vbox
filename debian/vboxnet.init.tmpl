@@ -7,13 +7,8 @@
 #
 #  Copyright (C) 2007 innotek GmbH
 # 
-#  This file is part of VirtualBox Open Source Edition (OSE), as
-#  available from http://www.virtualbox.org. This file is free software;
-#  you can redistribute it and/or modify it under the terms of the GNU
-#  General Public License as published by the Free Software Foundation,
-#  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
-#  distribution. VirtualBox OSE is distributed in the hope that it will
-#  be useful, but WITHOUT ANY WARRANTY of any kind.
+#  innotek GmbH confidential
+#  All rights reserved
 
 # chkconfig: 35 30 60
 # description: VirtualBox permanent host networking setup
@@ -90,9 +85,8 @@ valid_ifname()
 # script has already been started and do nothing.
 start_network() {
     log_action_begin_msg "Starting VirtualBox host networking"
-    # If there is no configuration file or if the service is already running,
-    # assume that we have successfully started.
-    if [ -f "$VARFILE" -o ! -f "$CONFIG" ]; then
+    # If the service is already running, return successfully.
+    if [ -f "$VARFILE" ]; then
       log_action_end_msg 0
       return 0
     fi
@@ -104,6 +98,11 @@ start_network() {
     fi
     if ! touch "$VARFILE" 2> /dev/null; then
       failure "Cannot create $VARFILE"
+    fi
+    # If there is no configuration file, report success
+    if [ ! -f "$CONFIG" ]; then
+      log_action_end_msg 0
+      return 0
     fi
     # Fail if we can't read our configuration
     if [ ! -r "$CONFIG" ]; then
@@ -126,24 +125,41 @@ start_network() {
             (valid_ifname "$1"))
         then
           # Try to create the interface
-          if (VBoxTunctl -t "$1" -u "$2" > /dev/null 2>&1 &&
-              ifconfig "$1" up 2> /dev/null)
+          if VBoxTunctl -t "$1" -u "$2" > /dev/null 2>&1
           then
-            # Add the interface to a bridge if one was specified
-            if [ ! -z "$3" ]; then
-              if brctl addif "$3" "$1" 2> /dev/null; then
-                echo "$1 $2 $3" > "$VARFILE"
+            # On SUSE Linux Enterprise Server, the interface does not
+            # appear immediately, so we loop trying to bring it up.
+            i=1
+            while [ $i -le 10 ]
+            do
+              ifconfig "$1" up 2> /dev/null
+              if ifconfig | grep "$1" > /dev/null 2>&1
+              then
+                # Add the interface to a bridge if one was specified
+                if [ ! -z "$3" ]
+                then
+                  if brctl addif "$3" "$1" 2> /dev/null
+                  then
+                    echo "$1 $2 $3" > "$VARFILE"
+                  else
+                    echo "$1 $2" > "$VARFILE"
+                    echo "Warning - failed to add interface $1 to the bridge $3"
+                  fi
+                else
+                  echo "$1 $2" > $VARFILE
+                fi
+                i=20
               else
-                echo "$1 $2" > "$VARFILE"
-                echo "Warning - failed to add interface $1 to the bridge $3"
+                i=`expr $i + 1`
+                sleep .1
               fi
-            else
-              echo "$1 $2" > $VARFILE
+            done
+            if [ $i -ne 20 ]
+            then
+              echo "Warning - failed to bring up the interface $1"
             fi
           else
-            echo
-            echo "Warning - invalid line in $CONFIG:"
-            echo "  $line"
+            echo "Warning - failed to create the interface $1 for the user $2"
           fi
         else
           echo
@@ -156,6 +172,7 @@ start_network() {
     # yet belong to a group.
     if ls -g "$TAPDEV" 2>/dev/null | grep -q root; then
       chgrp vboxusers "$TAPDEV"
+      chmod 0660 "$TAPDEV"
     fi
     log_action_end_msg 0
     return 0
