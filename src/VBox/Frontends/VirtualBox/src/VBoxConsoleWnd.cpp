@@ -1879,7 +1879,7 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     {
         mIsFullscreen = aOn;
         vmAdjustWindowAction->setEnabled (!aOn);
-        vmSeamlessAction->setEnabled (!aOn);
+        vmSeamlessAction->setEnabled (!aOn && mIsSeamlessSupported);
     }
 
     bool wasHidden = isHidden();
