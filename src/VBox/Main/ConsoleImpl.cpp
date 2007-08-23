@@ -811,6 +811,8 @@ DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
     return;
 }
 
+#define CRASHTEST64(a) do { LogRel(a); RTLogFlush(RTLogRelDefaultInstance()); } while (0)
+
 #ifdef VRDP_NO_COM
 void Console::VRDPInterceptClipboard (uint32_t u32ClientId)
 #else
@@ -821,27 +823,33 @@ DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
 #endif /* VRDP_NO_COM */
 {
     LogFlowFuncEnter();
-
+    
+    CRASHTEST64(("enter %p\n", u32ClientId));
+    
 #ifdef VRDP_NO_COM
     Console *console = this;
 #else
     Console *console = static_cast <Console *> (pvUser);
 #endif /* VRDP_NO_COM */
+    CRASHTEST64(("console %p\n", console));
     AssertReturnVoid (console);
 
     AutoCaller autoCaller (console);
     AssertComRCReturnVoid (autoCaller.rc());
 
+    CRASHTEST64(("console->mConsoleVRDPServer %p\n", console->mConsoleVRDPServer));
     AssertReturnVoid (console->mConsoleVRDPServer);
 
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
+    CRASHTEST64(("going to call the instance client id %d\n", u32ClientId));
     mConsoleVRDPServer->ClipboardCreate (u32ClientId);
 #else
     console->mConsoleVRDPServer->ClipboardCreate (u32ClientId, ppfn, ppv);
 #endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
+    CRASHTEST64(("leave\n"));
     LogFlowFuncLeave();
     return;
 }
