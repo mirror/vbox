@@ -2241,14 +2241,19 @@ STDMETHODIMP Machine::DeleteSettings()
         Assert (!logFolder.isEmpty());
         if (RTDirExists (logFolder))
         {
-            /* delete all VBox.log[.N] files from the Logs folder
+            /* Delete all VBox.log[.N] files from the Logs folder
              * (this must be in sync with the rotation logic in
-             * Console::powerUpThread()) */
+             * Console::powerUpThread()). Also, delete the VBox.png[.N]
+             * files that may have been created by the GUI. */
             Utf8Str log = Utf8StrFmt ("%s/VBox.log", logFolder.raw());
+            RTFileDelete (log);
+            log = Utf8StrFmt ("%s/VBox.png", logFolder.raw());
             RTFileDelete (log);
             for (int i = 3; i >= 0; i--)
             {
                 log = Utf8StrFmt ("%s/VBox.log.%d", logFolder.raw(), i);
+                RTFileDelete (log);
+                log = Utf8StrFmt ("%s/VBox.png.%d", logFolder.raw(), i);
                 RTFileDelete (log);
             }
 

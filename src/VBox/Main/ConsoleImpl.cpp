@@ -7114,6 +7114,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
         Utf8Str logFile = Utf8StrFmt ("%s%cVBox.log",
                                       logDir.raw(), RTPATH_DELIMITER);
+        Utf8Str pngFile = Utf8StrFmt ("%s%cVBox.png",
+                                      logDir.raw(), RTPATH_DELIMITER);
 
         /*
          * Age the old log files
@@ -7122,13 +7124,23 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
          */
         for (int i = 2; i >= 0; i--)
         {
-            Utf8Str oldName;
-            if (i > 0)
-                oldName = Utf8StrFmt ("%s.%d", logFile.raw(), i);
-            else
-                oldName = logFile;
-            Utf8Str newName = Utf8StrFmt ("%s.%d", logFile.raw(), i + 1);
-            RTFileRename(oldName.raw(), newName.raw(), RTFILEMOVE_FLAGS_REPLACE);
+            Utf8Str *files[] = { &logFile, &pngFile };
+            Utf8Str oldName, newName;
+
+            for (int j = 0; j < ELEMENTS (files); ++ j)
+            {
+                if (i > 0)
+                    oldName = Utf8StrFmt ("%s.%d", files [j]->raw(), i);
+                else
+                    oldName = *files [j];
+                newName = Utf8StrFmt ("%s.%d", files [j]->raw(), i + 1);
+                /* If the old file doesn't exist, delete the new file (if it
+                 * exists) to provide correct rotation even if the sequence is
+                 * broken */
+                if (RTFileRename (oldName, newName, RTFILEMOVE_FLAGS_REPLACE) ==
+                    VERR_FILE_NOT_FOUND)
+                    RTFileDelete (newName);
+            }
         }
 
         PRTLOGGER loggerRelease;
