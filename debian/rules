@@ -50,17 +50,15 @@ endif
 endif
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
-# Debian sarge: libhal-devel 0.4.7 is too old
 configure: debian/configure-stamp
 debian/configure-stamp:
 	dh_testdir
 	cd $(vboxroot) && ./configure --odir=$(current)/debian $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
-	    $(filter _xandros4.1 _Debian_sarge,$(debrel)),--without-hal,) $(if \
 	    $(filter _xandros4.1,$(debrel)),--build-xalan,) $(if \
 	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
-	    $(DEBUG),--build-debug,)
+	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,)
 	touch debian/configure-stamp
 
 build: debian/configure-stamp debian/build-stamp
@@ -74,8 +72,7 @@ debian/build-stamp $(verfile):
 	    $(if $(STAGEDISO),\
 	      VBOX_WITH_LINUX_ADDITIONS= VBOX_WITH_WIN32_ADDITIONS=,) \
 	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
-	    LOCALCFG=$(current)/debian/$(if \
-	      $(HEADLESS),LocalConfig-headless.kmk,LocalConfig.kmk) \
+	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual.pdf $(builddir)/bin,)
@@ -88,8 +85,7 @@ debian/build-stamp $(verfile):
 	    $(STAGEDISO),\
 	      VBOX_WITH_LINUX_ADDITIONS= VBOX_WITH_WIN32_ADDITIONS=,) \
 	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
-	    LOCALCFG=$(current)/debian/$(if \
-	      $(HEADLESS),LocalConfig-headless.kmk,LocalConfig.kmk) \
+	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    packing
 	touch debian/build-stamp
@@ -138,16 +134,18 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	   $(prefix)/usr/share/applications/VirtualBox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
 	install -D -g 0 -o 0 -m 644 debian/lintian-override \
-	    debian/virtualbox/usr/share/lintian/overrides/virtualbox
+	   $(prefix)/usr/share/lintian/overrides/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBox.png \
 	   $(prefix)/usr/share/pixmaps/VBox.png
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.gc $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.r0 $(prefix)/usr/lib/virtualbox
+	$(if $(filter amd64,$(arch)),\
+	    mv $(prefix)/opt/VirtualBox-$(ver)/VBoxREM2.rel $(prefix)/usr/lib/virtualbox,)
 	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxXPCOMIPCD $(prefix)/usr/lib/virtualbox
 	mv $(prefix)/opt/VirtualBox-$(ver)/components $(prefix)/usr/lib/virtualbox/components
 	mv $(prefix)/opt/VirtualBox-$(ver)/*.so $(prefix)/usr/lib
 	mv $(prefix)/opt/VirtualBox-$(ver)/sdk  $(prefix)/usr/share/virtualbox
-	mv $(prefix)/opt/VirtualBox-$(ver)/nls  $(prefix)/usr/share/virtualbox
+	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/nls $(prefix)/usr/share/virtualbox)
 	mv $(prefix)/opt/VirtualBox-$(ver)/src  $(prefix)/usr/share/virtualbox
 	rm $(prefix)/opt/VirtualBox-$(ver)/VBox.sh
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
@@ -160,12 +158,15 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    install -D -g 0 -o 0 -m 0644 \
 	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done)
 ifeq ($(ose),)
-	mv $(prefix)/opt/VirtualBox-$(ver)/kchmviewer $(prefix)/usr/lib/virtualbox
-	for i in UserManual.pdf VirtualBox.chm LICENSE; do \
-	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/share/doc/virtualbox; done
+	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/kchmviewer $(prefix)/usr/lib/virtualbox)
+	dh_installdocs $(addprefix $(prefix)/opt/VirtualBox-$(ver)/,\
+	    UserManual.pdf VirtualBox.chm LICENSE)
+	rm $(addprefix $(prefix)/opt/VirtualBox-$(ver)/,UserManual.pdf VirtualBox.chm LICENSE)
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/share/virtualbox; done
 	rmdir $(prefix)/opt/VirtualBox-$(ver)/additions
+else
+	dh_installdocs
 endif
 	rmdir $(prefix)/opt/VirtualBox-$(ver)
 	rmdir $(prefix)/opt
@@ -191,7 +192,7 @@ endif
 	dh_installchangelogs
 	dh_link
 	[ -n "$(DEBUG)" ] || dh_strip
-	dh_compress -X.pdf -X.chm
+	dh_compress -X.pdf -X.chm -X LICENSE
 	dh_fixperms
 	dh_makeshlibs
 	dh_installdeb
