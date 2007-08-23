@@ -32,6 +32,7 @@
 #include <iprt/asm.h>
 #include <stdio.h>
 #include <VBox/VBoxGuestLib.h>
+#include <VBoxGuestInternal.h>
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -75,7 +76,7 @@ __END_DECLS
 #pragma alloc_text (PAGE, VBoxGuestDeviceControl)
 #pragma alloc_text (PAGE, VBoxGuestShutdown)
 #pragma alloc_text (PAGE, VBoxGuestNotSupportedStub)
-/* Note: at least the isr handler should be in non-pagable memory! */
+/* Note: at least the isr handler should be in non-pageable memory! */
 /*#pragma alloc_text (PAGE, VBoxGuestDpcHandler)
  #pragma alloc_text (PAGE, VBoxGuestIsrHandler) */
 #pragma alloc_text (PAGE, vboxWorkerThread)
@@ -743,6 +744,34 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         } break;
 #endif /* VBOX_HGCM */
+
+#ifdef VBOX_WITH_VRDP_SESSION_HANDLING
+        case IOCTL_VBOXGUEST_ENABLE_VRDP_SESSION:
+        {
+            if (!pDevExt->fVRDPEnabled)
+            {
+                KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
+
+                pDevExt->fVRDPEnabled            = TRUE;
+                pDevExt->ulOldActiveConsoleId    = pSharedUserData->ActiveConsoleId;
+                pSharedUserData->ActiveConsoleId = 2;
+            }
+            break;
+        }
+
+        case IOCTL_VBOXGUEST_DISABLE_VRDP_SESSION:
+        {
+            if (pDevExt->fVRDPEnabled)
+            {
+                KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
+
+                pDevExt->fVRDPEnabled            = FALSE;
+                pSharedUserData->ActiveConsoleId = pDevExt->ulOldActiveConsoleId;
+                pDevExt->ulOldActiveConsoleId    = 0;
+            }
+            break;
+        }
+#endif
 
         default:
              Status = STATUS_INVALID_PARAMETER;
