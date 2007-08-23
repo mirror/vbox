@@ -182,10 +182,10 @@ endif
 	$(if $(NOMODS),,dh_installmodules)
 	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g;' \
 	    debian/vboxdrv.init.tmpl > debian/vboxdrv.init
-#	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
+	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
 	    debian/vboxnet.init.tmpl > debian/vboxnet.init
 	dh_installinit --name=vboxdrv
-#	dh_installinit --name=vboxnet
+	dh_installinit --name=vboxnet
 	if [ "$(debrel)" = "_Ubuntu_dapper" -o "$(debrel)" = "_Debian_sarge" ]; then \
 	    cat debian/postrm.dapper > debian/postrm; fi
 	dh_installdebconf
