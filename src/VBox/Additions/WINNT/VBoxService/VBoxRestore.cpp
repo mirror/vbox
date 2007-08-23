@@ -21,6 +21,7 @@
 #include "VBoxRestore.h"
 #include <VBoxDisplay.h>
 #include <VBox/VBoxDev.h>
+#include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
 #include "helpers.h"
 
@@ -76,7 +77,9 @@ void VBoxRestoreCheckVRDP()
 
     if (ret != gCtx.fRDPState)
     {
-        if (!DeviceIoControl (gCtx.pEnv->gDriver, (ret) ? IOCTL_VBOXGUEST_ENABLE_VRDP_SESSION : IOCTL_VBOXGUEST_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
+        DWORD cbReturned;
+
+        if (!DeviceIoControl (gCtx.pEnv->hDriver, (ret) ? IOCTL_VBOXGUEST_ENABLE_VRDP_SESSION : IOCTL_VBOXGUEST_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
         {
             dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         }
