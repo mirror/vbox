@@ -1067,7 +1067,7 @@ void ConsoleVRDPServer::Stop (void)
 {
     Assert(VALID_PTR(this)); /** @todo r=bird: there are(/was) some odd cases where this buster was invalid on
                               * linux. Just remove this when it's 100% sure that problem has been fixed. */
-    LogRel(("VRDP: stop the server\n")); RTLogFlush(RTLogRelDefaultInstance());
+    LogRel(("VRDP: stop the server mhServer %p\n", mhServer)); RTLogFlush(RTLogRelDefaultInstance());
 #ifdef VBOX_VRDP
     if (mhServer)
     {
