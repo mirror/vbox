@@ -151,6 +151,26 @@ STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
     return S_OK;
 }
 
+STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
+{
+    if (!aMemoryBalloonSize)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aMemoryBalloonSize = mMemoryBalloonSize;
+
+    return S_OK;
+}
+
+STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
+{
+    return S_OK;
+}
+
 STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
                                    INPTR BSTR aDomain, BOOL aAllowInteractiveLogon)
 {

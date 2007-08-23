@@ -4320,7 +4320,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="4a61e982-172b-4116-b12e-024b8a9a2b9d"
+     uuid="c7dca803-9ff0-4819-aa3c-d0f191d3798b"
      wsmap="suppress"
      >
     <desc>
@@ -4368,6 +4368,10 @@
         Flag whether seamless guest display rendering (seamless desktop
         integration) is supported.
       </desc>
+    </attribute>
+
+    <attribute name="memoryBalloonSize" type="unsigned long">
+      <desc>Guest system memory balloon size in megabytes.</desc>
     </attribute>
 
     <method name="setCredentials">

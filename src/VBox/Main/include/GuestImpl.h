@@ -55,6 +55,8 @@ public:
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
+    STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
+    STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
 
     // IGuest methods
     STDMETHOD(SetCredentials)(INPTR BSTR aUserName, INPTR BSTR aPassword,
@@ -74,11 +76,13 @@ private:
     {
         Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE) {}
 
-        Bstr mOSTypeId;
-        BOOL mAdditionsActive;
-        Bstr mAdditionsVersion;
-        BOOL mSupportsSeamless;
+        Bstr  mOSTypeId;
+        BOOL  mAdditionsActive;
+        Bstr  mAdditionsVersion;
+        BOOL  mSupportsSeamless;
     };
+
+    ULONG mMemoryBalloonSize;
 
     ComObjPtr <Console, ComWeakRef> mParent;
     Data mData;
