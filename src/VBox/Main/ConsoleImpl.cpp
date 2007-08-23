@@ -3883,6 +3883,7 @@ HRESULT Console::powerDown()
      *  Stop the VRDP server to prevent new clients connection while VM is being powered off.
      *  (When called from uninit mConsoleVRDPServer is already destroyed.)
      */
+    CRASHTEST64(("mConsoleVRDPServer = %p\n", mConsoleVRDPServer));
     if (mConsoleVRDPServer)
     {
         LogFlowThisFunc (("Stopping VRDP server...\n"));
@@ -3892,6 +3893,7 @@ HRESULT Console::powerDown()
 
         mConsoleVRDPServer->Stop();
 
+        CRASHTEST64(("server stopped\n"));
         alock.enter();
     }
 

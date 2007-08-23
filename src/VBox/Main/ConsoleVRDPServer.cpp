@@ -985,6 +985,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
 int ConsoleVRDPServer::Launch (void)
 {
     LogFlowMember(("ConsoleVRDPServer::Launch\n"));
+    LogRel(("VRDP: starting the server\n")); RTLogFlush(RTLogRelDefaultInstance());
 #ifdef VBOX_VRDP
     int rc = VINF_SUCCESS;
     IVRDPServer *vrdpserver = mConsole->getVRDPServer ();
@@ -1066,6 +1067,7 @@ void ConsoleVRDPServer::Stop (void)
 {
     Assert(VALID_PTR(this)); /** @todo r=bird: there are(/was) some odd cases where this buster was invalid on
                               * linux. Just remove this when it's 100% sure that problem has been fixed. */
+    LogRel(("VRDP: stop the server\n")); RTLogFlush(RTLogRelDefaultInstance());
 #ifdef VBOX_VRDP
     if (mhServer)
     {
