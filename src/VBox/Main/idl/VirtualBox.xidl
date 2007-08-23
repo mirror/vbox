@@ -406,6 +406,42 @@
     <const name="SessionScope"        value="2"/>
   </enum>
 
+  <enum
+     name="GuestStatisticType"
+     uuid="da89a1b7-e602-45ac-84b7-29c9d12b92d5"
+     >
+    <const name="CPULoad"              value="0">
+      <desc>
+        Current CPU load (0-100%).
+      </desc>
+    </const>
+    <const name="Threads"              value="1">
+      <desc>
+        Total number of threads in the system.
+      </desc>
+    </const>
+    <const name="Processes"            value="2">
+      <desc>
+        Total number of processes in the system.
+      </desc>
+    </const>
+    <const name="PhysMemTotal"         value="3">
+      <desc>
+        Total physical memory in megabytes.
+      </desc>
+    </const>
+    <const name="PhysMemAvailable"     value="4">
+      <desc>
+        Free physical memory in megabytes.
+      </desc>
+    </const>
+    <const name="PageFileSize"         value="5">
+      <desc>
+        Pagefile size in megabytes.
+      </desc>
+    </const>
+  </enum>
+ 
   <!--
   // IVirtualBoxErrorInfo
   /////////////////////////////////////////////////////////////////////////
@@ -4397,6 +4433,18 @@
           interactively specify different credentials. This flag might
           not be supported by all versions of the Additions.
         </desc>
+      </param>
+    </method>
+
+    <method name="getGuestStatistic">
+      <desc>
+        Query specified guest statistics as reported by the VirtualBox Additions.
+      </desc>
+      <param name="statistic" type="GuestStatisticType" dir="in">
+        <desc>Statistic type.</desc>
+      </param>
+      <param name="statVal" type="unsigned long" dir="out">
+        <desc>Statistics value</desc>
       </param>
     </method>
 

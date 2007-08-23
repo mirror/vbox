@@ -198,6 +198,47 @@ STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
         tr ("VMM device is not available (is the VM running?)"));
 }
 
+STDMETHODIMP Guest::GetGuestStatistic(GuestStatisticType_T statistic, ULONG *aStatVal)
+{
+    if (!aStatVal)
+        return E_INVALIDARG;
+
+    switch(statistic)
+    {
+    case GuestStatisticType_CPULoad:
+    case GuestStatisticType_Threads:
+    case GuestStatisticType_Processes:
+    case GuestStatisticType_PhysMemTotal:
+    case GuestStatisticType_PhysMemAvailable:
+    case GuestStatisticType_PageFileSize:
+        *aStatVal = 0;
+        break;
+
+    default:
+        AssertFailed();
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
+STDMETHODIMP Guest::SetGuestStatistic(GuestStatisticType_T statistic, ULONG aStatVal)
+{
+    switch(statistic)
+    {
+    case GuestStatisticType_CPULoad:
+    case GuestStatisticType_Threads:
+    case GuestStatisticType_Processes:
+    case GuestStatisticType_PhysMemTotal:
+    case GuestStatisticType_PhysMemAvailable:
+    case GuestStatisticType_PageFileSize:
+        break;
+
+    default:
+        AssertFailed();
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
