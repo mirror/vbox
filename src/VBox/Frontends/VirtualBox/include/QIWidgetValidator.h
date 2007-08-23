@@ -59,13 +59,13 @@ class QIULongValidator : public QValidator
 public:
 
     QIULongValidator (QObject *aParent, const char *aName = 0)
-        : mBottom (0), mTop (ULONG_MAX)
-        , QValidator (aParent, aName) {}
+        : QValidator (aParent, aName)
+        , mBottom (0), mTop (ULONG_MAX) {}
 
     QIULongValidator (ulong aMinimum, ulong aMaximum,
                       QObject *aParent, const char *aName = 0)
-        : mBottom (aMinimum), mTop (aMaximum)
-        , QValidator (aParent, aName) {}
+        : QValidator (aParent, aName)
+        , mBottom (aMinimum), mTop (aMaximum) {}
 
     ~QIULongValidator() {}
 
