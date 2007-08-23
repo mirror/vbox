@@ -47,14 +47,15 @@ public:
                    (mSlot == that.mSlot &&
                     mEnabled == that.mEnabled &&
                     mIRQ == that.mIRQ &&
-                    mIOBase == that.mIOBase);
+                    mIOBase == that.mIOBase &&
+                    mPath == that.mPath);
         }
 
         ULONG mSlot;
         BOOL  mEnabled;
         ULONG mIRQ;
         ULONG mIOBase;
-        Bstr  mDevicePath;
+        Bstr  mPath;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (ParallelPort)
@@ -89,8 +90,8 @@ public:
     STDMETHOD(COMSETTER(IRQ))     (ULONG      aIRQ);
     STDMETHOD(COMGETTER(IOBase))  (ULONG     *aIOBase);
     STDMETHOD(COMSETTER(IOBase))  (ULONG      aIOBase);
-    STDMETHOD(COMGETTER(DevicePath))    (BSTR      *aDevicePath);
-    STDMETHOD(COMSETTER(DevicePath))    (INPTR BSTR aDevicePath);
+    STDMETHOD(COMGETTER(Path))    (BSTR      *aPath);
+    STDMETHOD(COMSETTER(Path))    (INPTR BSTR aPath);
 
     // public methods only for internal purposes
     bool isModified() { AutoLock alock (this); return mData.isBackedUp(); }

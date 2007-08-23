@@ -7087,17 +7087,17 @@
   -->
 
   <enum
-     name="SerialHostMode"
-     uuid="5ac6ae50-30d4-4c89-8f9c-35b4500a5b9f"
+     name="PortMode"
+     uuid="b266f43c-2e93-46b3-812b-c20e600e867b"
      >
-    <const name="Disconnected"        value="0"/>
-    <const name="HostPipe"            value="1"/>
-    <const name="HostDevice"          value="2"/>
+    <const name="DisconnectedPort"        value="0"/>
+    <const name="HostPipePort"            value="1"/>
+    <const name="HostDevicePort"          value="2"/>
   </enum>
 
   <interface
      name="ISerialPort" extends="$unknown"
-     uuid="a5ab0989-0ca9-4d5e-b565-f7739b92bb0c"
+     uuid="937f6970-5103-4745-b78e-d28dcf1479a8"
      wsmap="managed"
      >
 
@@ -7111,29 +7111,37 @@
 
     <attribute name="enabled" type="boolean">
       <desc>
-        Flag whether the serial port is enabled. If it is disabled,
-        the serial port will not be reported to the guest.
+        Flag whether the serial port is enabled. If disabled,
+        the serial port will not be reported to the guest OS.
       </desc>
     </attribute>
 
     <attribute name="IOBase" type="unsigned long">
-      <desc>Gets the I/O base of the serial port.</desc>
+      <desc>I/O base of the serial port.</desc>
     </attribute>
 
     <attribute name="IRQ" type="unsigned long">
-      <desc>Gets the IRQ of the serial port.</desc>
+      <desc>IRQ of the serial port.</desc>
     </attribute>
 
-    <attribute name="HostMode" type="SerialHostMode">
+    <attribute name="hostMode" type="PortMode">
       <desc>How is this port connected to the host.</desc>
     </attribute>
 
     <attribute name="server" type="boolean">
-      <desc>Flag whether this serial port acts as a server or a client.</desc>
+      <desc>
+        Flag whether this serial port acts as a server (creates a new pipe on
+        the host) or as a client (uses the existing pipe). This attribute is
+        used only when #hostMode is PortMode::HostPipe.
+      </desc>
     </attribute>
 
     <attribute name="path" type="wstring">
-      <desc>Flag whether this serial port acts as a server or a client.</desc>
+      <desc>
+        Path to the serial port's pipe on the host when #hostMode is
+        PortMode::HostPipe, or the host serial device name when #hostMode is
+        PortMode::HostDevice.
+      </desc>
     </attribute>
 
   </interface>
@@ -7145,7 +7153,7 @@
 
   <interface
      name="IParallelPort" extends="$unknown"
-     uuid="6d7f2385-8ce3-4342-a042-61fa1882354b"
+     uuid="0c925f06-dd10-4b77-8de8-294d738c3214"
      wsmap="managed"
      >
 
@@ -7159,21 +7167,21 @@
 
     <attribute name="enabled" type="boolean">
       <desc>
-        Flag whether the parallel port is enabled. If it is disabled,
-        the parallel port will not be reported to the guest.
+        Flag whether the parallel port is enabled. If disabled,
+        the parallel port will not be reported to the guest OS.
       </desc>
     </attribute>
 
     <attribute name="IOBase" type="unsigned long">
-      <desc>Gets the I/O base of the parallel port.</desc>
+      <desc>I/O base of the parallel port.</desc>
     </attribute>
 
     <attribute name="IRQ" type="unsigned long">
-      <desc>Gets the IRQ of the parallel port.</desc>
+      <desc>IRQ of the parallel port.</desc>
     </attribute>
 
-    <attribute name="DevicePath" type="wstring">
-      <desc>Gets the of the device path connected to the parallel port.</desc>
+    <attribute name="path" type="wstring">
+      <desc>Host parallel device name.</desc>
     </attribute>
 
   </interface>

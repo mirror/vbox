@@ -225,10 +225,10 @@ public:
         return vrdpAuthTypes [t];
     }
 
-    QString toString (CEnums::SerialHostMode t) const
+    QString toString (CEnums::PortMode t) const
     {
-        AssertMsg (!serialHostModeTypes [t].isNull(), ("No text for %d", t));
-        return serialHostModeTypes [t];
+        AssertMsg (!portModeTypes [t].isNull(), ("No text for %d", t));
+        return portModeTypes [t];
     }
 
     QString toString (CEnums::USBDeviceFilterAction t) const
@@ -259,12 +259,12 @@ public:
         return CEnums::VRDPAuthType (it - vrdpAuthTypes.begin());
     }
 
-    CEnums::SerialHostMode toSerialHostMode (const QString &s) const
+    CEnums::PortMode toPortMode (const QString &s) const
     {
         QStringVector::const_iterator it =
-            qFind (serialHostModeTypes.begin(), serialHostModeTypes.end(), s);
-        AssertMsg (it != serialHostModeTypes.end(), ("No value for {%s}", s.latin1()));
-        return CEnums::SerialHostMode (it - serialHostModeTypes.begin());
+            qFind (portModeTypes.begin(), portModeTypes.end(), s);
+        AssertMsg (it != portModeTypes.end(), ("No value for {%s}", s.latin1()));
+        return CEnums::PortMode (it - portModeTypes.begin());
     }
 
     CEnums::USBDeviceFilterAction toUSBDevFilterAction (const QString &s) const
@@ -548,7 +548,7 @@ private:
     QStringVector diskTypes;
     QStringVector diskStorageTypes;
     QStringVector vrdpAuthTypes;
-    QStringVector serialHostModeTypes;
+    QStringVector portModeTypes;
     QStringVector usbFilterActionTypes;
     QStringVector diskControllerDevices;
     QStringVector audioDriverTypes;

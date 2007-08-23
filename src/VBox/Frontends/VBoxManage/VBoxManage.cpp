@@ -1057,7 +1057,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             else
             {
                 ULONG uIRQ, uIOBase;
-                SerialHostMode_T HostMode;
+                PortMode_T HostMode;
                 Bstr path;
                 BOOL fServer;
                 uart->COMGETTER(IRQ)(&uIRQ);
@@ -1071,14 +1071,14 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 switch (HostMode)
                 {
                     default:
-                    case SerialHostMode_Disconnected:
+                    case PortMode_DisconnectedPort:
                         RTPrintf(", disconnected\n");
                         break;
-                    case SerialHostMode_HostPipe:
+                    case PortMode_HostPipePort:
                         RTPrintf(", attached to pipe (%s) '%lS'\n",
                                 fServer ? "server" : "client", path.raw());
                         break;
-                    case SerialHostMode_HostDevice:
+                    case PortMode_HostDevicePort:
                         RTPrintf(", attached to device '%lS'\n", path.raw());
                         break;
                 }
@@ -4111,23 +4111,23 @@ static int handleModifyVM(int argc, char *argv[],
             {
                 if (strcmp(uarts_mode[n], "disconnected") == 0)
                 {
-                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_Disconnected), 1);
+                    CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_DisconnectedPort), 1);
                 }
                 else
                 {
                     if (strcmp(uarts_mode[n], "server") == 0)
                     {
-                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipePort), 1);
                         CHECK_ERROR_RET(uart, COMSETTER(Server) (TRUE), 1);
                     }
                     else if (strcmp(uarts_mode[n], "client") == 0)
                     {
-                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostPipe), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipePort), 1);
                         CHECK_ERROR_RET(uart, COMSETTER(Server) (FALSE), 1);
                     }
                     else
                     {
-                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (SerialHostMode_HostDevice), 1);
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostDevicePort), 1);
                     }
                     CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
                 }

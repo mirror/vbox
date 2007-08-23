@@ -171,7 +171,7 @@
     </xsd:restriction>
 </xsd:simpleType>
 
-<xsd:simpleType name="TUartHostModeType">
+<xsd:simpleType name="TPortMode">
     <xsd:restriction base="xsd:string">
       <xsd:enumeration value="Disconnected"/>
       <xsd:enumeration value="HostPipe"/>
@@ -528,12 +528,11 @@
     </xsd:simpleType>
   </xsd:attribute>
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="IRQ" type="xsd:unsignedInt" default="4"/>
-  <xsd:attribute name="IOBase" type="xsd:unsignedInt" default="1016"/>
-  <xsd:attribute name="HostMode" type="TUartHostModeType" default="Disconnected"/>
-  <xsd:attribute name="pipe" type="xsd:string"/>
-  <xsd:attribute name="path" type="xsd:string"/>
-  <xsd:attribute name="server" type="xsd:boolean"/>
+  <xsd:attribute name="IRQ" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="IOBase" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="hostMode" type="TPortMode" use="required"/>
+  <xsd:attribute name="path" type="TLocalFile"/>
+  <xsd:attribute name="server" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TUart">
@@ -559,9 +558,9 @@
     </xsd:simpleType>
   </xsd:attribute>
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="IRQ" type="xsd:unsignedInt" default="4"/>
-  <xsd:attribute name="IOBase" type="xsd:unsignedInt" default="888"/>
-  <xsd:attribute name="DevicePath" type="TLocalFile"/>
+  <xsd:attribute name="IRQ" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="IOBase" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="path" type="TLocalFile"/>
 </xsd:complexType>
 
 <xsd:complexType name="TLpt">
