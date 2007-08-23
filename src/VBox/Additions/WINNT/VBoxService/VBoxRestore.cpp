@@ -27,6 +27,8 @@
 typedef struct _VBOXRESTORECONTEXT
 {
     const VBOXSERVICEENV *pEnv;
+
+    BOOL  fRDPState;
 } VBOXRESTORECONTEXT;
 
 
@@ -37,7 +39,8 @@ int VBoxRestoreInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 {
     dprintf(("VBoxRestoreInit\n"));
 
-    gCtx.pEnv = pEnv;
+    gCtx.pEnv      = pEnv;
+    gCtx.fRDPState = FALSE;
 
     VBoxRestoreCheckVRDP();
 
@@ -69,8 +72,16 @@ void VBoxRestoreCheckVRDP()
     /* send to display driver */
     ret = ExtEscape(hdc, VBOXESC_ISVRDPACTIVE, 0, NULL, 0, NULL);
     dprintf(("VBoxRestoreSession -> VRDP activate state = %d\n", ret));
-
     ReleaseDC(HWND_DESKTOP, hdc);
+
+    if (ret != gCtx.fRDPState)
+    {
+        if (!DeviceIoControl (gCtx.pEnv->gDriver, (ret) ? IOCTL_VBOXGUEST_ENABLE_VRDP_SESSION : IOCTL_VBOXGUEST_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
+        {
+            dprintf(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        }
+        gCtx.fRDPState = ret;
+    }
 }
 
 /**
