@@ -7137,7 +7137,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             Utf8Str *files[] = { &logFile, &pngFile };
             Utf8Str oldName, newName;
 
-            for (int j = 0; j < ELEMENTS (files); ++ j)
+            for (unsigned int j = 0; j < ELEMENTS (files); ++ j)
             {
                 if (i > 0)
                     oldName = Utf8StrFmt ("%s.%d", files [j]->raw(), i);
