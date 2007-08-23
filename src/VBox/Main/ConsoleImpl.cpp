@@ -3879,6 +3879,22 @@ HRESULT Console::powerDown()
              "(mMachineState=%d, InUninit=%d)\n",
              mMachineState, autoCaller.state() == InUninit));
 
+    /*
+     *  Stop the VRDP server to prevent new clients connection while VM is being powered off.
+     *  (When called from uninit mConsoleVRDPServer is already destroyed.)
+     */
+    if (mConsoleVRDPServer)
+    {
+        LogFlowThisFunc (("Stopping VRDP server...\n"));
+
+        /* Leave the lock since EMT will call us back as addVMCaller in updateDisplayData(). */
+        alock.leave();
+
+        mConsoleVRDPServer->Stop();
+
+        alock.enter();
+    }
+
     /* First, wait for all mpVM callers to finish their work if necessary */
     if (mVMCallers > 0)
     {
@@ -3953,22 +3969,6 @@ HRESULT Console::powerDown()
      */
     if (VBOX_SUCCESS (vrc) || autoCaller.state() == InUninit)
     {
-        /*
-         *  Stop the VRDP server and release all USB device.
-         *  (When called from uninit mConsoleVRDPServer is already destroyed.)
-         */
-        if (mConsoleVRDPServer)
-        {
-            LogFlowThisFunc (("Stopping VRDP server...\n"));
-
-            /* Leave the lock since EMT will call us back as addVMCaller in updateDisplayData(). */
-            alock.leave();
-
-            mConsoleVRDPServer->Stop();
-
-            alock.enter();
-        }
-
         /* If the machine has an USB comtroller, release all USB devices
          * (symmetric to the code in captureUSBDevices()) */
         bool fHasUSBController = false;
