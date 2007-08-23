@@ -4356,7 +4356,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="c7dca803-9ff0-4819-aa3c-d0f191d3798b"
+     uuid="5d54a565-813c-42a0-a81a-e31779e03186"
      wsmap="suppress"
      >
     <desc>
@@ -4410,6 +4410,10 @@
       <desc>Guest system memory balloon size in megabytes.</desc>
     </attribute>
 
+    <attribute name="statisticsUpdateInterval" type="unsigned long">
+      <desc>Interval to update guest statistics in seconds.</desc>
+    </attribute>
+
     <method name="setCredentials">
       <desc>
         Store login credentials that can be queried by guest operating
@@ -4436,7 +4440,7 @@
       </param>
     </method>
 
-    <method name="getGuestStatistic">
+    <method name="getStatistic">
       <desc>
         Query specified guest statistics as reported by the VirtualBox Additions.
       </desc>
