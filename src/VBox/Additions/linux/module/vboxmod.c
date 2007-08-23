@@ -639,6 +639,14 @@ static void free_resources(void)
     }
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+#define PCI_DEV_GET(v,d,p) pci_get_device(v,d,p)
+#define PCI_DEV_PUT(x) pci_dev_put(x)
+#else
+#define PCI_DEV_GET(v,d,p) pci_find_device(v,d,p)
+#define PCI_DEV_PUT(x)
+#endif
+
 /**
  * Module initialization
  *
@@ -650,7 +658,7 @@ static __init int init(void)
     struct pci_dev *pcidev = NULL;
     VMMDevReportGuestInfo *infoReq = NULL;
 
-    printk(KERN_INFO "vboxadd: initializing. Version %s\n", VERSION);
+    printk(KERN_INFO "vboxadd: initializing version %s\n", VERSION);
 
     if (vboxadd_cmc_init ())
     {
@@ -661,7 +669,7 @@ static __init int init(void)
     /*
      * Detect PCI device
      */
-    pcidev = pci_find_device(VMMDEV_VENDORID, VMMDEV_DEVICEID, pcidev);
+    pcidev = PCI_DEV_GET(VMMDEV_VENDORID, VMMDEV_DEVICEID, pcidev);
     if (!pcidev)
     {
         printk(KERN_ERR "vboxadd: VirtualBox PCI device not found.\n");
@@ -672,6 +680,7 @@ static __init int init(void)
     if (err)
     {
         printk (KERN_ERR "vboxadd: could not enable device: %d\n", err);
+        PCI_DEV_PUT(pcidev);
         return -ENODEV;
     }
 
@@ -681,6 +690,7 @@ static __init int init(void)
     {
         printk(KERN_ERR "vboxadd: register_chrdev failed: vbox_major: %d, err = %d\n",
                vbox_major, err);
+        PCI_DEV_PUT(pcidev);
         return -ENODEV;
     }
     /* if no major code was set, take the return value */
@@ -703,7 +713,6 @@ static __init int init(void)
 
     /* get the memory region */
     vboxDev->vmmdevmem = pci_resource_start(pcidev, 1);
-    /* and size */
     vboxDev->vmmdevmem_size = pci_resource_len(pcidev, 1);
 
     /* all resources found? */
@@ -721,10 +730,8 @@ static __init int init(void)
     }
 
     /* map adapter memory into kernel address space and check version */
-    vboxDev->pVMMDevMemory = (VMMDevMemory *) ioremap(
-        vboxDev->vmmdevmem,
-        vboxDev->vmmdevmem_size
-        );
+    vboxDev->pVMMDevMemory = (VMMDevMemory *) ioremap(vboxDev->vmmdevmem,
+                                                      vboxDev->vmmdevmem_size);
     if (!vboxDev->pVMMDevMemory)
     {
         printk (KERN_ERR "vboxadd: ioremap failed\n");
@@ -748,11 +755,8 @@ static __init int init(void)
     }
 
     /* report guest information to host, this must be done as the very first request */
-    rcVBox = VbglGRAlloc(
-        (VMMDevRequestHeader**)&infoReq,
-        sizeof(VMMDevReportGuestInfo),
-        VMMDevReq_ReportGuestInfo
-        );
+    rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&infoReq,
+                         sizeof(VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
     if (VBOX_FAILURE(rcVBox))
     {
         printk(KERN_ERR "vboxadd: could not allocate request structure! rc = %d\n", rcVBox);
@@ -784,11 +788,8 @@ static __init int init(void)
     }
 
     /* allocate a VMM request structure for use in the ISR */
-    rcVBox = VbglGRAlloc(
-        (VMMDevRequestHeader**)&vboxDev->irqAckRequest,
-        sizeof(VMMDevEvents),
-        VMMDevReq_AcknowledgeEvents
-        );
+    rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vboxDev->irqAckRequest,
+                         sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
     if (VBOX_FAILURE(rcVBox))
     {
         printk(KERN_ERR "vboxadd: could not allocate request structure! rc = %d\n", rcVBox);
@@ -796,7 +797,13 @@ static __init int init(void)
     }
 
     /* get ISR */
-    err = request_irq(pcidev->irq, vboxadd_irq_handler, SA_SHIRQ, "vboxadd", vboxDev);
+    err = request_irq(pcidev->irq, vboxadd_irq_handler,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+                      IRQF_SHARED,
+#else
+                      SA_SHIRQ,
+#endif
+                      "vboxadd", vboxDev);
     if (err)
     {
         printk(KERN_ERR "vboxadd: Could not request IRQ %d, err: %d\n", pcidev->irq, err);
@@ -808,8 +815,7 @@ static __init int init(void)
 
     /* some useful information for the user */
     printk(KERN_INFO
-           "vboxadd: major code: %d, "
-           "using irq %d, "
+           "vboxadd: major code: %d, using irq %d, "
            "io port 0x%x, memory at 0x%x (size %d bytes), "
            "hypervisor window at 0x%p (size 0x%x bytes)\n",
            vbox_major, vboxDev->irq, vboxDev->io_port,
@@ -817,8 +823,11 @@ static __init int init(void)
            vboxDev->hypervisorStart, vboxDev->hypervisorSize);
 
     /* successful return */
+    PCI_DEV_PUT(pcidev);
     return 0;
+
 fail:
+    PCI_DEV_PUT(pcidev);
     free_resources();
     unregister_chrdev(vbox_major, "vboxadd");
     return err;
