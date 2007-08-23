@@ -65,8 +65,8 @@ HRESULT Guest::init (Console *aParent)
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
-    /* Default is a ten second update interval */
-    mStatUpdateInterval = 10;
+    /* Default is not to report guest statistics at all */
+    mStatUpdateInterval = 0;
     return S_OK;
 }
 
