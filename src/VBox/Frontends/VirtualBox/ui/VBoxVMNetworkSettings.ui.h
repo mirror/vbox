@@ -25,9 +25,6 @@
 ** place of a destructor.
 *****************************************************************************/
 
-/**
- *  VBoxVMNetworkSettings class to use as network interface setup page.
- */
 void VBoxVMNetworkSettings::init()
 {
     leMACAddress->setValidator (new QRegExpValidator (QRegExp ("[0-9,A-F]{12,12}"), this));

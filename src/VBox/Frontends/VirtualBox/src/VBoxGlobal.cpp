@@ -575,7 +575,7 @@ VBoxGlobal::VBoxGlobal()
     , diskTypes (CEnums::HardDiskType_COUNT)
     , diskStorageTypes (CEnums::HardDiskStorageType_COUNT)
     , vrdpAuthTypes (CEnums::VRDPAuthType_COUNT)
-    , serialHostModeTypes (CEnums::SerialHostMode_COUNT)
+    , portModeTypes (CEnums::PortMode_COUNT)
     , usbFilterActionTypes (CEnums::USBDeviceFilterAction_COUNT)
     , diskControllerDevices (3)
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
@@ -1863,12 +1863,12 @@ void VBoxGlobal::languageChange()
     vrdpAuthTypes [CEnums::VRDPAuthGuest] =
         tr ("Guest", "VRDPAuthType");
 
-    serialHostModeTypes [CEnums::Disconnected] =
-        tr ("Disconnected", "SerialHostMode");
-    serialHostModeTypes [CEnums::HostPipe] =
-        tr ("Host Pipe", "SerialHostMode");
-    serialHostModeTypes [CEnums::HostDevice] =
-        tr ("Host Device", "SerialHostMode");
+    portModeTypes [CEnums::DisconnectedPort] =
+        tr ("Disconnected", "PortMode");
+    portModeTypes [CEnums::HostPipePort] =
+        tr ("Host Pipe", "PortMode");
+    portModeTypes [CEnums::HostDevicePort] =
+        tr ("Host Device", "PortMode");
 
     usbFilterActionTypes [CEnums::USBDeviceFilterIgnore] =
         tr ("Ignore", "USBFilterActionType");

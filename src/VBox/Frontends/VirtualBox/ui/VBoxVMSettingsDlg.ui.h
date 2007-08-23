@@ -469,249 +469,6 @@ enum
 };
 
 
-class VBoxVMSerialPortSettings : public QWidget
-{
-    Q_OBJECT
-
-public:
-
-    VBoxVMSerialPortSettings (QWidget *aParent)
-        : QWidget (aParent, "VBoxVMSerialPortSettings")
-        , mTabWidget (0)
-    {
-        /* Basic initialization */
-        mTabWidget = new QTabWidget (this, "mTabWidget");
-        mTabWidget->setMargin (11);
-        mTabWidget->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
-        QVBoxLayout *mainLayout = new QVBoxLayout (this);
-        mainLayout->addWidget (mTabWidget);
-        mainLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Preferred,
-                                                    QSizePolicy::Expanding));
-
-        /* Create a list of known COM interfaces configurations */
-        mConfigList << PortConfig (0x3f8, 4, 1);
-        mConfigList << PortConfig (0x2f8, 3, 2);
-        mConfigList << PortConfig (0x3e8, 4, 3);
-        mConfigList << PortConfig (0x2e8, 3, 4);
-    }
-
-    void getFromMachine (const CMachine &aMachine)
-    {
-        mMachine = aMachine;
-
-        ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
-        for (ulong slot = 0; slot < count; ++ slot)
-        {
-            CSerialPort port = mMachine.GetSerialPort (slot);
-            addPage (port, slot);
-        }
-
-        /* Revalidate all pages */
-        portConfigUpdate();
-    }
-
-    void putBackToMachine()
-    {
-        for (int slot = 0; slot < mTabWidget->count(); ++ slot)
-        {
-            CSerialPort port = mMachine.GetSerialPort (slot);
-
-            port.SetEnabled (static_cast<QGroupBox*> (mTabWidget->page (slot))->isChecked());
-
-            PortConfig config = parsePortConfig (mPortList.at (slot)->currentText());
-            port.SetIOBase (config.io);
-            port.SetIRQ (config.irq);
-
-            port.SetHostMode (vboxGlobal().toSerialHostMode (mModeList.at (slot)->currentText()));
-
-            QCheckBox *chbIsServer = mIsServerList.at (slot);
-            port.SetServer (chbIsServer->isEnabled() ?
-                            chbIsServer->isChecked() : false);
-
-            QLineEdit *lePath = mPathList.at (slot);
-            port.SetPath (lePath->isEnabled() ?
-                          lePath->text() : QString::null);
-        }
-    }
-
-private slots:
-
-    void portConfigUpdate()
-    {
-        for (int index = 0; index < mTabWidget->count(); ++ index)
-        {
-            QComboBox *cbPortConfig = mPortList.at (index);
-            QString oldText = cbPortConfig->currentText();
-            QStringList newList = portConfigList (index);
-            cbPortConfig->clear();
-            cbPortConfig->insertStringList (newList);
-            cbPortConfig->setCurrentText (oldText);
-        }
-    }
-
-    void hostModeUpdate (int aIndex = -1)
-    {
-        if (aIndex == -1)
-            aIndex = mTabWidget->currentPageIndex();
-        QCheckBox *chbIsServer = mIsServerList.at (aIndex);
-        QLineEdit *lePath = mPathList.at (aIndex);
-        CEnums::SerialHostMode mode = vboxGlobal().toSerialHostMode (
-            mModeList.at (aIndex)->currentText());
-        chbIsServer->setEnabled (mode == CEnums::HostPipe);
-        lePath->setEnabled (mode != CEnums::Disconnected);
-    }
-
-private:
-
-    struct PortConfig
-    {
-        PortConfig ()
-            : io (0), irq (0), number (0) {}
-        PortConfig (ulong aIO, ulong aIRQ, ulong aNumber)
-            : io (aIO), irq (aIRQ), number (aNumber) {}
-
-        bool isNull() { return !io && !irq; }
-
-        bool operator== (const PortConfig &aCfg) const
-        {
-            return io  == aCfg.io && irq == aCfg.irq;
-        }
-
-        static QString format()
-        {
-            return QString ("I/O Port = 0x%1, IRQ = %2");
-        }
-        QString toString()
-        {
-            QString info = format().arg (QString::number (io, 16)).arg (irq);
-            if (number)
-                info += QString (" (COM%1)").arg (number);
-            return info;
-        }
-
-        ulong io;
-        ulong irq;
-        ulong number;
-    };
-    typedef QValueList<PortConfig> PortConfigs;
-
-    void addPage (const CSerialPort &aPort, ulong aSlot)
-    {
-        /* Create Serial Port page */
-        QGroupBox *gBox = new QGroupBox (tr ("&Enable Serial Port"));
-        gBox->setColumnLayout (0, Qt::Vertical);
-        gBox->layout()->setMargin (11);
-        gBox->layout()->setSpacing (6);
-        gBox->setCheckable (true);
-
-        QLabel *lbPort = new QLabel (tr ("Serial Port &Number"), gBox);
-        QComboBox *cbPort = new QComboBox (gBox);
-        lbPort->setBuddy (cbPort);
-        connect (cbPort, SIGNAL (activated (int)),
-                 this , SLOT (portConfigUpdate()));
-
-        QLabel *lbType = new QLabel (tr ("Serial Port Host &Mode"), gBox);
-        QComboBox *cbMode = new QComboBox (gBox);
-        lbType->setBuddy (cbMode);
-        cbMode->insertItem (vboxGlobal().toString (CEnums::Disconnected));
-        cbMode->insertItem (vboxGlobal().toString (CEnums::HostPipe));
-        cbMode->insertItem (vboxGlobal().toString (CEnums::HostDevice));
-        connect (cbMode, SIGNAL (activated (int)),
-                 this , SLOT (hostModeUpdate()));
-
-        QCheckBox *chbIsServer = new QCheckBox (tr ("Create Pipe &Automatically"), gBox);
-
-        QLabel *lbPath = new QLabel (tr ("Serial Port &Path"), gBox);
-        QLineEdit *lePath = new QLineEdit (gBox);
-        lbPath->setBuddy (lePath);
-
-        QGridLayout *pageLayout = new QGridLayout (gBox->layout());
-        pageLayout->setAlignment (Qt::AlignTop);
-        pageLayout->addWidget (lbPort, 0, 0);
-        pageLayout->addMultiCellWidget (cbPort, 0, 0, 1, 2);
-        pageLayout->addWidget (lbType, 1, 0);
-        pageLayout->addWidget (cbMode, 1, 1);
-        pageLayout->addWidget (chbIsServer, 1, 2);
-        pageLayout->addWidget (lbPath, 2, 0);
-        pageLayout->addMultiCellWidget (lePath, 2, 2, 1, 2);
-
-        /* Load machine information */
-        gBox->setChecked (aPort.GetEnabled());
-
-        PortConfig config (aPort.GetIOBase(), aPort.GetIRQ(), 0);
-        if (!mConfigList.contains (config))
-            mConfigList << config;
-        cbPort->insertStringList (portConfigList (mTabWidget->count()));
-        for (int id = 0; id < cbPort->count(); ++ id)
-            if (parsePortConfig (cbPort->text (id)) == config)
-                cbPort->setCurrentItem (id);
-
-        cbMode->setCurrentText (vboxGlobal().toString (aPort.GetHostMode()));
-
-        chbIsServer->setChecked (aPort.GetServer());
-
-        lePath->setText (aPort.GetPath());
-
-        /* Append newly createrd widget */
-        mTabWidget->addTab (gBox, tr ("Port &%1").arg (aSlot));
-        mPortList.append (cbPort);
-        mModeList.append (cbMode);
-        mIsServerList.append (chbIsServer);
-        mPathList.append (lePath);
-
-        /* Revalidate page */
-        hostModeUpdate (aSlot);
-    }
-
-    QStringList portConfigList (int aIndex)
-    {
-        QStringList list;
-        PortConfigs config = portConfigs (aIndex);
-        for (ulong id = 0; id < config.count(); ++ id)
-            list << config [id].toString();
-        return list;
-    }
-
-    PortConfigs portConfigs (int aIndex)
-    {
-        PortConfigs config (mConfigList);
-        if (aIndex == mTabWidget->count())
-            return config;
-
-        for (int index = 0; index < mTabWidget->count(); ++ index)
-        {
-            if (index != aIndex)
-            {
-                PortConfig used = parsePortConfig (mPortList.at (index)->currentText());
-                Assert (!used.isNull());
-                config.remove (used);
-            }
-        }
-        return config;
-    }
-
-    PortConfig parsePortConfig (const QString &aString)
-    {
-        QRegExp regExp (PortConfig::format().arg ("([0-9a-f]+)").arg ("(\\d+)"));
-        if (regExp.search (aString) != -1)
-            return PortConfig (regExp.cap (1).toULong(0, 16),
-                               regExp.cap (2).toULong(), 0);
-        Assert (0);
-        return PortConfig();
-    }
-
-    QTabWidget *mTabWidget;
-    PortConfigs mConfigList;
-
-    QPtrList<QComboBox> mPortList;
-    QPtrList<QComboBox> mModeList;
-    QPtrList<QCheckBox> mIsServerList;
-    QPtrList<QLineEdit> mPathList;
-
-    CMachine mMachine;
-};
-
-
 void VBoxVMSettingsDlg::init()
 {
     polished = false;
@@ -956,6 +713,8 @@ void VBoxVMSettingsDlg::init()
     QToolTip::add (pbHostAdd, tr ("Add"));
     QToolTip::add (pbHostRemove, tr ("Remove"));
 
+    /* Serial Port Page */
+
     /* USB Page */
 
     lvUSBFilters->header()->hide();
@@ -1020,12 +779,6 @@ void VBoxVMSettingsDlg::init()
     mSharedFolders = new VBoxSharedFoldersSettings (pageFolders, "sharedFolders");
     mSharedFolders->setDialogType (VBoxSharedFoldersSettings::MachineType);
     pageFoldersLayout->addWidget (mSharedFolders);
-
-    /* Serial Port Page */
-
-    QVBoxLayout* pageSerialLayout = new QVBoxLayout (pageSerial, 0, 0);
-    mSerialPorts = new VBoxVMSerialPortSettings (pageSerial);
-    pageSerialLayout->addWidget (mSerialPorts);
 
     /*
      *  set initial values
@@ -1548,6 +1301,10 @@ void VBoxVMSettingsDlg::enableOk( const QIWidgetValidator *wval )
 {
     Q_UNUSED (wval);
 
+    /* reset the warning text; interested parties will set it during
+     * validation */
+    setWarning (QString::null);
+
     /* detect the overall validity */
     bool newValid = true;
     {
@@ -1566,19 +1323,20 @@ void VBoxVMSettingsDlg::enableOk( const QIWidgetValidator *wval )
     {
         valid = newValid;
         buttonOk->setEnabled (valid);
-        if (valid)
-            setWarning(0);
-        warningLabel->setHidden(valid);
-        warningPixmap->setHidden(valid);
+        warningLabel->setHidden (valid);
+        warningPixmap->setHidden (valid);
     }
 }
 
 
-void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
+void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
 {
     /* do individual validations for pages */
     QWidget *pg = wval->widget();
     bool valid = wval->isOtherValid();
+
+    QString warningText;
+    QString pageTitle = ::path (listView->currentItem());
 
     if (pg == pageHDD)
     {
@@ -1592,7 +1350,7 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
             if (uuidHDA.isNull())
             {
                 valid = false;
-                setWarning (tr ("Primary Master hard disk is not selected."));
+                warningText = tr ("Primary Master hard disk is not selected");
             }
             else uuids << uuidHDA;
         }
@@ -1602,7 +1360,7 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
             if (uuidHDB.isNull())
             {
                 valid = false;
-                setWarning (tr ("Primary Slave hard disk is not selected."));
+                warningText = tr ("Primary Slave hard disk is not selected");
             }
             else
             {
@@ -1615,8 +1373,8 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
                 if (valid)
                     uuids << uuidHDB;
                 else
-                    setWarning (tr ("Primary Slave hard disk is already attached "
-                                    "to a different slot."));
+                    warningText = tr ("Primary Slave hard disk is already attached "
+                                      "to a different slot");
             }
         }
 
@@ -1625,7 +1383,7 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
             if (uuidHDD.isNull())
             {
                 valid = false;
-                setWarning (tr ("Secondary Slave hard disk is not selected."));
+                warningText = tr ("Secondary Slave hard disk is not selected");
             }
             else
             {
@@ -1638,8 +1396,8 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
                 if (valid)
                     uuids << uuidHDB;
                 else
-                    setWarning (tr ("Secondary Slave hard disk is already attached "
-                                    "to a different slot."));
+                    warningText = tr ("Secondary Slave hard disk is already attached "
+                                      "to a different slot");
             }
         }
 
@@ -1666,7 +1424,7 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
         tbISODVD->setEnabled (rbISODVD->isChecked());
 
         if (!valid)
-            setWarning (tr ("CD/DVD image file is not selected."));
+            warningText = tr ("CD/DVD image file is not selected");
     }
     else if (pg == pageFloppy)
     {
@@ -1683,21 +1441,70 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
         tbISOFloppy->setEnabled (rbISOFloppy->isChecked());
 
         if (!valid)
-            setWarning (tr ("Floppy image file is not selected."));
+            warningText = tr ("Floppy image file is not selected");
     }
     else if (pg == pageNetwork)
     {
-        int index = 0;
-        for (; index < tbwNetwork->count(); ++index)
+        QWidget *tab = NULL;
+        for (int index = 0; index < tbwNetwork->count(); ++ index)
         {
             QWidget *tab = tbwNetwork->page (index);
-            VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (tab);
-            valid = set->isPageValid (mInterfaceList);
+            VBoxVMNetworkSettings *page =
+                static_cast <VBoxVMNetworkSettings *> (tab);
+            valid = page->isPageValid (mInterfaceList);
             if (!valid) break;
         }
         if (!valid)
-            setWarning (tr ("Incorrect host network interface is selected "
-                            "for Adapter %1.").arg (index));
+        {
+            Assert (tab);
+            warningText = tr ("Incorrect host network interface is selected");
+            pageTitle += ": " + tbwNetwork->tabLabel (tab);
+        }
+    }
+    else if (pg == pageSerial)
+    {
+        QValueList <QString> ports;
+        QValueList <QString> paths;
+
+        int index = 0;
+        for (; index < tbwSerialPorts->count(); ++ index)
+        {
+            QWidget *tab = tbwSerialPorts->page (index);
+            VBoxVMSerialPortSettings *page =
+                static_cast <VBoxVMSerialPortSettings *> (tab);
+
+            /* skip disabled ports */
+            if (!page->mSerialPortBox->isChecked())
+                continue;
+            /* check the predefined port number unicity */
+            if (!page->isUserDefined())
+            {
+                QString port = page->mPortNumCombo->currentText();
+                valid = !ports.contains (port);
+                if (!valid)
+                {
+                    warningText = tr ("Duplicate port number is selected ");
+                    pageTitle += ": " + tbwSerialPorts->tabLabel (tab);
+                    break;
+                }
+                ports << port;
+            }
+            /* check the port path unicity */
+            CEnums::PortMode mode =
+                vboxGlobal().toPortMode (page->mHostModeCombo->currentText());
+            if (mode != CEnums::DisconnectedPort)
+            {
+                QString path = page->mPortPathLine->text();
+                valid = !paths.contains (path);
+                if (!valid)
+                {
+                    warningText = tr ("Duplicate port path is entered ");
+                    pageTitle += ": " + tbwSerialPorts->tabLabel (tab);
+                    break;
+                }
+                paths << path;
+            }
+        }
     }
     else if (pg == pageVRDP)
     {
@@ -1706,13 +1513,17 @@ void VBoxVMSettingsDlg::revalidate( QIWidgetValidator *wval )
             valid = !(grbVRDP->isChecked() &&
                     (leVRDPPort->text().isEmpty() || leVRDPTimeout->text().isEmpty()));
             if (!valid && leVRDPPort->text().isEmpty())
-                setWarning (tr ("VRDP Port is not set."));
+                warningText = tr ("VRDP Port is not set ");
             if (!valid && leVRDPTimeout->text().isEmpty())
-                setWarning (tr ("VRDP Timeout is not set."));
+                warningText = tr ("VRDP Timeout is not set ");
         }
         else
             valid = true;
     }
+
+    if (!valid)
+        setWarning (tr ("%1 on the <b>%2</b> page.")
+                    .arg (warningText, pageTitle));
 
     wval->setOtherValid (valid);
 }
@@ -1979,6 +1790,16 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         }
     }
 
+    /* serial ports */
+    {
+        ulong count = vbox.GetSystemProperties().GetSerialPortCount();
+        for (ulong slot = 0; slot < count; ++ slot)
+        {
+            CSerialPort port = machine.GetSerialPort (slot);
+            addSerialPort (port);
+        }
+    }
+
     /* USB */
     {
         CUSBController ctl = machine.GetUSBController();
@@ -2048,11 +1869,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* shared folders */
     {
         mSharedFolders->getFromMachine (machine);
-    }
-
-    /* serial ports */
-    {
-        mSerialPorts->getFromMachine (machine);
     }
 
     /* request for media shortcuts update */
@@ -2253,6 +2069,17 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
     }
 
+    /* serial ports */
+    {
+        for (int index = 0; index < tbwSerialPorts->count(); index++)
+        {
+            VBoxVMSerialPortSettings *page =
+                (VBoxVMSerialPortSettings *) tbwSerialPorts->page (index);
+            Assert (page);
+            page->putBackToPort();
+        }
+    }
+
     /* usb */
     {
         CUSBController ctl = cmachine.GetUSBController();
@@ -2313,11 +2140,6 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
     /* shared folders */
     {
         mSharedFolders->putBackToMachine();
-    }
-
-    /* serial ports */
-    {
-        mSerialPorts->putBackToMachine();
     }
 
     return COMResult();
@@ -2399,6 +2221,36 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     setTabOrder (pbHostAdd, pbHostRemove);
 
 #endif
+}
+
+void VBoxVMSettingsDlg::addSerialPort (const CSerialPort &aPort)
+{
+    VBoxVMSerialPortSettings *page = new VBoxVMSerialPortSettings();
+    page->getFromPort (aPort);
+    tbwSerialPorts->addTab (page, QString (tr ("Port %1", "serial ports"))
+                                               .arg (aPort.GetSlot()));
+
+    /* fix the tab order so that main dialog's buttons are always the last */
+    setTabOrder (page->mPortPathLine, buttonHelp);
+    setTabOrder (buttonHelp, buttonOk);
+    setTabOrder (buttonOk, buttonCancel);
+
+    /* setup validation */
+    QIWidgetValidator *wval = new QIWidgetValidator (pageSerial, this);
+    connect (page->mSerialPortBox, SIGNAL (toggled (bool)),
+             wval, SLOT (revalidate()));
+    connect (page->mIRQLine, SIGNAL (textChanged (const QString &)),
+             wval, SLOT (revalidate()));
+    connect (page->mIOPortLine, SIGNAL (textChanged (const QString &)),
+             wval, SLOT (revalidate()));
+    connect (page->mHostModeCombo, SIGNAL (activated (const QString &)),
+             wval, SLOT (revalidate()));
+    connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
+             this, SLOT (enableOk (const QIWidgetValidator *)));
+    connect (wval, SIGNAL (isValidRequested (QIWidgetValidator *)),
+             this, SLOT (revalidate (QIWidgetValidator *)));
+
+    wval->revalidate();
 }
 
 void VBoxVMSettingsDlg::slRAM_valueChanged( int val )

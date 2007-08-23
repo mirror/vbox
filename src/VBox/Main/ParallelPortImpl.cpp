@@ -261,15 +261,15 @@ HRESULT ParallelPort::loadSettings (CFGNODE aNode, ULONG aSlot)
     /* IRQ (required) */
     uint32_t uIRQ;
     CFGLDRQueryUInt32 (portNode, "IRQ", &uIRQ);
-    /* device path (required) */
-    Bstr DevicePath;
-    CFGLDRQueryBSTR   (portNode, "DevicePath", DevicePath.asOutParam());
+    /* device path */
+    Bstr path;
+    CFGLDRQueryBSTR   (portNode, "path", path.asOutParam());
 
     mData->mEnabled = fEnabled;
     mData->mSlot    = uSlot;
     mData->mIOBase  = uIOBase;
     mData->mIRQ     = uIRQ;
-    mData->mDevicePath = DevicePath;
+    mData->mPath    = path;
 
     return S_OK;
 }
@@ -291,7 +291,7 @@ HRESULT ParallelPort::saveSettings (CFGNODE aNode)
     CFGLDRSetBool   (portNode, "enabled", !!mData->mEnabled);
     CFGLDRSetUInt32 (portNode, "IOBase",  mData->mIOBase);
     CFGLDRSetUInt32 (portNode, "IRQ",     mData->mIRQ);
-    CFGLDRSetBSTR   (portNode, "DevicePath", mData->mDevicePath);
+    CFGLDRSetBSTR   (portNode, "path",    mData->mPath);
 
     return S_OK;
 }
@@ -450,9 +450,9 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
     return rc;
 }
 
-STDMETHODIMP ParallelPort::COMGETTER(DevicePath) (BSTR *aDevicePath)
+STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
 {
-    if (!aDevicePath)
+    if (!aPath)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -460,14 +460,14 @@ STDMETHODIMP ParallelPort::COMGETTER(DevicePath) (BSTR *aDevicePath)
 
     AutoReaderLock alock (this);
 
-    mData->mDevicePath.cloneTo (aDevicePath);
+    mData->mPath.cloneTo (aPath);
 
     return S_OK;
 }
 
-STDMETHODIMP ParallelPort::COMSETTER(DevicePath) (INPTR BSTR aDevicePath)
+STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
 {
-    if (!aDevicePath || *aDevicePath == 0)
+    if (!aPath || *aPath == 0)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -479,10 +479,10 @@ STDMETHODIMP ParallelPort::COMSETTER(DevicePath) (INPTR BSTR aDevicePath)
 
     AutoLock alock (this);
 
-    if (mData->mDevicePath != aDevicePath)
+    if (mData->mPath != aPath)
     {
         mData.backup();
-        mData->mDevicePath = aDevicePath;
+        mData->mPath = aPath;
 
         /* leave the lock before informing callbacks */
         alock.unlock();

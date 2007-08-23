@@ -39,7 +39,7 @@ public:
             , mEnabled (FALSE)
             , mIRQ (4)
             , mIOBase (0x3f8)
-            , mHostMode (SerialHostMode_Disconnected)
+            , mHostMode (PortMode_DisconnectedPort)
             , mServer (FALSE)
         {}
 
@@ -48,16 +48,18 @@ public:
             return this == &that ||
                    (mSlot     == that.mSlot     &&
                     mEnabled  == that.mEnabled  &&
-                    mHostMode == that.mHostMode &&
                     mIRQ      == that.mIRQ      &&
-                    mIOBase   == that.mIOBase);
+                    mIOBase   == that.mIOBase   &&
+                    mHostMode == that.mHostMode &&
+                    mPath     == that.mPath     &&
+                    mServer   == that.mServer);
         }
 
         ULONG mSlot;
         BOOL  mEnabled;
         ULONG mIRQ;
         ULONG mIOBase;
-        SerialHostMode_T mHostMode;
+        PortMode_T mHostMode;
         Bstr  mPath;
         BOOL  mServer;
     };
@@ -90,8 +92,8 @@ public:
     STDMETHOD(COMGETTER(Slot))     (ULONG     *aSlot);
     STDMETHOD(COMGETTER(Enabled))  (BOOL      *aEnabled);
     STDMETHOD(COMSETTER(Enabled))  (BOOL       aEnabled);
-    STDMETHOD(COMGETTER(HostMode)) (SerialHostMode_T *aHostMode);
-    STDMETHOD(COMSETTER(HostMode)) (SerialHostMode_T  aHostMode);
+    STDMETHOD(COMGETTER(HostMode)) (PortMode_T *aHostMode);
+    STDMETHOD(COMSETTER(HostMode)) (PortMode_T  aHostMode);
     STDMETHOD(COMGETTER(IRQ))      (ULONG     *aIRQ);
     STDMETHOD(COMSETTER(IRQ))      (ULONG      aIRQ);
     STDMETHOD(COMGETTER(IOBase) )  (ULONG     *aIOBase);

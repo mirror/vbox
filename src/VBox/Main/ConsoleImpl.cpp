@@ -5924,7 +5924,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
         ULONG uIRQ, uIOBase;
-        SerialHostMode_T HostMode;
+        PortMode_T HostMode;
         Bstr  path;
         BOOL  fServer;
         hrc = serialPort->COMGETTER(HostMode)(&HostMode);                           H();
@@ -5934,10 +5934,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", uIRQ);                              RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,   "IOBase", uIOBase);                        RC_CHECK();
-        if (HostMode != SerialHostMode_Disconnected)
+        if (HostMode != PortMode_DisconnectedPort)
         {
             rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                     RC_CHECK();
-            if (HostMode == SerialHostMode_HostPipe)
+            if (HostMode == PortMode_HostPipePort)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
@@ -5946,7 +5946,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
                 rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(path));        RC_CHECK();
                 rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);              RC_CHECK();
             }
-            else if (HostMode == SerialHostMode_HostDevice)
+            else if (HostMode == PortMode_HostDevicePort)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Host Serial");          RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "Config", &pLunL1);                RC_CHECK();
@@ -5979,7 +5979,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvTask)
         Bstr  DevicePath;
         hrc = parallelPort->COMGETTER(IRQ)(&uIRQ);                                  H();
         hrc = parallelPort->COMGETTER(IOBase)(&uIOBase);                            H();
-        hrc = parallelPort->COMGETTER(DevicePath)(DevicePath.asOutParam());         H();
+        hrc = parallelPort->COMGETTER(Path)(DevicePath.asOutParam());               H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", uIRQ);                              RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,   "IOBase", uIOBase);                        RC_CHECK();
         rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                         RC_CHECK();
