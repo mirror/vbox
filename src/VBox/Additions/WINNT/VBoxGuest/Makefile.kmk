@@ -29,6 +29,7 @@ endif
 VBoxGuest_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_HGCM VBOX_REBOOT_ON_UNINSTALL
 #VBoxGuest_DEFS       += LOG_ENABLED
+VBoxGuest_INCS        = ../include
 VBoxGuest_LDFLAGS     = -Entry:DriverEntry@8
 VBoxGuest_SOURCES     = \
 	VBoxGuest.cpp \

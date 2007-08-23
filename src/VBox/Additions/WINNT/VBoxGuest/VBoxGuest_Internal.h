@@ -182,6 +182,12 @@ typedef struct VBOXGUESTDEVEXT
     /* Notification semaphore */
     KEVENT keventNotification;
 
+    /* Old Windows session id */
+    ULONG   ulOldActiveConsoleId;
+
+    /* VRDP hook state */
+    BOOLEAN fVRDPEnabled;
+
     /* Preallocated VMMDevEvents for IRQ handler */
     VMMDevEvents *irqAckEvents;
 
