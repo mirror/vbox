@@ -199,10 +199,6 @@ STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
 
 STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
 {
-    /* zero seconds is invalid */
-    if (!aUpdateInterval)
-        return E_INVALIDARG;
-
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
