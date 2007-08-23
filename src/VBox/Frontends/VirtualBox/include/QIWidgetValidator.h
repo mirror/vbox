@@ -19,7 +19,10 @@
 #ifndef __QIWidgetValidator_h__
 #define __QIWidgetValidator_h__
 
+#include <limits.h>
+
 #include <qobject.h>
+#include <qvalidator.h>
 
 class QIWidgetValidator : public QObject
 {
@@ -49,6 +52,34 @@ private:
 
 private slots:
     void doRevalidate() { emit validityChanged( this ); }
+};
+
+class QIULongValidator : public QValidator
+{
+public:
+
+    QIULongValidator (QObject *aParent, const char *aName = 0)
+        : mBottom (0), mTop (ULONG_MAX)
+        , QValidator (aParent, aName) {}
+
+    QIULongValidator (ulong aMinimum, ulong aMaximum,
+                      QObject *aParent, const char *aName = 0)
+        : mBottom (aMinimum), mTop (aMaximum)
+        , QValidator (aParent, aName) {}
+
+    ~QIULongValidator() {}
+
+    State validate (QString &aInput, int &aPos) const;
+    void setBottom (ulong aBottom) { setRange (aBottom, mTop); }
+    void setTop (ulong aTop) { setRange (mBottom, aTop); }
+    void setRange (ulong aBottom, ulong aTop) { mBottom = aBottom; mTop = aTop; }
+    ulong bottom() const { return mBottom; }
+    ulong top() const { return mTop; }
+
+private:
+
+    ulong mBottom;
+    ulong mTop;
 };
 
 #endif // __QIWidgetValidator_h__

@@ -232,3 +232,33 @@ void QIWidgetValidator::rescan()
  *  isValid() method to check for validity.
  */
 
+
+/** @class QIULongValidator
+ *
+ *  The QIULongValidator class is a QIntValidator-like class to validate
+ *  unsigned integer numbers. As opposed to QIntValidator, this class accepts
+ *  all three integer number formats: decimal, hexadecimal (the string starts
+ *  with "0x") and octal (the string starts with "0").
+ */
+
+QValidator::State QIULongValidator::validate (QString &aInput, int &aPos) const
+{
+    Q_UNUSED (aPos);
+
+    QString stripped = aInput.stripWhiteSpace();
+
+    if (stripped.isEmpty() ||
+        stripped.upper() == QString ("0x").upper())
+        return Intermediate;
+
+    bool ok;
+    ulong entered = aInput.toULong (&ok, 0);
+
+    if (!ok)
+        return Invalid;
+
+    if (entered >= mBottom && entered <= mTop)
+        return Acceptable;
+
+    return (entered > mTop ) ? Invalid : Intermediate;
+}
