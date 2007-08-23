@@ -67,6 +67,9 @@ HRESULT Guest::init (Console *aParent)
 
     /* Default is not to report guest statistics at all */
     mStatUpdateInterval = 0;
+
+    /* Default is no ballooning */
+    mMemoryBalloonSize = 0;
     return S_OK;
 }
 
