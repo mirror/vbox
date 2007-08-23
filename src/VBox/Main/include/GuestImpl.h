@@ -57,18 +57,20 @@ public:
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
+    STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
+    STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
     // IGuest methods
     STDMETHOD(SetCredentials)(INPTR BSTR aUserName, INPTR BSTR aPassword,
                               INPTR BSTR aDomain, BOOL aAllowInteractiveLogon);
-    STDMETHOD(GetGuestStatistic)(GuestStatisticType_T statistic, ULONG *aStatVal);
+    STDMETHOD(GetStatistic)(GuestStatisticType_T statistic, ULONG *aStatVal);
 
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion);
 
     void setSupportsSeamless (BOOL aSupportsSeamless);
 
-    STDMETHOD(SetGuestStatistic)(GuestStatisticType_T statistic, ULONG aStatVal);
+    STDMETHOD(SetStatistic)(GuestStatisticType_T statistic, ULONG aStatVal);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }
@@ -86,6 +88,7 @@ private:
     };
 
     ULONG mMemoryBalloonSize;
+    ULONG mStatUpdateInterval;
 
     ComObjPtr <Console, ComWeakRef> mParent;
     Data mData;

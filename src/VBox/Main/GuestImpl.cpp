@@ -65,6 +65,8 @@ HRESULT Guest::init (Console *aParent)
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
+    /* Default is a ten second update interval */
+    mStatUpdateInterval = 10;
     return S_OK;
 }
 
@@ -168,6 +170,46 @@ STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 
 STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
 {
+    /** @todo fail if larger than physical memory */
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mMemoryBalloonSize = aMemoryBalloonSize;
+
+    return S_OK;
+}
+
+STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
+{
+    if (!aUpdateInterval)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aUpdateInterval = mStatUpdateInterval;
+
+    return S_OK;
+}
+
+STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
+{
+    /* zero seconds is invalid */
+    if (!aUpdateInterval)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    mStatUpdateInterval = aUpdateInterval;
+
     return S_OK;
 }
 
@@ -198,7 +240,7 @@ STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
         tr ("VMM device is not available (is the VM running?)"));
 }
 
-STDMETHODIMP Guest::GetGuestStatistic(GuestStatisticType_T statistic, ULONG *aStatVal)
+STDMETHODIMP Guest::GetStatistic(GuestStatisticType_T statistic, ULONG *aStatVal)
 {
     if (!aStatVal)
         return E_INVALIDARG;
@@ -221,7 +263,7 @@ STDMETHODIMP Guest::GetGuestStatistic(GuestStatisticType_T statistic, ULONG *aSt
     return S_OK;
 }
 
-STDMETHODIMP Guest::SetGuestStatistic(GuestStatisticType_T statistic, ULONG aStatVal)
+STDMETHODIMP Guest::SetStatistic(GuestStatisticType_T statistic, ULONG aStatVal)
 {
     switch(statistic)
     {
