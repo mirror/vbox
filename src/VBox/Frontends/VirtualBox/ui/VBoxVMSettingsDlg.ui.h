@@ -619,7 +619,7 @@ private:
         connect (cbMode, SIGNAL (activated (int)),
                  this , SLOT (hostModeUpdate()));
 
-        QCheckBox *chbIsServer = new QCheckBox (tr ("Act As &Server"), gBox);
+        QCheckBox *chbIsServer = new QCheckBox (tr ("Create Pipe &Automatically"), gBox);
 
         QLabel *lbPath = new QLabel (tr ("Serial Port &Path"), gBox);
         QLineEdit *lePath = new QLineEdit (gBox);
