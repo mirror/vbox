@@ -1071,10 +1071,7 @@ void ConsoleVRDPServer::Stop (void)
 #ifdef VBOX_VRDP
     if (mhServer)
     {
-#ifdef VRDP_NO_COM
-#else
         HVRDPSERVER hServer = mhServer;
-#endif /* VRDP_NO_COM */
 
         /* Reset the handle to avoid further calls to the server. */
         mhServer = 0;
