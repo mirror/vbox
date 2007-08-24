@@ -339,17 +339,13 @@ void VBoxGlobalSettingsDlg::init()
 
     /* General page */
 
-/// @todo (dmik) remove
-//    leVDIFolder->setValidator (new QRegExpValidator (QRegExp (".+"), this));
-//    leMachineFolder->setValidator (new QRegExpValidator (QRegExp (".+"), this));
-
-    wvalGeneral = new QIWidgetValidator (pageGeneral, this);
+    wvalGeneral = new QIWidgetValidator (pagePath (pageGeneral), pageGeneral, this);
     connect (wvalGeneral, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk( const QIWidgetValidator *)));
 
     /* Keyboard page */
 
-    wvalKeyboard = new QIWidgetValidator( pageKeyboard, this );
+    wvalKeyboard = new QIWidgetValidator (pagePath (pageKeyboard), pageKeyboard, this);
     connect (wvalKeyboard, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk( const QIWidgetValidator *)));
 
@@ -429,6 +425,17 @@ void VBoxGlobalSettingsDlg::init()
      */
     wvalGeneral->revalidate();
     wvalKeyboard->revalidate();
+}
+
+/** 
+ *  Returns a path to the given page of this settings dialog. See ::path() for
+ *  details.
+ */
+QString VBoxGlobalSettingsDlg::pagePath (QWidget *aPage)
+{
+    QListViewItem *li = listView->
+        findItem (QString::number (widgetStack->id (aPage)), 1);
+    return ::path (li);
 }
 
 bool VBoxGlobalSettingsDlg::event (QEvent *aEvent)
@@ -525,6 +532,12 @@ void VBoxGlobalSettingsDlg::enableOk (const QIWidgetValidator *wval)
 {
     Q_UNUSED (wval);
 
+    /* reset the warning text; interested parties will set it during
+     * validation */
+    setWarning (QString::null);
+
+    QString wvalWarning;
+
     /* detect the overall validity */
     bool newValid = true;
     {
@@ -533,20 +546,37 @@ void VBoxGlobalSettingsDlg::enableOk (const QIWidgetValidator *wval)
         QObject *obj;
         while ((obj = it.current()) != 0)
         {
-            newValid &= ((QIWidgetValidator *) obj)->isValid();
-            ++it;
+            QIWidgetValidator *wval = (QIWidgetValidator *) obj;
+            newValid = wval->isValid();
+            if (!newValid)
+            {
+                wvalWarning = wval->warningText();
+                break;
+            }
+            ++ it;
         }
         delete l;
+    }
+
+    if (warningString.isNull() && !wvalWarning.isNull())
+    {
+        /* try to set the generic error message when invalid but no specific
+         * message is provided */
+        setWarning (wvalWarning);
     }
 
     if (valid != newValid)
     {
         valid = newValid;
         buttonOk->setEnabled (valid);
+        /// @todo in VBoxVMSettingsDlg.ui.h, this is absent at all. Is it
+        /// really what we want?
+#if 0
         if (valid)
             warningSpacer->changeSize (0, 0, QSizePolicy::Expanding);
         else
             warningSpacer->changeSize (0, 0);
+#endif
         warningLabel->setHidden (valid);
         warningPixmap->setHidden (valid);
     }
@@ -845,7 +875,8 @@ void VBoxGlobalSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter,
 
     /* setup validation */
 
-    QIWidgetValidator *wval = new QIWidgetValidator (settings, settings);
+    QIWidgetValidator *wval =
+        new QIWidgetValidator (pagePath (pageUSB), settings, settings);
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
 

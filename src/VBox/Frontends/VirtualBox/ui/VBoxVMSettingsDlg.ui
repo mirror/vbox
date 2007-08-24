@@ -3165,6 +3165,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 </slots>
 <functions>
     <function access="private">init()</function>
+    <function access="private" returnType="QString">pagePath( QWidget * )</function>
     <function>setup( const QString &amp;, const QString &amp; )</function>
     <function>getFromMachine( const CMachine &amp; machine )</function>
     <function returnType="bool">eventFilter( QObject * watched, QEvent * e )</function>

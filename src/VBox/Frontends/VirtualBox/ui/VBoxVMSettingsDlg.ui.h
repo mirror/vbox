@@ -561,12 +561,12 @@ void VBoxVMSettingsDlg::init()
     const uint MinVRAM = sysProps.GetMinGuestVRAM();
     const uint MaxVRAM = sysProps.GetMaxGuestVRAM();
 
-    leName->setValidator( new QRegExpValidator( QRegExp( ".+" ), this ) );
+    leName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
 
     leRAM->setValidator (new QIntValidator (MinRAM, MaxRAM, this));
     leVRAM->setValidator (new QIntValidator (MinVRAM, MaxVRAM, this));
 
-    wvalGeneral = new QIWidgetValidator( pageGeneral, this );
+    wvalGeneral = new QIWidgetValidator (pagePath (pageGeneral), pageGeneral, this);
     connect (wvalGeneral, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT(enableOk (const QIWidgetValidator *)));
 
@@ -613,7 +613,7 @@ void VBoxVMSettingsDlg::init()
     QWhatsThis::add (cbHDD, tr ("Displays the virtual hard disk to attach to this IDE slot "
                                 "and allows to quickly select a different hard disk."));
 
-    wvalHDD = new QIWidgetValidator( pageHDD, this );
+    wvalHDD = new QIWidgetValidator (pagePath (pageHDD), pageHDD, this);
     connect (wvalHDD, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
     connect (wvalHDD, SIGNAL (isValidRequested (QIWidgetValidator *)),
@@ -648,7 +648,7 @@ void VBoxVMSettingsDlg::init()
     QWhatsThis::add (cbISODVD, tr ("Displays the image file to mount to the virtual CD/DVD "
                                    "drive and allows to quickly select a different image."));
 
-    wvalDVD = new QIWidgetValidator (pageDVD, this);
+    wvalDVD = new QIWidgetValidator (pagePath (pageDVD), pageDVD, this);
     connect (wvalDVD, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
     connect (wvalDVD, SIGNAL (isValidRequested (QIWidgetValidator *)),
@@ -674,7 +674,7 @@ void VBoxVMSettingsDlg::init()
     QWhatsThis::add (cbISOFloppy, tr ("Displays the image file to mount to the virtual Floppy "
                                       "drive and allows to quickly select a different image."));
 
-    wvalFloppy = new QIWidgetValidator (pageFloppy, this);
+    wvalFloppy = new QIWidgetValidator (pagePath (pageFloppy), pageFloppy, this);
     connect (wvalFloppy, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
     connect (wvalFloppy, SIGNAL (isValidRequested (QIWidgetValidator *)),
@@ -760,10 +760,9 @@ void VBoxVMSettingsDlg::init()
                          "and operate the VM (when it is running) "
                          "using a standard RDP client."));
 
-    ULONG maxPort = 65535;
-    leVRDPPort->setValidator (new QIntValidator (0, maxPort, this));
-    leVRDPTimeout->setValidator (new QIntValidator (0, maxPort, this));
-    wvalVRDP = new QIWidgetValidator (pageVRDP, this);
+    leVRDPPort->setValidator (new QIntValidator (0, 0xFFFF, this));
+    leVRDPTimeout->setValidator (new QIntValidator (this));
+    wvalVRDP = new QIWidgetValidator (pagePath (pageVRDP), pageVRDP, this);
     connect (wvalVRDP, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
     connect (wvalVRDP, SIGNAL (isValidRequested (QIWidgetValidator *)),
@@ -877,6 +876,17 @@ void VBoxVMSettingsDlg::init()
     cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthExternal));
     cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthGuest));
     leVRDPTimeout->setAlignment (Qt::AlignRight);
+}
+
+/** 
+ *  Returns a path to the given page of this settings dialog. See ::path() for
+ *  details.
+ */
+QString VBoxVMSettingsDlg::pagePath (QWidget *aPage)
+{
+    QListViewItem *li = listView->
+        findItem (QString::number (widgetStack->id (aPage)), 1);
+    return ::path (li);
 }
 
 bool VBoxVMSettingsDlg::eventFilter (QObject *object, QEvent *event)
@@ -1297,13 +1307,15 @@ void VBoxVMSettingsDlg::listView_currentChanged (QListViewItem *item)
 }
 
 
-void VBoxVMSettingsDlg::enableOk( const QIWidgetValidator *wval )
+void VBoxVMSettingsDlg::enableOk (const QIWidgetValidator *wval)
 {
     Q_UNUSED (wval);
 
     /* reset the warning text; interested parties will set it during
      * validation */
     setWarning (QString::null);
+
+    QString wvalWarning;
 
     /* detect the overall validity */
     bool newValid = true;
@@ -1313,10 +1325,23 @@ void VBoxVMSettingsDlg::enableOk( const QIWidgetValidator *wval )
         QObject *obj;
         while ((obj = it.current()) != 0)
         {
-            newValid &= ((QIWidgetValidator *) obj)->isValid();
-            ++it;
+            QIWidgetValidator *wval = (QIWidgetValidator *) obj;
+            newValid = wval->isValid();
+            if (!newValid)
+            {
+                wvalWarning = wval->warningText();
+                break;
+            }
+            ++ it;
         }
         delete l;
+    }
+
+    if (warningString.isNull() && !wvalWarning.isNull())
+    {
+        /* try to set the generic error message when invalid but no specific
+         * message is provided */
+        setWarning (wvalWarning);
     }
 
     if (valid != newValid)
@@ -1336,7 +1361,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
     bool valid = wval->isOtherValid();
 
     QString warningText;
-    QString pageTitle = ::path (listView->currentItem());
+    QString pageTitle = pagePath (pg);
 
     if (pg == pageHDD)
     {
@@ -1505,20 +1530,6 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
                 paths << path;
             }
         }
-    }
-    else if (pg == pageVRDP)
-    {
-        if (pageVRDP->isEnabled())
-        {
-            valid = !(grbVRDP->isChecked() &&
-                    (leVRDPPort->text().isEmpty() || leVRDPTimeout->text().isEmpty()));
-            if (!valid && leVRDPPort->text().isEmpty())
-                warningText = tr ("VRDP Port is not set ");
-            if (!valid && leVRDPTimeout->text().isEmpty())
-                warningText = tr ("VRDP Timeout is not set ");
-        }
-        else
-            valid = true;
     }
 
     if (!valid)
@@ -2190,8 +2201,9 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     VBoxVMNetworkSettings *page = new VBoxVMNetworkSettings();
     page->loadList (mInterfaceList, mNoInterfaces);
     page->getFromAdapter (aAdapter);
-    tbwNetwork->addTab (page, QString (tr ("Adapter %1", "network"))
-                                       .arg (aAdapter.GetSlot()));
+    QString pageTitle = QString (tr ("Adapter %1", "network"))
+                                 .arg (aAdapter.GetSlot());
+    tbwNetwork->addTab (page, pageTitle);
 
     /* fix the tab order so that main dialog's buttons are always the last */
     setTabOrder (page->leTAPTerminate, buttonHelp);
@@ -2199,7 +2211,10 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     setTabOrder (buttonOk, buttonCancel);
 
     /* setup validation */
-    QIWidgetValidator *wval = new QIWidgetValidator (pageNetwork, this);
+    QIWidgetValidator *wval =
+        new QIWidgetValidator (QString ("%1: %2")
+                               .arg (pagePath (pageNetwork), pageTitle),
+                               pageNetwork, this);
     connect (page->grbEnabled, SIGNAL (toggled (bool)), wval, SLOT (revalidate()));
     connect (page->cbNetworkAttachment, SIGNAL (activated (const QString &)),
              wval, SLOT (revalidate()));
@@ -2227,8 +2242,9 @@ void VBoxVMSettingsDlg::addSerialPort (const CSerialPort &aPort)
 {
     VBoxVMSerialPortSettings *page = new VBoxVMSerialPortSettings();
     page->getFromPort (aPort);
-    tbwSerialPorts->addTab (page, QString (tr ("Port %1", "serial ports"))
-                                               .arg (aPort.GetSlot()));
+    QString pageTitle = QString (tr ("Port %1", "serial ports"))
+                                 .arg (aPort.GetSlot());
+    tbwSerialPorts->addTab (page, pageTitle);
 
     /* fix the tab order so that main dialog's buttons are always the last */
     setTabOrder (page->mPortPathLine, buttonHelp);
@@ -2236,7 +2252,10 @@ void VBoxVMSettingsDlg::addSerialPort (const CSerialPort &aPort)
     setTabOrder (buttonOk, buttonCancel);
 
     /* setup validation */
-    QIWidgetValidator *wval = new QIWidgetValidator (pageSerial, this);
+    QIWidgetValidator *wval =
+        new QIWidgetValidator (QString ("%1: %2")
+                               .arg (pagePath (pageSerial), pageTitle),
+                               pageSerial, this);
     connect (page->mSerialPortBox, SIGNAL (toggled (bool)),
              wval, SLOT (revalidate()));
     connect (page->mIRQLine, SIGNAL (textChanged (const QString &)),
@@ -2354,7 +2373,8 @@ void VBoxVMSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNe
 
     /* setup validation */
 
-    QIWidgetValidator *wval = new QIWidgetValidator (settings, settings);
+    QIWidgetValidator *wval =
+        new QIWidgetValidator (pagePath (pageUSB), settings, settings);
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));
 

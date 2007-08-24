@@ -23,35 +23,62 @@
 
 #include <qobject.h>
 #include <qvalidator.h>
+#include <qvaluelist.h>
 
 class QIWidgetValidator : public QObject
 {
     Q_OBJECT
 
 public:
-    QIWidgetValidator( QWidget *widget, QObject *parent = 0, const char *name = 0 );
+
+    QIWidgetValidator (QWidget *aWidget, QObject *aParent = 0,
+                       const char *aName = 0);
+    QIWidgetValidator (const QString &aCaption,
+                       QWidget *aWidget, QObject *aParent = 0,
+                       const char *aName = 0);
     ~QIWidgetValidator();
 
-    QWidget *widget() const { return wgt; }
+    QWidget *widget() const { return mWidget; }
     bool isValid() const;
     void rescan();
 
-    void setOtherValid( bool valid ) { otherValid = valid; }
-    bool isOtherValid() const { return otherValid; }
+    QString warningText() const;
+
+    void setOtherValid (bool aValid) { mOtherValid = aValid; }
+    bool isOtherValid() const { return mOtherValid; }
 
 signals:
-    void validityChanged( const QIWidgetValidator *wval );
-    void isValidRequested( QIWidgetValidator *wval );
+
+    void validityChanged (const QIWidgetValidator *aValidator);
+    void isValidRequested (QIWidgetValidator *aValidator);
 
 public slots:
+
     void revalidate() { doRevalidate(); }
 
 private:
-    QWidget *wgt;
-    bool otherValid;
+
+    QString mCaption;
+    QWidget *mWidget;
+    bool mOtherValid;
+
+    struct Watched
+    {
+        Watched()
+            : widget (NULL), buddy (NULL)
+            , state (QValidator::Acceptable) {}
+
+        QWidget *widget;
+        QWidget *buddy;
+        QValidator::State state;
+    };
+
+    QValueList <Watched> mWatched;
+    Watched mLastInvalid;
 
 private slots:
-    void doRevalidate() { emit validityChanged( this ); }
+
+    void doRevalidate() { emit validityChanged (this); }
 };
 
 class QIULongValidator : public QValidator
