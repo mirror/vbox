@@ -542,7 +542,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         m->VSyncStart    = m->VDisplay + 2;
         m->VSyncEnd      = m->VDisplay + 4;
         m->VTotal        = m->VDisplay + 6;
-        m->Clock         = m->HTotal * m->VTotal * 60 / 1000000;
+        m->Clock         = m->HTotal * m->VTotal * 60 / 1000; /* kHz */
         m->name          = strdup(pScrn->display->modes[i]);
         if (!m_prev)
             pScrn->modePool = m;
