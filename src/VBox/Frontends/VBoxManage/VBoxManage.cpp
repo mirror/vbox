@@ -1056,18 +1056,18 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             }
             else
             {
-                ULONG uIRQ, uIOBase;
+                ULONG ulIRQ, ulIOBase;
                 PortMode_T HostMode;
                 Bstr path;
                 BOOL fServer;
-                uart->COMGETTER(IRQ)(&uIRQ);
-                uart->COMGETTER(IOBase)(&uIOBase);
+                uart->COMGETTER(IRQ)(&ulIRQ);
+                uart->COMGETTER(IOBase)(&ulIOBase);
                 uart->COMGETTER(Path)(path.asOutParam());
                 uart->COMGETTER(Server)(&fServer);
                 uart->COMGETTER(HostMode)(&HostMode);
 
                 RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d",
-                         currentUART + 1, uIOBase, uIRQ);
+                         currentUART + 1, ulIOBase, ulIRQ);
                 switch (HostMode)
                 {
                     default:
