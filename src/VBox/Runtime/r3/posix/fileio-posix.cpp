@@ -253,7 +253,7 @@ RTR3DECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64
 }
 
 
-RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, unsigned cbToRead, unsigned *pcbRead)
+RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     if (cbToRead <= 0)
         return VINF_SUCCESS;
@@ -277,8 +277,7 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, unsigned cbToRead, unsigned 
                 {
                     if (cbReadPart == 0)
                         return VERR_EOF;
-                    else
-                        return RTErrConvertFromErrno(errno);
+                    return RTErrConvertFromErrno(errno);
                 }
                 cbRead += cbReadPart;
             }
@@ -290,7 +289,7 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, unsigned cbToRead, unsigned 
 }
 
 
-RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, unsigned cbToWrite, unsigned *pcbWritten)
+RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     if (cbToWrite <= 0)
         return VINF_SUCCESS;

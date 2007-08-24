@@ -187,7 +187,7 @@ RTR3DECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64
  * @param   *pcbRead    How much we actually read .
  *                      If NULL an error will be returned for a partial read.
  */
-RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, unsigned cbToRead, unsigned *pcbRead);
+RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Read bytes from a file at a given offset.
@@ -201,7 +201,7 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, unsigned cbToRead, unsigned 
  * @param   *pcbRead    How much we actually read .
  *                      If NULL an error will be returned for a partial read.
  */
-RTR3DECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, unsigned cbToRead, unsigned *pcbRead);
+RTR3DECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Write bytes to a file.
@@ -213,7 +213,7 @@ RTR3DECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, unsigned cbToR
  * @param   *pcbWritten How much we actually wrote.
  *                      If NULL an error will be returned for a partial write.
  */
-RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, unsigned cbToWrite, unsigned *pcbWritten);
+RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Write bytes to a file at a given offset.
@@ -227,7 +227,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, unsigned cbToWrite, u
  * @param   *pcbWritten How much we actually wrote.
  *                      If NULL an error will be returned for a partial write.
  */
-RTR3DECL(int)  RTFileWriteAt(RTFILE File, RTFOFF off, const void *pvBuf, unsigned cbToWrite, unsigned *pcbWritten);
+RTR3DECL(int)  RTFileWriteAt(RTFILE File, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Flushes the buffers for the specified file.

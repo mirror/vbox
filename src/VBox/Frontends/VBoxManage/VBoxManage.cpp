@@ -2481,7 +2481,7 @@ static int handleConvertDDImage(int argc, char *argv[])
                     uint64_t off = 0;
                     while (off < cbFile)
                     {
-                        unsigned cbRead = 0;
+                        size_t cbRead = 0;
                         rc = RTFileRead(File, pvBuf, VDIDiskGetBufferSize(pVdi), &cbRead);
                         if (VBOX_FAILURE(rc) || !cbRead)
                             break;

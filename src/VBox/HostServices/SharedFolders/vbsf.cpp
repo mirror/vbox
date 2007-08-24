@@ -1034,7 +1034,7 @@ int vbsfClose (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
-    unsigned count = 0;
+    size_t count = 0;
     int rc;
 
     if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0)
@@ -1057,7 +1057,7 @@ int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
     }
 
     rc = RTFileRead(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
-    *pcbBuffer = count;
+    *pcbBuffer = (uint32_t)count;
     Log(("RTFileRead returned %Vrc bytes read %x\n", rc, count));
     return rc;
 }
@@ -1065,7 +1065,7 @@ int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
-    unsigned count = 0;
+    size_t count = 0;
     int rc;
 
     if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0)
@@ -1077,7 +1077,7 @@ int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
     Log(("vbsfWrite %RX64 offset %RX64 bytes %x\n", Handle, offset, *pcbBuffer));
 
     if (*pcbBuffer == 0)
-        return VINF_SUCCESS; /* @todo correct? */
+        return VINF_SUCCESS; /** @todo correct? */
 
     rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
     if (rc != VINF_SUCCESS)
@@ -1087,7 +1087,7 @@ int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
     }
 
     rc = RTFileWrite(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
-    *pcbBuffer = count;
+    *pcbBuffer = (uint32_t)count;
     Log(("RTFileWrite returned %Vrc bytes written %x\n", rc, count));
     return rc;
 }

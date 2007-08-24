@@ -592,7 +592,7 @@ unsigned int CfgLdrInputSource::FileHandleInputStream::readBytes (
     AssertRC (rc);
 
     // read from the file
-    unsigned cbRead = 0;
+    size_t cbRead = 0;
     rc = RTFileRead (m_hFileHandle, toFill, maxToRead, &cbRead);
     AssertRC (rc);
 
@@ -602,7 +602,7 @@ unsigned int CfgLdrInputSource::FileHandleInputStream::readBytes (
     rc = RTFileSeek (m_hFileHandle, cbOriginalPos, RTFILE_SEEK_BEGIN, NULL);
     AssertRC (rc);
 
-    return cbRead;
+    return (unsigned int)cbRead;
 }
 
 // CfgLdrFormatTarget

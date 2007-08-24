@@ -246,7 +246,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
              * Read the frame.
              */
             char achBuf[4096];
-            unsigned cbRead = 0;
+            size_t cbRead = 0;
             rc = RTFileRead(pData->FileDevice, achBuf, sizeof(achBuf), &cbRead);
             if (VBOX_SUCCESS(rc))
             {
@@ -317,7 +317,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
 
             /* drain the pipe */
             char ch;
-            unsigned cbRead;
+            size_t cbRead;
             RTFileRead(pData->PipeRead, &ch, 1, &cbRead);
         }
         else
@@ -368,7 +368,7 @@ static DECLCALLBACK(void) drvTAPPoller(PPDMDRVINS pDrvIns)
             {
                 /* data waiting, read it. */
                 char        achBuf[4096];
-                unsigned    cbRead = 0;
+                size_t      cbRead = 0;
                 int rc = RTFileRead(pData->FileDevice, achBuf, RT_MIN(sizeof(achBuf), cbMax), &cbRead);
                 if (VBOX_SUCCESS(rc))
                 {

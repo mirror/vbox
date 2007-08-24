@@ -283,7 +283,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
                 RTPrintf("info: %VGp...\n", GCPhys);
 
             /* read a page from the file */
-            unsigned cbRead = 0;
+            size_t cbRead = 0;
             uint8_t au8Page[PAGE_SIZE * 16];
             rc = RTFileRead(File, &au8Page, sizeof(au8Page), &cbRead);
             if (VBOX_SUCCESS(rc) && !cbRead)
