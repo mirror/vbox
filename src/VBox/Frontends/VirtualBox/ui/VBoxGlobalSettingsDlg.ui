@@ -1357,6 +1357,7 @@ to the system default language.&lt;/qt&gt;
 </slots>
 <functions>
     <function access="private">init()</function>
+    <function access="private" returnType="QString">pagePath( QWidget * )</function>
     <function access="private" returnType="bool">event( QEvent * )</function>
     <function access="protected">showEvent( QShowEvent * )</function>
     <function>getFrom( const CSystemProperties &amp; props, const VBoxGlobalSettings &amp; gs )</function>

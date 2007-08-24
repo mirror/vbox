@@ -21,6 +21,11 @@
 #include <qobjectlist.h>
 #include <qlineedit.h>
 #include <qcombobox.h>
+#include <qlabel.h>
+
+#include <iprt/assert.h>
+
+#include "VBoxGlobal.h"
 
 /** @class QIWidgetValidator
  *
@@ -69,14 +74,31 @@
  *  Constructs a new instance that will check the validity of children
  *  of the given widget.
  *
- *  @param widget the widget whose children should be checked
+ *  @param aWidget  Widget whose children should be checked.
  */
-QIWidgetValidator::QIWidgetValidator(
-    QWidget *widget, QObject *parent, const char *name
-) :
-    QObject( parent, name ),
-    wgt( widget ),
-    otherValid( true )
+QIWidgetValidator::QIWidgetValidator (QWidget *aWidget, QObject *aParent,
+                                      const char *aName)
+    : QObject (aParent, aName)
+    , mWidget (aWidget)
+    , mOtherValid (true)
+{
+    rescan();
+}
+
+/**
+ *  Constructs a new instance that will check the validity of children
+ *  of the given widget.
+ *
+ *  @param aCaption Caption to use for the warning message.
+ *  @param aWidget  Widget whose children should be checked.
+ */
+QIWidgetValidator::QIWidgetValidator (const QString &aCaption,
+                                      QWidget *aWidget, QObject *aParent,
+                                      const char *aName)
+    : QObject (aParent, aName)
+    , mCaption (aCaption)
+    , mWidget (aWidget)
+    , mOtherValid (true)
 {
     rescan();
 }
@@ -88,7 +110,7 @@ QIWidgetValidator::QIWidgetValidator(
  */
 QIWidgetValidator::~QIWidgetValidator()
 {
-    wgt = 0;
+    mWidget = 0;
     doRevalidate();
 }
 
@@ -119,55 +141,80 @@ QIWidgetValidator::~QIWidgetValidator()
 bool QIWidgetValidator::isValid() const
 {
     // wgt is null, we assume we're valid
-    if (!wgt)
+    if (!mWidget)
         return true;
 
     QIWidgetValidator *that = const_cast <QIWidgetValidator *> (this);
-    emit that->isValidRequested( that );
+    emit that->isValidRequested (that);
     if (!isOtherValid())
         return false;
 
-    bool valid = true;
+    QValidator::State state = QValidator::Acceptable;
 
-    QObjectList *list = wgt->queryList ("QLineEdit");
-    QObjectListIterator it (*list);
-    QObject *obj;
-    while (valid && (obj = it.current()) != 0)
+    for (QValueList <Watched>::ConstIterator it = mWatched.begin();
+         it != mWatched.end(); ++ it)
     {
-        ++it;
-        if (obj->inherits ("QLineEdit"))
+        Watched watched = *it;
+
+        if (watched.widget->inherits ("QLineEdit"))
         {
-            QLineEdit *le = ((QLineEdit *) obj);
+            QLineEdit *le = ((QLineEdit *) watched.widget);
+            Assert (le->validator());
             if (!le->validator() || !le->isEnabled())
                 continue;
-            valid = le->hasAcceptableInput();
+            int pos;
+            state = le->validator()->validate (le->text(), pos);
         }
-        else if (obj->inherits ("QComboBox"))
+        else if (watched.widget->inherits ("QComboBox"))
         {
-            QComboBox *cb = ((QComboBox *) obj);
-            if (!cb->validator() || !cb->lineEdit() || !cb->isEnabled())
+            QComboBox *cb = ((QComboBox *) watched.widget);
+            Assert (cb->validator());
+            if (!cb->validator() || !cb->isEnabled())
                 continue;
-            valid = cb->lineEdit()->hasAcceptableInput();
+            int pos;
+            state = cb->lineEdit()->validator()->
+                validate (cb->lineEdit()->text(), pos);
+        }
+
+        if (state != QValidator::Acceptable)
+        {
+            that->mLastInvalid = watched;
+            that->mLastInvalid.state = state;
+            return false;
         }
     }
-    delete list;
 
-    return valid;
+    /* reset last invalid */
+    that->mLastInvalid = Watched();
+    return true;
 }
 
 /**
- *  Rescans all (grand) children of the managed widget and connects itself to
- *  those that can be validated, in order to emit the validityChanged()
- *  signal to give its receiver an oportunity to do useful actions.
+ *  Rescans all (grand) children of the managed widget and:
+ *
+ *  1) remembers all supported widgets with validators to speed up further
+ *     validation;
+ *
+ *  2) connects itself to those that can be validated, in order to emit the
+ *     validityChanged() signal to give its receiver an oportunity to do
+ *     useful actions.
+ *
+ *  Must be called every time a child widget is added or removed.
  */
 void QIWidgetValidator::rescan()
 {
-    if (!wgt)
+    if (!mWidget)
         return;
 
-    QObjectList *list = wgt->queryList();
-    QObjectListIterator it (*list);
+    mWatched.clear();
+
+    Watched watched;
+
+    QObjectList *list = mWidget->queryList();
     QObject *obj;
+
+    /* detect all widgets that support validation */
+    QObjectListIterator it (*list);
     while ((obj = it.current()) != 0)
     {
         ++ it;
@@ -176,7 +223,7 @@ void QIWidgetValidator::rescan()
             QLineEdit *le = ((QLineEdit *) obj);
             if (!le->validator())
                 continue;
-            // disconnect to avoid duplicate connections
+            /* disconnect to avoid duplicate connections */
             disconnect (le, SIGNAL (textChanged (const QString &)),
                         this, SLOT (doRevalidate()));
             connect (le, SIGNAL (textChanged (const QString &)),
@@ -187,14 +234,84 @@ void QIWidgetValidator::rescan()
             QComboBox *cb = ((QComboBox *) obj);
             if (!cb->validator() || !cb->lineEdit())
                 continue;
-            // disconnect to avoid duplicate connections
+            /* disconnect to avoid duplicate connections */
             disconnect (cb, SIGNAL (textChanged (const QString &)),
                         this, SLOT (doRevalidate()));
             connect (cb, SIGNAL (textChanged (const QString &)),
                      this, SLOT (doRevalidate()));
         }
+
+        watched.widget = (QWidget *) obj;
+
+        /* try to find a buddy widget in order to determine the title for
+         * the watched widget which is used in the warning text */
+        QObjectListIterator it2 (*list);
+        while ((obj = it2.current()) != 0)
+        {
+            ++ it2;
+            if (obj->inherits ("QLabel"))
+            {
+                QLabel *label = (QLabel *) obj;
+                if (label->buddy() == watched.widget)
+                {
+                    watched.buddy = label;
+                    break;
+                }
+            }
+        }
+
+        /* memorize */
+        mWatched << watched;
     }
+
+    /* don't forget to delete the list */
     delete list;
+}
+
+/** 
+ *  Returns a message that describes the last detected error (invalid or
+ *  incomplete input).
+ *
+ *  This message uses the caption text passed to the constructor as a page
+ *  name to refer to. If the caption is NULL, this funciton will return a null
+ *  string.
+ *
+ *  Also, if the failed widget has a buddy widget, this buddy widget's text
+ *  will be used as a field name to refer to.
+ */
+QString QIWidgetValidator::warningText() const
+{
+    /* cannot generate an informative message if no caption provided */
+    if (mCaption.isEmpty())
+        return QString::null;
+
+    if (mLastInvalid.state == QValidator::Acceptable)
+        return QString::null;
+
+    AssertReturn (mLastInvalid.widget, QString::null);
+
+    QString title;
+    if (mLastInvalid.buddy != NULL)
+    {
+        if (mLastInvalid.buddy->inherits ("QLabel"))
+            title = VBoxGlobal::
+                removeAccelMark (((QLabel *) mLastInvalid.buddy)->text());
+    }
+
+    QString state;
+    if (mLastInvalid.state == QValidator::Intermediate)
+        state = tr ("not complete", "value state");
+    else
+        state = tr ("invalid", "value state");
+
+    if (!title.isEmpty())
+        return tr ("<qt>Value of the <b>%1</b> field "
+                   "on the <b>%2</b> page is %3.</qt>")
+            .arg (title, mCaption, state);
+
+    return tr ("<qt>One of the values "
+               "on the <b>%1</b> page is %2.</qt>")
+        .arg (mCaption, state);
 }
 
 /** @fn QIWidgetValidator::setOtherValid()
