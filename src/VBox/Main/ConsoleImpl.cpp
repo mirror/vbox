@@ -811,8 +811,6 @@ DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
     return;
 }
 
-#define CRASHTEST64(a) do { LogRel(a); RTLogFlush(RTLogRelDefaultInstance()); } while (0)
-
 #ifdef VRDP_NO_COM
 void Console::VRDPInterceptClipboard (uint32_t u32ClientId)
 #else
@@ -824,32 +822,26 @@ DECLCALLBACK(void) Console::vrdp_InterceptClipboard (void *pvUser,
 {
     LogFlowFuncEnter();
     
-    CRASHTEST64(("enter %p\n", u32ClientId));
-    
 #ifdef VRDP_NO_COM
     Console *console = this;
 #else
     Console *console = static_cast <Console *> (pvUser);
 #endif /* VRDP_NO_COM */
-    CRASHTEST64(("console %p\n", console));
     AssertReturnVoid (console);
 
     AutoCaller autoCaller (console);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    CRASHTEST64(("console->mConsoleVRDPServer %p\n", console->mConsoleVRDPServer));
     AssertReturnVoid (console->mConsoleVRDPServer);
 
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
-    CRASHTEST64(("going to call the instance client id %d\n", u32ClientId));
     mConsoleVRDPServer->ClipboardCreate (u32ClientId);
 #else
     console->mConsoleVRDPServer->ClipboardCreate (u32ClientId, ppfn, ppv);
 #endif /* VRDP_NO_COM */
 #endif /* VBOX_VRDP */
 
-    CRASHTEST64(("leave\n"));
     LogFlowFuncLeave();
     return;
 }
@@ -3883,7 +3875,6 @@ HRESULT Console::powerDown()
      *  Stop the VRDP server to prevent new clients connection while VM is being powered off.
      *  (When called from uninit mConsoleVRDPServer is already destroyed.)
      */
-    CRASHTEST64(("mConsoleVRDPServer = %p\n", mConsoleVRDPServer));
     if (mConsoleVRDPServer)
     {
         LogFlowThisFunc (("Stopping VRDP server...\n"));
@@ -3893,7 +3884,6 @@ HRESULT Console::powerDown()
 
         mConsoleVRDPServer->Stop();
 
-        CRASHTEST64(("server stopped\n"));
         alock.enter();
     }
 
