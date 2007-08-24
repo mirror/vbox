@@ -202,6 +202,82 @@ typedef DBGCVAR *PDBGCVAR;
 typedef const DBGCVAR *PCDBGCVAR;
 
 
+/** 
+ * Macro for initializing a DBGC variable with defaults.
+ * The result is an unknown variable type without any range.
+ */
+#define DBGCVAR_INIT(pVar) \
+        do { \
+            (pVar)->pDesc = NULL;\
+            (pVar)->pNext = NULL; \
+            (pVar)->enmType = DBGCVAR_TYPE_UNKNOWN; \
+            (pVar)->u.u64Number = 0; \
+            (pVar)->enmRangeType = DBGCVAR_RANGE_NONE; \
+            (pVar)->u64Range = 0; \
+        } while (0)
+
+/**
+ * Macro for initializing a DBGC variable with a HC physical address.
+ */
+#define DBGCVAR_INIT_HC_PHYS(pVar, Phys) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType = DBGCVAR_TYPE_HC_PHYS; \
+            (pVar)->u.HCPhys = (Phys); \
+        } while (0)
+
+/**
+ * Macro for initializing a DBGC variable with a HC flat address.
+ */
+#define DBGCVAR_INIT_HC_FLAT(pVar, Flat) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType = DBGCVAR_TYPE_HC_FLAT; \
+            (pVar)->u.pvHCFlat = (Flat); \
+        } while (0)
+
+/**
+ * Macro for initializing a DBGC variable with a GC physical address.
+ */
+#define DBGCVAR_INIT_GC_PHYS(pVar, Phys) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType = DBGCVAR_TYPE_GC_PHYS; \
+            (pVar)->u.GCPhys = (Phys); \
+        } while (0)
+
+/**
+ * Macro for initializing a DBGC variable with a GC flat address.
+ */
+#define DBGCVAR_INIT_GC_FLAT(pVar, Flat) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType = DBGCVAR_TYPE_GC_FLAT; \
+            (pVar)->u.GCFlat = (Flat); \
+        } while (0)
+
+/**
+ * Macro for initializing a DBGC variable with a GC far address.
+ */
+#define DBGCVAR_INIT_GC_FAR(pVar, _sel, _off) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType = DBGCVAR_TYPE_GC_FAR; \
+            (pVar)->u.GCFar.sel = (_sel); \
+            (pVar)->u.GCFar.off = (_off); \
+        } while (0)
+
+/**
+ * Macro for initializing a DBGC variable with a number
+ */
+#define DBGCVAR_INIT_NUMBER(pVar, Value) \
+        do { \
+            DBGCVAR_INIT(pVar); \
+            (pVar)->enmType = DBGCVAR_TYPE_NUMBER; \
+            (pVar)->u.u64 = (Value); \
+        } while (0)
+
+
 /** Pointer to helper functions for commands. */
 typedef struct DBGCCMDHLP *PDBGCCMDHLP;
 
@@ -387,6 +463,47 @@ typedef struct DBGCCMDHLP
 
 } DBGCCMDHLP;
 
+
+#ifdef IN_RING3
+/**
+ * Command helper for writing formatted text to the debug console.
+ *
+ * @returns VBox status.
+ * @param   pCmdHlp     Pointer to the command callback structure.
+ * @param   pszFormat   The format string.
+ *                      This is using the log formatter, so it's format extensions can be used.
+ * @param   ...         Arguments specified in the format string.
+ */
+DECLINLINE(int) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...)
+{
+    va_list va;
+    int rc;
+    va_start(va, pszFormat);
+    rc = pCmdHlp->pfnPrintfV(pCmdHlp, NULL, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+/**
+ * @copydoc FNDBGCHLPVBOXERROR
+ */
+DECLINLINE(int) DBGCCmdHlpVBoxError(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    rc = pCmdHlp->pfnVBoxErrorV(pCmdHlp, rc, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+/**
+ * @copydoc FNDBGCHLPMEMREAD
+ */
+DECLINLINE(int) DBGCCmdHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBuffer, size_t cbRead, PCDBGCVAR pVarPointer, size_t *pcbRead)
+{
+    return pCmdHlp->pfnMemRead(pCmdHlp, pVM, pvBuffer, cbRead, pVarPointer, pcbRead);
+}
+#endif /* IN_RING3 */
 
 
 /** Pointer to command descriptor. */
