@@ -373,8 +373,7 @@ VBoxXML_INCS       = \
 	include \
 	$(PATH_TARGET)
 VBoxXML_SOURCES    = \
-	xml/cfgldr.cpp \
-	xml/cfgldrhlp.cpp
+	xml/cfgldr.cpp
 VBoxXML_LDFLAGS.darwin = -install_name @executable_path/VBoxXML.dylib -Wl,-x # no debug info please.
 
 ## @todo (dmik): temporarily embed SettingsConverter.xsl into VBoxXML,
