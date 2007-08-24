@@ -314,11 +314,11 @@ HRESULT SerialPort::saveSettings (CFGNODE aNode)
             mode = "HostDevice";
             break;
     }
-    CFGLDRSetUInt32 (portNode, "slot",    mData->mSlot);
-    CFGLDRSetBool   (portNode, "enabled", !!mData->mEnabled);
-    CFGLDRSetUInt32 (portNode, "IOBase",  mData->mIOBase);
-    CFGLDRSetUInt32 (portNode, "IRQ",     mData->mIRQ);
-    CFGLDRSetString (portNode, "hostMode", mode);
+    CFGLDRSetUInt32   (portNode, "slot",     mData->mSlot);
+    CFGLDRSetBool     (portNode, "enabled",  !!mData->mEnabled);
+    CFGLDRSetUInt32Ex (portNode, "IOBase",   mData->mIOBase, 16);
+    CFGLDRSetUInt32   (portNode, "IRQ",      mData->mIRQ);
+    CFGLDRSetString   (portNode, "hostMode", mode);
     if (mData->mHostMode != PortMode_DisconnectedPort)
     {
         CFGLDRSetBSTR (portNode, "path",    mData->mPath);
@@ -458,6 +458,13 @@ STDMETHODIMP SerialPort::COMGETTER(IRQ) (ULONG *aIRQ)
 
 STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
 {
+    /* check IRQ limits
+     * (when changing this, make sure it corresponds to XML schema */
+    if (aIRQ > 255)
+        return setError (E_INVALIDARG,
+            tr ("Invalid IRQ number: %lu (must be in range [0, %lu])"),
+                aIRQ, 255);
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -505,6 +512,13 @@ STDMETHODIMP SerialPort::COMGETTER(IOBase) (ULONG *aIOBase)
 
 STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
 {
+    /* check IOBase limits
+     * (when changing this, make sure it corresponds to XML schema */
+    if (aIOBase > 0xFFFF)
+        return setError (E_INVALIDARG,
+            tr ("Invalid I/O port base address: %lu (must be in range [0, 0x%X])"),
+                aIOBase, 0, 0xFFFF);
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 

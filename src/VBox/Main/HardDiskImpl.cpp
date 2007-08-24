@@ -3223,9 +3223,9 @@ HRESULT HISCSIHardDisk::saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode)
         CFGLDRSetUInt16 (aStorageNode, "port", mPort);
     else
         CFGLDRDeleteAttribute (aStorageNode, "port");
-    /* lun (optional) */
+    /* lun (optional, force 0x format to coform to XML Schema!) */
     if (mLun != 0)
-        CFGLDRSetUInt64 (aStorageNode, "lun", mLun);
+        CFGLDRSetUInt64Ex (aStorageNode, "lun", mLun, 16);
     else
         CFGLDRDeleteAttribute (aStorageNode, "lun");
     /* userName (optional) */

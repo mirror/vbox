@@ -49,7 +49,35 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<xsd:simpleType name="TUInt64">
+<xsd:simpleType name="TUInt8">
+  <xsd:union>
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedByte">
+      </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:string">
+        <xsd:pattern value="0[xX][A-Fa-f0-9]{1,2}"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:union>
+</xsd:simpleType>
+
+<xsd:simpleType name="TUInt16">
+  <xsd:union>
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedShort">
+      </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:string">
+        <xsd:pattern value="0[xX][A-Fa-f0-9]{1,4}"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:union>
+</xsd:simpleType>
+
+<xsd:simpleType name="TUInt64Hex">
   <xsd:restriction base="xsd:string">
     <xsd:pattern value="0x[A-Fa-f0-9]{1,16}"/>
   </xsd:restriction>
@@ -210,7 +238,7 @@
           <xsd:attribute name="server" type="xsd:token" use="required"/>
           <xsd:attribute name="port" type="xsd:unsignedShort" default="0"/>
           <xsd:attribute name="target" type="xsd:token" use="required"/>
-          <xsd:attribute name="lun" type="TUInt64" default="0x0"/>
+          <xsd:attribute name="lun" type="TUInt64Hex" default="0x0"/>
           <xsd:attribute name="userName" type="xsd:token"/>
           <xsd:attribute name="password" type="xsd:token"/>
         </xsd:complexType>
@@ -477,18 +505,6 @@
 
 <xsd:complexType name="TUSBController">
   <xsd:sequence>
-    <xsd:element name="Device" minOccurs="0" maxOccurs="unbounded">
-      <xsd:complexType>
-        <xsd:attribute name="vendorid" type="xsd:unsignedShort" use="required"/>
-        <xsd:attribute name="productid" type="xsd:unsignedShort" use="required"/>
-        <xsd:attribute name="revision" type="xsd:unsignedShort" use="required"/>
-        <xsd:attribute name="serialhash" type="TUInt64" use="required"/>
-        <xsd:attribute name="manufacturer" type="xsd:string"/>
-        <xsd:attribute name="product" type="xsd:string"/>
-        <xsd:attribute name="serialnumber" type="xsd:string"/>
-        <xsd:attribute name="comment" type="xsd:string"/>
-      </xsd:complexType>
-    </xsd:element>
     <xsd:element name="DeviceFilter" type="TUSBDeviceFilter"
                  minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
@@ -528,8 +544,8 @@
     </xsd:simpleType>
   </xsd:attribute>
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="IRQ" type="xsd:unsignedInt" use="required"/>
-  <xsd:attribute name="IOBase" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="IRQ" type="TUInt8" use="required"/>
+  <xsd:attribute name="IOBase" type="TUInt16" use="required"/>
   <xsd:attribute name="hostMode" type="TPortMode" use="required"/>
   <xsd:attribute name="path" type="TLocalFile"/>
   <xsd:attribute name="server" type="xsd:boolean" default="false"/>
@@ -558,8 +574,8 @@
     </xsd:simpleType>
   </xsd:attribute>
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="IRQ" type="xsd:unsignedInt" use="required"/>
-  <xsd:attribute name="IOBase" type="xsd:unsignedInt" use="required"/>
+  <xsd:attribute name="IRQ" type="TUInt8" use="required"/>
+  <xsd:attribute name="IOBase" type="TUInt16" use="required"/>
   <xsd:attribute name="path" type="TLocalFile"/>
 </xsd:complexType>
 
