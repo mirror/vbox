@@ -156,6 +156,8 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
     /*
      * Validate and addjust input...
      */
+    if (uiBase == 0)
+        uiBase = 10;
     kASSERT((uiBase >= 2 || uiBase <= 16));
     if (fFlags & RTSTR_F_CAPITAL)
         pachDigits = "0123456789ABCDEF";
