@@ -25,7 +25,7 @@ endif
 OTHER_CLEAN              = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
 
 vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
-vboxadd-xclient_SOURCES  = clipboard.cpp
+vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
 vboxadd-xclient_LIBPATH  = $(PATH_TARGET)/vboxadd-xclient $(VBOX_LIBPATH32_X11)
 vboxadd-xclient_LIBS     = \
     $(PATH_LIB)/RuntimeLnx32GuestR3.a pthread rt Xt X11
