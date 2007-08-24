@@ -51,11 +51,13 @@
 #include <VBox/log.h>
 
 #include <VBox/err.h>
+
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/path.h>
 #include <iprt/file.h>
 #include <iprt/time.h>
+#include <iprt/alloc.h>
 
 /// @todo (dmik) until RTTimeImplode and friends are done
 #include <time.h>
@@ -112,16 +114,143 @@ extern "C" BSTR SysAllocString(const OLECHAR* sz);
 #include "Logging.h"
 
 #include <VBox/cfgldr.h>
-#include "cfgldrhlp.h"
 
 #include <string.h>
 #include <stdio.h> // for sscanf
+
 #ifdef STANDALONE_TEST
 # include <stdlib.h>
 # include <iprt/runtime.h>
 #endif
 
 XERCES_CPP_NAMESPACE_USE
+
+// Helpers
+////////////////////////////////////////////////////////////////////////////////
+
+inline unsigned char fromhex (RTUTF16 hexdigit)
+{
+    if (hexdigit >= '0' && hexdigit <= '9')
+        return hexdigit - '0';
+    if (hexdigit >= 'A' && hexdigit <= 'F')
+        return hexdigit - 'A' + 0xA;
+    if (hexdigit >= 'a' && hexdigit <= 'f')
+        return hexdigit - 'a' + 0xa;
+
+    return 0xFF; // error indicator
+}
+
+inline RTUTF16 tohex (unsigned char ch)
+{
+    return (ch < 0xA) ? ch + '0' : ch - 0xA + 'A';
+}
+
+/** 
+ * Converts a string of hex digits to memory bytes.
+ * 
+ * @param puszValue String of hex digits to convert.
+ * @param pvValue   Where to store converted bytes.
+ * @param cbValue   Size of the @a pvValue array.
+ * @param pcbValue  Where to store the actual number of stored bytes.
+ * 
+ * @return IPRT status code.
+ */
+int wstr_to_bin (PCRTUTF16 puszValue, void *pvValue, unsigned cbValue, unsigned *pcbValue)
+{
+    int rc = VINF_SUCCESS;
+
+    unsigned count = 0;
+    unsigned char *dst = (unsigned char *) pvValue;
+
+    while (*puszValue)
+    {
+        unsigned char b = fromhex (*puszValue);
+
+        if (b == 0xFF)
+        {
+            /* it was not a valid hex digit */
+            rc = VERR_CFG_INVALID_FORMAT;
+            break;
+        }
+
+        if (count < cbValue)
+        {
+            *dst = b;
+        }
+
+        puszValue++;
+
+        if (!*puszValue)
+        {
+            rc = VERR_CFG_INVALID_FORMAT;
+            break;
+        }
+
+        b = fromhex (*puszValue++);
+
+        if (b == 0xFF)
+        {
+            /* it was not a valid hex digit */
+            rc = VERR_CFG_INVALID_FORMAT;
+            break;
+        }
+
+        if (count < cbValue)
+        {
+            *dst = ((*dst) << 4) + b;
+            dst++;
+        }
+
+        count++;
+    }
+
+    *pcbValue = count;
+
+    return rc;
+}
+
+/**
+ * Converts memory bytes to a null-terminated string of hex values.
+ *
+ * @param pvValue   Memory array to convert.
+ * @param cbValue   Number of bytes in the @a pvValue array.
+ * @param puszValue Where to store the pointer to the resulting string.
+ *                  On success, this string should be freed using RTUtf16Free().
+ * 
+ * @return IPRT status code.
+ */
+static int bin_to_wstr (const void *pvValue, unsigned cbValue, PRTUTF16 *puszValue)
+{
+    int rc = VINF_SUCCESS;
+
+    /* each byte will produce two hex digits and there will be nul
+     * terminator */
+    *puszValue = (PRTUTF16) RTMemTmpAlloc (sizeof (RTUTF16) * (cbValue * 2 + 1));
+
+    if (!*puszValue)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        unsigned         i = 0;
+        unsigned char *src = (unsigned char *) pvValue;
+        PRTUTF16 dst       = *puszValue;
+
+        for (; i < cbValue; i++, src++)
+        {
+            *dst++ = tohex ((*src) >> 4);
+            *dst++ = tohex ((*src) & 0xF);
+        }
+
+        *dst = '\0';
+    }
+
+    return rc;
+}
+
+// CfgNode
+////////////////////////////////////////////////////////////////////////////////
 
 class CfgNode
 {
@@ -138,7 +267,7 @@ class CfgNode
 
         int resolve (DOMNode *root, const char *pszName, unsigned uIndex, unsigned flags);
 
-        int queryValueString (const char *pszName, PRTUTF16 *ppwszValue);
+        int getValueString (const char *pszName, PRTUTF16 *ppwszValue);
         int setValueString (const char *pszName, PRTUTF16 pwszValue);
 
         DOMNode *findChildText (void);
@@ -162,17 +291,17 @@ class CfgNode
 
 
         int QueryUInt32 (const char *pszName, uint32_t *pulValue);
-        int SetUInt32   (const char *pszName, uint32_t ulValue);
+        int SetUInt32   (const char *pszName, uint32_t ulValue, unsigned int uiBase = 0);
         int QueryUInt64 (const char *pszName, uint64_t *pullValue);
-        int SetUInt64   (const char *pszName, uint64_t ullValue);
+        int SetUInt64   (const char *pszName, uint64_t ullValue, unsigned int uiBase = 0);
 
-        int QueryInt32  (const char *pszName, int32_t *pint32Value);
-        int SetInt32    (const char *pszName, int32_t int32Value);
-        int QueryInt64  (const char *pszName, int64_t *pint64Value);
-        int SetInt64    (const char *pszName, int64_t int64Value);
+        int QueryInt32  (const char *pszName, int32_t *plValue);
+        int SetInt32    (const char *pszName, int32_t lValue, unsigned int uiBase = 0);
+        int QueryInt64  (const char *pszName, int64_t *pllValue);
+        int SetInt64    (const char *pszName, int64_t llValue, unsigned int uiBase = 0);
 
-        int QueryUInt16 (const char *pszName, uint16_t *pu16Value);
-        int SetUInt16   (const char *pszName, uint16_t u16Value);
+        int QueryUInt16 (const char *pszName, uint16_t *puhValue);
+        int SetUInt16   (const char *pszName, uint16_t uhValue, unsigned int uiBase = 0);
 
         int QueryBin    (const char *pszName, void *pvValue, unsigned cbValue, unsigned *pcbValue);
         int SetBin      (const char *pszName, const void *pvValue, unsigned cbValue);
@@ -184,6 +313,9 @@ class CfgNode
 
         int DeleteAttribute (const char *pszName);
 };
+
+// CfgLoader
+////////////////////////////////////////////////////////////////////////////////
 
 class CfgLoader
 {
@@ -228,6 +360,9 @@ class CfgLoader
 
         int GetNode (const char *pszName, unsigned uIndex, CfgNode **ppnode);
 };
+
+// VBoxWriterFilter
+////////////////////////////////////////////////////////////////////////////////
 
 #ifdef VBOX_XML_WRITER_FILTER
 class VBoxWriterFilter : public DOMWriterFilter
@@ -1594,7 +1729,16 @@ DOMNode *CfgNode::findChildText (void)
     return child;
 }
 
-int CfgNode::queryValueString (const char *pszName, PRTUTF16 *ppwszValue)
+/**
+ * Gets the value of the given attribute as a UTF-16 string.
+ * The returned string is owned by CfgNode, the caller must not free it.
+ * 
+ * @param pszName       Attribute name.
+ * @param ppwszValue    Where to store a pointer to the attribute value.
+ * 
+ * @return IPRT status code.
+ */
+int CfgNode::getValueString (const char *pszName, PRTUTF16 *ppwszValue)
 {
     int rc = VINF_SUCCESS;
 
@@ -1711,86 +1855,95 @@ int CfgNode::QueryUInt32 (const char *pszName, uint32_t *pulValue)
 
     PRTUTF16 pwszValue = NULL;
 
-    rc = queryValueString (pszName, &pwszValue);
-
+    rc = getValueString (pszName, &pwszValue);
     if (VBOX_SUCCESS(rc))
     {
         uint32_t value = 0;
+        char *pszValue = NULL;
 
-        rc = cfgldrhlp_strtouint32 (pwszValue, &value);
-
-        if (VBOX_SUCCESS(rc))
+        rc = RTUtf16ToUtf8 (pwszValue, &pszValue);
+        if (VBOX_SUCCESS (rc))
         {
-            *pulValue = value;
+            rc = RTStrToUInt32Ex (pszValue, NULL, 0, &value);
+            if (VBOX_SUCCESS(rc))
+            {
+                *pulValue = value;
+            }
+
+            RTStrFree (pszValue);
         }
     }
 
     return rc;
 }
-int CfgNode::SetUInt32 (const char *pszName, uint32_t ulValue)
+
+int CfgNode::SetUInt32 (const char *pszName, uint32_t ulValue, unsigned int uiBase)
 {
     int rc = VINF_SUCCESS;
 
-    char szValue[64];
+    char szValue [64];
 
-    rc = cfgldrhlp_uint32tostr (ulValue, szValue);
-
+    rc = RTStrFormatNumber (szValue, (uint64_t) ulValue, uiBase, 0, 0,
+                            RTSTR_F_32BIT | RTSTR_F_SPECIAL);
     if (VBOX_SUCCESS (rc))
     {
         PRTUTF16 pwszValue = NULL;
 
         rc = RTStrToUtf16 (szValue, &pwszValue);
-
         if (VBOX_SUCCESS (rc))
         {
             rc = setValueString (pszName, pwszValue);
-
             RTUtf16Free (pwszValue);
         }
     }
 
     return rc;
 }
+
 int CfgNode::QueryUInt64 (const char *pszName, uint64_t *pullValue)
 {
     int rc = VINF_SUCCESS;
 
     PRTUTF16 pwszValue = NULL;
 
-    rc = queryValueString (pszName, &pwszValue);
-
+    rc = getValueString (pszName, &pwszValue);
     if (VBOX_SUCCESS(rc))
     {
         uint64_t value = 0;
+        char *pszValue = NULL;
 
-        rc = cfgldrhlp_strtouint64 (pwszValue, &value);
-
-        if (VBOX_SUCCESS(rc))
+        rc = RTUtf16ToUtf8 (pwszValue, &pszValue);
+        if (VBOX_SUCCESS (rc))
         {
-            *pullValue = value;
+            rc = RTStrToUInt64Ex (pszValue, NULL, 0, &value);
+            if (VBOX_SUCCESS(rc))
+            {
+                *pullValue = value;
+            }
+
+            RTStrFree (pszValue);
         }
     }
 
     return rc;
 }
-int CfgNode::SetUInt64 (const char *pszName, uint64_t ullValue)
+
+int CfgNode::SetUInt64 (const char *pszName, uint64_t ullValue, unsigned int uiBase)
 {
     int rc = VINF_SUCCESS;
 
-    char szValue[64];
+    char szValue [64];
 
-    rc = cfgldrhlp_uint64tostr (ullValue, szValue);
-
+    rc = RTStrFormatNumber (szValue, ullValue, uiBase, 0, 0,
+                            RTSTR_F_64BIT | RTSTR_F_SPECIAL);
     if (VBOX_SUCCESS (rc))
     {
         PRTUTF16 pwszValue = NULL;
 
         rc = RTStrToUtf16 (szValue, &pwszValue);
-
         if (VBOX_SUCCESS (rc))
         {
             rc = setValueString (pszName, pwszValue);
-
             RTUtf16Free (pwszValue);
         }
     }
@@ -1798,91 +1951,154 @@ int CfgNode::SetUInt64 (const char *pszName, uint64_t ullValue)
     return rc;
 }
 
-int CfgNode::QueryInt32 (const char *pszName, int32_t *pint32Value)
+int CfgNode::QueryInt32 (const char *pszName, int32_t *plValue)
 {
+    int rc = VINF_SUCCESS;
+
     PRTUTF16 pwszValue = NULL;
 
-    int rc = queryValueString (pszName, &pwszValue);
-
+    rc = getValueString (pszName, &pwszValue);
     if (VBOX_SUCCESS(rc))
     {
-        rc = cfgldrhlp_ustr_to_integer<int32_t, uint32_t> (pwszValue, pint32Value);
+        int32_t value = 0;
+        char *pszValue = NULL;
+
+        rc = RTUtf16ToUtf8 (pwszValue, &pszValue);
+        if (VBOX_SUCCESS (rc))
+        {
+            rc = RTStrToInt32Ex (pszValue, NULL, 0, &value);
+            if (VBOX_SUCCESS(rc))
+            {
+                *plValue = value;
+            }
+
+            RTStrFree (pszValue);
+        }
     }
 
     return rc;
 }
 
-int CfgNode::SetInt32 (const char *pszName, int32_t int32Value)
+int CfgNode::SetInt32 (const char *pszName, int32_t lValue, unsigned int uiBase)
 {
-    PRTUTF16 pwszValue = NULL;
+    int rc = VINF_SUCCESS;
 
-    int rc = cfgldrhlp_integer_to_ustr<int32_t, uint32_t> (int32Value, &pwszValue);
+    char szValue [64];
 
-    if (VBOX_SUCCESS(rc))
+    rc = RTStrFormatNumber (szValue, (uint64_t) lValue, uiBase, 0, 0,
+                            RTSTR_F_32BIT | RTSTR_F_VALSIGNED | RTSTR_F_SPECIAL);
+    if (VBOX_SUCCESS (rc))
     {
-        rc = setValueString (pszName, pwszValue);
+        PRTUTF16 pwszValue = NULL;
 
-        cfgldrhlp_release_ustr (pwszValue);
+        rc = RTStrToUtf16 (szValue, &pwszValue);
+        if (VBOX_SUCCESS (rc))
+        {
+            rc = setValueString (pszName, pwszValue);
+            RTUtf16Free (pwszValue);
+        }
     }
 
     return rc;
 }
 
-int CfgNode::QueryInt64 (const char *pszName, int64_t *pint64Value)
+int CfgNode::QueryInt64 (const char *pszName, int64_t *pllValue)
 {
+    int rc = VINF_SUCCESS;
+
     PRTUTF16 pwszValue = NULL;
 
-    int rc = queryValueString (pszName, &pwszValue);
-
+    rc = getValueString (pszName, &pwszValue);
     if (VBOX_SUCCESS(rc))
     {
-        rc = cfgldrhlp_ustr_to_integer<int64_t, uint64_t> (pwszValue, pint64Value);
+        int64_t value = 0;
+        char *pszValue = NULL;
+
+        rc = RTUtf16ToUtf8 (pwszValue, &pszValue);
+        if (VBOX_SUCCESS (rc))
+        {
+            rc = RTStrToInt64Ex (pszValue, NULL, 0, &value);
+            if (VBOX_SUCCESS(rc))
+            {
+                *pllValue = value;
+            }
+
+            RTStrFree (pszValue);
+        }
     }
 
     return rc;
 }
 
-int CfgNode::SetInt64 (const char *pszName, int64_t int64Value)
+int CfgNode::SetInt64 (const char *pszName, int64_t llValue, unsigned int uiBase)
 {
-    PRTUTF16 pwszValue = NULL;
+    int rc = VINF_SUCCESS;
 
-    int rc = cfgldrhlp_integer_to_ustr<int64_t, uint64_t> (int64Value, &pwszValue);
+    char szValue [64];
 
-    if (VBOX_SUCCESS(rc))
+    rc = RTStrFormatNumber (szValue, (uint64_t) llValue, uiBase, 0, 0,
+                            RTSTR_F_64BIT | RTSTR_F_VALSIGNED | RTSTR_F_SPECIAL);
+    if (VBOX_SUCCESS (rc))
     {
-        rc = setValueString (pszName, pwszValue);
+        PRTUTF16 pwszValue = NULL;
 
-        cfgldrhlp_release_ustr (pwszValue);
+        rc = RTStrToUtf16 (szValue, &pwszValue);
+        if (VBOX_SUCCESS (rc))
+        {
+            rc = setValueString (pszName, pwszValue);
+            RTUtf16Free (pwszValue);
+        }
     }
 
     return rc;
 }
 
-int CfgNode::QueryUInt16 (const char *pszName, uint16_t *pu16Value)
+int CfgNode::QueryUInt16 (const char *pszName, uint16_t *puhValue)
 {
+    int rc = VINF_SUCCESS;
+
     PRTUTF16 pwszValue = NULL;
 
-    int rc = queryValueString (pszName, &pwszValue);
-
+    rc = getValueString (pszName, &pwszValue);
     if (VBOX_SUCCESS(rc))
     {
-        rc = cfgldrhlp_ustr_to_uinteger<uint16_t> (pwszValue, pu16Value);
+        uint16_t value = 0;
+        char *pszValue = NULL;
+
+        rc = RTUtf16ToUtf8 (pwszValue, &pszValue);
+        if (VBOX_SUCCESS (rc))
+        {
+            rc = RTStrToUInt16Ex (pszValue, NULL, 0, &value);
+            if (VBOX_SUCCESS(rc))
+            {
+                *puhValue = value;
+            }
+
+            RTStrFree (pszValue);
+        }
     }
 
     return rc;
 }
 
-int CfgNode::SetUInt16 (const char *pszName, uint16_t u16Value)
+int CfgNode::SetUInt16 (const char *pszName, uint16_t uhValue, unsigned int uiBase)
 {
-    PRTUTF16 pwszValue = NULL;
+    int rc = VINF_SUCCESS;
 
-    int rc = cfgldrhlp_uinteger_to_ustr<uint16_t> (u16Value, &pwszValue);
+    char szValue [64];
 
-    if (VBOX_SUCCESS(rc))
+    rc = RTStrFormatNumber (szValue, (uint64_t) uhValue, uiBase, 0, 0,
+                            RTSTR_F_16BIT | RTSTR_F_SPECIAL);
+    if (VBOX_SUCCESS (rc))
     {
-        rc = setValueString (pszName, pwszValue);
+        PRTUTF16 pwszValue = NULL;
 
-        cfgldrhlp_release_ustr (pwszValue);
+        rc = RTStrToUtf16 (szValue, &pwszValue);
+        if (VBOX_SUCCESS (rc))
+        {
+            rc = setValueString (pszName, pwszValue);
+            RTUtf16Free (pwszValue);
+        }
     }
 
     return rc;
@@ -1894,8 +2110,7 @@ int CfgNode::QueryBin (const char *pszName, void *pvValue, unsigned cbValue, uns
 
     PRTUTF16 pwszValue = NULL;
 
-    rc = queryValueString (pszName, &pwszValue);
-
+    rc = getValueString (pszName, &pwszValue);
     if (VBOX_SUCCESS(rc))
     {
         if ( (XMLString::stringLen (pwszValue) / 2) > cbValue)
@@ -1908,38 +2123,29 @@ int CfgNode::QueryBin (const char *pszName, void *pvValue, unsigned cbValue, uns
         }
         else
         {
-            rc = cfgldrhlp_strtobin (pwszValue, pvValue, cbValue, pcbValue);
+            rc = wstr_to_bin (pwszValue, pvValue, cbValue, pcbValue);
         }
     }
 
     return rc;
 }
+
 int CfgNode::SetBin (const char *pszName, const void *pvValue, unsigned cbValue)
 {
     int rc = VINF_SUCCESS;
 
-    char *pszValue = NULL;
+    PRTUTF16 pwszValue = NULL;
 
-    rc = cfgldrhlp_bintostr (pvValue, cbValue, &pszValue);
-
+    rc = bin_to_wstr (pvValue, cbValue, &pwszValue);
     if (VBOX_SUCCESS (rc))
     {
-        PRTUTF16 pwszValue = NULL;
-
-        rc = RTStrToUtf16 (pszValue, &pwszValue);
-
-        if (VBOX_SUCCESS (rc))
-        {
-            rc = setValueString (pszName, pwszValue);
-
-            RTUtf16Free (pwszValue);
-        }
-
-        cfgldrhlp_releasestr (pszValue);
+        rc = setValueString (pszName, pwszValue);
+        RTUtf16Free (pwszValue);
     }
 
     return rc;
 }
+
 int CfgNode::QueryString (const char *pszName, void **pValue, unsigned cbValue, unsigned *pcbValue, bool returnUtf16)
 {
     int rc = VINF_SUCCESS;
@@ -1950,7 +2156,7 @@ int CfgNode::QueryString (const char *pszName, void **pValue, unsigned cbValue, 
     if (pcbValue)
         *pcbValue = 0;
 
-    rc = queryValueString (pszName, &pwszValue);
+    rc = getValueString (pszName, &pwszValue);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -2017,7 +2223,7 @@ int CfgNode::QueryBool (const char *pszName, bool *pfValue)
     int rc = VINF_SUCCESS;
 
     PRTUTF16 pwszValue = NULL;
-    rc = queryValueString (pszName, &pwszValue);
+    rc = getValueString (pszName, &pwszValue);
     if (VBOX_SUCCESS (rc))
     {
         char *pszValue = NULL;
@@ -2303,6 +2509,15 @@ CFGLDRR3DECL(int) CFGLDRSetUInt32(CFGNODE hnode, const char *pszName, uint32_t u
     return hnode->SetUInt32 (pszName, ulValue);
 }
 
+CFGLDRR3DECL(int) CFGLDRSetUInt32Ex(CFGNODE hnode, const char *pszName, uint32_t ulValue, unsigned int uiBase)
+{
+    if (!hnode)
+    {
+        return VERR_INVALID_HANDLE;
+    }
+    return hnode->SetUInt32 (pszName, ulValue, uiBase);
+}
+
 CFGLDRR3DECL(int) CFGLDRQueryUInt64(CFGNODE hnode, const char *pszName, uint64_t *pullValue)
 {
     if (!hnode)
@@ -2325,62 +2540,98 @@ CFGLDRR3DECL(int) CFGLDRSetUInt64(CFGNODE hnode, const char *pszName, uint64_t u
     return hnode->SetUInt64 (pszName, ullValue);
 }
 
-CFGLDRR3DECL(int) CFGLDRQueryInt32(CFGNODE hnode, const char *pszName, int32_t *pint32Value)
+CFGLDRR3DECL(int) CFGLDRSetUInt64Ex(CFGNODE hnode, const char *pszName, uint64_t ullValue, unsigned int uiBase)
 {
     if (!hnode)
     {
         return VERR_INVALID_HANDLE;
     }
-    return hnode->QueryInt32 (pszName, pint32Value);
+    return hnode->SetUInt64 (pszName, ullValue, uiBase);
 }
 
-CFGLDRR3DECL(int) CFGLDRSetInt32(CFGNODE hnode, const char *pszName, int32_t int32Value)
+CFGLDRR3DECL(int) CFGLDRQueryInt32(CFGNODE hnode, const char *pszName, int32_t *plValue)
 {
     if (!hnode)
     {
         return VERR_INVALID_HANDLE;
     }
-    return hnode->SetInt32 (pszName, int32Value);
+    return hnode->QueryInt32 (pszName, plValue);
 }
 
-CFGLDRR3DECL(int) CFGLDRQueryInt64(CFGNODE hnode, const char *pszName, int64_t *pint64Value)
+CFGLDRR3DECL(int) CFGLDRSetInt32(CFGNODE hnode, const char *pszName, int32_t lValue)
 {
     if (!hnode)
     {
         return VERR_INVALID_HANDLE;
     }
-    return hnode->QueryInt64 (pszName, pint64Value);
+    return hnode->SetInt32 (pszName, lValue);
 }
 
-CFGLDRR3DECL(int) CFGLDRSetInt64(CFGNODE hnode, const char *pszName, int64_t int64Value)
+CFGLDRR3DECL(int) CFGLDRSetInt32Ex(CFGNODE hnode, const char *pszName, int32_t lValue, unsigned int uiBase)
 {
     if (!hnode)
     {
         return VERR_INVALID_HANDLE;
     }
-    return hnode->SetInt64 (pszName, int64Value);
+    return hnode->SetInt32 (pszName, lValue, uiBase);
 }
 
-CFGLDRR3DECL(int) CFGLDRQueryUInt16(CFGNODE hnode, const char *pszName, uint16_t *pu16Value)
+CFGLDRR3DECL(int) CFGLDRQueryInt64(CFGNODE hnode, const char *pszName, int64_t *pllValue)
 {
     if (!hnode)
     {
         return VERR_INVALID_HANDLE;
     }
-    if (!pu16Value)
+    return hnode->QueryInt64 (pszName, pllValue);
+}
+
+CFGLDRR3DECL(int) CFGLDRSetInt64(CFGNODE hnode, const char *pszName, int64_t llValue)
+{
+    if (!hnode)
+    {
+        return VERR_INVALID_HANDLE;
+    }
+    return hnode->SetInt64 (pszName, llValue);
+}
+
+CFGLDRR3DECL(int) CFGLDRSetInt64Ex(CFGNODE hnode, const char *pszName, int64_t llValue, unsigned int uiBase)
+{
+    if (!hnode)
+    {
+        return VERR_INVALID_HANDLE;
+    }
+    return hnode->SetInt64 (pszName, llValue, uiBase);
+}
+
+CFGLDRR3DECL(int) CFGLDRQueryUInt16(CFGNODE hnode, const char *pszName, uint16_t *puhValue)
+{
+    if (!hnode)
+    {
+        return VERR_INVALID_HANDLE;
+    }
+    if (!puhValue)
     {
         return VERR_INVALID_POINTER;
     }
-    return hnode->QueryUInt16 (pszName, pu16Value);
+    return hnode->QueryUInt16 (pszName, puhValue);
 }
 
-CFGLDRR3DECL(int) CFGLDRSetUInt16(CFGNODE hnode, const char *pszName, uint16_t u16Value)
+CFGLDRR3DECL(int) CFGLDRSetUInt16(CFGNODE hnode, const char *pszName, uint16_t uhValue)
 {
     if (!hnode)
     {
         return VERR_INVALID_HANDLE;
     }
-    return hnode->SetUInt16 (pszName, u16Value);
+    return hnode->SetUInt16 (pszName, uhValue);
+}
+
+CFGLDRR3DECL(int) CFGLDRSetUInt16Ex(CFGNODE hnode, const char *pszName, uint16_t uhValue, unsigned int uiBase)
+{
+    if (!hnode)
+    {
+        return VERR_INVALID_HANDLE;
+    }
+    return hnode->SetUInt16 (pszName, uhValue, uiBase);
 }
 
 CFGLDRR3DECL(int) CFGLDRQueryBin(CFGNODE hnode, const char *pszName, void *pvValue, unsigned cbValue, unsigned *pcbValue)
