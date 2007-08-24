@@ -871,11 +871,9 @@ void VBoxVMSettingsDlg::init()
 
     /* VRDP Page */
 
-    leVRDPPort->setAlignment (Qt::AlignRight);
     cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthNull));
     cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthExternal));
     cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthGuest));
-    leVRDPTimeout->setAlignment (Qt::AlignRight);
 }
 
 /** 

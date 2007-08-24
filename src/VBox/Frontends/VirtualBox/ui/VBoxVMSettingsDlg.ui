@@ -2526,10 +2526,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                             <cstring>txVRDPPort</cstring>
                                         </property>
                                         <property name="text">
-                                            <string>Server port </string>
+                                            <string>&amp;Server Port </string>
                                         </property>
                                         <property name="buddy" stdset="0">
-                                            <cstring>cbAudioDriver</cstring>
+                                            <cstring>leVRDPPort</cstring>
                                         </property>
                                     </widget>
                                     <widget class="QLabel">
@@ -2537,10 +2537,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                             <cstring>txVRDPAuthMethod</cstring>
                                         </property>
                                         <property name="text">
-                                            <string>Authentication Method </string>
+                                            <string>Authentication &amp;Method </string>
                                         </property>
                                         <property name="buddy" stdset="0">
-                                            <cstring>cbAudioDriver</cstring>
+                                            <cstring>cbVRDPAuthType</cstring>
                                         </property>
                                     </widget>
                                     <widget class="QLabel">
@@ -2548,10 +2548,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                             <cstring>txVRDPAuthTimeout</cstring>
                                         </property>
                                         <property name="text">
-                                            <string>Authentication Timeout </string>
+                                            <string>Authentication &amp;Timeout </string>
                                         </property>
                                         <property name="buddy" stdset="0">
-                                            <cstring>cbAudioDriver</cstring>
+                                            <cstring>leVRDPTimeout</cstring>
                                         </property>
                                     </widget>
                                 </vbox>
