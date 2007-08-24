@@ -162,8 +162,9 @@ bool QIWidgetValidator::isValid() const
             Assert (le->validator());
             if (!le->validator() || !le->isEnabled())
                 continue;
+            QString text = le->text();
             int pos;
-            state = le->validator()->validate (le->text(), pos);
+            state = le->validator()->validate (text, pos);
         }
         else if (watched.widget->inherits ("QComboBox"))
         {
@@ -171,9 +172,9 @@ bool QIWidgetValidator::isValid() const
             Assert (cb->validator());
             if (!cb->validator() || !cb->isEnabled())
                 continue;
+            QString text = cb->lineEdit()->text();
             int pos;
-            state = cb->lineEdit()->validator()->
-                validate (cb->lineEdit()->text(), pos);
+            state = cb->lineEdit()->validator()->validate (text, pos);
         }
 
         if (state != QValidator::Acceptable)
