@@ -1335,6 +1335,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             if (RequestPacket->InputBufferLength < sizeof(VIDEO_SHARE_MEMORY)) 
             {
+                dprintf(("IOCTL_VIDEO_UNSHARE_VIDEO_MEMORY: ERROR_INSUFFICIENT_BUFFER\n"));
                 RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
                 Result = FALSE;
                 break;
