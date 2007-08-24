@@ -652,7 +652,7 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
         ShareMemory.ViewOffset = 0;
         ShareMemory.ViewSize   = pDev->cyScreen * pDev->lDeltaScreen;
 
-        DISPDBG((0, "ViewSize = %x", ShareMemory.ViewSize));
+        DISPDBG((0, "ViewSize = %x\n", ShareMemory.ViewSize));
 
         if (EngDeviceIoControl(pDev->hDriver,
                        IOCTL_VIDEO_SHARE_VIDEO_MEMORY,
@@ -666,7 +666,7 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
 
             lpMapMemory->ddRVal = DDERR_GENERIC;
      
-            DISPDBG((0, "DdMapMemory: Exit GEN, DDHAL_DRIVER_HANDLED"));
+            DISPDBG((0, "DdMapMemory: Exit GEN, DDHAL_DRIVER_HANDLED\n"));
             
             return(DDHAL_DRIVER_HANDLED);
         }
@@ -689,7 +689,7 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
                        0,
                        &ReturnedDataLength))
         {
-            DISPDBG((0, "Failed IOCTL_VIDEO_UNSHARE_MEMORY"));
+            DISPDBG((0, "Failed IOCTL_VIDEO_UNSHARE_MEMORY\n"));
         }
     }
 
