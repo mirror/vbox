@@ -1023,7 +1023,7 @@ int ConsoleVRDPServer::Launch (void)
 void ConsoleVRDPServer::EnableConnections (void)
 {
 #ifdef VBOX_VRDP
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPEnableConnections (mhServer, true);
     }
@@ -1033,7 +1033,7 @@ void ConsoleVRDPServer::EnableConnections (void)
 void ConsoleVRDPServer::MousePointerUpdate (const VRDPCOLORPOINTER *pPointer)
 {
 #ifdef VBOX_VRDP
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPColorPointer (mhServer, pPointer);
     }
@@ -1043,7 +1043,7 @@ void ConsoleVRDPServer::MousePointerUpdate (const VRDPCOLORPOINTER *pPointer)
 void ConsoleVRDPServer::MousePointerHide (void)
 {
 #ifdef VBOX_VRDP
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPHidePointer (mhServer);
     }
@@ -1075,7 +1075,7 @@ void ConsoleVRDPServer::Stop (void)
         mhServer = 0;
 
 #ifdef VRDP_NO_COM
-        if (mpEntryPoints)
+        if (mpEntryPoints && hServer)
         {
             mpEntryPoints->VRDPDestroy (hServer);
         }
@@ -1425,7 +1425,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
         {
             /* The guest announces clipboard formats. This must be delivered to all clients. */
 #ifdef VRDP_NO_COM
-            if (mpEntryPoints)
+            if (mpEntryPoints && pServer->mhServer)
             {
                 mpEntryPoints->VRDPClipboard (pServer->mhServer, 
                                               VRDP_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
@@ -1454,7 +1454,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
              * announced the requested format most recently.
              */
 #ifdef VRDP_NO_COM
-            if (mpEntryPoints)
+            if (mpEntryPoints && pServer->mhServer)
             {
                 mpEntryPoints->VRDPClipboard (pServer->mhServer, 
                                               VRDP_CLIPBOARD_FUNCTION_DATA_READ,
@@ -1479,7 +1479,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
         case VBOX_CLIPBOARD_EXT_FN_DATA_WRITE:
         {
 #ifdef VRDP_NO_COM
-            if (mpEntryPoints)
+            if (mpEntryPoints && pServer->mhServer)
             {
                 mpEntryPoints->VRDPClipboard (pServer->mhServer, 
                                               VRDP_CLIPBOARD_FUNCTION_DATA_WRITE,
@@ -1823,7 +1823,7 @@ void ConsoleVRDPServer::SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t
 {
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPUpdate (mhServer, uScreenId, pvUpdate, cbUpdate);
     }
@@ -1838,7 +1838,7 @@ void ConsoleVRDPServer::SendResize (void) const
 {
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPResize (mhServer);
     }
@@ -1858,7 +1858,7 @@ void ConsoleVRDPServer::SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32
     update.y = y;
     update.w = w;
     update.h = h;
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPUpdate (mhServer, uScreenId, &update, sizeof (update));
     }
@@ -1884,7 +1884,7 @@ void ConsoleVRDPServer::SendAudioSamples (void *pvSamples, uint32_t cSamples, VR
 {
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPAudioSamples (mhServer, pvSamples, cSamples, format);
     }
@@ -1899,7 +1899,7 @@ void ConsoleVRDPServer::SendAudioVolume (uint16_t left, uint16_t right) const
 {
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPAudioVolume (mhServer, left, right);
     }
@@ -1914,7 +1914,7 @@ void ConsoleVRDPServer::SendUSBRequest (uint32_t u32ClientId, void *pvParms, uin
 {
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPUSBRequest (mhServer, u32ClientId, pvParms, cbParms);
     }
@@ -1929,7 +1929,7 @@ void ConsoleVRDPServer::QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBu
 {
 #ifdef VBOX_VRDP
 #ifdef VRDP_NO_COM
-    if (mpEntryPoints)
+    if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPQueryInfo (mhServer, index, pvBuffer, cbBuffer, pcbOut);
     }
