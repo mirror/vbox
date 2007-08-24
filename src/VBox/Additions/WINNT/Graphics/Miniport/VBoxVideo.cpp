@@ -1280,7 +1280,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             PVIDEO_SHARE_MEMORY pShareMemory;
             PVIDEO_SHARE_MEMORY_INFORMATION pShareMemoryInformation;
             PHYSICAL_ADDRESS shareAddress;
-            PVOID virtualAddress;
+            PVOID virtualAddress = NULL;
             ULONG sharedViewSize;
             ULONG inIoSpace = 0;
             VP_STATUS status;
@@ -1301,7 +1301,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             if (    (pShareMemory->ViewOffset > pDevExt->ulFrameBufferSize) 
                 ||  ((pShareMemory->ViewOffset + pShareMemory->ViewSize) > pDevExt->ulFrameBufferSize) ) {
 
-                dprintf(("IOCTL_VIDEO_SHARE_VIDEO_MEMORY - ERROR_INVALID_PARAMETER\n"));
+                dprintf(("IOCTL_VIDEO_SHARE_VIDEO_MEMORY - ERROR_INVALID_PARAMETER %x:%x size %x\n", pShareMemory->ViewOffset, pShareMemory->ViewSize, pDevExt->ulFrameBufferSize));
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_PARAMETER;
                 Result = FALSE;
                 break;
