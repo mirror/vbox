@@ -2746,7 +2746,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
     NOREF(pvUser);
 
-#ifdef IN_GC
+#ifndef IN_RING3
     /*
      * This has to be done on the host in order to execute the connector callbacks.
      */
