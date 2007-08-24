@@ -1082,7 +1082,7 @@ void ConsoleVRDPServer::Stop (void)
 #ifdef VRDP_NO_COM
         if (mpEntryPoints)
         {
-            mpEntryPoints->VRDPDestroy (mhServer);
+            mpEntryPoints->VRDPDestroy (hServer);
         }
 #else
         mpfnVRDPShutdownServer (hServer);
