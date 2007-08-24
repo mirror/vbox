@@ -37,7 +37,8 @@ public:
         Question,
         Warning,
         Error,
-        Critical
+        Critical,
+        GuruMeditation
     };
     enum {
         AutoConfirmed = 0x8000
