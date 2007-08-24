@@ -146,6 +146,9 @@ static DECLCALLBACK(int) drvHostParallelIOCtl(PPDMIHOSTDEVICECONNECTOR pInterfac
         case LPT_IOCTL_COMMAND_GET_CONTROL:
             ioctlCommand = PPRCONTROL;
             break;
+        default:
+            AssertMsgFailed(("uCommand = %d?\n"));
+            return VERR_INVALID_PARAMETER;
     }
 
     ioctl(pData->FileDevice, ioctlCommand, pvData);
