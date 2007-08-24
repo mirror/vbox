@@ -718,8 +718,17 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 }
                 else
                 {
+                    if (pStatusLed)
+                    {
+                        Assert(pStatusLed->u32Magic == PDMLED_MAGIC);
+                        pStatusLed->Asserted.s.fReading = pStatusLed->Actual.s.fReading = 1;
+                    }
+
                     /* Execute the function. */
                     rc = vbsfDirList (pClient, root, Handle, pPath, flags, &length, pBuffer, &resumePoint, &cFiles);
+
+                    if (pStatusLed)
+                        pStatusLed->Actual.s.fReading = 0;
 
                     if (VBOX_SUCCESS(rc))
                     {
