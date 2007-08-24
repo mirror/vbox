@@ -1275,6 +1275,80 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             break;
         }
 
+        case IOCTL_VIDEO_SHARE_VIDEO_MEMORY:
+        {
+            PVIDEO_SHARE_MEMORY pShareMemory;
+            PVIDEO_SHARE_MEMORY_INFORMATION pShareMemoryInformation;
+            PHYSICAL_ADDRESS shareAddress;
+            PVOID virtualAddress;
+            ULONG sharedViewSize;
+            ULONG inIoSpace = 0;
+            VP_STATUS status;
+
+            dprintf(("IOCTL_VIDEO_SHARE_VIDEO_MEMORY\n"));
+
+            if (    (RequestPacket->OutputBufferLength < sizeof(VIDEO_SHARE_MEMORY_INFORMATION)) 
+                ||  (RequestPacket->InputBufferLength < sizeof(VIDEO_MEMORY)) ) {
+
+                dprintf(("IOCTL_VIDEO_SHARE_VIDEO_MEMORY: ERROR_INSUFFICIENT_BUFFER\n"));
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                Result = FALSE;
+                break;
+            }
+
+            pShareMemory = (PVIDEO_SHARE_MEMORY)RequestPacket->InputBuffer;
+
+            if (    (pShareMemory->ViewOffset > pDevExt->ulFrameBufferSize) 
+                ||  ((pShareMemory->ViewOffset + pShareMemory->ViewSize) > pDevExt->ulFrameBufferSize) ) {
+
+                dprintf(("IOCTL_VIDEO_SHARE_VIDEO_MEMORY - ERROR_INVALID_PARAMETER\n"));
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_PARAMETER;
+                Result = FALSE;
+                break;
+            }
+
+            RequestPacket->StatusBlock->Information = sizeof(VIDEO_SHARE_MEMORY_INFORMATION);
+
+            virtualAddress = pShareMemory->ProcessHandle;
+            sharedViewSize = pShareMemory->ViewSize;
+
+            shareAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + pDevExt->ulFrameBufferOffset;
+
+            status = !!VideoPortMapMemory(HwDeviceExtension, shareAddress, &sharedViewSize, &inIoSpace, &virtualAddress);
+            if (status != NO_ERROR)
+                dprintf(("VideoPortMapMemory failed with %x\n", status));
+            Result = (status == NO_ERROR);
+
+            pShareMemoryInformation = (PVIDEO_SHARE_MEMORY_INFORMATION)RequestPacket->OutputBuffer;
+            pShareMemoryInformation->SharedViewOffset = pShareMemory->ViewOffset;
+            pShareMemoryInformation->VirtualAddress = virtualAddress;
+            pShareMemoryInformation->SharedViewSize = sharedViewSize;
+            break;
+        }
+
+        case IOCTL_VIDEO_UNSHARE_VIDEO_MEMORY:
+        {
+            PVIDEO_SHARE_MEMORY pShareMemory;
+            VP_STATUS status;
+
+            dprintf(("IOCTL_VIDEO_UNSHARE_VIDEO_MEMORY\n"));
+
+            if (RequestPacket->InputBufferLength < sizeof(VIDEO_SHARE_MEMORY)) 
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                Result = FALSE;
+                break;
+            }
+
+            pShareMemory = (PVIDEO_SHARE_MEMORY)RequestPacket->InputBuffer;
+
+            status = VideoPortUnmapMemory(HwDeviceExtension, pShareMemory->RequestedVirtualAddress, pShareMemory->ProcessHandle);
+            if (status != NO_ERROR)
+                dprintf(("VideoPortUnmapMemory failed with %x\n", status));
+            Result = (status == NO_ERROR);
+            break;
+        }
+
         /*
          * The display driver asks us how many video modes we support
          * so that it can supply an appropriate buffer for the next call.
@@ -1855,6 +1929,8 @@ BOOLEAN FASTCALL VBoxVideoMapVideoMemory(PDEVICE_EXTENSION DeviceExtension,
             VideoModes[DeviceExtension->CurrentMode - 1].ScreenStride;
         StatusBlock->Information = sizeof(VIDEO_MEMORY_INFORMATION);
 
+        /* Save the new framebuffer size */
+        DeviceExtension->ulFrameBufferSize = MapInformation->FrameBufferLength;
         return TRUE;
     }
 
