@@ -321,6 +321,10 @@ int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg
             title = tr ("VirtualBox - Critical Error", "msg box title");
             icon = QIMessageBox::Critical;
             break;
+        case GuruMeditation:
+            title = "VirtualBox - Guru Meditation"; /* don't translate this */
+            icon = QIMessageBox::Critical;
+            break;
     }
 
     if (!name)
@@ -1604,7 +1608,7 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
 {
     Q_UNUSED (aConsole);
 
-    int rc = message (&vboxGlobal().consoleWnd(), Critical,
+    int rc = message (&vboxGlobal().consoleWnd(), GuruMeditation,
         tr ("<p>A critical error has occurred while running the virtual "
             "machine and the machine execution has been stopped.</p>"
             ""
