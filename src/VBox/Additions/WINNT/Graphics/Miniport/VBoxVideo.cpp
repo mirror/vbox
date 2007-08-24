@@ -1314,7 +1314,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             shareAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + pDevExt->ulFrameBufferOffset;
 
-            status = !!VideoPortMapMemory(HwDeviceExtension, shareAddress, &sharedViewSize, &inIoSpace, &virtualAddress);
+            status = VideoPortMapMemory(HwDeviceExtension, shareAddress, &sharedViewSize, &inIoSpace, &virtualAddress);
             if (status != NO_ERROR)
                 dprintf(("VideoPortMapMemory failed with %x\n", status));
             Result = (status == NO_ERROR);
