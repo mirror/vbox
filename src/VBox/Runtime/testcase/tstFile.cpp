@@ -74,10 +74,10 @@ int main()
             cErrors++;
         }
         static const char szTestBuf[] = "Sausages and bacon for breakfast again!";
-        unsigned cbWritten = 0;
+        size_t cbWritten = 0;
         while (cbWritten < sizeof(szTestBuf))
         {
-            unsigned cbWrittenPart;
+            size_t cbWrittenPart;
             rc = RTFileWrite(File, &szTestBuf[cbWritten], sizeof(szTestBuf) - cbWritten, &cbWrittenPart);
             if (RT_FAILURE(rc))
                 break;
@@ -100,10 +100,10 @@ int main()
             else
             {
                 char        szReadBuf[sizeof(szTestBuf)];
-                unsigned    cbRead = 0;
+                size_t      cbRead = 0;
                 while (cbRead < sizeof(szTestBuf))
                 {
-                    unsigned cbReadPart;
+                    size_t cbReadPart;
                     rc = RTFileRead(File, &szReadBuf[cbRead], sizeof(szTestBuf) - cbRead, &cbReadPart);
                     if (RT_FAILURE(rc))
                         break;
@@ -146,10 +146,10 @@ int main()
             }
             else
             {
-                unsigned cbWritten = 0;
+                size_t cbWritten = 0;
                 while (cbWritten < sizeof(szTestBuf))
                 {
-                    unsigned cbWrittenPart;
+                    size_t cbWrittenPart;
                     rc = RTFileWrite(File, &szTestBuf[cbWritten], sizeof(szTestBuf) - cbWritten, &cbWrittenPart);
                     if (RT_FAILURE(rc))
                         break;
@@ -171,10 +171,10 @@ int main()
                     else
                     {
                         char        szReadBuf[sizeof(szTestBuf)];
-                        unsigned    cbRead = 0;
+                        size_t      cbRead = 0;
                         while (cbRead < sizeof(szTestBuf))
                         {
-                            unsigned cbReadPart;
+                            size_t cbReadPart;
                             rc = RTFileRead(File, &szReadBuf[cbRead], sizeof(szTestBuf) - cbRead, &cbReadPart);
                             if (RT_FAILURE(rc))
                                 break;

@@ -280,7 +280,7 @@ static DECLCALLBACK(int) drvTAPOs2AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
         }
         else
         {
-            LogFlow(("drvTAPOs2AsyncIoThread: RTFileRead -> %Vrc\n", rc));
+            LogFlow(("drvTAPOs2AsyncIoThread: DoDevIOCtl -> %Vrc\n", rc));
             if (rc == VERR_INVALID_HANDLE)
                 break;
             RTThreadYield();

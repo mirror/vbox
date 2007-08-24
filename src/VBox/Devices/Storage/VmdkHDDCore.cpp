@@ -1843,7 +1843,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, const char *pszFilename, unsigned uO
             goto out;
         }
 
-        /*size_t*/unsigned cbRead;
+        size_t cbRead;
         rc = RTFileReadAt(pImage->File, 0, pImage->pDescData,
                           pImage->cbDescAlloc, &cbRead);
         if (VBOX_FAILURE(rc))

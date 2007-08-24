@@ -440,7 +440,7 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
         if (!cbRemaining)
         {
             /* Get a block of data from the host serial device. */
-            unsigned cbRead;
+            size_t cbRead;
             rc = RTFileRead(pData->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
             if (VBOX_FAILURE(rc))
             {
