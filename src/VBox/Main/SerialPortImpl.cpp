@@ -272,7 +272,7 @@ HRESULT SerialPort::loadSettings (CFGNODE aNode, ULONG aSlot)
         mData->mHostMode = PortMode_DisconnectedPort;
     /* pipe/device path */
     Bstr path;
-    int rc = CFGLDRQueryBSTR(portNode, "path", path.asOutParam());
+    CFGLDRQueryBSTR(portNode, "path", path.asOutParam());
     /* server mode */
     bool fServer = true;
     CFGLDRQueryBool (portNode, "server", &fServer);
@@ -409,7 +409,7 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
         mData->mHostMode = aHostMode;
         if (aHostMode == PortMode_DisconnectedPort)
         {
-            mData->mPath   = "";
+            mData->mPath.setNull();
             mData->mServer = false;
         }
         emitChangeEvent = true;
