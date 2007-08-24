@@ -459,7 +459,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      *                              true -  an LFB mode was disabled
      * @thread  The emulation thread.
      */
-    DECLCALLBACKMEMBER(void, pfnLFBModeChange)(PPDMIDISPLAYCONNECTOR pInterface, bool fEnabled);
+    DECLR3CALLBACKMEMBER(void, pfnLFBModeChange, (PPDMIDISPLAYCONNECTOR pInterface, bool fEnabled));
 
     /**
      * Process the guest graphics adapter information.
@@ -471,7 +471,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   u32VRAMSize         Size of the guest VRAM.
      * @thread  The emulation thread.
      */
-    DECLCALLBACKMEMBER(void, pfnProcessAdapterData)(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize);
+    DECLR3CALLBACKMEMBER(void, pfnProcessAdapterData, (PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize));
 
     /**
      * Process the guest display information.
@@ -483,7 +483,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   uScreenId           The index of the guest display to be processed.
      * @thread  The emulation thread.
      */
-    DECLCALLBACKMEMBER(void, pfnProcessDisplayData)(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId);
+    DECLR3CALLBACKMEMBER(void, pfnProcessDisplayData, (PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId));
 
 
     /** Read-only attributes.
@@ -1388,7 +1388,7 @@ typedef struct PDMIVMMDEVPORT
      * @returns Nothing. Because it is informational callback.
      * @param   fEnabled    Current VBVA status.
      */
-    DECLCALLBACKMEMBER(void, pfnVBVAChange)(PPDMIVMMDEVPORT pInterface, bool fEnabled);
+    DECLR3CALLBACKMEMBER(void, pfnVBVAChange, (PPDMIVMMDEVPORT pInterface, bool fEnabled));
 
     /**
      * Issue a seamless mode change request.
