@@ -3124,7 +3124,75 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
 
 
 /**
- * The 'dpd*' commands.
+ * Best guess at which paging mode currently applies to the guest
+ * paging structures.
+ * 
+ * This have to come up with a decent answer even when the guest
+ * is in non-paged protected mode or real mode.
+ * 
+ * @returns cr3.
+ * @param   pDbgc   The DBGC instance.
+ * @param   pfPAE   Where to store the page address extension indicator.
+ * @param   pfLME   Where to store the long mode enabled indicator.
+ * @param   pfPSE   Where to store the page size extension indicator.
+ * @param   pfPGE   Where to store the page global enabled indicator.
+ * @param   pfNXE   Where to store the no-execution enabled inidicator.
+ */
+static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool *pfPSE, bool *pfPGE, bool *pfNXE)
+{
+    RTGCUINTREG cr4 = CPUMGetGuestCR4(pDbgc->pVM);
+    *pfPSE = !!(cr4 & X86_CR4_PSE);
+    *pfPGE = !!(cr4 & X86_CR4_PGE);
+    *pfPAE = !!(cr4 & X86_CR4_PAE);
+    *pfLME = CPUMGetGuestMode(pDbgc->pVM) == CPUMMODE_LONG;
+    *pfNXE = false; /* GUEST64 GUESTNX */
+    return CPUMGetGuestCR3(pDbgc->pVM);
+}
+
+
+/**
+ * Determin the shadow paging mode.
+ * 
+ * @returns cr3.
+ * @param   pDbgc   The DBGC instance.
+ * @param   pfPAE   Where to store the page address extension indicator.
+ * @param   pfLME   Where to store the long mode enabled indicator.
+ * @param   pfPSE   Where to store the page size extension indicator.
+ * @param   pfPGE   Where to store the page global enabled indicator.
+ * @param   pfNXE   Where to store the no-execution enabled inidicator.
+ */
+static RTHCPHYS dbgcGetShadowPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool *pfPSE, bool *pfPGE, bool *pfNXE)
+{
+    *pfPSE = true;
+    *pfPGE = false;
+    switch (PGMGetShadowMode(pDbgc->pVM))
+    {
+        default:
+        case PGMMODE_32_BIT:
+            *pfPAE = *pfLME = *pfNXE = false;
+            break;
+        case PGMMODE_PAE:
+            *pfLME = *pfNXE = false;
+            *pfPAE = true;
+            break;
+        case PGMMODE_PAE_NX:
+            *pfLME = false;
+            *pfPAE = *pfNXE = true;
+            break;
+        case PGMMODE_AMD64:
+            *pfNXE = false;
+            *pfPAE = *pfLME = true;
+            break;
+        case PGMMODE_AMD64_NX:
+            *pfPAE = *pfLME = *pfNXE = true;
+            break;
+    }
+    return PGMGetHyperCR3(pDbgc->pVM);
+}
+
+
+/**
+ * The 'dpd', 'dpda', 'dpdb', 'dpdg' and 'dpdh' commands.
  *
  * @returns VBox status.
  * @param   pCmd        Pointer to the command descriptor (as registered).
@@ -3148,151 +3216,244 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
 
+    /*
+     * Guest or shadow page directories? Get the paging parameters.
+     */
+    bool fGuest = pCmd->pszCmd[3] != 'h';
+    if (!pCmd->pszCmd[3] || !pCmd->pszCmd[3] == 'a')
+        fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
+               ? pDbgc->fRegCtxGuest
+               : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
+
+    bool fPAE, fLME, fPSE, fPGE, fNXE;
+    uint64_t cr3 = fGuest 
+                 ? dbgcGetGuestPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE)
+                 : dbgcGetShadowPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE);
+    const unsigned cbEntry = fPAE ? sizeof(X86PTEPAE) : sizeof(X86PTE);
 
     /*
-     * Where to start dumping page directory entries?
+     * Setup default arugment if none was specified.
+     * Fix address / index confusion.
      */
-    int         rc;
-    unsigned    cEntriesMax = PAGE_SIZE / sizeof(VBOXPDE);
-    unsigned    cEntries = PAGE_SIZE / sizeof(VBOXPDE);
-    unsigned    off = ~0;
-    uint32_t    u32CR4 = X86_CR4_PSE;
-    DBGCVAR     VarAddr;
-    if (cArgs == 0 || pCmd->pszCmd[3] != 'a')
+    DBGCVAR VarDefault;
+    if (!cArgs)
     {
-        /*
-         * Get defaults.
-         */
-        off = 0;
-        if (    pCmd->pszCmd[3] == 'g'
-            ||  (pDbgc->fRegCtxGuest && (!pCmd->pszCmd[3] || pCmd->pszCmd[3] == 'a')))
+        if (pCmd->pszCmd[3] == 'a')
         {
-            u32CR4 = CPUMGetGuestCR4(pVM);
-            rc = pCmdHlp->pfnEval(pCmdHlp, &VarAddr, "%%%%cr3");
+            if (fLME || fPAE)
+                return DBGCCmdHlpPrintf(pCmdHlp, "Default argument for 'dpda' hasn't been fully implemented yet. Try with an address or use one of the other commands.\n");
+            if (fGuest)
+                DBGCVAR_INIT_GC_PHYS(&VarDefault, cr3);
+            else
+                DBGCVAR_INIT_HC_PHYS(&VarDefault, cr3);
+        }
+        else
+            DBGCVAR_INIT_GC_FLAT(&VarDefault, 0);
+        paArgs = &VarDefault;
+        cArgs = 1;
+    }
+    else if (paArgs[0].enmType == DBGCVAR_TYPE_NUMBER)
+    {
+        Assert(pCmd->pszCmd[3] != 'a');
+        VarDefault = paArgs[0];
+        if (VarDefault.u.u64Number <= 1024)
+        {
+            if (fPAE)
+                return DBGCCmdHlpPrintf(pCmdHlp, "PDE indexing is only implemented for 32-bit paging.\n");
+            if (VarDefault.u.u64Number >= PAGE_SIZE / cbEntry)
+                return DBGCCmdHlpPrintf(pCmdHlp, "PDE index is out of range [0..%d].\n", PAGE_SIZE / cbEntry - 1);
+            VarDefault.u.u64Number <<= X86_PD_SHIFT;
+        }
+        VarDefault.enmType = DBGCVAR_TYPE_GC_FLAT;
+        paArgs = &VarDefault;
+    }
+
+    /*
+     * Locate the PDE to start displaying at. 
+     *
+     * The 'dpda' command takes the address of a PDE, while the others are guest 
+     * virtual address which PDEs should be displayed. So, 'dpda' is rather simple
+     * while the others require us to do all the tedious walking thru the paging
+     * hierarchy to find the intended PDE. 
+     */
+    unsigned    iEntry = ~0U;           /* The page directory index. ~0U for 'dpta'. */
+    DBGCVAR     VarGCPtr;               /* The GC address corresponding to the current PDE (iEntry != ~0U). */
+    DBGCVAR     VarPDEAddr;             /* The address of the current PDE. */
+    unsigned    cEntries;               /* The number of entries to display. */
+    unsigned    cEntriesMax;            /* The max number of entries to display. */
+    int         rc;
+    if (pCmd->pszCmd[3] == 'a')
+    {
+        VarPDEAddr = paArgs[0];
+        switch (VarPDEAddr.enmRangeType)
+        {
+            case DBGCVAR_RANGE_BYTES:       cEntries = VarPDEAddr.u64Range / cbEntry; break;
+            case DBGCVAR_RANGE_ELEMENTS:    cEntries = VarPDEAddr.u64Range; break;
+            default:                        cEntries = 10; break;
+        }
+        cEntriesMax = PAGE_SIZE / cbEntry;
+    }
+    else
+    {
+        /* 
+         * Determin the range.
+         */
+        switch (paArgs[0].enmRangeType)
+        {
+            case DBGCVAR_RANGE_BYTES:       cEntries = paArgs[0].u64Range / PAGE_SIZE; break;
+            case DBGCVAR_RANGE_ELEMENTS:    cEntries = paArgs[0].u64Range; break;
+            default:                        cEntries = 10; break;
+        }
+
+        /*
+         * Normalize the input address, it must be a flat GC address.
+         */
+        rc = pCmdHlp->pfnEval(pCmdHlp, &VarGCPtr, "%%(%Dv)", &paArgs[0]);
+        if (VBOX_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "%%(%Dv)", &paArgs[0]);
+        if (VarGCPtr.enmType == DBGCVAR_TYPE_HC_FLAT)
+        {
+            VarGCPtr.u.GCFlat = (uintptr_t)VarGCPtr.u.pvHCFlat;
+            VarGCPtr.enmType = DBGCVAR_TYPE_GC_FLAT;
+        }
+        if (fPAE)
+            VarGCPtr.u.GCFlat &= ~(((RTGCPTR)1 << X86_PD_PAE_SHIFT) - 1);
+        else
+            VarGCPtr.u.GCFlat &= ~(((RTGCPTR)1 << X86_PD_SHIFT) - 1);
+
+        /*
+         * Do the paging walk until we get to the page directory.
+         */
+        DBGCVAR VarCur;
+        if (fGuest)
+            DBGCVAR_INIT_GC_PHYS(&VarCur, cr3);
+        else
+            DBGCVAR_INIT_HC_PHYS(&VarCur, cr3);
+        if (fLME)
+        {
+            /* Page Map Level 4 Lookup. */
+            /* Check if it's a valid address first? */
+            VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK;
+            VarCur.u.u64Number += (((uint64_t)VarGCPtr.u.GCFlat >> X86_PML4_SHIFT) & X86_PML4_MASK) * sizeof(X86PML4E);
+            X86PML4E Pml4e;
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
+            if (VBOX_FAILURE(rc))
+                return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PML4E memory at %DV.\n", &VarCur);
+            if (!Pml4e.n.u1Present)
+                return DBGCCmdHlpPrintf(pCmdHlp, "Page directory pointer table is not present for %Dv.\n", &VarGCPtr);
+
+            VarCur.u.u64Number = Pml4e.u & X86_PML4E_PG_MASK;
+            Assert(fPAE);
+        }
+        if (fPAE)
+        {
+            /* Page directory pointer table. */
+            X86PDPE Pdpe;
+            VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PDPTR_SHIFT) & X86_PDPTR_MASK) * sizeof(Pdpe);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pdpe, sizeof(Pdpe), &VarCur, NULL);
+            if (VBOX_FAILURE(rc))
+                return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDPE memory at %DV.\n", &VarCur);
+            if (!Pdpe.n.u1Present)
+                return DBGCCmdHlpPrintf(pCmdHlp, "Page directory is not present for %Dv.\n", &VarGCPtr);
+
+            iEntry = (VarGCPtr.u.GCFlat >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+            VarPDEAddr = VarCur;
+            VarPDEAddr.u.u64Number = Pdpe.u & X86_PDPE_PG_MASK;
+            VarPDEAddr.u.u64Number += iEntry * sizeof(X86PDEPAE);
         }
         else
         {
-            /** @todo fix hypervisor CR4 value! */
-            //u32CR4 = CPUMGetHyperCR4(pVM);
-            u32CR4 = X86_CR4_PGE | X86_CR4_PSE;
-            rc = pCmdHlp->pfnEval(pCmdHlp, &VarAddr, "#%%%%.cr3");
+            /* 32-bit legacy - CR3 == page directory. */
+            iEntry = (VarGCPtr.u.GCFlat >> X86_PD_SHIFT) & X86_PD_MASK;
+            VarPDEAddr = VarCur;
+            VarPDEAddr.u.u64Number += iEntry * sizeof(X86PDE);
         }
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "(Getting (.)cr3.)");
-
-        if (cArgs > 0)
-        {
-            cEntries = 3;
-            if (!DBGCVAR_ISPOINTER(paArgs[0].enmType))
-            {
-                /*
-                 * Add index.
-                 */
-                rc = pCmdHlp->pfnEval(pCmdHlp, &VarAddr, "%DV + %#x", &VarAddr, paArgs[0].u.u64Number * sizeof(VBOXPTE));
-                if (VBOX_FAILURE(rc))
-                    return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%DV + %#x", &VarAddr, paArgs[0].u.u64Number * sizeof(VBOXPTE));
-                if (paArgs[0].u.u64Number >= PAGE_SIZE / sizeof(VBOXPDE))
-                    off = ~0;
-                else
-                {
-                    off = (unsigned)paArgs[0].u.u64Number;
-                    cEntriesMax = PAGE_SIZE / sizeof(VBOXPDE) - off;
-                }
-            }
-            else
-            {
-                /*
-                 * Pointer which we want the page directory entry for.
-                 * Start by making sure it's a GC pointer.
-                 */
-                DBGCVAR VarTmp;
-                rc = pCmdHlp->pfnEval(pCmdHlp, &VarTmp, "%%(%Dv)", &paArgs[0]);
-                if (VBOX_FAILURE(rc))
-                    return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%%(%Dv) failed.", &paArgs[0]);
-
-                rc = pCmdHlp->pfnEval(pCmdHlp, &VarAddr, "%DV + %#x", &VarAddr, (VarTmp.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPTE));
-                if (VBOX_FAILURE(rc))
-                    return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%DV + %#x", &VarAddr, (VarTmp.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPTE));
-                off = VarTmp.u.GCFlat >> PGDIR_SHIFT;
-                cEntriesMax = PAGE_SIZE / sizeof(VBOXPDE) - off;
-            }
-        }
-    }
-    else
-        VarAddr = paArgs[0];
-
-    /*
-     * Range.
-     */
-    unsigned i = cArgs;
-    while (i-- > 0)
-    {
-        if (paArgs[i].enmRangeType == DBGCVAR_RANGE_ELEMENTS)
-        {
-            cEntries = (unsigned)RT_MIN(paArgs[i].u64Range, cEntriesMax);
-            break;
-        }
-        else if (paArgs[i].enmRangeType == DBGCVAR_RANGE_BYTES)
-        {
-            cEntries = (unsigned)RT_MIN(paArgs[i].u64Range / sizeof(VBOXPDE), cEntriesMax);
-            break;
-        }
+        cEntriesMax = (PAGE_SIZE - iEntry) / cbEntry;
+        iEntry /= cbEntry;
     }
 
+    /* adjust cEntries */
+    cEntries = RT_MAX(1, cEntries);
+    cEntries = RT_MIN(cEntries, cEntriesMax);
+
     /*
-     * Dump loop.
+     * The display loop.
      */
-    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, off != ~0U ? "%DV (index %#x):\n" : "%DV:\n", &VarAddr, off);
-    if (VBOX_FAILURE(rc))
-        return rc;
-    for (;;)
+    DBGCCmdHlpPrintf(pCmdHlp, iEntry != ~0U ? "%DV (index %#x):\n" : "%DV:\n", 
+                     &VarPDEAddr, iEntry);
+    do
     {
         /*
          * Read.
          */
-        VBOXPDE Pde;
-        rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, sizeof(Pde), &VarAddr, NULL);
+        X86PDEPAE Pde;
+        Pde.u = 0;
+        rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, cbEntry, &VarPDEAddr, NULL);
         if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading memory at %DV.\n", &VarAddr);
+            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading PDE memory at %DV.\n", &VarPDEAddr);
 
         /*
          * Display.
          */
-        if (off != ~0U)
+        if (iEntry != ~0U)
         {
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%03x %08x: ", off, off << PGDIR_SHIFT);
-            off++;
+            DBGCCmdHlpPrintf(pCmdHlp, "%03x %DV: ", iEntry, &VarGCPtr);
+            iEntry++;
         }
-        if ((u32CR4 & X86_CR4_PSE) && Pde.b.u1Size)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                "%08x big phys=%08x %s %s %s %s %s avl=%02x %s %s %s %s\n",
-                Pde.u, Pde.b.u10PageNo << PGDIR_SHIFT, Pde.b.u1Present ? "p " : "np", Pde.b.u1Write ? "w" : "r",
-                Pde.b.u1User ? "u" : "s", Pde.b.u1Accessed ? "a " : "na", Pde.b.u1Dirty ? "d " : "nd",
-                Pde.b.u3Available, Pde.b.u1Global ? "G" : " ", Pde.b.u1WriteThru ? "pwt" : "   ",
-                Pde.b.u1CacheDisable ? "pcd" : "   ", Pde.b.u1PAT ? "pat" : "");
+        if (fPSE && Pde.b.u1Size)
+            DBGCCmdHlpPrintf(pCmdHlp,
+                             fPAE 
+                             ? "%016llx big phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s %s"
+                             :   "%08llx big phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s %s",
+                             Pde.u, 
+                             Pde.u & X86_PDE_PAE_PG_MASK,
+                             Pde.b.u1Present        ? "p "  : "np", 
+                             Pde.b.u1Write          ? "w"   : "r",
+                             Pde.b.u1User           ? "u"   : "s", 
+                             Pde.b.u1Accessed       ? "a "  : "na", 
+                             Pde.b.u1Dirty          ? "d "  : "nd",
+                             Pde.b.u3Available, 
+                             Pde.b.u1Global         ? (fPGE ? "g" : "G") : " ", 
+                             Pde.b.u1WriteThru      ? "pwt" : "   ",
+                             Pde.b.u1CacheDisable   ? "pcd" : "   ", 
+                             Pde.b.u1PAT            ? "pat" : "", 
+                             Pde.b.u1NoExecute      ? (fNXE ? "nx" : "NX") : "  ");
         else
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-                "%08x 4kb phys=%08x %s %s %s %s %s avl=%02x %s %s %s %s\n",
-                Pde.u, Pde.n.u20PageNo << PAGE_SHIFT, Pde.n.u1Present ? "p " : "np", Pde.n.u1Write ? "w" : "r",
-                Pde.n.u1User ? "u" : "s", Pde.n.u1Accessed ? "a " : "na", Pde.u & BIT(6) ? "6 " : "  ",
-                Pde.n.u3Available, Pde.u & BIT(8) ? "8" : " ", Pde.n.u1WriteThru ? "pwt" : "   ",
-                Pde.n.u1CacheDisable ? "pcd" : "   ", Pde.u & BIT(7) ? "7" : "");
+            DBGCCmdHlpPrintf(pCmdHlp,
+                             fPAE
+                             ? "%016llx 4kb phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s"
+                             :   "%08llx 4kb phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s",
+                             Pde.u, 
+                             Pde.u & X86_PDE_PAE_PG_MASK,
+                             Pde.n.u1Present        ? "p "  : "np", 
+                             Pde.n.u1Write          ? "w"   : "r",
+                             Pde.n.u1User           ? "u"   : "s", 
+                             Pde.n.u1Accessed       ? "a "  : "na", 
+                             Pde.u & BIT(6)         ? "6 "  : "  ",
+                             Pde.n.u3Available, 
+                             Pde.u & BIT(8)         ? "8"   : " ", 
+                             Pde.n.u1WriteThru      ? "pwt" : "   ",
+                             Pde.n.u1CacheDisable   ? "pcd" : "   ", 
+                             Pde.u & BIT(7)         ? "7"   : "", 
+                             Pde.n.u1NoExecute      ? (fNXE ? "nx" : "NX") : "  ");
+        if (Pde.u & UINT64_C(0x7fff000000000000))
+            DBGCCmdHlpPrintf(pCmdHlp, " weird=%RX64", (Pde.u & UINT64_C(0x7fff000000000000)));
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
         if (VBOX_FAILURE(rc))
             return rc;
 
         /*
-         * Next
+         * Advance.
          */
-        if (cEntries-- <= 1)
-            break;
-        rc = pCmdHlp->pfnEval(pCmdHlp, &VarAddr, "%DV + %#x", &VarAddr, sizeof(VBOXPDE));
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%DV + %#x", &VarAddr, sizeof(VBOXPDE));
-    }
+        VarPDEAddr.u.u64Number += cbEntry;
+        if (iEntry != ~0U)
+            VarGCPtr.u.GCFlat += 1 << (fPAE ? X86_PD_PAE_SHIFT : X86_PD_SHIFT);
+    } while (cEntries-- > 0);
 
     NOREF(pResult);
     return VINF_SUCCESS;
 }
+
 
 /**
  * The 'dpdb' command.
@@ -3338,157 +3499,209 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
         ||  (pCmd->pszCmd[3] == 'a' && !DBGCVAR_ISPOINTER(paArgs[0].enmType))
         ||  (pCmd->pszCmd[3] != 'a' && !(paArgs[0].enmType == DBGCVAR_TYPE_NUMBER || DBGCVAR_ISPOINTER(paArgs[0].enmType)))
         )
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: The parser doesn't do its job properly yet.. It might help to use the '%%' operator.\n");
+        return DBGCCmdHlpPrintf(pCmdHlp, "internal error: The parser doesn't do its job properly yet.. It might help to use the '%%' operator.\n");
     if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
-
+        return DBGCCmdHlpPrintf(pCmdHlp, "error: No VM.\n");
 
     /*
-     * Where to start dumping page directory entries?
+     * Guest or shadow page tables? Get the paging parameters.
      */
+    bool fGuest = pCmd->pszCmd[3] != 'h';
+    if (!pCmd->pszCmd[3] || !pCmd->pszCmd[3] == 'a')
+        fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
+               ? pDbgc->fRegCtxGuest
+               : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
+            
+    bool fPAE, fLME, fPSE, fPGE, fNXE;
+    uint64_t cr3 = fGuest 
+                 ? dbgcGetGuestPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE)
+                 : dbgcGetShadowPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE);
+    const unsigned cbEntry = fPAE ? sizeof(X86PTEPAE) : sizeof(X86PTE);
+
+    /*
+     * Locate the PTE to start displaying at. 
+     *
+     * The 'dpta' command takes the address of a PTE, while the others are guest 
+     * virtual address which PTEs should be displayed. So, 'pdta' is rather simple
+     * while the others require us to do all the tedious walking thru the paging
+     * hierarchy to find the intended PTE. 
+     */
+    unsigned    iEntry = ~0U;           /* The page table index. ~0U for 'dpta'. */
+    DBGCVAR     VarGCPtr;               /* The GC address corresponding to the current PTE (iEntry != ~0U). */
+    DBGCVAR     VarPTEAddr;             /* The address of the current PTE. */
+    unsigned    cEntries;               /* The number of entries to display. */
+    unsigned    cEntriesMax;            /* The max number of entries to display. */
     int         rc;
-    unsigned    cEntriesMax = PAGE_SIZE / sizeof(VBOXPDE);
-    unsigned    cEntries = PAGE_SIZE / sizeof(VBOXPDE);
-    unsigned    off = ~0;
-    DBGCVAR     VarGCPtr;               /* only valid with off == ~0 */
-    DBGCVAR     VarPTEAddr;
-    if (pCmd->pszCmd[3] != 'a')
+    if (pCmd->pszCmd[3] == 'a')
     {
-        /*
-         * Get page directory and cr4.
+        VarPTEAddr = paArgs[0];
+        switch (VarPTEAddr.enmRangeType)
+        {
+            case DBGCVAR_RANGE_BYTES:       cEntries = VarPTEAddr.u64Range / cbEntry; break;
+            case DBGCVAR_RANGE_ELEMENTS:    cEntries = VarPTEAddr.u64Range; break;
+            default:                        cEntries = 10; break;
+        }
+        cEntriesMax = PAGE_SIZE / cbEntry;
+    }
+    else
+    {
+        /* 
+         * Determin the range.
          */
-        bool        fHyper;
-        uint32_t    u32CR4;
-        off = 0;
-        if (    pCmd->pszCmd[3] == 'g'
-            ||  (pDbgc->fRegCtxGuest && (!pCmd->pszCmd[3] || pCmd->pszCmd[3] == 'a')))
+        switch (paArgs[0].enmRangeType)
         {
-            u32CR4 = CPUMGetGuestCR4(pVM);
-            rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, "%%%%cr3");
-            fHyper = false;
+            case DBGCVAR_RANGE_BYTES:       cEntries = paArgs[0].u64Range / PAGE_SIZE; break;
+            case DBGCVAR_RANGE_ELEMENTS:    cEntries = paArgs[0].u64Range; break;
+            default:                        cEntries = 10; break;
         }
-        else
-        {
-            /** @todo fix hypervisor CR4 value! */
-            //u32CR4 = CPUMGetHyperCR4(pVM);
-            u32CR4 = X86_CR4_PGE | X86_CR4_PSE;
-            rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, "#%%%%.cr3");
-            fHyper = true;
-        }
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "(Getting (.)cr3.)");
 
         /*
-         * Find page directory entry for the address.
-         * Make sure it's a flat address first.
+         * Normalize the input address, it must be a flat GC address.
          */
         rc = pCmdHlp->pfnEval(pCmdHlp, &VarGCPtr, "%%(%Dv)", &paArgs[0]);
         if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%%(%Dv)", &paArgs[0]);
-
-        rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, "(%Dv) + %#x", &VarPTEAddr, (VarGCPtr.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPDE));
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "(%Dv) + %#x", &VarPTEAddr, (VarGCPtr.u.GCFlat >> PGDIR_SHIFT) * sizeof(VBOXPDE));
-
-
-        /*
-         * Now read the page directory entry for this GC address.
-         */
-        VBOXPDE Pde;
-        rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, sizeof(Pde), &VarPTEAddr, NULL);
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading memory at %DV.\n", &VarPTEAddr);
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "%%(%Dv)", &paArgs[0]);
+        if (VarGCPtr.enmType == DBGCVAR_TYPE_HC_FLAT)
+        {
+            VarGCPtr.u.GCFlat = (uintptr_t)VarGCPtr.u.pvHCFlat;
+            VarGCPtr.enmType = DBGCVAR_TYPE_GC_FLAT;
+        }
+        VarGCPtr.u.GCFlat &= ~(RTGCPTR)PAGE_OFFSET_MASK;
 
         /*
-         * Check for presentness and handle big using dpd[gh].
+         * Do the paging walk until we get to the page table.
          */
-        if ((u32CR4 & X86_CR4_PSE) && Pde.b.u1Size)
-            return pCmdHlp->pfnExec(pCmdHlp, "dpd%s %Dv L3", &pCmd->pszCmd[3], &VarGCPtr);
+        DBGCVAR VarCur;
+        if (fGuest)
+            DBGCVAR_INIT_GC_PHYS(&VarCur, cr3);
+        else
+            DBGCVAR_INIT_HC_PHYS(&VarCur, cr3);
+        if (fLME)
+        {
+            /* Page Map Level 4 Lookup. */
+            /* Check if it's a valid address first? */
+            VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK;
+            VarCur.u.u64Number += (((uint64_t)VarGCPtr.u.GCFlat >> X86_PML4_SHIFT) & X86_PML4_MASK) * sizeof(X86PML4E);
+            X86PML4E Pml4e;
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
+            if (VBOX_FAILURE(rc))
+                return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PML4E memory at %DV.\n", &VarCur);
+            if (!Pml4e.n.u1Present)
+                return DBGCCmdHlpPrintf(pCmdHlp, "Page directory pointer table is not present for %Dv.\n", &VarGCPtr);
 
-        if (!Pde.n.u1Present)
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Page table for %Dv is not present.\n", &VarGCPtr);
+            VarCur.u.u64Number = Pml4e.u & X86_PML4E_PG_MASK;
+            Assert(fPAE);
+        }
+        if (fPAE)
+        {
+            /* Page directory pointer table. */
+            X86PDPE Pdpe;
+            VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PDPTR_SHIFT) & X86_PDPTR_MASK) * sizeof(Pdpe);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pdpe, sizeof(Pdpe), &VarCur, NULL);
+            if (VBOX_FAILURE(rc))
+                return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDPE memory at %DV.\n", &VarCur);
+            if (!Pdpe.n.u1Present)
+                return DBGCCmdHlpPrintf(pCmdHlp, "Page directory is not present for %Dv.\n", &VarGCPtr);
 
-        /*
-         * Calc page table address and setup offset and counts.
-         */
-        rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, fHyper ? "#%%%%%#x" : "%%%%%#x", Pde.u & X86_PDE_PG_MASK);
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, fHyper ? "#%%%%%#x" : "%%%%%#x", Pde.u & X86_PDE_PG_MASK);
+            VarCur.u.u64Number = Pdpe.u & X86_PDPE_PG_MASK;
 
-        cEntries    = 10;
-        off         = (VarGCPtr.u.GCFlat >> PAGE_SHIFT) & PTE_MASK;
-        cEntriesMax = PAGE_SIZE / sizeof(VBOXPDE) - off;
-        VarGCPtr.u.GCFlat &= ~PAGE_OFFSET_MASK; /* Make it page table base address. */
+            /* Page directory (PAE). */
+            X86PDEPAE Pde;
+            VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK) * sizeof(Pde);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, sizeof(Pde), &VarCur, NULL);
+            if (VBOX_FAILURE(rc))
+                return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDE memory at %DV.\n", &VarCur);
+            if (!Pde.n.u1Present)
+                return DBGCCmdHlpPrintf(pCmdHlp, "Page table is not present for %Dv.\n", &VarGCPtr);
+            if (fPSE && Pde.n.u1Size)
+                return pCmdHlp->pfnExec(pCmdHlp, "dpd%s %Dv L3", &pCmd->pszCmd[3], &VarGCPtr);
+
+            iEntry = (VarGCPtr.u.GCFlat >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
+            VarPTEAddr = VarCur;
+            VarPTEAddr.u.u64Number = Pde.u & X86_PDE_PAE_PG_MASK;
+            VarPTEAddr.u.u64Number += iEntry * sizeof(X86PTEPAE);
+        }
+        else
+        {
+            /* Page directory (legacy). */
+            X86PDE Pde;
+            VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PD_SHIFT) & X86_PD_MASK) * sizeof(Pde);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, sizeof(Pde), &VarCur, NULL);
+            if (VBOX_FAILURE(rc))
+                return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDE memory at %DV.\n", &VarCur);
+            if (!Pde.n.u1Present)
+                return DBGCCmdHlpPrintf(pCmdHlp, "Page table is not present for %Dv.\n", &VarGCPtr);
+            if (fPSE && Pde.n.u1Size)
+                return pCmdHlp->pfnExec(pCmdHlp, "dpd%s %Dv L3", &pCmd->pszCmd[3], &VarGCPtr);
+
+            iEntry = (VarGCPtr.u.GCFlat >> X86_PT_SHIFT) & X86_PT_MASK;
+            VarPTEAddr = VarCur;
+            VarPTEAddr.u.u64Number = Pde.u & X86_PDE_PG_MASK;
+            VarPTEAddr.u.u64Number += iEntry * sizeof(X86PTE);
+        }
+        cEntriesMax = (PAGE_SIZE - iEntry) / cbEntry;
+        iEntry /= cbEntry;
     }
-    else
-        VarPTEAddr = paArgs[0];
+
+    /* adjust cEntries */
+    cEntries = RT_MAX(1, cEntries);
+    cEntries = RT_MIN(cEntries, cEntriesMax);
 
     /*
-     * Range.
+     * The display loop.
      */
-    unsigned i = cArgs;
-    while (i-- > 0)
-    {
-        if (paArgs[i].enmRangeType == DBGCVAR_RANGE_ELEMENTS)
-        {
-            cEntries = (unsigned)RT_MIN(paArgs[i].u64Range, cEntriesMax);
-            break;
-        }
-        else if (paArgs[i].enmRangeType == DBGCVAR_RANGE_BYTES)
-        {
-            cEntries = (unsigned)RT_MIN(paArgs[i].u64Range / sizeof(VBOXPDE), cEntriesMax);
-            break;
-        }
-    }
-
-    /*
-     * Dump loop.
-     */
-    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, off != ~0U ? "%DV (base %DV / index %#x):\n" : "%DV:\n", &VarPTEAddr, &VarGCPtr, off);
-    if (VBOX_FAILURE(rc))
-        return rc;
-    rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, "%DV + %#x", &VarPTEAddr, sizeof(VBOXPTE) * off);
-    if (VBOX_FAILURE(rc))
-        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%DV + %#x", &VarPTEAddr, sizeof(VBOXPTE) * off);
-    for (;;)
+    DBGCCmdHlpPrintf(pCmdHlp, iEntry != ~0U ? "%DV (base %DV / index %#x):\n" : "%DV:\n", 
+                     &VarPTEAddr, &VarGCPtr, iEntry);
+    do
     {
         /*
          * Read.
          */
-        VBOXPTE Pte;
-        rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pte, sizeof(Pte), &VarPTEAddr, NULL);
+        X86PTEPAE Pte;
+        Pte.u = 0;
+        rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pte, cbEntry, &VarPTEAddr, NULL);
         if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading memory at %DV.\n", &VarPTEAddr);
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PTE memory at %DV.\n", &VarPTEAddr);
 
         /*
          * Display.
          */
-        if (off != ~0U)
+        if (iEntry != ~0U)
         {
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%03x %DV: ", off, &VarGCPtr);
-            off++;
+            DBGCCmdHlpPrintf(pCmdHlp, "%03x %DV: ", iEntry, &VarGCPtr);
+            iEntry++;
         }
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-            "%08x 4kb phys=%08x %s %s %s %s %s avl=%02x %s %s %s %s\n",
-            Pte.u, Pte.n.u20PageNo << PAGE_SHIFT, Pte.n.u1Present ? "p " : "np", Pte.n.u1Write ? "w" : "r",
-            Pte.n.u1User ? "u" : "s", Pte.n.u1Accessed ? "a " : "na", Pte.n.u1Dirty ? "d " : "nd",
-            Pte.n.u3Available, Pte.n.u1Global ? "G" : " ", Pte.n.u1WriteThru ? "pwt" : "   ",
-            Pte.n.u1CacheDisable ? "pcd" : "   ", Pte.n.u1PAT ? "pat" : "   ");
+        DBGCCmdHlpPrintf(pCmdHlp,
+                         fPAE 
+                         ? "%016llx 4kb phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s %s"
+                         :   "%08llx 4kb phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s %s",
+                         Pte.u,
+                         Pte.u & X86_PTE_PAE_PG_MASK,
+                         Pte.n.u1Present         ? "p " : "np",
+                         Pte.n.u1Write           ? "w" : "r",
+                         Pte.n.u1User            ? "u" : "s",
+                         Pte.n.u1Accessed        ? "a " : "na",
+                         Pte.n.u1Dirty           ? "d " : "nd",
+                         Pte.n.u3Available,
+                         Pte.n.u1Global          ? (fPGE ? "g" : "G") : " ",
+                         Pte.n.u1WriteThru       ? "pwt" : "   ",
+                         Pte.n.u1CacheDisable    ? "pcd" : "   ",
+                         Pte.n.u1PAT             ? "pat" : "   ", 
+                         Pte.n.u1NoExecute       ? (fNXE ? "nx" : "NX") : "  "
+                         );
+        if (Pte.u & UINT64_C(0x7fff000000000000))
+            DBGCCmdHlpPrintf(pCmdHlp, " weird=%RX64", (Pte.u & UINT64_C(0x7fff000000000000)));
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
         if (VBOX_FAILURE(rc))
             return rc;
 
         /*
-         * Next
+         * Advance.
          */
-        if (cEntries-- <= 1)
-            break;
-        rc = pCmdHlp->pfnEval(pCmdHlp, &VarPTEAddr, "%DV + %#x", &VarPTEAddr, sizeof(VBOXPDE));
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%DV + %#x", &VarPTEAddr, sizeof(VBOXPDE));
-        rc = pCmdHlp->pfnEval(pCmdHlp, &VarGCPtr, "%DV + %#x", &VarGCPtr, PAGE_SIZE);
-        if (VBOX_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%DV + %#x", &VarGCPtr, sizeof(VBOXPDE));
-    }
+        VarPTEAddr.u.u64Number += cbEntry;
+        if (iEntry != ~0U)
+            VarGCPtr.u.GCFlat += PAGE_SIZE;
+    } while (cEntries-- > 0);
 
     NOREF(pResult);
     return VINF_SUCCESS;
