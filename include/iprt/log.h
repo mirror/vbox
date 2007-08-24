@@ -737,6 +737,20 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #define LogRelFlow(a)      LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
 
+/** @def LogRelFunc
+ * Release logging.  Prepends the given log message with the function name
+ * followed by a semicolon and space.
+ */
+#define LogRelFunc(a) \
+    do { LogRel(("%s: ", __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+
+/** @def LogRelThisFunc
+ * The same as LogRelFunc but for class functions (methods): the resulting log
+ * line is additionally perpended with a hex value of |this| pointer.
+ */
+#define LogRelThisFunc(a) \
+    do { LogRel(("{%p} %s: ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+
 /** @def LogRelLelik
  *  lelik logging.
  */
