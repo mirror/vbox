@@ -26,49 +26,6 @@
 *****************************************************************************/
 
 
-static const struct PortConfig
-{
-    const char *name;
-    const ulong IRQ;
-    const ulong IOBase;
-}
-kKnownPorts[] = 
-{
-    { "COM1", 4, 0x3F8 },
-    { "COM2", 3, 0x2F8 },
-    { "COM3", 4, 0x3E8 },
-    { "COM4", 3, 0x2E8 },
-    /* must not contain an element with IRQ=0 and IOBase=0 used to cause
-     * portNumbers2Name() to return the "User-defined" string. */
-};
-
-static const PortConfig *findByPortNumbers (ulong aIRQ, ulong aIOBase)
-{
-    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
-        if (kKnownPorts [i].IRQ == aIRQ &&
-            kKnownPorts [i].IOBase == aIOBase)
-            return &kKnownPorts [i];
-    return NULL;
-}
-
-static const PortConfig *findByPortName (const char *aName)
-{
-    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
-        if (strcmp (kKnownPorts [i].name, aName) == 0)
-            return &kKnownPorts [i];
-    return NULL;
-}
-
-static QString portNumbers2Name (ulong aIRQ, ulong aIOBase)
-{
-    const PortConfig *config = findByPortNumbers (aIRQ, aIOBase);
-    if (config)
-        return config->name;
-
-    return VBoxVMSerialPortSettings::tr ("User-defined");
-}
-
-
 void VBoxVMSerialPortSettings::init()
 {
     /* setup validation */
@@ -90,9 +47,8 @@ void VBoxVMSerialPortSettings::init()
 
     /* set initial values */
 
-    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
-        mPortNumCombo->insertItem (kKnownPorts [i].name);
-    mPortNumCombo->insertItem (portNumbers2Name (0, 0));
+    mPortNumCombo->insertStringList (vboxGlobal().COMPortNames());
+    mPortNumCombo->insertItem (vboxGlobal().toCOMPortName (0, 0));
 
     mHostModeCombo->insertItem (vboxGlobal().toString (CEnums::DisconnectedPort));
     mHostModeCombo->insertItem (vboxGlobal().toString (CEnums::HostPipePort));
@@ -107,7 +63,7 @@ void VBoxVMSerialPortSettings::getFromPort (const CSerialPort &aPort)
 
     ulong IRQ = mPort.GetIRQ();
     ulong IOBase = mPort.GetIOBase();
-    mPortNumCombo->setCurrentText (portNumbers2Name (IRQ, IOBase));
+    mPortNumCombo->setCurrentText (vboxGlobal().toCOMPortName (IRQ, IOBase));
     mIRQLine->setText (QString::number (IRQ));
     mIOPortLine->setText ("0x" + QString::number (IOBase, 16).upper());
 
@@ -133,7 +89,8 @@ void VBoxVMSerialPortSettings::putBackToPort()
 
 bool VBoxVMSerialPortSettings::isUserDefined()
 {
-    return findByPortName (mPortNumCombo->currentText().utf8().data()) == NULL;
+    ulong a, b;
+    return !vboxGlobal().toCOMPortNumbers (mPortNumCombo->currentText(), a, b);
 }
 
 void VBoxVMSerialPortSettings::mSerialPortBox_toggled (bool aOn)
@@ -147,13 +104,15 @@ void VBoxVMSerialPortSettings::mSerialPortBox_toggled (bool aOn)
 
 void VBoxVMSerialPortSettings::mPortNumCombo_activated (const QString &aText)
 {
-    const PortConfig *config = findByPortName (aText.utf8().data());
-    mIRQLine->setEnabled (config == NULL);
-    mIOPortLine->setEnabled (config == NULL);
-    if (config != NULL)
+    ulong IRQ, IOBase;
+    bool std = vboxGlobal().toCOMPortNumbers (aText, IRQ, IOBase);
+
+    mIRQLine->setEnabled (!std);
+    mIOPortLine->setEnabled (!std);
+    if (std)
     {
-        mIRQLine->setText (QString::number (config->IRQ));
-        mIOPortLine->setText ("0x" + QString::number (config->IOBase, 16).upper());
+        mIRQLine->setText (QString::number (IRQ));
+        mIOPortLine->setText ("0x" + QString::number (IOBase, 16).upper());
     }
 }
 

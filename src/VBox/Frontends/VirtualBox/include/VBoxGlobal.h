@@ -341,6 +341,10 @@ public:
         return USBDeviceStates [aState];
     }
 
+    QStringList COMPortNames() const;
+    QString toCOMPortName (ulong aIRQ, ulong aIOBase) const;
+    bool toCOMPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
+
     QPixmap snapshotIcon (bool online) const
     {
         return online ? mOnlineSnapshotIcon : mOfflineSnapshotIcon;
@@ -555,6 +559,8 @@ private:
     QStringVector networkAttachmentTypes;
     QStringVector clipboardTypes;
     QStringVector USBDeviceStates;
+
+    QString mUserDefinedCOMPortName;
 
     mutable bool detailReportTemplatesReady;
 

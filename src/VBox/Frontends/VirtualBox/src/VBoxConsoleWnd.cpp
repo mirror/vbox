@@ -322,6 +322,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesUnmountFloppyAction->addTo (devicesMenu);
     devicesMenu->insertSeparator();
 
+    devicesMenu->insertItem (VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"),
+        QString::null, devicesNetworkMenu, devicesNetworkMenuId);
+    devicesMenu->insertSeparator();
+
     devicesMenu->insertItem (VBoxGlobal::iconSet ("usb_16px.png", "usb_disabled_16px.png"),
         QString::null, devicesUSBMenu, devicesUSBMenuId);
     devicesUSBMenuSeparatorId = devicesMenu->insertSeparator();
@@ -329,10 +333,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     devicesSFDialogAction->addTo (devicesMenu);
     devicesSFMenuSeparatorId = devicesMenu->insertSeparator();
     devicesSFDialogAction->addTo (devicesSFMenu);
-
-    devicesMenu->insertItem (VBoxGlobal::iconSet ("nw_16px.png", "nw_disabled_16px.png"),
-        QString::null, devicesNetworkMenu, devicesNetworkMenuId);
-    devicesMenu->insertSeparator();
 
     devicesSwitchVrdpAction->addTo (devicesMenu);
     devicesVRDPMenuSeparatorId = devicesMenu->insertSeparator();
@@ -2858,7 +2858,7 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
 
         machine_state = state;
 
-        updateAppearanceOf (Caption | FloppyStuff | DVDStuff |
+        updateAppearanceOf (Caption | FloppyStuff | DVDStuff | NetworkStuff |
                             USBStuff | VRDPStuff | PauseAction |
                             DisableMouseIntegrAction);
 

@@ -824,6 +824,68 @@ QStringList VBoxGlobal::deviceTypeStrings() const
     return list;
 }
 
+static const struct PortConfig
+{
+    const char *name;
+    const ulong IRQ;
+    const ulong IOBase;
+}
+kKnownPorts[] = 
+{
+    { "COM1", 4, 0x3F8 },
+    { "COM2", 3, 0x2F8 },
+    { "COM3", 4, 0x3E8 },
+    { "COM4", 3, 0x2E8 },
+    /* must not contain an element with IRQ=0 and IOBase=0 used to cause
+     * toCOMPortName() to return the "User-defined" string for these values. */
+};
+
+/** 
+ *  Returns the list of the standard COM port names (i.e. "COMx").
+ */
+QStringList VBoxGlobal::COMPortNames() const
+{
+    QStringList list;
+    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
+        list << kKnownPorts [i].name;
+
+    return list;
+}
+
+/** 
+ *  Returns the name of the standard COM port corresponding to the given
+ *  parameters, or "User-defined" (which is also returned when both
+ *  @a aIRQ and @a aIOBase are 0).
+ */
+QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
+{
+    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
+        if (kKnownPorts [i].IRQ == aIRQ &&
+            kKnownPorts [i].IOBase == aIOBase)
+            return kKnownPorts [i].name;
+
+    return mUserDefinedCOMPortName;
+}
+
+/** 
+ *  Returns port parameters corresponding to the given standard COM name.
+ *  Returns @c true on success, or @c false if the given port name is not one
+ *  of the standard names (i.e. "COMx").
+ */
+bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
+                                   ulong &aIOBase) const
+{
+    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
+        if (strcmp (kKnownPorts [i].name, aName.utf8().data()) == 0)
+        {
+            aIRQ = kKnownPorts [i].IRQ;
+            aIOBase = kKnownPorts [i].IOBase;
+            return true;
+        }
+
+    return false;
+}
+
 /**
  *  Returns the details of the given hard disk as a single-line string
  *  to be used in the VM details view.
@@ -1304,6 +1366,48 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                       tr ("Network", "details report"), /* title */
                       item); /* items */
         }
+        /* serial ports */
+        {
+            item = QString::null;
+            ulong count = vbox.GetSystemProperties().GetSerialPortCount();
+            int rows = 2; /* including section header and footer */
+            for (ulong slot = 0; slot < count; slot ++)
+            {
+                CSerialPort port = m.GetSerialPort (slot);
+                if (port.GetEnabled())
+                {
+                    CEnums::PortMode mode = port.GetHostMode();
+                    QString data =
+                        toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
+                    if (mode == CEnums::HostPipePort ||
+                        mode == CEnums::HostDevicePort)
+                        data += QString ("%1 (<nobr>%1</nobr>)")
+                            .arg (vboxGlobal().toString (mode))
+                            .arg (QDir::convertSeparators (port.GetPath()));
+                    else  
+                        data += toString (mode);
+
+                    item += QString (sSectionItemTpl)
+                        .arg (tr ("Port %1", "details report (serial ports)")
+                              .arg (port.GetSlot()))
+                        .arg (data);
+                    ++ rows;
+                }
+            }
+            if (item.isNull())
+            {
+                item = QString (sSectionItemTpl)
+                    .arg (tr ("Disabled", "details report (serial ports)"), "");
+                ++ rows;
+            }
+
+            detailsReport += sectionTpl
+                .arg (rows) /* rows */
+                .arg ("machine_16px.png", /* icon */
+                      "#serialPorts", /* link */
+                      tr ("Serial Ports", "details report"), /* title */
+                      item); /* items */
+        }
         /* USB */
         {
             CUSBController ctl = m.GetUSBController();
@@ -1333,9 +1437,30 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                     .arg (2 + 1) /* rows */
                     .arg ("usb_16px.png", /* icon */
                           "#usb", /* link */
-                          tr ("USB Controller", "details report"), /* title */
+                          tr ("USB", "details report"), /* title */
                           item); /* items */
             }
+        }
+        /* Shared folders */
+        {
+            ulong count = m.GetSharedFolders().GetCount();
+            if (count > 0)
+            {
+                item = QString (sSectionItemTpl)
+                    .arg (tr ("Shared Folders", "details report (shared folders)"),
+                          tr ("%1", "details report (shadef folders)")
+                              .arg (count));
+            }
+            else
+                item = QString (sSectionItemTpl)
+                    .arg (tr ("None", "details report (shared folders)"), "");
+
+            detailsReport += sectionTpl
+                .arg (2 + 1) /* rows */
+                .arg ("shared_folder_16px.png", /* icon */
+                      "#sfolders", /* link */
+                      tr ("Shared Folders", "details report"), /* title */
+                      item); /* items */
         }
         /* VRDP */
         {
@@ -1360,27 +1485,6 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                           tr ("Remote Display", "details report"), /* title */
                           item); /* items */
             }
-        }
-        /* Shared folders */
-        {
-            ulong count = m.GetSharedFolders().GetCount();
-            if (count > 0)
-            {
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("Shared Folders", "details report (shared folders)"),
-                          tr ("%1", "details report (shadef folders)")
-                              .arg (count));
-            }
-            else
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("None", "details report (shared folders)"), "");
-
-            detailsReport += sectionTpl
-                .arg (2 + 1) /* rows */
-                .arg ("shared_folder_16px.png", /* icon */
-                      "#sfolders", /* link */
-                      tr ("Shared Folders", "details report"), /* title */
-                      item); /* items */
         }
     }
 
@@ -1923,6 +2027,8 @@ void VBoxGlobal::languageChange()
         tr ("Held", "USBDeviceState");
     USBDeviceStates [CEnums::USBDeviceCaptured] =
         tr ("Captured", "USBDeviceState");
+
+    mUserDefinedCOMPortName = tr ("User-defined", "serial port");
 
     detailReportTemplatesReady = false;
 

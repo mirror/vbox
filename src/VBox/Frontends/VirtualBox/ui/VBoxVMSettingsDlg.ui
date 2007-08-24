@@ -212,7 +212,7 @@
                 <string> USB </string>
             </property>
             <property name="text">
-                <string>6</string>
+                <string>7</string>
             </property>
             <property name="text">
                 <string>#usb</string>
@@ -232,7 +232,7 @@
                 <string> Remote Display </string>
             </property>
             <property name="text">
-                <string>7</string>
+                <string>9</string>
             </property>
             <property name="text">
                 <string>#vrdp</string>
@@ -272,13 +272,13 @@
                 <string> Serial Ports </string>
             </property>
             <property name="text">
-                <string>9</string>
+                <string>6</string>
             </property>
             <property name="text">
                 <string>#serialPorts</string>
             </property>
             <property name="pixmap">
-                <pixmap></pixmap>
+                <pixmap>machine_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
@@ -2246,7 +2246,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <cstring>pageUSB</cstring>
                 </property>
                 <attribute name="id">
-                    <number>6</number>
+                    <number>7</number>
                 </attribute>
                 <vbox>
                     <property name="name">
@@ -2487,7 +2487,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <cstring>pageVRDP</cstring>
                 </property>
                 <attribute name="id">
-                    <number>7</number>
+                    <number>9</number>
                 </attribute>
                 <vbox>
                     <property name="name">
@@ -2709,7 +2709,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <cstring>pageSerial</cstring>
                 </property>
                 <attribute name="id">
-                    <number>9</number>
+                    <number>6</number>
                 </attribute>
                 <vbox>
                     <property name="name">
