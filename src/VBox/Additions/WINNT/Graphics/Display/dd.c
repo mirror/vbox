@@ -1,5 +1,3 @@
-#define LOG_ENABLED
-
 #ifdef VBOX_WITH_DDRAW
 
 /******************************Module*Header**********************************\
