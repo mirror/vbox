@@ -22,7 +22,7 @@
 #define USE_UTF8
 #define USE_CTEXT
 
-#define LOG_GROUP LOG_GROUP_HGCM
+#define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
 
 #include <vector>
 #include <iostream>
@@ -32,7 +32,7 @@ using std::endl;
 
 #include <VBox/VBoxGuest.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
-
+#include <VBox/log.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>        /* For atomic operations */
 #include <iprt/assert.h>
@@ -42,26 +42,25 @@ using std::endl;
 #include <iprt/thread.h>
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
-#include <VBox/log.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
+// #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
-#include <unistd.h>
-#include <getopt.h>
-
-// #include "VBoxClipboard.h"
+// #include <unistd.h>
+// #include <getopt.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Intrinsic.h>
 #include <X11/Shell.h>
 #include <X11/X.h>
+
+#include "clipboard.h"
 
 #define VBOX_INIT_CALL(__a, __b, __c) do {                                                             \
     (__a)->hdr.result      = VINF_SUCCESS;                                                             \
@@ -160,8 +159,6 @@ typedef struct
     /** Since the clipboard data moves asynchronously, we use an event semaphore to wait for
         it. */
     RTSEMEVENT terminating;
-    /** Are we running as a daemon? */
-    bool daemonise;
 
     /** Format which we are reading from the guest clipboard (valid during a request for the
         guest clipboard) */
@@ -1520,34 +1517,6 @@ void vboxClipboardDisconnect (void)
     LogFlowFunc(("returning\n"));
 }
 
-int vboxClipboardXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
-{
-    char errorText[1024];
-
-    LogFlowFunc(("\n"));
-    if (pError->error_code == BadAtom)
-    {
-        /* This can be triggered in debug builds if a guest application passes a bad atom
-           in its list of supported clipboard formats.  As such it is harmless. */
-        LogFlowFunc(("ignoring BadAtom error and returning\n"));
-        return 0;
-    }
-    vboxClipboardDisconnect();
-    XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
-    if (g_ctx.daemonise == 0)
-    {
-        cout << "An X Window protocol error occurred: " << errorText << endl
-            << "  Request code: " << int(pError->request_code) << endl
-            << "  Minor code: " << int(pError->minor_code) << endl
-            << "  Serial number of the failed request: " << int(pError->serial) << endl;
-    }
-    Log(("%s: an X Window protocol error occurred: %s.  Request code: %d, minor code: %d, serial number: %d\n",
-         __PRETTY_FUNCTION__, pError->error_code, pError->request_code, pError->minor_code,
-         pError->serial));
-    LogFlowFunc(("exiting\n"));
-    exit(1);
-}
-
 
 /**
   * Connect the guest clipboard to the host.
@@ -1560,6 +1529,31 @@ int vboxClipboardConnect (void)
     int rc;
     /* Only one client is supported for now */
     AssertReturn(g_ctx.client == 0, VERR_NOT_SUPPORTED);
+
+    /* Initialise the termination semaphore. */
+    RTSemEventCreate(&g_ctx.terminating);
+    /* Open a connection to the driver for sending requests. */
+    g_ctx.sendDevice = open(VBOXGUEST_DEVICE_NAME, O_RDWR, 0);
+    if (g_ctx.sendDevice < 0)
+    {
+        int err = errno;
+
+        Log(("Error opening kernel module! errno = %d\n", err));
+        cout << "Failed to open the VirtualBox device in the guest." << endl;
+        LogFlowFunc(("returning 1\n"));
+        return RTErrConvertFromErrno(err);
+    }
+    /* Open a connection to the driver for polling for host requests. */
+    g_ctx.receiveDevice = open(VBOXGUEST_DEVICE_NAME, O_RDWR, 0);
+    if (g_ctx.receiveDevice < 0)
+    {
+        int err = errno;
+
+        Log(("Error opening kernel module! rc = %d\n", err));
+        cout << "Failed to open the VirtualBox device in the guest" << endl;
+        LogFlowFunc(("returning 1\n"));
+        return RTErrConvertFromErrno(err);
+    }
 
     rc = ioctl(g_ctx.sendDevice, IOCTL_VBOXGUEST_CLIPBOARD_CONNECT, (void*)&g_ctx.client);
     if (rc >= 0)
@@ -1578,8 +1572,6 @@ int vboxClipboardConnect (void)
         LogFlowFunc(("returned VERR_NOT_SUPPORTED\n"));
         return VERR_NOT_SUPPORTED;
     }
-    /* Set an X11 error handler, so that we don't die when we get BadAtom errors. */
-    XSetErrorHandler(vboxClipboardXLibErrorHandler);
     LogFlowFunc(("returned VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
@@ -1682,103 +1674,4 @@ int vboxClipboardMain (void)
     RTSemEventSignal(g_ctx.terminating);
     LogFlowFunc(("returning %d\n", rc));
     return rc;
-}
-
-
-/**
- * Become a daemon process
- */
-void vboxDaemonise(void)
-{
-    /* First fork and exit the parent process, so that we are sure we are not session leader. */
-    if (fork() != 0)
-    {
-        exit(0);
-    }
-    /* Detach from the controlling terminal by creating our own session. */
-    setsid();
-    /* And change to the root directory to avoid holding the one we were started in open. */
-    chdir("/");
-    /* Close the standard files. */
-    close(0);
-    close(1);
-    close(2);
-}
-
-int main(int argc, char *argv[])
-{
-    int rc;
-
-    /* Parse our option(s) */
-    g_ctx.daemonise = 1;
-    while (1)
-    {
-        static struct option sOpts[] =
-        {
-            {"nodaemon", 0, 0, 'd'},
-            {0, 0, 0, 0}
-        };
-        int cOpt = getopt_long(argc, argv, "", sOpts, 0);
-        if (cOpt == -1)
-        {
-            if (optind < argc)
-            {
-                cout << "Unrecognized command line argument: " << argv[argc] << endl;
-                exit(1);
-            }
-            break;
-        }
-        switch(cOpt)
-        {
-        case 'd':
-            g_ctx.daemonise = 0;
-            break;
-        default:
-            cout << "Unrecognized command line option: " << static_cast<char>(cOpt) << endl;
-        case '?':
-            exit(1);
-        }
-    }
-    /* Initialise our runtime before all else. */
-    RTR3Init(false);
-    LogFlowFunc(("\n"));
-    /* Initialise threading in Xt before we start any new threads. */
-    XtToolkitThreadInitialize();
-    /* Initialise the termination semaphore. */
-    RTSemEventCreate(&g_ctx.terminating);
-    /* Open a connection to the driver for sending requests. */
-    g_ctx.sendDevice = open(VBOXGUEST_DEVICE_NAME, O_RDWR, 0);
-    if (g_ctx.sendDevice < 0)
-    {
-        Log(("Error opening kernel module! errno = %d\n", errno));
-        cout << "Failed to open the VirtualBox device in the guest." << endl;
-        LogFlowFunc(("returning 1\n"));
-        return 1;
-    }
-    /* Open a connection to the driver for polling for host requests. */
-    g_ctx.receiveDevice = open(VBOXGUEST_DEVICE_NAME, O_RDWR, 0);
-    if (g_ctx.receiveDevice < 0)
-    {
-        Log(("Error opening kernel module! rc = %d\n", errno));
-        cout << "Failed to open the VirtualBox device in the guest" << endl;
-        LogFlowFunc(("returning 1\n"));
-        return 1;
-    }
-    /* Connect to the host clipboard. */
-    rc = vboxClipboardConnect();
-    if (rc != VINF_SUCCESS)
-    {
-        Log(("vboxClipboardConnect failed with rc = %d\n", rc));
-        cout << "Failed to connect to the host clipboard." << endl;
-        LogFlowFunc(("returning 1\n"));
-        return 1;
-    }
-    if (g_ctx.daemonise == 1)
-    {
-        vboxDaemonise();
-    }
-    vboxClipboardMain();
-    vboxClipboardDisconnect();
-    LogFlowFunc(("returning 0\n"));
-    return 0;
 }

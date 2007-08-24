@@ -1345,6 +1345,8 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
  */
 #define VBGLR3DECL(type) type VBOXCALL
 
+/* General-purpose functions */
+
 __BEGIN_DECLS
 VBGLR3DECL(int)     VbglR3Init(void);
 VBGLR3DECL(void)    VbglR3Term(void);
@@ -1352,6 +1354,9 @@ VBGLR3DECL(int)     VbglR3GRPerform(VMMDevRequestHeader *pReq);
 # ifdef __iprt_time_h__
 VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
 # endif 
+VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
+
+/* Shared clipboard */
 
 VBGLR3DECL(int)     VbglR3ClipboardConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(uint32_t u32ClientId);
@@ -1359,6 +1364,12 @@ VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pM
 VBGLR3DECL(int)     VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb);
+
+/* Seamless mode */
+
+VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool bState);
+VBGLR3DECL(int)     VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode);
+VBGLR3DECL(int)     VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects);
 
 __END_DECLS
 
