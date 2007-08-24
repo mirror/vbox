@@ -1,3 +1,5 @@
+#define LOG_ENABLED
+
 #ifdef VBOX_WITH_DDRAW
 
 /******************************Module*Header**********************************\
@@ -212,24 +214,24 @@ BOOL APIENTRY DrvEnableDirectDraw(
     pCallBacks->dwSize                = sizeof(DD_CALLBACKS);
     pCallBacks->dwFlags               = 0;
 
-    pCallBacks->dwFlags               = DDHAL_CB32_CREATESURFACE | DDHAL_CB32_CANCREATESURFACE;
+    pCallBacks->dwFlags               = DDHAL_CB32_CREATESURFACE | DDHAL_CB32_CANCREATESURFACE | DDHAL_CB32_MAPMEMORY;
     pCallBacks->CreateSurface         = DdCreateSurface;
     pCallBacks->CanCreateSurface      = DdCanCreateSurface;
+    pCallBacks->MapMemory             = DdMapMemory;
     // pCallBacks->WaitForVerticalBlank  = DdWaitForVerticalBlank;
     // pCallBacks->GetScanLine           = DdGetScanLine;
-    // pCallBacks->MapMemory             = DdMapMemory;
-    // DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_MAPMEMORY | DDHAL_CB32_GETSCANLINE 
+    // DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_GETSCANLINE 
     /* Note: pCallBacks->SetMode & pCallBacks->DestroyDriver are unused in Windows 2000 and up */
 
     /* Fill in the Surface Callback pointers */
     pSurfaceCallBacks->dwSize           = sizeof(DD_SURFACECALLBACKS);
-    pSurfaceCallBacks->dwFlags          = 0;
+    pSurfaceCallBacks->dwFlags          = DDHAL_SURFCB32_LOCK | DDHAL_SURFCB32_UNLOCK;
+    pSurfaceCallBacks->Lock             = DdLock;
+    pSurfaceCallBacks->Unlock           = DdUnlock;
 
     /*
     pSurfaceCallBacks->dwFlags          = DDHAL_SURFCB32_DESTROYSURFACE | DDHAL_SURFCB32_LOCK; // DDHAL_SURFCB32_UNLOCK;
     pSurfaceCallBacks->DestroySurface   = DdDestroySurface;
-    pSurfaceCallBacks->Lock             = DdLock;
-    pSurfaceCallBacks->Unlock           = DdUnlock;
     pSurfaceCallBacks->Flip             = DdFlip;
     pSurfaceCallBacks->GetBltStatus     = DdGetBltStatus;
     pSurfaceCallBacks->GetFlipStatus    = DdGetFlipStatus;
@@ -583,6 +585,119 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
     return DDHAL_DRIVER_HANDLED;
 }
 
+// ***************************WIN NT ONLY**********************************
+//
+// DdMapMemory
+//
+// Maps application-modifiable portions of the frame buffer into the 
+// user-mode address space of the specified process, or unmaps memory.
+//
+// DdMapMemory is called to perform memory mapping before the first call to 
+// DdLock. The handle returned by the driver in fpProcess will be passed to 
+// every DdLock call made on the driver. 
+//
+// DdMapMemory is also called to unmap memory after the last DdUnLock call is 
+// made.
+//
+// To prevent driver crashes, the driver must not map any portion of the frame
+// buffer that must not be modified by an application.
+//
+// Parameters
+//      lpMapMemory 
+//          Points to a DD_MAPMEMORYDATA structure that contains details for 
+//          the memory mapping or unmapping operation. 
+//
+//          .lpDD 
+//              Points to a DD_DIRECTDRAW_GLOBAL structure that represents 
+//              the driver. 
+//          .bMap 
+//              Specifies the memory operation that the driver should perform. 
+//              A value of TRUE indicates that the driver should map memory; 
+//              FALSE means that the driver should unmap memory. 
+//          .hProcess 
+//              Specifies a handle to the process whose address space is 
+//              affected. 
+//          .fpProcess 
+//              Specifies the location in which the driver should return the 
+//              base address of the process's memory mapped space when bMap 
+//              is TRUE. When bMap is FALSE, fpProcess contains the base 
+//              address of the memory to be unmapped by the driver.
+//          .ddRVal 
+//              Specifies the location in which the driver writes the return 
+//              value of the DdMapMemory callback. A return code of DD_OK 
+//              indicates success. 
+//
+//-----------------------------------------------------------------------------
+
+DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
+{
+    PPDEV pDev = (PPDEV)lpMapMemory->lpDD->dhpdev;
+
+    VIDEO_SHARE_MEMORY              ShareMemory;
+    VIDEO_SHARE_MEMORY_INFORMATION  ShareMemoryInformation;
+    DWORD                           ReturnedDataLength;
+
+    DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
+
+    if (lpMapMemory->bMap)
+    {
+        ShareMemory.ProcessHandle = lpMapMemory->hProcess;
+
+        // 'RequestedVirtualAddress' isn't actually used for the SHARE IOCTL:
+
+        ShareMemory.RequestedVirtualAddress = 0;
+
+        // We map in starting at the top of the frame buffer:
+
+        ShareMemory.ViewOffset = 0;
+        ShareMemory.ViewSize   = pDev->cyScreen * pDev->lDeltaScreen;
+
+        DISPDBG((0, "ViewSize = %x", ShareMemory.ViewSize));
+
+        if (EngDeviceIoControl(pDev->hDriver,
+                       IOCTL_VIDEO_SHARE_VIDEO_MEMORY,
+                       &ShareMemory,
+                       sizeof(VIDEO_SHARE_MEMORY),
+                       &ShareMemoryInformation,
+                       sizeof(VIDEO_SHARE_MEMORY_INFORMATION),
+                       &ReturnedDataLength))
+        {
+            DISPDBG((0, "Failed IOCTL_VIDEO_SHARE_MEMORY"));
+
+            lpMapMemory->ddRVal = DDERR_GENERIC;
+     
+            DISPDBG((0, "DdMapMemory: Exit GEN, DDHAL_DRIVER_HANDLED"));
+            
+            return(DDHAL_DRIVER_HANDLED);
+        }
+
+        lpMapMemory->fpProcess = 
+                            (FLATPTR) ShareMemoryInformation.VirtualAddress;
+    }
+    else
+    {
+        ShareMemory.ProcessHandle           = lpMapMemory->hProcess;
+        ShareMemory.ViewOffset              = 0;
+        ShareMemory.ViewSize                = 0;
+        ShareMemory.RequestedVirtualAddress = (VOID*) lpMapMemory->fpProcess;
+
+        if (EngDeviceIoControl(pDev->hDriver,
+                       IOCTL_VIDEO_UNSHARE_VIDEO_MEMORY,
+                       &ShareMemory,
+                       sizeof(VIDEO_SHARE_MEMORY),
+                       NULL,
+                       0,
+                       &ReturnedDataLength))
+        {
+            DISPDBG((0, "Failed IOCTL_VIDEO_UNSHARE_MEMORY"));
+        }
+    }
+
+    lpMapMemory->ddRVal = DD_OK;
+
+    return(DDHAL_DRIVER_HANDLED);
+}
+
 /**
  * DdLock
  * 
@@ -610,6 +725,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
     // buffer when we created the surface, DirectDraw will automatically take
     // care of adding in the user-mode frame buffer address if we return
     // DDHAL_DRIVER_NOTHANDLED:
+    lpLock->ddRVal = DD_OK;
     return DDHAL_DRIVER_NOTHANDLED;
 }
 
@@ -635,6 +751,7 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
     PPDEV pDev = (PPDEV)lpUnlock->lpDD->dhpdev;
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
+    lpUnlock->ddRVal = DD_OK;
     return DDHAL_DRIVER_NOTHANDLED;
 }
 
