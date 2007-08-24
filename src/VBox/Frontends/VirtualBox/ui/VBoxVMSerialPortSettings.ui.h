@@ -82,9 +82,13 @@ void VBoxVMSerialPortSettings::putBackToPort()
     mPort.SetIRQ (mIRQLine->text().toULong (NULL, 0));
     mPort.SetIOBase (mIOPortLine->text().toULong (NULL, 0));
 
-    mPort.SetHostMode (vboxGlobal().toPortMode (mHostModeCombo->currentText()));
-    mPort.SetServer (mServerCheck->isChecked());
-    mPort.SetPath (QDir::convertSeparators (mPortPathLine->text()));
+    CEnums::PortMode mode = vboxGlobal().toPortMode (mHostModeCombo->currentText());
+    mPort.SetHostMode (mode);
+    /* don't set unused properties */
+    if (mode == CEnums::HostPipePort)
+        mPort.SetServer (mServerCheck->isChecked());
+    if (mode != CEnums::DisconnectedPort)
+        mPort.SetPath (QDir::convertSeparators (mPortPathLine->text()));
 }
 
 bool VBoxVMSerialPortSettings::isUserDefined()
