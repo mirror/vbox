@@ -1471,7 +1471,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
         QWidget *tab = NULL;
         for (int index = 0; index < tbwNetwork->count(); ++ index)
         {
-            QWidget *tab = tbwNetwork->page (index);
+            tab = tbwNetwork->page (index);
             VBoxVMNetworkSettings *page =
                 static_cast <VBoxVMNetworkSettings *> (tab);
             valid = page->isPageValid (mInterfaceList);
