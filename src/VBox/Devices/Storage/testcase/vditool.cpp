@@ -273,8 +273,8 @@ static int ShrinkImage(const char *pszFilename)
 
 int main(int argc, char **argv)
 {
-    putenv("VBOX_LOG_DEST=stdout");
-    putenv("VBOX_LOG_FLAGS=");
+    putenv((char*)"VBOX_LOG_DEST=stdout");
+    putenv((char*)"VBOX_LOG_FLAGS=");
 
     RTR3Init();
     RTPrintf("vditool    Copyright (c) 2004-2005 innotek GmbH.\n\n");
