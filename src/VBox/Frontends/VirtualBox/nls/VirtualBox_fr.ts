@@ -166,6 +166,27 @@
     </message>
 </context>
 <context>
+    <name>QIWidgetValidator</name>
+    <message>
+        <source>not complete</source>
+        <comment>value state</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>invalid</source>
+        <comment>value state</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;One of the values on the &lt;b&gt;%1&lt;/b&gt; page is %2.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QListBox</name>
     <message>
         <source>Inaccessible</source>
@@ -256,11 +277,15 @@
     </message>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation type="obsolete">OK</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation>Annuler</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="unfinished">&amp;OK</translation>
     </message>
 </context>
 <context>
@@ -331,17 +356,17 @@
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;attached&amp;nbsp;USB&amp;nbsp;devices&lt;br&gt;%1&lt;/qt&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l´activité des périphériques USB&lt;br&gt;%1&lt;/nobr&gt;&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indique l´activité des périphériques USB&lt;br&gt;%1&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;not attached&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;nobr&gt;[&lt;b&gt;non attaché&lt;/b&gt;]&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;non attaché&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;[&lt;b&gt;USB Controller is disabled&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
-        <translation>&lt;nobr&gt;[&lt;b&gt;Contrôleur USB désactivé&lt;/b&gt;]&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;Contrôleur USB désactivé&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>VirtualBox OSE</source>
@@ -480,7 +505,7 @@
     </message>
     <message>
         <source>Open</source>
-        <translation>Ouvrir</translation>
+        <translation type="obsolete">Ouvrir</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
@@ -568,7 +593,7 @@
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
-        <translation>Indique que le clavier du système d&apos;exploitation client est capturé (&lt;img src=hostkey_captured_16px.png/&gt;) ou ne l&apos;est pas (&lt;img src=hostkey_16px.png/&gt;)</translation>
+        <translation type="obsolete">Indique que le clavier du système d&apos;exploitation client est capturé (&lt;img src=hostkey_captured_16px.png/&gt;) ou ne l&apos;est pas (&lt;img src=hostkey_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
@@ -576,44 +601,44 @@
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Permet l&apos;accès rapide aux répertoires partagés (clic avec le bouton droit de la souris).&lt;br&gt;Noter que l&apos;accès aux répertoires partagés nécessite l&apos;installation des additions pour le système d&apos;exploitation client. </translation>
+        <translation type="obsolete">Permet l&apos;accès rapide aux répertoires partagés (clic avec le bouton droit de la souris).&lt;br&gt;Noter que l&apos;accès aux répertoires partagés nécessite l&apos;installation des additions pour le système d&apos;exploitation client. </translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;de&amp;nbsp;la&amp;nbsp;disquette&lt;br&gt;&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;de&amp;nbsp;la&amp;nbsp;disquette&lt;br&gt;&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>Floppy tooltip</comment>
-        <translation>Disquette&amp;nbsp;Hôte;</translation>
+        <translation type="obsolete">Disquette&amp;nbsp;Hôte;</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
         <comment>Floppy tooltip</comment>
-        <translation>non&amp;nbsp;installée</translation>
+        <translation type="obsolete">non&amp;nbsp;installée</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;des lecteurs&amp;nbsp;CD/DSVD-ROM[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;des lecteurs&amp;nbsp;CD/DSVD-ROM[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>Périphérique&amp;nbsp;Hôte&amp;nbsp;</translation>
+        <translation type="obsolete">Périphérique&amp;nbsp;Hôte&amp;nbsp;</translation>
     </message>
     <message>
         <source>not&amp;nbsp;mounted</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>non&amp;nbsp;installé</translation>
+        <translation type="obsolete">non&amp;nbsp;installé</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;virtual&amp;nbsp;hard&amp;nbsp;disks</source>
-        <translation>&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;sur&amp;nbsp;le&amp;nbsp;disque&amp;nbsp;dur;&amp;nbsp;virtuel</translation>
+        <translation type="obsolete">&lt;qt&gt;indicateur&amp;nbsp;d&apos;activité&amp;nbsp;sur&amp;nbsp;le&amp;nbsp;disque&amp;nbsp;dur;&amp;nbsp;virtuel</translation>
     </message>
     <message>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;[&lt;b&gt;non attaché&lt;/b&gt;]&lt;/b&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;[&lt;b&gt;non attaché&lt;/b&gt;]&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
@@ -621,7 +646,7 @@
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
-        <translation>Indique si l&apos;écran à distance (serveur VRDP) est activé (&lt;img src=vrdp_16px.png/&gt;) ou désactivé  (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
+        <translation type="obsolete">Indique si l&apos;écran à distance (serveur VRDP) est activé (&lt;img src=vrdp_16px.png/&gt;) ou désactivé  (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
@@ -665,7 +690,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>L&apos;image CD &quot;VirtualBox  Guest Additions&quot; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; non trouvée&lt;/p&gt;</translation>
+        <translation type="obsolete">L&apos;image CD &quot;VirtualBox  Guest Additions&quot; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; non trouvée&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -678,27 +703,27 @@
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
         <comment>Network adapters indicator</comment>
-        <translation>&lt;qt&gt;Indique&amp;nbsp;l&apos;&amp;nbsp;activité&amp;nbsp;sur&amp;nbsp;les&amp;nbsp;l&apos;interfaces&amp;nbsp;réseau</translation>
+        <translation type="obsolete">&lt;qt&gt;Indique&amp;nbsp;l&apos;&amp;nbsp;activité&amp;nbsp;sur&amp;nbsp;les&amp;nbsp;l&apos;interfaces&amp;nbsp;réseau</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptateur %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptateur %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
-        <translation>connecté</translation>
+        <translation type="obsolete">connecté</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
-        <translation>déconnecté</translation>
+        <translation type="obsolete">déconnecté</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tous les adaptateurs réseau sont désactivés&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tous les adaptateurs réseau sont désactivés&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
@@ -726,6 +751,122 @@
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
         <translation>Connecter le cable de l&apos;adaptateur virtuel réseau sélectionné</translation>
+    </message>
+    <message>
+        <source>Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to seamless desktop integration mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <comment>Floppy tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
+        <comment>Floppy tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
+        <comment>Floppy tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Floppy tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <comment>DVD-ROM tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
+        <comment>DVD-ROM tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
+        <comment>DVD-ROM tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>DVD-ROM tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <comment>HDD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>HDD tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptateur %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished">connecté</translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished">déconnecté</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tous les adaptateurs réseau sont désactivés&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1023,6 +1164,53 @@
     </message>
 </context>
 <context>
+    <name>VBoxDownloaderWgt</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Annuler</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not locate the file on the server (response: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not determine the file size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to the server (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not download the file (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The download process has been cancelled by the user.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxGlobal</name>
     <message>
         <source>Differencing</source>
@@ -1217,7 +1405,7 @@
     <message>
         <source>USB Controller</source>
         <comment>details report</comment>
-        <translation>Contrôleur USB</translation>
+        <translation type="obsolete">Contrôleur USB</translation>
     </message>
     <message>
         <source>VRDP Server Port</source>
@@ -1535,6 +1723,71 @@
     <message>
         <source>Select a file</source>
         <translation>Choisir un fichier</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Désactivé</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Répertoires partagés</translation>
+    </message>
+    <message>
+        <source>%1</source>
+        <comment>details report (shadef folders)</comment>
+        <translation type="unfinished">%1</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Rien</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Répertoires partagés</translation>
+    </message>
+    <message>
+        <source>Stuck</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Pipe</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Device</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User-defined</source>
+        <comment>serial port</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1905,6 +2158,89 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation>Ajoute un nouveau filtre USB avec tous les champs correspondants à la valeur du périphérique raccordé à l&apos;ordinateur principal.</translation>
+    </message>
+    <message>
+        <source>V&amp;RDP Authentication Library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Extended Features</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxLogSearchPanel</name>
+    <message>
+        <source>Close the search panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+P</source>
+        <translation type="unfinished">Alt+P</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+N</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2378,7 +2714,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     </message>
     <message>
         <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Echec d&apos;ouverture d&apos;une session pour la machine virtuelle avec l&apos;UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Echec d&apos;ouverture d&apos;une session pour la machine virtuelle avec l&apos;UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -2445,7 +2781,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode &lt;i&gt;fenêtre&lt;/i&gt; en actionnant &lt;b&gt;%1&lt;/b&gt;. Notez que la &lt;i&gt;touche hôte&lt;/i&gt; est définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;La machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode &lt;i&gt;fenêtre&lt;/i&gt; en actionnant &lt;b&gt;%1&lt;/b&gt;. Notez que la &lt;i&gt;touche hôte&lt;/i&gt; est définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -2536,6 +2872,54 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Les additions clients installées sont trop récentes; la version installée est %1, la version requise est %2, L&apos;utilisation de nouvelles additions client avec une version plus ancienne de Virtualbox n&apos;est pas prévue,&lt;/p&gt;&lt;p&gt;Veuillez installer la version actuelle à partir du menu Périphériques en choisissant &lt;b&gt;Installer les additions client...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
@@ -2545,11 +2929,19 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation type="obsolete">OK</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation>Annuler</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="unfinished">Aide</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="unfinished">&amp;OK</translation>
     </message>
 </context>
 <context>
@@ -2797,11 +3189,6 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>Chemin</translation>
     </message>
     <message>
-        <source>VBoxUSBFilterSettings</source>
-        <comment>don&apos;t translate</comment>
-        <translation></translation>
-    </message>
-    <message>
         <source>Shared &amp;Folders</source>
         <translation>&amp;Répertoires partagés</translation>
     </message>
@@ -2821,7 +3208,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Add</source>
-        <translation>Ajouter</translation>
+        <translation type="obsolete">Ajouter</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
@@ -2829,7 +3216,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Edit</source>
-        <translation>Editer</translation>
+        <translation type="obsolete">Editer</translation>
     </message>
     <message>
         <source>Edit selected shared folder definition.</source>
@@ -2837,7 +3224,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Remove</source>
-        <translation>Eliminer</translation>
+        <translation type="obsolete">Eliminer</translation>
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
@@ -2845,15 +3232,15 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Add a new shared folder</source>
-        <translation>Ajouter un nouveau répertoire partagé</translation>
+        <translation type="obsolete">Ajouter un nouveau répertoire partagé</translation>
     </message>
     <message>
         <source>Edit the selected shared folder</source>
-        <translation>Modifie le répertoire partagé sélectionné</translation>
+        <translation type="obsolete">Modifie le répertoire partagé sélectionné</translation>
     </message>
     <message>
         <source>Remove the selected shared folder</source>
-        <translation>Supprime le répertoire partagé sélectionné</translation>
+        <translation type="obsolete">Supprime le répertoire partagé sélectionné</translation>
     </message>
     <message>
         <source> Machine Folders</source>
@@ -2870,6 +3257,35 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     <message>
         <source>Edits the selected shared folder definition.</source>
         <translation>Modifie la définition du répertoire partagés sélectionné.</translation>
+    </message>
+    <message>
+        <source>VBoxSharedFoldersSettings</source>
+        <comment>don&apos;t translate</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ins</source>
+        <translation type="unfinished">Ins</translation>
+    </message>
+    <message>
+        <source>Add a new shared folder (Ins)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Space</source>
+        <translation type="unfinished">Espace</translation>
+    </message>
+    <message>
+        <source>Edit the selected shared folder (Space)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Del</source>
+        <translation type="unfinished">Supp</translation>
+    </message>
+    <message>
+        <source>Remove the selected shared folder (Del)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2962,20 +3378,12 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation>&amp;Saisir un instantané</translation>
     </message>
     <message>
-        <source>Ctrl+Alt+S</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Discard Current State</source>
-        <translation>Rejette l&apos;´etat actuel</translation>
+        <translation type="obsolete">Rejette l&apos;´etat actuel</translation>
     </message>
     <message>
         <source>D&amp;iscard Current State</source>
-        <translation>R&amp;ejette l&apos;état actuel</translation>
-    </message>
-    <message>
-        <source>Ctrl+Alt+D</source>
-        <translation></translation>
+        <translation type="obsolete">R&amp;ejette l&apos;état actuel</translation>
     </message>
     <message>
         <source>Discard Current Snapshot and State</source>
@@ -2984,10 +3392,6 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
         <translation>El&amp;iminé l&apos;instantané actuel et l&apos;état</translation>
-    </message>
-    <message>
-        <source>Ctrl+Alt+Shift+D</source>
-        <translation></translation>
     </message>
     <message>
         <source>Show Details</source>
@@ -3052,6 +3456,46 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     <message>
         <source>Snapshot %1</source>
         <translation>Instantané %1</translation>
+    </message>
+    <message>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+S</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Revert to Current Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Revert to Current Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+R</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ctrl+Shift+B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show details of the selected snapshot</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3440,6 +3884,26 @@ value.&lt;/qt&gt;</source>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMListBox</name>
@@ -3482,11 +3946,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Fermer</translation>
+        <translation type="obsolete">&amp;Fermer</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+F</translation>
+        <translation type="obsolete">Alt+F</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
@@ -3499,6 +3963,26 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Save VirtualBox Log As</source>
         <translation>Enregistrer le Log VirtualBox sous</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="unfinished">Aide</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished">F1</translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+F</source>
+        <translation type="unfinished">Alt+F</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3713,6 +4197,73 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Selects the terminate application.</source>
         <translation>Choisi l&apos;application de désinstallation.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSerialPortSettings</name>
+    <message>
+        <source>VBoxVMSerialPortSettings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Serial Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the given serial port of the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port &amp;Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;IRQ</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I/O Po&amp;rt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port &amp;Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create Pipe</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port &amp;Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4176,20 +4727,20 @@ Tous les champs correspondent à la valeur du périphérique raccordé `a l&apos
     </message>
     <message>
         <source>Server port </source>
-        <translation>Port du serveur</translation>
+        <translation type="obsolete">Port du serveur</translation>
     </message>
     <message>
         <source>Authentication Method </source>
-        <translation>Méthode d&apos;authentification</translation>
+        <translation type="obsolete">Méthode d&apos;authentification</translation>
     </message>
     <message>
         <source>Authentication Timeout </source>
-        <translation><byte value="x9"/>
+        <translation type="obsolete"><byte value="x9"/>
 Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>Displays the VRDP Server port.</source>
-        <translation>Affiche le port pour le serveur VRDP.</translation>
+        <translation type="obsolete">Affiche le port pour le serveur VRDP.</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
@@ -4286,43 +4837,43 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected.</source>
-        <translation>Disque dur maître primaire non sectionné.</translation>
+        <translation type="obsolete">Disque dur maître primaire non sectionné.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is not selected.</source>
-        <translation>Disque dur esclave secondaire non sectionné.</translation>
+        <translation type="obsolete">Disque dur esclave secondaire non sectionné.</translation>
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
-        <translation>Le disque dur esclave primaire est attaché sur un autre emplacement.</translation>
+        <translation type="obsolete">Le disque dur esclave primaire est attaché sur un autre emplacement.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected.</source>
-        <translation>Disque dur esclave secondaire non sectionné.</translation>
+        <translation type="obsolete">Disque dur esclave secondaire non sectionné.</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
-        <translation>Le disque dur esclave secondaire est attaché sur un autre emplacement.</translation>
+        <translation type="obsolete">Le disque dur esclave secondaire est attaché sur un autre emplacement.</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected.</source>
-        <translation>Image CD/DVD non sélectionnée.</translation>
+        <translation type="obsolete">Image CD/DVD non sélectionnée.</translation>
     </message>
     <message>
         <source>Floppy image file is not selected.</source>
-        <translation>Image disquette non sélectionnée.</translation>
+        <translation type="obsolete">Image disquette non sélectionnée.</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
-        <translation>L&apos;interface réseau hôte choisie pour l&apos;adaptateur %1 n&apos;est pas correcte.</translation>
+        <translation type="obsolete">L&apos;interface réseau hôte choisie pour l&apos;adaptateur %1 n&apos;est pas correcte.</translation>
     </message>
     <message>
         <source>VRDP Port is not set.</source>
-        <translation>Le port VRDP n&apos;est pas défini.</translation>
+        <translation type="obsolete">Le port VRDP n&apos;est pas défini.</translation>
     </message>
     <message>
         <source>VRDP Timeout is not set.</source>
-        <translation>Le timeout pour VRDP n&apos;est pas défini.</translation>
+        <translation type="obsolete">Le timeout pour VRDP n&apos;est pas défini.</translation>
     </message>
     <message>
         <source> - Settings</source>
@@ -4461,6 +5012,127 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Désirez vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines viruelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Serial Ports </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>#serialPorts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other &amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remember Media Mounted at Runtime</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+R</source>
+        <translation type="unfinished">Alt+R</translation>
+    </message>
+    <message>
+        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>O&amp;ther</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Passthrough</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Alt+E</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Server Port </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary Master hard disk is not selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary Slave hard disk is not selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Primary Slave hard disk is already attached to a different slot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secondary Slave hard disk is not selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Secondary Slave hard disk is already attached to a different slot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD image file is not selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy image file is not selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Incorrect host network interface is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate port number is selected </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate port path is entered </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>serial ports</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
