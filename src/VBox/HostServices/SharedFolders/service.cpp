@@ -591,6 +591,7 @@ static DECLCALLBACK(void) svcCall (VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 else
                 if (Handle == SHFL_HANDLE_NIL)
                 {
+                    AssertMsgFailed(("Invalid handle!!!!\n"));
                     rc = VERR_INVALID_HANDLE;
                 }
                 else
