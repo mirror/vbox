@@ -1846,9 +1846,7 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive>
                     {
                         tmp = strchr(mnt_type, ',');
                         if (tmp)
-                        {
                             *tmp = '\0';
-                        }
                     }
                 }
                 tmp = strstr(mntent->mnt_opts, "dev=");
@@ -1860,13 +1858,12 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive>
                     {
                         tmp = strchr(mnt_dev, ',');
                         if (tmp)
-                        {
                             *tmp = '\0';
-                        }
                     }
                 }
             }
-            if (strcmp(mnt_type, "iso9660") == 0)
+            // use strstr here to cover things fs types like "udf,iso9660"
+            if (strstr(mnt_type, "iso9660") == 0)
             {
                 /** @todo check whether we've already got the drive in our list! */
                 if (validateDevice(mnt_dev, true))
