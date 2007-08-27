@@ -1342,7 +1342,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     if (pVM->rem.s.fIgnoreInvlPg || pVM->rem.s.fIgnoreAll)
         return;
     Log(("remR3FlushPage: GCPtr=%VGv\n", GCPtr));
-    Assert(pVM->rem.s.fInREM);
+    Assert(pVM->rem.s.fInREM || pVM->rem.s.fInStateSync);
 
     //RAWEx_ProfileStop(env, STATS_QEMU_TOTAL);
 
