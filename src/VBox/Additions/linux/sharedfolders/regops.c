@@ -269,7 +269,7 @@ sf_reg_open (struct inode *inode, struct file *file)
         }
 
         /** @todo handle these return codes!! */
-        switch (pCreateParms->Result)
+        switch (params.Result)
         {
         case SHFL_PATH_NOT_FOUND:
             break;
