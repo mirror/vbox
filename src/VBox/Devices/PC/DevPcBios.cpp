@@ -1399,7 +1399,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (pu8LanBoot)
         rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot, 
-                                  false /* fShadow */, "Net Boot ROM");
+                                  true /* fShadow */, "Net Boot ROM");
 
     rc = CFGMR3QueryU8(pCfgHandle, "DelayBoot", &pData->uBootDelay);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)

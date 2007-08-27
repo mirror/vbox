@@ -25,7 +25,7 @@
 
 #define VBOX_MPS_TABLE_BASE          0xe1100
 
-#define VBOX_LANBOOT_SEG             0xca00
+#define VBOX_LANBOOT_SEG             0xe200
 
 #endif
 

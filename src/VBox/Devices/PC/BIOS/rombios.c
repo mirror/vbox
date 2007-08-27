@@ -7980,12 +7980,15 @@ Bit8u bseqnr;
   if (bootlan == 1) {
     if (read_word(VBOX_LANBOOT_SEG,0) == 0xaa55) {
       Bit16u pnpoff;
+      Bit32u manuf;
       // This is NOT a generic PnP implementation, but an Etherboot-specific hack.
       pnpoff = read_word(VBOX_LANBOOT_SEG,0x1a);
-      if (read_dword(VBOX_LANBOOT_SEG,pnpoff) == 0x506e5024 &&
-          read_dword(VBOX_LANBOOT_SEG,read_word(VBOX_LANBOOT_SEG,pnpoff+0xe)) == 0x65687445) {
-        // Found PnP signature and Etherboot manufacturer string.
-        print_boot_device(bootcd, bootlan, bootdrv);
+      if (read_dword(VBOX_LANBOOT_SEG,pnpoff) == 0x506e5024) {
+        // Found PnP signature
+        manuf = read_dword(VBOX_LANBOOT_SEG,read_word(VBOX_LANBOOT_SEG,pnpoff+0xe));
+        if (manuf == 0x65687445) {
+          // Found Etherboot ROM
+          print_boot_device(bootcd, bootlan, bootdrv);
 ASM_START
     push ds
     push es
@@ -7995,6 +7998,37 @@ ASM_START
     pop es
     pop ds
 ASM_END
+          } else if (manuf == 0x65746E49) {
+            // Found Intel PXE ROM
+            print_boot_device(bootcd, bootlan, bootdrv);
+ASM_START
+    push ds
+    push es
+    pusha
+    sti     ; Why are interrupts disabled now? Because we were called through an INT!
+    calli 0x0003,VBOX_LANBOOT_SEG
+;    cmp bx,#0x20
+;    jne no_rom
+    push #VBOX_LANBOOT_SEG
+    pop ds
+    mov bx,#0x1a    ; PnP header offset
+    mov bx,[bx]
+    add bx,#0x1a    ; BEV offset in PnP header
+    mov ax,[bx]
+    test ax,ax
+    jz no_rom
+bev_jump:
+    push cs
+    push #no_rom
+    push #VBOX_LANBOOT_SEG
+    push ax
+    retf    ; call Boot Entry Vector
+no_rom:
+    popa
+    pop es
+    pop ds
+ASM_END
+          }
         }
       }
 
