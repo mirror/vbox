@@ -178,6 +178,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 
     if (!pszRoot || cbRoot == 0)
     {
+        Log(("vbsfBuildFullPath: invalid root!\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -200,6 +201,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             {
                 rc = VERR_NO_MEMORY;
                 *ppszFullPath = NULL;
+                Log(("RTMemAllocZ %x failed!!\n", cbUtf8FullPath));
             }
             else
             {
@@ -446,7 +448,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
         }
         *ppszFullPath = pszFullPath;
 
-        LogFlow(("vbsfBuildFullPath: %s\n", pszFullPath));
+        LogFlow(("vbsfBuildFullPath: %s rc=%Vrc\n", pszFullPath, rc));
     }
 
     return rc;
@@ -791,8 +793,8 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
 {
     int rc = VINF_SUCCESS;
 
-    LogFlow(("vbsfCreate: pClient = %p, pPath = %p, cbPath = %d, pParms = %p\n",
-             pClient, pPath, cbPath, pParms));
+    LogFlow(("vbsfCreate: pClient = %p, pPath = %p, cbPath = %d, pParms = %p CreateFlags=%x\n",
+             pClient, pPath, cbPath, pParms, pParms->CreateFlags));
 
     /* Check the client access rights to the root. */
     /** @todo */
@@ -994,7 +996,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         vbsfFreeFullPath(pszFullPath);
     }
 
-    Log(("vbsfCreate: handle = %RX64 rc = %Vrc\n", (uint64_t)pParms->Handle, rc));
+    Log(("vbsfCreate: handle = %RX64 rc = %Vrc result=%x\n", (uint64_t)pParms->Handle, rc, pParms->Result));
 
     return rc;
 }
