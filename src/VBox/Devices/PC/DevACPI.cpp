@@ -1560,7 +1560,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (VBOX_FAILURE (rc))
         return rc;
 
-    rc = PDMDevHlpROMRegister (pDevIns, rsdp_addr, 0x1000, s->au8RSDPPage, "ACPI RSDP");
+    rc = PDMDevHlpROMRegister (pDevIns, rsdp_addr, 0x1000, s->au8RSDPPage, false /* fShadow */, "ACPI RSDP");
     if (VBOX_FAILURE (rc))
         return rc;
 

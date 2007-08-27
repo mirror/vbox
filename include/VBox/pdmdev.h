@@ -1790,12 +1790,17 @@ typedef struct PDMDEVHLP
      *                              Must be page aligned!
      * @param   pvBinary            Pointer to the binary data backing the ROM image.
      *                              This must be cbRange bytes big.
-     *                              It will be copied and doesn't have to stick around.
+     *                              It will be copied and doesn't have to stick around if fShadow is clear. 
+     * @param   fShadow             Whether to emulate ROM shadowing. This involves leaving
+     *                              the ROM writable for a while during the POST and refreshing
+     *                              it at reset. When this flag is set, the memory pointed to by
+     *                              pvBinary has to stick around for the lifespan of the VM.
      * @param   pszDesc             Pointer to description string. This must not be freed.
+     * 
      * @remark  There is no way to remove the rom, automatically on device cleanup or
      *          manually from the device yet. At present I doubt we need such features...
      */
-    DECLR3CALLBACKMEMBER(int, pfnROMRegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, const char *pszDesc));
+    DECLR3CALLBACKMEMBER(int, pfnROMRegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc));
 
     /**
      * Register a save state data unit.
@@ -2526,9 +2531,22 @@ typedef struct PDMDEVHLP
      */
     DECLR3CALLBACKMEMBER(void, pfnGetCpuId,(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx));
 
+    /**
+     * Write protects a shadow ROM mapping.
+     * 
+     * This is intented for use by the system BIOS or by the device that 
+     * employs a shadow ROM BIOS, so that the shadow ROM mapping can be
+     * write protected once the POST is over.
+     * 
+     * @param   pDevIns     Device instance.
+     * @param   GCPhysStart Where the shadow ROM mapping starts.
+     * @param   cbRange     The size of the shadow ROM mapping.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnROMProtectShadow,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange));
+
     /** @} */
 
-    /** Just a safety precaution. (The value is 0.) */
+    /** Just a safety precaution. (PDM_DEVHLP_VERSION) */
     uint32_t                        u32TheEnd;
 } PDMDEVHLP;
 #endif /* !IN_RING3 */
@@ -2538,7 +2556,7 @@ typedef HCPTRTYPE(struct PDMDEVHLP *) PPDMDEVHLP;
 typedef HCPTRTYPE(const struct PDMDEVHLP *) PCPDMDEVHLP;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2040000
+#define PDM_DEVHLP_VERSION  0xf2050000
 
 
 /**
@@ -2997,9 +3015,17 @@ DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 /**
  * @copydoc PDMDEVHLP::pfnROMRegister
  */
-DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, const char *pszDesc)
+DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc)
 {
-    return pDevIns->pDevHlp->pfnROMRegister(pDevIns, GCPhysStart, cbRange, pvBinary, pszDesc);
+    return pDevIns->pDevHlp->pfnROMRegister(pDevIns, GCPhysStart, cbRange, pvBinary, fShadow, pszDesc);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnROMProtectShadow
+ */
+DECLINLINE(int) PDMDevHlpROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+{
+    return pDevIns->pDevHlp->pfnROMProtectShadow(pDevIns, GCPhysStart, cbRange);
 }
 
 /**

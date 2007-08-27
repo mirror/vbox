@@ -1145,7 +1145,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pData->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
 
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, "DMI tables");
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, false /* fShadow */, "DMI tables");
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -1160,12 +1160,12 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertReleaseMsg(RT_ALIGN_Z(g_cbPcBiosBinary, _64K) == g_cbPcBiosBinary,
                      ("g_cbPcBiosBinary=%#x\n", g_cbPcBiosBinary));
     cb = RT_MIN(g_cbPcBiosBinary, 128 * _1K);
-    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb,
-                              &g_abPcBiosBinary[g_cbPcBiosBinary - cb], "PC BIOS - 0xfffff");
+    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &g_abPcBiosBinary[g_cbPcBiosBinary - cb], 
+                              false /* fShadow */, "PC BIOS - 0xfffff");
     if (VBOX_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary,
-                              &g_abPcBiosBinary[0], "PC BIOS - 0xffffffff");
+    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary, &g_abPcBiosBinary[0], 
+                              false /* fShadow */, "PC BIOS - 0xffffffff");
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -1398,7 +1398,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * the (up to) 32 kb ROM image.
      */
     if (pu8LanBoot)
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot, "Net Boot ROM");
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbFileLanBoot, pu8LanBoot, 
+                                  false /* fShadow */, "Net Boot ROM");
 
     rc = CFGMR3QueryU8(pCfgHandle, "DelayBoot", &pData->uBootDelay);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
