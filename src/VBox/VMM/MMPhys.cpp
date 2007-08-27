@@ -277,11 +277,17 @@ MMR3DECL(int) MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, 
  * @param   pvBinary            Pointer to the binary data backing the ROM image.
  *                              This must be cbRange bytes big.
  *                              It will be copied and doesn't have to stick around.
+ *                              It will be copied and doesn't have to stick around if fShadow is clear. 
+ * @param   fShadow             Whether to emulate ROM shadowing. This involves leaving
+ *                              the ROM writable for a while during the POST and refreshing
+ *                              it at reset. When this flag is set, the memory pointed to by
+ *                              pvBinary has to stick around for the lifespan of the VM.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  * @remark  There is no way to remove the rom, automatically on device cleanup or
  *          manually from the device yet. At present I doubt we need such features...
  */
-MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, const char *pszDesc)
+MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, 
+                                  bool fShadow, const char *pszDesc)
 {
     /*
      * Validate input.
@@ -339,19 +345,21 @@ MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, 
     void *pvCopy = (char *)pCur->pv + (iPage << PAGE_SHIFT);
     memcpy(pvCopy, pvBinary, cbRange);
 
-    /** @note we rely on the MM_RAM_FLAGS_ROM flag in PGMPhysRead now. Don't change to reserved! */
-    /** @todo r=bird: Noone ever talked about changing *to* _RESERVED. The question is whether
-     * we should *clear* _RESERVED. I've no idea what the state of that flag is for ROM areas right
-     * now, but I will find out later. */
+    const unsigned fSet = fShadow ? MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2 : MM_RAM_FLAGS_ROM;
     for (; iPage < iPageEnd; iPage++)
-        pCur->aPhysPages[iPage].Phys |= MM_RAM_FLAGS_ROM; /** @todo should be clearing _RESERVED? */
-    int rc = PGMR3PhysSetFlags(pVM, GCPhys, cbRange, MM_RAM_FLAGS_ROM, ~0); /** @todo should be clearing _RESERVED? */
+    {
+        pCur->aPhysPages[iPage].Phys &= ~MM_RAM_FLAGS_RESERVED;
+        pCur->aPhysPages[iPage].Phys |= fSet;
+    }
+    int rc = PGMR3PhysSetFlags(pVM, GCPhys, cbRange, fSet, ~MM_RAM_FLAGS_RESERVED);
     AssertRC(rc);
     if (VBOX_SUCCESS(rc))
     {
         /*
-         * Prevent changes to the ROM memory when executing in raw mode by
-         * registering a GC only write access handler.
+         * To prevent the shadow page table mappings from being RW in raw-mode, we 
+         * must currently employ a little hack. We register an write access handler
+         * and thereby ensures a RO mapping of the pages. This is NOT very nice,
+         * and wasn't really my intention when writing the code, consider it a PGM bug.
          *
          * ASSUMES that REMR3NotifyPhysRomRegister doesn't call cpu_register_physical_memory
          * when there is no HC handler. The result would probably be immediate boot failure.
@@ -359,11 +367,42 @@ MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, 
         rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + cbRange - 1,
                                           NULL, NULL,
                                           NULL, "pgmGuestROMWriteHandler", 0,
-                                          NULL, "pgmGuestROMWriteHandler", 0, "ROM Write Access Handler");
+                                          NULL, "pgmGuestROMWriteHandler", 0, pszDesc);
         AssertRC(rc);
     }
 
-    REMR3NotifyPhysRomRegister(pVM, GCPhys, cbRange, pvCopy);
+    /*
+     * Create a ROM range it so we can make a 'info rom' thingy and more importantly
+     * reload and protect/unprotect shadow ROM correctly.
+     */
+    if (VBOX_SUCCESS(rc))
+    {
+        PMMROMRANGE pRomRange = (PMMROMRANGE)MMR3HeapAlloc(pVM, MM_TAG_MM, sizeof(*pRomRange));
+        AssertReturn(pRomRange, VERR_NO_MEMORY);
+        pRomRange->GCPhys = GCPhys;
+        pRomRange->cbRange = cbRange;
+        pRomRange->pszDesc = pszDesc;
+        pRomRange->fShadow = fShadow;
+        pRomRange->fWritable = fShadow;
+        pRomRange->pvBinary = fShadow ? pvBinary : NULL;
+        pRomRange->pvCopy = pvCopy;
+
+        /* sort it for 'info rom' readability.  */
+        PMMROMRANGE pPrev = NULL;
+        PMMROMRANGE pCur = pVM->mm.s.pRomHead;
+        while (pCur && pCur->GCPhys < GCPhys)
+        {
+            pPrev = pCur;
+            pCur = pCur->pNext;
+        }
+        pRomRange->pNext = pCur;
+        if (pPrev)
+            pPrev->pNext = pRomRange;
+        else
+            pVM->mm.s.pRomHead = pRomRange;
+    }
+
+    REMR3NotifyPhysRomRegister(pVM, GCPhys, cbRange, pvCopy, fShadow);
     return rc; /* we're sloppy with error cleanup here, but we're toast anyway if this fails. */
 }
 
@@ -437,12 +476,83 @@ MMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const ch
  * Get the size of the base RAM.
  * This usually means the size of the first contigous block of physical memory.
  *
- * @returns
- * @param   pVM
+ * @returns The guest base RAM size.
+ * @param   pVM         The VM handle.
  * @thread  Any.
  */
 MMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
 {
     return pVM->mm.s.cbRamBase;
+}
+
+
+/** 
+ * Called by MMR3Reset to reset the shadow ROM.
+ * 
+ * Resetting involves reloading the ROM into RAM and make it 
+ * wriable again (as it was made read only at the end of the POST).
+ * 
+ * @param   pVM         The VM handle.
+ */
+void mmR3PhysRomReset(PVM pVM)
+{
+    for (PMMROMRANGE pCur = pVM->mm.s.pRomHead; pCur; pCur = pCur->pNext)
+        if (pCur->fShadow)
+        {
+            memcpy(pCur->pvCopy, pCur->pvBinary, pCur->cbRange);
+            if (!pCur->fWritable)
+            {
+                int rc = PGMHandlerPhysicalDeregister(pVM, pCur->GCPhys);
+                AssertRC(rc);
+                pCur->fWritable = true;
+
+                rc = PGMR3PhysSetFlags(pVM, pCur->GCPhys, pCur->cbRange, MM_RAM_FLAGS_MMIO2, ~0); /* ROM -> ROM + MMIO2 */
+                AssertRC(rc);
+
+                REMR3NotifyPhysRomRegister(pVM, pCur->GCPhys, pCur->cbRange, pCur->pvCopy, true /* read-write now */);
+            }
+        }
+}
+
+
+/**
+ * Write-protects a shadow ROM range.
+ * 
+ * This is called late in the POST for shadow ROM ranges.
+ * 
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      Start of the registered shadow ROM range 
+ * @param   cbRange     The length of the registered shadow ROM range.
+ *                      This can be NULL (not sure about the BIOS interface yet).
+ */
+MMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
+{
+    for (PMMROMRANGE pCur = pVM->mm.s.pRomHead; pCur; pCur = pCur->pNext)
+        if (    pCur->GCPhys == GCPhys 
+            &&  (   pCur->cbRange == cbRange 
+                 || !cbRange))
+        {
+            if (pCur->fWritable)
+            {
+                cbRange = pCur->cbRange;
+                int rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + cbRange - 1,
+                                                      NULL, NULL,
+                                                      NULL, "pgmGuestROMWriteHandler", 0,
+                                                      NULL, "pgmGuestROMWriteHandler", 0, pCur->pszDesc);
+                AssertRCReturn(rc, rc);
+                pCur->fWritable = false;
+
+                rc = PGMR3PhysSetFlags(pVM, GCPhys, cbRange, 0, ~MM_RAM_FLAGS_MMIO2); /* ROM + MMIO2 -> ROM */
+                AssertRCReturn(rc, rc);
+                /* Don't bother with the MM page flags here because I don't think they are 
+                   really used beyond conflict checking at ROM, RAM, Reservation, etc. */
+
+                REMR3NotifyPhysRomRegister(pVM, GCPhys, cbRange, pCur->pvCopy, false /* read-only now */);
+            }
+            return VINF_SUCCESS;
+        }
+    AssertMsgFailed(("GCPhys=%VGp cbRange=%#x\n", GCPhys, cbRange));
+    return VERR_INVALID_PARAMETER;
 }
 

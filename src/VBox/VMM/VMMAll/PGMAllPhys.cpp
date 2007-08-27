@@ -20,6 +20,8 @@
  *
  * Since this flag is currently incorrectly kept set for ROM regions we will
  * have to ignore it for now so we don't break stuff.
+ * 
+ * @todo this has been fixed now I believe, remove this hack.
  */
 #define PGM_IGNORE_RAM_FLAGS_RESERVED
 
@@ -735,8 +737,9 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                         case 0:
                         case MM_RAM_FLAGS_ROM:
                         case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_RESERVED:
+                        //case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2: /* = shadow */ - //MMIO2 isn't in the mask.
                         case MM_RAM_FLAGS_PHYSICAL_WRITE:
-                        case MM_RAM_FLAGS_MMIO2 | MM_RAM_FLAGS_PHYSICAL_WRITE:
+                        case MM_RAM_FLAGS_MMIO2 | MM_RAM_FLAGS_PHYSICAL_WRITE: // MMIO2 isn't in the mask.
                         case MM_RAM_FLAGS_VIRTUAL_WRITE:
                         {
 #ifdef IN_GC
@@ -999,10 +1002,11 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                 switch (HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2 | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE))
                 {
                     /*
-                     * Normal memory.
+                     * Normal memory, MMIO2 or writable shadow ROM.
                      */
                     case 0:
                     case MM_RAM_FLAGS_MMIO2:
+                    case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2: /* shadow rom */
                     {
 #ifdef IN_GC
                         void *pvDst = NULL;

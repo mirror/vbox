@@ -1487,8 +1487,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: GCPhysStart=%VGp cbRange=%#x pvBinary=%p fShadow=%RTbool pszDesc=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvBinary, fShadow, pszDesc, pszDesc));
 
-AssertReturn(!fShadow, VERR_NOT_IMPLEMENTED); /* be patient. */
-    int rc = MMR3PhysRomRegister(pDevIns->Internal.s.pVMHC, pDevIns, GCPhysStart, cbRange, pvBinary, pszDesc);
+    int rc = MMR3PhysRomRegister(pDevIns->Internal.s.pVMHC, pDevIns, GCPhysStart, cbRange, pvBinary, fShadow, pszDesc);
 
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -3597,8 +3596,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPH
     LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: GCPhysStart=%VGp cbRange=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange));
 
-AssertFailed(); /* be patient. */
-    int rc = VERR_NOT_IMPLEMENTED;
+    int rc = MMR3PhysRomProtect(pDevIns->Internal.s.pVMHC, GCPhysStart, cbRange);
 
     LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
