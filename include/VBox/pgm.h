@@ -1261,8 +1261,8 @@ PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
 
 /**
- * Interface MMR3RamRegister(), MMR3RomRegister() and MMIO handler
- * registration calls.
+ * Interface that the MMR3RamRegister(), MMR3RomRegister() and MMIO handler
+ * registration APIs calls to inform PGM about memory registrations.
  *
  * It registers the physical memory range with PGM. MM is responsible
  * for the toplevel things - allocation and locking - while PGM is taking
