@@ -409,7 +409,7 @@ static const REMPARMDESC g_aArgsNotifyPhysRomRegister[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
 };
 static const REMPARMDESC g_aArgsNotifyHandlerPhysicalModify[] =
