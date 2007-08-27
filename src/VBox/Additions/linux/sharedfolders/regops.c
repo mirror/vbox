@@ -260,11 +260,27 @@ sf_reg_open (struct inode *inode, struct file *file)
 
         /* XXX: here i probably should check rc and convert some values to
            EEXISTS ENOENT etc */
-        if (VBOX_FAILURE (rc)) {
-                elog ("vboxCallCreate failed flags=%d,%#x rc=%d\n",
-                      file->f_flags, params.CreateFlags, rc);
-                kfree (sf_r);
-                return -EPROTO;
+        if (VBOX_FAILURE (rc))  
+        {
+            elog ("vboxCallCreate failed flags=%d,%#x rc=%d\n",
+                  file->f_flags, params.CreateFlags, rc);
+            kfree (sf_r);
+            return -EPROTO;
+        }
+
+        /** @todo handle these return codes!! */
+        switch (pCreateParms->Result)
+        {
+        case SHFL_PATH_NOT_FOUND:
+            break;
+        case SHFL_FILE_NOT_FOUND:
+            break;
+        case SHFL_FILE_EXISTS:
+            break;
+        case SHFL_FILE_REPLACED:
+            break;
+        case SHFL_FILE_CREATED:
+            break;
         }
 
         sf_i->force_restat = 1;
