@@ -1677,8 +1677,7 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
         }
 #ifdef VBOX
         /* inform raw mode about TLB page change */
-        /** @todo double check and fix this interface. OLD: remR3SetPage(env, &env->tlb_read[is_user][index], &env->tlb_write[is_user][index], prot, is_user); */
-        remR3SetPage(env, te, te, prot, is_user);
+        remR3FlushPage(env, vaddr);
 #endif
     }
 #if !defined(CONFIG_SOFTMMU)
