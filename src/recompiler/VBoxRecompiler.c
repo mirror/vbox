@@ -2503,7 +2503,10 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 # ifndef REM_PHYS_ADDR_IN_TLB
         uint32_t i;
 # endif
-        cpu_register_physical_memory(GCPhys, cb, GCPhys | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
+        if (fFlags & MM_RAM_FLAGS_RESERVED)
+            cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+        else
+            cpu_register_physical_memory(GCPhys, cb, GCPhys);
 
 # ifndef REM_PHYS_ADDR_IN_TLB
         AssertRelease(pVM->rem.s.cPhysRegistrations < REM_MAX_PHYS_REGISTRATIONS);
