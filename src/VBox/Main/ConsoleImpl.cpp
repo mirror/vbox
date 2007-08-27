@@ -352,8 +352,10 @@ void Console::uninit()
     /* This should be the first, since this may cause detaching remote USB devices. */
     if (mConsoleVRDPServer)
     {
-        delete mConsoleVRDPServer;
-        unconst (mConsoleVRDPServer) = NULL;
+        mConsoleVRDPServer->Stop ();
+        /* Do not delete the mConsoleVRDPServer yet, it could be called
+         * since the VM may be not powered done at the moment.
+         */
     }
 
     /* power down the VM if necessary */
@@ -422,6 +424,12 @@ void Console::uninit()
     {
         mGuest->uninit();
         unconst (mGuest).setNull();;
+    }
+
+    if (mConsoleVRDPServer)
+    {
+        delete mConsoleVRDPServer;
+        unconst (mConsoleVRDPServer) = NULL;
     }
 
     unconst (mFloppyDrive).setNull();
