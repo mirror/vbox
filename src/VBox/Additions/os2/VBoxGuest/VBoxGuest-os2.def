@@ -16,7 +16,7 @@
 
 
 PHYSICAL DEVICE VBoxGst
-DESCRIPTION 'VirtualBox.org Guest Additions Driver for OS/2.'
+DESCRIPTION 'VirtualBox Guest Additions Driver for OS/2.'
 CODE PRELOAD EXECUTEREAD
 DATA PRELOAD
 ; We're using wlink.exe, so this doesn't work.

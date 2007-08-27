@@ -15,7 +15,7 @@
 
 
 NAME VBoxSvc
-DESCRIPTION 'VirtualBox.org Guest Additions Service for OS/2.'
+DESCRIPTION 'VirtualBox Guest Additions Service for OS/2.'
 CODE SHARED
 DATA MULTIPLE NONSHARED
 
