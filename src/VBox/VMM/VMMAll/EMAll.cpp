@@ -46,9 +46,9 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef EMDECL(uint32_t) PFN_EMULATE_PARAM2_UINT32(uint32_t *pu32Param1, uint32_t val2);
-typedef EMDECL(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, size_t val2);
-typedef EMDECL(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, size_t val3);
+typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2_UINT32(uint32_t *pu32Param1, uint32_t val2);
+typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM2(uint32_t *pu32Param1, size_t val2);
+typedef DECLCALLBACK(uint32_t) PFN_EMULATE_PARAM3(uint32_t *pu32Param1, uint32_t val2, size_t val3);
 
 
 /*******************************************************************************
@@ -107,14 +107,14 @@ DECLCALLBACK(int32_t) EMReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t siz
     return VINF_SUCCESS;
 }
 
-inline int emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
+DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
     return DISCoreOneEx(InstrGC, pCpu->mode, EMReadBytes, pVM, pCpu,  pOpsize);
 }
 
 #else
 
-inline int emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
+DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
     return DISCoreOne(pCpu, InstrGC, pOpsize);
 }
@@ -278,29 +278,57 @@ EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu,
 }
 
 
-inline int emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
+DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 {
+    int rc;
 #ifdef IN_GC
-    return MMGCRamRead(pVM, pDest, GCSrc, cb);
-#else
-    int         rc;
+    rc = MMGCRamRead(pVM, pDest, GCSrc, cb);
+    if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
+        return rc;
+    /* 
+     * The page pool cache may end up here in some cases because it 
+     * flushed one of the shadow mappings used by the trapping 
+     * instruction and it either flushed the TLB or the CPU reused it.
+     */
+#endif
     RTGCPHYS    GCPhys;
     RTGCUINTPTR offset;
 
-    offset = GCSrc & PAGE_OFFSET_MASK;
+    offset = (RTGCUINTPTR)GCSrc & PAGE_OFFSET_MASK;
 
     rc = PGMPhysGCPtr2GCPhys(pVM, GCSrc, &GCPhys);
     AssertRCReturn(rc, rc);
     PGMPhysRead(pVM, GCPhys + offset, pDest, cb);
     return VINF_SUCCESS;
-#endif
 }
 
-inline int emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
+DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 {
 #ifdef IN_GC
-    return MMGCRamWrite(pVM, GCDest, pSrc, cb);
+    int rc = MMGCRamWrite(pVM, GCDest, pSrc, cb);
+    if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
+        return rc;
+    /* 
+     * The page pool cache may end up here in some cases because it 
+     * flushed one of the shadow mappings used by the trapping 
+     * instruction and it either flushed the TLB or the CPU reused it.
+     * We want to play safe here, verifying that we've got write 
+     * access doesn't cost us much (see PGMPhysGCPtr2GCPhys()).
+     */
+    uint64_t fFlags;
+    RTGCPHYS GCPhys;
+    rc = PGMGstGetPage(pVM, GCDest, &fFlags, &GCPhys);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (    !(fFlags & X86_PTE_RW) 
+        &&  (CPUMGetGuestCR0(pVM) & X86_CR0_WP))
+        return VERR_ACCESS_DENIED;
+
+    PGMPhysWrite(pVM, GCPhys + ((RTGCUINTPTR)GCDest & PAGE_OFFSET_MASK), pSrc, cb);
+    return VINF_SUCCESS;
+
 #else
+
     int         rc;
     RTGCPHYS    GCPhys;
     RTGCUINTPTR offset;
