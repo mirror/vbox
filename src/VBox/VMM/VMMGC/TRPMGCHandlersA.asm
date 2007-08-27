@@ -171,13 +171,13 @@ BEGINPROC_EXPORTED TRPMGCHandlerGeneric
     TRPMGenericEntry GenericTrapErrCode ; e
     TRPMGenericEntry GenericTrap        ; f  (reserved)
     TRPMGenericEntry GenericTrap        ; 10
-    TRPMGenericEntry GenericTrapErrCode ; 12
+    TRPMGenericEntry GenericTrapErrCode ; 11
+    TRPMGenericEntry GenericTrap        ; 12
     TRPMGenericEntry GenericTrap        ; 13
     TRPMGenericEntry GenericTrap        ; 14 (reserved)
     TRPMGenericEntry GenericTrap        ; 15 (reserved)
     TRPMGenericEntry GenericTrap        ; 16 (reserved)
     TRPMGenericEntry GenericTrap        ; 17 (reserved)
-    TRPMGenericEntry GenericTrap        ; 18 (reserved)
 %undef i
 %undef TRPMGenericEntry
 
