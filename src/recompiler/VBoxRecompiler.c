@@ -2503,7 +2503,6 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 # ifndef REM_PHYS_ADDR_IN_TLB
         uint32_t i;
 # endif
-        Assert((fFlags & MM_RAM_FLAGS_RESERVED) || !fFlags);
         cpu_register_physical_memory(GCPhys, cb, GCPhys | (fFlags & MM_RAM_FLAGS_RESERVED ? IO_MEM_UNASSIGNED : 0));
 
 # ifndef REM_PHYS_ADDR_IN_TLB
