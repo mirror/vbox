@@ -1281,6 +1281,7 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
         {
             if (pRam->aHCPhys[iPage] & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2))
             {
+                /* shadow ram is reloaded elsewhere. */
                 Log4(("PGMR3Reset: not clearing phys page %RGp due to flags %RHp\n", pRam->GCPhys + (iPage << PAGE_SHIFT), pRam->aHCPhys[iPage] & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO)));
                 continue;
             }

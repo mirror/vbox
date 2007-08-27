@@ -335,6 +335,20 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
 
 
 /**
+ * Reset notification.
+ * 
+ * MM will reload shadow ROMs into RAM at this point and make 
+ * the ROM writable.
+ * 
+ * @param   pVM             The VM handle.
+ */
+MMR3DECL(void) MMR3Reset(PVM pVM)
+{
+    mmR3PhysRomReset(pVM);
+}
+
+
+/**
  * Execute state save operation.
  *
  * @returns VBox status code.

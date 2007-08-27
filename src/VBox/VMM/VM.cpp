@@ -1743,6 +1743,7 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
     CSAMR3Reset(pVM);
     PGMR3Reset(pVM);                    /* We clear VM RAM in PGMR3Reset. It's vital PDMR3Reset is executed
                                          * _afterwards_. E.g. ACPI sets up RAM tables during init/reset. */
+    MMR3Reset(pVM);
     PDMR3Reset(pVM);
     SELMR3Reset(pVM);
     TRPMR3Reset(pVM);

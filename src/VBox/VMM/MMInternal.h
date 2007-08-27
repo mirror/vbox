@@ -502,6 +502,37 @@ typedef MMLOCKEDMEM *PMMLOCKEDMEM;
 
 
 /**
+ * A registered Rom range.
+ * 
+ * This is used to track ROM registrations both for debug reasons
+ * and for resetting shadow ROM at reset.
+ * 
+ * This is allocated of the MMR3Heap and thus only accessibel from ring-3.
+ */
+typedef struct MMROMRANGE
+{
+    /** Pointer to the next */
+    struct MMROMRANGE  *pNext;
+    /** Address of the range. */
+    RTGCPHYS            GCPhys;
+    /** Size of the range. */
+    uint32_t            cbRange;
+    /** Shadow ROM? */
+    bool                fShadow;
+    /** Is the shadow ROM currently wriable? */
+    bool                fWritable;
+    /** The address of the virgin ROM image for shadow ROM. */
+    const void         *pvBinary;
+    /** The address of the guest RAM that's shadowing the ROM. (lazy bird) */
+    void               *pvCopy;
+    /** The ROM description. */
+    const char         *pszDesc;
+} MMROMRANGE;
+/** Pointer to a ROM range. */
+typedef MMROMRANGE *PMMROMRANGE;
+
+
+/**
  * Hypervisor memory mapping type.
  */
 typedef enum MMLOOKUPHYPERTYPE
@@ -635,6 +666,8 @@ typedef struct MM
     RTUINT                      cbRamBase;
     /** Pointer to the base RAM. */
     HCPTRTYPE(void *)           pvRamBaseHC;
+    /** The head of the ROM ranges. */
+    R3PTRTYPE(PMMROMRANGE)      pRomHead;
 
     /** Pointer to the MM R3 Heap. */
     HCPTRTYPE(PMMHEAP)          pHeap;
@@ -659,6 +692,8 @@ int  mmr3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM 
 int  mmr3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage, size_t cPages, unsigned fFlags);
 
 const char *mmR3GetTagName(MMTAG enmTag);
+
+void mmR3PhysRomReset(PVM pVM);
 
 /**
  * Converts a pool address to a physical address.

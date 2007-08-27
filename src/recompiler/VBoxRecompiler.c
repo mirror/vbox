@@ -2789,13 +2789,16 @@ void remR3GrowDynRange(unsigned long physaddr)
  * @param   GCPhys      The physical address of the ROM.
  * @param   cb          The size of the ROM.
  * @param   pvCopy      Pointer to the ROM copy.
+ * @param   fShadow     Whether it's currently writable shadow ROM or normal readonly ROM.
+ *                      This function will be called when ever the protection of the 
+ *                      shadow ROM changes (at reset and end of POST).
  */
-REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy)
+REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy, bool fShadow)
 {
 #if defined(PGM_DYNAMIC_RAM_ALLOC) && !defined(REM_PHYS_ADDR_IN_TLB)
     uint32_t i;
 #endif
-    Log(("REMR3NotifyPhysRomRegister: GCPhys=%VGp cb=%d pvCopy=%p\n", GCPhys, cb, pvCopy));
+    Log(("REMR3NotifyPhysRomRegister: GCPhys=%VGp cb=%d pvCopy=%p fShadow=%RTbool\n", GCPhys, cb, pvCopy, fShadow));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2814,9 +2817,9 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     pVM->rem.s.fIgnoreAll = true;
 
 #ifdef REM_PHYS_ADDR_IN_TLB
-    cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_ROM);
+    cpu_register_physical_memory(GCPhys, cb, GCPhys | (fShadow ? 0 : IO_MEM_ROM));
 #elif defined(PGM_DYNAMIC_RAM_ALLOC)
-    cpu_register_physical_memory(GCPhys, cb, GCPhys | IO_MEM_ROM);
+    cpu_register_physical_memory(GCPhys, cb, GCPhys | (fShadow ? 0 : IO_MEM_ROM));
     AssertRelease(pVM->rem.s.cPhysRegistrations < REM_MAX_PHYS_REGISTRATIONS);
     for (i = 0; i < pVM->rem.s.cPhysRegistrations; i++)
     {
@@ -2836,7 +2839,7 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     }
 #else
     AssertRelease(phys_ram_base);
-    cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvCopy - (uintptr_t)phys_ram_base) | IO_MEM_ROM);
+    cpu_register_physical_memory(GCPhys, cb, ((uintptr_t)pvCopy - (uintptr_t)phys_ram_base) | (fShadow ? 0 : IO_MEM_ROM));
 #endif
 
     Log2(("%.64Vhxd\n", (char *)pvCopy + cb - 64));

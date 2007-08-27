@@ -296,8 +296,11 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
  * @param   GCPhys      The physical address of the ROM.
  * @param   cb          The size of the ROM.
  * @param   pvCopy      Pointer to the ROM copy.
+ * @param   fShadow     Whether it's currently writable shadow ROM or normal readonly ROM.
+ *                      This function will be called when ever the protection of the 
+ *                      shadow ROM changes (at reset and end of POST).
  */
-REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy);
+REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy, bool fShadow);
 
 /**
  * Notification about a successful MMR3PhysRegister() call.
