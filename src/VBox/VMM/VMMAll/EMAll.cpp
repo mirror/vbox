@@ -1259,6 +1259,9 @@ EMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
 #endif
     if (VBOX_SUCCESS(rc))
         return VINF_SUCCESS;
+    Log(("PGMInvalidatePage %VGv returned %VGv (%d)\n", pAddrGC, rc, rc));
+    Assert(rc == VERR_REM_FLUSHED_PAGES_OVERFLOW);
+
     /** @todo r=bird: we shouldn't ignore returns codes like this... I'm 99% sure the error is fatal. */
     return VERR_EM_INTERPRETER;
 }
