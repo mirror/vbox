@@ -1776,6 +1776,7 @@ static int remLoadLinuxObj(void)
         RTLdrClose(g_ModREM2);
         g_ModREM2 = NIL_RTLDRMOD;
     }
+    LogRel(("REM: failed loading '%s', rc=%VRc\n", szPath, rc));
     return rc;
 }
 
