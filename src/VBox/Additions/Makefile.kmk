@@ -24,7 +24,7 @@
 
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -172,9 +172,14 @@ endif
 
 
 # build the Linux installer on a remote machine
+# TODO: Move the VBOX_REMOTE_LINUX32_ADDITIONS_BUILD stuff into LocaleConfig.kmk on the x86 box.
+VBOX_REMOTE_LINUX32_ADDITIONS_BUILD ?= ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions build-linux32-additions BUILD_TYPE=release"
 $(LINUXINSTALLER_CROSS):
-	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Runtime BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
-	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/common BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
-	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/linux BUILD_TYPE=release all packing"
+	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions build-linux32-additions BUILD_TYPE=release"
 
-build-linux32-additions: $(LINUXINSTALLER_CROSS)
+test-build-linux32-additions: $(LINUXINSTALLER_CROSS)
+build-linux32-additions:
+	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1" -C ../Runtime
+	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1" -C common
+	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1" -C linux all packing
+
