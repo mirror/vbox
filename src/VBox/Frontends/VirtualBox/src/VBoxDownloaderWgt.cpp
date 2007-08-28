@@ -65,7 +65,7 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
     /* Select the product version */
     QString version = vboxGlobal().virtualBox().GetVersion();
 
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.
+#if !defined(VBOX_WITHOUT_QHTTP)
     /* Initialize url operator */
     mHttp = new QHttp (this, "mHttp");
     mHttp->setHost (mUrl.host());
@@ -77,7 +77,7 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
              this, SLOT (processFinished (int, bool)));
     connect (mHttp, SIGNAL (responseHeaderReceived (const QHttpResponseHeader&)),
              this, SLOT (processResponse (const QHttpResponseHeader&)));
-#endif /* !RT_OS_DARWIN */ /// @todo fix the qt build on darwin.
+#endif /* !VBOX_WITHOUT_QHTTP */
     connect (mCancelButton, SIGNAL (clicked()),
              this, SLOT (processAbort()));
 
@@ -110,7 +110,7 @@ void VBoxDownloaderWgt::processProgress (int aRead, int aTotal)
     {
         if (mIsChecking)
         {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.
+#if !defined(VBOX_WITHOUT_QHTTP)
             mHttp->abort();
 #endif
             if (mStatus == 404)
@@ -132,7 +132,7 @@ void VBoxDownloaderWgt::processProgress (int aRead, int aTotal)
  * operation and for the received-buffer serialization procedure. */
 void VBoxDownloaderWgt::processFinished (int, bool aError)
 {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.
+#if !defined(VBOX_WITHOUT_QHTTP)
     if (aError && mHttp->error() != QHttp::Aborted)
     {
         mConnectDone = true;
@@ -186,19 +186,17 @@ void VBoxDownloaderWgt::processFinished (int, bool aError)
                 mTarget = QDir (target).absFilePath (QFileInfo (mTarget).fileName());
         };
     }
-#else
+#else  /* VBOX_WITHOUT_QHTTP */
     NOREF (aError);
-#endif /* !RT_OS_DARWIN */
+#endif /* VBOX_WITHOUT_QHTTP */
 }
 
 /* This slot is used to handle the header responses about the
  * requested operations. Watches for the header's status-code. */
 void VBoxDownloaderWgt::processResponse (const QHttpResponseHeader &aHeader)
 {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.
+#if !defined(VBOX_WITHOUT_QHTTP)
     mStatus = aHeader.statusCode();
-#else
-    NOREF(aHeader);
 #endif
 }
 
@@ -207,7 +205,7 @@ void VBoxDownloaderWgt::processTimeout()
 {
     if (mConnectDone)
         return;
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.
+#if !defined(VBOX_WITHOUT_QHTTP)
     mHttp->abort();
     abortDownload (tr ("Connection timed out."));
 #endif
@@ -216,7 +214,7 @@ void VBoxDownloaderWgt::processTimeout()
 /* This slot is used to process cancel-button clicking signal. */
 void VBoxDownloaderWgt::processAbort()
 {
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.
+#if !defined(VBOX_WITHOUT_QHTTP)
     mConnectDone = true;
     mHttp->abort();
     abortDownload (tr ("The download process has been cancelled "
@@ -238,7 +236,7 @@ void VBoxDownloaderWgt::suicide()
 void VBoxDownloaderWgt::getFile()
 {
     mConnectDone = false;
-#ifndef RT_OS_DARWIN /// @todo fix the qt build on darwin.
+#if !defined(VBOX_WITHOUT_QHTTP)
     mHttp->get (mUrl.path());
 #endif
     QTimer::singleShot (5000, this, SLOT (processTimeout()));
