@@ -92,9 +92,6 @@ VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
 VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 
-VBOX_SIGNING_MODE=release
-VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign
-
 
 # Delete targets on failure.
 .DELETE_ON_ERROR:
