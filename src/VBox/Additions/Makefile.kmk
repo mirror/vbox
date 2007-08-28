@@ -177,3 +177,4 @@ $(LINUXINSTALLER_CROSS):
 	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/common BUILD_TYPE=release VBOX_ADDITIONS_LINUX_ONLY=1"
 	ssh vbox@$(VBOX_ADDITIONS_LINUX_CROSS_HOST) "./enter-rhel3-jail /mnt/tinderwin_vbox/w32-rel/tools/env.sh --no-wine kmk -C src/VBox/Additions/linux BUILD_TYPE=release all packing"
 
+build-linux32-additions: $(LINUXINSTALLER_CROSS)
