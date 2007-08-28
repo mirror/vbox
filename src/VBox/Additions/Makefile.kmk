@@ -179,7 +179,7 @@ $(LINUXINSTALLER_CROSS):
 
 test-build-linux32-additions: $(LINUXINSTALLER_CROSS)
 build-linux32-additions:
-	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1" -C ../Runtime
-	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1" -C common
-	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1" -C linux all packing
+	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 -C ../Runtime
+	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 -C common
+	$(KMK) VBOX_ADDITIONS_LINUX_ONLY=1 -C linux all packing
 
