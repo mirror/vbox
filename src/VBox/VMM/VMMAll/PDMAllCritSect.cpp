@@ -190,3 +190,16 @@ PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
 #endif
 }
 
+
+/**
+ * Checks if a critical section is initialized or not.
+ *
+ * @returns true if initialized.
+ * @returns false if not initialized.
+ * @param   pCritSect   The critical section.
+ */
+PDMDECL(bool) PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect)
+{
+    return pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC;
+}
+

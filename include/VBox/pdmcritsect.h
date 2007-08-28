@@ -89,6 +89,15 @@ PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect);
 PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
 
 /**
+ * Checks if a critical section is initialized or not.
+ *
+ * @returns true if initialized.
+ * @returns false if not initialized.
+ * @param   pCritSect   The critical section.
+ */
+PDMDECL(bool) PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
+
+/**
  * Try enter a critical section.
  *
  * @returns VINF_SUCCESS on success.
