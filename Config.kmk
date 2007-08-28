@@ -1124,11 +1124,12 @@ ifeq ($(BUILD_TARGET),win)
  ifeq ($(BUILD_TARGET_ARCH),x86)
   VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.3
   LIB_QT ?= $(VBOX_PATH_QT)/lib/dynamic/qt-mt333.lib
- else
-  VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.6
-  LIB_QT ?= $(VBOX_PATH_QT)/lib/dynamic/qt-mt336.lib
- endif
   LIB_QTMAIN ?= $(VBOX_PATH_QT)/lib/dynamic/qtmain.lib
+ else
+  VBOX_PATH_QT ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.8
+  LIB_QT ?= $(VBOX_PATH_QT)/lib/qt-mt338.lib
+  LIB_QTMAIN ?= $(VBOX_PATH_QT)/lib/qtmain.lib
+ endif
  ifndef QTDIR
   QTDIR := $(sort $(wildcard $(PATH_DEVTOOLS_BLD)/v*))
   QTDIR := $(call lastword,$(QTDIR))
