@@ -707,6 +707,8 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect (void *pvCall
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept (void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercept, void **ppvIntercept)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
+    
+    LogFlowFunc(("%x\n", fu32Intercept));
 
     int rc = VERR_NOT_SUPPORTED;
 
@@ -715,31 +717,31 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept (void *pvCallback, u
         case VRDP_CLIENT_INTERCEPT_AUDIO:
         {
             server->mConsole->VRDPInterceptAudio (u32ClientId);
+            if (ppvIntercept)
+            {
+                *ppvIntercept = server;
+            }
             rc = VINF_SUCCESS;
         } break;
 
         case VRDP_CLIENT_INTERCEPT_USB:
         {
-            server->mConsole->VRDPInterceptUSB (u32ClientId);
+            server->mConsole->VRDPInterceptUSB (u32ClientId, ppvIntercept);
             rc = VINF_SUCCESS;
         } break;
 
         case VRDP_CLIENT_INTERCEPT_CLIPBOARD:
         {
             server->mConsole->VRDPInterceptClipboard (u32ClientId);
+            if (ppvIntercept)
+            {
+                *ppvIntercept = server;
+            }
             rc = VINF_SUCCESS;
         } break;
 
         default:
             break;
-    }
-
-    if (VBOX_SUCCESS (rc))
-    {
-        if (ppvIntercept)
-        {
-            *ppvIntercept = server;
-        }
     }
 
     return rc;
@@ -1563,7 +1565,7 @@ void ConsoleVRDPServer::ClipboardDelete (uint32_t u32ClientId)
  * The ConsoleVRDPServer keeps a list of created backend instances.
  */
 #ifdef VRDP_NO_COM
-void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId)
+void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, void **ppvIntercept)
 #else
 void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv)
 #endif /* VRDP_NO_COM */
@@ -1598,6 +1600,10 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBA
             unlockConsoleVRDPServer ();
             
 #ifdef VRDP_NO_COM
+            if (ppvIntercept)
+            {
+                *ppvIntercept = pRemoteUSBBackend;
+            }
 #else
             pRemoteUSBBackend->QueryVRDPCallbackPointer (ppfn, ppv);
 #endif /* VRDP_NO_COM */

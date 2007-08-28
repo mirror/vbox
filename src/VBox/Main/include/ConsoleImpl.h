@@ -183,7 +183,7 @@ public:
     void VRDPClientConnect (uint32_t u32ClientId);
     void VRDPClientDisconnect (uint32_t u32ClientId, uint32_t fu32Intercepted);
     void VRDPInterceptAudio (uint32_t u32ClientId);
-    void VRDPInterceptUSB (uint32_t u32ClientId);
+    void VRDPInterceptUSB (uint32_t u32ClientId, void **ppvIntercept);
     void VRDPInterceptClipboard (uint32_t u32ClientId);
 #else
     static VRDPSERVERCALLBACK *getVrdpServerCallback () { return &sVrdpServerCallback; };

@@ -61,7 +61,7 @@ public:
     void AuthDisconnect (const Guid &uuid, uint32_t u32ClientId);
 
 #ifdef VRDP_NO_COM
-    void USBBackendCreate (uint32_t u32ClientId);
+    void USBBackendCreate (uint32_t u32ClientId, void **ppvIntercept);
 #else
     void USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBACK *ppfn, void **ppv);
 #endif /* VRDP_NO_COM */

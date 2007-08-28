@@ -787,7 +787,7 @@ DECLCALLBACK(void) Console::vrdp_InterceptAudio (void *pvUser,
 }
 
 #ifdef VRDP_NO_COM
-void Console::VRDPInterceptUSB (uint32_t u32ClientId)
+void Console::VRDPInterceptUSB (uint32_t u32ClientId, void **ppvIntercept)
 #else
 DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
                                                uint32_t u32ClientId,
@@ -810,7 +810,7 @@ DECLCALLBACK(void) Console::vrdp_InterceptUSB (void *pvUser,
     AssertReturnVoid (console->mConsoleVRDPServer);
 
 #ifdef VRDP_NO_COM
-    mConsoleVRDPServer->USBBackendCreate (u32ClientId);
+    mConsoleVRDPServer->USBBackendCreate (u32ClientId, ppvIntercept);
 #else
     console->mConsoleVRDPServer->USBBackendCreate (u32ClientId, ppfn, ppv);
 #endif /* VRDP_NO_COM */
