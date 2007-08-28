@@ -4772,7 +4772,7 @@ invalid_write_loop_start:
                             /** @note possibly dangerous assumption that all future writes will be harmless. */
                             if (pPatch->flags & PATMFL_IDTHANDLER)
                             {
-                                LogRel(("PATM: Stop monitoring IDT handler pages at %VGv - invalid write %VGv-%VGv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
+                                LogRel(("PATM: Stop monitoring IDT handler pages at %VGv - invalid write %VGv-%VGv (this is not a fatal error)\n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
 
                                 Assert(pPatch->flags & PATMFL_CODE_MONITORED);
                                 int rc = patmRemovePatchPages(pVM, pPatch);
