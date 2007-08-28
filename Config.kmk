@@ -92,6 +92,9 @@ VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
 VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 
+VBOX_SIGNING_MODE=release
+VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign
+
 
 # Delete targets on failure.
 .DELETE_ON_ERROR:
@@ -829,7 +832,12 @@ VBOX_PATH_NSIS ?= $(PATH_DEVTOOLS)/win.x86/nsis/v2.22
 
 # Windows install tools...
 VBOX_PATH_WIX  ?= $(PATH_DEVTOOLS)/win.x86/wix/v2.0.4611.0
-VBOX_PATH_DIFX ?= $(PATH_DEVTOOLS)/win.x86/DIFx/v2.1
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+ VBOX_PATH_DIFX ?= $(PATH_DEVTOOLS)/win.amd64/DIFx/v2.1
+else
+ VBOX_PATH_DIFX ?= $(PATH_DEVTOOLS)/win.x86/DIFx/v2.1
+endif
+
 
 # We need to export YASM for OSE, but since it was converted to .zip we need to
 # allow for the location used by the zip to be properly cleaned up first.
