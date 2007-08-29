@@ -460,7 +460,17 @@ DECLINLINE(int) iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 #ifdef IN_GC
     return MMGCRamReadNoTrapHandler(pDest, GCSrc, cb);
 #else
-    return PGMPhysReadGCPtrSafe(pVM, pDest, GCSrc, cb);
+    int         rc;
+    RTGCPHYS    GCPhys;
+    RTGCUINTPTR offset;
+
+    offset = GCSrc & PAGE_OFFSET_MASK;
+
+    /** @todo optimize the loop; no need to convert the address all the time */
+    rc = PGMPhysGCPtr2GCPhys(pVM, GCSrc, &GCPhys);
+    AssertRCReturn(rc, rc);
+    PGMPhysRead(pVM, GCPhys + offset, pDest, cb);
+    return VINF_SUCCESS;
 #endif
 }
 
@@ -469,7 +479,16 @@ DECLINLINE(int) iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 #ifdef IN_GC
     return MMGCRamWriteNoTrapHandler(GCDest, pSrc, cb);
 #else
-    return PGMPhysWriteGCPtrSafe(pVM, GCDest, pSrc, cb);
+    int         rc;
+    RTGCPHYS    GCPhys;
+    RTGCUINTPTR offset;
+
+    /** @todo optimize the loop; no need to convert the address all the time */
+    offset = GCDest & PAGE_OFFSET_MASK;
+    rc = PGMPhysGCPtr2GCPhys(pVM, GCDest, &GCPhys);
+    AssertRCReturn(rc, rc);
+    PGMPhysWrite(pVM, GCPhys + offset, pSrc, cb);
+    return VINF_SUCCESS;
 #endif
 }
 
