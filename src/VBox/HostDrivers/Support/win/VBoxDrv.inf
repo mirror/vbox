@@ -44,8 +44,7 @@ VBoxDrv.sys=1
 [VBoxDrv.CopyFiles]
 VBoxDrv.sys
 
-;x86   [VBoxDrv_Service]
-;amd64 [VBoxDrv_Service.NTamd64]
+[VBoxDrv_Service]
 DisplayName    = %VBoxDrv.SVCDESC%
 ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
 ;StartType      = 3                  ; SERVICE_DEMAND_START
