@@ -352,7 +352,11 @@ int main()
     GEN_CHECK_OFF(PCNetState, ILeds);
     GEN_CHECK_OFF(PCNetState, pLedsConnector);
     GEN_CHECK_OFF(PCNetState, hSendEventSem);
+#ifdef USE_PDMTHREAD
+    GEN_CHECK_OFF(PCNetState, pSendThread);
+#else
     GEN_CHECK_OFF(PCNetState, hSendThread);
+#endif 
     GEN_CHECK_OFF(PCNetState, CritSect);
     GEN_CHECK_OFF(PCNetState, cPendingSends);
 #ifdef PCNET_NO_POLLING
