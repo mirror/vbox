@@ -34,6 +34,7 @@
 #include <iprt/string.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
+#include <iprt/param.h>
 
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
