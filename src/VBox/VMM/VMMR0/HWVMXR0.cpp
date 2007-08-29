@@ -1699,6 +1699,10 @@ ResumeExecution:
 
         if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
         {
+#if 1
+            rc = fIOWrite ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
+            break;
+#else /** @todo broken code path (hangs/crashes host) */
             /* ins/outs */
             uint32_t prefix = 0;
             if (VMX_EXIT_QUALIFICATION_IO_REP(exitQualification))
@@ -1716,6 +1720,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
             }
+#endif
         }
         else
         {
