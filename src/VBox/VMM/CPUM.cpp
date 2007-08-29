@@ -1187,13 +1187,14 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             pHlp->pfnPrintf(pHlp, "CPL-DS - CPL Qualified Debug Store     = %d (%d)\n",  EcxGuest.u1CPLDS,      EcxHost.u1CPLDS);
             pHlp->pfnPrintf(pHlp, "VMX - Virtual Machine Technology       = %d (%d)\n",  EcxGuest.u1VMX,        EcxHost.u1VMX);
             pHlp->pfnPrintf(pHlp, "Reserved                               = %d (%d)\n",  EcxGuest.u1Reserved2,  EcxHost.u1Reserved2);
-            pHlp->pfnPrintf(pHlp, "Enh. SpeedStep Tech                    = %d (%d)\n",  EcxGuest.u1EST,        EcxHost.u1EST);
+            pHlp->pfnPrintf(pHlp, "Enhanced SpeedStep Technology          = %d (%d)\n",  EcxGuest.u1EST,        EcxHost.u1EST);
             pHlp->pfnPrintf(pHlp, "Terminal Monitor 2                     = %d (%d)\n",  EcxGuest.u1TM2,        EcxHost.u1TM2);
-            pHlp->pfnPrintf(pHlp, "Reserved                               = %d (%d)\n",  EcxGuest.u1Reserved3,  EcxHost.u1Reserved3);
+            pHlp->pfnPrintf(pHlp, "Supports Supplemental SSE3 or not      = %d (%d)\n",  EcxGuest.u1SSSE3,      EcxHost.u1SSSE3);
             pHlp->pfnPrintf(pHlp, "L1 Context ID                          = %d (%d)\n",  EcxGuest.u1CNTXID,     EcxHost.u1CNTXID);
             pHlp->pfnPrintf(pHlp, "Reserved                               = %#x (%#x)\n",EcxGuest.u2Reserved4,  EcxHost.u2Reserved4);
-            pHlp->pfnPrintf(pHlp, "L1 Context ID                          = %d (%d)\n",  EcxGuest.u1CNTXID,     EcxHost.u1CNTXID);
-            pHlp->pfnPrintf(pHlp, "Reserved                               = %#x (%#x)\n",EcxGuest.u18Reserved5, EcxHost.u18Reserved5);
+            pHlp->pfnPrintf(pHlp, "CMPXCHG16B                             = %d (%d)\n",  EcxGuest.u1CX16,       EcxHost.u1CX16);
+            pHlp->pfnPrintf(pHlp, "xTPR Update Control                    = %d (%d)\n",  EcxGuest.u1TPRUpdate,  EcxHost.u1TPRUpdate);
+            pHlp->pfnPrintf(pHlp, "Reserved                               = %#x (%#x)\n",EcxGuest.u17Reserved5, EcxHost.u17Reserved5);
         }
     }
     if (cStdMax >= 2 && iVerbosity)
@@ -1280,9 +1281,9 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             if (uEDX & BIT(23))  pHlp->pfnPrintf(pHlp, " MMX");
             if (uEDX & BIT(24))  pHlp->pfnPrintf(pHlp, " FXSR");
             if (uEDX & BIT(25))  pHlp->pfnPrintf(pHlp, " FastFXSR");
-            if (uEDX & BIT(26))  pHlp->pfnPrintf(pHlp, " 26");
+            if (uEDX & BIT(26))  pHlp->pfnPrintf(pHlp, " Page1GB");
             if (uEDX & BIT(27))  pHlp->pfnPrintf(pHlp, " RDTSCP");
-            if (uEDX & BIT(28))  pHlp->pfnPrintf(pHlp, " 29");
+            if (uEDX & BIT(28))  pHlp->pfnPrintf(pHlp, " 28");
             if (uEDX & BIT(29))  pHlp->pfnPrintf(pHlp, " LongMode");
             if (uEDX & BIT(30))  pHlp->pfnPrintf(pHlp, " Ext3DNow");
             if (uEDX & BIT(31))  pHlp->pfnPrintf(pHlp, " 3DNow");
@@ -1292,9 +1293,16 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             pHlp->pfnPrintf(pHlp, "Features ECX:                   ");
             if (uECX & BIT(0))   pHlp->pfnPrintf(pHlp, " LAHF/SAHF");
             if (uECX & BIT(1))   pHlp->pfnPrintf(pHlp, " CMPL");
-            if (uECX & BIT(2))   pHlp->pfnPrintf(pHlp, " 2");
-            if (uECX & BIT(3))   pHlp->pfnPrintf(pHlp, " SVM");
+            if (uECX & BIT(2))   pHlp->pfnPrintf(pHlp, " SVM");
+            if (uECX & BIT(3))   pHlp->pfnPrintf(pHlp, " ExtAPIC");
             if (uECX & BIT(4))   pHlp->pfnPrintf(pHlp, " CR8L");
+            if (uECX & BIT(5))   pHlp->pfnPrintf(pHlp, " ABM");
+            if (uECX & BIT(6))   pHlp->pfnPrintf(pHlp, " SSE4A");
+            if (uECX & BIT(7))   pHlp->pfnPrintf(pHlp, " MISALNSSE");
+            if (uECX & BIT(8))   pHlp->pfnPrintf(pHlp, " 3DNOWPRF");
+            if (uECX & BIT(9))   pHlp->pfnPrintf(pHlp, " OSVW");
+            if (uECX & BIT(12))  pHlp->pfnPrintf(pHlp, " SKINIT");
+            if (uECX & BIT(13))  pHlp->pfnPrintf(pHlp, " WDT");
             for (unsigned iBit = 5; iBit < 32; iBit++)
                 if (uECX & BIT(iBit))
                     pHlp->pfnPrintf(pHlp, " %d", iBit);
@@ -1332,22 +1340,30 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             pHlp->pfnPrintf(pHlp, "AXMMX - AMD Extensions to MMX Instr.   = %d (%d)\n",  !!(uEdxGst & BIT(22)),  !!(uEdxHst & BIT(22)));
             pHlp->pfnPrintf(pHlp, "MMX - Intel MMX Technology             = %d (%d)\n",  !!(uEdxGst & BIT(23)),  !!(uEdxHst & BIT(23)));
             pHlp->pfnPrintf(pHlp, "FXSR - FXSAVE and FXRSTOR Instructions = %d (%d)\n",  !!(uEdxGst & BIT(24)),  !!(uEdxHst & BIT(24)));
-            pHlp->pfnPrintf(pHlp, "?? - AMD fast FXSAVE and FXRSTOR Instr.= %d (%d)\n",  !!(uEdxGst & BIT(25)),  !!(uEdxHst & BIT(25)));
+            pHlp->pfnPrintf(pHlp, "25 - AMD fast FXSAVE and FXRSTOR Instr.= %d (%d)\n",  !!(uEdxGst & BIT(25)),  !!(uEdxHst & BIT(25)));
             pHlp->pfnPrintf(pHlp, "26 - Reserved                          = %d (%d)\n",  !!(uEdxGst & BIT(26)),  !!(uEdxHst & BIT(26)));
             pHlp->pfnPrintf(pHlp, "27 - Reserved                          = %d (%d)\n",  !!(uEdxGst & BIT(27)),  !!(uEdxHst & BIT(27)));
             pHlp->pfnPrintf(pHlp, "28 - Reserved                          = %d (%d)\n",  !!(uEdxGst & BIT(28)),  !!(uEdxHst & BIT(28)));
-            pHlp->pfnPrintf(pHlp, "?? - AMD Long Mode                     = %d (%d)\n",  !!(uEdxGst & BIT(29)),  !!(uEdxHst & BIT(29)));
-            pHlp->pfnPrintf(pHlp, "?? - AMD Extensions to 3DNow           = %d (%d)\n",  !!(uEdxGst & BIT(30)),  !!(uEdxHst & BIT(30)));
-            pHlp->pfnPrintf(pHlp, "?? - AMD 3DNow                         = %d (%d)\n",  !!(uEdxGst & BIT(31)),  !!(uEdxHst & BIT(31)));
+            pHlp->pfnPrintf(pHlp, "29 - AMD Long Mode                     = %d (%d)\n",  !!(uEdxGst & BIT(29)),  !!(uEdxHst & BIT(29)));
+            pHlp->pfnPrintf(pHlp, "30 - AMD Extensions to 3DNow           = %d (%d)\n",  !!(uEdxGst & BIT(30)),  !!(uEdxHst & BIT(30)));
+            pHlp->pfnPrintf(pHlp, "31 - AMD 3DNow                         = %d (%d)\n",  !!(uEdxGst & BIT(31)),  !!(uEdxHst & BIT(31)));
 
             uint32_t uEcxGst = Guest.ecx;
             uint32_t uEcxHst = Host.ecx;
             pHlp->pfnPrintf(pHlp, "LahfSahf - LAHF/SAHF in 64-bit mode    = %d (%d)\n",  !!(uEcxGst & BIT( 0)),  !!(uEcxHst & BIT( 0)));
             pHlp->pfnPrintf(pHlp, "CmpLegacy - Core MP legacy mode (depr) = %d (%d)\n",  !!(uEcxGst & BIT( 1)),  !!(uEcxHst & BIT( 1)));
             pHlp->pfnPrintf(pHlp, "SVM - AMD VM Extensions                = %d (%d)\n",  !!(uEcxGst & BIT( 2)),  !!(uEcxHst & BIT( 2)));
-            pHlp->pfnPrintf(pHlp, "3  - Reserved                          = %d (%d)\n",  !!(uEcxGst & BIT( 3)),  !!(uEcxHst & BIT( 3)));
+            pHlp->pfnPrintf(pHlp, "APIC registers starting at 0x400       = %d (%d)\n",  !!(uEcxGst & BIT( 3)),  !!(uEcxHst & BIT( 3)));
             pHlp->pfnPrintf(pHlp, "AltMovCR8 - LOCK MOV CR0 means MOV CR8 = %d (%d)\n",  !!(uEcxGst & BIT( 4)),  !!(uEcxHst & BIT( 4)));
-            pHlp->pfnPrintf(pHlp, "31:5 - Reserved                        = %#x (%#x)\n",   uEcxGst >> 5,           uEcxHst >> 5);
+            pHlp->pfnPrintf(pHlp, "Advanced bit manipulation              = %d (%d)\n",  !!(uEcxGst & BIT( 5)),  !!(uEcxHst & BIT( 5)));
+            pHlp->pfnPrintf(pHlp, "SSE4A instruction support              = %d (%d)\n",  !!(uEcxGst & BIT( 6)),  !!(uEcxHst & BIT( 6)));
+            pHlp->pfnPrintf(pHlp, "Misaligned SSE mode                    = %d (%d)\n",  !!(uEcxGst & BIT( 7)),  !!(uEcxHst & BIT( 7)));
+            pHlp->pfnPrintf(pHlp, "PREFETCH and PREFETCHW instruction     = %d (%d)\n",  !!(uEcxGst & BIT( 8)),  !!(uEcxHst & BIT( 8)));
+            pHlp->pfnPrintf(pHlp, "OS visible workaround                  = %d (%d)\n",  !!(uEcxGst & BIT( 9)),  !!(uEcxHst & BIT( 9)));
+            pHlp->pfnPrintf(pHlp, "11:10 - Reserved                       = %#x (%#x)\n",  (uEcxGst >> 10) & 3,    (uEcxHst >> 10) & 3);
+            pHlp->pfnPrintf(pHlp, "SKINIT, STGI, and DEV support          = %d (%d)\n",  !!(uEcxGst & BIT(12)),  !!(uEcxHst & BIT(12)));
+            pHlp->pfnPrintf(pHlp, "Watchdog timer support.                = %d (%d)\n",  !!(uEcxGst & BIT(13)),  !!(uEcxHst & BIT(13)));
+            pHlp->pfnPrintf(pHlp, "31:14 - Reserved                       = %#x (%#x)\n",   uEcxGst >> 14,          uEcxHst >> 14);
         }
     }
 

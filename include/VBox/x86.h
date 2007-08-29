@@ -176,16 +176,18 @@ typedef struct X86CPUIDFEATECX
     unsigned    u1EST : 1;
     /** Bit 8 - TM2 - Terminal Monitor 2. */
     unsigned    u1TM2 : 1;
-    /** Reserved. */
-    unsigned    u1Reserved3 : 1;
+    /** Bit 9 - SSSE3 - Supplemental Streaming SIMD Extensions 3. */
+    unsigned    u1SSSE3 : 1;
     /** Bit 10 - CNTX-ID - L1 Context ID. */
     unsigned    u1CNTXID : 1;
     /** Reserved. */
     unsigned    u2Reserved4 : 2;
     /** Bit 13 - CX16 - CMPXCHG16B. */
     unsigned    u1CX16 : 1;
+    /** Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
+    unsigned    u1TPRUpdate : 1;
     /** Reserved. */
-    unsigned    u18Reserved5 : 18;
+    unsigned    u17Reserved5 : 17;
 
 } X86CPUIDFEATECX;
 /** Pointer to CPUID Feature Information - ECX. */
@@ -299,10 +301,16 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_EST       BIT(7)
 /** ECX Bit 8 - TM2 - Terminal Monitor 2. */
 #define X86_CPUID_FEATURE_ECX_TM2       BIT(8)
+/** ECX Bit 9 - SSSE3 - Supplemental Streaming SIMD Extensions 3. */
+#define X86_CPUID_FEATURE_ECX_SSSE3     BIT(9)
 /** ECX Bit 10 - CNTX-ID - L1 Context ID. */
 #define X86_CPUID_FEATURE_ECX_CNTXID    BIT(10)
-/** ECX Bit 13 - CX16 - L1 Context ID. */
+/** ECX Bit 13 - CX16 - CMPXCHG16B. */
 #define X86_CPUID_FEATURE_ECX_CX16      BIT(13)
+/** ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
+#define X86_CPUID_FEATURE_ECX_TPRUPDATE BIT(14)
+/** ECX Bit 23 - POPCOUNT instruction. */
+#define X86_CPUID_FEATURE_ECX_POPCOUNT  BIT(23)
 
 
 /** Bit 0 - FPU - x87 FPU on Chip. */
@@ -412,23 +420,43 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_FEATURE_EDX_MMX       BIT(23)
 /** Bit 24 - FXSR - FXSAVE and FXRSTOR Instructions. */
 #define X86_CPUID_AMD_FEATURE_EDX_FXSR      BIT(24)
-/** Bit 25 - ???? - AMD fast FXSAVE and FXRSTOR Instructions. */
+/** Bit 25 - FFXSR - AMD fast FXSAVE and FXRSTOR Instructions. */
 #define X86_CPUID_AMD_FEATURE_EDX_FFXSR     BIT(25)
-/** Bit 29 - ???? - AMD Long Mode. */
+/** Bit 26 - PAGE1GB - AMD 1GB large page support. */
+#define X86_CPUID_AMD_FEATURE_EDX_PAGE1GB   BIT(26)
+/** Bit 27 - RDTSCP - AMD RDTSCP instruction. */
+#define X86_CPUID_AMD_FEATURE_EDX_RDTSCP    BIT(27)
+/** Bit 29 - LM - AMD Long Mode. */
 #define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE BIT(29)
-/** Bit 30 - ???? - AMD Extensions to 3DNow. */
+/** Bit 30 - 3DNOWEXT - AMD Extensions to 3DNow. */
 #define X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX  BIT(30)
-/** Bit 31 - ???? - AMD 3DNow. */
+/** Bit 31 - 3DNOW - AMD 3DNow. */
 #define X86_CPUID_AMD_FEATURE_EDX_3DNOW     BIT(31)
 
-/** Bit 1 - LAHF/SAHF - ???. */
-/*define X86_CPUID_AMD_FEATURE_ECX_TODO      BIT(0)*/
-/** Bit 1 - CMPL - ???. */
+/** Bit 0 - LAHF/SAHF - AMD LAHF and SAHF in 64-bit mode. */
+#define X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF BIT(0)
+/** Bit 1 - CMPL - Core multi-processing legacy mode. */
 #define X86_CPUID_AMD_FEATURE_ECX_CMPL      BIT(1)
 /** Bit 2 - SVM - AMD VM extensions. */
 #define X86_CPUID_AMD_FEATURE_ECX_SVM       BIT(2)
-/** Bit 4 - CR8L - ???. */
+/** Bit 3 - EXTAPIC - AMD extended APIC registers starting at 0x400. */
+#define X86_CPUID_AMD_FEATURE_ECX_EXT_APIC  BIT(3)
+/** Bit 4 - CR8L - AMD LOCK MOV CR0 means MOV CR8. */
 #define X86_CPUID_AMD_FEATURE_ECX_CR8L      BIT(4)
+/** Bit 5 - ABM - AMD Advanced bit manipulation. LZCNT instruction support. */
+#define X86_CPUID_AMD_FEATURE_ECX_ABM       BIT(5)
+/** Bit 6 - SSE4A - AMD EXTRQ, INSERTQ, MOVNTSS, and MOVNTSD instruction support. */
+#define X86_CPUID_AMD_FEATURE_ECX_SSE4A     BIT(6)
+/** Bit 7 - MISALIGNSSE - AMD Misaligned SSE mode. */
+#define X86_CPUID_AMD_FEATURE_ECX_MISALNSSE BIT(7)
+/** Bit 8 - 3DNOWPRF - AMD PREFETCH and PREFETCHW instruction support. */
+#define X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF  BIT(8)
+/** Bit 9 - OSVW - AMD OS visible workaround. */
+#define X86_CPUID_AMD_FEATURE_ECX_OSVW      BIT(9)
+/** Bit 12 - SKINIT - AMD SKINIT: SKINIT, STGI, and DEV support. */
+#define X86_CPUID_AMD_FEATURE_ECX_SKINIT    BIT(12)
+/** Bit 13 - WDT - AMD Watchdog timer support. */
+#define X86_CPUID_AMD_FEATURE_ECX_WDT       BIT(13)
 
 /** @} */
 
