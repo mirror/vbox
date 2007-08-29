@@ -692,12 +692,12 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
 
 #ifdef IN_GC
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-//                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv, pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv, pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
 #endif
                 rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
                 if (VBOX_FAILURE(rc))
                 {
-//                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
             }
@@ -1016,7 +1016,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
 #ifdef IN_GC
             /* Safety check (in theory it could cross a page boundary and fault there though) */
-//            AssertMsgReturn(pDest == pvFault, ("eip=%VGv pDest=%VGv pvFault=%VGv\n", pRegFrame->eip, pDest, pvFault), VERR_EM_INTERPRETER);
+            AssertMsgReturn(pDest == pvFault, ("eip=%VGv pDest=%VGv pvFault=%VGv\n", pRegFrame->eip, pDest, pvFault), VERR_EM_INTERPRETER);
 #endif
             rc = emRamWrite(pVM, pDest, &val32, param2.size);
             if (VBOX_FAILURE(rc))
@@ -1115,7 +1115,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
-//                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
 
 #ifdef VBOX_STRICT
                 rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
