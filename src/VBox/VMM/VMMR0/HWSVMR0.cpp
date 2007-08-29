@@ -1224,9 +1224,10 @@ ResumeExecution:
         if (IoExitInfo.n.u1STR)
         {
 #if 1
-            rc = (IoExitInfo.n.u1Type == 0) ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
+            /** @todo the ring 3 emulation somehow causes the host to hang during e.g. nt4 installation; fall back to the recompiler */
+            rc = VINF_EM_RAW_EMULATE_INSTR;
             break;
-#else /** @todo broken code path (hangs/crashes host) */
+#else
             /* ins/outs */
             uint32_t prefix = 0;
             if (IoExitInfo.n.u1REP)
