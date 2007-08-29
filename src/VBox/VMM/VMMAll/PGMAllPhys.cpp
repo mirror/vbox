@@ -1563,6 +1563,10 @@ PGMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
 /** @todo use the PGMPhysReadGCPtr name and rename the unsafe one to something appropriate */
 PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
+    RTGCPHYS    GCPhys;
+    RTGCUINTPTR offset;
+    int         rc;
+
     /*
      * Anything to do?
      */
@@ -1576,11 +1580,16 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
      */
     if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
+        /* Convert virtual to physical address */
+        offset = GCPtrSrc & PAGE_OFFSET_MASK;
+        rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrSrc, &GCPhys);
+        AssertRCReturn(rc, rc);
+
         /* mark the guest page as accessed. */
-        int rc = PGMGstModifyPage(pVM, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
+        rc = PGMGstModifyPage(pVM, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
         AssertRC(rc);
 
-        PGMPhysRead(pVM, GCPtrSrc, pvDst, cb);
+        PGMPhysRead(pVM, GCPhys + offset, pvDst, cb);
         return VINF_SUCCESS;
     }
 
@@ -1589,6 +1598,11 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
      */
     for (;;)
     {
+        /* Convert virtual to physical address */
+        offset = GCPtrSrc & PAGE_OFFSET_MASK;
+        rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrSrc, &GCPhys);
+        AssertRCReturn(rc, rc);
+
         /* mark the guest page as accessed. */
         int rc = PGMGstModifyPage(pVM, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
         AssertRC(rc);
@@ -1597,10 +1611,10 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
         size_t cbRead = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
         if (cbRead >= cb)
         {
-            PGMPhysRead(pVM, GCPtrSrc, pvDst, cb);
+            PGMPhysRead(pVM, GCPhys + offset, pvDst, cb);
             return VINF_SUCCESS;
         }
-        PGMPhysRead(pVM, GCPtrSrc, pvDst, cbRead);
+        PGMPhysRead(pVM, GCPhys + offset, pvDst, cbRead);
 
         /* next */
         cb         -= cbRead;
@@ -1625,6 +1639,10 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
 /** @todo use the PGMPhysWriteGCPtr name and rename the unsafe one to something appropriate */
 PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
+    RTGCPHYS    GCPhys;
+    RTGCUINTPTR offset;
+    int         rc;
+
     /*
      * Anything to do?
      */
@@ -1638,11 +1656,16 @@ PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
      */
     if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
+        /* Convert virtual to physical address */
+        offset = GCPtrDst & PAGE_OFFSET_MASK;
+        rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrDst, &GCPhys);
+        AssertRCReturn(rc, rc);
+
         /* mark the guest page as accessed and dirty. */
-        int rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
         AssertRC(rc);
 
-        PGMPhysWrite(pVM, GCPtrDst, pvSrc, cb);
+        PGMPhysWrite(pVM, GCPhys + offset, pvSrc, cb);
         return VINF_SUCCESS;
     }
 
@@ -1651,18 +1674,23 @@ PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
      */
     for (;;)
     {
+        /* Convert virtual to physical address */
+        offset = GCPtrDst & PAGE_OFFSET_MASK;
+        rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrDst, &GCPhys);
+        AssertRCReturn(rc, rc);
+
         /* mark the guest page as accessed and dirty. */
-        int rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
         AssertRC(rc);
 
         /* copy */
         size_t cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
         if (cbWrite >= cb)
         {
-            PGMPhysWrite(pVM, GCPtrDst, pvSrc, cb);
+            PGMPhysWrite(pVM, GCPhys + offset, pvSrc, cb);
             return VINF_SUCCESS;
         }
-        PGMPhysWrite(pVM, GCPtrDst, pvSrc, cbWrite);
+        PGMPhysWrite(pVM, GCPhys + offset, pvSrc, cbWrite);
 
         /* next */
         cb         -= cbWrite;
