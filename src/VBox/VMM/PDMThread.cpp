@@ -55,29 +55,29 @@ DECLINLINE(bool) pdmR3AtomicCmpXchgState(PPDMTHREAD pThread, PDMTHREADSTATE enmN
  * @returns VBox status code. Already asserted on failure.
  * @param   pThread     The PDM thread.
  */
-static DECLCALLBACK(int) pdmR3ThreadWakeup(PPDMTHREAD pThread)
+static DECLCALLBACK(int) pdmR3ThreadWakeUp(PPDMTHREAD pThread)
 {
     int rc;
     switch (pThread->Internal.s.enmType)
     {
         case PDMTHREADTYPE_DEVICE:
-            rc = pThread->u.Dev.pfnWakeup(pThread->u.Dev.pDevIns, pThread);
+            rc = pThread->u.Dev.pfnWakeUp(pThread->u.Dev.pDevIns, pThread);
             break;
             
         case PDMTHREADTYPE_USB:
-            rc = pThread->u.Usb.pfnWakeup(pThread->u.Usb.pUsbIns, pThread);
+            rc = pThread->u.Usb.pfnWakeUp(pThread->u.Usb.pUsbIns, pThread);
             break;
 
         case PDMTHREADTYPE_DRIVER:
-            rc = pThread->u.Drv.pfnWakeup(pThread->u.Drv.pDrvIns, pThread);
+            rc = pThread->u.Drv.pfnWakeUp(pThread->u.Drv.pDrvIns, pThread);
             break;
 
         case PDMTHREADTYPE_INTERNAL:
-            rc = pThread->u.Int.pfnWakeup(pThread->Internal.s.pVM, pThread);
+            rc = pThread->u.Int.pfnWakeUp(pThread->Internal.s.pVM, pThread);
             break;
 
         case PDMTHREADTYPE_EXTERNAL:
-            rc = pThread->u.Ext.pfnWakeup(pThread);
+            rc = pThread->u.Ext.pfnWakeUp(pThread);
             break;
 
         default:
@@ -149,6 +149,16 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
                 rc = VERR_INTERNAL_ERROR;
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * Insert it into the thread list.
+                 */
+                pThread->Internal.s.pNext = NULL;
+                if (pVM->pdm.s.pThreadsTail)
+                    pVM->pdm.s.pThreadsTail->Internal.s.pNext = pThread;
+                else
+                    pVM->pdm.s.pThreads = pThread;
+                pVM->pdm.s.pThreadsTail = pThread;
+
                 rc = RTThreadUserReset(pThread->Thread);
                 AssertRC(rc);
                 return rc;
@@ -176,14 +186,14 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
- * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ * @param   pfnWakeUp   The wakup callback. This is called on the EMT thread when
  *                      a state change is pending.
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
 int pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
-                            PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+                            PFNPDMTHREADWAKEUPDEV pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
@@ -192,7 +202,7 @@ int pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, v
         (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_DEVICE;
         (*ppThread)->u.Dev.pDevIns = pDevIns;
         (*ppThread)->u.Dev.pfnThread = pfnThread;
-        (*ppThread)->u.Dev.pfnWakeup = pfnWakeup;
+        (*ppThread)->u.Dev.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -208,14 +218,14 @@ int pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, v
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
- * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ * @param   pfnWakeUp   The wakup callback. This is called on the EMT thread when
  *                      a state change is pending.
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
 int pdmR3ThreadCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADUSB pfnThread,
-                         PFNPDMTHREADWAKEUPUSB pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+                         PFNPDMTHREADWAKEUPUSB pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
@@ -224,7 +234,7 @@ int pdmR3ThreadCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void
         (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_USB;
         (*ppThread)->u.Usb.pUsbIns = pUsbIns;
         (*ppThread)->u.Usb.pfnThread = pfnThread;
-        (*ppThread)->u.Usb.pfnWakeup = pfnWakeup;
+        (*ppThread)->u.Usb.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -240,14 +250,14 @@ int pdmR3ThreadCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
- * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ * @param   pfnWakeUp   The wakup callback. This is called on the EMT thread when
  *                      a state change is pending.
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
 int pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
-                            PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+                            PFNPDMTHREADWAKEUPDRV pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
@@ -256,7 +266,7 @@ int pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, v
         (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_DRIVER;
         (*ppThread)->u.Drv.pDrvIns = pDrvIns;
         (*ppThread)->u.Drv.pfnThread = pfnThread;
-        (*ppThread)->u.Drv.pfnWakeup = pfnWakeup;
+        (*ppThread)->u.Drv.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -271,14 +281,14 @@ int pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, v
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
- * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ * @param   pfnWakeUp   The wakup callback. This is called on the EMT thread when
  *                      a state change is pending.
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
 PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
-                                 PFNPDMTHREADWAKEUPINT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+                                 PFNPDMTHREADWAKEUPINT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
@@ -286,7 +296,7 @@ PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PF
         (*ppThread)->pvUser = pvUser;
         (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_INTERNAL;
         (*ppThread)->u.Int.pfnThread = pfnThread;
-        (*ppThread)->u.Int.pfnWakeup = pfnWakeup;
+        (*ppThread)->u.Int.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -301,14 +311,14 @@ PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PF
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
- * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ * @param   pfnWakeUp   The wakup callback. This is called on the EMT thread when
  *                      a state change is pending.
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
 PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
-                                         PFNPDMTHREADWAKEUPEXT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+                                         PFNPDMTHREADWAKEUPEXT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
@@ -316,7 +326,7 @@ PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pv
         (*ppThread)->pvUser = pvUser;
         (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_EXTERNAL;
         (*ppThread)->u.Ext.pfnThread = pfnThread;
-        (*ppThread)->u.Ext.pfnWakeup = pfnWakeup;
+        (*ppThread)->u.Ext.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -361,11 +371,11 @@ PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
                 case PDMTHREADSTATE_RUNNING:
                     if (!pdmR3AtomicCmpXchgState(pThread, PDMTHREADSTATE_TERMINATING, enmState))
                         continue;
-                    rc = pdmR3ThreadWakeup(pThread);
+                    rc = pdmR3ThreadWakeUp(pThread);
                     break;
 
-                case PDMTHREADSTATE_SUSPENDING:
                 case PDMTHREADSTATE_SUSPENDED:
+                case PDMTHREADSTATE_SUSPENDING:
                 case PDMTHREADSTATE_RESUMING:
                 case PDMTHREADSTATE_INITIALIZING:
                     if (!pdmR3AtomicCmpXchgState(pThread, PDMTHREADSTATE_TERMINATING, enmState))
@@ -384,11 +394,13 @@ PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
             break;
         }
     }
+    int rc2 = RTSemEventMultiSignal(pThread->Internal.s.BlockEvent);
+    AssertRC(rc2);
 
     /*
      * Wait for it to terminate and the do cleanups.
      */
-    int rc2 = RTThreadWait(pThread->Thread, RT_SUCCESS(rc) ? 60*1000 : 150, pRcThread);
+    rc2 = RTThreadWait(pThread->Thread, RT_SUCCESS(rc) ? 60*1000 : 150, pRcThread);
     if (RT_SUCCESS(rc2))
     {
         /* make it invalid. */
@@ -398,7 +410,11 @@ PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
 
         /* unlink */
         if (pVM->pdm.s.pThreads == pThread)
+        {
             pVM->pdm.s.pThreads = pThread->Internal.s.pNext;
+            if (!pThread->Internal.s.pNext)
+                pVM->pdm.s.pThreadsTail = NULL;
+        }
         else
         {
             PPDMTHREAD pPrev = pVM->pdm.s.pThreads;
@@ -407,11 +423,8 @@ PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
             Assert(pPrev);
             if (pPrev)
                 pPrev->Internal.s.pNext = pThread->Internal.s.pNext;
-        }
-        if (pVM->pdm.s.pThreadsTail == pThread)
-        {
-            Assert(pVM->pdm.s.pThreads == NULL);
-            pVM->pdm.s.pThreadsTail = NULL;
+            if (!pThread->Internal.s.pNext)
+                pVM->pdm.s.pThreadsTail = pPrev;
         }
         pThread->Internal.s.pNext = NULL;
 
@@ -783,7 +796,7 @@ static void pdmR3ThreadBailOut(PPDMTHREAD pThread)
             case PDMTHREADSTATE_RUNNING:
                 if (!pdmR3AtomicCmpXchgState(pThread, PDMTHREADSTATE_TERMINATING, enmState))
                     continue;
-                pdmR3ThreadWakeup(pThread);
+                pdmR3ThreadWakeUp(pThread);
                 break;
 
             case PDMTHREADSTATE_TERMINATING:
@@ -834,7 +847,7 @@ PDMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread)
             rc = VERR_WRONG_ORDER;
             if (pdmR3AtomicCmpXchgState(pThread, PDMTHREADSTATE_SUSPENDING, PDMTHREADSTATE_RUNNING))
             {
-                rc = pdmR3ThreadWakeup(pThread);
+                rc = pdmR3ThreadWakeUp(pThread);
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -881,6 +894,10 @@ int pdmR3ThreadSuspendAll(PVM pVM)
                 AssertRCReturn(rc, rc);
                 break;
             }
+
+            /* suspend -> power off; voluntary suspend. */
+            case PDMTHREADSTATE_SUSPENDED:
+                break;
 
             default:
                 AssertMsgFailed(("pThread=%p enmState=%d\n", pThread, pThread->enmState));
