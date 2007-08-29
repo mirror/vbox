@@ -280,9 +280,8 @@ EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu,
 
 DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 {
-    int rc;
 #ifdef IN_GC
-    rc = MMGCRamRead(pVM, pDest, GCSrc, cb);
+    int rc = MMGCRamRead(pVM, pDest, GCSrc, cb);
     if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
         return rc;
     /* 
@@ -290,7 +289,6 @@ DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
      * flushed one of the shadow mappings used by the trapping 
      * instruction and it either flushed the TLB or the CPU reused it.
      */
-#endif
     RTGCPHYS    GCPhys;
     RTGCUINTPTR offset;
 
@@ -300,6 +298,9 @@ DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
     AssertRCReturn(rc, rc);
     PGMPhysRead(pVM, GCPhys + offset, pDest, cb);
     return VINF_SUCCESS;
+#else
+    return PGMPhysReadGCPtrSafe(pVM, pDest, GCSrc, cb);
+#endif
 }
 
 DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
@@ -328,16 +329,7 @@ DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
     return VINF_SUCCESS;
 
 #else
-
-    int         rc;
-    RTGCPHYS    GCPhys;
-    RTGCUINTPTR offset;
-
-    offset = GCDest & PAGE_OFFSET_MASK;
-    rc = PGMPhysGCPtr2GCPhys(pVM, GCDest, &GCPhys);
-    AssertRCReturn(rc, rc);
-    PGMPhysWrite(pVM, GCPhys + offset, pSrc, cb);
-    return VINF_SUCCESS;
+    return PGMPhysWriteGCPtrSafe(pVM, GCDest, pSrc, cb);
 #endif
 }
 
