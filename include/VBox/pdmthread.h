@@ -212,7 +212,7 @@ typedef struct PDMTHREAD
             /** The thread function. */
             R3PTRTYPE(PFNPDMTHREADDEV)          pfnThread;
             /** Thread. */
-            R3PTRTYPE(PFNPDMTHREADWAKEUPDEV)    pfnWakeup;
+            R3PTRTYPE(PFNPDMTHREADWAKEUPDEV)    pfnWakeUp;
         } Dev;
 
         /** PDMTHREADTYPE_USB data. */
@@ -223,7 +223,7 @@ typedef struct PDMTHREAD
             /** The thread function. */
             R3PTRTYPE(PFNPDMTHREADUSB)          pfnThread;
             /** Thread. */
-            R3PTRTYPE(PFNPDMTHREADWAKEUPUSB)    pfnWakeup;
+            R3PTRTYPE(PFNPDMTHREADWAKEUPUSB)    pfnWakeUp;
         } Usb;
 
         /** PDMTHREADTYPE_DRIVER data. */
@@ -234,7 +234,7 @@ typedef struct PDMTHREAD
             /** The thread function. */
             R3PTRTYPE(PFNPDMTHREADDRV)          pfnThread;
             /** Thread. */
-            R3PTRTYPE(PFNPDMTHREADWAKEUPDRV)    pfnWakeup;
+            R3PTRTYPE(PFNPDMTHREADWAKEUPDRV)    pfnWakeUp;
         } Drv;
 
         /** PDMTHREADTYPE_INTERNAL data. */
@@ -243,7 +243,7 @@ typedef struct PDMTHREAD
             /** The thread function. */
             R3PTRTYPE(PFNPDMTHREADINT)          pfnThread;
             /** Thread. */
-            R3PTRTYPE(PFNPDMTHREADWAKEUPINT)    pfnWakeup;
+            R3PTRTYPE(PFNPDMTHREADWAKEUPINT)    pfnWakeUp;
         } Int;
 
         /** PDMTHREADTYPE_EXTERNAL data. */
@@ -252,7 +252,7 @@ typedef struct PDMTHREAD
             /** The thread function. */
             R3PTRTYPE(PFNPDMTHREADEXT)          pfnThread;
             /** Thread. */
-            R3PTRTYPE(PFNPDMTHREADWAKEUPEXT)    pfnWakeup;
+            R3PTRTYPE(PFNPDMTHREADWAKEUPEXT)    pfnWakeUp;
         } Ext;
     } u;
 
@@ -278,14 +278,14 @@ typedef struct PDMTHREAD
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
- * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ * @param   pfnWakeUp   The wakup callback. This is called on the EMT thread when
  *                      a state change is pending.
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
 PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
-                                 PFNPDMTHREADWAKEUPINT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+                                 PFNPDMTHREADWAKEUPINT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
 
 /**
  * Creates a PDM thread for VM use by some external party.
@@ -295,14 +295,14 @@ PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PF
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
- * @param   pfnWakeup   The wakup callback. This is called on the EMT thread when
+ * @param   pfnWakeUp   The wakup callback. This is called on the EMT thread when
  *                      a state change is pending.
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
 PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
-                                         PFNPDMTHREADWAKEUPEXT pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+                                         PFNPDMTHREADWAKEUPEXT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
 
 /**
  * Destroys a PDM thread.
