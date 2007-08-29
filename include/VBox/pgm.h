@@ -1009,6 +1009,34 @@ PGMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 PGMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 
 /**
+ * Read from guest physical memory referenced by GC pointer.
+ *
+ * This function uses the current CR3/CR0/CR4 of the guest and will
+ * respect access handlers and set accessed bits.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   pvDst       The destination address.
+ * @param   GCPtrSrc    The source address (GC pointer).
+ * @param   cb          The number of bytes to read.
+ */
+PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
+
+/**
+ * Write to guest physical memory referenced by GC pointer.
+ *
+ * This function uses the current CR3/CR0/CR4 of the guest and will
+ * respect access handlers and set dirty and accessed bits.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPtrDst    The destination address (GC pointer).
+ * @param   pvSrc       The source address.
+ * @param   cb          The number of bytes to write.
+ */
+PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
+
+/**
  * Write to guest physical memory referenced by GC pointer and update the PTE.
  *
  * This function uses the current CR3/CR0/CR4 of the guest and will
