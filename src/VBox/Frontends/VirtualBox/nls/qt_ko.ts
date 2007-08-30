@@ -317,7 +317,7 @@
     </message>
     <message>
         <source>&amp;Sat:</source>
-        <translation type="unfinished"></translation>
+        <translation>채도(&amp;S):</translation>
     </message>
     <message>
         <source>&amp;Val:</source>
@@ -349,7 +349,7 @@
     </message>
     <message>
         <source>&amp;Define Custom Colors &gt;&gt;</source>
-        <translation>색상 사용자 정의(&amp;D) &gt;&gt;</translation>
+        <translation>사용자 정의 색상 정의(&amp;D) &gt;&gt;</translation>
     </message>
     <message>
         <source>OK</source>
