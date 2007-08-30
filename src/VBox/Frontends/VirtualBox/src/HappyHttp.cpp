@@ -34,6 +34,7 @@
     #include <arpa/inet.h>
     #include <netdb.h>  // for gethostbyname()
     #include <errno.h>
+    #include <unistd.h> // close
 #endif
 
 #ifdef RT_OS_WINDOWS
