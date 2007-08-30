@@ -4409,6 +4409,7 @@ ASM_START
       sti
 
       ;; Get the count in eax
+      ;; VBOX: corrected _int15_function -> _int15_function32 here.
       mov  bx, sp
       SEG SS
         mov  ax, _int15_function32.CX [bx]
