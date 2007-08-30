@@ -27,7 +27,7 @@
 
 #include "HappyHttp.h"
 
-#ifndef __WIN32__
+#ifndef RT_OS_WINDOWS
 //  #include <sys/types.h>
     #include <sys/socket.h>
     #include <netinet/in.h>
@@ -36,7 +36,7 @@
     #include <errno.h>
 #endif
 
-#ifdef __WIN32__
+#ifdef RT_OS_WINDOWS
     #include <winsock2.h>
     #define vsnprintf _vsnprintf
     #define strcasecmp stricmp
@@ -61,7 +61,7 @@ using namespace std;
 namespace happyhttp
 {
 
-#ifdef __WIN32__
+#ifdef RT_OS_WINDOWS
 const char* GetWinsockErrorString( int err );
 #endif
 
@@ -74,7 +74,7 @@ const char* GetWinsockErrorString( int err );
 
 void BailOnSocketError( const char* context )
 {
-#ifdef __WIN32__
+#ifdef RT_OS_WINDOWS
 
     int e = WSAGetLastError();
     const char* msg = GetWinsockErrorString( e );
@@ -85,7 +85,7 @@ void BailOnSocketError( const char* context )
 }
 
 
-#ifdef __WIN32__
+#ifdef RT_OS_WINDOWS
 
 const char* GetWinsockErrorString( int err )
 {
@@ -146,7 +146,7 @@ const char* GetWinsockErrorString( int err )
     return "unknown";
 };
 
-#endif // __WIN32__
+#endif // RT_OS_WINDOWS
 
 
 // return true if socket has data waiting to be read
@@ -180,7 +180,7 @@ struct in_addr *atoaddr( const char* address)
 
     // First try nnn.nnn.nnn.nnn form
     saddr.s_addr = inet_addr(address);
-    if (saddr.s_addr != (in_addr_t)-1)
+    if (saddr.s_addr != INADDR_NONE)
         return &saddr;
 
     host = gethostbyname(address);
@@ -276,7 +276,7 @@ void Connection::connect()
 
 void Connection::close()
 {
-#ifdef __WIN32__
+#ifdef RT_OS_WINDOWS
     if( m_Sock >= 0 )
         ::closesocket( m_Sock );
 #else
@@ -416,7 +416,7 @@ void Connection::send( const unsigned char* buf, int numbytes )
 
     while( numbytes > 0 )
     {
-#ifdef __WIN32__
+#ifdef RT_OS_WINDOWS
         int n = ::send( m_Sock, (const char*)buf, numbytes, 0 );
 #else
         int n = ::send( m_Sock, buf, numbytes, 0 );
