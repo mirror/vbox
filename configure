@@ -1128,7 +1128,6 @@ Configuration:
   --nofatal               don't abort on errors
   --disable-xpcom         disable XPCOM and related stuff
   --disable-sdl-ttf       disable SDL_ttf detection
-  --disable-32            disable check for 32-bit compiler
   --build-xalan           build xalan & xerces from shipped sources
 
 Paths:
