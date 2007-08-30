@@ -4411,10 +4411,10 @@ ASM_START
       ;; Get the count in eax
       mov  bx, sp
       SEG SS
-        mov  ax, _int15_function.CX [bx]
+        mov  ax, _int15_function32.CX [bx]
       shl  eax, #16
       SEG SS
-        mov  ax, _int15_function.DX [bx]
+        mov  ax, _int15_function32.DX [bx]
 
       ;; convert to numbers of 15usec ticks
       mov ebx, #15
