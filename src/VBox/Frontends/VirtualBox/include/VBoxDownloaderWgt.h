@@ -19,14 +19,17 @@
 #ifndef __VBoxDownloaderWgt_h__
 #define __VBoxDownloaderWgt_h__
 
+#include "HappyHttp.h"
 #include "qwidget.h"
 #include "qurl.h"
+#include "qmutex.h"
 class QStatusBar;
 class QAction;
-class QHttpResponseHeader;
-class QHttp;
 class QProgressBar;
 class QToolButton;
+class QThread;
+class QTimer;
+typedef happyhttp::Connection HConnect;
 
 /** class VBoxDownloaderWgt
  *
@@ -46,21 +49,9 @@ public:
 
     void languageChange();
 
+    bool isCheckingPresence() { return mIsChecking; }
+
 private slots:
-
-    /* This slot is used to handle the progress of the file-downloading
-     * procedure. It also checks the downloading status for the file
-     * presence verifying purposes. */
-    void processProgress (int aRead, int aTotal);
-
-    /* This slot is used to handle the finish signal of every operation's
-     * response. It is used to display the errors occurred during the download
-     * operation and for the received-buffer serialization procedure. */
-    void processFinished (int, bool aError);
-
-    /* This slot is used to handle the header responses about the
-     * requested operations. Watches for the header's status-code. */
-    void processResponse (const QHttpResponseHeader &aHeader);
 
     /* This slot is used to control the connection timeout. */
     void processTimeout();
@@ -74,6 +65,9 @@ private slots:
     void suicide();
 
 private:
+
+    /* Used to process all the widget events */
+    bool event (QEvent *aEvent);
 
     /* This function is used to make a request to get a file */
     void getFile();
@@ -89,17 +83,22 @@ private:
      * to close itself on the next event loop iteration. */
     void abortDownload (const QString &aReason = QString::null);
 
-    QStatusBar *mStatusBar;
+    void abortConnection();
+
     QUrl mUrl;
     QString mTarget;
-    QHttp *mHttp;
-    bool mIsChecking;
+    QStatusBar *mStatusBar;
+    QAction *mAction;
     QProgressBar *mProgressBar;
     QToolButton *mCancelButton;
-    QAction *mAction;
-    int mStatus;
-    bool mConnectDone;
+    bool mIsChecking;
     bool mSuicide;
+    HConnect *mConn;
+    QThread *mRequestThread;
+    QMutex mMutex;
+    QByteArray mDataArray;
+    QDataStream mDataStream;
+    QTimer *mTimeout;
 };
 
 #endif

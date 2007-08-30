@@ -25,23 +25,116 @@
 #include "qprogressbar.h"
 #include "qtoolbutton.h"
 #include "qlayout.h"
-#include "qhttp.h"
 #include "qstatusbar.h"
 #include "qdir.h"
 #include "qtimer.h"
 
+/* These notifications are used to notify the GUI thread about different
+ * downloading events: Downloading Started, Downloading in Progress,
+ * Downloading Finished. */
+enum
+{
+    StartDownloadEventType = QEvent::User + 100,
+    ProcessDownloadEventType,
+    FinishDownloadEventType,
+    ErrorDownloadEventType
+};
+
+class StartDownloadEvent : public QEvent
+{
+public:
+    StartDownloadEvent (int aStatus, long aSize)
+        : QEvent ((QEvent::Type) StartDownloadEventType)
+        , mStatus (aStatus), mSize (aSize) {}
+
+    int  mStatus;
+    long mSize;
+};
+
+class ProcessDownloadEvent : public QEvent
+{
+public:
+    ProcessDownloadEvent (const char *aData, ulong aSize)
+        : QEvent ((QEvent::Type) ProcessDownloadEventType)
+        , mData (QByteArray().duplicate (aData, aSize)) {}
+
+    QByteArray mData;
+};
+
+class FinishDownloadEvent : public QEvent
+{
+public:
+    FinishDownloadEvent()
+        : QEvent ((QEvent::Type) FinishDownloadEventType) {}
+};
+
+class ErrorDownloadEvent : public QEvent
+{
+public:
+    ErrorDownloadEvent (const QString &aInfo)
+        : QEvent ((QEvent::Type) ErrorDownloadEventType)
+        , mInfo (aInfo) {}
+
+    QString mInfo;
+};
+
+/* This callback is used to handle the file-downloading procedure
+ * beginning. It checks the downloading status for the file
+ * presence verifying purposes. */
+void OnBegin (const happyhttp::Response *aResponse, void *aUserdata)
+{
+    VBoxDownloaderWgt *loader = static_cast<VBoxDownloaderWgt*> (aUserdata);
+    if (loader->isCheckingPresence())
+    {
+        int status = aResponse->getstatus();
+        QString contentLength = aResponse->getheader ("Content-length");
+
+        QApplication::postEvent (loader,
+            new StartDownloadEvent (status, contentLength.toLong()));
+    }
+}
+
+/* This callback is used to handle the progress of the file-downloading
+ * procedure. It also checks the downloading status for the file
+ * presence verifying purposes. */
+void OnData (const happyhttp::Response*, void *aUserdata,
+             const unsigned char *aData, int aSize)
+{
+    VBoxDownloaderWgt *loader = static_cast<VBoxDownloaderWgt*> (aUserdata);
+    if (!loader->isCheckingPresence())
+    {
+        QApplication::postEvent (loader,
+            new ProcessDownloadEvent ((const char*)aData, aSize));
+    }
+}
+
+/* This callback is used to handle the finish signal of every operation's
+ * response. It is used to display the errors occurred during the download
+ * operation and for the received-buffer serialization procedure. */
+void OnComplete (const happyhttp::Response*, void *aUserdata)
+{
+    VBoxDownloaderWgt *loader = static_cast<VBoxDownloaderWgt*> (aUserdata);
+    if (!loader->isCheckingPresence())
+        QApplication::postEvent (loader,
+            new FinishDownloadEvent());
+}
+
 VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
                                       const QString &aUrl, const QString &aTarget)
     : QWidget (0, "VBoxDownloaderWgt")
-    , mStatusBar (aStatusBar)
     , mUrl (aUrl), mTarget (aTarget)
-    , mHttp (0), mIsChecking (true)
+    , mStatusBar (aStatusBar), mAction (aAction)
     , mProgressBar (0), mCancelButton (0)
-    , mAction (aAction), mStatus (0)
-    , mConnectDone (false), mSuicide (false)
+    , mIsChecking (true), mSuicide (false)
+    , mConn (new HConnect (mUrl.host(), 80))
+    , mRequestThread (0)
+    , mDataStream (mDataArray, IO_WriteOnly)
+    , mTimeout (new QTimer (this))
 {
     /* Disable the associated action */
     mAction->setEnabled (false);
+    connect (mTimeout, SIGNAL (timeout()),
+             this, SLOT (processTimeout()));
 
     /* Drawing itself */
     setFixedHeight (16);
@@ -54,32 +147,20 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
     mCancelButton = new QToolButton (this);
     mCancelButton->setAutoRaise (true);
     mCancelButton->setFocusPolicy (TabFocus);
-    QSpacerItem *spacer = new QSpacerItem (0, 0, QSizePolicy::Expanding,
-                                                 QSizePolicy::Fixed);
+    connect (mCancelButton, SIGNAL (clicked()),
+             this, SLOT (processAbort()));
 
     QHBoxLayout *mainLayout = new QHBoxLayout (this);
     mainLayout->addWidget (mProgressBar);
     mainLayout->addWidget (mCancelButton);
-    mainLayout->addItem (spacer);
+    mainLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
+                                                QSizePolicy::Fixed));
 
     /* Select the product version */
     QString version = vboxGlobal().virtualBox().GetVersion();
 
-#if !defined(VBOX_WITHOUT_QHTTP)
-    /* Initialize url operator */
-    mHttp = new QHttp (this, "mHttp");
-    mHttp->setHost (mUrl.host());
-
-    /* Setup connections */
-    connect (mHttp, SIGNAL (dataReadProgress (int, int)),
-             this, SLOT (processProgress (int, int)));
-    connect (mHttp, SIGNAL (requestFinished (int, bool)),
-             this, SLOT (processFinished (int, bool)));
-    connect (mHttp, SIGNAL (responseHeaderReceived (const QHttpResponseHeader&)),
-             this, SLOT (processResponse (const QHttpResponseHeader&)));
-#endif /* !VBOX_WITHOUT_QHTTP */
-    connect (mCancelButton, SIGNAL (clicked()),
-             this, SLOT (processAbort()));
+    /* Prepare the connection */
+    mConn->setcallbacks (OnBegin, OnData, OnComplete, this);
 
     languageChange();
     mStatusBar->addWidget (this);
@@ -100,126 +181,17 @@ void VBoxDownloaderWgt::languageChange()
                                       "Additions CD image download"));
 }
 
-/* This slot is used to handle the progress of the file-downloading
- * procedure. It also checks the downloading status for the file
- * presence verifying purposes. */
-void VBoxDownloaderWgt::processProgress (int aRead, int aTotal)
-{
-    mConnectDone = true;
-    if (aTotal != -1)
-    {
-        if (mIsChecking)
-        {
-#if !defined(VBOX_WITHOUT_QHTTP)
-            mHttp->abort();
-#endif
-            if (mStatus == 404)
-                abortDownload (tr ("Could not locate the file on "
-                                   "the server (response: %1).")
-                               .arg (mStatus));
-            else
-                processFile (aTotal);
-        }
-        else
-            mProgressBar->setProgress (aRead, aTotal);
-    }
-    else
-        abortDownload (tr ("Could not determine the file size."));
-}
-
-/* This slot is used to handle the finish signal of every operation's
- * response. It is used to display the errors occurred during the download
- * operation and for the received-buffer serialization procedure. */
-void VBoxDownloaderWgt::processFinished (int, bool aError)
-{
-#if !defined(VBOX_WITHOUT_QHTTP)
-    if (aError && mHttp->error() != QHttp::Aborted)
-    {
-        mConnectDone = true;
-        QString reason = mIsChecking ?
-            tr ("Could not connect to the server (%1).") :
-            tr ("Could not download the file (%1).");
-        abortDownload (reason.arg (mHttp->errorString()));
-    }
-    else if (!aError && !mIsChecking)
-    {
-        mHttp->abort();
-        /* Serialize the incoming buffer into the .iso image. */
-        while (true)
-        {
-            QFile file (mTarget);
-            if (file.open (IO_WriteOnly))
-            {
-                file.writeBlock (mHttp->readAll());
-                file.close();
-                /// @todo the below action is not part of the generic
-                //  VBoxDownloaderWgt functionality, so this class should just
-                //  emit a signal when it is done saving the downloaded file
-                //  (succeeded or failed).
-                int rc = vboxProblem().confirmMountAdditions (mUrl.toString(),
-                                           QDir::convertSeparators (mTarget));
-                if (rc == QIMessageBox::Yes)
-                    vboxGlobal().consoleWnd().installGuestAdditionsFrom (mTarget);
-                QTimer::singleShot (0, this, SLOT (suicide()));
-                return;
-            }
-            else
-            {
-                vboxProblem().message (mStatusBar->topLevelWidget(),
-                    VBoxProblemReporter::Error,
-                    tr ("<p>Failed to save the downloaded file as "
-                        "<nobr><b>%1</b>.</nobr></p>")
-                    .arg (QDir::convertSeparators (mTarget)));
-            }
-
-            /// @todo read the todo above (probably should just parametrize
-            /// the title)
-            QString target = vboxGlobal().getExistingDirectory (
-                QFileInfo (mTarget).dirPath(), this, "selectSaveDir",
-                tr ("Select folder to save Guest Additions image to"), true);
-            if (target.isNull())
-            {
-                QTimer::singleShot (0, this, SLOT (suicide()));
-                return;
-            }
-            else
-                mTarget = QDir (target).absFilePath (QFileInfo (mTarget).fileName());
-        };
-    }
-#else  /* VBOX_WITHOUT_QHTTP */
-    NOREF (aError);
-#endif /* VBOX_WITHOUT_QHTTP */
-}
-
-/* This slot is used to handle the header responses about the
- * requested operations. Watches for the header's status-code. */
-void VBoxDownloaderWgt::processResponse (const QHttpResponseHeader &aHeader)
-{
-#if !defined(VBOX_WITHOUT_QHTTP)
-    mStatus = aHeader.statusCode();
-#endif
-}
-
 /* This slot is used to control the connection timeout. */
 void VBoxDownloaderWgt::processTimeout()
 {
-    if (mConnectDone)
-        return;
-#if !defined(VBOX_WITHOUT_QHTTP)
-    mHttp->abort();
     abortDownload (tr ("Connection timed out."));
-#endif
 }
 
 /* This slot is used to process cancel-button clicking signal. */
 void VBoxDownloaderWgt::processAbort()
 {
-#if !defined(VBOX_WITHOUT_QHTTP)
-    mConnectDone = true;
-    mHttp->abort();
     abortDownload (tr ("The download process has been cancelled "
                        "by the user."));
-#endif
 }
 
 /* This slot is used to terminate the downloader, activate the
@@ -227,19 +199,145 @@ void VBoxDownloaderWgt::processAbort()
  * sub-widgets from the VM Console status-bar. */
 void VBoxDownloaderWgt::suicide()
 {
+    delete mRequestThread;
+    delete mConn;
+
     mAction->setEnabled (true);
     mStatusBar->removeWidget (this);
     delete this;
 }
 
+/* Used to process all the widget events */
+bool VBoxDownloaderWgt::event (QEvent *aEvent)
+{
+    switch (aEvent->type())
+    {
+        case StartDownloadEventType:
+        {
+            StartDownloadEvent *e = static_cast<StartDownloadEvent*> (aEvent);
+
+            mTimeout->stop();
+            if (e->mStatus == 404)
+                abortDownload (tr ("Could not locate the file on "
+                    "the server (response: %1).").arg (e->mStatus));
+            else
+                processFile (e->mSize);
+
+            return true;
+        }
+        case ProcessDownloadEventType:
+        {
+            ProcessDownloadEvent *e = static_cast<ProcessDownloadEvent*> (aEvent);
+
+            mTimeout->start (20000, true);
+            mProgressBar->setProgress (mProgressBar->progress() + e->mData.size());
+            mDataStream.writeRawBytes (e->mData.data(), e->mData.size());
+
+            return true;
+        }
+        case FinishDownloadEventType:
+        {
+            mTimeout->stop();
+
+            /* Serialize the incoming buffer into the .iso image. */
+            while (true)
+            {
+                QFile file (mTarget);
+                if (file.open (IO_WriteOnly))
+                {
+                    file.writeBlock (mDataArray);
+                    file.close();
+                    /// @todo the below action is not part of the generic
+                    //  VBoxDownloaderWgt functionality, so this class should just
+                    //  emit a signal when it is done saving the downloaded file
+                    //  (succeeded or failed).
+                    int rc = vboxProblem().confirmMountAdditions (mUrl.toString(),
+                                               QDir::convertSeparators (mTarget));
+                    if (rc == QIMessageBox::Yes)
+                        vboxGlobal().consoleWnd().installGuestAdditionsFrom (mTarget);
+                    QTimer::singleShot (0, this, SLOT (suicide()));
+                    break;
+                }
+                else
+                {
+                    vboxProblem().message (mStatusBar->topLevelWidget(),
+                        VBoxProblemReporter::Error,
+                        tr ("<p>Failed to save the downloaded file as "
+                            "<nobr><b>%1</b>.</nobr></p>")
+                        .arg (QDir::convertSeparators (mTarget)));
+                }
+
+                /// @todo read the todo above (probably should just parametrize
+                /// the title)
+                QString target = vboxGlobal().getExistingDirectory (
+                    QFileInfo (mTarget).dirPath(), this, "selectSaveDir",
+                    tr ("Select folder to save Guest Additions image to"), true);
+                if (target.isNull())
+                    QTimer::singleShot (0, this, SLOT (suicide()));
+                else
+                    mTarget = QDir (target).absFilePath (QFileInfo (mTarget).fileName());
+            }
+
+            return true;
+        }
+        case ErrorDownloadEventType:
+        {
+            ErrorDownloadEvent *e = static_cast<ErrorDownloadEvent*> (aEvent);
+
+            abortDownload (e->mInfo);
+
+            return true;
+        }
+        default:
+            break;
+    }
+
+    return QWidget::event (aEvent);
+}
+
 /* This function is used to make a request to get a file */
 void VBoxDownloaderWgt::getFile()
 {
-    mConnectDone = false;
-#if !defined(VBOX_WITHOUT_QHTTP)
-    mHttp->get (mUrl.path());
-#endif
-    QTimer::singleShot (5000, this, SLOT (processTimeout()));
+    /* Http request thread class */
+    class Thread : public QThread
+    {
+    public:
+
+        Thread (VBoxDownloaderWgt *aParent, HConnect *aConn,
+                const QString &aPath, QMutex *aMutex)
+            : mParent (aParent), mConn (aConn)
+            , mPath (aPath), mMutex (aMutex) {}
+
+        virtual void run()
+        {
+            try
+            {
+                mConn->request ("GET", mPath);
+                while (mConn->outstanding())
+                {
+                    QMutexLocker locker (mMutex);
+                    mConn->pump();
+                }
+            }
+            catch (happyhttp::Wobbly &ex)
+            {
+                QApplication::postEvent (mParent,
+                    new ErrorDownloadEvent (ex.what()));
+            }
+        }
+
+    private:
+
+        VBoxDownloaderWgt *mParent;
+        HConnect *mConn;
+        QString mPath;
+        QMutex *mMutex;
+    };
+
+    if (!mRequestThread)
+        mRequestThread = new Thread (this, mConn, mUrl.path(), &mMutex);
+    mRequestThread->start();
+    mTimeout->start (20000, true);
 }
 
 /* This function is used to ask the user about he wants to download the
@@ -247,28 +345,32 @@ void VBoxDownloaderWgt::getFile()
  * and Cancel-button widgets. */
 void VBoxDownloaderWgt::processFile (int aSize)
 {
+    abortConnection();
+
     /// @todo the below action is not part of the generic
     //  VBoxDownloaderWgt functionality, so this class should just
     //  emit a signal when it is done detecting the file size.
 
     /* Ask user about GA image downloading */
-    int rc = vboxProblem().
-        confirmDownloadAdditions (mUrl.toString(), aSize);
+    int rc = vboxProblem().confirmDownloadAdditions (mUrl.toString(), aSize);
     if (rc == QIMessageBox::Yes)
     {
         mIsChecking = false;
+        mProgressBar->setTotalSteps (aSize);
         getFile();
     }
     else
         abortDownload();
 }
 
-/* This wrapper displays an error message box (unless @aReason is
+/* This wrapper displays an error message box (unless aReason is
  * QString::null) with the cause of the download procedure
  * termination. After the message box is dismissed, the downloader signals
  * to close itself on the next event loop iteration. */
 void VBoxDownloaderWgt::abortDownload (const QString &aReason)
 {
+    abortConnection();
+
     /* Protect against double kill request. */
     if (mSuicide)
         return;
@@ -283,5 +385,12 @@ void VBoxDownloaderWgt::abortDownload (const QString &aReason)
 
     /* Allows all the queued signals to be processed before quit. */
     QTimer::singleShot (0, this, SLOT (suicide()));
+}
+
+void VBoxDownloaderWgt::abortConnection()
+{
+    mMutex.lock();
+    mConn->close();
+    mMutex.unlock();
 }
 
