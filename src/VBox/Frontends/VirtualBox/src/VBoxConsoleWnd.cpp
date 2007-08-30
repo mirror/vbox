@@ -1686,24 +1686,24 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     if (element & VRDPStuff)
     {
         CVRDPServer vrdpsrv = csession.GetMachine().GetVRDPServer();
-        if (vrdpsrv.isNull())
-            return;
-
-        /* update menu&status icon state */
-        bool isVRDPEnabled = vrdpsrv.GetEnabled();
-        devicesSwitchVrdpAction->setOn (isVRDPEnabled);
+        if (!vrdpsrv.isNull())
+        {
+            /* update menu&status icon state */
+            bool isVRDPEnabled = vrdpsrv.GetEnabled();
+            devicesSwitchVrdpAction->setOn (isVRDPEnabled);
 #if 0
-        vrdp_state->setState (isVRDPEnabled ? 1 : 0);
+            vrdp_state->setState (isVRDPEnabled ? 1 : 0);
 
-        /* compose status icon tooltip */
-        QString tip = tr ("Indicates whether the Remote Display (VRDP Server) "
-                          "is enabled (<img src=vrdp_16px.png/>) or not "
-                          "(<img src=vrdp_disabled_16px.png/>)."
-        );
-        if (vrdpsrv.GetEnabled())
-            tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
-        QToolTip::add (vrdp_state, tip);
+            /* compose status icon tooltip */
+            QString tip = tr ("Indicates whether the Remote Display (VRDP Server) "
+                              "is enabled (<img src=vrdp_16px.png/>) or not "
+                              "(<img src=vrdp_disabled_16px.png/>)."
+                              );
+            if (vrdpsrv.GetEnabled())
+                tip += tr ("<hr>VRDP Server is listening on port %1").arg (vrdpsrv.GetPort());
+            QToolTip::add (vrdp_state, tip);
 #endif
+        }
     }
     if (element & SharedFolderStuff)
     {
