@@ -174,9 +174,9 @@ VBoxDrv_SOURCES       = \
 INSTALLS += VBoxDrv.kext
 VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
 VBoxDrv.kext_SOURCES  = \
-	$(PATH_TARGET)/Info.plist
+	$(PATH_TARGET)/VBoxDrv/Info.plist
 
-$(PATH_TARGET)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET))
+$(PATH_TARGET)/VBoxDrv/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $(call DIRDEP,$(PATH_TARGET)/VBoxDrv)
 	$(call MSG_GENERATE,VBoxDrv,$@,$<)
 	$(xQUIET)$(RM) -f $@
 	$(xQUIET)$(SED) \
