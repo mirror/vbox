@@ -60,7 +60,7 @@
 #ifdef RT_OS_WINDOWS
     #include <winsock2.h>
     #define vsnprintf _vsnprintf
-    #define strcasecmp stricmp
+    #define strcasecmp _stricmp
 #endif
 
 #include <cstdio>
