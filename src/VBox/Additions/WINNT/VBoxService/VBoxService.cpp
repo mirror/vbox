@@ -336,41 +336,32 @@ void WINAPI VBoxServiceStart(void)
      */
     while(true)
     {
-        DWORD waitResult = MsgWaitForMultipleObjectsEx(1, &gStopSem, 500, QS_ALLINPUT, 0);
+        DWORD waitResult = MsgWaitForMultipleObjectsEx(1, &gStopSem, 100, QS_ALLINPUT, 0);
         if (waitResult == WAIT_OBJECT_0)
         {
             dprintf(("VBoxService: exit\n"));
             /* exit */
             break;
         }
-        else if (waitResult == WAIT_OBJECT_0 + 1)
+        /* timeout or a window message, handle it */
+        MSG msg;
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            /* a window message, handle it */
-            MSG msg;
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            dprintf(("VBoxService: msg %p\n", msg.message));
+            if (msg.message == WM_QUIT)
             {
-                dprintf(("VBoxService: msg %p\n", msg.message));
-                if (msg.message == WM_QUIT)
-                {
-                    dprintf(("VBoxService: WM_QUIT!\n"));
-                    SetEvent(gStopSem);
-                    continue;
-                }
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                dprintf(("VBoxService: WM_QUIT!\n"));
+                SetEvent(gStopSem);
+                continue;
             }
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
-        else /* timeout */
+        /* we might have to repeat this operation because the shell might not be loaded yet */
+        if (!fTrayIconCreated)
         {
-#ifndef DEBUG_sandervl
-            dprintf(("VBoxService: timed out\n"));
-#endif
-            /* we might have to repeat this operation because the shell might not be loaded yet */
-            if (!fTrayIconCreated)
-            {
-                fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
-                dprintf(("VBoxService: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
-            }
+            fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
+            dprintf(("VBoxService: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
         }
     }
 
