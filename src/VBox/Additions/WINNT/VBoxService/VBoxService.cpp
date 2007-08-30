@@ -336,7 +336,7 @@ void WINAPI VBoxServiceStart(void)
      */
     while(true)
     {
-        DWORD waitResult = MsgWaitForMultipleObjectsEx(1, &gStopSem, 100, QS_ALLINPUT, 0);
+        DWORD waitResult = MsgWaitForMultipleObjectsEx(1, &gStopSem, 250, QS_ALLINPUT, 0);
         if (waitResult == WAIT_OBJECT_0)
         {
             dprintf(("VBoxService: exit\n"));
