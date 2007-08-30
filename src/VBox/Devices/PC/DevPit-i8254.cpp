@@ -124,6 +124,8 @@ typedef struct PITState
 #ifdef FAKE_REFRESH_CLOCK
     /** Speaker dummy. */
     int32_t                 dummy_refresh_clock;
+#else
+    uint32_t                Alignment1;
 #endif
     /** Pointer to the device instance. */
     HCPTRTYPE(PPDMDEVINS)   pDevIns;
