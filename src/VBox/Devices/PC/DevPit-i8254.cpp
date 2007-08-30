@@ -67,6 +67,10 @@
 /** The version of the saved state. */
 #define PIT_SAVED_STATE_VERSION 2
 
+/** @def FAKE_REFRESH_CLOCK
+ * Define this to flip the 15usec refresh bit on every read.
+ * If not defined, it will be flipped correctly. */
+//#define FAKE_REFRESH_CLOCK
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -117,8 +121,10 @@ typedef struct PITState
     PITChannelState         channels[3];
     /** Speaker data. */
     int32_t                 speaker_data_on;
+#ifdef FAKE_REFRESH_CLOCK
     /** Speaker dummy. */
     int32_t                 dummy_refresh_clock;
+#endif
     /** Pointer to the device instance. */
     HCPTRTYPE(PPDMDEVINS)   pDevIns;
 #if HC_ARCH_BITS == 32
@@ -297,7 +303,7 @@ static inline void pit_load_count(PITChannelState *s, int val)
     /* log the new rate (ch 0 only). */
     if (    s->pTimerHC /* ch 0 */
         &&  s->cRelLogEntries++ < 32)
-        LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=0)\n", 
+        LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=0)\n",
                 s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
 }
 
@@ -626,9 +632,29 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     if (cb == 1)
     {
         PITState *pData = PDMINS2DATA(pDevIns, PITState *);
-        int out = pit_get_out(pData, 2, TMTimerGet(pData->channels[0].CTXSUFF(pTimer)));
+        const uint64_t u64Now = TMTimerGet(pData->channels[0].CTXSUFF(pTimer));
+        Assert(TMTimerGetFreq(pData->channels[0].CTXSUFF(pTimer)) == 1000000000); /* lazy bird. */
+
+        /* bit 6,7 Parity error stuff. */
+        /* bit 5 - mirrors timer 2 output condition. */
+        const int fOut = pit_get_out(pData, 2, u64Now);
+        /* bit 4 - toggled every with each (DRAM?) refresh request, every 15.085 µs. */
+#ifdef FAKE_REFRESH_CLOCK
         pData->dummy_refresh_clock ^= 1;
-        *pu32 = (pData->speaker_data_on << 1) | pit_get_gate(pData, 2) | (out << 5) | (pData->dummy_refresh_clock << 4);
+        const int fRefresh = pData->dummy_refresh_clock;
+#else
+        const int fRefresh = (u64Now / 15085) & 1;
+#endif
+        /* bit 2,3 NMI / parity status stuff. */
+        /* bit 1 - speaker data status */
+        const int fSpeakerStatus = pData->speaker_data_on;
+        /* bit 0 - timer 2 clock gate to speaker status. */
+        const int fTimer2GateStatus = pit_get_gate(pData, 2);
+
+        *pu32 = fTimer2GateStatus
+              | (fSpeakerStatus << 1)
+              | (fRefresh << 4)
+              | (fOut << 5);
         Log(("pitIOPortSpeakerRead: Port=%#x cb=%x *pu32=%#x\n", Port, cb, *pu32));
         return VINF_SUCCESS;
     }
@@ -699,7 +725,11 @@ static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     }
 
     SSMR3PutS32(pSSMHandle, pData->speaker_data_on);
+#ifdef FAKE_REFRESH_CLOCK
     return SSMR3PutS32(pSSMHandle, pData->dummy_refresh_clock);
+#else
+    return SSMR3PutS32(pSSMHandle, 0);
+#endif
 }
 
 
@@ -741,14 +771,19 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         if (s->CTXSUFF(pTimer))
         {
             TMR3TimerLoad(s->CTXSUFF(pTimer), pSSMHandle);
-            LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n", 
+            LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n",
                     s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100, i));
         }
         pData->channels[0].cRelLogEntries = 0;
     }
 
     SSMR3GetS32(pSSMHandle, &pData->speaker_data_on);
+#ifdef FAKE_REFRESH_CLOCK
     return SSMR3GetS32(pSSMHandle, &pData->dummy_refresh_clock);
+#else
+    int32_t u32Dummy;
+    return SSMR3GetS32(pSSMHandle, &u32Dummy);
+#endif
 }
 
 
@@ -860,8 +895,12 @@ static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
                         pCh->count_load_time,   pCh->next_transition_time,
                         pCh->u64ReloadTS,       pCh->u64NextTS);
     }
+#ifdef FAKE_REFRESH_CLOCK
     pHlp->pfnPrintf(pHlp, "speaker_data_on=%#x dummy_refresh_clock=%#x\n",
                     pData->speaker_data_on, pData->dummy_refresh_clock);
+#else
+    pHlp->pfnPrintf(pHlp, "speaker_data_on=%#x\n", pData->speaker_data_on);
+#endif
 }
 
 
