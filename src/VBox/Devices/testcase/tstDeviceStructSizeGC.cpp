@@ -466,7 +466,7 @@ int main()
     GEN_CHECK_OFF(PITState, channels);
     GEN_CHECK_OFF(PITState, channels[1]);
     GEN_CHECK_OFF(PITState, speaker_data_on);
-    GEN_CHECK_OFF(PITState, dummy_refresh_clock);
+//    GEN_CHECK_OFF(PITState, dummy_refresh_clock);
     GEN_CHECK_OFF(PITState, pDevIns);
     GEN_CHECK_OFF(PITState, StatPITIrq);
     GEN_CHECK_OFF(PITState, StatPITHandler);
