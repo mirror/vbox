@@ -157,8 +157,10 @@ VirtualBox_SOURCES.darwin = \
 
 src/HappyHttp.cpp_CXXFLAGS.linux += -fexceptions
 src/HappyHttp.cpp_CXXFLAGS.darwin += -fexceptions
+src/HappyHttp.cpp_CXXFLAGS.os2 += -fexceptions
 src/VBoxDownloaderWgt.cpp_CXXFLAGS.linux += -fexceptions
 src/VBoxDownloaderWgt.cpp_CXXFLAGS.darwin += -fexceptions
+src/VBoxDownloaderWgt.cpp_CXXFLAGS.os2 += -fexceptions
 
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
