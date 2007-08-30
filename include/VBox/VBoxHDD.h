@@ -521,7 +521,7 @@ VBOXDDU_DECL(int) VDIDiskGetParentImageUuid(PVDIDISK pDisk, int nImage, PRTUUID 
  * @param   pvBuf           Pointer to buffer for reading data.
  * @param   cbToRead        Number of bytes to read.
  */
-VBOXDDU_DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, unsigned cbToRead);
+VBOXDDU_DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, size_t cbToRead);
 
 /**
  * Write data to virtual HDD.
@@ -532,7 +532,7 @@ VBOXDDU_DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, un
  * @param   pvBuf           Pointer to buffer of writing data.
  * @param   cbToWrite       Number of bytes to write.
  */
-VBOXDDU_DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf, unsigned cbToWrite);
+VBOXDDU_DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf, size_t cbToWrite);
 
 
 

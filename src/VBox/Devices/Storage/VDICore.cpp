@@ -59,10 +59,10 @@ static void vdiEnableLastModifiedUpdate(PVDIIMAGEDESC pImage);
 #endif
 static void vdiCloseImage(PVDIIMAGEDESC pImage);
 static int  vdiReadInBlock(PVDIIMAGEDESC pImage, unsigned uBlock, unsigned offRead,
-                           unsigned cbToRead, void *pvBuf);
+                           size_t cbToRead, void *pvBuf);
 static int  vdiFillBlockByZeroes(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock);
 static int  vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock,
-                            unsigned offWrite, unsigned cbToWrite, const void *pvBuf);
+                            unsigned offWrite, size_t cbToWrite, const void *pvBuf);
 static int  vdiCopyBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock);
 static int  vdiMergeImages(PVDIIMAGEDESC pImageFrom, PVDIIMAGEDESC pImageTo, bool fParentToChild,
                           PFNVMPROGRESS pfnProgress, void *pvUser);
@@ -911,7 +911,7 @@ static void vdiCloseImage(PVDIIMAGEDESC pImage)
  * note: uBlock must be valid, readed data must not overlap block bounds.
  */
 static int vdiReadInBlock(PVDIIMAGEDESC pImage, unsigned uBlock, unsigned offRead,
-                          unsigned cbToRead, void *pvBuf)
+                          size_t cbToRead, void *pvBuf)
 {
     if (IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
     {
@@ -941,7 +941,7 @@ static int vdiReadInBlock(PVDIIMAGEDESC pImage, unsigned uBlock, unsigned offRea
  * @param   pvBuf           Pointer to buffer for reading data.
  * @param   cbToRead        Number of bytes to read.
  */
-VBOXDDU_DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, unsigned cbToRead)
+VBOXDDU_DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, size_t cbToRead)
 {
     /* sanity check */
     Assert(pDisk);
@@ -969,7 +969,7 @@ VBOXDDU_DECL(int) VDIDiskRead(PVDIDISK pDisk, uint64_t offStart, void *pvBuf, un
     int rc;
     for (;;)
     {
-        unsigned to_read;
+        size_t to_read;
         if ((offRead + cbToRead) <= cbBlock)
             to_read = cbToRead;
         else
@@ -1061,7 +1061,7 @@ static int vdiFillBlockByZeroes(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned u
  *
  * note: uBlock must be valid, written data must not overlap block bounds.
  */
-static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock, unsigned offWrite, unsigned cbToWrite, const void *pvBuf)
+static int vdiWriteInBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock, unsigned offWrite, size_t cbToWrite, const void *pvBuf)
 {
     int rc;
 
@@ -1201,7 +1201,7 @@ static int vdiCopyBlock(PVDIDISK pDisk, PVDIIMAGEDESC pImage, unsigned uBlock)
  * @param   pvBuf           Pointer to buffer of writing data.
  * @param   cbToWrite       Number of bytes to write.
  */
-VBOXDDU_DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf, unsigned cbToWrite)
+VBOXDDU_DECL(int) VDIDiskWrite(PVDIDISK pDisk, uint64_t offStart, const void *pvBuf, size_t cbToWrite)
 {
     /* sanity check */
     Assert(pDisk);

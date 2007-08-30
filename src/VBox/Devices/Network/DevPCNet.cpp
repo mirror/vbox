@@ -2779,7 +2779,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pData, uint32_t u32RAP)
         case BCR_MIIMDR:
             if (pData->fAm79C973 && (pData->aBCR[BCR_MIIADDR] >> 5 & 0x1f) == 0)
             {
-                size_t miiaddr = pData->aBCR[BCR_MIIADDR] & 0x1f;
+                uint32_t miiaddr = pData->aBCR[BCR_MIIADDR] & 0x1f;
                 val = pcnetMIIReadU16(pData, miiaddr);
             }
             else
