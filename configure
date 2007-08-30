@@ -1088,6 +1088,34 @@ check_compiler_h()
 
 
 #
+# Check if we are able to build 32-bit applications (needed for the guest additions)
+#
+check_32bit()
+{
+  test_header "32-bit support"
+  cat > .tmp_src.c << EOF
+#include <stdint.h>
+int main(void)
+{
+  return 0;
+}
+EOF
+  echo "compiling the following source file:" >> $LOG
+  cat .tmp_src.c >> $LOG
+  echo "using the following command line:" >> $LOG
+  echo "$CC -m32 -O -Wall -o .tmp_out .tmp_src.c" >> $LOG
+  $CC -m32 -O -Wall -o .tmp_out .tmp_src.c >> $LOG 2>&1
+  if [ $? -ne 0 ]; then
+    echo
+    echo "  Cannot compile 32-bit applications (missing headers and/or libraries)!"
+    echo "  Check the file $LOG for detailed error information."
+    fail
+  fi
+  log_success ""
+}
+
+
+#
 # Show help
 #
 show_help()
@@ -1100,6 +1128,7 @@ Configuration:
   --nofatal               don't abort on errors
   --disable-xpcom         disable XPCOM and related stuff
   --disable-sdl-ttf       disable SDL_ttf detection
+  --disable-32            disable check for 32-bit compiler
   --build-xalan           build xalan & xerces from shipped sources
 
 Paths:
@@ -1310,6 +1339,7 @@ if [ "$OS" = "linux" ]; then
   check_linux
   check_alsa
   check_compiler_h
+  [ "$BUILD_MACHINE" = "amd64" ] && check_32bit
 fi
 
 # success!
