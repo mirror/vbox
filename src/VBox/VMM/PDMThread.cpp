@@ -63,7 +63,7 @@ static DECLCALLBACK(int) pdmR3ThreadWakeUp(PPDMTHREAD pThread)
         case PDMTHREADTYPE_DEVICE:
             rc = pThread->u.Dev.pfnWakeUp(pThread->u.Dev.pDevIns, pThread);
             break;
-            
+
         case PDMTHREADTYPE_USB:
             rc = pThread->u.Usb.pfnWakeUp(pThread->u.Usb.pUsbIns, pThread);
             break;
@@ -139,11 +139,13 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
     {
         /*
          * Create the thread and wait for it to initialize.
+         * The newly created thread will set the PDMTHREAD::Thread member.
          */
-        rc = RTThreadCreate(&pThread->Thread, pdmR3ThreadMain, pThread, cbStack, enmType, RTTHREADFLAGS_WAITABLE, pszName);
+        RTTHREAD Thread;
+        rc = RTThreadCreate(&Thread, pdmR3ThreadMain, pThread, cbStack, enmType, RTTHREADFLAGS_WAITABLE, pszName);
         if (RT_SUCCESS(rc))
         {
-            rc = RTThreadUserWait(pThread->Thread, 60*1000);
+            rc = RTThreadUserWait(Thread, 60*1000);
             if (    RT_SUCCESS(rc)
                 &&  pThread->enmState != PDMTHREADSTATE_SUSPENDED)
                 rc = VERR_INTERNAL_ERROR;
@@ -159,13 +161,13 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
                     pVM->pdm.s.pThreads = pThread;
                 pVM->pdm.s.pThreadsTail = pThread;
 
-                rc = RTThreadUserReset(pThread->Thread);
+                rc = RTThreadUserReset(Thread);
                 AssertRC(rc);
                 return rc;
             }
 
             /* bailout */
-            RTThreadWait(pThread->Thread, 60*1000, NULL);
+            RTThreadWait(Thread, 60*1000, NULL);
         }
         RTSemEventMultiDestroy(pThread->Internal.s.BlockEvent);
         pThread->Internal.s.BlockEvent = NIL_RTSEMEVENTMULTI;
@@ -179,9 +181,9 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
 
 /**
  * Device Helper for creating a thread associated with a device.
- * 
+ *
  * @returns VBox status code.
- * @param   pVM         The VM handle. 
+ * @param   pVM         The VM handle.
  * @param   pDevIns     The device instance.
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
@@ -211,9 +213,9 @@ int pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, v
 
 /**
  * USB Device Helper for creating a thread associated with an USB device.
- * 
+ *
  * @returns VBox status code.
- * @param   pVM         The VM handle. 
+ * @param   pVM         The VM handle.
  * @param   pUsbIns     The USB device instance.
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
@@ -243,9 +245,9 @@ int pdmR3ThreadCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void
 
 /**
  * Driver Helper for creating a thread associated with a driver.
- * 
+ *
  * @returns VBox status code.
- * @param   pVM         The VM handle. 
+ * @param   pVM         The VM handle.
  * @param   pDrvIns     The driver instance.
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
@@ -275,9 +277,9 @@ int pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, v
 
 /**
  * Creates a PDM thread for internal use in the VM.
- * 
+ *
  * @returns VBox status code.
- * @param   pVM         The VM handle. 
+ * @param   pVM         The VM handle.
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
@@ -305,9 +307,9 @@ PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PF
 
 /**
  * Creates a PDM thread for VM use by some external party.
- * 
+ *
  * @returns VBox status code.
- * @param   pVM         The VM handle. 
+ * @param   pVM         The VM handle.
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
@@ -441,9 +443,9 @@ PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
 /**
  * Destroys all threads associated with a device.
  *
- * This function is called by PDMDevice when a device is 
+ * This function is called by PDMDevice when a device is
  * destroyed (not currently implemented).
- * 
+ *
  * @returns VBox status code of the first failure.
  * @param   pVM         The VM handle.
  * @param   pDevIns     the device instance.
@@ -475,7 +477,7 @@ int pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
  * Destroys all threads associated with an USB device.
  *
  * This function is called by PDMUsb when a device is destroyed.
- * 
+ *
  * @returns VBox status code of the first failure.
  * @param   pVM         The VM handle.
  * @param   pUsbIns     The USB device instance.
@@ -507,7 +509,7 @@ int pdmR3ThreadDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
  * Destroys all threads associated with a driver.
  *
  * This function is called by PDMDriver when a driver is destroyed.
- * 
+ *
  * @returns VBox status code of the first failure.
  * @param   pVM         The VM handle.
  * @param   pDrvIns     The driver instance.
@@ -685,6 +687,7 @@ static DECLCALLBACK(int) pdmR3ThreadMain(RTTHREAD Thread, void *pvUser)
 {
     PPDMTHREAD pThread = (PPDMTHREAD)pvUser;
     Log(("PDMThread: Initializing thread %RTthrd / %p / '%s'...\n", Thread, pThread, RTThreadGetName(Thread)));
+    pThread->Thread = Thread;
 
     /*
      * The run loop.
@@ -819,7 +822,7 @@ static void pdmR3ThreadBailOut(PPDMTHREAD pThread)
  * This can be called at the power off / suspend notifications to suspend the
  * PDM thread a bit early. The thread will be automatically suspend upon
  * completion of the device/driver notification cycle.
- * 
+ *
  * The caller is responsible for serializing the control operations on the
  * thread. That basically means, always do these calls from the EMT.
  *
