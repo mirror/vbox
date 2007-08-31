@@ -227,7 +227,10 @@ VBOX_WITH_SHARED_FOLDERS = 1
 VBOX_WITH_SHARED_CLIPBOARD = 1
 # Enable the Intel PXE ROM (replaces Etherboot).
 VBOX_WITH_INTEL_PXE = 1
-
+# Strip binaries of release and profile builds
+VBOX_DO_STRIP = $(if $(filter release profile,$(BUILD_TYPE)),1,)
+# Strip R0/GC modules (current requirement for our loader)
+VBOX_DO_STRIP_MODULES = 1
 
 #
 # Skip stuff.
@@ -1246,8 +1249,8 @@ ifeq ($(BUILD_TARGET),solaris)
 else
  TEMPLATE_VBOXGC_LDFLAGS             = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
- TEMPLATE_VBOXGC_LDFLAGS            += -S
- TEMPLATE_VBOXGC_LDFLAGS.release     = -S
+ TEMPLATE_VBOXGC_LDFLAGS            += $(if $(VBOX_DO_STRIP_MODULES),-S,)
+ TEMPLATE_VBOXGC_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
 TEMPLATE_VBOXGC_LIBS                = \
 	$(VBOX_GCC32_LIBGCC) # instricts
@@ -1347,8 +1350,8 @@ ifeq ($(BUILD_TARGET),solaris)
 else
  TEMPLATE_VBOXR0_LDFLAGS             = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
- TEMPLATE_VBOXR0_LDFLAGS            += -S
- TEMPLATE_VBOXR0_LDFLAGS.release     = -S
+ TEMPLATE_VBOXR0_LDFLAGS            += $(if $(VBOX_DO_STRIP_MODULES),-S,)
+ TEMPLATE_VBOXR0_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
 
 TEMPLATE_VBOXR0_LIBS                = \

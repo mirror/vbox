@@ -30,7 +30,6 @@ OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
 	         VirtualBox.tar.bz2 LICENSE) \
 	         $(wildcard $(PATH_TARGET)/VirtualBox-*)
 INSTALLS       = linux-bin linux-doc
-VBOX_DO_STRIP ?= $(if $(filter release profile,$(BUILD_TYPE)),1,)
 
 VBoxTunctl_TEMPLATE = VBOXR3EXE
 VBoxTunctl_SOURCES  = tunctl.c
