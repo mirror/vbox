@@ -29,6 +29,7 @@
 /* global variables */
 HANDLE                gVBoxDriver;
 HANDLE                gStopSem;
+HANDLE                ghSeamlessNotifyEvent = 0;
 SERVICE_STATUS        gVBoxServiceStatus;
 SERVICE_STATUS_HANDLE gVBoxServiceStatusHandle;
 HINSTANCE             gInstance;
@@ -290,6 +291,12 @@ void WINAPI VBoxServiceStart(void)
             dprintf(("VBoxService: CreateEvent failed: rc = %d\n", GetLastError()));
             return;
         }
+        ghSeamlessNotifyEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
+        if (ghSeamlessNotifyEvent == NULL)
+        {
+            dprintf(("VBoxService: CreateEvent failed: rc = %d\n", GetLastError()));
+            return;
+        }
     }
 
     /*
@@ -334,34 +341,44 @@ void WINAPI VBoxServiceStart(void)
      * Main execution loop
      * Wait for the stop semaphore to be posted or a window event to arrive
      */
+    HANDLE hWaitEvent[2] = {gStopSem, ghSeamlessNotifyEvent};
     while(true)
     {
-        DWORD waitResult = MsgWaitForMultipleObjectsEx(1, &gStopSem, 250, QS_ALLINPUT, 0);
+        DWORD waitResult = MsgWaitForMultipleObjectsEx(2, hWaitEvent, 500, QS_ALLINPUT, 0);
         if (waitResult == WAIT_OBJECT_0)
         {
             dprintf(("VBoxService: exit\n"));
             /* exit */
             break;
         }
-        /* timeout or a window message, handle it */
-        MSG msg;
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        else
+        if (waitResult == WAIT_OBJECT_0+1)
         {
-            dprintf(("VBoxService: msg %p\n", msg.message));
-            if (msg.message == WM_QUIT)
-            {
-                dprintf(("VBoxService: WM_QUIT!\n"));
-                SetEvent(gStopSem);
-                continue;
-            }
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            /* seamless window notification */
+            VBoxSeamlessCheckWindows();
         }
-        /* we might have to repeat this operation because the shell might not be loaded yet */
-        if (!fTrayIconCreated)
+        else
         {
-            fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
-            dprintf(("VBoxService: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
+            /* timeout or a window message, handle it */
+            MSG msg;
+            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            {
+                dprintf(("VBoxService: msg %p\n", msg.message));
+                if (msg.message == WM_QUIT)
+                {
+                    dprintf(("VBoxService: WM_QUIT!\n"));
+                    SetEvent(gStopSem);
+                    continue;
+                }
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            /* we might have to repeat this operation because the shell might not be loaded yet */
+            if (!fTrayIconCreated)
+            {
+                fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
+                dprintf(("VBoxService: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
+            }
         }
     }
 

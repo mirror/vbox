@@ -17,9 +17,10 @@
 
 
 #define VBOXHOOK_DLL_NAME           "VBoxHook.dll"
+#define VBOXHOOK_GLOBAL_EVENT_NAME  "Local\\VBoxHookNotifyEvent"
 
 /* Install the global message hook */
-BOOL VBoxInstallHook(HMODULE hDll, HWND hwndPostWindow);
+BOOL VBoxInstallHook(HMODULE hDll);
 
 /* Remove the global message hook */
 BOOL VBoxRemoveHook();

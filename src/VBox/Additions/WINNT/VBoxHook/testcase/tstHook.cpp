@@ -20,7 +20,10 @@
 int main(int argc, char **argv)
 {
     printf("Enabling global hook\n");
-    VBoxInstallHook(GetModuleHandle("VBoxHook.dll"), 0);
+
+    HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
+
+    VBoxInstallHook(GetModuleHandle("VBoxHook.dll"));
     getchar();
 
     printf("Disabling global hook\n");

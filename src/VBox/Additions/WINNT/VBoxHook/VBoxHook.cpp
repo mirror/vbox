@@ -18,9 +18,10 @@
 
 #pragma data_seg("SHARED") 
 static HWINEVENTHOOK    hEventHook[2]    = {0}; 
-static HWND             hwndNotification = 0;
 #pragma data_seg() 
 #pragma comment(linker, "/section:SHARED,RWS") 
+
+static HANDLE   hNotifyEvent = 0;
 
 #ifdef DEBUG
 void WriteLog(char *String, ...);
@@ -73,22 +74,24 @@ void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
             break;
         }
 #endif
-        BOOL ret = PostMessage(hwndNotification, WM_VBOX_SEAMLESS_UPDATE, 0, 0);
-        dprintf(("PostMessage %x returned %d (last error %x)\n", hwndNotification, ret, GetLastError()));
+        if (!hNotifyEvent)
+        {
+            hNotifyEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
+            dprintf(("OpenEvent returned %x (last err=%x)\n", hNotifyEvent, GetLastError()));
+        }
+        BOOL ret = SetEvent(hNotifyEvent);
+        dprintf(("SetEvent %x returned %d (last error %x)\n", hNotifyEvent, ret, GetLastError()));
         break;
     }
 }
 
 
 /* Install the global message hook */
-BOOL VBoxInstallHook(HMODULE hDll, HWND hwndPostWindow)
+BOOL VBoxInstallHook(HMODULE hDll)
 {
     if (hEventHook[0] || hEventHook[1])
         return TRUE;
 
-    hwndNotification = hwndPostWindow;
-
-    dprintf(("VBoxInstallHook hwnd=%x\n", hwndPostWindow));
     CoInitialize(NULL);
     hEventHook[0] = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_LOCATIONCHANGE,
                                     hDll,
@@ -114,7 +117,6 @@ BOOL VBoxRemoveHook()
         CoUninitialize();
     }
     hEventHook[0]  = hEventHook[1] = 0;
-    hwndNotification = 0;
     return true;
 }
 
