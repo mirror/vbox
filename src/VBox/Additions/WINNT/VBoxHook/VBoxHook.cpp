@@ -76,7 +76,7 @@ void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
 #endif
         if (!hNotifyEvent)
         {
-            hNotifyEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
+            hNotifyEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
             dprintf(("OpenEvent returned %x (last err=%x)\n", hNotifyEvent, GetLastError()));
         }
         BOOL ret = SetEvent(hNotifyEvent);
