@@ -54,7 +54,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
     if (pFastInt)
     {
         pFastInt->u32Magic = RTSEMFASTMUTEX_MAGIC;
-        mutex_init (&pFastInt->Mtx, "IPRT Fast Mutex Semaphore", MUTEX_DEFAULT, NULL);
+        mutex_init (&pFastInt->Mtx, "IPRT Fast Mutex Semaphore", MUTEX_DRIVER, NULL);
         *pMutexSem = pFastInt;
         return VINF_SUCCESS;
     }

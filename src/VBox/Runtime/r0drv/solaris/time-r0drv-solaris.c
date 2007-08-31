@@ -27,7 +27,7 @@
 
 RTDECL(uint64_t) RTTimeNanoTS(void)
 {
-    return gethrtime();
+    return (uint64_t)gethrtime();
 }
 
 

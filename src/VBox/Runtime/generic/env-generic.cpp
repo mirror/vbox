@@ -37,7 +37,7 @@
 /* It's an implementation detail in Solaris, see 
  * http://cvs.opensolaris.org/source/xref/onnv/onnv-gate/usr/src/lib/libc/port/gen/getenv.c line 50.
  */
-extern const char		**environ;
+extern char **environ;
 #endif
 
 struct RTENVINTERNAL

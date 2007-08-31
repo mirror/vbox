@@ -22,7 +22,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 # Targets
 #
 LIBRARIES += SUPR3
-ifneq ($(filter-out darwin,$(BUILD_TARGET)),)
+ifneq ($(filter-out darwin solaris,$(BUILD_TARGET)),)
 LIBRARIES += SUPR0
 endif
 ifdef VBOX_WITH_VBOXDRV

@@ -58,7 +58,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
      * Initialize & return.
      */
     pSpinlockInt->u32Magic = RTSPINLOCK_MAGIC;
-    mutex_init(&pSpinlockInt->Mtx, "IPRT Spinlock", MUTEX_SPIN, NULL);
+    mutex_init(&pSpinlockInt->Mtx, "IPRT Spinlock", MUTEX_DRIVER, NULL);
     *pSpinlock = pSpinlockInt;
     return VINF_SUCCESS;
 }

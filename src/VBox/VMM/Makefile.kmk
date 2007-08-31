@@ -164,7 +164,7 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 #
 # VMMGCBuiltin.lib
 #
-ifneq ($(BUILD_TARGET),darwin)
+ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
 LIBRARIES += VMMGCBuiltin
 VMMGCBuiltin_TEMPLATE = VBOXGC
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -182,7 +182,7 @@ endif # !darwin
 #
 # VMMGCImp.lib
 #
-ifneq ($(BUILD_TARGET),darwin)
+ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
 LIBRARIES += VMMGCImp
 VMMGCImp_TEMPLATE = VBOXGC
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -202,7 +202,7 @@ endif # !darwin
 #
 # VMMR0Imp.lib
 #
-ifneq ($(BUILD_TARGET),darwin)
+ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
 LIBRARIES += VMMR0Imp
 VMMR0Imp_TEMPLATE = VBOXR0
 ifeq ($(VBOX_LDR_FMT),pe)
@@ -370,13 +370,9 @@ VMMR0_LIBS = \
 	$(PATH_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB)
-ifneq ($(BUILD_TARGET),darwin)
+ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
 VMMR0_LIBS += \
 	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
-ifeq ($(VBOX_LDR_FMT),elf)
-VMMR0_LIBS += \
-	$(VBOX_GCC_LIBGCC)
 endif
 
 
