@@ -31,7 +31,7 @@ typedef struct _VBOXSEAMLESSCONTEXT
 
     HMODULE    hModule;
 
-    BOOL    (* pfnVBoxInstallHook)(HMODULE hDll, HWND hwndPostWindow);
+    BOOL    (* pfnVBoxInstallHook)(HMODULE hDll);
     BOOL    (* pfnVBoxRemoveHook)();
 
     LPRGNDATA lpRgnData;
@@ -119,7 +119,7 @@ void VBoxSeamlessInstallHook()
         /* Check current visible region state */
         VBoxSeamlessCheckWindows();
 
-        gCtx.pfnVBoxInstallHook(gCtx.hModule, gToolWindow);
+        gCtx.pfnVBoxInstallHook(gCtx.hModule);
     }
 }
 
