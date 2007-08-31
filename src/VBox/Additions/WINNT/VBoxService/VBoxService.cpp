@@ -26,6 +26,10 @@
 
 #include "helpers.h"
 
+#undef  _WIN32_WINNT
+#define _WIN32_WINNT    0x500
+#include <sddl.h>
+
 /* global variables */
 HANDLE                gVBoxDriver;
 HANDLE                gStopSem;
@@ -291,7 +295,65 @@ void WINAPI VBoxServiceStart(void)
             dprintf(("VBoxService: CreateEvent failed: rc = %d\n", GetLastError()));
             return;
         }
-        ghSeamlessNotifyEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
+
+        /* We need to setup a security descriptor to allow other processes modify access to the seamless notification event semaphore */
+        SECURITY_ATTRIBUTES     SecAttr;
+        PSECURITY_DESCRIPTOR    pSD;
+        OSVERSIONINFO           info;
+        char                    secDesc[SECURITY_DESCRIPTOR_MIN_LENGTH];
+        DWORD                   dwMajorVersion = 5; /* default XP */
+        BOOL                    ret;
+
+        SecAttr.nLength              = sizeof(SecAttr);
+        SecAttr.bInheritHandle       = FALSE;
+        SecAttr.lpSecurityDescriptor = &secDesc;
+        InitializeSecurityDescriptor(SecAttr.lpSecurityDescriptor, SECURITY_DESCRIPTOR_REVISION);
+        ret = SetSecurityDescriptorDacl(SecAttr.lpSecurityDescriptor, TRUE, 0, FALSE);
+        if (!ret)
+            dprintf(("SetSecurityDescriptorDacl failed with %d\n", GetLastError()));
+
+        info.dwOSVersionInfoSize = sizeof(info);
+        if (GetVersionEx(&info))
+        {
+            dprintf(("VBoxService: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
+            dwMajorVersion = info.dwMajorVersion;    
+        }
+
+        if (dwMajorVersion >= 6) /* Vista and up only */
+        {
+            PACL    pSacl          = NULL;
+            BOOL    fSaclPresent   = FALSE;
+            BOOL    fSaclDefaulted = FALSE;
+            HMODULE hModule;
+
+            BOOL (WINAPI * pfnConvertStringSecurityDescriptorToSecurityDescriptorA)(LPCSTR StringSecurityDescriptor, DWORD StringSDRevision, PSECURITY_DESCRIPTOR  *SecurityDescriptor, PULONG  SecurityDescriptorSize);
+    
+            hModule = LoadLibrary("ADVAPI32.DLL");
+
+            if (hModule)
+            {
+                *(uintptr_t *)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA = (uintptr_t)GetProcAddress(hModule, "ConvertStringSecurityDescriptorToSecurityDescriptorA");
+
+                dprintf(("pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
+                if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
+                {
+                    ret = pfnConvertStringSecurityDescriptorToSecurityDescriptorA("S:(ML;;NW;;;LW)", // this means "low integrity"
+                                                                            SDDL_REVISION_1,
+                                                                            &pSD,
+                                                                            NULL);
+                    if (!ret)
+                        dprintf(("ConvertStringSecurityDescriptorToSecurityDescriptorA failed with %d\n", GetLastError()));
+                    ret = GetSecurityDescriptorSacl(pSD, &fSaclPresent, &pSacl, &fSaclDefaulted);
+                    if (!ret)
+                        dprintf(("GetSecurityDescriptorSacl failed with %d\n", GetLastError()));
+                    ret = SetSecurityDescriptorSacl(SecAttr.lpSecurityDescriptor, TRUE, pSacl, FALSE);
+                    if (!ret)
+                        dprintf(("SetSecurityDescriptorSacl failed with %d\n", GetLastError()));
+                }
+            }
+        }
+
+        ghSeamlessNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
         if (ghSeamlessNotifyEvent == NULL)
         {
             dprintf(("VBoxService: CreateEvent failed: rc = %d\n", GetLastError()));
@@ -336,6 +398,9 @@ void WINAPI VBoxServiceStart(void)
     sprintf(ndata.szTip, "innotek VirtualBox Guest Additions %d.%d.%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
 
     dprintf(("VBoxService: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
+
+    /* Boost thread priority to make sure we wake up early for seamless window notifications (not sure if it actually makes any difference though) */
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
     /*
      * Main execution loop
