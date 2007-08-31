@@ -2181,10 +2181,10 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
             if ((pGDTGC & PAGE_OFFSET_MASK) + sizeof(VBOXDESC) - 1 < sizeof(VBOXDESC))
-                pHlp->pfnPrintf(pHlp, "%04 - page not present (GCAddr=%VGv)\n", iGDT << X86_SEL_SHIFT, pGDTGC);
+                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", iGDT << X86_SEL_SHIFT, pGDTGC);
         }
         else
-            pHlp->pfnPrintf(pHlp, "%04 - read error rc=%Vrc GCAddr=%VGv\n", iGDT << X86_SEL_SHIFT, rc, pGDTGC);
+            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Vrc GCAddr=%VGv\n", iGDT << X86_SEL_SHIFT, rc, pGDTGC);
     }
 }
 
@@ -2256,10 +2256,10 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
             if ((pLdtGC & PAGE_OFFSET_MASK) + sizeof(VBOXDESC) - 1 < sizeof(VBOXDESC))
-                pHlp->pfnPrintf(pHlp, "%04 - page not present (GCAddr=%VGv)\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, pLdtGC);
+                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, pLdtGC);
         }
         else
-            pHlp->pfnPrintf(pHlp, "%04 - read error rc=%Vrc GCAddr=%VGv\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, rc, pLdtGC);
+            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Vrc GCAddr=%VGv\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, rc, pLdtGC);
     }
 }
 
