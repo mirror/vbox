@@ -73,7 +73,8 @@ void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
             break;
         }
 #endif
-        PostMessage(hwndNotification, WM_VBOX_SEAMLESS_UPDATE, 0, 0);
+        BOOL ret = PostMessage(hwndNotification, WM_VBOX_SEAMLESS_UPDATE, 0, 0);
+        dprintf(("PostMessage %x returned %d (last error %x)\n", hwndNotification, ret, GetLastError()));
         break;
     }
 }
@@ -87,6 +88,7 @@ BOOL VBoxInstallHook(HMODULE hDll, HWND hwndPostWindow)
 
     hwndNotification = hwndPostWindow;
 
+    dprintf(("VBoxInstallHook hwnd=%x\n", hwndPostWindow));
     CoInitialize(NULL);
     hEventHook[0] = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_LOCATIONCHANGE,
                                     hDll,
