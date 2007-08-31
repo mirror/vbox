@@ -21,15 +21,16 @@ ifneq ($(BUILD_PLATFORM),linux)
 $(error "The Linux installer can only be built on Linux!") # yeah, right.
 endif
 
-PROGRAMS     = VBoxTunctl
-PACKING      = $(if $(VBOX_OSE),,$(PATH_BIN)/VirtualBox.run)
-PACKING     += $(PATH_BIN)/VirtualBox.tar.bz2
-OTHER_CLEAN  = $(addprefix $(PATH_TARGET)/install/,\
-	       install.sh deffiles routines.sh \
-	       VBoxAddIF.sh vboxdrv.sh vboxnet.sh \
-	       VirtualBox.tar.bz2 LICENSE) \
-	       $(wildcard $(PATH_TARGET)/VirtualBox-*)
-INSTALLS     = linux-bin linux-doc
+PROGRAMS       = VBoxTunctl
+PACKING        = $(if $(VBOX_OSE),,$(PATH_BIN)/VirtualBox.run)
+PACKING       += $(PATH_BIN)/VirtualBox.tar.bz2
+OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
+	         install.sh deffiles routines.sh \
+	         VBoxAddIF.sh vboxdrv.sh vboxnet.sh \
+	         VirtualBox.tar.bz2 LICENSE) \
+	         $(wildcard $(PATH_TARGET)/VirtualBox-*)
+INSTALLS       = linux-bin linux-doc
+VBOX_DO_STRIP ?= $(if $(filter release profile,$(BUILD_TYPE)),1,)
 
 VBoxTunctl_TEMPLATE = VBOXR3EXE
 VBoxTunctl_SOURCES  = tunctl.c
@@ -70,7 +71,7 @@ LINUXSTRIPBIN = \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so
 
-# Don't remove relocation information of these binaries
+# Do not remove relocation information of these binaries
 LINUXSTRIPOBJ = \
 	VBoxDD2GC.gc \
 	VBoxDD2R0.r0 \
@@ -83,7 +84,7 @@ LINUXSTRIPOBJ += \
 	VBoxREM2.rel
 endif
 
-# Don't strip anything of these files
+# Do not strip anything of these files
 LINUXNOSTRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	components/VBoxXPCOMBase.xpt \
@@ -203,12 +204,12 @@ $(PATH_BIN)/VirtualBox.desktop: VirtualBox.desktop $(VBOX_VERSION_STAMP)
 $(foreach f,$(LINUXSTRIPBIN),$(PATH_TARGET)/archive/$(f)): \
 		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
 	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)install -D -m 0755 $(if $(filter release profile,$(BUILD_TYPE)),-s,) $< $@
+	$(QUIET)install -D -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
 $(foreach f,$(LINUXSTRIPOBJ),$(PATH_TARGET)/archive/$(f)): \
 		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
 	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)objcopy --strip-unneeded -R .comment $< $@
+	$(QUIET)$(if $(VBOX_DO_STRIP),objcopy --strip-unneeded -R .comment $< $@,cp $< $@)
 
 $(foreach f,$(LINUXNOSTRIP),$(PATH_TARGET)/archive/$(f)): \
 		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
