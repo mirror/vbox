@@ -318,7 +318,8 @@ void WINAPI VBoxServiceStart(void)
             dwMajorVersion = info.dwMajorVersion;    
         }
 
-        if (dwMajorVersion >= 6) /* Vista and up only */
+        /* For Vista and up we need to change the integrity of the security descriptor too */
+        if (dwMajorVersion >= 6)
         {
             HMODULE hModule;
 
@@ -338,8 +339,7 @@ void WINAPI VBoxServiceStart(void)
                 if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
                 {
                     ret = pfnConvertStringSecurityDescriptorToSecurityDescriptorA("S:(ML;;NW;;;LW)", /* this means "low integrity" */
-                                                                                  SDDL_REVISION_1,
-                                                                                  &pSD,                                                                                  NULL);
+                                                                                  SDDL_REVISION_1, &pSD, NULL);
                     if (!ret)
                         dprintf(("ConvertStringSecurityDescriptorToSecurityDescriptorA failed with %d\n", GetLastError()));
 
