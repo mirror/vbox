@@ -400,6 +400,7 @@ void WINAPI VBoxServiceStart(void)
 
     CloseHandle(gVBoxDriver);
     CloseHandle(gStopSem);
+    CloseHandle(ghSeamlessNotifyEvent);
 
     dprintf(("VBoxService: leaving service main function\n"));
 
