@@ -1403,7 +1403,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
             detailsReport += sectionTpl
                 .arg (rows) /* rows */
-                .arg ("machine_16px.png", /* icon */
+                .arg ("serial_port_16px.png", /* icon */
                       "#serialPorts", /* link */
                       tr ("Serial Ports", "details report"), /* title */
                       item); /* items */
@@ -3415,7 +3415,7 @@ void VBoxGlobal::init()
         {CEnums::Aborted, "state_aborted_16px.png"},
         {CEnums::Running, "state_running_16px.png"},
         {CEnums::Paused, "state_paused_16px.png"},
-        {CEnums::Stuck, "state_paused_16px.png"}, /// @todo (dmik) separate icon?
+        {CEnums::Stuck, "state_stuck_16px.png"},
         {CEnums::Starting, "state_running_16px.png"}, /// @todo (dmik) separate icon?
         {CEnums::Stopping, "state_running_16px.png"}, /// @todo (dmik) separate icon?
         {CEnums::Saving, "state_saving_16px.png"},

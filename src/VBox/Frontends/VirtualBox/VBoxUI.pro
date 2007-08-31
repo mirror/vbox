@@ -37,6 +37,7 @@ FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxVMLogViewer.ui
 
 IMAGES	= images/tpixel.png \
+	images/transparent_16px.png \
 	images/vm_new.png \
 	images/vm_new_dis.png \
 	images/vm_settings.png \
@@ -76,6 +77,7 @@ IMAGES	= images/tpixel.png \
 	images/state_saving_16px.png \
 	images/state_powered_off_16px.png \
 	images/state_restoring_16px.png \
+	images/state_stuck_16px.png \
 	images/offline_snapshot_16px.png \
 	images/online_snapshot_16px.png \
 	images/vmw_new_welcome.png \
@@ -163,6 +165,14 @@ IMAGES	= images/tpixel.png \
 	images/usb_remove_disabled_16px.png \
 	images/usb_unavailable_16px.png \
 	images/usb_unavailable_disabled_16px.png \
+	images/parallel_port_16px.png \
+	images/parallel_port_disabled_16px.png \
+	images/parallel_port_read_16px.png \
+	images/parallel_port_write_16px.png \
+	images/serial_port_16px.png \
+	images/serial_port_disabled_16px.png \
+	images/serial_port_read_16px.png \
+	images/serial_port_write_16px.png \
 	images/select_file_16px.png \
 	images/select_file_dis_16px.png \
 	images/list_moveup_16px.png \

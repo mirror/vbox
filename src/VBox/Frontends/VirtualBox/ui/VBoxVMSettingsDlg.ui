@@ -278,7 +278,7 @@
                 <string>#serialPorts</string>
             </property>
             <property name="pixmap">
-                <pixmap>machine_16px.png</pixmap>
+                <pixmap>serial_port_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
