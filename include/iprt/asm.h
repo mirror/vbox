@@ -2181,7 +2181,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t *pu32, const uint32_t u32
     uint32_t u32Ret;
     __asm__ __volatile__("lock; cmpxchgl %2, %0\n\t"
                          "setz  %%al\n\t"
-                         "movzx %%al, %%eax\n\t"
+                         "movzbl %%al, %%eax\n\t"
                          : "=m" (*pu32),
                            "=a" (u32Ret)
                          : "r" (u32New),
@@ -2256,7 +2256,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
     uint64_t u64Ret;
     __asm__ __volatile__("lock; cmpxchgq %2, %0\n\t"
                          "setz  %%al\n\t"
-                         "movzx %%al, %%eax\n\t"
+                         "movzbl %%al, %%eax\n\t"
                          : "=m" (*pu64),
                            "=a" (u64Ret)
                          : "r" (u64New),
@@ -2285,7 +2285,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
                          "lock; cmpxchg8b (%6)\n\t"
                          "setz  %%al\n\t"
                          "xchgl %%ebx, %4\n\t"
-                         "movzx %%al, %%eax\n\t"
+                         "movzbl %%al, %%eax\n\t"
                          : "=a" (u32Ret),
                            "=d" (u32Spill),
                            "=m" (*pu64)
@@ -2297,7 +2297,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
     uint32_t u32Spill;
     __asm__ __volatile__("lock; cmpxchg8b %2\n\t"
                          "setz  %%al\n\t"
-                         "movzx %%al, %%eax\n\t"
+                         "movzbl %%al, %%eax\n\t"
                          : "=a" (u32Ret),
                            "=d" (u32Spill),
                            "=m" (*pu64)
