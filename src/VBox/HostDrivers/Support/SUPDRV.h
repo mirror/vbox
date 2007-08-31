@@ -97,6 +97,7 @@
 #   include <iprt/string.h>
 
 #elif defined(RT_OS_SOLARIS)
+#   include <sys/cmn_err.h>
 #   include <iprt/string.h>
 
 #else
@@ -186,7 +187,7 @@ __END_DECLS
  * Solaris
  */
 #elif defined(RT_OS_SOLARIS)
-# define OSDBGPRINT(a) printf a
+# define OSDBGPRINT(a) uprintf a
 
 
 #else

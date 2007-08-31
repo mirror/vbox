@@ -512,7 +512,6 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, i
     unsigned            cbOut = 0;
     PSUPDRVIOCTLDATA    pArgData = (PSUPDRVIOCTLDATA)pArgs;
 
-    cmn_err(CE_CONT, "VBoxDrvSolarisIOCtlSlow\n");
    /*
      * Allocate and copy user space input data buffer to kernel space.
      */
@@ -527,11 +526,11 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, i
             return ENOMEM;
         }
         
-        rc = ddi_copyin(pArgData->pvIn, pvBuf, cbBuf, Mode);
+        rc = ddi_copyin(pArgData->pvIn, pvBuf, pArgData->cbIn, Mode);
         
         if (rc != 0)
         {
-            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(%p,%d) failed.\n", pArgData->pvIn, cbBuf));
+            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(%p,%d) failed.\n", pArgData->pvIn, pArgData->cbIn));
 
             RTMemTmpFree(pvBuf);
             return EFAULT;
@@ -554,7 +553,13 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, i
         {
             rc = ddi_copyout(pvBuf, pArgData->pvOut, cbOut, Mode);
             if (rc != 0)
+            {
                 OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyout(,%p,%d) failed.\n", pArgData->pvOut, cbBuf));
+
+                /** @todo r=bird: why this extra return? setting rc = EFAULT; should do the trick, shouldn't it? */
+                RTMemTmpFree(pvBuf);
+                return EFAULT;
+            }
         }
         else
         {
@@ -563,6 +568,9 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, i
         }
     }
 
+    if (pvBuf)
+        RTMemTmpFree(pvBuf);
+    
     OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: returns %d cbOut=%d\n", rc, cbOut));
     return rc;
 }

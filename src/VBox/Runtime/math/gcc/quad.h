@@ -75,7 +75,11 @@
 # if !defined(RT_OS_LINUX) || !defined(__KERNEL__) /* (linux/types.h defines u_int) */
    typedef unsigned int	u_int;
 # endif
+# if !defined(RT_OS_SOLARIS)
    typedef int64_t quad_t;
+# else
+#  define quad_t int64_t
+# endif
    typedef uint64_t u_quad_t;
    typedef quad_t *qaddr_t;
 #endif /* iprt */

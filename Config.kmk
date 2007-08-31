@@ -515,7 +515,7 @@ ifndef VBOX_GCC_TOOL
  else ifeq ($(BUILD_TARGET),darwin)
   VBOX_GCC_TOOL := GXX4MACHO
  else ifeq ($(BUILD_TARGET),solaris)
-  VBOX_GCC_TOOL := GXX3
+  VBOX_GCC_TOOL := GXX3PLAIN
  else
   VBOX_GCC_TOOL := GXX3
   ifeq ($(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH),x86.amd64)
@@ -1245,15 +1245,17 @@ TEMPLATE_VBOXGC_TOOL                = $(VBOX_GCC32_TOOL)
 TEMPLATE_VBOXGC_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
 TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC32_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
 ifeq ($(BUILD_TARGET),solaris)
- TEMPLATE_VBOXGC_LDFLAGS            = -B symbolic
+ TEMPLATE_VBOXGC_LDFLAGS            = -r
 else
  TEMPLATE_VBOXGC_LDFLAGS             = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
  TEMPLATE_VBOXGC_LDFLAGS            += $(if $(VBOX_DO_STRIP_MODULES),-S,)
  TEMPLATE_VBOXGC_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
+ifneq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXGC_LIBS                = \
 	$(VBOX_GCC32_LIBGCC) # instricts
+endif
 endif
 
 ifeq ($(VBOX_LDR_FMT32),macho)
@@ -1346,7 +1348,7 @@ TEMPLATE_VBOXR0_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-tri
 TEMPLATE_VBOXR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables -ffreestanding
 TEMPLATE_VBOXR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables
 ifeq ($(BUILD_TARGET),solaris)
- TEMPLATE_VBOXR0_LDFLAGS             = -B symbolic
+ TEMPLATE_VBOXR0_LDFLAGS             = -r
 else
  TEMPLATE_VBOXR0_LDFLAGS             = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
@@ -1354,8 +1356,10 @@ else
  TEMPLATE_VBOXR0_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
 
-TEMPLATE_VBOXR0_LIBS                = \
+ifneq ($(BUILD_TARGET),solaris)
+ TEMPLATE_VBOXR0_LIBS                = \
 	$(VBOX_GCC_LIBGCC) # instricts
+endif
 endif
 
 ifeq ($(VBOX_LDR_FMT),macho)

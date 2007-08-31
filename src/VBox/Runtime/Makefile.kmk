@@ -680,7 +680,8 @@ RuntimeR0_SOURCES.os2 = \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm
 
-RuntimeR0_SOURCES.darwin.x86 = \
+ifeq ($(filter-out darwin solaris,$(BUILD_TARGET)),)
+RuntimeR0_SOURCES += \
 	math/gcc/adddi3.c \
 	math/gcc/anddi3.c \
 	math/gcc/ashldi3.c \
@@ -700,8 +701,9 @@ RuntimeR0_SOURCES.darwin.x86 = \
 	math/gcc/udivdi3.c \
 	math/gcc/umoddi3.c \
 	math/gcc/xordi3.c
-
-
+endif
+	
+	
 string/memchr.cpp_CXXFLAGS.win = -Oi-
 string/memcmp.cpp_CXXFLAGS.win = -Oi-
 string/memcpy.cpp_CXXFLAGS.win = -Oi-
@@ -890,7 +892,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/thread-r0drv-solaris.c \
 	r0drv/solaris/thread2-r0drv-solaris.c \
 	r0drv/solaris/time-r0drv-solaris.c \
-	generic/timer-generic.cpp
+	r0drv/solaris/timer-r0drv-solaris.c
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
@@ -991,7 +993,8 @@ ifeq ($(VBOX_LDR_FMT32),lx)
 RuntimeGC_SOURCES += os2/sys0.asm
 endif
 
-RuntimeGC_SOURCES.darwin = \
+ifeq ($(filter-out darwin solaris,$(BUILD_TARGET)),)
+RuntimeGC_SOURCES += \
 	math/gcc/adddi3.c \
 	math/gcc/anddi3.c \
 	math/gcc/ashldi3.c \
@@ -1011,6 +1014,7 @@ RuntimeGC_SOURCES.darwin = \
 	math/gcc/udivdi3.c \
 	math/gcc/umoddi3.c \
 	math/gcc/xordi3.c
+endif
 
 
 #
