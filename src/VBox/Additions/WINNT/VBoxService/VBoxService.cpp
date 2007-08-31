@@ -298,7 +298,6 @@ void WINAPI VBoxServiceStart(void)
 
         /* We need to setup a security descriptor to allow other processes modify access to the seamless notification event semaphore */
         SECURITY_ATTRIBUTES     SecAttr;
-        PSECURITY_DESCRIPTOR    pSD;
         OSVERSIONINFO           info;
         char                    secDesc[SECURITY_DESCRIPTOR_MIN_LENGTH];
         DWORD                   dwMajorVersion = 5; /* default XP */
@@ -321,31 +320,33 @@ void WINAPI VBoxServiceStart(void)
 
         if (dwMajorVersion >= 6) /* Vista and up only */
         {
-            PACL    pSacl          = NULL;
-            BOOL    fSaclPresent   = FALSE;
-            BOOL    fSaclDefaulted = FALSE;
             HMODULE hModule;
 
             BOOL (WINAPI * pfnConvertStringSecurityDescriptorToSecurityDescriptorA)(LPCSTR StringSecurityDescriptor, DWORD StringSDRevision, PSECURITY_DESCRIPTOR  *SecurityDescriptor, PULONG  SecurityDescriptorSize);
     
             hModule = LoadLibrary("ADVAPI32.DLL");
-
             if (hModule)
             {
+                PSECURITY_DESCRIPTOR    pSD;
+                PACL                    pSacl          = NULL;
+                BOOL                    fSaclPresent   = FALSE;
+                BOOL                    fSaclDefaulted = FALSE;
+
                 *(uintptr_t *)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA = (uintptr_t)GetProcAddress(hModule, "ConvertStringSecurityDescriptorToSecurityDescriptorA");
 
                 dprintf(("pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
                 if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
                 {
-                    ret = pfnConvertStringSecurityDescriptorToSecurityDescriptorA("S:(ML;;NW;;;LW)", // this means "low integrity"
-                                                                            SDDL_REVISION_1,
-                                                                            &pSD,
-                                                                            NULL);
+                    ret = pfnConvertStringSecurityDescriptorToSecurityDescriptorA("S:(ML;;NW;;;LW)", /* this means "low integrity" */
+                                                                                  SDDL_REVISION_1,
+                                                                                  &pSD,                                                                                  NULL);
                     if (!ret)
                         dprintf(("ConvertStringSecurityDescriptorToSecurityDescriptorA failed with %d\n", GetLastError()));
+
                     ret = GetSecurityDescriptorSacl(pSD, &fSaclPresent, &pSacl, &fSaclDefaulted);
                     if (!ret)
                         dprintf(("GetSecurityDescriptorSacl failed with %d\n", GetLastError()));
+
                     ret = SetSecurityDescriptorSacl(SecAttr.lpSecurityDescriptor, TRUE, pSacl, FALSE);
                     if (!ret)
                         dprintf(("SetSecurityDescriptorSacl failed with %d\n", GetLastError()));
