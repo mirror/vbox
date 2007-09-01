@@ -116,14 +116,12 @@ RTR3DECL(RTPROCPRIORITY) RTProcGetPriority(void);
  * @returns iprt status code.
  * @param   pszExec     Executable image to use to create the child process.
  * @param   papszArgs   Pointer to an array of arguments to the child. The array terminated by an entry containing NULL.
- * @param   papszEnv    Pointer to array of environment variables for the child process. An NULL entry
- *                      terminates the array. The variables are on the form '\<var\>=\<value\>'.
- *                      If NULL the environment of the process will be used.
+ * @param   Env         Handle to the environment block for the child.
  * @param   fFlags      Flags. This is currently reserved and must be 0.
  * @param   pProcess    Where to store the process identifier on successful return.
  *                      The content is not changed on failure. NULL is allowed.
  */
-RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, const char * const *papszEnv, unsigned fFlags, PRTPROCESS pProcess);
+RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess);
 
 /**
  * Process exit reason.

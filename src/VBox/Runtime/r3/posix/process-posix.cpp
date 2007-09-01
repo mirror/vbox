@@ -41,25 +41,22 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/env.h>
 #include "internal/process.h"
 
 
 
-RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, const char * const *papszEnv, unsigned fFlags, PRTPROCESS pProcess)
+RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
 {
     /*
      * Validate input.
      */
-    if (!pszExec || !*pszExec)
-    {
-        AssertMsgFailed(("no exec\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (fFlags)
-    {
-        AssertMsgFailed(("invalid flags!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
+    AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(Env != NIL_RTENV, VERR_INVALID_PARAMETER);
+    const char * const *papszEnv = RTEnvGetExecEnvP(Env);
+    AssertPtrReturn(papszEnv, VERR_INVALID_HANDLE);
     /* later: path searching. */
 
 
@@ -99,7 +96,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 #ifdef HAVE_POSIX_SPAWN
     /** @todo check if it requires any of those two attributes, don't remember atm. */
     int rc = posix_spawn(&pid, pszExec, NULL, NULL, (char * const *)papszArgs,
-                         papszEnv ? (char * const *)papszEnv : environ);
+                         (char * const *)papszEnv);
     if (!rc)
     {
         if (pProcess)
@@ -113,10 +110,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
     if (!pid)
     {
         int rc;
-        if (papszEnv)
-            rc = execve(pszExec, (char * const *)papszArgs, (char * const *)papszEnv);
-        else
-            rc = execv(pszExec, (char * const *)papszArgs);
+        rc = execve(pszExec, (char * const *)papszArgs, (char * const *)papszEnv);
         AssertReleaseMsgFailed(("execve returns %d errno=%d\n", rc, errno));
         exit(127);
     }

@@ -21,6 +21,8 @@
 /** @name Magic Numbers.
  * @{ */
 
+/** The value of RTENVINTERNAL::u32Magic. (Rumiko Takahashi) */
+#define RTENV_MAGIC                 0x19571010
 /** The value of RTDIR::u32Magic. (Michael Ende) */
 #define RTDIR_MAGIC                 0x19291112
 /** The value of RTDIR::u32Magic after RTDirClose().  */

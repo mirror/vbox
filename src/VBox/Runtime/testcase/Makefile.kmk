@@ -19,37 +19,38 @@ include	$(PATH_KBUILD)/header.kmk
 
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS = \
+	tstAvl \
+	tstBitOperations \
 	tstCritSect \
-	tstPrfRT \
+	tstDeadlock \
+	tstDir \
+	tstDir-2 \
+	tstEnv \
+	tstErrUnique \
+	tstFile \
+	tstFileLock \
+	tstHeapSimple \
+	tstInlineAsm \
 	tstLdr \
 	tstLdr-2 \
 	tstLdr-3 \
 	tstLdr-4 \
 	tstLdrLoad \
-	tstAvl \
-	tstTSC \
-	tstTimer \
+	tstLog \
+	tstMove \
+	tstPath \
+	tstPrfRT \
+	tstRTFsQueries \
+	tstStrFormat \
+	tstStrToNum \
 	tstTime \
 	tstTime-2 \
 	tstTime-3 \
+	tstTimer \
 	tstTimeSpec \
-	tstStrFormat \
-	tstPath \
-	tstLog \
-	tstFile \
-	tstFileLock \
-	tstBitOperations \
-	tstInlineAsm \
-	tstStrToNum \
-	tstDir \
-	tstDir-2 \
-	tstRTFsQueries \
-	tstMove \
+	tstTSC \
 	tstUtf8 \
-	tstDeadlock \
-	tstUuid \
-	tstErrUnique \
-	tstHeapSimple
+	tstUuid
 PROGRAMS.win = \
 	tstRTProcWait \
 	tstCritSectW32 \
@@ -226,6 +227,8 @@ tstIoCtl_SOURCES = tstIoCtl.cpp
 tstDeadlock_SOURCES = tstDeadlock.cpp
 
 tstUuid_SOURCES = tstUuid.cpp
+
+tstEnv_SOURCES = tstEnv.cpp
 
 tstErrUnique_SOURCES = tstErrUnique.cpp
 tstErrUnique_INCS    = $(PATH_TARGET)/..

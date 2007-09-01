@@ -28,6 +28,7 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/env.h>
 
 
 /*
@@ -68,23 +69,19 @@ NtQueryInformationProcess (
 
 /** @todo r=michael This function currently does not work correctly if the arguments
                     contain spaces. */
-RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, const char * const *papszEnv, unsigned fFlags, PRTPROCESS pProcess)
+RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
 {
     /*
      * Validate input.
      */
-    if (!pszExec || !*pszExec)
-    {
-        AssertMsgFailed(("no exec\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (fFlags)
-    {
-        AssertMsgFailed(("invalid flags!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
+    AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(Env != NIL_RTENV, VERR_INVALID_PARAMETER);
+    const char * const *papszEnv = RTEnvGetExecEnvP(Env);
+    AssertPtrReturn(papszEnv, VERR_INVALID_HANDLE);
     /* later: path searching. */
-
+    
     /*
      * Spawn the child.
      */

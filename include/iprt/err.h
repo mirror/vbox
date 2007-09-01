@@ -818,6 +818,15 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 #define VERR_RT_REQUEST_STATUS_FREED            (-704)
 /** @} */
 
+/** @name Environment Status Code 
+ * @{
+ */
+/** The specified environment variable was not found. (RTEnvGetEx) */
+#define VERR_ENV_VAR_NOT_FOUND                  (-750)
+/** The specified environment variable was not found. (RTEnvUnsetEx) */
+#define VINF_ENV_VAR_NOT_FOUND                  (750)
+/** @} */
+
 /* SED-END */
 
 /** @} */
