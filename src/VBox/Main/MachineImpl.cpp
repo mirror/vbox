@@ -2808,7 +2808,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     int vrc = VINF_SUCCESS;
     RTPROCESS pid = NIL_RTPROCESS;
 
-    RTENV env = NIL_RTENV;
+    RTENV env = RTENV_DEFAULT;
 
     if (aEnvironment)
     {
@@ -2817,11 +2817,11 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         do
         {
             /* clone the current environment */
-            int vrc = RTEnvClone(&env, NULL);
-            AssertRCBreak (vrc, vrc = vrc);
+            int vrc2 = RTEnvClone (&env, RTENV_DEFAULT);
+            AssertRCBreak (vrc2, vrc = vrc2);
 
-            vrc = RTStrUtf8ToCurrentCP (&newEnvStr, Utf8Str (aEnvironment));
-            AssertRCBreak (vrc, vrc = vrc);
+            newEnvStr = RTStrDup(Utf8Str (aEnvironment));
+            AssertPtrBreak (newEnvStr, vrc = vrc2);
 
             /* put new variables to the environment
              * (ignore empty variable names here since RTEnv API
@@ -2833,15 +2833,25 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
                 {
                     *p = '\0';
                     if (*var)
-                        if (VBOX_FAILURE (vrc = RTEnvPutEx(env, var)))
+                    {
+                        char *val = strchr (var, '=');
+                        if (val)
+                        {
+                            *val++ = '\0';
+                            vrc2 = RTEnvSetEx (env, var, val);
+                        }
+                        else
+                            vrc2 = RTEnvUnsetEx (env, var);
+                        if (VBOX_FAILURE (vrc2))
                             break;
+                    }
                     var = p + 1;
                 }
             }
-            if (VBOX_SUCCESS (vrc) && *var)
-                vrc = RTEnvPutEx(env, var);
+            if (VBOX_SUCCESS (vrc2) && *var)
+                vrc2 = RTEnvPutEx (env, var);
 
-            AssertRCBreak (vrc, vrc = vrc);
+            AssertRCBreak (vrc2, vrc = vrc2);
         }
         while (0);
 
@@ -2867,7 +2877,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
-        vrc = RTProcCreate (path, args, RTEnvGetArray (env), 0, &pid);
+        vrc = RTProcCreate (path, args, env, 0, &pid);
     }
     else
 #ifdef VBOX_VRDP
@@ -2884,7 +2894,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
 #endif
-        vrc = RTProcCreate (path, args, RTEnvGetArray (env), 0, &pid);
+        vrc = RTProcCreate (path, args, env, 0, &pid);
     }
     else
 #endif /* VBOX_VRDP */
@@ -2901,18 +2911,16 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, "-capture", 0 };
 #endif
-        vrc = RTProcCreate (path, args, RTEnvGetArray (env), 0, &pid);
+        vrc = RTProcCreate (path, args, env, 0, &pid);
     }
     else
     {
-        if (env != NIL_RTENV)
-            RTEnvDestroy (env);
+        RTEnvDestroy (env);
         return setError (E_INVALIDARG,
             tr ("Invalid session type: '%ls'"), aType);
     }
 
-    if (env != NIL_RTENV)
-        RTEnvDestroy (env);
+    RTEnvDestroy (env);
 
     if (VBOX_FAILURE (vrc))
         return setError (E_FAIL,

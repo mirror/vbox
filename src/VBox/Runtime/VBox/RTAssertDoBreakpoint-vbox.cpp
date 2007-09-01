@@ -86,7 +86,7 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
             NULL
         };
         RTPROCESS Process;
-        int rc = RTProcCreate(apszArgs[0], &apszArgs[0], NULL, 0, &Process);
+        int rc = RTProcCreate(apszArgs[0], &apszArgs[0], RTENV_DEFAULT, 0, &Process);
         if (RT_FAILURE(rc))
             return false;
 

@@ -48,6 +48,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
+#include <iprt/env.h>
 #include <iprt/thread.h>
 
 #include <string.h>
@@ -178,7 +179,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 #else
                 const char *args[] = { VBoxSVCPath, "--automate", 0 };
                 RTPROCESS pid = NIL_RTPROCESS;
-                vrc = RTProcCreate (VBoxSVCPath, args, NULL, 0, &pid);
+                vrc = RTProcCreate (VBoxSVCPath, args, RTENV_DEFAULT, 0, &pid);
                 if (VBOX_FAILURE (vrc))
                 {
                     rc = NS_ERROR_FAILURE;

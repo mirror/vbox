@@ -22,336 +22,619 @@
 #include <iprt/env.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
+#include <iprt/alloca.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
+#include "internal/magics.h"
 
-#if defined(RT_OS_WINDOWS)
-# include <stdlib.h>
-#else
+#include <stdlib.h>
+#if !defined(RT_OS_WINDOWS)
 # include <unistd.h>
 #endif
-
-#include <string.h>
-
 #if defined(RT_OS_SOLARIS)
-/* It's an implementation detail in Solaris, see 
- * http://cvs.opensolaris.org/source/xref/onnv/onnv-gate/usr/src/lib/libc/port/gen/getenv.c line 50.
- */
+__BEGIN_DECLS
 extern char **environ;
+__END_DECLS
 #endif
 
-struct RTENVINTERNAL
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Macro that unlocks the specified environment block. */
+#define RTENV_LOCK(pEnvInt)     do { } while (0)
+/** Macro that unlocks the specified environment block. */
+#define RTENV_UNLOCK(pEnvInt)   do { } while (0)
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * The internal representation of a (non-default) environment.
+ */
+typedef struct RTENVINTERNAL
 {
-    /* Array of environment variables. */
-    char **apszEnv;
-    /* Count of variables in the array. */
-    size_t cCount;
-    /* Capacity (real size) of the array. This includes space for the
-     * terminating NULL element (for compatibility with the C library), so
-     * that cCount <= cCapacity - 1. */
-    size_t cCapacity;
-};
+    /** Magic value . */
+    uint32_t    u32Magic;
+    /** Number of variables in the array. 
+     * This does not include the terminating NULL entry. */
+    size_t      cVars;
+    /** Capacity (allocated size) of the array. 
+     * This includes space for the terminating NULL element (for compatibility 
+     * with the C library), so that c <= cCapacity - 1. */
+    size_t      cAllocated;
+    /** Array of environment variables. */
+    char      **papszEnv;
+    /** Array of environment variables in the process CP. 
+     * This get (re-)constructed when RTEnvGetExecEnvP method is called. */
+    char      **papszEnvOtherCP;
+} RTENVINTERNAL, *PRTENVINTERNAL;
 
-#define RTENV_GROW_SIZE 16
+/** The allocation granularity of the RTENVINTERNAL::papszEnv memory. */
+#define RTENV_GROW_SIZE     16
 
-static int rtEnvCreate(struct RTENVINTERNAL **ppIntEnv, size_t cCapacity)
+
+/**
+ * Internal worker that resolves the pointer to the default 
+ * process environment. (environ)
+ * 
+ * @returns Pointer to the default environment.
+ *          This may be NULL.
+ */
+static const char * const *rtEnvDefault(void)
 {
-    int rc;
+#ifdef RT_OS_DARWIN
+    return *(_NSGetEnviron());
+#elif defined(RT_OS_L4)  
+    /* So far, our L4 libraries do not include environment support. */
+    return NULL;
+#else
+    return environ;
+#endif 
+}
 
+
+/**
+ * Internal worker that creates an environment handle with a specified capacity.
+ * 
+ * @returns IPRT status code.
+ * @param   ppIntEnv    Where to store the result.
+ * @param   cAllocated  The initial array size.
+ */
+static int rtEnvCreate(PRTENVINTERNAL *ppIntEnv, size_t cAllocated)
+{
     /*
      * Allocate environment handle.
      */
-    struct RTENVINTERNAL *pIntEnv = (struct RTENVINTERNAL *)RTMemAlloc(sizeof(struct RTENVINTERNAL));
+    PRTENVINTERNAL pIntEnv = (PRTENVINTERNAL)RTMemAlloc(sizeof(*pIntEnv));
     if (pIntEnv)
     {
-        cCapacity = (cCapacity + RTENV_GROW_SIZE - 1)
-                    / RTENV_GROW_SIZE * RTENV_GROW_SIZE;
         /*
          * Pre-allocate the variable array.
          */
-        pIntEnv->cCount = 0;
-        pIntEnv->cCapacity = cCapacity;
-        pIntEnv->apszEnv = (char **)RTMemAlloc(sizeof(pIntEnv->apszEnv[0]) * pIntEnv->cCapacity);
-        if (pIntEnv->apszEnv)
+        pIntEnv->u32Magic = RTENV_MAGIC;
+        pIntEnv->papszEnvOtherCP = NULL;
+        pIntEnv->cVars = 0;
+        pIntEnv->cAllocated = RT_ALIGN_Z(RT_MAX(cAllocated, RTENV_GROW_SIZE), RTENV_GROW_SIZE);
+        pIntEnv->papszEnv = (char **)RTMemAllocZ(sizeof(pIntEnv->papszEnv[0]) * pIntEnv->cAllocated);
+        if (pIntEnv->papszEnv)
         {
-            /* add terminating NULL */
-            pIntEnv->apszEnv[0] = NULL;
             *ppIntEnv = pIntEnv;
             return VINF_SUCCESS;
         }
 
-        rc = VERR_NO_MEMORY;
         RTMemFree(pIntEnv);
     }    
-    else
-        rc = VERR_NO_MEMORY;
 
-    return rc;
+    return VERR_NO_MEMORY;
 }
 
-/**
- * Creates an empty environment block.
- * 
- * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
- * @param   pEnv        Where to store the handle of the environment block.
- */
+
 RTDECL(int) RTEnvCreate(PRTENV pEnv)
 {
-    if (pEnv == NULL)
-        return VERR_INVALID_POINTER;
-
+    AssertPtrReturn(pEnv, VERR_INVALID_POINTER);
     return rtEnvCreate(pEnv, RTENV_GROW_SIZE);
 }
 
-/**
- * Destroys an environment block.
- *
- * @returns IPRT status code.
- *
- * @param   Env     Handle of the environment block.
- */
+
 RTDECL(int) RTEnvDestroy(RTENV Env)
 {
-    struct RTENVINTERNAL *pIntEnv = Env;
+    /* 
+     * Ignore NIL_RTENV and validate input.
+     */
+    if (    Env == NIL_RTENV
+        ||  Env == RTENV_DEFAULT)
+        return VINF_SUCCESS;
 
-    if (pIntEnv == NULL)
-        return VERR_INVALID_HANDLE;
+    PRTENVINTERNAL pIntEnv = Env;
+    AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
+    AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
 
-    for (size_t i = 0; i < pIntEnv->cCount; ++i)
+    /* 
+     * Do the cleanup.
+     */
+    RTENV_LOCK(pIntEnv);
+    pIntEnv->u32Magic++;
+    size_t iVar = pIntEnv->cVars;
+    while (iVar-- > 0)
+        RTStrFree(pIntEnv->papszEnv[iVar]);
+    RTMemFree(pIntEnv->papszEnv);
+    pIntEnv->papszEnv = NULL;
+
+    if (pIntEnv->papszEnvOtherCP)
     {
-        RTStrFree(pIntEnv->apszEnv[i]);
+        for (iVar = 0; pIntEnv->papszEnvOtherCP[iVar]; iVar++)
+        {
+            RTStrFree(pIntEnv->papszEnvOtherCP[iVar]);
+            pIntEnv->papszEnvOtherCP[iVar] = NULL;
+        }
+        RTMemFree(pIntEnv->papszEnvOtherCP);
+        pIntEnv->papszEnvOtherCP = NULL;
     }
 
-    RTMemFree(pIntEnv->apszEnv);
+    RTENV_UNLOCK(pIntEnv);
+    /*RTCritSectDelete(&pIntEnv->CritSect) */
     RTMemFree(pIntEnv);
+    
     return VINF_SUCCESS;
 }
 
-/**
- * Creates an environment block and fill it with variables from the given
- * environment array.
- *
- * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- *
- * @param   pEnv        Where to store the handle of the environment block.
- * @param   apszEnv     Pointer to the NULL-terminated array of environment
- *                      variables. If NULL, the current process' environment
- *                      will be cloned.
- */
-RTDECL(int) RTEnvClone(PRTENV pEnv, char const *const *apszEnv)
+
+RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
 {
-#ifndef RT_OS_L4  /* So far, our L4 libraries do not include environment support. */
-    if (apszEnv == NULL)
-        apszEnv = environ;
-
-    /* count the number of varialbes to clone */
-    size_t cEnv = 0;
-    for (; apszEnv[cEnv]; ++cEnv) {}
-#else
-    size_t cEnv = 0;
-#endif
-
-    struct RTENVINTERNAL *pIntEnv;
-
-    int rc = rtEnvCreate(&pIntEnv, cEnv + 1 /* NULL */);
-    if (RT_FAILURE(rc))
-        return rc;
-
-#ifndef RT_OS_L4
-    for (size_t i = 0; i < cEnv; ++i)
+    /*
+     * Validate input and figure out how many variable to clone and where to get them.
+     */
+    size_t cVars;
+    const char * const *papszEnv;
+    PRTENVINTERNAL pIntEnvToClone;
+    AssertPtrReturn(pEnv, VERR_INVALID_POINTER);
+    if (EnvToClone == RTENV_DEFAULT)
     {
-        char *pszVar = RTStrDup(environ[i]);
-        if (pszVar == NULL)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        pIntEnv->apszEnv[i] = pszVar;
-        ++pIntEnv->cCount;
-    }
-#endif
-
-    if (RT_SUCCESS(rc))
-    {
-        /* add terminating NULL */
-        pIntEnv->apszEnv[pIntEnv->cCount] = NULL;
-        *pEnv = pIntEnv;
-        return VINF_SUCCESS;
-    }
-
-    RTEnvDestroy(pIntEnv);
-    return rc;
-}
-
-static int rtEnvRemoveVars(struct RTENVINTERNAL *pIntEnv, size_t iFrom, size_t cVars)
-{
-    AssertReturn (iFrom < pIntEnv->cCount, VERR_GENERAL_FAILURE);
-    AssertReturn (cVars <= pIntEnv->cCount, VERR_GENERAL_FAILURE);
-    AssertReturn (cVars > 0, VERR_GENERAL_FAILURE);
-
-    /* free variables */
-    size_t iTo = iFrom + cVars - 1;
-    for (size_t i = iFrom; i <= iTo; ++i)
-        RTStrFree(pIntEnv->apszEnv[i]);
-
-    /* remove the hole */
-    size_t cToMove = pIntEnv->cCount - iTo - 1;
-    if (cToMove)
-        memcpy(&pIntEnv->apszEnv[iFrom], &pIntEnv->apszEnv[iTo + 1],
-               sizeof(pIntEnv->apszEnv[0]) * cToMove);
-
-    pIntEnv->cCount -= cVars;
-
-    /// @todo resize pIntEnv->apszEnv to a multiply of RTENV_GROW_SIZE to keep
-    /// it compact
-
-    /* add terminating NULL */
-    pIntEnv->apszEnv[pIntEnv->cCount] = NULL;
-    return VINF_SUCCESS;
-}
-
-static int rtEnvInsertVars(struct RTENVINTERNAL *pIntEnv, size_t iAt, size_t cVars)
-{
-    AssertReturn (iAt <= pIntEnv->cCount, VERR_GENERAL_FAILURE);
-
-    int rc;
-
-    size_t cCapacity = (pIntEnv->cCount + cVars + 1 /* NULL */ + RTENV_GROW_SIZE - 1)
-                       / RTENV_GROW_SIZE * RTENV_GROW_SIZE;
-    bool needAlloc = cCapacity != pIntEnv->cCapacity;
-
-    /* allocate a new variable array if needed */
-    char **apszEnv = needAlloc ? (char **)RTMemAlloc(sizeof(apszEnv[0]) * cCapacity)
-                               : pIntEnv->apszEnv;
-    if (apszEnv)
-    {
-        /* copy old variables */
-        if (needAlloc && iAt)
-            memcpy (apszEnv, pIntEnv->apszEnv, sizeof(apszEnv[0]) * iAt);
-        if (iAt < pIntEnv->cCount)
-            memcpy (&apszEnv[iAt + cVars], &pIntEnv->apszEnv[iAt],
-                    sizeof(apszEnv[0]) * pIntEnv->cCount - iAt);
-        /* initialize new variables with NULL */
-        memset(&apszEnv[iAt], 0, sizeof(apszEnv[0]) * cVars);
-        /* replace the array */
-        if (needAlloc)
-        {
-            RTMemFree(pIntEnv->apszEnv);
-            pIntEnv->apszEnv = apszEnv;
-            pIntEnv->cCapacity = cCapacity;
-        }
-        pIntEnv->cCount += cVars;
-        /* add terminating NULL */
-        pIntEnv->apszEnv[pIntEnv->cCount] = NULL;
-        return VINF_SUCCESS;
+        pIntEnvToClone = NULL;
+        papszEnv = rtEnvDefault();
+        cVars = 0;
+        if (papszEnv)
+            while (papszEnv[cVars])
+                cVars++;
     }
     else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-static int rtEnvSetEx(struct RTENVINTERNAL *pIntEnv,
-                      const char *pszVar, size_t cchVar,
-                      const char *pszValue)
-{
-    AssertReturn (pszVar != NULL, VERR_GENERAL_FAILURE);
-
-    size_t i = 0;
-    for (; i < pIntEnv->cCount; ++i)
     {
-        if ((cchVar == 0 && !*pszVar) ||
-            strncmp(pIntEnv->apszEnv[i], pszVar, cchVar) == 0)
-        {
-            if (pszValue == NULL)
-                return rtEnvRemoveVars(pIntEnv, i, 1);
+        pIntEnvToClone = EnvToClone;
+        AssertPtrReturn(pIntEnvToClone, VERR_INVALID_HANDLE);
+        AssertReturn(pIntEnvToClone->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+        RTENV_LOCK(pIntEnvToClone);
 
-            break;
-        }
+        papszEnv = pIntEnvToClone->papszEnv;
+        cVars = pIntEnvToClone->cVars;
     }
 
-    /* allocate a new variable */
-    size_t cchNew = cchVar + 1 + strlen(pszValue) + 1;
-    char *pszNew = (char *)RTMemAlloc(cchNew);
-    if (pszNew == NULL)
-        return VERR_NO_MEMORY;
-    memcpy(pszNew, pszVar, cchVar);
-    pszNew[cchVar] = '=';
-    strcpy(pszNew + cchVar + 1, pszValue);
-
-    if (i < pIntEnv->cCount)
-    {
-        /* replace the old variable */
-        RTStrFree(pIntEnv->apszEnv[i]);
-        pIntEnv->apszEnv[i] = pszNew;
-        return VINF_SUCCESS;
-    }
-
-    /* nothing to do to remove a non-existent variable */
-    if (pszValue == NULL)
-        return VINF_SUCCESS;
-
-    /* insert the new variable */
-    int rc = rtEnvInsertVars(pIntEnv, i, 1);
+    /*
+     * Create the duplicate.
+     */
+    PRTENVINTERNAL pIntEnv;
+    int rc = rtEnvCreate(&pIntEnv, cVars + 1 /* NULL */);
     if (RT_SUCCESS(rc))
     {
-        pIntEnv->apszEnv[i] = pszNew;
-        return VINF_SUCCESS;
+        pIntEnv->cVars = cVars;
+        pIntEnv->papszEnv[pIntEnv->cVars] = NULL;
+        if (EnvToClone == RTENV_DEFAULT)
+        {
+            /* ASSUMES the default environment is in the current codepage. */
+            for (size_t iVar = 0; iVar < cVars; iVar++)
+            {
+                int rc = RTStrCurrentCPToUtf8(&pIntEnv->papszEnv[iVar], papszEnv[iVar]);
+                if (RT_FAILURE(rc))
+                {
+                    pIntEnv->cVars = iVar;
+                    RTEnvDestroy(pIntEnv);
+                    return rc;
+                }
+            }
+        }
+        else
+        {
+            for (size_t iVar = 0; iVar < cVars; iVar++)
+            {
+                char *pszVar = RTStrDup(papszEnv[iVar]);
+                if (RT_UNLIKELY(!pszVar))
+                {
+                    RTENV_UNLOCK(pIntEnvToClone);
+
+                    pIntEnv->cVars = iVar;
+                    RTEnvDestroy(pIntEnv);
+                    return rc;
+                }
+                pIntEnv->papszEnv[iVar] = pszVar;
+            }
+        }
+
+        /* done */
+        *pEnv = pIntEnv;
     }
 
-    RTStrFree(pszNew);
+    if (pIntEnvToClone)
+        RTENV_UNLOCK(pIntEnvToClone);
     return rc;
 }
 
-/**
- * Puts a 'variable=value' string into the environment.
- *
- * The supplied string must be in the current process' codepage.
- * This function makes a copy of the supplied string.
- * 
- * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
- * 
- * @param   Env                 Handle of the environment block.
- * @param   pszVarEqualValue    The variable '=' value string. If the value and '=' is 
- *                              omitted, the variable is removed from the environment.
- */
+
 RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
 {
-    struct RTENVINTERNAL *pIntEnv = Env;
-
-    if (pIntEnv == NULL)
-        return VERR_INVALID_HANDLE;
-
-    if (pszVarEqualValue == NULL)
-        return VERR_INVALID_POINTER;
-
+    int rc;
+    AssertPtrReturn(pszVarEqualValue, VERR_INVALID_POINTER);
     const char *pszEq = strchr(pszVarEqualValue, '=');
-    return rtEnvSetEx(pIntEnv, pszVarEqualValue,
-                      pszEq ? pszEq - pszVarEqualValue
-                            : strlen (pszVarEqualValue),
-                      pszEq ? pszEq + 1 : NULL);
+    if (!pszEq)
+        rc = RTEnvUnsetEx(Env, pszVarEqualValue);
+    else
+    {
+        /* 
+         * Make a copy of the variable name so we can terminate it
+         * properly and then pass the request on to RTEnvSetEx.
+         */
+        const char *pszValue = pszEq + 1;
+
+        size_t cchVar = pszEq - pszVarEqualValue;
+        Assert(cchVar < 1024);
+        char *pszVar = (char *)alloca(cchVar + 1);
+        memcpy(pszVar, pszVarEqualValue, cchVar);
+        pszVar[cchVar] = '\0';
+
+        rc = RTEnvSetEx(Env, pszVar, pszValue);
+    }
+    return rc;
 }
 
-/**
- * Returns a raw pointer to the array of environment variables of the given
- * environment block where every variable is a string in format
- * 'variable=value'.
- *
- * All returned strings are in the current process' codepage.
- * 
- * @returns Pointer to the raw array of environment variables.
- * @returns NULL if Env is NULL or invalid.
- * 
- * @param   Env                 Handle of the environment block.
- */
-RTDECL(char const *const *) RTEnvGetArray(RTENV Env)
+
+RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
 {
-    struct RTENVINTERNAL *pIntEnv = Env;
+    AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
+    AssertPtrReturn(*pszVar, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
 
-    if (pIntEnv == NULL)
-        return NULL;
+    int rc;
+    if (Env == RTENV_DEFAULT)
+    {
+        /* 
+         * Since RTEnvPut isn't UTF-8 clean and actually expects the strings
+         * to be in the current code page (codeset), we'll do the necessary 
+         * conversions here.
+         */
+        char *pszVarOtherCP;
+        rc = RTStrUtf8ToCurrentCP(&pszVarOtherCP, pszVar);
+        if (RT_SUCCESS(rc))
+        {
+            char *pszValueOtherCP;
+            rc = RTStrUtf8ToCurrentCP(&pszValueOtherCP, pszValue);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTEnvSet(pszVarOtherCP, pszValueOtherCP);
+                RTStrFree(pszValueOtherCP);
+            }
+            RTStrFree(pszVarOtherCP);
+        }
+    }
+    else
+    {
+        PRTENVINTERNAL pIntEnv = Env;
+        AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
+        AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
 
-    return pIntEnv->apszEnv;
+        /*
+         * Create the variable string.
+         */
+        const size_t cchVar = strlen(pszVar);
+        const size_t cchValue = strlen(pszValue);
+        char *pszEntry = (char *)RTMemAlloc(cchVar + cchValue + 2);
+        if (pszEntry)
+        {
+            memcpy(pszEntry, pszVar, cchVar);
+            pszEntry[cchVar] = '=';
+            memcpy(&pszEntry[cchVar + 1], pszValue, cchValue + 1);
+
+            RTENV_LOCK(pIntEnv);
+
+            /*
+             * Find the location of the variable. (iVar = cVars if new)
+             */
+            rc = VINF_SUCCESS;
+            size_t iVar;
+            for (iVar = 0; iVar < pIntEnv->cVars; iVar++)
+                if (    !strncmp(pIntEnv->papszEnv[iVar], pszVar, cchVar)
+                    &&  pIntEnv->papszEnv[iVar][cchVar] == '=')
+                    break;
+            if (iVar < pIntEnv->cVars)
+            {
+                /* 
+                 * Replace the current entry. Simple.
+                 */
+                RTMemFree(pIntEnv->papszEnv[iVar]);
+                pIntEnv->papszEnv[iVar] = pszEntry;
+            }
+            else
+            {
+                /*
+                 * Adding a new variable. Resize the array if required 
+                 * and then insert the new value at the end.
+                 */
+                if (pIntEnv->cVars + 2 > pIntEnv->cAllocated)
+                {
+                    void *pvNew = RTMemRealloc(pIntEnv->papszEnv, sizeof(char *) * (pIntEnv->cAllocated + RTENV_GROW_SIZE));
+                    if (!pvNew)
+                        rc = VERR_NO_MEMORY;
+                    else
+                    {
+                        pIntEnv->papszEnv = (char **)pvNew;
+                        pIntEnv->cAllocated += RTENV_GROW_SIZE;
+                        for (size_t iNewVar = pIntEnv->cVars; iNewVar < pIntEnv->cAllocated; iNewVar++)
+                            pIntEnv->papszEnv[iNewVar] = NULL;
+                    }
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    pIntEnv->papszEnv[iVar] = pszEntry;
+                    pIntEnv->papszEnv[iVar + 1] = NULL; /* this isn't really necessary, but doesn't hurt. */
+                    pIntEnv->cVars++;
+                    Assert(pIntEnv->cVars == iVar + 1);
+                }
+            }
+    
+            RTENV_UNLOCK(pIntEnv);
+
+            if (RT_FAILURE(rc))
+                RTMemFree(pszEntry);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar)
+{
+    AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
+    AssertPtrReturn(*pszVar, VERR_INVALID_PARAMETER);
+
+    int rc;
+    if (Env == RTENV_DEFAULT)
+    {
+        /* 
+         * Since RTEnvUnset isn't UTF-8 clean and actually expects the strings
+         * to be in the current code page (codeset), we'll do the necessary 
+         * conversions here.
+         */
+        char *pszVarOtherCP;
+        rc = RTStrUtf8ToCurrentCP(&pszVarOtherCP, pszVar);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTEnvUnset(pszVarOtherCP);
+            RTStrFree(pszVarOtherCP);
+        }
+    }
+    else
+    {
+        PRTENVINTERNAL pIntEnv = Env;
+        AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
+        AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+
+        RTENV_LOCK(pIntEnv);
+
+        /*
+         * Remove all variable by the given name.
+         */
+        rc = VINF_ENV_VAR_NOT_FOUND;
+        const size_t cchVar = strlen(pszVar);
+        size_t iVar;
+        for (iVar = 0; iVar < pIntEnv->cVars; iVar++)
+            if (    !strncmp(pIntEnv->papszEnv[iVar], pszVar, cchVar)
+                &&  pIntEnv->papszEnv[iVar][cchVar] == '=')
+            {
+                RTMemFree(pIntEnv->papszEnv[iVar]);
+                pIntEnv->cVars--;
+                if (pIntEnv->cVars > 0)
+                    pIntEnv->papszEnv[iVar] = pIntEnv->papszEnv[pIntEnv->cVars];
+                pIntEnv->papszEnv[pIntEnv->cVars] = NULL;
+                rc = VINF_SUCCESS;
+                /* no break, there could be more. */
+            }
+
+        RTENV_UNLOCK(pIntEnv);
+    }
+    return rc;
+    
+}
+
+
+RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbValue, size_t *pcchActual)
+{
+    AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pszValue, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pcchActual, VERR_INVALID_POINTER);
+    AssertReturn(pcchActual || (pszValue && cbValue), VERR_INVALID_PARAMETER);
+
+    if (pcchActual)
+        *pcchActual = 0;
+    int rc;
+    if (Env == RTENV_DEFAULT)
+    {
+        /* 
+         * Since RTEnvGet isn't UTF-8 clean and actually expects the strings
+         * to be in the current code page (codeset), we'll do the necessary 
+         * conversions here.
+         */
+        char *pszVarOtherCP;
+        rc = RTStrUtf8ToCurrentCP(&pszVarOtherCP, pszVar);
+        if (RT_SUCCESS(rc))
+        {
+            const char *pszValueOtherCP = RTEnvGet(pszVarOtherCP);
+            RTStrFree(pszVarOtherCP);
+            if (pszValueOtherCP)
+            {
+                char *pszValueUtf8;
+                rc = RTStrCurrentCPToUtf8(&pszValueUtf8, pszValueOtherCP);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = VINF_SUCCESS;
+                    size_t cch = strlen(pszValueUtf8);
+                    if (pcchActual)
+                        *pcchActual = cch;
+                    if (pszValue && cbValue)
+                    {
+                        if (cch < cbValue)
+                            memcpy(pszValue, pszValueUtf8, cch + 1);
+                        else
+                            rc = VERR_BUFFER_OVERFLOW;
+                    }
+                }
+            }
+            else
+                rc = VERR_ENV_VAR_NOT_FOUND;
+        }
+    }
+    else
+    {
+        PRTENVINTERNAL pIntEnv = Env;
+        AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
+        AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+
+        RTENV_LOCK(pIntEnv);
+
+        /*
+         * Locate the first variable and return it to the caller.
+         */
+        rc = VERR_ENV_VAR_NOT_FOUND;
+        const size_t cchVar = strlen(pszVar);
+        size_t iVar;
+        for (iVar = 0; iVar < pIntEnv->cVars; iVar++)
+            if (    !strncmp(pIntEnv->papszEnv[iVar], pszVar, cchVar)
+                &&  pIntEnv->papszEnv[iVar][cchVar] == '=')
+            {
+                rc = VINF_SUCCESS;
+                const char *pszValueOrg = pIntEnv->papszEnv[iVar] + cchVar + 1;
+                size_t cch = strlen(pszValueOrg);
+                if (pcchActual)
+                    *pcchActual = cch;
+                if (pszValue && cbValue)
+                {
+                    if (cch < cbValue)
+                        memcpy(pszValue, pszValueOrg, cch + 1);
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+                }
+                break;
+            }
+
+        RTENV_UNLOCK(pIntEnv);
+    }
+    return rc;
+    
+}
+
+
+RTDECL(bool) RTEnvExistEx(RTENV Env, const char *pszVar)
+{
+    AssertPtrReturn(pszVar, false);
+
+    bool fExist = false;
+    if (Env == RTENV_DEFAULT)
+    {
+        /* 
+         * Since RTEnvExist isn't UTF-8 clean and actually expects the strings
+         * to be in the current code page (codeset), we'll do the necessary 
+         * conversions here.
+         */
+        char *pszVarOtherCP;
+        int rc = RTStrUtf8ToCurrentCP(&pszVarOtherCP, pszVar);
+        if (RT_SUCCESS(rc))
+        {
+            fExist = RTEnvExist(pszVarOtherCP);
+            RTStrFree(pszVarOtherCP);
+        }
+    }
+    else
+    {
+        PRTENVINTERNAL pIntEnv = Env;
+        AssertPtrReturn(pIntEnv, false);
+        AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, false);
+
+        RTENV_LOCK(pIntEnv);
+
+        /*
+         * Simple search.
+         */
+        const size_t cchVar = strlen(pszVar);
+        for (size_t iVar = 0; iVar < pIntEnv->cVars; iVar++)
+            if (    !strncmp(pIntEnv->papszEnv[iVar], pszVar, cchVar)
+                &&  pIntEnv->papszEnv[iVar][cchVar] == '=')
+            {
+                fExist = true;
+                break;
+            }
+
+        RTENV_UNLOCK(pIntEnv);
+    }
+    return fExist;
+}
+
+
+RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env)
+{
+    const char * const *papszRet;
+    if (Env == RTENV_DEFAULT)
+    {
+        papszRet = rtEnvDefault();
+        if (!papszRet)
+        {
+            static const char * const s_papszDummy[2] = { NULL, NULL };
+            papszRet = &s_papszDummy[0];
+        }
+    }
+    else
+    {
+        PRTENVINTERNAL pIntEnv = Env;
+        AssertPtrReturn(pIntEnv, NULL);
+        AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, NULL);
+
+        RTENV_LOCK(pIntEnv);
+
+        /* 
+         * Free any old envp. 
+         */
+        if (pIntEnv->papszEnvOtherCP)
+        {
+            for (size_t iVar = 0; pIntEnv->papszEnvOtherCP[iVar]; iVar++)
+            {
+                RTStrFree(pIntEnv->papszEnvOtherCP[iVar]);
+                pIntEnv->papszEnvOtherCP[iVar] = NULL;
+            }
+            RTMemFree(pIntEnv->papszEnvOtherCP);
+            pIntEnv->papszEnvOtherCP = NULL;
+        }
+
+        /*
+         * Construct a new envp with the strings in the process code set.
+         */
+        char **papsz;
+        papszRet = pIntEnv->papszEnvOtherCP = papsz = (char **)RTMemAlloc(sizeof(char *) * (pIntEnv->cVars + 1));
+        if (papsz)
+        {
+            papsz[pIntEnv->cVars] = NULL;
+            for (size_t iVar = 0; iVar < pIntEnv->cVars; iVar++)
+            {
+                int rc = RTStrUtf8ToCurrentCP(&papsz[iVar], pIntEnv->papszEnv[iVar]);
+                if (RT_FAILURE(rc))
+                {
+                    /* RTEnvDestroy / we cleans up later. */
+                    papsz[iVar] = NULL;
+                    AssertRC(rc);
+                    papszRet = NULL;
+                    break;
+                }
+            }
+        }
+
+        RTENV_UNLOCK(pIntEnv);
+    }
+    return papszRet;
 }

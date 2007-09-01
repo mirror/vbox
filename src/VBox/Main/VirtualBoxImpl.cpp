@@ -43,6 +43,7 @@
 #include <iprt/uuid.h>
 #include <iprt/thread.h>
 #include <iprt/process.h>
+#include <iprt/env.h>
 #include <iprt/cpputils.h>
 
 #include <VBox/err.h>
@@ -2337,7 +2338,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         else
         {
             const char *args[] = { exePath, "/Helper", client.name(), 0 };
-            vrc = RTProcCreate (exePath, args, NULL, 0, &pid);
+            vrc = RTProcCreate (exePath, args, RTENV_DEFAULT, 0, &pid);
             if (VBOX_FAILURE (vrc))
             {
                 rc = setError (E_FAIL,
