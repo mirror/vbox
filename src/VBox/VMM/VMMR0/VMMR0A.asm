@@ -5,7 +5,7 @@
 
 ;
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
@@ -126,10 +126,14 @@ BEGINPROC vmmR0CallHostSetJmp
     ;
     ; Save the registers.
     ;
+    push    rbp
+    mov     rbp, rsp
  %ifdef ASM_CALL64_MSC
+    sub     rsp, 30h
     mov     r11, rdx                    ; pfn
     mov     rdx, rcx                    ; pJmpBuf;
  %else
+    sub     rsp, 10h
     mov     r8, rdx                     ; pVM (save it like MSC)
     mov     r11, rsi                    ; pfn
     mov     rdx, rdi                    ; pJmpBuf
@@ -139,14 +143,15 @@ BEGINPROC vmmR0CallHostSetJmp
     mov     [rdx + VMMR0JMPBUF.rsi], rsi
     mov     [rdx + VMMR0JMPBUF.rdi], rdi
  %endif
-    mov     [rdx + VMMR0JMPBUF.rbp], rbp
+    mov     r10, [rbp]
+    mov     [rdx + VMMR0JMPBUF.rbp], r10
     mov     [rdx + VMMR0JMPBUF.r12], r12
     mov     [rdx + VMMR0JMPBUF.r13], r13
     mov     [rdx + VMMR0JMPBUF.r14], r14
     mov     [rdx + VMMR0JMPBUF.r15], r15
-    mov     rax, [rsp]
+    mov     rax, [rbp + 8]
     mov     [rdx + VMMR0JMPBUF.rip], rax
-    lea     r10, [rsp + 8]              ; (used in resume)
+    lea     r10, [rbp + 10h]            ; (used in resume)
     mov     [rdx + VMMR0JMPBUF.rsp], r10
 
     ;
@@ -155,15 +160,16 @@ BEGINPROC vmmR0CallHostSetJmp
     test    byte [rdx + VMMR0JMPBUF.fInRing3Call], 1
     jnz     .resume
 
-    push    rdx                         ; Save it and fix stack alignment (16).
+    mov     [rbp - 8], rdx              ; Save it and fix stack alignment (16).
  %ifdef ASM_CALL64_MSC
     mov     rcx, r8                     ; pVM -> arg0
  %else
     mov     rdi, r8                     ; pVM -> arg0
  %endif
     call    r11
-    pop     rdx                         ; pJmpBuf
+    mov     rdx, [rbp - 8]              ; pJmpBuf
     and     qword [rdx + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
+    leave
     ret
 
     ;
@@ -185,6 +191,7 @@ BEGINPROC vmmR0CallHostSetJmp
     mov     r14, [rdx + VMMR0JMPBUF.r14]
     mov     r15, [rdx + VMMR0JMPBUF.r15]
     mov     eax, VERR_INTERNAL_ERROR    ; todo better return code!
+    leave
     ret
 
 .rspCheck_ok:
