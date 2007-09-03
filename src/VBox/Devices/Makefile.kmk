@@ -108,8 +108,10 @@ ifeq ($(BUILD_TARGET),l4)
  VBoxDD_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
-VBoxDD_LIBS.darwin     = \
+ifdef VBOX_WTIH_USB
+VBoxDD_LIBS.darwin     += \
 	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
+endif
 VBoxDD_LIBS.darwin     += \
 	$(LIB_REM)
 VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib \
