@@ -220,7 +220,6 @@ public:
         bool operator== (const HWData &that) const;
 
         ULONG          mMemorySize;
-        ULONG          mMemoryBalloonSize;
         ULONG          mVRAMSize;
         ULONG          mMonitorCount;
         TriStateBool_T mHWVirtExEnabled;
@@ -441,8 +440,6 @@ public:
     STDMETHOD(COMSETTER(OSTypeId)) (INPTR BSTR aOSTypeId);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(MemorySize))(ULONG memorySize);
-    STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);
-    STDMETHOD(COMSETTER(MemoryBalloonSize))(ULONG memoryBalloonSize);
     STDMETHOD(COMGETTER(VRAMSize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(VRAMSize))(ULONG memorySize);
     STDMETHOD(COMGETTER(MonitorCount))(ULONG *monitorCount);

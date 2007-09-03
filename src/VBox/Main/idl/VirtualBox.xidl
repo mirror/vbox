@@ -408,7 +408,7 @@
 
   <enum
      name="GuestStatisticType"
-     uuid="a7cffd08-665f-4156-b2e9-2b3c64e213da"
+     uuid="da89a1b7-e602-45ac-84b7-29c9d12b92d5"
      >
     <const name="CPULoad"              value="0">
       <desc>
@@ -435,12 +435,7 @@
         Free physical memory in megabytes.
       </desc>
     </const>
-    <const name="PhysMemBalloon"       value="5">
-      <desc>
-        Ballooned physical memory in megabytes.
-      </desc>
-    </const>
-    <const name="PageFileSize"         value="6">
+    <const name="PageFileSize"         value="5">
       <desc>
         Pagefile size in megabytes.
       </desc>
@@ -2020,7 +2015,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="dcfb87c4-18a9-4a1e-9b1f-6f68f920535b"
+     uuid="31f7169f-14da-4c55-8cb6-a3665186e35e"
      wsmap="managed"
      >
     <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -2167,11 +2162,7 @@
     </attribute>
 
     <attribute name="memorySize" type="unsigned long">
-      <desc>System memory size in megabytes.</desc>
-    </attribute>
-
-    <attribute name="memoryBalloonSize" type="unsigned long">
-      <desc>Initial memory balloon size in megabytes.</desc>
+      <desc>Sytem memory size in megabytes.</desc>
     </attribute>
 
     <attribute name="VRAMSize" type="unsigned long">
