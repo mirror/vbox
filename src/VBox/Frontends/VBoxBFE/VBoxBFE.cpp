@@ -243,7 +243,7 @@ static int networkArg2Index(const char *pszArg, int cchRoot)
  * @returns iprt status code
  * @param pAddress An array into which to store the newly generated address
  */
-int GenerateMACAddress(char pAddress[MAC_STRING_LEN + 1])
+int GenerateMACAddress(char pszAddress[MAC_STRING_LEN + 1])
 {
     /*
      * Our strategy is as follows: the first three bytes are our fixed
@@ -258,9 +258,9 @@ int GenerateMACAddress(char pAddress[MAC_STRING_LEN + 1])
         LogFlowFunc(("RTUuidCreate failed, returning %Vrc\n", rc));
         return rc;
     }
-    RTStrPrintf (pAddress, MAC_STRING_LEN + 1, "080027%02X%02X%02X",
-                 uuid.au8[0], uuid.au8[1], uuid.au8[2]);
-    LogFlowFunc(("generated MAC: '%s'\n", pAddress));
+    RTStrPrintf(pszAddress, MAC_STRING_LEN + 1, "080027%02X%02X%02X",
+                uuid.au8[0], uuid.au8[1], uuid.au8[2]);
+    LogFlowFunc(("generated MAC: '%s'\n", pszAddress));
     return VINF_SUCCESS;
 }                         
 
@@ -1206,6 +1206,9 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertString(pCfg,   "HardDiskDevice", "piix3ide");                  UPDATE_RC();
     rc = CFGMR3InsertString(pCfg,   "FloppyDevice",   "i82078");                    UPDATE_RC();
     rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",         g_fIOAPIC);                   UPDATE_RC();
+    RTUUID Uuid;
+    RTUuidClear(&Uuid);
+    rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));                   UPDATE_RC();
 
     /* Default: no bios logo. */
     rc = CFGMR3InsertInteger(pCfg,  "FadeIn",         1);                           UPDATE_RC();
