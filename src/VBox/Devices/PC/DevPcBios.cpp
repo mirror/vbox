@@ -733,7 +733,7 @@ static DECLCALLBACK(int) logoIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  * @param   table           pointer to DMI table.
  */
 #define STRCPY(p, s) do { memcpy (p, s, sizeof(s)); p += sizeof(s); } while (0)
-static void pcbiosPlantDMITable(uint8_t *pTable)
+static void pcbiosPlantDMITable(uint8_t *pTable, PRTUUID puuid)
 {
     char *pszStr = (char*)pTable;
     int iStrNr;
@@ -783,6 +783,7 @@ static void pcbiosPlantDMITable(uint8_t *pTable)
     STRCPY(pszStr, "1.2");
     pSystemInf->u8SerialNumber   = iStrNr++;
     STRCPY(pszStr, "0");
+    memcpy(pSystemInf->au8Uuid, puuid, sizeof(RTUUID));
     pSystemInf->u8WakeupType     = 6; /* Power Switch */
     pSystemInf->u8SKUNumber      = 0;
     pSystemInf->u8Family         = iStrNr++;
@@ -1091,6 +1092,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "ShowBootMenu\0"
                               "DelayBoot\0"
                               "LanBootRom\0"
+                              "UUID\0"
                               "IOAPIC\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
@@ -1141,7 +1143,21 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (VBOX_FAILURE(rc))
         return rc;
 
-    pcbiosPlantDMITable(pData->au8DMIPage);
+    /*
+     * Query the machine's UUID for SMBIOS/DMI use.
+     */
+    RTUUID  uuid;
+    rc = CFGMR3QueryBytes(pCfgHandle, "UUID", &uuid, sizeof(uuid));
+    if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"UUID\" failed"));
+
+
+    /* Convert the UUID to network byte order. Not entirely straightforward as parts are MSB already... */
+    uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
+    uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
+    uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+    pcbiosPlantDMITable(pData->au8DMIPage, &uuid);
     if (pData->u8IOAPIC)
         pcbiosPlantMPStable(pDevIns, pData->au8DMIPage + 0x100);
 
