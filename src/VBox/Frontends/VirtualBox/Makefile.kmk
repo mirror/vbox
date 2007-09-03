@@ -155,7 +155,7 @@ VirtualBox_SOURCES.darwin = \
 	src/darwin/VBoxAquaStyle.cpp \
 	src/darwin/VBoxUtils-darwin.cpp
 
-src/HappyHttp.cpp_CXXFLAGS.linux += -fexceptions
+src/HappyHttp.cpp_CXXFLAGS.linux += -fexceptions -O2
 src/HappyHttp.cpp_CXXFLAGS.darwin += -fexceptions
 src/HappyHttp.cpp_CXXFLAGS.os2 += -fexceptions
 src/VBoxDownloaderWgt.cpp_CXXFLAGS.linux += -fexceptions
