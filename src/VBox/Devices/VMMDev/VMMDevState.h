@@ -131,6 +131,9 @@ typedef struct VMMDevState
         char szDomain[VMMDEV_CREDENTIALS_STRLEN];
     } credentialsJudge;
 
+    /* memory balloon change request */
+    uint32_t    u32MemoryBalloonSize, u32LastMemoryBalloonSize;
+
     /* seamless mode change request */
     bool fLastSeamlessEnabled, fSeamlessEnabled;
 
