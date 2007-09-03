@@ -625,7 +625,7 @@ static void show_usage()
              "  -hda <file>              Set temporary first hard disk to file\n"
              "  -fda <file>              Set temporary first floppy disk to file\n"
              "  -cdrom <file>            Set temporary CDROM/DVD to file/device ('none' to unmount)\n"
-             "  -boot <a|c|d>            Set temporary boot device (a = floppy, c = first hard disk, d = DVD)\n"
+             "  -boot <a|c|d|n>          Set temporary boot device (a = floppy, c = 1st HD, d = DVD, n = network)\n"
              "  -m <size>                Set temporary memory size in megabytes\n"
              "  -vram <size>             Set temporary size of video memory in megabytes\n"
              "  -fullscreen              Start VM in fullscreen mode\n"
@@ -1011,6 +1011,12 @@ int main(int argc, char *argv[])
                 case 'd':
                 {
                     bootDevice = DeviceType_DVDDevice;
+                    break;
+                }
+
+                case 'n':
+                {
+                    bootDevice = DeviceType_NetworkDevice;
                     break;
                 }
 
