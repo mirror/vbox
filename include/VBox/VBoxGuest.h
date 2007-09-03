@@ -143,6 +143,8 @@ typedef enum
     VMMDevReq_GetSeamlessChangeRequest   = 73,
     VMMDevReq_QueryCredentials           = 100,
     VMMDevReq_ReportCredentialsJudgement = 101,
+    VMMDevReq_ReportGuestStats           = 110,
+    VMMDevReq_GetMemBalloonChangeRequest = 111,
     VMMDevReq_LogString                  = 200,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
@@ -350,6 +352,57 @@ typedef struct
     VBoxGuestInfo guestInfo;
 } VMMDevReportGuestInfo;
 
+/** guest statistics values */
+#define VBOX_GUEST_STAT_CPU_LOAD            BIT(0)
+#define VBOX_GUEST_STAT_THREADS             BIT(1)
+#define VBOX_GUEST_STAT_PROCESSES           BIT(2)
+#define VBOX_GUEST_STAT_PHYS_MEM_TOTAL      BIT(3)
+#define VBOX_GUEST_STAT_PHYS_MEM_AVAIL      BIT(4)
+#define VBOX_GUEST_STAT_PHYS_MEM_BALLOON    BIT(5)
+#define VBOX_GUEST_STAT_PAGE_FILE_SIZE      BIT(6)
+
+
+/** guest statistics structure */
+typedef struct VBoxGuestStatistics
+{
+    /** Reported statistics */
+    uint32_t        u32StatCaps;
+    /** CPU load (0-100) */
+    uint32_t        u32CpuLoad;
+    /** Nr of threads */
+    uint32_t        u32Threads;
+    /** Nr of processes */
+    uint32_t        u32Processes;
+    /** Total physical memory (megabytes) */
+    uint32_t        u32PhysMemTotal;
+    /** Available physical memory (megabytes) */
+    uint32_t        u32PhysMemAvail;
+    /** Ballooned physical memory (megabytes) */
+    uint32_t        u32PhysMemBalloon;
+    /** Pagefile size (megabytes) */
+    uint32_t        u32PageFileSize;
+} VBoxGuestStatistics;
+
+/** guest statistics command structure */
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    /** Guest information. */
+    VBoxGuestStatistics guestStats;
+} VMMDevReportGuestStats;
+
+/** memory balloon change request structure */
+#define VMMDEV_MAX_MEMORY_BALLOON(PhysMemTotal)     ((90*PhysMemTotal)/100)
+
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    uint32_t            u32BalloonSize;
+    uint32_t            eventAck;
+} VMMDevGetMemBalloonChangeRequest;
+ 
 /** display change request structure */
 typedef struct
 {
@@ -926,6 +979,8 @@ typedef struct
 #define VMMDEV_EVENT_RESTORED                       BIT(4)
 /** Seamless mode state changed */
 #define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST   BIT(5)
+/** Memory balloon size changed */
+#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST         BIT(6)
 
 
 /** @} */
@@ -1235,6 +1290,10 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevSeamlessChangeRequest);
         case VMMDevReq_QueryCredentials:
             return sizeof(VMMDevCredentials);
+        case VMMDevReq_ReportGuestStats:
+            return sizeof(VMMDevReportGuestStats);
+        case VMMDevReq_GetMemBalloonChangeRequest:
+            return sizeof(VMMDevGetMemBalloonChangeRequest);
         case VMMDevReq_LogString:
             return sizeof(VMMDevReqLogString);
         default:

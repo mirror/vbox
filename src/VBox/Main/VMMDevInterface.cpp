@@ -354,6 +354,79 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
     return VINF_SUCCESS;
 }
 
+/**
+ * Request the statistics interval
+ *
+ * @returns VBox status code.
+ * @param   pInterface          Pointer to this interface.
+ * @param   pulInterval         Pointer to interval in seconds
+ * @thread  The emulation thread.
+ */
+DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pulInterval)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    ULONG          val = 0;
+
+    if (!pulInterval)
+        return VERR_INVALID_POINTER;
+
+    /* store that information in IGuest */
+    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
+    Assert(guest);
+    if (!guest)
+        return VERR_INVALID_PARAMETER; /** @todo wrong error */
+
+    guest->COMGETTER(StatisticsUpdateInterval)(&val);
+    *pulInterval = val;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Report new guest statistics
+ *
+ * @returns VBox status code.
+ * @param   pInterface          Pointer to this interface.
+ * @param   pGuestStats         Guest statistics
+ * @thread  The emulation thread.
+ */
+DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGuestStatistics *pGuestStats)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    Assert(pGuestStats);
+    if (!pGuestStats)
+        return VERR_INVALID_POINTER;
+
+    /* store that information in IGuest */
+    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
+    Assert(guest);
+    if (!guest)
+        return VERR_INVALID_PARAMETER; /** @todo wrong error */
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD)
+        guest->SetStatistic(GuestStatisticType_CPULoad, pGuestStats->u32CpuLoad);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_THREADS)
+        guest->SetStatistic(GuestStatisticType_Threads, pGuestStats->u32Threads);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PROCESSES)
+        guest->SetStatistic(GuestStatisticType_Processes, pGuestStats->u32Processes);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
+        guest->SetStatistic(GuestStatisticType_PhysMemTotal, pGuestStats->u32PhysMemTotal);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_AVAIL)
+        guest->SetStatistic(GuestStatisticType_PhysMemAvailable, pGuestStats->u32PhysMemAvail);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_BALLOON)
+        guest->SetStatistic(GuestStatisticType_PhysMemBalloon, pGuestStats->u32PhysMemBalloon);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
+        guest->SetStatistic(GuestStatisticType_PageFileSize, pGuestStats->u32PageFileSize);
+
+    return VINF_SUCCESS;
+}
+
 #ifdef VBOX_HGCM
 
 /* HGCM connector interface */
@@ -542,6 +615,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->Connector.pfnSetCredentialsJudgementResult = vmmdevSetCredentialsJudgementResult;
     pData->Connector.pfnSetVisibleRegion              = vmmdevSetVisibleRegion;
     pData->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
+    pData->Connector.pfnReportStatistics              = vmmdevReportStatistics;
+    pData->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;
 
 #ifdef VBOX_HGCM
     pData->HGCMConnector.pfnConnect                   = iface_hgcmConnect;

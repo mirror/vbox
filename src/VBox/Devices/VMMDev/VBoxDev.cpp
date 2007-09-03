@@ -1178,6 +1178,52 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         }
 
 
+        case VMMDevReq_GetMemBalloonChangeRequest:
+        {
+            Log(("VMMDevReq_GetMemBalloonChangeRequest\n"));
+            if (requestHeader->size != sizeof(VMMDevGetMemBalloonChangeRequest))
+            {
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevGetMemBalloonChangeRequest *memBalloonChangeRequest = (VMMDevGetMemBalloonChangeRequest*)requestHeader;
+                /* just pass on the information */
+                Log(("VMMDev: returning memory balloon size =%d\n", pData->u32MemoryBalloonSize));
+                memBalloonChangeRequest->u32BalloonSize = pData->u32MemoryBalloonSize;
+
+                if (memBalloonChangeRequest->eventAck == VMMDEV_EVENT_BALLOON_CHANGE_REQUEST)
+                {
+                    /* Remember which mode the client has queried. */
+                    pData->u32LastMemoryBalloonSize = pData->u32MemoryBalloonSize;
+                }
+
+                requestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
+        case VMMDevReq_ReportGuestStats:
+        {
+            Log(("VMMDevReq_ReportGuestStats\n"));
+            if (requestHeader->size != sizeof(VMMDevReportGuestStats))
+            {
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevReportGuestStats *stats = (VMMDevReportGuestStats*)requestHeader;
+
+                /* Update the last known memory balloon size */
+                if (stats->guestStats.u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_BALLOON)
+                    pData->u32LastMemoryBalloonSize = stats->guestStats.u32PhysMemBalloon;
+
+                /* forward the call */
+                requestHeader->rc = pData->pDrv->pfnReportStatistics(pData->pDrv, &stats->guestStats);
+            }
+            break;
+        }
+
         case VMMDevReq_QueryCredentials:
         {
             if (requestHeader->size != sizeof(VMMDevCredentials))
@@ -1629,6 +1675,27 @@ static DECLCALLBACK(int) vmmdevRequestSeamlessChange(PPDMIVMMDEVPORT pInterface,
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) vmmdevSetMemoryBalloon(PPDMIVMMDEVPORT pInterface, uint32_t ulBalloonSize)
+{
+    VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+
+    /* Verify that the new resolution is different and that guest does not yet know about it. */
+    bool fSame = (pData->u32LastMemoryBalloonSize == ulBalloonSize);
+
+    Log(("vmmdevSetMemoryBalloon: old=%d. new=%d\n", pData->u32LastMemoryBalloonSize, ulBalloonSize));
+
+    if (!fSame)
+    {
+        /* we could validate the information here but hey, the guest can do that as well! */
+        pData->u32MemoryBalloonSize = ulBalloonSize;
+
+        /* IRQ so the guest knows what's going on */
+        VMMDevNotifyGuest (pData, VMMDEV_EVENT_BALLOON_CHANGE_REQUEST);
+    }
+
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(int) vmmdevSetCredentials(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
                                               const char *pszPassword, const char *pszDomain,
                                               uint32_t u32Flags)
@@ -1916,6 +1983,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->Port.pfnSetCredentials         = vmmdevSetCredentials;
     pData->Port.pfnVBVAChange             = vmmdevVBVAChange;
     pData->Port.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
+    pData->Port.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
 
     /* Shared folder LED */
     pData->SharedFolders.Led.u32Magic                 = PDMLED_MAGIC;
@@ -2044,6 +2112,9 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 
     /* disable seamless mode */
     pData->fLastSeamlessEnabled = false;
+
+    /* disabled memory ballooning */
+    pData->u32LastMemoryBalloonSize = 0;
 
     /* Clear the event variables.
      *

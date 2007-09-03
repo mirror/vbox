@@ -1401,12 +1401,25 @@ typedef struct PDMIVMMDEVPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnRequestSeamlessChange,(PPDMIVMMDEVPORT pInterface, bool fEnabled));
 
+    /**
+     * Issue a memory balloon change request.
+     *
+     * Note that there can only one request in the queue and that in case the guest does
+     * not process it, issuing another request will overwrite the previous.
+     *
+     * @returns VBox status code
+     * @param   ulBalloonSize   Balloon size in megabytes
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetMemoryBalloon,(PPDMIVMMDEVPORT pInterface, uint32_t ulBalloonSize));
+
 } PDMIVMMDEVPORT;
 
 /** Forward declaration of the video accelerator command memory. */
 struct _VBVAMEMORY;
 /** Forward declaration of the guest information structure. */
 struct VBoxGuestInfo;
+/** Forward declaration of the guest statistics structure */
+struct VBoxGuestStatistics;
 /** Pointer to video accelerator command memory. */
 typedef struct _VBVAMEMORY *PVBVAMEMORY;
 
@@ -1547,6 +1560,26 @@ typedef struct PDMIVMMDEVCONNECTOR
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRect, PRTRECT pRect));
+
+    /**
+     * Request the statistics interval
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pulInterval         Pointer to interval in seconds
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryStatisticsInterval,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pulInterval));
+
+    /**
+     * Report new guest statistics
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pGuestStats         Guest statistics
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReportStatistics,(PPDMIVMMDEVCONNECTOR pInterface, struct VBoxGuestStatistics *pGuestStats));
 
 } PDMIVMMDEVCONNECTOR;
 
