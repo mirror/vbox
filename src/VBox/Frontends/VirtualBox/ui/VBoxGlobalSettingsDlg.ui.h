@@ -25,6 +25,8 @@
 ** place of a destructor.
 *****************************************************************************/
 
+#include <iprt/param.h>
+#include <iprt/path.h>
 
 /* defined in VBoxGlobal.cpp */
 extern const char *gVBoxLangSubDir;
@@ -392,7 +394,11 @@ void VBoxGlobalSettingsDlg::init()
 
     lvLanguages->header()->hide();
     lvLanguages->setSorting (0);
-    QString nlsPath = qApp->applicationDirPath() + gVBoxLangSubDir;
+
+    char szNlsPath[RTPATH_MAX];
+    int rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+    Assert(RT_SUCCESS(rc));
+    QString nlsPath = QString(szNlsPath) + gVBoxLangSubDir;
     QDir nlsDir (nlsPath);
     QStringList files = nlsDir.entryList (QString ("%1*%2")
                                           .arg (gVBoxLangFileBase, gVBoxLangFileExt),
