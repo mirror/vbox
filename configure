@@ -278,8 +278,12 @@ check_gcc()
         log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
         fail really
       elif [ $cc_maj -eq 4 -a $cc_min -eq 0 ]; then
-        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with x>0"
-        fail really
+        if [ "$OS" = "darwin" ]; then
+          log_success "found version $cc_ver"
+        else
+          log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with x>0"
+          fail really
+        fi
       elif [ $cc_maj -gt 3 ]; then
         log_success "found version $cc_ver"
       elif [ $cc_maj -lt 3 -o $cc_min -lt 2 ]; then
