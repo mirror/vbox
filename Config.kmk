@@ -267,10 +267,6 @@ ifeq ($(BUILD_TARGET),darwin)
  VBOX_WITH_INTERNAL_NETWORKING=
  # Don't bother with SDL ttf for now.
  VBOX_WITH_SECURELABEL=
- ifdef VBOX_OSE
-  # Qt/Mac v3.3.x requires patching to work for us.
-  VBOX_WITH_QTGUI=
- endif
  # Later:
  VBOX_WITH_VRDP_AUTHMOD=
  VBOX_WITH_VRDP_RDESKTOP=
@@ -360,6 +356,12 @@ ifdef VBOX_OSE
  VBOX_WITH_DOCS=
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_INTEL_PXE=
+ ifeq ($(BUILD_TARGET),darwin)
+  # Qt/Mac v3.3.x requires patching to work for us.
+  VBOX_WITH_QTGUI=
+  # The installer is not public
+  VBOX_WITH_INSTALLER=
+ endif
 endif
 
 #
