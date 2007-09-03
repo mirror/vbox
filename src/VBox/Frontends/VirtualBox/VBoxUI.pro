@@ -251,6 +251,7 @@ IMAGES	= images/tpixel.png \
 	images/vdm_remove_disabled_16px.png \
 	images/vdm_remove_22px.png \
 	images/vdm_remove_disabled_22px.png \
+	images/meditation_32px.png \
 	images/welcome.png \
 	images/about.png \
 	images/about_tile.png \

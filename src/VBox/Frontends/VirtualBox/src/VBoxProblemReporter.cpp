@@ -323,7 +323,7 @@ int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg
             break;
         case GuruMeditation:
             title = "VirtualBox - Guru Meditation"; /* don't translate this */
-            icon = QIMessageBox::Critical;
+            icon = QIMessageBox::GuruMeditation;
             break;
     }
 

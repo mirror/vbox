@@ -68,7 +68,10 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     layout->addWidget (main);
 
     mIconLabel = new QLabel (main);
-    mIconLabel->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) aIcon));
+	if (aIcon < GuruMeditation)
+        mIconLabel->setPixmap (QMessageBox::standardIcon ((QMessageBox::Icon) aIcon));
+    else if (aIcon == GuruMeditation)
+        mIconLabel->setPixmap (QPixmap::fromMimeSource ("meditation_32px.png"));
     mIconLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
     mIconLabel->setAlignment (AlignHCenter | AlignTop);
 

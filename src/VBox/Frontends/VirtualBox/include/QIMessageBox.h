@@ -43,7 +43,8 @@ public:
         Information = QMessageBox::Information,
         Warning = QMessageBox::Warning,
         Critical = QMessageBox::Critical,
-        Question = QMessageBox::Question
+        Question = QMessageBox::Question,
+        GuruMeditation,
     };
 
     enum
