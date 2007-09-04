@@ -66,6 +66,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 
 
 /*******************************************************************************
