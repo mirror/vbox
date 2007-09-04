@@ -1144,6 +1144,14 @@ typedef struct _VBoxGuestFilterMaskInfo
 # define IOCTL_VBOXGUEST_CTL_FILTER_MASK IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2051, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof (VBoxGuestFilterMaskInfo))
 #endif 
 
+/** IOCTL to VBoxGuest to check memory ballooning */
+#ifdef VBOXGUEST_IOCTL_CODE
+# define VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK     VBOXGUEST_IOCTL_CODE(4, 100)
+# define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON          VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK
+#else
+# define IOCTL_VBOXGUEST_CTL_CHECK_BALLOON          IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2052, METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
+#endif 
+
 #ifdef VBOX_HGCM
 /* These structures are shared between the driver and other binaries,
  * therefore packing must be defined explicitely.
