@@ -981,6 +981,8 @@ typedef struct
 #define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST   BIT(5)
 /** Memory balloon size changed */
 #define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST         BIT(6)
+/** VRDP status changed. */
+#define VMMDEV_EVENT_VRDP                           BIT(7)
 
 
 /** @} */
