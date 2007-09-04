@@ -767,6 +767,10 @@ static int cfgmR3CreateDefault(PVM pVM)
     UPDATERC();
     rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "");
     UPDATERC();
+    RTUUID Uuid;
+    RTUuidClear(&Uuid);
+    rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));                   
+    UPDATE_RC();
     /* Bios logo. */
     rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               1);
     UPDATERC();
