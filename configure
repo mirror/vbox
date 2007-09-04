@@ -217,7 +217,7 @@ check_environment()
   test_header environment
   BUILD_CPU=`uname -m`
   case "$BUILD_CPU" in
-    i[3456789]86|x86)
+    i[3456789]86|x86|i86pc)
       BUILD_MACHINE='x86'
       LIB='lib'
       ;;
@@ -242,6 +242,9 @@ check_environment()
     darwin)
       ;;
     freebsd)
+      ;;
+    SunOS)
+      OS='solaris'
       ;;
     *)
       log_failure "Cannot determine OS"
@@ -1311,6 +1314,8 @@ echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
 
 # append some extra paths
 PATH="$PATH:/opt/gnome/bin"
+# solaris
+PATH="$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
 
 # the tools
 check_gcc
