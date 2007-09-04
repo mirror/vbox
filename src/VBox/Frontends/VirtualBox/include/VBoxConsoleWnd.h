@@ -68,6 +68,8 @@ public:
 
     bool isTrueSeamless() const { return mIsSeamless; }
 
+    bool isManualResize() const { return mManualResize; }
+
     void setMouseIntegrationLocked (bool aDisabled);
 
     void popupMainMenu (bool aCenter);
@@ -84,6 +86,7 @@ protected:
 
     // events
     bool event (QEvent *e);
+    void resizeEvent (QResizeEvent *e);
     void closeEvent (QCloseEvent *e);
 #if defined(Q_WS_X11)
     bool x11Event (XEvent *event);
@@ -178,6 +181,9 @@ private slots:
 
     void dbgShowStatistics();
     void dbgShowCommandLine();
+
+    void onEnterFullscreen();
+    void onExitFullscreen();
 
 private:
 
@@ -285,12 +291,17 @@ private:
     QPoint normal_pos;
     QSize normal_size;
     QSize prev_min_size;
+    QSize mPrevSize;
+    QSize mAwaitingSize;
 
 #ifdef Q_WS_WIN32
     QRegion mPrevRegion;
 #endif
 
     // variables for dealing with true fullscreen
+    bool mDoMaximize : 1;
+    bool mManualResize : 1;
+    bool mAllowOneResize : 1;
     bool mIsFullscreen : 1;
     bool mIsSeamless : 1;
     bool mIsSeamlessSupported : 1;

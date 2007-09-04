@@ -106,6 +106,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     , console (0)
     , machine_state (CEnums::InvalidMachineState)
     , no_auto_close (false)
+    , mDoMaximize (false)
+    , mManualResize (false)
+    , mAllowOneResize (false)
     , mIsFullscreen (false)
     , mIsSeamless (false)
     , mIsSeamlessSupported (false)
@@ -974,6 +977,36 @@ void VBoxConsoleWnd::refreshView()
     }
 }
 
+/**
+ *  This slot is called just after entering the fullscreen/seamless mode,
+ *  when the console was resized to required size.
+ */
+void VBoxConsoleWnd::onEnterFullscreen()
+{
+    disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
+
+    vmSeamlessAction->setEnabled (mIsSeamless);
+    vmFullscreenAction->setEnabled (mIsFullscreen);
+
+    mAwaitingSize = mPrevSize;
+}
+
+/**
+ *  This slot is called just after leaving the fullscreen/seamless mode,
+ *  when the console was resized to previous size.
+ */
+void VBoxConsoleWnd::onExitFullscreen()
+{
+    disconnect (console, SIGNAL (resizeHintDone()), 0, 0);
+
+    vmSeamlessAction->setEnabled (mIsSeamlessSupported);
+    vmFullscreenAction->setEnabled (true);
+
+    mManualResize = false;
+    console->setIgnoreMainwndResize (false);
+    console->normalizeGeometry (true /* adjustPosition */);
+}
+
 void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
 {
     vmDisableMouseIntegrAction->setOn (aDisabled);
@@ -1023,7 +1056,14 @@ bool VBoxConsoleWnd::event (QEvent *e)
         case QEvent::Resize:
         {
             QResizeEvent *re = (QResizeEvent *) e;
-            if (!mIsFullscreen && !mIsSeamless &&
+
+            /* do not process event if the resize events are blocked
+             * and the proposed size is not the awaited one */
+            if (mManualResize && !mAllowOneResize &&
+                re->size() != mAwaitingSize)
+                return false;
+
+            if (!mManualResize  &&
                 (windowState() & (WindowMaximized | WindowMinimized |
                                   WindowFullScreen)) == 0)
             {
@@ -1032,11 +1072,14 @@ bool VBoxConsoleWnd::event (QEvent *e)
                 dbgAdjustRelativePos();
 #endif
             }
+            if (mManualResize && mAllowOneResize)
+                mAllowOneResize = false;
+
             break;
         }
         case QEvent::Move:
         {
-            if (!mIsFullscreen && !mIsSeamless &&
+            if (!mManualResize  &&
                 (windowState() & (WindowMaximized | WindowMinimized |
                                   WindowFullScreen)) == 0)
             {
@@ -1053,11 +1096,34 @@ bool VBoxConsoleWnd::event (QEvent *e)
             statusBar()->message (ev->mTip);
             break;
         }
+        case QEvent::WindowStateChange:
+        {
+            if (mDoMaximize)
+            {
+                /* this workaround is necessary due to KDE seems to be
+                 * thinks the seamless mode is maximized state */
+                mDoMaximize = false;
+                setWindowState (windowState() | WindowMaximized);
+            }
+        }
         default:
             break;
     }
 
     return QMainWindow::event (e);
+}
+
+void VBoxConsoleWnd::resizeEvent (QResizeEvent *aEvent)
+{
+    if (aEvent->size() == mAwaitingSize)
+    {
+        /* this resize was done to awaited size, so
+         * let the guest to be resized to this size too */
+        mAwaitingSize = QSize();
+        console->toggleFSMode (centralWidget()->size());
+    }
+
+    QMainWindow::resizeEvent (aEvent);
 }
 
 void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
@@ -1817,23 +1883,25 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 
 void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
-    if (aSeamless &&
-        (aOn && !mIsSeamlessSupported ||
-         aOn && mIsFullscreen ||
-         !aOn && !mIsSeamless))
-        return;
-
-    /* Check if the Guest Video RAM enough for the seamless mode */
-    QRect screen = QApplication::desktop()->screenGeometry (this);
-    ULONG vRamSize = csession.GetMachine().GetVRAMSize();
-    if (aSeamless && aOn &&
-        (ULONG64) vRamSize * _1M * 8 <
-        (ULONG64) screen.width() * screen.height() * QColor::numBitPlanes())
+    if (aSeamless)
     {
-        vboxProblem().cannotEnterSeamlessMode (screen.width(),
-            screen.height(), QColor::numBitPlanes());
-        vmSeamlessAction->setOn (false);
-        return;
+        /* Check if it is necessary to enter/leave seamless mode */
+        if (aOn && !mIsSeamlessSupported || aOn && mIsFullscreen ||
+            !aOn && !mIsSeamless)
+            return;
+
+        /* Check if the Guest Video RAM enough for the seamless mode */
+        QRect screen = QApplication::desktop()->screenGeometry (this);
+        ULONG vRamSize = csession.GetMachine().GetVRAMSize();
+        if (aOn &&
+            (ULONG64) vRamSize * _1M * 8 <
+            (ULONG64) screen.width() * screen.height() * QColor::numBitPlanes())
+        {
+            vboxProblem().cannotEnterSeamlessMode (screen.width(),
+                screen.height(), QColor::numBitPlanes());
+            vmSeamlessAction->setOn (false);
+            return;
+        }
     }
 
     AssertReturnVoid (console);
@@ -1873,7 +1941,8 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         vmAutoresizeGuestAction->setEnabled (!aOn);
         vmDisableMouseIntegrAction->setEnabled (!aOn);
 
-        console->console().GetDisplay().SetSeamlessMode(aOn);
+        console->console().GetDisplay().SetSeamlessMode (aOn);
+        mIsSeamless = aOn;
     }
     else
     {
@@ -1886,8 +1955,16 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
     if (aOn)
     {
-        if (aSeamless)
-            mIsSeamless = true;
+        /* Block any disallowed resize events: */
+        mManualResize = true;
+        console->setIgnoreMainwndResize (true);
+
+        /* temporarily disable the mode-related action to make sure
+         * user can not leave the mode before he enter it */
+        aSeamless ? vmSeamlessAction->setEnabled (false) :
+                    vmFullscreenAction->setEnabled (false);
+
+        connect (console, SIGNAL (resizeHintDone()), this, SLOT (onEnterFullscreen()));
 
         /* Save the previous scroll-view minimum size before entering
          * fullscreen/seamless state to restore this minimum size before
@@ -1899,6 +1976,9 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         /* memorize the maximized state */
         was_max = isMaximized();
 
+        /* memorize previous size before entering the f/s mode */
+        mPrevSize = size();
+
         /* set the correct flags to disable unnecessary frame controls */
         int flags = WType_TopLevel | WStyle_Customize | WStyle_NoBorder;
         if (!aSeamless)
@@ -1908,6 +1988,9 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         QRect scrGeo = aSeamless ?
             QApplication::desktop()->availableGeometry (this) :
             QApplication::desktop()->screenGeometry (this);
+
+        /* let the required resize event pass */
+        mAwaitingSize = scrGeo.size();
 
 #ifdef Q_WS_WIN32
         mPrevRegion = scrGeo;
@@ -1948,8 +2031,8 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* go fullscreen */
         resize (scrGeo.size());
-        setMinimumSize (size());
-        setMaximumSize (size());
+        setMinimumSize (scrGeo.size());
+        setMaximumSize (scrGeo.size());
 
 #ifdef Q_WS_MAC
         if (!aSeamless)
@@ -1964,6 +2047,13 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     }
     else
     {
+        /* temporarily disable the mode-related action to make sure
+         * user can not enter the mode before he leave it */
+        aSeamless ? vmSeamlessAction->setEnabled (false) :
+                    vmFullscreenAction->setEnabled (false);
+
+        connect (console, SIGNAL (resizeHintDone()), this, SLOT (onExitFullscreen()));
+
         /* Restore the previous scroll-view minimum size before the exiting
          * fullscreen. Required for correct scroll-view and guest display
          * update in SDL mode. */
@@ -1980,7 +2070,7 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         hide();
 
         /* reparent to restore normal flags */
-        reparent (parentWidget(), normal_wflags, QPoint (0, 0), false);
+        reparent (parentWidget(), normal_wflags, normal_pos, false);
         /* reattaching application icon after window reparenting */
         setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
 
@@ -2001,36 +2091,22 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         setMinimumSize (QSize(0, 0));
         setMaximumSize (QSize (QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
 
-        if (aSeamless)
-        {
-            if (was_max)
-            {
-                /* restore the maximized state */
-                setWindowState (windowState() | WindowMaximized);
-            }
-            else
-            {
-                move (normal_pos);
-                resize (normal_size);
-                QTimer::singleShot (200, console, SLOT (exitFullScreen()));
-            }
-        }
-        else
-        {
-            move (normal_pos);
-            resize (normal_size);
-            /* restore the maximized state */
-            if (was_max)
-                setWindowState (windowState() | WindowMaximized);
-            else
-                QTimer::singleShot (0, console, SLOT (exitFullScreen()));
-        }
+        /* restore previous position and size */
+        bool is_max = isMaximized();
+        move (normal_pos);
+        if (was_max)
+            mAllowOneResize = true;
+        resize (normal_size);
+        qApp->processEvents();
 
-        /* let our toplevel widget calculate its sizeHint properly */
-        QApplication::sendPostedEvents (0, QEvent::LayoutHint);
-
-        if (aSeamless)
-            mIsSeamless = false;
+        if (was_max)
+        {
+            if (aSeamless && is_max)
+                mDoMaximize = true;
+            else
+                setWindowState (windowState() | WindowMaximized);
+            qApp->processEvents();
+        }
     }
 
     /* VBoxConsoleView loses focus for some reason after reparenting,
