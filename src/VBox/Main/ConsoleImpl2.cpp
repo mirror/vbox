@@ -93,7 +93,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     HRESULT         hrc;
     char           *psz = NULL;
     BSTR            str = NULL;
-    ULONG           cRamMBs;
     unsigned        i;
 
 #define STR_CONV()  do { rc = RTStrUcs2ToUtf8(&psz, str); RC_CHECK(); } while (0)
@@ -101,8 +100,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); STR_FREE(); return rc; } } while (0)
 #define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
 
-    /* Get necessary objects */
-
+    /*
+     * Get necessary objects and frequently used parameters.
+     */
     ComPtr<IVirtualBox> virtualBox;
     hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());                     H();
 
@@ -118,6 +118,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     Guid uuid;
     hrc = pMachine->COMGETTER(Id)(uuid.asOutParam());                               H();
     PCRTUUID pUuid = uuid.raw();
+
+    ULONG cRamMBs;
+    hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
 
 
     /*
@@ -135,7 +138,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertString(pRoot,  "Name",                 psz);                   RC_CHECK();
     STR_FREE();
     rc = CFGMR3InsertBytes(pRoot,   "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
-    hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cRamMBs * _1M);         RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
