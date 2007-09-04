@@ -19,6 +19,7 @@
 #include "VBoxClipboard.h"
 #include "VBoxDisplay.h"
 #include "VBoxRestore.h"
+#include "VBoxGuest.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -95,6 +96,14 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxSeamlessThread,
         VBoxSeamlessDestroy
     },
+#ifdef VBOX_WITH_MANAGEMENT
+    {
+        "Guest Management",
+        VBoxGuestInit,
+        VBoxGuestThread,
+        VBoxGuestDestroy,
+    },
+#endif
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
     {
         "Restore",
