@@ -20,7 +20,7 @@
  *
  *
  *
- * @section         sec_pg_modes            Paging Modes
+ * @section         sec_pgm_modes           Paging Modes
  *
  * There are three memory contexts: Host Context (HC), Guest Context (GC)
  * and intermediate context. When talking about paging HC can also be refered to
@@ -48,7 +48,7 @@
  *
  *
  *
- * @section         sec_pg_shw              The Shadow Memory Context
+ * @section         sec_pgm_shw             The Shadow Memory Context
  *
  *
  *  [..]
@@ -62,7 +62,7 @@
  *
  *
  *
- * @section         sec_pg_int              The Intermediate Memory Context
+ * @section         sec_pgm_int             The Intermediate Memory Context
  *
  * The world switch goes thru an intermediate memory context which purpose it is
  * to provide different mappings of the switcher code. All guest mappings are also
@@ -78,7 +78,7 @@
  * 4GB (this includes page tables for guest context mappings).
  *
  *
- * @subsection      subsec_pg_int_gc        Guest Context Mappings
+ * @subsection      subsec_pgm_int_gc       Guest Context Mappings
  *
  * During assignment and relocation of a guest context mapping the intermediate
  * memory context is used to verify the new location.
@@ -89,9 +89,9 @@
  *
  *
  *
- * @section         sec_pg_misc             Misc
+ * @section         sec_pgm_misc            Misc
  *
- * @subsection      subsec_pg_misc_diff     Differences Between Legacy PAE and Long Mode PAE
+ * @subsection      subsec_pgm_misc_diff    Differences Between Legacy PAE and Long Mode PAE
  *
  * The differences between legacy PAE and long mode PAE are:
  *      -# PDPE bits 1, 2, 5 and 6 are defined differently. In leagcy mode they are
@@ -115,7 +115,15 @@
  *      - Moving or mirroring a VM onto a different physical machine.
  *
  * 
- * @subsection subsec_pg_pgmPhys_AllocPage      Allocating a page.
+ * @subsection subsec_pgmPhys_Definitions       Definitions
+ * 
+ * Allocation chunk - A RTR0MemObjAllocPhysNC object and the tracking 
+ * machinery assoicated with it. 
+ * 
+ * 
+ * 
+ * 
+ * @subsection subsec_pgmPhys_AllocPage         Allocating a page.
  * 
  * Initially we map *all* guest memory to the (per VM) zero page, which 
  * means that none of the read functions will cause pages to be allocated.
@@ -223,7 +231,7 @@
  * the same as when telling it to share/zero a page.
  *
  * 
- * @subsection subsec_pgmPhys_Serializing       Tracking Structures And Their Cost
+ * @subsection subsec_pgmPhys_Tracking      Tracking Structures And Their Cost
  * 
  * There's a difficult balance between keeping the per-page tracking structures 
  * (global and guest page) easy to use and keeping them from eating too much 
@@ -232,7 +240,148 @@
  * tracking structures will be attemted designed such that we can deal with up
  * to 32GB of memory on a 32-bit system and essentially unlimited on 64-bit ones.
  * 
- * ...
+ * 
+ * @subsubsection subsubsec_pgmPhys_Tracking_Kernel     Kernel Space
+ * 
+ * The allocation chunks are of fixed sized, the size defined at build time. 
+ * Each chunk is given an unquie ID. Each page can be addressed by
+ * (idChunk << CHUNK_SHIFT) | iPage, where CHUNK_SHIFT is log2(cbChunk / PAGE_SIZE). 
+ * Meaning that each page have an unique ID, a sort of virtual page frame number
+ * if you like, so that a page can be referenced to in an efficient manner. 
+ * No surprise, the allocation chunks are organized in an AVL tree with 
+ * their IDs being the key.
+ * 
+ * The physical address of each page in an allocation chunk is maintained by 
+ * the RTR0MEMOBJ and obtained using RTR0MemObjGetPagePhysAddr. There is no 
+ * need to duplicate this information unnecessarily. 
+ * 
+ * We wish to maintain a reference to the VM owning the page. For the purposes
+ * of defragmenting allocation chunks, it would make sense to keep track of 
+ * which page within the VM that it's being used as, although this will 
+ * obviously make the handy pages a wee more work to realize. For shared 
+ * pages we need a reference count so we know when to free the page. But tracking
+ * which VMs using shared pages will be too complicated and expensive, so we'll
+ * just forget about it. And finally, free pages needs to be chained somehow,
+ * so we can do allocations in an efficient manner.
+ * 
+ * Putting shared pages in dedicated allocation chunks will simplify matters
+ * quite a bit. It will more or less eliminate the problem with defragmenting
+ * shared pages, but arranging it so that we will never encounter shared pages
+ * and normal pages in the same allocation chunks. And it will I think permit
+ * us to get away with a 32-bit field for each page.
+ * 
+ * We'll chain the free pages using this field to indicate the index of the 
+ * next page. (I'm undecided whether this chain should be on a per-chunk 
+ * level or not, it depends a bit on whether it's desirable to keep chunks
+ * with free pages in a priority list by free page count (ascending) in order 
+ * to maximize the number of full chunks.) In any case, there'll be two free 
+ * lists, one for shared pages and one for normal pages.
+ * 
+ * Shared pages that have been allocated will use the 32-bit field for keeping
+ * the reference counter.
+ * 
+ * Normal pages that have been allocated will use the first 24 bits for guest
+ * page frame number (i.e. shift by PAGE_SHIFT and you'll have the physical 
+ * address, all 24-bit set means unknown or out of range). The top 8 bits will
+ * be used as VM handle index - we assign each VM a unique handle [0..255] for
+ * this purpose. This implies a max of 256 VMs and 64GB of base RAM per VM. 
+ * Neither limits should cause any trouble for the time being.
+ * 
+ * The per page cost in kernel space is 32-bit plus whatever RTR0MEMOBJ 
+ * entails. In addition there is the chunk cost of approximately
+ * (sizeof(RT0MEMOBJ) + sizof(CHUNK)) / 2^CHUNK_SHIFT bytes per page.
+ * 
+ * On Windows the per page RTR0MEMOBJ cost is 32-bit on 32-bit windows 
+ * and 64-bit on 64-bit windows (a PFN_NUMBER in the MDL). So, 64-bit per page.
+ * The cost on Linux is identical, but here it's because of sizeof(struct page *).
+ * 
+ *
+ * @subsubsection subsubsec_pgmPhys_Tracking_PerVM      Per-VM
+ * 
+ * Fixed info is the physical address of the page (HCPhys) and the page id 
+ * (described above). Theoretically we'll need 48(-12) bits for the HCPhys part.
+ * Today we've restricting ourselves to 40(-12) bits because this is the current
+ * restrictions of all AMD64 implementations (I think Barcelona will up this 
+ * to 48(-12) bits, not that it really matters) and I needed the bits for 
+ * tracking mappings of a page. 48-12 = 36. That leaves 28 bits, which means a
+ * decent range for the page id: 2^(28+12) = 1024TB.
+ * 
+ * In additions to these, we'll have to keep maintaining the page flags as we 
+ * currently do. Although it wouldn't harm to optimize these quite a bit, like 
+ * for instance the ROM shouldn't depend on having a write handler installed
+ * in order for it to become read-only. A RO/RW bit should be considered so
+ * that the page syncing code doesn't have to mess about checking multiple 
+ * flag combinations (ROM || RW handler || write monitored) in order to
+ * figure out how to setup a shadow PTE. But this of course, is second 
+ * priority at present. Current this requires 12 bits, but could probably
+ * be optimized to ~8.
+ * 
+ * Then there's the 24 bits used to track which shadow page tables are 
+ * currently mapping a page for the purpose of speeding up physical 
+ * access handlers, and thereby the page pool cache. More bit for this 
+ * purpose wouldn't hurt IIRC.
+ * 
+ * Then there is a new bit in which we need to record what kind of page
+ * this is, shared, zero, normal or write-monitored-normal. This'll 
+ * require 2 bits. One bit might be needed for indicating whether a 
+ * write monitored page has been written to. And yet another one or
+ * two for tracking migration status. 3-4 bits total then.
+ * 
+ * Whatever is left will can be used to record the sharabilitiy of a
+ * page. The page checksum will not be stored in the per-VM table as
+ * the idle thread will not be permitted to do modifications to it. 
+ * It will instead have to keep its own working set of potentially
+ * shareable pages and their check sums and stuff.
+ * 
+ * For the present we'll keep the current packing of the 
+ * PGMRAMRANGE::aHCPhys to keep the changes simple, only of course,
+ * we'll have to change it to a struct with a total of 128-bits at 
+ * our disposal.
+ * 
+ * The initial layout will be like this:
+ * @verbatim
+    RTHCPHYS HCPhys;            The current stuff.       
+        63:40                   Current shadow PT tracking stuff.
+        39:12                   The physical page frame number.
+        11:0                    The current flags.
+    uint32_t u28PageId : 28;    The page id.
+    uint32_t u2State : 2;       The page state { zero, shared, normal, write monitored }.
+    uint32_t fWrittenTo : 1;    Whether a write monitored page was written to.
+    uint32_t u1Reserved : 1;    Reserved for later.
+    uint32_t u32Reserved;       Reserved for later, mostly sharing stats.
+ @endverbatim
+ * 
+ * The final layout will be something like this:
+ * @verbatim
+    RTHCPHYS HCPhys;            The current stuff.       
+        63:48                   High page id (12+).
+        47:12                   The physical page frame number.
+        11:0                    Low page id.
+    uint32_t fReadOnly : 1;     Whether it's readonly page (rom or monitored in some way).
+    uint32_t u3Type : 3;        The page type {RESERVED, MMIO, MMIO2, ROM, shadowed ROM, RAM}.
+    uint32_t u2PhysMon : 2;     Physical access handler type {none, read, write, all}.
+    uint32_t u2VirtMon : 2;     Virtual access handler type {none, read, write, all}..
+    uint32_t u2State : 2;       The page state { zero, shared, normal, write monitored }.
+    uint32_t fWrittenTo : 1;    Whether a write monitored page was written to.
+    uint32_t u20Reserved : 20;  Reserved for later, mostly sharing stats.
+    uint32_t u32Reserved : ;       Reserved for later, mostly sharing stats.
+    uint32_t u32Tracking;       The shadow PT tracking stuff, roughly.
+ @endverbatim
+ * 
+ * Cost wise, this means we'll double the cost for guest memory. There isn't anyway 
+ * around that I'm afraid. It means that the cost of dealing out 32GB of memory
+ * to one or more VMs is: (32GB >> PAGE_SHIFT) * 16 bytes, or 128MBs. Or another 
+ * example, the VM heap cost when assigning 1GB to a VM will be: 4MB.
+ * 
+ * A couple of cost examples for the total cost per-VM + kernel. 
+ * 32-bit Windows and 32-bit linux:
+ *      1GB guest ram, 256K pages:  4MB +  2MB(+) =   6MB
+ *      4GB guest ram, 1M pages:   16MB +  8MB(+) =  24MB
+ *     32GB guest ram, 8M pages:  128MB + 64MB(+) = 192MB
+ * 64-bit Windows and 64-bit linux:
+ *      1GB guest ram, 256K pages:  4MB +  3MB(+) =   7MB
+ *      4GB guest ram, 1M pages:   16MB + 12MB(+) =  28MB
+ *     32GB guest ram, 8M pages:  128MB + 96MB(+) = 224MB
  * 
  * 
  * @subsection subsec_pgmPhys_Serializing       Serializing Access
@@ -279,6 +428,12 @@
  *
  * The 3rd step is identical to what we're already doing when updating a 
  * physical handler, see pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs.
+ * 
+ * 
+ * @subsection subsec_pgmPhys_Changes           Changes
+ * 
+ * Breakdown of the changes involved...
+ * 
  * 
  */
 
