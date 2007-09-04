@@ -115,6 +115,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ComPtr<IBIOSSettings> biosSettings;
     hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());             H();
 
+    Guid uuid;
+    hrc = pMachine->COMGETTER(Id)(uuid.asOutParam());                               H();
+    PCRTUUID pUuid = uuid.raw();
+
 
     /*
      * Get root node first.
@@ -130,6 +134,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     STR_CONV();
     rc = CFGMR3InsertString(pRoot,  "Name",                 psz);                   RC_CHECK();
     STR_FREE();
+    rc = CFGMR3InsertBytes(pRoot,   "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cRamMBs * _1M);         RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
@@ -214,9 +219,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertString(pCfg,   "HardDiskDevice",       "piix3ide");            RC_CHECK();
     rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "i82078");              RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",               fIOAPIC);               RC_CHECK();
-    Guid uuid;
-    hrc = pMachine->COMGETTER(Id)(uuid.asOutParam());                               H();
-    rc = CFGMR3InsertBytes(pCfg,    "UUID", (void *)uuid.raw(), sizeof(RTUUID));    RC_CHECK();
+    rc = CFGMR3InsertBytes(pCfg,    "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
 
     DeviceType_T bootDevice;
     if (SchemaDefs::MaxBootPosition > 9)
