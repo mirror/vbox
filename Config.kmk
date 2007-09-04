@@ -362,6 +362,10 @@ ifdef VBOX_OSE
   # The installer is not public
   VBOX_WITH_INSTALLER=
  endif
+ ifeq ($(BUILD_TARGET),win)
+  # The installer is not public
+  VBOX_WITH_INSTALLER=
+ endif
 endif
 
 #
