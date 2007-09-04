@@ -173,16 +173,22 @@ STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 
 STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
 {
-    /** @todo fail if larger than physical memory */
-
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReaderLock alock (this);
 
-    mMemoryBalloonSize = aMemoryBalloonSize;
+    HRESULT ret = mParent->machine()->COMSETTER(MemoryBalloonSize)(aMemoryBalloonSize);
+    if (ret == S_OK)
+    {
+        mMemoryBalloonSize = aMemoryBalloonSize;
+        /* forward the information to the VMM device */
+        VMMDev *vmmDev = mParent->getVMMDev();
+        if (vmmDev)
+            vmmDev->getVMMDevPort()->pfnSetMemoryBalloon(vmmDev->getVMMDevPort(), aMemoryBalloonSize);
+    }
 
-    return S_OK;
+    return ret;
 }
 
 STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)

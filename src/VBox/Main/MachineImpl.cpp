@@ -40,6 +40,7 @@
 #include "SharedFolderImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"
+#include "GuestImpl.h"
 
 #include "USBProxyService.h"
 
@@ -163,6 +164,7 @@ Machine::HWData::HWData()
 {
     /* default values for a newly created machine */
     mMemorySize = 128;
+    mMemoryBalloonSize = 0;
     mVRAMSize = 8;
     mMonitorCount = 1;
     mHWVirtExEnabled = TriStateBool_False;
@@ -187,6 +189,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         return true;
 
     if (mMemorySize != that.mMemorySize ||
+        mMemoryBalloonSize != that.mMemoryBalloonSize ||
         mVRAMSize != that.mVRAMSize ||
         mMonitorCount != that.mMonitorCount ||
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
@@ -976,6 +979,45 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize) (ULONG memorySize)
 
     return S_OK;
 }
+
+
+STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize) (ULONG *memoryBalloonSize)
+{
+    if (!memoryBalloonSize)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *memoryBalloonSize = mHWData->mMemoryBalloonSize;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize) (ULONG memoryBalloonSize)
+{
+    /* check limits */
+    if (memoryBalloonSize >= VMMDEV_MAX_MEMORY_BALLOON(mHWData->mMemorySize))
+        return setError (E_INVALIDARG,
+            tr ("Invalid memory balloon size: %lu MB (must be in range [%lu, %lu] MB)"),
+                memoryBalloonSize, 0, VMMDEV_MAX_MEMORY_BALLOON(mHWData->mMemorySize));
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    mHWData.backup();
+    mHWData->mMemoryBalloonSize = memoryBalloonSize;
+
+    return S_OK;
+}
+
 
 STDMETHODIMP Machine::COMGETTER(MonitorCount) (ULONG *monitorCount)
 {
@@ -3720,6 +3762,20 @@ HRESULT Machine::loadSettings (bool aRegistered)
                 break;
         }
 
+        /* Guest node (optional) */
+        {
+            CFGNODE GuestNode = 0;
+            CFGLDRGetChildNode (machineNode, "Guest", 0, &GuestNode);
+            if (GuestNode)
+            {
+                uint32_t memoryBalloonSize = 0;
+                CFGLDRQueryUInt32 (GuestNode, "MemoryBalloonSize", &memoryBalloonSize);
+                mHWData->mMemoryBalloonSize = memoryBalloonSize;
+
+                CFGLDRReleaseNode (GuestNode);
+            }
+        }
+
         /*
          *  NOTE: the assignment below must be the last thing to do,
          *  otherwise it will be not possible to change the settings
@@ -5385,6 +5441,23 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
             CFGLDRReleaseNode (hdasNode);
             if (FAILED (rc))
                 break;
+        }
+
+        /* Guest node (optional) */
+        {
+            CFGNODE GuestNode = 0;
+            CFGLDRGetChildNode (machineNode, "Guest", 0, &GuestNode);
+            /* first, delete the entire node if exists */
+            if (GuestNode)
+                CFGLDRDeleteNode (GuestNode);
+            /* then recreate it */
+            GuestNode = 0;
+            CFGLDRCreateChildNode (machineNode, "Guest", &GuestNode);
+            if (GuestNode)
+            {
+                CFGLDRSetUInt32 (GuestNode, "MemoryBalloonSize", mHWData->mMemoryBalloonSize);
+                CFGLDRReleaseNode (GuestNode);
+            }
         }
 
         /* update all snapshots if requested */
