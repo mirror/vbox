@@ -420,7 +420,7 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         UPDATERC();
     RTUUID Uuid;
     RTUuidClear(&Uuid);
-    rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));               UPDATE_RC();
+    rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));               UPDATERC();
     /* Bios logo. */
     rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               0);
     UPDATERC();
