@@ -576,6 +576,21 @@ DECLCALLBACK(void) VMDisplay::displayLFBModeChangeCallback(PPDMIDISPLAYCONNECTOR
     pDrv->pDisplay->VideoAccelEnable (false, NULL);
 }
 
+DECLCALLBACK(void) VMDisplay::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize)
+{
+    NOREF(pInterface);
+    NOREF(pvVRAM);
+    NOREF(u32VRAMSize);
+}
+
+DECLCALLBACK(void) VMDisplay::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId)
+{
+    NOREF(pInterface);
+    NOREF(pvVRAM);
+    NOREF(uScreenId);
+}
+
+
 typedef struct _VBVADIRTYREGION
 {
     /* Copies of object's pointers used by vbvaRgn functions. */
@@ -1210,6 +1225,8 @@ DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     pData->Connector.pfnRefresh         = VMDisplay::displayRefreshCallback;
     pData->Connector.pfnReset           = VMDisplay::displayResetCallback;
     pData->Connector.pfnLFBModeChange   = VMDisplay::displayLFBModeChangeCallback;
+    pData->Connector.pfnProcessAdapterData = VMDisplay::displayProcessAdapterDataCallback;
+    pData->Connector.pfnProcessDisplayData = VMDisplay::displayProcessDisplayDataCallback;
 
     /*
      * Get the IDisplayPort interface of the above driver/device.
