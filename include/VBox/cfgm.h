@@ -452,7 +452,7 @@ CFGMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const c
  * @param   pvBytes         The value.
  * @param   cbBytes         The value size.
  */
-CFGMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, void *pvBytes, size_t cbBytes);
+CFGMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const void *pvBytes, size_t cbBytes);
 
 /**
  * Remove a value.
