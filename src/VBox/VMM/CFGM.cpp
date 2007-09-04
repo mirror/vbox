@@ -771,7 +771,7 @@ static int cfgmR3CreateDefault(PVM pVM)
     RTUUID Uuid;
     RTUuidClear(&Uuid);
     rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));                   
-    UPDATE_RC();
+    UPDATERC();
     /* Bios logo. */
     rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               1);
     UPDATERC();
