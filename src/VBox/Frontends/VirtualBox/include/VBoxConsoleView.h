@@ -90,6 +90,10 @@ public:
 
     void fixModifierState (LONG *codes, uint *count);
 
+    void toggleFSMode (const QSize &aFeatSize);
+
+    void setIgnoreMainwndResize (bool aYes) { mIgnoreMainwndResize = aYes; }
+
 signals:
 
     void keyboardStateChanged (int state);
@@ -100,6 +104,7 @@ signals:
     void networkStateChange();
     void usbStateChange();
     void sharedFoldersChanged();
+    void resizeHintDone();
 
 protected:
 
@@ -175,10 +180,7 @@ private:
 
 private slots:
 
-    void exitFullScreen();
-
-    void doResizeHint();
-    void normalizeGeo() { normalizeGeometry (true); }
+    void doResizeHint (const QSize &aSize = QSize());
 
 private:
 
@@ -221,6 +223,7 @@ private:
     long muCapsLockAdaptionCnt;
 
     QTimer *resize_hint_timer;
+    QTimer *mToggleFSModeTimer;
 
     VBoxDefs::RenderMode mode;
 

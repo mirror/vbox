@@ -649,6 +649,10 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     connect (resize_hint_timer, SIGNAL (timeout()),
              this, SLOT (doResizeHint()));
 
+    mToggleFSModeTimer = new QTimer (this);
+    connect (mToggleFSModeTimer, SIGNAL (timeout()),
+             this, SIGNAL (resizeHintDone()));
+
     /* setup rendering */
 
     CDisplay display = cconsole.GetDisplay();
@@ -833,6 +837,11 @@ void VBoxConsoleView::detach()
  */
 void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
 {
+    /* Make no normalizeGeometry in case we are in manual resize
+     * mode or main window is maximized */
+    if (mainwnd->isManualResize() || mainwnd->isMaximized())
+        return;
+
     QWidget *tlw = topLevelWidget();
 
     /* calculate client window offsets */
@@ -994,6 +1003,9 @@ bool VBoxConsoleView::event (QEvent *e)
                 LogFlow (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
                           re->width(), re->height(), re->bitsPerPixel()));
 
+                if (mToggleFSModeTimer->isActive())
+                    mToggleFSModeTimer->stop();
+
                 /* do frame buffer dependent resize */
                 mFrameBuf->resizeEvent (re);
                 viewport()->unsetCursor();
@@ -1018,17 +1030,15 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* let our toplevel widget calculate its sizeHint properly */
                 QApplication::sendPostedEvents (0, QEvent::LayoutHint);
 
-                /* automatically normalize geometry unless maximized or
-                 * full screen */
-                if (!mainwnd->isTrueFullscreen() &&
-                    !mainwnd->isTrueSeamless() &&
-                    !topLevelWidget()->isMaximized())
-                    normalizeGeometry (true /* adjustPosition */);
+                normalizeGeometry (true /* adjustPosition */);
 
                 /* report to the VM thread that we finished resizing */
                 cconsole.GetDisplay().ResizeCompleted (0);
 
                 mIgnoreMainwndResize = oldIgnoreMainwndResize;
+
+                /* emit a signal about guest was resized */
+                emit resizeHintDone();
 
                 return true;
             }
@@ -1386,35 +1396,10 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 #endif /* defined (Q_WS_MAC) */
             case QEvent::Resize:
             {
-                if (!mIgnoreMainwndResize)
-                {
-                    if (mIsAdditionsActive && mAutoresizeGuest)
-                        resize_hint_timer->start (300, TRUE);
-                    /// @todo disabled for the time being since seems to be not
-                    //  necessary anymore
-#if 0
-                    /* During window maximization WindowStateChange event is
-                     * processed before Resize event, so the mIgnoreMainwndResize
-                     * variable should be set to true here in case of mainwnd is
-                     * maximized or in fullscreen state. */
-                    /* Not sure if it is really required */
-                    if (mainwnd->isMaximized() || mainwnd->isTrueFullscreen()
-                                               || mainwnd->isTrueSeamless())
-                        mIgnoreMainwndResize = true;
-#endif
-                }
+                if (!mIgnoreMainwndResize &&
+                    mIsAdditionsActive && mAutoresizeGuest)
+                    resize_hint_timer->start (300, TRUE);
                 break;
-            }
-            case QEvent::WindowStateChange:
-            {
-                /* The guest screen size (and therefore the contents size)
-                 * could have been changed while we were maximized or minimized,
-                 * so posting event for auto-resize and normalization. */
-                if (!mainwnd->isMinimized() &&
-                    !mainwnd->isMaximized() &&
-                    !mainwnd->isTrueFullscreen() &&
-                    !mainwnd->isTrueSeamless())
-                    QTimer::singleShot (0, this, SLOT (exitFullScreen()));
             }
 
             default:
@@ -1965,24 +1950,13 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 }
 
 /**
- *  Called on exit from fullscreen or from maximized mode.
+ *  Called on enter/exit seamless/fullscreen mode.
  */
-void VBoxConsoleView::exitFullScreen()
+void VBoxConsoleView::toggleFSMode (const QSize &aResizeTo)
 {
     if (mIsAdditionsActive && mAutoresizeGuest)
-    {
-        doResizeHint();
-        /* Fire a normalize event with some delay to let the guest process the
-         * resize hint and send resize properly, instead of normalizing to the
-         * current guest size right now. */
-        QTimer::singleShot (200, this, SLOT (normalizeGeo()));
-    }
-    else
-    {
-        normalizeGeo();
-    }
-
-    mIgnoreMainwndResize = false;
+        doResizeHint (aResizeTo);
+    mToggleFSModeTimer->start (400, true);
 }
 
 /**
@@ -2769,7 +2743,7 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
     // Note, that it's just a guess that sending RESEND will give the desired
     // effect :), but at least it works with NT and W2k guests.
 
-    // @TODO Sending 0xFE is responsible for the warning 
+    // @TODO Sending 0xFE is responsible for the warning
     //
     //         ``atkbd.c: Spurious NAK on isa0060/serio0. Some program might
     //           be trying access hardware directly''
@@ -3161,14 +3135,15 @@ void VBoxConsoleView::dimImage (QImage &img)
     }
 }
 
-void VBoxConsoleView::doResizeHint()
+void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 {
     if (mIsAdditionsActive && mAutoresizeGuest)
     {
-        /* Get the available size for the guest display.
+        /* If this slot is invoked directly then use the passed size
+         * otherwise get the available size for the guest display.
          * We assume here that the centralWidget() contains this view only
          * and gives it all available space. */
-        QSize sz (mainwnd->centralWidget()->size());
+        QSize sz (aToSize.isValid() ? aToSize : mainwnd->centralWidget()->size());
         sz -= QSize (frameWidth() * 2, frameWidth() * 2);
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
