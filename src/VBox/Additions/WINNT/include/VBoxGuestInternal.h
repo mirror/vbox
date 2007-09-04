@@ -13,6 +13,9 @@
 /** Uncomment to enable VRDP status checks */
 //#define VBOX_WITH_VRDP_SESSION_HANDLING
 
+/** Uncomment to enable the guest management extension in VBoxService */
+//#define VBOX_WITH_MANAGEMENT
+
 /** IOCTL for VBoxGuest to enable a VRDP session */
 #define IOCTL_VBOXGUEST_ENABLE_VRDP_SESSION     IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2100, METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
 
