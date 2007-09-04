@@ -41,6 +41,7 @@
 #include <iprt/file.h>
 #include <iprt/thread.h>
 #include <iprt/ctype.h>
+#include <iprt/uuid.h>
 
 #include <signal.h>
 
