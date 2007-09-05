@@ -406,6 +406,8 @@ typedef struct
 } VMMDevGetMemBalloonChangeRequest;
 
 /** inflate/deflate memory balloon structure */
+#define VMMDEV_MEMORY_BALLOON_CHUNK_PAGES            (_1M/4096)
+
 typedef struct
 {
     /** header */
