@@ -176,7 +176,7 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoLock alock (this);
 
     HRESULT ret = mParent->machine()->COMSETTER(MemoryBalloonSize)(aMemoryBalloonSize);
     if (ret == S_OK)
@@ -211,11 +211,19 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReaderLock alock (this);
+    AutoLock alock (this);
 
-    mStatUpdateInterval = aUpdateInterval;
+    HRESULT ret = mParent->machine()->COMSETTER(StatisticsUpdateInterval)(aUpdateInterval);
+    if (ret == S_OK)
+    {
+        mStatUpdateInterval = aUpdateInterval;
+        /* forward the information to the VMM device */
+        VMMDev *vmmDev = mParent->getVMMDev();
+        if (vmmDev)
+            vmmDev->getVMMDevPort()->pfnSetStatisticsInterval(vmmDev->getVMMDevPort(), aUpdateInterval);
+    }
 
-    return S_OK;
+    return ret;
 }
 
 STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,

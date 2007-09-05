@@ -165,6 +165,7 @@ Machine::HWData::HWData()
     /* default values for a newly created machine */
     mMemorySize = 128;
     mMemoryBalloonSize = 0;
+    mStatisticsUpdateInterval = 0;
     mVRAMSize = 8;
     mMonitorCount = 1;
     mHWVirtExEnabled = TriStateBool_False;
@@ -190,6 +191,7 @@ bool Machine::HWData::operator== (const HWData &that) const
 
     if (mMemorySize != that.mMemorySize ||
         mMemoryBalloonSize != that.mMemoryBalloonSize ||
+        mStatisticsUpdateInterval != that.mStatisticsUpdateInterval ||
         mVRAMSize != that.mVRAMSize ||
         mMonitorCount != that.mMonitorCount ||
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
@@ -980,7 +982,7 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize) (ULONG memorySize)
     return S_OK;
 }
 
-
+/** @todo this method should not be public */
 STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize) (ULONG *memoryBalloonSize)
 {
     if (!memoryBalloonSize)
@@ -996,6 +998,7 @@ STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize) (ULONG *memoryBalloonSize)
     return S_OK;
 }
 
+/** @todo this method should not be public */
 STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize) (ULONG memoryBalloonSize)
 {
     /* check limits */
@@ -1014,6 +1017,39 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize) (ULONG memoryBalloonSize)
 
     mHWData.backup();
     mHWData->mMemoryBalloonSize = memoryBalloonSize;
+
+    return S_OK;
+}
+
+/** @todo this method should not be public */
+STDMETHODIMP Machine::COMGETTER(StatisticsUpdateInterval) (ULONG *statisticsUpdateInterval)
+{
+    if (!statisticsUpdateInterval)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *statisticsUpdateInterval = mHWData->mStatisticsUpdateInterval;
+
+    return S_OK;
+}
+
+/** @todo this method should not be public */
+STDMETHODIMP Machine::COMSETTER(StatisticsUpdateInterval) (ULONG statisticsUpdateInterval)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    mHWData.backup();
+    mHWData->mStatisticsUpdateInterval = statisticsUpdateInterval;
 
     return S_OK;
 }
@@ -3772,6 +3808,10 @@ HRESULT Machine::loadSettings (bool aRegistered)
                 CFGLDRQueryUInt32 (GuestNode, "MemoryBalloonSize", &memoryBalloonSize);
                 mHWData->mMemoryBalloonSize = memoryBalloonSize;
 
+                uint32_t statisticsUpdateInterval = 0;
+                CFGLDRQueryUInt32 (GuestNode, "StatisticsUpdateInterval", &statisticsUpdateInterval);
+                mHWData->mStatisticsUpdateInterval = statisticsUpdateInterval;
+
                 CFGLDRReleaseNode (GuestNode);
             }
         }
@@ -5455,7 +5495,8 @@ HRESULT Machine::saveSettings (bool aMarkCurStateAsModified /* = true */,
             CFGLDRCreateChildNode (machineNode, "Guest", &GuestNode);
             if (GuestNode)
             {
-                CFGLDRSetUInt32 (GuestNode, "MemoryBalloonSize", mHWData->mMemoryBalloonSize);
+                CFGLDRSetUInt32 (GuestNode, "MemoryBalloonSize",  mHWData->mMemoryBalloonSize);
+                CFGLDRSetUInt32 (GuestNode, "StatisticsUpdateInterval", mHWData->mStatisticsUpdateInterval);                
                 CFGLDRReleaseNode (GuestNode);
             }
         }
