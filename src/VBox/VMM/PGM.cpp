@@ -430,11 +430,74 @@
  * physical handler, see pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs.
  * 
  * 
- * @subsection subsec_pgmPhys_Changes           Changes
  * 
- * Breakdown of the changes involved...
+ * @section sec_pgmPhys_MappingCaches   Mapping Caches
+ * 
+ * In order to be able to map in and out memory and to be able to support 
+ * guest with more RAM than we've got virtual address space, we'll employing
+ * a mapping cache. There is already a tiny one for GC (see PGMGCDynMapGCPageEx)
+ * and we'll create a similar one for ring-0 unless we decide to setup a dedicate
+ * memory context for the HWACCM execution.
  * 
  * 
+ * @subsection subsec_pgmPhys_MappingCaches_R3  Ring-3
+ * 
+ * We've considered implementing the ring-3 mapping cache page based but found
+ * that this was bother some when one had to take into account TLBs+SMP and 
+ * portability (missing the necessary APIs on several platforms). There were 
+ * also some performance concerns with this approach which hadn't quite been 
+ * worked out.
+ * 
+ * Instead, we'll be mapping allocation chunks into the VM process. This simplifies
+ * matters greatly quite a bit since we don't need to invent any new ring-0 stuff, 
+ * only some minor RTR0MEMOBJ mapping stuff. The main concern here is that mapping
+ * compared to the previous idea is that mapping or unmapping a 1MB chunk is more
+ * costly than a single page, although how much more costly is uncertain. We'll 
+ * try address this by using a very big cache, preferably bigger than the actual
+ * VM RAM size if possible. The current VM RAM sizes should give some idea for 
+ * 32-bit boxes, while on 64-bit we can probably get away with employing an 
+ * unlimited cache.
+ *
+ * The cache have to parts, as already indicated, the ring-3 side and the
+ * ring-0 side. 
+ * 
+ * The ring-0 will be tied to the page allocator since it will operate on the 
+ * memory objects it contains. It will therefore require the first ring-0 mutex 
+ * discussed in @ref subsec_pgmPhys_Serializing. We
+ * some double house keeping wrt to who has mapped what I think, since both 
+ * VMMR0.r0 and RTR0MemObj will keep track of mapping relataions
+ * 
+ * The ring-3 part will be protected by the pgm critsect. For simplicity, we'll 
+ * require anyone that desires to do changes to the mapping cache to do that 
+ * from within this critsect. Alternatively, we could employ a separate critsect 
+ * for serializing changes to the mapping cache as this would reduce potential
+ * contention with other threads accessing mappings unrelated to the changes
+ * that are in process. We can see about this later, contention will show
+ * up in the statistics anyway, so it'll be simple to tell.
+ *
+ * The organization of the ring-3 part will be very much like how the allocation 
+ * chunks are organized in ring-0, that is in an AVL tree by chunk id. To avoid
+ * having to walk the tree all the time, we'll have a couple of lookaside entries
+ * like in we do for I/O ports and MMIO in IOM.
+ *
+ * The simplified flow of a PGMPhysRead/Write function:
+ *      -# Enter the PGM critsect.
+ *      -# Lookup GCPhys in the ram ranges and get the Page ID.
+ *      -# Calc the Allocation Chunk ID from the Page ID.
+ *      -# Check the lookaside entries and then the AVL tree for the Chunk ID.
+ *         If not found in cache:
+ *              -# Call ring-0 and request it to be mapped and supply 
+ *                 a chunk to be unmapped if the cache is maxed out already.
+ *              -# Insert the new mapping into the AVL tree (id + R3 address). 
+ *      -# Update the relevant lookaside entry and return the mapping address.
+ *      -# Do the read/write according to monitoring flags and everything.
+ *      -# Leave the critsect.
+ *
+ * 
+ * 
+ * @section sec_pgmPhys_Changes             Changes
+ * 
+ * Breakdown of the changes involved?
  */
 
 
