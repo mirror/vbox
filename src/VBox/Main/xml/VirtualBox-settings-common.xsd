@@ -383,8 +383,8 @@
 </xsd:complexType>
 
 <xsd:complexType name="TGuest">
-  <xsd:attribute name="MemoryBalloonSize"  type="xsd:unsignedInt" default="0"/>
-  <xsd:attribute name="StatisticsInterval" type="xsd:unsignedInt" default="0"/>
+  <xsd:attribute name="MemoryBalloonSize"        type="xsd:unsignedInt" default="0"/>
+  <xsd:attribute name="StatisticsUpdateInterval" type="xsd:unsignedInt" default="0"/>
 </xsd:complexType>
 
 <xsd:complexType name="TBoot">
