@@ -336,23 +336,26 @@ static const char *audio_get_conf_str (const char *key,
     }
 }
 
-void AUD_vlog (const char *cap, const char *fmt, va_list ap)
+void AUD_vlog (const char *cap, const char *fmt, va_list va)
 {
+    va_list va2;
+    va_copy (va2, va); /* Have to make a copy here or GCC will break. */
     if (cap) {
-        Log (("%s: %N", cap, fmt, &ap));
+        Log (("%s: %N", cap, fmt, &va2));
     }
     else {
-        Log (("%N", fmt, &ap));
+        Log (("%N", fmt, &va2));
     }
+    va_end (va2);
 }
 
 void AUD_log (const char *cap, const char *fmt, ...)
 {
-    va_list ap;
+    va_list va;
 
-    va_start (ap, fmt);
-    AUD_vlog (cap, fmt, ap);
-    va_end (ap);
+    va_start (va, fmt);
+    AUD_vlog (cap, fmt, va);
+    va_end (va);
 }
 
 static void audio_process_options (const char *prefix,

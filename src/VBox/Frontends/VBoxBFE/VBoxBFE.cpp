@@ -946,9 +946,12 @@ DECLCALLBACK(void) setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_
         szError[0] = '\0';
     else
     {
+        va_list va2;
+        va_copy(va2, args); /* Have to make a copy here or GCC will break. */
         RTStrPrintf(szError, sizeof(szError), 
-                    "%N!\nVBox status code: %d (%Vrc)", pszFormat, &args, rc, rc);
+                    "%N!\nVBox status code: %d (%Vrc)", pszFormat, &va2, rc, rc);
         RTPrintf("%s\n", szError);
+        va_end(va2);
     }
 }
 
@@ -968,7 +971,10 @@ DECLCALLBACK(void) setVMRuntimeErrorCallback(PVM pVM, void *pvUser, bool fFatal,
                                              const char *pszErrorId,
                                              const char *pszFormat, va_list args)
 {
-    RTPrintf("%s: %s!\n%N!\n", fFatal ? "Error" : "Warning", pszErrorId, pszFormat, &args);
+    va_list va2;
+    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
+    RTPrintf("%s: %s!\n%N!\n", fFatal ? "Error" : "Warning", pszErrorId, pszFormat, &va2);
+    va_end(va2);
 }
 
 
