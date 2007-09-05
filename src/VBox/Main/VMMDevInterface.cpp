@@ -439,7 +439,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
  */
 DECLCALLBACK(int) vmmdevChangeMemoryBalloon(PPDMIVMMDEVCONNECTOR pInterface, bool fInflate, uint32_t cPages, RTGCPHYS *aPhysPage)
 {
-    if (    cPages != 256
+    if (    cPages != VMMDEV_MEMORY_BALLOON_CHUNK_PAGES
         ||  !aPhysPage)
         return VERR_INVALID_PARAMETER;
 
