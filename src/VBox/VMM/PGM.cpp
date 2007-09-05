@@ -494,6 +494,28 @@
  *      -# Leave the critsect.
  *
  * 
+ * @section sec_pgmPhys_Fallback            Fallback
+ * 
+ * Current all the "second tier" hosts will not support the RTR0MemObjAllocPhysNC
+ * API and thus require a fallback.
+ * 
+ * So, when RTR0MemObjAllocPhysNC returns VERR_NOT_SUPPORTED the page allocator
+ * will return to the ring-3 caller (and later ring-0) and asking it to seed
+ * the page allocator with some fresh pages (VERR_GVM_SEED_ME). Ring-3 will
+ * then perform an SUPPageAlloc(cbChunk >> PAGE_SHIFT) call and make a 
+ * "SeededAllocPages" call to ring-0.
+ * 
+ * The first time ring-0 sees the VERR_NOT_SUPPORTED failure it will disable
+ * all page sharing (zero page detection will continue). It will also force
+ * all allocations to come from the VM which seeded the page. Both these 
+ * measures are taken to make sure that there will never be any need for
+ * mapping anything into ring-3 - everything will be mapped already.
+ *
+ * Whether we'll continue to use the current MM locked memory management 
+ * for this I don't quite know (I'd prefer not to and just ditch that all
+ * togther), we'll see what's simplest to do.
+ * 
+ * 
  * 
  * @section sec_pgmPhys_Changes             Changes
  * 
