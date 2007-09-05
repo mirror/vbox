@@ -5403,11 +5403,14 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
     AssertReturnVoid (task);
 
     /* we ignore RT_SRC_POS_DECL arguments to avoid confusion of end-users */
+    va_list va2;
+    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
     HRESULT hrc = setError (E_FAIL, tr ("%N.\n"
                                         "VBox status code: %d (%Vrc)"),
-                                    tr (pszFormat), &args,
+                                    tr (pszFormat), &va2,
                                     rc, rc);
     task->mProgress->notifyComplete (hrc);
+    va_end(va2);
 }
 
 /**

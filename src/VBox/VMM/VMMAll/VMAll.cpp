@@ -74,10 +74,13 @@ VMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat,
     /*
      * Switch to EMT.
      */
+    va_list va2;
+    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
     PVMREQ pReq;
     VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3SetErrorV, 7,  /* ASSUMES 3 source pos args! */
-                pVM, rc, RT_SRC_POS_ARGS, pszFormat, &args);
+                pVM, rc, RT_SRC_POS_ARGS, pszFormat, &va2);
     VMR3ReqFree(pReq);
+    va_end(va2);
 
 #else
     /*
@@ -249,13 +252,13 @@ VMDECL(int) VMSetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID,
     /*
      * Switch to EMT.
      */
-    va_list WorkaroundVA;
-    va_copy(WorkaroundVA, args); /* Have to make a copy here or GCC will break. */
+    va_list va2;
+    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
     PVMREQ pReq;
     VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3SetRuntimeErrorV, 5,
-                pVM, fFatal, pszErrorID, pszFormat, &WorkaroundVA);
+                pVM, fFatal, pszErrorID, pszFormat, &va2);
     VMR3ReqFree(pReq);
-    va_end(WorkaroundVA);
+    va_end(va2);
 
 #else
     /*
