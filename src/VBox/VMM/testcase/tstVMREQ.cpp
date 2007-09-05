@@ -32,17 +32,144 @@
 #include <iprt/time.h>
 
 
-
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #define TESTCASE    "tstVMREQ"
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** the error count. */
+static int g_cErrors = 0;
+
+
+/** 
+ * Testings va_list passing in VMSetRuntimeError.
+ */
+static DECLCALLBACK(void) MyAtRuntimeError(PVM pVM, void *pvUser, bool fFatal, const char *pszErrorId, const char *pszFormat, va_list va)
+{
+    if (strcmp((const char *)pvUser, "user argument"))
+    {
+        RTPrintf(TESTCASE ": pvUser=%p:{%s}!\n", pvUser, (const char *)pvUser);
+        g_cErrors++;
+    }
+    if (fFatal)
+    {
+        RTPrintf(TESTCASE ": fFatal=%d!\n", fFatal);
+        g_cErrors++;
+    }
+    if (strcmp(pszErrorId, "enum"))
+    {
+        RTPrintf(TESTCASE ": pszErrorId=%p:{%s}!\n", pszErrorId, pszErrorId);
+        g_cErrors++;
+    }
+    if (strcmp(pszFormat, "some %s string"))
+    {
+        RTPrintf(TESTCASE ": pszFormat=%p:{%s}!\n", pszFormat, pszFormat);
+        g_cErrors++;
+    }
+
+    char szBuf[1024];
+    RTStrPrintfV(szBuf, sizeof(szBuf), pszFormat, va);
+    if (strcmp(szBuf, "some error string"))
+    {
+        RTPrintf(TESTCASE ": RTStrPrintfV -> '%s'!\n", szBuf);
+        g_cErrors++;
+    }
+}
+
+
+/**
+ * The function PassVA and PassVA2 calls.
+ */
+static DECLCALLBACK(int) PassVACallback(PVM pVM, unsigned u4K, unsigned u1G, const char *pszFormat, va_list *pva)
+{
+    if (u4K != _4K)
+    {
+        RTPrintf(TESTCASE ": u4K=%#x!\n", u4K);
+        g_cErrors++;
+    }
+    if (u1G != _1G)
+    {
+        RTPrintf(TESTCASE ": u1G=%#x!\n", u1G);
+        g_cErrors++;
+    }
+
+    if (strcmp(pszFormat, "hello %s"))
+    {
+        RTPrintf(TESTCASE ": pszFormat=%p:{%s}!\n", pszFormat, pszFormat);
+        g_cErrors++;
+    }
+
+    char szBuf[1024];
+    RTStrPrintfV(szBuf, sizeof(szBuf), pszFormat, *pva);
+    if (strcmp(szBuf, "hello world"))
+    {
+        RTPrintf(TESTCASE ": RTStrPrintfV -> '%s'!\n", szBuf);
+        g_cErrors++;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/** 
+ * Functions that tests passing a va_list * argument in a request, 
+ * similar to VMSetRuntimeError.
+ */
+static void PassVA2(PVM pVM, const char *pszFormat, va_list va)
+{
+#if 0 /** @todo test if this is a GCC problem only or also happens with AMD64+VCC80... */
+    void *pvVA = &va;
+#else
+    va_list va2;
+    va_copy(va2, va); 
+    void *pvVA = va2;
+#endif 
+
+    PVMREQ pReq;
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
+                         pVM, _4K, _1G, pszFormat, pvVA);
+    if (VBOX_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+#if 1
+    va_end(va2);
+#endif 
+}
+
+
+/** 
+ * Functions that tests passing a va_list * argument in a request, 
+ * similar to VMSetRuntimeError.
+ */
+static void PassVA(PVM pVM, const char *pszFormat, ...)
+{
+    /* 1st test */
+    va_list va1;
+    va_start(va1, pszFormat);
+    PVMREQ pReq;
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
+                         pVM, _4K, _1G, pszFormat, &va1);
+    if (VBOX_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+    va_end(va1);
+
+    /* 2nd test */
+    va_list va2;
+    va_start(va2, pszFormat);
+    PassVA2(pVM, pszFormat, va2);
+    va_end(va2);
+}
+
+
 /**
  * Thread function which allocates and frees requests like wildfire.
  */
-DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
+static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PVM pVM = (PVM)pvUser;
@@ -87,8 +214,6 @@ DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
 
 int main(int argc, char **argv)
 {
-    int     cErrors = 0;
-
     RTR3Init();
     RTPrintf(TESTCASE ": TESTING...\n");
 
@@ -116,15 +241,15 @@ int main(int argc, char **argv)
                 if (VBOX_FAILURE(rc))
                 {
                     RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Vrc\n", rc);
-                    cErrors++;
+                    g_cErrors++;
                 }
                 if (VBOX_FAILURE(rcThread1))
-                    cErrors++;
+                    g_cErrors++;
             }
             else
             {
                 RTPrintf(TESTCASE ": RTThreadCreate(&Thread1,,,,) failed, rc=%Vrc\n", rc);
-                cErrors++;
+                g_cErrors++;
             }
 
             int rcThread0;
@@ -132,15 +257,15 @@ int main(int argc, char **argv)
             if (VBOX_FAILURE(rc))
             {
                 RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Vrc\n", rc);
-                cErrors++;
+                g_cErrors++;
             }
             if (VBOX_FAILURE(rcThread0))
-                cErrors++;
+                g_cErrors++;
         }
         else
         {
             RTPrintf(TESTCASE ": RTThreadCreate(&Thread0,,,,) failed, rc=%Vrc\n", rc);
-            cErrors++;
+            g_cErrors++;
         }
         uint64_t u64ElapsedTS = RTTimeNanoTS() - u64StartTS;
         RTPrintf(TESTCASE  ": %llu ns elapsed\n", u64ElapsedTS);
@@ -151,28 +276,36 @@ int main(int argc, char **argv)
         STAMR3Print(pVM, "/VM/Req/*");
 
         /*
+         * Testing va_list fun.
+         */
+        RTPrintf(TESTCASE ": va_list argument test...\n");
+        PassVA(pVM, "hello %s", "world");
+        VMR3AtRuntimeErrorRegister(pVM, MyAtRuntimeError, (void *)"user argument");
+        VMSetRuntimeError(pVM, false, "enum", "some %s string", "error");
+
+        /*
          * Cleanup.
          */
         rc = VMR3Destroy(pVM);
         if (!VBOX_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Vrc\n", rc);
-            cErrors++;
+            g_cErrors++;
         }
     }
     else
     {
         RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%Vrc\n", rc);
-        cErrors++;
+        g_cErrors++;
     }
 
     /*
      * Summary and return.
      */
-    if (!cErrors)
+    if (!g_cErrors)
         RTPrintf(TESTCASE ": SUCCESS\n");
     else
-        RTPrintf(TESTCASE ": FAILURE - %d errors\n", cErrors);
+        RTPrintf(TESTCASE ": FAILURE - %d errors\n", g_cErrors);
 
-    return !!cErrors;
+    return !!g_cErrors;
 }
