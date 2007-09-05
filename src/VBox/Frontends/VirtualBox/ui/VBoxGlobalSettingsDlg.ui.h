@@ -398,6 +398,7 @@ void VBoxGlobalSettingsDlg::init()
 
     char szNlsPath[RTPATH_MAX];
     int rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+    NOREF(rc);
     Assert(RT_SUCCESS(rc));
     QString nlsPath = QString(szNlsPath) + gVBoxLangSubDir;
     QDir nlsDir (nlsPath);
