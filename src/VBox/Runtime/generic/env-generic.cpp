@@ -34,7 +34,7 @@
 #ifdef RT_OS_DARWIN
 # include <crt_externs.h>
 #endif
-#if defined(RT_OS_SOLARIS)
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD)
 __BEGIN_DECLS
 extern char **environ;
 __END_DECLS
