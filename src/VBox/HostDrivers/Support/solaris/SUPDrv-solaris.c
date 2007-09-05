@@ -32,6 +32,7 @@
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 #include <sys/file.h>
+#undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include "SUPDRV.h"
 #include <iprt/spinlock.h>
