@@ -1204,6 +1204,24 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_ChangeMemBalloon:
+        {
+            VMMDevChangeMemBalloon *memBalloonChange = (VMMDevChangeMemBalloon*)requestHeader;
+
+            Log(("VMMDevReq_ChangeMemBalloon\n"));
+            if (    requestHeader->size < sizeof(VMMDevChangeMemBalloon)
+                ||  requestHeader->size != RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[memBalloonChange->cPages]))
+            {
+                AssertFailed();
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                requestHeader->rc = pData->pDrv->pfnChangeMemoryBalloon(pData->pDrv, !!memBalloonChange->fInflate, memBalloonChange->cPages, memBalloonChange->aPhysPage);
+            }
+            break;
+        }
+
         case VMMDevReq_GetStatisticsChangeRequest:
         {
             Log(("VMMDevReq_GetStatisticsChangeRequest\n"));
