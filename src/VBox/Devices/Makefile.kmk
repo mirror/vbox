@@ -32,7 +32,9 @@ SUBDIRS_LIBRARIES = PC/Etherboot-src
 SUBDIRS_CLEAN     = PC/Etherboot-src
 endif
 
+ifndef VBOX_OSE
 SUBDIRS_LIBRARIES += Storage/VBoxHDDFormats
+endif
 
 #
 # Main targets.
