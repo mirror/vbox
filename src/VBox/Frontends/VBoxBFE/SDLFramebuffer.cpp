@@ -228,7 +228,7 @@ HRESULT SDLFramebuffer::NotifyUpdate(ULONG x, ULONG y,
     LogFlow(("SDLFramebuffer::NotifyUpdate: x = %d, y = %d, w = %d, h = %d\n",
              x, y, w, h));
 
-#ifdef RT_OS_LINUX
+#ifdef VBOXBFE_WITH_X11
     /*
      * SDL does not allow us to make this call from any other
      * thread. So we have to send an event to the main SDL
@@ -249,9 +249,9 @@ HRESULT SDLFramebuffer::NotifyUpdate(ULONG x, ULONG y,
               SDL_GetError()));
     /* in order to not flood the SDL event queue, yield the CPU */
     RTThreadYield();
-#else /* !RT_OS_LINUX */
+#else /* !VBOXBFE_WITH_X11 */
     update(x, y + mTopOffset, w, h);
-#endif /* !RT_OS_LINUX */
+#endif /* !VBOXBFE_WITH_X11 */
 
     /*
      * The Display thread can continue as we will lock the framebuffer
@@ -414,7 +414,7 @@ void SDLFramebuffer::resize()
  */
 void SDLFramebuffer::update(int x, int y, int w, int h)
 {
-#ifdef RT_OS_LINUX
+#ifdef VBOXBFE_WITH_X11
     AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 #endif
 

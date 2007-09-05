@@ -735,7 +735,7 @@ int main(int argc, char **argv)
     /* loop until the powerup processing is done */
     do
     {
-#if defined(RT_OS_LINUX) && defined(USE_SDL)
+#if defined(VBOXBFE_WITH_X11) && defined(USE_SDL)
         if (   machineState == VMSTATE_CREATING
             || machineState == VMSTATE_LOADING)
         {
