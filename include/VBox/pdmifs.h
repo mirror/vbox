@@ -1592,6 +1592,18 @@ typedef struct PDMIVMMDEVCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnReportStatistics,(PPDMIVMMDEVCONNECTOR pInterface, struct VBoxGuestStatistics *pGuestStats));
 
+    /**
+     * Inflate or deflate the memory balloon
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   fInflate            Inflate or deflate
+     * @param   cPages              Number of physical pages (must be 256 as we allocate in 1 MB chunks)
+     * @param   aPhysPage           Array of physical page addresses
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnChangeMemoryBalloon, (PPDMIVMMDEVCONNECTOR pInterface, bool fInflate, uint32_t cPages, RTGCPHYS *aPhysPage));
+
 } PDMIVMMDEVCONNECTOR;
 
 

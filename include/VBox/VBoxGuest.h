@@ -146,6 +146,7 @@ typedef enum
     VMMDevReq_ReportGuestStats           = 110,
     VMMDevReq_GetMemBalloonChangeRequest = 111,
     VMMDevReq_GetStatisticsChangeRequest = 112,
+    VMMDevReq_ChangeMemBalloon           = 113,
     VMMDevReq_LogString                  = 200,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
@@ -403,6 +404,16 @@ typedef struct
     uint32_t            u32BalloonSize;
     uint32_t            eventAck;
 } VMMDevGetMemBalloonChangeRequest;
+
+/** inflate/deflate memory balloon structure */
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    uint32_t            cPages;
+    uint32_t            fInflate;       /* true = inflate, false = defalte */
+    RTGCPHYS            aPhysPage[1];   /* variable size */
+} VMMDevChangeMemBalloon;
 
 /** guest statistics interval change request structure */
 typedef struct
@@ -1318,6 +1329,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevGetMemBalloonChangeRequest);
         case VMMDevReq_GetStatisticsChangeRequest:
             return sizeof(VMMDevGetStatisticsChangeRequest);
+        case VMMDevReq_ChangeMemBalloon:
+            return sizeof(VMMDevChangeMemBalloon);
         case VMMDevReq_LogString:
             return sizeof(VMMDevReqLogString);
         default:
