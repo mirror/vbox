@@ -148,9 +148,7 @@ tstLdrObj_LIBS    += \
 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
 endif # PE
 ifeq ($(VBOX_LDR_FMT32),elf)
-  tstLdrObj_LDFLAGS = -e Entrypoint
-tstLdrObj_LIBS    += \
-	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+tstLdrObj_LDFLAGS = -e Entrypoint
 endif
 ifeq ($(VBOX_LDR_FMT32),lx)
 tstLdrObj_LIBS    += \
