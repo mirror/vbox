@@ -3479,6 +3479,8 @@ static int vmdkSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 
 VBOXHDDBACKEND g_VmdkBackend =
 {
+    /* cbSize */
+    sizeof(VBOXHDDBACKEND),
     /* pfnOpen */
     vmdkOpen,
     /* pfnCreate */

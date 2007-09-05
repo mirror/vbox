@@ -20,12 +20,16 @@
 #include <VBox/pdm.h>
 #include <VBox/VBoxHDD-new.h>
 
-
 /**
  * Image format backend interface used by VBox HDD Container implementation.
  */
 typedef struct VBOXHDDBACKEND
 {
+    /**
+     * The size of the structure.
+     */
+    uint32_t cbSize;
+
     /**
      * Open a disk image.
      *
@@ -276,5 +280,9 @@ typedef struct VBOXHDDBACKEND
 
 } VBOXHDDBACKEND, *PVBOXHDDBACKEND;
 
+/** Initialization entry point. */
+typedef DECLCALLBACK(int) VBOXHDDFORMATLOAD(PVBOXHDDBACKEND pBackendTable);
+typedef VBOXHDDFORMATLOAD *PFNVBOXHDDFORMATLOAD;
+#define VBOX_HDDFORMAT_LOAD_NAME "VBoxHDDFormatLoad"
 
 #endif
