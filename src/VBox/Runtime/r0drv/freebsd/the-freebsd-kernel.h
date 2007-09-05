@@ -52,6 +52,7 @@
 #include <sys/mutex.h>
 #include <sys/sched.h>
 #include <sys/callout.h>
+#include <sys/smp.h>
 #include <vm/vm.h>
 #include <vm/pmap.h>            /* for vtophys */
 #include <vm/vm_map.h>

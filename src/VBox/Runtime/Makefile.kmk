@@ -372,6 +372,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
@@ -702,8 +703,8 @@ RuntimeR0_SOURCES += \
 	math/gcc/umoddi3.c \
 	math/gcc/xordi3.c
 endif
-	
-	
+
+
 string/memchr.cpp_CXXFLAGS.win = -Oi-
 string/memcmp.cpp_CXXFLAGS.win = -Oi-
 string/memcpy.cpp_CXXFLAGS.win = -Oi-

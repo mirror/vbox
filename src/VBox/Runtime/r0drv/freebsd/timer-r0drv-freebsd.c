@@ -102,7 +102,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
         &&  (fFlags & RTTIMER_FLAGS_CPU_MASK) > mp_maxid)
         return VERR_INVALID_PARAMETER;
-    
+
     /*
      * Allocate and initialize the timer handle.
      */
@@ -175,7 +175,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     pTimer->iTick = 0;
     pTimer->u64StartTS = u64First;
     pTimer->u64NextTS = u64First;
-    
+
     tv.tv_sec  =  u64First / 1000000000;
     tv.tv_usec = (u64First % 1000000000) / 1000;
     callout_reset(&pTimer->Callout, tvtohz(&tv), rtTimerFreeBSDCallback, pTimer);
@@ -205,13 +205,13 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
  * smp_rendezvous action callback.
  *
  * This will perform the timer callback if we're on the right CPU.
- * 
+ *
  * @param   pvTimer The timer.
  */
 static void rtTimerFreeBSDIpiAction(void *pvTimer)
 {
-    PRTTIMER pTimer = (PRTTIMER)pvTimer; 
-    if (    pTimer->iCpu == RTTIMER_FLAGS_CPU_ALL
+    PRTTIMER pTimer = (PRTTIMER)pvTimer;
+    if (    pTimer->iCpu == RTTIMER_FLAGS_CPU_MASK
         ||  (u_int)pTimer->iCpu == curcpu)
         pTimer->pfnTimer(pTimer, pTimer->pvUser);
 }
@@ -234,7 +234,7 @@ static void rtTimerFreeBSDCallback(void *pvTimer)
         pTimer->u64NextTS = pTimer->u64StartTS + pTimer->iTick * pTimer->u64NanoInterval;
         if (pTimer->u64NextTS < u64NanoTS)
             pTimer->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
- 
+
         tv.tv_sec = pTimer->u64NextTS / 1000000000;
         tv.tv_usec = (pTimer->u64NextTS % 1000000000) / 1000;
         callout_reset(&pTimer->Callout, tvtohz(&tv), rtTimerFreeBSDCallback, pTimer);
