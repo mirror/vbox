@@ -65,11 +65,20 @@ HRESULT Guest::init (Console *aParent)
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
-    /* Default is not to report guest statistics at all */
-    mStatUpdateInterval = 0;
+    ULONG aMemoryBalloonSize;
+    HRESULT ret = mParent->machine()->COMGETTER(MemoryBalloonSize)(&aMemoryBalloonSize);
+    if (ret == S_OK)
+        mMemoryBalloonSize = aMemoryBalloonSize;
+    else
+        mMemoryBalloonSize = 0;                     /* Default is no ballooning */
 
-    /* Default is no ballooning */
-    mMemoryBalloonSize = 0;
+    ULONG aStatUpdateInterval;
+    ret = mParent->machine()->COMGETTER(StatisticsUpdateInterval)(&aStatUpdateInterval);
+    if (ret == S_OK)
+        mStatUpdateInterval = aStatUpdateInterval;
+    else
+        mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
+
     return S_OK;
 }
 
