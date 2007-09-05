@@ -191,27 +191,27 @@ $(PATH_TARGET)/VMMGC.def: VMMGC/VMMGC.def | $(call DIRDEP,$(PATH_TARGET))
 	$(MV) -f $@.tmp $@
 endif
 
-endif # pe + lx
+endif # GC: pe + lx
 
 
+ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
 #
 # VMMR0Imp.lib
 #
-ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
 LIBRARIES += VMMR0Imp
 VMMR0Imp_TEMPLATE = VBOXR0
-ifeq ($(VBOX_LDR_FMT),pe)
+ ifeq ($(VBOX_LDR_FMT),pe)
 VMMR0Imp_SOURCES = VMMR0/VMMR0.def
-endif
-ifeq ($(VBOX_LDR_FMT),lx)
+ endif
+ ifeq ($(VBOX_LDR_FMT),lx)
 VMMR0Imp_SOURCES = $(PATH_TARGET)/VMMR0.def
 $(PATH_TARGET)/VMMR0.def: VMMR0/VMMR0.def | $(call DIRDEP,$(PATH_TARGET))
 	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(APPEND) "$@.tmp" ""
 	$(APPEND) "$@.tmp" "    ___ehInit"
 	$(MV) -f $@.tmp $@
-endif
-endif # !darwin
+ endif
+endif # R0: pe + lx
 
 
 #
@@ -365,7 +365,7 @@ VMMR0_LIBS = \
 	$(PATH_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB)
-ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
+ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
 VMMR0_LIBS += \
 	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
