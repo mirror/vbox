@@ -80,8 +80,9 @@ static LPDIRECTDRAWSURFACE7 createPrimarySurface (LPDIRECTDRAW7 pDDRAW)
     DDSURFACEDESC2 sd;
     memset (&sd, 0, sizeof (sd));
     sd.dwSize = sizeof (sd);
-    sd.dwFlags = DDSD_CAPS;
+    sd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
     sd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+    sd.dwBackBufferCount = 0;
 
     HRESULT rc = pDDRAW->CreateSurface (&sd, &pPrimarySurface, NULL);
 
@@ -346,7 +347,7 @@ bool VBoxDDRAWFrameBuffer::createSurface (ULONG aPixelFormat, uchar *aVRAM,
                 sd.ddpfPixelFormat.dwBBitMask = 0x001F;
                 break;
             default:
-                /* we don't directly support any other color depth */                
+                /* we don't directly support any other color depth */
                 return false;
         }
 
@@ -360,7 +361,7 @@ bool VBoxDDRAWFrameBuffer::createSurface (ULONG aPixelFormat, uchar *aVRAM,
     else
     if (aPixelFormat != FramebufferPixelFormat_PixelFormatOpaque)
     {
-        /* we don't directly support any other pixel format */                
+        /* we don't directly support any other pixel format */
         return false;
     }
     else
@@ -396,11 +397,11 @@ bool VBoxDDRAWFrameBuffer::createSurface (ULONG aPixelFormat, uchar *aVRAM,
         deleteSurface();
         return false;
     }
-    
+
     /* Initialize the surface description member. It will be used to obtain
      * address, bpp and bpl. */
     mSurfaceDesc = sd;
-    
+
     LOGDDRAW(("DDRAW: Created %s surface: format = %d, address = %p\n",
               mUsesGuestVRAM ? "GuestVRAM": "system memory",
               aPixelFormat, address ()));
