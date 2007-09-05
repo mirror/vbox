@@ -429,10 +429,12 @@ static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
 
 static NTSTATUS VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt)
 {
+    NTSTATUS Status = STATUS_SUCCESS;
+
     /* just perform the request */
     VMMDevGetMemBalloonChangeRequest *req = NULL;
 
-    Log(("VBoxGuestQueryMemoryBalloon\n"));
+    dprintf(("VBoxGuestQueryMemoryBalloon\n"));
 
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevGetMemBalloonChangeRequest), VMMDevReq_GetMemBalloonChangeRequest);
     vmmdevInitRequest(&req->header, VMMDevReq_GetMemBalloonChangeRequest);
@@ -459,6 +461,7 @@ static NTSTATUS VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt)
     {
         Status = STATUS_UNSUCCESSFUL;
     }
+    return Status;
 }
 
 
