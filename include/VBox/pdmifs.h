@@ -1412,6 +1412,17 @@ typedef struct PDMIVMMDEVPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnSetMemoryBalloon,(PPDMIVMMDEVPORT pInterface, uint32_t ulBalloonSize));
 
+    /**
+     * Issue a statistcs interval change request.
+     *
+     * Note that there can only one request in the queue and that in case the guest does
+     * not process it, issuing another request will overwrite the previous.
+     *
+     * @returns VBox status code
+     * @param   ulStatInterval  Statistics query interval in seconds (0=disable)
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetStatisticsInterval,(PPDMIVMMDEVPORT pInterface, uint32_t ulStatInterval));
+
 } PDMIVMMDEVPORT;
 
 /** Forward declaration of the video accelerator command memory. */
