@@ -483,6 +483,7 @@ EMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
 {
     switch (enmState)
     {
+        case EMSTATE_NONE:              return "EMSTATE_NONE";
         case EMSTATE_RAW:               return "EMSTATE_RAW";
         case EMSTATE_HWACC:             return "EMSTATE_HWACC";
         case EMSTATE_REM:               return "EMSTATE_REM";
