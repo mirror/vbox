@@ -1852,9 +1852,9 @@ static void vga_draw_graphic(VGAState *s, int full_update)
 static int vga_draw_graphic(VGAState *s, int full_update)
 #endif /* !VBOX */
 {
-    int y1, y, update, page_min, page_max, linesize, y_start, double_scan, mask;
+    int y1, y2, y, update, page_min, page_max, linesize, y_start, double_scan, mask;
     int width, height, shift_control, line_offset, page0, page1, bwidth;
-    int disp_width, multi_scan, multi_run;
+    int disp_width, multi_run;
     uint8_t *d;
     uint32_t v, addr1, addr;
     vga_draw_line_func *vga_draw_line;
@@ -1869,14 +1869,7 @@ static int vga_draw_graphic(VGAState *s, int full_update)
 
     shift_control = (s->gr[0x05] >> 5) & 3;
     double_scan = (s->cr[0x09] >> 7);
-    if (shift_control != 1) {
-        multi_scan = (((s->cr[0x09] & 0x1f) + 1) << double_scan) - 1;
-    } else {
-        /* in CGA modes, multi_scan is ignored */
-        /* XXX: is it correct ? */
-        multi_scan = double_scan;
-    }
-    multi_run = multi_scan;
+    multi_run = double_scan;
     if (shift_control != s->shift_control ||
         double_scan != s->double_scan) {
         full_update = 1;
@@ -1982,6 +1975,7 @@ static int vga_draw_graphic(VGAState *s, int full_update)
 #endif /* VBOX */
 
     y1 = 0;
+    y2 = s->cr[0x09] & 0x1F;    /* starting row scan count */
     for(y = 0; y < height; y++) {
         addr = addr1;
         if (!(s->cr[0x17] & 1)) {
@@ -2043,11 +2037,18 @@ static int vga_draw_graphic(VGAState *s, int full_update)
             }
         }
         if (!multi_run) {
-            mask = (s->cr[0x17] & 3) ^ 3;
-            if ((y1 & mask) == mask)
-                addr1 += line_offset;
+//            mask = (s->cr[0x17] & 3) ^ 3;
+//            if ((y & mask) == mask)
+//                addr1 += line_offset;
             y1++;
-            multi_run = multi_scan;
+            multi_run = double_scan;
+
+            if (y2 == 0) {
+                y2 = s->cr[0x09] & 0x1F;
+                addr1 += line_offset;
+            } else {
+                --y2;
+            }
         } else {
             multi_run--;
         }
