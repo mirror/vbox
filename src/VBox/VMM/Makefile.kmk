@@ -156,10 +156,11 @@ VBoxVMM_LDFLAGS.darwin = -install_name @executable_path/VBoxVMM.dylib
 VBoxVMM_LDFLAGS.solaris = -mimpure-text
 
 
+ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
+
 #
 # VMMGCBuiltin.lib
 #
-ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
 LIBRARIES += VMMGCBuiltin
 VMMGCBuiltin_TEMPLATE = VBOXGC
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -171,13 +172,11 @@ $(PATH_TARGET)/VMMGCBuiltin.def: VMMGC/VMMGCBuiltin.def | $(call DIRDEP,$(PATH_T
 	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(MV) -f $@.tmp $@
 endif
-endif # !darwin
 
 
 #
 # VMMGCImp.lib
 #
-ifneq ($(filter-out solaris darwin,$(BUILD_TARGET)),)
 LIBRARIES += VMMGCImp
 VMMGCImp_TEMPLATE = VBOXGC
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -191,7 +190,8 @@ $(PATH_TARGET)/VMMGC.def: VMMGC/VMMGC.def | $(call DIRDEP,$(PATH_TARGET))
 	$(APPEND) "$@.tmp" "    ___ehInit"
 	$(MV) -f $@.tmp $@
 endif
-endif # !darwin
+
+endif # pe + lx
 
 
 #
