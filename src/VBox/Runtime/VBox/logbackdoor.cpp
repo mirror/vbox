@@ -32,9 +32,10 @@ static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars,
 RTDECL(size_t) RTLogBackdoorPrintf(const char *pszFormat, ...)
 {
     va_list args;
+    size_t cb;
 
     va_start(args, pszFormat);
-    size_t cb = RTLogBackdoorPrintfV(pszFormat, args);
+    cb = RTLogBackdoorPrintfV(pszFormat, args);
     va_end(args);
 
     return cb;
@@ -60,7 +61,8 @@ static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars,
 
 RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
 {
-    for (const uint8_t *pu8 = (const uint8_t *)pch; cb-- > 0; pu8++)
+    const uint8_t *pu8;
+    for (pu8 = (const uint8_t *)pch; cb-- > 0; pu8++)
         ASMOutU8(RTLOG_DEBUG_PORT, *pu8);
     /** @todo a rep outs could be more efficient, I don't know...
      * @code
