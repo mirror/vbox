@@ -29,6 +29,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/asm.h>
+#include <iprt/ldr.h>
 
 #include "VBoxHDD-newInternal.h"
 
@@ -99,6 +100,8 @@ struct VBOXHDD
     /** Opaque data for error callback. */
     void                *pvErrorUser;
 
+    /** Handle for the shared object / DLL. */
+    RTLDRMOD            pluginHandle;
     /** Function pointers for the various backend methods. */
     PVBOXHDDBACKEND     Backend;
 };
@@ -486,6 +489,61 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
             break;
         }
     }
+
+    /* If no static backend is found try loading a shared module with pszBackend as filename. */
+    if (!pBackend)
+    {
+        RTLDRMOD ldrHandle;
+        char *pszPluginName;
+        size_t cbPluginName;
+
+        /* HDD Format Plugins have VBoxHDD as prefix, thatswhy we have to prepend it. 
+         * @todo: find out what to do if filenames are case sensitive.
+         */
+        cbPluginName = RTStrAPrintf(&pszPluginName, "VBoxHDD%s", pszBackend);
+        if (cbPluginName == -1)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+        else
+        {
+            /* try to load the plugin (RTldrLoad appends the suffix for the shared object/DLL). */
+            rc = RTLdrLoad(pszPluginName, &ldrHandle);
+            if (VBOX_SUCCESS(rc))
+            {
+                PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad;
+
+                rc = RTLdrGetSymbol (ldrHandle, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
+                if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+                {
+                    Log(("%s: Error resolving the entry point %s, rc = %d, pfnHDDFormat = %p\n", VBOX_HDDFORMAT_LOAD_NAME, rc, pfnHDDFormatLoad));
+                    if (VBOX_SUCCESS(rc))
+                       rc = VERR_SYMBOL_NOT_FOUND;
+                }
+                else
+                {
+                    /* Get the function table. */
+                    pBackend = (PVBOXHDDBACKEND)RTMemAllocZ(sizeof(VBOXHDDBACKEND));
+                    if (!pBackend)
+                    {
+                        rc = VERR_NO_MEMORY;
+                    }
+                    else
+                    {
+                        pBackend->cbSize = sizeof(VBOXHDDBACKEND);
+                        rc = pfnHDDFormatLoad(pBackend);
+                        if (VBOX_FAILURE(rc))
+                        {
+                            RTMemFree(pBackend);
+                            pBackend = NULL;
+                        }
+                    }
+                }
+            }
+            RTStrFree(pszPluginName);
+        }
+    }
+
     if (pBackend)
     {
         pDisk = (PVBOXHDD)RTMemAllocZ(sizeof(VBOXHDD));
@@ -532,6 +590,8 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
     if (pDisk)
     {
         VDCloseAll(pDisk);
+        RTLdrClose(pDisk->pluginHandle);
+        RTMemFree(pDisk->Backend);
         RTMemFree(pDisk);
     }
 }
