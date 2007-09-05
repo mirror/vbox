@@ -1049,7 +1049,7 @@ done:
                 } while (scode == 0);
 
                 // Change first boot device code to selected one
-                if (scode > 0x02 && scode <= 0x05)
+                if (scode >= 0x02 && scode <= 0x05)
                 {
                     write_byte(ebda_seg,&EbdaData->uForceBootDrive, scode-1);
                     break;
