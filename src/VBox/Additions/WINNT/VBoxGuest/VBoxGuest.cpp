@@ -427,6 +427,41 @@ static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
     return result;
 }
 
+static NTSTATUS VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt)
+{
+    /* just perform the request */
+    VMMDevGetMemBalloonChangeRequest *req = NULL;
+
+    Log(("VBoxGuestQueryMemoryBalloon\n"));
+
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevGetMemBalloonChangeRequest), VMMDevReq_GetMemBalloonChangeRequest);
+    vmmdevInitRequest(&req->header, VMMDevReq_GetMemBalloonChangeRequest);
+    req->eventAck = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
+
+    if (VBOX_SUCCESS(rc))
+    {
+        rc = VbglGRPerform(&req->header);
+
+        if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+        {
+            dprintf(("VBoxGuest::VBoxGuestDeviceControl IOCTL_VBOXGUEST_CTL_CHECK_BALLOON: error issuing request to VMMDev!"
+                     "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
+            Status = STATUS_UNSUCCESSFUL;
+        }
+        else
+        {
+
+        }
+
+        VbglGRFree(&req->header);
+    }
+    else
+    {
+        Status = STATUS_UNSUCCESSFUL;
+    }
+}
+
+
 /**
  * Device I/O Control entry point.
  *
@@ -769,6 +804,14 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 pSharedUserData->ActiveConsoleId = pDevExt->ulOldActiveConsoleId;
                 pDevExt->ulOldActiveConsoleId    = 0;
             }
+            break;
+        }
+#endif
+
+#ifdef VBOX_WITH_MANAGEMENT
+        case IOCTL_VBOXGUEST_CTL_CHECK_BALLOON:
+        {
+            Status = VBoxGuestQueryMemoryBalloon(pDevExt);
             break;
         }
 #endif

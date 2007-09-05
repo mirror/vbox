@@ -145,6 +145,7 @@ typedef enum
     VMMDevReq_ReportCredentialsJudgement = 101,
     VMMDevReq_ReportGuestStats           = 110,
     VMMDevReq_GetMemBalloonChangeRequest = 111,
+    VMMDevReq_GetStatisticsChangeRequest = 112,
     VMMDevReq_LogString                  = 200,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
@@ -402,6 +403,15 @@ typedef struct
     uint32_t            u32BalloonSize;
     uint32_t            eventAck;
 } VMMDevGetMemBalloonChangeRequest;
+
+/** guest statistics interval change request structure */
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    uint32_t            u32StatInterval; /* interval in seconds */
+    uint32_t            eventAck;
+} VMMDevGetStatisticsChangeRequest;
  
 /** display change request structure */
 typedef struct
@@ -968,19 +978,21 @@ typedef struct
  */
 
 /** Host mouse capabilities has been changed. */
-#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED     BIT(0)
+#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED             BIT(0)
 /** HGCM event. */
-#define VMMDEV_EVENT_HGCM                           BIT(1)
+#define VMMDEV_EVENT_HGCM                                   BIT(1)
 /** A display change request has been issued. */
-#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST         BIT(2)
+#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST                 BIT(2)
 /** Credentials are available for judgement. */
-#define VMMDEV_EVENT_JUDGE_CREDENTIALS              BIT(3)
+#define VMMDEV_EVENT_JUDGE_CREDENTIALS                      BIT(3)
 /** The guest has been restored. */
-#define VMMDEV_EVENT_RESTORED                       BIT(4)
+#define VMMDEV_EVENT_RESTORED                               BIT(4)
 /** Seamless mode state changed */
-#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST   BIT(5)
+#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST           BIT(5)
 /** Memory balloon size changed */
-#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST         BIT(6)
+#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST                 BIT(6)
+/** Statistics interval changed */
+#define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     BIT(7)
 /** VRDP status changed. */
 #define VMMDEV_EVENT_VRDP                           BIT(7)
 
@@ -1304,6 +1316,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReportGuestStats);
         case VMMDevReq_GetMemBalloonChangeRequest:
             return sizeof(VMMDevGetMemBalloonChangeRequest);
+        case VMMDevReq_GetStatisticsChangeRequest:
+            return sizeof(VMMDevGetStatisticsChangeRequest);
         case VMMDevReq_LogString:
             return sizeof(VMMDevReqLogString);
         default:

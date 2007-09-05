@@ -1183,6 +1183,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             Log(("VMMDevReq_GetMemBalloonChangeRequest\n"));
             if (requestHeader->size != sizeof(VMMDevGetMemBalloonChangeRequest))
             {
+                AssertFailed();
                 requestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
@@ -1196,6 +1197,32 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 {
                     /* Remember which mode the client has queried. */
                     pData->u32LastMemoryBalloonSize = pData->u32MemoryBalloonSize;
+                }
+
+                requestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
+        case VMMDevReq_GetStatisticsChangeRequest:
+        {
+            Log(("VMMDevReq_GetStatisticsChangeRequest\n"));
+            if (requestHeader->size != sizeof(VMMDevGetStatisticsChangeRequest))
+            {
+                AssertFailed();
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevGetStatisticsChangeRequest *statIntervalChangeRequest = (VMMDevGetStatisticsChangeRequest*)requestHeader;
+                /* just pass on the information */
+                Log(("VMMDev: returning statistics interval %d seconds\n", pData->u32StatIntervalSize));
+                statIntervalChangeRequest->u32StatInterval = pData->u32StatIntervalSize;
+
+                if (statIntervalChangeRequest->eventAck == VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST)
+                {
+                    /* Remember which mode the client has queried. */
+                    pData->u32LastStatIntervalSize= pData->u32StatIntervalSize;
                 }
 
                 requestHeader->rc = VINF_SUCCESS;
@@ -1696,6 +1723,28 @@ static DECLCALLBACK(int) vmmdevSetMemoryBalloon(PPDMIVMMDEVPORT pInterface, uint
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) vmmdevSetStatisticsInterval(PPDMIVMMDEVPORT pInterface, uint32_t ulStatInterval)
+{
+    VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+
+    /* Verify that the new resolution is different and that guest does not yet know about it. */
+    bool fSame = (pData->u32LastStatIntervalSize == ulStatInterval);
+
+    Log(("vmmdevSetStatisticsInterval: old=%d. new=%d\n", pData->u32LastStatIntervalSize, ulStatInterval));
+
+    if (!fSame)
+    {
+        /* we could validate the information here but hey, the guest can do that as well! */
+        pData->u32StatIntervalSize = ulStatInterval;
+
+        /* IRQ so the guest knows what's going on */
+        VMMDevNotifyGuest (pData, VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 static DECLCALLBACK(int) vmmdevSetCredentials(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
                                               const char *pszPassword, const char *pszDomain,
                                               uint32_t u32Flags)
@@ -1984,6 +2033,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->Port.pfnVBVAChange             = vmmdevVBVAChange;
     pData->Port.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
     pData->Port.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
+    pData->Port.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
 
     /* Shared folder LED */
     pData->SharedFolders.Led.u32Magic                 = PDMLED_MAGIC;
@@ -2115,6 +2165,9 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 
     /* disabled memory ballooning */
     pData->u32LastMemoryBalloonSize = 0;
+
+    /* disabled statistics updating */
+    pData->u32LastStatIntervalSize = 0;
 
     /* Clear the event variables.
      *
