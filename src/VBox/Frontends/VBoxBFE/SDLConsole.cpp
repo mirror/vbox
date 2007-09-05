@@ -409,7 +409,7 @@ void SDLConsole::eventQuit()
     SDL_PushEvent(&event);
 }
 
-#if defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
 /**
  * Fallback keycode conversion using SDL symbols.
  *
@@ -584,7 +584,8 @@ uint8_t SDLConsole::keyEventToKeyCode(const SDL_KeyboardEvent *ev)
     // start with the scancode determined by SDL
     keycode = ev->keysym.scancode;
 
-#ifdef VBOXBFE_WITH_X11 /// @todo verify that these are X11 issues and not unique linux issues.
+#if defined(VBOXBFE_WITH_X11) && !defined(RT_OS_SOLARIS) /// @todo verify that these are X11 issues and not unique linux issues.
+                                                         // -> doesn't seem to work on solaris...
     // workaround for SDL keyboard translation issues on X11
     static const uint8_t x_keycode_to_pc_keycode[61] =
     {
@@ -843,6 +844,11 @@ uint8_t SDLConsole::keyEventToKeyCode(const SDL_KeyboardEvent *ev)
     RTPrintf("scancode=%#x -> %#x\n", ev->keysym.scancode, keycode);
 #endif
 
+#elif defined(RT_OS_SOLARIS)
+    /*
+     * For now, just use the fallback code.
+     */
+    keycode = Keyevent2KeycodeFallback(ev);
 #endif
     return keycode;
 }
