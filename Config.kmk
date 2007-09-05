@@ -1654,6 +1654,7 @@ TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
+TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG # Avoid the GNU libiconv, for now at least.
 TEMPLATE_VBOXR3EXE_LIBS                = rt socket
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
