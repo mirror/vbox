@@ -221,6 +221,7 @@ public:
 
         ULONG          mMemorySize;
         ULONG          mMemoryBalloonSize;
+        ULONG          mStatisticsUpdateInterval;
         ULONG          mVRAMSize;
         ULONG          mMonitorCount;
         TriStateBool_T mHWVirtExEnabled;
@@ -443,6 +444,8 @@ public:
     STDMETHOD(COMSETTER(MemorySize))(ULONG memorySize);
     STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize))(ULONG memoryBalloonSize);
+    STDMETHOD(COMGETTER(StatisticsUpdateInterval))(ULONG *statisticsUpdateInterval);
+    STDMETHOD(COMSETTER(StatisticsUpdateInterval))(ULONG statisticsUpdateInterval);
     STDMETHOD(COMGETTER(VRAMSize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(VRAMSize))(ULONG memorySize);
     STDMETHOD(COMGETTER(MonitorCount))(ULONG *monitorCount);

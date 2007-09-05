@@ -2020,7 +2020,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="dcfb87c4-18a9-4a1e-9b1f-6f68f920535b"
+     uuid="2830ce8c-be5b-4660-b8d5-65d913005b4f"
      wsmap="managed"
      >
     <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -2172,6 +2172,10 @@
 
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Initial memory balloon size in megabytes.</desc>
+    </attribute>
+
+    <attribute name="statisticsUpdateInterval" type="unsigned long">
+      <desc>Initial interval to update guest statistics in seconds.</desc>
     </attribute>
 
     <attribute name="VRAMSize" type="unsigned long">
