@@ -86,9 +86,11 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     return virtAddr;
 }
 
+
 RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
 {
     NOREF(cb);
     if (pv)
         i_ddi_mem_free(pv, NULL);
 }
+
