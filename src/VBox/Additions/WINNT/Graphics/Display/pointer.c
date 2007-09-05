@@ -534,7 +534,7 @@ FLONG fl)
                     bitmask = 0x80;
                 }
                 
-                if (pjSrcAlpha[cx * 4 + 3] >= 0xF0)
+                if (pjSrcAlpha[cx * 4 + 3] > 0x7f)
                 {
                     pjDstAnd[cx / 8] &= ~bitmask;
                 }

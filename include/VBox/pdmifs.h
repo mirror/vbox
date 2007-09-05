@@ -1423,6 +1423,15 @@ typedef struct PDMIVMMDEVPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnSetStatisticsInterval,(PPDMIVMMDEVPORT pInterface, uint32_t ulStatInterval));
 
+    /**
+     * Notify the guest about a VRDP status change.
+     *
+     * @returns VBox status code
+     * @param   fVRDPEnabled           Current VRDP status.
+     * @param   u32VRDPExperienceLevel Which visual effects to be disabled in the guest.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVRDPChange, (PPDMIVMMDEVPORT pInterface, bool fVRDPEnabled, uint32_t u32VRDPExperienceLevel));
+
 } PDMIVMMDEVPORT;
 
 /** Forward declaration of the video accelerator command memory. */

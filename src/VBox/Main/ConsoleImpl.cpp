@@ -660,7 +660,14 @@ DECLCALLBACK(void) Console::vrdp_ClientConnect (void *pvUser,
     AssertComRCReturnVoid (autoCaller.rc());
 
 #ifdef VBOX_VRDP
-    ASMAtomicIncU32(&console->mcVRDPClients);
+    uint32_t u32Clients = ASMAtomicIncU32(&console->mcVRDPClients);
+
+    if (u32Clients == 1)
+    {
+        console->getVMMDev()->getVMMDevPort()->
+            pfnVRDPChange (console->getVMMDev()->getVMMDevPort(),
+                           true, VRDP_EXPERIENCE_LEVEL_FULL); // @todo configurable
+    }
 
     NOREF(u32ClientId);
     console->mDisplay->VideoAccelVRDP (true);
@@ -694,7 +701,14 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser,
     AssertReturnVoid (console->mConsoleVRDPServer);
 
 #ifdef VBOX_VRDP
-    ASMAtomicDecU32(&console->mcVRDPClients);
+    uint32_t u32Clients = ASMAtomicDecU32(&console->mcVRDPClients);
+    
+    if (u32Clients == 0)
+    {
+        console->getVMMDev()->getVMMDevPort()->
+            pfnVRDPChange (console->getVMMDev()->getVMMDevPort(),
+                           false, 0);
+    }
 
     console->mDisplay->VideoAccelVRDP (false);
 #endif /* VBOX_VRDP */
