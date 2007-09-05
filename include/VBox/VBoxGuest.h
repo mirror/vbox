@@ -147,6 +147,7 @@ typedef enum
     VMMDevReq_GetMemBalloonChangeRequest = 111,
     VMMDevReq_GetStatisticsChangeRequest = 112,
     VMMDevReq_ChangeMemBalloon           = 113,
+    VMMDevReq_GetVRDPChangeRequest       = 150,
     VMMDevReq_LogString                  = 200,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
@@ -484,6 +485,24 @@ typedef struct
     /** height reduction in pixels (output) */
     uint32_t heightReduction;
 } VMMDevGetHeightReductionRequest;
+
+#define VRDP_EXPERIENCE_LEVEL_ZERO     0 /* Theming disabled. */
+#define VRDP_EXPERIENCE_LEVEL_LOW      1 /* Full window dragging and desktop wallpaper disabled. */
+#define VRDP_EXPERIENCE_LEVEL_MEDIUM   2 /* Font smoothing, gradients. */
+#define VRDP_EXPERIENCE_LEVEL_HIGH     3 /* Animation effects disabled. */
+#define VRDP_EXPERIENCE_LEVEL_FULL     4 /* Everything enabled. */
+
+typedef struct
+{
+    /** header */
+    VMMDevRequestHeader header;
+    /** Whether VRDP is active or not */
+    uint8_t u8VRDPActive;
+    /** The configured experience level for active VRDP. */
+    uint32_t u32VRDPExperienceLevel;
+} VMMDevVRDPChangeRequest;
+
+
 
 #pragma pack()
 
@@ -1333,6 +1352,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevGetStatisticsChangeRequest);
         case VMMDevReq_ChangeMemBalloon:
             return sizeof(VMMDevChangeMemBalloon);
+        case VMMDevReq_GetVRDPChangeRequest:
+            return sizeof(VMMDevVRDPChangeRequest);
         case VMMDevReq_LogString:
             return sizeof(VMMDevReqLogString);
         default:

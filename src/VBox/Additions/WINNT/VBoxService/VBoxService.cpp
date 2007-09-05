@@ -19,6 +19,7 @@
 #include "VBoxClipboard.h"
 #include "VBoxDisplay.h"
 #include "VBoxRestore.h"
+#include "VBoxVRDP.h"
 #include "VBoxGuest.h"
 #include <VBoxHook.h>
 #include "resource.h"
@@ -112,6 +113,12 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxRestoreDestroy,
     },
 #endif
+    {
+        "VRDP",
+        VBoxVRDPInit,
+        VBoxVRDPThread,
+        VBoxVRDPDestroy,
+    },
     {
         NULL
     }

@@ -1177,6 +1177,25 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_GetVRDPChangeRequest:
+        {
+            if (requestHeader->size != sizeof(VMMDevVRDPChangeRequest))
+            {
+                requestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevVRDPChangeRequest *vrdpChangeRequest = (VMMDevVRDPChangeRequest*)requestHeader;
+                /* just pass on the information */
+                Log(("VMMDev: returning VRDP status %d level %d\n", pData->fVRDPEnabled, pData->u32VRDPExperienceLevel));
+                
+                vrdpChangeRequest->u8VRDPActive = pData->fVRDPEnabled;
+                vrdpChangeRequest->u32VRDPExperienceLevel = pData->u32VRDPExperienceLevel;
+                
+                requestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
 
         case VMMDevReq_GetMemBalloonChangeRequest:
         {
@@ -1742,6 +1761,25 @@ static DECLCALLBACK(int) vmmdevSetMemoryBalloon(PPDMIVMMDEVPORT pInterface, uint
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) vmmdevVRDPChange(PPDMIVMMDEVPORT pInterface, bool fVRDPEnabled, uint32_t u32VRDPExperienceLevel)
+{
+    VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+
+    bool fSame = (pData->fVRDPEnabled == fVRDPEnabled);
+
+    Log(("vmmdevVRDPChange: old=%d. new=%d\n", pData->fVRDPEnabled, fVRDPEnabled));
+
+    if (!fSame)
+    {
+        pData->fVRDPEnabled = fVRDPEnabled;
+        pData->u32VRDPExperienceLevel = u32VRDPExperienceLevel;
+
+        VMMDevNotifyGuest (pData, VMMDEV_EVENT_VRDP);
+    }
+
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(int) vmmdevSetStatisticsInterval(PPDMIVMMDEVPORT pInterface, uint32_t ulStatInterval)
 {
     VMMDevState *pData = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
@@ -2053,6 +2091,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->Port.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
     pData->Port.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
     pData->Port.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
+    pData->Port.pfnVRDPChange             = vmmdevVRDPChange;
 
     /* Shared folder LED */
     pData->SharedFolders.Led.u32Magic                 = PDMLED_MAGIC;

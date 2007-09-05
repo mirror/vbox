@@ -140,6 +140,9 @@ typedef struct VMMDevState
     /* seamless mode change request */
     bool fLastSeamlessEnabled, fSeamlessEnabled;
 
+    bool fVRDPEnabled;
+    uint32_t u32VRDPExperienceLevel;
+        
 #ifdef TIMESYNC_BACKDOOR
     bool fTimesyncBackdoorLo;
     uint64_t hostTime;
