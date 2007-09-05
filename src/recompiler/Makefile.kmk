@@ -180,6 +180,7 @@ ifdef REM_USE_NOCRT
 else # !REM_USE_NOCRT
 
  $(REM_MOD)_TOOL            = GXX3
+ $(REM_MOD)_TOOL.solaris    = GXX3PLAIN
  $(REM_MOD)_TOOL.win.x86    = MINGW32
  $(REM_MOD)_TOOL.win.amd64  = XGCCAMD64LINUX
  $(REM_MOD)_SDKS.win.x86    = W32API  							## @todo do we really need this now?
@@ -295,8 +296,9 @@ ifeq ($(filter win os2,$(BUILD_TARGET)),)
 VBoxREMImp_SOURCES          = $(PATH_TARGET)/VBoxREMImp.c
 VBoxREMImp_CLEAN            = $(PATH_TARGET)/VBoxREMImp.c
 endif
-VBoxREMImp_SONAME.linux     = VBoxREM.so
-VBoxREMImp_SONAME.l4        = VBoxREM.s.so
+ifneq ($(filter-out darwin os2 win,$(BUILD_TARGET)),)
+VBoxREMImp_SONAME           = VBoxREM$(SUFF_DLL)
+endif
 VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
 #VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
