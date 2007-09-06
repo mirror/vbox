@@ -429,6 +429,9 @@ static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
 
 static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBalloonSize)
 {
+    /** @todo */
+    return VINF_SUCCESS;
+
     /* just perform the request */
     VMMDevGetMemBalloonChangeRequest *req = NULL;
 
