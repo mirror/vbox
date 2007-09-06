@@ -408,39 +408,49 @@
 
   <enum
      name="GuestStatisticType"
-     uuid="a7cffd08-665f-4156-b2e9-2b3c64e213da"
+     uuid="42d6b94f-9b17-4a9c-8d6f-a837c383eed0"
      >
-    <const name="CPULoad"              value="0">
+    <const name="CPULoad_Idle"         value="0">
       <desc>
-        Current CPU load (0-100%).
+        Idle CPU load (0-100%) for last interval.
       </desc>
     </const>
-    <const name="Threads"              value="1">
+    <const name="CPULoad_Kernel"       value="1">
+      <desc>
+        Kernel CPU load (0-100%) for last interval.
+      </desc>
+    </const>
+    <const name="CPULoad_User"         value="2">
+      <desc>
+        User CPU load (0-100%) for last interval.
+      </desc>
+    </const>
+    <const name="Threads"              value="3">
       <desc>
         Total number of threads in the system.
       </desc>
     </const>
-    <const name="Processes"            value="2">
+    <const name="Processes"            value="5">
       <desc>
         Total number of processes in the system.
       </desc>
     </const>
-    <const name="PhysMemTotal"         value="3">
+    <const name="PhysMemTotal"         value="6">
       <desc>
         Total physical memory in megabytes.
       </desc>
     </const>
-    <const name="PhysMemAvailable"     value="4">
+    <const name="PhysMemAvailable"     value="7">
       <desc>
         Free physical memory in megabytes.
       </desc>
     </const>
-    <const name="PhysMemBalloon"       value="5">
+    <const name="PhysMemBalloon"       value="8">
       <desc>
         Ballooned physical memory in megabytes.
       </desc>
     </const>
-    <const name="PageFileSize"         value="6">
+    <const name="PageFileSize"         value="9">
       <desc>
         Pagefile size in megabytes.
       </desc>

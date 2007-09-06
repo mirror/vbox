@@ -269,7 +269,9 @@ STDMETHODIMP Guest::GetStatistic(GuestStatisticType_T statistic, ULONG *aStatVal
 
     switch(statistic)
     {
-    case GuestStatisticType_CPULoad:
+    case GuestStatisticType_CPULoad_Idle:
+    case GuestStatisticType_CPULoad_Kernel:
+    case GuestStatisticType_CPULoad_User:
     case GuestStatisticType_Threads:
     case GuestStatisticType_Processes:
     case GuestStatisticType_PhysMemTotal:
@@ -289,7 +291,9 @@ STDMETHODIMP Guest::SetStatistic(GuestStatisticType_T statistic, ULONG aStatVal)
 {
     switch(statistic)
     {
-    case GuestStatisticType_CPULoad:
+    case GuestStatisticType_CPULoad_Idle:
+    case GuestStatisticType_CPULoad_Kernel:
+    case GuestStatisticType_CPULoad_User:
     case GuestStatisticType_Threads:
     case GuestStatisticType_Processes:
     case GuestStatisticType_PhysMemTotal:
