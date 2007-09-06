@@ -403,8 +403,14 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
     if (!guest)
         return VERR_INVALID_PARAMETER; /** @todo wrong error */
 
-    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD)
-        guest->SetStatistic(GuestStatisticType_CPULoad, pGuestStats->u32CpuLoad);
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_IDLE)
+        guest->SetStatistic(GuestStatisticType_CPULoad_Idle, pGuestStats->u32CpuLoad_Idle);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_KERNEL)
+        guest->SetStatistic(GuestStatisticType_CPULoad_Kernel, pGuestStats->u32CpuLoad_Kernel);
+
+    if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_USER)
+        guest->SetStatistic(GuestStatisticType_CPULoad_User, pGuestStats->u32CpuLoad_User);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_THREADS)
         guest->SetStatistic(GuestStatisticType_Threads, pGuestStats->u32Threads);

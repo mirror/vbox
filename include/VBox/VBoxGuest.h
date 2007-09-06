@@ -356,13 +356,15 @@ typedef struct
 } VMMDevReportGuestInfo;
 
 /** guest statistics values */
-#define VBOX_GUEST_STAT_CPU_LOAD            BIT(0)
-#define VBOX_GUEST_STAT_THREADS             BIT(1)
-#define VBOX_GUEST_STAT_PROCESSES           BIT(2)
-#define VBOX_GUEST_STAT_PHYS_MEM_TOTAL      BIT(3)
-#define VBOX_GUEST_STAT_PHYS_MEM_AVAIL      BIT(4)
-#define VBOX_GUEST_STAT_PHYS_MEM_BALLOON    BIT(5)
-#define VBOX_GUEST_STAT_PAGE_FILE_SIZE      BIT(6)
+#define VBOX_GUEST_STAT_CPU_LOAD_IDLE       BIT(0)
+#define VBOX_GUEST_STAT_CPU_LOAD_KERNEL     BIT(1)
+#define VBOX_GUEST_STAT_CPU_LOAD_USER       BIT(2)
+#define VBOX_GUEST_STAT_THREADS             BIT(3)
+#define VBOX_GUEST_STAT_PROCESSES           BIT(4)
+#define VBOX_GUEST_STAT_PHYS_MEM_TOTAL      BIT(5)
+#define VBOX_GUEST_STAT_PHYS_MEM_AVAIL      BIT(6)
+#define VBOX_GUEST_STAT_PHYS_MEM_BALLOON    BIT(7)
+#define VBOX_GUEST_STAT_PAGE_FILE_SIZE      BIT(8)
 
 
 /** guest statistics structure */
@@ -370,8 +372,12 @@ typedef struct VBoxGuestStatistics
 {
     /** Reported statistics */
     uint32_t        u32StatCaps;
-    /** CPU load (0-100) */
-    uint32_t        u32CpuLoad;
+    /** Idle CPU load (0-100) for last interval */
+    uint32_t        u32CpuLoad_Idle;
+    /** Kernel CPU load (0-100) for last interval */
+    uint32_t        u32CpuLoad_Kernel;
+    /** User CPU load (0-100) for last interval */
+    uint32_t        u32CpuLoad_User;
     /** Nr of threads */
     uint32_t        u32Threads;
     /** Nr of processes */
