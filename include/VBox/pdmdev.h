@@ -2195,7 +2195,6 @@ typedef struct PDMDEVHLP
     DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                   PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
-
     /**
      * Convert a guest virtual address to a guest physical address.
      *
@@ -3215,6 +3214,14 @@ DECLINLINE(int) PDMDevHlpPhys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT
 DECLINLINE(int) PDMDevHlpPhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
 {
     return pDevIns->pDevHlp->pfnPhysGCPtr2HCPtr(pDevIns, GCPtr, pHCPtr);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnPhysGCPtr2GCPhys
+ */
+DECLINLINE(int) PDMDevHlpPhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
+{
+    return pDevIns->pDevHlp->pfnPhysGCPtr2GCPhys(pDevIns, GCPtr, pGCPhys);
 }
 
 /**
