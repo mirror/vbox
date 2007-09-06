@@ -3262,10 +3262,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GC
 static DECLCALLBACK(int) pdmR3DevHlp_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMHC;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_Phys2HCVirt: caller='%s'/%d: GCPhys=%VGp cbRange=%#x ppvHC=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, cbRange, ppvHC));
 
-    if (!VM_IS_EMT(pDevIns->Internal.s.pVMHC))
+    if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
 
     int rc = PGMPhysGCPhys2HCPtr(pDevIns->Internal.s.pVMHC, GCPhys, cbRange, ppvHC);
@@ -3285,7 +3287,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR
     LogFlow(("pdmR3DevHlp_PhysGCPtr2HCPtr: caller='%s'/%d: GCPtr=%VGv pHCPtr=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPtr, pHCPtr));
 
-    if (!VM_IS_EMT(pDevIns->Internal.s.pVMHC))
+    if (!VM_IS_EMT(pVMs))
         return VERR_ACCESS_DENIED;
 
     int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtr, pHCPtr);
@@ -3304,7 +3306,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
     LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: GCPtr=%VGv pGCPhys=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPtr, pGCPhys));
 
-    if (!VM_IS_EMT(pDevIns->Internal.s.pVMHC))
+    if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
 
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, pGCPhys);
