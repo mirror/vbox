@@ -143,6 +143,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
 static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC);
+static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable);
@@ -319,7 +320,7 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CritSectInit,
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
-    0,
+    pdmR3DevHlp_PhysGCPtr2GCPhys,
     0,
     0,
     0,
@@ -408,7 +409,7 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CritSectInit,
     pdmR3DevHlp_UTCNow,
     pdmR3DevHlp_PDMThreadCreate,
-    0,
+    pdmR3DevHlp_PhysGCPtr2GCPhys,
     0,
     0,
     0,
@@ -3288,6 +3289,21 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR
     return rc;
 }
 
+/** @copydoc PDMDEVHLP::pfnPhysGCPtr2GCPhys */
+static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMHC;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: GCPtr=%VGv pGCPhys=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPtr, pGCPhys));
+
+    int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, pGCPhys);
+
+    LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: returns %Vrc *pGCPhys=%VGp\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pGCPhys));
+
+    return rc;
+}
 
 /** @copydoc PDMDEVHLP::pfnA20IsEnabled */
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)

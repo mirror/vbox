@@ -2195,10 +2195,21 @@ typedef struct PDMDEVHLP
     DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                   PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
-   
+
+    /**
+     * Convert a guest virtual address to a guest physical address.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         Device instance.
+     * @param   GCPtr           Guest virtual address.
+     * @param   pGCPhys         Where to store the GC physical address corresponding to GCPtr.
+     * @thread  The emulation thread.
+     * @remark  Careful with page boundraries.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2GCPhys, (PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys));
+
     /** Space reserved for future members.
      * @{ */
-    DECLR3CALLBACKMEMBER(void, pfnReserved2,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved3,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
