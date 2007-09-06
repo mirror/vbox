@@ -86,6 +86,7 @@ endif
 # Do not strip anything of these files
 LINUXNOSTRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
+	$(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html) \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
 	VBox.sh \
