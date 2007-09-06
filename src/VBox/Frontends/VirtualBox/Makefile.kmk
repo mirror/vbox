@@ -53,6 +53,10 @@ ifeq ($(BUILD_TARGET),darwin)
 VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
 
+ifeq ($(BUILD_TARGET),linux)
+$(PATH_BIN)/VirtualBox: $(VBOX_LICENSE_BIN)
+endif
+
 # Each nls/VirtualBox_xx_YY.ts file must have a qt_xx_YY.ts counterpart
 VirtualBox_QT_TRANSLATIONS_QT := \
 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts,\
