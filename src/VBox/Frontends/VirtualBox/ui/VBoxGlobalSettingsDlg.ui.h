@@ -397,10 +397,9 @@ void VBoxGlobalSettingsDlg::init()
     lvLanguages->setSorting (0);
 
     char szNlsPath[RTPATH_MAX];
-    int rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
-    NOREF(rc);
-    Assert(RT_SUCCESS(rc));
-    QString nlsPath = QString(szNlsPath) + gVBoxLangSubDir;
+    int rc = RTPathAppPrivateNoArch (szNlsPath, sizeof(szNlsPath));
+    AssertRC (rc);
+    QString nlsPath = QString (szNlsPath) + gVBoxLangSubDir;
     QDir nlsDir (nlsPath);
     QStringList files = nlsDir.entryList (QString ("%1*%2")
                                           .arg (gVBoxLangFileBase, gVBoxLangFileExt),
