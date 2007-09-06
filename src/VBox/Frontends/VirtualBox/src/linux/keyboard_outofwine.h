@@ -69,9 +69,14 @@ typedef void *HWND;
 #define TRUE 1
 
 /* debug macros */
+#if 0
+# include <stdio.h>
+# define noop printf
+#else
 inline static void noop(char *arg, ...)
 {
 }
+#endif
 
 #define TRACE noop
 /* #define TRACE printf */

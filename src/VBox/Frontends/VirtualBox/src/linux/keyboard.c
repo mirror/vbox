@@ -22,8 +22,8 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-/* our master define to make this module usable outside wine */
 
+/* our master define to make this module usable outside of Wine */
 #define OUTOFWINE
 
 #ifdef OUTOFWINE
@@ -135,11 +135,20 @@ static const WORD main_key_scan_abnt_qwerty[MAIN_LEN] =
    0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,
  /* a    s    d    f    g    h    j    k    l    ;    '    \ */
    0x1E,0x1F,0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x2B,
+#ifndef OUTOFWINE
  /* \      z    x    c    v    b    n    m    ,    .    / */
    0x5e,0x2C,0x2D,0x2E,0x2F,0x30,0x31,0x32,0x33,0x34,0x35,
    0x56, /* the 102nd key (actually to the right of l-shift) */
+#else
+/* innotek FIX */
+ /* \      z    x    c    v    b    n    m    ,    .    / */
+   0x56,0x2C,0x2D,0x2E,0x2F,0x30,0x31,0x32,0x33,0x34,0x35,
+   0x73, /* the extra key on the Brazilian keyboard. */
+#endif
 };
 
+#ifndef OUTOFWINE
+/* innotek FIX - a dvorak keyboard uses standard scan codes. */
 static const WORD main_key_scan_dvorak[MAIN_LEN] =
 {
  /* `    1    2    3    4    5    6    7    8    9    0    [    ] */
@@ -152,7 +161,12 @@ static const WORD main_key_scan_dvorak[MAIN_LEN] =
    0x27,0x10,0x24,0x25,0x2D,0x30,0x32,0x11,0x2F,0x2C,
    0x56 /* the 102nd key (actually to the right of l-shift) */
 };
+#endif
 
+#ifdef OUTOFWINE
+/* What is this supposed to be?  This is just the same as the qwerty layout, with one key
+   in a different place. */
+#endif
 static const WORD main_key_scan_qwerty_jp106[MAIN_LEN] =
 {
   /* this is my (106-key) keyboard layout, sorry if it doesn't quite match yours */
@@ -298,6 +312,19 @@ static const char main_key_US_dvorak[MAIN_LEN][4] =
  "aA","oO","eE","uU","iI","dD","hH","tT","nN","sS","-_","\\|",
  ";:","qQ","jJ","kK","xX","bB","mM","wW","vV","zZ"
 };
+
+#ifdef OUTOFWINE
+/* innotek FIX */
+/*** United States keyboard layout (dvorak version with phantom key) */
+static const char main_key_US_dvorak_phantom[MAIN_LEN][4] =
+{
+ "`~","1!","2@","3#","4$","5%","6^","7&","8*","9(","0)","[{","]}",
+ "'\"",",<",".>","pP","yY","fF","gG","cC","rR","lL","/?","=+",
+ "aA","oO","eE","uU","iI","dD","hH","tT","nN","sS","-_","\\|",
+ ";:","qQ","jJ","kK","xX","bB","mM","wW","vV","zZ",
+ "<>" /* the phantom key */
+};
+#endif
 
 /*** British keyboard layout */
 static const char main_key_UK[MAIN_LEN][4] =
@@ -602,11 +629,24 @@ static const char main_key_ES[MAIN_LEN][4] =
 /*** Belgian keyboard layout ***/
 static const char main_key_BE[MAIN_LEN][4] =
 {
+#ifndef OUTOFWINE
  "","&1|","é2@","\"3#","'4","(5","§6^","è7","!8","ç9{","à0}",")°","-_",
  "aA","zZ","eE¤","rR","tT","yY","uU","iI","oO","pP","^¨[","$*]",
  "qQ","sSß","dD","fF","gG","hH","jJ","kK","lL","mM","ù%´","µ£`",
  "wW","xX","cC","vV","bB","nN",",?",";.",":/","=+~",
  "<>\\"
+#else
+/* innotek FIX */
+/* I wonder how much of this Wine code has been properly tested?  There are many
+   seemingly duplicate layouts, and while many specify three or four keysyms per
+   key, the code choked on all keys in this layout containing more than two
+   keysyms.  I suspect that many of these maps only work by luck. */
+ "²³","&1","é2","\"3","'4","(5","§6","è7","!8","ç9","à0",")°","-_",
+ "aA","zZ","eE","rR","tT","yY","uU","iI","oO","pP","^¨","$*",
+ "qQ","sS","dD","fF","gG","hH","jJ","kK","lL","mM","ù%","µ£",
+ "wW","xX","cC","vV","bB","nN",",?",";.",":/","=+",
+ "<>"
+#endif
 };
 
 /*** Hungarian keyboard layout (setxkbmap hu) */
@@ -717,6 +757,7 @@ static const char main_key_PT_br_alt_gr[MAIN_LEN][4] =
  "\\|","zZ","xX","cC","vV","bB","nN","mM",",<",".>",";:","/?0"
 };
 
+#ifndef OUTOFWINE
 /*** US international keyboard layout (contributed by Gustavo Noronha (kov@debian.org)) */
 static const char main_key_US_intl[MAIN_LEN][4] =
 {
@@ -725,6 +766,27 @@ static const char main_key_US_intl[MAIN_LEN][4] =
   "aA", "sS", "dD", "fF", "gG", "hH", "jJ", "kK", "lL", ";:", "'\"",
   "zZ", "xX", "cC", "vV", "bB", "nN", "mM", ",<", ".>", "/?"
 };
+#else
+/* innotek FIX */
+/*** US international keyboard layout (contributed by Gustavo Noronha (kov@debian.org)) */
+static const char main_key_US_intl[MAIN_LEN][4] =
+{
+  "`~", "1!", "2@", "3#", "4$", "5%", "6^", "7&", "8*", "9(", "0)", "-_", "=+",
+  "qQ", "wW", "eE", "rR", "tT", "yY", "uU", "iI", "oO", "pP", "[{", "]}",
+  "aA", "sS", "dD", "fF", "gG", "hH", "jJ", "kK", "lL", ";:", "´¨",
+  "\\|", "zZ", "xX", "cC", "vV", "bB", "nN", "mM", ",<", ".>", "/?"
+};
+
+/*** US international keyboard layout with phantom key (contributed by Gustavo Noronha (kov@debian.org)) */
+static const char main_key_US_intl_phantom[MAIN_LEN][4] =
+{
+  "`~", "1!", "2@", "3#", "4$", "5%", "6^", "7&", "8*", "9(", "0)", "-_", "=+",
+  "qQ", "wW", "eE", "rR", "tT", "yY", "uU", "iI", "oO", "pP", "[{", "]}",
+  "aA", "sS", "dD", "fF", "gG", "hH", "jJ", "kK", "lL", ";:", "´¨",
+  "\\|", "zZ", "xX", "cC", "vV", "bB", "nN", "mM", ",<", ".>", "/?",
+  "<>" /* the phantom key */
+};
+#endif
 
 /*** Slovak keyboard layout (see cssk_ibm(sk_qwerty) in xkbsel)
   - dead_abovering replaced with degree - no symbol in iso8859-2
@@ -922,8 +984,16 @@ static const struct {
 } main_key_tab[]={
  {0x0409, "United States keyboard layout", &main_key_US, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0409, "United States keyboard layout (phantom key version)", &main_key_US_phantom, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#ifndef OUTOFWINE
  {0x0409, "United States keyboard layout (dvorak)", &main_key_US_dvorak, &main_key_scan_dvorak, &main_key_vkey_dvorak},
  {0x0409, "United States International keyboard layout", &main_key_US_intl, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#else
+/* innotek FIX */
+ {0x0409, "United States keyboard layout (dvorak)", &main_key_US_dvorak, &main_key_scan_qwerty, &main_key_vkey_dvorak},
+ {0x0409, "United States keyboard layout (dvorak, phantom key version)", &main_key_US_dvorak_phantom, &main_key_scan_qwerty, &main_key_vkey_dvorak},
+ {0x0409, "United States International keyboard layout", &main_key_US_intl, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+ {0x0409, "United States International keyboard layout (phantom key version)", &main_key_US_intl_phantom, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#endif
  {0x0809, "British keyboard layout", &main_key_UK, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0407, "German keyboard layout", &main_key_DE, &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x0407, "German keyboard layout without dead keys", &main_key_DE_nodead, &main_key_scan_qwerty, &main_key_vkey_qwertz},
@@ -1069,7 +1139,12 @@ static const WORD nonchar_key_scan[256] =
     0x147, 0x14B, 0x148, 0x14D, 0x150, 0x149, 0x151, 0x14F,      /* FF50 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF58 */
     /* misc keys */
-    /*?*/ 0, 0x137, /*?*/ 0, 0x152, 0x00, 0x00, 0x00, 0x15D,      /* FF60 */
+#ifdef OUTOFWINE
+/* innotek FIX */
+    /*?*/ 0, 0x137, /*?*/ 0, 0x152, 0x00, 0x00, 0x00, 0x15D,     /* FF60 */
+#else
+    /*?*/ 0, 0x137, /*?*/ 0, 0x152, 0x00, 0x00, 0x00, 0x00,      /* FF60 */
+#endif
     /*?*/ 0, /*?*/ 0, 0x38, 0x146, 0x00, 0x00, 0x00, 0x00,       /* FF68 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF70 */
     /* keypad keys */
@@ -1079,7 +1154,12 @@ static const WORD nonchar_key_scan[256] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x4B, 0x48,              /* FF90 */
     0x4D, 0x50, 0x49, 0x51, 0x4F, 0x4C, 0x52, 0x53,              /* FF98 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFA0 */
+#ifdef OUTOFWINE
+/* innotek FIX */
+    0x00, 0x00, 0x37, 0x4E, 0x53, 0x4A, 0x7e, 0x135,             /* FFA8 */
+#else
     0x00, 0x00, 0x37, 0x4E, 0x53, 0x4A, 0x53, 0x135,             /* FFA8 */
+#endif
     0x52, 0x4F, 0x50, 0x51, 0x4B, 0x4C, 0x4D, 0x47,              /* FFB0 */
     0x48, 0x49, 0x00, 0x00, 0x00, 0x00,                          /* FFB8 */
     /* function keys */
@@ -1090,11 +1170,17 @@ static const WORD nonchar_key_scan[256] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD8 */
     /* modifier keys */
     0x00, 0x2A, 0x36, 0x1D, 0x11D, 0x3A, 0x00, 0x38,             /* FFE0 */
-    0x138, 0x38, 0x138, 0x15B, 0x15C, 0x00, 0x00, 0x00,            /* FFE8 */
+#ifdef OUTOFWINE
+/* innotek FIX */
+    0x138, 0x38, 0x138, 0x15B, 0x15C, 0x00, 0x00, 0x00,          /* FFE8 */
+#else
+    0x138, 0x38, 0x138, 0x00, 0x00, 0x00, 0x00, 0x00,            /* FFE8 */
+#endif
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFF0 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x153              /* FFF8 */
 };
 
+#ifndef OUTOFWINE
 static const WORD xfree86_vendor_key_vkey[256] =
 {
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF00 */
@@ -1134,6 +1220,61 @@ static const WORD xfree86_vendor_key_vkey[256] =
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFF0 */
     0, 0, 0, 0, 0, 0, 0, 0                                      /* 1008FFF8 */
 };
+#else /* OUTOFWINE defined */
+/* innotek FIX */
+/* This list was put together using /usr/include/X11/XF86keysym.h and
+   http://www.win.tue.nl/~aeb/linux/kbd/scancodes-6.html.  It has not yet
+   been extensively tested.  The scancodes are those used by MicroSoft
+   keyboards. */
+static const WORD xfree86_vendor_key_scan[256] =
+{
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF00 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF08 */
+ /*    Vol-   Mute   Vol+   Play   Stop   Track- Track+ */
+    0, 0x12e, 0x120, 0x130, 0x122, 0x124, 0x110, 0x119,         /* 1008FF10 */
+ /* Home   E-mail    Search */
+    0x132, 0x16c, 0, 0x165, 0, 0, 0, 0,                         /* 1008FF18 */
+ /* Calndr PwrDown            Back   Forward */
+    0x115, 0x15e, 0, 0, 0, 0, 0x16a, 0x169,                     /* 1008FF20 */
+ /* Stop   Refresh Power Wake            Sleep */
+    0x168, 0x167, 0x15e, 0x163, 0, 0, 0, 0x15f,                 /* 1008FF28 */
+ /* Favrts Pause  Media  MyComp */
+    0x166, 0x122, 0x16d, 0x16b, 0, 0, 0, 0,                     /* 1008FF30 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF38 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF40 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF48 */
+ /* AppL   AppR         Calc      Close  Copy */
+    0x109, 0x11e, 0, 0, 0x121, 0, 0x140, 0x118,                 /* 1008FF50 */
+ /* Cut          Docmnts Excel */
+    0x117, 0, 0, 0x105, 0x114, 0, 0, 0,                         /* 1008FF58 */
+ /*    LogOff */
+    0, 0x116, 0, 0, 0, 0, 0, 0,                                 /* 1008FF60 */
+ /*       OffcHm Open      Paste */
+    0, 0, 0x13c, 0x13f, 0, 0x10a, 0, 0,                         /* 1008FF68 */
+ /*       Reply  Refresh         Save */
+    0, 0, 0x141, 0x167, 0, 0, 0, 0x157,                         /* 1008FF70 */
+ /* ScrlUp ScrlDn    Send   Spell        TaskPane */
+    0x10b, 0x18b, 0, 0x143, 0x123, 0, 0, 0x13d,                 /* 1008FF78 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF80 */
+ /*    Word */
+    0, 0x113, 0, 0, 0, 0, 0, 0,                                 /* 1008FF88 */
+ /* MailFwd MyPics MyMusic*/
+    0x142, 0x164, 0x13c, 0, 0, 0, 0, 0,                         /* 1008FF90 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF98 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFA0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFA8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFB0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFB8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFC0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFC8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFD0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFD8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFE0 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFE8 */
+    0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FFF0 */
+    0, 0, 0, 0, 0, 0, 0, 0                                      /* 1008FFF8 */
+};
+#endif /* OUTOFWINE defined */
 
 #ifndef OUTOFWINE
 /* Returns the Windows virtual key code associated with the X event <e> */
@@ -1519,6 +1660,14 @@ X11DRV_KEYBOARD_DetectLayout (Display *display)
   unsigned max_seq = 0;
   int max_score = 0, ismatch = 0;
   char ckey[256][4];
+#ifdef OUTOFWINE
+/* innotek FIX */
+  /* The Wine algorithm is incapable of distinguishing the dvorak and the querty layout,
+     which have the same keys in a different sequence.  Based on the assumption that
+     scan codes are laid out more or less sequentially, we keep a track of how many
+     of our detected scan codes are out of order as an additional matching criterium. */
+  int misorder, last_match, least_misorder = 256;
+#endif
 
   syms = keysyms_per_keycode;
   if (syms > 4) {
@@ -1560,6 +1709,11 @@ X11DRV_KEYBOARD_DetectLayout (Display *display)
     seq = 0;
     lkey = main_key_tab[current].key;
     pkey = -1;
+#ifdef OUTOFWINE
+/* innotek FIX - dvorak layout */
+    last_match = 0;
+    misorder = 0;
+#endif
     for (keyc = min_keycode; keyc <= max_keycode; keyc++) {
       if (ckey[keyc][0]) {
 	/* search for a match in layout table */
@@ -1576,6 +1730,14 @@ X11DRV_KEYBOARD_DetectLayout (Display *display)
 	  }
 	  if (ok > 0) {
 	    score += ok;
+#ifdef OUTOFWINE
+/* innotek FIX - dvorak layout */
+	    if (key < last_match)
+	    {
+	      ++misorder;
+	    }
+	    last_match = key;
+#endif
 	    break;
 	  }
 	}
@@ -1596,15 +1758,29 @@ X11DRV_KEYBOARD_DetectLayout (Display *display)
 	}
       }
     }
+#ifndef OUTOFWINE
     TRACE("matches=%d, mismatches=%d, seq=%d, score=%d\n",
 	   match, mismatch, seq, score);
     if ((score > max_score) ||
 	((score == max_score) && (seq > max_seq))) {
+#else
+/* innotek FIX - dvorak layout */
+    TRACE("matches=%d, mismatches=%d, seq=%d, score=%d, misorder = %d\n",
+	   match, mismatch, seq, score, misorder);
+    if ((score > max_score) ||
+	((score == max_score) && (seq > max_seq)) ||
+	((score == max_score) && (seq == max_seq) &&
+	 (misorder < least_misorder))) {
+#endif
       /* best match so far */
       kbd_layout = current;
       max_score = score;
       max_seq = seq;
       ismatch = !mismatch;
+#ifdef OUTOFWINE
+/* innotek FIX - dvorak layout */
+      least_misorder = misorder;
+#endif
     }
   }
   /* we're done, report results if necessary */
@@ -1727,8 +1903,9 @@ void X11DRV_InitKeyboard(Display *display)
                 scan = 0x100;
 		vkey |= 0x100;
 #else
-                /* @michael: this needs to be investigated and improved on. */
-                scan = 0x100;
+/* innotek FIX - multimedia/internet keys */
+                /* @michael: this needs to be tested and completed some day. */
+                scan = xfree86_vendor_key_scan[keysym & 0xff];
 #endif
             } else if (keysym == 0x20) {                 /* Spacebar */
 #ifndef OUTOFWINE
@@ -1736,6 +1913,7 @@ void X11DRV_InitKeyboard(Display *display)
 #endif
 		scan = 0x39;
 #ifdef OUTOFWINE
+/* innotek FIX - AltGr support */
             } else if (keysym == 0xFE03) {               /* ISO level3 shift, aka AltGr */
 		scan = 0x138;
 #endif /* OUTOFWINE defined */
