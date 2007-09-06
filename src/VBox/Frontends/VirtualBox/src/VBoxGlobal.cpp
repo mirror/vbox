@@ -33,6 +33,12 @@
 #include <qimage.h>
 #include <qlabel.h>
 
+#ifdef Q_WS_X11
+#include <qtextbrowser.h>
+#include <qpushbutton.h>
+#include <qlayout.h>
+#endif
+
 #include <qfileinfo.h>
 #include <qdir.h>
 #include <qmutex.h>
@@ -490,6 +496,88 @@ private:
 
 #endif /* Q_WS_WIN */
 
+#ifdef Q_WS_X11
+/**
+ *  This class is used to show a user license under linux.
+ */
+class VBoxLicenseViewer : public QDialog
+{
+    Q_OBJECT
+
+public:
+
+    VBoxLicenseViewer (const QString &aFilePath)
+        : QDialog (0, "VBoxLicenseViewerObject")
+        , mFilePath (aFilePath)
+        , mLicenseText (0), mAgreeButton (0), mDisagreeButton (0)
+    {
+        setCaption ("VirtualBox License");
+        setIcon (QPixmap::fromMimeSource ("ico40x01.png"));
+
+        mLicenseText = new QTextBrowser (this);
+        mAgreeButton = new QPushButton (tr ("I &Agree"), this);
+        mDisagreeButton = new QPushButton (tr ("I &Disagree"), this);
+
+        mLicenseText->setTextFormat (Qt::RichText);
+        mAgreeButton->setEnabled (false);
+        mDisagreeButton->setEnabled (false);
+
+        connect (mLicenseText->verticalScrollBar(), SIGNAL (valueChanged (int)),
+                 SLOT (onScrollBarMoving (int)));
+        connect (mAgreeButton, SIGNAL (clicked()), SLOT (accept()));
+        connect (mDisagreeButton, SIGNAL (clicked()), SLOT (reject()));
+
+        QVBoxLayout *mainLayout = new QVBoxLayout (this, 10, 10);
+        mainLayout->addWidget (mLicenseText);
+
+        QHBoxLayout *buttonLayout = new QHBoxLayout (mainLayout, 10);
+        buttonLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
+                                                      QSizePolicy::Preferred));
+        buttonLayout->addWidget (mAgreeButton);
+        buttonLayout->addWidget (mDisagreeButton);
+
+        resize (600, 450);
+    }
+
+public slots:
+
+    int exec()
+    {
+        /* read & show the license file */
+        QFile file (mFilePath);
+        if (file.open (IO_ReadOnly))
+        {
+            mLicenseText->setText (file.readAll());
+            return QDialog::exec();
+        }
+        else
+        {
+            vboxProblem().cannotOpenLicenseFile (this, mFilePath);
+            return QDialog::Rejected;
+        }
+    }
+
+private slots:
+
+    void onScrollBarMoving (int aValue)
+    {
+        if (aValue == mLicenseText->verticalScrollBar()->maxValue())
+        {
+            mAgreeButton->setEnabled (true);
+            mDisagreeButton->setEnabled (true);
+        }
+    }
+
+private:
+
+    QString       mFilePath;
+    QTextBrowser *mLicenseText;
+    QPushButton  *mAgreeButton;
+    QPushButton  *mDisagreeButton;
+};
+#endif
+
+
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -830,7 +918,7 @@ static const struct PortConfig
     const ulong IRQ;
     const ulong IOBase;
 }
-kKnownPorts[] = 
+kKnownPorts[] =
 {
     { "COM1", 4, 0x3F8 },
     { "COM2", 3, 0x2F8 },
@@ -840,7 +928,7 @@ kKnownPorts[] =
      * toCOMPortName() to return the "User-defined" string for these values. */
 };
 
-/** 
+/**
  *  Returns the list of the standard COM port names (i.e. "COMx").
  */
 QStringList VBoxGlobal::COMPortNames() const
@@ -852,7 +940,7 @@ QStringList VBoxGlobal::COMPortNames() const
     return list;
 }
 
-/** 
+/**
  *  Returns the name of the standard COM port corresponding to the given
  *  parameters, or "User-defined" (which is also returned when both
  *  @a aIRQ and @a aIOBase are 0).
@@ -867,7 +955,7 @@ QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
     return mUserDefinedCOMPortName;
 }
 
-/** 
+/**
  *  Returns port parameters corresponding to the given standard COM name.
  *  Returns @c true on success, or @c false if the given port name is not one
  *  of the standard names (i.e. "COMx").
@@ -1384,7 +1472,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                         data += QString ("%1 (<nobr>%1</nobr>)")
                             .arg (vboxGlobal().toString (mode))
                             .arg (QDir::convertSeparators (port.GetPath()));
-                    else  
+                    else
                         data += toString (mode);
 
                     item += QString (sSectionItemTpl)
@@ -1490,6 +1578,56 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
     return QString (sTableTpl). arg (detailsReport);
 }
+
+#ifdef Q_WS_X11
+bool VBoxGlobal::showVirtualBoxLicense()
+{
+    /* get the apps doc path */
+    int size = 256;
+    char *buffer = (char*) malloc (size);
+    RTPathAppDocs (buffer, size);
+    QString path (buffer);
+    free (buffer);
+    QDir docDir (path);
+    docDir.setFilter (QDir::Files);
+    docDir.setNameFilter ("License*-*.html");
+
+    /* get the license files list and search for the latest license */
+    QStringList filesList = docDir.entryList();
+    double maxVersionNumber = 0;
+    for (uint index = 0; index < filesList.count(); ++ index)
+    {
+        QRegExp regExp ("License([\\d]+-[\\d]+).html");
+        regExp.search (filesList [index]);
+        QString version = regExp.cap (1);
+        version = version.replace ("-", ".");
+        if (maxVersionNumber < version.toDouble())
+            maxVersionNumber = version.toDouble();
+    }
+    if (!maxVersionNumber)
+    {
+        vboxProblem().cannotFindLicenseFiles (path);
+        return false;
+    }
+
+    /* compose the latest license file full path */
+    QString latestVersion = QString::number (maxVersionNumber);
+    latestVersion = latestVersion.replace (".", "-");
+    QString latestFilePath = docDir.absFilePath (
+        QString ("License%1.html").arg (latestVersion));
+
+    /* check for the agreed license version */
+    QString licenseAgreed = virtualBox().GetExtraData (VBoxDefs::GUI_LicenseKey);
+    if (licenseAgreed == latestVersion)
+        return true;
+
+    VBoxLicenseViewer licenseDialog (latestFilePath);
+    bool result = licenseDialog.exec() == QDialog::Accepted;
+    if (result)
+        virtualBox().SetExtraData (VBoxDefs::GUI_LicenseKey, latestVersion);
+    return result;
+}
+#endif
 
 /**
  *  Opens a direct session for a machine with the given ID.
@@ -3720,3 +3858,6 @@ void VBoxSwitchMenu::processActivated (int /*aIndex*/)
     mAction->setOn (!mAction->isOn());
 }
 
+#ifdef Q_WS_X11
+#include "VBoxGlobal.moc"
+#endif

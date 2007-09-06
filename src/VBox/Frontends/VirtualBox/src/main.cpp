@@ -189,6 +189,12 @@ int main (int argc, char **argv)
 
     if (vboxGlobal().isValid())
     {
+#ifdef Q_WS_X11
+        /* show the user license file */
+        //if (!vboxGlobal().showVirtualBoxLicense())
+        //    return rc;
+#endif
+
         VBoxGlobalSettings settings = vboxGlobal().settings();
         /* Process known keys */
         bool noSelector = settings.isFeatureActive ("noSelector");

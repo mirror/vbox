@@ -84,6 +84,11 @@ public:
 
     // problem handlers
 
+#ifdef Q_WS_X11
+    void cannotFindLicenseFiles (const QString &aPath);
+    void cannotOpenLicenseFile (QWidget *aParent, const QString &aPath);
+#endif
+
     void cannotOpenURL (const QString &aURL);
 
     void cannotFindLanguage (const QString &aLangID, const QString &aNlsPath);

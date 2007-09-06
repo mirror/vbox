@@ -449,6 +449,27 @@ QWidget *VBoxProblemReporter::mainWindowShown()
 // Problem handlers
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef Q_WS_X11
+void VBoxProblemReporter::cannotFindLicenseFiles (const QString &aPath)
+{
+    message
+        (0, VBoxProblemReporter::Error,
+         tr ("Failed to find any license file in "
+             "<nobr><b>%1</b></nobr> path.")
+             .arg (aPath));
+}
+
+void VBoxProblemReporter::cannotOpenLicenseFile (QWidget *aParent,
+                                                 const QString &aPath)
+{
+    message
+        (aParent, VBoxProblemReporter::Error,
+         tr ("Failed to open license file <nobr><b>%1</b></nobr>. "
+             "Check the file presence and read-permissions.")
+             .arg (aPath));
+}
+#endif
+
 void VBoxProblemReporter::cannotOpenURL (const QString &aURL)
 {
     message
@@ -1600,7 +1621,7 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
     NOREF(rc);
 }
 
-/** 
+/**
  *  Returns @c true if the user has selected to power off the machine.
  */
 bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,

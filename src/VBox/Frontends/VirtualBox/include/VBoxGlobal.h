@@ -363,6 +363,10 @@ public:
 
     /* VirtualBox helpers */
 
+#ifdef Q_WS_X11
+    bool showVirtualBoxLicense();
+#endif
+
     CSession openSession (const QUuid &id);
 
     bool startMachine (const QUuid &id);
