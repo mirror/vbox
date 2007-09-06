@@ -409,9 +409,8 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
 # ifdef RT_OS_LINUX
         int cchLink = readlink("/proc/self/exe", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
 # elif defined(RT_OS_SOLARIS)
-        pid_t curProcId = getpid();
         char szFileBuf[PATH_MAX + 1];
-        sprintf(szFileBuf, "/proc/%ld/path/a.out", curProcId);
+        sprintf(szFileBuf, "/proc/%ld/path/a.out", (long)getpid());
         int cchLink = readlink(szFileBuf, &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
 # else /* RT_OS_FREEBSD: */
         int cchLink = readlink("/proc/curproc/file", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
@@ -480,23 +479,23 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
 
 
 #ifndef RT_OS_L4
-/** 
+/**
  * Worker for RTPathUserHome that looks up the home directory
- * using the getpwuid_r api. 
- * 
+ * using the getpwuid_r api.
+ *
  * @returns IPRT status code.
  * @param   pszPath     The path buffer.
  * @param   cchPath     The size of the buffer.
  * @param   uid         The User ID to query the home directory of.
- */ 
+ */
 static int rtPathUserHomeByPasswd(char *pszPath, size_t cchPath, uid_t uid)
 {
-    /* 
-     * The getpwuid_r function uses the passed in buffer to "allocate" any 
-     * extra memory it needs. On some systems we should probably use the 
+    /*
+     * The getpwuid_r function uses the passed in buffer to "allocate" any
+     * extra memory it needs. On some systems we should probably use the
      * sysconf function to find the appropriate buffer size, but since it won't
-     * work everywhere we'll settle with a 5KB buffer and ASSUME that it'll 
-     * suffice for even the lengthiest user descriptions... 
+     * work everywhere we'll settle with a 5KB buffer and ASSUME that it'll
+     * suffice for even the lengthiest user descriptions...
      */
     char            achBuffer[5120];
     struct passwd   Passwd;
@@ -507,7 +506,7 @@ static int rtPathUserHomeByPasswd(char *pszPath, size_t cchPath, uid_t uid)
         return RTErrConvertFromErrno(rc);
     if (!pPasswd) /* uid not found in /etc/passwd */
         return VERR_PATH_NOT_FOUND;
-    
+
     /*
      * Check that it isn't empty and that it exists.
      */
@@ -537,14 +536,14 @@ static int rtPathUserHomeByPasswd(char *pszPath, size_t cchPath, uid_t uid)
 #endif
 
 
-/** 
+/**
  * Worker for RTPathUserHome that looks up the home directory
- * using the HOME environment variable. 
- * 
+ * using the HOME environment variable.
+ *
  * @returns IPRT status code.
  * @param   pszPath     The path buffer.
  * @param   cchPath     The size of the buffer.
- */ 
+ */
 static int rtPathUserHomeByEnv(char *pszPath, size_t cchPath)
 {
     /*
@@ -553,7 +552,7 @@ static int rtPathUserHomeByEnv(char *pszPath, size_t cchPath)
     int rc = VERR_PATH_NOT_FOUND;
     const char *pszHome = getenv("HOME");
     if (!pszHome)
-        
+
     {
         struct stat st;
         if (    !stat(pszHome, &st)
@@ -595,8 +594,8 @@ RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
          rc = rtPathUserHomeByPasswd(pszPath, cchPath, uid);
      else
          rc = rtPathUserHomeByEnv(pszPath, cchPath);
-     
-     /* 
+
+     /*
       * On failure, retry using the alternative method.
       * (Should perhaps restrict the retry cases a bit more here...)
       */
