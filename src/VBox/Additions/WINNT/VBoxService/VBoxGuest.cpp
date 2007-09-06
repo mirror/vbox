@@ -306,7 +306,7 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
         } 
         else
         {
-            dprintf(("VBoxService: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxGuestThread: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
