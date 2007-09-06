@@ -2045,22 +2045,13 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 
             if (RT_LIKELY(pcnetIsLinkUp(pData) || CSR_LOOP(pData)))
             {
-                RTR3PTR pv;
-
                 /* From the manual: ``A zero length buffer is acceptable as
                  * long as it is not the last buffer in a chain (STP = 0 and
                  * ENP = 1).'' That means that the first buffer might have a
                  * zero length if it is not the last one in the chain. */
                 if (RT_LIKELY(cb <= 1536))
                 {
-                    int rc = PDMDevHlpPhys2HCVirt(pData->pDevInsHC,
-                                                  PHYSADDR(pData, tmd.tmd0.tbadr), cb, &pv);
-                    if (RT_SUCCESS(rc))
-                        pcnetXmitZeroCopyFrame(pData, pv, cb);
-                    else
-                    {
-                        pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
-                    }
+                    pcnetXmitRead1st(pData, PHYSADDR(pData, tmd.tmd0.tbadr), cb);
                     if (CSR_LOOP(pData))
                         pcnetXmitLoopbackFrame(pData);
                     else
