@@ -28,4 +28,7 @@ const char* VBoxDefs::GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 const char* VBoxDefs::GUI_LastCloseAction = "GUI/LastCloseAction";
 const char* VBoxDefs::GUI_SuppressMessages = "GUI/SuppressMessages";
 const char* VBoxDefs::GUI_PermanentSharedFoldersAtRuntime = "GUI/PermanentSharedFoldersAtRuntime";
+#ifdef Q_WS_X11
+const char* VBoxDefs::GUI_LicenseKey = "GUI/LicenseAgreed";
+#endif
 

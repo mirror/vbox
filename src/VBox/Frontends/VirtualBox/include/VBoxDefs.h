@@ -159,6 +159,9 @@ struct VBoxDefs
     static const char* GUI_LastCloseAction;
     static const char* GUI_SuppressMessages;
     static const char* GUI_PermanentSharedFoldersAtRuntime;
+#ifdef Q_WS_X11
+    static const char* GUI_LicenseKey;
+#endif
 };
 
 #endif // __VBoxDefs_h__
