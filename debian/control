@@ -22,7 +22,7 @@ Description: innotek VirtualBox
 
 Package: virtualbox-ose-dbg
 Architecture: i386 amd64
-Depends: virtualbox (= ${Source-Version})
+Depends: virtualbox-ose (= ${Source-Version})
 Description: innotek VirtualBox debugging symbols
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
