@@ -17,6 +17,7 @@
  */
 #define _WIN32_WINNT 0x0500
 #include <windows.h>
+#include <psapi.h>
 #include "VBoxService.h"
 #include "VBoxGuest.h"
 #include <VBoxDisplay.h>
@@ -30,8 +31,15 @@ typedef struct _VBOXGUESTCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
     uint32_t              uStatInterval;
+    uint32_t              uMemBalloonSize;
+
+    uint64_t              ullLastCpuLoad_Idle;
+    uint64_t              ullLastCpuLoad_Kernel;
+    uint64_t              ullLastCpuLoad_User;
 
     NTSTATUS (WINAPI *pfnNtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength);
+    void     (WINAPI *pfnGlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer);
+    BOOL     (WINAPI *pfnGetPerformanceInfo)(PPERFORMANCE_INFORMATION pPerformanceInformation, DWORD cb);
 } VBOXGUESTCONTEXT;
 
 
@@ -45,8 +53,12 @@ int VBoxGuestInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
 
     dprintf(("VBoxGuestInit\n"));
 
-    gCtx.pEnv          = pEnv;
-    gCtx.uStatInterval = 0;     /* default */
+    gCtx.pEnv                   = pEnv;
+    gCtx.uStatInterval          = 0;     /* default */
+    gCtx.ullLastCpuLoad_Idle    = 0;
+    gCtx.ullLastCpuLoad_Kernel  = 0;
+    gCtx.ullLastCpuLoad_User    = 0;
+    gCtx.uMemBalloonSize        = 0;
 
     VMMDevGetStatisticsChangeRequest req;
     vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
@@ -60,6 +72,7 @@ int VBoxGuestInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     else
         dprintf(("VBoxGuestThread: DeviceIoControl failed with %d\n", GetLastError()));
 
+    /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
     HMODULE hMod = LoadLibrary("NTDLL.DLL");
     if (hMod)
     {
@@ -67,8 +80,45 @@ int VBoxGuestInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
         if (gCtx.pfnNtQuerySystemInformation)
             dprintf(("gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation));
         else
+        {
             dprintf(("NTDLL.NtQuerySystemInformation not found!!\n"));
+            return VERR_NOT_IMPLEMENTED;
+        }
     }
+
+    /* GlobalMemoryStatus is win2k and up, so load it dynamically */
+    hMod = LoadLibrary("KERNEL32.DLL");
+    if (hMod)
+    {
+        *(uintptr_t *)&gCtx.pfnGlobalMemoryStatusEx = (uintptr_t)GetProcAddress(hMod, "GlobalMemoryStatus");
+        if (gCtx.pfnGlobalMemoryStatusEx)
+            dprintf(("gCtx.GlobalMemoryStatus= %x\n", gCtx.pfnGlobalMemoryStatusEx));
+        else
+        {
+            /** @todo now fails in NT4; do we care? */
+            dprintf(("KERNEL32.GlobalMemoryStatus not found!!\n"));
+            return VERR_NOT_IMPLEMENTED;
+        }
+    }
+    /* GetPerformanceInfo is xp and up, so load it dynamically */
+    hMod = LoadLibrary("PSAPI.DLL");
+    if (hMod)
+    {
+        *(uintptr_t *)&gCtx.pfnGetPerformanceInfo = (uintptr_t)GetProcAddress(hMod, "GetPerformanceInfo");
+        if (gCtx.pfnGetPerformanceInfo)
+            dprintf(("gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo));
+        /* failure is not fatal */
+    }
+
+    /* Check balloon size */
+    DWORD dwMemBalloonSize;
+    if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
+    {
+        dprintf(("VBoxGuestThread: new balloon size % MB\n", dwMemBalloonSize));
+        gCtx.uMemBalloonSize = dwMemBalloonSize;
+    }
+    else
+        dprintf(("VBoxGuestThread: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
 
     *pfStartThread = true;
     *ppInstance = &gCtx;
@@ -80,6 +130,110 @@ void VBoxGuestDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
     dprintf(("VBoxGuestDestroy\n"));
     return;
+}
+
+void VBoxGuestReportStatistics(VBOXGUESTCONTEXT *pCtx)
+{
+    SYSTEM_INFO systemInfo;
+    PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION pProcInfo;
+    MEMORYSTATUSEX memStatus;
+    VMMDevReportGuestStats req;
+    uint32_t cbStruct;
+    DWORD    cbReturned;
+    HANDLE   gVBoxDriver = pCtx->pEnv->hDriver;
+
+    Assert(gCtx.pfnGlobalMemoryStatusEx && gCtx.pfnNtQuerySystemInformation);
+    if (    !gCtx.pfnGlobalMemoryStatusEx 
+        ||  !gCtx.pfnNtQuerySystemInformation)
+        return;
+
+    vmmdevInitRequest(&req.header, VMMDevReq_ReportGuestStats);
+
+    /* Query and report guest statistics */
+    GetSystemInfo(&systemInfo);
+
+    gCtx.pfnGlobalMemoryStatusEx(&memStatus);
+
+    req.guestStats.u32PhysMemTotal      = (uint32_t)(memStatus.ullTotalPhys / systemInfo.dwPageSize);
+    req.guestStats.u32PhysMemAvail      = (uint32_t)(memStatus.ullAvailPhys / systemInfo.dwPageSize);
+    req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize);
+    req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
+    req.guestStats.u32PhysMemBalloon    = pCtx->uMemBalloonSize;    /* in megabytes already */
+    req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
+
+    if (gCtx.pfnGetPerformanceInfo)
+    {
+        PERFORMANCE_INFORMATION perfInfo;
+
+        if (gCtx.pfnGetPerformanceInfo(&perfInfo, sizeof(perfInfo)))
+        {
+            req.guestStats.u32Processes         = perfInfo.ProcessCount;
+            req.guestStats.u32Threads           = perfInfo.ThreadCount;
+            req.guestStats.u32MemCommitTotal    = perfInfo.CommitTotal;     /* already in pages */
+            req.guestStats.u32MemKernelTotal    = perfInfo.KernelTotal;     /* already in pages */
+            req.guestStats.u32MemKernelPaged    = perfInfo.KernelPaged;     /* already in pages */
+            req.guestStats.u32MemKernelNonPaged = perfInfo.KernelNonpaged;  /* already in pages */
+            req.guestStats.u32MemSystemCache    = perfInfo.SystemCache;     /* already in pages */
+            req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_PROCESSES | VBOX_GUEST_STAT_THREADS | VBOX_GUEST_STAT_MEM_COMMIT_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_PAGED | VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
+        }
+        else
+            dprintf(("GetPerformanceInfo failed with %d\n", GetLastError()));
+    }
+
+    /* Query CPU load information */
+    cbStruct = systemInfo.dwNumberOfProcessors*sizeof(SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION);
+    pProcInfo = (PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION)malloc(cbStruct);
+    Assert(pProcInfo);
+    if (!pProcInfo)
+        return;
+
+    /* Unfortunately GetSystemTimes is XP SP1 and up only, so we need to use the semi-undocumented NtQuerySystemInformation */
+    NTSTATUS rc = gCtx.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
+    if (    !rc
+        &&  cbReturned == cbStruct)
+    {
+        if (gCtx.ullLastCpuLoad_Kernel == 0)
+        {   
+            /* first time */
+            gCtx.ullLastCpuLoad_Idle    = pProcInfo->IdleTime.QuadPart;
+            gCtx.ullLastCpuLoad_Kernel  = pProcInfo->KernelTime.QuadPart;
+            gCtx.ullLastCpuLoad_User    = pProcInfo->UserTime.QuadPart;
+
+            Sleep(250);
+
+            rc = gCtx.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
+            Assert(!rc);
+        }
+
+        uint64_t deltaIdle    = (pProcInfo->IdleTime.QuadPart - gCtx.ullLastCpuLoad_Idle);
+        uint64_t deltaKernel  = (pProcInfo->KernelTime.QuadPart - gCtx.ullLastCpuLoad_Kernel);
+        uint64_t deltaUser    = (pProcInfo->UserTime.QuadPart - gCtx.ullLastCpuLoad_User);
+        uint64_t ullTotalTime = deltaIdle + deltaKernel + deltaUser;
+
+        req.guestStats.u32CpuLoad_Idle      = (uint32_t)(deltaIdle  * 100 / ullTotalTime);
+        req.guestStats.u32CpuLoad_Kernel    = (uint32_t)(deltaKernel* 100 / ullTotalTime);
+        req.guestStats.u32CpuLoad_User      = (uint32_t)(deltaUser  * 100 / ullTotalTime);
+
+        req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL | VBOX_GUEST_STAT_CPU_LOAD_USER;
+
+        gCtx.ullLastCpuLoad_Idle    = pProcInfo->IdleTime.QuadPart;
+        gCtx.ullLastCpuLoad_Kernel  = pProcInfo->KernelTime.QuadPart;
+        gCtx.ullLastCpuLoad_User    = pProcInfo->UserTime.QuadPart;
+    }
+
+    for (uint32_t i=0;i<systemInfo.dwNumberOfProcessors;i++)
+    {
+        req.guestStats.u32CpuId = i;
+
+        if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+        {
+            dprintf(("VBoxGuestThread: new statistics reported successfully!\n"));
+        }
+        else
+            dprintf(("VBoxGuestThread: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
+    }
+
+    free(pProcInfo);
 }
 
 /**
@@ -125,7 +279,14 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_BALLOON_CHANGE_REQUEST)
             {
-                DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, NULL, 0, NULL, NULL);
+                DWORD dwMemBalloonSize;
+                if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
+                {
+                    dprintf(("VBoxGuestThread: new balloon size % MB\n", dwMemBalloonSize));
+                    pCtx->uMemBalloonSize = dwMemBalloonSize;
+                }
+                else
+                    dprintf(("VBoxGuestThread: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
             }
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST)
             {
@@ -139,8 +300,7 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
                     pCtx->uStatInterval = req.u32StatInterval * 1000;
                 }
                 else
-                    dprintf(("VBoxGuestThread: DeviceIoControl failed with %d\n", GetLastError()));
-
+                    dprintf(("VBoxGuestThread: DeviceIoControl (stat) failed with %d\n", GetLastError()));
             }
         } 
         else
@@ -154,15 +314,11 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
                 break;
             }
         }
+        /* Report statistics to the host */
         if (    gCtx.uStatInterval 
             &&  gCtx.pfnNtQuerySystemInformation)
         {
-            SYSTEM_INFO systemInfo;
-
-            /* Query and report guest statistics */
-            GetSystemInfo(&systemInfo);
-
-            //gCtx.pfnNtQuerySystemInformation(
+            VBoxGuestReportStatistics(pCtx);
         }
     } 
     while (!fTerminate);
