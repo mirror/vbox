@@ -426,7 +426,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
 
     /* Note that reported values are in pages; upper layers expect them in megabytes */
     Assert(pGuestStats->u32PageSize == 4096);
-    if (!pGuestStats->u32PageSize)
+    if (pGuestStats->u32PageSize != 4096)
         pGuestStats->u32PageSize = 4096;
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
