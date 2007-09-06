@@ -249,7 +249,7 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
     VBoxGuestFilterMaskInfo maskInfo;
     DWORD cbReturned;
 
-    maskInfo.u32OrMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
+    maskInfo.u32OrMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST | VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
