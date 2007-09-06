@@ -45,6 +45,7 @@
 #include "VBox/com/com.h"
 #include "VBox/com/assert.h"
 
+#include "../include/Logging.h"
 
 namespace com
 {
@@ -170,9 +171,45 @@ HRESULT Initialize()
 
 #if !defined (VBOX_WITH_XPCOM)
 
-    rc = CoInitializeEx (NULL, COINIT_MULTITHREADED |
-                               COINIT_DISABLE_OLE1DDE |
-                               COINIT_SPEED_OVER_MEMORY);
+    DWORD flags = COINIT_MULTITHREADED |
+                  COINIT_DISABLE_OLE1DDE |
+                  COINIT_SPEED_OVER_MEMORY;
+
+    rc = CoInitializeEx (NULL, flags);
+
+    /* If we fail to set the necessary apartment model, it may mean that some
+     * DLL that was indirectly loaded by the process calling this function has
+     * already initialized COM on the given thread in an incompatible way
+     * which we can't leave with. Therefore, we try to fix this by using the
+     * brute force method: */
+
+    enum { MaxTries = 10000 };
+    int tries = MaxTries;
+    while (rc == RPC_E_CHANGED_MODE && tries --)
+    {
+        LogFlowFunc (("COM already initialized in wrong apartment mode, "
+                      "will reinitialize.\n"));
+
+        CoUninitialize();
+        rc = CoInitializeEx (NULL, flags);
+        if (rc == S_OK)
+        {
+            /* We've successfully reinitialized COM; restore the
+             * initialization reference counter */
+
+            LogFlowFunc (("Will call CoInitializeEx() %d times.\n",
+                          MaxTries - tries));
+
+            while (tries ++ < MaxTries)
+            {
+                rc = CoInitializeEx (NULL, flags);
+                Assert (rc == S_FALSE);
+            }
+        }
+    }
+
+    /* the overall result must be either S_OK or S_FALSE */
+    AssertMsg (rc == S_OK || rc == S_FALSE, ("rc=%08X\n", rc));
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 

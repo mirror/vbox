@@ -89,18 +89,12 @@ HRESULT COMBase::initializeCOM()
 {
     LogFlowFuncEnter();
 
-    HRESULT rc = S_OK;
+    /* Note: On Win32, Qt somehow calls CoInitialize[Ex]() during creation of
+     * the QApplication instance (didn't explore deeply why it does so) with
+     * different flags which is incompatible with our multithreaded
+     * apartment. com::Initialize() will properly care of this situation. */
 
-#if !defined (VBOX_WITH_XPCOM)
-
-    /* disable this damn CoInitialize* somehow made by Qt during
-     * creation of the QApplication instance (didn't explore deeply
-     * why does it do this) */
-    CoUninitialize();
-
-#endif /* !defined (VBOX_WITH_XPCOM) */
-
-    rc = com::Initialize();
+    HRESULT rc = com::Initialize();
 
 #if defined (VBOX_WITH_XPCOM)
 
