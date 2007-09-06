@@ -361,10 +361,17 @@ typedef struct
 #define VBOX_GUEST_STAT_CPU_LOAD_USER       BIT(2)
 #define VBOX_GUEST_STAT_THREADS             BIT(3)
 #define VBOX_GUEST_STAT_PROCESSES           BIT(4)
-#define VBOX_GUEST_STAT_PHYS_MEM_TOTAL      BIT(5)
-#define VBOX_GUEST_STAT_PHYS_MEM_AVAIL      BIT(6)
-#define VBOX_GUEST_STAT_PHYS_MEM_BALLOON    BIT(7)
-#define VBOX_GUEST_STAT_PAGE_FILE_SIZE      BIT(8)
+#define VBOX_GUEST_STAT_HANDLES             BIT(5)
+#define VBOX_GUEST_STAT_MEMORY_LOAD         BIT(6)
+#define VBOX_GUEST_STAT_PHYS_MEM_TOTAL      BIT(7)
+#define VBOX_GUEST_STAT_PHYS_MEM_AVAIL      BIT(8)
+#define VBOX_GUEST_STAT_PHYS_MEM_BALLOON    BIT(9)
+#define VBOX_GUEST_STAT_MEM_COMMIT_TOTAL    BIT(10)
+#define VBOX_GUEST_STAT_MEM_KERNEL_TOTAL    BIT(11)
+#define VBOX_GUEST_STAT_MEM_KERNEL_PAGED    BIT(12)
+#define VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED BIT(13)
+#define VBOX_GUEST_STAT_MEM_SYSTEM_CACHE    BIT(14)
+#define VBOX_GUEST_STAT_PAGE_FILE_SIZE      BIT(15)
 
 
 /** guest statistics structure */
@@ -384,13 +391,27 @@ typedef struct VBoxGuestStatistics
     uint32_t        u32Threads;
     /** Nr of processes */
     uint32_t        u32Processes;
-    /** Total physical memory (megabytes) */
+    /** Nr of handles */
+    uint32_t        u32Handles;
+    /** Memory load (0-100) */
+    uint32_t        u32MemoryLoad;
+    /** Total physical memory (in 4kb pages) */
     uint32_t        u32PhysMemTotal;
-    /** Available physical memory (megabytes) */
+    /** Available physical memory (in 4kb pages) */
     uint32_t        u32PhysMemAvail;
-    /** Ballooned physical memory (megabytes) */
+    /** Ballooned physical memory (in 4kb pages) */
     uint32_t        u32PhysMemBalloon;
-    /** Pagefile size (megabytes) */
+    /** Total number of committed memory (which is not necessarily in-use) (in 4kb pages) */
+    uint32_t        u32MemCommitTotal;
+    /** Total amount of memory used by the kernel (in 4kb pages) */
+    uint32_t        u32MemKernelTotal;
+    /** Total amount of paged memory used by the kernel (in 4kb pages) */
+    uint32_t        u32MemKernelPaged;
+    /** Total amount of nonpaged memory used by the kernel (in 4kb pages) */
+    uint32_t        u32MemKernelNonPaged;
+    /** Total amount of memory used for the system cache (in 4kb pages) */
+    uint32_t        u32MemSystemCache;
+    /** Pagefile size (in 4kb pages) */
     uint32_t        u32PageFileSize;
 } VBoxGuestStatistics;
 

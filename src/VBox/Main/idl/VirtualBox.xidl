@@ -430,27 +430,62 @@
         Total number of threads in the system.
       </desc>
     </const>
-    <const name="Processes"            value="5">
+    <const name="Processes"            value="4">
       <desc>
         Total number of processes in the system.
       </desc>
     </const>
-    <const name="PhysMemTotal"         value="6">
+    <const name="Handles"              value="5">
+      <desc>
+        Total number of handles in the system.
+      </desc>
+    </const>
+    <const name="MemoryLoad"           value="6">
+      <desc>
+        Memory load (0-100%).
+      </desc>
+    </const>
+    <const name="PhysMemTotal"         value="7">
       <desc>
         Total physical memory in megabytes.
       </desc>
     </const>
-    <const name="PhysMemAvailable"     value="7">
+    <const name="PhysMemAvailable"     value="8">
       <desc>
         Free physical memory in megabytes.
       </desc>
     </const>
-    <const name="PhysMemBalloon"       value="8">
+    <const name="PhysMemBalloon"       value="9">
       <desc>
         Ballooned physical memory in megabytes.
       </desc>
     </const>
-    <const name="PageFileSize"         value="9">
+    <const name="MemCommitTotal"       value="10">
+      <desc>
+        Total amount of memory in the committed state in megabytes.
+      </desc>
+    </const>
+    <const name="MemKernelTotal"       value="11">
+      <desc>
+        Total amount of memory used by the guest OS's kernel in megabytes.
+      </desc>
+    </const>
+    <const name="MemKernelPaged"       value="12">
+      <desc>
+        Total amount of paged memory used by the guest OS's kernel in megabytes.
+      </desc>
+    </const>
+    <const name="MemKernelNonpaged"    value="13">
+      <desc>
+        Total amount of nonpaged memory used by the guest OS's kernel in megabytes.
+      </desc>
+    </const>
+    <const name="MemSystemCache"       value="14">
+      <desc>
+        Total amount of memory used by the guest OS's system cache in megabytes.
+      </desc>
+    </const>
+    <const name="PageFileSize"         value="15">
       <desc>
         Pagefile size in megabytes.
       </desc>

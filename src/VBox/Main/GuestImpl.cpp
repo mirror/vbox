@@ -277,8 +277,15 @@ STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     case GuestStatisticType_CPULoad_User:
     case GuestStatisticType_Threads:
     case GuestStatisticType_Processes:
+    case GuestStatisticType_Handles:
+    case GuestStatisticType_MemoryLoad:
     case GuestStatisticType_PhysMemTotal:
     case GuestStatisticType_PhysMemAvailable:
+    case GuestStatisticType_MemCommitTotal:
+    case GuestStatisticType_MemKernelTotal:
+    case GuestStatisticType_MemKernelPaged:
+    case GuestStatisticType_MemKernelNonpaged:
+    case GuestStatisticType_MemSystemCache:
     case GuestStatisticType_PageFileSize:
         *aStatVal = 0;
         break;
@@ -302,8 +309,15 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     case GuestStatisticType_CPULoad_User:
     case GuestStatisticType_Threads:
     case GuestStatisticType_Processes:
+    case GuestStatisticType_Handles:
+    case GuestStatisticType_MemoryLoad:
     case GuestStatisticType_PhysMemTotal:
     case GuestStatisticType_PhysMemAvailable:
+    case GuestStatisticType_MemCommitTotal:
+    case GuestStatisticType_MemKernelTotal:
+    case GuestStatisticType_MemKernelPaged:
+    case GuestStatisticType_MemKernelNonpaged:
+    case GuestStatisticType_MemSystemCache:
     case GuestStatisticType_PageFileSize:
         break;
 
