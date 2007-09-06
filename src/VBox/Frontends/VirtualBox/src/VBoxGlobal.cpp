@@ -1590,17 +1590,16 @@ bool VBoxGlobal::showVirtualBoxLicense()
     free (buffer);
     QDir docDir (path);
     docDir.setFilter (QDir::Files);
-    docDir.setNameFilter ("License*-*.html");
+    docDir.setNameFilter ("License-*.html");
 
     /* get the license files list and search for the latest license */
     QStringList filesList = docDir.entryList();
     double maxVersionNumber = 0;
     for (uint index = 0; index < filesList.count(); ++ index)
     {
-        QRegExp regExp ("License([\\d]+-[\\d]+).html");
+        QRegExp regExp ("License-([\\d\\.]+).html");
         regExp.search (filesList [index]);
         QString version = regExp.cap (1);
-        version = version.replace ("-", ".");
         if (maxVersionNumber < version.toDouble())
             maxVersionNumber = version.toDouble();
     }
@@ -1612,9 +1611,8 @@ bool VBoxGlobal::showVirtualBoxLicense()
 
     /* compose the latest license file full path */
     QString latestVersion = QString::number (maxVersionNumber);
-    latestVersion = latestVersion.replace (".", "-");
     QString latestFilePath = docDir.absFilePath (
-        QString ("License%1.html").arg (latestVersion));
+        QString ("License-%1.html").arg (latestVersion));
 
     /* check for the agreed license version */
     QString licenseAgreed = virtualBox().GetExtraData (VBoxDefs::GUI_LicenseKey);
