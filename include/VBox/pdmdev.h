@@ -2349,7 +2349,10 @@ typedef struct PDMDEVHLP
      * @param   GCPhys          Start physical address.
      * @param   cbRange         The size of the range. Use 0 if you don't care about the range.
      * @param   ppvHC           Where to store the HC pointer corresponding to GCPhys.
-     * @thread  Any thread.
+     * @thread  The emulation thread.
+     *
+     * @remark  Careful with page boundraries.
+     * @remark  Do not use the mapping after you return to the caller! (it could get invalidated/changed)
      */
     DECLR3CALLBACKMEMBER(int, pfnPhys2HCVirt,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC));
 
@@ -2361,7 +2364,9 @@ typedef struct PDMDEVHLP
      * @param   GCPtr           Guest virtual address.
      * @param   pHCPtr          Where to store the HC pointer corresponding to GCPtr.
      * @thread  The emulation thread.
+     *
      * @remark  Careful with page boundraries.
+     * @remark  Do not use the mapping after you return to the caller! (it could get invalidated/changed)
      */
     DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2HCPtr,(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr));
 
