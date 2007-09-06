@@ -427,10 +427,8 @@ static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
     return result;
 }
 
-static NTSTATUS VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt)
+static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBalloonSize)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
     /* just perform the request */
     VMMDevGetMemBalloonChangeRequest *req = NULL;
 
@@ -448,7 +446,6 @@ static NTSTATUS VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt)
         {
             dprintf(("VBoxGuest::VBoxGuestDeviceControl IOCTL_VBOXGUEST_CTL_CHECK_BALLOON: error issuing request to VMMDev!"
                      "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
-            Status = STATUS_UNSUCCESSFUL;
         }
         else
         {
@@ -457,11 +454,7 @@ static NTSTATUS VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt)
 
         VbglGRFree(&req->header);
     }
-    else
-    {
-        Status = STATUS_UNSUCCESSFUL;
-    }
-    return Status;
+    return rc;
 }
 
 
@@ -814,7 +807,26 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #ifdef VBOX_WITH_MANAGEMENT
         case IOCTL_VBOXGUEST_CTL_CHECK_BALLOON:
         {
-            Status = VBoxGuestQueryMemoryBalloon(pDevExt);
+            ULONG *pMemBalloonSize = (ULONG *) pBuf;
+
+            if (pStack->Parameters.DeviceIoControl.OutputBufferLength != sizeof(ULONG))
+            {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: OutputBufferLength %d != sizeof(ULONG) %d\n",
+                         pStack->Parameters.DeviceIoControl.OutputBufferLength, sizeof(ULONG)));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            int rc = VBoxGuestQueryMemoryBalloon(pDevExt, pMemBalloonSize);
+            if (VBOX_FAILURE(rc))
+            {
+                dprintf(("IOCTL_VBOXGUEST_CTL_CHECK_BALLOON: vbox rc = %Vrc\n", rc));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
+            }
             break;
         }
 #endif
