@@ -359,11 +359,9 @@ ifdef VBOX_OSE
  ifeq ($(BUILD_TARGET),darwin)
   # Qt/Mac v3.3.x requires patching to work for us.
   VBOX_WITH_QTGUI=
-  # The installer is not public
-  VBOX_WITH_INSTALLER=
  endif
- ifeq ($(BUILD_TARGET),win)
-  # The installer is not public
+ ifneq ($(BUILD_TARGET),linux)
+  # Only the Linux installer is public
   VBOX_WITH_INSTALLER=
  endif
 endif
