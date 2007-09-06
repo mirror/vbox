@@ -121,7 +121,11 @@
 #ifdef IN_RING3
 # if defined(RT_OS_WINDOWS)
 #  include <Windows.h>
-# elif defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+# elif defined(RT_OS_LINUX)
+#  include <unistd.h>
+# elif defined(RT_OS_SOLARIS)
+#  define _STRUCTURED_PROC 1
+#  include <sys/procfs.h>
 #  include <unistd.h>
 # elif defined(RT_OS_L4)
 #  include <l4/vboxserver/vboxserver.h>
@@ -295,17 +299,30 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 # if defined(RT_OS_WINDOWS)
         RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %ls\n", GetCommandLineW());
 
-# elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
-#  ifdef RT_OS_LINUX
-        FILE *pFile = fopen("/proc/self/cmdline", "r");
-#  elif defined(RT_OS_SOLARIS)
-        /*
-         * I have a sinking feeling solaris' psinfo format could be different from cmdline
-         * Must check at run time and possible just ignore this section for solaris
-         */
+# elif defined(RT_OS_SOLARIS)
+        psinfo_t psi;
         char szArgFileBuf[80];
         RTStrPrintf(szArgFileBuf, sizeof(szArgFileBuf), "/proc/%ld/psinfo", (long)getpid());
-        FILE* pFile = fopen(szArgFileBuf, "r");
+        FILE* pFile = fopen(szArgFileBuf, "rb");
+        if (pFile)
+        {
+            if (fread(&psi, sizeof(psi), 1, pFile) == 1)
+            {
+#  if 0     /* 100% safe:*/
+                RTLogLoggerEx(pLogger, 0, ~0U, "Args: %s\n", psi.pr_psargs);
+#  else     /* probably safe: */
+                const char * const *argv = (const char * const *)psi.pr_argv;
+                for (int iArg = 0; iArg < psi.pr_argc; iArg++)
+                    RTLogLoggerEx(pLogger, 0, ~0U, "Arg[%d]: %s\n", iArg, argv[iArg]);
+#  endif
+
+            }
+            fclose(pFile);
+        }
+
+# elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#  ifdef RT_OS_LINUX
+        FILE *pFile = fopen("/proc/self/cmdline", "r");
 #  else /* RT_OS_FREEBSD: */
         FILE *pFile = fopen("/proc/curproc/cmdline", "r");
 #  endif
