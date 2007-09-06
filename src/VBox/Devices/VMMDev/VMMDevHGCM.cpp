@@ -52,11 +52,11 @@ typedef struct _VBOXHGCMLINPTR
     /* How many pages. */
     uint32_t cPages;
     
-    /* Pointer to array of the HC addresses for these pages. 
-     * It is assumed that the HC address of the locked resident
-     * guest physical page does not change.
+    /* Pointer to array of the GC physical addresses for these pages. 
+     * It is assumed that the physical address of the locked resident
+     * guest page does not change.
      */
-    RTHCPTR *paPages;
+    RTGCPHYS *paPages;
     
 } VBOXHGCMLINPTR;
 
@@ -180,7 +180,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
                                  uint32_t u32Size,
                                  uint32_t iLinPtr,
                                  VBOXHGCMLINPTR *paLinPtrs,
-                                 RTHCPTR **ppPages)
+                                 RTGCPHYS **ppPages)
 {
     int rc = VINF_SUCCESS;
     
@@ -210,11 +210,11 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
     while (iPage < cPages)
     {
         /* convert */
-        RTHCPTR HCPtr;
+        RTGCPHYS GCPhys;
         
-        rc = PDMDevHlpPhysGCPtr2HCPtr(pDevIns, GCPtr, &HCPtr);
+        rc = PDMDevHlpPhysGCPtr2GCPhys(pDevIns, GCPtr, &GCPhys);
         
-        Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %p. %Vrc\n", iPage, GCPtr, HCPtr, rc));
+        Log(("vmmdevHGCMSaveLinPtr: Page %d: %VGv -> %VGp. %Vrc\n", iPage, GCPtr, GCPhys, rc));
     
         if (VBOX_FAILURE (rc))
         {
@@ -222,7 +222,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
         }
 
         /* store */
-        pLinPtr->paPages[iPage++] = HCPtr;
+        pLinPtr->paPages[iPage++] = GCPhys;
 
         /* next */
         GCPtr += PAGE_SIZE;
@@ -246,8 +246,8 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
     
     AssertRelease (u32Size > 0 && iParm == (uint32_t)pLinPtr->iParm);
     
-    uint8_t *pu8Dst = (uint8_t *)pLinPtr->paPages[0] + pLinPtr->cbOffsetFirstPage;
-    uint8_t *pu8Src = (uint8_t *)pvHost;
+    RTGCPHYS GCPhysDst = pLinPtr->paPages[0] + pLinPtr->cbOffsetFirstPage;
+    uint8_t *pu8Src    = (uint8_t *)pvHost;
     
     Log(("vmmdevHGCMWriteLinPtr: parm %d: size %d, cPages = %d\n", iParm, u32Size, pLinPtr->cPages));
     
@@ -260,24 +260,24 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
                              PAGE_SIZE - pLinPtr->cbOffsetFirstPage:
                              PAGE_SIZE;
                              
-        Log(("vmmdevHGCMWriteLinPtr: page %d: dst %p, src %p, cbWrite %d\n", iPage, pu8Dst, pu8Src, cbWrite));
+        Log(("vmmdevHGCMWriteLinPtr: page %d: dst %VGp, src %p, cbWrite %d\n", iPage, GCPhysDst, pu8Src, cbWrite));
         
         iPage++;
         
         if (cbWrite >= u32Size)
         {
-            memcpy (pu8Dst, pu8Src, u32Size);
+            PDMDevHlpPhysWrite(pDevIns, GCPhysDst, pu8Src, u32Size);
             u32Size = 0;
             break;
         }
         
-        memcpy (pu8Dst, pu8Src, cbWrite);
+        PDMDevHlpPhysWrite(pDevIns, GCPhysDst, pu8Src, cbWrite);
 
         /* next */
         u32Size    -= cbWrite;
         pu8Src     += cbWrite;
         
-        pu8Dst = (uint8_t *)pLinPtr->paPages[iPage];
+        GCPhysDst   = pLinPtr->paPages[iPage];
     }
     
     AssertRelease (iPage == pLinPtr->cPages);
@@ -426,7 +426,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
     if (cLinPtrs > 0)
     {
         pCmd->paLinPtrs = (VBOXHGCMLINPTR *)RTMemAlloc (  sizeof (VBOXHGCMLINPTR) * cLinPtrs
-                                                          + sizeof (RTHCPTR) * cLinPtrPages);
+                                                          + sizeof (RTGCPHYS) * cLinPtrPages);
     
         if (pCmd->paLinPtrs == NULL)
         {
@@ -456,7 +456,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
         pGuestParm = VMMDEV_HGCM_CALL_PARMS(pHGCMCall);
 
         uint32_t iLinPtr = 0;
-        RTHCPTR *pPages  = (RTHCPTR *)((uint8_t *)pCmd->paLinPtrs + sizeof (VBOXHGCMLINPTR) *cLinPtrs);
+        RTGCPHYS *pPages  = (RTGCPHYS *)((uint8_t *)pCmd->paLinPtrs + sizeof (VBOXHGCMLINPTR) *cLinPtrs);
 
         for (i = 0; i < cParms && VBOX_SUCCESS(rc); i++, pGuestParm++, pHostParm++)
         {
