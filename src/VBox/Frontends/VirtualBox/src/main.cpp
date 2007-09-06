@@ -189,10 +189,12 @@ int main (int argc, char **argv)
 
     if (vboxGlobal().isValid())
     {
+#ifndef VBOX_OSE
 #ifdef Q_WS_X11
         /* show the user license file */
-        //if (!vboxGlobal().showVirtualBoxLicense())
-        //    return rc;
+        if (!vboxGlobal().showVirtualBoxLicense())
+            return rc;
+#endif
 #endif
 
         VBoxGlobalSettings settings = vboxGlobal().settings();
