@@ -370,6 +370,8 @@ typedef struct
 /** guest statistics structure */
 typedef struct VBoxGuestStatistics
 {
+    /** Virtual CPU id */
+    uint32_t        u32CpuId;
     /** Reported statistics */
     uint32_t        u32StatCaps;
     /** Idle CPU load (0-100) for last interval */

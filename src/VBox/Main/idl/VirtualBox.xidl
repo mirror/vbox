@@ -4379,7 +4379,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="5d54a565-813c-42a0-a81a-e31779e03186"
+     uuid="c101f037-b03d-4bd4-bd25-381123980be2"
      wsmap="suppress"
      >
     <desc>
@@ -4467,6 +4467,9 @@
       <desc>
         Query specified guest statistics as reported by the VirtualBox Additions.
       </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>Virtual CPU id; not relevant for all statistic types</desc>
+      </param>
       <param name="statistic" type="GuestStatisticType" dir="in">
         <desc>Statistic type.</desc>
       </param>

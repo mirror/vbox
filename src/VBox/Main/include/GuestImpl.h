@@ -63,14 +63,14 @@ public:
     // IGuest methods
     STDMETHOD(SetCredentials)(INPTR BSTR aUserName, INPTR BSTR aPassword,
                               INPTR BSTR aDomain, BOOL aAllowInteractiveLogon);
-    STDMETHOD(GetStatistic)(GuestStatisticType_T statistic, ULONG *aStatVal);
+    STDMETHOD(GetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal);
 
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion);
 
     void setSupportsSeamless (BOOL aSupportsSeamless);
 
-    STDMETHOD(SetStatistic)(GuestStatisticType_T statistic, ULONG aStatVal);
+    STDMETHOD(SetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG aStatVal);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }

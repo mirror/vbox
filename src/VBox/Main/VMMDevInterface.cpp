@@ -404,31 +404,31 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
         return VERR_INVALID_PARAMETER; /** @todo wrong error */
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_IDLE)
-        guest->SetStatistic(GuestStatisticType_CPULoad_Idle, pGuestStats->u32CpuLoad_Idle);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_CPULoad_Idle, pGuestStats->u32CpuLoad_Idle);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_KERNEL)
-        guest->SetStatistic(GuestStatisticType_CPULoad_Kernel, pGuestStats->u32CpuLoad_Kernel);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_CPULoad_Kernel, pGuestStats->u32CpuLoad_Kernel);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_USER)
-        guest->SetStatistic(GuestStatisticType_CPULoad_User, pGuestStats->u32CpuLoad_User);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_CPULoad_User, pGuestStats->u32CpuLoad_User);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_THREADS)
-        guest->SetStatistic(GuestStatisticType_Threads, pGuestStats->u32Threads);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_Threads, pGuestStats->u32Threads);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PROCESSES)
-        guest->SetStatistic(GuestStatisticType_Processes, pGuestStats->u32Processes);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_Processes, pGuestStats->u32Processes);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
-        guest->SetStatistic(GuestStatisticType_PhysMemTotal, pGuestStats->u32PhysMemTotal);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PhysMemTotal, pGuestStats->u32PhysMemTotal);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_AVAIL)
-        guest->SetStatistic(GuestStatisticType_PhysMemAvailable, pGuestStats->u32PhysMemAvail);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PhysMemAvailable, pGuestStats->u32PhysMemAvail);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_BALLOON)
-        guest->SetStatistic(GuestStatisticType_PhysMemBalloon, pGuestStats->u32PhysMemBalloon);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PhysMemBalloon, pGuestStats->u32PhysMemBalloon);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
-        guest->SetStatistic(GuestStatisticType_PageFileSize, pGuestStats->u32PageFileSize);
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PageFileSize, pGuestStats->u32PageFileSize);
 
     return VINF_SUCCESS;
 }
