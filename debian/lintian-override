@@ -2,6 +2,7 @@ virtualbox: shlib-with-non-pic-code usr/lib/VBoxRT.so
 virtualbox: shlib-with-non-pic-code usr/lib/VBoxDD.so
 virtualbox: shlib-with-non-pic-code usr/lib/VBoxDD2.so
 virtualbox: shlib-with-non-pic-code usr/lib/VBoxDDU.so
+virtualbox: shlib-with-non-pic-code usr/lib/VBoxKeyboard.so
 virtualbox: shlib-with-non-pic-code usr/lib/VBoxVMM.so
 virtualbox: shlib-with-non-pic-code usr/lib/VBoxXML.so
 virtualbox: shlib-with-non-pic-code usr/lib/VBoxREM.so
@@ -20,6 +21,7 @@ virtualbox: no-shlibs-control-file usr/lib/VBoxRT.so
 virtualbox: no-shlibs-control-file usr/lib/VBoxDD.so
 virtualbox: no-shlibs-control-file usr/lib/VBoxDD2.so
 virtualbox: no-shlibs-control-file usr/lib/VBoxDDU.so
+virtualbox: no-shlibs-control-file usr/lib/VBoxKeyboard.so
 virtualbox: no-shlibs-control-file usr/lib/VBoxVMM.so
 virtualbox: no-shlibs-control-file usr/lib/VBoxXML.so
 virtualbox: no-shlibs-control-file usr/lib/VBoxREM.so

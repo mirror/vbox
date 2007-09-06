@@ -1,4 +1,4 @@
-Source: virtualbox
+Source: virtualbox-ose
 Section: misc
 Priority: optional
 Maintainer: innotek GmbH <info@virtualbox.org>
@@ -7,14 +7,27 @@ Build-Depends: libz-dev, libssl-dev, libqt3-headers, qt3-dev-tools, libsdl1.2-de
   uuid-dev, libxalan110-dev, libxerces27-dev, libxcursor-dev, libidl-dev, libpam0g-dev,
   bcc, iasl, xsltproc, linux-headers-generic, wine, java2-runtime, lsb-release
 
-Package: virtualbox
+Package: virtualbox-ose
 Architecture: i386 amd64
 Pre-Depends: debconf (>= 1.1) | debconf-2.0
 Depends: ${shlibs:Depends}, debconf (>= 0.5) | debconf-2.0, psmisc
-Recommends: linux-headers, gcc, make, binutils, bridge-utils, uml-utilities
+Recommends: linux-headers, gcc, make, binutils, bridge-utils, uml-utilities,
+  libhal1 (>= 0.5)
 Description: innotek VirtualBox
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
  feature set and excellent performance, making it the premier virtualization
  software solution on the market.
+
+Package: virtualbox-ose-dbg
+Architecture: i386 amd64
+Depends: virtualbox (= ${Source-Version})
+Description: innotek VirtualBox debugging symbols
+ VirtualBox is a powerful PC virtualization solution allowing you to run a
+ wide range of PC operating systems on your Linux system. This includes
+ Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
+ feature set and excellent performance, making it the premier virtualization
+ software solution on the market.
+ .
+ This package contains debugging symbols.
