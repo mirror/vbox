@@ -3216,10 +3216,15 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCP
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMHC;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: pvDst=%p GCVirt=%VGv cb=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pvDst, GCVirtSrc, cb));
 
-    int rc = PGMPhysReadGCPtr(pDevIns->Internal.s.pVMHC, pvDst, GCVirtSrc, cb);
+    if (!VM_IS_EMT(pVM))
+        return VERR_ACCESS_DENIED;
+
+    int rc = PGMPhysReadGCPtr(pVM, pvDst, GCVirtSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
@@ -3231,10 +3236,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
 static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMHC;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: GCVirtDst=%VGv pvSrc=%p cb=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCVirtDst, pvSrc, cb));
 
-    int rc = PGMPhysWriteGCPtr(pDevIns->Internal.s.pVMHC, GCVirtDst, pvSrc, cb);
+    if (!VM_IS_EMT(pVM))
+        return VERR_ACCESS_DENIED;
+
+    int rc = PGMPhysWriteGCPtr(pVM, GCVirtDst, pvSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
@@ -3270,7 +3280,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GC
     if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
 
-    int rc = PGMPhysGCPhys2HCPtr(pDevIns->Internal.s.pVMHC, GCPhys, cbRange, ppvHC);
+    int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, ppvHC);
 
     LogFlow(("pdmR3DevHlp_Phys2HCVirt: caller='%s'/%d: returns %Vrc *ppvHC=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *ppvHC));
 
