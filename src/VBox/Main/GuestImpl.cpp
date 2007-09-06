@@ -262,12 +262,15 @@ STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
         tr ("VMM device is not available (is the VM running?)"));
 }
 
-STDMETHODIMP Guest::GetStatistic(GuestStatisticType_T statistic, ULONG *aStatVal)
+STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal)
 {
     if (!aStatVal)
         return E_INVALIDARG;
 
-    switch(statistic)
+    if (aCpuId != 0)
+        return E_INVALIDARG;
+
+    switch(aStatistic)
     {
     case GuestStatisticType_CPULoad_Idle:
     case GuestStatisticType_CPULoad_Kernel:
@@ -287,9 +290,12 @@ STDMETHODIMP Guest::GetStatistic(GuestStatisticType_T statistic, ULONG *aStatVal
     return S_OK;
 }
 
-STDMETHODIMP Guest::SetStatistic(GuestStatisticType_T statistic, ULONG aStatVal)
+STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG aStatVal)
 {
-    switch(statistic)
+    if (aCpuId != 0)
+        return E_INVALIDARG;
+
+    switch(aStatistic)
     {
     case GuestStatisticType_CPULoad_Idle:
     case GuestStatisticType_CPULoad_Kernel:
