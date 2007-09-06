@@ -395,6 +395,8 @@ typedef struct VBoxGuestStatistics
     uint32_t        u32Handles;
     /** Memory load (0-100) */
     uint32_t        u32MemoryLoad;
+    /** Page size of guest system */
+    uint32_t        u32PageSize;
     /** Total physical memory (in 4kb pages) */
     uint32_t        u32PhysMemTotal;
     /** Available physical memory (in 4kb pages) */

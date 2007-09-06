@@ -154,11 +154,12 @@ void VBoxGuestReportStatistics(VBOXGUESTCONTEXT *pCtx)
 
     gCtx.pfnGlobalMemoryStatusEx(&memStatus);
 
+    req.guestStats.u32PageSize          = systemInfo.dwPageSize;
     req.guestStats.u32PhysMemTotal      = (uint32_t)(memStatus.ullTotalPhys / systemInfo.dwPageSize);
     req.guestStats.u32PhysMemAvail      = (uint32_t)(memStatus.ullAvailPhys / systemInfo.dwPageSize);
     req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize);
     req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
-    req.guestStats.u32PhysMemBalloon    = pCtx->uMemBalloonSize;    /* in megabytes already */
+    req.guestStats.u32PhysMemBalloon    = pCtx->uMemBalloonSize * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
     req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
 
     if (gCtx.pfnGetPerformanceInfo)
