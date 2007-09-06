@@ -3287,7 +3287,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR
     LogFlow(("pdmR3DevHlp_PhysGCPtr2HCPtr: caller='%s'/%d: GCPtr=%VGv pHCPtr=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPtr, pHCPtr));
 
-    if (!VM_IS_EMT(pVMs))
+    if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
 
     int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtr, pHCPtr);
