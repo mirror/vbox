@@ -2462,7 +2462,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Konnte %1 nicht &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; registrieren.</translation>
+        <translation>Konnte %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; nicht registrieren.</translation>
     </message>
     <message>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
