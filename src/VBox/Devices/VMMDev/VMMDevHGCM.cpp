@@ -470,7 +470,8 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                      pHostParm->u.uint32 = u32;
 
                      Log(("vmmdevHGCMCall: uint32 guest parameter %u\n", u32));
-                 } break;
+                     break;
+                 } 
 
                  case VMMDevHGCMParmType_64bit:
                  {
@@ -480,7 +481,8 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                      pHostParm->u.uint64 = u64;
 
                      Log(("vmmdevHGCMCall: uint64 guest parameter %llu\n", u64));
-                 } break;
+                     break;
+                 } 
 
                  case VMMDevHGCMParmType_PhysAddr:
                  {
@@ -490,10 +492,13 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                      pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
                      pHostParm->u.pointer.size = size;
 
+                     AssertFailed();
+                     /** @todo It's no longer allowed to save a conversion address for later use! */
                      rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr);
 
                      Log(("vmmdevHGCMCall: PhysAddr guest parameter %VGp\n", physAddr));
-                 } break;
+                     break;
+                 } 
 
                  case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
                  case VMMDevHGCMParmType_LinAddr_Out: /* Out (write) */
@@ -537,7 +542,8 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                      }
 
                      Log(("vmmdevHGCMCall: LinAddr guest parameter %VGv, rc = %Vrc\n", linearAddr, rc));
-                 } break;
+                     break;
+                 }
 
                 /* just to shut up gcc */
                 default:
