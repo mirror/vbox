@@ -146,8 +146,10 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
 
     req.guestStats.u32PageSize          = systemInfo.dwPageSize;
     req.guestStats.u32PhysMemTotal      = (uint32_t)(memStatus.ullTotalPhys / systemInfo.dwPageSize);
+    dprintf(("memStatus.ullTotalPhys %VX64\n", memStatus.ullTotalPhys));
     req.guestStats.u32PhysMemAvail      = (uint32_t)(memStatus.ullAvailPhys / systemInfo.dwPageSize);
-    req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize);
+    /* The current size of the committed memory limit, in bytes. This is physical memory plus the size of the page file, minus a small overhead. */
+    req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize) - req.guestStats.u32PhysMemTotal;
     req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
     req.guestStats.u32PhysMemBalloon    = VBoxMemBalloonQuerySize() * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
     req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
@@ -158,14 +160,17 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
 
         if (gCtx.pfnGetPerformanceInfo(&perfInfo, sizeof(perfInfo)))
         {
+            dprintf(("PhysicalTotal     %VX64\n", perfInfo.PhysicalTotal));
+            dprintf(("PhysicalAvailable %VX64\n", perfInfo.PhysicalAvailable));
             req.guestStats.u32Processes         = perfInfo.ProcessCount;
             req.guestStats.u32Threads           = perfInfo.ThreadCount;
+            req.guestStats.u32Handles           = perfInfo.HandleCount;
             req.guestStats.u32MemCommitTotal    = perfInfo.CommitTotal;     /* already in pages */
             req.guestStats.u32MemKernelTotal    = perfInfo.KernelTotal;     /* already in pages */
             req.guestStats.u32MemKernelPaged    = perfInfo.KernelPaged;     /* already in pages */
             req.guestStats.u32MemKernelNonPaged = perfInfo.KernelNonpaged;  /* already in pages */
             req.guestStats.u32MemSystemCache    = perfInfo.SystemCache;     /* already in pages */
-            req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_PROCESSES | VBOX_GUEST_STAT_THREADS | VBOX_GUEST_STAT_MEM_COMMIT_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_PAGED | VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
+            req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_PROCESSES | VBOX_GUEST_STAT_THREADS | VBOX_GUEST_STAT_HANDLES | VBOX_GUEST_STAT_MEM_COMMIT_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_PAGED | VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
         }
         else
             dprintf(("GetPerformanceInfo failed with %d\n", GetLastError()));
