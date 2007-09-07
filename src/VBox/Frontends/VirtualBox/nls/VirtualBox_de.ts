@@ -1568,7 +1568,7 @@
     <message>
         <source>Serial Ports</source>
         <comment>details report</comment>
-        <translation>Serielle Ports</translation>
+        <translation>Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>USB</source>
@@ -2526,7 +2526,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mindestens eins der registrierten virtuellen Medien ist momentan nicht zugreifbar. Virtuelle Maschinen, die auf eines dieser Medien zugreifen, können so lange nicht gestartet werden, bis dieses Medium wieder zugreifbar wird.&lt;/p&gt;&lt;/p&gt;Bestätigen Sie mit &lt;b&gt;OK&lt;/b&gt; um den Manager für virtuelle Medien zu starten und zu überprüfen, welche Medien nicht zugreifbar sind. Oder drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt; um diese Meldung zu ignorieren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Mindestens eines der registrierten virtuellen Medien ist momentan nicht zugreifbar. Virtuelle Maschinen, die auf eines dieser Medien zugreifen, können so lange nicht gestartet werden, bis dieses Medium wieder zugreifbar wird.&lt;/p&gt;&lt;/p&gt;Bestätigen Sie mit &lt;b&gt;OK&lt;/b&gt; um den Manager für virtuelle Medien zu starten und zu überprüfen, welche Medien nicht zugreifbar sind. Oder drücken Sie &lt;b&gt;Ignorieren&lt;/b&gt; um diese Meldung zu ignorieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -3723,11 +3723,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Enable Serial Port</source>
-        <translation>&amp;Aktiviere seriellen Port</translation>
+        <translation>&amp;Aktiviere serielle Schnittstelle</translation>
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>Aktiviert den seriellen Port für diese virtuelle Maschine.</translation>
+        <translation>Aktiviert die ausgewählte serielle Schnittstelle für diese virtuelle Maschine.</translation>
     </message>
     <message>
         <source>Port &amp;Number</source>
@@ -3735,7 +3735,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Zeigt die Portnummer des seriellen Ports. Sie können einen der Standardports auswählen, oder Sie wählen &lt;b&gt;benutzerdefiniert&lt;/b&gt; und können die Portparameter frei einstellen.</translation>
+        <translation>Zeigt die Portnummer der seriellen Schnittstelle. Sie können einen der Standardports auswählen, oder Sie wählen &lt;b&gt;benutzerdefiniert&lt;/b&gt; und können die Portparameter frei einstellen.</translation>
     </message>
     <message>
         <source>&amp;IRQ</source>
@@ -3743,7 +3743,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>Zeigt die IRQ-Nummer dieses seriellen Ports. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn der &lt;b&gt;I/O-APIC&lt;/b&gt; für diese virtuelle Maschine aktiviert ist.</translation>
+        <translation>Zeigt die IRQ-Nummer dieser seriellen Schnittstelle. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn der &lt;b&gt;I/O-APIC&lt;/b&gt; für diese virtuelle Maschine aktiviert ist.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -3751,7 +3751,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Zeigt den Basis-Portadresse dieses seriellen Ports. Zulässige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+        <translation>Zeigt den Basis-Portadresse dieser seriellen Schnittstelle. Zulässige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Mode</source>
@@ -3759,7 +3759,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>Stellt den Modus für diesen seriellen Port ein. Falls &lt;b&gt;nicht verbunden&lt;/b&gt; gewählt wurde, wird ein serieller Port virtualisiert, der jedoch nicht mit dem Host verbunden ist.</translation>
+        <translation>Stellt den Modus für diese serielle Schnittstelle ein. Falls &lt;b&gt;nicht verbunden&lt;/b&gt; gewählt wurde, wird ein serieller Port virtualisiert, der jedoch nicht mit dem Host verbunden ist.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -4382,7 +4382,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source> Serial Ports </source>
-        <translation>Serielle Ports</translation>
+        <translation>Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>#serialPorts</source>
