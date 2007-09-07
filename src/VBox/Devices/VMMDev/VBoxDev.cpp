@@ -1279,9 +1279,64 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevReportGuestStats *stats = (VMMDevReportGuestStats*)requestHeader;
 
-                /* Update the last known memory balloon size */
-                if (stats->guestStats.u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_BALLOON)
-                    pData->u32LastMemoryBalloonSize = stats->guestStats.u32PhysMemBalloon;
+#ifdef DEBUG
+                VBoxGuestStatistics *pGuestStats = &stats->guestStats;
+
+                Log(("Current statistics:\n"));
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_IDLE)
+                    Log(("CPU%d: CPU Load Idle %d%\n", pGuestStats->u32CpuId, pGuestStats->u32CpuLoad_Idle));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_KERNEL)
+                    Log(("CPU%d: CPU Load Kernel %d\n", pGuestStats->u32CpuId, pGuestStats->u32CpuLoad_Kernel));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_USER)
+                    Log(("CPU%d: CPU Load User   %d\n", pGuestStats->u32CpuId, pGuestStats->u32CpuLoad_User));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_THREADS)
+                    Log(("CPU%d: Thread          %d\n", pGuestStats->u32CpuId, pGuestStats->u32Threads));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PROCESSES)
+                    Log(("CPU%d: Processes       %d\n", pGuestStats->u32CpuId, pGuestStats->u32Processes));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_HANDLES)
+                    Log(("CPU%d: Handles         %d\n", pGuestStats->u32CpuId, pGuestStats->u32Handles));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEMORY_LOAD)
+                    Log(("CPU%d: Memory Load     %d%\n", pGuestStats->u32CpuId, pGuestStats->u32MemoryLoad));
+
+                /* Note that reported values are in pages; upper layers expect them in megabytes */
+                Assert(pGuestStats->u32PageSize == 4096);
+                if (pGuestStats->u32PageSize != 4096)
+                    pGuestStats->u32PageSize = 4096;
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
+                    Log(("CPU%d: Total physical memory %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32PhysMemTotal / (_1M/pGuestStats->u32PageSize)));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_AVAIL)
+                    Log(("CPU%d: Free physical memory  %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32PhysMemAvail / (_1M/pGuestStats->u32PageSize)));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_BALLOON)
+                    Log(("CPU%d: Memory balloon size   %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32PhysMemBalloon / (_1M/pGuestStats->u32PageSize)));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_COMMIT_TOTAL)
+                    Log(("CPU%d: Committed memory      %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32MemCommitTotal / (_1M/pGuestStats->u32PageSize)));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_KERNEL_TOTAL)
+                    Log(("CPU%d: Total kernel memory   %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32MemKernelTotal / (_1M/pGuestStats->u32PageSize)));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_KERNEL_PAGED)
+                    Log(("CPU%d: Paged kernel memory   %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32MemKernelPaged / (_1M/pGuestStats->u32PageSize)));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED)
+                    Log(("CPU%d: Nonpaged kernel memory %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32MemKernelNonPaged / (_1M/pGuestStats->u32PageSize)));
+
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_SYSTEM_CACHE)
+                    Log(("CPU%d: System cache size      %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32MemSystemCache / (_1M/pGuestStats->u32PageSize)));
+    
+                if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
+                    Log(("CPU%d: Page file size         %d MB\n", pGuestStats->u32CpuId, pGuestStats->u32PageFileSize / (_1M/pGuestStats->u32PageSize)));
+                Log(("Statistics end *******************\n"));
+#endif
 
                 /* forward the call */
                 requestHeader->rc = pData->pDrv->pfnReportStatistics(pData->pDrv, &stats->guestStats);
