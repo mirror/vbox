@@ -1773,14 +1773,10 @@ else
  TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -nostdlib
  ifneq ($(filter-out os2 darwin solaris,$(BUILD_TARGET)),)
   ifneq ($(BUILD_TARGET_ARCH),amd64)
-   TEMPLATE_VBOXNOCRTGCC_LDFLAGS        += -Wl,--no-undefined
+   TEMPLATE_VBOXNOCRTGCC_LDFLAGS       += -Wl,--no-undefined
   endif
  endif
- ifneq ($(filter-out freebsd,$(BUILD_TARGET)),)
-  TEMPLATE_VBOXNOCRTGCC_LIBS            = # FIXME - has unwind mess.
- else
-  TEMPLATE_VBOXNOCRTGCC_LIBS            = $(VBOX_GCC_LIBGCC)
- endif
+ TEMPLATE_VBOXNOCRTGCC_LIBS             = $(VBOX_GCC_LIBGCC)
 endif
 
 
