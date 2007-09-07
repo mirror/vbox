@@ -1,6 +1,6 @@
 /** @file
  *
- * VBoxGuest - Guest management notification
+ * VBoxStats - Guest statistics notification
  *
  */
 
@@ -19,19 +19,20 @@
 #include <windows.h>
 #include <psapi.h>
 #include "VBoxService.h"
-#include "VBoxGuest.h"
+#include "VBoxStatistics.h"
+#include "VBoxMemBalloon.h"
 #include <VBoxDisplay.h>
 #include <VBox/VBoxDev.h>
+#include <VBox/VBoxGuest.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
 #include "helpers.h"
 #include <winternl.h>
 
-typedef struct _VBOXGUESTCONTEXT
+typedef struct _VBOXSTATSCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
     uint32_t              uStatInterval;
-    uint32_t              uMemBalloonSize;
 
     uint64_t              ullLastCpuLoad_Idle;
     uint64_t              ullLastCpuLoad_Kernel;
@@ -40,25 +41,24 @@ typedef struct _VBOXGUESTCONTEXT
     NTSTATUS (WINAPI *pfnNtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength);
     void     (WINAPI *pfnGlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer);
     BOOL     (WINAPI *pfnGetPerformanceInfo)(PPERFORMANCE_INFORMATION pPerformanceInformation, DWORD cb);
-} VBOXGUESTCONTEXT;
+} VBOXSTATSCONTEXT;
 
 
-static VBOXGUESTCONTEXT gCtx = {0};
+static VBOXSTATSCONTEXT gCtx = {0};
 
 
-int VBoxGuestInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
+int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
     HANDLE gVBoxDriver = pEnv->hDriver;
     DWORD  cbReturned;
 
-    dprintf(("VBoxGuestInit\n"));
+    dprintf(("VBoxStatsInit\n"));
 
     gCtx.pEnv                   = pEnv;
     gCtx.uStatInterval          = 0;     /* default */
     gCtx.ullLastCpuLoad_Idle    = 0;
     gCtx.ullLastCpuLoad_Kernel  = 0;
     gCtx.ullLastCpuLoad_User    = 0;
-    gCtx.uMemBalloonSize        = 0;
 
     VMMDevGetStatisticsChangeRequest req;
     vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
@@ -66,11 +66,11 @@ int VBoxGuestInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
 
     if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
     {
-        dprintf(("VBoxGuestThread: new statistics interval %d seconds\n", req.u32StatInterval));
+        dprintf(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
         gCtx.uStatInterval = req.u32StatInterval * 1000;
     }
     else
-        dprintf(("VBoxGuestThread: DeviceIoControl failed with %d\n", GetLastError()));
+        dprintf(("VBoxStatsThread: DeviceIoControl failed with %d\n", GetLastError()));
 
     /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
     HMODULE hMod = LoadLibrary("NTDLL.DLL");
@@ -110,29 +110,19 @@ int VBoxGuestInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
         /* failure is not fatal */
     }
 
-    /* Check balloon size */
-    DWORD dwMemBalloonSize;
-    if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
-    {
-        dprintf(("VBoxGuestThread: new balloon size % MB\n", dwMemBalloonSize));
-        gCtx.uMemBalloonSize = dwMemBalloonSize;
-    }
-    else
-        dprintf(("VBoxGuestThread: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
-
     *pfStartThread = true;
     *ppInstance = &gCtx;
     return VINF_SUCCESS;
 }
 
 
-void VBoxGuestDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
+void VBoxStatsDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    dprintf(("VBoxGuestDestroy\n"));
+    dprintf(("VBoxStatsDestroy\n"));
     return;
 }
 
-void VBoxGuestReportStatistics(VBOXGUESTCONTEXT *pCtx)
+void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
 {
     SYSTEM_INFO systemInfo;
     PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION pProcInfo;
@@ -159,7 +149,7 @@ void VBoxGuestReportStatistics(VBOXGUESTCONTEXT *pCtx)
     req.guestStats.u32PhysMemAvail      = (uint32_t)(memStatus.ullAvailPhys / systemInfo.dwPageSize);
     req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize);
     req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
-    req.guestStats.u32PhysMemBalloon    = pCtx->uMemBalloonSize * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
+    req.guestStats.u32PhysMemBalloon    = VBoxMemBalloonQuerySize() * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
     req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
 
     if (gCtx.pfnGetPerformanceInfo)
@@ -228,10 +218,10 @@ void VBoxGuestReportStatistics(VBOXGUESTCONTEXT *pCtx)
 
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
         {
-            dprintf(("VBoxGuestThread: new statistics reported successfully!\n"));
+            dprintf(("VBoxStatsThread: new statistics reported successfully!\n"));
         }
         else
-            dprintf(("VBoxGuestThread: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
+            dprintf(("VBoxStatsThread: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
     }
 
     free(pProcInfo);
@@ -241,23 +231,23 @@ void VBoxGuestReportStatistics(VBOXGUESTCONTEXT *pCtx)
  * Thread function to wait for and process seamless mode change
  * requests
  */
-unsigned __stdcall VBoxGuestThread(void *pInstance)
+unsigned __stdcall VBoxStatsThread(void *pInstance)
 {
-    VBOXGUESTCONTEXT *pCtx = (VBOXGUESTCONTEXT *)pInstance;
+    VBOXSTATSCONTEXT *pCtx = (VBOXSTATSCONTEXT *)pInstance;
     HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
     bool fTerminate = false;
     VBoxGuestFilterMaskInfo maskInfo;
     DWORD cbReturned;
 
-    maskInfo.u32OrMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST | VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
+    maskInfo.u32OrMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxGuestThread: DeviceIOControl(CtlMask - or) succeeded\n"));
+        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxGuestThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         return 0;
     }
 
@@ -266,29 +256,18 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
         /* wait for a seamless change event */
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = (pCtx->uStatInterval) ? pCtx->uStatInterval : 1000;
-        waitEvent.u32EventMaskIn = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST | VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
+        waitEvent.u32EventMaskIn = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            dprintf(("VBoxGuestThread: DeviceIOControl succeded\n"));
+            dprintf(("VBoxStatsThread: DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            dprintf(("VBoxGuestThread: checking event\n"));
+            dprintf(("VBoxStatsThread: checking event\n"));
 
             /* did we get the right event? */
-            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_BALLOON_CHANGE_REQUEST)
-            {
-                DWORD dwMemBalloonSize;
-                if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
-                {
-                    dprintf(("VBoxGuestThread: new balloon size % MB\n", dwMemBalloonSize));
-                    pCtx->uMemBalloonSize = dwMemBalloonSize;
-                }
-                else
-                    dprintf(("VBoxGuestThread: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
-            }
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST)
             {
                 VMMDevGetStatisticsChangeRequest req;
@@ -297,16 +276,16 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
 
                 if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
                 {
-                    dprintf(("VBoxGuestThread: new statistics interval %d seconds\n", req.u32StatInterval));
+                    dprintf(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
                     pCtx->uStatInterval = req.u32StatInterval * 1000;
                 }
                 else
-                    dprintf(("VBoxGuestThread: DeviceIoControl (stat) failed with %d\n", GetLastError()));
+                    dprintf(("VBoxStatsThread: DeviceIoControl (stat) failed with %d\n", GetLastError()));
             }
         } 
         else
         {
-            dprintf(("VBoxGuestThread: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
+            dprintf(("VBoxStatsThread: error 0 from DeviceIoControl IOCTL_VBOXGUEST_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -319,23 +298,23 @@ unsigned __stdcall VBoxGuestThread(void *pInstance)
         if (    gCtx.uStatInterval 
             &&  gCtx.pfnNtQuerySystemInformation)
         {
-            VBoxGuestReportStatistics(pCtx);
+            VBoxStatsReportStatistics(pCtx);
         }
     } 
     while (!fTerminate);
 
     maskInfo.u32OrMask = 0;
-    maskInfo.u32NotMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST | VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
+    maskInfo.u32NotMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
     if (DeviceIoControl (gVBoxDriver, IOCTL_VBOXGUEST_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        dprintf(("VBoxGuestThread: DeviceIOControl(CtlMask - not) succeeded\n"));
+        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        dprintf(("VBoxGuestThread: DeviceIOControl(CtlMask) failed\n"));
+        dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxGuestThread: finished seamless change request thread\n"));
+    dprintf(("VBoxStatsThread: finished seamless change request thread\n"));
     return 0;
 }
 

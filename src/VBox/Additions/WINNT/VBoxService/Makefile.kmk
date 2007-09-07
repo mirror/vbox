@@ -32,7 +32,8 @@ VBoxService_SOURCES  = \
 	VBoxDisplay.cpp \
 	VBoxVRDP.cpp \
         VBoxRestore.cpp \
-        VBoxGuest.cpp \
+        VBoxStatistics.cpp \
+        VBoxMemBalloon.cpp \
 	helpers.cpp \
 	VBoxService.rc
 VBoxService_LIBS     = \

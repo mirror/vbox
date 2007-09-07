@@ -1,5 +1,5 @@
 /** @file
- * VBoxGuest - Guest management notification
+ * VBoxGuest - Guest statistics notification
  */
 
 /*
@@ -14,12 +14,12 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXSERVICEGUEST__H
-#define __VBOXSERVICEGUEST__H
+#ifndef __VBOXSERVICESTATS__H
+#define __VBOXSERVICESTATS__H
 
 /* The guest management service prototypes. */
-int                VBoxGuestInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-unsigned __stdcall VBoxGuestThread  (void *pInstance);
-void               VBoxGuestDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
+int                VBoxStatsInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
+unsigned __stdcall VBoxStatsThread  (void *pInstance);
+void               VBoxStatsDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
-#endif /* __VBOXSERVICEGUEST__H */
+#endif /* __VBOXSERVICESTATS__H */
