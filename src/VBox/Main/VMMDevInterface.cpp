@@ -430,7 +430,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
         pGuestStats->u32PageSize = 4096;
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
-        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PhysMemTotal, pGuestStats->u32PhysMemTotal / (_1M/pGuestStats->u32PageSize));
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PhysMemTotal, (pGuestStats->u32PhysMemTotal + (_1M/pGuestStats->u32PageSize)-1) / (_1M/pGuestStats->u32PageSize));
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_AVAIL)
         guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PhysMemAvailable, pGuestStats->u32PhysMemAvail / (_1M/pGuestStats->u32PageSize));
