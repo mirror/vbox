@@ -2510,6 +2510,8 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp "VBOX_VERSION_STRING = $(VBOX_VERSION_STRING)"
 	$(QUIET)$(MV) -f $@.tmp $@
 
+ifndef VBOX_OSE
+ifeq ($(BUILD_TARGET),linux)
 VBOX_LICENSE_SRC := $(PATH_ROOT)/doc/License.html
 VBOX_LICENSE_VER := $(shell grep Version $(VBOX_LICENSE_SRC)|sed -e 's/.*Version \([0-9.]*\),.*/\1/g')
 VBOX_LICENSE_BIN := $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
@@ -2517,6 +2519,8 @@ VBOX_LICENSE_BIN := $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
 $(VBOX_LICENSE_BIN): $(VBOX_LICENSE_SRC)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(CP) $< $@
+endif
+endif
 
 
 # Force building of the version header file as the first thing anywhere in
