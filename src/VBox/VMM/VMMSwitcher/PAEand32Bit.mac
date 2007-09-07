@@ -179,8 +179,9 @@ htg_debug_regs_no:
     ; Change CR0 and CR4 so we can correctly emulate FPU/MMX/SSE[23] exceptions
     ; Also disable WP. (eax==cr4 now)
     ; Note! X86_CR4_PSE and X86_CR4_PAE are important if the host thinks so :-)
+    ; Note! X86_CR4_VMXE must not be touched in case the CPU is in vmx root mode
     ;
-    and     eax, X86_CR4_MCE | X86_CR4_PSE | X86_CR4_PAE
+    and     eax, X86_CR4_MCE | X86_CR4_PSE | X86_CR4_PAE | X86_CR4_VMXE
     mov     ecx, [edx + CPUM.Guest.cr4]
     ;; @todo Switcher cleanup: Determin base CR4 during CPUMR0Init / VMMR3SelectSwitcher putting it
     ;                          in CPUM.Hyper.cr4 (which isn't currently being used). That should
