@@ -235,6 +235,8 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 // initialize the event notification semaphore
                 KeInitializeEvent(&pDevExt->keventNotification, NotificationEvent, FALSE);
 
+                VBoxInitMemBalloon(pDevExt);
+
                 // ready to rumble!
                 dprintf(("VBoxGuest::VBoxGuestPnp: device is ready!\n"));
                 pDevExt->devState = WORKING;

@@ -191,6 +191,14 @@ typedef struct VBOXGUESTDEVEXT
     /* Preallocated VMMDevEvents for IRQ handler */
     VMMDevEvents *irqAckEvents;
 
+
+    struct
+    {
+        uint32_t     cBalloons;
+        uint32_t     cMaxBalloons;
+        PMDL        *paMdlMemBalloon;
+    } MemBalloon;
+
 } VBOXGUESTDEVEXT, *PVBOXGUESTDEVEXT;
 
 // Windows version identifier
@@ -211,6 +219,8 @@ VOID     VBoxGuestDpcHandler(PKDPC dpc, PDEVICE_OBJECT pDevObj,
 BOOLEAN  VBoxGuestIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
 NTSTATUS createThreads(PVBOXGUESTDEVEXT pDevExt);
 VOID     unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt);
+void     VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt);
+void     VBoxCleanupMemBalloon(PVBOXGUESTDEVEXT pDevExt);
 }
 
 #endif
