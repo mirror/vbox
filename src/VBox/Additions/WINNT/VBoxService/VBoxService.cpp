@@ -26,6 +26,7 @@
 #include "resource.h"
 #include <malloc.h>
 #include <VBoxGuestInternal.h>
+#include <iprt/string.h>
 
 #include "helpers.h"
 
@@ -63,7 +64,7 @@ void WriteLog(char *String, ...)
     va_start(va, String);
 
     vmmdevInitRequest(&pReq->header, VMMDevReq_LogString);
-    vsprintf(pReq->szString, String, va);
+    RTStrPrintfV(pReq->szString, sizeof(Buffer)-sizeof(*pReq), String, va);
     OutputDebugStringA(pReq->szString);
     pReq->header.size += strlen(pReq->szString);
 

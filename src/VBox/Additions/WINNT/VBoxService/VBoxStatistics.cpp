@@ -142,11 +142,11 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
     /* Query and report guest statistics */
     GetSystemInfo(&systemInfo);
 
+    memStatus.dwLength = sizeof(memStatus);
     gCtx.pfnGlobalMemoryStatusEx(&memStatus);
 
     req.guestStats.u32PageSize          = systemInfo.dwPageSize;
     req.guestStats.u32PhysMemTotal      = (uint32_t)(memStatus.ullTotalPhys / systemInfo.dwPageSize);
-    dprintf(("memStatus.ullTotalPhys %VX64\n", memStatus.ullTotalPhys));
     req.guestStats.u32PhysMemAvail      = (uint32_t)(memStatus.ullAvailPhys / systemInfo.dwPageSize);
     /* The current size of the committed memory limit, in bytes. This is physical memory plus the size of the page file, minus a small overhead. */
     req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize) - req.guestStats.u32PhysMemTotal;
@@ -160,8 +160,6 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
 
         if (gCtx.pfnGetPerformanceInfo(&perfInfo, sizeof(perfInfo)))
         {
-            dprintf(("PhysicalTotal     %VX64\n", perfInfo.PhysicalTotal));
-            dprintf(("PhysicalAvailable %VX64\n", perfInfo.PhysicalAvailable));
             req.guestStats.u32Processes         = perfInfo.ProcessCount;
             req.guestStats.u32Threads           = perfInfo.ThreadCount;
             req.guestStats.u32Handles           = perfInfo.HandleCount;
@@ -204,6 +202,7 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
         uint64_t deltaIdle    = (pProcInfo->IdleTime.QuadPart - gCtx.ullLastCpuLoad_Idle);
         uint64_t deltaKernel  = (pProcInfo->KernelTime.QuadPart - gCtx.ullLastCpuLoad_Kernel);
         uint64_t deltaUser    = (pProcInfo->UserTime.QuadPart - gCtx.ullLastCpuLoad_User);
+        deltaKernel          -= deltaIdle;  /* idle time is added to kernel time */
         uint64_t ullTotalTime = deltaIdle + deltaKernel + deltaUser;
 
         req.guestStats.u32CpuLoad_Idle      = (uint32_t)(deltaIdle  * 100 / ullTotalTime);
