@@ -20,7 +20,8 @@
 #include "VBoxDisplay.h"
 #include "VBoxRestore.h"
 #include "VBoxVRDP.h"
-#include "VBoxGuest.h"
+#include "VBoxStatistics.h"
+#include "VBoxMemBalloon.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -99,10 +100,16 @@ static VBOXSERVICEINFO vboxServiceTable[] =
     },
 #ifdef VBOX_WITH_MANAGEMENT
     {
-        "Guest Management",
-        VBoxGuestInit,
-        VBoxGuestThread,
-        VBoxGuestDestroy,
+        "Memory Balloon",
+        VBoxMemBalloonInit,
+        VBoxMemBalloonThread,
+        VBoxMemBalloonDestroy,
+    },
+    {
+        "Guest Statistics",
+        VBoxStatsInit,
+        VBoxStatsThread,
+        VBoxStatsDestroy,
     },
 #endif
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
