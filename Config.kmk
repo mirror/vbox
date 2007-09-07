@@ -1256,7 +1256,7 @@ else
  TEMPLATE_VBOXGC_LDFLAGS            += $(if $(VBOX_DO_STRIP_MODULES),-S,)
  TEMPLATE_VBOXGC_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
-ifneq ($(BUILD_TARGET),solaris)
+ifneq ($(filter solaris freebsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXGC_LIBS                = \
 	$(VBOX_GCC32_LIBGCC) # instricts
 endif
@@ -1360,7 +1360,7 @@ else
  TEMPLATE_VBOXR0_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
 
-ifneq ($(BUILD_TARGET),solaris)
+ifneq ($(filter solaris freebsd,$(BUILD_TARGET)),)
  TEMPLATE_VBOXR0_LIBS                = \
 	$(VBOX_GCC_LIBGCC) # instricts
 endif
