@@ -90,7 +90,7 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     hMod = LoadLibrary("KERNEL32.DLL");
     if (hMod)
     {
-        *(uintptr_t *)&gCtx.pfnGlobalMemoryStatusEx = (uintptr_t)GetProcAddress(hMod, "GlobalMemoryStatus");
+        *(uintptr_t *)&gCtx.pfnGlobalMemoryStatusEx = (uintptr_t)GetProcAddress(hMod, "GlobalMemoryStatusEx");
         if (gCtx.pfnGlobalMemoryStatusEx)
             dprintf(("gCtx.GlobalMemoryStatus= %x\n", gCtx.pfnGlobalMemoryStatusEx));
         else
