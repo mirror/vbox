@@ -84,9 +84,9 @@ typedef struct REMHANDLERNOTIFICATION
         {
             RTGCPHYS            GCPhys;
             RTGCPHYS            cb;
-            RTHCPTR             pvHCPtr;
             PGMPHYSHANDLERTYPE  enmType;
             bool                fHasHCHandler;
+            bool                fRestoreAsRAM;
         } PhysicalDeregister;
 
         struct

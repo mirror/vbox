@@ -2367,7 +2367,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
                                                      pRec->u.PhysicalDeregister.GCPhys,
                                                      pRec->u.PhysicalDeregister.cb,
                                                      pRec->u.PhysicalDeregister.fHasHCHandler,
-                                                     pRec->u.PhysicalDeregister.pvHCPtr);
+                                                     pRec->u.PhysicalDeregister.fRestoreAsRAM);
                 break;
 
             case REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY:
@@ -2658,12 +2658,12 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
- * @param   pvHCPtr         The HC virtual address corresponding to GCPhys if available.
+ * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, void *pvHCPtr)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
-    Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%VGp cb=%d fHasHCHandler=%d pvHCPtr=%p RAM=%08x\n",
-          enmType, GCPhys, cb, fHasHCHandler, pvHCPtr, MMR3PhysGetRamSize(pVM)));
+    Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%VGp cb=%VGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
+          enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
 
     if (pVM->rem.s.cHandlerNotifications)
@@ -2676,7 +2676,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
         cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
     else if (fHasHCHandler)
     {
-        if (!pvHCPtr)
+        if (!fRestoreAsRAM)
         {
             Assert(GCPhys > MMR3PhysGetRamSize(pVM));
             cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
