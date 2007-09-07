@@ -134,6 +134,9 @@ typedef struct VMMDevState
     /* memory balloon change request */
     uint32_t    u32MemoryBalloonSize, u32LastMemoryBalloonSize;
 
+    /* guest ram size */
+    uint64_t    u64GuestRAMSize;
+
     /* statistics interval change request */
     uint32_t    u32StatIntervalSize, u32LastStatIntervalSize;
 

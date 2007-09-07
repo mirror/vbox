@@ -433,7 +433,8 @@ typedef struct
 {
     /** header */
     VMMDevRequestHeader header;
-    uint32_t            u32BalloonSize;
+    uint32_t            u32BalloonSize;     /* balloon size in megabytes */
+    uint32_t            u32PhysMemSize;     /* guest ram size in megabytes */
     uint32_t            eventAck;
 } VMMDevGetMemBalloonChangeRequest;
 

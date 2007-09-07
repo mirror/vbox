@@ -1211,6 +1211,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 /* just pass on the information */
                 Log(("VMMDev: returning memory balloon size =%d\n", pData->u32MemoryBalloonSize));
                 memBalloonChangeRequest->u32BalloonSize = pData->u32MemoryBalloonSize;
+                memBalloonChangeRequest->u32PhysMemSize = (pData->u64GuestRAMSize / (uint64_t)_1M);
 
                 if (memBalloonChangeRequest->eventAck == VMMDEV_EVENT_BALLOON_CHANGE_REQUEST)
                 {
@@ -2223,6 +2224,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pData->pVMMDevRAMHC->u32Size = sizeof (VMMDevMemory);
     pData->pVMMDevRAMHC->u32Version = VMMDEV_MEMORY_VERSION;
 
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    pData->u64GuestRAMSize = MMR3PhysGetRamSize(pVM);
     return rc;
 }
 
