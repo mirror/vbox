@@ -377,13 +377,12 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
     /*
      * Tell REM.
      */
-    RTHCPTR pvRange = 0;
-    if (pCur->pfnHandlerR3 && pCur->enmType != PGMPHYSHANDLERTYPE_MMIO)
-        PGMRamGCPhys2HCPtr(&pVM->pgm.s, GCPhysStart, &pvRange); /* ASSUMES it doesn't change pvRange on failure. */
+    const bool fRestoreAsRAM = pCur->pfnHandlerR3 
+                            && pCur->enmType != PGMPHYSHANDLERTYPE_MMIO; /** @todo this isn't entirely correct. */
 #ifndef IN_RING3
-    REMNotifyHandlerPhysicalDeregister(pVM, pCur->enmType, GCPhysStart, GCPhysLast - GCPhysStart + 1, !!pCur->pfnHandlerR3, pvRange);
+    REMNotifyHandlerPhysicalDeregister(pVM, pCur->enmType, GCPhysStart, GCPhysLast - GCPhysStart + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #else
-    REMR3NotifyHandlerPhysicalDeregister(pVM, pCur->enmType, GCPhysStart, GCPhysLast - GCPhysStart + 1, !!pCur->pfnHandlerR3, pvRange);
+    REMR3NotifyHandlerPhysicalDeregister(pVM, pCur->enmType, GCPhysStart, GCPhysLast - GCPhysStart + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #endif
 }
 
