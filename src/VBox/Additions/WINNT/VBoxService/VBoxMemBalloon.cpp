@@ -42,7 +42,7 @@ int VBoxMemBalloonInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSt
     HANDLE gVBoxDriver = pEnv->hDriver;
     DWORD  cbReturned;
 
-    dprintf(("VBoxGuestInit\n"));
+    dprintf(("VBoxMemBalloonInit\n"));
 
     gCtx.pEnv                   = pEnv;
     gCtx.uMemBalloonSize        = 0;
@@ -51,11 +51,11 @@ int VBoxMemBalloonInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSt
     DWORD dwMemBalloonSize;
     if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_CTL_CHECK_BALLOON, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
     {
-        dprintf(("VBoxMemBalloonThread: new balloon size % MB\n", dwMemBalloonSize));
+        dprintf(("VBoxMemBalloonInit: new balloon size % MB\n", dwMemBalloonSize));
         gCtx.uMemBalloonSize = dwMemBalloonSize;
     }
     else
-        dprintf(("VBoxMemBalloonThread: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
+        dprintf(("VBoxMemBalloonInit: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
 
     *pfStartThread = true;
     *ppInstance = &gCtx;
@@ -65,7 +65,7 @@ int VBoxMemBalloonInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSt
 
 void VBoxMemBalloonDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    dprintf(("VBoxGuestDestroy\n"));
+    dprintf(("VBoxMemBalloonDestroy\n"));
     return;
 }
 
@@ -152,7 +152,7 @@ unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
         dprintf(("VBoxMemBalloonThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxMemBalloonThread: finished seamless change request thread\n"));
+    dprintf(("VBoxMemBalloonThread: finished mem balloon change request thread\n"));
     return 0;
 }
 

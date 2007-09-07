@@ -66,11 +66,11 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
 
     if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
     {
-        dprintf(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
+        dprintf(("VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval));
         gCtx.uStatInterval = req.u32StatInterval * 1000;
     }
     else
-        dprintf(("VBoxStatsThread: DeviceIoControl failed with %d\n", GetLastError()));
+        dprintf(("VBoxStatsInit: DeviceIoControl failed with %d\n", GetLastError()));
 
     /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
     HMODULE hMod = LoadLibrary("NTDLL.DLL");
@@ -218,10 +218,10 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
 
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_VMMREQUEST, &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
         {
-            dprintf(("VBoxStatsThread: new statistics reported successfully!\n"));
+            dprintf(("VBoxStatsReportStatistics: new statistics reported successfully!\n"));
         }
         else
-            dprintf(("VBoxStatsThread: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
+            dprintf(("VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
     }
 
     free(pProcInfo);
@@ -314,7 +314,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
         dprintf(("VBoxStatsThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    dprintf(("VBoxStatsThread: finished seamless change request thread\n"));
+    dprintf(("VBoxStatsThread: finished statistics change request thread\n"));
     return 0;
 }
 
