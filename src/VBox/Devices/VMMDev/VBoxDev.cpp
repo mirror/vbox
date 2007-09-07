@@ -1310,7 +1310,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pGuestStats->u32PageSize = 4096;
 
                 if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
-                    Log(("CPU%d: Total physical memory  %-4d MB\n", pGuestStats->u32CpuId, pGuestStats->u32PhysMemTotal / (_1M/pGuestStats->u32PageSize)));
+                    Log(("CPU%d: Total physical memory  %-4d MB\n", pGuestStats->u32CpuId, (pGuestStats->u32PhysMemTotal + _1M-1)/ (_1M/pGuestStats->u32PageSize)));
 
                 if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_AVAIL)
                     Log(("CPU%d: Free physical memory   %-4d MB\n", pGuestStats->u32CpuId, pGuestStats->u32PhysMemAvail / (_1M/pGuestStats->u32PageSize)));
