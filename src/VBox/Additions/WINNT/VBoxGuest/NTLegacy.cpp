@@ -249,6 +249,8 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
 
     /** @todo cleanup on failure */
 
+    VBoxInitMemBalloon(pDevExt);
+
     // ready to rumble!
     pDevExt->devState = WORKING;
     dprintf(("returning from createDevice with rc = 0x%x\n", rc));
@@ -348,5 +350,7 @@ static void freeDeviceResources(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 
     // unmap mem/io resources
     hlpVBoxUnmapVMMDevMemory (pDevExt);
+
+    VBoxCleanupMemBalloon(pDevExt);
 }
 

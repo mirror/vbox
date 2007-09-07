@@ -251,6 +251,8 @@ void VBoxGuestUnload(PDRIVER_OBJECT pDrvObj)
 
     hlpVBoxUnmapVMMDevMemory (pDevExt);
 
+    VBoxCleanupMemBalloon(pDevExt);
+
     /*
      * I don't think it's possible to unload a driver which processes have
      * opened, at least we'll blindly assume that here.
@@ -427,11 +429,133 @@ static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
     return result;
 }
 
+#ifdef VBOX_WITH_MANAGEMENT
+static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32BalloonSize)
+{
+    VMMDevChangeMemBalloon *req = NULL;
+    int rc = VINF_SUCCESS;
+
+    if (u32BalloonSize > pDevExt->MemBalloon.cMaxBalloons)
+    {
+        AssertMsgFailed(("VBoxGuestSetBalloonSize illegal balloon size %d (max=%d)\n", u32BalloonSize, pDevExt->MemBalloon.cMaxBalloons));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (u32BalloonSize == pDevExt->MemBalloon.cBalloons)
+        return VINF_SUCCESS;    /* nothing to do */
+
+    /* Allocate request packet */
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&req, RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]), VMMDevReq_ChangeMemBalloon);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    vmmdevInitRequest(&req->header, VMMDevReq_ChangeMemBalloon);
+
+    if (u32BalloonSize > pDevExt->MemBalloon.cBalloons)
+    {
+        /* inflate */
+        for (uint32_t i=pDevExt->MemBalloon.cBalloons;i<u32BalloonSize;i++)
+        {
+            PVOID pvBalloon;
+
+            pvBalloon = ExAllocatePoolWithTag(PagedPool, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, 'MBAL');
+            if (!pvBalloon)
+            {
+                rc = VERR_NO_MEMORY;
+                goto end;
+            }
+
+            PMDL pMdl = IoAllocateMdl (pvBalloon, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, FALSE, FALSE, NULL);
+            if (pMdl == NULL)
+            {
+                rc = VERR_NO_MEMORY;
+                ExFreePoolWithTag(pvBalloon, 'MBAL');
+                AssertMsgFailed(("IoAllocateMdl %VGv %x failed!!\n", pvBalloon, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE));
+                goto end;
+            }
+            else
+            {
+                __try {
+                    /* Calls to MmProbeAndLockPages must be enclosed in a try/except block. */
+                    MmProbeAndLockPages (pMdl, KernelMode, IoModifyAccess);
+                } 
+                __except(EXCEPTION_EXECUTE_HANDLER) 
+                {
+                    rc = VERR_NO_MEMORY;
+                    IoFreeMdl (pMdl);
+                    ExFreePoolWithTag(pvBalloon, 'MBAL');
+                    goto end;
+                }
+            }
+
+            PPFN_NUMBER pPageDesc = MmGetMdlPfnArray(pMdl);
+
+            /* Copy manually as RTGCPHYS is always 64 bits */
+            for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
+                req->aPhysPage[j] = pPageDesc[j];
+
+            req->cPages   = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
+            req->fInflate = true;
+
+            rc = VbglGRPerform(&req->header);
+            if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+            {
+                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev!"
+                         "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
+
+                IoFreeMdl (pMdl);
+                ExFreePoolWithTag(pvBalloon, 'MBAL');
+                goto end;
+            }
+            else
+            {
+                pDevExt->MemBalloon.paMdlMemBalloon[i] = pMdl;
+                pDevExt->MemBalloon.cBalloons++;
+            }
+        }
+    }
+    else
+    {
+        /* deflate */
+        for (uint32_t i=pDevExt->MemBalloon.cBalloons-1;i>=u32BalloonSize;i--)
+        {
+            PMDL  pMdl      = pDevExt->MemBalloon.paMdlMemBalloon[i];
+            PVOID pvBalloon = MmGetMdlVirtualAddress(pMdl);
+
+            PPFN_NUMBER pPageDesc = MmGetMdlPfnArray(pMdl);
+
+            /* Copy manually as RTGCPHYS is always 64 bits */
+            for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
+                req->aPhysPage[j] = pPageDesc[j];
+
+            req->cPages   = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
+            req->fInflate = false;
+
+            rc = VbglGRPerform(&req->header);
+            if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+            {
+                AssertMsgFailed(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev! rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                /* ignore error and just continue; this should never fail */
+            }
+
+            /* Free the ballooned memory */
+            MmUnlockPages (pMdl);
+            IoFreeMdl (pMdl);
+            ExFreePoolWithTag(pvBalloon, 'MBAL');
+
+            pDevExt->MemBalloon.paMdlMemBalloon[i] = NULL;
+            pDevExt->MemBalloon.cBalloons--;
+        }
+    }
+    Assert(pDevExt->MemBalloon.cBalloons <= pDevExt->MemBalloon.cMaxBalloons);
+
+end:
+    VbglGRFree(&req->header);
+    return rc;
+}
+
 static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBalloonSize)
 {
-    /** @todo */
-    return VINF_SUCCESS;
-
     /* just perform the request */
     VMMDevGetMemBalloonChangeRequest *req = NULL;
 
@@ -452,14 +576,51 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
         }
         else
         {
+            if (!pDevExt->MemBalloon.paMdlMemBalloon)
+            {
+                pDevExt->MemBalloon.paMdlMemBalloon = (PMDL *)ExAllocatePoolWithTag(PagedPool, req->u32PhysMemSize * sizeof(PMDL), 'MBAL');
+                Assert(pDevExt->MemBalloon.paMdlMemBalloon);
+                if (!pDevExt->MemBalloon.paMdlMemBalloon)
+                    return VERR_NO_MEMORY;
+            }
 
+            rc = VBoxGuestSetBalloonSize(pDevExt, req->u32BalloonSize);
+            if (pMemBalloonSize)
+                *pMemBalloonSize = pDevExt->MemBalloon.cBalloons;
         }
 
         VbglGRFree(&req->header);
     }
     return rc;
 }
+#endif
 
+void VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
+{
+#ifdef VBOX_WITH_MANAGEMENT
+    ULONG dummy;
+
+    pDevExt->MemBalloon.cBalloons       = 0;
+    pDevExt->MemBalloon.cMaxBalloons    = 0;
+    pDevExt->MemBalloon.paMdlMemBalloon = NULL;
+
+    VBoxGuestQueryMemoryBalloon(pDevExt, &dummy);
+#endif
+}
+
+void VBoxCleanupMemBalloon(PVBOXGUESTDEVEXT pDevExt)
+{
+#ifdef VBOX_WITH_MANAGEMENT
+    if (pDevExt->MemBalloon.paMdlMemBalloon)
+    {
+        /* Clean up the memory balloon leftovers */
+        VBoxGuestSetBalloonSize(pDevExt, 0);
+        ExFreePoolWithTag(pDevExt->MemBalloon.paMdlMemBalloon, 'MBAL');
+        pDevExt->MemBalloon.paMdlMemBalloon = NULL;
+    }
+    Assert(pDevExt->MemBalloon.cBalloons == 0);
+#endif
+}
 
 /**
  * Device I/O Control entry point.
