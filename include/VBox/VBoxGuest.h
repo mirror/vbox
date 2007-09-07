@@ -1057,7 +1057,7 @@ typedef struct
 /** Statistics interval changed */
 #define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     BIT(7)
 /** VRDP status changed. */
-#define VMMDEV_EVENT_VRDP                           BIT(7)
+#define VMMDEV_EVENT_VRDP                                   BIT(8)
 
 
 /** @} */
