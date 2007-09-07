@@ -494,9 +494,8 @@ PGMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
          * Clear the ram flags. (We're gonna move or free it!)
          */
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
-        RTHCPTR pvRange = 0;
-        if (pCur->pfnHandlerR3 && pCur->enmType != PGMPHYSHANDLERTYPE_MMIO)
-            PGMRamGCPhys2HCPtr(&pVM->pgm.s, GCPhysCurrent, &pvRange); /* ASSUMES it doesn't change pvRange on failure. */
+        const bool fRestoreAsRAM = pCur->pfnHandlerR3
+                                && pCur->enmType != PGMPHYSHANDLERTYPE_MMIO; /** @todo this isn't entirely correct. */
 
         /*
          * Validate the new range, modify and reinsert.
@@ -533,16 +532,17 @@ PGMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 
 #ifndef IN_RING3
                     REMNotifyHandlerPhysicalModify(pVM, pCur->enmType, GCPhysCurrent, GCPhys,
-                                                   pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, pvRange);
+                                                   pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #else
                     REMR3NotifyHandlerPhysicalModify(pVM, pCur->enmType, GCPhysCurrent, GCPhys,
-                                                     pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, pvRange);
+                                                     pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #endif
                     pgmUnlock(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%VGp -> GCPhys=%VGp GCPhysLast=%VGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
                     return VINF_SUCCESS;
                 }
+
                 AssertMsgFailed(("Conflict! GCPhys=%VGp GCPhysLast=%VGp\n", GCPhys, GCPhysLast));
                 rc = VERR_PGM_HANDLER_PHYSICAL_CONFLICT;
             }

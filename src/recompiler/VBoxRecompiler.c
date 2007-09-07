@@ -2377,7 +2377,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
                                                  pRec->u.PhysicalModify.GCPhysNew,
                                                  pRec->u.PhysicalModify.cb,
                                                  pRec->u.PhysicalModify.fHasHCHandler,
-                                                 pRec->u.PhysicalModify.pvHCPtr);
+                                                 pRec->u.PhysicalModify.fRestoreAsRAM);
                 break;
 
             default:
@@ -2704,12 +2704,12 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
  * @param   GCPhysNew       New handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
- * @param   pvHCPtr         The HC virtual address corresponding to GCPhys if available.
+ * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, void *pvHCPtr)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
-    Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%VGp GCPhysNew=%VGp cb=%d fHasHCHandler=%d pvHCPtr=%p\n",
-          enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, pvHCPtr));
+    Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%VGp GCPhysNew=%VGp cb=%d fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
+          enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM));
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
 
@@ -2724,7 +2724,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
         /*
          * Reset the old page.
          */
-        if (!pvHCPtr)
+        if (!fRestoreAsRAM)
             cpu_register_physical_memory(GCPhysOld, cb, IO_MEM_UNASSIGNED);
         else
         {

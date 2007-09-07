@@ -128,9 +128,9 @@ REMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
  * @param   GCPhysNew       New handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
- * @param   pvHCPtr         The HC virtual address corresponding to GCPhys if available.
+ * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, RTHCPTR pvHCPtr)
+REMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     if (pVM->rem.s.cHandlerNotifications >= ELEMENTS(pVM->rem.s.aHandlerNotifications))
         remFlushHandlerNotifications(pVM);
@@ -141,6 +141,6 @@ REMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
     pRec->u.PhysicalModify.GCPhysNew = GCPhysNew;
     pRec->u.PhysicalModify.cb = cb;
     pRec->u.PhysicalModify.fHasHCHandler = fHasHCHandler;
-    pRec->u.PhysicalModify.pvHCPtr = pvHCPtr;
+    pRec->u.PhysicalModify.fRestoreAsRAM = fRestoreAsRAM;
 }
 
