@@ -91,12 +91,12 @@ typedef struct REMHANDLERNOTIFICATION
 
         struct
         {
-            RTHCPTR             pvHCPtr;
             RTGCPHYS            GCPhysOld;
             RTGCPHYS            GCPhysNew;
             RTGCPHYS            cb;
             PGMPHYSHANDLERTYPE  enmType;
             bool                fHasHCHandler;
+            bool                fRestoreAsRAM;
         } PhysicalModify;
         uint64_t                padding[3 + (HC_ARCH_BITS == 64)];
     } u;
