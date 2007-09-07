@@ -81,8 +81,10 @@ __BEGIN_DECLS
 #define MM_RAM_FLAGS_PHYSICAL_ALL       BIT(9)
 /** PGM has physical page access handler(s) for this page and has temporarily disabled it. */
 #define MM_RAM_FLAGS_PHYSICAL_TEMP_OFF  BIT(10)
+#ifndef NEW_PHYS_CODE
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
 #define MM_RAM_FLAGS_DYNAMIC_ALLOC      BIT(11)
+#endif /* !NEW_PHYS_CODE */
 
 /** The shift used to get the reference count. */
 #define MM_RAM_FLAGS_CREFS_SHIFT        62

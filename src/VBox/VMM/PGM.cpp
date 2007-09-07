@@ -364,7 +364,6 @@
     uint32_t u2State : 2;       The page state { zero, shared, normal, write monitored }.
     uint32_t fWrittenTo : 1;    Whether a write monitored page was written to.
     uint32_t u20Reserved : 20;  Reserved for later, mostly sharing stats.
-    uint32_t u32Reserved : ;       Reserved for later, mostly sharing stats.
     uint32_t u32Tracking;       The shadow PT tracking stuff, roughly.
  @endverbatim
  * 
