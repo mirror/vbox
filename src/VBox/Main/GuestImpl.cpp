@@ -281,6 +281,7 @@ STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     case GuestStatisticType_MemoryLoad:
     case GuestStatisticType_PhysMemTotal:
     case GuestStatisticType_PhysMemAvailable:
+    case GuestStatisticType_PhysMemBalloon:
     case GuestStatisticType_MemCommitTotal:
     case GuestStatisticType_MemKernelTotal:
     case GuestStatisticType_MemKernelPaged:
@@ -313,6 +314,7 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     case GuestStatisticType_MemoryLoad:
     case GuestStatisticType_PhysMemTotal:
     case GuestStatisticType_PhysMemAvailable:
+    case GuestStatisticType_PhysMemBalloon:
     case GuestStatisticType_MemCommitTotal:
     case GuestStatisticType_MemKernelTotal:
     case GuestStatisticType_MemKernelPaged:
