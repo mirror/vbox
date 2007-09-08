@@ -292,11 +292,13 @@ vslick.h: include/VBox/cdefs.h Makefile
 	$(RM) -f $@.tmp $@.tmp2 $@.tmp3
 
 
-ifndef VBOX_OSE
 ## add tools fetching to the 'up' / 'update' target.
 up update::
 # this doesn't work of course if kmk is updated:	svn$(HOSTSUFF_EXE) up $(PATH_KBUILD)
+ifndef VBOX_OSE
 	$(MAKE) -C tools fetch
+else
+	$(MAKE) -C tools -f Makefile-ose.kmk fetch
 endif
 
 #

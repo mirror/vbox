@@ -547,8 +547,10 @@ xpidl_SOURCES = \
 
 ifeq ($(BUILD_TARGET),os2)
  # glib and libIDL needed by XPCOM on OS/2.
- VBOX_PATH_GLIB      ?= $(PATH_DEVTOOLS_TRG)/glibidl/gcc335
- VBOX_PATH_LIBIDL    ?= $(PATH_DEVTOOLS_TRG)/glibidl/gcc335
+ ifeq ($(VBOX_PATH_GLIB),)
+ VBOX_PATH_GLIB := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/glibidl/*/glibidl/gcc335)))
+ endif
+ VBOX_PATH_LIBIDL ?= $(VBOX_PATH_GLIB)
  ifeq ($(wildcard $(VBOX_PATH_GLIB)),)
   $(warning VBOX_PATH_GLIB is "$(VBOX_PATH_GLIB)" which is not a valid directory!)
  endif
