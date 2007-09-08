@@ -1,7 +1,6 @@
+/** $Id$ */
 /** @file
- *
- * VBox network devices:
- * AMD PC-Net II (Am79C970A + Am79C973) Ethernet Controller
+ * AMD PC-Net II (Am79C970A + Am79C973) Ethernet Controller Emulation.
  */
 
 /*
