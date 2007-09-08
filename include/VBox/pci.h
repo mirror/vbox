@@ -71,7 +71,7 @@ typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPCIDEVICE pPciDev, /*unsigned*/ int 
 typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 
 
-/** @name PCI Configuration Space Registers 
+/** @name PCI Configuration Space Registers
  * @{ */
 #define VBOX_PCI_VENDOR_ID              0x00    /**< 16-bit RO */
 #define VBOX_PCI_DEVICE_ID              0x02    /**< 16-bit RO */
@@ -119,7 +119,7 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 /** @} */
 
 
-/** 
+/**
  * Callback function for reading from the PCI configuration space.
  *
  * @returns The register value.
@@ -133,12 +133,12 @@ typedef FNPCICONFIGREAD *PFNPCICONFIGREAD;
 /** Pointer to a PFNPCICONFIGREAD. */
 typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
 
-/** 
+/**
  * Callback function for writing to the PCI configuration space.
  *
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
  * @param   Address         The configuration space register address. [0..255]
- * @param   u32Value        The value that's being written. The number of bits actually used from 
+ * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
  * @param   cb              The register size. [1,2,4]
  */
@@ -234,6 +234,26 @@ DECLINLINE(void) PCIDevSetDeviceId(PPCIDEVICE pPciDev, uint16_t u16DeviceId)
 DECLINLINE(uint16_t) PCIDevGetDeviceId(PPCIDEVICE pPciDev)
 {
     return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_DEVICE_ID], pPciDev->config[VBOX_PCI_DEVICE_ID + 1]));
+}
+
+/**
+ * Gets the sub-system vendor id config register.
+ * @returns the sub-system vendor id.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint16_t) PCIDevGetSubSystemVendorId(PPCIDEVICE pPciDev)
+{
+    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID], pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID + 1]));
+}
+
+/**
+ * Gets the sub-system id config register.
+ * @returns the sub-system id.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint16_t) PCIDevGetSubSystemId(PPCIDEVICE pPciDev)
+{
+    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_SUBSYSTEM_ID], pPciDev->config[VBOX_PCI_SUBSYSTEM_ID + 1]));
 }
 
 
