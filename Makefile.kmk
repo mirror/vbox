@@ -70,7 +70,7 @@ ifneq ($(VBOX_WITH_QTGUI),)
   endif
  else ifeq ($(BUILD_TARGET),os2)
   VBOX_DLL_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/bin/qt*.dll)))
-  ifdef VBOX_DLL_QT
+  ifneq ($(strip $(VBOX_DLL_QT)),)
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
   endif
