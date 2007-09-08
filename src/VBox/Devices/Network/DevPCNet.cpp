@@ -45,12 +45,6 @@
  * AMD Publication# 19436  Rev:E  Amendment/0  Issue Date: June 2000
  */
 
-/** To enable the PDMThread based send thread code.
- * This is just a emergency switch in case changes doesn't quite work and
- * we want to get 1.5 out.
- * @todo cleanup after 1.5.  */
-#define USE_PDMTHREAD 1
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -222,12 +216,8 @@ struct PCNetState_st
 
     /** Async send thread */
     RTSEMEVENT                          hSendEventSem;
-#ifdef USE_PDMTHREAD
     /** The Async send thread. */
     PPDMTHREAD                          pSendThread;
-#else
-    RTTHREAD                            hSendThread;
-#endif
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
@@ -2056,12 +2046,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                     else
                     {
                         int rc = pcnetXmitCompleteFrame(pData);
-#ifdef USE_PDMTHREAD
                         AssertRCReturn(rc, rc);
-#else
-                        if (VBOX_FAILURE(rc))
-                            return rc; /* can happen during termination */
-#endif
                     }
                 }
                 else if (cb == 4096)
@@ -2167,12 +2152,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
                     if (pcnetIsLinkUp(pData) && !fDropFrame)
                     {
                         int rc = pcnetXmitCompleteFrame(pData);
-#ifdef USE_PDMTHREAD
                         AssertRCReturn(rc, rc);
-#else
-                        if (VBOX_FAILURE(rc))
-                            return rc; /* can happen during termination */
-#endif
                     }
                     else if (CSR_LOOP(pData) && !fDropFrame)
                         pcnetXmitLoopbackFrame(pData);
@@ -2235,7 +2215,6 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 }
 
 
-#ifdef USE_PDMTHREAD
 /**
  * Async I/O thread for delayed sending of packets.
  *
@@ -2308,35 +2287,6 @@ static DECLCALLBACK(int) pcnetAsyncSendThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHRE
     PCNetState *pThis = PDMINS2DATA(pDevIns, PCNetState *);
     return RTSemEventSignal(pThis->hSendEventSem);
 }
-
-
-#else /* USE_PDMTHREAD */
-/**
- * Async I/O thread for delayed sending of packets.
- */
-static DECLCALLBACK(int) pcnetAsyncSend(RTTHREAD ThreadSelf, void *pvUser)
-{
-    PCNetState *pData = (PCNetState *)pvUser;
-    RTSEMEVENT hEvent = pData->hSendEventSem;
-    int        rc     = VINF_SUCCESS;
-
-    while(rc == VINF_SUCCESS)
-    {
-        rc = RTSemEventWait(hEvent, RT_INDEFINITE_WAIT);
-        if (VBOX_FAILURE(rc))
-            break;
-
-        rc = PDMCritSectEnter(&pData->CritSect, VERR_PERMISSION_DENIED);
-        AssertReleaseRC(rc);
-
-        if (!pData->fSaving)
-            rc = pcnetAsyncTransmit(pData);
-
-        PDMCritSectLeave(&pData->CritSect);
-    }
-    return VINF_SUCCESS;
-}
-#endif /* USE_PDMTHREAD */
 
 #endif /* IN_RING3 */
 
@@ -4165,7 +4115,6 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 
     if (PDMCritSectIsInitialized(&pData->CritSect))
     {
-#ifdef USE_PDMTHREAD
         /*
          * At this point the send thread is suspended and will not enter
          * this module again. So, no coordination is needed here and PDM
@@ -4174,15 +4123,6 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
         RTSemEventDestroy(pData->hSendEventSem);
         pData->hSendEventSem = NIL_RTSEMEVENT;
         PDMR3CritSectDelete(&pData->CritSect);
-#else
-        PDMCritSectEnter(&pData->CritSect, VERR_ACCESS_DENIED);
-
-        RTSemEventDestroy(pData->hSendEventSem);
-        pData->hSendEventSem = 0;
-
-        PDMCritSectLeave(&pData->CritSect);
-        PDMR3CritSectDelete(&pData->CritSect);
-#endif
     }
     return VINF_SUCCESS;
 }
@@ -4453,13 +4393,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRC(rc);
 
     /* Create asynchronous thread */
-#ifdef USE_PDMTHREAD
     rc = PDMDevHlpPDMThreadCreate(pDevIns, &pData->pSendThread, pData, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_SEND");
     AssertRCReturn(rc, rc);
-#else
-    rc = RTThreadCreate(&pData->hSendThread, pcnetAsyncSend, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "PCNET_SEND");
-    AssertRC(rc);
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
