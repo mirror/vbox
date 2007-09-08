@@ -209,7 +209,7 @@ PGMGCDECL(int) PGMGCDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     /*
      * Pass it on to PGMGCDynMapHCPage.
      */
-    RTHCPHYS HCPhys = pRam->aHCPhys[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT] & X86_PTE_PAE_PG_MASK;
+    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
     //Log(("PGMGCDynMapGCPage: GCPhys=%VGp HCPhys=%VHp\n", GCPhys, HCPhys));
     return PGMGCDynMapHCPage(pVM, HCPhys, ppv);
 }
@@ -247,7 +247,7 @@ PGMGCDECL(int) PGMGCDynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     /*
      * Pass it on to PGMGCDynMapHCPage.
      */
-    RTHCPHYS HCPhys = pRam->aHCPhys[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT] & X86_PTE_PAE_PG_MASK;
+    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
     int rc = PGMGCDynMapHCPage(pVM, HCPhys, ppv);
     if (VBOX_SUCCESS(rc))
         *ppv = (void *)((uintptr_t)*ppv | (GCPhys & PAGE_OFFSET_MASK));

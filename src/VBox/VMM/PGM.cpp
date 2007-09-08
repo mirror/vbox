@@ -1694,10 +1694,10 @@ PGMR3DECL(void) PGMR3Reset(PVM pVM)
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
         {
-            if (pRam->aHCPhys[iPage] & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2))
+            if (pRam->aPages[iPage].HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2)) /** @todo PAGE FLAGS */
             {
                 /* shadow ram is reloaded elsewhere. */
-                Log4(("PGMR3Reset: not clearing phys page %RGp due to flags %RHp\n", pRam->GCPhys + (iPage << PAGE_SHIFT), pRam->aHCPhys[iPage] & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO)));
+                Log4(("PGMR3Reset: not clearing phys page %RGp due to flags %RHp\n", pRam->GCPhys + (iPage << PAGE_SHIFT), pRam->aPages[iPage].HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO))); /** @todo PAGE FLAGS */
                 continue;
             }
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
@@ -1807,7 +1807,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
         /* Flags. */
         const unsigned cPages = pRam->cb >> PAGE_SHIFT;
         for (unsigned iPage = 0; iPage < cPages; iPage++)
-            SSMR3PutU16(pSSM, (uint16_t)(pRam->aHCPhys[iPage] & ~X86_PTE_PAE_PG_MASK));
+            SSMR3PutU16(pSSM, (uint16_t)(pRam->aPages[iPage].HCPhys & ~X86_PTE_PAE_PG_MASK)); /** @todo PAGE FLAGS */
 
         /* any memory associated with the range. */
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
@@ -2029,7 +2029,7 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
             u16 &= PAGE_OFFSET_MASK & ~( MM_RAM_FLAGS_VIRTUAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_VIRTUAL_ALL
                                        | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL
                                        | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF );
-            pRam->aHCPhys[iPage] = (pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK) | (RTHCPHYS)u16;
+            pRam->aPages[iPage].HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) | (RTHCPHYS)u16; /** @todo PAGE FLAGS */
         }
 
         /* any memory associated with the range. */

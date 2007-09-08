@@ -109,7 +109,7 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
      * Allocate RAM range.
      * Small ranges are allocated from the heap, big ones have separate mappings.
      */
-    size_t          cbRam = RT_OFFSETOF(PGMRAMRANGE, aHCPhys[cb >> PAGE_SHIFT]);
+    size_t          cbRam = RT_OFFSETOF(PGMRAMRANGE, aPages[cb >> PAGE_SHIFT]);
     PPGMRAMRANGE    pNew;
     RTGCPTR         GCPtrNew;
     int             rc;
@@ -159,7 +159,11 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         if (paPages)
         {
             while (iPage-- > 0)
-                pNew->aHCPhys[iPage] = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags;
+            {
+                pNew->aPages[iPage].HCPhys = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags; /** @todo PAGE FLAGS */
+                pNew->aPages[iPage].u32A = 0;
+                pNew->aPages[iPage].u32B = 0;
+            }
         }
         else if (fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
@@ -172,14 +176,22 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
 
             /* Physical memory will be allocated on demand. */
             while (iPage-- > 0)
-                pNew->aHCPhys[iPage] = fFlags;
+            {
+                pNew->aPages[iPage].HCPhys = fFlags; /** @todo PAGE FLAGS */
+                pNew->aPages[iPage].u32A = 0;
+                pNew->aPages[iPage].u32B = 0;
+            }
         }
         else
         {
             Assert(fFlags == (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO));
-            RTHCPHYS HCPhysDummyPage = (MMR3PageDummyHCPhys(pVM) & X86_PTE_PAE_PG_MASK) | fFlags;
+            RTHCPHYS HCPhysDummyPage = (MMR3PageDummyHCPhys(pVM) & X86_PTE_PAE_PG_MASK) | fFlags; /** @todo PAGE FLAGS */
             while (iPage-- > 0)
-                pNew->aHCPhys[iPage] = HCPhysDummyPage;
+            {
+                pNew->aPages[iPage].HCPhys = HCPhysDummyPage; /** @todo PAGE FLAGS */
+                pNew->aPages[iPage].u32A = 0;
+                pNew->aPages[iPage].u32B = 0;
+            }
         }
 
         /*
@@ -269,7 +281,7 @@ PGMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
     if (paPages)
     {
         while (iPage-- > 0)
-            pRam->aHCPhys[off + iPage] = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags;
+            pRam->aPages[off + iPage].HCPhys = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags;  /** @todo PAGE FLAGS */
     }
     off >>= (PGM_DYNAMIC_CHUNK_SHIFT - PAGE_SHIFT);
     pRam->pavHCChunkHC[off] = pvRam;
@@ -561,7 +573,7 @@ PGMR3DECL(int) PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsigned f
     unsigned iPageEnd = (GCPhysLast - pRam->GCPhys + 1) >> PAGE_SHIFT;
     unsigned iPage    = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;
     for ( ; iPage < iPageEnd; iPage++)
-        pRam->aHCPhys[iPage] = (pRam->aHCPhys[iPage] & fFullMask) | fFlags;
+        pRam->aPages[iPage].HCPhys = (pRam->aPages[iPage].HCPhys & fFullMask) | fFlags; /** @todo PAGE FLAGS */
 
     return VINF_SUCCESS;
 }
