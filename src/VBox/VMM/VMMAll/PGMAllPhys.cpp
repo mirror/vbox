@@ -20,7 +20,7 @@
  *
  * Since this flag is currently incorrectly kept set for ROM regions we will
  * have to ignore it for now so we don't break stuff.
- * 
+ *
  * @todo this has been fixed now I believe, remove this hack.
  */
 #define PGM_IGNORE_RAM_FLAGS_RESERVED
@@ -102,7 +102,7 @@ PGMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
  *          page but has no physical backing.
  * @returns VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid
  *          GC physical address.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   GCPhys  The GC physical address to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
@@ -127,16 +127,16 @@ PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 #ifdef NEW_PHYS_CODE
 
 
-/** 
+/**
  * Replace a zero or shared page with new page that we can write to.
- * 
- * @returns VBox status. 
+ *
+ * @returns VBox status.
  * @todo    Define the return values and propagate them up the call tree..
- * 
+ *
  * @param   pVM         The VM address.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
- * 
+ *
  * @remarks Called from within the PGM critical section.
  */
 int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
@@ -145,17 +145,17 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 }
 
 
-/** 
+/**
  * Deal with pages that are not writable, i.e. not in the ALLOCATED state.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
- * 
+ *
  * @param   pVM         The VM address.
  * @param   pPage       The physical page tracking structure.
  * @param   GCPhys      The address of the page.
- * 
+ *
  * @remarks Called from within the PGM critical section.
  */
 int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
@@ -169,9 +169,9 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         case PGM_PAGE_STATE_ALLOCATED:
             return VINF_SUCCESS;
 
-        /* 
+        /*
          * Zero pages can be dummy pages for MMIO or reserved memory,
-         * so we need to check the flags before joining cause with 
+         * so we need to check the flags before joining cause with
          * shared page replacement.
          */
         case PGM_PAGE_STATE_ZERO:
@@ -189,7 +189,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
 /**
  * Tree enumeration callback for dealing with age rollover.
- * It will perform a simple compression of the current age.  
+ * It will perform a simple compression of the current age.
  */
 static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pNode, void *pvUser)
 {
@@ -206,8 +206,8 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pN
 
 
 /**
- * Tree enumeration callback that updates the chunks that have 
- * been used since the last 
+ * Tree enumeration callback that updates the chunks that have
+ * been used since the last
  */
 static DECLCALLBACK(int) pgmR3PhysChunkAgeingCallback(PAVLU32NODECORE pNode, void *pvUser)
 {
@@ -219,14 +219,14 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingCallback(PAVLU32NODECORE pNode, voi
         pChunk->AgeCore.Key = pChunk->iAge = pVM->pgm.s.R3ChunkTlb.iNow;
         RTAvllU32Insert(&pVM->pgm.s.R3ChunkTlb.pAgeTree, &pChunk->AgeCore);
     }
-    
+
     return 0;
 }
 
 
 /**
  * Performs ageing of the ring-3 chunk mappings.
- * 
+ *
  * @param   pVM         The VM handle.
  */
 PGMR3DECL(void) PGMR3PhysChunkAgeing(PVM pVM)
@@ -253,7 +253,7 @@ typedef struct PGMR3PHYSCHUNKUNMAPCB
 
 
 /**
- * Callback used to find the mapping that's been unused for 
+ * Callback used to find the mapping that's been unused for
  * the longest time.
  */
 static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE pNode, void *pvUser)
@@ -264,8 +264,8 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
         if (    pChunk->iAge
             &&  !pChunk->cRefs)
         {
-            /* 
-             * Check that it's not in any of the TLBs. 
+            /*
+             * Check that it's not in any of the TLBs.
              */
             PVM pVM = ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pVM;
             for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.R3ChunkTlb->aEntries); i++)
@@ -297,10 +297,10 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
 
 /**
  * Finds a good candidate for unmapping when the ring-3 mapping cache is full.
- * 
- * The candidate will not be part of any TLBs, so no need to flush 
+ *
+ * The candidate will not be part of any TLBs, so no need to flush
  * anything afterwards.
- * 
+ *
  * @returns Chunk id.
  * @param   pVM         The VM handle.
  */
@@ -326,14 +326,14 @@ int pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
 
 /**
  * Maps the given chunk into the ring-3 mapping cache.
- * 
+ *
  * This will call ring-0.
- * 
+ *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @param   idChunk     The chunk in question.
  * @param   ppChunk     Where to store the chunk tracking structure.
- * 
+ *
  * @remarks Called from within the PGM critical section.
  */
 int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAPPING ppChunk)
@@ -398,7 +398,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAPPING ppChunk)
         MMR3HeapFree(pChunk);
 #else
         MMHyperFree(pVM, pChunk);
-#endif 
+#endif
         pChunk = NULL;
     }
 
@@ -408,20 +408,20 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAPPING ppChunk)
 #endif /* IN_RING3 */
 
 
-/** 
+/**
  * Maps a page into the current virtual address space so it can be accessed.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
- * 
+ *
  * @param   pVM         The VM address.
  * @param   pPage       The physical page tracking structure.
- * @param   GCPhys      The address of the page. 
- * @param   ppMap       Where to store the address of the mapping tracking structure. 
- * @param   ppv         Where to store the mapping address of the page. The page 
+ * @param   GCPhys      The address of the page.
+ * @param   ppMap       Where to store the address of the mapping tracking structure.
+ * @param   ppv         Where to store the mapping address of the page. The page
  *                      offset is masked off!
- * 
+ *
  * @remarks Called from within the PGM critical section.
  */
 int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv)
@@ -437,9 +437,9 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
 
 #else /* IN_RING3 || IN_RING0 */
 
-/** 
+/**
  * Calculates the index of a guest page in the Ring-3 Chunk TLB.
- * @returns Chunk TLB index. 
+ * @returns Chunk TLB index.
  * @param   idChunk         The Chunk ID.
  */
 #define PGM_R3CHUNKTLB_IDX(idChunk)     ( (idChunk) & (PGM_R3CHUNKTLB_ENTRIES - 1) )
@@ -492,9 +492,9 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
 }
 
 
-/** 
+/**
  * Calculates the index of a guest page in the Physical TLB.
- * @returns Physical TLB index. 
+ * @returns Physical TLB index.
  * @param   GCPhys      The guest physical address.
  */
 #define PGM_R3PHYSTLB_IDX(GCPhys) ( ((GCPhys) >> PAGE_SHIFT) & (PGM_R3PHYSTLB_ENTRIES - 1) )
@@ -505,12 +505,12 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
 #else /* IN_GC */
 # define PGM_PHYSTLB_IDX(GCPhys)   PGM_GCPHYSTLB_IDX(GCPhys)
 # define PGMPHYSTLBE PGMGCPHYSTLBE
-#endif 
+#endif
 
 
 /**
  * Load a guest page into the ring-3 physical TLB.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
@@ -539,7 +539,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
     }
 
     /*
-     * Map the page. 
+     * Map the page.
      * Make a special case for the zero page as it is kind of special.
      */
     PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
@@ -566,9 +566,9 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
 
 
 /**
- * Queries the Physical TLB entry for a physical guest page, 
+ * Queries the Physical TLB entry for a physical guest page,
  * attemting to load the TLB entry if necessary.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
@@ -595,23 +595,23 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPgm, RTGCPHYS GCPhys, PPPGMPHYSTLBE p
 #endif /* NEW_PHYS_CODE */
 
 
-/** 
+/**
  * Requests the mapping of a guest page into the current context.
- * 
+ *
  * This API should only be used for very short term, as it will consume
- * scarse resources (R0 and GC) in the mapping cache. When you're done 
+ * scarse resources (R0 and GC) in the mapping cache. When you're done
  * with the page, call PGMPhysGCPhys2CCPtrRelease() ASAP to release it.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
- * 
+ *
  * @param   pVM         The VM handle.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
- * 
- * @remark  Avoid calling this API from within critical sections (other than 
+ *
+ * @remark  Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
  */
 PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv)
@@ -625,7 +625,7 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     return PGMGCDynMapGCPageEx(pVM, GCPhys, ppv);
 
 #else
-    /* 
+    /*
      * Query the Physical TLB entry for the page (may fail).
      */
     PGMPHYSTLBE pTlbe;
@@ -633,7 +633,7 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     if (RT_SUCCESS(rc))
     {
         /*
-         * If the page is shared, the zero page, or being write monitored 
+         * If the page is shared, the zero page, or being write monitored
          * it must be converted to an page that's writable if possible.
          */
         PPGMPAGE pPage = pTlbe->pPage;
@@ -652,7 +652,7 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv)
                     AssertMsgFailed(("%VGp is entering permanent locked state!\n", GCPhys));
                     pMap->cRefs++; /* Extra ref to prevent it from going away. */
                 }
-        
+
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
         }
     }
@@ -670,16 +670,16 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     return PGMGCDynMapGCPageEx(pVM, GCPhys, ppv);
 # else
     return PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1, ppv);
-# endif 
-#endif 
+# endif
+#endif
 }
 
 
-/** 
+/**
  * Release the mapping of a guest page.
- * 
+ *
  * This is the counterpart to the PGMPhysGCPhys2CCPtr.
- * 
+ *
  * @param   pVM         The VM handle.
  * @param   GCPhys      The address that was mapped using PGMPhysGCPhys2CCPtr.
  * @param   pv          The address that PGMPhysGCPhys2CCPtr returned.
@@ -689,7 +689,7 @@ PGMDECL(void) PGMPhysGCPhys2CCPtrRelease(PVM pVM, RTGCPHYS GCPhys, void *pv)
 #ifdef NEW_PHYS_CODE
 #ifdef IN_GC
     /* currently nothing to do here. */
-/* --- postponed 
+/* --- postponed
 #elif defined(IN_RING0)
 */
 
@@ -760,7 +760,7 @@ PGMDECL(void) PGMPhysGCPhys2CCPtrRelease(PVM pVM, RTGCPHYS GCPhys, void *pv)
     NOREF(pVM);
     NOREF(GCPhys);
     NOREF(pv);
-#endif 
+#endif
 }
 
 
@@ -822,14 +822,14 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
 
 
 /**
- * Converts a HC pointer to a GC physical address. 
- * 
+ * Converts a HC pointer to a GC physical address.
+ *
  * Only for the debugger.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success, *pGCPhys is set.
  * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   HCPtr   The HC pointer to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
@@ -883,7 +883,7 @@ PGMDECL(int) PGMPhysHCPtr2GCPhysDbg(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
  * @retval  VINF_SUCCESS on success, *pHCPhys is set.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical page but has no physical backing.
  * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   HCPtr   The HC pointer to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
@@ -944,13 +944,13 @@ PGMDECL(int) PGMPhysHCPtr2HCPhysDbg(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
 
 /**
  * Converts a HC physical address to a GC physical address.
- * 
+ *
  * Only for the debugger.
  *
  * @returns VBox status code
  * @retval  VINF_SUCCESS on success, *pGCPhys is set.
  * @retval  VERR_INVALID_POINTER if the HC physical address is not within the GC physical memory.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   HCPhys  The HC physical address to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
@@ -977,7 +977,7 @@ PGMDECL(int) PGMPhysHCPhys2GCPhysDbg(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys
             if (    PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
                 &&  !PGM_PAGE_IS_RESERVED(&pRam->aPages[iPage])
-#endif 
+#endif
                 )
             {
                 *pGCPhys = pRam->GCPhys + (iPage << PAGE_SHIFT) + off;
@@ -1152,6 +1152,8 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
  * @param   pCache          Cache structure pointer
  * @param   GCPhys          GC physical address
  * @param   pbHC            HC pointer corresponding to physical page
+ *
+ * @thread  EMT.
  */
 static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint8_t *pbHC)
 {
@@ -1260,7 +1262,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                             if (cb >= cbRead)
                             {
 #if defined(IN_RING3) && defined(PGM_PHYSMEMACCESS_CACHING)
-                                if (cbRead <= 4)
+                                if (cbRead <= 4 && !fGrabbedLock /* i.e. EMT */)
                                     pgmPhysCacheAdd(pVM, &pVM->pgm.s.pgmphysreadcache, GCPhys, (uint8_t*)pvSrc);
 #endif /* IN_RING3 && PGM_PHYSMEMACCESS_CACHING */
                                 memcpy(pvBuf, pvSrc, cbRead);
@@ -1526,7 +1528,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         if (cb >= cbWrite)
                         {
 #if defined(IN_RING3) && defined(PGM_PHYSMEMACCESS_CACHING)
-                            if (cbWrite <= 4)
+                            if (cbWrite <= 4 && !fGrabbedLock /* i.e. EMT */)
                                 pgmPhysCacheAdd(pVM, &pVM->pgm.s.pgmphyswritecache, GCPhys, (uint8_t*)pvDst);
 #endif /* IN_RING3 && PGM_PHYSMEMACCESS_CACHING */
                             memcpy(pvDst, pvBuf, cbWrite);
