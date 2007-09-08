@@ -46,8 +46,8 @@
  * AMD Publication# 19436  Rev:E  Amendment/0  Issue Date: June 2000
  */
 
-/** To enable the PDMThread based send thread code. 
- * This is just a emergency switch in case changes doesn't quite work and 
+/** To enable the PDMThread based send thread code.
+ * This is just a emergency switch in case changes doesn't quite work and
  * we want to get 1.5 out.
  * @todo cleanup after 1.5.  */
 #define USE_PDMTHREAD 1
@@ -203,8 +203,8 @@ struct PCNetState_st
     bool                                fLinkUp;
     /** If set the link is temporarily down because of a saved state load. */
     bool                                fLinkTempDown;
-    /** This flag is set on SavePrep to prevent altering of memory after pgmR3Save() was called 
-     * @todo r=bird: This is inadequate, we are not supposed to do anything at all while the VM 
+    /** This flag is set on SavePrep to prevent altering of memory after pgmR3Save() was called
+     * @todo r=bird: This is inadequate, we are not supposed to do anything at all while the VM
      *               isn't running. Naturally, the problem really lies with the driver and not
      *               the pcnet code. We will have to address this properly at some time. */
     bool                                fSaving;
@@ -228,7 +228,7 @@ struct PCNetState_st
     PPDMTHREAD                          pSendThread;
 #else
     RTTHREAD                            hSendThread;
-#endif 
+#endif
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
@@ -316,8 +316,8 @@ struct PCNetState_st
 #define BCR_SWS         20
 #define BCR_INTCON      21  /* Reserved */
 #define BCR_PLAT        22
-#define BCR_PCISID      23
-#define BCR_PCISVID     24
+#define BCR_PCISVID     23
+#define BCR_PCISID      24
 #define BCR_SRAMSIZ     25
 #define BCR_SRAMB       26
 #define BCR_SRAMIC      27
@@ -2062,7 +2062,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 #else
                         if (VBOX_FAILURE(rc))
                             return rc; /* can happen during termination */
-#endif 
+#endif
                     }
                 }
                 else if (cb == 4096)
@@ -2173,7 +2173,7 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 #else
                         if (VBOX_FAILURE(rc))
                             return rc; /* can happen during termination */
-#endif 
+#endif
                     }
                     else if (CSR_LOOP(pData) && !fDropFrame)
                         pcnetXmitLoopbackFrame(pData);
@@ -2237,9 +2237,9 @@ static int pcnetAsyncTransmit(PCNetState *pData)
 
 
 #ifdef USE_PDMTHREAD
-/** 
+/**
  * Async I/O thread for delayed sending of packets.
- * 
+ *
  * @returns VBox status code. Returning failure will naturally terminate the thread.
  * @param   pDevIns     The pcnet device instance.
  * @param   pThread     The thread.
@@ -2251,7 +2251,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
     /*
      * We can enter this function in two states, initializing or resuming.
      *
-     * The idea about the initializing bit is that we can do per-thread 
+     * The idea about the initializing bit is that we can do per-thread
      * initialization while the creator thread can still pick up errors.
      * At present, there is nothing to init, or at least nothing that
      * need initing in the thread.
@@ -2260,7 +2260,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
         return VINF_SUCCESS;
 
     /*
-     * Stay in the run-loop until we're supposed to leave the 
+     * Stay in the run-loop until we're supposed to leave the
      * running state. If something really bad happens, we'll
      * quit the loop while in the running state and return
      * an error status to PDM and let it terminate the thread.
@@ -2277,7 +2277,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
             break;
 
         /*
-         * Perform async send. Mind that we might be requested to 
+         * Perform async send. Mind that we might be requested to
          * suspended while waiting for the critical section.
          */
         rc = PDMCritSectEnter(&pThis->CritSect, VERR_PERMISSION_DENIED);
@@ -2299,7 +2299,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
 
 /**
  * Unblock the send thread so it can respond to a state change.
- * 
+ *
  * @returns VBox status code.
  * @param   pDevIns     The pcnet device instance.
  * @param   pThread     The send thread.
@@ -2477,14 +2477,10 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 21: /* CXBAU */
         case 22: /* NRBAL */
         case 23: /* NRBAU */
-        case 24: /* BADRL */
-        case 25: /* BADRU */
         case 26: /* NRDAL */
         case 27: /* NRDAU */
         case 28: /* CRDAL */
         case 29: /* CRDAU */
-        case 30: /* BADXL */
-        case 31: /* BADXU */
         case 32: /* NXDAL */
         case 33: /* NXDAU */
         case 34: /* CXDAL */
@@ -2503,10 +2499,6 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
         case 47: /* POLLINT */
         case 72: /* RCVRC */
         case 74: /* XMTRC */
-        case 76: /* RCVRL */ /** @todo call pcnetUpdateRingHandlers */
-                             /** @todo receive ring length is stored in two's complement! */
-        case 78: /* XMTRL */ /** @todo call pcnetUpdateRingHandlers */
-                             /** @todo transmit ring length is stored in two's complement! */
         case 112: /* MISSC */
             if (CSR_STOP(pData) || CSR_SPND(pData))
                 break;
@@ -2548,11 +2540,74 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
             return pcnetCSRWriteU16(pData, 1, val);
         case 17: /* IADRH */
             return pcnetCSRWriteU16(pData, 2, val);
+
+        /*
+         * 24 and 25 are the Base Address of Receive Descriptor.
+         * We combine and mirror these in GCRDRA.
+         */
+        case 24: /* BADRL */
+        case 25: /* BADRU */
+            if (!CSR_STOP(pData) && !CSR_SPND(pData))
+            {
+                Log(("PCNet#%d: WRITE CSR%d, %#06x !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+                return rc;
+            }
+            if (u32RAP == 24)
+                pData->GCRDRA = (pData->GCRDRA & 0xffff0000) | (val & 0x0000ffff);
+            else
+                pData->GCRDRA = (pData->GCRDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
+            Log(("PCNet#%d: WRITE CSR%d, %#06x => GCRDRA=%08x (alt init)\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+                 u32RAP, val, pData->GCRDRA));
+            break;
+
+        /*
+         * 30 & 31 are the Base Address of Transmit Descriptor.
+         * We combine and mirrorthese in GCTDRA.
+         */
+        case 30: /* BADXL */
+        case 31: /* BADXU */
+            if (!CSR_STOP(pData) && !CSR_SPND(pData))
+            {
+                Log(("PCNet#%d: WRITE CSR%d, %#06x !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+                return rc;
+            }
+            if (u32RAP == 30)
+                pData->GCTDRA = (pData->GCTDRA & 0xffff0000) | (val & 0x0000ffff);
+            else
+                pData->GCTDRA = (pData->GCTDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
+            Log(("PCNet#%d: WRITE CSR%d, %#06x => GCTDRA=%08x (alt init)\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+                 u32RAP, val, pData->GCTDRA));
+            break;
+
         case 58: /* Software Style */
             LOG_REGISTER(("PCNet#%d: WRITE SW_STYLE, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, val));
             rc = pcnetBCRWriteU16(pData, BCR_SWS, val);
             break;
+
+        /*
+         * Registers 76 and 78 aren't stored correctly (see todos), but I'm don't dare
+         * try fix that right now. So, as a quick hack for 'alt init' I'll just correct them here.
+         */
+        case 76: /* RCVRL */ /** @todo call pcnetUpdateRingHandlers */
+                             /** @todo receive ring length is stored in two's complement! */
+        case 78: /* XMTRL */ /** @todo call pcnetUpdateRingHandlers */
+                             /** @todo transmit ring length is stored in two's complement! */
+            if (!CSR_STOP(pData) && !CSR_SPND(pData))
+            {
+                Log(("PCNet#%d: WRITE CSR%d, %#06x !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
+                return rc;
+            }
+            Log(("PCNet#%d: WRITE CSR%d, %#06x (hacked %#06x) (alt init)\n", PCNETSTATE_2_DEVINS(pData)->iInstance,
+                 u32RAP, val, 1 + ~(uint16_t)val));
+            val = 1 + ~(uint16_t)val;
+
+            /*
+             * HACK ALERT! Set the counter registers too.
+             */
+            pData->aCSR[u32RAP - 4] = val;
+            break;
+
         default:
             return rc;
     }
@@ -2820,6 +2875,9 @@ static void pcnetHardReset(PCNetState *pData)
     pData->aBCR[BCR_SWS  ] = 0x0200;
     pData->iLog2DescSize   = 3;
     pData->aBCR[BCR_PLAT ] = 0xff06;
+    pData->aBCR[BCR_PCIVID] = PCIDevGetVendorId(&pData->PciDev);
+    pData->aBCR[BCR_PCISID] = PCIDevGetSubSystemId(&pData->PciDev);
+    pData->aBCR[BCR_PCISVID] = PCIDevGetSubSystemVendorId(&pData->PciDev);
 
     pcnetSoftReset(pData);
 }
@@ -2869,6 +2927,8 @@ static int pcnetIoportWriteU16(PCNetState *pData, uint32_t addr, uint32_t val)
                 break;
         }
     }
+    else
+        Log(("#%d pcnetIoportWriteU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val));
 
     return rc;
 }
@@ -2905,6 +2965,9 @@ static uint32_t pcnetIoportReadU16(PCNetState *pData, uint32_t addr, int *pRC)
                 break;
         }
     }
+    else
+        Log(("#%d pcnetIoportReadU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val & 0xffff));
+
     pcnetUpdateIrq(pData);
 
 skip_update_irq:
@@ -2940,7 +3003,7 @@ static int pcnetIoportWriteU32(PCNetState *pData, uint32_t addr, uint32_t val)
                 break;
         }
     }
-    else if (addr == 0)
+    else if ((addr & 0x0f) == 0)
     {
         /* switch device to dword I/O mode */
         pcnetBCRWriteU16(pData, BCR_BSBC, pcnetBCRReadU16(pData, BCR_BSBC) | 0x0080);
@@ -2948,6 +3011,8 @@ static int pcnetIoportWriteU32(PCNetState *pData, uint32_t addr, uint32_t val)
         Log2(("device switched into dword i/o mode\n"));
 #endif
     }
+    else
+        Log(("#%d pcnetIoportWriteU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val));
 
     return rc;
 }
@@ -2984,6 +3049,8 @@ static uint32_t pcnetIoportReadU32(PCNetState *pData, uint32_t addr, int *pRC)
                 break;
         }
     }
+    else
+        Log(("#%d pcnetIoportReadU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, addr, val));
     pcnetUpdateIrq(pData);
 
 skip_update_irq:
@@ -3109,19 +3176,31 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
 {
     PCNetState *pData = PDMINS2DATA(pDevIns, PCNetState *);
     int        rc;
-    if (cb == 1)
+
+    STAM_PROFILE_ADV_START(&pData->StatAPROMRead, a);
+    rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+    if (rc == VINF_SUCCESS)
     {
-        STAM_PROFILE_ADV_START(&pData->StatAPROMRead, a);
-        rc = PDMCritSectEnter(&pData->CritSect, VINF_IOM_HC_IOPORT_WRITE);
-        if (rc == VINF_SUCCESS)
-        {
+
+        /* FreeBSD is accessing in dwords. */
+        if (cb == 1)
             *pu32 = pcnetAPROMReadU8(pData, Port);
-            PDMCritSectLeave(&pData->CritSect);
+        else if (cb == 2 && !BCR_DWIO(pData))
+            *pu32 = pcnetAPROMReadU8(pData, Port)
+                  | (pcnetAPROMReadU8(pData, Port + 1) << 8);
+        else if (cb == 4 && BCR_DWIO(pData))
+            *pu32 = pcnetAPROMReadU8(pData, Port)
+                  | (pcnetAPROMReadU8(pData, Port + 1) << 8)
+                  | (pcnetAPROMReadU8(pData, Port + 2) << 16)
+                  | (pcnetAPROMReadU8(pData, Port + 3) << 24);
+        else
+        {
+            Log(("#%d pcnetIOPortAPromRead: Port=%RTiop cb=%d BCR_DWIO !!\n", PCNETSTATE_2_DEVINS(pData)->iInstance, Port, cb));
+            rc = VERR_IOM_IOPORT_UNUSED;
         }
-        STAM_PROFILE_ADV_STOP(&pData->StatAPROMRead, a);
+        PDMCritSectLeave(&pData->CritSect);
     }
-    else
-        rc =  VERR_IOM_IOPORT_UNUSED;
+    STAM_PROFILE_ADV_STOP(&pData->StatAPROMRead, a);
     LogFlow(("#%d pcnetIOPortAPromRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Vrc\n",
              PCNETSTATE_2_DEVINS(pData)->iInstance, Port, *pu32, cb, rc));
     return rc;
@@ -3808,7 +3887,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3GetU16(pSSMHandle, &pData->u16CSR0LastSeenByGuest);
     SSMR3GetU64(pSSMHandle, &pData->u64LastPoll);
     SSMR3GetMem(pSSMHandle, &Mac, sizeof(Mac));
-    Assert(     !memcmp(&Mac, &pData->MacConfigured, sizeof(Mac)) 
+    Assert(     !memcmp(&Mac, &pData->MacConfigured, sizeof(Mac))
            ||   SSMR3HandleGetAfter(pSSMHandle) == SSMAFTER_DEBUG_IT);
     SSMR3GetBool(pSSMHandle, &pData->fAm79C973);
 #ifndef PCNET_NO_POLLING
@@ -3921,7 +4000,7 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
     {
         if (cb > 70) /* unqualified guess */
             pData->Led.Asserted.s.fReading = pData->Led.Actual.s.fReading = 1;
-        pcnetReceiveNoSync(pData, (const uint8_t*)pvBuf, cb);
+        pcnetReceiveNoSync(pData, (const uint8_t *)pvBuf, cb);
         pData->Led.Actual.s.fReading = 0;
     }
     /* otherwise junk the data to Nirwana. */
@@ -4088,9 +4167,9 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
     if (PDMCritSectIsInitialized(&pData->CritSect))
     {
 #ifdef USE_PDMTHREAD
-        /* 
+        /*
          * At this point the send thread is suspended and will not enter
-         * this module again. So, no coordination is needed here and PDM 
+         * this module again. So, no coordination is needed here and PDM
          * will take care of terminating and cleaning up the thread.
          */
         RTSemEventDestroy(pData->hSendEventSem);
@@ -4104,7 +4183,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 
         PDMCritSectLeave(&pData->CritSect);
         PDMR3CritSectDelete(&pData->CritSect);
-#endif 
+#endif
     }
     return VINF_SUCCESS;
 }
@@ -4381,7 +4460,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #else
     rc = RTThreadCreate(&pData->hSendThread, pcnetAsyncSend, (void *)pData, 128*1024, RTTHREADTYPE_IO, 0, "PCNET_SEND");
     AssertRC(rc);
-#endif 
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pData->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
