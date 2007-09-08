@@ -347,7 +347,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
      */
     RTHCPHYS    HCPhysGuestCR3;
     RTHCPTR     HCPtrGuestCR3;
-    int rc = PGMRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhysCR3, &HCPtrGuestCR3, &HCPhysGuestCR3);
+    int rc = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhysCR3, &HCPtrGuestCR3, &HCPhysGuestCR3);
     if (VBOX_SUCCESS(rc))
     {
         rc = PGMMap(pVM, (RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3 & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);
@@ -374,7 +374,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     RTHCPTR     HCPtr;
                     RTHCPHYS    HCPhys;
                     RTGCPHYS    GCPhys = pVM->pgm.s.CTXSUFF(pGstPaePDPTR)->a[i].u & X86_PDPE_PG_MASK;
-                    int rc2 = PGMRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
+                    int rc2 = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
                     if (VBOX_SUCCESS(rc2))
                     {
                         rc = PGMMap(pVM, GCPtr, HCPhys & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);

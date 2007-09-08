@@ -72,15 +72,8 @@ PGMDECL(bool) PGMPhysIsA20Enabled(PVM pVM)
  */
 PGMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
 {
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
-         pRam;
-         pRam = CTXSUFF(pRam->pNext))
-    {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-            return true;
-    }
-    return false;
+    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+    return pPage != NULL;
 }
 
 
@@ -95,15 +88,9 @@ PGMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
  */
 PGMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
 {
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
-         pRam;
-         pRam = CTXSUFF(pRam->pNext))
-    {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-            return !(pRam->aHCPhys[off >> PAGE_SHIFT] & (MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO2));
-    }
-    return false;
+    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+    return pPage
+        && !(pPage->HCPhys & (MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO2));
 }
 
 
@@ -115,48 +102,25 @@ PGMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
  *          page but has no physical backing.
  * @returns VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid
  *          GC physical address.
+ * 
  * @param   pVM     The VM handle.
  * @param   GCPhys  The GC physical address to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
  */
 PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 {
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
-         pRam;
-         pRam = CTXSUFF(pRam->pNext))
-    {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-        {
-            if (    pRam->pvHC
-                ||  (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC))
-            {
-                unsigned iPage = off >> PAGE_SHIFT;
-                if (RT_UNLIKELY(!(pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK)))
-                {
-#ifdef IN_RING3
-                    int rc = pgmr3PhysGrowRange(pVM, GCPhys);
-#else
-                    int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
-#endif
-                    if (rc != VINF_SUCCESS)
-                        return rc;
-                }
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    if (VBOX_FAILURE(rc))
+        return rc;
 
-                RTHCPHYS HCPhys = pRam->aHCPhys[off >> PAGE_SHIFT];
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
-                if (!(HCPhys & MM_RAM_FLAGS_RESERVED))
+    if (RT_UNLIKELY(pPage->HCPhys & MM_RAM_FLAGS_RESERVED)) /** @todo PAGE FLAGS */
+        return VERR_PGM_PHYS_PAGE_RESERVED;
 #endif
-                {
-                    *pHCPhys = (HCPhys & X86_PTE_PAE_PG_MASK)
-                             | (off & PAGE_OFFSET_MASK);
-                    return VINF_SUCCESS;
-                }
-            }
-            return VERR_PGM_PHYS_PAGE_RESERVED;
-        }
-    }
-    return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+
+    *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
+    return VINF_SUCCESS;
 }
 
 
@@ -820,111 +784,70 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
 #ifdef PGM_DYNAMIC_RAM_ALLOC
     if ((GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK) != ((GCPhys+cbRange-1) & PGM_DYNAMIC_CHUNK_BASE_MASK))
     {
-        AssertMsgFailed(("PGMPhysGCPhys2HCPtr %VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
+        AssertMsgFailed(("%VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
         LogRel(("PGMPhysGCPhys2HCPtr %VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
         return VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY;
     }
 #endif
 
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
-         pRam;
-         pRam = CTXSUFF(pRam->pNext))
-    {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-        {
-            if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-            {
-                unsigned iPage = off >> PAGE_SHIFT;
-                if (RT_UNLIKELY(!(pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK)))
-                {
-#ifdef IN_RING3
-                    int rc = pgmr3PhysGrowRange(pVM, GCPhys);
-#else
-                    int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
-#endif
-                    if (rc != VINF_SUCCESS)
-                        return rc;
-                }
-                unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-                *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
-                return VINF_SUCCESS;
-            }
-            if (pRam->pvHC)
-            {
+    PPGMRAMRANGE pRam;
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageAndRangeEx(&pVM->pgm.s, GCPhys, &pPage, &pRam);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
-                if (!(pRam->aHCPhys[off >> PAGE_SHIFT] & MM_RAM_FLAGS_RESERVED))
+    if (RT_UNLIKELY(PGM_PAGE_IS_RESERVED(pPage)))
+        return VERR_PGM_PHYS_PAGE_RESERVED;
 #endif
-                {
-                    *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
-                    return VINF_SUCCESS;
-                }
-            }
-            return VERR_PGM_PHYS_PAGE_RESERVED;
-        }
-    }
-    return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-}
 
-
-/**
- * Validates a HC pointer.
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pVM     The VM handle.
- * @param   HCPtr   The pointer to validate.
- */
-PGMDECL(bool) PGMPhysIsHCPtrValid(PVM pVM, RTHCPTR HCPtr)
-{
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
-         pRam;
-         pRam = CTXSUFF(pRam->pNext))
+    RTGCPHYS off = GCPhys - pRam->GCPhys;
+    if (RT_UNLIKELY(off + cbRange > pRam->cb))
     {
-        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-        {
-            /** @note this is quite slow */
-            for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
-            {
-                if (CTXSUFF(pRam->pavHCChunk)[iChunk])
-                {
-                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk];
-                    if (off < PGM_DYNAMIC_CHUNK_SIZE)
-                        return true;
-                }
-            }
-        }
-        else if (pRam->pvHC)
-        {
-            RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pRam->pvHC;
-
-            if (off < pRam->cb)
-                return true;
-        }
+        AssertMsgFailed(("%VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys + cbRange));
+        return VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY;
     }
-    return false;
+
+    if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
+    {
+        unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+    }
+    else if (RT_LIKELY(pRam->pvHC))
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
+    else
+        return VERR_PGM_PHYS_PAGE_RESERVED;
+    return VINF_SUCCESS;
 }
 
 
 /**
- * Converts a HC pointer to a GC physical address.
+ * Converts a HC pointer to a GC physical address. 
+ * 
+ * Only for the debugger.
  *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_INVALID_POINTER if the pointer is not within the
- *          GC physical memory.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success, *pGCPhys is set.
+ * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
+ * 
  * @param   pVM     The VM handle.
  * @param   HCPtr   The HC pointer to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
  */
-PGMDECL(int) PGMPhysHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
+PGMDECL(int) PGMPhysHCPtr2GCPhysDbg(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
 {
+#ifdef NEW_PHYS_CODE
+    /** @todo Rename to PGMR3PhysDbgHCPtr2GCPhys and move to seperate file. */
+    *pGCPhys = NIL_RTGCPHYS;
+    return VERR_NOT_IMPLEMENTED;
+
+#else
     for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
          pRam;
          pRam = CTXSUFF(pRam->pNext))
     {
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
-            /** @note this is quite slow */
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
                 if (CTXSUFF(pRam->pavHCChunk)[iChunk])
@@ -949,30 +872,36 @@ PGMDECL(int) PGMPhysHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
         }
     }
     return VERR_INVALID_POINTER;
+#endif
 }
 
 
 /**
  * Converts a HC pointer to a GC physical address.
  *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical
- *          page but has no physical backing.
- * @returns VERR_INVALID_POINTER if the pointer is not within the
- *          GC physical memory.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success, *pHCPhys is set.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical page but has no physical backing.
+ * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
+ * 
  * @param   pVM     The VM handle.
  * @param   HCPtr   The HC pointer to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
  */
-PGMDECL(int) PGMPhysHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
+PGMDECL(int) PGMPhysHCPtr2HCPhysDbg(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
 {
+#ifdef NEW_PHYS_CODE
+    /** @todo rename to PGMR3PhysDbgHCPtr2HCPhys and move to a different file. */
+    *pHCPhys = NIL_RTHCPHYS;
+    return VERR_NOT_IMPLEMENTED;
+
+#else
     for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
          pRam;
          pRam = CTXSUFF(pRam->pNext))
     {
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
-            /** @note this is quite slow */
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
                 if (CTXSUFF(pRam->pavHCChunk)[iChunk])
@@ -980,16 +909,14 @@ PGMDECL(int) PGMPhysHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
                     RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                     {
-                        RTHCPHYS HCPhys = pRam->aHCPhys[off >> PAGE_SHIFT];
+                        PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
-                        if (!(HCPhys & MM_RAM_FLAGS_RESERVED))
+                        if (PGM_PAGE_IS_RESERVED(pPage))
+                            return VERR_PGM_PHYS_PAGE_RESERVED;
 #endif
-                        {
-                            *pHCPhys = (HCPhys & X86_PTE_PAE_PG_MASK)
-                                     | (off & PAGE_OFFSET_MASK);
-                            return VINF_SUCCESS;
-                        }
-                        return VERR_PGM_PHYS_PAGE_RESERVED;
+                        *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage)
+                                 | (off & PAGE_OFFSET_MASK);
+                        return VINF_SUCCESS;
                     }
                 }
             }
@@ -999,124 +926,63 @@ PGMDECL(int) PGMPhysHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
             RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pRam->pvHC;
             if (off < pRam->cb)
             {
-                RTHCPHYS HCPhys = pRam->aHCPhys[off >> PAGE_SHIFT];
+                PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
-                if (!(HCPhys & MM_RAM_FLAGS_RESERVED))
+                if (PGM_PAGE_IS_RESERVED(pPage))
+                    return VERR_PGM_PHYS_PAGE_RESERVED;
 #endif
-                {
-                    *pHCPhys = (HCPhys & X86_PTE_PAE_PG_MASK)
-                             | (off & PAGE_OFFSET_MASK);
-                    return VINF_SUCCESS;
-                }
-                return VERR_PGM_PHYS_PAGE_RESERVED;
+                *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage)
+                         | (off & PAGE_OFFSET_MASK);
+                return VINF_SUCCESS;
             }
         }
     }
     return VERR_INVALID_POINTER;
-}
-
-
-/**
- * Validates a HC Physical address.
- *
- * This is an extremely slow API, don't use it!
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pVM     The VM handle.
- * @param   HCPhys  The physical address to validate.
- */
-PGMDECL(bool) PGMPhysIsHCPhysValid(PVM pVM, RTHCPHYS HCPhys)
-{
-    RTGCPHYS GCPhys;
-    int rc = PGMPhysHCPhys2GCPhys(pVM, HCPhys, &GCPhys);
-    return VBOX_SUCCESS(rc);
+#endif
 }
 
 
 /**
  * Converts a HC physical address to a GC physical address.
+ * 
+ * Only for the debugger.
  *
- * This is an extremely slow API, don't use it!
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_INVALID_POINTER if the HC physical address is
- *          not within the GC physical memory.
+ * @returns VBox status code
+ * @retval  VINF_SUCCESS on success, *pGCPhys is set.
+ * @retval  VERR_INVALID_POINTER if the HC physical address is not within the GC physical memory.
+ * 
  * @param   pVM     The VM handle.
  * @param   HCPhys  The HC physical address to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
  */
-PGMDECL(int) PGMPhysHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys)
+PGMDECL(int) PGMPhysHCPhys2GCPhysDbg(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys)
 {
+/** @todo rename to PGMR3PhysDbgHCPhys2GCPhys and move to a different file. (Nobody is currently using it btw.) */
+    /*
+     * Validate and adjust the input a bit.
+     */
+    if (HCPhys == NIL_RTHCPHYS)
+        return VERR_INVALID_POINTER;
     unsigned off = HCPhys & PAGE_OFFSET_MASK;
     HCPhys &= X86_PTE_PAE_PG_MASK;
+    if (HCPhys == 0)
+        return VERR_INVALID_POINTER;
+
     for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
          pRam;
          pRam = CTXSUFF(pRam->pNext))
     {
-        if (    pRam->pvHC
-            ||  (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC))
-        {
-            unsigned iPage = pRam->cb >> PAGE_SHIFT;
-            while (iPage-- > 0)
+        uint32_t iPage = pRam->cb >> PAGE_SHIFT;
+        while (iPage-- > 0)
+            if (    PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
-                if ((pRam->aHCPhys[iPage] & (X86_PTE_PAE_PG_MASK | MM_RAM_FLAGS_RESERVED)) == HCPhys)
-#else
-                if ((pRam->aHCPhys[iPage] & (X86_PTE_PAE_PG_MASK)) == HCPhys)
-#endif
-                {
-                    *pGCPhys = pRam->GCPhys + (iPage << PAGE_SHIFT) + off;
-                    return VINF_SUCCESS;
-                }
-        }
-    }
-    return VERR_INVALID_POINTER;
-}
-
-
-/**
- * Converts a HC physical address to a HC pointer.
- *
- * This is an extremely slow API, don't use it!
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_INVALID_POINTER if the HC physical address is
- *          not within the GC physical memory.
- * @param   pVM     The VM handle.
- * @param   HCPhys  The HC physical address to convert.
- * @param   pHCPtr  Where to store the HC pointer on success.
- */
-PGMDECL(int) PGMPhysHCPhys2HCPtr(PVM pVM, RTHCPHYS HCPhys, PRTHCPTR pHCPtr)
-{
-    unsigned off = HCPhys & PAGE_OFFSET_MASK;
-    HCPhys &= X86_PTE_PAE_PG_MASK;
-    for (PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
-         pRam;
-         pRam = CTXSUFF(pRam->pNext))
-    {
-        if (    pRam->pvHC
-            ||  (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC))
-        {
-            unsigned iPage = pRam->cb >> PAGE_SHIFT;
-            while (iPage-- > 0)
-#ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
-                if ((pRam->aHCPhys[iPage] & (X86_PTE_PAE_PG_MASK | MM_RAM_FLAGS_RESERVED)) == HCPhys)
-#else
-                if ((pRam->aHCPhys[iPage] & (X86_PTE_PAE_PG_MASK)) == HCPhys)
-#endif
-                {
-                    if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-                    {
-                        unsigned idx = (iPage >> (PGM_DYNAMIC_CHUNK_SHIFT - PAGE_SHIFT));
-
-                        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + ((iPage << PAGE_SHIFT) & PGM_DYNAMIC_CHUNK_OFFSET_MASK) + off);
-                    }
-                    else
-                        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + (iPage << PAGE_SHIFT) + off);
-
-                    return VINF_SUCCESS;
-                }
-        }
+                &&  !PGM_PAGE_IS_RESERVED(&pRam->aPages[iPage])
+#endif 
+                )
+            {
+                *pGCPhys = pRam->GCPhys + (iPage << PAGE_SHIFT) + off;
+                return VINF_SUCCESS;
+            }
     }
     return VERR_INVALID_POINTER;
 }
@@ -1353,10 +1219,11 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
             while (off < pCur->cb)
             {
                 unsigned iPage = off >> PAGE_SHIFT;
+                PPGMPAGE pPage = &pCur->aPages[iPage];
                 size_t   cb;
 
                 /* Physical chunk in dynamically allocated range not present? */
-                if (RT_UNLIKELY(!(pCur->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK)))
+                if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(pPage)))
                 {
                     /* Treat it as reserved; return zeros */
                     cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
@@ -1369,8 +1236,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                 }
                 else
                 {
-                    RTHCPHYS HCPhys = pCur->aHCPhys[iPage];
-                    switch (HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_ROM))
+                    switch (pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_ROM)) /** @todo PAGE FLAGS */
                     {
                         /*
                          * Normal memory or ROM.
@@ -1385,7 +1251,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                         {
 #ifdef IN_GC
                             void *pvSrc = NULL;
-                            PGMGCDynMapHCPage(pVM, HCPhys & X86_PTE_PAE_PG_MASK, &pvSrc);
+                            PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                             pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
 #else
                             void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
@@ -1447,7 +1313,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                             {
 #ifdef IN_GC
                                 void *pvSrc = NULL;
-                                PGMGCDynMapHCPage(pVM, HCPhys & X86_PTE_PAE_PG_MASK, &pvSrc);
+                                PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                                 pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
 #else
                                 void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
@@ -1494,7 +1360,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                             {
 #ifdef IN_GC
                                 void *pvSrc = NULL;
-                                PGMGCDynMapHCPage(pVM, HCPhys & X86_PTE_PAE_PG_MASK, &pvSrc);
+                                PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                                 pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
 #else
                                 void *pvSrc = PGMRAMRANGE_GETHCPTR(pCur, off)
@@ -1524,7 +1390,7 @@ PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                             /** @todo fix me later. */
                             AssertReleaseMsgFailed(("Unknown read at %VGp size %d implement the complex physical reading case %x\n",
                                                     GCPhys, cbRead,
-                                                    HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_ROM)));
+                                                    pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_ROM))); /** @todo PAGE FLAGS */
                             cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
                             break;
                     }
@@ -1615,9 +1481,10 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
             while (off < pCur->cb)
             {
                 unsigned iPage = off >> PAGE_SHIFT;
+                PPGMPAGE pPage = &pCur->aPages[iPage];
 
                 /* Physical chunk in dynamically allocated range not present? */
-                if (RT_UNLIKELY(!(pCur->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK)))
+                if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(pPage)))
                 {
                     int rc;
 #ifdef IN_RING3
@@ -1638,9 +1505,8 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                 }
 
                 size_t   cb;
-                RTHCPHYS HCPhys = pCur->aHCPhys[iPage];
                 /** @todo r=bird: missing MM_RAM_FLAGS_ROM here, we shall not allow anyone to overwrite the ROM! */
-                switch (HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2 | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE))
+                switch (pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2 | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE)) /** @todo PAGE FLAGS */
                 {
                     /*
                      * Normal memory, MMIO2 or writable shadow ROM.
@@ -1651,7 +1517,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                     {
 #ifdef IN_GC
                         void *pvDst = NULL;
-                        PGMGCDynMapHCPage(pVM, HCPhys & X86_PTE_PAE_PG_MASK, &pvDst);
+                        PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                         pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
                         void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
@@ -1711,7 +1577,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         {
 #ifdef IN_GC
                             void *pvDst = NULL;
-                            PGMGCDynMapHCPage(pVM, HCPhys & X86_PTE_PAE_PG_MASK, &pvDst);
+                            PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
@@ -1759,7 +1625,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         {
 #ifdef IN_GC
                             void *pvDst = NULL;
-                            PGMGCDynMapHCPage(pVM, HCPhys & X86_PTE_PAE_PG_MASK, &pvDst);
+                            PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
@@ -1833,7 +1699,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         {
 #ifdef IN_GC
                             void *pvDst = NULL;
-                            PGMGCDynMapHCPage(pVM, HCPhys & X86_PTE_PAE_PG_MASK, &pvDst);
+                            PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
 #else
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pCur, off)
@@ -1864,7 +1730,7 @@ PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         /** @todo fix me later. */
                         AssertReleaseMsgFailed(("Unknown write at %VGp size %d implement the complex physical writing case %x\n",
                                                 GCPhys, cbWrite,
-                                                (HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2 | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE))));
+                                                (pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2 | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE)))); /** @todo PAGE FLAGS */
                         /* skip the write */
                         cb = cbWrite;
                         break;
@@ -1937,7 +1803,7 @@ PGMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
                 {
                     /* convert */
                     void *pvSrc;
-                    int rc = PGMRamGCPhys2HCPtr(pVM, pRam, GCPhysSrc, &pvSrc);
+                    int rc = pgmRamGCPhys2HCPtrWithRange(pVM, pRam, GCPhysSrc, &pvSrc);
                     if (VBOX_FAILURE(rc))
                         return rc;
 
@@ -2014,6 +1880,9 @@ PGMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
         RTGCPHYS off = GCPhysDst - pRam->GCPhys;
         if (off < pRam->cb)
         {
+#ifdef NEW_PHYS_CODE
+/** @todo PGMRamGCPhys2HCPtrWithRange. */
+#endif
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
             {
                 /* Copy page by page as we're not dealing with a linear HC range. */
@@ -2021,7 +1890,7 @@ PGMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
                 {
                     /* convert */
                     void *pvDst;
-                    int rc = PGMRamGCPhys2HCPtr(pVM, pRam, GCPhysDst, &pvDst);
+                    int rc = pgmRamGCPhys2HCPtrWithRange(pVM, pRam, GCPhysDst, &pvDst);
                     if (VBOX_FAILURE(rc))
                         return rc;
 

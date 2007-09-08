@@ -184,8 +184,8 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 
 /**
- * Wrapper for getting the current context pointer to the entry begin modified.
- *
+ * Wrapper for getting the current context pointer to the entry being modified.
+ * 
  * @returns Pointer to the current context mapping of the entry.
  * @param   pPool       The pool.
  * @param   pvFault     The fault virtual address.
@@ -193,9 +193,9 @@ int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @param   cbEntry     The entry size.
  */
 #ifdef IN_RING3
-DECLINLINE(void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTHCPTR pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
+DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTHCPTR pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
 #else
-DECLINLINE(void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
+DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
 #endif
 {
 #ifdef IN_GC
@@ -203,7 +203,7 @@ DECLINLINE(void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFault, RT
 
 #elif defined(IN_RING0)
     void *pvRet;
-    int rc = PGMRamGCPhys2HCPtr(&pPool->pVMHC->pgm.s, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
+    int rc = pgmRamGCPhys2HCPtr(&pPool->pVMHC->pgm.s, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
     AssertFatalRCSuccess(rc);
     return pvRet;
 
@@ -1622,7 +1622,7 @@ void pgmPoolClearAll(PVM pVM)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-            pRam->aHCPhys[iPage] &= MM_RAM_FLAGS_NO_REFS_MASK;
+            pRam->aPages[iPage].HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
     }
 
     pPool->iPhysExtFreeHead = 0;
@@ -1982,13 +1982,13 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
  * Scans one shadow page table for mappings of a physical page.
  *
  * @param   pVM         The VM handle.
- * @param   pHCPhys     The aHCPhys ramrange entry in question.
+ * @param   pPhysPage   The guest page in question.
  * @param   iShw        The shadow page table.
  * @param   cRefs       The number of references made in that PT.
  */
-static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCRTHCPHYS pHCPhys, uint16_t iShw, uint16_t cRefs)
+static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs)
 {
-    LogFlow(("pgmPoolTrackFlushGCPhysPT: pHCPhys=%p:{%RHp} iShw=%d cRefs=%d\n", pHCPhys, *pHCPhys, iShw, cRefs));
+    LogFlow(("pgmPoolTrackFlushGCPhysPT: HCPhys=%RHp iShw=%d cRefs=%d\n", pPhysPage->HCPhys, iShw, cRefs));
     PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
 
     /*
@@ -2007,7 +2007,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCRTHCPHYS pHCPhys, uint16_t i
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
         case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
         {
-            const uint32_t  u32 = (*pHCPhys & X86_PTE_PAE_PG_MASK) | X86_PTE_P;
+            const uint32_t  u32 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
             PX86PT          pPT = (PX86PT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
             for (unsigned i = pPage->iFirstPresent; i < ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PG_MASK | X86_PTE_P)) == u32)
@@ -2037,7 +2037,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCRTHCPHYS pHCPhys, uint16_t i
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         {
-            const uint64_t  u64 = (*pHCPhys & X86_PTE_PAE_PG_MASK) | X86_PTE_P;
+            const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
             PX86PTPAE       pPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pVM, pPage);
             for (unsigned i = pPage->iFirstPresent; i < ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
@@ -2071,17 +2071,17 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCRTHCPHYS pHCPhys, uint16_t i
  * Scans one shadow page table for mappings of a physical page.
  *
  * @param   pVM         The VM handle.
- * @param   pHCPhys     The aHCPhys ramrange entry in question.
+ * @param   pPhysPage   The guest page in question.
  * @param   iShw        The shadow page table.
  * @param   cRefs       The number of references made in that PT.
  */
-void pgmPoolTrackFlushGCPhysPT(PVM pVM, PRTHCPHYS pHCPhys, uint16_t iShw, uint16_t cRefs)
+void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool); NOREF(pPool);
-    LogFlow(("pgmPoolTrackFlushGCPhysPT: pHCPhys=%p:{%RHp} iShw=%d cRefs=%d\n", pHCPhys, *pHCPhys, iShw, cRefs));
+    LogFlow(("pgmPoolTrackFlushGCPhysPT: HCPhys=%RHp iShw=%d cRefs=%d\n", pPhysPage->HCPhys, iShw, cRefs));
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
-    pgmPoolTrackFlushGCPhysPTInt(pVM, pHCPhys, iShw, cRefs);
-    *pHCPhys &= MM_RAM_FLAGS_NO_REFS_MASK;
+    pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, iShw, cRefs);
+    pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPT, f);
 }
 
@@ -2090,14 +2090,14 @@ void pgmPoolTrackFlushGCPhysPT(PVM pVM, PRTHCPHYS pHCPhys, uint16_t iShw, uint16
  * Flushes a list of shadow page tables mapping the same physical page.
  *
  * @param   pVM         The VM handle.
- * @param   pHCPhys     The aHCPhys ramrange entry in question.
+ * @param   pPhysPage   The guest page in question. 
  * @param   iPhysExt    The physical cross reference extent list to flush.
  */
-void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PRTHCPHYS pHCPhys, uint16_t iPhysExt)
+void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTs, f);
-    LogFlow(("pgmPoolTrackFlushGCPhysPTs: pHCPhys=%p:{%RHp} iPhysExt\n", pHCPhys, *pHCPhys, iPhysExt));
+    LogFlow(("pgmPoolTrackFlushGCPhysPTs: HCPhys=%RHp iPhysExt\n", pPhysPage->HCPhys, iPhysExt));
 
     const uint16_t  iPhysExtStart = iPhysExt;
     PPGMPOOLPHYSEXT pPhysExt;
@@ -2108,7 +2108,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PRTHCPHYS pHCPhys, uint16_t iPhysExt)
         for (unsigned i = 0; i < ELEMENTS(pPhysExt->aidx); i++)
             if (pPhysExt->aidx[i] != NIL_PGMPOOL_IDX)
             {
-                pgmPoolTrackFlushGCPhysPTInt(pVM, pHCPhys, pPhysExt->aidx[i], 1);
+                pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, pPhysExt->aidx[i], 1);
                 pPhysExt->aidx[i] = NIL_PGMPOOL_IDX;
             }
 
@@ -2119,7 +2119,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PRTHCPHYS pHCPhys, uint16_t iPhysExt)
     /* insert the list into the free list and clear the ram range entry. */
     pPhysExt->iNext = pPool->iPhysExtFreeHead;
     pPool->iPhysExtFreeHead = iPhysExtStart;
-    *pHCPhys &= MM_RAM_FLAGS_NO_REFS_MASK;
+    pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
 
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTs, f);
 }
@@ -2138,14 +2138,14 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PRTHCPHYS pHCPhys, uint16_t iPhysExt)
  *          a page pool cleaning.
  *
  * @param   pVM         The VM handle.
- * @param   pHCPhys     The aHCPhys ramrange entry in question.
+ * @param   pPhysPage   The guest page in question. 
  */
-int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PRTHCPHYS pHCPhys)
+int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTsSlow, s);
-    LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: cUsedPages=%d cPresent=%d *pHCPhys=%RHp\n",
-             pPool->cUsedPages, pPool->cPresent, *pHCPhys));
+    LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: cUsedPages=%d cPresent=%d HCPhys=%RHp\n",
+             pPool->cUsedPages, pPool->cPresent, pPhysPage->HCPhys));
 
 #if 1
     /*
@@ -2163,7 +2163,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PRTHCPHYS pHCPhys)
      * Iterate all the pages until we've encountered all that in use.
      * This is simple but not quite optimal solution.
      */
-    const uint64_t  u64   = (*pHCPhys & X86_PTE_PAE_PG_MASK) | X86_PTE_P;
+    const uint64_t  u64   = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P; 
     const uint32_t  u32   = u64;
     unsigned        cLeft = pPool->cUsedPages;
     unsigned        iPage = pPool->cCurPages;
@@ -2224,7 +2224,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PRTHCPHYS pHCPhys)
         }
     }
 
-    *pHCPhys &= MM_RAM_FLAGS_NO_REFS_MASK;
+    pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTsSlow, s);
     return VINF_SUCCESS;
 }
@@ -2518,14 +2518,14 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
  *
  * @param   pPool       The pool.
  * @param   pPage       The page.
- * @param   pHCPhys     Pointer to the aHCPhys entry in the ram range.
+ * @param   pPhysPage   Pointer to the aPages entry in the ram range.
  */
-void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PRTHCPHYS pHCPhys)
+void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE pPhysPage)
 {
-    const unsigned cRefs = *pHCPhys >> MM_RAM_FLAGS_CREFS_SHIFT;
-    AssertFatalMsg(cRefs == MM_RAM_FLAGS_CREFS_PHYSEXT, ("cRefs=%d *pHCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, *pHCPhys, pPage, pPage->idx));
+    const unsigned cRefs = pPhysPage->HCPhys >> MM_RAM_FLAGS_CREFS_SHIFT; /** @todo PAGE FLAGS */
+    AssertFatalMsg(cRefs == MM_RAM_FLAGS_CREFS_PHYSEXT, ("cRefs=%d HCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, pPhysPage->HCPhys, pPage, pPage->idx));
 
-    uint16_t iPhysExt = (*pHCPhys >> MM_RAM_FLAGS_IDX_SHIFT) & MM_RAM_FLAGS_IDX_MASK;
+    uint16_t iPhysExt = (pPhysPage->HCPhys >> MM_RAM_FLAGS_IDX_SHIFT) & MM_RAM_FLAGS_IDX_MASK;
     if (iPhysExt != MM_RAM_FLAGS_IDX_OVERFLOWED)
     {
         uint16_t        iPhysExtPrev = NIL_PGMPOOL_PHYSEXT_INDEX;
@@ -2546,7 +2546,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PRTHCPHY
                     for (i = 0; i < ELEMENTS(paPhysExts[iPhysExt].aidx); i++)
                         if (paPhysExts[iPhysExt].aidx[i] != NIL_PGMPOOL_IDX)
                         {
-                            LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: *pHCPhys=%RX64 idx=%d\n", *pHCPhys, pPage->idx));
+                            LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d\n", pPhysPage->HCPhys, pPage->idx));
                             return;
                         }
 
@@ -2558,22 +2558,22 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PRTHCPHY
                     {
                         /* lonely node */
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
-                        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: *pHCPhys=%RX64 idx=%d lonely\n", *pHCPhys, pPage->idx));
-                        *pHCPhys &= MM_RAM_FLAGS_NO_REFS_MASK;
+                        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d lonely\n", pPhysPage->HCPhys, pPage->idx));
+                        pPhysPage->HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
                     }
                     else if (iPhysExtPrev == NIL_PGMPOOL_PHYSEXT_INDEX)
                     {
                         /* head */
-                        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: *pHCPhys=%RX64 idx=%d head\n", *pHCPhys, pPage->idx));
-                        *pHCPhys = (*pHCPhys & MM_RAM_FLAGS_NO_REFS_MASK)
-                            | ((uint64_t)MM_RAM_FLAGS_CREFS_PHYSEXT << MM_RAM_FLAGS_CREFS_SHIFT)
-                            | ((uint64_t)iPhysExtNext << MM_RAM_FLAGS_IDX_SHIFT);
+                        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d head\n", pPhysPage->HCPhys, pPage->idx));
+                        pPhysPage->HCPhys = (pPhysPage->HCPhys & MM_RAM_FLAGS_NO_REFS_MASK)    /** @todo PAGE FLAGS */
+                                          | ((uint64_t)MM_RAM_FLAGS_CREFS_PHYSEXT << MM_RAM_FLAGS_CREFS_SHIFT)
+                                          | ((uint64_t)iPhysExtNext << MM_RAM_FLAGS_IDX_SHIFT);
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
                     else
                     {
                         /* in list */
-                        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: *pHCPhys=%RX64 idx=%d\n", *pHCPhys, pPage->idx));
+                        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64 idx=%d\n", pPhysPage->HCPhys, pPage->idx));
                         paPhysExts[iPhysExtPrev].iNext = iPhysExtNext;
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
@@ -2587,10 +2587,10 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PRTHCPHY
             iPhysExt = paPhysExts[iPhysExt].iNext;
         } while (iPhysExt != NIL_PGMPOOL_PHYSEXT_INDEX);
 
-        AssertFatalMsgFailed(("not-found! cRefs=%d *pHCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, *pHCPhys, pPage, pPage->idx));
+        AssertFatalMsgFailed(("not-found! cRefs=%d HCPhys=%RHp pPage=%p:{.idx=%d}\n", cRefs, pPhysPage->HCPhys, pPage, pPage->idx));
     }
     else /* nothing to do */
-        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: *pHCPhys=%RX64\n", *pHCPhys));
+        LogFlow(("pgmPoolTrackPhysExtDerefGCPhys: HCPhys=%RX64\n", pPhysPage->HCPhys));
 }
 
 
@@ -2620,10 +2620,10 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
         {
             /* does it match? */
             const unsigned iPage = off >> PAGE_SHIFT;
-            Assert(pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK);
-            if ((pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK) == HCPhys)
+            Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]));
+            if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
-                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aHCPhys[iPage]);
+                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage]);
                 return;
             }
             break;
@@ -2655,10 +2655,10 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
         {
             /* does it match? */
             const unsigned iPage = off >> PAGE_SHIFT;
-            Assert(pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK);
-            if ((pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK) == HCPhys)
+            Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]));
+            if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
-                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aHCPhys[iPage]);
+                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage]);
                 return;
             }
             break;
@@ -2676,11 +2676,11 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
         {
-            if ((pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK) == HCPhys)
+            if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
                 Log4(("pgmPoolTracDerefGCPhysHint: Linear HCPhys=%VHp GCPhysHint=%VGp GCPhysReal=%VGp\n",
                       HCPhys, GCPhysHint, pRam->GCPhys + (iPage << PAGE_SHIFT)));
-                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aHCPhys[iPage]);
+                pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage]);
                 return;
             }
         }
@@ -3090,7 +3090,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-            pRam->aHCPhys[iPage] &= MM_RAM_FLAGS_NO_REFS_MASK;
+            pRam->aPages[iPage].HCPhys &= MM_RAM_FLAGS_NO_REFS_MASK; /** @todo PAGE FLAGS */
     }
 
     pPool->iPhysExtFreeHead = 0;

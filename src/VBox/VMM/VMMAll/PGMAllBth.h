@@ -302,13 +302,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         {
             STAM_PROFILE_START(&pVM->pgm.s.StatHandlers, b);
 
-            RTHCPHYS HCPhys;
-            rc = PGMRamGCPhys2HCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPhys);
+            PPGMPAGE pPage;
+            rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
             if (VBOX_SUCCESS(rc))
             {
-                if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_HANDLER))
+                if (pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_VIRTUAL_HANDLER)) /** @todo PAGE FLAGS */
                 {
-                    if (HCPhys & MM_RAM_FLAGS_PHYSICAL_HANDLER)
+                    if (pPage->HCPhys & MM_RAM_FLAGS_PHYSICAL_HANDLER) /** @todo PAGE FLAGS */
                     {
                         /*
                          * Physical page access handler.
@@ -344,7 +344,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
                             AssertMsg(   pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
                                       || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
-                                      ("Unexpected trap for physical handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, HCPhys, uErr, pCur->enmType));
+                                      ("Unexpected trap for physical handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
 #if defined(IN_GC) || defined(IN_RING0)
                             if (CTXALLSUFF(pCur->pfnHandler))
@@ -371,7 +371,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          * the pages. If the fault was caused by a read, then restart the instruction.
                          * In case of write access continue to the GC write handler.
                          */
-                        if (    (HCPhys & (MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_VIRTUAL_ALL)) == MM_RAM_FLAGS_VIRTUAL_WRITE
+                        if (    (pPage->HCPhys & (MM_RAM_FLAGS_VIRTUAL_WRITE | MM_RAM_FLAGS_VIRTUAL_ALL)) == MM_RAM_FLAGS_VIRTUAL_WRITE /** @todo PAGE FLAGS */
                             && !(uErr & X86_TRAP_PF_P))
                         {
                             rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
@@ -404,7 +404,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                       || (     pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                            || !(uErr & X86_TRAP_PF_P)
                                            || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
-                                      ("Unexpected trap for virtual handler: %VGv (phys=%VGp) HCPhys=%HGp uErr=%X, enum=%d\n", pvFault, GCPhys, HCPhys, uErr, pCur->enmType));
+                                      ("Unexpected trap for virtual handler: %VGv (phys=%VGp) HCPhys=%HGp uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
                             if (    pCur->enmType != PGMVIRTHANDLERTYPE_EIP
                                 &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
@@ -469,7 +469,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      */
                     STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersUnhandled);
 
-                    if (    !(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL))
+                    if (    !(pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL)) /** @todo PAGE FLAGS */
                         && !(uErr & X86_TRAP_PF_P))
                     {
                         rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
@@ -490,8 +490,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      */
                     rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
                     LogFlow(("PGM: PGMInterpretInstruction -> rc=%d HCPhys=%VHp%s%s\n",
-                             rc, HCPhys, HCPhys & MM_RAM_FLAGS_PHYSICAL_HANDLER ? " phys" : "",
-                             HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER ? " virt" : ""));
+                             rc, pPage->HCPhys, pPage->HCPhys & MM_RAM_FLAGS_PHYSICAL_HANDLER ? " phys" : "",
+                             pPage->HCPhys & MM_RAM_FLAGS_VIRTUAL_HANDLER ? " virt" : ""));
                     STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
                     STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndUnhandled; });
                     return rc;
@@ -514,7 +514,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                   || (    pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                        || !(uErr & X86_TRAP_PF_P)
                                        || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
-                                  ("Unexpected trap for virtual handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, HCPhys, uErr, pCur->enmType));
+                                  ("Unexpected trap for virtual handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
                         if (    pCur->enmType != PGMVIRTHANDLERTYPE_EIP
                             &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
@@ -1070,7 +1070,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
     LogFlow(("SyncPageWorkerTrackDeref: Damn HCPhys=%VHp pShwPage->idx=%#x!!!\n", HCPhys, pShwPage->idx));
 
     /** @todo If this turns out to be a bottle neck (*very* likely) two things can be done:
-     *      1. have a medium sized HCPhys -> GCPhys cache (hash?)
+     *      1. have a medium sized HCPhys -> GCPhys TLB (hash?)
      *      2. write protect all shadowed pages. I.e. implement caching.
      */
     /*
@@ -1083,10 +1083,10 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
         {
-            if ((pRam->aHCPhys[iPage] & X86_PTE_PAE_PG_MASK) == HCPhys)
+            if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
                 PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
-                pgmTrackDerefGCPhys(pPool, pShwPage, &pRam->aHCPhys[iPage]);
+                pgmTrackDerefGCPhys(pPool, pShwPage, &pRam->aPages[iPage]);
                 pShwPage->cPresent--;
                 pPool->cPresent--;
                 STAM_PROFILE_STOP(&pVM->pgm.s.StatTrackDeref, a);
@@ -1109,11 +1109,11 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
  *
  * @param   pVM         The VM handle.
  * @param   pShwPage    The shadow page.
- * @param   u16         The top 16-bit of the *pHCPhys.
- * @param   pHCPhys     Pointer to the ram range physical page entry.
+ * @param   u16         The top 16-bit of the pPage->HCPhys.
+ * @param   pPage       Pointer to the guest page. this will be modified.
  * @param   iPTDst      The index into the shadow table.
  */
-DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE pShwPage, uint16_t u16, PRTHCPHYS pHCPhys, const unsigned iPTDst)
+DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE pShwPage, uint16_t u16, PPGMPAGE pPage, const unsigned iPTDst)
 {
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /*
@@ -1134,9 +1134,9 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE p
         u16 = pgmPoolTrackPhysExtAddref(pVM, u16, pShwPage->idx);
 
     /* write back, trying to be clever... */
-    Log2(("SyncPageWorkerTrackAddRef: u16=%#x *pHCPhys=%VHp->%VHp iPTDst=%#x\n",
-          u16, *pHCPhys, (*pHCPhys & MM_RAM_FLAGS_NO_REFS_MASK) | ((uint64_t)u16 << MM_RAM_FLAGS_CREFS_SHIFT), iPTDst));
-    *((uint16_t *)pHCPhys + 3) = u16;
+    Log2(("SyncPageWorkerTrackAddRef: u16=%#x pPage->HCPhys=%VHp->%VHp iPTDst=%#x\n",
+          u16, pPage->HCPhys, (pPage->HCPhys & MM_RAM_FLAGS_NO_REFS_MASK) | ((uint64_t)u16 << MM_RAM_FLAGS_CREFS_SHIFT), iPTDst));
+    *((uint16_t *)&pPage->HCPhys + 3) = u16; /** @todo PAGE FLAGS */
 # endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
     /* update statistics. */
@@ -1172,15 +1172,15 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, VBOXPDE 
         /*
          * Find the ram range.
          */
-        PRTHCPHYS pHCPhys;
-        int rc = PGMRamGCPhys2PagePtr(&pVM->pgm.s, PteSrc.u & X86_PTE_PG_MASK, &pHCPhys);
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageEx(&pVM->pgm.s, PteSrc.u & X86_PTE_PG_MASK, &pPage);
         if (VBOX_SUCCESS(rc))
         {
             /** @todo investiage PWT, PCD and PAT. */
             /*
              * Make page table entry.
              */
-            const RTHCPHYS HCPhys = *pHCPhys;
+            const RTHCPHYS HCPhys = pPage->HCPhys; /** @todo FLAGS */
             SHWPTE PteDst;
             if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
             {
@@ -1234,12 +1234,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, VBOXPDE 
             if (PteDst.n.u1Present)
             {
                 if (!pPteDst->n.u1Present)
-                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pHCPhys, iPTDst);
+                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst);
                 else if ((pPteDst->u & SHW_PTE_PG_MASK) != (PteDst.u & SHW_PTE_PG_MASK))
                 {
                     Log2(("SyncPageWorker: deref! *pPteDst=%RX64 PteDst=%RX64\n", (uint64_t)pPteDst->u, (uint64_t)PteDst.u));
                     PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVM, pShwPage, pPteDst->u & SHW_PTE_PG_MASK);
-                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pHCPhys, iPTDst);
+                    PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst);
                 }
             }
             else if (pPteDst->n.u1Present)
@@ -1406,7 +1406,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                                 if (    ((PdeSrc.u & PteSrc.u) & (X86_PTE_RW | X86_PTE_US))
                                     ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
                                     ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)GCPtrCurPage)
-                                    ||  PGMRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
+                                    ||  pgmRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
                                                         MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)
                                    )
 #endif
@@ -1448,14 +1448,14 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                 /* Calculate the GC physical address of this 4KB shadow page. */
                 RTGCPHYS GCPhys = (PdeSrc.u & X86_PDE4M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtrPage & PAGE_OFFSET_MASK_BIG);
                 /* Find ram range. */
-                PRTHCPHYS pHCPhys;
-                int rc = PGMRamGCPhys2PagePtr(&pVM->pgm.s, GCPhys, &pHCPhys);
+                PPGMPAGE pPage;
+                int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
                 if (VBOX_SUCCESS(rc))
                 {
                     /*
                      * Make shadow PTE entry.
                      */
-                    RTHCPHYS HCPhys = *pHCPhys;
+                    RTHCPHYS HCPhys = pPage->HCPhys; /** @todo PAGE FLAGS */
                     SHWPTE PteDst;
                     PteDst.u = (PdeSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
@@ -1469,7 +1469,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
 # ifdef PGMPOOL_WITH_USER_TRACKING
                     if (PteDst.n.u1Present && !pPTDst->a[iPTDst].n.u1Present)
-                        PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pHCPhys, iPTDst);
+                        PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst);
 # endif
                     pPTDst->a[iPTDst] = PteDst;
 
@@ -1811,10 +1811,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PVBOX
                     {
                         LogFlow(("DIRTY page trap addr=%VGv\n", GCPtrPage));
 #  ifdef VBOX_STRICT
-                        RTHCPHYS HCPhys;
-                        rc = PGMRamGCPhys2HCPhysWithFlags(&pVM->pgm.s, pPteSrc->u & X86_PTE_PG_MASK, &HCPhys);
-                        if (VBOX_SUCCESS(rc))
-                            AssertMsg(!(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)),
+                        PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & X86_PTE_PG_MASK);
+                        if (pPage)
+                            AssertMsg(!(pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)), /** @todo PAGE FLAGS */
                                       ("Unexpected dirty bit tracking on monitored page %VGv (phys %VGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
 #  endif
                         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,DirtyPageTrap));
@@ -2064,7 +2063,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                          */
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
                             ||  !CSAMDoesPageNeedScanning(pVM, (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)))
-                            ||  PGMRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
+                            ||  pgmRamTestFlags(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK,
                                                 MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)
                            )
 #endif
@@ -2146,13 +2145,13 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                     do
                     {
                         /* Make shadow PTE. */
-                        RTHCPHYS    HCPhys = pRam->aHCPhys[iHCPage];
+                        PPGMPAGE    pPage = &pRam->aPages[iHCPage];
                         SHWPTE      PteDst;
 
                         /* Make sure the RAM has already been allocated. */
-                        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
+                        if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)  /** @todo PAGE FLAGS */
                         {
-                            if (RT_UNLIKELY(!(pRam->aHCPhys[iHCPage] & X86_PTE_PAE_PG_MASK)))
+                            if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(pPage)))
                             {
 # ifdef IN_RING3
                                 int rc = pgmr3PhysGrowRange(pVM, GCPhys);
@@ -2161,16 +2160,14 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
 # endif
                                 if (rc != VINF_SUCCESS)
                                     return rc;
-
-                                HCPhys = pRam->aHCPhys[iHCPage];
                             }
                         }
 
-                        if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
+                        if (pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
                         {
-                            if (!(HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL)))
+                            if (!(pPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL))) /** @todo PAGE FLAGS */
                             {
-                                PteDst.u = (HCPhys & X86_PTE_PAE_PG_MASK) | PteDstBase.u;
+                                PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
                                 PteDst.n.u1Write = 0;
                             }
                             else
@@ -2187,10 +2184,10 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PVBOXPD pPDSrc, RTGCUINTPTR 
                             PteDst.u = 0;
 # endif
                         else
-                            PteDst.u = (HCPhys & X86_PTE_PAE_PG_MASK) | PteDstBase.u;
+                            PteDst.u = PGM_PAGE_GET_HCPHYS(pPage) | PteDstBase.u;
 # ifdef PGMPOOL_WITH_USER_TRACKING
                         if (PteDst.n.u1Present)
-                            PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, &pRam->aHCPhys[iHCPage], iPTDst);
+                            PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVM, pShwPage, pPage->HCPhys >> MM_RAM_FLAGS_IDX_SHIFT, pPage, iPTDst); /** @todo PAGE FLAGS */
 # endif
                         /* commit it */
                         pPTDst->a[iPTDst] = PteDst;
@@ -2909,11 +2906,12 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     false);
     rc = PGMShwGetPage(pVM, pPGM->pGuestPDGC, NULL, &HCPhysShw);
     AssertRCReturn(rc, 1);
-    rc = PGMRamGCPhys2HCPhys(pPGM, cr3 & X86_CR3_PAGE_MASK, &HCPhys);
+    HCPhys = NIL_RTHCPHYS;
+    rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & X86_CR3_PAGE_MASK, &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%VHp HCPhyswShw=%VHp (cr3)\n", HCPhys, HCPhysShw), false);
 # ifndef IN_GC
     RTGCPHYS GCPhys;
-    rc = PGMPhysHCPtr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
+    rc = PGMPhysHCPtr2GCPhysDbg(pVM, pPGM->pGuestPDHC, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & X86_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
 # endif
@@ -2960,15 +2958,15 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                 )
         {
             HCPhysShw = PdeDst.u & SHW_PDE_PG_MASK;
-            PPGMPOOLPAGE pPage = pgmPoolGetPageByHCPhys(pVM, HCPhysShw);
-            if (!pPage)
+            PPGMPOOLPAGE pPoolPage = pgmPoolGetPageByHCPhys(pVM, HCPhysShw);
+            if (!pPoolPage)
             {
                 AssertMsgFailed(("Invalid page table address %VGp at %VGv! PdeDst=%#RX64\n",
                                  HCPhysShw, GCPtr, (uint64_t)PdeDst.u));
                 cErrors++;
                 continue;
             }
-            const SHWPT *pPTDst = (const SHWPT *)PGMPOOL_PAGE_2_PTR(pVM, pPage);
+            const SHWPT *pPTDst = (const SHWPT *)PGMPOOL_PAGE_2_PTR(pVM, pPoolPage);
 
             if (PdeDst.u & (X86_PDE4M_PWT | X86_PDE4M_PCD))
             {
@@ -3016,16 +3014,16 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
 # endif
             }
 
-            if (    pPage->enmKind
+            if (    pPoolPage->enmKind
                 !=  (!PdeSrc.b.u1Size || !(cr4 & X86_CR4_PSE) ? BTH_PGMPOOLKIND_PT_FOR_PT : BTH_PGMPOOLKIND_PT_FOR_BIG))
             {
                 AssertMsgFailed(("Invalid shadow page table kind %d at %VGv! PdeSrc=%#RX64\n",
-                                 pPage->enmKind, GCPtr, (uint64_t)PdeSrc.u));
+                                 pPoolPage->enmKind, GCPtr, (uint64_t)PdeSrc.u));
                 cErrors++;
             }
 
-            rc = PGMRamGCPhys2HCPhysWithFlags(pPGM, GCPhysGst, &HCPhys);
-            if (VBOX_FAILURE(rc))
+            PPGMPAGE pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
+            if (!pPhysPage)
             {
                 AssertMsgFailed(("Cannot find guest physical address %VGp in the PDE at %VGv! PdeSrc=%#RX64\n",
                                  GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
@@ -3033,10 +3031,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                 continue;
             }
 
-            if (GCPhysGst != pPage->GCPhys)
+            if (GCPhysGst != pPoolPage->GCPhys)
             {
                 AssertMsgFailed(("GCPhysGst=%VGp != pPage->GCPhys=%VGp at %VGv\n",
-                                 GCPhysGst, pPage->GCPhys, GCPtr));
+                                 GCPhysGst, pPoolPage->GCPhys, GCPtr));
                 cErrors++;
                 continue;
             }
@@ -3135,8 +3133,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     }
 # endif
 
-                    rc = PGMRamGCPhys2HCPhysWithFlags(pPGM, GCPhysGst, &HCPhys);
-                    if (VBOX_FAILURE(rc))
+                    pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
+                    if (!pPhysPage)
                     {
 # ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
                         if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
@@ -3155,23 +3153,23 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                         }
                         fIgnoreFlags |= X86_PTE_RW;
                     }
-                    else if (HCPhysShw != (HCPhys & SHW_PTE_PG_MASK))
+                    else if (HCPhysShw != (PGM_PAGE_GET_HCPHYS(pPhysPage) & SHW_PTE_PG_MASK))
                     {
                         AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                         GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                         cErrors++;
                         continue;
                     }
 
                     /* flags */
-                    if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
+                    if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
                     {
-                        if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
+                        if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
                         {
                             if (PteDst.n.u1Write)
                             {
                                 AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                                 GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
                             }
@@ -3182,7 +3180,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                             if (PteDst.n.u1Present)
                             {
                                 AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VHp PteSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
+                                                 GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
                             }
@@ -3364,8 +3362,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                     }
 # endif
 
-                    rc = PGMRamGCPhys2HCPhysWithFlags(pPGM, GCPhysGst, &HCPhys);
-                    if (VBOX_FAILURE(rc))
+                    pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
+                    if (!pPhysPage)
                     {
 # ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
                         if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
@@ -3384,25 +3382,25 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                         }
                         fIgnoreFlags |= X86_PTE_RW;
                     }
-                    else if (HCPhysShw != (HCPhys & X86_PTE_PAE_PG_MASK))
+                    else if (HCPhysShw != (pPhysPage->HCPhys & X86_PTE_PAE_PG_MASK))
                     {
                         AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                         GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                         GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                         cErrors++;
                         continue;
                     }
 
                     /* flags */
-                    if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
+                    if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
                     {
-                        if (HCPhys & (MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE))
+                        if (pPhysPage->HCPhys & (MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_VIRTUAL_WRITE)) /** @todo PAGE FLAGS */
                         {
-                            if (!(HCPhys & MM_RAM_FLAGS_PHYSICAL_TEMP_OFF))
+                            if (!(pPhysPage->HCPhys & MM_RAM_FLAGS_PHYSICAL_TEMP_OFF)) /** @todo PAGE FLAGS */
                             {
                                 if (PteDst.n.u1Write)
                                 {
                                     AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                                     GCPtr + off, HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                                     GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                     continue;
                                 }
@@ -3414,7 +3412,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
                             if (PteDst.n.u1Present)
                             {
                                 AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
-                                                 GCPtr + off, HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
+                                                 GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
                             }

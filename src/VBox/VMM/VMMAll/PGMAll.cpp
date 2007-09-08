@@ -830,9 +830,9 @@ PGMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             /** @todo add a function which does both clear and set! */
             /* clear and set */
             PPGMRAMRANGE pHint = NULL;
-            int rc = PGMRamFlagsClearByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, fFlag, &pHint);
+            int rc = pgmRamFlagsClearByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, fFlag, &pHint);
             if (VBOX_SUCCESS(rc))
-                rc = PGMRamFlagsSetByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, MM_RAM_FLAGS_PHYSICAL_TEMP_OFF, &pHint);
+                rc = pgmRamFlagsSetByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, MM_RAM_FLAGS_PHYSICAL_TEMP_OFF, &pHint);
             return rc;
         }
         AssertMsgFailed(("The page %#x is outside the range %#x-%#x\n",
@@ -894,9 +894,9 @@ PGMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             /** @todo add a function which does both clear and set! */
             /* set and clear */
             PPGMRAMRANGE pHint = NULL;
-            int rc = PGMRamFlagsSetByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, fFlag, &pHint);
+            int rc = pgmRamFlagsSetByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, fFlag, &pHint);
             if (VBOX_SUCCESS(rc))
-                rc = PGMRamFlagsClearByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, MM_RAM_FLAGS_PHYSICAL_TEMP_OFF, &pHint);
+                rc = pgmRamFlagsClearByGCPhysWithHint(&pVM->pgm.s, GCPhysPage, MM_RAM_FLAGS_PHYSICAL_TEMP_OFF, &pHint);
             return rc;
 
         }
@@ -1531,20 +1531,19 @@ static DECLCALLBACK(int) pgmVirtHandlerVerifyOne(PAVLROGCPTRNODECORE pNode, void
             continue;
         }
 
-        RTHCPHYS HCPhys;
-        rc = PGMRamGCPhys2HCPhysWithFlags(&pVM->pgm.s, GCPhysGst, &HCPhys);
-        if (VBOX_FAILURE(rc))
+        PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
+        if (!pPage)
         {
-            AssertMsgFailed(("virt handler getting ram flags rc=%Vrc. GCPhysGst=%VGp iPage=%#x %VGv %s\n",
-                             rc, GCPhysGst, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
+            AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%VGp iPage=%#x %VGv %s\n",
+                             GCPhysGst, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
         }
 
-        if ((HCPhys & fFlags) != fFlags)
+        if ((pPage->HCPhys & fFlags) != fFlags) /** @todo PAGE FLAGS */
         {
             AssertMsgFailed(("virt handler flags mismatch. HCPhys=%VHp fFlags=%#x GCPhysGst=%VGp iPage=%#x %VGv %s\n",
-                             HCPhys, fFlags, GCPhysGst, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
+                             pPage->HCPhys, fFlags, GCPhysGst, iPage, GCPtr, HCSTRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
         }
@@ -1577,9 +1576,9 @@ PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
         for (unsigned iPage = 0; iPage < cPages; iPage++)
         {
             State.GCPhys = pRam->GCPhys + (iPage << PAGE_SHIFT);
-            const unsigned fFlags = pRam->aHCPhys[iPage]
-                                   & (  MM_RAM_FLAGS_VIRTUAL_HANDLER  | MM_RAM_FLAGS_VIRTUAL_WRITE  | MM_RAM_FLAGS_VIRTUAL_ALL
-                                      | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF);
+            const unsigned fFlags = pRam->aPages[iPage].HCPhys /** @todo PAGE FLAGS */
+                                  & (  MM_RAM_FLAGS_VIRTUAL_HANDLER  | MM_RAM_FLAGS_VIRTUAL_WRITE  | MM_RAM_FLAGS_VIRTUAL_ALL
+                                     | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF);
             if (fFlags)
             {
                 State.fFlagsFound = 0; /* build flags and compare. */

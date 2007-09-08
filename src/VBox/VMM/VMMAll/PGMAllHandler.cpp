@@ -239,7 +239,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
     for (;;)
     {
         /* Physical chunk in dynamically allocated range not present? */
-        if (RT_UNLIKELY(!(pRam->aHCPhys[i] & X86_PTE_PAE_PG_MASK)))
+        if (RT_UNLIKELY(!PGM_PAGE_GET_HCPHYS(&pRam->aPages[i])))
         {
             RTGCPHYS GCPhys = pRam->GCPhys + (i << PAGE_SHIFT);
 #ifdef IN_RING3
@@ -251,31 +251,31 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
                 return rc2;
         }
 
-        if ((pRam->aHCPhys[i] & fFlags) != fFlags)
+        if ((pRam->aPages[i].HCPhys & fFlags) != fFlags) /** @todo PAGE FLAGS */
         {
-            pRam->aHCPhys[i] |= fFlags;
+            pRam->aPages[i].HCPhys |= fFlags; /** @todo PAGE FLAGS */
 
-            Assert(pRam->aHCPhys[i] & X86_PTE_PAE_PG_MASK);
+            Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[i]));
 
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
             /* This code also makes ASSUMPTIONS about the cRefs and stuff. */
             Assert(MM_RAM_FLAGS_IDX_SHIFT < MM_RAM_FLAGS_CREFS_SHIFT);
-            const uint16_t u16 = pRam->aHCPhys[i] >> MM_RAM_FLAGS_IDX_SHIFT;
+            const uint16_t u16 = pRam->aPages[i].HCPhys >> MM_RAM_FLAGS_IDX_SHIFT; /** @todo PAGE FLAGS */
             if (u16)
             {
                 if ((u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) != MM_RAM_FLAGS_CREFS_PHYSEXT)
                     pgmPoolTrackFlushGCPhysPT(pVM,
-                                              &pRam->aHCPhys[i],
+                                              &pRam->aPages[i],
                                               u16 & MM_RAM_FLAGS_IDX_MASK,
                                               u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT));
                 else if (u16 != ((MM_RAM_FLAGS_CREFS_PHYSEXT << (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) | MM_RAM_FLAGS_IDX_OVERFLOWED))
-                    pgmPoolTrackFlushGCPhysPTs(pVM, &pRam->aHCPhys[i], u16 & MM_RAM_FLAGS_IDX_MASK);
+                    pgmPoolTrackFlushGCPhysPTs(pVM, &pRam->aPages[i], u16 & MM_RAM_FLAGS_IDX_MASK);
                 else
-                    rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, &pRam->aHCPhys[i]);
+                    rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, &pRam->aPages[i]);
                 fFlushTLBs = true;
             }
 #elif defined(PGMPOOL_WITH_CACHE)
-            rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, &pRam->aHCPhys[i]);
+            rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, &pRam->aPages[i]);
             fFlushTLBs = true;
 #endif
         }
@@ -348,7 +348,7 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
     {
         if (GCPhysStart & PAGE_OFFSET_MASK)
         {
-            if (PGMRamTestFlags(&pVM->pgm.s, GCPhysStart, MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF))
+            if (pgmRamTestFlags(&pVM->pgm.s, GCPhysStart, MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF))
             {
                 RTGCPHYS GCPhys = (GCPhysStart + (PAGE_SIZE - 1)) & X86_PTE_PAE_PG_MASK;
                 if (    GCPhys > GCPhysLast
@@ -361,7 +361,7 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
         }
         if (GCPhysLast & PAGE_OFFSET_MASK)
         {
-            if (PGMRamTestFlags(&pVM->pgm.s, GCPhysLast, MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF))
+            if (pgmRamTestFlags(&pVM->pgm.s, GCPhysLast, MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_TEMP_OFF))
             {
                 RTGCPHYS GCPhys = (GCPhysStart & X86_PTE_PAE_PG_MASK) - 1;
                 if (    GCPhys < GCPhysStart
@@ -411,7 +411,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
     PPGM            pPGM = &pVM->pgm.s;
     for (;;)
     {
-        PGMRamFlagsClearByGCPhysWithHint(pPGM, GCPhys,
+        pgmRamFlagsClearByGCPhysWithHint(pPGM, GCPhys,
                                          MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL,
                                          &pRamHint);
         /* next */
@@ -432,7 +432,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    !pBelow
                 ||  (pBelow->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT))
                 break;
-            PGMRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
+            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
 
             /* next? */
             if (    (pBelow->Core.Key >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT)
@@ -454,7 +454,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    !pAbove
                 ||  (pAbove->Core.Key >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT))
                 break;
-            PGMRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
+            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
 
             /* next? */
             if (    (pAbove->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT)
@@ -958,7 +958,7 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
         if (pPhys2Virt->Core.Key != NIL_RTGCPHYS)
         {
             /* Update the flags. */
-            int rc = PGMRamFlagsSetByGCPhysWithHint(&pVM->pgm.s, pPhys2Virt->Core.Key, fFlags, &pRamHint);
+            int rc = pgmRamFlagsSetByGCPhysWithHint(&pVM->pgm.s, pPhys2Virt->Core.Key, fFlags, &pRamHint);
             AssertRC(rc);
 
             /* Need to insert the page in the Phys2Virt lookup tree? */

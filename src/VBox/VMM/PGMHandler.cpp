@@ -161,7 +161,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode
     PPGM            pPGM = &((PVM)pvUser)->pgm.s;
     for (;;)
     {
-        PGMRamFlagsClearByGCPhysWithHint(pPGM, GCPhys, MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL, &pRamHint);
+        pgmRamFlagsClearByGCPhysWithHint(pPGM, GCPhys, MM_RAM_FLAGS_PHYSICAL_HANDLER | MM_RAM_FLAGS_PHYSICAL_WRITE | MM_RAM_FLAGS_PHYSICAL_ALL, &pRamHint);
         if (--cPages == 0)
             return 0;
         GCPhys += PAGE_SIZE;
@@ -186,7 +186,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
     PPGM            pPGM = &((PVM)pvUser)->pgm.s;
     for (;;)
     {
-        PGMRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, fFlags, &pRamHint);
+        pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, fFlags, &pRamHint);
         if (--cPages == 0)
             return 0;
         GCPhys += PAGE_SIZE;
