@@ -1852,7 +1852,7 @@ static void vga_draw_graphic(VGAState *s, int full_update)
 static int vga_draw_graphic(VGAState *s, int full_update)
 #endif /* !VBOX */
 {
-    int y1, y2, y, update, page_min, page_max, linesize, y_start, double_scan, mask;
+    int y1, y2, y, update, page_min, page_max, linesize, y_start, double_scan;
     int width, height, shift_control, line_offset, page0, page1, bwidth;
     int disp_width, multi_run;
     uint8_t *d;
@@ -2037,9 +2037,6 @@ static int vga_draw_graphic(VGAState *s, int full_update)
             }
         }
         if (!multi_run) {
-//            mask = (s->cr[0x17] & 3) ^ 3;
-//            if ((y & mask) == mask)
-//                addr1 += line_offset;
             y1++;
             multi_run = double_scan;
 
