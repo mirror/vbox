@@ -91,6 +91,9 @@ APIRET _Optlink SemReleasex86(PRAMSEM, ULONG);
 #undef  HAVE_THREAD_AFFINITY
 #define _PR_HAVE_THREADSAFE_GETHOST
 #define _PR_HAVE_ATOMIC_OPS
+#ifndef TCPV40HDRS                      /* bird */
+#define _PR_HAVE_SOCKADDR_LEN           /* bird */
+#endif                                  /* bird */
 
 #define HANDLE unsigned long
 #define HINSTANCE HMODULE

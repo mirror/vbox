@@ -309,6 +309,10 @@ _MD_Accept(PRFileDesc *fd, PRNetAddr *addr,
         _PR_MD_MAP_ACCEPT_ERROR(err);
     }
 done:
+#ifdef _PR_HAVE_SOCKADDR_LEN /* bird - !TCPV40HDRS */
+    if (rv != -1 && addr) /* ignore the sa_len field of struct sockaddr */
+        addr->raw.family = ((struct sockaddr *) addr)->sa_family;
+#endif /* _PR_HAVE_SOCKADDR_LEN */
     return(rv);
 }
 
@@ -319,6 +323,12 @@ _PR_MD_CONNECT(PRFileDesc *fd, const PRNetAddr *addr, PRUint32 addrlen,
     PRInt32 rv, err;
     PRThread *me = _PR_MD_CURRENT_THREAD();
     PRInt32 osfd = fd->secret->md.osfd;
+#ifdef _PR_HAVE_SOCKADDR_LEN /* bird - !TCPV40HDRS */
+    PRNetAddr addrCopy = *addr;
+    ((struct sockaddr *)&addrCopy)->sa_len = addrlen;
+    ((struct sockaddr *)&addrCopy)->sa_family = addr->raw.family;
+    addr = &addrCopy;
+#endif
 
      /*
       * We initiate the connection setup by making a nonblocking connect()
@@ -381,6 +391,12 @@ PRInt32
 _PR_MD_BIND(PRFileDesc *fd, const PRNetAddr *addr, PRUint32 addrlen)
 {
     PRInt32 rv, err;
+#ifdef _PR_HAVE_SOCKADDR_LEN /* bird - !TCPV40HDRS */
+    PRNetAddr addrCopy = *addr;
+    ((struct sockaddr *)&addrCopy)->sa_len = addrlen;
+    ((struct sockaddr *)&addrCopy)->sa_family = addr->raw.family;
+    addr = &addrCopy;
+#endif
     rv = bind(fd->secret->md.osfd, (struct sockaddr *) addr, (int )addrlen);
     if (rv < 0) {
         err = sock_errno();
@@ -484,6 +500,12 @@ _PR_MD_SENDTO(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
     PRInt32 osfd = fd->secret->md.osfd;
     PRInt32 rv, err;
     PRThread *me = _PR_MD_CURRENT_THREAD();
+#ifdef _PR_HAVE_SOCKADDR_LEN /* bird - !TCPV40HDRS */
+    PRNetAddr addrCopy = *addr;
+    ((struct sockaddr *)&addrCopy)->sa_len = addrlen;
+    ((struct sockaddr *)&addrCopy)->sa_family = addr->raw.family;
+    addr = &addrCopy;
+#endif
     while ((rv = sendto(osfd, buf, amount, flags,
            (struct sockaddr *) addr, addrlen)) == -1)
     {
@@ -537,6 +559,10 @@ _PR_MD_RECVFROM(PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags,
         _PR_MD_MAP_RECVFROM_ERROR(err);
     }
 done:
+#ifdef _PR_HAVE_SOCKADDR_LEN /* bird - !TCPV40HDRS */
+    if (rv != -1 && addr) /* ignore the sa_len field of struct sockaddr */
+        addr->raw.family = ((struct sockaddr *) addr)->sa_family;
+#endif /* _PR_HAVE_SOCKADDR_LEN */
     return(rv);
 }
 
@@ -629,6 +655,10 @@ _PR_MD_GETSOCKNAME(PRFileDesc *fd, PRNetAddr *addr, PRUint32 *addrlen)
 
     rv = getsockname(fd->secret->md.osfd,
                      (struct sockaddr *) addr, (int *)addrlen);
+#ifdef _PR_HAVE_SOCKADDR_LEN /* bird - !TCPV40HDRS */
+    if (rv == 0 && addr) /* ignore the sa_len field of struct sockaddr */
+        addr->raw.family = ((struct sockaddr *) addr)->sa_family;
+#endif /* _PR_HAVE_SOCKADDR_LEN */
     if (rv < 0) {
         err = sock_errno();
         _PR_MD_MAP_GETSOCKNAME_ERROR(err);
@@ -643,6 +673,10 @@ _PR_MD_GETPEERNAME(PRFileDesc *fd, PRNetAddr *addr, PRUint32 *addrlen)
 
     rv = getpeername(fd->secret->md.osfd,
                      (struct sockaddr *) addr, (int *)addrlen);
+#ifdef _PR_HAVE_SOCKADDR_LEN /* bird - !TCPV40HDRS */
+    if (rv == 0 && addr) /* ignore the sa_len field of struct sockaddr */
+        addr->raw.family = ((struct sockaddr *) addr)->sa_family;
+#endif /* _PR_HAVE_SOCKADDR_LEN */
     if (rv < 0) {
         err = sock_errno();
         _PR_MD_MAP_GETPEERNAME_ERROR(err);
