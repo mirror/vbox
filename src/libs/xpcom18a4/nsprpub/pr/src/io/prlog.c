@@ -414,7 +414,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #ifdef _PR_USE_STDIO_FOR_LOGGING
     FILE *newLogFile;
 
-#ifdef VBOX
+#if defined(VBOX) && (!defined(RT_OS_OS2) || defined(DEBUG) || defined(IPC_LOGGING))
     if ( strcmp( file, "IPRT") == 0)
     {
         /* initialize VBox Runtime */
