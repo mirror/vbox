@@ -811,7 +811,7 @@ ifeq ($(BUILD_PLATFORM),win)
 # VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/libxslt/10114/xsltproc.exe
  VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
 else ifeq ($(BUILD_PLATFORM),os2)
- VBOX_XSLTPROC ?= $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
+ VBOX_XSLTPROC ?= BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
 else
  VBOX_XSLTPROC ?= xsltproc$(HOSTSUFF_EXE)
 endif
