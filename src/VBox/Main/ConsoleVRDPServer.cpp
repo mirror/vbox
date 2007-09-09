@@ -749,7 +749,11 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept (void *pvCallback, u
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackUSB (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint8_t u8Code, const void *pvRet, uint32_t cbRet)
 {
+#ifdef VBOX_WITH_USB
     return USBClientResponseCallback (pvIntercept, u32ClientId, u8Code, pvRet, cbRet);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif 
 }
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackClipboard (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData)
