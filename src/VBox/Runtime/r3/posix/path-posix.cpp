@@ -551,7 +551,7 @@ static int rtPathUserHomeByEnv(char *pszPath, size_t cchPath)
      */
     int rc = VERR_PATH_NOT_FOUND;
     const char *pszHome = getenv("HOME");
-    if (!pszHome)
+    if (pszHome)
 
     {
         struct stat st;
