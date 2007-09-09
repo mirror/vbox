@@ -29,7 +29,7 @@
 
 using namespace com;
 
-#if defined (RT_OS_LINUX)
+#if defined (VBOXSDL_WITH_X11)
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>      /* for XC_left_ptr */
 #include <X11/Xcursor/Xcursor.h>
@@ -180,7 +180,7 @@ static ComPtr<IProgress> gProgress;
 
 static VBoxSDLFB  *gpFrameBuffer = NULL;
 static SDL_Cursor *gpDefaultCursor = NULL;
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
 static Cursor      gpDefaultOrigX11Cursor;
 #endif
 static SDL_Cursor *gpCustomCursor = NULL;
@@ -188,7 +188,7 @@ static WMcursor   *gpCustomOrigWMcursor = NULL;
 static SDL_Cursor *gpOffCursor = NULL;
 static SDL_TimerID gSdlResizeTimer = NULL;
 
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
 static SDL_SysWMinfo gSdlInfo;
 #endif
 
@@ -568,7 +568,7 @@ public:
         SDL_VERSION(&info.version);
         if (SDL_GetWMInfo(&info))
         {
-#if defined (RT_OS_LINUX)
+#if defined (VBOXSDL_WITH_X11)
             *winId = (ULONG64) info.info.x11.wmwindow;
 #elif defined (RT_OS_WIN)
             *winId = (ULONG64) info.window;
@@ -687,7 +687,7 @@ static void PrintError(const char *pszName, const BSTR pwszDescr, const BSTR pws
     RTPrintf("\n");
 }
 
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
 /**
  * Custom signal handler. Currently it is only used to release modifier
  * keys when receiving the USR1 signal. When switching VTs, we might not
@@ -704,7 +704,7 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
         ResetKeys();
     }
 }
-#endif /* RT_OS_LINUX */
+#endif /* VBOXSDL_WITH_X11 */
 
 /** entry point */
 int main(int argc, char *argv[])
@@ -719,7 +719,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
     /*
      * Lock keys on SDL behave different from normal keys: A KeyPress event is generated
      * if the lock mode gets active and a keyRelease event is genereated if the lock mode
@@ -1821,7 +1821,7 @@ int main(int argc, char *argv[])
     /* memorize the default cursor */
     gpDefaultCursor = SDL_GetCursor();
 
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
     /* Get Window Manager info. We only need the X11 display. */
     SDL_VERSION(&gSdlInfo.version);
     if (!SDL_GetWMInfo(&gSdlInfo))
@@ -1835,7 +1835,7 @@ int main(int argc, char *argv[])
     gpDefaultOrigX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
     *(Cursor*)gpDefaultCursor->wm_cursor = XCreateFontCursor(gSdlInfo.info.x11.display, XC_left_ptr);
     SDL_SetCursor(gpDefaultCursor);
-#endif /* RT_OS_LINUX */
+#endif /* VBOXSDL_WITH_X11 */
 
     /* create a fake empty cursor */
     {
@@ -1848,13 +1848,13 @@ int main(int argc, char *argv[])
     /*
      * Register our user signal handler.
      */
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
     struct sigaction sa;
     sa.sa_sigaction = signal_handler;
     sigemptyset (&sa.sa_mask);
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     sigaction (SIGUSR1, &sa, NULL);
-#endif /* RT_OS_LINUX */
+#endif /* VBOXSDL_WITH_X11 */
 
     /*
      * Start the VM execution thread. This has to be done
@@ -2494,14 +2494,14 @@ leave:
     /* restore the default cursor and free the custom one if any */
     if (gpDefaultCursor)
     {
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
         Cursor pDefaultTempX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
         *(Cursor*)gpDefaultCursor->wm_cursor = gpDefaultOrigX11Cursor;
-#endif /* RT_OS_LINUX */
+#endif /* VBOXSDL_WITH_X11 */
         SDL_SetCursor(gpDefaultCursor);
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
         XFreeCursor(gSdlInfo.info.x11.display, pDefaultTempX11Cursor);
-#endif /* RT_OS_LINUX */
+#endif /* VBOXSDL_WITH_X11 */
     }
 
     if (gpCustomCursor)
@@ -2513,7 +2513,7 @@ leave:
         {
 #if defined (RT_OS_WINDOWS)
             ::DestroyCursor(*(HCURSOR *) pCustomTempWMCursor);
-#elif defined (RT_OS_LINUX)
+#elif defined (VBOXSDL_WITH_X11)
             XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
 #endif
             free(pCustomTempWMCursor);
@@ -2751,7 +2751,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
     // start with the scancode determined by SDL
     int keycode = ev->keysym.scancode;
 
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
     // workaround for SDL keyboard translation issues on Linux
     // keycodes > 0x100 are sent as 0xe0 keycode
     static const uint16_t x_keycode_to_pc_keycode[61] =
@@ -4002,7 +4002,7 @@ static void SetPointerShape (const PointerShapeChangeData *data)
         if (hBitmap)
             ::DeleteObject (hBitmap);
 
-#elif defined (RT_OS_LINUX)
+#elif defined (VBOXSDL_WITH_X11)
 
         XcursorImage *img = XcursorImageCreate (data->width, data->height);
         Assert (img);
@@ -4380,7 +4380,7 @@ int PushSDLEventForSure(SDL_Event *event)
     return -1;
 }
 
-#ifdef RT_OS_LINUX
+#ifdef VBOXSDL_WITH_X11
 /**
  * Special SDL_PushEvent function for NotifyUpdate events. These events may occur in bursts
  * so make sure they don't flood the SDL event queue.
@@ -4405,4 +4405,4 @@ void PushNotifyUpdateEvent(SDL_Event *event)
     else
         RTThreadYield();
 }
-#endif /* RT_OS_LINUX */
+#endif /* VBOXSDL_WITH_X11 */
