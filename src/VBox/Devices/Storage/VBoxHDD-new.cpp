@@ -495,7 +495,7 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
     {
         RTLDRMOD ldrHandle;
         char *pszPluginName;
-        size_t cbPluginName;
+        int cbPluginName;
 
         /* HDD Format Plugins have VBoxHDD as prefix, thatswhy we have to prepend it. 
          * @todo: find out what to do if filenames are case sensitive.
