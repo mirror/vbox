@@ -56,7 +56,7 @@ void rtMemFree(PRTMEMHDR pHdr)
 
 /**
  * Allocates physical contiguous memory (below 4GB).
- * The allocation is page aligned and the content is undefined.
+ * The allocation is page aligned and its contents is undefined.
  *
  * @returns Pointer to the memory block. This is page aligned.
  * @param   pPhys   Where to store the physical address.
