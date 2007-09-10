@@ -589,19 +589,6 @@ MMDECL(int) MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
  */
 MMDECL(void *) MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 
-/**
- * Convert GC virtual address to HC virtual address.
- *
- * This uses the current PD of the guest.
- *
- * @returns HC virtual address.
- * @param   pVM         VM Handle
- * @param   GCPtr       Guest context virtual address.
- * @thread  The Emulation Thread.
- * @deprecated
- */
-MMDECL(void *) MMPhysGCVirt2HCVirt(PVM pVM, RTGCPTR pvGC);
-
 
 /** @def MMHYPER_GC_ASSERT_GCPTR
  * Asserts that an address is either NULL or inside the hypervisor memory area.
