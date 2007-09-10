@@ -549,14 +549,17 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
     else
     {
         /* deflate */
-        for (uint32_t i=pDevExt->MemBalloon.cBalloons-1;i>=u32BalloonSize;i--)
+        for (uint32_t _i=pDevExt->MemBalloon.cBalloons;_i>u32BalloonSize;_i--)
         {
-            PMDL  pMdl = pDevExt->MemBalloon.paMdlMemBalloon[i];
+            uint32_t index = _i - 1;
+            PMDL  pMdl = pDevExt->MemBalloon.paMdlMemBalloon[index];
 
             Assert(pMdl);
             if (pMdl)
             {
+#ifdef TARGET_NT4
                 PVOID pvBalloon = MmGetMdlVirtualAddress(pMdl);
+#endif
 
                 PPFN_NUMBER pPageDesc = MmGetMdlPfnArray(pMdl);
 
@@ -575,19 +578,19 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                     break;
                 }
 
-                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB free chunk at %x\n", i, pvBalloon));
-
                 /* Free the ballooned memory */
 #ifndef TARGET_NT4
+                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB free chunk at %x\n", index, pMdl));
                 MmFreePagesFromMdl(pMdl);
                 ExFreePool(pMdl);
 #else
+                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB free chunk at %x\n", index, pvBalloon));
                 MmUnlockPages (pMdl);
                 IoFreeMdl (pMdl);
                 ExFreePoolWithTag(pvBalloon, 'MBAL');
 #endif
 
-                pDevExt->MemBalloon.paMdlMemBalloon[i] = NULL;
+                pDevExt->MemBalloon.paMdlMemBalloon[index] = NULL;
                 pDevExt->MemBalloon.cBalloons--;
             }
         }
