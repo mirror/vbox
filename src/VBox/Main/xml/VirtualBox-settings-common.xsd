@@ -693,6 +693,7 @@
         </xsd:sequence>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="Guest" type="TGuest" minOccurs="0"/>
   </xsd:all>
   <xsd:attribute name="name" type="xsd:token" use="required"/>
   <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
