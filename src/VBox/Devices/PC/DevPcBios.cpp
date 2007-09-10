@@ -28,6 +28,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <VBox/err.h>
+#include <VBox/param.h>
 
 #include "Builtins.h"
 #include "Builtins2.h"
@@ -937,32 +938,47 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     /*
      * Paranoia: Check that the BIOS ROM hasn't changed.
      */
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
+    uint8_t abBuf[PAGE_SIZE];
+
     /* the low ROM mapping. */
     unsigned cb = RT_MIN(g_cbPcBiosBinary, 128 * _1K);
-    const uint8_t *pb1 = (uint8_t *)MMPhysGCPhys2HCVirt(pVM, 0x00100000 - cb, cb);
-    AssertRelease(pb1);
-    const uint8_t *pb2 = &g_abPcBiosBinary[g_cbPcBiosBinary - cb];
-    if (memcmp(pb1, pb2, cb))
+    RTGCPHYS GCPhys = 0x00100000 - cb;
+    const uint8_t *pbVirgin = &g_abPcBiosBinary[g_cbPcBiosBinary - cb];
+    while (GCPhys < 0x00100000)
     {
-        AssertMsg2("low ROM mismatch! cb=%#x\n", cb);
-        for (unsigned off = 0; off < cb; off++)
-            if (pb1[off] != pb2[off])
-                AssertMsg2("%05x: %02x expected %02x\n", off, pb1[off], pb2[off]);
-        AssertReleaseFailed();
+        PDMDevHlpPhysRead(pDevIns, GCPhys, abBuf, PAGE_SIZE);
+        if (memcmp(abBuf, pbVirgin, PAGE_SIZE))
+        {
+            LogRel(("low ROM mismatch! GCPhys=%VGp - Ignore if you've loaded an old saved state with an different VirtualBox version.\n", GCPhys));
+            for (unsigned off = 0; off < PAGE_SIZE; off++)
+                if (abBuf[off] != pbVirgin[off])
+                    LogRel(("%VGp: %02x expected %02x\n", GCPhys + off, abBuf[off], pbVirgin[off]));
+            AssertFailed();
+        }
+
+        /* next page */
+        GCPhys += PAGE_SIZE;
+        pbVirgin += PAGE_SIZE;
     }
 
     /* the high ROM mapping. */
-    pb1 = (uint8_t *)MMPhysGCPhys2HCVirt(pVM, (uint32_t)-g_cbPcBiosBinary, g_cbPcBiosBinary);
-    AssertRelease(pb1);
-    pb2 = &g_abPcBiosBinary[0];
-    if (memcmp(pb1, pb2, g_cbPcBiosBinary))
+    GCPhys = UINT32_C(0xffffffff) - (g_cbPcBiosBinary - 1);
+    pbVirgin = &g_abPcBiosBinary[0];
+    while (pbVirgin < &g_abPcBiosBinary[g_cbPcBiosBinary])
     {
-        AssertMsg2("high ROM mismatch! g_cbPcBiosBinary=%#x\n", g_cbPcBiosBinary);
-        for (unsigned off = 0; off < g_cbPcBiosBinary; off++)
-            if (pb1[off] != pb2[off])
-                AssertMsg2("%05x: %02x expected %02x\n", off, pb1[off], pb2[off]);
-        AssertReleaseFailed();
+        PDMDevHlpPhysRead(pDevIns, GCPhys, abBuf, PAGE_SIZE);
+        if (memcmp(abBuf, pbVirgin, PAGE_SIZE))
+        {
+            LogRel(("high ROM mismatch! GCPhys=%VGp - Ignore if you've loaded an old saved state with an different VirtualBox version.\n", GCPhys));
+            for (unsigned off = 0; off < PAGE_SIZE; off++)
+                if (abBuf[off] != pbVirgin[off])
+                    LogRel(("%VGp: %02x expected %02x\n", GCPhys + off, abBuf[off], pbVirgin[off]));
+            AssertFailed();
+        }
+
+        /* next page */
+        GCPhys += PAGE_SIZE;
+        pbVirgin += PAGE_SIZE;
     }
 #endif
 
