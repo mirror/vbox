@@ -67,6 +67,7 @@ VMMR3_SOURCES   = \
 	PDMQueue.cpp \
 	PDMThread.cpp \
 	PGM.cpp \
+	PGMDbg.cpp \
 	PGMHandler.cpp \
 	PGMMap.cpp \
 	PGMPhys.cpp \

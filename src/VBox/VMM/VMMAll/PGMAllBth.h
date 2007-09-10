@@ -2909,9 +2909,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTP
     HCPhys = NIL_RTHCPHYS;
     rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & X86_CR3_PAGE_MASK, &HCPhys);
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%VHp HCPhyswShw=%VHp (cr3)\n", HCPhys, HCPhysShw), false);
-# ifndef IN_GC
+# ifdef IN_RING3
     RTGCPHYS GCPhys;
-    rc = PGMPhysHCPtr2GCPhysDbg(pVM, pPGM->pGuestPDHC, &GCPhys);
+    rc = PGMR3DbgHCPtr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & X86_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
 # endif
