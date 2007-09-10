@@ -1253,34 +1253,36 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
         if (    CPUMGetGuestSS(pVM) == 0
             &&  esp < _64K)
         {
+            uint8_t abBuf[PAGE_SIZE];
             RTLogRelPrintf("***\n"
                            "ss:sp=0000:%04x ", esp);
-            void *pv;
-            int rc = PGMPhysGCPtr2HCPtr(pVM, esp, &pv);
+            uint32_t Start = esp & ~(uint32_t)63;
+            int rc = PGMPhysReadGCPtr(pVM, abBuf, Start, Start + 0x100);
             if (VBOX_SUCCESS(rc))
-            {
-                const uint8_t *pb = (uint8_t *)((uintptr_t)pv & ~(uintptr_t)0x3f);
-                RTLogRelPrintf("pb=%p pv=%p\n"
-                               "%.*Rhxd\n", pb, pv,
-                               PAGE_SIZE - ((uintptr_t)pb & PAGE_OFFSET_MASK), pb);
-            }
+                RTLogRelPrintf("0000:%04x TO 0000:%04x:\n"
+                               "%.*Rhxd\n",
+                               Start, Start + 0x100 - 1,
+                               0x100, abBuf);
             else
                 RTLogRelPrintf("rc=%Vrc\n", rc);
+
             /* grub ... */
             if (esp < 0x2000 && esp > 0x1fc0)
             {
-                int rc = PGMPhysGCPtr2HCPtr(pVM, 0x8000, &pv);
+                rc = PGMPhysReadGCPtr(pVM, abBuf, 0x8000, 0x800);
                 if (VBOX_SUCCESS(rc))
-                    RTLogRelPrintf("0000:8000 TO 0000:87ff: pv=%p\n"
-                                   "%.*Rhxd\n", pv, 0x8000, pv);
+                    RTLogRelPrintf("0000:8000 TO 0000:87ff:\n"
+                                   "%.*Rhxd\n",
+                                   0x800, abBuf);
             }
             /* microsoft cdrom hang ... */
             if (true)
             {
-                int rc = PGMPhysGCPtr2HCPtr(pVM, 0x20000, &pv);
+                rc = PGMPhysReadGCPtr(pVM, abBuf, 0x8000, 0x200);
                 if (VBOX_SUCCESS(rc))
-                    RTLogRelPrintf("2000:0000 TO 2000:01ff: pv=%p\n"
-                                   "%.*Rhxd\n", pv, 0x200, pv);
+                    RTLogRelPrintf("2000:0000 TO 2000:01ff:\n"
+                                   "%.*Rhxd\n",
+                                   0x200, abBuf);
             }
         }
 #endif
