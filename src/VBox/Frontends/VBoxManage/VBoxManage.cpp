@@ -1545,76 +1545,84 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             RTPrintf("Description:\n%lS\n", description.raw());
         }
     }
-    if (details == VMINFO_STATISTICS || details == VMINFO_FULL)
+    if (    console 
+        &&  (details == VMINFO_STATISTICS || details == VMINFO_FULL))
     {
         ComPtr <IGuest> Guest;
         ULONG statVal;
 
-        CHECK_ERROR_RET(console, COMGETTER(Guest)(Guest.asOutParam()), rc);
+        rc = console->COMGETTER(Guest)(Guest.asOutParam()); 
+        if (SUCCEEDED(rc))
+        {
+            rc = Guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: CPU Load Idle          %-3d%%\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: CPU Load Idle          %-3d%%\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_CPULoad_Kernel, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: CPU Load Kernel        %-3d%%\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_CPULoad_Kernel, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: CPU Load Kernel        %-3d%%\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_CPULoad_User, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: CPU Load User          %-3d%%\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_CPULoad_User, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: CPU Load User          %-3d%%\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_Threads, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Threads                %d%%\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_Threads, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Threads                %d%%\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_Processes, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Processes              %d%%\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_Processes, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Processes              %d%%\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_Handles, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Handles                %d%%\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_Handles, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Handles                %d%%\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_MemoryLoad, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Memory Load            %d%%\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_MemoryLoad, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Memory Load            %d%%\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_PhysMemTotal, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Total physical memory  %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_PhysMemTotal, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Total physical memory  %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_PhysMemAvailable, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Free physical memory   %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_PhysMemAvailable, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Free physical memory   %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Memory balloon size    %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Memory balloon size    %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Committed memory       %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Committed memory       %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_MemKernelTotal, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Total kernel memory    %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_MemKernelTotal, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Total kernel memory    %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_MemKernelPaged, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Paged kernel memory    %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_MemKernelPaged, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Paged kernel memory    %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_MemKernelNonpaged, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Nonpaged kernel memory %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_MemKernelNonpaged, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Nonpaged kernel memory %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_MemSystemCache, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: System cache size      %-4d MB\n", 0, statVal);
 
-        rc = Guest->GetStatistic(0, GuestStatisticType_MemSystemCache, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: System cache size      %-4d MB\n", 0, statVal);
-
-        rc = Guest->GetStatistic(0, GuestStatisticType_PageFileSize, &statVal);
-        if (rc == S_OK)
-            RTPrintf("CPU%d: Page file size         %-4d MB\n", 0, statVal);
+            rc = Guest->GetStatistic(0, GuestStatisticType_PageFileSize, &statVal);
+            if (SUCCEEDED(rc))
+                RTPrintf("CPU%d: Page file size         %-4d MB\n", 0, statVal);
+        }
+        else
+        {
+            RTPrintf("[!] FAILED calling console->getGuest at line %d!\n", __LINE__);
+            PRINT_RC_MESSAGE(rc);
+        }
     }
 
     /*
