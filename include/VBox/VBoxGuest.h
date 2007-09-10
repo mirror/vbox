@@ -440,6 +440,7 @@ typedef struct
 
 /** inflate/deflate memory balloon structure */
 #define VMMDEV_MEMORY_BALLOON_CHUNK_PAGES            (_1M/4096)
+#define VMMDEV_MEMORY_BALLOON_CHUNK_SIZE             (VMMDEV_MEMORY_BALLOON_CHUNK_PAGES*4096)
 
 typedef struct
 {
