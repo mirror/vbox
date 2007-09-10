@@ -31,6 +31,10 @@
 
 #include "Builtins.h"
 
+#define INCL_BASE
+#include <os2.h>
+#include "DrvTAPOs2.h"
+
 
 
 /*******************************************************************************
@@ -49,13 +53,24 @@ typedef struct DRVTAPOS2
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** TAP device file handle. */
-    RTFILE                  FileDevice;
+    RTFILE                  hDevice;
+    /** Out LAN number. */
+    int32_t                 iLan;
+    /** The LAN number we're connected to. -1 if not connected. */
+    int32_t                 iConnectedTo;
     /** Receiver thread. */
     PPDMTHREAD              pThread;
-    /** We are waiting for more receive buffers. */
-    uint32_t volatile       fOutOfSpace;
     /** Event semaphore for blocking on receive. */
     RTSEMEVENT              EventOutOfSpace;
+    /** We are checking or waiting for more receive buffers. */
+    bool volatile           fMaybeOutOfSpace;
+    /** Set if the link is down.
+     * When the link is down all incoming packets will be dropped. */
+    bool volatile           fLinkDown;
+    /** The log and thread name. */
+    char                    szName[16];
+    /** The \DEV\TAP$ device name. */
+    char                    szDevice[32];
 
 #ifdef VBOX_WITH_STATISTICS
     /** Number of sent packets. */
@@ -97,31 +112,41 @@ typedef struct DRVTAPOS2
  */
 static DECLCALLBACK(int) drvTAPOs2Send(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVTAPOS2 pData = PDMINETWORKCONNECTOR_2_DRVTAPOS2(pInterface);
-    STAM_COUNTER_INC(&pData->StatPktSent);
-    STAM_COUNTER_ADD(&pData->StatPktSentBytes, cb);
-    STAM_PROFILE_START(&pData->StatTransmit, a);
+    PDRVTAPOS2 pThis = PDMINETWORKCONNECTOR_2_DRVTAPOS2(pInterface);
+    STAM_COUNTER_INC(&pThis->StatPktSent);
+    STAM_COUNTER_ADD(&pThis->StatPktSentBytes, cb);
+    STAM_PROFILE_START(&pThis->StatTransmit, a);
 
 #ifdef LOG_ENABLED
     uint64_t u64Now = RTTimeProgramNanoTS();
-    LogFlow(("drvTAPOs2Send: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
-             cb, u64Now, u64Now - pData->u64LastReceiveTS, u64Now - pData->u64LastTransferTS));
-    pData->u64LastTransferTS = u64Now;
+    LogFlow(("%s: Send: %-4d bytes at %RU64 ns  deltas: recv=%RU64 xmit=%RU64\n", pThis->szName,
+             cb, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
+    pThis->u64LastTransferTS = u64Now;
 #endif
-    Log2(("drvTAPOs2Send: pvBuf=%p cb=%#x\n"
+    Log2(("%s Send: pvBuf=%p cb=%#zx\n"
           "%.*Vhxd\n",
-          pvBuf, cb, cb, pvBuf));
+          pThis->szName, pvBuf, cb, cb, pvBuf));
 
-    ULONG UnusedParms[10] = { 0,0,0,0, 0,0,0,0, 0,0 };
-    ULONG cbParms = sizeof(UnusedParms);
+    ULONG Parm[2] = { ~0UL, ~0UL }; /* mysterious output */
+    ULONG cbParm = sizeof(Parm);
     ULONG cbData = cb;
-    int rc = DosDevIOCtl(pData->FileDevice, PROT_CATEGORY, TAP_WRITE_PACKET,
-                         &UnusedParms[0], cbParms, &cbParms,
-                         pvBuf, cbData, &cbData);
-    if (rc)
-        rc = RTErrConvertFromOS2(rc);
+    int rc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_WRITE_PACKET,
+                         &Parm[0], cbParm, &cbParm,
+                         (void *)pvBuf, cbData, &cbData);
+    if (RT_UNLIKELY(rc || Parm[0]))
+    {
+        static unsigned cComplaints = 0;
+        if (cComplaints++ < 256)
+            LogRel(("%s: send failed. rc=%d Parm={%ld,%ld} cb=%d\n", 
+                    pThis->szName, rc, Parm[0], Parm[1], cb));
+        if (rc)
+            rc = RTErrConvertFromOS2(rc);
+        else
+            rc = VERR_IO_GEN_FAILURE;
+    }
+    Log3(("%s: Send completed %d ns\n", pThis->szName, RTTimeProgramNanoTS() - pThis->u64LastTransferTS));
 
-    STAM_PROFILE_STOP(&pData->StatTransmit, a);
+    STAM_PROFILE_STOP(&pThis->StatTransmit, a);
     AssertRC(rc);
     return rc;
 }
@@ -139,8 +164,10 @@ static DECLCALLBACK(int) drvTAPOs2Send(PPDMINETWORKCONNECTOR pInterface, const v
  */
 static DECLCALLBACK(void) drvTAPOs2SetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
 {
-    LogFlow(("drvTAPOs2SetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
-    /* nothing to do */
+    PDRVTAPOS2 pThis = PDMINETWORKCONNECTOR_2_DRVTAPOS2(pInterface);
+    LogFlow(("%s: SetPromiscuousMode: fPromiscuous=%d\n", pThis->szName, fPromiscuous));
+    NOREF(pThis);
+    /** @todo is it always in promiscuous mode? */
 }
 
 
@@ -153,8 +180,22 @@ static DECLCALLBACK(void) drvTAPOs2SetPromiscuousMode(PPDMINETWORKCONNECTOR pInt
  */
 static DECLCALLBACK(void) drvTAPOs2NotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
-    /** @todo take action on link down and up. Stop the polling and such like. */
+    PDRVTAPOS2 pThis = PDMINETWORKCONNECTOR_2_DRVTAPOS2(pInterface);
+    bool fLinkDown;
+    switch (enmLinkState)
+    {
+        case PDMNETWORKLINKSTATE_DOWN:
+        case PDMNETWORKLINKSTATE_DOWN_RESUME:
+            fLinkDown = true;
+            break;
+        default:
+            AssertMsgFailed(("enmLinkState=%d\n", enmLinkState));
+        case PDMNETWORKLINKSTATE_UP:
+            fLinkDown = false;
+            break;
+    }
+    LogFlow(("%s: NotifyLinkChanged: enmLinkState=%d %d->%d\n", pThis->szName, pThis->fLinkDown, fLinkDown));
+    ASMAtomicXchgBool(&pThis->fLinkDown, fLinkDown);
 }
 
 
@@ -168,127 +209,146 @@ static DECLCALLBACK(void) drvTAPOs2NotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
  */
 static DECLCALLBACK(void) drvTAPOs2NotifyCanReceive(PPDMINETWORKCONNECTOR pInterface)
 {
-    PDRVTAPOS2 pData = PDMINETWORKCONNECTOR_2_DRVTAPOS2(pInterface);
+    PDRVTAPOS2 pThis = PDMINETWORKCONNECTOR_2_DRVTAPOS2(pInterface);
 
-    LogFlow(("drvTAPOs2NotifyCanReceive:\n"));
-    /* ensure we wake up only once */
-    if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
-        RTSemEventSignal(pData->EventOutOfSpace);
+    /* don't waste time signalling the semaphore unnecessary */
+    if (!pThis->fMaybeOutOfSpace)
+        LogFlow(("%s: NotifyCanReceive: fMaybeOutOfSpace=false\n", pThis->szName));
+    else
+    {
+        LogFlow(("%s: NotifyCanReceive: fMaybeOutOfSpace=true\n", pThis->szName));
+        RTSemEventSignal(pThis->EventOutOfSpace);
+    }
 }
 
 
 /**
- * Asynchronous I/O thread for handling receive.
+ * Receiver thread.
  *
- * @returns VINF_SUCCESS (ignored).
- * @param   pDrvIns         The driver instance.
- * @param   pThread         The PDM thread structure.
+ * @returns VBox status code. Returning failure will naturally terminate the thread.
+ * @param   pDrvIns     The pcnet device instance.
+ * @param   pThread     The thread.
  */
-static DECLCALLBACK(int) drvTAPOs2AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    PDRVTAPOS2 pData = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
-    LogFlow(("drvTAPOs2AsyncIoThread: pData=%p\n", pData));
-    Assert(pThread->enmState == PDMTHREADSTATE_INITIALIZING);
-    
+    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
 
     /*
-     * Outer loop.
+     * No initialization work to do, just return immediately.
      */
-    for (;;)
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+    Assert(pThread->enmState == PDMTHREADSTATE_RESUMING);
+
+    /*
+     * Loop while the thread is running, quit immediately when 
+     * we're supposed to suspend or terminate.
+     */
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         /*
-         *
+         * Read a frame, this will block for a while if nothing to read.
          */
-        PDMR3ThreadSuspend(pThread);
-        if (pThread->enmState != PDMTHREADSTATE_RESUMING)
+        char    abBuf[4096];
+        ULONG   Parm[2] = { ~0UL, ~0UL };   /* mysterious output */
+        ULONG   cbParm = sizeof(Parm);      /* this one is actually ignored... */
+        ULONG   cbBuf = sizeof(abBuf);
+
+        int rc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_READ_PACKET,
+                             &Parm[0], cbParm, &cbParm,
+                             &abBuf[0], cbBuf, &cbBuf);
+        if (pThread->enmState != PDMTHREADSTATE_RUNNING)
             break;
-
-        {
-        }
-    }
-
-
-
-
-    STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-
-    /*
-     * Polling loop.
-     */
-    for (;;)
-    {
-        /*
-         * Read/wait the frame.
-         */
-        char    achBuf[4096];
-        ULONG   cbParm = ;
-        ULONG   cbRead = 0;
-        int     LanNumber;
-
-        int rc = DosDevIOCtl(pData->FileDevice, PROT_CATEGORY, TAP_CANCEL_READ,
-                             &UnusedParms[0], cbParm, &cbParm,
-                             &achBuf[0], cbRead, &cbRead);
-        if (rc == NO_ERROR)
+        const size_t cbRead = Parm[1];
+        if (    !rc
+            &&  !Parm[0]
+            &&  cbRead > 0 /* cbRead */)
         {
             AssertMsg(cbRead <= 1536, ("cbRead=%d\n", cbRead));
 
             /*
-             * Wait for the device to have space for this frame.
+             * Wait for the device to have room for this frame.
              */
-            size_t cbMax = pData->pPort->pfnCanReceive(pData->pPort);
+            ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
+            size_t cbMax = pThis->pPort->pfnCanReceive(pThis->pPort);
             if (cbMax < cbRead)
             {
-                /** @todo receive overflow handling needs serious improving! */
-                STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
-                STAM_PROFILE_START(&pData->StatRecvOverflows, b);
+                STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
+                STAM_PROFILE_START(&pThis->StatRecvOverflows, b);
                 while (   cbMax < cbRead
-                       && pData->enmState != ASYNCSTATE_TERMINATE)
+                       && pThread->enmState == PDMTHREADSTATE_RUNNING)
                 {
-                    LogFlow(("drvTAPOs2AsyncIoThread: cbMax=%d cbRead=%d waiting...\n", cbMax, cbRead));
-#if 1
-                    /* We get signalled by the network driver. 50ms is just for sanity */
-                    ASMAtomicXchgU32(&pData->fOutOfSpace, true);
-                    RTSemEventWait(pData->EventOutOfSpace, 50);
-#else
-                    RTThreadSleep(1);
-#endif
-                    cbMax = pData->pPort->pfnCanReceive(pData->pPort);
+                    LogFlow(("%s: ReceiveThread: cbMax=%d cbRead=%d waiting...\n", pThis->szName, cbMax, cbRead));
+                    RTSemEventWait(pThis->EventOutOfSpace, 50);
+                    cbMax = pThis->pPort->pfnCanReceive(pThis->pPort);
                 }
-                ASMAtomicXchgU32(&pData->fOutOfSpace, false);
-                STAM_PROFILE_STOP(&pData->StatRecvOverflows, b);
-                STAM_PROFILE_ADV_START(&pData->StatReceive, a);
-                if (pData->enmState == ASYNCSTATE_TERMINATE)
-                    break;
+                STAM_PROFILE_STOP(&pThis->StatRecvOverflows, b);
+                STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
             }
+            ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, false);
+            if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+                break; /* just drop it, no big deal. */
 
             /*
              * Pass the data up.
              */
 #ifdef LOG_ENABLED
             uint64_t u64Now = RTTimeProgramNanoTS();
-            LogFlow(("drvTAPOs2AsyncIoThread: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
-                     cbRead, u64Now, u64Now - pData->u64LastReceiveTS, u64Now - pData->u64LastTransferTS));
-            pData->u64LastReceiveTS = u64Now;
+            LogFlow(("%s: ReceiveThread: %-4d bytes at %RU64 ns  deltas: recv=%RU64 xmit=%RU64\n", pThis->szName,
+                     cbRead, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
+            pThis->u64LastReceiveTS = u64Now;
 #endif
-            Log2(("drvTAPOs2AsyncIoThread: cbRead=%#x\n"
+            Log2(("%s: ReceiveThread: cbRead=%#x\n"
                   "%.*Vhxd\n",
-                  cbRead, cbRead, achBuf));
-            STAM_COUNTER_INC(&pData->StatPktRecv);
-            STAM_COUNTER_ADD(&pData->StatPktRecvBytes, cbRead);
-            rc = pData->pPort->pfnReceive(pData->pPort, achBuf, cbRead);
+                  pThis->szName, cbRead, cbRead, abBuf));
+            STAM_COUNTER_INC(&pThis->StatPktRecv);
+            STAM_COUNTER_ADD(&pThis->StatPktRecvBytes, cbRead);
+            rc = pThis->pPort->pfnReceive(pThis->pPort, abBuf, cbRead);
             AssertRC(rc);
         }
-        else
+        /* we'll be returning ~1 per second with no data; rc=0 Parm[0] = 1, Parm[1] = 0. */
+        else if (rc)
         {
-            LogFlow(("drvTAPOs2AsyncIoThread: DoDevIOCtl -> %Vrc\n", rc));
+            LogFlow(("%s: ReceiveThread: DoDevIOCtl -> %s Parm={%ld, %ld}\n", 
+                     pThis->szName, rc, Parm[0], Parm[1]));
+            rc = RTErrConvertFromOS2(rc);
             if (rc == VERR_INVALID_HANDLE)
-                break;
+                return rc;
             RTThreadYield();
         }
     }
 
-    LogFlow(("drvTAPOs2AsyncIoThread: returns %Vrc\n", VINF_SUCCESS));
-    STAM_PROFILE_ADV_STOP(&pData->StatReceive, a);
+    /* The thread is being suspended or terminated. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Unblock the send thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns     The pcnet device instance.
+ * @param   pThread     The send thread.
+ */
+static DECLCALLBACK(int) drvTAPOs2WakeupReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    LogFlow(("%s: WakeupReceiveThread\n", pThis->szName));
+
+    /* cancel any pending reads */
+    ULONG   Parm[2] = { ~0UL, ~0UL };   /* mysterious output */
+    ULONG   cbParm = sizeof(Parm);
+    ULONG   Data = pThis->iLan;         /* right? */
+    ULONG   cbData = sizeof(Data);
+    int orc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_CANCEL_READ,
+                          &Parm[0], cbParm, &cbParm,
+                          &Data, cbData, &cbData);
+    AssertMsg(orc == 0, ("%d\n", orc)); NOREF(orc);
+
+    /* wake it up if it's waiting for receive buffers. */
+    if (pThis->fMaybeOutOfSpace)
+        RTSemEventSignal(pThis->EventOutOfSpace);
+
     return VINF_SUCCESS;
 }
 
@@ -305,13 +365,13 @@ static DECLCALLBACK(int) drvTAPOs2AsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
 static DECLCALLBACK(void *) drvTAPOs2QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVTAPOS2 pData = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
             return &pDrvIns->IBase;
         case PDMINTERFACE_NETWORK_CONNECTOR:
-            return &pData->INetworkConnector;
+            return &pThis->INetworkConnector;
         default:
             return NULL;
     }
@@ -328,17 +388,45 @@ static DECLCALLBACK(void *) drvTAPOs2QueryInterface(PPDMIBASE pInterface, PDMINT
  */
 static DECLCALLBACK(void) drvTAPOs2Destruct(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("drvTAPOs2Destruct\n"));
-    PDRVTAPOS2 pData = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    LogFlow(("%s: Destruct\n", pThis->szName));
+
+    /* PDM will destroy the thread for us, it's suspended right now. */
 
     /*
-     * Destroy the event semaphore.
+     * Destroy the out-of-space event semaphore.
      */
-    if (pData->EventOutOfSpace != NIL_RTSEMEVENTMULTI)
+    if (pThis->EventOutOfSpace != NIL_RTSEMEVENTMULTI)
     {
-        rc = RTSemEventDestroy(pData->EventOutOfSpace);
+        int rc = RTSemEventDestroy(pThis->EventOutOfSpace);
         AssertRC(rc);
-        pData->EventOutOfSpace = NIL_RTSEMEVENTMULTI;
+        pThis->EventOutOfSpace = NIL_RTSEMEVENTMULTI;
+    }
+
+    /*
+     * Disconnect from the lan if we made a connection and close it.
+     */
+    if (pThis->iConnectedTo != -1)
+    {
+        ULONG Parm[2] = { ~0UL, ~0UL }; /* mysterious output */
+        ULONG cbParm = sizeof(Parm);
+        ULONG Data = pThis->iConnectedTo;
+        ULONG cbData = sizeof(Data);
+        int orc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_DISCONNECT_NIC,
+                              &Parm, cbParm, &cbParm,
+                              &Data, cbData, &cbData);
+        if (    orc
+            ||  Parm[0])
+            LogRel(("%s: Failed to disconnect %d from %d! orc=%d Parm={%ld,%ld}\n", 
+                    pThis->szName, pThis->iLan, pThis->iConnectedTo, orc, Parm[0], Parm[1]));
+        pThis->iConnectedTo = -1;
+    }
+
+    if (pThis->hDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->hDevice);
+        AssertRC(rc);
+        pThis->hDevice = NIL_RTFILE;
     }
 }
 
@@ -355,27 +443,29 @@ static DECLCALLBACK(void) drvTAPOs2Destruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
-    PDRVTAPOS2 pData = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
+    PDRVTAPOS2 pThis = PDMINS2DATA(pDrvIns, PDRVTAPOS2);
 
     /*
      * Init the static parts.
      */
-    pData->pDrvIns                      = pDrvIns;
-    pData->FileDevice                   = NIL_RTFILE;
-    pData->Thread                       = NIL_RTTHREAD;
-    pData->enmState                     = ASYNCSTATE_RUNNING;
+    pThis->pDrvIns                      = pDrvIns;
+    pThis->hDevice                      = NIL_RTFILE;
+    pThis->iLan                         = -1;
+    pThis->iConnectedTo                 = -1;
+    pThis->pThread                      = NULL;
+    RTStrPrintf(pThis->szName, sizeof(pThis->szName), "TAP%d", pDrvIns->iInstance);
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTAPOs2QueryInterface;
     /* INetwork */
-    pData->INetworkConnector.pfnSend                = drvTAPOs2Send;
-    pData->INetworkConnector.pfnSetPromiscuousMode  = drvTAPOs2SetPromiscuousMode;
-    pData->INetworkConnector.pfnNotifyLinkChanged   = drvTAPOs2NotifyLinkChanged;
-    pData->INetworkConnector.pfnNotifyCanReceive    = drvTAPOs2NotifyCanReceive;
+    pThis->INetworkConnector.pfnSend                = drvTAPOs2Send;
+    pThis->INetworkConnector.pfnSetPromiscuousMode  = drvTAPOs2SetPromiscuousMode;
+    pThis->INetworkConnector.pfnNotifyLinkChanged   = drvTAPOs2NotifyLinkChanged;
+    pThis->INetworkConnector.pfnNotifyCanReceive    = drvTAPOs2NotifyCanReceive;
 
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0InitProg\0TermProg\0FileHandle\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0LanNumber\0ConnectTo\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "");
 
     /*
@@ -389,57 +479,125 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Query the network port interface.
      */
-    pData->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
-    if (!pData->pPort)
+    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
+    if (!pThis->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: The above device/driver didn't export the network port interface!"));
 
     /*
      * Read the configuration.
      */
-    int32_t iFile;
-    rc = CFGMR3QueryS32(pCfgHandle, "FileHandle", &iFile);
-    if (VBOX_FAILURE(rc))
+    rc = CFGMR3QueryString(pCfgHandle, "Device", &pThis->szDevice[0], sizeof(pThis->szDevice));
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        strcpy(pThis->szDevice, "\\DEV\\TAP$");
+    else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("Configuration error: Query for \"FileHandle\" 32-bit signed integer failed!"));
-    pData->FileDevice = (RTFILE)iFile;
-    if (!RTFileIsValid(pData->FileDevice))
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_HANDLE, RT_SRC_POS,
-                                   N_("The TAP file handle %RTfile is not valid!"), pData->FileDevice);
+                                N_("Configuration error: Query for \"Device\" failed!"));
+
+    int32_t iConnectTo;
+    rc = CFGMR3QueryS32(pCfgHandle, "ConnectTo", &iConnectTo);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        iConnectTo = -1;
+    else if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Query for \"ConnectTo\" failed!"));
 
     /*
-     * Make sure the descriptor is non-blocking and valid.
-     *
-     * We should actually query if it's a TAP device, but I haven't
-     * found any way to do that.
+     * Open the device.
+     * Keep in mind that the destructor is always called!
      */
-    if (fcntl(pData->FileDevice, F_SETFL, O_NONBLOCK) == -1)
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
-                                   N_("Configuration error: Failed to configure /dev/net/tun. errno=%d"), errno);
-    Log(("drvTAPOs2Contruct: %d (from fd)\n", pData->FileDevice));
-    rc = VINF_SUCCESS;
+    rc = RTFileOpen(&pThis->hDevice, pThis->szDevice, RTFILE_O_DENY_NONE | RTFILE_O_READ);
+    if (VBOX_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Failed to open tap device '%s'!"), pThis->szDevice);
+
+    ULONG Parm[2] = { ~0UL, ~0UL }; /* mysterious output */
+    ULONG cbParm = sizeof(Parm);
+    ULONG Data = ~0UL;
+    ULONG cbData = sizeof(Data);
+    int orc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_GET_LAN_NUMBER,
+                          &Parm, cbParm, &cbParm,
+                          &Data, cbData, &cbData);
+    if (orc)
+        rc = RTErrConvertFromOS2(orc);
+    else if (Parm[0])
+        rc = VERR_GENERAL_FAILURE;
+    if (VBOX_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Failed to query LanNumber! orc=%d Parm={%ld,%ld}\n"), 
+                                   orc, Parm[0], Parm[1]);
+    pThis->iLan = (int32_t)Data;
+    Log(("%s: iLan=%d Parm[1]=%ld\n", pThis->szName, pThis->iLan, Parm[1]));
+
+    /* 
+     * Connect it requested.
+     */
+    if (iConnectTo != -1)
+    {
+        if (iConnectTo == pThis->iLan)
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Cannot connect to ourself (%d)"), iConnectTo);
+
+        Parm[0] = Parm[1] = ~0UL; /* mysterious output */
+        cbParm = sizeof(Parm);
+        Data = iConnectTo;
+        cbData = sizeof(Data);
+        int orc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_CONNECT_NIC,
+                              &Parm, cbParm, &cbParm,
+                              &Data, cbData, &cbData);
+        if (orc)
+            rc = RTErrConvertFromOS2(orc);
+        else if (Parm[0])
+            rc = VERR_GENERAL_FAILURE;
+        if (VBOX_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Failed to connect %d to %d! orc=%d Parm={%ld,%ld}\n"), 
+                                       pThis->iLan, iConnectTo, orc, Parm[0], Parm[1]);
+        Log(("%s: Connected to %d\n", pThis->szName, iConnectTo));
+        pThis->iConnectedTo = iConnectTo;
+    }
+
+    /* 
+     * Log the config.
+     */
+    Parm[0] = Parm[1] = ~0UL; /* mysterious output */
+    PDMMAC Mac;
+    cbParm = sizeof(Parm);
+    cbData = sizeof(Mac);
+    orc = DosDevIOCtl(pThis->hDevice, PROT_CATEGORY, TAP_READ_MAC_ADDRESS,
+                      &Parm[0], cbParm, &cbParm,
+                      &Mac, cbData, &cbData);
+    if (    !orc 
+        &&  !Parm[0]
+      /*&&  !Parm[1]?*/)
+        LogRel(("%s: iLan=%d iConnectedTo=%d Mac=%02x:%02x:%02x:%02x:%02x:%02x\n", 
+                pThis->szName, pThis->iLan, pThis->iConnectedTo, 
+                Mac.au8[0], Mac.au8[1], Mac.au8[2], Mac.au8[3], Mac.au8[4], Mac.au8[5]));
+    else
+        LogRel(("%s: iLan=%d iConnectedTo Mac=failed - orc=%d Parm={%ld,%ld}\n", 
+                pThis->szName, pThis->iLan, pThis->iConnectedTo, Parm[0], Parm[1]));
 
     /*
      * Create the out-of-space semaphore and the async receiver thread. 
      */
-    rc = RTSemEventCreate(&pData->EventOutOfSpace);
+    rc = RTSemEventCreate(&pThis->EventOutOfSpace);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDrvHlpThreadCreate(pDrvIns, &pData->pThread, pData, drvTAPOs2AsyncIoThread, drvTAPOs2WakeupThread,
-                               0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "TAP");
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvTAPOs2ReceiveThread, drvTAPOs2WakeupReceiveThread,
+                                  0, RTTHREADTYPE_IO, pThis->szName);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktSent,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of sent packets.",          "/Drivers/TAP%d/Packets/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktSentBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of sent bytes.",            "/Drivers/TAP%d/Bytes/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecv,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of received packets.",      "/Drivers/TAP%d/Packets/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPktRecvBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of received bytes.",        "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTransmit,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet transmit runs.",  "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatReceive,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet receive runs.",   "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatRecvOverflows, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktSent,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of sent packets.",          "/Drivers/TAP%d/Packets/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktSentBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of sent bytes.",            "/Drivers/TAP%d/Bytes/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktRecv,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,        "Number of received packets.",      "/Drivers/TAP%d/Packets/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatPktRecvBytes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,             "Number of received bytes.",        "/Drivers/TAP%d/Bytes/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet transmit runs.",  "/Drivers/TAP%d/Transmit", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,    "Profiling packet receive runs.",   "/Drivers/TAP%d/Receive", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatRecvOverflows, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling packet receive overflows.", "/Drivers/TAP%d/RecvOverflows", pDrvIns->iInstance);
 #endif /* VBOX_WITH_STATISTICS */
 
     return rc;
@@ -484,3 +642,4 @@ const PDMDRVREG g_DrvHostInterface =
     /* pfnPowerOff */
     NULL
 };
+
