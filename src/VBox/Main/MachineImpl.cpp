@@ -3907,6 +3907,24 @@ HRESULT Machine::loadSnapshot (CFGNODE aNode, const Guid &aCurSnapshotId,
         }
         while (0);
 
+        /* Guest node (optional) */
+        {
+            CFGNODE GuestNode = 0;
+            CFGLDRGetChildNode (aNode, "Guest", 0, &GuestNode);
+            if (GuestNode)
+            {
+                uint32_t memoryBalloonSize = 0;
+                CFGLDRQueryUInt32 (GuestNode, "MemoryBalloonSize", &memoryBalloonSize);
+                mHWData->mMemoryBalloonSize = memoryBalloonSize;
+
+                uint32_t statisticsUpdateInterval = 0;
+                CFGLDRQueryUInt32 (GuestNode, "StatisticsUpdateInterval", &statisticsUpdateInterval);
+                mHWData->mStatisticsUpdateInterval = statisticsUpdateInterval;
+
+                CFGLDRReleaseNode (GuestNode);
+            }
+        }
+
         CFGLDRReleaseNode (hardwareNode);
     }
     while (0);
@@ -5882,6 +5900,25 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
             if (FAILED (rc))
                 return rc;
         }
+
+        /* Guest node (optional) */
+        {
+            CFGNODE GuestNode = 0;
+            CFGLDRGetChildNode (aNode, "Guest", 0, &GuestNode);
+            /* first, delete the entire node if exists */
+            if (GuestNode)
+                CFGLDRDeleteNode (GuestNode);
+            /* then recreate it */
+            GuestNode = 0;
+            CFGLDRCreateChildNode (aNode, "Guest", &GuestNode);
+            if (GuestNode)
+            {
+                CFGLDRSetUInt32 (GuestNode, "MemoryBalloonSize",  mHWData->mMemoryBalloonSize);
+                CFGLDRSetUInt32 (GuestNode, "StatisticsUpdateInterval", mHWData->mStatisticsUpdateInterval);                
+                CFGLDRReleaseNode (GuestNode);
+            }
+        }
+
     }
 
     /* save children */
