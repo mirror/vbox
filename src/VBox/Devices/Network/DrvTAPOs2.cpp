@@ -238,7 +238,7 @@ static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
      */
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
-    Assert(pThread->enmState == PDMTHREADSTATE_RESUMING);
+    Assert(pThread->enmState == PDMTHREADSTATE_RUNNING);
 
     /*
      * Loop while the thread is running, quit immediately when 
@@ -465,7 +465,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0LanNumber\0ConnectTo\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0ConnectTo\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "");
 
     /*
@@ -535,7 +535,7 @@ static DECLCALLBACK(int) drvTAPOs2Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     if (iConnectTo != -1)
     {
         if (iConnectTo == pThis->iLan)
-            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                        N_("Cannot connect to ourself (%d)"), iConnectTo);
 
         Parm[0] = Parm[1] = ~0UL; /* mysterious output */
