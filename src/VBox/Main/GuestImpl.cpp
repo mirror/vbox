@@ -79,6 +79,9 @@ HRESULT Guest::init (Console *aParent)
     else
         mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
 
+    for (int i=0;i<GuestStatisticType_MaxVal;i++)
+        mCurrentGuestStat[i] = GUEST_STAT_INVALID;
+
     return S_OK;
 }
 
@@ -270,31 +273,14 @@ STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     if (aCpuId != 0)
         return E_INVALIDARG;
 
-    switch(aStatistic)
-    {
-    case GuestStatisticType_CPULoad_Idle:
-    case GuestStatisticType_CPULoad_Kernel:
-    case GuestStatisticType_CPULoad_User:
-    case GuestStatisticType_Threads:
-    case GuestStatisticType_Processes:
-    case GuestStatisticType_Handles:
-    case GuestStatisticType_MemoryLoad:
-    case GuestStatisticType_PhysMemTotal:
-    case GuestStatisticType_PhysMemAvailable:
-    case GuestStatisticType_PhysMemBalloon:
-    case GuestStatisticType_MemCommitTotal:
-    case GuestStatisticType_MemKernelTotal:
-    case GuestStatisticType_MemKernelPaged:
-    case GuestStatisticType_MemKernelNonpaged:
-    case GuestStatisticType_MemSystemCache:
-    case GuestStatisticType_PageFileSize:
-        *aStatVal = 0;
-        break;
-
-    default:
-        AssertFailed();
+    if (aStatistic >= GuestStatisticType_MaxVal)
         return E_INVALIDARG;
-    }
+
+    /* not available or not yet reported? */
+    if (mCurrentGuestStat[aStatistic] == GUEST_STAT_INVALID)
+        return E_INVALIDARG;
+
+    *aStatVal = mCurrentGuestStat[aStatistic];
     return S_OK;
 }
 
@@ -303,30 +289,11 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     if (aCpuId != 0)
         return E_INVALIDARG;
 
-    switch(aStatistic)
-    {
-    case GuestStatisticType_CPULoad_Idle:
-    case GuestStatisticType_CPULoad_Kernel:
-    case GuestStatisticType_CPULoad_User:
-    case GuestStatisticType_Threads:
-    case GuestStatisticType_Processes:
-    case GuestStatisticType_Handles:
-    case GuestStatisticType_MemoryLoad:
-    case GuestStatisticType_PhysMemTotal:
-    case GuestStatisticType_PhysMemAvailable:
-    case GuestStatisticType_PhysMemBalloon:
-    case GuestStatisticType_MemCommitTotal:
-    case GuestStatisticType_MemKernelTotal:
-    case GuestStatisticType_MemKernelPaged:
-    case GuestStatisticType_MemKernelNonpaged:
-    case GuestStatisticType_MemSystemCache:
-    case GuestStatisticType_PageFileSize:
-        break;
-
-    default:
-        AssertFailed();
+    if (aStatistic >= GuestStatisticType_MaxVal)
         return E_INVALIDARG;
-    }
+
+    /* internal method assumes that the caller known what he's doing (no boundary checks) */
+    mCurrentGuestStat[aStatistic] = aStatVal;
     return S_OK;
 }
 
