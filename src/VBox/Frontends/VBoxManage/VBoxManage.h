@@ -69,6 +69,15 @@ typedef uint64_t USAGECATEGORY;
 /** flag whether we're in internal mode */
 extern bool fInternalMode;
 
+/** showVMInfo details */
+typedef enum
+{
+    VMINFO_NONE         = 0,
+    VMINFO_STANDARD     = 1,    /* standard details */
+    VMINFO_STATISTICS   = 2,    /* guest statistics */
+    VMINFO_FULL         = 3,    /* both */
+} VMINFO_DETAILS;
+
 /*
  * Prototypes
  */
