@@ -500,7 +500,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 } 
                 __except(EXCEPTION_EXECUTE_HANDLER) 
                 {
-                    dprintf("MmProbeAndLockPages failed!\n"));
+                    dprintf(("MmProbeAndLockPages failed!\n"));
                     rc = VERR_NO_MEMORY;
                     IoFreeMdl (pMdl);
                     ExFreePoolWithTag(pvBalloon, 'MBAL');
