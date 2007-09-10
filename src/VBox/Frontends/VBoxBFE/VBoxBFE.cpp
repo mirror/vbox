@@ -195,8 +195,11 @@ typedef struct BFENetworkDevice
     bool        fSniff;     /**< Set if the network sniffer should be installed. */
     const char *pszSniff;   /**< Output file for the network sniffer. */
     PDMMAC      Mac;        /**< The mac address for the device. */
-    const char *pszName;     /**< The device name of a HIF device. The name of the internal network. */
-#if 1//defined(RT_OS_LINUX)
+    const char *pszName;    /**< The device name of a HIF device. The name of the internal network. */
+#ifdef RT_OS_OS2
+    bool        fHaveConnectTo; /**< Whether fConnectTo is set. */
+    int32_t     iConnectTo; /**< The lanX to connect to (bridge with). */
+#elif 1//defined(RT_OS_LINUX)
     bool        fHaveFd;    /**< Set if fd is valid. */
     int32_t     fd;         /**< The file descriptor of a HIF device.*/
 #endif
@@ -334,6 +337,9 @@ static void show_usage()
 #endif
 #if 0
              "  -netsniff<1-N>     Enable packet sniffer\n"
+#endif
+#ifdef RT_OS_OS2
+             "  -brdev<1-N> lan<X> Bridge network adaptor <N> with the 'lanX' device.\n"
 #endif
 #ifdef RT_OS_LINUX
              "  -tapfd<1-N> <fd>   Use existing TAP device, don't allocate\n"
@@ -605,16 +611,34 @@ int main(int argc, char **argv)
         }
         else if (strncmp(pszArg, "-netsniff", 9) == 0)
         {
-            int i = networkArg2Index(pszArg, 7);
-            if (rc < 0)
+            int i = networkArg2Index(pszArg, 9);
+            if (i < 0)
                 return 1;
             g_aNetDevs[i].fSniff = true;
             /** @todo filename */
         }
+#ifdef RT_OS_OS2
+        else if (strncmp(pszArg, "-brdev", 6) == 0)
+        {
+            int i = networkArg2Index(pszArg, 6);
+            if (i < 0)
+                return 1;
+            if (g_aNetDevs[i].enmType != BFENETDEV::HIF)
+                return SyntaxError("%d is not a hif device! Make sure you put the -hifdev argument first.\n", i);
+            if (++curArg >= argc)
+                return SyntaxError("missing argument for %s!\n", pszArg);
+            rc = RTStrToInt32Ex(argv[curArg], NULL, 0, &g_aNetDevs[i].iConnectTo);
+            if (VBOX_FAILURE(rc))
+                return SyntaxError("bad tap file descriptor: %s (error %VRc)\n", argv[curArg], rc);
+            g_aNetDevs[i].fHaveConnectTo = true;
+        }
+#endif
 #ifdef RT_OS_LINUX
         else if (strncmp(pszArg, "-tapfd", 6) == 0)
         {
-            int i = networkArg2Index(pszArg, 7);
+            int i = networkArg2Index(pszArg, 6);
+            if (i < 0)
+                return 1;
             if (++curArg >= argc)
                 return SyntaxError("missing argument for %s!\n", pszArg);
             rc = RTStrToInt32Ex(argv[curArg], NULL, 0, &g_aNetDevs[i].fd);
@@ -1552,15 +1576,13 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 #if defined(RT_OS_LINUX)
                 if (g_aNetDevs[ulInstance].fHaveFd)
                 {
-                    rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName);
-                                                                                    UPDATE_RC();
-                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", g_aNetDevs[ulInstance].fd);
-                                                                                    UPDATE_RC();
+                    rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName); UPDATE_RC();
+                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", g_aNetDevs[ulInstance].fd); UPDATE_RC();
                 }
                 else
 #endif
                 {
-#if defined (RT_OS_LINUX) || defined (RT_OS_L4)
+#if defined(RT_OS_LINUX) || defined(RT_OS_L4)
                     /*
                      * Create/Open the TAP the device.
                      */
@@ -1611,6 +1633,17 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName);        UPDATE_RC();
                     rc = CFGMR3InsertInteger(pCfg, "FileHandle", (RTFILE)tapFD);                    UPDATE_RC();
 
+#elif defined(RT_OS_OS2)
+                    /*
+                     * The TAP driver does all the opening and setting up, 
+                     * as it was originally was ment to be (stupid fork() problems).
+                     */
+                    rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName); UPDATE_RC();
+                    if (g_aNetDevs[ulInstance].fHaveConnectTo)
+                    {
+                        rc = CFGMR3InsertInteger(pCfg, "ConnectTo", g_aNetDevs[ulInstance].iConnectTo); 
+                        UPDATE_RC();
+                    }
 #elif defined(RT_OS_WINDOWS)
                     /*
                      * We need the GUID too here...
