@@ -93,6 +93,10 @@ VBoxBFE_INCS.linux = \
 VBoxBFE_LIBS = \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
+ifneq ($(filter-out win os2 l4,$(BUILD_TARGET)),)
+VBoxBFE_LIBS += \
+	$(LIB_REM)
+endif
 ifndef VBOX_WITHOUT_COM
 VBoxBFE_LIBS.win = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
@@ -108,7 +112,6 @@ VBoxBFE_LIBS.l4 = \
 	$(L4_LIBDIR)/libconstream-server.a \
 	$(L4_LIBDIR)/libl4sys.a
 VBoxBFE_LIBS.darwin = \
-	$(LIB_REM) \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 VBoxBFE_LDFLAGS.darwin = -framework Foundation -framework AppKit
 
