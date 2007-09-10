@@ -475,9 +475,6 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
         {
             RTGCPTR   pHandler, dummy;
             GCPTRTYPE(uint32_t *) pTrapStackGC;
-#ifndef IN_GC
-            HCPTRTYPE(uint32_t *) pTrapStackHC;
-#endif
 
             pHandler = (RTGCPTR)((GuestIdte.Gen.u16OffsetHigh << 16) | GuestIdte.Gen.u16OffsetLow);
 
@@ -582,16 +579,23 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                 /*
                  * Build trap stack frame on guest handler's stack
                  */
+                uint32_t *pTrapStack;
 #ifdef IN_GC
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
+                pTrapStack = pTrapStackGC;
 #else
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
-                if (    PAGE_ADDRESS(pTrapStackGC) != PAGE_ADDRESS(pTrapStackGC - 10*sizeof(uint32_t)) /* fail if we cross a page boundary */
-                    ||  VBOX_FAILURE((rc = PGMPhysGCPtr2HCPtr(pVM, pTrapStackGC, (PRTHCPTR)&pTrapStackHC)))
-                   )
+                if ((pTrapStackGC >> PAGE_SHIFT) != ((pTrapStackGC - 10*sizeof(uint32_t)) >> PAGE_SHIFT)) /* fail if we cross a page boundary */
+                    goto failure;
+
+                RTGCPHYS GCPhysStack;
+                rc = PGMPhysGCPtr2GCPhys(pVM, pTrapStackGC, &GCPhysStack);
+                if (VBOX_SUCCESS(rc))
+                    rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysStack, (void **)&pTrapStack);
+                if (VBOX_FAILURE(rc))
                 {
                     AssertRC(rc);
                     goto failure;
@@ -603,10 +607,10 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     if (eflags.Bits.u1VM)
                     {
                         Log(("TRAP%02X: (VM) Handler %04X:%08X Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->gs;
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->fs;
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->ds;
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->es;
+                        pTrapStack[--idx] = pRegFrame->gs;
+                        pTrapStack[--idx] = pRegFrame->fs;
+                        pTrapStack[--idx] = pRegFrame->ds;
+                        pTrapStack[--idx] = pRegFrame->es;
 
                         /* clear ds, es, fs & gs in current context */
                         pRegFrame->ds = pRegFrame->es = pRegFrame->fs = pRegFrame->gs = 0;
@@ -617,33 +621,33 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     if (!fConforming && dpl < cpl)
                     {
                         if ((pRegFrame->ss & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
-                            CTXSUFF(pTrapStack)[--idx] = pRegFrame->ss & ~1;    /* Mask away traces of raw ring execution (ring 1). */
+                            pTrapStack[--idx] = pRegFrame->ss & ~1;    /* Mask away traces of raw ring execution (ring 1). */
                         else
-                            CTXSUFF(pTrapStack)[--idx] = pRegFrame->ss;
+                            pTrapStack[--idx] = pRegFrame->ss;
 
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->esp;
+                        pTrapStack[--idx] = pRegFrame->esp;
                     }
 
                     /* Note: We use the eflags copy, that includes the virtualized bits! */
                     /* Note: Not really necessary as we grab include those bits in the trap/irq handler trampoline */
-                    CTXSUFF(pTrapStack)[--idx] = eflags.u32;
+                    pTrapStack[--idx] = eflags.u32;
 
                     if ((pRegFrame->cs & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->cs & ~1;    /* Mask away traces of raw ring execution (ring 1). */
+                        pTrapStack[--idx] = pRegFrame->cs & ~1;    /* Mask away traces of raw ring execution (ring 1). */
                     else
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->cs;
+                        pTrapStack[--idx] = pRegFrame->cs;
 
                     if (enmType == TRPM_SOFTWARE_INT)
                     {
                         Assert(opsize);
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->eip + opsize;    /* return address = next instruction */
+                        pTrapStack[--idx] = pRegFrame->eip + opsize;    /* return address = next instruction */
                     }
                     else
-                        CTXSUFF(pTrapStack)[--idx] = pRegFrame->eip;
+                        pTrapStack[--idx] = pRegFrame->eip;
 
                     if (enmError == TRPM_TRAP_HAS_ERRORCODE)
                     {
-                        CTXSUFF(pTrapStack)[--idx] = pVM->trpm.s.uActiveErrorCode;
+                        pTrapStack[--idx] = pVM->trpm.s.uActiveErrorCode;
                     }
 
                     Assert(esp_r0 > -idx*sizeof(uint32_t));
@@ -655,7 +659,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
 #ifdef DEBUG
                     for (int j=idx;j<0;j++)
                     {
-                        LogFlow(("Stack %VGv pos %02d: %08x\n", &CTXSUFF(pTrapStack)[j], j, CTXSUFF(pTrapStack)[j]));
+                        LogFlow(("Stack %VGv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
                     }
                     const char *pszPrefix = "";
                     const char *szEFlags = "";
@@ -705,6 +709,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     pRegFrame->esp        = esp_r0;
                     pRegFrame->ss         = ss_r0 & ~X86_SEL_RPL;     /* set rpl to ring 0 */
                     STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+                    PGMPhysGCPhys2CCPtrRelease(pVM, GCPhysStack, pTrapStack);
                     return VINF_SUCCESS;
 #endif
                 }
