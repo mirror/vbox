@@ -837,7 +837,7 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
  * @returns VBox status code.
  * @param   pVM         The VM Handle
  * @param   GCPtr       The guest pointer to convert.
- * @param   pGCPhys     Where to store the HC physical address.
+ * @param   pGCPhys     Where to store the GC physical address.
  */
 PGMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
 

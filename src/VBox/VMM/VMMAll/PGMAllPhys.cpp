@@ -829,11 +829,14 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
  * @returns VBox status code.
  * @param   pVM         The VM Handle
  * @param   GCPtr       The guest pointer to convert.
- * @param   pGCPhys     Where to store the HC physical address.
+ * @param   pGCPhys     Where to store the GC physical address.
  */
 PGMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
-    return PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
+    int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
+    if (pGCPhys && VBOX_SUCCESS(rc))
+        *pGCPhys |= (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
+    return rc;
 }
 
 
@@ -1926,7 +1929,6 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
     if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address */
-        offset = GCPtrSrc & PAGE_OFFSET_MASK;
         rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrSrc, &GCPhys);
         AssertRCReturn(rc, rc);
 
@@ -1934,7 +1936,7 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
         rc = PGMGstModifyPage(pVM, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
         AssertRC(rc);
 
-        PGMPhysRead(pVM, GCPhys + offset, pvDst, cb);
+        PGMPhysRead(pVM, GCPhys, pvDst, cb);
         return VINF_SUCCESS;
     }
 
@@ -1944,7 +1946,6 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
     for (;;)
     {
         /* Convert virtual to physical address */
-        offset = GCPtrSrc & PAGE_OFFSET_MASK;
         rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrSrc, &GCPhys);
         AssertRCReturn(rc, rc);
 
@@ -1956,10 +1957,10 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
         size_t cbRead = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
         if (cbRead >= cb)
         {
-            PGMPhysRead(pVM, GCPhys + offset, pvDst, cb);
+            PGMPhysRead(pVM, GCPhys, pvDst, cb);
             return VINF_SUCCESS;
         }
-        PGMPhysRead(pVM, GCPhys + offset, pvDst, cbRead);
+        PGMPhysRead(pVM, GCPhys, pvDst, cbRead);
 
         /* next */
         cb         -= cbRead;
@@ -2002,7 +2003,6 @@ PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
     if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address */
-        offset = GCPtrDst & PAGE_OFFSET_MASK;
         rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrDst, &GCPhys);
         AssertRCReturn(rc, rc);
 
@@ -2010,7 +2010,7 @@ PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
         rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
         AssertRC(rc);
 
-        PGMPhysWrite(pVM, GCPhys + offset, pvSrc, cb);
+        PGMPhysWrite(pVM, GCPhys, pvSrc, cb);
         return VINF_SUCCESS;
     }
 
@@ -2020,7 +2020,6 @@ PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
     for (;;)
     {
         /* Convert virtual to physical address */
-        offset = GCPtrDst & PAGE_OFFSET_MASK;
         rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrDst, &GCPhys);
         AssertRCReturn(rc, rc);
 
@@ -2032,10 +2031,10 @@ PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
         size_t cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
         if (cbWrite >= cb)
         {
-            PGMPhysWrite(pVM, GCPhys + offset, pvSrc, cb);
+            PGMPhysWrite(pVM, GCPhys, pvSrc, cb);
             return VINF_SUCCESS;
         }
-        PGMPhysWrite(pVM, GCPhys + offset, pvSrc, cbWrite);
+        PGMPhysWrite(pVM, GCPhys, pvSrc, cbWrite);
 
         /* next */
         cb         -= cbWrite;
