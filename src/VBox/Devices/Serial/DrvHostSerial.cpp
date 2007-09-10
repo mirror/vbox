@@ -44,6 +44,7 @@
 # include <fcntl.h>
 # include <string.h>
 # include <unistd.h>
+# include <sys/poll.h>
 #elif defined(RT_OS_WINDOWS)
 # include <windows.h>
 #endif
@@ -440,13 +441,26 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
         if (!cbRemaining)
         {
             /* Get a block of data from the host serial device. */
-            size_t cbRead;
+            size_t        cbRead;
+
+#ifdef RT_OS_LINUX
+            struct pollfd pfd;
+
+            pfd.fd = pData->DeviceFile;
+            pfd.events = POLLIN;
+
+            rc = poll(&pfd, 1, -1);
+            if (rc < 0)
+                break;
+#endif
+
             rc = RTFileRead(pData->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
             if (VBOX_FAILURE(rc))
             {
                 LogRel(("Host Serial Driver: Read failed with %Vrc, terminating the worker thread.\n", rc));
                 break;
             }
+            Log(("Host Serial Driver: Read %d bytes.\n", cbRead));
             cbRemaining = cbRead;
             pbBuffer = abBuffer;
         }
@@ -559,7 +573,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     comTimeout.ReadIntervalTimeout         = MAXDWORD;
     comTimeout.ReadTotalTimeoutMultiplier  = 0;
-    comTimeout.ReadTotalTimeoutConstant    = 0;
+    comTimeout.ReadTotalTimeoutConstant    = 10;
     comTimeout.WriteTotalTimeoutMultiplier = 0;
     comTimeout.WriteTotalTimeoutConstant   = 0;
 
