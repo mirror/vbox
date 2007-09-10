@@ -1551,15 +1551,15 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
     rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
     if (SUCCEEDED(rc))
-        RTPrintf("Configured memory balloon size %d MB\n", guestVal);
+        RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
 
     rc = machine->COMGETTER(StatisticsUpdateInterval)(&guestVal);
     if (SUCCEEDED(rc))
     {
         if (guestVal == 0)
-            RTPrintf("Statistics update disabled\n");
+            RTPrintf("Statistics update:                   disabled\n");
         else
-            RTPrintf("Statistics update interval %d seconds\n", guestVal);
+            RTPrintf("Statistics update interval:          %d seconds\n", guestVal);
     }
     RTPrintf("\n");
 
