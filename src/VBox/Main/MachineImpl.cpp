@@ -3907,7 +3907,6 @@ HRESULT Machine::loadSnapshot (CFGNODE aNode, const Guid &aCurSnapshotId,
         }
         while (0);
 
-#if 0
         /* Guest node (optional) */
         {
             CFGNODE GuestNode = 0;
@@ -3925,7 +3924,6 @@ HRESULT Machine::loadSnapshot (CFGNODE aNode, const Guid &aCurSnapshotId,
                 CFGLDRReleaseNode (GuestNode);
             }
         }
-#endif
         CFGLDRReleaseNode (hardwareNode);
     }
     while (0);
@@ -5901,7 +5899,7 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
             if (FAILED (rc))
                 return rc;
         }
-#if 0
+
         /* Guest node (optional) */
         {
             CFGNODE GuestNode = 0;
@@ -5919,7 +5917,6 @@ HRESULT Machine::saveSnapshot (CFGNODE aNode, Snapshot *aSnapshot, bool aAttrsOn
                 CFGLDRReleaseNode (GuestNode);
             }
         }
-#endif
     }
 
     /* save children */
