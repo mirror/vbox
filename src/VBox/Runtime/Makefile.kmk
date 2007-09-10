@@ -681,7 +681,7 @@ RuntimeR0_SOURCES.os2 = \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm
 
-ifeq ($(filter-out darwin solaris,$(BUILD_TARGET)),)
+ifeq ($(filter-out darwin solaris freebsd,$(BUILD_TARGET)),)
 RuntimeR0_SOURCES += \
 	math/gcc/adddi3.c \
 	math/gcc/anddi3.c \
@@ -995,7 +995,7 @@ ifeq ($(VBOX_LDR_FMT32),lx)
 RuntimeGC_SOURCES += os2/sys0.asm
 endif
 
-ifeq ($(filter-out darwin solaris,$(BUILD_TARGET)),)
+ifeq ($(filter-out darwin solaris freebsd,$(BUILD_TARGET)),)
 RuntimeGC_SOURCES += \
 	math/gcc/adddi3.c \
 	math/gcc/anddi3.c \
