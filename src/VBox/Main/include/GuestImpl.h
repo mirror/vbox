@@ -22,6 +22,8 @@
 
 class Console;
 
+#define GUEST_STAT_INVALID          (ULONG)-1
+
 class ATL_NO_VTABLE Guest :
     public VirtualBoxSupportErrorInfoImpl <Guest, IGuest>,
     public VirtualBoxSupportTranslation <Guest>,
@@ -89,6 +91,8 @@ private:
 
     ULONG mMemoryBalloonSize;
     ULONG mStatUpdateInterval;
+
+    ULONG mCurrentGuestStat[GuestStatisticType_MaxVal];
 
     ComObjPtr <Console, ComWeakRef> mParent;
     Data mData;
