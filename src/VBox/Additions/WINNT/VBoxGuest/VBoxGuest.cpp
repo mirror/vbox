@@ -578,11 +578,13 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
         {
             if (!pDevExt->MemBalloon.paMdlMemBalloon)
             {
+                pDevExt->MemBalloon.cMaxBalloons = req->u32PhysMemSize;
                 pDevExt->MemBalloon.paMdlMemBalloon = (PMDL *)ExAllocatePoolWithTag(PagedPool, req->u32PhysMemSize * sizeof(PMDL), 'MBAL');
                 Assert(pDevExt->MemBalloon.paMdlMemBalloon);
                 if (!pDevExt->MemBalloon.paMdlMemBalloon)
                     return VERR_NO_MEMORY;
             }
+            Assert(pDevExt->MemBalloon.cMaxBalloons == req->u32PhysMemSize);
 
             rc = VBoxGuestSetBalloonSize(pDevExt, req->u32BalloonSize);
             if (pMemBalloonSize)
