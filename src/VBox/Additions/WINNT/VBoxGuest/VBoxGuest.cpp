@@ -494,8 +494,9 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
             for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
                 req->aPhysPage[j] = pPageDesc[j];
 
-            req->cPages   = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
-            req->fInflate = true;
+            req->header.size = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
+            req->cPages      = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
+            req->fInflate    = true;
 
             rc = VbglGRPerform(&req->header);
             if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
@@ -509,6 +510,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
             }
             else
             {
+                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize added 1 MB chunk at %x\n", pvBalloon));
                 pDevExt->MemBalloon.paMdlMemBalloon[i] = pMdl;
                 pDevExt->MemBalloon.cBalloons++;
             }
@@ -528,8 +530,9 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
             for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
                 req->aPhysPage[j] = pPageDesc[j];
 
-            req->cPages   = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
-            req->fInflate = false;
+            req->header.size = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
+            req->cPages      = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
+            req->fInflate    = false;
 
             rc = VbglGRPerform(&req->header);
             if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
@@ -537,6 +540,8 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 AssertMsgFailed(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev! rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
                 /* ignore error and just continue; this should never fail */
             }
+
+            dprintf(("VBoxGuest::VBoxGuestSetBalloonSize free 1 MB chunk at %x\n", pvBalloon));
 
             /* Free the ballooned memory */
             MmUnlockPages (pMdl);
