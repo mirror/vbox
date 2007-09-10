@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * link dependencies - drag all we want into the link!
+ * VBoxVMM link dependencies - drag all we want into the link!
  */
 
 /*
@@ -42,6 +42,7 @@ PFNRT g_apfnDeps[] =
     (PFNRT)PDMQueueInsert,
     (PFNRT)PDMCritSectEnter,
     (PFNRT)PGMInvalidatePage,
+    (PFNRT)PGMR3DbgHCPtr2GCPhys,
     (PFNRT)VMR3Create,
     (PFNRT)VMMDoTest,
     NULL

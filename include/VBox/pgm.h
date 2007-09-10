@@ -830,50 +830,6 @@ PGMDECL(void) PGMPhysGCPhys2CCPtrRelease(PVM pVM, RTGCPHYS GCPhys, void *pv);
 PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr);
 
 /**
- * Converts a HC pointer to a GC physical address. 
- * 
- * Only for the debugger.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success, *pGCPhys is set.
- * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
- * 
- * @param   pVM     The VM handle.
- * @param   HCPtr   The HC pointer to convert.
- * @param   pGCPhys Where to store the GC physical address on success.
- */
-PGMDECL(int) PGMPhysHCPtr2GCPhysDbg(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys);
-
-/**
- * Converts a HC pointer to a GC physical address.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success, *pHCPhys is set.
- * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical page but has no physical backing.
- * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
- * 
- * @param   pVM     The VM handle.
- * @param   HCPtr   The HC pointer to convert.
- * @param   pHCPhys Where to store the HC physical address on success.
- */
-PGMDECL(int) PGMPhysHCPtr2HCPhysDbg(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys);
-
-/**
- * Converts a HC physical address to a GC physical address.
- * 
- * Only for the debugger.
- *
- * @returns VBox status code
- * @retval  VINF_SUCCESS on success, *pGCPhys is set.
- * @retval  VERR_INVALID_POINTER if the HC physical address is not within the GC physical memory.
- * 
- * @param   pVM     The VM handle.
- * @param   HCPhys  The HC physical address to convert.
- * @param   pGCPhys Where to store the GC physical address on success.
- */
-PGMDECL(int) PGMPhysHCPhys2GCPhysDbg(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys);
-
-/**
  * Converts a guest pointer to a GC physical address.
  *
  * This uses the current CR3/CR0/CR4 of the guest.
@@ -1662,9 +1618,53 @@ PGMR3DECL(void) PGMR3PhysWriteDword(PVM pVM, RTGCPHYS GCPhys, uint32_t val);
  */
 PDMR3DECL(int) PGMR3CheckIntegrity(PVM pVM);
 
+/**
+ * Converts a HC pointer to a GC physical address. 
+ * 
+ * Only for the debugger.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success, *pGCPhys is set.
+ * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
+ * 
+ * @param   pVM     The VM handle.
+ * @param   HCPtr   The HC pointer to convert.
+ * @param   pGCPhys Where to store the GC physical address on success.
+ */
+PGMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys);
+
+/**
+ * Converts a HC pointer to a GC physical address.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success, *pHCPhys is set.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical page but has no physical backing.
+ * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
+ * 
+ * @param   pVM     The VM handle.
+ * @param   HCPtr   The HC pointer to convert.
+ * @param   pHCPhys Where to store the HC physical address on success.
+ */
+PGMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys);
+
+/**
+ * Converts a HC physical address to a GC physical address.
+ * 
+ * Only for the debugger.
+ *
+ * @returns VBox status code
+ * @retval  VINF_SUCCESS on success, *pGCPhys is set.
+ * @retval  VERR_INVALID_POINTER if the HC physical address is not within the GC physical memory.
+ * 
+ * @param   pVM     The VM handle.
+ * @param   HCPhys  The HC physical address to convert.
+ * @param   pGCPhys Where to store the GC physical address on success.
+ */
+PGMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys);
+
 /** @} */
 
-#endif
+#endif /* IN_RING3 */
 
 __END_DECLS
 

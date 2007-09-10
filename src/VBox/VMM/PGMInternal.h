@@ -496,7 +496,14 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns host physical address (RTHCPHYS).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HCPHYS(pPage)  ( (pPage)->HCPhys & UINT64_C(0x0000fffffffff000) )
+#define PGM_PAGE_GET_HCPHYS(pPage)      ( (pPage)->HCPhys & UINT64_C(0x0000fffffffff000) )
+
+/**
+ * Checks if the page is 'reserved'.
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_RESERVED(pPage)     ( !!((pPage)->HCPhys & MM_RAM_FLAGS_RESERVED) )
 
 
 /**
