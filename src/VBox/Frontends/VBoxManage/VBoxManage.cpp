@@ -4383,14 +4383,11 @@ static int handleModifyVM(int argc, char *argv[],
             }
         }
 
-        if (    guestMemBalloonSize != -1
-            ||  guestStatInterval != -1)
-        {
-            if (guestMemBalloonSize != -1)
-                CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(guestMemBalloonSize));
-            if (guestStatInterval != -1)
-                CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(guestStatInterval));
-        }
+        if (guestMemBalloonSize != -1)
+            CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(guestMemBalloonSize));
+
+        if (guestStatInterval != -1)
+            CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(guestStatInterval));
 
         /* commit changes */
         CHECK_ERROR(machine, SaveSettings());
