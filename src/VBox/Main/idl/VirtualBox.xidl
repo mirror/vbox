@@ -490,6 +490,7 @@
         Pagefile size in megabytes.
       </desc>
     </const>
+    <const name="MaxVal"               value="16"/>
   </enum>
  
   <!--
