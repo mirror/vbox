@@ -85,7 +85,7 @@ RTDECL(void *) RTMemPageAlloc(size_t cb)
 {
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     void *pv = malloc(cb);
-    AssertReleaseMsgReturn(RT_ALIGN_P(pv, PAGE_SIZE) != pv, 
+    AssertReleaseMsgReturn(RT_ALIGN_P(pv, PAGE_SIZE) == pv, 
                            ("malloc(%zu) -> %p; expected page aligned!\n", cb, pv), 
                            NULL);
     return pv;
