@@ -339,6 +339,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                                            server <pipe>|\n"
                  "                                            client <pipe>|\n"
                  "                                            <devicename>]\n"
+                 "                            [-guestmemoryballoon <balloonsize>]\n"
+                 "                            [-gueststatisticsinterval <seconds>]\n"
                  );
         if (fLinux)
         {
@@ -1547,7 +1549,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     }
 
     ULONG guestVal;
-    RTPrintf("Guest:\n");
+    RTPrintf("Guest:\n\n");
 
     rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
     if (SUCCEEDED(rc))
@@ -1573,7 +1575,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         {
             ULONG statVal;
 
-            RTPrintf("\nGuest statistics:\n");
+            RTPrintf("Guest statistics:\n\n");
 
             rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &statVal);
             if (SUCCEEDED(rc))
@@ -2928,6 +2930,8 @@ static int handleModifyVM(int argc, char *argv[],
 #endif
     int   fUsbEnabled = -1;
     char *snapshotFolder = NULL;
+    ULONG guestMemBalloonSize = (ULONG)-1;
+    ULONG guestStatInterval = (ULONG)-1;
 
     /* VM ID + at least one parameter + value */
     if (argc < 3)
@@ -3468,6 +3472,30 @@ static int handleModifyVM(int argc, char *argv[],
                     return errorArgument("Error parsing UART IRQ '%s'", argv[i]);
                 uarts_irq[n - 1]  = uVal;
             }
+        }
+        else if (strncmp(argv[i], "-guestmemoryballoon", 19) == 0)
+        {
+                if (argc <= i + 1)
+                    return errorArgument("Missing argument to '%s'", argv[i-1]);
+                i++;
+                uint32_t uVal;
+                int vrc;
+                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+                if (vrc != VINF_SUCCESS)
+                    return errorArgument("Error parsing guest memory balloon size '%s'", argv[i]);
+                guestMemBalloonSize = uVal;
+        }
+        else if (strncmp(argv[i], "-gueststatisticsinterval", 24) == 0)
+        {
+                if (argc <= i + 1)
+                    return errorArgument("Missing argument to '%s'", argv[i-1]);
+                i++;
+                uint32_t uVal;
+                int vrc;
+                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+                if (vrc != VINF_SUCCESS)
+                    return errorArgument("Error parsing guest statistics interval '%s'", argv[i]);
+                guestStatInterval = uVal;
         }
         else
         {
@@ -4355,6 +4383,15 @@ static int handleModifyVM(int argc, char *argv[],
             }
         }
 
+        if (    guestMemBalloonSize != -1
+            ||  guestStatInterval != -1)
+        {
+            if (guestMemBalloonSize != -1)
+                CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(guestMemBalloonSize));
+            if (guestStatInterval != -1)
+                CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(guestStatInterval));
+        }
+
         /* commit changes */
         CHECK_ERROR(machine, SaveSettings());
     } while (0);
@@ -4788,6 +4825,56 @@ static int handleControlVM(int argc, char *argv[],
                 floppyImage->COMGETTER(Id)(uuid.asOutParam());
                 CHECK_ERROR(floppyDrive, MountImage(uuid));
             }
+        }
+        else if (strncmp(argv[1], "-guestmemoryballoon", 19) == 0)
+        {
+            if (argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+            uint32_t uVal;
+            int vrc;
+            vrc = RTStrToUInt32Ex(argv[2], NULL, 0, &uVal);
+            if (vrc != VINF_SUCCESS)
+            {
+                errorArgument("Error parsing guest memory balloon size '%s'", argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* guest is running; update IGuest */
+            ComPtr <IGuest> guest;
+
+            rc = console->COMGETTER(Guest)(guest.asOutParam()); 
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
+        }
+        else if (strncmp(argv[1], "-gueststatisticsinterval", 24) == 0)
+        {
+            if (argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+            uint32_t uVal;
+            int vrc;
+            vrc = RTStrToUInt32Ex(argv[2], NULL, 0, &uVal);
+            if (vrc != VINF_SUCCESS)
+            {
+                errorArgument("Error parsing guest memory balloon size '%s'", argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* guest is running; update IGuest */
+            ComPtr <IGuest> guest;
+
+            rc = console->COMGETTER(Guest)(guest.asOutParam()); 
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(guest, COMSETTER(StatisticsUpdateInterval)(uVal));
         }
         else
         {
