@@ -196,6 +196,17 @@ static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterfac
     PDRVTAP pData = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
 
     LogFlow(("drvTAPNotifyCanReceive:\n"));
+    /** @todo r=bird: With a bit unfavorable scheduling it's possible to get here
+     * before fOutOfSpace is set by the overflow code. This will mean that, unless
+     * more receive descriptors become available, the receive thread will be stuck
+     * until it times out and cause a hickup in the network traffic.
+     * There is a simple, but not perfect, workaround for this problem in DrvTAPOs2.cpp.
+     * 
+     * A better solution would be to ditch the NotifyCanReceive callback and instead 
+     * change the CanReceive to do all the work. This will reduce the amount of code
+     * duplication, and would permit pcnet to avoid queuing unnecessary ring-3 tasks.
+     */
+
     /* ensure we wake up only once */
     if (ASMAtomicXchgU32(&pData->fOutOfSpace, false))
         RTSemEventSignal(pData->EventOutOfSpace);
