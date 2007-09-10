@@ -456,8 +456,27 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
         /* inflate */
         for (uint32_t i=pDevExt->MemBalloon.cBalloons;i<u32BalloonSize;i++)
         {
+#ifndef TARGET_NT4
+            /*
+             * Use MmAllocatePagesForMdl to specify the range of physical addresses we wish to use.
+             */
+            PHYSICAL_ADDRESS Zero;
+            PHYSICAL_ADDRESS HighAddr;
+            Zero.QuadPart = 0;
+            HighAddr.QuadPart = _4G - 1;
+            PMDL pMdl = MmAllocatePagesForMdl(Zero, HighAddr, Zero, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE);
+            if (pMdl)
+            {
+                if (MmGetMdlByteCount(pMdl) < VMMDEV_MEMORY_BALLOON_CHUNK_SIZE)
+                {
+                    MmFreePagesFromMdl(pMdl);
+                    ExFreePool(pMdl);
+                    rc = VERR_NO_MEMORY;
+                    goto end;
+                }
+            }
+#else
             PVOID pvBalloon;
-
             pvBalloon = ExAllocatePoolWithTag(PagedPool, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, 'MBAL');
             if (!pvBalloon)
             {
@@ -481,12 +500,14 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 } 
                 __except(EXCEPTION_EXECUTE_HANDLER) 
                 {
+                    Log(("MmProbeAndLockPages failed!\n"));
                     rc = VERR_NO_MEMORY;
                     IoFreeMdl (pMdl);
                     ExFreePoolWithTag(pvBalloon, 'MBAL');
                     goto end;
                 }
             }
+#endif
 
             PPFN_NUMBER pPageDesc = MmGetMdlPfnArray(pMdl);
 
@@ -504,13 +525,22 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 dprintf(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev!"
                          "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
 
+#ifndef TARGET_NT4
+                MmFreePagesFromMdl(pMdl);
+                ExFreePool(pMdl);
+#else
                 IoFreeMdl (pMdl);
                 ExFreePoolWithTag(pvBalloon, 'MBAL');
+#endif
                 goto end;
             }
             else
             {
-                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize added 1 MB chunk at %x\n", pvBalloon));
+#ifndef TARGET_NT4
+                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB added chunk at %x\n", i, pMdl));
+#else
+                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB added chunk at %x\n", i, pvBalloon));
+#endif
                 pDevExt->MemBalloon.paMdlMemBalloon[i] = pMdl;
                 pDevExt->MemBalloon.cBalloons++;
             }
@@ -521,35 +551,45 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
         /* deflate */
         for (uint32_t i=pDevExt->MemBalloon.cBalloons-1;i>=u32BalloonSize;i--)
         {
-            PMDL  pMdl      = pDevExt->MemBalloon.paMdlMemBalloon[i];
-            PVOID pvBalloon = MmGetMdlVirtualAddress(pMdl);
+            PMDL  pMdl = pDevExt->MemBalloon.paMdlMemBalloon[i];
 
-            PPFN_NUMBER pPageDesc = MmGetMdlPfnArray(pMdl);
-
-            /* Copy manually as RTGCPHYS is always 64 bits */
-            for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
-                req->aPhysPage[j] = pPageDesc[j];
-
-            req->header.size = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
-            req->cPages      = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
-            req->fInflate    = false;
-
-            rc = VbglGRPerform(&req->header);
-            if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+            Assert(pMdl);
+            if (pMdl)
             {
-                AssertMsgFailed(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev! rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
-                /* ignore error and just continue; this should never fail */
+                PVOID pvBalloon = MmGetMdlVirtualAddress(pMdl);
+
+                PPFN_NUMBER pPageDesc = MmGetMdlPfnArray(pMdl);
+
+                /* Copy manually as RTGCPHYS is always 64 bits */
+                for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
+                    req->aPhysPage[j] = pPageDesc[j];
+
+                req->header.size = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
+                req->cPages      = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
+                req->fInflate    = false;
+
+                rc = VbglGRPerform(&req->header);
+                if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+                {
+                    AssertMsgFailed(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev! rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                    break;
+                }
+
+                dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB free chunk at %x\n", i, pvBalloon));
+
+                /* Free the ballooned memory */
+#ifndef TARGET_NT4
+                MmFreePagesFromMdl(pMdl);
+                ExFreePool(pMdl);
+#else
+                MmUnlockPages (pMdl);
+                IoFreeMdl (pMdl);
+                ExFreePoolWithTag(pvBalloon, 'MBAL');
+#endif
+
+                pDevExt->MemBalloon.paMdlMemBalloon[i] = NULL;
+                pDevExt->MemBalloon.cBalloons--;
             }
-
-            dprintf(("VBoxGuest::VBoxGuestSetBalloonSize free 1 MB chunk at %x\n", pvBalloon));
-
-            /* Free the ballooned memory */
-            MmUnlockPages (pMdl);
-            IoFreeMdl (pMdl);
-            ExFreePoolWithTag(pvBalloon, 'MBAL');
-
-            pDevExt->MemBalloon.paMdlMemBalloon[i] = NULL;
-            pDevExt->MemBalloon.cBalloons--;
         }
     }
     Assert(pDevExt->MemBalloon.cBalloons <= pDevExt->MemBalloon.cMaxBalloons);
@@ -592,6 +632,10 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
             Assert(pDevExt->MemBalloon.cMaxBalloons == req->u32PhysMemSize);
 
             rc = VBoxGuestSetBalloonSize(pDevExt, req->u32BalloonSize);
+            /* ignore out of memory failures */
+            if (rc == VERR_NO_MEMORY)
+                rc = VINF_SUCCESS;
+
             if (pMemBalloonSize)
                 *pMemBalloonSize = pDevExt->MemBalloon.cBalloons;
         }
