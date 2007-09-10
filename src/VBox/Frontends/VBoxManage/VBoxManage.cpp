@@ -1568,15 +1568,15 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
             rc = guest->GetStatistic(0, GuestStatisticType_Threads, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Threads                %d%%\n", 0, statVal);
+                RTPrintf("CPU%d: Threads                %d\n", 0, statVal);
 
             rc = guest->GetStatistic(0, GuestStatisticType_Processes, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Processes              %d%%\n", 0, statVal);
+                RTPrintf("CPU%d: Processes              %d\n", 0, statVal);
 
             rc = guest->GetStatistic(0, GuestStatisticType_Handles, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Handles                %d%%\n", 0, statVal);
+                RTPrintf("CPU%d: Handles                %d\n", 0, statVal);
 
             rc = guest->GetStatistic(0, GuestStatisticType_MemoryLoad, &statVal);
             if (SUCCEEDED(rc))
