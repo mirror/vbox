@@ -1042,7 +1042,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             addr = ((addr & ~1) << 1) | plane;
 #else
-            /* 'addr' is offset in a plane, bit 0 select the plane. 
+            /* 'addr' is offset in a plane, bit 0 selects the plane.
              * Mask the bit 0, convert plane index to vram offset,
              * that is multiply by the number of planes,
              * and select the plane byte in the vram offset.
@@ -1343,9 +1343,9 @@ static void vga_get_offsets(VGAState *s,
         line_offset = s->cr[0x13];
         line_offset <<= 3;
 #ifdef VBOX
-        if ((s->gr[0x06] & 1) == 0)
+        if (!(s->cr[0x14] & 0x40) && !(s->cr[0x17] & 0x40))
         {
-            /* Text mode. Every second byte of a plane is used. */
+            /* Word mode. Used for odd/even modes. */
             line_offset *= 2;
         }
 #endif /* VBOX */
@@ -1978,14 +1978,14 @@ static int vga_draw_graphic(VGAState *s, int full_update)
     y2 = s->cr[0x09] & 0x1F;    /* starting row scan count */
     for(y = 0; y < height; y++) {
         addr = addr1;
+        /* CGA/MDA compatibility. Note that these addresses are all 
+         * shifted left by two compared to VGA specs.
+         */
         if (!(s->cr[0x17] & 1)) {
-            int shift;
-            /* CGA compatibility handling */
-            shift = 14 + ((s->cr[0x17] >> 6) & 1);
-            addr = (addr & ~(1 << shift)) | ((y1 & 1) << shift);
+            addr = (addr & ~(1 << 15)) | ((y1 & 1) << 15);
         }
         if (!(s->cr[0x17] & 2)) {
-            addr = (addr & ~0x8000) | ((y1 & 2) << 14);
+            addr = (addr & ~(1 << 16)) | ((y1 & 2) << 15);
         }
 #ifndef VBOX
         page0 = s->vram_offset + (addr & TARGET_PAGE_MASK);
