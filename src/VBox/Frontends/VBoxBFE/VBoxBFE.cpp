@@ -627,9 +627,13 @@ int main(int argc, char **argv)
                 return SyntaxError("%d is not a hif device! Make sure you put the -hifdev argument first.\n", i);
             if (++curArg >= argc)
                 return SyntaxError("missing argument for %s!\n", pszArg);
-            rc = RTStrToInt32Ex(argv[curArg], NULL, 0, &g_aNetDevs[i].iConnectTo);
-            if (VBOX_FAILURE(rc))
-                return SyntaxError("bad tap file descriptor: %s (error %VRc)\n", argv[curArg], rc);
+            if (    strncmp(argv[curArg], "lan", 3)
+                ||  argv[curArg][3] < '0'
+                ||  argv[curArg][3] >= '8'
+                ||  argv[curArg][4])
+                return SyntaxError("bad interface name '%s' specified with '%s'. Expected 'lan0', 'lan1' and similar.\n", 
+                                   argv[curArg], pszArg);
+            g_aNetDevs[i].iConnectTo = argv[curArg][3] - '0';
             g_aNetDevs[i].fHaveConnectTo = true;
         }
 #endif
