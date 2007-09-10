@@ -475,7 +475,7 @@ DECLCALLBACK(int) vmmdevChangeMemoryBalloon(PPDMIVMMDEVCONNECTOR pInterface, boo
         ||  !aPhysPage)
         return VERR_INVALID_PARAMETER;
 
-    AssertMsgFailed(("vmmdevChangeMemoryBalloon @todo\n"));
+    Log(("vmmdevChangeMemoryBalloon @todo\n"));
     return VINF_SUCCESS;
 }
 
