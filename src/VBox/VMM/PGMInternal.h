@@ -576,6 +576,115 @@ typedef struct PGMPHYSCACHE
 } PGMPHYSCACHE;
 
 
+/** Pointer to an allocation chunk ring-3 mapping. */
+typedef struct PGMCHUNKR3MAP *PPGMCHUNKR3MAP;
+/** Pointer to an allocation chunk ring-3 mapping pointer. */
+typedef PPGMCHUNKR3MAP *PPPGMCHUNKR3MAP;
+
+/**
+ * Ring-3 tracking structore for an allocation chunk ring-3 mapping.
+ * 
+ * The primary tree (Core) uses the chunk id as key.
+ * The secondary tree (AgeCore) is used for ageing and uses ageing sequence number as key.
+ */
+typedef struct PGMCHUNKR3MAP
+{
+    /** The key is the chunk id. */
+    AVLU32NODECORE      Core;
+    /** The key is the ageing sequence number. */
+    AVLLU32NODECORE     AgeCore;
+    /** The current age thingy. */
+    uint32_t            iAge;
+    /** The current reference count. */
+    uint32_t volatile   cRefs;
+    /** The current permanent reference count. */
+    uint32_t volatile   cPermRefs;
+    /** The mapping address. */
+    void               *pv;
+} PGMCHUNKR3MAP;
+
+/**
+ * Allocation chunk ring-3 mapping TLB entry.
+ */
+typedef struct PGMCHUNKR3MAPTLBE
+{
+    /** The chunk id. */
+    uint32_t                    idChunk;
+#if HC_ARCH_BITS == 64
+    uint32_t                    u32Padding; /**< alignment padding. */
+#endif 
+    /** The chunk map. */
+    HCPTRTYPE(PPGMCHUNKR3MAP)   pChunk;
+} PGMCHUNKR3MAPTLBE;
+/** Pointer to the an allocation chunk ring-3 mapping TLB entry. */
+typedef PGMCHUNKR3MAPTLBE *PPGMCHUNKR3MAPTLBE;
+
+/** The number of TLB entries in PGMCHUNKR3TLB. */
+#define PGMCHUNKR3MAPTLB_ENTRIES   32
+
+/**
+ * Allocation chunk ring-3 mapping TLB.
+ * 
+ * @remarks We use a TLB to speed up lookups by avoiding walking the AVL.
+ *          At first glance this might look kinda odd since AVL trees are 
+ *          supposed to give the most optimial lookup times of all trees
+ *          due to their balancing. However, take a tree with 1023 nodes 
+ *          in it, that's 10 levels, meaning that most searches has to go
+ *          down 9 levels before they find what they want. This isn't fast
+ *          compared to a TLB hit. There is the factor of cache misses,
+ *          and of course the problem with trees and branch prediction.
+ *          This is why we use TLBs in front of most of the trees.
+ * 
+ * @todo    Generalize this TLB + AVL stuff, shouldn't be all that 
+ *          difficult when we switch to inlined AVL trees (from kStuff).
+ */
+typedef struct PGMCHUNKR3MAPTLB
+{
+    /** The TLB entries. */
+    PGMCHUNKR3MAPTLBE   aEntries[PGMCHUNKR3MAPTLB_ENTRIES];
+} PGMCHUNKR3MAPTLB;
+
+
+/**
+ * Ring-3 guest page mapping TLB entry.
+ * @remarks used in ring-0 as well at the moment.
+ */
+typedef struct PGMPAGER3MAPTLBE
+{
+    /** The page id. */
+    uint32_t                    idPage;
+#if HC_ARCH_BITS == 64
+    uint32_t                    u32Padding; /**< alignment padding. */
+#endif 
+    /** The guest page. */
+    HCPTRTYPE(PPGMPAGE)         pPage;
+    /** Pointer to the page mapping tracking structure, PGMCHUNKR3MAP. */
+    HCPTRTYPE(PPGMCHUNKR3MAP)   pMap;
+    /** The address */
+    HCPTRTYPE(void *)           pv;
+} PGMPAGER3MAPTLBE;
+/** Pointer to an entry in the HC physical TLB. */
+typedef PGMPAGER3MAPTLBE *PPGMPAGER3MAPTLBE;
+
+
+/** The number of entries in the ring-3 guest page mapping TLB. */
+#define PGMPAGER3MAPTLB_ENTRIES 64
+         
+/**
+ * Ring-3 guest page mapping TLB.
+ * @remarks used in ring-0 as well at the moment.
+ */
+typedef struct PGMPAGER3MAPTLB
+{
+    /** The TLB entries. */
+    PGMPAGER3MAPTLBE            aEntries[PGMPAGER3MAPTLB_ENTRIES];
+} PGMPAGER3MAPTLB;
+/** Pointer to the ring-3 guest page mapping TLB. */
+typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
+
+
+
+
 /** @name PGM Pool Indexes.
  * Aka. the unique shadow page identifier.
  * @{ */
@@ -1499,6 +1608,33 @@ typedef struct PGM
     PGMPHYSCACHE                    pgmphysreadcache;
     /** PGMPhysWrite cache */
     PGMPHYSCACHE                    pgmphyswritecache;
+
+    /** 
+     * Data associated with managing the ring-3 mappings of the allocation chunks.
+     */
+    struct 
+    {
+        /** The chunk tree, ordered by chunk id. */
+        HCPTRTYPE(PAVLU32NODECORE)  pTree;
+        /** The chunk mapping TLB. */
+        PGMCHUNKR3MAPTLB            Tlb;
+        /** The number of mapped chunks. */
+        uint32_t                    c;
+        /** The maximum number of mapped chunks. 
+         * @cfgm    PGM/MaxRing3Chunks */
+        uint32_t                    cMax;
+        /** The chunk age tree, ordered by ageing sequence number. */
+        HCPTRTYPE(PAVLLU32NODECORE) pAgeTree;
+        /** The current time. */
+        uint32_t                    iNow;
+        /** Number of pgmR3PhysChunkFindUnmapCandidate calls left to the next ageing. */
+        uint32_t                    AgeingCountdown;
+    }                               ChunkR3Map;
+
+    /** 
+     * The page mapping TLB for ring-3 and (for the time being) ring-0.
+     */
+    PGMPAGER3MAPTLB                 PhysTlbHC;
 
     /** @name Release Statistics
      * @{ */

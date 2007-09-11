@@ -73,8 +73,12 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_PGM_LOCK,
     /** Grow the PGM shadow page pool. */
     VMMCALLHOST_PGM_POOL_GROW,
+    /** Maps a chunk into ring-3. */
+    VMMCALLHOST_PGM_MAP_CHUNK,
+#ifndef NEW_PHYS_CODE
     /** Dynamically allocate physical guest RAM. */
     VMMCALLHOST_PGM_RAM_GROW_RANGE,
+#endif 
     /** Replay the REM handler notifications. */
     VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS,
     /** Flush the GC/R0 logger. */

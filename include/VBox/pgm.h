@@ -1610,6 +1610,15 @@ PGMR3DECL(void) PGMR3PhysWriteWord(PVM pVM, RTGCPHYS GCPhys, uint16_t val);
 PGMR3DECL(void) PGMR3PhysWriteDword(PVM pVM, RTGCPHYS GCPhys, uint32_t val);
 
 /**
+ * For VMMCALLHOST_PGM_MAP_CHUNK, considered internal.
+ * 
+ * @returns see pgmR3PhysChunkMap.
+ * @param   pVM         The VM handle.
+ * @param   idChunk     The chunk to map.
+ */
+PDMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
+
+/**
  * Perform an integrity check on the PGM component.
  *
  * @returns VINF_SUCCESS if everything is fine.
