@@ -20,14 +20,25 @@ OBJS   = \
 	hgcmcall.o \
 	vboxmod.o \
 	GenericRequest.o \
+	HGCMInternal.o \
+	Init.o \
 	PhysHeap.o \
 	SysHlp.o \
-	Init.o \
 	VMMDev.o \
-	HGCMInternal.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o
+#ifdef DEBUG
+OBJS  += \
+	logbackdoor.o \
+	logformat.o \
+	strformat.o \
+	strformatrt.o \
+	strformat-vbox.o \
+	udivdi3.o \
+	umoddi3.o \
+	qdivrem.o
+#endif
 
 ifneq ($(MAKECMDGOALS),clean)
 
@@ -95,10 +106,11 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -D_X86_ -DIN_RT_R0 -DIN_SUP_R0 \
-	    -DVBGL_VBOXGUEST -DVBOX_HGCM -DLOG_TO_BACKDOOR
-#ifeq ($(BUILD_TYPE),debug) - you'll have to enable this manually to get debug stuff.
-#KFLAGS   += -DDEBUG
+KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -D_X86_ \
+	    -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DVBGL_VBOXGUEST -DVBOX_HGCM \
+	    -DLOG_TO_BACKDOOR -DRT_WITH_VBOX -DIN_MODULE
+#ifeq ($(BUILD_TYPE),debug)
+KFLAGS   += -DDEBUG
 #endif
 
 ifeq ($(KERN_VERSION), 24)
