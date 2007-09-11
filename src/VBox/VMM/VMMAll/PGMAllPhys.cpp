@@ -185,229 +185,6 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 }
 
 
-#ifdef IN_RING3
-
-/**
- * Tree enumeration callback for dealing with age rollover.
- * It will perform a simple compression of the current age.
- */
-static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pNode, void *pvUser)
-{
-    /* ASSMES iNow = 4 */
-    PPGMCHUNKR3MAPPING pChunk = (PPGMCHUNKR3MAPPING)pNode;
-    if (pChunk->iAge >= UINT32_C(0xffffff00))
-        pChunk->iAge = 3;
-    else if (pChunk->iAge >= UINT32_C(0xfffff000))
-        pChunk->iAge = 2;
-    else if (pChunk->iAge)
-        pChunk->iAge = 1;
-    return 0;
-}
-
-
-/**
- * Tree enumeration callback that updates the chunks that have
- * been used since the last
- */
-static DECLCALLBACK(int) pgmR3PhysChunkAgeingCallback(PAVLU32NODECORE pNode, void *pvUser)
-{
-    PPGMCHUNKR3MAPPING pChunk = (PPGMCHUNKR3MAPPING)pNode;
-    if (!pChunk->iAge)
-    {
-        PVM pVM = (PVM)pvUser;
-        RTAvllU32Remove(&pVM->pgm.s.R3ChunkTlb.pAgeTree, pChunk->AgeCore.Key);
-        pChunk->AgeCore.Key = pChunk->iAge = pVM->pgm.s.R3ChunkTlb.iNow;
-        RTAvllU32Insert(&pVM->pgm.s.R3ChunkTlb.pAgeTree, &pChunk->AgeCore);
-    }
-
-    return 0;
-}
-
-
-/**
- * Performs ageing of the ring-3 chunk mappings.
- *
- * @param   pVM         The VM handle.
- */
-PGMR3DECL(void) PGMR3PhysChunkAgeing(PVM pVM)
-{
-    pVM->pgm.s.R3ChunkMap.AgeingCountdown = RT_MIN(pVM->pgm.s.R3ChunkMap.cMax / 4, 1024);
-    pVM->pgm.s.R3ChunkMap.iNow++;
-    if (pVM->pgm.s.R3ChunkMap.iNow == 0)
-    {
-        pVM->pgm.s.R3ChunkMap.iNow = 20;
-        RTAvlU32DoWithAll(&pVM->pgm.s.R3ChunkMap.pTree, true /*fFromLeft*/, pgmR3PhysChunkAgeingRolloverCallback, NULL);
-    }
-    RTAvlU32DoWithAll(&pVM->pgm.s.R3ChunkMap.pTree, true /*fFromLeft*/, pgmR3PhysChunkAgeingCallback, pVM);
-}
-
-
-/**
- * The structure passed in the pvUser argument of pgmR3PhysChunkUnmapCandidateCallback().
- */
-typedef struct PGMR3PHYSCHUNKUNMAPCB
-{
-    PVM                 pVM;            /**< The VM handle. */
-    PPGMR3CHUNKMAP      pChunk;         /**< The chunk to unmap. */
-} PGMR3PHYSCHUNKUNMAPCB, *PPGMR3PHYSCHUNKUNMAPCB;
-
-
-/**
- * Callback used to find the mapping that's been unused for
- * the longest time.
- */
-static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE pNode, void *pvUser)
-{
-    do
-    {
-        PPGMR3CHUNKMAP pChunk = (PPGMR3CHUNKMAP)((uint8_t *)pNode - RT_OFFSETOF(PGMR3CHUNKMAP, AgeCore));
-        if (    pChunk->iAge
-            &&  !pChunk->cRefs)
-        {
-            /*
-             * Check that it's not in any of the TLBs.
-             */
-            PVM pVM = ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pVM;
-            for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.R3ChunkTlb->aEntries); i++)
-                if (pVM->pgm.s.R3ChunkTlb->aEntries[i].pChunk == pChunk)
-                {
-                    pChunk = NULL;
-                    break;
-                }
-            if (pChunk)
-                for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.CTXSUFF(PhysTlb)->aEntries); i++)
-                    if (pVM->pgm.s.CTXSUFF(PhysTlb)->aEntries[i].pChunk == pChunk)
-                    {
-                        pChunk = NULL;
-                        break;
-                    }
-            if (pChunk)
-            {
-                ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pChunk = pChunk;
-                return 1; /* done */
-            }
-        }
-
-        /* next with the same age - this version of the AVL API doesn't enumerate the list, so we have to do it. */
-        pNode = pNode->pList;
-    } while (pNode);
-    return 0;
-}
-
-
-/**
- * Finds a good candidate for unmapping when the ring-3 mapping cache is full.
- *
- * The candidate will not be part of any TLBs, so no need to flush
- * anything afterwards.
- *
- * @returns Chunk id.
- * @param   pVM         The VM handle.
- */
-int pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
-{
-    /*
-     * Do tree ageing first?
-     */
-    if (pVM->pgm.s.R3ChunkMap.AgeingCountdown-- == 0)
-        pgmR3PhysChunkAgeing(pVM);
-
-    /*
-     * Enumerate the age tree starting with the left most node.
-     */
-    PGMR3PHYSCHUNKUNMAPCB Args;
-    Args.pVM = pVM;
-    Args.pChunk = NULL;
-    if (RTAvlU32DoWithAll(&pVM->pgm.s.R3ChunkMap.pAgeTree, true /*fFromLeft*/, pgmR3PhysChunkUnmapCandidateCallback, pVM))
-        return Args.pChunk->idChunk;
-    return INT32_MAX;
-}
-
-
-/**
- * Maps the given chunk into the ring-3 mapping cache.
- *
- * This will call ring-0.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   idChunk     The chunk in question.
- * @param   ppChunk     Where to store the chunk tracking structure.
- *
- * @remarks Called from within the PGM critical section.
- */
-int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAPPING ppChunk)
-{
-    /*
-     * Allocate a new tracking structure first.
-     */
-#if 0 /* for later when we've got a separate mapping method for ring-0. */
-    PPGMCHUNKR3MAPPING pChunk = (PPGMCHUNKR3MAPPING)MMR3HeapAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk));
-#else
-    PPGMCHUNKR3MAPPING pChunk = (PPGMCHUNKR3MAPPING)MMHyperAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk));
-#endif
-    AssertReturn(pChunk, VERR_NO_MEMORY);
-    pChunk->Core.Key = idChunk;
-    pChunk->pv = NULL;
-    pChunk->cRefs = 0;
-    pChunk->iAge = 0;
-
-    /*
-     * Request the ring-0 part to map the chunk in question and if
-     * necessary unmap another one to make space in the mapping cache.
-     */
-    PGMMAPCHUNKREQ Req;
-    Req.pvR3 = NULL;
-    Req.idChunkMap = idChunck;
-    Req.idChunkUnmap = INT32_MAX;
-    if (pVM->pgm.R3ChunkMap.c >= pVM->pgm.R3ChunkMap.cMax)
-        Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
-    /** @todo SUPCallVMMR0Ex needs to support in+out or similar.  */
-    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_PGM_MAP_CHUNK, &Req, sizeof(Req));
-    if (VBOX_SUCCESS(rc))
-    {
-        /*
-         * Update the tree.
-         */
-        /* insert the new one. */
-        AssertPtr(Req.pvR3);
-        pChunk->pv = Req.pvR3;
-        bool fRc = RTAvlU32Insert(&pVM->pgm.s.R3ChunkMap.Tree, &pChunk->Core);
-        AssertRelease(fRc);
-        pVM->pgm.s.R3ChunkMap.c++;
-
-        /* remove the unmapped one. */
-        if (Req.idChunkUnmap != INT32_MAX)
-        {
-            PPGMCHUNKR3MAPPING pUnmappedChunk = (PPGMCHUNKR3MAPPING)RTAvlU32Remove(&pVM->pgm.s.R3ChunkMap.Tree, Req.idChunkUnmap);
-            AssertRelease(pUnmappedChunk);
-            pUnmappedChunk->pv = NULL;
-            pUnmappedChunk->Key = INT32_MAX;
-#if 0 /* for later when we've got a separate mapping method for ring-0. */
-            MMR3HeapFree(pUnmappedChunk);
-#else
-            MMHyperFree(pVM, pUnmappedChunk);
-#endif
-            pVM->pgm.R3ChunkMap.c--;
-        }
-    }
-    else
-    {
-        AssertRC(rc);
-#if 0 /* for later when we've got a separate mapping method for ring-0. */
-        MMR3HeapFree(pChunk);
-#else
-        MMHyperFree(pVM, pChunk);
-#endif
-        pChunk = NULL;
-    }
-
-    *ppChunk = pChunk;
-    return rc;
-}
-#endif /* IN_RING3 */
-
-
 /**
  * Maps a page into the current virtual address space so it can be accessed.
  *
@@ -471,7 +248,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
             pChunk = (PPGMR3CHUNK)RTAvlU32Get(&pVM->pgm.s.R3ChunkMap.Tree, idChunk);
             Assert(pChunk);
 #else
-            int rc = pgmR3PhysChunkMap(pVM, idChunk, &pChunk);
+            int rc = PGMR3PhysChunkMap(pVM, idChunk, &pChunk);
             if (VBOX_FAILURE(rc))
                 return rc;
 #endif
@@ -1912,7 +1689,6 @@ PGMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
 PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
     RTGCPHYS    GCPhys;
-    RTGCUINTPTR offset;
     int         rc;
 
     /*
@@ -1986,7 +1762,6 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
 PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
     RTGCPHYS    GCPhys;
-    RTGCUINTPTR offset;
     int         rc;
 
     /*
