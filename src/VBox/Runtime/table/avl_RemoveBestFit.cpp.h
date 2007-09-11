@@ -44,14 +44,14 @@ RTDECL(PKAVLNODECORE) KAVL_FN(RemoveBestFit)(PPKAVLNODECORE ppTree, KAVLKEY Key,
     PKAVLNODECORE   pNode = KAVL_FN(GetBestFit)(ppTree, Key, fAbove);
     if (pNode != NULL)
     {
-        #ifdef KAVL_EQUAL_ALLOWED
+#ifdef KAVL_EQUAL_ALLOWED
         if (pNode->pList != KAVL_NULL)
         {
-            PKAVLANODECORE pRet = KAVL_GET_POINTER(&pNode->pList);
+            PKAVLNODECORE pRet = KAVL_GET_POINTER(&pNode->pList);
             KAVL_SET_POINTER_NULL(&pNode->pList, &pRet->pList);
             return pRet;
         }
-        #endif
+#endif
         pNode = KAVL_FN(Remove)(ppTree, pNode->Key);
     }
     return pNode;

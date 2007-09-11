@@ -150,6 +150,44 @@ RTDECL(int)             RTAvlU32Destroy(PPAVLU32NODECORE pTree, PAVLU32CALLBACK 
 
 
 
+/** AVL tree of uint32_t, list duplicates.
+ * @{
+ */
+
+/** AVL key type. */
+typedef uint32_t    AVLLU32KEY;
+
+/** AVL Core node. */
+typedef struct _AVLLU32NodeCore
+{
+    AVLLU32KEY                  Key;        /**< Key value. */
+    unsigned char               uchHeight;  /**< Height of this tree: max(height(left), height(right)) + 1 */
+    struct _AVLLU32NodeCore    *pLeft;      /**< Pointer to left leaf node. */
+    struct _AVLLU32NodeCore    *pRight;     /**< Pointer to right leaf node. */
+    struct _AVLLU32NodeCore    *pList;      /**< Pointer to next node with the same key. */
+} AVLLU32NODECORE, *PAVLLU32NODECORE, **PPAVLLU32NODECORE;
+
+/** Callback function for RTAvllU32DoWithAll() & RTAvllU32Destroy(). */
+typedef DECLCALLBACK(int) AVLLU32CALLBACK(PAVLLU32NODECORE, void*);
+/** Pointer to callback function for RTAvllU32DoWithAll() & RTAvllU32Destroy(). */
+typedef AVLLU32CALLBACK *PAVLLU32CALLBACK;
+
+
+/*
+ * Functions.
+ */
+RTDECL(bool)                RTAvllU32Insert(PPAVLLU32NODECORE ppTree, PAVLLU32NODECORE pNode);
+RTDECL(PAVLLU32NODECORE)    RTAvllU32Remove(PPAVLLU32NODECORE ppTree, AVLLU32KEY Key);
+RTDECL(PAVLLU32NODECORE)    RTAvllU32Get(PPAVLLU32NODECORE ppTree, AVLLU32KEY Key);
+RTDECL(PAVLLU32NODECORE)    RTAvllU32GetBestFit(PPAVLLU32NODECORE ppTree, AVLLU32KEY Key, bool fAbove);
+RTDECL(PAVLLU32NODECORE)    RTAvllU32RemoveBestFit(PPAVLLU32NODECORE ppTree, AVLLU32KEY Key, bool fAbove);
+RTDECL(int)                 RTAvllU32DoWithAll(PPAVLLU32NODECORE ppTree, int fFromLeft, PAVLLU32CALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)                 RTAvllU32Destroy(PPAVLLU32NODECORE pTree, PAVLLU32CALLBACK pfnCallBack, void *pvParam);
+
+/** @} */
+
+
+
 /** AVL tree of RTGCPHYSes - using relative offsets internally.
  * @{
  */

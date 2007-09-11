@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 1999-2002 knut st. osmundsen (bird-src-spam@anduin.net)
+ * Copyright (C) 1999-2007 knut st. osmundsen (bird-src-spam@anduin.net)
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
 
 
 /**
- * Iterates tru all nodes in the given tree.
+ * Iterates thru all nodes in the given tree.
  * @returns   0 on success. Return from callback on failure.
  * @param     ppTree   Pointer to the AVL-tree root node pointer.
  * @param     fFromLeft    TRUE:  Left to right.
@@ -32,6 +32,9 @@ RTDECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCALLBA
 {
     KAVLSTACK2      AVLStack;
     PKAVLNODECORE   pNode;
+#ifdef KAVL_EQUAL_ALLOWED
+    PKAVLNODECORE   pEqual;
+#endif
     int             rc;
 
     if (*ppTree == KAVL_NULL)
@@ -62,6 +65,15 @@ RTDECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCALLBA
             rc = pfnCallBack(pNode, pvParam);
             if (rc)
                 return rc;
+#ifdef KAVL_EQUAL_ALLOWED
+            if (pNode->pList != KAVL_NULL)
+                for (pEqual = KAVL_GET_POINTER(&pNode->pList); pEqual; pEqual = KAVL_GET_POINTER_NULL(&pEqual->pList))
+                {
+                    rc = pfnCallBack(pEqual, pvParam);
+                    if (rc)
+                        return rc;
+                }
+#endif
 
             /* right */
             AVLStack.cEntries--;
@@ -78,7 +90,6 @@ RTDECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCALLBA
         {
             pNode = AVLStack.aEntries[AVLStack.cEntries - 1];
 
-
             /* right */
             if (!AVLStack.achFlags[AVLStack.cEntries - 1]++)
             {
@@ -94,6 +105,15 @@ RTDECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCALLBA
             rc = pfnCallBack(pNode, pvParam);
             if (rc)
                 return rc;
+#ifdef KAVL_EQUAL_ALLOWED
+            if (pNode->pList != KAVL_NULL)
+                for (pEqual = KAVL_GET_POINTER(&pNode->pList); pEqual; pEqual = KAVL_GET_POINTER_NULL(&pEqual->pList))
+                {
+                    rc = pfnCallBack(pEqual, pvParam);
+                    if (rc)
+                        return rc;
+                }
+#endif
 
             /* left */
             AVLStack.cEntries--;
