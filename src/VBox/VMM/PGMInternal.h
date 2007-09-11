@@ -1834,6 +1834,21 @@ typedef struct PGM
      */
     PGMPAGER3MAPTLB                 PhysTlbHC;
 
+    /** @name   The zero page.
+     * @{ */
+    /** The host physical address of the zero page. */
+    RTHCPHYS                        HCPhysZeroPg;
+    /** The ring-3 mapping of the zero page. */ 
+    RTR3PTR                         pvZeroPgR3;
+    /** The ring-0 mapping of the zero page. */ 
+    RTR0PTR                         pvZeroPgR0;
+    /** The GC mapping of the zero page. */ 
+    RTGCPTR                         pvZeroPgGC;
+#if GC_ARCH_BITS == 32
+    uint32_t                        u32ZeroAlignment; /**< Alignment padding. */
+#endif
+    /** @}*/
+
     /** @name Release Statistics
      * @{ */
     /** The number of times the guest has switched mode since last reset or statistics reset. */

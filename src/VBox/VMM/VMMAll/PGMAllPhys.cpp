@@ -249,7 +249,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
      */
     *ppMap = NULL;
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
-    /** @todo  Assert(HCPhys != pVM->pgm.s.HCPhysZeroPg); */
+    Assert(HCPhys != pVM->pgm.s.HCPhysZeroPg);
     return PGMGCDynMapHCPage(pVM, HCPhys, ppv);
 
 #else /* IN_RING3 || IN_RING0 */
@@ -297,7 +297,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
     else
     {
         Assert(PGM_PAGE_IS_ZERO(pPage));
-        ///@todo *ppv = pVM->pgm.s.pvZeroPgR3;
+        *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
         *ppMap = NULL;
         return VINF_SUCCESS;
     }
@@ -358,9 +358,9 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
     }
     else
     {
-        /** @todo Assert(PGM_PAGE_GET_HCPHYS(pPage) == pPGM->HCPhysZeroPg); */
+        Assert(PGM_PAGE_GET_HCPHYS(pPage) == pPGM->HCPhysZeroPg);
         pTlbe->pMap = NULL;
-        /** @todo pTlbe->pv = pPGM->pvZeroPgR3; */
+        pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
     pTlbe->pPage = pPage;
     return VINF_SUCCESS;
