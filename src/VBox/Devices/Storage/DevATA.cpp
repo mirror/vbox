@@ -1621,7 +1621,7 @@ static bool atapiReadSS(ATADevState *s)
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     cbTransfer = RT_MIN(s->cbTotalTransfer, s->cbIOBuffer);
     cSectors = cbTransfer / s->cbATAPISector;
-    Assert(cSectors * s->cbATAPISector == cbTransfer);
+    Assert(cSectors * s->cbATAPISector <= cbTransfer);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, s->iATAPILBA));
 
     PDMCritSectLeave(&pCtl->lock);
@@ -1672,6 +1672,10 @@ static bool atapiReadSS(ATADevState *s)
         s->Led.Actual.s.fReading = 0;
         STAM_COUNTER_ADD(&s->StatBytesRead, s->cbATAPISector * cSectors);
 
+        /* The initial buffer end value has been set up based on the total
+         * transfer size. But the I/O buffer size limits what can actually be
+         * done in one transfer, so set the actual value of the buffer end. */
+        s->iIOBufferEnd = cbTransfer;
         atapiCmdOK(s);
         s->iATAPILBA += cSectors;
     }
@@ -1828,6 +1832,10 @@ static bool atapiPassthroughSS(ATADevState *s)
             Assert(cbTransfer <= s->cbTotalTransfer);
             /* Reply with the same amount of data as the real drive. */
             s->cbTotalTransfer = cbTransfer;
+            /* The initial buffer end value has been set up based on the total
+             * transfer size. But the I/O buffer size limits what can actually be
+             * done in one transfer, so set the actual value of the buffer end. */
+            s->iIOBufferEnd = cbTransfer;
             if (s->aATAPICmd[0] == SCSI_INQUIRY)
             {
                 /* Make sure that the real drive cannot be identified.
