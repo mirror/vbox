@@ -53,7 +53,7 @@ typedef struct _VBVAENABLERESULT
      *  The other purpose is to perform a synchronous command.
      *  But the goal is to have no such commands at all.
      */
-    DECLCALLBACKMEMBER(void, pfnFlush) (void *pvFlush);
+    DECLR0CALLBACKMEMBER(void, pfnFlush, (void *pvFlush));
 
     /** Pointer required by the pfnFlush callback. */
     void *pvFlush;
