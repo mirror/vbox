@@ -60,7 +60,6 @@ FILES_VBOXVFS_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/dirops.c=>dirops.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/regops.c=>regops.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/utils.c=>utils.c \
-    ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfs-utils.c=>vfs-utils.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vbsfmount.h=>vbsfmount.h \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfsmod.c=>vfsmod.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/vfsmod.h=>vfsmod.h \
