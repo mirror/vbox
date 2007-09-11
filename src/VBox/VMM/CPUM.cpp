@@ -268,7 +268,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_AMD_FEATURE_EDX_MMX
                                        | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                        | X86_CPUID_AMD_FEATURE_EDX_FFXSR
-                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - definitly not.
+                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - definitely not.
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW
                                        | 0;
