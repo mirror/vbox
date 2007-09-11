@@ -193,6 +193,8 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
     }
     *ppLogger = NULL;
 
+    if (pszErrorMsg)
+        RTStrPrintf(pszErrorMsg, cchErrorMsg, "unknown error");
 
     /*
      * Allocate a logger instance.
@@ -420,7 +422,16 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
             RTMemExecFree(*(void **)&pLogger->pfnLogger);
         }
         else
+        {
+#ifdef RT_OS_LINUX
+            /*
+             * RTMemAlloc() succeeded but RTMemExecAlloc() failed -- most probably an SELinux problem.
+             */
+            if (pszErrorMsg)
+                RTStrPrintf(pszErrorMsg, cchErrorMsg, "mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?");
+#endif /* RT_OS_LINUX */
             rc = VERR_NO_MEMORY;
+        }
         RTMemFree(pLogger);
     }
     else
