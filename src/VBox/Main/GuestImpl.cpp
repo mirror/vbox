@@ -79,9 +79,12 @@ HRESULT Guest::init (Console *aParent)
     else
         mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
 
+    /* invalidate all stats */
     for (int i=0;i<GuestStatisticType_MaxVal;i++)
         mCurrentGuestStat[i] = GUEST_STAT_INVALID;
 
+    /* start with sample 0 */
+    mCurrentGuestStat[GuestStatisticType_SampleNumber] = 0;
     return S_OK;
 }
 

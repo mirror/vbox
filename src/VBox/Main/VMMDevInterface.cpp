@@ -456,6 +456,13 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
         guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_PageFileSize, pGuestStats->u32PageFileSize / (_1M/pGuestStats->u32PageSize));
 
+    /* increase sample number */
+    ULONG sample;
+
+    int rc = guest->GetStatistic(0, GuestStatisticType_SampleNumber, &sample);
+    if (SUCCEEDED(rc))
+        guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_SampleNumber, sample+1);
+
     return VINF_SUCCESS;
 }
 
