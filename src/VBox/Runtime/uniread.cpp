@@ -194,7 +194,7 @@ static RTUNICP ToRange(const char *psz, PRTUNICP pLast)
 static char *DupStr(const char *pszStr)
 {
     if (!*pszStr)
-        return "";
+        return (char*)"";
     char *psz = strdup(pszStr);
     if (psz)
         return psz;
