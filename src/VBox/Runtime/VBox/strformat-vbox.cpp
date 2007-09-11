@@ -175,7 +175,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
 
                                         cch += pfnOutput(pvArgOutput, " ", 1);
 
-                                        for (int i = 0; i < cchPrecision && off + i < cchWidth; i++)
+                                        for (i = 0; i < cchPrecision && off + i < cchWidth; i++)
                                         {
                                             uint8_t u8 = pu8[i];
                                             cch += pfnOutput(pvArgOutput, u8 < 127 && u8 >= 32 ? (const char *)&u8 : ".", 1);

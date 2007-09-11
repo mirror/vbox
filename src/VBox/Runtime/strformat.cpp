@@ -300,10 +300,11 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
 {
     /* make a copy so we can reference it (AMD64 / gcc). */
     va_list args;
-    va_copy(args, InArgs);
-
     KSIZE       cch = 0;
     const char *pszStartOutput = pszFormat;
+
+    va_copy(args, InArgs);
+
     while (*pszFormat != '\0')
     {
         if (*pszFormat == '%')
