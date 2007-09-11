@@ -928,6 +928,14 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     rc = PDMR3CritSectInit(pVM, &pVM->pgm.s.CritSect, "PGM");
     AssertRCReturn(rc, rc);
 
+    /* 
+     * Invalidate the TLBs.
+     */
+    PGMR3PhysChunkInvalidateTLB(pVM);
+    PGMPhysInvalidatePageR3MapTLB(pVM);
+    PGMPhysInvalidatePageR0MapTLB(pVM);
+    PGMPhysInvalidatePageGCMapTLB(pVM);
+
     /*
      * Trees
      */
@@ -1376,6 +1384,13 @@ static void pgmR3InitStats(PVM pVM)
 
     STAM_REG(pVM, &pPGM->StatDynRamTotal,                   STAMTYPE_COUNTER, "/PGM/RAM/TotalAlloc",                STAMUNIT_MEGABYTES,      "Allocated mbs of guest ram.");
     STAM_REG(pVM, &pPGM->StatDynRamGrow,                    STAMTYPE_COUNTER, "/PGM/RAM/Grow",                      STAMUNIT_OCCURENCES,     "Nr of pgmr3PhysGrowRange calls.");
+
+    STAM_REG(pVM, &pPGM->StatPageHCMapTlbHits,              STAMTYPE_COUNTER, "/PGM/PageHCMap/TlbHits",                 STAMUNIT_OCCURENCES, "TLB hits.");
+    STAM_REG(pVM, &pPGM->StatPageHCMapTlbMisses,            STAMTYPE_COUNTER, "/PGM/PageHCMap/TlbMisses",               STAMUNIT_OCCURENCES, "TLB misses.");
+    STAM_REG(pVM, &pPGM->ChunkR3Map.c,                      STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                      STAMUNIT_OCCURENCES, "Number of mapped chunks.");
+    STAM_REG(pVM, &pPGM->ChunkR3Map.cMax,                   STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",                   STAMUNIT_OCCURENCES, "Maximum number of mapped chunks.");
+    STAM_REG(pVM, &pPGM->StatChunkR3MapTlbHits,             STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbHits",                STAMUNIT_OCCURENCES, "TLB hits.");
+    STAM_REG(pVM, &pPGM->StatChunkR3MapTlbMisses,           STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbMisses",              STAMUNIT_OCCURENCES, "TLB misses.");
 
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAM_REG(pVM, &pPGM->StatTrackVirgin,                   STAMTYPE_COUNTER, "/PGM/Track/Virgin",                  STAMUNIT_OCCURENCES,     "The number of first time shadowings");

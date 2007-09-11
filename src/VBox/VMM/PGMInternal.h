@@ -480,15 +480,58 @@ typedef struct PGMPAGE
 {
     /** The physical address and a whole lot of other stuff. All bits are used! */
     RTHCPHYS    HCPhys;
-    uint32_t    u32A;
+    /** The page state. */
+    uint32_t    u2State : 2;
+    /** Flag indicating that a write monitored page was written to when set. */
+    uint32_t    fWrittenTo : 1;
+    /** For later. */
+    uint32_t    fSomethingElse : 1;
+    /** The Page ID. */
+    uint32_t    idPage : 28;
     uint32_t    u32B;
 } PGMPAGE;
+AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
 typedef PGMPAGE *PPGMPAGE;
 /** Pointer to a const physical guest page. */
 typedef const PGMPAGE *PCPGMPAGE;
 /** Pointer to a physical guest page pointer. */
 typedef PPGMPAGE *PPPGMPAGE;
+
+/** @name The Page state, PGMPAGE::u2State.
+ * @{ */
+/** The zero page.
+ * This is a per-VM page that's never ever mapped writable. */
+#define PGM_PAGE_STATE_ZERO             0
+/** A allocated page.
+ * This is a per-VM page allocated from the page pool.
+ */
+#define PGM_PAGE_STATE_ALLOCATED        1
+/** A allocated page that's being monitored for writes.
+ * The shadow page table mappings are read-only. When a write occurs, the 
+ * fWrittenTo member is set, the page remapped as read-write and the state
+ * moved back to allocated. */
+#define PGM_PAGE_STATE_WRITE_MONITORED  2
+/** The page is shared, aka. copy-on-write.
+ * This is a page that's shared with other VMs. */
+#define PGM_PAGE_STATE_SHARED           3    
+/** @} */
+
+
+/**
+ * Gets the page state.
+ * @returns page state (PGM_PAGE_STATE_*).
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_STATE(pPage)       ( (pPage)->u2State )
+
+/**
+ * Sets the page state.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ * @param   _uState     The new page state.
+ */
+#define PGM_PAGE_SET_STATE(pPage, _uState) \
+                                        do { (pPage)->u2State = (_uState); } while (0)
 
 
 /**
@@ -499,11 +542,101 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_GET_HCPHYS(pPage)      ( (pPage)->HCPhys & UINT64_C(0x0000fffffffff000) )
 
 /**
+ * Sets the host physical address of the guest page.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ * @param   _HCPhys     The new host physical address.
+ */
+#define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
+                                        do { (pPage)->HCPhys = (((pPage)->HCPhys) & UINT64_C(0xffff000000000fff)) \
+                                                             | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
+
+/** The chunk shift. (2^20 = 1 MB) */
+#define GPM_CHUNK_SHIFT                 20
+/** The allocation chunk size. */
+#define GPM_CHUNK_SIZE                  (1U << GPM_CHUNK_SIZE_LOG2)
+/** The shift factor for converting a page id into a chunk id. */
+#define GPM_CHUNKID_SHIFT               (GPM_CHUNK_SHIFT - PAGE_SHIFT)
+/** The NIL Chunk ID value. */
+#define NIL_GPM_CHUNKID                 0
+/** The NIL Page ID value. */
+#define NIL_GPM_PAGEID                  0
+
+/**
+ * Get the Page ID.
+ * @returns The Page ID; NIL_GPM_PAGEID if it's a ZERO page.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_PAGEID(pPage)      ( (pPage)->idPage )
+/* later:
+#define PGM_PAGE_GET_PAGEID(pPage)      (   ((uint32_t)(pPage)->HCPhys >> (48 - 12))
+                                         |  ((uint32_t)(pPage)->HCPhys & 0xfff) )
+*/
+/**
+ * Sets the Page ID.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->idPage = (_idPage); } while (0)
+/* later: 
+#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->HCPhys = (((pPage)->HCPhys) & UINT64_C(0x0000fffffffff000)) \
+                                                                  | ((_idPage) & 0xfff) \
+                                                                  | (((_idPage) & 0x0ffff000) << (48-12)); } while (0)
+*/
+
+/**
+ * Get the Chunk ID.
+ * @returns The Chunk ID; NIL_GPM_CHUNKID if it's a ZERO page.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_CHUNKID(pPage)     ( (pPage)->idPage >> GPM_CHUNKID_SHIFT )
+/* later:
+#if GPM_CHUNKID_SHIFT == 12
+# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> 48) )
+#elif GPM_CHUNKID_SHIFT > 12
+# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> (48 + (GPM_CHUNKID_SHIFT - 12)) )
+#elif GPM_CHUNKID_SHIFT < 12
+# define PGM_PAGE_GET_CHUNKID(pPage)    (   ( (uint32_t)((pPage)->HCPhys >> 48)   << (12 - GPM_CHUNKID_SHIFT) ) \
+                                         |  ( (uint32_t)((pPage)->HCPhys & 0xfff) >> GPM_CHUNKID_SHIFT ) )
+#else
+# error "GPM_CHUNKID_SHIFT isn't defined or something."
+#endif
+*/
+
+/**
+ * Get the index of the page within the allocaiton chunk.
+ * @returns The page index.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPage & (RT_BIT_32(GPM_CHUNKID_SHIFT) - 1) )
+/* later:
+#if GPM_CHUNKID_SHIFT <= 12
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhys & (RT_BIT_32(GPM_CHUNKID_SHIFT) - 1)) )
+#else
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  (   (uint32_t)((pPage)->HCPhys & 0xfff) \
+                                             |  ( (uint32_t)((pPage)->HCPhys >> 48) & (RT_BIT_32(GPM_CHUNKID_SHIFT - 12) - 1) ) )
+#endif
+*/
+
+/**
  * Checks if the page is 'reserved'.
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_IS_RESERVED(pPage)     ( !!((pPage)->HCPhys & MM_RAM_FLAGS_RESERVED) )
+
+/**
+ * Checks if the page is marked for MMIO.
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_MMIO(pPage)         ( !!((pPage)->HCPhys & MM_RAM_FLAGS_MMIO) )
+
+/**
+ * Checks if the page is backed by the ZERO page.
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_ZERO(pPage)         ( (pPage)->u2State == PGM_PAGE_STATE_ZERO )
+
 
 
 /**
@@ -609,18 +742,19 @@ typedef struct PGMCHUNKR3MAP
 typedef struct PGMCHUNKR3MAPTLBE
 {
     /** The chunk id. */
-    uint32_t                    idChunk;
+    uint32_t volatile                   idChunk;
 #if HC_ARCH_BITS == 64
-    uint32_t                    u32Padding; /**< alignment padding. */
+    uint32_t                            u32Padding; /**< alignment padding. */
 #endif 
     /** The chunk map. */
-    HCPTRTYPE(PPGMCHUNKR3MAP)   pChunk;
+    HCPTRTYPE(PPGMCHUNKR3MAP) volatile  pChunk;
 } PGMCHUNKR3MAPTLBE;
 /** Pointer to the an allocation chunk ring-3 mapping TLB entry. */
 typedef PGMCHUNKR3MAPTLBE *PPGMCHUNKR3MAPTLBE;
 
-/** The number of TLB entries in PGMCHUNKR3TLB. */
-#define PGMCHUNKR3MAPTLB_ENTRIES   32
+/** The number of TLB entries in PGMCHUNKR3MAPTLB. 
+ * @remark Must be a power of two value. */
+#define PGM_CHUNKR3MAPTLB_ENTRIES   32
 
 /**
  * Allocation chunk ring-3 mapping TLB.
@@ -641,8 +775,15 @@ typedef PGMCHUNKR3MAPTLBE *PPGMCHUNKR3MAPTLBE;
 typedef struct PGMCHUNKR3MAPTLB
 {
     /** The TLB entries. */
-    PGMCHUNKR3MAPTLBE   aEntries[PGMCHUNKR3MAPTLB_ENTRIES];
+    PGMCHUNKR3MAPTLBE   aEntries[PGM_CHUNKR3MAPTLB_ENTRIES];
 } PGMCHUNKR3MAPTLB;
+
+/**
+ * Calculates the index of a guest page in the Ring-3 Chunk TLB.
+ * @returns Chunk TLB index.
+ * @param   idChunk         The Chunk ID.
+ */
+#define PGM_CHUNKR3MAPTLB_IDX(idChunk)     ( (idChunk) & (PGM_CHUNKR3MAPTLB_ENTRIES - 1) )
 
 
 /**
@@ -651,24 +792,25 @@ typedef struct PGMCHUNKR3MAPTLB
  */
 typedef struct PGMPAGER3MAPTLBE
 {
-    /** The page id. */
-    uint32_t                    idPage;
+    /** Address of the page. */
+    RTGCPHYS volatile                   GCPhys;
 #if HC_ARCH_BITS == 64
-    uint32_t                    u32Padding; /**< alignment padding. */
+    uint32_t                            u32Padding; /**< alignment padding. */
 #endif 
     /** The guest page. */
-    HCPTRTYPE(PPGMPAGE)         pPage;
+    HCPTRTYPE(PPGMPAGE) volatile        pPage;
     /** Pointer to the page mapping tracking structure, PGMCHUNKR3MAP. */
-    HCPTRTYPE(PPGMCHUNKR3MAP)   pMap;
+    HCPTRTYPE(PPGMCHUNKR3MAP) volatile  pMap;
     /** The address */
-    HCPTRTYPE(void *)           pv;
+    HCPTRTYPE(void *) volatile          pv;
 } PGMPAGER3MAPTLBE;
 /** Pointer to an entry in the HC physical TLB. */
 typedef PGMPAGER3MAPTLBE *PPGMPAGER3MAPTLBE;
 
 
-/** The number of entries in the ring-3 guest page mapping TLB. */
-#define PGMPAGER3MAPTLB_ENTRIES 64
+/** The number of entries in the ring-3 guest page mapping TLB. 
+ * @remarks The value must be a power of two. */
+#define PGM_PAGER3MAPTLB_ENTRIES 64
          
 /**
  * Ring-3 guest page mapping TLB.
@@ -677,12 +819,68 @@ typedef PGMPAGER3MAPTLBE *PPGMPAGER3MAPTLBE;
 typedef struct PGMPAGER3MAPTLB
 {
     /** The TLB entries. */
-    PGMPAGER3MAPTLBE            aEntries[PGMPAGER3MAPTLB_ENTRIES];
+    PGMPAGER3MAPTLBE            aEntries[PGM_PAGER3MAPTLB_ENTRIES];
 } PGMPAGER3MAPTLB;
 /** Pointer to the ring-3 guest page mapping TLB. */
 typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 
+/**
+ * Calculates the index of the TLB entry for the specified guest page. 
+ * @returns Physical TLB index.
+ * @param   GCPhys      The guest physical address.
+ */
+#define PGM_PAGER3MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER3MAPTLB_ENTRIES - 1) )
 
+
+/** @name Context neutrual page mapper TLB. 
+ * 
+ * Hoping to avoid some code and bug duplication parts of the GCxxx->CCPtr
+ * code is writting in a kind of context neutrual way. Time will show whether 
+ * this actually makes sense or not...
+ * 
+ * @{ */
+/** @typedef PPGMPAGEMAPTLB
+ * The page mapper TLB pointer type for the current context. */
+/** @typedef PPGMPAGEMAPTLB
+ * The page mapper TLB entry pointer type for the current context. */
+/** @typedef PPGMPAGEMAPTLB
+ * The page mapper TLB entry pointer pointer type for the current context. */
+/** @def PGMPAGEMAPTLB_ENTRIES
+ * The number of TLB entries in the page mapper TLB for the current context. */
+/** @def PGM_PAGEMAPTLB_IDX
+ * Calculate the TLB index for a guest physical address.
+ * @returns The TLB index.
+ * @param   GCPhys      The guest physical address. */
+/** @typedef PPGMPAGEMAP
+ * Pointer to a page mapper unit for current context. */
+/** @typedef PPPGMPAGEMAP
+ * Pointer to a page mapper unit pointer for current context. */
+#ifdef IN_GC
+// typedef PPGMPAGEGCMAPTLB       PPGMPAGEMAPTLB;
+// typedef PPGMPAGEGCMAPTLBE      PPGMPAGEMAPTLBE;
+// typedef PPGMPAGEGCMAPTLBE     *PPPGMPAGEMAPTLBE;
+# define PGM_PAGEMAPTLB_ENTRIES     PGM_PAGEGCMAPTLB_ENTRIES
+# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGEGCMAPTLB_IDX(GCPhys)     
+ typedef void *                 PPGMPAGEMAP;
+ typedef void **                PPPGMPAGEMAP;
+//#elif IN_RING0
+// typedef PPGMPAGER0MAPTLB       PPGMPAGEMAPTLB;
+// typedef PPGMPAGER0MAPTLBE      PPGMPAGEMAPTLBE;
+// typedef PPGMPAGER0MAPTLBE     *PPPGMPAGEMAPTLBE;
+//# define PGM_PAGEMAPTLB_ENTRIES     PGM_PAGER0MAPTLB_ENTRIES
+//# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGER0MAPTLB_IDX(GCPhys)     
+// typedef PPGMCHUNKR0MAP         PPGMPAGEMAP;
+// typedef PPPGMCHUNKR0MAP        PPPGMPAGEMAP;
+#else
+ typedef PPGMPAGER3MAPTLB       PPGMPAGEMAPTLB;
+ typedef PPGMPAGER3MAPTLBE      PPGMPAGEMAPTLBE;
+ typedef PPGMPAGER3MAPTLBE     *PPPGMPAGEMAPTLBE;
+# define PGM_PAGEMAPTLB_ENTRIES     PGM_PAGER3MAPTLB_ENTRIES
+# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGER3MAPTLB_IDX(GCPhys)     
+ typedef PPGMCHUNKR3MAP         PPGMPAGEMAP;
+ typedef PPPGMCHUNKR3MAP        PPPGMPAGEMAP;
+#endif 
+/** @} */
 
 
 /** @name PGM Pool Indexes.
@@ -1886,6 +2084,15 @@ typedef struct PGM
     STAMPROFILE StatTrackDeref;
 # endif
 
+    /** Ring-3/0 page mapper TLB hits. */
+    STAMCOUNTER StatPageHCMapTlbHits;
+    /** Ring-3/0 page mapper TLB misses. */
+    STAMCOUNTER StatPageHCMapTlbMisses;
+    /** Ring-3/0 chunk mapper TLB hits. */
+    STAMCOUNTER StatChunkR3MapTlbHits;
+    /** Ring-3/0 chunk mapper TLB misses. */
+    STAMCOUNTER StatChunkR3MapTlbMisses;
+
     /** Allocated mbs of guest ram */
     STAMCOUNTER     StatDynRamTotal;
     /** Nr of pgmr3PhysGrowRange calls. */
@@ -1935,14 +2142,16 @@ void            pgmHandlerVirtualDumpPhysPages(PVM pVM);
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
+int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 #ifdef IN_RING3
 int             pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
+int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
 
 int             pgmR3PoolInit(PVM pVM);
 void            pgmR3PoolRelocate(PVM pVM);
 void            pgmR3PoolReset(PVM pVM);
 
-#endif
+#endif /* IN_RING3 */
 #ifdef IN_GC
 void           *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
@@ -2248,6 +2457,36 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
     *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
     return VINF_SUCCESS;
 }
+
+
+#ifndef IN_GC
+/**
+ * Queries the Physical TLB entry for a physical guest page,
+ * attemting to load the TLB entry if necessary.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ * @param   pPGM        The PGM instance handle.
+ * @param   GCPhys      The address of the guest page.
+ * @param   ppTlbe      Where to store the pointer to the TLB entry.
+ */
+  
+DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLBE ppTlbe)
+{
+    int rc;
+    PPGMPAGEMAPTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
+    if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
+    {
+        STAM_COUNTER_INC(&pPGM->CTXMID(StatPage,MapTlbHits));
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = pgmPhysPageLoadIntoTlb(pPGM, GCPhys);
+    *ppTlbe = pTlbe;
+    return rc;
+}
+#endif /* !IN_GC */
 
 
 #ifndef NEW_PHYS_CODE

@@ -186,7 +186,10 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             while (iPage-- > 0)
             {
                 pNew->aPages[iPage].HCPhys = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].u32A = 0;
+                pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ALLOCATED;
+                pNew->aPages[iPage].fWrittenTo = 0;
+                pNew->aPages[iPage].fSomethingElse = 0;
+                pNew->aPages[iPage].idPage = 0;
                 pNew->aPages[iPage].u32B = 0;
             }
         }
@@ -203,7 +206,10 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             while (iPage-- > 0)
             {
                 pNew->aPages[iPage].HCPhys = fFlags; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].u32A = 0;
+                pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ZERO;
+                pNew->aPages[iPage].fWrittenTo = 0;
+                pNew->aPages[iPage].fSomethingElse = 0;
+                pNew->aPages[iPage].idPage = 0;
                 pNew->aPages[iPage].u32B = 0;
             }
         }
@@ -214,7 +220,10 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             while (iPage-- > 0)
             {
                 pNew->aPages[iPage].HCPhys = HCPhysDummyPage; /** @todo PAGE FLAGS */
-                pNew->aPages[iPage].u32A = 0;
+                pNew->aPages[iPage].u2State = PGM_PAGE_STATE_ZERO;
+                pNew->aPages[iPage].fWrittenTo = 0;
+                pNew->aPages[iPage].fSomethingElse = 0;
+                pNew->aPages[iPage].idPage = 0;
                 pNew->aPages[iPage].u32B = 0;
             }
         }
@@ -887,4 +896,22 @@ PDMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk)
     PPGMCHUNKR3MAP pChunk;
     return pgmR3PhysChunkMap(pVM, idChunk, &pChunk);
 }
+
+
+/**
+ * Invalidates the TLB for the ring-3 mapping cache.
+ * 
+ * @param   pVM         The VM handle.
+ */
+PGMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
+{
+    pgmLock(pVM);
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
+    {
+        pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].idChunk = NIL_GPM_CHUNKID;
+        pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk = NULL;
+    }
+    pgmUnlock(pVM);
+}
+
 

@@ -124,7 +124,46 @@ PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 }
 
 
-#ifdef NEW_PHYS_CODE
+/**
+ * Invalidates the GC page mapping TLB.
+ * 
+ * @param   pVM     The VM handle.
+ */
+PDMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
+{
+    /* later */
+    NOREF(pVM);
+}
+
+
+/**
+ * Invalidates the ring-0 page mapping TLB.
+ * 
+ * @param   pVM     The VM handle.
+ */
+PDMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM)
+{
+    PGMPhysInvalidatePageR3MapTLB(pVM);
+}
+
+
+/**
+ * Invalidates the ring-3 page mapping TLB.
+ * 
+ * @param   pVM     The VM handle.
+ */
+PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
+{
+    pgmLock(pVM);
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
+    {
+        pVM->pgm.s.PhysTlbHC.aEntries[i].GCPhys = NIL_RTGCPHYS;
+        pVM->pgm.s.PhysTlbHC.aEntries[i].pPage = 0;
+        pVM->pgm.s.PhysTlbHC.aEntries[i].pMap = 0;
+        pVM->pgm.s.PhysTlbHC.aEntries[i].pv = 0;
+    }
+    pgmUnlock(pVM);
+}
 
 
 /**
@@ -164,8 +203,9 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     {
         case PGM_PAGE_STATE_WRITE_MONITORED:
             pPage->fWrittenTo = true;
-            pPage->u2State = PGM_PAGE_STATE_WRITE_ALLOCATED;
+            pPage->u2State = PGM_PAGE_STATE_ALLOCATED;
             /* fall thru */
+        default: /* to shut up GCC */
         case PGM_PAGE_STATE_ALLOCATED:
             return VINF_SUCCESS;
 
@@ -208,47 +248,40 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
      * Just some sketchy GC code.
      */
     *ppMap = NULL;
-    RTHCPHYS HCPhys = pPage->HCPhys & PGM_HCPHYS_PAGE_MASK;
-    Assert(HCPhys != pVM->pgm.s.HCPhysZeroPg)
+    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+    /** @todo  Assert(HCPhys != pVM->pgm.s.HCPhysZeroPg); */
     return PGMGCDynMapHCPage(pVM, HCPhys, ppv);
 
 #else /* IN_RING3 || IN_RING0 */
 
-/**
- * Calculates the index of a guest page in the Ring-3 Chunk TLB.
- * @returns Chunk TLB index.
- * @param   idChunk         The Chunk ID.
- */
-#define PGM_R3CHUNKTLB_IDX(idChunk)     ( (idChunk) & (PGM_R3CHUNKTLB_ENTRIES - 1) )
-
     /*
      * Find/make Chunk TLB entry for the mapping chunk.
      */
-    PPGMR3CHUNK pChunk;
-    const uint32_t idChunk = PGM_PAGE_GET_PAGEID(pPage) >> XXX_CHUNKID_SHIFT;
-    PGMR3CHUNKTLBE pTlbe = &pVM->pgm.s.R3ChunkTlb.aEntries[PGM_R3CHUNKTLB_IDX(idChunk)];
+    PPGMCHUNKR3MAP pMap;
+    const uint32_t idChunk = PGM_PAGE_GET_CHUNKID(pPage);
+    PPGMCHUNKR3MAPTLBE pTlbe = &pVM->pgm.s.ChunkR3Map.Tlb.aEntries[PGM_CHUNKR3MAPTLB_IDX(idChunk)];
     if (pTlbe->idChunk == idChunk)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.StatR3ChunkTlbHits);
-        pChunk = pTlbe->pChunk;
+        STAM_COUNTER_INC(&pVM->pgm.s.StatChunkR3MapTlbHits);
+        pMap = pTlbe->pChunk;
     }
-    else
+    else if (idChunk != NIL_GPM_CHUNKID)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.StatR3ChunkTlbMisses);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatChunkR3MapTlbMisses);
 
         /*
          * Find the chunk, map it if necessary.
          */
-        pChunk = (PPGMR3CHUNK)RTAvlU32Get(&pVM->pgm.s.R3ChunkMap.Tree, idChunk);
-        if (!pChunk)
+        pMap = (PPGMCHUNKR3MAP)RTAvlU32Get(&pVM->pgm.s.ChunkR3Map.pTree, idChunk);
+        if (!pMap)
         {
 #ifdef IN_RING0
             int rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_MAP_CHUNK, idChunk);
             AssertRCReturn(rc, rc);
-            pChunk = (PPGMR3CHUNK)RTAvlU32Get(&pVM->pgm.s.R3ChunkMap.Tree, idChunk);
-            Assert(pChunk);
+            pMap = (PPGMCHUNKR3MAP)RTAvlU32Get(&pVM->pgm.s.ChunkR3Map.pTree, idChunk);
+            Assert(pMap);
 #else
-            int rc = PGMR3PhysChunkMap(pVM, idChunk, &pChunk);
+            int rc = pgmR3PhysChunkMap(pVM, idChunk, &pMap);
             if (VBOX_FAILURE(rc))
                 return rc;
 #endif
@@ -258,33 +291,25 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
          * Enter it into the Chunk TLB.
          */
         pTlbe->idChunk = idChunk;
-        pTlbe->pChunk = pChunk;
-        pChunk->iAge = 0;
+        pTlbe->pChunk = pMap;
+        pMap->iAge = 0;
+    }
+    else
+    {
+        Assert(PGM_PAGE_IS_ZERO(pPage));
+        ///@todo *ppv = pVM->pgm.s.pvZeroPgR3;
+        *ppMap = NULL;
+        return VINF_SUCCESS;
     }
 
-    *ppv = (uint8_t *)pMap->pv + (iPage << PAGE_SHIFT);
-    *ppMap = pChunk;
+    *ppv = (uint8_t *)pMap->pv + (PGM_PAGE_GET_PAGE_IN_CHUNK(pPage) << PAGE_SHIFT);
+    *ppMap = pMap;
     return VINF_SUCCESS;
 #endif /* IN_RING3 */
 }
 
 
-/**
- * Calculates the index of a guest page in the Physical TLB.
- * @returns Physical TLB index.
- * @param   GCPhys      The guest physical address.
- */
-#define PGM_R3PHYSTLB_IDX(GCPhys) ( ((GCPhys) >> PAGE_SHIFT) & (PGM_R3PHYSTLB_ENTRIES - 1) )
-
-#if defined(IN_RING3) || defined(IN_RING0)
-# define PGM_PHYSTLB_IDX(GCPhys)   PGM_R3PHYSTLB_IDX(GCPhys)
-# define PGMPHYSTLBE PGMR3PHYSTLBE
-#else /* IN_GC */
-# define PGM_PHYSTLB_IDX(GCPhys)   PGM_GCPHYSTLB_IDX(GCPhys)
-# define PGMPHYSTLBE PGMGCPHYSTLBE
-#endif
-
-
+#ifndef IN_GC
 /**
  * Load a guest page into the ring-3 physical TLB.
  *
@@ -296,7 +321,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
  */
 int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
 {
-    STAM_COUNTER_INC(&pPGM->StatR3PhysTlbMisses);
+    STAM_COUNTER_INC(&pPGM->CTXMID(StatPage,MapTlbMisses));
 
     /*
      * Find the ram range.
@@ -320,12 +345,12 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
      * Make a special case for the zero page as it is kind of special.
      */
     PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
-    PPGMR3PHYSTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PHYSTLB_IDX(GCPhys)];
-    if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ZERO)
+    PPGMPAGEMAPTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
+    if (!PGM_PAGE_IS_ZERO(pPage))
     {
         void *pv;
         PPGMPAGEMAP pMap;
-        int rc = pgmPhysPageMap(pVM, pPage, GCPhys, &pMap, &pv);
+        int rc = pgmPhysPageMap(PGM2VM(pPGM), pPage, GCPhys, &pMap, &pv);
         if (VBOX_FAILURE(rc))
             return rc;
         pTlbe->pMap = pMap;
@@ -333,43 +358,14 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
     }
     else
     {
-        Assert(PGM_PAGE_GET_HCPHYS(pPage) == pPGM->HCPhysZeroPg);
+        /** @todo Assert(PGM_PAGE_GET_HCPHYS(pPage) == pPGM->HCPhysZeroPg); */
         pTlbe->pMap = NULL;
-        pTlbe->pv = pPGM->pvZeroPgR3;
+        /** @todo pTlbe->pv = pPGM->pvZeroPgR3; */
     }
     pTlbe->pPage = pPage;
     return VINF_SUCCESS;
 }
-
-
-/**
- * Queries the Physical TLB entry for a physical guest page,
- * attemting to load the TLB entry if necessary.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success
- * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
- * @param   pPgm        The PGM instance handle.
- * @param   GCPhys      The address of the guest page.
- * @param   ppTlbe      Where to store the pointer to the TLB entry.
- */
-DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPgm, RTGCPHYS GCPhys, PPPGMPHYSTLBE ppTlbe)
-{
-    int rc;
-    PGMPHYSTLBE pTlbe = &pPgm->CTXSUFF(PhysTlb).aEntries[PGM_PHYSTLB_IDX(GCPhys)];
-    if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
-    {
-        STAM_COUNTER_INC(&pPgm->StatR3PhysTlbHits);
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = pgmPhysPageLoadIntoTlb(pVM, GCPhys);
-    *ppTlbe = pTlbe;
-    return rc;
-}
-
-
-#endif /* NEW_PHYS_CODE */
+#endif /* !IN_GC */
 
 
 /**
@@ -436,6 +432,8 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
                 }
 
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
+            pLock->pvPage = pPage;
+            pLock->pvMap = pMap;
         }
     }
 
@@ -576,63 +574,15 @@ PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 #else   /* IN_RING3 */
     pgmLock(pVM);
 
-    /*
-     * Try the Physical TLB cache.
-     * There's a high likely hood that this will work out since it's a short-term lock.
-     */
-    PPGMR3PHYSTLBE pTlbe = &pVM->pgm.s.R3PhysTlb.aEntries[PGM_R3PHYSTLB_IDX(GCPhys)];
-    if (RT_LIKELY(pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK)))
-    {
-        PPGMPAGE pPage = pTlbe->pPage;
-        Assert(PGM_PAGE_IS_NORMAL(pPage));
-        Assert(pPage->cLocks >= 1);
-        if (pPage->cLocks != PGM_PAGE_MAX_LOCKS)
-            pPage->cLocks--;
+    PPGMPAGE pPage = (PPGMPAGE)pLock->pvPage;
+    Assert(pPage->cLocks >= 1);
+    if (pPage->cLocks != PGM_PAGE_MAX_LOCKS)
+        pPage->cLocks--;
 
-        PPGMR3CHUNK pChunk = pTlbe->pChunk;
-        Assert(pChunk->cRefs >= 1);
-        pChunk->cRefs--;
-        pChunk->iAge = 0;
-    }
-    else
-    {
-        /*
-         * Find the page and unlock it.
-         */
-        PPGMRAMRANGE pRam = CTXSUFF(pVM->pgm.s.pRamRanges);
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (RT_UNLIKELY(off >= pRam->cb))
-        {
-            do
-            {
-                pRam = CTXSUFF(pRam->pNext);
-                AssertMsgRelease(pRam, ("GCPhys=%RGp\n", GCPhys));
-                off = GCPhys - pRam->GCPhys;
-            } while (off >= pRam->cb);
-        }
-        PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
-        Assert(PGM_PAGE_IS_NORMAL(pTlbe->pPage));
-        Assert(pPage->cLocks >= 1);
-        if (pPage->cLocks != PGM_PAGE_MAX_LOCKS)
-            pPage->cLocks--;
-
-        /*
-         * Now find the chunk mapping and unlock it.
-         */
-        PPGMR3CHUNK pChunk;
-        const uint32_t idChunk = PGM_PAGE_GET_PAGEID(pPage) >> XXX_CHUNKID_SHIFT;
-        PGMR3CHUNKTLBE pTlbe = &pVM->pgm.s.R3ChunkTlb.aEntries[PGM_R3CHUNKTLB_IDX(idChunk)];
-        if (pTlbe->idChunk == idChunk)
-            pChunk = pTlbe->pChunk;
-        else
-        {
-            pChunk = (PPGMR3CHUNK)RTAvlU32Get(&pVM->pgm.s.R3ChunkMap.Tree, idChunk);
-            AssertMsgRelease(pChunk, ("GCPhys=%RGp\n", GCPhys));
-            pChunk->iAge = 0;
-        }
-        Assert(pChunk->cRefs >= 1);
-        pChunk->cRefs--;
-    }
+    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)pLock->pvChunk;
+    Assert(pChunk->cRefs >= 1);
+    pChunk->cRefs--;
+    pChunk->iAge = 0;
 
     pgmUnlock(pVM);
 #endif /* IN_RING3 */
