@@ -590,13 +590,8 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 if ((pTrapStackGC >> PAGE_SHIFT) != ((pTrapStackGC - 10*sizeof(uint32_t)) >> PAGE_SHIFT)) /* fail if we cross a page boundary */
                     goto failure;
-
-                /** @todo add PGMPhysGCPtr2CCPtr */
                 PGMPAGEMAPLOCK PageMappingLock;
-                RTGCPHYS GCPhysStack;
-                rc = PGMPhysGCPtr2GCPhys(pVM, pTrapStackGC, &GCPhysStack);
-                if (VBOX_SUCCESS(rc))
-                    rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysStack, (void **)&pTrapStack, &PageMappingLock);
+                rc = PGMPhysGCPtr2CCPtr(pVM, pTrapStackGC, (void **)&pTrapStack, &PageMappingLock);
                 if (VBOX_FAILURE(rc))
                 {
                     AssertRC(rc);

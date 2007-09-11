@@ -807,6 +807,10 @@ typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
  * This API should only be used for very short term, as it will consume
  * scarse resources (R0 and GC) in the mapping cache. When you're done
  * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ * 
+ * This API will assume your intention is to write to the page, and will 
+ * therefore replace shared and zero pages. If you do not intend to modify 
+ * the page, use the PGMPhysGCPhys2CCPtrReadOnly() API.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
@@ -820,13 +824,92 @@ typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
  *
  * @remark  Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
+ * @thread  Any thread.
  */
 PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
 
 /**
+ * Requests the mapping of a guest page into the current context.
+ *
+ * This API should only be used for very short term, as it will consume
+ * scarse resources (R0 and GC) in the mapping cache. When you're done
+ * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ *
+ * @remark  Avoid calling this API from within critical sections (other than
+ *          the PGM one) because of the deadlock risk.
+ * @thread  Any thread.
+ */
+PGMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void * const *ppv, PPGMPAGEMAPLOCK pLock);
+
+/**
+ * Requests the mapping of a guest page given by virtual address into the current context.
+ *
+ * This API should only be used for very short term, as it will consume
+ * scarse resources (R0 and GC) in the mapping cache. When you're done
+ * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ *
+ * This API will assume your intention is to write to the page, and will 
+ * therefore replace shared and zero pages. If you do not intend to modify 
+ * the page, use the PGMPhysGCPtr2CCPtrReadOnly() API.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT if the page directory for the virtual address isn't present.
+ * @retval  VERR_PAGE_NOT_PRESENT if the page at the virtual address isn't present.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ *
+ * @remark  Avoid calling this API from within critical sections (other than
+ *          the PGM one) because of the deadlock risk.
+ * @thread  EMT
+ */
+PGMDECL(int) PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPLOCK pLock);
+
+/**
+ * Requests the mapping of a guest page given by virtual address into the current context.
+ *
+ * This API should only be used for very short term, as it will consume
+ * scarse resources (R0 and GC) in the mapping cache. When you're done
+ * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT if the page directory for the virtual address isn't present.
+ * @retval  VERR_PAGE_NOT_PRESENT if the page at the virtual address isn't present.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ *
+ * @remark  Avoid calling this API from within critical sections (other than
+ *          the PGM one) because of the deadlock risk.
+ * @thread  EMT
+ */
+PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void * const *ppv, PPGMPAGEMAPLOCK pLock);
+
+/**
  * Release the mapping of a guest page.
  * 
- * This is the counter part of PGMPhysGCPhys2CCPtr.
+ * This is the counter part of PGMPhysGCPhys2CCPtr, PGMPhysGCPhys2CCPtrReadOnly
+ * PGMPhysGCPtr2CCPtr and PGMPhysGCPtr2CCPtrReadOnly.
  *
  * @param   pVM         The VM handle.
  * @param   pLock       The lock structure initialized by the mapping function.
