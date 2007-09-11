@@ -56,7 +56,7 @@ typedef struct VBOXHGCMCALLHANDLE_TYPEDEF *VBOXHGCMCALLHANDLE;
 typedef struct _VBOXHGCMSVCHELPERS
 {
     /** The service has processed the Call request. */
-    DECLCALLBACKMEMBER(void, pfnCallComplete) (VBOXHGCMCALLHANDLE callHandle, int32_t rc);
+    DECLR3CALLBACKMEMBER(void, pfnCallComplete, (VBOXHGCMCALLHANDLE callHandle, int32_t rc));
 
     void *pvInstance;
 } VBOXHGCMSVCHELPERS;
@@ -130,32 +130,32 @@ typedef struct _VBOXHGCMSVCFNTABLE
 #endif
 
     /** Uninitialize service */
-    DECLCALLBACKMEMBER(int, pfnUnload) (void);
+    DECLR3CALLBACKMEMBER(int, pfnUnload, (void));
 
     /** Inform the service about a client connection. */
-    DECLCALLBACKMEMBER(int, pfnConnect) (uint32_t u32ClientID, void *pvClient);
+    DECLR3CALLBACKMEMBER(int, pfnConnect, (uint32_t u32ClientID, void *pvClient));
 
     /** Inform the service that the client wants to disconnect. */
-    DECLCALLBACKMEMBER(int, pfnDisconnect) (uint32_t u32ClientID, void *pvClient);
+    DECLR3CALLBACKMEMBER(int, pfnDisconnect, (uint32_t u32ClientID, void *pvClient));
 
     /** Service entry point.
      *  Return code is passed to pfnCallComplete callback.
      */
-    DECLCALLBACKMEMBER(void, pfnCall) (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    DECLR3CALLBACKMEMBER(void, pfnCall, (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
 
     /** Host Service entry point meant for privileged features invisible to the guest.
      *  Return code is passed to pfnCallComplete callback.
      */
-    DECLCALLBACKMEMBER(int, pfnHostCall) (uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    DECLR3CALLBACKMEMBER(int, pfnHostCall, (uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
  
     /** Inform the service about a VM save operation. */
-    DECLCALLBACKMEMBER(int, pfnSaveState) (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM);
+    DECLR3CALLBACKMEMBER(int, pfnSaveState, (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
 
     /** Inform the service about a VM load operation. */
-    DECLCALLBACKMEMBER(int, pfnLoadState) (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM);
+    DECLR3CALLBACKMEMBER(int, pfnLoadState, (uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
 
     /** Manage the service extension. */
-    DECLCALLBACKMEMBER(int, pfnRegisterExtension) (PFNHGCMSVCEXT pfnExtension, void *pvExtension);
+    DECLR3CALLBACKMEMBER(int, pfnRegisterExtension, (PFNHGCMSVCEXT pfnExtension, void *pvExtension));
 
 } VBOXHGCMSVCFNTABLE;
 #pragma pack()
