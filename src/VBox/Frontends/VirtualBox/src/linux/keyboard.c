@@ -28,7 +28,12 @@
 
 #ifdef OUTOFWINE
 #include "keyboard_outofwine.h"
-int use_xkb = 1;
+/* I don't see any advantage for us of using Xkb here. The only effect of it in
+   the code is to cause the keyboard symbols we are looking up to be translated
+   according to the locale, so that we potentially need additional look-up tables
+   for ambiguous situations (or the translation can fail if the combination of
+   locale and keyboard does not match). */
+int use_xkb = 0;
 #endif /* OUTOFWINE defined */
 
 #ifndef OUTOFWINE
@@ -164,6 +169,7 @@ static const WORD main_key_scan_dvorak[MAIN_LEN] =
 #endif
 
 #ifdef OUTOFWINE
+/* Not FIXed as it should still work, even though it is completely unnecessary. */
 /* What is this supposed to be?  This is just the same as the qwerty layout, with one key
    in a different place. */
 #endif
@@ -274,6 +280,7 @@ static const WORD main_key_vkey_dvorak[MAIN_LEN] =
 /* If Wine fails to match your new table, use WINEDEBUG=+key to find out why */
 /* Remember to also add your new table to the layout index table far below! */
 
+#ifndef OUTOFWINE
 /*** German Logitech Desktop Pro keyboard layout */
 static const char main_key_DE_logitech[MAIN_LEN][4] =
 {
@@ -283,6 +290,7 @@ static const char main_key_DE_logitech[MAIN_LEN][4] =
  "yY","xX","cC","vV","bB","nN","mM",",;",".:","-_",
  "<>|"
 };
+#endif
 
 /*** United States keyboard layout (mostly contributed by Uwe Bonnes) */
 static const char main_key_US[MAIN_LEN][4] =
@@ -363,9 +371,14 @@ static const char main_key_DE[MAIN_LEN][4] =
  "qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","üÜ","+*",
  "aA","sS","dD","fF","gG","hH","jJ","kK","lL","öÖ","äÄ","#'",
  "yY","xX","cC","vV","bB","nN","mM",",;",".:","-_",
+#ifndef OUTOFWINE
  "<>|"
+#else
+ "<>"
+#endif
 };
 
+#ifndef OUTOFWINE
 /*** German keyboard layout without dead keys */
 static const char main_key_DE_nodead[MAIN_LEN][4] =
 {
@@ -384,6 +397,7 @@ static const char main_key_DE_nodead_105[MAIN_LEN][4] =
  "aA","sS","dD","fF","gG","hH","jJ","kK","lL","öÖ","äÄ","#'",
  "<>|","yY","xX","cC","vV","bB","nN","mM",",;",".:","-_",
 };
+#endif
 
 /*** Swiss German keyboard layout (setxkbmap ch -variant de) */
 static const char main_key_SG[MAIN_LEN][4] =
@@ -405,6 +419,7 @@ static const char main_key_SF[MAIN_LEN][4] =
  "<>"
 };
 
+#ifndef OUTOFWINE
 /*** Norwegian keyboard layout (contributed by Ove Kåven) */
 static const char main_key_NO[MAIN_LEN][4] =
 {
@@ -414,6 +429,18 @@ static const char main_key_NO[MAIN_LEN][4] =
  "zZ","xX","cC","vV","bB","nN","mM",",;",".:","-_",
  "<>"
 };
+#else
+/* innotek FIX */
+/*** Norwegian keyboard layout (contributed by Ove Kåven) */
+static const char main_key_NO[MAIN_LEN][4] =
+{
+ "|§","1!","2\"","3#","4¤","5%","6&","7/","8(","9)","0=","+?","\\`",
+ "qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","åÅ","¨^",
+ "aA","sS","dD","fF","gG","hH","jJ","kK","lL","øØ","æÆ","'",
+ "zZ","xX","cC","vV","bB","nN","mM",",;",".:","-_",
+ "<>"
+};
+#endif
 
 /*** Danish keyboard layout (setxkbmap dk) */
 static const char main_key_DA[MAIN_LEN][4] =
@@ -445,6 +472,7 @@ static const char main_key_ET[MAIN_LEN][4] =
  "<>"
 };
 
+#ifndef OUTOFWINE
 /*** Canadian French keyboard layout (setxkbmap ca_enhanced) */
 static const char main_key_CF[MAIN_LEN][4] =
 {
@@ -454,6 +482,7 @@ static const char main_key_CF[MAIN_LEN][4] =
  "zZ","xX","cC","vV","bB","nN","mM",",'-",".","éÉ",
  "«»°"
 };
+#endif
 
 /*** Canadian French keyboard layout (setxkbmap ca -variant fr) */
 static const char main_key_CA_fr[MAIN_LEN][4] =
@@ -465,6 +494,7 @@ static const char main_key_CA_fr[MAIN_LEN][4] =
  "«»"
 };
 
+#ifndef OUTOFWINE
 /*** Canadian keyboard layout (setxkbmap ca) */
 static const char main_key_CA[MAIN_LEN][4] =
 {
@@ -474,6 +504,17 @@ static const char main_key_CA[MAIN_LEN][4] =
  "zZ","xX","cC¢©","vV","bB","nN","mMµº",",'",".\"·÷","éÉ",
  "ùÙ"
 };
+#else
+/*** Canadian keyboard layout (setxkbmap ca) */
+static const char main_key_CA[MAIN_LEN][4] =
+{
+ "/\\","1!","2@","3#","4$","5%","6?","7&","8*","9(","0)","-_","=+",
+ "qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","^¨","çÇ",
+ "aA","sS","dD","fF","gG","hH","jJ","kK","lL",";:","èÈ","àÀ",
+ "zZ","xX","cC","vV","bB","nN","mM",",'",".\"","éÉ",
+ "ùÙ"
+};
+#endif
 
 /*** Portuguese keyboard layout (setxkbmap pt) */
 static const char main_key_PT[MAIN_LEN][4] =
@@ -505,6 +546,7 @@ static const char main_key_FI[MAIN_LEN][4] =
  "<>"
 };
 
+#ifndef OUTOFWINE
 /*** Bulgarian bds keyboard layout */
 static const char main_key_BG_bds[MAIN_LEN][4] =
 {
@@ -534,8 +576,40 @@ static const char main_key_BY[MAIN_LEN][4] =
  "aAÆæ","sSÙù","dD×÷","fFÁá","gGÐð","hHÒò","jJÏï","kKÌì","lLÄä",";:Öö","'\"Üü","\\|/|",
  "zZÑñ","xXÞþ","cCÓó","vVÍí","bB¦¶","nNÔô","mMØø",",<Ââ",".>Àà","/?.,", "<>|¦",
 };
+#else
+/*** Bulgarian bds keyboard layout */
+static const char main_key_BG_bds[MAIN_LEN][4] =
+{
+ "()","1!","2?","3+","4\"","5%","6=","7:","8/","9\xa9","0\xb0","-I",".V",
+ ",\xd9","\xd5\xf5","\xc5\xe5","\xc9\xe9","\xdb\xfb","\xdd\xfd","\xcb\xeb","\xd3\xf3","\xc4\xe4","\xda\xfa","\xc3\xe3",";\xa7",
+ "\xd8\xf8","\xd1\xf1","\xc1\xe1","\xcf\xef","\xd6\xf6","\xc7\xe7","\xd4\xf4","\xce\xee","\xd7\xf7","\xcd\xed","\xde\xfe","'\xf9",
+ "\xc0\xe0","\xca\xea","\xdf\xff","\xdc\xfc","\xc6\xe6","\xc8\xe8","\xd0\xf0","\xd2\xf2","\xcc\xec","\xc2\xe2",
+ "<>" /* the phantom key */
+};
+
+/*** Bulgarian phonetic keyboard layout */
+static const char main_key_BG_phonetic[MAIN_LEN][4] =
+{
+ "\xde\xfe","1!","2@","3#","4$","5%","6^","7&","8*","9(","0)","-_","=+",
+ "\xd1\xf1","\xd7\xf7","\xc5\xe5","\xd2\xf2","\xd4\xf4","\xdf\xff","\xd5\xf5","\xc9\xe9","\xcf\xef","\xd0\xf0","\xdb\xfb","\xdd\xfd",
+ "\xc1\xe1","\xd3\xf3","\xc4\xe4","\xc6\xe6","\xc7\xe7","\xc8\xe8","\xca\xea","\xcb\xeb","\xcc\xec",";:","'\"","\xc0\xe0",
+ "\xda\xfa","\xd8\xf8","\xc3\xe3","\xd6\xf6","\xc2\xe2","\xce\xee","\xcd\xed",",<",".>","/?",
+ "<>" /* the phantom key */
+};
+
+/*** Belarusian standard keyboard layout (contributed by Hleb Valoska) */
+/*** It matches belarusian layout for XKB from Alexander Mikhailian    */
+static const char main_key_BY[MAIN_LEN][4] =
+{
+ "£³","1!","2\"","3#","4;","5%","6:","7?","8*","9(","0)","-_","=+",
+ "Êê","Ãã","Õõ","Ëë","Åå","Îî","Çç","Ûû","®¾","Úú","Èè","''",
+ "Ææ","Ùù","×÷","Áá","Ðð","Òò","Ïï","Ìì","Ää","Öö","Üü","/|",
+ "Ññ","Þþ","Óó","Íí","¦¶","Ôô","Øø","Ââ","Àà",".,", "|¦",
+};
+#endif
 
 
+#ifndef OUTOFWINE
 /*** Russian keyboard layout (contributed by Pavel Roskin) */
 static const char main_key_RU[MAIN_LEN][4] =
 {
@@ -564,7 +638,19 @@ static const char main_key_RU_koi8r[MAIN_LEN][4] =
  "Ññ","Þþ","Óó","Íí","Éé","Ôô","Øø","Ââ","Àà","/?",
  "<>" /* the phantom key */
 };
+#else
+/*** Russian keyboard layout KOI8-R */
+static const char main_key_RU_koi8r[MAIN_LEN][4] =
+{
+ "£³","1!","2\"","3#","4*","5:","6,","7.","8;","9(","0)","-_","=+",
+ "Êê","Ãã","Õõ","Ëë","Åå","Îî","Çç","Ûû","Ýý","Úú","Èè","ßÿ",
+ "Ææ","Ùù","×÷","Áá","Ðð","Òò","Ïï","Ìì","Ää","Öö","Üü","\\|",
+ "Ññ","Þþ","Óó","Íí","Éé","Ôô","Øø","Ââ","Àà","/?",
+ "/|" /* the phantom key */
+};
+#endif
 
+#ifndef OUTOFWINE
 /*** Russian keyboard layout cp1251 */
 static const char main_key_RU_cp1251[MAIN_LEN][4] =
 {
@@ -584,7 +670,19 @@ static const char main_key_RU_phonetic[MAIN_LEN][4] =
  "zZÚú","xXØø","cCÃã","vVÖö","bBÂâ","nNÎî","mMÍí",",<",".>","/?",
  "<>" /* the phantom key */
 };
+#else
+/*** Russian phonetic keyboard layout */
+static const char main_key_RU_phonetic[MAIN_LEN][4] =
+{
+ "Àà","1!","2@","3£","4³","5ß","6ÿ","7&","8*","9(","0)","-_","Þþ",
+ "Ññ","×÷","Åå","Òò","Ôô","Ùù","Õõ","Éé","Ïï","Ðð","Ûû","Ýý",
+ "Áá","Óó","Ää","Ææ","Çç","Èè","Êê","Ëë","Ìì",";:","'\"","Üü",
+ "Úú","Øø","Ãã","Öö","Ââ","Îî","Íí",",<",".>","/?",
+ "|¦" /* the phantom key */
+};
+#endif
 
+#ifndef OUTOFWINE
 /*** Ukrainian keyboard layout KOI8-U */
 static const char main_key_UA[MAIN_LEN][4] =
 {
@@ -594,6 +692,17 @@ static const char main_key_UA[MAIN_LEN][4] =
  "zZÑñ","xXÞþ","cCÓó","vVÍí","bBÉé","nNÔô","mMØø",",<Ââ",".>Àà","/?/?",
  "<>" /* the phantom key */
 };
+#else
+/*** Ukrainian keyboard layout KOI8-U */
+static const char main_key_UA[MAIN_LEN][4] =
+{
+ "­½","1!","2\"","3#","4*","5:","6,","7.","8;","9(","0)","-_","=+",
+ "Êê","Ãã","Õõ","Ëë","Åå","Îî","Çç","Ûû","Ýý","Úú","Èè","§·",
+ "Ææ","¦¶","×÷","Áá","Ðð","Òò","Ïï","Ìì","Ää","Öö","¤´","\\|",
+ "Ññ","Þþ","Óó","Íí","Éé","Ôô","Øø","Ââ","Àà","/?",
+ "<>" /* the phantom key */
+};
+#endif
 
 /*** Ukrainian keyboard layout KOI8-U by O. Nykyforchyn */
 /***  (as it appears on most of keyboards sold today)   */
@@ -931,6 +1040,7 @@ static const char main_key_EL[MAIN_LEN][4] =
  "<>"
 };
 
+#ifndef OUTOFWINE
 /*** Thai (Kedmanee) keyboard layout by Supphachoke Suntiwichaya <mrchoke@opentle.org> */
 static const char main_key_th[MAIN_LEN][4] =
 {
@@ -939,6 +1049,17 @@ static const char main_key_th[MAIN_LEN][4] =
  "aA¿Ä","sSË¦","dD¡¯","fF´â","gGà¬","hHéç","jJèë","kKÒÉ","lLÊÈ",";:Ç«","\'\"§.","\\|£¥",
  "zZ¼(","xX»)","cCá©","vVÍÎ","bBÚ","nN×ì","mM·?",",<Á²",".>ãÌ","/?½Æ"
 }; 
+#else
+/*** Thai (Kedmanee) keyboard layout by Supphachoke Suntiwichaya <mrchoke@opentle.org> */
+static const char main_key_th[MAIN_LEN][4] =
+{
+ "_%","å+","/ñ","-ò","Àó","¶ô","ØÙ","Öß","¤õ","µö","¨÷","¢ø","ªù",
+ "æð","ä\"","Ó®","¾±","Ð¸","Ñí","Õê","Ã³","¹Ï","Â­","º°","Å,",
+ "¿Ä","Ë¦","¡¯","´â","à¬","éç","èë","ÒÉ","ÊÈ","Ç«","§.","£¥",
+ "¼(","»)","á©","ÍÎ","\xd4\xda","×ì","·?","Á²","ãÌ","½Æ",
+ "<>" /* The phantom key. */
+};
+#endif
 
 /*** VNC keyboard layout */
 static const WORD main_key_scan_vnc[MAIN_LEN] =
@@ -996,9 +1117,11 @@ static const struct {
 #endif
  {0x0809, "British keyboard layout", &main_key_UK, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0407, "German keyboard layout", &main_key_DE, &main_key_scan_qwerty, &main_key_vkey_qwertz},
+#ifndef OUTOFWINE
  {0x0407, "German keyboard layout without dead keys", &main_key_DE_nodead, &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x0407, "German keyboard layout for logitech desktop pro", &main_key_DE_logitech,  &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x0407, "German keyboard layout without dead keys 105", &main_key_DE_nodead_105, &main_key_scan_qwerty, &main_key_vkey_qwertz_105},
+#endif
  {0x0807, "Swiss German keyboard layout", &main_key_SG, &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x100c, "Swiss French keyboard layout", &main_key_SF, &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x041d, "Swedish keyboard layout", &main_key_SE, &main_key_scan_qwerty, &main_key_vkey_qwerty_v2},
@@ -1006,7 +1129,9 @@ static const struct {
  {0x0414, "Norwegian keyboard layout", &main_key_NO, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0406, "Danish keyboard layout", &main_key_DA, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x040c, "French keyboard layout", &main_key_FR, &main_key_scan_qwerty, &main_key_vkey_azerty},
+#ifndef OUTOFWINE
  {0x0c0c, "Canadian French keyboard layout", &main_key_CF, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#endif
  {0x0c0c, "Canadian French keyboard layout (CA_fr)", &main_key_CA_fr, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0c0c, "Canadian keyboard layout", &main_key_CA, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x080c, "Belgian keyboard layout", &main_key_BE, &main_key_scan_qwerty, &main_key_vkey_azerty},
@@ -1017,10 +1142,14 @@ static const struct {
  {0x0402, "Bulgarian bds keyboard layout", &main_key_BG_bds, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0402, "Bulgarian phonetic keyboard layout", &main_key_BG_phonetic, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0423, "Belarusian keyboard layout", &main_key_BY, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#ifndef OUTOFWINE
  {0x0419, "Russian keyboard layout", &main_key_RU, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0419, "Russian keyboard layout (phantom key version)", &main_key_RU_phantom, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#endif
  {0x0419, "Russian keyboard layout KOI8-R", &main_key_RU_koi8r, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#ifndef OUTOFWINE
  {0x0419, "Russian keyboard layout cp1251", &main_key_RU_cp1251, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#endif
  {0x0419, "Russian phonetic keyboard layout", &main_key_RU_phonetic, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0422, "Ukrainian keyboard layout KOI8-U", &main_key_UA, &main_key_scan_qwerty, &main_key_vkey_qwerty},
  {0x0422, "Ukrainian keyboard layout (standard)", &main_key_UA_std, &main_key_scan_qwerty, &main_key_vkey_qwerty},
@@ -1687,7 +1816,9 @@ X11DRV_KEYBOARD_DetectLayout (Display *display)
             if (!use_xkb || !XkbTranslateKeySym(display, &keysym, 0, &ckey[keyc][i], 1, NULL))
 #endif
             {
+#ifndef OUTOFWINE
                 TRACE("XKB could not translate keysym %ld\n", keysym);
+#endif
                 /* FIXME: query what keysym is used as Mode_switch, fill XKeyEvent
                  * with appropriate ShiftMask and Mode_switch, use XLookupString
                  * to get character in the local encoding.
@@ -1752,7 +1883,12 @@ X11DRV_KEYBOARD_DetectLayout (Display *display)
           char str[5];
           for (i = 0; i < 4; i++) str[i] = ckey[keyc][i] ? ckey[keyc][i] : ' ';
           str[4] = 0;
+#ifndef OUTOFWINE
           TRACE_(key)("mismatch for keysym 0x%04lX, keycode %d, got %s\n", keysym, keyc, str );
+#else
+          TRACE_(key)("mismatch for keycode %d, got %s (0x%.2hx 0x%.2hx)\n",
+                       keyc, str, str[0], str[1]);
+#endif
           mismatch++;
           score -= syms;
 	}
