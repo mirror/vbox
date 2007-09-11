@@ -1308,14 +1308,22 @@ static int update_palette256(VGAState *s)
 {
     int full_update, i;
     uint32_t v, col, *palette;
+    int wide_dac;
 
     full_update = 0;
     palette = s->last_palette;
     v = 0;
+    wide_dac = (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & (VBE_DISPI_ENABLED | VBE_DISPI_8BIT_DAC))
+             == (VBE_DISPI_ENABLED | VBE_DISPI_8BIT_DAC);
     for(i = 0; i < 256; i++) {
-        col = s->rgb_to_pixel(c6_to_8(s->palette[v]),
-                              c6_to_8(s->palette[v + 1]),
-                              c6_to_8(s->palette[v + 2]));
+        if (wide_dac)
+            col = s->rgb_to_pixel(s->palette[v],
+                                  s->palette[v + 1],
+                                  s->palette[v + 2]);
+        else
+            col = s->rgb_to_pixel(c6_to_8(s->palette[v]),
+                                  c6_to_8(s->palette[v + 1]),
+                                  c6_to_8(s->palette[v + 2]));
         if (col != palette[i]) {
             full_update = 1;
             palette[i] = col;
