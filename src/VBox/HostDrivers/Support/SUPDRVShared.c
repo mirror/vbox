@@ -1559,7 +1559,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
         pUsagePre->pObj     = pObj;
         pUsagePre->pNext    = pSession->pUsage;
         pSession->pUsage    = pUsagePre;
-        dprintf(("SUPR0ObjRelease: pUsagePre=%p:{.pObj=%p, .pNext=%p}\n", pUsagePre, pUsagePre->pObj, pUsagePre->pNext));
+        dprintf(("SUPR0AddRef: pUsagePre=%p:{.pObj=%p, .pNext=%p}\n", pUsagePre, pUsagePre->pObj, pUsagePre->pNext));
 
         pUsagePre = NULL;
     }
