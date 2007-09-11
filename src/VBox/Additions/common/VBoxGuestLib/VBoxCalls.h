@@ -122,6 +122,29 @@ DECLVBGL(int) vboxCallQueryMappings (PVBSFCLIENT pClient, SHFLMAPPING paMappings
 
 DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRING *pString, uint32_t size);
 
+/**
+ * Create a new file or folder or open an existing one in a shared folder.  Proxies
+ * to vbsfCreate in the host shared folder service.
+ *
+ * @returns IPRT status code, but see note below
+ * @param   pClient      Host-guest communication connection
+ * @param   pMap         The mapping for the shared folder in which the file
+ *                       or folder is to be created
+ * @param   pParsedPath  The path of the file or folder relative to the shared
+ *                       folder
+ * @param   pCreateParms Parameters for file/folder creation.  See the
+ *                       structure description in shflsvc.h
+ * @retval  pCreateParms See the structure description in shflsvc.h
+ *
+ * @note This function reports errors as follows.  The return value is always
+ *       VINF_SUCCESS unless an exceptional condition occurrs - out of
+ *       memory, invalid arguments, etc.  If the file or folder could not be
+ *       opened or created, pCreateParms->Handle will be set to
+ *       SHFL_HANDLE_NIL on return.  In this case the value in
+ *       pCreateParms->Result provides information as to why (e.g.
+ *       SHFL_FILE_EXISTS).  pCreateParms->Result is also set on success
+ *       as additional information.
+ */
 DECLVBGL(int) vboxCallCreate (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms);
 
 DECLVBGL(int) vboxCallClose (PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE Handle);
