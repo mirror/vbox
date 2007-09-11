@@ -408,7 +408,7 @@
 
   <enum
      name="GuestStatisticType"
-     uuid="42d6b94f-9b17-4a9c-8d6f-a837c383eed0"
+     uuid="aa7c1d71-aafe-47a8-9608-27d2d337cf55"
      >
     <const name="CPULoad_Idle"         value="0">
       <desc>
@@ -490,7 +490,12 @@
         Pagefile size in megabytes.
       </desc>
     </const>
-    <const name="MaxVal"               value="16"/>
+    <const name="SampleNumber"         value="16">
+      <desc>
+        Statistics sample number
+      </desc>
+    </const>
+    <const name="MaxVal"               value="17"/>
   </enum>
  
   <!--

@@ -1575,7 +1575,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         {
             ULONG statVal;
 
-            RTPrintf("Guest statistics:\n\n");
+            rc = guest->GetStatistic(0, GuestStatisticType_SampleNumber, &statVal);
+            RTPrintf("Guest statistics for sample %d:\n\n", statVal);
 
             rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &statVal);
             if (SUCCEEDED(rc))
