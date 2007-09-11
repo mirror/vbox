@@ -1064,8 +1064,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
                 return false;
 
             if (!mManualResize  &&
-                (windowState() & (WindowMaximized | WindowMinimized |
-                                  WindowFullScreen)) == 0)
+                (windowState() & WindowMaximized) == 0)
             {
                 normal_size = re->size();
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2098,19 +2097,30 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         setMinimumSize (QSize(0, 0));
         setMaximumSize (QSize (QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
 
-        /* restore previous position and size */
+        /* check if we are maximized: seamless on some wm == maximized */
         bool is_max = isMaximized();
+
+        /* restore previous position */
         move (normal_pos);
+
         if (was_max)
+            /* let pass one resize event with previous size */
             mAllowOneResize = true;
+        else
+            /* ensure we are waiting for the previous size */
+            mAwaitingSize = normal_size;
+
+        /* restore previous size */
         resize (normal_size);
         qApp->processEvents();
 
         if (was_max)
         {
             if (aSeamless && is_max)
+                /* if seamless == maximized do delayed maximization */
                 mDoMaximize = true;
             else
+                /* restore maximized mode now */
                 setWindowState (windowState() | WindowMaximized);
             qApp->processEvents();
         }
