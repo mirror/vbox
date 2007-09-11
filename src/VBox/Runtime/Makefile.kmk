@@ -152,6 +152,7 @@ RuntimeR3_SOURCES       = \
 	table/avlroogcptr.cpp \
 	table/avlroioport.cpp \
 	table/avlu32.cpp \
+	table/avllu32.cpp \
 	table/avlul.cpp \
 	table/table.cpp \
 	crc32.cpp \

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 1999-2004 knut st. osmundsen (bird-src-spam@anduin.net)
+ * Copyright (C) 1999-2007 knut st. osmundsen (bird-src-spam@anduin.net)
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,65 +20,82 @@
 
 
 /**
- * Iterates thru all nodes in the given tree so the caller can free resources
- * associated with each node.
+ * Destroys the specified tree, starting with the root node and working our way down.
  *
- * @returns     0 on success.
- * @returns     Return code from the callback on failure. The tree might be half
- *              destroyed at this point and will not behave correctly when any
- *              insert or remove operation is attempted.
- *
- * @param       ppTree          Pointer to the AVL-tree root node pointer.
- * @param       pfnCallBack     Pointer to callback function.
- * @param       pvParam         User parameter passed on to the callback function.
+ * @returns 0 on success.
+ * @returns Return value from callback on failure. On failure, the tree will be in
+ *          an unbalanced condition and only further calls to the Destroy should be
+ *          made on it. Note that the node we fail on will be considered dead and
+ *          no action is taken to link it back into the tree.
+ * @param   ppTree          Pointer to the AVL-tree root node pointer.
+ * @param   pfnCallBack     Pointer to callback function.
+ * @param   pvUser          User parameter passed on to the callback function.
  */
-RTDECL(int) KAVL_FN(Destroy)(PPKAVLNODECORE ppTree, PKAVLCALLBACK pfnCallBack, void *pvParam)
+RTDECL(int) KAVL_FN(Destroy)(PPKAVLNODECORE ppTree, PKAVLCALLBACK pfnCallBack, void *pvUser)
 {
-    KAVLSTACK2      AVLStack;
+    unsigned        cEntries;
+    PKAVLNODECORE   apEntries[KAVL_MAX_STACK];
+    int             rc;
+
     if (*ppTree == KAVL_NULL)
         return 0;
 
-    AVLStack.cEntries = 1;
-    AVLStack.achFlags[0] = 0;
-    AVLStack.aEntries[0] = KAVL_GET_POINTER(ppTree);
-    while (AVLStack.cEntries > 0)
+    cEntries = 1;
+    apEntries[0] = KAVL_GET_POINTER(ppTree);
+    while (cEntries > 0)
     {
-        int             rc;
-        PKAVLNODECORE   pNode = AVLStack.aEntries[AVLStack.cEntries - 1];
-
-        if (!AVLStack.achFlags[AVLStack.cEntries - 1]++)
+        /*
+         * Process the subtrees first.
+         */
+        PKAVLNODECORE pNode = apEntries[cEntries - 1];
+        if (pNode->pLeft != KAVL_NULL)
+            apEntries[cEntries++] = KAVL_GET_POINTER(&pNode->pLeft);
+        else if (pNode->pRight != KAVL_NULL)
+            apEntries[cEntries++] = KAVL_GET_POINTER(&pNode->pRight);
+        else
         {
-            /* push left and recurse */
-            if (pNode->pLeft != KAVL_NULL)
+#ifdef KAVL_EQUAL_ALLOWED
+            /*
+             * Process nodes with the same key.
+             */
+            while (pNode->pList != KAVL_NULL)
             {
-                AVLStack.achFlags[AVLStack.cEntries] = 0; /* 0 first, 1 last */
-                AVLStack.aEntries[AVLStack.cEntries++] = KAVL_GET_POINTER(&pNode->pLeft);
-                continue;
+                PKAVLNODECORE pEqual = KAVL_GET_POINTER(&pNode->pList);
+                KAVL_SET_POINTER(&pNode->pList, KAVL_GET_POINTER_NULL(&pEqual->pList));
+                pEqual->pList = KAVL_NULL;
+
+                rc = pfnCallBack(pEqual, pvUser);
+                if (rc)
+                    return rc;
             }
+#endif
+
+            /*
+             * Unlink the node.
+             */
+            if (--cEntries > 0)
+            {
+                PKAVLNODECORE pParent = apEntries[cEntries - 1];
+                if (KAVL_GET_POINTER(&pParent->pLeft) == pNode)
+                    pParent->pLeft = KAVL_NULL;
+                else
+                    pParent->pRight = KAVL_NULL;
+            }
+            else
+                *ppTree = KAVL_NULL;
+
+            kASSERT(pNode->pLeft == KAVL_NULL);
+            kASSERT(pNode->pRight == KAVL_NULL);
+            rc = pfnCallBack(pNode, pvUser);
+            if (rc)
+                return rc;
         }
-
-        /* pop pNode */
-        AVLStack.cEntries--;
-
-        /* push right */
-        if (pNode->pRight != KAVL_NULL)
-        {
-            AVLStack.achFlags[AVLStack.cEntries] = 0;
-            AVLStack.aEntries[AVLStack.cEntries++] = KAVL_GET_POINTER(&pNode->pRight);
-        }
-
-        /* call destructor */
-        pNode->pRight = pNode->pLeft = KAVL_NULL;
-        rc = pfnCallBack(pNode, pvParam);
-        if (rc)
-            return rc;
-
     } /* while */
 
-    *ppTree = KAVL_NULL;
+    kASSERT(*ppTree == KAVL_NULL);
+
     return 0;
 }
-
 
 #endif
 
