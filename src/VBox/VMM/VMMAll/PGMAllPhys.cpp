@@ -377,7 +377,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPgm, RTGCPHYS GCPhys, PPPGMPHYSTLBE p
  *
  * This API should only be used for very short term, as it will consume
  * scarse resources (R0 and GC) in the mapping cache. When you're done
- * with the page, call PGMPhysGCPhys2CCPtrRelease() ASAP to release it.
+ * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
@@ -387,11 +387,12 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPgm, RTGCPHYS GCPhys, PPPGMPHYSTLBE p
  * @param   pVM         The VM handle.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
  *
  * @remark  Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
  */
-PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
 # ifdef NEW_PHYS_CODE
     int rc = pgmLock(pVM);
@@ -454,14 +455,13 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 
 /**
  * Release the mapping of a guest page.
- *
- * This is the counterpart to the PGMPhysGCPhys2CCPtr.
+ * 
+ * This is the counter part of PGMPhysGCPhys2CCPtr.
  *
  * @param   pVM         The VM handle.
- * @param   GCPhys      The address that was mapped using PGMPhysGCPhys2CCPtr.
- * @param   pv          The address that PGMPhysGCPhys2CCPtr returned.
+ * @param   pLock       The lock structure initialized by the mapping function.
  */
-PGMDECL(void) PGMPhysGCPhys2CCPtrRelease(PVM pVM, RTGCPHYS GCPhys, void *pv)
+PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 {
 #ifdef NEW_PHYS_CODE
 #ifdef IN_GC
@@ -535,8 +535,7 @@ PGMDECL(void) PGMPhysGCPhys2CCPtrRelease(PVM pVM, RTGCPHYS GCPhys, void *pv)
 #endif /* IN_RING3 */
 #else
     NOREF(pVM);
-    NOREF(GCPhys);
-    NOREF(pv);
+    NOREF(pLock);
 #endif
 }
 

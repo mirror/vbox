@@ -783,36 +783,55 @@ PGMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys);
 PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys);
 
 /** 
+ * Page mapping lock.
+ * 
+ * @remarks This doesn't work in structures shared between 
+ *          ring-3, ring-0 and/or GC.
+ */
+typedef struct PGMPAGEMAPLOCK
+{
+#ifdef IN_GC
+    /** Just a dummy for the time being. */
+    uint32_t    u32Dummy;
+#else
+    /** Just a dummy for the time being. */
+    uint32_t    u32Dummy;
+#endif
+} PGMPAGEMAPLOCK;
+/** Pointer to a page mapping lock. */
+typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
+
+/**
  * Requests the mapping of a guest page into the current context.
- * 
+ *
  * This API should only be used for very short term, as it will consume
- * scarse resources (R0 and GC) in the mapping cache. When you're done 
- * with the page, call PGMPhysGCPhys2CCPtrRelease() ASAP to release it.
- * 
+ * scarse resources (R0 and GC) in the mapping cache. When you're done
+ * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
- * 
+ *
  * @param   pVM         The VM handle.
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
- * 
- * @remark  Avoid calling this API from within critical sections (other than 
+ * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ *
+ * @remark  Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
  */
-PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv);
+PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
 
-/** 
+/**
  * Release the mapping of a guest page.
  * 
- * This is the counterpart to the PGMPhysGCPhys2CCPtr.
- * 
+ * This is the counter part of PGMPhysGCPhys2CCPtr.
+ *
  * @param   pVM         The VM handle.
- * @param   GCPhys      The address that was mapped using PGMPhysGCPhys2CCPtr.
- * @param   pv          The address that PGMPhysGCPhys2CCPtr returned.
+ * @param   pLock       The lock structure initialized by the mapping function.
  */
-PGMDECL(void) PGMPhysGCPhys2CCPtrRelease(PVM pVM, RTGCPHYS GCPhys, void *pv);
+PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
 
 /**
  * Converts a GC physical address to a HC pointer.
