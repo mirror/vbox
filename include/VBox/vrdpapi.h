@@ -558,7 +558,7 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @return IPRT status code.
      */
-    DECLCALLBACKMEMBER(void, VRDPDestroy)(HVRDPSERVER hServer);
+    DECLR3CALLBACKMEMBER(void, VRDPDestroy,(HVRDPSERVER hServer));
 
     /** The server should start to accept clients connections.
      *
@@ -568,8 +568,8 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @return IPRT status code.
      */
-    DECLCALLBACKMEMBER(int, VRDPEnableConnections)(HVRDPSERVER hServer,
-                                                   bool fEnable);
+    DECLR3CALLBACKMEMBER(int, VRDPEnableConnections,(HVRDPSERVER hServer,
+                                                   bool fEnable));
 
     /** The server should disconnect the client.
      *
@@ -580,9 +580,9 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @return IPRT status code.
      */
-    DECLCALLBACKMEMBER(void, VRDPDisconnect)(HVRDPSERVER hServer,
+    DECLR3CALLBACKMEMBER(void, VRDPDisconnect,(HVRDPSERVER hServer,
                                              uint32_t u32ClientId,
-                                             bool fReconnect);
+                                             bool fReconnect));
 
     /**
      * Inform the server that the display was resized.
@@ -591,7 +591,7 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @param hServer Handle of VRDP server instance.
      */
-    DECLCALLBACKMEMBER(void, VRDPResize)(HVRDPSERVER hServer);
+    DECLR3CALLBACKMEMBER(void, VRDPResize,(HVRDPSERVER hServer));
 
     /**
      * Send a update.
@@ -601,10 +601,10 @@ typedef struct _VRDPENTRYPOINTS_1
      * @param pvUpdate  Pointer to VBoxGuest.h::VRDPORDERHDR structure with extra data.
      * @param cbUpdate  Size of the update data.
      */
-    DECLCALLBACKMEMBER(void, VRDPUpdate)(HVRDPSERVER hServer,
+    DECLR3CALLBACKMEMBER(void, VRDPUpdate,(HVRDPSERVER hServer,
                                          unsigned uScreenId,
                                          void *pvUpdate,
-                                         uint32_t cbUpdate);
+                                         uint32_t cbUpdate));
 
     /**
      * Set the mouse pointer shape.
@@ -612,15 +612,15 @@ typedef struct _VRDPENTRYPOINTS_1
      * @param hServer  Handle of VRDP server instance.
      * @param pPointer The pointer shape information.
      */
-    DECLCALLBACKMEMBER(void, VRDPColorPointer)(HVRDPSERVER hServer,
-                                               const VRDPCOLORPOINTER *pPointer);
+    DECLR3CALLBACKMEMBER(void, VRDPColorPointer,(HVRDPSERVER hServer,
+                                               const VRDPCOLORPOINTER *pPointer));
 
     /**
      * Hide the mouse pointer.
      *
      * @param hServer Handle of VRDP server instance.
      */
-    DECLCALLBACKMEMBER(void, VRDPHidePointer)(HVRDPSERVER hServer);
+    DECLR3CALLBACKMEMBER(void, VRDPHidePointer,(HVRDPSERVER hServer));
 
     /**
      * Queues the samples to be sent to clients.
@@ -632,10 +632,10 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @note Initialized to NULL when the application audio callbacks are NULL.
      */
-    DECLCALLBACKMEMBER(void, VRDPAudioSamples)(HVRDPSERVER hServer,
+    DECLR3CALLBACKMEMBER(void, VRDPAudioSamples,(HVRDPSERVER hServer,
                                                const void *pvSamples,
                                                uint32_t cSamples,
-                                               VRDPAUDIOFORMAT format);
+                                               VRDPAUDIOFORMAT format));
 
     /**
      * Sets the sound volume on clients.
@@ -646,9 +646,9 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @note Initialized to NULL when the application audio callbacks are NULL.
      */
-    DECLCALLBACKMEMBER(void, VRDPAudioVolume)(HVRDPSERVER hServer,
+    DECLR3CALLBACKMEMBER(void, VRDPAudioVolume,(HVRDPSERVER hServer,
                                               uint16_t u16Left,
-                                              uint16_t u16Right);
+                                              uint16_t u16Right));
 
     /**
      * Sends a USB request.
@@ -663,10 +663,10 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @note Initialized to NULL when the application USB callbacks are NULL.
      */
-    DECLCALLBACKMEMBER(void, VRDPUSBRequest)(HVRDPSERVER hServer,
+    DECLR3CALLBACKMEMBER(void, VRDPUSBRequest,(HVRDPSERVER hServer,
                                              uint32_t u32ClientId,
                                              void *pvParm,
-                                             uint32_t cbParm);
+                                             uint32_t cbParm));
 
     /**
      * Called by the application when (VRDP_CLIPBOARD_FUNCTION_*):
@@ -684,12 +684,12 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @note Initialized to NULL when the application clipboard callbacks are NULL.
      */
-    DECLCALLBACKMEMBER(void, VRDPClipboard)(HVRDPSERVER hServer,
+    DECLR3CALLBACKMEMBER(void, VRDPClipboard,(HVRDPSERVER hServer,
                                             uint32_t u32Function,
                                             uint32_t u32Format,
                                             void *pvData,
                                             uint32_t cbData,
-                                            uint32_t *pcbActualRead);
+                                            uint32_t *pcbActualRead));
 
     /**
      * Query various information from the VRDP server.
@@ -704,11 +704,11 @@ typedef struct _VRDPENTRYPOINTS_1
      *         A value greater than cbBuffer means that information is too big to fit in the
      *         buffer, in that case no information was placed to the buffer.
      */
-    DECLCALLBACKMEMBER(void, VRDPQueryInfo)(HVRDPSERVER hServer,
+    DECLR3CALLBACKMEMBER(void, VRDPQueryInfo,(HVRDPSERVER hServer,
                                             uint32_t index,
                                             void *pvBuffer,
                                             uint32_t cbBuffer,
-                                            uint32_t *pcbOut);
+                                            uint32_t *pcbOut));
 } VRDPENTRYPOINTS_1;
 
 #define VRDP_QP_NETWORK_PORT      (1)
@@ -769,11 +769,11 @@ typedef struct _VRDPCALLBACKS_1
      *
      * @return IPRT status code. VINF_BUFFER_OVERFLOW if the buffer is too small for the value.
      */
-    DECLCALLBACKMEMBER(int, VRDPCallbackQueryProperty)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(int, VRDPCallbackQueryProperty,(void *pvCallback,
                                                        uint32_t index,
                                                        void *pvBuffer,
                                                        uint32_t cbBuffer,
-                                                       uint32_t *pcbOut);
+                                                       uint32_t *pcbOut));
 
     /* A client is logging in, the application must decide whether
      * to let to connect the client. The server will drop the connection, 
@@ -787,19 +787,19 @@ typedef struct _VRDPCALLBACKS_1
      *
      * @return IPRT status code.
      */
-    DECLCALLBACKMEMBER(int, VRDPCallbackClientLogon)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(int, VRDPCallbackClientLogon,(void *pvCallback,
                                                      uint32_t u32ClientId,
                                                      const char *pszUser,
                                                      const char *pszPassword,
-                                                     const char *pszDomain);
+                                                     const char *pszDomain));
 
     /* The client has been successfully connected.
      *
      * @param pvCallback      The callback specific pointer.
      * @param u32ClientId     An unique client identifier generated by the server.
      */
-    DECLCALLBACKMEMBER(void, VRDPCallbackClientConnect)(void *pvCallback,
-                                                        uint32_t u32ClientId);
+    DECLR3CALLBACKMEMBER(void, VRDPCallbackClientConnect,(void *pvCallback,
+                                                        uint32_t u32ClientId));
 
     /* The client has been disconnected.
      *
@@ -807,9 +807,9 @@ typedef struct _VRDPCALLBACKS_1
      * @param u32ClientId     An unique client identifier generated by the server.
      * @param fu32Intercepted What was intercepted by the client (VRDP_CLIENT_INTERCEPT_*).
      */
-    DECLCALLBACKMEMBER(void, VRDPCallbackClientDisconnect)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(void, VRDPCallbackClientDisconnect,(void *pvCallback,
                                                            uint32_t u32ClientId,
-                                                           uint32_t fu32Intercepted);
+                                                           uint32_t fu32Intercepted));
     /* The client supports one of RDP channels.
      *
      * @param pvCallback      The callback specific pointer.
@@ -819,10 +819,10 @@ typedef struct _VRDPCALLBACKS_1
      *
      * @return IPRT status code.
      */
-    DECLCALLBACKMEMBER(int, VRDPCallbackIntercept)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(int, VRDPCallbackIntercept,(void *pvCallback,
                                                    uint32_t u32ClientId,
                                                    uint32_t fu32Intercept,
-                                                   void **ppvIntercept);
+                                                   void **ppvIntercept));
 
     /**
      * Called by the server when a reply is received from a client.
@@ -836,12 +836,12 @@ typedef struct _VRDPCALLBACKS_1
      *
      * @return IPRT status code.
      */
-    DECLCALLBACKMEMBER(int, VRDPCallbackUSB)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(int, VRDPCallbackUSB,(void *pvCallback,
                                              void *pvIntercept,
                                              uint32_t u32ClientId,
                                              uint8_t u8Code,
                                              const void *pvRet,
-                                             uint32_t cbRet);
+                                             uint32_t cbRet));
 
     /**
      * Called by the server when (VRDP_CLIPBOARD_FUNCTION_*):
@@ -858,13 +858,13 @@ typedef struct _VRDPCALLBACKS_1
      *
      * @return IPRT status code.
      */
-    DECLCALLBACKMEMBER(int, VRDPCallbackClipboard)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(int, VRDPCallbackClipboard,(void *pvCallback,
                                                    void *pvIntercept,
                                                    uint32_t u32ClientId,
                                                    uint32_t u32Function,
                                                    uint32_t u32Format,
                                                    const void *pvData,
-                                                   uint32_t cbData);
+                                                   uint32_t cbData));
 
     /* The framebuffer information is queried.
      *
@@ -874,25 +874,25 @@ typedef struct _VRDPCALLBACKS_1
      *
      * @return Whether the framebuffer is available.
      */
-    DECLCALLBACKMEMBER(bool, VRDPCallbackFramebufferQuery)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(bool, VRDPCallbackFramebufferQuery,(void *pvCallback,
                                                            unsigned uScreenId,
-                                                           VRDPFRAMEBUFFERINFO *pInfo);
+                                                           VRDPFRAMEBUFFERINFO *pInfo));
 
     /* The framebuffer is locked.
      *
      * @param pvCallback      The callback specific pointer.
      * @param uScreenId       The framebuffer index.
      */
-    DECLCALLBACKMEMBER(void, VRDPCallbackFramebufferLock)(void *pvCallback,
-                                                          unsigned uScreenId);
+    DECLR3CALLBACKMEMBER(void, VRDPCallbackFramebufferLock,(void *pvCallback,
+                                                          unsigned uScreenId));
 
     /* The framebuffer is unlocked.
      *
      * @param pvCallback      The callback specific pointer.
      * @param uScreenId       The framebuffer index.
      */
-    DECLCALLBACKMEMBER(void, VRDPCallbackFramebufferUnlock)(void *pvCallback,
-                                                            unsigned uScreenId);
+    DECLR3CALLBACKMEMBER(void, VRDPCallbackFramebufferUnlock,(void *pvCallback,
+                                                            unsigned uScreenId));
 
     /* Input from the client.
      *
@@ -900,10 +900,10 @@ typedef struct _VRDPCALLBACKS_1
      * @param pvInput         The input information.
      * @param cbInput         The size of the input information.
      */
-    DECLCALLBACKMEMBER(void, VRDPCallbackInput)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(void, VRDPCallbackInput,(void *pvCallback,
                                                 int type,
                                                 const void *pvInput,
-                                                unsigned cbInput);
+                                                unsigned cbInput));
 
     /* Video mode hint from the client.
      *
@@ -913,11 +913,11 @@ typedef struct _VRDPCALLBACKS_1
      * @param cBitsPerPixel   Requested color depth.
      * @param uScreenId       The framebuffer index.
      */
-    DECLCALLBACKMEMBER(void, VRDPCallbackVideoModeHint)(void *pvCallback,
+    DECLR3CALLBACKMEMBER(void, VRDPCallbackVideoModeHint,(void *pvCallback,
                                                         unsigned cWidth,
                                                         unsigned cHeight, 
                                                         unsigned cBitsPerPixel,
-                                                        unsigned uScreenId);
+                                                        unsigned uScreenId));
 
 } VRDPCALLBACKS_1;
 
@@ -1520,43 +1520,43 @@ typedef struct _VRDPSERVERCALLBACK
      *
      * @return VBox error code.
      */
-    DECLCALLBACKMEMBER(int, pfnClientLogon) (void *pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnClientLogon, (void *pvUser,
                                              uint32_t u32ClientId,
                                              const char *pszUser,
                                              const char *pszPassword,
-                                             const char *pszDomain);
+                                             const char *pszDomain));
     /* The client has connected.
      *
      * @param pvUser       The callback specific pointer.
      * @param u32ClientId  An unique client identifier generated by the server.
      */
-    DECLCALLBACKMEMBER(void, pfnClientConnect) (void *pvUser,
-                                                uint32_t u32ClientId);
+    DECLR3CALLBACKMEMBER(void, pfnClientConnect, (void *pvUser,
+                                                uint32_t u32ClientId));
     /* The client has been disconnected.
      *
      * @param pvUser          The callback specific pointer.
      * @param u32ClientId     An unique client identifier generated by the server.
      * @param fu32Intercepted What was intercepted by the client (VRDP_CLIENT_INTERCEPT_*).
      */
-    DECLCALLBACKMEMBER(void, pfnClientDisconnect) (void *pvUser,
+    DECLR3CALLBACKMEMBER(void, pfnClientDisconnect, (void *pvUser,
                                                    uint32_t u32ClientId,
-                                                   uint32_t fu32Intercepted);
+                                                   uint32_t fu32Intercepted));
     /* The client supports audio channel.
      */
-    DECLCALLBACKMEMBER(void, pfnInterceptAudio) (void *pvUser,
-                                                 uint32_t u32ClientId);
+    DECLR3CALLBACKMEMBER(void, pfnInterceptAudio, (void *pvUser,
+                                                 uint32_t u32ClientId));
     /* The client supports USB channel.
      */
-    DECLCALLBACKMEMBER(void, pfnInterceptUSB) (void *pvUser,
+    DECLR3CALLBACKMEMBER(void, pfnInterceptUSB, (void *pvUser,
                                                uint32_t u32ClientId,
                                                PFNVRDPUSBCALLBACK *ppfn,
-                                               void **ppv);
+                                               void **ppv));
     /* The client supports clipboard channel.
      */
-    DECLCALLBACKMEMBER(void, pfnInterceptClipboard) (void *pvUser,
+    DECLR3CALLBACKMEMBER(void, pfnInterceptClipboard, (void *pvUser,
                                                      uint32_t u32ClientId,
                                                      PFNVRDPCLIPBOARDCALLBACK *ppfn,
-                                                     void **ppv);
+                                                     void **ppv));
 } VRDPSERVERCALLBACK;
 
 /**
