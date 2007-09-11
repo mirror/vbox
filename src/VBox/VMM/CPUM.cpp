@@ -223,7 +223,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_FEATURE_EDX_PAT   - not virtualized.
                                        //| X86_CPUID_FEATURE_EDX_PSE36 - not virtualized.
                                        //| X86_CPUID_FEATURE_EDX_PSN   - no serial number.
-                                       //| X86_CPUID_FEATURE_EDX_CLFSH - no CLFLUSH instruction.
+                                       | X86_CPUID_FEATURE_EDX_CLFSH
                                        //| X86_CPUID_FEATURE_EDX_DS    - no debug store.
                                        //| X86_CPUID_FEATURE_EDX_ACPI  - not virtualized yet.
                                        | X86_CPUID_FEATURE_EDX_MMX
@@ -268,7 +268,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_AMD_FEATURE_EDX_MMX
                                        | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                        | X86_CPUID_AMD_FEATURE_EDX_FFXSR
-                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - definintly not.
+                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - definitly not.
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW
                                        | 0;
@@ -293,7 +293,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Hide HTT, multicode, SMP, whatever.
      * (APIC-ID := 0 and #LogCpus := 0)
      */
-    pCPUM->aGuestCpuIdStd[1].ebx = 0x0000ffff;
+    pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 
     /*
      * Determin the default value and limit it the number of entries.
