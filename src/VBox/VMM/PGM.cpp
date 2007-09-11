@@ -924,13 +924,12 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /* Initialise PGM critical section. */
+    /* 
+     * Initialize the PGM critical section and flush the phys TLBs
+     */
     rc = PDMR3CritSectInit(pVM, &pVM->pgm.s.CritSect, "PGM");
     AssertRCReturn(rc, rc);
 
-    /* 
-     * Invalidate the TLBs.
-     */
     PGMR3PhysChunkInvalidateTLB(pVM);
     PGMPhysInvalidatePageR3MapTLB(pVM);
     PGMPhysInvalidatePageR0MapTLB(pVM);
@@ -943,6 +942,19 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     if (VBOX_SUCCESS(rc))
     {
         pVM->pgm.s.pTreesGC = MMHyperHC2GC(pVM, pVM->pgm.s.pTreesHC);
+
+        /*
+         * Alocate the zero page.
+         */
+        rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvZeroPgR3);
+    }
+    if (VBOX_SUCCESS(rc))
+    {
+        pVM->pgm.s.pvZeroPgGC = MMHyperR3ToGC(pVM, pVM->pgm.s.pvZeroPgR3);
+        pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
+        AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTHCPHYS);
+        pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
+        AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
 
         /*
          * Init the paging.
@@ -994,7 +1006,9 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
 #endif
         return VINF_SUCCESS;
     }
-    /* No cleanup necessary, MM frees all memory. */
+
+    /* Almost no cleanup necessary, MM frees all memory. */
+    PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
 
     return rc;
 }
@@ -1607,6 +1621,12 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->pgm.s.paDynPageMap32BitPTEsGC += offDelta;
     pVM->pgm.s.paDynPageMapPaePTEsGC += offDelta;
     pVM->pgm.s.pbDynPageMapBaseGC += offDelta;
+
+    /*
+     * The Zero page.
+     */
+    pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
+    AssertRelease(pVM->pgm.s.pvZeroPgR0);
 
     /*
      * Physical and virtual handlers.
