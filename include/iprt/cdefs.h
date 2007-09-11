@@ -488,14 +488,22 @@
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the variable member.
  */
-#define DECLCALLBACKPTR(type, name)  type (RTCALL * name)
+#ifdef IN_RING3
+# define DECLCALLBACKPTR(type, name)  type (RTCALL * name)
+#else
+# define DECLCALLBACKPTR(type, name)  RTR3PTR name
+#endif
 
 /** @def DECLCALLBACKMEMBER
  * How to declare an call back function pointer member.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
  */
-#define DECLCALLBACKMEMBER(type, name)  type (RTCALL * name)
+#ifdef IN_RING3
+# define DECLCALLBACKMEMBER(type, name)  type (RTCALL * name)
+#else
+# define DECLCALLBACKMEMBER(type, name)  RTR3PTR name
+#endif
 
 /** @def DECLR3CALLBACKMEMBER
  * How to declare an call back function pointer member - R3 Ptr.
