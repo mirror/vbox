@@ -757,7 +757,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             LARGE_INTEGER timeout;
             timeout.QuadPart = eventInfo->u32TimeoutIn;
-            timeout.QuadPart *= -100000;
+            timeout.QuadPart *= -10000;
 
             NTSTATUS rc = STATUS_SUCCESS;
 

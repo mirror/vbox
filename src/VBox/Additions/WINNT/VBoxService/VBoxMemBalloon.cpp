@@ -102,7 +102,7 @@ unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
     {
         /* wait for a seamless change event */
         VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn = 1000;
+        waitEvent.u32TimeoutIn = 5000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {

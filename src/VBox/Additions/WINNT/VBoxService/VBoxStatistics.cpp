@@ -92,11 +92,11 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     {
         *(uintptr_t *)&gCtx.pfnGlobalMemoryStatusEx = (uintptr_t)GetProcAddress(hMod, "GlobalMemoryStatusEx");
         if (gCtx.pfnGlobalMemoryStatusEx)
-            dprintf(("gCtx.GlobalMemoryStatus= %x\n", gCtx.pfnGlobalMemoryStatusEx));
+            dprintf(("gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx));
         else
         {
             /** @todo now fails in NT4; do we care? */
-            dprintf(("KERNEL32.GlobalMemoryStatus not found!!\n"));
+            dprintf(("KERNEL32.GlobalMemoryStatusEx not found!!\n"));
             return VERR_NOT_IMPLEMENTED;
         }
     }
@@ -259,7 +259,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
     {
         /* wait for a seamless change event */
         VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn = (pCtx->uStatInterval) ? pCtx->uStatInterval : 1000;
+        waitEvent.u32TimeoutIn = (pCtx->uStatInterval) ? pCtx->uStatInterval : 5000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {

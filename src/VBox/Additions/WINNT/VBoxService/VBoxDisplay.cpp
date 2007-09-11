@@ -318,7 +318,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     {
         /* wait for a display change event */
         VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn = 100;
+        waitEvent.u32TimeoutIn = 1000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, IOCTL_VBOXGUEST_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
