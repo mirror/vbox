@@ -33,6 +33,7 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
 
+#ifdef DEBUG
 /* Runtime assert implementation for Linux ring 0 */
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
                         const char *pszFile, const char *pszFunction)
@@ -46,6 +47,7 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
          "Location  : %s(%d) %s\n",
          pszExpr, pszFile, uLine, pszFunction));
 }
+EXPORT_SYMBOL(AssertMsg1);
 
 /* Runtime assert implementation for Linux ring 0 */
 RTDECL(void) AssertMsg2(const char *pszFormat, ...)
@@ -60,23 +62,14 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     Log(("%s", msg));
     va_end(ap);
 }
+EXPORT_SYMBOL(AssertMsg2);
 
-#if 0  /* We now have real backdoor logging */
-/* Backdoor logging function, needed by the runtime */
-RTDECL(size_t) RTLogBackdoorPrintf (const char *pszFormat, ...)
+RTDECL(bool)    RTAssertDoBreakpoint(void)
 {
-    va_list ap;
-    char    msg[256];
-    size_t n;
-
-    va_start(ap, pszFormat);
-    n = vsnprintf(msg, sizeof(msg) - 1, pszFormat, ap);
-    msg[sizeof(msg) - 1] = '\0';
-    printk ("%s", msg);
-    va_end(ap);
-    return n;
+    return false;
 }
-#endif
+EXPORT_SYMBOL(RTAssertDoBreakpoint);
+#endif /* DEBUG defined */
 
 /** device extension structure (we only support one device instance) */
 static VBoxDevice *vboxDev = NULL;
