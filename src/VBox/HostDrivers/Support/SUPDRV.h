@@ -640,7 +640,7 @@ typedef struct SUPDRVDEVEXT
      * 0 if the code VMM isn't loaded and Idt are nops. */
     void * volatile         pvVMMR0;
     /** VMMR0Entry() pointer. */
-    DECLCALLBACKMEMBER(int, pfnVMMR0Entry)(PVM pVM, unsigned uOperation, void *pvArg);
+    DECLR0CALLBACKMEMBER(int, pfnVMMR0Entry, (PVM pVM, unsigned uOperation, void *pvArg));
 
     /** Linked list of loaded code. */
     PSUPDRVLDRIMAGE volatile pLdrImages;
