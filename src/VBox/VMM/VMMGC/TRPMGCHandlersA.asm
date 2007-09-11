@@ -146,7 +146,6 @@ g_apfnStaticTrapHandlersGuest:
 ALIGNCODE(16)
 BEGINPROC_EXPORTED TRPMGCHandlerGeneric
 %macro TRPMGenericEntry 1
-    cli                                 ; not disabled for traps it seems.
     db 06ah, i                          ; push imm8 - note that this is a signextended value.
     jmp   %1
     ALIGNCODE(8)
@@ -300,7 +299,7 @@ gt_SkipV86Entry:
     ;
     ; Disable Ring-0 WP
     ;
-    mov     eax, cr0
+    mov     eax, cr0                    ;; @todo elimitate this read?
     and     eax, ~X86_CR0_WRITE_PROTECT
     mov     cr0, eax
 
@@ -341,8 +340,7 @@ gt_SkipV86Entry:
     jnz short gt_NotHyperVisor
 
     test    byte [esp + 0ch + ESPOFF], 3h ; check CPL of the cs selector
-    jnz short gt_NotHyperVisor
-    jmp     gt_InHypervisor
+    jz      near gt_InHypervisor
 
     ;
     ; Trap in guest code.
@@ -400,7 +398,7 @@ gt_GuestTrap:
     ;
 
     ; Enable WP
-    mov     eax, cr0
+    mov     eax, cr0                    ;; @todo try elimiate this read.
     or      eax, X86_CR0_WRITE_PROTECT
     mov     cr0, eax
     ; Restore guest context and continue execution.
@@ -427,7 +425,7 @@ gt_continue_guest:
 %endif
 
     ; enable WP
-    mov     eax, cr0
+    mov     eax, cr0                    ;; @todo try elimiate this read.
     or      eax, X86_CR0_WRITE_PROTECT
     mov     cr0, eax
 
@@ -560,7 +558,7 @@ gt_Hyper_HaveTemporaryHandler:
     add     esp, byte 8                 ; cleanup stack (cdecl)
 
     cmp     eax, byte VINF_SUCCESS      ; If completely handled Then resume execution.
-    je near gt_Hyper_Continue           ; YASM BUG! YASMCHECK!
+    je      near gt_Hyper_Continue
     ;; @todo Handle ALL returns types from temporary handlers!
     jmp     gt_Hyper_AbandonShip
 
@@ -782,7 +780,7 @@ ti_SkipV86Entry:
     ;
     ; Disable Ring-0 WP
     ;
-    mov     eax, cr0
+    mov     eax, cr0                    ;; @todo try elimiate this read.
     and     eax, ~X86_CR0_WRITE_PROTECT
     mov     cr0, eax
 
@@ -845,7 +843,7 @@ gi_NotHyperVisor:
     mov     [eax + TRPM.uPrevVector], edx
 
     ; Enable WP
-    mov     eax, cr0
+    mov     eax, cr0                    ;; @todo try elimiate this read.
     or      eax, X86_CR0_WRITE_PROTECT
     mov     cr0, eax
     ; restore guest context and continue execution.
@@ -952,7 +950,6 @@ ENDPROC TRPMGCHandlerInterupt
 ;
 ALIGNCODE(16)
 BEGINPROC_EXPORTED TRPMGCHandlerTrap12
-    cli
     push    byte 12h
     jmp     ti_GenericInterrupt
 ENDPROC TRPMGCHandlerTrap12
@@ -995,8 +992,9 @@ ENDPROC TRPMGCHandlerTrap12
 ;
 ALIGNCODE(16)
 BEGINPROC_EXPORTED TRPMGCHandlerTrap08
-    cli                                 ; slight paranoia
-    cld                                 ; more paranoia
+    ; be careful.
+    cli
+    cld
 
     ;
     ; Load Hypervisor DS and ES (get it from the SS) - paranoia, but the TSS could be overwritten.. :)
