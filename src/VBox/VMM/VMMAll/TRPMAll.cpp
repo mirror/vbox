@@ -591,10 +591,12 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                 if ((pTrapStackGC >> PAGE_SHIFT) != ((pTrapStackGC - 10*sizeof(uint32_t)) >> PAGE_SHIFT)) /* fail if we cross a page boundary */
                     goto failure;
 
+                /** @todo add PGMPhysGCPtr2CCPtr */
+                PGMPAGEMAPLOCK PageMappingLock;
                 RTGCPHYS GCPhysStack;
                 rc = PGMPhysGCPtr2GCPhys(pVM, pTrapStackGC, &GCPhysStack);
                 if (VBOX_SUCCESS(rc))
-                    rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysStack, (void **)&pTrapStack);
+                    rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysStack, (void **)&pTrapStack, &PageMappingLock);
                 if (VBOX_FAILURE(rc))
                 {
                     AssertRC(rc);
@@ -709,7 +711,7 @@ TRPMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, u
                     pRegFrame->esp        = esp_r0;
                     pRegFrame->ss         = ss_r0 & ~X86_SEL_RPL;     /* set rpl to ring 0 */
                     STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
-                    PGMPhysGCPhys2CCPtrRelease(pVM, GCPhysStack, pTrapStack);
+                    PGMPhysReleasePageMappingLock(pVM, &PageMappingLock);
                     return VINF_SUCCESS;
 #endif
                 }
