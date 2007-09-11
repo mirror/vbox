@@ -19,6 +19,7 @@
 #include "VBoxService.h"
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include "helpers.h"
+#include <iprt/asm.h>
 
 typedef struct _VBOXCLIPBOARDCONTEXT
 {
@@ -37,7 +38,7 @@ typedef struct _VBOXCLIPBOARDCONTEXT
 //    uint32_t u32LastSentFormat;
 //    uint64_t u64LastSentCRC64;
     
-    bool     fAnnouncing;
+    volatile uint32_t u32Announcing;
 
 } VBOXCLIPBOARDCONTEXT;
 
@@ -334,8 +335,9 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
         {
             dprintf (("vboxClipboardProcessMsg: WM_DRAWCLIPBOARD, hwnd %p\n", pCtx->hwnd));
 
-            if (!pCtx->fAnnouncing)
+            if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 0, 1) == false)
             {
+                /* Could not do 1->0 transition. That means u32Announcing is 0. */
                 vboxClipboardChanged (pCtx);
             }
 
@@ -355,6 +357,8 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
 
             UINT format = (UINT)wParam;
 
+            dprintf (("vboxClipboardProcessMsg: WM_RENDERFORMAT, format %x\n", format));
+            
             switch (format)
             {
                 case CF_UNICODETEXT:
@@ -517,9 +521,6 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
             /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
             uint32_t u32Formats = (uint32_t)lParam;
             
-            /* Prevent the WM_DRAWCLIPBOARD processing. */
-            pCtx->fAnnouncing = true;
-
             if (OpenClipboard (hwnd))
             {
                 EmptyClipboard();
@@ -529,13 +530,23 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
                 {
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT\n"));
-                    hClip = SetClipboardData (CF_UNICODETEXT, NULL);
+                    
+                    /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
+                    if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
+                    {
+                        hClip = SetClipboardData (CF_UNICODETEXT, NULL);
+                    }
                 }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
                 {
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
-                    hClip = SetClipboardData (CF_DIB, NULL);
+                    
+                    /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
+                    if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
+                    {
+                        hClip = SetClipboardData (CF_DIB, NULL);
+                    }
                 }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
@@ -544,20 +555,22 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_HTML 0x%04X\n", format));
                     if (format != 0)
                     {
-                        hClip = SetClipboardData (format, NULL);
+                        /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
+                        if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
+                        {
+                            hClip = SetClipboardData (format, NULL);
+                        }
                     }
                 }
 
                 CloseClipboard();
 
-                dprintf(("window proc WM_USER: hClip %p\n", hClip));
+                dprintf(("window proc WM_USER: hClip %p, err %d\n", hClip, GetLastError ()));
             }
             else
             {
                 dprintf(("window proc WM_USER: failed to open clipboard\n"));
             }
-            
-            pCtx->fAnnouncing = false;
         } break;
 
         case WM_USER + 1:
