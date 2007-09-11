@@ -584,9 +584,13 @@ uint8_t SDLConsole::keyEventToKeyCode(const SDL_KeyboardEvent *ev)
     // start with the scancode determined by SDL
     keycode = ev->keysym.scancode;
 
-#if defined(VBOXBFE_WITH_X11) && !defined(RT_OS_SOLARIS) /// @todo verify that these are X11 issues and not unique linux issues.
-                                                         // -> doesn't seem to work on solaris...
-    // workaround for SDL keyboard translation issues on X11
+#if defined(RT_OS_LINUX)
+    // workaround for SDL keyboard translation issues on Linux
+    // keycodes > 0x100 are sent as 0xe0 keycode
+    // Note that these are the keycodes used by XFree86/X.org
+    // servers on a Linux host, and will almost certainly not
+    // work on other hosts or on other servers on Linux hosts.
+    // For a more general approach, see the Wine code in the GUI.
     static const uint8_t x_keycode_to_pc_keycode[61] =
     {
        0xc7,      /*  97  Home   */

@@ -2754,6 +2754,10 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
 #ifdef VBOXSDL_WITH_X11
     // workaround for SDL keyboard translation issues on Linux
     // keycodes > 0x100 are sent as 0xe0 keycode
+    // Note that these are the keycodes used by XFree86/X.org
+    // servers on a Linux host, and will almost certainly not
+    // work on other hosts or on other servers on Linux hosts.
+    // For a more general approach, see the Wine code in the GUI.
     static const uint16_t x_keycode_to_pc_keycode[61] =
     {
        0x47|0x100,  /*  97  Home   */
