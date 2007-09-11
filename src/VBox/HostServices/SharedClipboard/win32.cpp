@@ -20,6 +20,7 @@
 
 #include <iprt/alloc.h>
 #include <iprt/string.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <process.h>
@@ -42,7 +43,7 @@ struct _VBOXCLIPBOARDCONTEXT
     
     VBOXCLIPBOARDCLIENTDATA *pClient;
     
-    bool fAnnouncing;
+    volatile uint32_t u32Announcing;
 };
 
 /* Only one client is supported. There seems to be no need for more clients. */
@@ -223,8 +224,9 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         {
             Log(("WM_DRAWCLIPBOARD next %p\n", pCtx->hwndNextInChain));
 
-            if (!pCtx->fAnnouncing)
+            if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 0, 1) == false)
             {
+                /* Could not do 1->0 transition. That means u32Announcing is 0. */
                 vboxClipboardChanged (pCtx);
             }
 
@@ -380,26 +382,34 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             
             Log(("WM_USER u32Formats = %02X\n", u32Formats));
             
-            pCtx->fAnnouncing = true;
-
             if (OpenClipboard (hwnd))
             {
                 EmptyClipboard();
                 
                 Log(("WM_USER emptied clipboard\n"));
             
-                HANDLE hClip;
+                HANDLE hClip = NULL;
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
                 {
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT\n"));
-                    hClip = SetClipboardData (CF_UNICODETEXT, NULL);
+                    
+                    /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
+                    if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
+                    {
+                        hClip = SetClipboardData (CF_UNICODETEXT, NULL);
+                    }
                 }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
                 {
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
-                    hClip = SetClipboardData (CF_DIB, NULL);
+                    
+                    /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
+                    if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
+                    {
+                        hClip = SetClipboardData (CF_DIB, NULL);
+                    }
                 }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
@@ -408,21 +418,22 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_HTML 0x%04X\n", format));
                     if (format != 0)
                     {
-                        hClip = SetClipboardData (format, NULL);
+                        /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
+                        if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
+                        {
+                            hClip = SetClipboardData (format, NULL);
+                        }
                     }
                 }
 
                 CloseClipboard();
 
-                dprintf(("window proc WM_USER: hClip %p\n", hClip));
+                dprintf(("window proc WM_USER: hClip %p, err %d\n", hClip, GetLastError ()));
             }
             else
             {
                 dprintf(("window proc WM_USER: failed to open clipboard\n"));
             }
-            
-            pCtx->fAnnouncing = false;
-            
         } break;
 
         default:
@@ -524,6 +535,8 @@ int vboxClipboardInit (void)
 
     g_ctx.hRenderEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     
+    g_ctx.u32Announcing = 0;
+    
     rc = RTThreadCreate (&g_ctx.thread, VBoxClipboardThread, NULL, 65536, 
                          RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
 
@@ -604,6 +617,8 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
      */
     if (OpenClipboard (pClient->pCtx->hwnd))
     {
+        dprintf(("Clipboard opened.\n"));
+        
         if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
         {
             hClip = GetClipboardData (CF_DIB);
