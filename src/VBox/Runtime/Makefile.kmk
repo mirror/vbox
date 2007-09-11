@@ -660,6 +660,8 @@ RuntimeR0_SOURCES       = \
 	table/avlroogcptr.cpp \
 	table/avloioport.cpp \
 	table/avlroioport.cpp \
+	table/avlu32.cpp \
+	table/avllu32.cpp \
 	logcom.cpp \
 	logformat.cpp \
 	strformat.cpp \
@@ -961,7 +963,7 @@ RuntimeOS2GuestR0_SOURCES       = \
 RuntimeGC_TEMPLATE      = VBOXGC
 RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
 RuntimeGC_SOURCES       = \
-        gc/initterm-gc.cpp \
+	gc/initterm-gc.cpp \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
 	table/avlogcphys.cpp \
@@ -972,6 +974,8 @@ RuntimeGC_SOURCES       = \
 	table/avlroogcptr.cpp \
 	table/avloioport.cpp \
 	table/avlroioport.cpp \
+	table/avlu32.cpp \
+	table/avllu32.cpp \
 	assert.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	log.cpp \

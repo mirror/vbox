@@ -782,6 +782,52 @@ PGMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys);
  */
 PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys);
 
+/**
+ * Converts a guest pointer to a GC physical address.
+ *
+ * This uses the current CR3/CR0/CR4 of the guest.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM Handle
+ * @param   GCPtr       The guest pointer to convert.
+ * @param   pGCPhys     Where to store the GC physical address.
+ */
+PGMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
+
+/**
+ * Converts a guest pointer to a HC physical address.
+ *
+ * This uses the current CR3/CR0/CR4 of the guest.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM Handle
+ * @param   GCPtr       The guest pointer to convert.
+ * @param   pHCPhys     Where to store the HC physical address.
+ */
+PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys);
+
+
+/**
+ * Invalidates the GC page mapping TLB.
+ * 
+ * @param   pVM     The VM handle.
+ */
+PDMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM);
+
+/**
+ * Invalidates the ring-0 page mapping TLB.
+ * 
+ * @param   pVM     The VM handle.
+ */
+PDMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM);
+
+/**
+ * Invalidates the ring-3 page mapping TLB.
+ * 
+ * @param   pVM     The VM handle.
+ */
+PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM);
+
 /** 
  * Page mapping lock.
  * 
@@ -794,8 +840,10 @@ typedef struct PGMPAGEMAPLOCK
     /** Just a dummy for the time being. */
     uint32_t    u32Dummy;
 #else
-    /** Just a dummy for the time being. */
-    uint32_t    u32Dummy;
+    /** Pointer to the PGMPAGE. */
+    void       *pvPage;
+    /** Pointer to the PGMCHUNKR3MAP. */
+    void       *pvMap;
 #endif
 } PGMPAGEMAPLOCK;
 /** Pointer to a page mapping lock. */
@@ -930,30 +978,6 @@ PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
  * @param   pHCPtr  Where to store the HC pointer on success.
  */
 PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr);
-
-/**
- * Converts a guest pointer to a GC physical address.
- *
- * This uses the current CR3/CR0/CR4 of the guest.
- *
- * @returns VBox status code.
- * @param   pVM         The VM Handle
- * @param   GCPtr       The guest pointer to convert.
- * @param   pGCPhys     Where to store the GC physical address.
- */
-PGMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
-
-/**
- * Converts a guest pointer to a HC physical address.
- *
- * This uses the current CR3/CR0/CR4 of the guest.
- *
- * @returns VBox status code.
- * @param   pVM         The VM Handle
- * @param   GCPtr       The guest pointer to convert.
- * @param   pHCPhys     Where to store the HC physical address.
- */
-PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys);
 
 /**
  * Converts a guest pointer to a HC pointer.
@@ -1719,6 +1743,13 @@ PGMR3DECL(void) PGMR3PhysWriteDword(PVM pVM, RTGCPHYS GCPhys, uint32_t val);
  * @param   idChunk     The chunk to map.
  */
 PDMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
+
+/**
+ * Invalidates the TLB for the ring-3 mapping cache.
+ * 
+ * @param   pVM         The VM handle.
+ */
+PGMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM);
 
 /**
  * Perform an integrity check on the PGM component.
