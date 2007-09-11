@@ -451,9 +451,9 @@ typedef struct PGMVIRTHANDLER
     /** Pointer to the GC callback function. */
     GCPTRTYPE(PFNPGMGCVIRTHANDLER)      pfnHandlerGC;
     /** Pointer to the HC callback function for invalidation. */
-    HCPTRTYPE(PFNPGMHCVIRTINVALIDATE)   pfnInvalidateHC;
+    R3PTRTYPE(PFNPGMHCVIRTINVALIDATE)   pfnInvalidateHC;
     /** Pointer to the HC callback function. */
-    HCPTRTYPE(PFNPGMHCVIRTHANDLER)      pfnHandlerHC;
+    R3PTRTYPE(PFNPGMHCVIRTHANDLER)      pfnHandlerHC;
     /** Description / Name. For easing debugging. */
     HCPTRTYPE(const char *)             pszDesc;
 #ifdef VBOX_WITH_STATISTICS

@@ -597,7 +597,7 @@ typedef struct PDMQUEUE
         struct
         {
             /** Pointer to consumer function. */
-            HCPTRTYPE(PFNPDMQUEUEDEV)   pfnCallback;
+            R3PTRTYPE(PFNPDMQUEUEDEV)   pfnCallback;
             /** Pointer to the device instance owning the queue. */
             HCPTRTYPE(PPDMDEVINS)       pDevIns;
         } Dev;
@@ -605,7 +605,7 @@ typedef struct PDMQUEUE
         struct
         {
             /** Pointer to consumer function. */
-            HCPTRTYPE(PFNPDMQUEUEDRV)   pfnCallback;
+            R3PTRTYPE(PFNPDMQUEUEDRV)   pfnCallback;
             /** Pointer to the driver instance owning the queue. */
             HCPTRTYPE(PPDMDRVINS)       pDrvIns;
         } Drv;
@@ -613,13 +613,13 @@ typedef struct PDMQUEUE
         struct
         {
             /** Pointer to consumer function. */
-            HCPTRTYPE(PFNPDMQUEUEINT)   pfnCallback;
+            R3PTRTYPE(PFNPDMQUEUEINT)   pfnCallback;
         } Int;
         /** PDMQUEUETYPE_EXTERNAL */
         struct
         {
             /** Pointer to consumer function. */
-            HCPTRTYPE(PFNPDMQUEUEEXT)   pfnCallback;
+            R3PTRTYPE(PFNPDMQUEUEEXT)   pfnCallback;
             /** Pointer to user argument. */
             HCPTRTYPE(void *)           pvUser;
         } Ext;
@@ -823,7 +823,7 @@ typedef struct PDM
 #if HC_ARCH_BITS == 64
     RTUINT                          padding1;
 #endif
-    HCPTRTYPE(PFNPDMDRVPOLLER)      apfnPollers[16];
+    R3PTRTYPE(PFNPDMDRVPOLLER)      apfnPollers[16];
     HCPTRTYPE(PPDMDRVINS)           aDrvInsPollers[16];
     PTMTIMERHC                      pTimerPollers;
     /** @} */
