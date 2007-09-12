@@ -891,11 +891,14 @@ static void ataPIOTransferLimitATAPI(ATADevState *s)
 {
     uint32_t cbLimit, cbTransfer;
 
-    cbLimit = s->uATARegLCyl | (s->uATARegHCyl << 8);
+    if (s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
+        cbLimit = 0xfffe;
+    else
+        cbLimit = s->uATARegLCyl | (s->uATARegHCyl << 8);
     Log2(("%s: byte count limit=%d\n", __FUNCTION__, cbLimit));
     if (cbLimit == 0xffff)
         cbLimit--;
-    cbTransfer = s->cbTotalTransfer;
+    cbTransfer = RT_MIN(s->cbTotalTransfer, s->iIOBufferEnd - s->iIOBufferCur);
     if (cbTransfer > cbLimit)
     {
         /* byte count limit must be even if this case */
@@ -1617,7 +1620,6 @@ static bool atapiReadSS(ATADevState *s)
     int rc = VINF_SUCCESS;
     uint32_t cbTransfer, cSectors;
 
-    s->iSourceSink = ATAFN_SS_NULL;
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     cbTransfer = RT_MIN(s->cbTotalTransfer, s->cbIOBuffer);
     cSectors = cbTransfer / s->cbATAPISector;
@@ -1675,7 +1677,9 @@ static bool atapiReadSS(ATADevState *s)
         /* The initial buffer end value has been set up based on the total
          * transfer size. But the I/O buffer size limits what can actually be
          * done in one transfer, so set the actual value of the buffer end. */
-        s->iIOBufferEnd = cbTransfer;
+        s->cbElementaryTransfer = cbTransfer;
+        if (cbTransfer >= s->cbTotalTransfer)
+            s->iSourceSink = ATAFN_SS_NULL;
         atapiCmdOK(s);
         s->iATAPILBA += cSectors;
     }
@@ -1835,7 +1839,7 @@ static bool atapiPassthroughSS(ATADevState *s)
             /* The initial buffer end value has been set up based on the total
              * transfer size. But the I/O buffer size limits what can actually be
              * done in one transfer, so set the actual value of the buffer end. */
-            s->iIOBufferEnd = cbTransfer;
+            s->cbElementaryTransfer = cbTransfer;
             if (s->aATAPICmd[0] == SCSI_INQUIRY)
             {
                 /* Make sure that the real drive cannot be identified.
@@ -3694,7 +3698,7 @@ static void ataPIOTransfer(PATACONTROLLER pCtl)
 
     if (s->cbTotalTransfer && s->iIOBufferCur > s->iIOBufferEnd)
     {
-        LogRel(("PIIX3 ATA: LUN#%d: %s data in the middle of a PIO transfer - VERY SLOW\n", s->iLUN, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "storing" : "loading"));
+        LogRel(("PIIX3 ATA: LUN#%d: %s data in the middle of a PIO transfer - VERY SLOW\n", s->iLUN, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "loading" : "storing"));
         /* Any guest OS that triggers this case has a pathetic ATA driver.
          * In a real system it would block the CPU via IORDY, here we do it
          * very similarly by not continuing with the current instruction
@@ -3748,7 +3752,9 @@ DECLINLINE(void) ataPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
         return;
     }
 
-    if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
+    if (   s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE
+        || (   s->iSourceSink != ATAFN_SS_NULL
+            && s->iIOBufferCur >= s->iIOBufferEnd))
     {
         /* Need to continue the transfer in the async I/O thread. This is
          * the case for write operations or generally for not yet finished
@@ -3761,8 +3767,8 @@ DECLINLINE(void) ataPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
     }
     else
     {
-        /* Everything finished (though maybe a couple of chunks need to be
-         * transferred, but all without source/sink callback). */
+        /* Either everything finished (though some data might still be pending)
+         * or some data is pending before the next read is due. */
 
         /* Continue a previously started transfer. */
         ataUnsetStatus(s, ATA_STAT_DRQ);
