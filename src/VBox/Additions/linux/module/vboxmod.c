@@ -33,7 +33,6 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
 
-#ifdef DEBUG
 /* Runtime assert implementation for Linux ring 0 */
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
                         const char *pszFile, const char *pszFunction)
@@ -69,7 +68,26 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
     return false;
 }
 EXPORT_SYMBOL(RTAssertDoBreakpoint);
-#endif /* DEBUG defined */
+#if !defined(DEBUG) && defined(IN_MODULE)
+/** Write a string to the backdoor logger. */
+RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
+{
+    const uint8_t *pu8;
+    for (pu8 = (const uint8_t *)pch; cb-- > 0; pu8++)
+        ASMOutU8(RTLOG_DEBUG_PORT, *pu8);
+    /** @todo a rep outs could be more efficient, I don't know...
+     * @code
+     * __asm {
+     *      mov     ecx, [cb]
+     *      mov     esi, [pch]
+     *      mov     dx, RTLOG_DEFAULT_PORT
+     *      rep outsb
+     * }
+     * @endcode
+     */
+}
+EXPORT_SYMBOL(RTLogWriteUser);
+#endif /* DEBUG not defined and IN_MODULE defined */
 
 /** device extension structure (we only support one device instance) */
 static VBoxDevice *vboxDev = NULL;
