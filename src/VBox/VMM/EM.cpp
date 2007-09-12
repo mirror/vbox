@@ -2358,6 +2358,16 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
         /** @todo maybe prefetch the supervisor stack page as well */
     }
 
+    /* 
+     * Allocate handy pages (just in case the above actions have consumed some pages).
+     */
+    if (VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
+    {
+        int rc = PGMR3PhysAllocateHandyPages(pVM);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -2488,19 +2498,6 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK))
             rc = emR3HighPriorityPostForcedActions(pVM, rc);
-
-#ifdef PGM_CACHE_VERY_STRICT
-        /*
-         * Page manager cache checks.
-         */
-        if (    rc == VINF_EM_RAW_INTERRUPT
-            ||  rc == VINF_EM_RAW_GUEST_TRAP
-            ||  rc == VINF_IOM_HC_IOPORT_READ
-            ||  rc == VINF_IOM_HC_IOPORT_WRITE
-            //||  rc == VINF_PATM_PATCH_INT3
-           )
-            pgmCacheCheckPD(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4);
-#endif
 
 #ifdef VBOX_STRICT
         /*
@@ -3070,6 +3067,15 @@ static int emR3ForcedActions(PVM pVM, int rc)
             }
         }
 
+        /* 
+         * Allocate handy pages.
+         */
+        if (VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
+        {
+            rc2 = PGMR3PhysAllocateHandyPages(pVM);
+            UPDATE_RC();
+        }
+
         /*
          * Debugger Facility request.
          */
@@ -3102,7 +3108,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
 
 #endif
         /* check that we got them all  */
-        Assert(!(VM_FF_HIGH_PRIORITY_PRE_MASK & ~(VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_DBGF | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_INHIBIT_INTERRUPTS)));
+        Assert(!(VM_FF_HIGH_PRIORITY_PRE_MASK & ~(VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_DBGF | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_INHIBIT_INTERRUPTS | VM_FF_PGM_NEED_HANDY_PAGES)));
     }
 
 #undef UPDATE_RC

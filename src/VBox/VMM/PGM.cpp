@@ -500,7 +500,7 @@
  * 
  * So, when RTR0MemObjAllocPhysNC returns VERR_NOT_SUPPORTED the page allocator
  * will return to the ring-3 caller (and later ring-0) and asking it to seed
- * the page allocator with some fresh pages (VERR_GVM_SEED_ME). Ring-3 will
+ * the page allocator with some fresh pages (VERR_GMM_SEED_ME). Ring-3 will
  * then perform an SUPPageAlloc(cbChunk >> PAGE_SHIFT) call and make a 
  * "SeededAllocPages" call to ring-0.
  * 
@@ -1405,6 +1405,13 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->ChunkR3Map.cMax,                   STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",                   STAMUNIT_OCCURENCES, "Maximum number of mapped chunks.");
     STAM_REG(pVM, &pPGM->StatChunkR3MapTlbHits,             STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbHits",                STAMUNIT_OCCURENCES, "TLB hits.");
     STAM_REG(pVM, &pPGM->StatChunkR3MapTlbMisses,           STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbMisses",              STAMUNIT_OCCURENCES, "TLB misses.");
+    STAM_REG(pVM, &pPGM->StatPageReplaceShared,             STAMTYPE_COUNTER, "/PGM/Page/ReplacedShared",               STAMUNIT_OCCURENCES, "Times a shared page was replaced.");
+    STAM_REG(pVM, &pPGM->StatPageReplaceZero,               STAMTYPE_COUNTER, "/PGM/Page/ReplacedZero",                 STAMUNIT_OCCURENCES, "Times the zero page was replaced.");
+    STAM_REG(pVM, &pPGM->StatPageHandyAllocs,               STAMTYPE_COUNTER, "/PGM/Page/HandyAllocs",                  STAMUNIT_OCCURENCES, "Number of times we've allocated more handy pages.");
+    STAM_REG(pVM, &pPGM->cAllPages,                         STAMTYPE_U32,     "/PGM/Page/cAllPages",                    STAMUNIT_OCCURENCES, "The total number of pages.");
+    STAM_REG(pVM, &pPGM->cPrivatePages,                     STAMTYPE_U32,     "/PGM/Page/cPrivatePages",                STAMUNIT_OCCURENCES, "The number of private pages.");
+    STAM_REG(pVM, &pPGM->cSharedPages,                      STAMTYPE_U32,     "/PGM/Page/cSharedPages",                 STAMUNIT_OCCURENCES, "The number of shared pages.");
+    STAM_REG(pVM, &pPGM->cZeroPages,                        STAMTYPE_U32,     "/PGM/Page/cZeroPages",                   STAMUNIT_OCCURENCES, "The number of zero backed pages.");
 
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAM_REG(pVM, &pPGM->StatTrackVirgin,                   STAMTYPE_COUNTER, "/PGM/Track/Virgin",                  STAMUNIT_OCCURENCES,     "The number of first time shadowings");

@@ -42,57 +42,59 @@
  * @{
  */
 /** This action forces the VM to service check and pending interrups on the APIC. */
-#define VM_FF_INTERRUPT_APIC            BIT(0)
+#define VM_FF_INTERRUPT_APIC            RT_BIT_32(0)
 /** This action forces the VM to service check and pending interrups on the PIC. */
-#define VM_FF_INTERRUPT_PIC             BIT(1)
+#define VM_FF_INTERRUPT_PIC             RT_BIT_32(1)
 /** This action forces the VM to schedule and run pending timer (TM). */
-#define VM_FF_TIMER                     BIT(2)
+#define VM_FF_TIMER                     RT_BIT_32(2)
 /** PDM Queues are pending. */
-#define VM_FF_PDM_QUEUES                BIT(3)
+#define VM_FF_PDM_QUEUES                RT_BIT_32(3)
 /** PDM DMA transfers are pending. */
-#define VM_FF_PDM_DMA                   BIT(4)
+#define VM_FF_PDM_DMA                   RT_BIT_32(4)
 /** PDM critical section unlocking is pending, process promptly upon return to R3. */
-#define VM_FF_PDM_CRITSECT              BIT(5)
+#define VM_FF_PDM_CRITSECT              RT_BIT_32(5)
 
 /** This action forces the VM to call DBGF so DBGF can service debugger
  * requests in the emulation thread.
  * This action flag stays asserted till DBGF clears it.*/
-#define VM_FF_DBGF                      BIT(8)
+#define VM_FF_DBGF                      RT_BIT_32(8)
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
-#define VM_FF_REQUEST                   BIT(9)
+#define VM_FF_REQUEST                   RT_BIT_32(9)
 /** Terminate the VM immediately. */
-#define VM_FF_TERMINATE                 BIT(10)
+#define VM_FF_TERMINATE                 RT_BIT_32(10)
 /** Reset the VM. (postponed) */
-#define VM_FF_RESET                     BIT(11)
+#define VM_FF_RESET                     RT_BIT_32(11)
 
 /** This action forces the VM to resync the page tables before going
  * back to execute guest code. (GLOBAL FLUSH) */
-#define VM_FF_PGM_SYNC_CR3              BIT(16)
+#define VM_FF_PGM_SYNC_CR3              RT_BIT_32(16)
 /** Same as VM_FF_PGM_SYNC_CR3 except that global pages can be skipped.
  * (NON-GLOBAL FLUSH) */
-#define VM_FF_PGM_SYNC_CR3_NON_GLOBAL   BIT(17)
+#define VM_FF_PGM_SYNC_CR3_NON_GLOBAL   RT_BIT_32(17)
+/** PGM needs to allocate handy pages. */
+#define VM_FF_PGM_NEED_HANDY_PAGES      RT_BIT_32(18)
 /** Check the interupt and trap gates */
-#define VM_FF_TRPM_SYNC_IDT             BIT(18)
+#define VM_FF_TRPM_SYNC_IDT             RT_BIT_32(19)
 /** Check Guest's TSS ring 0 stack */
-#define VM_FF_SELM_SYNC_TSS             BIT(19)
+#define VM_FF_SELM_SYNC_TSS             RT_BIT_32(20)
 /** Check Guest's GDT table */
-#define VM_FF_SELM_SYNC_GDT             BIT(20)
+#define VM_FF_SELM_SYNC_GDT             RT_BIT_32(21)
 /** Check Guest's LDT table */
-#define VM_FF_SELM_SYNC_LDT             BIT(21)
+#define VM_FF_SELM_SYNC_LDT             RT_BIT_32(22)
 /** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
-#define VM_FF_INHIBIT_INTERRUPTS        BIT(22)
+#define VM_FF_INHIBIT_INTERRUPTS        RT_BIT_32(23)
 
 /** CSAM needs to scan the page that's being executed */
-#define VM_FF_CSAM_SCAN_PAGE            BIT(24)
+#define VM_FF_CSAM_SCAN_PAGE            RT_BIT_32(24)
 /** CSAM needs to do some homework. */
-#define VM_FF_CSAM_PENDING_ACTION       BIT(25)
+#define VM_FF_CSAM_PENDING_ACTION       RT_BIT_32(25)
 
 /** Force return to Ring-3. */
-#define VM_FF_TO_R3                     BIT(28)
+#define VM_FF_TO_R3                     RT_BIT_32(28)
 
 /** Suspend the VM - debug only. */
-#define VM_FF_DEBUG_SUSPEND             BIT(31)
+#define VM_FF_DEBUG_SUSPEND             RT_BIT_32(31)
 
 /** Externally forced actions. Used to quit the idle/wait loop. */
 #define VM_FF_EXTERNAL_SUSPENDED_MASK   (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_REQUEST)
@@ -100,11 +102,12 @@
 #define VM_FF_EXTERNAL_HALTED_MASK      (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA)
 /** High priority pre-execution actions. */
 #define VM_FF_HIGH_PRIORITY_PRE_MASK    (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_DEBUG_SUSPEND \
-                                        | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT)
+                                        | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_PGM_NEED_HANDY_PAGES)
 /** High priority pre raw-mode execution mask. */
-#define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK (VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_INHIBIT_INTERRUPTS)
+#define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK (VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_PGM_NEED_HANDY_PAGES \
+                                        | VM_FF_INHIBIT_INTERRUPTS)
 /** High priority post-execution actions. */
-#define VM_FF_HIGH_PRIORITY_POST_MASK   (VM_FF_PDM_CRITSECT|VM_FF_CSAM_PENDING_ACTION)
+#define VM_FF_HIGH_PRIORITY_POST_MASK   (VM_FF_PDM_CRITSECT | VM_FF_CSAM_PENDING_ACTION)
 /** Normal priority post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_CSAM_SCAN_PAGE)
 /** Normal priority actions. */

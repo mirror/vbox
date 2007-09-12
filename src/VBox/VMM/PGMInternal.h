@@ -551,19 +551,19 @@ typedef PPGMPAGE *PPPGMPAGE;
                                                              | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
 
 /** The chunk shift. (2^20 = 1 MB) */
-#define GPM_CHUNK_SHIFT                 20
+#define GMM_CHUNK_SHIFT                 20
 /** The allocation chunk size. */
-#define GPM_CHUNK_SIZE                  (1U << GPM_CHUNK_SIZE_LOG2)
+#define GMM_CHUNK_SIZE                  (1U << GMM_CHUNK_SHIFT)
 /** The shift factor for converting a page id into a chunk id. */
-#define GPM_CHUNKID_SHIFT               (GPM_CHUNK_SHIFT - PAGE_SHIFT)
+#define GMM_CHUNKID_SHIFT               (GMM_CHUNK_SHIFT - PAGE_SHIFT)
 /** The NIL Chunk ID value. */
-#define NIL_GPM_CHUNKID                 0
+#define NIL_GMM_CHUNKID                 0
 /** The NIL Page ID value. */
-#define NIL_GPM_PAGEID                  0
+#define NIL_GMM_PAGEID                  0
 
 /**
  * Get the Page ID.
- * @returns The Page ID; NIL_GPM_PAGEID if it's a ZERO page.
+ * @returns The Page ID; NIL_GMM_PAGEID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_GET_PAGEID(pPage)      ( (pPage)->idPage )
@@ -584,20 +584,20 @@ typedef PPGMPAGE *PPPGMPAGE;
 
 /**
  * Get the Chunk ID.
- * @returns The Chunk ID; NIL_GPM_CHUNKID if it's a ZERO page.
+ * @returns The Chunk ID; NIL_GMM_CHUNKID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_CHUNKID(pPage)     ( (pPage)->idPage >> GPM_CHUNKID_SHIFT )
+#define PGM_PAGE_GET_CHUNKID(pPage)     ( (pPage)->idPage >> GMM_CHUNKID_SHIFT )
 /* later:
-#if GPM_CHUNKID_SHIFT == 12
+#if GMM_CHUNKID_SHIFT == 12
 # define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> 48) )
-#elif GPM_CHUNKID_SHIFT > 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> (48 + (GPM_CHUNKID_SHIFT - 12)) )
-#elif GPM_CHUNKID_SHIFT < 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    (   ( (uint32_t)((pPage)->HCPhys >> 48)   << (12 - GPM_CHUNKID_SHIFT) ) \
-                                         |  ( (uint32_t)((pPage)->HCPhys & 0xfff) >> GPM_CHUNKID_SHIFT ) )
+#elif GMM_CHUNKID_SHIFT > 12
+# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhys >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
+#elif GMM_CHUNKID_SHIFT < 12
+# define PGM_PAGE_GET_CHUNKID(pPage)    (   ( (uint32_t)((pPage)->HCPhys >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
+                                         |  ( (uint32_t)((pPage)->HCPhys & 0xfff) >> GMM_CHUNKID_SHIFT ) )
 #else
-# error "GPM_CHUNKID_SHIFT isn't defined or something."
+# error "GMM_CHUNKID_SHIFT isn't defined or something."
 #endif
 */
 
@@ -606,13 +606,13 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The page index.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPage & (RT_BIT_32(GPM_CHUNKID_SHIFT) - 1) )
+#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPage & (RT_BIT_32(GMM_CHUNKID_SHIFT) - 1) )
 /* later:
-#if GPM_CHUNKID_SHIFT <= 12
-# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhys & (RT_BIT_32(GPM_CHUNKID_SHIFT) - 1)) )
+#if GMM_CHUNKID_SHIFT <= 12
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhys & (RT_BIT_32(GMM_CHUNKID_SHIFT) - 1)) )
 #else
 # define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  (   (uint32_t)((pPage)->HCPhys & 0xfff) \
-                                             |  ( (uint32_t)((pPage)->HCPhys >> 48) & (RT_BIT_32(GPM_CHUNKID_SHIFT - 12) - 1) ) )
+                                             |  ( (uint32_t)((pPage)->HCPhys >> 48) & (RT_BIT_32(GMM_CHUNKID_SHIFT - 12) - 1) ) )
 #endif
 */
 
@@ -636,6 +636,13 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_IS_ZERO(pPage)         ( (pPage)->u2State == PGM_PAGE_STATE_ZERO )
+
+/**
+ * Checks if the page is backed by a SHARED page.
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_SHARED(pPage)        ( (pPage)->u2State == PGM_PAGE_STATE_SHARED )
 
 
 
@@ -1844,13 +1851,44 @@ typedef struct PGM
     RTR0PTR                         pvZeroPgR0;
     /** The GC mapping of the zero page. */ 
     RTGCPTR                         pvZeroPgGC;
-#if GC_ARCH_BITS == 32
+#if GC_ARCH_BITS != 32
     uint32_t                        u32ZeroAlignment; /**< Alignment padding. */
 #endif
     /** @}*/
 
+    /** The number of handy pages. */
+    uint32_t                        cHandyPages;
+    /** 
+     * Array of handy pages.
+     * 
+     * This array is used in a two way communication between pgmPhysAllocPage 
+     * and GMMR0AllocateHandyPages, with PGMR3PhysAllocateHandyPages serving as
+     * an intermediary.
+     * 
+     * The size of this array is important, see pgmPhysEnsureHandyPage for details.
+     * (The current size of 32 pages, means 128 KB of memory.)
+     */
+    struct 
+    {
+        /** The host physical address before pgmPhysAllocPage uses it,
+         * and the guest physical address afterwards.
+         * This is NIL_RTHCPHYS if the array entry isn't valid.
+         * ASSUMES: sizeof(RTHCPHYS) >= sizeof(RTHCPHYS). */
+        RTHCPHYS                    HCPhysGCPhys;
+        /** The Page ID.
+         * This is NIL_GMM_PAGEID if the array entry isn't valid. */
+        uint32_t                    idPage;
+        /** The Page ID of the shared page that pgmPageAllocPage replaced.
+         * This is NIL_GMM_PAGEID if no shared page was replaced. */
+        uint32_t                    idSharedPage;
+    }                               aHandyPages[32];
+
     /** @name Release Statistics
-     * @{ */
+     * @{ */                                                     
+    uint32_t                        cAllPages;          /**< The total number of pages. (Should be Private + Shared + Zero.) */
+    uint32_t                        cPrivatePages;      /**< The number of private pages. */
+    uint32_t                        cSharedPages;       /**< The number of shared pages. */
+    uint32_t                        cZeroPages;         /**< The number of zero backed pages. */
     /** The number of times the guest has switched mode since last reset or statistics reset. */
     STAMCOUNTER                     cGuestModeChanges;
     /** @} */
@@ -2107,6 +2145,12 @@ typedef struct PGM
     STAMCOUNTER StatChunkR3MapTlbHits;
     /** Ring-3/0 chunk mapper TLB misses. */
     STAMCOUNTER StatChunkR3MapTlbMisses;
+    /** Times a shared page has been replaced by a private one. */
+    STAMCOUNTER StatPageReplaceShared;
+    /** Times the zero page has been replaced by a private one. */
+    STAMCOUNTER StatPageReplaceZero;
+    /** The number of times we've executed GMMR3AllocateHandyPages. */
+    STAMCOUNTER StatPageHandyAllocs;
 
     /** Allocated mbs of guest ram */
     STAMCOUNTER     StatDynRamTotal;
@@ -2159,8 +2203,10 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
 
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 #ifdef IN_RING3
-int             pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
+#ifndef NEW_PHYS_CODE
+int             pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
+#endif
 
 int             pgmR3PoolInit(PVM pVM);
 void            pgmR3PoolRelocate(PVM pVM);

@@ -371,6 +371,7 @@ PGMR3DECL(int) PGM3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
 
+#ifndef NEW_PHYS_CODE
 
 /**
  * Allocate missing physical pages for an existing guest RAM range.
@@ -447,6 +448,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     return rc;
 }
 
+#endif /* !NEW_PHYS_CODE */
 
 /**
  * Interface MMIO handler relocation calls.
@@ -778,11 +780,10 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
 }
 
 
-#define VMMR0_DO_PGM_MAP_CHUNK 0 // later
 /**
- * Argument package for the VMMR0_DO_PGM_MAP_CHUNK request.
+ * Argument package for the VMMR0_DO_GMM_MAP_UNMAP_CHUNK request.
  */
-typedef struct PGMMAPCHUNKREQ
+typedef struct GMMMAPUNMAPCHUNKREQ
 {
     /** The chunk to map, UINT32_MAX if unmap only. (IN) */
     uint32_t    idChunkMap;
@@ -790,7 +791,7 @@ typedef struct PGMMAPCHUNKREQ
     uint32_t    idChunkUnmap;
     /** Where the mapping address is returned. (OUT) */
     RTR3PTR     pvR3;
-} PGMMAPCHUNKREQ;
+} GMMMAPUNMAPCHUNKREQ;
 
 
 /**
@@ -830,14 +831,14 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
      * Request the ring-0 part to map the chunk in question and if
      * necessary unmap another one to make space in the mapping cache.
      */
-    PGMMAPCHUNKREQ Req;
+    GMMMAPUNMAPCHUNKREQ Req;
     Req.pvR3 = NULL;
     Req.idChunkMap = idChunk;
     Req.idChunkUnmap = INT32_MAX;
     if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
     /** @todo SUPCallVMMR0Ex needs to support in+out or similar.  */
-    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_PGM_MAP_CHUNK, &Req, sizeof(Req));
+    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, &Req, sizeof(Req));
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -908,10 +909,40 @@ PGMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
     pgmLock(pVM);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
     {
-        pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].idChunk = NIL_GPM_CHUNKID;
+        pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].idChunk = NIL_GMM_CHUNKID;
         pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk = NULL;
     }
     pgmUnlock(pVM);
 }
 
+
+/**
+ * Response to VM_FF_PGM_NEED_HANDY_PAGES and VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES.
+ * 
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success. FF cleared.
+ * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is not cleared in this case.
+ * 
+ * @param   pVM         The VM handle.
+ */
+PDMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
+{
+    pgmLock(pVM);
+    int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, NULL, 0);
+    if (rc == VERR_GMM_SEED_ME)
+    {
+        void *pvChunk;
+        rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
+        if (VBOX_SUCCESS(rc))
+            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_SEED_CHUNK, pvChunk, 0);
+        if (VBOX_FAILURE(rc))
+        {
+            LogRel(("PGM: GMM Seeding failed, rc=%Vrc\n", rc));
+            rc = VINF_EM_NO_MEMORY;
+        }
+    }
+    pgmUnlock(pVM);
+    Assert(rc == VINF_SUCCESS || rc == VINF_EM_NO_MEMORY);
+    return rc;
+}
 
