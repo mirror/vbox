@@ -513,7 +513,8 @@ extern "C" int main(void)
 #endif
 }
 EOF
-    if test_compile "$LIBXALAN $LIBPTHREAD ${INCXALAN:+-I$INCXALAN}" xalan xalanc; then
+    [ -n "$INCXALAN" ] && I_INCXALAN="-I$INCXALAN"
+    if test_compile "$LIBXALAN $LIBPTHREAD $I_INCXALAN" xalan xalanc; then
       if test_execute; then
         cnf_append "SDK_VBOX_XALAN_LIBS" "`strip_l "$LIBXALAN"`"
         cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
@@ -550,7 +551,8 @@ extern "C" int main(void)
 #endif
 }
 EOF
-    if test_compile "$LIBXERCES $LIBPTHREAD ${INCXERCES:+-I$INCXERCES}" xerces xercesc; then
+    [ -n "$INCXERCES" ] && I_INCXERCES="-I$INCXERCES"
+    if test_compile "$LIBXERCES $LIBPTHREAD $I_INCXERCES" xerces xercesc; then
       if test_execute; then
         cnf_append "SDK_VBOX_XERCES_LIBS" "`strip_l "$LIBXERCES"`"
         cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
@@ -677,7 +679,8 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  if test_compile "$LIBZ ${INCZ:+-I$INCZ}" zlib zlib; then
+  [ -n "$INCZ" ] && I_INCZ="-I$INCZ"
+  if test_compile "$LIBZ $I_INCZ" zlib zlib; then
     if test_execute; then
       cnf_append "SDK_VBOX_ZLIB_LIBS" "`strip_l "$LIBZ"`"
       cnf_append "SDK_VBOX_ZLIB_INCS" "$INCZ"
@@ -706,8 +709,9 @@ extern "C" int main(void)
 #endif
 }
 EOF
-#  if test_compile "$LIBPNG ${INCPNG:+-I$INCPNG}" libpng libpng nofatal; then
-  if test_compile "$LIBPNG ${INCPNG:+-I$INCPNG}" libpng libpng; then
+  [ -n "$INCPNG" ] && I_INCPNG="-I$INCPNG"
+#  if test_compile "$LIBPNG $I_INCPNG" libpng libpng nofatal; then
+  if test_compile "$LIBPNG $I_INCPNG" libpng libpng; then
 #    if test_execute nofatal; then
     if test_execute; then
       cnf_append "SDK_VBOX_LIBPNG_LIBS" "`strip_l "$LIBPNG"`"
@@ -802,7 +806,8 @@ extern "C" int main(void)
 #endif
 }
 EOF
-    if test_compile "$LIBSDL $LIBSDLMAIN ${INCSDL:+-I$INCSDL}" SDL SDL; then
+    [ -n "$INCSDL" ] && I_INCSDL="-I$INCSDL"
+    if test_compile "$LIBSDL $LIBSDLMAIN $I_INCSDL" SDL SDL; then
       if test_execute; then
         cnf_append "LIB_SDK_LIBSDL_SDL"     "`strip_l "$LIBSDL"`"
         cnf_append "SDK_LIBSDL_LIBPATH"     "`strip_L "$LIBSDL"`"
@@ -1223,7 +1228,7 @@ for option; do
       OSE=2
       ;;
     --odir=*)
-      ODIR=`echo $option | cut -d'=' -f2`
+      ODIR="`echo $option | cut -d'=' -f2`/"
       ;;
     *)
       echo
@@ -1234,9 +1239,9 @@ for option; do
   esac
 done
 
-LOG="${ODIR:+$ODIR/}$LOG"
-ENV="${ODIR:+$ODIR/}$ENV"
-CNF="${ODIR:+$ODIR/}$CNF"
+LOG="$ODIR$LOG"
+ENV="$ODIR$ENV"
+CNF="$ODIR$CNF"
 
 # initialize output files
 cat > $LOG << EOF
