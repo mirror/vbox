@@ -96,7 +96,7 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 
 #define CMC_API __attribute__ ((cdecl, regparm (0)))
 
-#define TRACE() LogFlow (("%s, tracepoint\n", __func__))
+#define TRACE() LogFunc (("tracepoint\n"))
 
 /* Following casts are here to prevent assignment of void * to
    pointers of arbitrary type */
