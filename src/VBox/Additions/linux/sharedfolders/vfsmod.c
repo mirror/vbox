@@ -21,6 +21,13 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/**
+ * @note Anyone wishing to make changes here might wish to take a look at
+ *  http://www.atnf.csiro.au/people/rgooch/linux/vfs.txt
+ * which seems to be the closest there is to official documentation on
+ * writing filesystem drivers for Linux.
+ */
+
 /*
  * Suppress the definition of wchar_t from stddef.h that occurs below.
  * This makes (at least) RHEL3U5 happy.

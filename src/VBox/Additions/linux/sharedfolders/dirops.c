@@ -408,7 +408,7 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
                 goto fail0;
         }
 
-        LogFunc(("sf_create_aux: calling vboxCallCreate, folder %s, flags %#x\n",
+        LogFunc(("calling vboxCallCreate, folder %s, flags %#x\n",
                  path->String.utf8, params.CreateFlags));
         rc = vboxCallCreate (&client_handle, &sf_g->map, path, &params);
         if (VBOX_FAILURE (rc)) {
