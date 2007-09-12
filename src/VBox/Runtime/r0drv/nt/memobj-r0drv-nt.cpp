@@ -60,6 +60,8 @@ typedef struct RTR0MEMOBJNT
     /** Used MmAllocatePagesForMdl(). */
     bool                fAllocatedPagesForMdl;
 #endif
+    /** Pointer returned by MmSecureVirtualMemory */
+    PVOID               pvSecureMem;
     /** The number of PMDLs (memory descriptor lists) in the array. */
     uint32_t            cMdls;
     /** Array of MDL pointers. (variable size) */
@@ -83,6 +85,11 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 Assert(pMemNt->Core.pv && pMemNt->cMdls == 1 && pMemNt->apMdls[0]);
                 MmUnmapLockedPages(pMemNt->Core.pv, pMemNt->apMdls[0]);
                 pMemNt->Core.pv = NULL;
+                if (pMemNt->pvSecureMem)
+                {
+                    MmUnsecureVirtualMemory(pMemNt->pvSecureMem);
+                    pMemNt->pvSecureMem = NULL;
+                }
 
                 MmFreePagesFromMdl(pMemNt->apMdls[0]);
                 ExFreePool(pMemNt->apMdls[0]);
@@ -132,6 +139,11 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
+            if (pMemNt->pvSecureMem)
+            {
+                MmUnsecureVirtualMemory(pMemNt->pvSecureMem);
+                pMemNt->pvSecureMem = NULL;
+            }
             for (uint32_t i = 0; i < pMemNt->cMdls; i++)
             {
                 MmUnlockPages(pMemNt->apMdls[i]);
@@ -522,6 +534,7 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
         __try
         {
             MmProbeAndLockPages(pMdl, R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode, IoModifyAccess);
+
             pMemNt->apMdls[iMdl] = pMdl;
             pMemNt->cMdls++;
         }
@@ -530,6 +543,17 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
             IoFreeMdl(pMdl);
             rc = VERR_LOCK_FAILED;
             break;
+        }
+
+        if (R0Process != NIL_RTR0PROCESS )
+        {
+            /* Make sure the user process can't change the allocation. */
+            pMemNt->pvSecureMem = MmSecureVirtualMemory(pv, cb, PAGE_READWRITE);
+            if (!pMemNt->pvSecureMem)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
         }
 
         /* next */
@@ -553,8 +577,14 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
         IoFreeMdl(pMemNt->apMdls[iMdl]);
         pMemNt->apMdls[iMdl] = NULL;
     }
+    if (pMemNt->pvSecureMem)
+    {
+        MmUnsecureVirtualMemory(pMemNt->pvSecureMem);
+        pMemNt->pvSecureMem = NULL;
+    }
+
     rtR0MemObjDelete(&pMemNt->Core);
-    return VERR_LOCK_FAILED;
+    return rc;
 }
 
 
@@ -660,6 +690,7 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
             /* nothing */
             rc = VERR_MAP_FAILED;
         }
+
     }
     else
     {
