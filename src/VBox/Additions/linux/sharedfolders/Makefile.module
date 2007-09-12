@@ -17,6 +17,9 @@
 MODULE = vboxvfs
 OBJS   = \
 	vfsmod.o \
+	dirops.o \
+	regops.o \
+	utils.o \
 	GenericRequest.o \
 	SysHlp.o \
 	PhysHeap.o \
@@ -27,6 +30,16 @@ OBJS   = \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o
+#ifdef DEBUG
+OBJS  += \
+	divdi3.o \
+	moddi3.o \
+	udivdi3.o \
+	umoddi3.o \
+	qdivrem.o
+#endif
+
+
 EXTRA_CFLAGS = -fshort-wchar
 
 ifneq ($(MAKECMDGOALS),clean)

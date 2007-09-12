@@ -20,6 +20,8 @@
  * Limitations: only COW memory mapping is supported
  */
 
+#include "vfsmod.h"
+
 #define CHUNK_SIZE 4096
 
 /* fops */
@@ -31,8 +33,8 @@ sf_reg_read_aux (const char *caller, struct sf_glob_info *sf_g,
         int rc = vboxCallRead (&client_handle, &sf_g->map, sf_r->handle,
                                pos, nread, buf, false /* already locked? */);
         if (VBOX_FAILURE (rc)) {
-                elog3 ("%s: %s: vboxCallRead failed rc=%d\n",
-                       caller, __func__, rc);
+                LogFunc(("vboxCallRead failed.  caller=%s, rc=%Vrc\n",
+                         caller, rc));
                 return -EPROTO;
         }
         return 0;
@@ -52,7 +54,7 @@ sf_reg_read (struct file *file, char *buf, size_t size, loff_t *off)
 
         TRACE ();
         if (!S_ISREG (inode->i_mode)) {
-                elog ("read from non regular file %d\n", inode->i_mode);
+                LogFunc(("read from non regular file %d\n", inode->i_mode));
                 return -EINVAL;
         }
 
@@ -62,8 +64,9 @@ sf_reg_read (struct file *file, char *buf, size_t size, loff_t *off)
 
         tmp = kmalloc (CHUNK_SIZE, GFP_KERNEL);
         if (!tmp) {
-                elog ("could not allocate bounce buffer memory %u bytes\n",
-                      CHUNK_SIZE);
+                LogRelPrintFunc("could not allocate bounce buffer memory ");
+                LogRelPrintQuote(CHUNK_SIZE);
+                LogRelPrint(" bytes\n");
                 return -ENOMEM;
         }
 
@@ -123,7 +126,7 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
         BUG_ON (!sf_r);
 
         if (!S_ISREG (inode->i_mode)) {
-                elog ("write to non regular file %d\n",  inode->i_mode);
+                LogFunc(("write to non regular file %d\n",  inode->i_mode));
                 return -EINVAL;
         }
 
@@ -133,8 +136,9 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
 
         tmp = kmalloc (CHUNK_SIZE, GFP_KERNEL);
         if (!tmp) {
-                elog ("could not allocate bounce buffer memory %u bytes\n",
-                      CHUNK_SIZE);
+                LogRelPrintFunc("could not allocate bounce buffer memory ");
+                LogRelPrintQuote(CHUNK_SIZE);
+                LogRelPrint("bytes\n");
                 return -ENOMEM;
         }
 
@@ -157,8 +161,8 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
                                     pos, &nwritten, tmp, false /* already locked? */);
                 if (VBOX_FAILURE (rc)) {
                         err = -EPROTO;
-                        elog ("vboxCallWrite(%s) failed rc=%d\n",
-                              sf_i->path->String.utf8, rc);
+                        LogFunc(("vboxCallWrite(%s) failed rc=%Vrc\n",
+                                 sf_i->path->String.utf8, rc));
                         goto fail;
                 }
 
@@ -188,7 +192,7 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
 static int
 sf_reg_open (struct inode *inode, struct file *file)
 {
-        int rc;
+        int rc, rc_linux = 0;
         struct sf_glob_info *sf_g = GET_GLOB_INFO (inode->i_sb);
         struct sf_inode_info *sf_i = GET_INODE_INFO (inode);
         struct sf_reg_info *sf_r;
@@ -200,26 +204,30 @@ sf_reg_open (struct inode *inode, struct file *file)
 
         sf_r = kmalloc (sizeof (*sf_r), GFP_KERNEL);
         if (!sf_r) {
-                elog2 ("could not allocate reg info\n");
+                LogRelPrintFunc("could not allocate reg info\n");
                 return -ENOMEM;
         }
 
-#if 0
-        printk ("open %s\n", sf_i->path->String.utf8);
-#endif
+        LogFunc(("open %s\n", sf_i->path->String.utf8));
 
         params.CreateFlags = 0;
         params.Info.cbObject = 0;
+        /* We check this afterwards to find out if the call succeeded
+           or failed, as the API does not seem to cleanly distinguish
+           error and informational messages. */
+        params.Handle = 0;
 
         if (file->f_flags & O_CREAT) {
+                LogFunc(("O_CREAT set\n"));
+                params.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
                 if (file->f_flags & O_EXCL) {
-                        params.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+                        LogFunc(("O_EXCL set\n"));
                         params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS;
                 }
                 else {
-                        params.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
-                        params.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+                        /* O_TRUNC combined with O_EXCL is undefined. */
                         if (file->f_flags & O_TRUNC) {
+                                LogFunc(("O_TRUNC set\n"));
                                 params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
                         }
                         else {
@@ -228,12 +236,10 @@ sf_reg_open (struct inode *inode, struct file *file)
                 }
         }
         else {
+                params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
                 if (file->f_flags & O_TRUNC) {
-                        params.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+                        LogFunc(("O_TRUNC set\n"));
                         params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
-                }
-                else {
-                        params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
                 }
         }
 
@@ -256,37 +262,35 @@ sf_reg_open (struct inode *inode, struct file *file)
                 }
         }
 
+        LogFunc(("sf_reg_open: calling vboxCallCreate, file %s, flags=%d, %#x\n",
+                 sf_i->path->String.utf8 , file->f_flags, params.CreateFlags));
         rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
 
-        /* XXX: here i probably should check rc and convert some values to
-           EEXISTS ENOENT etc */
-        if (VBOX_FAILURE (rc))  
-        {
-            elog ("vboxCallCreate failed flags=%d,%#x rc=%d\n",
-                  file->f_flags, params.CreateFlags, rc);
-            kfree (sf_r);
-            return -EPROTO;
+        if (VBOX_FAILURE (rc)) {
+                LogFunc(("vboxCallCreate failed flags=%d,%#x rc=%Vrc\n",
+                         file->f_flags, params.CreateFlags, rc));
+                kfree (sf_r);
+                return -EPROTO;
         }
 
-        /** @todo handle these return codes!! */
-        switch (params.Result)
-        {
-        case SHFL_PATH_NOT_FOUND:
-            break;
-        case SHFL_FILE_NOT_FOUND:
-            break;
-        case SHFL_FILE_EXISTS:
-            break;
-        case SHFL_FILE_REPLACED:
-            break;
-        case SHFL_FILE_CREATED:
-            break;
+        if (SHFL_HANDLE_NIL == params.Handle) {
+                switch (params.Result) {
+                case SHFL_PATH_NOT_FOUND:
+                case SHFL_FILE_NOT_FOUND:
+                        rc_linux = -ENOENT;
+                        break;
+                case SHFL_FILE_EXISTS:
+                        rc_linux = -EEXIST;
+                        break;
+                default:
+                        break;
+                }
         }
 
         sf_i->force_restat = 1;
         sf_r->handle = params.Handle;
         file->private_data = sf_r;
-        return 0;
+        return rc_linux;
 }
 
 static int
@@ -305,7 +309,7 @@ sf_reg_release (struct inode *inode, struct file *file)
 
         rc = vboxCallClose (&client_handle, &sf_g->map, sf_r->handle);
         if (VBOX_FAILURE (rc)) {
-                elog ("vboxCallClose failed rc=%d\n", rc);
+                LogFunc(("vboxCallClose failed rc=%Vrc\n", rc));
         }
 
         kfree (sf_r);
@@ -340,7 +344,7 @@ sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int *type)
 
         page = alloc_page (GFP_HIGHUSER);
         if (!page) {
-                elog2 ("failed to allocate page\n");
+                LogRelPrintFunc("failed to allocate page\n");
                 SET_TYPE (VM_FAULT_OOM);
                 return NOPAGE_OOM;
         }
@@ -383,7 +387,7 @@ sf_reg_mmap (struct file *file, struct vm_area_struct *vma)
 {
         TRACE ();
         if (vma->vm_flags & VM_SHARED) {
-                elog2 ("shared mmapping not available\n");
+                LogFunc(("shared mmapping not available\n"));
                 return -EINVAL;
         }
 
@@ -391,7 +395,7 @@ sf_reg_mmap (struct file *file, struct vm_area_struct *vma)
         return 0;
 }
 
-static struct file_operations sf_reg_fops = {
+struct file_operations sf_reg_fops = {
         .read    = sf_reg_read,
         .open    = sf_reg_open,
         .write   = sf_reg_write,
@@ -402,7 +406,7 @@ static struct file_operations sf_reg_fops = {
 
 /* iops */
 
-static struct inode_operations sf_reg_iops = {
+struct inode_operations sf_reg_iops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
         .revalidate = sf_inode_revalidate
 #else

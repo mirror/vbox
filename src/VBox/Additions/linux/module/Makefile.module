@@ -35,6 +35,8 @@ OBJS  += \
 	strformat.o \
 	strformatrt.o \
 	strformat-vbox.o \
+	divdi3.o \
+	moddi3.o \
 	udivdi3.o \
 	umoddi3.o \
 	qdivrem.o
