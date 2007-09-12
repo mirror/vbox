@@ -100,13 +100,13 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_PAGE:
-            kmem_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
+            ddi_umem_free(pMemSolaris->Cookie);
             break;
 
         case RTR0MEMOBJTYPE_LOCK:
         {
             cmn_err(CE_NOTE, "rtR0MemObjNativeFree: LOCK\n");
-            struct as* addrSpace;
+            struct as *addrSpace;
             if (pMemSolaris->Core.u.Lock.R0Process == NIL_RTR0PROCESS)
                 addrSpace = &kas;
             else
@@ -118,8 +118,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         
         case RTR0MEMOBJTYPE_MAPPING:
         {
-            struct hat* hatSpace;
-            struct as* addrSpace;
+            struct hat *hatSpace;
+            struct as *addrSpace;
             cmn_err(CE_NOTE, "rtR0MemObjNativeFree: MAPPING\n");
             if (pMemSolaris->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
             {
@@ -163,12 +163,11 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    /** @todo r=bird: The man page says: "The allocated memory is at least double-word aligned, so it can hold any C data structure. No greater alignment can be assumed." */
-    void* virtAddr = kmem_alloc(cb, KM_SLEEP);
+    void *virtAddr = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
     if (!virtAddr)
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
-        return VERR_NO_MEMORY;
+        return VERR_NO_PAGE_MEMORY;
     }
     
     pMemSolaris->Core.pv = virtAddr;
@@ -214,7 +213,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     if (rc != DDI_SUCCESS)
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
-        return VERR_NO_MEMORY;
+        return VERR_NO_CONT_MEMORY;
     }
 
     pMemSolaris->Core.pv = virtAddr;
@@ -257,7 +256,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 
 int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
 {
-    /* Create the object */
+    /* Create the locking object */
     PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb);
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
@@ -269,18 +268,19 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
     struct as *useras = userproc->p_as;
     page_t **ppl;
 
+    /* Lock down user pages */
     int rc = as_pagelock(useras, &ppl, (caddr_t)R3Ptr, cb, S_WRITE);
     if (rc != 0)
     {
         cmn_err(CE_NOTE,"rtR0MemObjNativeLockUser: as_pagelock failed rc=%d\n", rc);
-        return VERR_NO_MEMORY;
+        return VERR_LOCK_FAILED;
     }
 
     if (!ppl)
     {
         as_pageunlock(useras, ppl, (caddr_t)R3Ptr, cb, S_WRITE);
         cmn_err(CE_NOTE, "rtR0MemObjNativeLockUser: as_pagelock failed to get shadow pages\n");
-        return VERR_NO_MEMORY;
+        return VERR_LOCK_FAILED;
     }
     
     pMemSolaris->Core.u.Lock.R0Process = (RTR0PROCESS)userproc;
@@ -292,7 +292,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
 
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-    /* Create the object */
+    /* Create the locking object */
     PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_LOCK, pv, cb);
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
@@ -300,15 +300,19 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
     caddr_t virtAddr = (caddr_t)((uintptr_t)pv & (uintptr_t)PAGEMASK);
     page_t **ppl;
     
+    /* Lock down kernel pages */
     int rc = as_pagelock(&kas, &ppl, virtAddr, cb, S_WRITE);
     if (rc != 0)
-        return VERR_NO_MEMORY;
+    {
+        cmn_err(CE_NOTE,"rtR0MemObjNativeLockKernel: as_pagelock failed rc=%d\n", rc);
+        return VERR_LOCK_FAILED;
+    }
 
     if (!ppl)
     {
         as_pageunlock(&kas, ppl, virtAddr, cb, S_WRITE);
-        cmn_err(CE_NOTE, "rtR0MemObjNativeLockUser: failed to get shadow pages\n");
-        return VERR_NO_MEMORY;
+        cmn_err(CE_NOTE, "rtR0MemObjNativeLockKernel: failed to get shadow pages\n");
+        return VERR_LOCK_FAILED;
     }
 
     pMemSolaris->Core.u.Lock.R0Process = NIL_RTR0PROCESS;   /* means kernel, see rtR0MemObjNativeFree() */
@@ -332,7 +336,7 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
 int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
     PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;    
-    size_t size = P2ROUNDUP(pMemToMapSolaris->Core.cb, PAGE_SIZE); /* r=bird: not necessary, see the specs / caller implementation. */
+    size_t size = pMemToMapSolaris->Core.cb;
     void *pv = pMemToMapSolaris->Core.pv;
     pgcnt_t cPages = btop(size);
     pgcnt_t iPage;
@@ -363,7 +367,14 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
             cmn_err(CE_NOTE, "rtR0MemObjNativeMapKernel: map_addr failed\n");
             return VERR_NO_MEMORY;
         }
-        /** @todo r=bird: check address against uAlignment, just fail if it's not matching. */
+        
+        /* Check address against alignment, fail if it doesn't match */
+        if ((uintptr_t)addr & (uAlignment - 1))
+        {
+            as_rangeunlock(&kas);
+            cmn_err(CE_NOTE, "rtR0MemObjNativeMapKernel: map_addr alignment(%ld) failed.\n", uAlignment);
+            return VERR_MAP_FAILED;
+        }
     }
     
     /* Our protection masks are identical to <sys/mman.h> but we
@@ -400,7 +411,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;    
-    size_t size = P2ROUNDUP(pMemToMapSolaris->Core.cb, PAGE_SIZE); /** @todo r=bird: this isn't necessary, see the specs. */
+    size_t size = pMemToMapSolaris->Core.cb;
     proc_t *userproc = (proc_t *)R0Process;
     struct as *useras = userproc->p_as;
     void *pv = pMemToMapSolaris->Core.pv;
@@ -440,10 +451,16 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         {
             as_rangeunlock(useras);
             cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr failed\n");
-            return VERR_NO_MEMORY;
+            return VERR_MAP_FAILED;
         }
-
-        /** @todo r=bird: check address against uAlignment, just fail if it's not matching. */
+        
+        /* Check address against alignment, fail if it doesn't match */
+        if ((uintptr_t)addr & (uAlignment - 1))
+        {
+            as_rangeunlock(useras);
+            cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr alignment(%ld) failed.\n", uAlignment);
+            return VERR_MAP_FAILED;
+        }
     }
     
     /* Our protection masks are identical to <sys/mman.h> but we
@@ -455,7 +472,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     if (rc != 0)
     {
         cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: as_map failure.\n");
-        return VERR_NO_MEMORY;
+        return VERR_MAP_FAILED;
     }
 
 #if 0
