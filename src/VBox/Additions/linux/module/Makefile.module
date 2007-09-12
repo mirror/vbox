@@ -111,9 +111,9 @@ endif
 KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -D_X86_ \
 	    -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DVBGL_VBOXGUEST -DVBOX_HGCM \
 	    -DLOG_TO_BACKDOOR -DRT_WITH_VBOX -DIN_MODULE
-#ifeq ($(BUILD_TYPE),debug)
+ifeq ($(BUILD_TYPE),debug)
 KFLAGS   += -DDEBUG
-#endif
+endif
 
 ifeq ($(KERN_VERSION), 24)
 #
