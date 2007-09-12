@@ -243,7 +243,7 @@ check_environment()
       ;;
     freebsd)
       ;;
-    SunOS)
+    sunos)
       OS='solaris'
       ;;
     *)
@@ -416,7 +416,7 @@ check_yasm()
       yasm_maj=`echo $yasm_ver|cut -d. -f1`
       yasm_min=`echo $yasm_ver|cut -d. -f2`
       yasm_rev=`echo $yasm_ver|cut -d. -f3`
-      yasm_ver_mul=$(($yasm_maj*10000+$yasm_min*100+$yasm_rev))
+      yasm_ver_mul=`expr $yasm_maj \* 10000 + $yasm_min \* 100 + $yasm_rev`
       if [ $yasm_ver_mul -lt 501 ]; then
         log_failure "found version $yasm_ver, expected at least 0.5.1"
         fail
@@ -1166,7 +1166,7 @@ EOF
 #
 
 # scan command line options
-for option; do
+for option in $*; do
   case "$option" in
     --help|-help|-h)
       show_help
@@ -1320,7 +1320,7 @@ echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
 # append some extra paths
 PATH="$PATH:/opt/gnome/bin"
 # solaris
-PATH="$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
+PATH="/usr/ucb:/usr/xpg4/bin:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
 
 # the tools
 check_gcc
