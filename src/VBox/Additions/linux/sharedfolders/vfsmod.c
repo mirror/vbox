@@ -21,9 +21,6 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "the-linux-kernel.h"
-#include "version-generated.h"
-
 /*
  * Suppress the definition of wchar_t from stddef.h that occurs below.
  * This makes (at least) RHEL3U5 happy.
@@ -33,9 +30,8 @@
 # define _WCHAR_T
 #endif
 #endif
+
 #include "vfsmod.h"
-#include "VBoxCalls.h"
-#include "vbsfmount.h"
 
 // #define wchar_t linux_wchar_t
 
@@ -46,50 +42,15 @@ MODULE_LICENSE ("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
 
-/* structs */
-struct sf_glob_info {
-        VBSFMAP map;
-        struct nls_table *nls;
-        int ttl;
-        int uid;
-        int gid;
-};
-
-struct sf_inode_info {
-        SHFLSTRING *path;
-        int force_restat;
-};
-
-struct sf_dir_info {
-        struct list_head info_list;
-};
-
-struct sf_dir_buf {
-        size_t nb_entries;
-        size_t free_bytes;
-        size_t used_bytes;
-        void *buf;
-        struct list_head head;
-};
-
-struct sf_reg_info {
-        SHFLHANDLE handle;
-};
-
 /* globals */
-static VBSFCLIENT client_handle;
+VBSFCLIENT client_handle;
 
 /* forward declarations */
-static struct inode_operations  sf_dir_iops;
-static struct inode_operations  sf_reg_iops;
-static struct file_operations   sf_dir_fops;
-static struct file_operations   sf_reg_fops;
 static struct super_operations  sf_super_ops;
-static struct dentry_operations sf_dentry_ops;
 
-#include "utils.c"
-#include "dirops.c"
-#include "regops.c"
+// #include "utils.c"
+// #include "dirops.c"
+// #include "regops.c"
 
 /* allocate global info, try to map host share */
 static int
@@ -104,7 +65,7 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
         sf_g = kmalloc (sizeof (*sf_g), GFP_KERNEL);
         if (!sf_g) {
                 err = -ENOMEM;
-                elog2 ("could not allocate memory for global info\n");
+                LogRelPrintFunc("could not allocate memory for global info\n");
                 goto fail0;
         }
 
@@ -114,7 +75,7 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
         name_len = strlen (info->name);
         if (name_len > 0xfffe) {
                 err = -ENAMETOOLONG;
-                elog2 ("map name too big\n");
+                LogFunc(("map name too big\n"));
                 goto fail1;
         }
 
@@ -122,7 +83,7 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
         str_name = kmalloc (str_len, GFP_KERNEL);
         if (!str_name) {
                 err = -ENOMEM;
-                elog2 ("could not allocate memory for host name\n");
+                LogRelPrintFunc("could not allocate memory for host name\n");
                 goto fail1;
         }
 
@@ -134,8 +95,7 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
                 sf_g->nls = load_nls (info->nls_name);
                 if (!sf_g->nls) {
                         err = -EINVAL;
-                        elog ("failed to load nls %.*s\n",
-                              sizeof (info->nls_name), info->nls_name);
+                        LogFunc(("failed to load nls %s\n", info->nls_name));
                         goto fail1;
                 }
         }
@@ -148,7 +108,7 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
 
         if (VBOX_FAILURE (rc)) {
                 err = -EPROTO;
-                elog ("vboxCallMapFolder failed rc=%d\n", rc);
+                LogFunc(("vboxCallMapFolder failed rc=%d\n", rc));
                 goto fail2;
         }
 
@@ -178,7 +138,7 @@ sf_glob_free (struct sf_glob_info *sf_g)
         TRACE ();
         rc = vboxCallUnmapFolder (&client_handle, &sf_g->map);
         if (VBOX_FAILURE (rc)) {
-                elog ("vboxCallUnmapFolder failed rc=%d\n", rc);
+                LogFunc(("vboxCallUnmapFolder failed rc=%d\n", rc));
         }
 
         if (sf_g->nls) {
@@ -209,14 +169,14 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
 
         TRACE ();
         if (!data) {
-                elog2 ("no mount info specified\n");
+                LogFunc(("no mount info specified\n"));
                 return -EINVAL;
         }
 
         info = data;
 
         if (flags & MS_REMOUNT) {
-                elog2 ("remounting is not supported\n");
+                LogFunc(("remounting is not supported\n"));
                 return -ENOSYS;
         }
 
@@ -228,14 +188,14 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         sf_i = kmalloc (sizeof (*sf_i), GFP_KERNEL);
         if (!sf_i) {
                 err = -ENOMEM;
-                elog2 ("could not allocate memory for root inode info\n");
+                LogRelPrintFunc ("could not allocate memory for root inode info\n");
                 goto fail1;
         }
 
         sf_i->path = kmalloc (sizeof (SHFLSTRING) + 1, GFP_KERNEL);
         if (!sf_i->path) {
                 err = -ENOMEM;
-                elog2 ("could not allocate memory for root inode path\n");
+                LogRelPrintFunc ("could not allocate memory for root inode path\n");
                 goto fail2;
         }
 
@@ -246,7 +206,7 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
 
         err = sf_stat (__func__, sf_g, sf_i->path, &fsinfo, 0);
         if (err) {
-                elog2 ("could not stat root of share\n");
+                LogFunc(("could not stat root of share\n"));
                 goto fail3;
         }
 
@@ -257,7 +217,7 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         iroot = iget (sb, 0);
         if (!iroot) {
                 err = -ENOMEM;  /* XXX */
-                elog2 ("could not get root inode\n");
+                LogFunc(("could not get root inode\n"));
                 goto fail3;
         }
 
@@ -267,7 +227,7 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         droot = d_alloc_root (iroot);
         if (!droot) {
                 err = -ENOMEM;  /* XXX */
-                elog2 ("d_alloc_root failed\n");
+                LogFunc(("d_alloc_root failed\n"));
                 goto fail4;
         }
 
@@ -440,7 +400,7 @@ init (void)
 
         err = register_filesystem (&vboxsf_fs_type);
         if (err) {
-                elog ("register_filesystem err=%d\n", err);
+                LogFunc(("register_filesystem err=%d\n", err));
                 return err;
         }
 
@@ -450,19 +410,22 @@ init (void)
 
         rc = vboxInit ();
         if (VBOX_FAILURE (rc)) {
-                elog ("vboxInit failed rc=%d\n", rc);
+                LogRelPrintFunc ("vboxInit failed\n");
+                Log (("rc=%d\n", rc));
                 goto fail0;
         }
 
         rc = vboxConnect (&client_handle);
         if (VBOX_FAILURE (rc)) {
-                elog ("vboxConnect failed rc=%d\n", rc);
+                LogRelPrintFunc ("vboxConnect failed\n");
+                Log (("rc=%d\n", rc));
                 goto fail1;
         }
 
         rc = vboxCallSetUtf8 (&client_handle);
         if (VBOX_FAILURE (rc)) {
-                elog ("vboxCallSetUtf8 failed rc=%d\n", rc);
+                LogRelPrintFunc ("vboxCallSetUtf8 failed\n");
+                Log (("rc=%d\n", rc));
                 goto fail2;
         }
 
@@ -495,6 +458,7 @@ module_exit (fini);
 /* C++ hack */
 int __gxx_personality_v0 = 0xdeadbeef;
 
+#if 0
 /* long long hacks (as far as i can see, gcc emits the refs to those
    symbols, notwithstanding the fact that those aren't referenced
    anywhere in the module) */
@@ -509,6 +473,7 @@ void __moddi3 (void)
         elog ("called from %p\n", __builtin_return_address (0));
         BUG ();
 }
+#endif /* 0 */
 
 /*
  * Local Variables:

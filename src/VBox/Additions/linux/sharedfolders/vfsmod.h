@@ -18,10 +18,77 @@
 #ifndef VFSMOD_H
 #define VFSMOD_H
 
-#define elog(fmt, ...) \
-printk (KERN_ERR "vboxvfs: %s: " fmt, __func__, __VA_ARGS__)
-#define elog2(s) printk (KERN_ERR "vboxvfs: %s: " s, __func__)
-#define elog3(...) printk (KERN_ERR "vboxvfs: " __VA_ARGS__)
+#include "the-linux-kernel.h"
+#include "version-generated.h"
+
+#include "VBoxCalls.h"
+#include "vbsfmount.h"
+
+/* structs */
+struct sf_glob_info {
+        VBSFMAP map;
+        struct nls_table *nls;
+        int ttl;
+        int uid;
+        int gid;
+};
+
+struct sf_inode_info {
+        SHFLSTRING *path;
+        int force_restat;
+};
+
+struct sf_dir_info {
+        struct list_head info_list;
+};
+
+struct sf_dir_buf {
+        size_t nb_entries;
+        size_t free_bytes;
+        size_t used_bytes;
+        void *buf;
+        struct list_head head;
+};
+
+struct sf_reg_info {
+        SHFLHANDLE handle;
+};
+
+/* globals */
+extern VBSFCLIENT client_handle;
+
+/* forward declarations */
+extern struct inode_operations  sf_dir_iops;
+extern struct inode_operations  sf_reg_iops;
+extern struct file_operations   sf_dir_fops;
+extern struct file_operations   sf_reg_fops;
+extern struct dentry_operations sf_dentry_ops;
+
+extern int
+sf_stat (const char *caller, struct sf_glob_info *sf_g,
+         SHFLSTRING *path, RTFSOBJINFO *result, int ok_to_fail);
+extern void
+sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
+               RTFSOBJINFO *info);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+extern int
+sf_getattr (struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat);
+#endif
+extern int
+sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,
+                     struct sf_inode_info *sf_i, struct dentry *dentry,
+                     SHFLSTRING **result);
+extern int
+sf_nlscpy (struct sf_glob_info *sf_g,
+           char *name, size_t name_bound_len,
+           const unsigned char *utf8_name, size_t utf8_len);
+extern void
+sf_dir_info_free (struct sf_dir_info *p);
+extern struct sf_dir_info *
+sf_dir_info_alloc (void);
+extern int
+sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
+                 struct sf_dir_info *sf_d, SHFLHANDLE handle);
 
 #ifdef ALIGN
 #undef ALIGN
@@ -29,8 +96,7 @@ printk (KERN_ERR "vboxvfs: %s: " fmt, __func__, __VA_ARGS__)
 
 #define CMC_API __attribute__ ((cdecl, regparm (0)))
 
-#define DBGC if (0)
-#define TRACE() DBGC printk (KERN_DEBUG "%s\n", __func__)
+#define TRACE() LogFlow (("%s, tracepoint\n", __func__))
 
 /* Following casts are here to prevent assignment of void * to
    pointers of arbitrary type */

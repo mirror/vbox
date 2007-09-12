@@ -17,6 +17,8 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "vfsmod.h"
+
 /* #define USE_VMALLOC */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
@@ -42,7 +44,7 @@ sf_ftime_from_timespec (struct timespec *tv, RTTIMESPEC *ts)
 #endif
 
 /* set [inode] attributes based on [info], uid/gid based on [sf_g] */
-static void
+void
 sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
                RTFSOBJINFO *info)
 {
@@ -100,7 +102,7 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
         sf_ftime_from_timespec (&inode->i_mtime, &info->ModificationTime);
 }
 
-static int
+int
 sf_stat (const char *caller, struct sf_glob_info *sf_g,
          SHFLSTRING *path, RTFSOBJINFO *result, int ok_to_fail)
 {
@@ -109,18 +111,19 @@ sf_stat (const char *caller, struct sf_glob_info *sf_g,
 
         TRACE ();
         params.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
+        LogFunc(("calling vboxCallCreate, file %s, flags %#x\n",
+                 path->String.utf8, params.CreateFlags));
         rc = vboxCallCreate (&client_handle, &sf_g->map, path, &params);
         if (VBOX_FAILURE (rc)) {
-                elog3 ("%s: %s: vboxCallCreate(%s) failed rc=%d\n",
-                       caller, __func__, path->String.utf8, rc);
+                LogFunc(("vboxCallCreate(%s) failed.  caller=%s, rc=%Vrc\n",
+                         path->String.utf8, rc, caller));
                 return -EPROTO;
         }
 
         if (params.Result != SHFL_FILE_EXISTS) {
                 if (!ok_to_fail) {
-                        elog3 ("%s: %s: vboxCallCreate(%s)"
-                               " file does not exist result=%d\n",
-                               caller, __func__, path->String.utf8, params.Result);
+                        LogFunc(("vboxCallCreate(%s) file does not exist.  caller=%s, result=%d\n",
+                                 path->String.utf8, params.Result, caller));
                 }
                 return -ENOENT;
         }
@@ -145,7 +148,7 @@ sf_inode_revalidate (struct dentry *dentry)
 
         TRACE ();
         if (!dentry || !dentry->d_inode) {
-                DBGC elog ("no dentry(%p) or inode(%p)\n", dentry, dentry->d_inode);
+                LogFunc(("no dentry(%p) or inode(%p)\n", dentry, dentry->d_inode));
                 return -EINVAL;
         }
 
@@ -200,7 +203,7 @@ sf_dentry_revalidate (struct dentry *dentry, int flags)
    has inode at all) from these new attributes we derive [kstat] via
    [generic_fillattr] */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
-static int
+int
 sf_getattr (struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 {
         int err;
@@ -239,7 +242,7 @@ sf_make_path (const char *caller, struct sf_inode_info *sf_i,
                 /* lengths of constituents plus terminating zero plus slash  */
                 path_len = p_len + d_len + 2;
                 if (path_len > 0xffff) {
-                        elog ("%s: path to big %zu\n", caller, path_len);
+                        LogFunc(("path too long.  caller=%s, path_len=%zu\n", caller, path_len));
                         return -ENAMETOOLONG;
                 }
         }
@@ -247,7 +250,8 @@ sf_make_path (const char *caller, struct sf_inode_info *sf_i,
         shflstring_len = offsetof (SHFLSTRING, String.utf8) + path_len;
         tmp = kmalloc (shflstring_len, GFP_KERNEL);
         if (!tmp) {
-                elog ("%s: kmalloc failed\n", caller);
+                LogRelPrintFunc("kmalloc failed, caller=");
+                LogRelPrint(caller);
                 return -ENOMEM;
         }
         tmp->u16Length = path_len - 1;
@@ -271,7 +275,7 @@ sf_make_path (const char *caller, struct sf_inode_info *sf_i,
 /* [dentry] contains string encoded in coding system that corresponds
    to [sf_g]->nls, we must convert it to UTF8 here and pass down to
    [sf_make_path] which will allocate SHFLSTRING and fill it in */
-static int
+int
 sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,
                      struct sf_inode_info *sf_i, struct dentry *dentry,
                      SHFLSTRING **result)
@@ -306,8 +310,8 @@ sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,
 
                         nb = sf_g->nls->char2uni (in, in_len, &uni);
                         if (nb < 0) {
-                                elog ("nls->char2uni failed %x %d\n",
-                                      *in, in_len);
+                                LogFunc(("nls->char2uni failed %x %d\n",
+                                         *in, in_len));
                                 err = -EINVAL;
                                 goto fail1;
                         }
@@ -316,8 +320,8 @@ sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,
 
                         nb = utf8_wctomb (out, uni, out_bound_len);
                         if (nb < 0) {
-                                elog ("nls->uni2char failed %x %d\n",
-                                      uni, out_bound_len);
+                                LogFunc(("nls->uni2char failed %x %d\n",
+                                         uni, out_bound_len));
                                 err = -EINVAL;
                                 goto fail1;
                         }
@@ -330,7 +334,7 @@ sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,
                         goto fail1;
                 }
 
-                DBGC printk (KERN_DEBUG "result(%d) = %.*s\n", len, len, name);
+                LogFunc(("result(%d) = %.*s\n", len, len, name));
                 *out = 0;
         }
         else {
@@ -349,7 +353,7 @@ sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,
         return err;
 }
 
-static int
+int
 sf_nlscpy (struct sf_glob_info *sf_g,
            char *name, size_t name_bound_len,
            const unsigned char *utf8_name, size_t utf8_len)
@@ -374,8 +378,8 @@ sf_nlscpy (struct sf_glob_info *sf_g,
 
                         nb = utf8_mbtowc (&uni, in, in_bound_len);
                         if (nb < 0) {
-                                elog ("utf8_mbtowc failed(%s) %x:%d\n",
-                                      utf8_name, *in, in_bound_len);
+                                LogFunc(("utf8_mbtowc failed(%s) %x:%d\n",
+                                         (const char *) utf8_name, *in, in_bound_len));
                                 return -EINVAL;
                         }
                         in += nb;
@@ -383,8 +387,8 @@ sf_nlscpy (struct sf_glob_info *sf_g,
 
                         nb = sf_g->nls->uni2char (uni, out, out_bound_len);
                         if (nb < 0) {
-                                elog ("nls->uni2char failed(%s) %x:%d\n",
-                                      utf8_name, uni, out_bound_len);
+                                LogFunc(("nls->uni2char failed(%s) %x:%d\n",
+                                         utf8_name, uni, out_bound_len));
                                 return nb;
                         }
                         out += nb;
@@ -414,7 +418,7 @@ sf_dir_buf_alloc (void)
         TRACE ();
         b = kmalloc (sizeof (*b), GFP_KERNEL);
         if (!b) {
-                elog2 ("could not alloc directory buffer\n");
+                LogRelPrintFunc("could not alloc directory buffer\n");
                 return NULL;
         }
 
@@ -425,7 +429,7 @@ sf_dir_buf_alloc (void)
 #endif
         if (!b->buf) {
                 kfree (b);
-                elog2 ("could not alloc directory buffer storage\n");
+                LogRelPrintFunc("could not alloc directory buffer storage\n");
                 return NULL;
         }
 
@@ -451,7 +455,7 @@ sf_dir_buf_free (struct sf_dir_buf *b)
         kfree (b);
 }
 
-static void
+void
 sf_dir_info_free (struct sf_dir_info *p)
 {
         struct list_head *list, *pos, *tmp;
@@ -467,7 +471,7 @@ sf_dir_info_free (struct sf_dir_info *p)
         kfree (p);
 }
 
-static struct sf_dir_info *
+struct sf_dir_info *
 sf_dir_info_alloc (void)
 {
         struct sf_dir_info *p;
@@ -475,7 +479,7 @@ sf_dir_info_alloc (void)
         TRACE ();
         p = kmalloc (sizeof (*p), GFP_KERNEL);
         if (!p) {
-                elog2 ("could not alloc directory info\n");
+                LogRelPrintFunc("could not alloc directory info\n");
                 return NULL;
         }
 
@@ -506,7 +510,7 @@ sf_get_non_empty_dir_buf (struct sf_dir_info *sf_d)
         return NULL;
 }
 
-static int
+int
 sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                  struct sf_dir_info *sf_d, SHFLHANDLE handle)
 {
@@ -531,7 +535,7 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                         b = sf_dir_buf_alloc ();
                         if (!b) {
                                 err = -ENOMEM;
-                                elog2 ("could not alloc directory buffer\n");
+                                LogRelPrintFunc("could not alloc directory buffer\n");
                                 goto fail1;
                         }
                 }
@@ -559,13 +563,13 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                                 break;
 
                         case VERR_NO_TRANSLATION:
-                                elog2 ("host could not translte entry\n");
+                                LogFunc(("host could not translate entry\n"));
                                 /* XXX */
                                 break;
 
                         default:
                                 err = -EPROTO;
-                                elog ("vboxCallDirInfo failed rc=%d\n", rc);
+                                LogFunc(("vboxCallDirInfo failed rc=%Vrc\n", rc));
                                 goto fail1;
                 }
 
@@ -586,6 +590,6 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
         return err;
 }
 
-static struct dentry_operations sf_dentry_ops = {
+struct dentry_operations sf_dentry_ops = {
         .d_revalidate = sf_dentry_revalidate
 };

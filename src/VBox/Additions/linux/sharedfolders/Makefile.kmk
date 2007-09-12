@@ -43,9 +43,15 @@ vboxvfs-sh_SOURCES      = $(subst ",,$(FILES_VBOXVFS_BIN))
 # The module (for syntax checking).
 #
 vboxvfs_TEMPLATE        = VBOXLNX32GUESTR0
-vboxvfs_DEFS           := KBUILD_MODNAME=KBUILD_STR\(vboxadd\) KBUILD_BASENAME=KBUILD_STR\(vboxadd\) MODULE IN_RING0 IN_RT_R0 VBOXGUEST VBOX_HGCM
+vboxvfs_DEFS           := KBUILD_MODNAME=KBUILD_STR\(vboxadd\) \
+                          KBUILD_BASENAME=KBUILD_STR\(vboxadd\) \
+                          MODULE IN_RING0 IN_RT_R0 VBOXGUEST VBOX_HGCM
 vboxvfs_LIBS            = $(PATH_LIB)/VBoxGuestLibLinux.a $(PATH_LIB)/RuntimeLnx32GuestR0.a
-vboxvfs_SOURCES         = vfsmod.c
+vboxvfs_SOURCES         = \
+	vfsmod.c \
+	utils.c \
+	dirops.c \
+	regops.c
 vboxvfs_NOINST          = 1
 vboxvfs_CFLAGS         += -fshort-wchar
 vboxvfs_INCS           += \
