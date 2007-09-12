@@ -334,6 +334,7 @@ VMMR0_SOURCES   = \
 	VMMR0/TRPMR0.cpp \
 	VMMR0/TRPMR0A.asm \
 	VMMR0/PDMR0Device.cpp \
+	VMMR0/PGMR0.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
 	VMMAll/PDMAll.cpp \

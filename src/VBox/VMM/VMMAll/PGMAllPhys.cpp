@@ -34,6 +34,7 @@
 #include <VBox/trpm.h>
 #include <VBox/vmm.h>
 #include <VBox/iom.h>
+#include <VBox/rem.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/param.h>
@@ -166,21 +167,168 @@ PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
 }
 
 
+
+/**
+ * Makes sure that there is at least one handy page ready for use.
+ * 
+ * This will also take the appropriate actions when reaching water-marks.
+ * 
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_EM_NO_MEMORY if we're really out of memory.
+ * 
+ * @param   pVM     The VM handle.
+ * 
+ * @remarks Must be called from within the PGM critical section. It may
+ *          nip back to ring-3/0 in some cases.
+ */
+static int pgmPhysEnsureHandyPage(PVM pVM)
+{
+    /** @remarks
+     * low-water mark logic for R0 & GC:
+     *      - 75%: Set FF.
+     *      - 50%: Force return to ring-3 ASAP.
+     *
+     * For ring-3 there is a little problem wrt to the recompiler, so:
+     *      - 75%: Set FF.
+     *      - 50%: Try allocate pages; on failure we'll force REM to quite ASAP.
+     *
+     * The basic idea is that we should be able to get out of any situation with 
+     * only 50% of handy pages remaining.
+     *
+     * At the moment we'll not adjust the number of handy pages relative to the 
+     * actual VM RAM committment, that's too much work for now.
+     */
+    Assert(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+    if (    !pVM->pgm.s.cHandyPages
+#ifdef IN_RING3
+        ||   pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 2 /* 50% */
+#endif 
+       )
+    {
+        Log(("PGM: cHandyPages=%u out of %u -> allocate more\n", pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
+#ifdef IN_RING3
+        int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, NULL, 0);
+#elif defined(IN_RING0)
+        /** @todo call PGMR0PhysAllocateHandyPages directly - need to make sure we can call kernel code first and deal with the seeding fallback. */
+        int rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
+#else
+        int rc = VMMGCCallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
+#endif 
+        if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        {
+            Assert(rc == VINF_EM_NO_MEMORY);
+            if (!pVM->pgm.s.cHandyPages)
+            {
+                LogRel(("PGM: no more handy pages!\n"));
+                return VERR_EM_NO_MEMORY;
+            }
+            Assert(VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES));
+#ifdef IN_RING3
+            REMR3NotifyFF(pVM);
+#else
+            VM_FF_SET(pVM, VM_FF_TO_R3);
+#endif
+        }
+        Assert(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+    }
+    else if (pVM->pgm.s.cHandyPages - 1 <= (RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 4) * 3) /* 75% */
+    {
+        VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
+#ifndef IN_RING3
+        if (pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 2)
+        {
+            Log(("PGM: VM_FF_TO_R3 - cHandyPages=%u out of %u\n", pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
+            VM_FF_SET(pVM, VM_FF_TO_R3);
+        }
+#endif 
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Replace a zero or shared page with new page that we can write to.
  *
- * @returns VBox status.
- * @todo    Define the return values and propagate them up the call tree..
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success, pPage is modified.
+ * @retval  VERR_EM_NO_MEMORY if we're totally out of memory.
+ * 
+ * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
  *
  * @param   pVM         The VM address.
- * @param   pPage       The physical page tracking structure.
+ * @param   pPage       The physical page tracking structure. This will 
+ *                      be modified on success. 
  * @param   GCPhys      The address of the page.
  *
- * @remarks Called from within the PGM critical section.
+ * @remarks Must be called from within the PGM critical section. It may
+ *          nip back to ring-3/0 in some cases.
+ * 
+ * @remarks This function shouldn't really fail, however if it does 
+ *          it probably means we've screwed up the size of the amount 
+ *          and/or the low-water mark of handy pages. Or, that some
+ *          device I/O is causing a lot of pages to be allocated while
+ *          while the host is in a low-memory condition.
  */
 int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Ensure that we've got a page handy, take it and use it.
+     */
+    int rc = pgmPhysEnsureHandyPage(pVM);
+    if (VBOX_FAILURE(rc))
+    {
+        Assert(rc == VERR_EM_NO_MEMORY);
+        return rc;
+    }
+    AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%d %RGp\n", PGM_PAGE_GET_STATE(pPage), GCPhys));
+    Assert(!PGM_PAGE_IS_RESERVED(pPage));
+    Assert(!PGM_PAGE_IS_MMIO(pPage));
+
+    uint32_t iHandyPage = --pVM->pgm.s.cHandyPages;
+    Assert(iHandyPage < RT_ELEMENTS(pVM->pgm.s.aHandyPages));
+    Assert(pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys != NIL_RTHCPHYS);
+    Assert(!(pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys & ~X86_PTE_PAE_PG_MASK));
+    Assert(pVM->pgm.s.aHandyPages[iHandyPage].idPage != NIL_GMM_PAGEID);
+    Assert(pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage == NIL_GMM_PAGEID);
+
+    /*
+     * There are one or two action to be taken the next time we allocate handy pages:
+     *      - Tell the GMM (global memory manager) what the page is being used for.
+     *        (Speeds up replacement operations - sharing and defragmenting.)
+     *      - If the current backing is shared, it must be freed.
+     */
+    const RTHCPHYS HCPhys = pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys;
+    pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys = GCPhys;
+
+    if (PGM_PAGE_IS_SHARED(pPage))
+    {
+        pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage = PGM_PAGE_GET_PAGEID(pPage);
+        Assert(PGM_PAGE_GET_PAGEID(pPage) != NIL_GMM_PAGEID);
+        VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
+
+        Log2(("PGM: Replaced shared page %#x at %RGp with %#x / %RHp\n", PGM_PAGE_GET_PAGEID(pPage), 
+              GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
+        STAM_COUNTER_INC(&pVM->pgm.s.StatPageReplaceShared);
+        pVM->pgm.s.cSharedPages--;
+    }
+    else
+    {
+        Log2(("PGM: Replaced zero page %RGp with %#x / %RHp\n", GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
+        STAM_COUNTER_INC(&pVM->pgm.s.StatPageReplaceZero);
+        pVM->pgm.s.cZeroPages--;
+    }
+
+    /*
+     * Do the PGMPAGE modifications.
+     */
+    pVM->pgm.s.cPrivatePages++;
+    PGM_PAGE_SET_HCPHYS(pPage, HCPhys);
+    PGM_PAGE_SET_PAGEID(pPage, pVM->pgm.s.aHandyPages[iHandyPage].idPage);
+    PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -265,7 +413,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
         STAM_COUNTER_INC(&pVM->pgm.s.StatChunkR3MapTlbHits);
         pMap = pTlbe->pChunk;
     }
-    else if (idChunk != NIL_GPM_CHUNKID)
+    else if (idChunk != NIL_GMM_CHUNKID)
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatChunkR3MapTlbMisses);
 

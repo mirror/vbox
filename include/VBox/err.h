@@ -1107,6 +1107,15 @@
 #define VERR_HWACCM_NO_CPUID                        (-4101)
 /** @} */
 
+/** @name VBox GMM Status Codes 
+ * @{
+ */
+/** The GMM is out of pages and needs to be give another chunk of user memory that 
+ * it can lock down and borrow pages from. */
+#define VERR_GMM_SEED_ME                            (-4150)
+/** @} */
+
+
 /* SED-END */
 
 

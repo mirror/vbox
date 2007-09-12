@@ -75,6 +75,8 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_PGM_POOL_GROW,
     /** Maps a chunk into ring-3. */
     VMMCALLHOST_PGM_MAP_CHUNK,
+    /** Allocates more handy pages. */
+    VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES,
 #ifndef NEW_PHYS_CODE
     /** Dynamically allocate physical guest RAM. */
     VMMCALLHOST_PGM_RAM_GROW_RANGE,
@@ -360,6 +362,17 @@ typedef enum VMMR0OPERATION
      * the return GC code. The return code will not be interpreted by this operation.
      */
     VMMR0_DO_CALL_HYPERVISOR,
+
+    /** Call PGMR0PhysAllocateHandyPages(). */
+    VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES,
+    /** Call GMMR0AllocatePages(). */
+    VMMR0_DO_GMM_ALLOCATE_PAGES,
+    /** Call GMMR0FreePages(). */
+    VMMR0_DO_GMM_FREE_PAGES,
+    /** Call GMMR0MapUnmapChunk(). */
+    VMMR0_DO_GMM_MAP_UNMAP_CHUNK,
+    /** Call GMMR0SeedChunk(). */
+    VMMR0_DO_GMM_SEED_CHUNK,
 
     /** The start of the R0 service operations. */
     VMMR0_DO_SRV_START,

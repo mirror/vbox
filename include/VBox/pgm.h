@@ -1282,6 +1282,29 @@ PGMGCDECL(int) PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 #endif
 
 
+#ifdef IN_RING0
+/** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
+ * @ingroup grp_pgm
+ * @{
+ */
+/** 
+ * Worker function for PGMR3PhysAllocateHandyPages and pgmPhysEnsureHandyPage.
+ * 
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success. FF cleared.
+ * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is set in this case.
+ * 
+ * @param   pVM         The VM handle.
+ * 
+ * @remarks Must be called from within the PGM critical section.
+ */
+PGMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM);
+
+/** @} */
+#endif 
+
+
+
 #ifdef IN_RING3
 /** @defgroup grp_pgm_r3  The PGM Host Context Ring-3 API
  * @ingroup grp_pgm
@@ -1750,6 +1773,17 @@ PDMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
  * @param   pVM         The VM handle.
  */
 PGMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM);
+
+/**
+ * Response to VM_FF_PGM_NEED_HANDY_PAGES and VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES.
+ * 
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success. FF cleared.
+ * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is not cleared in this case.
+ * 
+ * @param   pVM         The VM handle.
+ */
+PDMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM);
 
 /**
  * Perform an integrity check on the PGM component.
