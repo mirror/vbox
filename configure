@@ -1321,6 +1321,7 @@ echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
 PATH="$PATH:/opt/gnome/bin"
 # solaris
 PATH="/usr/ucb:/usr/xpg4/bin:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
+export PATH
 
 # the tools
 check_gcc
