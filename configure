@@ -235,7 +235,7 @@ check_environment()
   esac
   [ -z "$TARGET_MACHINE" ] && TARGET_MACHINE=$BUILD_MACHINE
   [ -z "$TARGET_CPU"     ] && TARGET_CPU=$BUILD_CPU
-  OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr [A-Z] [a-z]`
+  OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr [:upper:] [:lower:]`
   case "$OS" in
     linux)
       ;;
