@@ -33,14 +33,14 @@ OBJS   = \
 	udivdi3.o \
 	umoddi3.o \
 	qdivrem.o
-#ifdef DEBUG
+ifdef DEBUG
 OBJS  += \
 	logbackdoor.o \
 	logformat.o \
 	strformat.o \
 	strformatrt.o \
 	strformat-vbox.o
-#endif
+endif
 
 ifneq ($(MAKECMDGOALS),clean)
 
