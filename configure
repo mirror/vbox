@@ -57,8 +57,8 @@ LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
 QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3 /usr/X11R6"
-KBUILDDIR="`cd $(dirname $0); pwd`/kBuild"
-DEVDIR="`cd $(dirname $0); pwd`/tools"
+KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
+DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
  LINUX="/lib/modules/`uname -r`/build"
 else
@@ -1276,7 +1276,7 @@ cat > $ENV << EOF
 EOF
 
 # test if we are OSE
-if [ $OSE -eq 1 -a -d "`cd $(dirname $0); pwd`/src/VBox/Devices/USB" ]; then
+if [ $OSE -eq 1 -a -d "`cd \`dirname $0\`; pwd`/src/VBox/Devices/USB" ]; then
   echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
   echo >> $LOG
   OSE=0
