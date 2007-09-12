@@ -19,28 +19,60 @@
 #ifndef __VBOXGUESTLOG__H
 #define __VBOXGUESTLOG__H
 
+#if defined(RT_OS_LINUX)
+
+/* Since I don't know the background for the stuff below, I prefer not to change
+   it.  I don't need it or want it for backdoor logging inside the Linux
+   Guest Additions kernel modules though. */
+# include <VBox/log.h>
+# define LogRelPrint(a) \
+      do { \
+          RTLogWriteUser (a, strlen(a)); \
+      } while (0)
+
+# define LogRelPrintQuote(a) \
+      do { \
+          LogRelPrint (#a); \
+      } while (0)
+
+# define LogRelPrintFunc(a) \
+      do { \
+          LogRelPrint (__PRETTY_FUNCTION__); \
+          LogRelPrint (": "); \
+          LogRelPrint (a); \
+      } while (0)
+
+# define LogFunc(a) \
+      do { \
+          Log(("%s: ", __PRETTY_FUNCTION__)); \
+          Log(a); \
+      } while (0)
+
+#else  /* RT_OS_LINUX not defined */
 /* Save LOG_ENABLED state, because "VBox/rt/log.h"
  * may undefine it for IN_RING0 code.
  */
-#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
-# define __LOG_ENABLED_SAVED__
-#endif
-
-#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
-# ifdef VBOX_GUEST
-#  include <VBox/log.h>
-#  undef Log
-#  define Log(a)  RTLogBackdoorPrintf a
-# else
-#  define Log(a)  DbgPrint a
+# if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
+#  define __LOG_ENABLED_SAVED__
 # endif
-#else
-# define Log(a)
-#endif
 
-#ifdef __LOG_ENABLED_SAVED__
-# define LOG_ENABLED
-# undef __LOG_ENABLED_SAVED__
-#endif
+# if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
+#  ifdef VBOX_GUEST
+#   include <VBox/log.h>
+#   undef Log
+#   define Log(a)  RTLogBackdoorPrintf a
+#  else
+#   define Log(a)  DbgPrint a
+#  endif
+# else
+#  define Log(a)
+# endif
+
+# ifdef __LOG_ENABLED_SAVED__
+#  define LOG_ENABLED
+#  undef __LOG_ENABLED_SAVED__
+# endif
+
+#endif  /* RT_OS_LINUX not defined */
 
 #endif /* __VBOXGUESTLOG__H */
