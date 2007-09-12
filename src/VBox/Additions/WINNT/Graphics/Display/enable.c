@@ -52,7 +52,6 @@ DRVFN gadrvfn_nt4[] = {
     {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
     {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
     {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
-    {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85 0x55
 #endif
 };
 /* Experimental begin */
