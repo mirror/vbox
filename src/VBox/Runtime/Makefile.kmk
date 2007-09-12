@@ -875,7 +875,6 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/freebsd/timer-r0drv-freebsd.c \
 	generic/RTTimerCreate-generic.cpp
 
-# SOLARISTODO - Todo for Solaris
 RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -890,6 +889,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/memobj-r0drv-solaris.c \
 	r0drv/solaris/process-r0drv-solaris.c \
 	r0drv/solaris/semevent-r0drv-solaris.c \
+	r0drv/solaris/semeventmulti-r0drv-solaris.c \
 	r0drv/solaris/semfastmutex-r0drv-solaris.c \
 	r0drv/solaris/spinlock-r0drv-solaris.c \
 	r0drv/solaris/thread-r0drv-solaris.c \
@@ -897,7 +897,6 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/time-r0drv-solaris.c \
 	r0drv/solaris/timer-r0drv-solaris.c
 
-## @todo r0drv/solaris/semeventmulti-r0drv-solaris.c
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 

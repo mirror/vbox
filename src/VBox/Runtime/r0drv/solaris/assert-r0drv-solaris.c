@@ -36,10 +36,10 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
                         pszExpr, pszFile, uLine, pszFunction);
 #endif
 
-    printf("\r\n!!Assertion Failed!!\r\n"
-           "Expression: %s\r\n"
-           "Location  : %s(%d) %s\r\n",
-           pszExpr, pszFile, uLine, pszFunction);
+    uprintf("\r\n!!Assertion Failed!!\r\n"
+            "Expression: %s\r\n"
+            "Location  : %s(%d) %s\r\n",
+            pszExpr, pszFile, uLine, pszFunction);
 }
 
 
@@ -58,6 +58,6 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
     szMsg[sizeof(szMsg) - 1] = '\0';
     va_end(va);
-    printf("%s", szMsg);
+    uprintf("%s", szMsg);
 }
 

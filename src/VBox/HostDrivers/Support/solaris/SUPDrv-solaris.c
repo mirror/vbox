@@ -46,21 +46,23 @@
 *******************************************************************************/
 /** The module name. */
 #define DEVICE_NAME              "vboxdrv"
+/** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC              "VirtualBox Driver"
+/** Maximum number of driver instances. */
 #define DEVICE_MAXINSTANCES      16
 
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int VBoxDrvSolarisOpen(dev_t* pDev, int fFlag, int fType, cred_t* pCred);
-static int VBoxDrvSolarisClose(dev_t Dev, int fFlag, int fType, cred_t* pCred);
-static int VBoxDrvSolarisRead(dev_t Dev, struct uio* pUio, cred_t* pCred);
-static int VBoxDrvSolarisWrite(dev_t Dev, struct uio* pUio, cred_t* pCred);
-static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int mode, cred_t* pCred, int* pVal);
+static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred);
+static int VBoxDrvSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred);
+static int VBoxDrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
+static int VBoxDrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred);
+static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int mode, cred_t *pCred, int *pVal);
 
-static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t Cmd);
-static int VBoxDrvSolarisDetach(dev_info_t* pDip, ddi_detach_cmd_t Cmd);
+static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t Cmd);
+static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t Cmd);
 
 static int VBoxSupDrvErr2SolarisErr(int rc);
 static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, intptr_t pArgs);
@@ -130,14 +132,14 @@ static struct modlinkage g_VBoxDrvSolarisModLinkage =
     NULL                    /* terminate array of linkage structures */
 };
 
-/** State info. each our kernel module instances */
+/** State info. for each driver instance. */
 typedef struct
 {
-    dev_info_t*     pDip;   /* Device handle */
+    dev_info_t     *pDip;   /* Device handle */
 } vbox_devstate_t;
 
 /** Opaque pointer to state */
-static void* g_pVBoxDrvSolarisState;
+static void *g_pVBoxDrvSolarisState;
 
 /** Device extention & session data association structure */
 static SUPDRVDEVEXT         g_DevExt;
@@ -206,7 +208,6 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     rc = supdrvCreateSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
-        cmn_err(CE_NOTE,"supdrvCreateSession success");
         RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
         unsigned        iHash;
 
@@ -236,7 +237,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     
     if (instance >= DEVICE_MAXINSTANCES)
     {
-        cmn_err(CE_NOTE, "All instances exhausted\n");
+        cmn_err(CE_NOTE, "VBoxDrvSolarisOpen: All instances exhausted\n");
         return ENXIO;
     }
     
@@ -300,13 +301,13 @@ static int VBoxDrvSolarisClose(dev_t pDev, int flag, int otyp, cred_t *cred)
     return DDI_SUCCESS;
 }
 
-static int VBoxDrvSolarisRead(dev_t dev, struct uio* pUio, cred_t* credp)
+static int VBoxDrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     cmn_err(CE_CONT, "VBoxDrvSolarisRead");
     return DDI_SUCCESS;
 }
 
-static int VBoxDrvSolarisWrite(dev_t dev, struct uio* pUio, cred_t* credp)
+static int VBoxDrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     cmn_err(CE_CONT, "VBoxDrvSolarisWrite");
     return DDI_SUCCESS;
@@ -320,12 +321,12 @@ static int VBoxDrvSolarisWrite(dev_t dev, struct uio* pUio, cred_t* credp)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxDrvSolarisAttach(dev_info_t* pDip, ddi_attach_cmd_t enmCmd)
+static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
     cmn_err(CE_CONT, "VBoxDrvSolarisAttach");
     int rc = VINF_SUCCESS;
     int instance = 0;
-    vbox_devstate_t* pState;
+    vbox_devstate_t *pState;
     
     switch (enmCmd)
     {
@@ -411,7 +412,7 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
     int rc = VINF_SUCCESS;
     int instance;
-    register vbox_devstate_t* pState;
+    register vbox_devstate_t *pState;
 
     cmn_err(CE_CONT, "VBoxDrvSolarisDetach");
     switch (enmCmd)
@@ -556,10 +557,7 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, i
             if (rc != 0)
             {
                 OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyout(,%p,%d) failed.\n", pArgData->pvOut, cbBuf));
-
-                /** @todo r=bird: why this extra return? setting rc = EFAULT; should do the trick, shouldn't it? */
-                RTMemTmpFree(pvBuf);
-                return EFAULT;
+                rc = EFAULT;
             }
         }
         else
@@ -572,7 +570,6 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, i
     if (pvBuf)
         RTMemTmpFree(pvBuf);
     
-    OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: returns %d cbOut=%d\n", rc, cbOut));
     return rc;
 }
 
@@ -632,6 +629,7 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     return false;
 }
 
+
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
     va_list     args;
@@ -642,6 +640,6 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     va_end(args);
 
     szMsg[sizeof(szMsg) - 1] = '\0';
-    printf("%s", szMsg);
+    uprintf("%s", szMsg);
     return 0;
 }
