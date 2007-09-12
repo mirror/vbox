@@ -27,19 +27,19 @@ OBJS   = \
 	VMMDev.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
-	r0drv/linux/semaphore-r0drv-linux.o
+	r0drv/linux/semaphore-r0drv-linux.o \
+	divdi3.o \
+	moddi3.o \
+	udivdi3.o \
+	umoddi3.o \
+	qdivrem.o
 #ifdef DEBUG
 OBJS  += \
 	logbackdoor.o \
 	logformat.o \
 	strformat.o \
 	strformatrt.o \
-	strformat-vbox.o \
-	divdi3.o \
-	moddi3.o \
-	udivdi3.o \
-	umoddi3.o \
-	qdivrem.o
+	strformat-vbox.o
 #endif
 
 ifneq ($(MAKECMDGOALS),clean)
