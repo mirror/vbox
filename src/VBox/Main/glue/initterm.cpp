@@ -183,32 +183,36 @@ HRESULT Initialize()
      * which we can't leave with. Therefore, we try to fix this by using the
      * brute force method: */
 
-    enum { MaxTries = 10000 };
-    int tries = MaxTries;
-    while (rc == RPC_E_CHANGED_MODE && tries --)
+    if (rc == RPC_E_CHANGED_MODE)
     {
         LogFlowFunc (("COM already initialized in wrong apartment mode, "
                       "will reinitialize.\n"));
 
-        CoUninitialize();
-        rc = CoInitializeEx (NULL, flags);
-        if (rc == S_OK)
+        enum { MaxTries = 10000 };
+        int tries = MaxTries;
+        while (rc == RPC_E_CHANGED_MODE && tries --)
         {
-            /* We've successfully reinitialized COM; restore the
-             * initialization reference counter */
-
-            LogFlowFunc (("Will call CoInitializeEx() %d times.\n",
-                          MaxTries - tries));
-
-            while (tries ++ < MaxTries)
+            CoUninitialize();
+            rc = CoInitializeEx (NULL, flags);
+            if (rc == S_OK)
             {
-                rc = CoInitializeEx (NULL, flags);
-                Assert (rc == S_FALSE);
+                /* We've successfully reinitialized COM; restore the
+                 * initialization reference counter */
+
+                LogFlowFunc (("Will call CoInitializeEx() %d times.\n",
+                              MaxTries - tries));
+
+                while (tries ++ < MaxTries)
+                {
+                    rc = CoInitializeEx (NULL, flags);
+                    Assert (rc == S_FALSE);
+                }
             }
         }
     }
 
-    /* the overall result must be either S_OK or S_FALSE */
+    /* the overall result must be either S_OK or S_FALSE (S_FALSE means
+     * "already initialized using the same apartment model") */
     AssertMsg (rc == S_OK || rc == S_FALSE, ("rc=%08X\n", rc));
 
 #else /* !defined (VBOX_WITH_XPCOM) */
