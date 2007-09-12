@@ -454,8 +454,8 @@ void VBoxProblemReporter::cannotFindLicenseFiles (const QString &aPath)
 {
     message
         (0, VBoxProblemReporter::Error,
-         tr ("Failed to find any license file in "
-             "<nobr><b>%1</b></nobr> path.")
+         tr ("Failed to find license files in "
+             "<nobr><b>%1</b></nobr>.")
              .arg (aPath));
 }
 
@@ -464,8 +464,8 @@ void VBoxProblemReporter::cannotOpenLicenseFile (QWidget *aParent,
 {
     message
         (aParent, VBoxProblemReporter::Error,
-         tr ("Failed to open license file <nobr><b>%1</b></nobr>. "
-             "Check the file presence and read-permissions.")
+         tr ("Failed to open the license file <nobr><b>%1</b></nobr>. "
+             "Check file permissions.")
              .arg (aPath));
 }
 #endif
