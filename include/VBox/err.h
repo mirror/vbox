@@ -111,28 +111,33 @@
 /** Indicating that the VM has been resumed and that the thread should
  * start executing. */
 #define VINF_EM_RESUME                      1112
+/** Indicating that we've got an out-of-memory condition and that we need
+ * to take the appropriate actions to deal with this. 
+ * @remarks It might seem odd at first that this has lower priority than VINF_EM_HALT, 
+ *          VINF_EM_SUSPEND, and VINF_EM_RESUME. The reason is that these events are
+ *          vital to correctly operating the VM. Also, they can't normally occur together
+ *          with an out-of-memory condition, and even if that should happen the condition
+ *          will be rediscovered before executing any more code. */
+#define VINF_EM_NO_MEMORY                   1113
+/** The fatal variant of VINF_EM_NO_MEMORY. */
+#define VERR_EM_NO_MEMORY                   (-1113)
 /** Indicating that a rescheduling to recompiled execution.
  * Typically caused by raw-mode executing code which is difficult/slow
  * to virtualize rawly.
- * @note important to have a higher priority (lower number) than VINF_EM_RESCHEDULE
- *       and VINF_EM_RESCHEDULE_RAW
- */
+ * @remarks Important to have a higher priority (lower number) than the other rescheduling status codes. */
 #define VINF_EM_RESCHEDULE_REM              1114
 /** Indicating that a rescheduling to vmx-mode execution.
- * Typically caused by REM detecting that hardware-accelerated raw-mode execution is possible.
- */
+ * Typically caused by REM detecting that hardware-accelerated raw-mode execution is possible. */
 #define VINF_EM_RESCHEDULE_HWACC            1115
 /** Indicating that a rescheduling to raw-mode execution.
  * Typically caused by REM detecting that raw-mode execution is possible.
- * @note important to have a higher priority (lower number) than VINF_EM_RESCHEDULE
- *       and VINF_EM_RESCHEDULE_RAW
- */
+ * @remarks Important to have a higher priority (lower number) than VINF_EM_RESCHEDULE. */
 #define VINF_EM_RESCHEDULE_RAW              1116
 /** Indicating that a rescheduling now is required. Typically caused by
  * interrupts having changed the EIP. */
 #define VINF_EM_RESCHEDULE                  1117
 /** Last scheduling related status code. (inclusive) */
-#define VINF_EM_LAST                        1118
+#define VINF_EM_LAST                        1117
 
 /** Reason for leaving GC: Guest trap which couldn't be handled in GC.
  * The trap is generally forwared to the REM and executed there. */
