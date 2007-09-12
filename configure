@@ -21,6 +21,12 @@
 LC_ALL=C
 export LC_ALL
 
+# append some extra paths
+PATH="$PATH:/opt/gnome/bin"
+# solaris
+PATH="/usr/ucb:/usr/xpg4/bin:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
+export PATH
+
 #
 # Defaults
 #
@@ -1290,6 +1296,10 @@ fi
 check_environment
 check_kbuild
 
+# append the tools directory to the default search path
+echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
+export PATH
+
 # some things are not available in for OSE
 if [ $OSE -ge 1 ]; then
   cnf_append "VBOX_OSE" "1"
@@ -1313,15 +1323,6 @@ fi
 [ $WITH_XPCOM -eq 0 ]   && cnf_append "VBOX_WITH_MAIN" ""
 [ $WITH_QT -eq 0 ]      && cnf_append "VBOX_WITH_QTGUI" ""
 [ $WITH_SDL_TTF -eq 0 ] && cnf_append "VBOX_WITH_SECURELABEL" ""
-
-# append the tools directory to the default search path
-echo "$PATH" | grep -q "$DEVDIR_BIN" || PATH="$PATH:$DEVDIR_BIN"
-
-# append some extra paths
-PATH="$PATH:/opt/gnome/bin"
-# solaris
-PATH="/usr/ucb:/usr/xpg4/bin:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
-export PATH
 
 # the tools
 check_gcc
