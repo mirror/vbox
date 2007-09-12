@@ -220,11 +220,13 @@ sf_reg_open (struct inode *inode, struct file *file)
         if (file->f_flags & O_CREAT) {
                 LogFunc(("O_CREAT set\n"));
                 params.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
-                if (file->f_flags & O_EXCL) {
-                        LogFunc(("O_EXCL set\n"));
-                        params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS;
-                }
-                else {
+                /* We ignore O_EXCL, as the Linux kernel seems to call create
+                   beforehand itself, so O_EXCL should always fail. */
+//                if (file->f_flags & O_EXCL) {
+//                        LogFunc(("O_EXCL set\n"));
+//                        params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS;
+//                }
+//                else {
                         /* O_TRUNC combined with O_EXCL is undefined. */
                         if (file->f_flags & O_TRUNC) {
                                 LogFunc(("O_TRUNC set\n"));
@@ -233,7 +235,7 @@ sf_reg_open (struct inode *inode, struct file *file)
                         else {
                                 params.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
                         }
-                }
+//                }
         }
         else {
                 params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
