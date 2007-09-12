@@ -1,3 +1,4 @@
+%define ___VBox_x86_h
 %define X86_EFL_CF          BIT(0)
 %define X86_EFL_PF          BIT(2)
 %define X86_EFL_AF          BIT(4)
@@ -17,6 +18,12 @@
 %define X86_EFL_ID          BIT(21)
 %define X86_EFL_IOPL_SHIFT  12
 %define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
+%define X86_CPUID_VENDOR_INTEL_EBX      0x756e6547      /* Genu */
+%define X86_CPUID_VENDOR_INTEL_ECX      0x6c65746e      /* ntel */
+%define X86_CPUID_VENDOR_INTEL_EDX      0x49656e69      /* ineI */
+%define X86_CPUID_VENDOR_AMD_EBX        0x68747541      /* Auth */
+%define X86_CPUID_VENDOR_AMD_ECX        0x444d4163      /* cAMD */
+%define X86_CPUID_VENDOR_AMD_EDX        0x69746e65      /* enti */
 %define X86_CPUID_FEATURE_ECX_SSE3      BIT(0)
 %define X86_CPUID_FEATURE_ECX_MONITOR   BIT(3)
 %define X86_CPUID_FEATURE_ECX_CPLDS     BIT(4)
@@ -57,8 +64,8 @@
 %define X86_CPUID_FEATURE_EDX_HTT       BIT(28)
 %define X86_CPUID_FEATURE_EDX_TM        BIT(29)
 %define X86_CPUID_FEATURE_EDX_PBE       BIT(31)
-%define X86_CPUID_AMD_FEATURE_EDX_FPU       BIT(0)
-%define X86_CPUID_AMD_FEATURE_EDX_VME       BIT(1)
+%define X86_CPUID_AMD_FEATURE_EDX_FPU   BIT(0)
+%define X86_CPUID_AMD_FEATURE_EDX_VME    BIT(1)
 %define X86_CPUID_AMD_FEATURE_EDX_DE        BIT(2)
 %define X86_CPUID_AMD_FEATURE_EDX_PSE       BIT(3)
 %define X86_CPUID_AMD_FEATURE_EDX_TSC       BIT(4)
@@ -84,6 +91,7 @@
 %define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE BIT(29)
 %define X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX  BIT(30)
 %define X86_CPUID_AMD_FEATURE_EDX_3DNOW     BIT(31)
+%define X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF BIT(0)
 %define X86_CPUID_AMD_FEATURE_ECX_CMPL      BIT(1)
 %define X86_CPUID_AMD_FEATURE_ECX_SVM       BIT(2)
 %define X86_CPUID_AMD_FEATURE_ECX_EXT_APIC  BIT(3)
@@ -231,6 +239,7 @@
 %define MSR_K8_TOP_MEM1                     0xc001001a
 %define MSR_K8_TOP_MEM2                     0xc001001d
 %define MSR_K8_VM_CR                        0xc0010114
+%define MSR_K8_VM_CR_SVM_DISABLE            BIT(4)
 %define MSR_K8_IGNNE                        0xc0010115
 %define MSR_K8_SMM_CTL                      0xc0010116
 %define MSR_K8_VM_HSAVE_PA                  0xc0010117
@@ -328,6 +337,7 @@
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
 %define X86_SEL_TYPE_CODE                   8
+%define X86_SEL_TYPE_MEMORY                 BIT(4)
 %define X86_SEL_TYPE_ACCESSED               1
 %define X86_SEL_TYPE_DOWN                   4
 %define X86_SEL_TYPE_CONF                   4
@@ -349,22 +359,28 @@
 %define X86_SEL_TYPE_EO_CONF_ACC           (4 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
 %define X86_SEL_TYPE_ER_CONF               (6 | X86_SEL_TYPE_CODE)
 %define X86_SEL_TYPE_ER_CONF_ACC           (6 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
-%define X86_SEL_TYPE_SYS_UNDEFINED         0
-%define X86_SEL_TYPE_SYS_286_TSS_AVAIL     1
-%define X86_SEL_TYPE_SYS_LDT               2
-%define X86_SEL_TYPE_SYS_286_TSS_BUSY      3
-%define X86_SEL_TYPE_SYS_286_CALL_GATE     4
-%define X86_SEL_TYPE_SYS_TASK_GATE         5
-%define X86_SEL_TYPE_SYS_286_INT_GATE      6
-%define X86_SEL_TYPE_SYS_286_TRAP_GATE     7
-%define X86_SEL_TYPE_SYS_UNDEFINED2        8
-%define X86_SEL_TYPE_SYS_386_TSS_AVAIL     9
-%define X86_SEL_TYPE_SYS_UNDEFINED3        0xA
-%define X86_SEL_TYPE_SYS_386_TSS_BUSY      0xB
-%define X86_SEL_TYPE_SYS_386_CALL_GATE     0xC
-%define X86_SEL_TYPE_SYS_UNDEFINED4        0xD
-%define X86_SEL_TYPE_SYS_386_INT_GATE      0xE
-%define X86_SEL_TYPE_SYS_386_TRAP_GATE     0xF
+%define X86_SEL_TYPE_SYS_UNDEFINED          0
+%define X86_SEL_TYPE_SYS_286_TSS_AVAIL      1
+%define X86_SEL_TYPE_SYS_LDT                2
+%define X86_SEL_TYPE_SYS_286_TSS_BUSY       3
+%define X86_SEL_TYPE_SYS_286_CALL_GATE      4
+%define X86_SEL_TYPE_SYS_TASK_GATE          5
+%define X86_SEL_TYPE_SYS_286_INT_GATE       6
+%define X86_SEL_TYPE_SYS_286_TRAP_GATE      7
+%define X86_SEL_TYPE_SYS_UNDEFINED2         8
+%define X86_SEL_TYPE_SYS_386_TSS_AVAIL      9
+%define X86_SEL_TYPE_SYS_UNDEFINED3         0xA
+%define X86_SEL_TYPE_SYS_386_TSS_BUSY       0xB
+%define X86_SEL_TYPE_SYS_386_CALL_GATE      0xC
+%define X86_SEL_TYPE_SYS_UNDEFINED4         0xD
+%define X86_SEL_TYPE_SYS_386_INT_GATE       0xE
+%define X86_SEL_TYPE_SYS_386_TRAP_GATE      0xF
+%define AMD64_SEL_TYPE_SYS_LDT              2
+%define AMD64_SEL_TYPE_SYS_TSS_AVAIL        9
+%define AMD64_SEL_TYPE_SYS_TSS_BUSY         0xB
+%define AMD64_SEL_TYPE_SYS_CALL_GATE        0xC
+%define AMD64_SEL_TYPE_SYS_INT_GATE         0xE
+%define AMD64_SEL_TYPE_SYS_TRAP_GATE        0xF
 %define X86_DESC_TYPE_MASK                  (BIT(8) | BIT(9) | BIT(10) | BIT(11))
 %define X86_DESC_S                          BIT(12)
 %define X86_DESC_DPL                       (BIT(13) | BIT(14))
@@ -372,10 +388,13 @@
 %define X86_DESC_AVL                        BIT(20)
 %define X86_DESC_DB                         BIT(22)
 %define X86_DESC_G                          BIT(23)
-%define X86_SEL_SHIFT   3
-%define X86_SEL_MASK    0xfff8
-%define X86_SEL_LDT     0x0004
-%define X86_SEL_RPL     0x0003
+%define X86_SEL_SHIFT       3
+%define AMD64_SEL_SHIFT     4
+%define X86_SEL_SHIFT_HC    AMD64_SEL_SHIFT
+%define X86_SEL_SHIFT_HC    X86_SEL_SHIFT
+%define X86_SEL_MASK        0xfff8
+%define X86_SEL_LDT         0x0004
+%define X86_SEL_RPL         0x0003
 %define X86_TRAP_ERR_EXTERNAL       1
 %define X86_TRAP_ERR_IDT            2
 %define X86_TRAP_ERR_TI             4
