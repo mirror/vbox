@@ -64,12 +64,14 @@ extern struct file_operations   sf_dir_fops;
 extern struct file_operations   sf_reg_fops;
 extern struct dentry_operations sf_dentry_ops;
 
-extern int
-sf_stat (const char *caller, struct sf_glob_info *sf_g,
-         SHFLSTRING *path, RTFSOBJINFO *result, int ok_to_fail);
 extern void
 sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
                RTFSOBJINFO *info);
+extern int
+sf_stat (const char *caller, struct sf_glob_info *sf_g,
+         SHFLSTRING *path, RTFSOBJINFO *result, int ok_to_fail);
+extern int
+sf_inode_revalidate (struct dentry *dentry);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
 extern int
 sf_getattr (struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat);

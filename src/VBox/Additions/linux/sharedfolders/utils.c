@@ -138,7 +138,7 @@ sf_stat (const char *caller, struct sf_glob_info *sf_g,
    still valid. the test is failed if [dentry] does not have an inode
    or [sf_stat] is unsuccessful, otherwise we return success and
    update inode attributes */
-static int
+int
 sf_inode_revalidate (struct dentry *dentry)
 {
         int err;
