@@ -758,20 +758,20 @@ typedef struct PDM
     RTUINT                          uPadding0; /**< Alignment padding.*/
 
     /** Pointer to list of loaded modules. This is HC only! */
-    HCPTRTYPE(PPDMMOD)              pModules;
+    R3PTRTYPE(PPDMMOD)              pModules;
 
     /** List of registered devices. (FIFO) */
-    HCPTRTYPE(PPDMDEV)              pDevs;
+    R3PTRTYPE(PPDMDEV)              pDevs;
     /** List of devices instances. (FIFO) */
-    HCPTRTYPE(PPDMDEVINS)           pDevInstances;
+    R3PTRTYPE(PPDMDEVINS)           pDevInstances;
     /** List of registered USB devices. (FIFO) */
     R3PTRTYPE(PPDMUSB)              pUsbDevs;
     /** List of USB devices instances. (FIFO) */
     R3PTRTYPE(PPDMUSBINS)           pUsbInstances;
     /** List of registered drivers. (FIFO) */
-    HCPTRTYPE(PPDMDRV)              pDrvs;
+    R3PTRTYPE(PPDMDRV)              pDrvs;
     /** List of initialized critical sections. (LIFO) */
-    HCPTRTYPE(PPDMCRITSECTINT)      pCritSects;
+    R3PTRTYPE(PPDMCRITSECTINT)      pCritSects;
     /** PCI Buses. */
     PDMPCIBUS                       aPciBuses[1];
     /** The register PIC device. */
@@ -781,9 +781,9 @@ typedef struct PDM
     /** The registerd I/O APIC device. */
     PDMIOAPIC                       IoApic;
     /** The registered DMAC device. */
-    HCPTRTYPE(PPDMDMAC)             pDmac;
+    R3PTRTYPE(PPDMDMAC)             pDmac;
     /** The registered RTC device. */
-    HCPTRTYPE(PPDMRTC)              pRtc;
+    R3PTRTYPE(PPDMRTC)              pRtc;
     /** The registered USB HUBs. (FIFO) */
     R3PTRTYPE(PPDMUSBHUB)           pUsbHubs;
 
@@ -799,9 +799,9 @@ typedef struct PDM
     R3PTRTYPE(PPDMCRITSECT)         apQueuedCritSectsLeaves[8];
 
     /** Linked list of timer driven PDM queues. */
-    HCPTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
+    R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
     /** Linked list of force action driven PDM queues. */
-    HCPTRTYPE(struct PDMQUEUE *)    pQueuesForced;
+    R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
     /** Pointer to the queue which should be manually flushed - HCPtr.
      * Only touched by EMT. */
     HCPTRTYPE(struct PDMQUEUE *)    pQueueFlushHC;
@@ -824,7 +824,7 @@ typedef struct PDM
     RTUINT                          padding1;
 #endif
     R3PTRTYPE(PFNPDMDRVPOLLER)      apfnPollers[16];
-    HCPTRTYPE(PPDMDRVINS)           aDrvInsPollers[16];
+    R3PTRTYPE(PPDMDRVINS)           aDrvInsPollers[16];
     PTMTIMERHC                      pTimerPollers;
     /** @} */
 

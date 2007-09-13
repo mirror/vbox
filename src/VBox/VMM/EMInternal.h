@@ -259,10 +259,10 @@ typedef struct EM
 
 
     /** Pointer to the PATM status structure. (HC Ptr) */
-    HCPTRTYPE(PPATMGCSTATE) pPatmGCState;
+    R3R0PTRTYPE(PPATMGCSTATE) pPatmGCState;
 
     /** Pointer to the guest CPUM state. (HC Ptr) */
-    HCPTRTYPE(PCPUMCTX)     pCtx;
+    R3R0PTRTYPE(PCPUMCTX)     pCtx;
 
 
     union
@@ -310,7 +310,7 @@ typedef struct EM
     STAMCOUNTER             StatHwAccExecuteEntry;
 
     /** More statistics (HC). */
-    HCPTRTYPE(PEMSTATS)     pStatsHC;
+    R3R0PTRTYPE(PEMSTATS)   pStatsHC;
     /** More statistics (GC). */
     GCPTRTYPE(PEMSTATS)     pStatsGC;
 #if HC_ARCH_BITS != GC_ARCH_BITS && GC_ARCH_BITS == 32
@@ -318,7 +318,7 @@ typedef struct EM
 #endif
 
     /** Tree for keeping track of cli occurances (debug only). */
-    HCPTRTYPE(PAVLPVNODECORE) pCliStatTree;
+    R3PTRTYPE(PAVLPVNODECORE) pCliStatTree;
     STAMCOUNTER             StatTotalClis;
 #if 0
     /** 64-bit Visual C++ rounds the struct size up to 16 byte. */
