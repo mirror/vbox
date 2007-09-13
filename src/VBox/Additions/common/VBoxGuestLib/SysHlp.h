@@ -38,7 +38,10 @@ __BEGIN_DECLS
 #  include <ntddk.h>
 __END_DECLS
 # endif
-/* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so... */
+/* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so... 
+ * The same for ExAllocatePool.
+ */
+#undef ExAllocatePool
 #undef ExFreePool
 #endif
 

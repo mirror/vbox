@@ -34,6 +34,14 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxGuestInternal.h>
 
+#ifdef TARGET_NT4
+/* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so... 
+ * The same for ExAllocatePool.
+ */
+#undef ExAllocatePool
+#undef ExFreePool
+#endif
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -477,7 +485,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
             }
 #else
             PVOID pvBalloon;
-            pvBalloon = ExAllocatePoolWithTag(PagedPool, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, 'MBAL');
+            pvBalloon = ExAllocatePool(PagedPool, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE);
             if (!pvBalloon)
             {
                 rc = VERR_NO_MEMORY;
@@ -488,7 +496,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
             if (pMdl == NULL)
             {
                 rc = VERR_NO_MEMORY;
-                ExFreePoolWithTag(pvBalloon, 'MBAL');
+                ExFreePool(pvBalloon);
                 AssertMsgFailed(("IoAllocateMdl %VGv %x failed!!\n", pvBalloon, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE));
                 goto end;
             }
@@ -503,7 +511,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                     dprintf(("MmProbeAndLockPages failed!\n"));
                     rc = VERR_NO_MEMORY;
                     IoFreeMdl (pMdl);
-                    ExFreePoolWithTag(pvBalloon, 'MBAL');
+                    ExFreePool(pvBalloon);
                     goto end;
                 }
             }
@@ -530,7 +538,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 ExFreePool(pMdl);
 #else
                 IoFreeMdl (pMdl);
-                ExFreePoolWithTag(pvBalloon, 'MBAL');
+                ExFreePool(pvBalloon);
 #endif
                 goto end;
             }
@@ -587,7 +595,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB free chunk at %x\n", index, pvBalloon));
                 MmUnlockPages (pMdl);
                 IoFreeMdl (pMdl);
-                ExFreePoolWithTag(pvBalloon, 'MBAL');
+                ExFreePool(pvBalloon);
 #endif
 
                 pDevExt->MemBalloon.paMdlMemBalloon[index] = NULL;
@@ -627,7 +635,7 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
             if (!pDevExt->MemBalloon.paMdlMemBalloon)
             {
                 pDevExt->MemBalloon.cMaxBalloons = req->u32PhysMemSize;
-                pDevExt->MemBalloon.paMdlMemBalloon = (PMDL *)ExAllocatePoolWithTag(PagedPool, req->u32PhysMemSize * sizeof(PMDL), 'MBAL');
+                pDevExt->MemBalloon.paMdlMemBalloon = (PMDL *)ExAllocatePool(PagedPool, req->u32PhysMemSize * sizeof(PMDL));
                 Assert(pDevExt->MemBalloon.paMdlMemBalloon);
                 if (!pDevExt->MemBalloon.paMdlMemBalloon)
                     return VERR_NO_MEMORY;
@@ -669,7 +677,7 @@ void VBoxCleanupMemBalloon(PVBOXGUESTDEVEXT pDevExt)
     {
         /* Clean up the memory balloon leftovers */
         VBoxGuestSetBalloonSize(pDevExt, 0);
-        ExFreePoolWithTag(pDevExt->MemBalloon.paMdlMemBalloon, 'MBAL');
+        ExFreePool(pDevExt->MemBalloon.paMdlMemBalloon);
         pDevExt->MemBalloon.paMdlMemBalloon = NULL;
     }
     Assert(pDevExt->MemBalloon.cBalloons == 0);
