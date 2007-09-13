@@ -60,7 +60,7 @@ int mmr3PagePoolInit(PVM pVM)
     /*
      * Allocate the pool structures.
      */
-    int rc = SUPPageAlloc(RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePool), PAGE_SIZE)/PAGE_SIZE, (void **)&pVM->mm.s.pPagePool);
+    int rc = MMHyperAlloc(pVM, sizeof(*pVM->mm.s.pPagePool), 0, MM_TAG_MM_PAGE, (void **)&pVM->mm.s.pPagePool);
     if (VBOX_FAILURE(rc))
         return rc;
     pVM->mm.s.pPagePool->pVM = pVM;
@@ -73,7 +73,7 @@ int mmr3PagePoolInit(PVM pVM)
     STAM_REG(pVM, &pVM->mm.s.pPagePool->cToVirtCalls,   STAMTYPE_COUNTER, "/MM/Page/Def/cToVirtCalls",  STAMUNIT_CALLS, "Number of MMR3PagePhys2Page()+MMR3PageFreeByPhys() calls for the default pool.");
     STAM_REG(pVM, &pVM->mm.s.pPagePool->cErrors,        STAMTYPE_COUNTER, "/MM/Page/Def/cErrors",       STAMUNIT_ERRORS,"Number of errors for the default pool.");
 
-    rc = SUPPageAlloc(RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePoolLow), PAGE_SIZE)/PAGE_SIZE, (void **)&pVM->mm.s.pPagePoolLow);
+    rc = MMHyperAlloc(pVM, sizeof(*pVM->mm.s.pPagePoolLow), 0, MM_TAG_MM_PAGE, (void **)&pVM->mm.s.pPagePoolLow);
     if (VBOX_FAILURE(rc))
         return rc;
     pVM->mm.s.pPagePoolLow->pVM = pVM;
@@ -119,8 +119,6 @@ void mmr3PagePoolTerm(PVM pVM)
             /* next */
             pSubPool = pSubPool->pNext;
         }
-
-        SUPPageFree(pVM->mm.s.pPagePool, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePool), PAGE_SIZE)/PAGE_SIZE);
         pVM->mm.s.pPagePool = NULL;
     }
 
@@ -140,8 +138,6 @@ void mmr3PagePoolTerm(PVM pVM)
             /* next */
             pSubPool = pSubPool->pNext;
         }
-
-        SUPPageFree(pVM->mm.s.pPagePoolLow, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePoolLow), PAGE_SIZE)/PAGE_SIZE);
         pVM->mm.s.pPagePoolLow = NULL;
     }
 }
