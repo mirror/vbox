@@ -693,7 +693,7 @@ SELMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL)
     return VERR_SELECTOR_NOT_PRESENT;
 }
 
-
+#ifndef IN_RING0
 /**
  * Gets the hypervisor code selector (CS).
  * @returns CS selector.
@@ -748,7 +748,6 @@ SELMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
     return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
 }
 
-
 /**
  * Gets the address for the hypervisor GDT.
  *
@@ -766,7 +765,7 @@ SELMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM)
      */
     return MMHyperHC2GC(pVM, pVM->selm.s.paGdtHC);
 }
-
+#endif /* IN_RING0 */
 
 /**
  * Gets info about the current TSS.

@@ -69,8 +69,8 @@ typedef struct
 
 typedef struct
 {
-    HCPTRTYPE(uint8_t *) pPageLocStartHC;
-    HCPTRTYPE(uint8_t *) pPageLocEndHC;
+    R3PTRTYPE(uint8_t *) pPageLocStartHC;
+    R3PTRTYPE(uint8_t *) pPageLocEndHC;
     GCPTRTYPE(uint8_t *) pGuestLoc;
     uint32_t             depth;  //call/jump depth
 
@@ -145,7 +145,7 @@ typedef struct CSAM
     RTINT               Alignment0;     /**< Align pPageTree correctly. */
 #endif
 
-    HCPTRTYPE(PAVLPVNODECORE) pPageTree;
+    R3PTRTYPE(PAVLPVNODECORE) pPageTree;
 
     /* Array to store previously scanned dangerous instructions, so we don't need to
      * switch back to ring 3 each time we encounter them in GC.
@@ -156,13 +156,13 @@ typedef struct CSAM
 
     GCPTRTYPE(RTGCPTR *)  pPDBitmapGC;
     GCPTRTYPE(RTHCPTR *)  pPDHCBitmapGC;
-    HCPTRTYPE(uint8_t **) pPDBitmapHC;
-    HCPTRTYPE(RTGCPTR  *) pPDGCBitmapHC;
+    R3PTRTYPE(uint8_t **) pPDBitmapHC;
+    R3PTRTYPE(RTGCPTR  *) pPDGCBitmapHC;
 
     /* Temporary storage during load/save state */
     struct
     {
-        HCPTRTYPE(PSSMHANDLE) pSSM;
+        R3PTRTYPE(PSSMHANDLE) pSSM;
         uint32_t        cPageRecords;
         uint32_t        cPatchPageRecords;
     } savedstate;
@@ -235,19 +235,6 @@ typedef struct CSAM
  *
  */
 typedef int (VBOXCALL *PFN_CSAMR3ANALYSE)(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *) pCurInstrGC, PCSAMP2GLOOKUPREC pCacheRec, void *pUserData);
-
-/**
- * Check if the current instruction is the start of a known guest block that requires our attention
- *
- * @param   pVM         The VM to operate on.
- * @param   pInstrGC    Guest context pointer of instruction to check
- * @param   pInstrHC    Host context pointer of instruction to check
- * @param   opcode      Opcode of instruction at pInstrGC
- *
- * @returns             true if patched
- *
- */
-bool csamCheckGuestSpecificPatch(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC, uint32_t opcode);
 
 /**
  * Calculate the branch destination

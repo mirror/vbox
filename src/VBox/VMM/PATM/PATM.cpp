@@ -914,7 +914,7 @@ PATMR3DECL(PPATMGCSTATE) PATMR3QueryGCStateHC(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     Guest context address
  */
-PATMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, HCPTRTYPE(uint8_t *) pAddrHC)
+PATMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, R3PTRTYPE(uint8_t *) pAddrHC)
 {
     return (pAddrHC >= pVM->patm.s.pPatchMemHC && pAddrHC < pVM->patm.s.pPatchMemHC + pVM->patm.s.cbPatchMem) ? true : false;
 }
@@ -940,7 +940,7 @@ PATMR3DECL(int) PATMR3AllowPatching(PVM pVM, uint32_t fAllowPatching)
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     GC pointer
  */
-PATMR3DECL(HCPTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTGCPTR pAddrGC)
+PATMR3DECL(R3PTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTGCPTR pAddrGC)
 {
     if (pVM->patm.s.pPatchMemGC <= pAddrGC && pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem > pAddrGC)
     {
@@ -972,10 +972,10 @@ PATMR3DECL(int) PATMR3IsEnabled(PVM pVM)
  * @returns             Host context pointer or NULL in case of an error
  *
  */
-HCPTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pGCPtr)
+R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pGCPtr)
 {
     int rc;
-    HCPTRTYPE(uint8_t *) pHCPtr;
+    R3PTRTYPE(uint8_t *) pHCPtr;
     uint32_t offset;
 
     if (PATMIsPatchGCAddr(pVM, pGCPtr))
@@ -995,9 +995,9 @@ HCPTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(ui
         AssertMsg(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("MMR3PhysGCVirt2HCVirtEx failed for %08X\n", pGCPtr));
         return NULL;
     }
-////invalid?    Assert(sizeof(HCPTRTYPE(uint8_t*)) == sizeof(uint32_t));
+////invalid?    Assert(sizeof(R3PTRTYPE(uint8_t*)) == sizeof(uint32_t));
 
-    pPatch->cacheRec.pPatchLocStartHC = (HCPTRTYPE(uint8_t*))((RTHCUINTPTR)pHCPtr & PAGE_BASE_HC_MASK);
+    pPatch->cacheRec.pPatchLocStartHC = (R3PTRTYPE(uint8_t*))((RTHCUINTPTR)pHCPtr & PAGE_BASE_HC_MASK);
     pPatch->cacheRec.pGuestLoc        = pGCPtr & PAGE_BASE_GC_MASK;
     return pHCPtr;
 }
@@ -1703,7 +1703,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, GCPTRTYPE(uint8_t *
             unsigned    opsize;
             int         disret;
             GCPTRTYPE(uint8_t *) pNextInstrGC, pReturnInstrGC;
-            HCPTRTYPE(uint8_t *) pNextInstrHC;
+            R3PTRTYPE(uint8_t *) pNextInstrHC;
 
             pPatch->flags |= PATMFL_FOUND_PATCHEND;
 
@@ -2081,7 +2081,7 @@ int patmr3DisasmCode(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTYPE(uint8_t *
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
     int rc = VWRN_CONTINUE_ANALYSIS;
     uint32_t opsize, delta;
-    HCPTRTYPE(uint8_t *) pCurInstrHC = 0;
+    R3PTRTYPE(uint8_t *) pCurInstrHC = 0;
     bool disret;
     char szOutput[256];
 
@@ -2252,7 +2252,7 @@ static int patmRecompileCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTR
     PPATCHINFO pPatch = (PPATCHINFO)pUserData;
     int rc = VWRN_CONTINUE_ANALYSIS;
     uint32_t opsize;
-    HCPTRTYPE(uint8_t *) pCurInstrHC = 0;
+    R3PTRTYPE(uint8_t *) pCurInstrHC = 0;
     bool disret;
 #ifdef LOG_ENABLED
     char szOutput[256];
@@ -2634,7 +2634,7 @@ static int patmGenCallToPatch(PVM pVM, PPATCHINFO pPatch, RTGCPTR pTargetGC, boo
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC,
+PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC,
                                  uint32_t uOpcode, uint32_t uOpSize, PPATMPATCHREC pPatchRec)
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
@@ -2861,7 +2861,7 @@ failure:
  * @note    returns failure if patching is not allowed or possible
  *
  */
-static int patmIdtHandler(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC,
+static int patmIdtHandler(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC,
                           uint32_t uOpSize, PPATMPATCHREC pPatchRec)
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
@@ -3742,7 +3742,7 @@ static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch)
+PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch)
 {
     uint8_t ASMInt3 = 0xCC;
     int rc;
@@ -3797,7 +3797,7 @@ failure:
  * @note    returns failure if patching is not allowed or possible
  *
  */
-int patmPatchJump(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATMPATCHREC pPatchRec)
+int patmPatchJump(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATMPATCHREC pPatchRec)
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
@@ -3940,7 +3940,7 @@ PATMR3DECL(int) PATMR3AddHint(PVM pVM, RTGCPTR pInstrGC, uint32_t flags)
 PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTGCPTR pInstrGC, uint64_t flags)
 {
     DISCPUSTATE cpu;
-    HCPTRTYPE(uint8_t *) pInstrHC;
+    R3PTRTYPE(uint8_t *) pInstrHC;
     uint32_t opsize;
     PPATMPATCHREC pPatchRec;
     PCPUMCTX pCtx = 0;
@@ -5059,7 +5059,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTGCPTR pInstrGC, RTGCPTR pConflict
 #ifdef PATM_RESOLVE_CONFLICTS_WITH_JUMP_PATCHES
     PATCHINFO            patch = {0};
     DISCPUSTATE          cpu;
-    HCPTRTYPE(uint8_t *) pInstrHC;
+    R3PTRTYPE(uint8_t *) pInstrHC;
     uint32_t             opsize;
     bool                 disret;
     int                  rc;

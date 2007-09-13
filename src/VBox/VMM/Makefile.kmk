@@ -353,8 +353,7 @@ VMMR0_SOURCES   = \
 	VMMAll/TMAllCpu.cpp \
 	VMMAll/TMAllReal.cpp \
 	VMMAll/TMAllVirtual.cpp \
-	VMMAll/VMAll.cpp \
-	PATM/VMMAll/PATMAll.cpp
+	VMMAll/VMAll.cpp
 
 ifeq ($(VBOX_LDR_FMT),pe)
 VMMR0_SOURCES += VMMR0/VMMR0.def

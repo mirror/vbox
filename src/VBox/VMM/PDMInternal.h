@@ -78,10 +78,10 @@ typedef struct PDMDEVINSINT
 {
     /** Pointer to the next instance (HC Ptr).
      * (Head is pointed to by PDM::pDevInstances.) */
-    HCPTRTYPE(PPDMDEVINS)           pNextHC;
+    R3PTRTYPE(PPDMDEVINS)           pNextHC;
     /** Pointer to the next per device instance (HC Ptr).
      * (Head is pointed to by PDMDEV::pInstances.) */
-    HCPTRTYPE(PPDMDEVINS)           pPerDeviceNextHC;
+    R3PTRTYPE(PPDMDEVINS)           pPerDeviceNextHC;
 
     /** Pointer to device structure - HC Ptr. */
     HCPTRTYPE(PPDMDEV)              pDevHC;
@@ -89,13 +89,13 @@ typedef struct PDMDEVINSINT
     /** Pointer to the VM this instance was created for - HC Ptr. */
     HCPTRTYPE(PVM)                  pVMHC;
     /** Pointer to the list of logical units associated with the device. (FIFO) */
-    HCPTRTYPE(PPDMLUN)              pLunsHC;
+    R3PTRTYPE(PPDMLUN)              pLunsHC;
     /** Configuration handle to the instance node. */
-    HCPTRTYPE(PCFGMNODE)            pCfgHandle;
+    R3PTRTYPE(PCFGMNODE)            pCfgHandle;
     /** HC pointer to associated PCI device structure. */
-    HCPTRTYPE(struct PCIDevice *)   pPciDeviceHC;
+    R3R0PTRTYPE(struct PCIDevice *) pPciDeviceHC;
     /** HC pointer to associated PCI bus structure. */
-    HCPTRTYPE(PPDMPCIBUS)           pPciBusHC;
+    R3R0PTRTYPE(PPDMPCIBUS)         pPciBusHC;
 
     /** GC pointer to associated PCI device structure. */
     GCPTRTYPE(struct PCIDevice *)   pPciDeviceGC;

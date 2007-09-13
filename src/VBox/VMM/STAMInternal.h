@@ -111,7 +111,7 @@ struct STAM
     /** Alignment padding. */
     RTUINT                  uPadding;
     /** Pointer to the first sample. */
-    HCPTRTYPE(PSTAMDESC)    pHead;
+    R3PTRTYPE(PSTAMDESC)    pHead;
     /** RW Lock for the list. */
     RTSEMRW                 RWSem;
 };

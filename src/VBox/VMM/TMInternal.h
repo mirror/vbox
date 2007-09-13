@@ -171,7 +171,7 @@ typedef struct TMTIMER
     /** Pointer to the previous timer in the list of all created timers. (TM::pTimers) */
     PTMTIMERR3              pBigPrev;
     /** Pointer to the timer description. */
-    HCPTRTYPE(const char *) pszDesc;
+    R3PTRTYPE(const char *) pszDesc;
     /** Pointer to the VM the timer belongs to - R3 Ptr. */
     PVMR3                   pVMR3;
     /** Pointer to the VM the timer belongs to - R0 Ptr. */

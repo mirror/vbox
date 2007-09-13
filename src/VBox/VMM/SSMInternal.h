@@ -174,7 +174,7 @@ typedef struct SSM
     RTUINT                  offVM;
 
     /** FIFO of data entity descriptors. */
-    HCPTRTYPE(PSSMUNIT)     pHead;
+    R3PTRTYPE(PSSMUNIT)     pHead;
 
 } SSM;
 /** Pointer to SSM VM instance data. */

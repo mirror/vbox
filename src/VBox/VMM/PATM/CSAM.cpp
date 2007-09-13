@@ -547,10 +547,10 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
  * @returns             Host context pointer or NULL in case of an error
  *
  */
-static HCPTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec, GCPTRTYPE(uint8_t *) pGCPtr)
+static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec, GCPTRTYPE(uint8_t *) pGCPtr)
 {
     int rc;
-    HCPTRTYPE(void *) pHCPtr;
+    R3PTRTYPE(void *) pHCPtr;
 
     STAM_PROFILE_START(&pVM->csam.s.StatTimeAddrConv, a);
 
@@ -574,9 +574,9 @@ static HCPTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
         STAM_PROFILE_STOP(&pVM->csam.s.StatTimeAddrConv, a);
         return NULL;
     }
-////invalid?    Assert(sizeof(HCPTRTYPE(uint8_t*)) == sizeof(uint32_t));
+////invalid?    Assert(sizeof(R3PTRTYPE(uint8_t*)) == sizeof(uint32_t));
 
-    pCacheRec->pPageLocStartHC = (HCPTRTYPE(uint8_t*))((RTHCUINTPTR)pHCPtr & PAGE_BASE_HC_MASK);
+    pCacheRec->pPageLocStartHC = (R3PTRTYPE(uint8_t*))((RTHCUINTPTR)pHCPtr & PAGE_BASE_HC_MASK);
     pCacheRec->pGuestLoc      = pGCPtr & PAGE_BASE_GC_MASK;
     STAM_PROFILE_STOP(&pVM->csam.s.StatTimeAddrConv, a);
     return pHCPtr;
@@ -1071,7 +1071,7 @@ static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTY
     PCSAMPAGE pPage = (PCSAMPAGE)pUserData;
     int rc = VWRN_CONTINUE_ANALYSIS;
     uint32_t opsize;
-    HCPTRTYPE(uint8_t *) pCurInstrHC = 0;
+    R3PTRTYPE(uint8_t *) pCurInstrHC = 0;
     bool disret;
 
 #ifdef DEBUG
