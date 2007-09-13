@@ -2762,7 +2762,7 @@ QString VBoxGlobal::formatSize (Q_UINT64 aSize, int aMode /* = 0 */)
             }
         }
         number = QString ("%1%2%3").arg (intg).arg (decimalSep())
-                                   .arg (QString::number (hund).leftJustify (2, '0'));
+                                   .arg (QString::number (hund).rightJustify (2, '0'));
     }
     else
     {
