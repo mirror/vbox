@@ -120,7 +120,7 @@ void mmr3PagePoolTerm(PVM pVM)
             pSubPool = pSubPool->pNext;
         }
 
-        SUPPageFree(pVM->mm.s.pPagePool, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePool), PAGE_SIZE));
+        SUPPageFree(pVM->mm.s.pPagePool, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePool), PAGE_SIZE)/PAGE_SIZE);
         pVM->mm.s.pPagePool = NULL;
     }
 
@@ -141,7 +141,7 @@ void mmr3PagePoolTerm(PVM pVM)
             pSubPool = pSubPool->pNext;
         }
 
-        SUPPageFree(pVM->mm.s.pPagePoolLow, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePoolLow), PAGE_SIZE));
+        SUPPageFree(pVM->mm.s.pPagePoolLow, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePoolLow), PAGE_SIZE)/PAGE_SIZE);
         pVM->mm.s.pPagePoolLow = NULL;
     }
 }
