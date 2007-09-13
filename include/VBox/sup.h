@@ -368,6 +368,28 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
 SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
 
 /**
+ * Allocate zero-filled locked pages.
+ *
+ * Use this to allocate a number of pages rather than using RTMem*() and mess with
+ * alignment. The returned address is of course page aligned. Call SUPPageFreeLocked()
+ * to free the pages once done with them.
+ *
+ * @returns VBox status.
+ * @param   cPages      Number of pages to allocate.
+ * @param   ppvPages    Where to store the base pointer to the allocated pages.
+ */
+SUPR3DECL(int) SUPPageAllocLocked(size_t cPages, void **ppvPages);
+
+/**
+ * Frees locked pages allocated with SUPPageAllocLocked().
+ *
+ * @returns VBox status.
+ * @param   pvPages     Pointer returned by SUPPageAlloc().
+ * @param   cPages      Number of pages that was allocated.
+ */
+SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages);
+
+/**
  * Locks down the physical memory backing a virtual memory
  * range in the current process.
  *
