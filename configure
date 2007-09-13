@@ -19,9 +19,8 @@ export LC_ALL
 
 # append some extra paths
 PATH="$PATH:/opt/gnome/bin"
-# solaris
-PATH="/usr/ucb:/usr/xpg4/bin:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
-export PATH
+# Solaris (order of paths important for tr, echo, grep, sed to work)
+PATH="/usr/xpg4/bin:/usr/ucb:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
 
 #
 # Defaults
@@ -117,17 +116,17 @@ cnf_append()
 
 strip_l()
 {
-  echo "$1"|sed 's|-l\([^ ]\+\)|\1|g; s|-[^l]\([^ ]\+\)||g; s|^ ||; s| *$||g'
+  echo "$1"|$KBUILD_SED 's|-l\([^ ]\+\)|\1|g; s|-[^l]\([^ ]\+\)||g; s|^ ||; s| *$||g'
 }
 
 strip_L()
 {
-  echo "$1"|sed 's|-L\([^ ]\+\)|\1|g; s|-[^L]\([^ ]\+\)||g; s|^ ||; s| *$||g'
+  echo "$1"|$KBUILD_SED 's|-L\([^ ]\+\)|\1|g; s|-[^L]\([^ ]\+\)||g; s|^ ||; s| *$||g'
 }
 
 strip_I()
 {
-  echo "$1"|sed 's|-I\([^ ]\+\)|\1|g; s|-[^I]\([^ ]\+\)||g; s|^ ||; s| *$||g'
+  echo "$1"|$KBUILD_SED 's|-I\([^ ]\+\)|\1|g; s|-[^I]\([^ ]\+\)||g; s|^ ||; s| *$||g'
 }
 
 # Wrapper for ancient /usr/bin/which on darwin that always returns 0
@@ -141,9 +140,10 @@ which_wrapper()
     fi
   fi
   if [ "$have_ancient_which" = "yes" ]; then
-    local retval=`which $* 2>/dev/null`
+    retval=`which $* 2>/dev/null`
     echo "$retval"
     test -n "$retval" -a -e "$retval"
+    unset retval
   else
     which $* 2> /dev/null
   fi
@@ -255,6 +255,7 @@ check_environment()
   esac
   DEVDIR_BIN="$DEVDIR/$OS.$BUILD_MACHINE/bin"
   KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$BUILD_MACHINE"
+  KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
   log_success "Determined build machine: $OS.$BUILD_MACHINE, target machine: $OS.$TARGET_MACHINE"
 
   # Automatically disable XPCOM on darwin.
@@ -369,8 +370,8 @@ int foo(a)
 }
 EOF
       cat .tmp_src.c >> $LOG
-      local bcc_path=`which_wrapper $BCC`
-      local bcc_dir="`dirname $bcc_path`/"
+      bcc_path=`which_wrapper $BCC`
+      bcc_dir="`dirname $bcc_path`/"
       echo "using the following command line:" >> $LOG
       echo "$BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c" >> $LOG
       $BCC -B $bcc_dir -C-c -3 -S -o .tmp_out .tmp_src.c >> $LOG 2>&1
@@ -381,6 +382,8 @@ EOF
         log_success "found version $bcc_ver"
         cnf_append "VBOX_BCC" "$bcc_path -B $bcc_dir"
       fi
+      unset bcc_path
+      unset bcc_dir
     fi
   fi
 }
@@ -1073,8 +1076,16 @@ check_kbuild()
     echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"" >> $ENV
     echo "export PATH_KBUILD_BIN=\"\$path_kbuild_bin\"" >> $ENV
     echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
-    echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
-    echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
+    if [ "$OS" = "solaris" ]; then
+      # Because of sh being non-default shell in Solaris we need to export PATH again when
+      # sourcing env.sh. Simply exporting from ./configure does not export PATH correctly.
+      echo "PATH=\"$PATH\"" >> $ENV
+      echo "echo \"\$PATH\" | /usr/sfw/bin/ggrep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
+      echo "echo \"\$PATH\" | /usr/sfw/bin/ggrep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
+    else
+      echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
+      echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
+    fi
     echo "export PATH" >> $ENV
     echo "unset path_kbuild_bin path_dev_bin" >> $ENV
   fi
