@@ -72,10 +72,11 @@ extern bool fInternalMode;
 /** showVMInfo details */
 typedef enum
 {
-    VMINFO_NONE         = 0,
-    VMINFO_STANDARD     = 1,    /* standard details */
-    VMINFO_STATISTICS   = 2,    /* guest statistics */
-    VMINFO_FULL         = 3,    /* both */
+    VMINFO_NONE             = 0,
+    VMINFO_STANDARD         = 1,    /* standard details */
+    VMINFO_STATISTICS       = 2,    /* guest statistics */
+    VMINFO_FULL             = 3,    /* both */
+    VMINFO_MACHINEREADABLE  = 4,    /* both, and make it machine readable */
 } VMINFO_DETAILS;
 
 /*
