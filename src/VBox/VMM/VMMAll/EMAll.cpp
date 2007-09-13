@@ -872,7 +872,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     if(VBOX_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     const char *pszInstr;
 
     if (pCpu->pCurInstr->opcode == OP_BTR)
@@ -914,9 +914,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-#ifdef DEBUG
             Log2(("emInterpret%s: pvFault=%VGv pParam1=%VGv val2=%x\n", pszInstr, pvFault, pParam1, valpar2));
-#endif
             pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
 #ifdef IN_GC
             /* Safety check. */
