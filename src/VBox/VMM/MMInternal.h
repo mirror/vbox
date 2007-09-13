@@ -647,9 +647,9 @@ typedef struct MM
     HCPTRTYPE(PMMLOCKEDMEM)     pLockedMem;
 
     /** Page pool. (HC only) */
-    HCPTRTYPE(PMMPAGEPOOL)      pPagePool;
+    R3R0PTRTYPE(PMMPAGEPOOL)    pPagePool;
     /** Page pool pages in low memory. (HC only) */
-    HCPTRTYPE(PMMPAGEPOOL)      pPagePoolLow;
+    R3R0PTRTYPE(PMMPAGEPOOL)    pPagePoolLow;
 
     /** Pointer to the dummy page.
      * The dummy page is a paranoia thingy used for instance for pure MMIO RAM ranges

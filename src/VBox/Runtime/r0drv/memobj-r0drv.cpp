@@ -187,6 +187,8 @@ RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
                          && pMem->u.Mapping.R0Process != NIL_RTR0PROCESS)
                     ||  (   pMem->enmType == RTR0MEMOBJTYPE_LOCK
                          && pMem->u.Lock.R0Process != NIL_RTR0PROCESS)
+                    ||  (   pMem->enmType == RTR0MEMOBJTYPE_PHYS_NC
+                         && pMem->u.Lock.R0Process != NIL_RTR0PROCESS)
                     ||  (   pMem->enmType == RTR0MEMOBJTYPE_RES_VIRT
                          && pMem->u.ResVirt.R0Process != NIL_RTR0PROCESS),
                     ("%p: %d\n", pMem, pMem->enmType), NIL_RTR3PTR);
@@ -466,7 +468,7 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, 
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
 
-    /* do the allocation. */
+    /* do the locking. */
     return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, R0Process);
 }
 

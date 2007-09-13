@@ -724,7 +724,6 @@ SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages)
     return rc;
 }
 
-
 SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages)
 {
     /*
@@ -740,10 +739,25 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages)
         return VERR_INVALID_PARAMETER;
     *ppvPages = NULL;
 
+#ifdef RT_OS_WINDOWS
+    SUPALLOCPAGE_IN  In;
+    SUPALLOCPAGE_OUT Out;
+
+    In.u32Cookie        = g_u32Cookie;
+    In.u32SessionCookie = g_u32SessionCookie;
+    In.cPages           = cPages;
+    Out.u32Cookie       = g_u32Cookie;
+    int rc = suplibOsIOCtl(SUP_IOCTL_PAGE_ALLOC, &In, sizeof(In), &Out, sizeof(Out));
+    if (VBOX_SUCCESS(rc))
+        *ppvPages = Out.pvR3;
+
+    return rc;
+#else
     /*
      * Call OS specific worker.
      */
     return suplibOsPageAlloc(cPages, ppvPages);
+#endif
 }
 
 
@@ -756,10 +770,19 @@ SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages)
     if (!pvPages)
         return VINF_SUCCESS;
 
+#ifdef RT_OS_WINDOWS
+    SUPFREEPAGE_IN  In;
+
+    In.u32Cookie        = g_u32Cookie;
+    In.u32SessionCookie = g_u32SessionCookie;
+    In.pvR3             = pvPages;
+    return suplibOsIOCtl(SUP_IOCTL_PAGE_FREE, &In, sizeof(In), NULL, 0);
+#else
     /*
      * Call OS specific worker.
      */
     return suplibOsPageFree(pvPages, cPages);
+#endif
 }
 
 

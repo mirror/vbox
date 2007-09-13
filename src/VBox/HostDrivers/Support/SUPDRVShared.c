@@ -84,6 +84,11 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0MemAlloc",                          (void *)SUPR0MemAlloc },
     { "SUPR0MemGetPhys",                        (void *)SUPR0MemGetPhys },
     { "SUPR0MemFree",                           (void *)SUPR0MemFree },
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
+    { "SUPR0PageAlloc",                         (void *)SUPR0PageAlloc },
+    { "SUPR0PageGetPhys",                       (void *)SUPR0PageGetPhys },
+    { "SUPR0PageFree",                          (void *)SUPR0PageFree },
+#endif
     { "SUPR0Printf",                            (void *)SUPR0Printf },
     { "RTMemAlloc",                             (void *)RTMemAlloc },
     { "RTMemAllocZ",                            (void *)RTMemAllocZ },
@@ -461,6 +466,8 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             if (pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ)
             {
                 int rc;
+                dprintf2(("eType=%d pvR0=%p pvR3=%p cb=%d\n", pBundle->aMem[i].eType,
+                          RTR0MemObjAddress(pBundle->aMem[i].MapObj), RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3), RTR0MemObjSize(pBundle->aMem[i].MemObj)));
                 if (pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ)
                 {
                     rc = RTR0MemObjFree(pBundle->aMem[i].MapObjR3, false);
@@ -1380,6 +1387,68 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
 #endif
         }
 
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
+        case SUP_IOCTL_PAGE_ALLOC:
+        {
+            int               rc;
+            PSUPALLOCPAGE_IN  pIn  = (PSUPALLOCPAGE_IN)pvIn;
+            PSUPALLOCPAGE_OUT pOut = (PSUPALLOCPAGE_OUT)pvOut;
+
+            /*
+             * Validate.
+             */
+            if (    cbIn != sizeof(*pIn)
+                ||  cbOut < sizeof(*pOut))
+            {
+                dprintf(("SUP_IOCTL_PAGE_ALLOC: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
+                return SUPDRV_ERR_INVALID_PARAM;
+            }
+            if (    pIn->u32Cookie != pDevExt->u32Cookie
+                ||  pIn->u32SessionCookie != pSession->u32Cookie 
+                ||  pOut->u32Cookie != pDevExt->u32Cookie)
+            {
+                dprintf(("SUP_IOCTL_PAGE_ALLOC: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
+                         pIn->u32Cookie,  pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
+                return SUPDRV_ERR_INVALID_MAGIC;
+            }
+            /*
+             * Execute.
+             */
+            *pcbReturned = sizeof(*pOut);
+            rc = SUPR0PageAlloc(pSession, pIn->cPages, &pOut->pvR3);
+            if (rc)
+                *pcbReturned = 0;
+            return rc;
+        }
+
+        case SUP_IOCTL_PAGE_FREE:
+        {
+            PSUPFREEPAGE_IN pIn = (PSUPFREEPAGE_IN)pvIn;
+
+            /*
+             * Validate.
+             */
+            if (    cbIn != sizeof(*pIn)
+                ||  cbOut != 0)
+            {
+                dprintf(("SUP_IOCTL_PAGE_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
+                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
+                return SUPDRV_ERR_INVALID_PARAM;
+            }
+            if (    pIn->u32Cookie != pDevExt->u32Cookie
+                ||  pIn->u32SessionCookie != pSession->u32Cookie)
+            {
+                dprintf(("SUP_IOCTL_PAGE_FREE: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
+                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
+                return SUPDRV_ERR_INVALID_MAGIC;
+            }
+            /*
+             * Execute.
+             */
+            return SUPR0PageFree(pSession, (RTHCUINTPTR)pIn->pvR3);
+        }
+#endif /* USE_NEW_OS_INTERFACE_FOR_MM */
 
         default:
             dprintf(("Unknown IOCTL %#x\n", uIOCtl));
@@ -1769,6 +1838,11 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
     }
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
+    /* First check if we allocated it using SUPPageAlloc; if so then we don't need to lock it again */
+    rc = SUPR0PageGetPhys(pSession, pvR3, cPages, paPages);
+    if (RT_SUCCESS(rc))
+        return rc;
+
     /*
      * Let IPRT do the job.
      */
@@ -1835,6 +1909,14 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
 SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 {
     dprintf(("SUPR0UnlockMem: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
+
+    /* SUPR0PageFree will unlock SUPR0PageAlloc allocations; ignore this call */
+    if (SUPR0PageWasLockedByPageAlloc(pSession, pvR3))
+    {
+        dprintf(("Page will be unlocked in SUPR0PageFree -> ignore\n"));
+        return 0;
+    }
+
     return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED);
 }
 
@@ -2056,6 +2138,7 @@ SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 }
 
 
+
 /**
  * Allocates a chunk of memory with both R0 and R3 mappings.
  * The memory is fixed and it's possible to query the physical addresses using SUPR0MemGetPhys().
@@ -2234,6 +2317,207 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
     dprintf(("SUPR0MemFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
     return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_MEM);
 }
+
+
+#ifdef USE_NEW_OS_INTERFACE_FOR_MM
+/**
+ * Allocates a chunk of memory with only a R3 mappings.
+ * The memory is fixed and it's possible to query the physical addresses using SUPR0MemGetPhys().
+ *
+ * @returns 0 on success.
+ * @returns SUPDRV_ERR_* on failure.
+ * @param   pSession    The session to associated the allocation with.
+ * @param   cb          Number of bytes to allocate.
+ * @param   ppvR3       Where to store the address of the Ring-3 mapping.
+ */
+SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR3PTR ppvR3)
+{
+    int             rc;
+    SUPDRVMEMREF    Mem = {0};
+    dprintf(("SUPR0PageAlloc: pSession=%p cb=%d ppvR3=%p\n", pSession, cb, ppvR3));
+
+    /*
+     * Validate input.
+     */
+    if (!pSession || !ppvR3)
+    {
+        dprintf(("Null pointer. All of these should be set: pSession=%p ppvR3=%p\n",
+                 pSession, ppvR3));
+        return SUPDRV_ERR_INVALID_PARAM;
+
+    }
+    if (cb < 1 || cb >= 4096)
+    {
+        dprintf(("Illegal request cb=%u; must be greater than 0 and smaller than 16MB.\n", cb));
+        return SUPDRV_ERR_INVALID_PARAM;
+    }
+
+    /*
+     * Let IPRT do the work.
+     */
+    rc = RTR0MemObjAllocPhysNC(&Mem.MemObj, cb * PAGE_SIZE, NIL_RTHCPHYS);
+    if (RT_SUCCESS(rc))
+    {
+        int rc2;
+        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
+                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+        if (RT_SUCCESS(rc))
+        {
+            Mem.eType = MEMREF_TYPE_LOCKED_SUP;
+            rc = supdrvMemAdd(&Mem, pSession);
+            if (!rc)
+            {
+                *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
+                return 0;
+            }
+            rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
+            AssertRC(rc2);
+        }
+
+        rc2 = RTR0MemObjFree(Mem.MemObj, false);
+        AssertRC(rc2);
+    }
+    return rc;
+}
+
+/**
+ * Check if the pages were locked by SUPR0PageAlloc
+ *
+ * @returns boolean
+ * @param   pSession        The session to which the memory was allocated.
+ * @param   uPtr            The Ring-3 address returned by SUPR0PageAlloc().
+ */
+SUPR0DECL(bool) SUPR0PageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
+{
+    PSUPDRVBUNDLE pBundle;
+    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+    dprintf(("SUPR0PageIsLockedByPageAlloc: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+
+    /*
+     * Validate input.
+     */
+    if (!pSession)
+    {
+        dprintf(("pSession must not be NULL!"));
+        return false;
+    }
+    if (!uPtr)
+    {
+        dprintf(("Illegal address uPtr=%p\n", (void *)uPtr));
+        return false;
+    }
+
+    /*
+     * Search for the address.
+     */
+    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
+    {
+        if (pBundle->cUsed > 0)
+        {
+            unsigned i;
+            for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+            {
+                if (    pBundle->aMem[i].eType == MEMREF_TYPE_LOCKED_SUP
+                    &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
+                    &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
+                         || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
+                             && RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == uPtr)
+                        )
+                   )
+                {
+                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+                    return true;
+                }
+            }
+        }
+    }
+    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    return false;
+}
+
+/**
+ * Get the physical addresses of memory allocated using SUPR0PageAlloc().
+ *
+ * @returns 0 on success.
+ * @returns SUPDRV_ERR_* on failure.
+ * @param   pSession        The session to which the memory was allocated.
+ * @param   uPtr            The Ring-3 address returned by SUPR0PageAlloc().
+ * @param   cPages          Number of pages in paPages
+ * @param   paPages         Where to store the physical addresses.
+ */
+SUPR0DECL(int) SUPR0PageGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, uint32_t cPages, PSUPPAGE paPages)
+{
+    PSUPDRVBUNDLE pBundle;
+    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+    dprintf(("SUPR0PageGetPhys: pSession=%p uPtr=%p paPages=%p\n", pSession, (void *)uPtr, paPages));
+
+    /*
+     * Validate input.
+     */
+    if (!pSession)
+    {
+        dprintf(("pSession must not be NULL!"));
+        return SUPDRV_ERR_INVALID_PARAM;
+    }
+    if (!uPtr || !paPages)
+    {
+        dprintf(("Illegal address uPtr=%p or/and paPages=%p\n", (void *)uPtr, paPages));
+        return SUPDRV_ERR_INVALID_PARAM;
+    }
+
+    /*
+     * Search for the address.
+     */
+    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
+    {
+        if (pBundle->cUsed > 0)
+        {
+            unsigned i;
+            for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+            {
+                if (    pBundle->aMem[i].eType == MEMREF_TYPE_LOCKED_SUP
+                    &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
+                    &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
+                         || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
+                             && RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == uPtr)
+                        )
+                   )
+                {
+                    unsigned iPage;
+                    cPages = RT_MIN(RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT, cPages);
+                    for (iPage = 0; iPage < cPages; iPage++)
+                    {
+                        paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(pBundle->aMem[i].MemObj, iPage);
+                        paPages[iPage].uReserved = 0;
+                    }
+                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+                    return 0;
+                }
+            }
+        }
+    }
+    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    dprintf(("Failed to find %p!!!\n", (void *)uPtr));
+    return SUPDRV_ERR_INVALID_PARAM;
+}
+
+
+/**
+ * Free memory allocated by SUPR0PageAlloc().
+ *
+ * @returns 0 on success.
+ * @returns SUPDRV_ERR_* on failure.
+ * @param   pSession        The session owning the allocation.
+ * @param   uPtr            The Ring-3 address returned by SUPR0PageAlloc().
+ */
+SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
+{
+    dprintf(("SUPR0PageFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+    return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_LOCKED_SUP);
+}
+#endif /* USE_NEW_OS_INTERFACE_FOR_MM */
 
 
 /**

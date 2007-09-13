@@ -319,8 +319,8 @@ static int VBoxSupDrvDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
     unsigned    cbOut = 0;
     int         rc = 0;
     dprintf2(("VBoxSupDrvDeviceControlSlow(%p,%p): ioctl=%#x pBuf=%p cbIn=%#x cbOut=%#x pSession=%p\n",
-             pDevObj, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
-             pBuf, pStack->Parameters.DeviceIoControl.InputBufferLength,
+             pDevExt, pIrp, pStack->Parameters.DeviceIoControl.IoControlCode,
+             pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.DeviceIoControl.InputBufferLength,
              pStack->Parameters.DeviceIoControl.OutputBufferLength, pSession));
 
 #ifdef RT_ARCH_AMD64
