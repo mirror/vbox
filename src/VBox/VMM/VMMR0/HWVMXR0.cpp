@@ -1559,7 +1559,6 @@ ResumeExecution:
             goto ResumeExecution;
         }
         AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: invlpg %VGv failed with %Vrc\n", exitQualification, rc));
-        rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
 
@@ -1633,8 +1632,6 @@ ResumeExecution:
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
-        if (rc == VERR_EM_INTERPRETER)
-            rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
 
@@ -1669,7 +1666,6 @@ ResumeExecution:
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER);
-        rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
 
@@ -1847,8 +1843,17 @@ ResumeExecution:
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */
         /* already handled above */
-        AssertMsg(rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_RAW_INTERRUPT || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_PGM_SYNC_CR3 || rc == VINF_IOM_HC_IOPORT_READ || rc == VINF_IOM_HC_IOPORT_WRITE
-                  || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_EM_RESCHEDULE_REM, ("rc = %d\n", rc));
+        AssertMsg(   rc == VINF_PGM_CHANGE_MODE 
+                  || rc == VINF_EM_RAW_INTERRUPT 
+                  || rc == VERR_EM_INTERPRETER 
+                  || rc == VINF_EM_RAW_EMULATE_INSTR 
+                  || rc == VINF_PGM_SYNC_CR3 
+                  || rc == VINF_IOM_HC_IOPORT_READ 
+                  || rc == VINF_IOM_HC_IOPORT_WRITE
+                  || rc == VINF_EM_RAW_GUEST_TRAP 
+                  || rc == VINF_TRPM_XCPT_DISPATCHED 
+                  || rc == VINF_EM_RESCHEDULE_REM, 
+                  ("rc = %d\n", rc));
         break;
 
     case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
@@ -1919,6 +1924,10 @@ end:
         /** @todo we can do better than this */
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
     }
+
+    /* translate into a less severe return code */
+    if (rc == VERR_EM_INTERPRETER)
+        rc = VINF_EM_RAW_EMULATE_INSTR;
 
     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
     Log2(("X"));
