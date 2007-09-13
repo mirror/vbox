@@ -33,7 +33,7 @@ OBJS   = \
 	udivdi3.o \
 	umoddi3.o \
 	qdivrem.o
-ifdef DEBUG
+ifeq ($(BUILD_TYPE),debug)
 OBJS  += \
 	logbackdoor.o \
 	logformat.o \
