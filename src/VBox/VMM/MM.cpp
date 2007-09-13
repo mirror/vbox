@@ -283,6 +283,11 @@ MMR3DECL(int) MMR3Term(PVM pVM)
 static int mmR3Term(PVM pVM, bool fKeepTheHeap)
 {
     /*
+     * Destroy the page pool. (first as it used the hyper heap)
+     */
+    mmr3PagePoolTerm(pVM);
+
+    /*
      * Release locked memory.
      * (Associated record are released by the heap.)
      */
@@ -306,11 +311,6 @@ static int mmR3Term(PVM pVM, bool fKeepTheHeap)
         /* next */
         pLockedMem = pLockedMem->pNext;
     }
-
-    /*
-     * Destroy the page pool.
-     */
-    mmr3PagePoolTerm(pVM);
 
     /*
      * Destroy the heap if requested.
