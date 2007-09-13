@@ -108,6 +108,10 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
     if (VBOX_FAILURE(rc))
     {
         dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR allocating request, rc = %Vrc\n", rc));
+        /* Most likely the VBoxGuest driver is not loaded.
+         * To get at least the video working, report the mode as supported.
+         */
+        bRC = TRUE;
     }
     else
     {
