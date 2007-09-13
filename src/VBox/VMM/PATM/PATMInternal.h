@@ -130,15 +130,15 @@ typedef struct
     AVLPVNODECORE   Core;
 
     uint32_t        uType;
-    HCPTRTYPE(uint8_t *) pRelocPos;
+    R3PTRTYPE(uint8_t *) pRelocPos;
     RTGCPTR         pSource;
     RTGCPTR         pDest;
 } RELOCREC, *PRELOCREC;
 
 typedef struct
 {
-    HCPTRTYPE(uint8_t *) pPatchLocStartHC;
-    HCPTRTYPE(uint8_t *) pPatchLocEndHC;
+    R3PTRTYPE(uint8_t *) pPatchLocStartHC;
+    R3PTRTYPE(uint8_t *) pPatchLocEndHC;
     GCPTRTYPE(uint8_t *) pGuestLoc;
     uint32_t             opsize;
 } P2GLOOKUPREC, *PP2GLOOKUPREC;
@@ -148,7 +148,7 @@ typedef struct
     /** The key is a pointer to a JUMPREC structure. */
     AVLPVNODECORE   Core;
 
-    HCPTRTYPE(uint8_t *) pJumpHC;
+    R3PTRTYPE(uint8_t *) pJumpHC;
     GCPTRTYPE(uint8_t *) pTargetGC;
     uint32_t            offDispl;
     uint32_t            opcode;
@@ -196,14 +196,14 @@ typedef struct RECGUESTTOPATCH
 typedef struct
 {
     /* Temporary tree for storing the addresses of illegal instructions. */
-    HCPTRTYPE(PAVLPVNODECORE)   IllegalInstrTree;
+    R3PTRTYPE(PAVLPVNODECORE)   IllegalInstrTree;
     uint32_t                    nrIllegalInstr;
 
     int32_t                     nrJumps;
     uint32_t                    nrRetInstr;
 
     /* Temporary tree of encountered jumps. (debug only) */
-    HCPTRTYPE(PAVLPVNODECORE)   DisasmJumpTree;
+    R3PTRTYPE(PAVLPVNODECORE)   DisasmJumpTree;
 
     int32_t                     nrCalls;
 
@@ -222,7 +222,7 @@ typedef struct _PATCHINFO
     uint32_t        uOpMode;
 
     GCPTRTYPE(uint8_t *)  pPrivInstrGC;    //GC pointer of privileged instruction
-    HCPTRTYPE(uint8_t *)  pPrivInstrHC;    //HC pointer of privileged instruction
+    R3PTRTYPE(uint8_t *)  pPrivInstrHC;    //HC pointer of privileged instruction
     uint8_t         aPrivInstr[MAX_INSTR_SIZE];
     uint32_t        cbPrivInstr;
     uint32_t        opcode;      //opcode for priv instr (OP_*)
@@ -247,19 +247,19 @@ typedef struct _PATCHINFO
     RTGCPTR                   pInstrGCHighest;
 
     /* Tree of fixup records for the patch. */
-    HCPTRTYPE(PAVLPVNODECORE) FixupTree;
+    R3PTRTYPE(PAVLPVNODECORE) FixupTree;
     int32_t         nrFixups;
 
     /* Tree of jumps inside the generated patch code. */
     int32_t         nrJumpRecs;
-    HCPTRTYPE(PAVLPVNODECORE) JumpTree;
+    R3PTRTYPE(PAVLPVNODECORE) JumpTree;
 
     /**
      * Lookup trees for determining the corresponding guest address of an
      * instruction in the patch block.
      */
-    HCPTRTYPE(PAVLU32NODECORE) Patch2GuestAddrTree;
-    HCPTRTYPE(PAVLGCPTRNODECORE) Guest2PatchAddrTree;
+    R3PTRTYPE(PAVLU32NODECORE) Patch2GuestAddrTree;
+    R3PTRTYPE(PAVLGCPTRNODECORE) Guest2PatchAddrTree;
     uint32_t                  nrPatch2GuestRecs;
 #if HC_ARCH_BITS == 64
     uint32_t        Alignment1;
@@ -269,7 +269,7 @@ typedef struct _PATCHINFO
     P2GLOOKUPREC    cacheRec;
 
     /* Temporary information during patch creation. Don't waste hypervisor memory for this. */
-    HCPTRTYPE(PPATCHINFOTEMP) pTempInfo;
+    R3PTRTYPE(PPATCHINFOTEMP) pTempInfo;
 
     /* Count the number of writes to the corresponding guest code. */
     uint32_t        cCodeWrites;
@@ -322,7 +322,7 @@ typedef struct PATMPATCHPAGE
     /** Maximum nr of pointers in the array. */
     uint32_t           cMaxPatches;
     /** Array of patch pointers for this page. */
-    HCPTRTYPE(PPATCHINFO *) aPatch;
+    R3PTRTYPE(PPATCHINFO *) aPatch;
 } PATMPATCHPAGE, *PPATMPATCHPAGE;
 
 #define PATM_PATCHREC_FROM_COREOFFSET(a)  (PPATMPATCHREC)((uintptr_t)a - RT_OFFSETOF(PATMPATCHREC, CoreOffset))
@@ -359,7 +359,7 @@ typedef struct PATM
     RTINT                   offVM;
 
     GCPTRTYPE(uint8_t *)    pPatchMemGC;
-    HCPTRTYPE(uint8_t *)    pPatchMemHC;
+    R3PTRTYPE(uint8_t *)    pPatchMemHC;
     uint32_t                cbPatchMem;
     uint32_t                offPatchMem;
     bool                    fOutOfMemory;
@@ -367,19 +367,19 @@ typedef struct PATM
     int32_t                 deltaReloc;
 
     /* GC PATM state pointers */
-    HCPTRTYPE(PPATMGCSTATE) pGCStateHC;
+    R3PTRTYPE(PPATMGCSTATE) pGCStateHC;
     GCPTRTYPE(PPATMGCSTATE) pGCStateGC;
 
     /** PATM stack page for call instruction execution. (2 parts: one for our private stack and one to store the original return address */
     GCPTRTYPE(RTGCPTR *)    pGCStackGC;
-    HCPTRTYPE(RTGCPTR *)    pGCStackHC;
+    R3PTRTYPE(RTGCPTR *)    pGCStackHC;
 
     /** GC pointer to CPUMCTX structure. */
     GCPTRTYPE(PCPUMCTX)     pCPUMCtxGC;
 
     /* GC statistics pointers */
     GCPTRTYPE(PSTAMRATIOU32) pStatsGC;
-    HCPTRTYPE(PSTAMRATIOU32) pStatsHC;
+    R3PTRTYPE(PSTAMRATIOU32) pStatsHC;
 
     /* Current free index value (uPatchRun/uPatchTrap arrays). */
     uint32_t                uCurrentPatchIdx;
@@ -398,7 +398,7 @@ typedef struct PATM
 
     /** Pointer to the patch tree for instructions replaced by 'int 3'. */
     GCPTRTYPE(PPATMTREES)   PatchLookupTreeGC;
-    HCPTRTYPE(PPATMTREES)   PatchLookupTreeHC;
+    R3PTRTYPE(PPATMTREES)   PatchLookupTreeHC;
 
     /** Global PATM lookup and call function (used by call patches). */
     RTGCPTR                 pfnHelperCallGC;
@@ -410,7 +410,7 @@ typedef struct PATM
     RTGCPTR                 pfnHelperIretGC;
 
     /** Fake patch record for global functions. */
-    HCPTRTYPE(PPATMPATCHREC) pGlobalPatchRec;
+    R3PTRTYPE(PPATMPATCHREC) pGlobalPatchRec;
 
     /** Pointer to original sysenter handler */
     RTGCPTR                 pfnSysEnterGC;
@@ -432,7 +432,7 @@ typedef struct PATM
     /* Temporary storage during load/save state */
     struct
     {
-        HCPTRTYPE(PSSMHANDLE) pSSM;
+        R3PTRTYPE(PSSMHANDLE) pSSM;
         uint32_t            cPatches;
 #if HC_ARCH_BITS == 64
         uint32_t            Alignment0; /**< Align the structure size on a 8-byte boundrary. */
@@ -611,7 +611,7 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR pInstrGC, 
  * @returns             Host context pointer or NULL in case of an error
  *
  */
-HCPTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pGCPtr);
+R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pGCPtr);
 
 
 /**
@@ -680,7 +680,7 @@ typedef struct
 {
     PVM           pVM;
     PPATCHINFO    pPatchInfo;
-    HCPTRTYPE(uint8_t *) pInstrHC;
+    R3PTRTYPE(uint8_t *) pInstrHC;
     RTGCPTR       pInstrGC;
     uint32_t      fReadFlags;
 } PATMDISASM, *PPATMDISASM;
@@ -741,7 +741,7 @@ PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTGCPTR pInstrGC, bool fIncl
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC,
+PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC,
                                  uint32_t uOpcode, uint32_t uOpSize, PPATMPATCHREC pPatchRec);
 
 
@@ -758,7 +758,7 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *)
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTGCPTR pInstrGC, HCPTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch);
+PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTGCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch);
 
 /**
  * Mark patch as dirty

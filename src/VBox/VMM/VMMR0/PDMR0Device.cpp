@@ -357,7 +357,10 @@ static DECLCALLBACK(int) pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RT
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_PATMSetMMIOPatchInfo: caller=%p/%d:\n", pDevIns, pDevIns->iInstance));
 
-    return PATMSetMMIOPatchInfo(pDevIns->Internal.s.pVMHC, GCPhys, pCachedData);
+    AssertFailed();
+
+/*    return PATMSetMMIOPatchInfo(pDevIns->Internal.s.pVMHC, GCPhys, pCachedData); */
+    return VINF_SUCCESS;
 }
 
 

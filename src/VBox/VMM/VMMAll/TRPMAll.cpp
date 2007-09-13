@@ -337,7 +337,7 @@ TRPMDECL(void) TRPMRestoreTrap(PVM pVM)
     pVM->trpm.s.uActiveCR2          = pVM->trpm.s.uSavedCR2;
 }
 
-
+#ifndef IN_RING0
 /**
  * Forward trap or interrupt to the guest's handler
  *
@@ -738,7 +738,7 @@ failure:
 #endif
     return VINF_EM_RAW_GUEST_TRAP;
 }
-
+#endif /* !IN_RING0 */
 
 /**
  * Raises a cpu exception which doesn't take an error code.
