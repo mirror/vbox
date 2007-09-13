@@ -60,9 +60,9 @@ int mmr3PagePoolInit(PVM pVM)
     /*
      * Allocate the pool structures.
      */
-    pVM->mm.s.pPagePool = (PMMPAGEPOOL)MMR3HeapAllocZ(pVM, MM_TAG_MM_PAGE, sizeof(MMPAGEPOOL));
-    if (!pVM->mm.s.pPagePool)
-        return VERR_NO_MEMORY;
+    int rc = SUPPageAlloc(RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePool), PAGE_SIZE), (void **)pVM->mm.s.pPagePool);
+    if (VBOX_FAILURE(rc))
+        return rc;
     pVM->mm.s.pPagePool->pVM = pVM;
     STAM_REG(pVM, &pVM->mm.s.pPagePool->cPages,         STAMTYPE_U32,     "/MM/Page/Def/cPages",        STAMUNIT_PAGES, "Number of pages in the default pool.");
     STAM_REG(pVM, &pVM->mm.s.pPagePool->cFreePages,     STAMTYPE_U32,     "/MM/Page/Def/cFreePages",    STAMUNIT_PAGES, "Number of free pages in the default pool.");
@@ -73,9 +73,9 @@ int mmr3PagePoolInit(PVM pVM)
     STAM_REG(pVM, &pVM->mm.s.pPagePool->cToVirtCalls,   STAMTYPE_COUNTER, "/MM/Page/Def/cToVirtCalls",  STAMUNIT_CALLS, "Number of MMR3PagePhys2Page()+MMR3PageFreeByPhys() calls for the default pool.");
     STAM_REG(pVM, &pVM->mm.s.pPagePool->cErrors,        STAMTYPE_COUNTER, "/MM/Page/Def/cErrors",       STAMUNIT_ERRORS,"Number of errors for the default pool.");
 
-    pVM->mm.s.pPagePoolLow = (PMMPAGEPOOL)MMR3HeapAllocZ(pVM, MM_TAG_MM_PAGE, sizeof(MMPAGEPOOL));
-    if (!pVM->mm.s.pPagePoolLow)
-        return VERR_NO_MEMORY;
+    rc = SUPPageAlloc(RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePoolLow), PAGE_SIZE), (void **)pVM->mm.s.pPagePoolLow);
+    if (VBOX_FAILURE(rc))
+        return rc;
     pVM->mm.s.pPagePoolLow->pVM = pVM;
     pVM->mm.s.pPagePoolLow->fLow = true;
     STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cPages,      STAMTYPE_U32,     "/MM/Page/Low/cPages",        STAMUNIT_PAGES, "Number of pages in the <4GB pool.");
@@ -120,6 +120,7 @@ void mmr3PagePoolTerm(PVM pVM)
             pSubPool = pSubPool->pNext;
         }
 
+        SUPPageFree(pVM->mm.s.pPagePool, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePool), PAGE_SIZE));
         pVM->mm.s.pPagePool = NULL;
     }
 
@@ -140,7 +141,8 @@ void mmr3PagePoolTerm(PVM pVM)
             pSubPool = pSubPool->pNext;
         }
 
-        pVM->mm.s.pPagePool = NULL;
+        SUPPageFree(pVM->mm.s.pPagePoolLow, RT_ALIGN_32(sizeof(*pVM->mm.s.pPagePoolLow), PAGE_SIZE));
+        pVM->mm.s.pPagePoolLow = NULL;
     }
 }
 

@@ -133,6 +133,10 @@
 #define SUP_IOCTL_GIP_UNMAP         SUP_CTL_CODE(19)
 /** Set the VM handle for doing fast call ioctl calls. */
 #define SUP_IOCTL_SET_VM_FOR_FAST   SUP_CTL_CODE(20)
+/** Allocate memory and map into the user process. */
+#define SUP_IOCTL_PAGE_ALLOC        SUP_CTL_CODE(21)
+/** Free memory allocated with SUP_IOCTL_PAGE_ALLOC. */
+#define SUP_IOCTL_PAGE_FREE         SUP_CTL_CODE(22)
 
 /** Fast path IOCtl: VMMR0_DO_RAW_RUN */
 #define SUP_IOCTL_FAST_DO_RAW_RUN   SUP_CTL_CODE_FAST(64)
@@ -596,6 +600,34 @@ typedef struct SUPSETVMFORFAST_IN
     /** The ring-0 VM handle (pointer). */
     PVMR0           pVMR0;
 } SUPSETVMFORFAST_IN, *PSUPSETVMFORFAST_IN;
+
+typedef struct SUPALLOCPAGE_IN
+{
+    /** Cookie. */
+    uint32_t        u32Cookie;
+    /** Session cookie. */
+    uint32_t        u32SessionCookie;
+    /** Number of pages to allocate */
+    uint32_t        cPages;
+} SUPALLOCPAGE_IN, *PSUPALLOCPAGE_IN;
+
+typedef struct SUPALLOCPAGE_OUT
+{
+    /** Cookie. */
+    uint32_t            u32Cookie;
+    /** Returned ring-3 address */
+    R3PTRTYPE(void *)   pvR3;
+} SUPALLOCPAGE_OUT, *PSUPALLOCPAGE_OUT;
+
+typedef struct SUPFREEPAGE_IN
+{
+    /** Cookie. */
+    uint32_t            u32Cookie;
+    /** Session cookie. */
+    uint32_t        u32SessionCookie;
+    /** Address of memory range to free */
+    R3PTRTYPE(void *)   pvR3;
+} SUPFREEPAGE_IN, *PSUPFREEPAGE_IN;
 
 #pragma pack()                          /* paranoia */
 

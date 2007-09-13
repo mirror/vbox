@@ -508,8 +508,10 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
         case VMMR0_DO_HWACC_RUN:
         {
             int rc;
+            RTCCUINTREG fFlags;
 
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+            fFlags = ASMIntDisableFlags();
             rc = HWACCMR0Enable(pVM);
             if (VBOX_SUCCESS(rc))
             {
@@ -524,6 +526,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                 AssertRC(rc2);
             }
             pVM->vmm.s.iLastGCRc = rc;
+            ASMSetFlags(fFlags);
 
 #ifdef VBOX_WITH_STATISTICS
             vmmR0RecordRC(pVM, rc);
