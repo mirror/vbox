@@ -571,18 +571,18 @@ typedef struct MMLOOKUPHYPER
         struct
         {
             /** Host context pointer. */
-            HCPTRTYPE(void *)       pvHC;
+            R3PTRTYPE(void *)       pvHC;
             /** Host context ring-0 pointer. */
             RTR0PTR                 pvR0;
             /** Pointer to the locked mem record. */
-            HCPTRTYPE(PMMLOCKEDMEM) pLockedMem;
+            R3PTRTYPE(PMMLOCKEDMEM) pLockedMem;
         } Locked;
 
         /** Contiguous physical memory. */
         struct
         {
             /** Host context pointer. */
-            HCPTRTYPE(void *)       pvHC;
+            R3PTRTYPE(void *)       pvHC;
             /** HC physical address corresponding to pvHC. */
             RTHCPHYS                HCPhys;
         } HCPhys;
@@ -641,10 +641,10 @@ typedef struct MM
     /** The hypervisor heap (GC Ptr). */
     GCPTRTYPE(PMMHYPERHEAP)     pHyperHeapGC;
     /** The hypervisor heap (HC Ptr). */
-    HCPTRTYPE(PMMHYPERHEAP)     pHyperHeapHC;
+    R3R0PTRTYPE(PMMHYPERHEAP)   pHyperHeapHC;
 
     /** List of memory locks. (HC only) */
-    HCPTRTYPE(PMMLOCKEDMEM)     pLockedMem;
+    R3PTRTYPE(PMMLOCKEDMEM)     pLockedMem;
 
     /** Page pool. (HC only) */
     R3R0PTRTYPE(PMMPAGEPOOL)    pPagePool;
@@ -655,7 +655,7 @@ typedef struct MM
      * The dummy page is a paranoia thingy used for instance for pure MMIO RAM ranges
      * to make sure any bugs will not harm whatever the system stores in the first
      * physical page. */
-    HCPTRTYPE(void *)           pvDummyPage;
+    R3PTRTYPE(void *)           pvDummyPage;
     /** Physical address of the dummy page. */
     RTHCPHYS                    HCPhysDummyPage;
 
@@ -665,12 +665,12 @@ typedef struct MM
     /** Size of the base RAM in bytes. */
     RTUINT                      cbRamBase;
     /** Pointer to the base RAM. */
-    HCPTRTYPE(void *)           pvRamBaseHC;
+    R3PTRTYPE(void *)           pvRamBaseHC;
     /** The head of the ROM ranges. */
     R3PTRTYPE(PMMROMRANGE)      pRomHead;
 
     /** Pointer to the MM R3 Heap. */
-    HCPTRTYPE(PMMHEAP)          pHeap;
+    R3PTRTYPE(PMMHEAP)          pHeap;
 
 } MM;
 /** Pointer to MM Data (part of VM). */
