@@ -278,6 +278,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage showvminfo       <uuid>|<name>\n"
                  "                            [-details]\n"
                  "                            [-statistics]\n"
+                 "                            [-machinereadable]\n"
                  "\n");
     }
 
@@ -660,15 +661,24 @@ static void showProgress(ComPtr<IProgress> progress)
    }
 }
 
-static void showSnapshots(ComPtr<ISnapshot> rootSnapshot, int level = 0)
+static void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const Bstr &prefix = "", int level = 0)
 {
     /* start with the root */
     Bstr name;
     Guid uuid;
     rootSnapshot->COMGETTER(Name)(name.asOutParam());
     rootSnapshot->COMGETTER(Id)(uuid.asOutParam());
-    /* print with indentation */
-    RTPrintf("%*sName: %lS (UUID: %s)\n", level * 3, "", name.raw(), uuid.toString().raw());
+    if (details == VMINFO_MACHINEREADABLE)
+    {
+        /* print with hierarchical numbering */
+        RTPrintf("SnapshotName%lS=\"%lS\"\n", prefix.raw(), name.raw());
+        RTPrintf("SnapshotUUID%lS=\"%s\"\n", prefix.raw(), uuid.toString().raw());
+    }
+    else
+    {
+        /* print with indentation */
+        RTPrintf("   %lSName: %lS (UUID: %s)\n", prefix.raw(), name.raw(), uuid.toString().raw());
+    }
 
     /* get the children */
     ComPtr<ISnapshotCollection> coll;
@@ -677,6 +687,7 @@ static void showSnapshots(ComPtr<ISnapshot> rootSnapshot, int level = 0)
     {
         ComPtr<ISnapshotEnumerator> enumerator;
         coll->Enumerate(enumerator.asOutParam());
+        ULONG index = 0;
         BOOL hasMore = FALSE;
         while (enumerator->HasMore(&hasMore), hasMore)
         {
@@ -684,9 +695,15 @@ static void showSnapshots(ComPtr<ISnapshot> rootSnapshot, int level = 0)
             enumerator->GetNext(snapshot.asOutParam());
             if (snapshot)
             {
+                Bstr newPrefix;
+                if (details == VMINFO_MACHINEREADABLE)
+                    newPrefix = Utf8StrFmt("%lS-%d", prefix.raw(), index + 1);
+                else
+                    newPrefix = Utf8StrFmt("%lS   ", prefix.raw());
                 /* recursive call */
-                showSnapshots(snapshot, level + 1);
+                showSnapshots(snapshot, details, newPrefix, level + 1);
             }
+            index++;
         }
     }
 }
@@ -711,31 +728,57 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 {
     HRESULT rc;
 
+    /*
+     * The rules for output in -argdump format:
+     * 1) the key part (the [0-9a-zA-Z_]+ string before the '=' delimiter)
+     *    is all lowercase for "VBoxManage modifyvm" parameters. Any
+     *    other values printed are in CamelCase.
+     * 2) strings (anything non-decimal) are printed surrounded by
+     *    double quotes '"'. If the strings themselves contain double
+     *    quotes, these characters are escaped by '\'. Any '\' character
+     *    in the original string is also escaped by '\'.
+     * 3) numbers (containing just [0-9\-]) are written out unchanged.
+     */
+
+    /** @todo the quoting is not yet implemented! */
+
     BOOL accessible = FALSE;
     CHECK_ERROR (machine, COMGETTER(Accessible) (&accessible));
     CheckComRCReturnRC (rc);
 
     if (!accessible)
     {
-        RTPrintf ("Name:            <inaccessible!>\n");
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("name=\"<inaccessible>\"\n");
+        else
+            RTPrintf ("Name:            <inaccessible!>\n");
         Guid uuid;
         rc = machine->COMGETTER(Id) (uuid.asOutParam());
-        RTPrintf ("UUID:            %s\n", uuid.toString().raw());
-        Bstr settingsFilePath;
-        rc = machine->COMGETTER(SettingsFilePath) (settingsFilePath.asOutParam());
-        RTPrintf ("Config file:     %lS\n", settingsFilePath.raw());
-        ComPtr<IVirtualBoxErrorInfo> accessError;
-        rc = machine->COMGETTER(AccessError) (accessError.asOutParam());
-        RTPrintf ("Access error details:\n");
-        ErrorInfo ei (accessError);
-        ei.print ("[-] ");
-        RTPrintf ("\n");
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf ("UUID=\"%s\"\n", uuid.toString().raw());
+        else
+            RTPrintf ("UUID:            %s\n", uuid.toString().raw());
+        if (details != VMINFO_MACHINEREADABLE)
+        {
+            Bstr settingsFilePath;
+            rc = machine->COMGETTER(SettingsFilePath) (settingsFilePath.asOutParam());
+            RTPrintf ("Config file:     %lS\n", settingsFilePath.raw());
+            ComPtr<IVirtualBoxErrorInfo> accessError;
+            rc = machine->COMGETTER(AccessError) (accessError.asOutParam());
+            RTPrintf ("Access error details:\n");
+            ErrorInfo ei (accessError);
+            ei.print ("[-] ");
+            RTPrintf ("\n");
+        }
         return S_OK;
     }
 
     Bstr machineName;
     rc = machine->COMGETTER(Name)(machineName.asOutParam());
-    RTPrintf("Name:            %lS\n", machineName.raw());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("name=\"%lS\"\n", machineName.raw());
+    else
+        RTPrintf("Name:            %lS\n", machineName.raw());
 
     Bstr osTypeId;
     rc = machine->COMGETTER(OSTypeId)(osTypeId.asOutParam());
@@ -743,53 +786,87 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     rc = virtualBox->GetGuestOSType (osTypeId, osType.asOutParam());
     Bstr osName;
     rc = osType->COMGETTER(Description)(osName.asOutParam());
-    RTPrintf("Guest OS:        %lS\n", osName.raw());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("ostype=\"%lS\"\n", osTypeId.raw());
+    else
+        RTPrintf("Guest OS:        %lS\n", osName.raw());
 
     Guid uuid;
     rc = machine->COMGETTER(Id)(uuid.asOutParam());
-    RTPrintf("UUID:            %s\n", uuid.toString().raw());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("UUID=\"%s\"\n", uuid.toString().raw());
+    else
+        RTPrintf("UUID:            %s\n", uuid.toString().raw());
 
     Bstr settingsFilePath;
     rc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
-    RTPrintf("Config file:     %lS\n", settingsFilePath.raw());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("CfgFile=\"%lS\"\n", settingsFilePath.raw());
+    else
+        RTPrintf("Config file:     %lS\n", settingsFilePath.raw());
 
     ULONG memorySize;
     rc = machine->COMGETTER(MemorySize)(&memorySize);
-    RTPrintf("Memory size:     %uMB\n", memorySize);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("memory=%u\n", memorySize);
+    else
+        RTPrintf("Memory size:     %uMB\n", memorySize);
 
     ULONG vramSize;
     rc = machine->COMGETTER(VRAMSize)(&vramSize);
-    RTPrintf("VRAM size:       %uMB\n", vramSize);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("vram=%u\n", vramSize);
+    else
+        RTPrintf("VRAM size:       %uMB\n", vramSize);
 
     ComPtr <IBIOSSettings> biosSettings;
     machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
 
     BIOSBootMenuMode_T bootMenuMode;
     biosSettings->COMGETTER(BootMenuMode)(&bootMenuMode);
-    RTPrintf("Boot menu mode:  ");
+    const char *pszBootMenu = NULL;
     switch (bootMenuMode)
     {
         case BIOSBootMenuMode_Disabled:
-            RTPrintf("disabled\n");
+            pszBootMenu = "disabled";
             break;
         case BIOSBootMenuMode_MenuOnly:
-            RTPrintf("menu only\n");
+            if (details == VMINFO_MACHINEREADABLE)
+                pszBootMenu = "menuonly";
+            else
+                pszBootMenu = "menu only";
             break;
         default:
-            RTPrintf("message and menu\n");
+            if (details == VMINFO_MACHINEREADABLE)
+                pszBootMenu = "messageandmenu";
+            else
+                pszBootMenu = "message and menu";
     }
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("bootmenu=\"%s\"\n", pszBootMenu);
+    else
+        RTPrintf("Boot menu mode:  %s\n", pszBootMenu);
 
     BOOL acpiEnabled;
     biosSettings->COMGETTER(ACPIEnabled)(&acpiEnabled);
-    RTPrintf("ACPI:            %s\n", acpiEnabled ? "on" : "off");
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("acpi=\"%s\"\n", acpiEnabled ? "on" : "off");
+    else
+        RTPrintf("ACPI:            %s\n", acpiEnabled ? "on" : "off");
 
     BOOL ioapicEnabled;
     biosSettings->COMGETTER(IOAPICEnabled)(&ioapicEnabled);
-    RTPrintf("IOAPIC:          %s\n", ioapicEnabled ? "on" : "off");
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("ioapic=\"%s\"\n", ioapicEnabled ? "on" : "off");
+    else
+        RTPrintf("IOAPIC:          %s\n", ioapicEnabled ? "on" : "off");
 
     LONG64 timeOffset;
     biosSettings->COMGETTER(TimeOffset)(&timeOffset);
-    RTPrintf("Time offset:     %lld ms\n", timeOffset);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("biossystemtimeoffset=%lld\n", timeOffset);
+    else
+        RTPrintf("Time offset:     %lld ms\n", timeOffset);
 
     TriStateBool_T hwVirtExEnabled;
     machine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);
@@ -799,11 +876,17 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         ComPtr<ISystemProperties> systemProperties;
         virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
         systemProperties->COMGETTER(HWVirtExEnabled)(&fHWVirtExEnabled);
-        RTPrintf("Hardw. virt.ext: Default (%s)\n", fHWVirtExEnabled ? "on" : "off");
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("hwvirtex=\"default\"\n");
+        else
+            RTPrintf("Hardw. virt.ext: Default (%s)\n", fHWVirtExEnabled ? "on" : "off");
     }
     else
     {
-        RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled == TriStateBool_True ? "on" : "off");
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("hwvirtex=\"%s\"\n", hwVirtExEnabled == TriStateBool_True ? "on" : "off");
+        else
+            RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled == TriStateBool_True ? "on" : "off");
     }
 
     MachineState_T machineState;
@@ -812,7 +895,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     switch (machineState)
     {
         case MachineState_PoweredOff:
-            pszState = "powered off";
+            if (details == VMINFO_MACHINEREADABLE)
+                pszState = "poweroff";
+            else
+                pszState = "powered off";
             break;
         case MachineState_Saved:
             pszState = "saved";
@@ -848,11 +934,20 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     RTTimeSpecSetMilli(&timeSpec, stateSince);
     char pszTime[30] = {0};
     RTTimeSpecToString(&timeSpec, pszTime, 30);
-    RTPrintf("State:           %s (since %s)\n", pszState, pszTime);
+    if (details == VMINFO_MACHINEREADABLE)
+    {
+        RTPrintf("VMState=\"%s\"\n", pszState);
+        RTPrintf("VMStateChangeTime=\"%s\"\n", pszTime);
+    }
+    else
+        RTPrintf("State:           %s (since %s)\n", pszState, pszTime);
 
     ULONG numMonitors;
     machine->COMGETTER(MonitorCount)(&numMonitors);
-    RTPrintf("Monitor count:   %d\n", numMonitors);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("monitorcount=%d\n", numMonitors);
+    else
+        RTPrintf("Monitor count:   %d\n", numMonitors);
 
     ComPtr<IFloppyDrive> floppyDrive;
     rc = machine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
@@ -877,7 +972,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                         floppyImage->COMGETTER(FilePath)(imagePath.asOutParam());
                         Guid imageGuid;
                         floppyImage->COMGETTER(Id)(imageGuid.asOutParam());
-                        pszFloppy = Utf8StrFmt("%lS (UUID: %s)", imagePath.raw(), imageGuid.toString().raw());
+                        if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("FloppyImageUUID=\"%s\"\n", imageGuid.toString().raw());
+                            pszFloppy = Utf8StrFmt("%lS", imagePath.raw());
+                        }
+                        else
+                            pszFloppy = Utf8StrFmt("%lS (UUID: %s)", imagePath.raw(), imageGuid.toString().raw());
                     }
                     break;
                 }
@@ -890,7 +991,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     {
                         Bstr driveName;
                         hostFloppyDrive->COMGETTER(Name)(driveName.asOutParam());
-                        pszFloppy = Utf8StrFmt("Host drive %lS", driveName.raw());
+                        if (details == VMINFO_MACHINEREADABLE)
+                            pszFloppy = Utf8StrFmt("host:%lS", driveName.raw());
+                        else
+                            pszFloppy = Utf8StrFmt("Host drive %lS", driveName.raw());
                     }
                     break;
                 }
@@ -906,7 +1010,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         {
             pszFloppy = "disabled";
         }
-        RTPrintf("Floppy:          %s\n", pszFloppy.raw());
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("floppy=\"%s\"\n", pszFloppy.raw());
+        else
+            RTPrintf("Floppy:          %s\n", pszFloppy.raw());
     }
 
     ComPtr<IHardDisk> hardDisk;
@@ -921,7 +1028,18 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         //  the location property)
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        RTPrintf("Primary master:  %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+        if (details == VMINFO_MACHINEREADABLE)
+        {
+            RTPrintf("hda=\"%lS\"\n", filePath.raw());
+            RTPrintf("HdaImageUUID=\"%s\"\n", uuid.toString().raw());
+        }
+        else
+            RTPrintf("Primary master:  %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+    }
+    else
+    {
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("hda=\"none\"\n");
     }
     rc = machine->GetHardDisk(DiskControllerType_IDE0Controller, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
@@ -933,7 +1051,18 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         //  the location property)
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        RTPrintf("Primary slave:   %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+        if (details == VMINFO_MACHINEREADABLE)
+        {
+            RTPrintf("hdb=\"%lS\"\n", filePath.raw());
+            RTPrintf("HdbImageUUID=\"%s\"\n", uuid.toString().raw());
+        }
+        else
+            RTPrintf("Primary slave:   %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+    }
+    else
+    {
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("hdb=\"none\"\n");
     }
     rc = machine->GetHardDisk(DiskControllerType_IDE1Controller, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
@@ -945,7 +1074,18 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         //  the location property)
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        RTPrintf("Secondary slave: %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+        if (details == VMINFO_MACHINEREADABLE)
+        {
+            RTPrintf("hdd=\"%lS\"\n", filePath.raw());
+            RTPrintf("HddImageUUID=\"%s\"\n", uuid.toString().raw());
+        }
+        else
+            RTPrintf("Secondary slave: %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+    }
+    else
+    {
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("hdd=\"none\"\n");
     }
     ComPtr<IDVDDrive> dvdDrive;
     rc = machine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
@@ -959,7 +1099,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             if (SUCCEEDED(rc) && filePath)
             {
                 rc = dvdImage->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("DVD:             %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+                if (details == VMINFO_MACHINEREADABLE)
+                {
+                    RTPrintf("dvd=\"%lS\"\n", filePath.raw());
+                    RTPrintf("DvdImageUUID=\"%s\"\n", uuid.toString().raw());
+                }
+                else
+                    RTPrintf("DVD:             %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
             }
         }
         else
@@ -970,15 +1116,30 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             {
                 Bstr name;
                 hostDVDDrive->COMGETTER(Name)(name.asOutParam());
-                RTPrintf("DVD:             Host drive %lS", name.raw());
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("dvd=\"host:%lS\"\n", name.raw());
+                else
+                    RTPrintf("DVD:             Host drive %lS", name.raw());
             }
             else
-                RTPrintf("DVD:             empty");
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("dvd=\"none\"\n");
+                else
+                    RTPrintf("DVD:             empty");
+            }
             BOOL fPassthrough;
             dvdDrive->COMGETTER(Passthrough)(&fPassthrough);
-            if (fPassthrough)
-                RTPrintf(" (passthrough enabled)");
-            RTPrintf("\n");
+            if (details == VMINFO_MACHINEREADABLE)
+            {
+                RTPrintf("dvdpassthrough=\"%s\"\n", fPassthrough ? "on" : "off");
+            }
+            else
+            {
+                if (fPassthrough)
+                    RTPrintf(" (passthrough enabled)");
+                RTPrintf("\n");
+            }
         }
     }
 
@@ -997,7 +1158,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             nic->COMGETTER(Enabled)(&fEnabled);
             if (!fEnabled)
             {
-                RTPrintf("NIC %d:           disabled\n", currentNIC + 1);
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("nic%d=\"none\"\n", currentNIC + 1);
+                else
+                    RTPrintf("NIC %d:           disabled\n", currentNIC + 1);
             }
             else
             {
@@ -1009,19 +1173,41 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 switch (attachment)
                 {
                     case NetworkAttachmentType_NoNetworkAttachment:
-                        strAttachment = "none";
+                        if (details == VMINFO_MACHINEREADABLE)
+                            strAttachment = "null";
+                        else
+                            strAttachment = "none";
                         break;
                     case NetworkAttachmentType_NATNetworkAttachment:
-                        strAttachment = "NAT";
+                        if (details == VMINFO_MACHINEREADABLE)
+                            strAttachment = "nat";
+                        else
+                            strAttachment = "NAT";
                         break;
                     case NetworkAttachmentType_HostInterfaceNetworkAttachment:
-                        strAttachment = "Host Interface";
+                    {
+                        Bstr strHostIfDev;
+                        nic->COMGETTER(HostInterface)(strHostIfDev.asOutParam());
+                        if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("hostifdev%d=\"%lS\"\n", currentNIC + 1, strHostIfDev.raw());
+                            strAttachment = "hostif";
+                        }
+                        else
+                            strAttachment = Utf8StrFmt("Host Interface '%lS'", strHostIfDev.raw());
                         break;
+                    }
                     case NetworkAttachmentType_InternalNetworkAttachment:
                     {
                         Bstr strNetwork;
                         nic->COMGETTER(InternalNetwork)(strNetwork.asOutParam());
-                        strAttachment = Utf8StrFmt("Internal Network '%s'", Utf8Str(strNetwork).raw());
+                        if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("intnet%d=\"%lS\"\n", currentNIC + 1, strNetwork.raw());
+                            strAttachment = "intnet";
+                        }
+                        else
+                            strAttachment = Utf8StrFmt("Internal Network '%s'", Utf8Str(strNetwork).raw());
                         break;
                     }
                     default:
@@ -1029,15 +1215,27 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                         break;
                 }
 
+                /* cable connected */
+                BOOL fConnected;
+                nic->COMGETTER(CableConnected)(&fConnected);
+
                 /* trace stuff */
                 BOOL fTraceEnabled;
                 nic->COMGETTER(TraceEnabled)(&fTraceEnabled);
                 Bstr traceFile;
                 nic->COMGETTER(TraceFile)(traceFile.asOutParam());
 
-                RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Trace: %s (file: %lS)\n",
-                         currentNIC + 1, strMACAddress.raw(), strAttachment.raw(),
-                         fTraceEnabled ? "on" : "off", traceFile.raw());
+                if (details == VMINFO_MACHINEREADABLE)
+                {
+                    RTPrintf("macaddress%d=\"%lS\"\n", currentNIC + 1, strMACAddress.raw());
+                    RTPrintf("cableconnected%d=\"%s\"\n", currentNIC + 1, fConnected ? "on" : "off");
+                    RTPrintf("nic%d=\"%s\"\n", currentNIC + 1, strAttachment.raw());
+                }
+                else
+                    RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS)\n",
+                             currentNIC + 1, strMACAddress.raw(), strAttachment.raw(),
+                             fConnected ? "on" : "off",
+                             fTraceEnabled ? "on" : "off", traceFile.raw());
             }
         }
     }
@@ -1055,7 +1253,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             uart->COMGETTER(Enabled)(&fEnabled);
             if (!fEnabled)
             {
-                RTPrintf("UART %d:          disabled\n", currentUART + 1);
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("uart%d=\"off\"\n", currentUART + 1);
+                else
+                    RTPrintf("UART %d:          disabled\n", currentUART + 1);
             }
             else
             {
@@ -1069,20 +1270,35 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 uart->COMGETTER(Server)(&fServer);
                 uart->COMGETTER(HostMode)(&HostMode);
 
-                RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d",
-                         currentUART + 1, ulIOBase, ulIRQ);
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("uart%d=\"%#06x,%d\"\n", currentUART + 1,
+                             ulIOBase, ulIRQ);
+                else
+                    RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d",
+                             currentUART + 1, ulIOBase, ulIRQ);
                 switch (HostMode)
                 {
                     default:
                     case PortMode_DisconnectedPort:
-                        RTPrintf(", disconnected\n");
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("uartmode%d=\"disconnected\"\n", currentUART + 1);
+                        else
+                            RTPrintf(", disconnected\n");
                         break;
                     case PortMode_HostPipePort:
-                        RTPrintf(", attached to pipe (%s) '%lS'\n",
-                                fServer ? "server" : "client", path.raw());
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("uartmode%d=\"%s,%lS\"\n", currentUART + 1,
+                                     fServer ? "server" : "client", path.raw());
+                        else
+                            RTPrintf(", attached to pipe (%s) '%lS'\n",
+                                     fServer ? "server" : "client", path.raw());
                         break;
                     case PortMode_HostDevicePort:
-                        RTPrintf(", attached to device '%lS'\n", path.raw());
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("uartmode%d=\"%lS\"\n", currentUART + 1,
+                                     path.raw());
+                        else
+                            RTPrintf(", attached to device '%lS'\n", path.raw());
                         break;
                 }
             }
@@ -1102,34 +1318,101 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             rc = AudioAdapter->COMGETTER(AudioDriver)(&enmType);
             switch (enmType)
             {
-                case  AudioDriverType_NullAudioDriver:   psz = "Null"; break;
-                case  AudioDriverType_WINMMAudioDriver:  psz = "WINMM"; break;
-                case  AudioDriverType_DSOUNDAudioDriver: psz = "DSOUND"; break;
-                case  AudioDriverType_OSSAudioDriver:    psz = "OSS"; break;
-                case  AudioDriverType_ALSAAudioDriver:   psz = "ALSA"; break;
-                case  AudioDriverType_CoreAudioDriver:   psz = "CoreAudio"; break;
-                default: ; break;
+                case AudioDriverType_NullAudioDriver:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        psz = "null";
+                    else
+                        psz = "Null";
+                    break;
+                case AudioDriverType_WINMMAudioDriver:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        psz = "winmm";
+                    else
+                        psz = "WINMM";
+                    break;
+                case AudioDriverType_DSOUNDAudioDriver:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        psz = "dsound";
+                    else
+                        psz = "DSOUND";
+                    break;
+                case AudioDriverType_OSSAudioDriver:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        psz = "oss";
+                    else
+                        psz = "OSS";
+                    break;
+                case AudioDriverType_ALSAAudioDriver:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        psz = "alsa";
+                    else
+                        psz = "ALSA";
+                    break;
+                case AudioDriverType_CoreAudioDriver:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        psz = "coreaudio";
+                    else
+                        psz = "CoreAudio";
+                    break;
+                default:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        psz = "unknown";
+                    break;
             }
         }
         else
             fEnabled = FALSE;
-        RTPrintf("Audio:           %s (Driver: %s)\n", fEnabled ? "enabled" : "disabled", psz);
+        if (details == VMINFO_MACHINEREADABLE)
+        {
+            if (fEnabled)
+                RTPrintf("audio=\"%s\"\n", psz);
+            else
+                RTPrintf("audio=\"none\"\n");
+        }
+        else
+            RTPrintf("Audio:           %s (Driver: %s)\n", fEnabled ? "enabled" : "disabled", psz);
     }
 
     /* Shared clipboard */
     {
         const char *psz = "Unknown";
-            ClipboardMode_T enmMode;
-            rc = machine->COMGETTER(ClipboardMode)(&enmMode);
-            switch (enmMode)
-            {
-                case  ClipboardMode_ClipDisabled:      psz = "disabled"; break;
-                case  ClipboardMode_ClipHostToGuest:   psz = "HostToGuest"; break;
-                case  ClipboardMode_ClipGuestToHost:   psz = "GuestToHost"; break;
-                case  ClipboardMode_ClipBidirectional: psz = "Bidirectional"; break;
-                default: ; break;
-            }
-        RTPrintf("Clipboard Mode:  %s\n", psz);
+        ClipboardMode_T enmMode;
+        rc = machine->COMGETTER(ClipboardMode)(&enmMode);
+        switch (enmMode)
+        {
+            case ClipboardMode_ClipDisabled:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "disabled";
+                else
+                    psz = "disabled";
+                break;
+            case ClipboardMode_ClipHostToGuest:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "hosttoguest";
+                else
+                    psz = "HostToGuest";
+                break;
+            case ClipboardMode_ClipGuestToHost:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "guesttohost";
+                else
+                    psz = "GuestToHost";
+                break;
+            case ClipboardMode_ClipBidirectional:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "bidirectional";
+                else
+                    psz = "Bidirectional";
+                break;
+            default:
+                if (details == VMINFO_MACHINEREADABLE)
+                    psz = "unknown";
+                break;
+        }
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("clipboard=\"%s\"\n", psz);
+        else
+            RTPrintf("Clipboard Mode:  %s\n", psz);
     }
 
     if (console)
@@ -1140,7 +1423,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         CHECK_ERROR_RET(display, COMGETTER(Width)(&xRes), rc);
         CHECK_ERROR_RET(display, COMGETTER(Height)(&yRes), rc);
         CHECK_ERROR_RET(display, COMGETTER(BitsPerPixel)(&bpp), rc);
-        RTPrintf("Video mode:      %dx%dx%d\n", xRes, yRes, bpp);
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("VideoMode=\"%d,%d,%d\"\n", xRes, yRes, bpp);
+        else
+            RTPrintf("Video mode:      %dx%dx%d\n", xRes, yRes, bpp);
     }
 
     /*
@@ -1156,6 +1442,10 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         {
             ULONG port;
             vrdpServer->COMGETTER(Port)(&port);
+            Bstr address;
+            vrdpServer->COMGETTER(NetAddress)(address.asOutParam());
+            BOOL fMultiCon;
+            vrdpServer->COMGETTER(AllowMultiConnection)(&fMultiCon);
             VRDPAuthType_T vrdpAuthType;
             const char *strAuthType;
             vrdpServer->COMGETTER(AuthType)(&vrdpAuthType);
@@ -1174,10 +1464,24 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     strAuthType = "unknown";
                     break;
             }
-            RTPrintf("VRDP:            enabled (Port %d, Authentication type: %s)\n", port, strAuthType);
+            if (details == VMINFO_MACHINEREADABLE)
+            {
+                RTPrintf("vrdp=\"on\"\n");
+                RTPrintf("vrdpport=%d\n", port);
+                RTPrintf("vrdpaddress=\"%lS\"\n", address.raw());
+                RTPrintf("vrdpauthtype=\"%s\"\n", strAuthType);
+                RTPrintf("vrdpmulticon=\"%s\"\n", fMultiCon ? "on" : "off");
+            }
+            else
+                RTPrintf("VRDP:            enabled (Address %lS, Port %d, MultiConn: %s, Authentication type: %s)\n", address.raw(), port, fMultiCon ? "on" : "off", strAuthType);
         }
         else
-            RTPrintf("VRDP:            disabled\n");
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("vrdp=\"off\"\n");
+            else
+                RTPrintf("VRDP:            disabled\n");
+        }
     }
 
     /*
@@ -1191,9 +1495,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         rc = USBCtl->COMGETTER(Enabled)(&fEnabled);
         if (FAILED(rc))
             fEnabled = false;
-        RTPrintf("USB:             %s\n", fEnabled ? "enabled" : "disabled");
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("usb=\"%s\"\n", fEnabled ? "on" : "off");
+        else
+            RTPrintf("USB:             %s\n", fEnabled ? "enabled" : "disabled");
 
-        RTPrintf("\nUSB Device Filters:\n\n");
+        if (details != VMINFO_MACHINEREADABLE)
+            RTPrintf("\nUSB Device Filters:\n\n");
 
         ComPtr<IUSBDeviceFilterCollection> Coll;
         CHECK_ERROR_RET (USBCtl, COMGETTER(DeviceFilters)(Coll.asOutParam()), rc);
@@ -1208,7 +1516,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
         if (!fMore)
         {
-            RTPrintf("<none>\n\n");
+            if (details != VMINFO_MACHINEREADABLE)
+                RTPrintf("<none>\n\n");
         }
         else
         while (fMore)
@@ -1219,27 +1528,57 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
             /* Query info. */
 
-            RTPrintf("Index:            %lu\n", index);
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("Index:            %lu\n", index);
 
             BOOL bActive = FALSE;
             CHECK_ERROR_RET (DevPtr, COMGETTER (Active) (&bActive), rc);
-            RTPrintf("Active:           %s\n", bActive ? "yes" : "no");
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterActive%d=\"%s\"\n", index + 1, bActive ? "on" : "off");
+            else
+                RTPrintf("Active:           %s\n", bActive ? "yes" : "no");
 
             Bstr bstr;
             CHECK_ERROR_RET (DevPtr, COMGETTER (Name) (bstr.asOutParam()), rc);
-            RTPrintf("Name:             %lS\n", bstr.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterName%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("Name:             %lS\n", bstr.raw());
             CHECK_ERROR_RET (DevPtr, COMGETTER (VendorId) (bstr.asOutParam()), rc);
-            RTPrintf("VendorId:         %lS\n", bstr.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterVendorId%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("VendorId:         %lS\n", bstr.raw());
             CHECK_ERROR_RET (DevPtr, COMGETTER (ProductId) (bstr.asOutParam()), rc);
-            RTPrintf("ProductId:        %lS\n", bstr.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterProductId%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("ProductId:        %lS\n", bstr.raw());
             CHECK_ERROR_RET (DevPtr, COMGETTER (Revision) (bstr.asOutParam()), rc);
-            RTPrintf("Revision:         %lS\n", bstr.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterRevision%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("Revision:         %lS\n", bstr.raw());
             CHECK_ERROR_RET (DevPtr, COMGETTER (Manufacturer) (bstr.asOutParam()), rc);
-            RTPrintf("Manufacturer:     %lS\n", bstr.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterManufacturer%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("Manufacturer:     %lS\n", bstr.raw());
             CHECK_ERROR_RET (DevPtr, COMGETTER (Product) (bstr.asOutParam()), rc);
-            RTPrintf("Product:          %lS\n", bstr.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterProduct%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("Product:          %lS\n", bstr.raw());
+            CHECK_ERROR_RET (DevPtr, COMGETTER (Remote) (bstr.asOutParam()), rc);
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterRemote%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("Remote:           %lS\n\n", bstr.raw());
             CHECK_ERROR_RET (DevPtr, COMGETTER (SerialNumber) (bstr.asOutParam()), rc);
-            RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("USBFilterSerialNumber%d=\"%lS\"\n", index + 1, bstr.raw());
+            else
+                RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
 
             rc = Enum->HasMore (&fMore);
             ASSERT_RET (SUCCEEDED (rc), rc);
@@ -1249,9 +1588,11 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
         if (console)
         {
+            index = 0;
             /* scope */
             {
-                RTPrintf("Available remote USB devices:\n\n");
+                if (details != VMINFO_MACHINEREADABLE)
+                    RTPrintf("Available remote USB devices:\n\n");
 
                 ComPtr<IHostUSBDeviceCollection> coll;
                 CHECK_ERROR_RET (console, COMGETTER(RemoteUSBDevices) (coll.asOutParam()), rc);
@@ -1265,7 +1606,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
                 if (!more)
                 {
-                    RTPrintf("<none>\n\n");
+                    if (details != VMINFO_MACHINEREADABLE)
+                        RTPrintf("<none>\n\n");
                 }
                 else
                 while (more)
@@ -1284,40 +1626,75 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     USHORT bcdRevision;
                     CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
 
-                    RTPrintf("UUID:               %S\n"
-                             "VendorId:           0x%04x (%04X)\n"
-                             "ProductId:          0x%04x (%04X)\n"
-                             "Revision:           %u.%u (%02u%02u)\n",
-                             id.toString().raw(),
-                             usVendorId, usVendorId, usProductId, usProductId,
-                             bcdRevision >> 8, bcdRevision & 0xff,
-                             bcdRevision >> 8, bcdRevision & 0xff);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBRemoteUUID%d=\"%S\"\n"
+                                 "USBRemoteVendorId%d=\"%#06x\"\n"
+                                 "USBRemoteProductId%d=\"%#06x\"\n"
+                                 "USBRemoteRevision%d=\"%#04x%02x\"\n",
+                                 index + 1, id.toString().raw(),
+                                 index + 1, usVendorId,
+                                 index + 1, usProductId,
+                                 index + 1, bcdRevision >> 8, bcdRevision & 0xff);
+                    else
+                        RTPrintf("UUID:               %S\n"
+                                 "VendorId:           0x%04x (%04X)\n"
+                                 "ProductId:          0x%04x (%04X)\n"
+                                 "Revision:           %u.%u (%02u%02u)\n",
+                                 id.toString().raw(),
+                                 usVendorId, usVendorId, usProductId, usProductId,
+                                 bcdRevision >> 8, bcdRevision & 0xff,
+                                 bcdRevision >> 8, bcdRevision & 0xff);
 
                     /* optional stuff. */
                     Bstr bstr;
                     CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("Manufacturer:       %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBRemoteManufacturer%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("Manufacturer:       %lS\n", bstr.raw());
+                    }
                     CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("Product:            %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBRemoteProduct%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("Product:            %lS\n", bstr.raw());
+                    }
                     CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("SerialNumber:       %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBRemoteSerialNumber%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("SerialNumber:       %lS\n", bstr.raw());
+                    }
                     CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("Address:            %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBRemoteAddress%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("Address:            %lS\n", bstr.raw());
+                    }
 
-                    RTPrintf("\n");
+                    if (details != VMINFO_MACHINEREADABLE)
+                        RTPrintf("\n");
 
                     rc = en->HasMore (&more);
                     ASSERT_RET (SUCCEEDED (rc), rc);
+
+                    index ++;
                 }
             }
 
+            index = 0;
             /* scope */
             {
-                RTPrintf ("Currently Attached USB Devices:\n\n");
+                if (details != VMINFO_MACHINEREADABLE)
+                    RTPrintf ("Currently Attached USB Devices:\n\n");
 
                 ComPtr <IUSBDeviceCollection> coll;
                 CHECK_ERROR_RET (console, COMGETTER(USBDevices) (coll.asOutParam()), rc);
@@ -1331,7 +1708,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
                 if (!more)
                 {
-                    RTPrintf("<none>\n\n");
+                    if (details != VMINFO_MACHINEREADABLE)
+                        RTPrintf("<none>\n\n");
                 }
                 else
                 while (more)
@@ -1350,34 +1728,67 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     USHORT bcdRevision;
                     CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
 
-                    RTPrintf("UUID:               %S\n"
-                             "VendorId:           0x%04x (%04X)\n"
-                             "ProductId:          0x%04x (%04X)\n"
-                             "Revision:           %u.%u (%02u%02u)\n",
-                             id.toString().raw(),
-                             usVendorId, usVendorId, usProductId, usProductId,
-                             bcdRevision >> 8, bcdRevision & 0xff,
-                             bcdRevision >> 8, bcdRevision & 0xff);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBAttachedUUID%d=\"%S\"\n"
+                                 "USBAttachedVendorId%d=\"%#06x\"\n"
+                                 "USBAttachedProductId%d=\"%#06x\"\n"
+                                 "USBAttachedRevision%d=\"%#04x%02x\"\n",
+                                 index + 1, id.toString().raw(),
+                                 index + 1, usVendorId,
+                                 index + 1, usProductId,
+                                 index + 1, bcdRevision >> 8, bcdRevision & 0xff);
+                    else
+                        RTPrintf("UUID:               %S\n"
+                                 "VendorId:           0x%04x (%04X)\n"
+                                 "ProductId:          0x%04x (%04X)\n"
+                                 "Revision:           %u.%u (%02u%02u)\n",
+                                 id.toString().raw(),
+                                 usVendorId, usVendorId, usProductId, usProductId,
+                                 bcdRevision >> 8, bcdRevision & 0xff,
+                                 bcdRevision >> 8, bcdRevision & 0xff);
 
                     /* optional stuff. */
                     Bstr bstr;
                     CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("Manufacturer:       %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBAttachedManufacturer%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("Manufacturer:       %lS\n", bstr.raw());
+                    }
                     CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("Product:            %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBAttachedProduct%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("Product:            %lS\n", bstr.raw());
+                    }
                     CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("SerialNumber:       %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBAttachedSerialNumber%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("SerialNumber:       %lS\n", bstr.raw());
+                    }
                     CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
                     if (!bstr.isEmpty())
-                        RTPrintf("Address:            %lS\n", bstr.raw());
+                    {
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("USBAttachedAddress%d=\"%lS\"\n", index + 1, bstr.raw());
+                        else
+                            RTPrintf("Address:            %lS\n", bstr.raw());
+                    }
 
-                    RTPrintf("\n");
+                    if (details != VMINFO_MACHINEREADABLE)
+                        RTPrintf("\n");
 
                     rc = en->HasMore (&more);
                     ASSERT_RET (SUCCEEDED (rc), rc);
+
+                    index ++;
                 }
             }
         }
@@ -1386,7 +1797,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     /*
      * Shared folders
      */
-    RTPrintf("Shared folders:  ");
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("Shared folders:  ");
     uint32_t numSharedFolders = 0;
 #if 0 // not yet implemented
     /* globally shared folders first */
@@ -1416,6 +1828,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         ComPtr<ISharedFolderEnumerator> sfEnum;
         CHECK_ERROR_RET(machine, COMGETTER(SharedFolders)(sfColl.asOutParam()), rc);
         CHECK_ERROR_RET(sfColl, Enumerate(sfEnum.asOutParam()), rc);
+        ULONG index = 0;
         BOOL fMore;
         sfEnum->HasMore(&fMore);
         while (fMore)
@@ -1425,9 +1838,17 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             Bstr name, hostPath;
             sf->COMGETTER(Name)(name.asOutParam());
             sf->COMGETTER(HostPath)(hostPath.asOutParam());
-            if (!numSharedFolders)
+            if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)
                 RTPrintf("\n\n");
-            RTPrintf("Name: '%lS', Host path: '%lS' (machine mapping)\n", name.raw(), hostPath.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+            {
+                RTPrintf("SharedFolderNameMachineMapping%d=\"%lS\"\n", index + 1,
+                         name.raw());
+                RTPrintf("SharedFolderPathMachineMapping%d=\"%lS\"\n", index + 1,
+                         hostPath.raw());
+            }
+            else
+                RTPrintf("Name: '%lS', Host path: '%lS' (machine mapping)\n", name.raw(), hostPath.raw());
             ++numSharedFolders;
             CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
         }
@@ -1439,6 +1860,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         ComPtr<ISharedFolderEnumerator> sfEnum;
         CHECK_ERROR_RET(console, COMGETTER(SharedFolders)(sfColl.asOutParam()), rc);
         CHECK_ERROR_RET(sfColl, Enumerate(sfEnum.asOutParam()), rc);
+        ULONG index = 0;
         BOOL fMore;
         sfEnum->HasMore(&fMore);
         while (fMore)
@@ -1448,16 +1870,25 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             Bstr name, hostPath;
             sf->COMGETTER(Name)(name.asOutParam());
             sf->COMGETTER(HostPath)(hostPath.asOutParam());
-            if (!numSharedFolders)
+            if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)
                 RTPrintf("\n\n");
-            RTPrintf("Name: '%lS', Host path: '%lS' (transient mapping)\n", name.raw(), hostPath.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+            {
+                RTPrintf("SharedFolderNameTransientMapping%d=\"%lS\"\n", index + 1,
+                         name.raw());
+                RTPrintf("SharedFolderPathTransientMapping%d=\"%lS\"\n", index + 1,
+                         hostPath.raw());
+            }
+            else
+                RTPrintf("Name: '%lS', Host path: '%lS' (transient mapping)\n", name.raw(), hostPath.raw());
             ++numSharedFolders;
             CHECK_ERROR_RET(sfEnum, HasMore(&fMore), rc);
         }
     }
-    if (!numSharedFolders)
+    if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)
         RTPrintf("<none>\n");
-    RTPrintf("\n");
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("\n");
 
     if (console)
     {
@@ -1496,8 +1927,15 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientVersion)      (&ClientVersion), rc);
         CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(EncryptionStyle)    (&EncryptionStyle), rc);
 
-        RTPrintf("VRDP Connection:    %s\n", Active? "active": "not active");
-        RTPrintf("Clients so far:     %d\n", NumberOfClients);
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("VRDPActiveConnection=\"%s\"\n", Active ? "on": "off");
+        else
+            RTPrintf("VRDP Connection:    %s\n", Active? "active": "not active");
+
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("VRDPClients=%d\n", NumberOfClients);
+        else
+            RTPrintf("Clients so far:     %d\n", NumberOfClients);
 
         if (NumberOfClients > 0)
         {
@@ -1506,148 +1944,288 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             if (Active)
             {
                 makeTimeStr (timestr, sizeof (timestr), BeginTime);
-                RTPrintf("Start time:         %s\n", timestr);
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("VRDPStartTime=\"%s\"\n", timestr);
+                else
+                    RTPrintf("Start time:         %s\n", timestr);
             }
             else
             {
                 makeTimeStr (timestr, sizeof (timestr), BeginTime);
-                RTPrintf("Last started:       %s\n", timestr);
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("VRDPLastStartTime=\"%s\"\n", timestr);
+                else
+                    RTPrintf("Last started:       %s\n", timestr);
                 makeTimeStr (timestr, sizeof (timestr), EndTime);
-                RTPrintf("Last ended:         %s\n", timestr);
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("VRDPLastEndTime=\"%s\"\n", timestr);
+                else
+                    RTPrintf("Last ended:         %s\n", timestr);
             }
 
-            RTPrintf("Sent:               %llu Bytes\n", BytesSent);
-            RTPrintf("Average speed:      %llu B/s\n", (BytesSent * 1000) / (EndTime - BeginTime) );
-            RTPrintf("Sent total:         %llu Bytes\n", BytesSentTotal);
+            if (details == VMINFO_MACHINEREADABLE)
+            {
+                RTPrintf("VRDPBytesSent=%llu\n", BytesSent);
+                RTPrintf("VRDPThroughputSend=%llu\n", (BytesSent * 1000) / (EndTime - BeginTime) );
+                RTPrintf("VRDPBytesSentTotal=%llu\n", BytesSentTotal);
 
-            RTPrintf("Received:           %llu Bytes\n", BytesReceived);
-            RTPrintf("Speed:              %llu B/s\n", (BytesReceived * 1000) / (EndTime - BeginTime) );
-            RTPrintf("Received total:     %llu Bytes\n", BytesReceivedTotal);
+                RTPrintf("VRDPBytesReceived=%llu\n", BytesReceived);
+                RTPrintf("VRDPThroughputReceive=%llu\n", (BytesReceived * 1000) / (EndTime - BeginTime) );
+                RTPrintf("VRDPBytesReceivedTotal=%llu\n", BytesReceivedTotal);
+            }
+            else
+            {
+                RTPrintf("Sent:               %llu Bytes\n", BytesSent);
+                RTPrintf("Average speed:      %llu B/s\n", (BytesSent * 1000) / (EndTime - BeginTime) );
+                RTPrintf("Sent total:         %llu Bytes\n", BytesSentTotal);
+
+                RTPrintf("Received:           %llu Bytes\n", BytesReceived);
+                RTPrintf("Speed:              %llu B/s\n", (BytesReceived * 1000) / (EndTime - BeginTime) );
+                RTPrintf("Received total:     %llu Bytes\n", BytesReceivedTotal);
+            }
 
             if (Active)
             {
-                RTPrintf("User name:          %lS\n", User.raw());
-                RTPrintf("Domain:             %lS\n", Domain.raw());
-                RTPrintf("Client name:        %lS\n", ClientName.raw());
-                RTPrintf("Client IP:          %lS\n", ClientIP.raw());
-                RTPrintf("Client version:     %d\n",  ClientVersion);
-                RTPrintf("Encryption:         %s\n", EncryptionStyle == 0? "RDP4": "RDP5 (X.509)");
+                if (details == VMINFO_MACHINEREADABLE)
+                {
+                    RTPrintf("VRDPUserName=\"%lS\"\n", User.raw());
+                    RTPrintf("VRDPDomain=\"%lS\"\n", Domain.raw());
+                    RTPrintf("VRDPClientName=\"%lS\"\n", ClientName.raw());
+                    RTPrintf("VRDPClientIP=\"%lS\"\n", ClientIP.raw());
+                    RTPrintf("VRDPClientVersion=%d\n",  ClientVersion);
+                    RTPrintf("VRDPEncryption=\"%s\"\n", EncryptionStyle == 0? "RDP4": "RDP5 (X.509)");
+                }
+                else
+                {
+                    RTPrintf("User name:          %lS\n", User.raw());
+                    RTPrintf("Domain:             %lS\n", Domain.raw());
+                    RTPrintf("Client name:        %lS\n", ClientName.raw());
+                    RTPrintf("Client IP:          %lS\n", ClientIP.raw());
+                    RTPrintf("Client version:     %d\n",  ClientVersion);
+                    RTPrintf("Encryption:         %s\n", EncryptionStyle == 0? "RDP4": "RDP5 (X.509)");
+                }
             }
         }
 
-        RTPrintf("\n");
+        if (details != VMINFO_MACHINEREADABLE)
+            RTPrintf("\n");
     }
 
-    if (details == VMINFO_STANDARD || details == VMINFO_FULL)
+    if (    details == VMINFO_STANDARD
+        ||  details == VMINFO_FULL
+        ||  details == VMINFO_MACHINEREADABLE)
     {
         Bstr description;
         machine->COMGETTER(Description)(description.asOutParam());
         if (!description.isEmpty())
         {
-            RTPrintf("Description:\n%lS\n", description.raw());
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("description=\"%lS\"\n", description.raw());
+            else
+                RTPrintf("Description:\n%lS\n", description.raw());
         }
     }
 
     ULONG guestVal;
-    RTPrintf("Guest:\n\n");
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("Guest:\n\n");
 
     rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
     if (SUCCEEDED(rc))
-        RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
+    {
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("GuestMemoryBalloon=%d\n", guestVal);
+        else
+            RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
+    }
 
     rc = machine->COMGETTER(StatisticsUpdateInterval)(&guestVal);
     if (SUCCEEDED(rc))
     {
-        if (guestVal == 0)
-            RTPrintf("Statistics update:                   disabled\n");
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("GuestStatisticsUpdateInterval=%d\n", guestVal);
         else
-            RTPrintf("Statistics update interval:          %d seconds\n", guestVal);
+        {
+            if (guestVal == 0)
+                RTPrintf("Statistics update:                   disabled\n");
+            else
+                RTPrintf("Statistics update interval:          %d seconds\n", guestVal);
+        }
     }
-    RTPrintf("\n");
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("\n");
 
     if (    console
-        &&  (details == VMINFO_STATISTICS || details == VMINFO_FULL))
+        &&  (   details == VMINFO_STATISTICS
+             || details == VMINFO_FULL
+             || details == VMINFO_MACHINEREADABLE))
     {
         ComPtr <IGuest> guest;
 
-        rc = console->COMGETTER(Guest)(guest.asOutParam()); 
+        rc = console->COMGETTER(Guest)(guest.asOutParam());
         if (SUCCEEDED(rc))
         {
             ULONG statVal;
 
             rc = guest->GetStatistic(0, GuestStatisticType_SampleNumber, &statVal);
-            RTPrintf("Guest statistics for sample %d:\n\n", statVal);
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("StatGuestSample=%d\n", statVal);
+            else
+                RTPrintf("Guest statistics for sample %d:\n\n", statVal);
 
             rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: CPU Load Idle          %-3d%%\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestLoadIdleCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: CPU Load Idle          %-3d%%\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_Kernel, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: CPU Load Kernel        %-3d%%\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestLoadKernelCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: CPU Load Kernel        %-3d%%\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_User, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: CPU Load User          %-3d%%\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestLoadUserCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: CPU Load User          %-3d%%\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_Threads, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Threads                %d\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestThreadsCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Threads                %d\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_Processes, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Processes              %d\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestProcessesCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Processes              %d\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_Handles, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Handles                %d\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestHandlesCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Handles                %d\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_MemoryLoad, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Memory Load            %d%%\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryLoadCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Memory Load            %d%%\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_PhysMemTotal, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Total physical memory  %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryTotalPhysCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Total physical memory  %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_PhysMemAvailable, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Free physical memory   %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryFreePhysCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Free physical memory   %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Memory balloon size    %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryBalloonCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Memory balloon size    %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Committed memory       %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryCommittedCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Committed memory       %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_MemKernelTotal, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Total kernel memory    %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryTotalKernelCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Total kernel memory    %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_MemKernelPaged, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Paged kernel memory    %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryPagedKernelCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Paged kernel memory    %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_MemKernelNonpaged, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Nonpaged kernel memory %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestMemoryNonpagedKernelCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Nonpaged kernel memory %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_MemSystemCache, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: System cache size      %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestSystemCacheSizeCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: System cache size      %-4d MB\n", 0, statVal);
+            }
 
             rc = guest->GetStatistic(0, GuestStatisticType_PageFileSize, &statVal);
             if (SUCCEEDED(rc))
-                RTPrintf("CPU%d: Page file size         %-4d MB\n", 0, statVal);
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("StatGuestPageFileSizeCPU%d=%d\n", 0, statVal);
+                else
+                    RTPrintf("CPU%d: Page file size         %-4d MB\n", 0, statVal);
+            }
 
             RTPrintf("\n");
         }
         else
         {
-            RTPrintf("[!] FAILED calling console->getGuest at line %d!\n", __LINE__);
-            PRINT_RC_MESSAGE(rc);
+            if (details != VMINFO_MACHINEREADABLE)
+            {
+                RTPrintf("[!] FAILED calling console->getGuest at line %d!\n", __LINE__);
+                PRINT_RC_MESSAGE(rc);
+            }
         }
     }
 
@@ -1658,11 +2236,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     rc = machine->GetSnapshot(Guid(), snapshot.asOutParam());
     if (SUCCEEDED(rc) && snapshot)
     {
-        RTPrintf("Snapshots:\n\n");
-        showSnapshots(snapshot);
+        if (details != VMINFO_MACHINEREADABLE)
+            RTPrintf("Snapshots:\n\n");
+        showSnapshots(snapshot, details);
     }
 
-    RTPrintf("\n");
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("\n");
     return S_OK;
 }
 
@@ -1693,10 +2273,11 @@ static int handleShowVMInfo(int argc, char *argv[],
     if (FAILED (rc))
         return 1;
 
-    /* 2nd option can be -details or -statistics */
+    /* 2nd option can be -details, -statistics or -argdump */
     VMINFO_DETAILS details = VMINFO_NONE;
     bool fDetails = false;
     bool fStatistics = false;
+    bool fMachinereadable = false;
     for (int i=1;i<argc;i++)
     {
         if (!strcmp(argv[i], "-details"))
@@ -1704,7 +2285,12 @@ static int handleShowVMInfo(int argc, char *argv[],
         else
         if (!strcmp(argv[i], "-statistics"))
             fStatistics = true;
+        if (!strcmp(argv[1], "-machinereadable"))
+            fMachinereadable = true;
     }
+    if (fMachinereadable)
+        details = VMINFO_MACHINEREADABLE;
+    else
     if (fDetails && fStatistics)
         details = VMINFO_FULL;
     else
@@ -2842,7 +3428,7 @@ static int handleCreateVM(int argc, char *argv[],
     }
     if (!!baseFolder && !!settingsFile)
     {
-        return errorSyntax(USAGE_CREATEVM, "Either -basefolder or -settingsfile may be specified");
+        return errorSyntax(USAGE_CREATEVM, "Either -basefolder or -settingsfile must be specified");
     }
 
     do
@@ -3836,21 +4422,21 @@ static int handleModifyVM(int argc, char *argv[],
                 rc = hostDVDs->FindByName(Bstr(dvd + 5), hostDVDDrive.asOutParam());
                 if (!hostDVDDrive)
                 {
-		    /* 2nd try: try with the real name, important on Linux+libhal */
-		    char szPathReal[RTPATH_MAX];
-		    if (VBOX_FAILURE(RTPathReal(dvd + 5, szPathReal, sizeof(szPathReal))))
-		    {
-			errorArgument("Invalid host DVD drive name");
-			rc = E_FAIL;
-			break;
-		    }
-		    rc = hostDVDs->FindByName(Bstr(szPathReal), hostDVDDrive.asOutParam());
-		    if (!hostDVDDrive)
-		    {
-			errorArgument("Invalid host DVD drive name");
-			rc = E_FAIL;
-			break;
-		    }
+                    /* 2nd try: try with the real name, important on Linux+libhal */
+                    char szPathReal[RTPATH_MAX];
+                    if (VBOX_FAILURE(RTPathReal(dvd + 5, szPathReal, sizeof(szPathReal))))
+                    {
+                        errorArgument("Invalid host DVD drive name");
+                        rc = E_FAIL;
+                        break;
+                    }
+                    rc = hostDVDs->FindByName(Bstr(szPathReal), hostDVDDrive.asOutParam());
+                    if (!hostDVDDrive)
+                    {
+                        errorArgument("Invalid host DVD drive name");
+                        rc = E_FAIL;
+                        break;
+                    }
                 }
                 CHECK_ERROR(dvdDrive, CaptureHostDrive(hostDVDDrive));
             }
@@ -4845,7 +5431,7 @@ static int handleControlVM(int argc, char *argv[],
             /* guest is running; update IGuest */
             ComPtr <IGuest> guest;
 
-            rc = console->COMGETTER(Guest)(guest.asOutParam()); 
+            rc = console->COMGETTER(Guest)(guest.asOutParam());
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
         }
@@ -4870,7 +5456,7 @@ static int handleControlVM(int argc, char *argv[],
             /* guest is running; update IGuest */
             ComPtr <IGuest> guest;
 
-            rc = console->COMGETTER(Guest)(guest.asOutParam()); 
+            rc = console->COMGETTER(Guest)(guest.asOutParam());
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(StatisticsUpdateInterval)(uVal));
         }
