@@ -1,4 +1,5 @@
-'
+' $Id$
+'' @file
 ' The purpose of this script is to check for all external tools, headers, and
 ' libraries VBox OSE depends on.
 '
@@ -17,10 +18,6 @@
 ' in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 ' distribution. VirtualBox OSE is distributed in the hope that it will
 ' be useful, but WITHOUT ANY WARRANTY of any kind.
-'
-' If you received this file as part of a commercial VirtualBox
-' distribution, then only the terms of your commercial VirtualBox
-' license agreement apply instead of the previous paragraph.
 '
 
 
