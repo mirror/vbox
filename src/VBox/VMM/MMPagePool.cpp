@@ -217,16 +217,28 @@ DECLINLINE(void *) mmr3PagePoolAlloc(PMMPAGEPOOL pPool)
      * Allocate new subpool.
      */
     unsigned        cPages = !pPool->fLow ? 128 : 32;
+#if 1
+    PMMPAGESUBPOOL  pSub;
+    int rc = MMHyperAlloc(pPool->pVM, 
+                          RT_OFFSETOF(MMPAGESUBPOOL, auBitmap[cPages / (sizeof(pSub->auBitmap[0] * 8))])
+                          + (sizeof(SUPPAGE) + sizeof(MMPPLOOKUPHCPHYS)) * cPages
+                          + sizeof(MMPPLOOKUPHCPTR),
+                          0,
+                          MM_TAG_MM_PAGE,
+                          (void **)&pSub);
+    if (VBOX_FAILURE(rc))
+        return NULL;
+#else
     PMMPAGESUBPOOL  pSub = (PMMPAGESUBPOOL)MMR3HeapAlloc(pPool->pVM, MM_TAG_MM_PAGE,
                                                          RT_OFFSETOF(MMPAGESUBPOOL, auBitmap[cPages / (sizeof(pSub->auBitmap[0] * 8))])
                                                          + (sizeof(SUPPAGE) + sizeof(MMPPLOOKUPHCPHYS)) * cPages
                                                          + sizeof(MMPPLOOKUPHCPTR));
+#endif
     if (!pSub)
         return NULL;
 
     PSUPPAGE paPhysPages = (PSUPPAGE)&pSub->auBitmap[cPages / (sizeof(pSub->auBitmap[0]) * 8)];
     Assert((uintptr_t)paPhysPages >= (uintptr_t)&pSub->auBitmap[1]);
-    int rc;
     if (!pPool->fLow)
     {
         /*
