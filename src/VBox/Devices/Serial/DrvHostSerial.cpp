@@ -1,4 +1,4 @@
-/** $Id: $ */
+/** $Id$ */
 /** @file
  * VBox stream I/O devices: Host serial driver
  *
