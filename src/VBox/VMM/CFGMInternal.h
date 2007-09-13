@@ -137,7 +137,7 @@ typedef struct CFGM
     RTUINT                  uPadding0;
 
     /** Pointer to root node. */
-    HCPTRTYPE(PCFGMNODE)    pRoot;
+    R3PTRTYPE(PCFGMNODE)    pRoot;
 } CFGM;
 
 /** @} */
