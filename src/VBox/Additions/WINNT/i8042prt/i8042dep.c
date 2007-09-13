@@ -1339,8 +1339,7 @@ Return Value:
     if (VBOX_FAILURE(vboxRC))
     {
         dprintf(("i8042prt::DriverEntry: could not initialize guest library, rc = %Vrc\n", vboxRC));
-        status = STATUS_UNSUCCESSFUL;
-        goto I8042InitializeExit;
+        /* Continue working in non-VBox mode. */
     }
     else
     {
@@ -1374,8 +1373,7 @@ Return Value:
             VbglTerminate ();
             
             dprintf(("i8042prt::DriverEntry: could not allocate request buffer, rc = %Vrc\n", vboxRC));
-            status = STATUS_UNSUCCESSFUL;
-            goto I8042InitializeExit;
+            /* Continue working in non-VBox mode. */
         }
     }
 // VBOX end
