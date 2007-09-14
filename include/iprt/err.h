@@ -147,6 +147,14 @@ RTDECL(int)  RTErrConvertFromOS2(unsigned uNativeCode);
  */
 RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
 
+/**
+ * Converts an iprt status code to a Posix error code.
+ *
+ * @returns a Posix error code.
+ * @param   iErr    iprt status code.
+ */
+RTDECL(unsigned)  RTErrnoConvertFromErr(int iErr);
+
 
 #ifdef IN_RING3
 

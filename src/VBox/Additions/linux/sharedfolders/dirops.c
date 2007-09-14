@@ -490,22 +490,7 @@ sf_unlink_aux (struct inode *parent, struct dentry *dentry, int dirop)
         if (VBOX_FAILURE (rc)) {
                 LogFunc(("(%d): vboxCallRemove(%s) failed rc=%Vrc\n", dirop,
                          path->String.utf8, rc));
-
-                switch (rc) {
-                        case VERR_PATH_NOT_FOUND:
-                                err = -ENOENT;
-                                break;
-
-                        case VERR_DIR_NOT_EMPTY:
-                                err = -ENOTEMPTY;
-                                break;
-
-                        default:
-                                err = -EPROTO;
-                                LogFunc(("(%d): vboxCallRemove(%s) failed rc=%Vrc\n", dirop,
-                                         path->String.utf8, rc));
-                                break;
-                }
+                         err = -RTErrnoConvertFromErr(rc);
                 goto fail1;
         }
 
@@ -575,25 +560,7 @@ sf_rename (struct inode *old_parent, struct dentry *old_dentry,
                                 sf_file_i->path = new_path;
                         } else {
                                 LogFunc(("vboxCallRename failed rc=%Vrc\n", rc));
-                                switch (rc) {
-                                /** @todo we need a function to convert VBox error
-                                    codes back to Linux. */
-                                case VERR_ACCESS_DENIED:
-                                        err = -EACCES;
-                                        break;
-                                case VERR_DEV_IO_ERROR:
-                                        err = -EBUSY;
-                                        break;
-                                case VERR_INVALID_POINTER:
-                                        err = -EFAULT;
-                                        break;
-                                case VERR_FILE_NOT_FOUND:
-                                case VERR_PATH_NOT_FOUND:
-                                        err = -ENOENT;
-                                        break;
-                                default:
-                                        err = -EPROTO;
-                                }
+                                err = -RTErrnoConvertFromErr(err);
                         }
                         if (0 != err) {
                                 kfree (new_path);
