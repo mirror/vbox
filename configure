@@ -1151,28 +1151,28 @@ show_help()
 Usage: ./configure [OPTIONS]...
 
 Configuration:
-  -h, --help              display this help and exit
-  --nofatal               don't abort on errors
-  --disable-xpcom         disable XPCOM and related stuff
-  --disable-sdl-ttf       disable SDL_ttf detection
-  --build-xalan           build xalan & xerces from shipped sources
+  -h, --help               display this help and exit
+  --nofatal                don't abort on errors
+  --disable-xpcom          disable XPCOM and related stuff
+  --disable-sdl-ttf        disable SDL_ttf detection
+  --build-xalan            build xalan & xerces from shipped sources
 
 Paths:
-  --with-gcc=PATH         location of the gcc compiler [$CC]
-  --with-g++=PATH         location of the g++ compiler [$CXX]
-  --with-kbuild=DIR       kbuild directory [$KBUILDDIR]
-  --with-iasl=PATH        location of the iasl compiler [$IASL]
-  --with-linux=DIR        Linux kernel source directory [$LINUX]
-  --with-mkisofs=PATH     location of mkisofs [$MKISOFS]
-  --with-qt-dir=DIR       directory for QT headers/libraries [$QTDIR]
-  --with-xalan=LIB        location of the xalan library [$LIBXALAN]
-  --with-xalan-inc=DIR    location of the xalan headers [$INCXALAN]
-  --with-xerces=LIB       location of the xerces library [$LIBXERCES]
-  --with-xerces-inc=DIR   location of the xerces headers [$INCXERCES]
+  --with-gcc=PATH          location of the gcc compiler [$CC]
+  --with-g++=PATH          location of the g++ compiler [$CXX]
+  --with-kbuild=DIR        kbuild directory [$KBUILDDIR]
+  --with-iasl=PATH         location of the iasl compiler [$IASL]
+  --with-linux=DIR         Linux kernel source directory [$LINUX]
+  --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
+  --with-qt-dir=DIR        directory for QT headers/libraries [$QTDIR]
+  --with-xalan=LIB         location of the xalan library [$LIBXALAN]
+  --with-xalan-incdir=DIR  location of the xalan headers [$INCXALAN]
+  --with-xerces=LIB        location of the xerces library [$LIBXERCES]
+  --with-xerces-incdir=DIR location of the xerces headers [$INCXERCES]
 
 Build type:
-  -d, --build-debug       build with debugging symbols and assertions
-  --build-headless        build headless (without any X11 frontend)
+  -d, --build-debug        build with debugging symbols and assertions
+  --build-headless         build headless (without any X11 frontend)
 EOF
   exit 0
 }
@@ -1183,7 +1183,7 @@ EOF
 #
 
 # scan command line options
-for option in "$*"; do
+for option in $*; do
   case "$option" in
     --help|-help|-h)
       show_help
@@ -1219,13 +1219,19 @@ for option in "$*"; do
     --with-xalan=*)
       LIBXALAN=`echo $option | cut -d'=' -f2`
       ;;
-    --with-xalan-inc=*)
+    --with-xalan-libdir=*)
+      LIBXALAN_DIR=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-xalan-incdir=*)
       INCXALAN=`echo $option | cut -d'=' -f2`
       ;;
     --with-xerces=*)
       LIBXERCES=`echo $option | cut -d'=' -f2`
       ;;
-    --with-xserces-inc=*)
+    --with-xerces-libdir=*)
+      LIBXERCES_DIR=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-xerces-incdir=*)
       INCXERCES=`echo $option | cut -d'=' -f2`
       ;;
     --disable-xpcom)
@@ -1261,6 +1267,9 @@ for option in "$*"; do
       ;;
   esac
 done
+
+[ -n "$LIBXALAN_DIR" ] && LIBXALAN="-L$LIBXALAN_DIR $LIBXALAN"
+[ -n "$LIBXERCES_DIR" ] && LIBXERCES="-L$LIBXERCES_DIR $LIBXERCES"
 
 LOG="$ODIR$LOG"
 ENV="$ODIR$ENV"
