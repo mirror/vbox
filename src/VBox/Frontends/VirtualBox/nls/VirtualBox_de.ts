@@ -753,7 +753,7 @@
     </message>
     <message>
         <source>Virtual Disk Manager</source>
-        <translation>Manager für virtuelle Laufwerke</translation>
+        <translation>Manager für virtuelle Medien</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
@@ -2702,7 +2702,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation>Strg+L</translation>
+        <translation>Strg+M</translation>
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
@@ -2751,7 +2751,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>Än&amp;dern...</translation>
+        <translation type="unfinished">Änd&amp;ern...</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -2759,7 +2759,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation>Strg+D</translation>
+        <translation>Strg+E</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
