@@ -60,7 +60,7 @@ __END_DECLS
  * safe when more than one VM is running or when using internal
  * networking. */
 #if defined(DEBUG_sandervl) /*|| defined(DEBUG_bird)*/
-#define DEBUG_NO_RING0_ASSERTIONS
+# define DEBUG_NO_RING0_ASSERTIONS
 #endif
 #ifdef DEBUG_NO_RING0_ASSERTIONS
 static PVM g_pVMAssert = 0;
@@ -411,18 +411,21 @@ static void vmmR0RecordRC(PVM pVM, int rc)
 #endif /* VBOX_WITH_STATISTICS */
 
 
+
 /**
- * The Ring 0 entry point, called by the support library (SUP).
+ * The Ring 0 entry point, called by the interrupt gate.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   uOperation  Which operation to execute. (VMMR0OPERATION)
- * @param   pvArg       Argument to the operation.
+ * @param   pVM             The VM to operate on.
+ * @param   enmOperation    Which operation to execute.
+ * @param   pvArg           Argument to the operation.
+ * @remarks Assume called with interrupts disabled.
  */
-VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, void *pvArg)
+VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
 {
-    switch (uOperation)
+    switch (enmOperation)
     {
+#ifndef VBOX_WITHOUT_IDT_PATCHING
         /*
          * Switch to GC.
          * These calls return whatever the GC returns.
@@ -443,63 +446,45 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
 #endif
 
             /*
-             * Check if there is an exit R0 action associated with the return code.
+             * We'll let TRPM change the stack frame so our return is different.
+             * Just keep in mind that after the call, things have changed!
              */
-            switch (rc)
+            if (    rc == VINF_EM_RAW_INTERRUPT
+                ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
             {
                 /*
-                 * Default - no action, just return.
+                 * Don't trust the compiler to get this right.
+                 * gcc -fomit-frame-pointer screws up big time here. This works fine in 64-bit
+                 * mode too because we push the arguments on the stack in the IDT patch code.
                  */
-                default:
-                    return rc;
-
-                /*
-                 * We'll let TRPM change the stack frame so our return is different.
-                 * Just keep in mind that after the call, things have changed!
-                 */
-                case VINF_EM_RAW_INTERRUPT:
-                case VINF_EM_RAW_INTERRUPT_HYPER:
-                {
-#ifdef VBOX_WITHOUT_IDT_PATCHING
-                    TRPMR0DispatchHostInterrupt(pVM);
-#else /* !VBOX_WITHOUT_IDT_PATCHING */
-                    /*
-                     * Don't trust the compiler to get this right.
-                     * gcc -fomit-frame-pointer screws up big time here. This works fine in 64-bit
-                     * mode too because we push the arguments on the stack in the IDT patch code.
-                     */
 # if defined(__GNUC__)
-                    void *pvRet = (uint8_t *)__builtin_frame_address(0) + sizeof(void *);
+                void *pvRet = (uint8_t *)__builtin_frame_address(0) + sizeof(void *);
 # elif defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
-                    void *pvRet = (uint8_t *)_AddressOfReturnAddress();
+                void *pvRet = (uint8_t *)_AddressOfReturnAddress();
 # elif defined(RT_ARCH_X86)
-                    void *pvRet = (uint8_t *)&pVM - sizeof(pVM);
+                void *pvRet = (uint8_t *)&pVM - sizeof(pVM);
 # else
 #  error "huh?"
 # endif
-                    if (    ((uintptr_t *)pvRet)[1] == (uintptr_t)pVM
-                        &&  ((uintptr_t *)pvRet)[2] == (uintptr_t)uOperation
-                        &&  ((uintptr_t *)pvRet)[3] == (uintptr_t)pvArg)
-                        TRPMR0SetupInterruptDispatcherFrame(pVM, pvRet);
-                    else
-                    {
+                if (    ((uintptr_t *)pvRet)[1] == (uintptr_t)pVM
+                    &&  ((uintptr_t *)pvRet)[2] == (uintptr_t)enmOperation
+                    &&  ((uintptr_t *)pvRet)[3] == (uintptr_t)pvArg)
+                    TRPMR0SetupInterruptDispatcherFrame(pVM, pvRet);
+                else
+                {
 # if defined(DEBUG) || defined(LOG_ENABLED)
-                        static bool  s_fHaveWarned = false;
-                        if (!s_fHaveWarned)
-                        {
-                             s_fHaveWarned = true;
-                             //RTLogPrintf("VMMR0.r0: The compiler can't find the stack frame!\n"); -- @todo export me!
-                             RTLogComPrintf("VMMR0.r0: The compiler can't find the stack frame!\n");
-                        }
-# endif
-                        TRPMR0DispatchHostInterrupt(pVM);
+                    static bool  s_fHaveWarned = false;
+                    if (!s_fHaveWarned)
+                    {
+                         s_fHaveWarned = true;
+                         //RTLogPrintf("VMMR0.r0: The compiler can't find the stack frame!\n"); -- @todo export me!
+                         RTLogComPrintf("VMMR0.r0: The compiler can't find the stack frame!\n");
                     }
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
-                    return rc;
+# endif
+                    TRPMR0DispatchHostInterrupt(pVM);
                 }
             }
-            /* Won't get here! */
-            break;
+            return rc;
         }
 
         /*
@@ -507,12 +492,8 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
          */
         case VMMR0_DO_HWACC_RUN:
         {
-            int rc;
-            RTCCUINTREG fFlags;
-
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
-            fFlags = ASMIntDisableFlags();
-            rc = HWACCMR0Enable(pVM);
+            int rc = HWACCMR0Enable(pVM);
             if (VBOX_SUCCESS(rc))
             {
 #ifdef DEBUG_NO_RING0_ASSERTIONS
@@ -526,7 +507,6 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
                 AssertRC(rc2);
             }
             pVM->vmm.s.iLastGCRc = rc;
-            ASMSetFlags(fFlags);
 
 #ifdef VBOX_WITH_STATISTICS
             vmmR0RecordRC(pVM, rc);
@@ -542,6 +522,183 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
         {
             RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = VMMR0Init(pVM, (unsigned)(uintptr_t)pvArg);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
+
+        /*
+         * Terminate the R0 part of a VM instance.
+         */
+        case VMMR0_DO_VMMR0_TERM:
+        {
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = VMMR0Term(pVM);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
+
+        /*
+         * Setup the hardware accelerated raw-mode session.
+         */
+        case VMMR0_DO_HWACC_SETUP_VM:
+        {
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = HWACCMR0SetupVMX(pVM);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
+
+        /*
+         * Switch to GC to execute Hypervisor function.
+         */
+        case VMMR0_DO_CALL_HYPERVISOR:
+        {
+            /* Safety precaution as VMX disables the switcher. */
+            Assert(!pVM->vmm.s.fSwitcherDisabled);
+            if (pVM->vmm.s.fSwitcherDisabled)
+                return VERR_NOT_SUPPORTED;
+
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
+
+        /*
+         * For profiling.
+         */
+        case VMMR0_DO_NOP:
+            return VINF_SUCCESS;
+#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+
+        default:
+            /*
+             * We're returning VERR_NOT_SUPPORT here so we've got something else
+             * than -1 which the interrupt gate glue code might return.
+             */
+            Log(("operation %#x is not supported\n", enmOperation));
+            return VERR_NOT_SUPPORTED;
+    }
+}
+
+
+/**
+ * The Ring 0 entry point, called by the fast-ioctl path.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM to operate on.
+ * @param   enmOperation    Which operation to execute.
+ * @remarks Assume called with interrupts disabled.
+ */
+VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
+{
+    switch (enmOperation)
+    {
+        /*
+         * Switch to GC and run guest raw mode code.
+         */
+        case VMMR0_DO_RAW_RUN:
+        {
+            /* Safety precaution as VMX disables the switcher. */
+            if (RT_LIKELY(!pVM->vmm.s.fSwitcherDisabled))
+            {
+                int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+                pVM->vmm.s.iLastGCRc = rc;
+
+                if (    rc == VINF_EM_RAW_INTERRUPT
+                    ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
+                    TRPMR0DispatchHostInterrupt(pVM);
+
+#ifdef VBOX_WITH_STATISTICS
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+                vmmR0RecordRC(pVM, rc);
+#endif
+                return rc;
+            }
+
+            Assert(!pVM->vmm.s.fSwitcherDisabled);
+            return VERR_NOT_SUPPORTED;
+        }
+
+        /*
+         * Run guest code using the available hardware acceleration technology.
+         */
+        case VMMR0_DO_HWACC_RUN:
+        {
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+            int rc = HWACCMR0Enable(pVM);
+            if (VBOX_SUCCESS(rc))
+            {
+#ifdef DEBUG_NO_RING0_ASSERTIONS
+                g_pVMAssert = pVM;
+#endif
+                rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM); /* this may resume code. */
+#ifdef DEBUG_NO_RING0_ASSERTIONS
+                g_pVMAssert = NULL;
+#endif
+                int rc2 = HWACCMR0Disable(pVM);
+                AssertRC(rc2);
+            }
+            pVM->vmm.s.iLastGCRc = rc;
+
+#ifdef VBOX_WITH_STATISTICS
+            vmmR0RecordRC(pVM, rc);
+#endif
+            /* No special action required for external interrupts, just return. */
+            return rc;
+        }
+
+        /*
+         * For profiling.
+         */
+        case VMMR0_DO_NOP:
+            return VINF_SUCCESS;
+
+        /*
+         * Impossible.
+         */
+        default:
+            AssertMsgFailed(("%#x\n", enmOperation));
+            return VERR_NOT_SUPPORTED;
+    }
+}
+
+
+/**
+ * The Ring 0 entry point, called by the support library (SUP).
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM to operate on.
+ * @param   enmOperation    Which operation to execute.
+ * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
+ * @param   u64Arg          Some simple constant argument.
+ * @remarks Assume called with interrupts _enabled_.
+ */
+VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg)
+{
+    switch (enmOperation)
+    {
+#if 1 /* disable later? */
+        /*
+         * Alternative to the fast path, all we need to do is disable interrupts.
+         */
+        case VMMR0_DO_RAW_RUN:
+        case VMMR0_DO_HWACC_RUN:
+        {
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = VMMR0EntryFast(pVM, enmOperation);
+            ASMSetFlags(fFlags);
+            return rc;
+        }
+#endif
+
+        /*
+         * Initialize the R0 part of a VM instance.
+         */
+        case VMMR0_DO_VMMR0_INIT:
+        {
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            int rc = VMMR0Init(pVM, (unsigned)u64Arg);
             ASMSetFlags(fFlags);
             return rc;
         }
@@ -602,11 +759,11 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
             return GMMR0FreeMapUnmapChunk(pVM, ...);
         case VMMR0_DO_GMM_SEED_CHUNK:
             return GMMR0SeedChunk(pVM, (RTR3PTR)pvArg);
-#endif 
+#endif
 
 
 
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
+#if 0//def VBOX_WITH_INTERNAL_NETWORKING - currently busted
         /*
          * Services.
          */
@@ -634,7 +791,7 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
             /*
              * Unpack the arguments and call the service.
              */
-            switch (uOperation)
+            switch (enmOperation)
             {
                 case VMMR0_DO_INTNET_OPEN:
                 {
@@ -697,10 +854,12 @@ VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, vo
              * We're returning VERR_NOT_SUPPORT here so we've got something else
              * than -1 which the interrupt gate glue code might return.
              */
-            Log(("operation %#x is not supported\n", uOperation));
+            Log(("operation %#x is not supported\n", enmOperation));
             return VERR_NOT_SUPPORTED;
     }
 }
+
+
 
 
 /**

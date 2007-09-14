@@ -127,7 +127,7 @@ PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 
 /**
  * Invalidates the GC page mapping TLB.
- * 
+ *
  * @param   pVM     The VM handle.
  */
 PDMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
@@ -139,7 +139,7 @@ PDMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
 
 /**
  * Invalidates the ring-0 page mapping TLB.
- * 
+ *
  * @param   pVM     The VM handle.
  */
 PDMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM)
@@ -150,7 +150,7 @@ PDMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM)
 
 /**
  * Invalidates the ring-3 page mapping TLB.
- * 
+ *
  * @param   pVM     The VM handle.
  */
 PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
@@ -170,15 +170,15 @@ PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
 
 /**
  * Makes sure that there is at least one handy page ready for use.
- * 
+ *
  * This will also take the appropriate actions when reaching water-marks.
- * 
+ *
  * @returns The following VBox status codes.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_EM_NO_MEMORY if we're really out of memory.
- * 
+ *
  * @param   pVM     The VM handle.
- * 
+ *
  * @remarks Must be called from within the PGM critical section. It may
  *          nip back to ring-3/0 in some cases.
  */
@@ -193,28 +193,28 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
      *      - 75%: Set FF.
      *      - 50%: Try allocate pages; on failure we'll force REM to quite ASAP.
      *
-     * The basic idea is that we should be able to get out of any situation with 
+     * The basic idea is that we should be able to get out of any situation with
      * only 50% of handy pages remaining.
      *
-     * At the moment we'll not adjust the number of handy pages relative to the 
+     * At the moment we'll not adjust the number of handy pages relative to the
      * actual VM RAM committment, that's too much work for now.
      */
     Assert(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages));
     if (    !pVM->pgm.s.cHandyPages
 #ifdef IN_RING3
         ||   pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages) / 2 /* 50% */
-#endif 
+#endif
        )
     {
         Log(("PGM: cHandyPages=%u out of %u -> allocate more\n", pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
 #ifdef IN_RING3
-        int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, NULL, 0);
+        int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
 #elif defined(IN_RING0)
         /** @todo call PGMR0PhysAllocateHandyPages directly - need to make sure we can call kernel code first and deal with the seeding fallback. */
         int rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
 #else
         int rc = VMMGCCallHost(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
-#endif 
+#endif
         if (RT_UNLIKELY(rc != VINF_SUCCESS))
         {
             Assert(rc == VINF_EM_NO_MEMORY);
@@ -241,7 +241,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
             Log(("PGM: VM_FF_TO_R3 - cHandyPages=%u out of %u\n", pVM->pgm.s.cHandyPages - 1 <= RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
             VM_FF_SET(pVM, VM_FF_TO_R3);
         }
-#endif 
+#endif
     }
 
     return VINF_SUCCESS;
@@ -254,19 +254,19 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
  * @returns The following VBox status codes.
  * @retval  VINF_SUCCESS on success, pPage is modified.
  * @retval  VERR_EM_NO_MEMORY if we're totally out of memory.
- * 
+ *
  * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
  *
  * @param   pVM         The VM address.
- * @param   pPage       The physical page tracking structure. This will 
- *                      be modified on success. 
+ * @param   pPage       The physical page tracking structure. This will
+ *                      be modified on success.
  * @param   GCPhys      The address of the page.
  *
  * @remarks Must be called from within the PGM critical section. It may
  *          nip back to ring-3/0 in some cases.
- * 
- * @remarks This function shouldn't really fail, however if it does 
- *          it probably means we've screwed up the size of the amount 
+ *
+ * @remarks This function shouldn't really fail, however if it does
+ *          it probably means we've screwed up the size of the amount
  *          and/or the low-water mark of handy pages. Or, that some
  *          device I/O is causing a lot of pages to be allocated while
  *          while the host is in a low-memory condition.
@@ -308,7 +308,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         Assert(PGM_PAGE_GET_PAGEID(pPage) != NIL_GMM_PAGEID);
         VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
 
-        Log2(("PGM: Replaced shared page %#x at %RGp with %#x / %RHp\n", PGM_PAGE_GET_PAGEID(pPage), 
+        Log2(("PGM: Replaced shared page %#x at %RGp with %#x / %RHp\n", PGM_PAGE_GET_PAGEID(pPage),
               GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
         STAM_COUNTER_INC(&pVM->pgm.s.StatPageReplaceShared);
         pVM->pgm.s.cSharedPages--;
@@ -522,9 +522,9 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
  * This API should only be used for very short term, as it will consume
  * scarse resources (R0 and GC) in the mapping cache. When you're done
  * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
- * 
- * This API will assume your intention is to write to the page, and will 
- * therefore replace shared and zero pages. If you do not intend to modify 
+ *
+ * This API will assume your intention is to write to the page, and will
+ * therefore replace shared and zero pages. If you do not intend to modify
  * the page, use the PGMPhysGCPhys2CCPtrReadOnly() API.
  *
  * @returns VBox status code.
@@ -638,8 +638,8 @@ PGMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void * const 
  * scarse resources (R0 and GC) in the mapping cache. When you're done
  * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
  *
- * This API will assume your intention is to write to the page, and will 
- * therefore replace shared and zero pages. If you do not intend to modify 
+ * This API will assume your intention is to write to the page, and will
+ * therefore replace shared and zero pages. If you do not intend to modify
  * the page, use the PGMPhysGCPtr2CCPtrReadOnly() API.
  *
  * @returns VBox status code.
@@ -703,7 +703,7 @@ PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void * const *pp
 
 /**
  * Release the mapping of a guest page.
- * 
+ *
  * This is the counter part of PGMPhysGCPhys2CCPtr, PGMPhysGCPhys2CCPtrReadOnly
  * PGMPhysGCPtr2CCPtr and PGMPhysGCPtr2CCPtrReadOnly.
  *

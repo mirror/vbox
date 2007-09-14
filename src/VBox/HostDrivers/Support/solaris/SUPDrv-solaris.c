@@ -485,12 +485,10 @@ static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cr
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
      */
-#ifdef VBOX_WITHOUT_IDT_PATCHING
     if (    Cmd == SUP_IOCTL_FAST_DO_RAW_RUN
         ||  Cmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  Cmd == SUP_IOCTL_FAST_DO_NOP)
         return supdrvIOCtlFast(Cmd, &g_DevExt, pSession);
-#endif
 
     return VBoxDrvSolarisIOCtlSlow(pSession, Cmd, Mode, pArgs);
 }

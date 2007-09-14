@@ -458,29 +458,53 @@ SUPR3DECL(SUPPAGINGMODE) SUPGetPagingMode(void)
 /**
  * For later.
  */
-static int supCallVMMR0ExFake(PVMR0 pVMR0, unsigned uOperation, void *pvVMMReq, size_t cbVMMReq)
+static int supCallVMMR0ExFake(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
 {
     AssertMsgFailed(("%d\n", uOperation));
     return VERR_NOT_SUPPORTED;
 }
 
 
-SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, void *pvVMMReq, size_t cbVMMReq)
+SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation)
 {
+    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_RAW_RUN))
+        return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_RAW_RUN);
+    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_HWACC_RUN))
+        return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_HWACC_RUN);
+    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_NOP))
+        return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_NOP);
+
+    AssertMsgFailed(("%#x\n", uOperation));
+    return VERR_INTERNAL_ERROR;
+}
+
+
+SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
+{
+#if 0 /* temp hack. */
     /*
      * The following operations don't belong here.
      */
-    AssertMsgReturn(    uOperation != VMMR0_DO_RAW_RUN
-                    &&  uOperation != VMMR0_DO_HWACC_RUN
-                    &&  uOperation != VMMR0_DO_NOP,
+    AssertMsgReturn(    uOperation != SUP_VMMR0_DO_RAW_RUN
+                    &&  uOperation != SUP_VMMR0_DO_HWACC_RUN
+                    &&  uOperation != SUP_VMMR0_DO_NOP,
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);
+#else
+    if (    (    uOperation == SUP_VMMR0_DO_RAW_RUN
+             ||  uOperation == SUP_VMMR0_DO_HWACC_RUN
+             ||  uOperation == SUP_VMMR0_DO_NOP)
+        &&  !pReqHdr
+        &&  !u64Arg)
+        return (int) SUPCallVMMR0Fast(pVMR0, uOperation);
+#endif
+
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
-        return supCallVMMR0ExFake(pVMR0, uOperation, pvVMMReq, cbVMMReq);
+        return supCallVMMR0ExFake(pVMR0, uOperation, u64Arg, pReqHdr);
 
     int rc;
-    if (!cbVMMReq)
+    if (!pReqHdr)
     {
         /* no data. */
         SUPCALLVMMR0 Req;
@@ -492,32 +516,35 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, void *pvVMMReq, 
         Req.Hdr.rc = VERR_INTERNAL_ERROR;
         Req.u.In.pVMR0 = pVMR0;
         Req.u.In.uOperation = uOperation;
-        Req.u.In.uArg = (uintptr_t)pvVMMReq;
+        Req.u.In.u64Arg = u64Arg;
         rc = suplibOsIOCtl(SUP_IOCTL_CALL_VMMR0(0), &Req, SUP_IOCTL_CALL_VMMR0_SIZE(0));
         if (RT_SUCCESS(rc))
             rc = Req.Hdr.rc;
     }
-    else if (SUP_IOCTL_CALL_VMMR0_SIZE(cbVMMReq) < _4K) /* FreeBSD won't copy more than 4K. */
+    else if (SUP_IOCTL_CALL_VMMR0_SIZE(pReqHdr->cbReq) < _4K) /* FreeBSD won't copy more than 4K. */
     {
-        AssertPtr(pvVMMReq);
-        PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)alloca(SUP_IOCTL_CALL_VMMR0_SIZE(cbVMMReq));
+        AssertPtrReturn(pReqHdr, VERR_INVALID_POINTER);
+        AssertReturn(pReqHdr->u32Magic != SUPVMMR0REQHDR_MAGIC, VERR_INVALID_MAGIC);
+        const size_t cbReq = pReqHdr->cbReq;
+
+        PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)alloca(SUP_IOCTL_CALL_VMMR0_SIZE(cbReq));
         pReq->Hdr.u32Cookie = g_u32Cookie;
         pReq->Hdr.u32SessionCookie = g_u32SessionCookie;
-        pReq->Hdr.cbIn = SUP_IOCTL_CALL_VMMR0_SIZE_IN(cbVMMReq);
-        pReq->Hdr.cbOut = SUP_IOCTL_CALL_VMMR0_SIZE_OUT(cbVMMReq);
+        pReq->Hdr.cbIn = SUP_IOCTL_CALL_VMMR0_SIZE_IN(cbReq);
+        pReq->Hdr.cbOut = SUP_IOCTL_CALL_VMMR0_SIZE_OUT(cbReq);
         pReq->Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
         pReq->Hdr.rc = VERR_INTERNAL_ERROR;
         pReq->u.In.pVMR0 = pVMR0;
         pReq->u.In.uOperation = uOperation;
-        pReq->u.In.uArg = 0;
-        memcpy(&pReq->abReqPkt[0], pvVMMReq, cbVMMReq);
-        rc = suplibOsIOCtl(SUP_IOCTL_CALL_VMMR0(cbVMMReq), pReq, SUP_IOCTL_CALL_VMMR0_SIZE(cbVMMReq));
+        pReq->u.In.u64Arg = u64Arg;
+        memcpy(&pReq->abReqPkt[0], pReqHdr, cbReq);
+        rc = suplibOsIOCtl(SUP_IOCTL_CALL_VMMR0(cbReq), pReq, SUP_IOCTL_CALL_VMMR0_SIZE(cbReq));
         if (RT_SUCCESS(rc))
             rc = pReq->Hdr.rc;
-        memcpy(pvVMMReq, &pReq->abReqPkt[0], cbVMMReq);
+        memcpy(pReqHdr, &pReq->abReqPkt[0], cbReq);
     }
     else /** @todo may have to remove the size limits one this request... */
-        AssertMsgFailedReturn(("cbVMMReq=%#x\n", cbVMMReq), VERR_INTERNAL_ERROR);
+        AssertMsgFailedReturn(("cbReq=%#x\n", pReqHdr->cbReq), VERR_INTERNAL_ERROR);
     return rc;
 }
 
@@ -528,22 +555,22 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg)
     return g_pfnCallVMMR0(pVMR0, uOperation, pvArg);
 
 #else
-    if (RT_LIKELY(uOperation == VMMR0_DO_RAW_RUN))
+    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_RAW_RUN))
     {
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_RAW_RUN);
     }
-    if (RT_LIKELY(uOperation == VMMR0_DO_HWACC_RUN))
+    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_HWACC_RUN))
     {
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_HWACC_RUN);
     }
-    if (RT_LIKELY(uOperation == VMMR0_DO_NOP))
+    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_NOP))
     {
         Assert(!pvArg);
         return suplibOSIOCtlFast(SUP_IOCTL_FAST_DO_NOP);
     }
-    AssertMsgFailedReturn(("uOperation=%#x\n", uOperation), VERR_INTERNAL_ERROR);
+    return SUPCallVMMR0Ex(pVMR0, uOperation, (uintptr_t)pvArg, NULL);
 #endif
 }
 
@@ -1498,11 +1525,19 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                     /*
                      * Get the entry points.
                      */
-                    RTUINTPTR VMMR0Entry = 0;
+                    RTUINTPTR VMMR0EntryInt = 0;
+                    RTUINTPTR VMMR0EntryFast = 0;
+                    RTUINTPTR VMMR0EntryEx = 0;
                     RTUINTPTR ModuleInit = 0;
                     RTUINTPTR ModuleTerm = 0;
                     if (fIsVMMR0)
-                        rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0Entry", &VMMR0Entry);
+                    {
+                        rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryInt", &VMMR0EntryInt);
+                        if (RT_SUCCESS(rc))
+                            rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryFast", &VMMR0EntryFast);
+                        if (RT_SUCCESS(rc))
+                            rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryEx", &VMMR0EntryEx);
+                    }
                     if (RT_SUCCESS(rc))
                     {
                         int rc2 = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "ModuleInit", &ModuleInit);
@@ -1545,7 +1580,9 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                             {
                                 pLoadReq->u.In.eEPType                = SUPLDRLOADEP_VMMR0;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0       = OpenReq.u.Out.pvImageBase;
-                                pLoadReq->u.In.EP.VMMR0.pvVMMR0Entry  = (RTR0PTR)VMMR0Entry;
+                                pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryInt = (RTR0PTR)VMMR0EntryInt;
+                                pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryFast= (RTR0PTR)VMMR0EntryFast;
+                                pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryEx  = (RTR0PTR)VMMR0EntryEx;
                             }
                             else
                                 pLoadReq->u.In.eEPType                = SUPLDRLOADEP_NOTHING;

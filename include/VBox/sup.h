@@ -263,6 +263,18 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 #define SUPVMMR0REQHDR_MAGIC    UINT32_C(0x19730211)
 
 
+/** For the fast ioctl path.
+ * @{
+ */
+/** @see VMMR0_DO_RAW_RUN. */
+#define SUP_VMMR0_DO_RAW_RUN    0
+/** @see VMMR0_DO_HWACC_RUN. */
+#define SUP_VMMR0_DO_HWACC_RUN  1
+/** @see VMMR0_DO_NOP */
+#define SUP_VMMR0_DO_NOP        2
+/** @} */
+
+
 
 #ifdef IN_RING3
 
@@ -339,6 +351,16 @@ SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0);
 SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
 
 /**
+ * Variant of SUPCallVMMR0, except that this takes the fast ioclt path
+ * regardsless of compile-time defaults.
+ *
+ * @returns VBox status code.
+ * @param   pVMR0       The ring-0 VM handle.
+ * @param   uOperation  The operation; only the SUP_VMMR0_DO_* ones are valid.
+ */
+SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation);
+
+/**
  * Calls the HC R0 VMM entry point, in a safer but slower manner than SUPCallVMMR0.
  * When entering using this call the R0 components can call into the host kernel
  * (i.e. use the SUPR0 and RT APIs).
@@ -348,12 +370,12 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
  * @returns error code specific to uFunction.
  * @param   pVMR0       Pointer to the Ring-0 (Host Context) mapping of the VM structure.
  * @param   uOperation  Operation to execute.
- * @param   pvArg       Pointer to argument structure or if cbArg is 0 just an value.
- * @param   cbArg       The size of the argument. This is used to copy whatever the argument
- *                      points at into a kernel buffer to avoid problems like the user page
- *                      being invalidated while we're executing the call.
+ * @param   u64Arg      Constant argument.
+ * @param   pReqHdr     Pointer to a request header. Optional.
+ *                      This will be copied in and out of kernel space. There currently is a size
+ *                      limit on this, just below 4KB.
  */
-SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, void *pvArg, size_t cbArg);
+SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 
 /**
  * Queries the paging mode of the host OS.

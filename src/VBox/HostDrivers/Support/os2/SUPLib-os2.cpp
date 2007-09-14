@@ -144,7 +144,6 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 }
 
 
-#ifdef VBOX_WITHOUT_IDT_PATCHING
 int suplibOSIOCtlFast(uintptr_t uFunction)
 {
     int32_t rcRet = VERR_INTERNAL_ERROR;
@@ -158,7 +157,6 @@ int suplibOSIOCtlFast(uintptr_t uFunction)
         rc = RTErrConvertFromOS2(rc);
     return rc;
 }
-#endif
 
 
 int suplibOsPageAlloc(size_t cPages, void **ppvPages)

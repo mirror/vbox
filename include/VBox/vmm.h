@@ -20,6 +20,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/vmapi.h>
+#include <VBox/sup.h>
 #include <iprt/stdarg.h>
 
 __BEGIN_DECLS
@@ -346,10 +347,12 @@ VMMR3DECL(void) VMMR3YieldResume(PVM pVM);
 typedef enum VMMR0OPERATION
 {
     /** Run guest context. */
-    VMMR0_DO_RAW_RUN = 0,
-    VMMR0_DO_RUN_GC = VMMR0_DO_RAW_RUN,
+    VMMR0_DO_RAW_RUN = SUP_VMMR0_DO_RAW_RUN,
     /** Run guest code using the available hardware acceleration technology. */
-    VMMR0_DO_HWACC_RUN,
+    VMMR0_DO_HWACC_RUN = SUP_VMMR0_DO_HWACC_RUN,
+    /** Official NOP that we use for profiling. */
+    VMMR0_DO_NOP = SUP_VMMR0_DO_NOP,
+
     /** Call VMMR0 Per VM Init. */
     VMMR0_DO_VMMR0_INIT,
     /** Call VMMR0 Per VM Termination. */
@@ -391,8 +394,6 @@ typedef enum VMMR0OPERATION
     /** The end of the R0 service operations. */
     VMMR0_DO_SRV_END,
 
-    /** Official NOP that we use for profiling. */
-    VMMR0_DO_NOP,
     /** Official call we use for testing Ring-0 APIs. */
     VMMR0_DO_TESTS,
 
@@ -401,14 +402,37 @@ typedef enum VMMR0OPERATION
 } VMMR0OPERATION;
 
 /**
+ * The Ring 0 entry point, called by the interrupt gate.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM to operate on.
+ * @param   enmOperation    Which operation to execute.
+ * @param   pvArg           Argument to the operation.
+ * @remarks Assume called with interrupts disabled.
+ */
+VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
+
+/**
+ * The Ring 0 entry point, called by the fast-ioctl path.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM to operate on.
+ * @param   enmOperation    Which operation to execute.
+ * @remarks Assume called with interrupts disabled.
+ */
+VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
+
+/**
  * The Ring 0 entry point, called by the support library (SUP).
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   uOperation  Which operation to execute (VMMR0OPERATION).
- * @param   pvArg       Argument to the operation.
+ * @param   pVM             The VM to operate on.
+ * @param   enmOperation    Which operation to execute.
+ * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
+ * @param   u64Arg          Some simple constant argument.
+ * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0Entry(PVM pVM, unsigned /* make me an enum */ uOperation, void *pvArg);
+VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg);
 
 /**
  * Calls the ring-3 host code.

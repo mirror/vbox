@@ -387,8 +387,12 @@ typedef struct SUPLDRLOAD
                 {
                     /** The module handle (i.e. address). */
                     RTR0PTR         pvVMMR0;
-                    /** Address of VMMR0Entry function. */
-                    RTR0PTR         pvVMMR0Entry;
+                    /** Address of VMMR0EntryInt function. */
+                    RTR0PTR         pvVMMR0EntryInt;
+                    /** Address of VMMR0EntryFast function. */
+                    RTR0PTR         pvVMMR0EntryFast;
+                    /** Address of VMMR0EntryEx function. */
+                    RTR0PTR         pvVMMR0EntryEx;
                 } VMMR0;
             }               EP;
             /** Address. */
@@ -495,7 +499,7 @@ typedef struct SUPCALLVMMR0
             uint32_t        u32Reserved;
 #endif
             /** Argument to use when no request packet is supplied. */
-            RTR0UINTPTR     uArg;
+            uint64_t        u64Arg;
         } In;
     } u;
     /** The VMMR0Entry request packet. */
