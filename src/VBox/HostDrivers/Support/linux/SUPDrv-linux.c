@@ -1840,8 +1840,10 @@ void  VBOXCALL  supdrvOSGipSuspend(PSUPDRVDEVEXT pDevExt)
 unsigned VBOXCALL supdrvOSGetCPUCount(void)
 {
 #ifdef CONFIG_SMP
-# ifdef num_present_cpus
+# if defined(num_present_cpus)
     return num_present_cpus();
+# elif defined(num_online_cpus)
+    return num_online_cpus();
 # else
     return smp_num_cpus;
 # endif
