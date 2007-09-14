@@ -5,7 +5,7 @@
 
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -308,10 +308,10 @@ VMMR0_INCS     := \
 	PATM
 VMMR0_DEFS      = IN_VMM_R0 IN_RT_R0 IN_TRPM_R0 IN_CPUM_R0 IN_VM_R0 IN_TM_R0 IN_INTNET_R0 IN_HWACCM_R0 IN_EM_R0 IN_PDM_R0 IN_PGM_R0 IN_DIS_R0 IN_MM_R0 IN_SELM_R0 IN_CSAM_R0 IN_PATM_R0 IN_DBGF_R0 IN_REM_R0 IN_IOM_R0 DIS_CORE_ONLY
 ifeq ($(VBOX_LDR_FMT),pe)
-VMMR0_LDFLAGS   = -Entry:VMMR0Entry
+VMMR0_LDFLAGS   = -Entry:VMMR0EntryEx
 endif
 ifeq ($(VBOX_LDR_FMT),elf)
- VMMR0_LDFLAGS   = -e VMMR0Entry
+ VMMR0_LDFLAGS   = -e VMMR0EntryEx
 endif
 VMMR0_SYSSUFF   = .r0
 VMMR0_SOURCES   = \
