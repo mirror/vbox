@@ -1958,7 +1958,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL);
+            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL, 0);
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 

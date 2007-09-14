@@ -1417,7 +1417,7 @@ ResumeExecution:
                 }
 #ifdef VBOX_STRICT
                 if (rc != VINF_EM_RAW_EMULATE_INSTR)
-                    Log(("PGMTrap0eHandler failed with %d\n", rc));
+                    Log2(("PGMTrap0eHandler failed with %d\n", rc));
 #endif
                 /* Need to go back to the recompiler to emulate the instruction. */
                 TRPMResetTrap(pVM);
@@ -1695,11 +1695,6 @@ ResumeExecution:
 
         if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
         {
-#if 1
-            /** @todo the ring 3 emulation somehow causes the host to hang during e.g. nt4 installation; fall back to the recompiler */
-            rc = VINF_EM_RAW_EMULATE_INSTR;
-            break;
-#else 
             /* ins/outs */
             uint32_t prefix = 0;
             if (VMX_EXIT_QUALIFICATION_IO_REP(exitQualification))
@@ -1717,7 +1712,6 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
             }
-#endif
         }
         else
         {

@@ -1217,11 +1217,6 @@ ResumeExecution:
 
         if (IoExitInfo.n.u1STR)
         {
-#if 1
-            /** @todo the ring 3 emulation somehow causes the host to hang during e.g. nt4 installation; fall back to the recompiler */
-            rc = VINF_EM_RAW_EMULATE_INSTR;
-            break;
-#else
             /* ins/outs */
             uint32_t prefix = 0;
             if (IoExitInfo.n.u1REP)
@@ -1239,7 +1234,6 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
-#endif
         }
         else
         {
