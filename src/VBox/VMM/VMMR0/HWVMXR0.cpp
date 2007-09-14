@@ -1035,10 +1035,12 @@ ResumeExecution:
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
     if (pVM->hwaccm.s.vmx.fResumeVM == false)
         rc = VMXStartVM(pCtx);
     else
         rc = VMXResumeVM(pCtx);
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
 
     /* In case we execute a goto ResumeExecution later on. */
     pVM->hwaccm.s.vmx.fResumeVM = true;
@@ -1955,6 +1957,7 @@ HWACCMR0DECL(int) VMXR0Enable(PVM pVM)
         VMXDisable();
         return rc;
     }
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
     pVM->hwaccm.s.vmx.fResumeVM = false;
     return VINF_SUCCESS;
 }
@@ -1969,6 +1972,8 @@ HWACCMR0DECL(int) VMXR0Enable(PVM pVM)
 HWACCMR0DECL(int) VMXR0Disable(PVM pVM)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
+
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
     int rc = VMXClearVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
