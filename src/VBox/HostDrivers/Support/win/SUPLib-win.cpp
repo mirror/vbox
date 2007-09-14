@@ -624,7 +624,7 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 
 
 #ifdef VBOX_WITHOUT_IDT_PATCHING
-int suplibOSIOCtlFast(unsigned uFunction)
+int suplibOSIOCtlFast(uintptr_t uFunction)
 {
     /*
      * Issue device I/O control.
