@@ -536,72 +536,70 @@ static int
 sf_rename (struct inode *old_parent, struct dentry *old_dentry,
            struct inode *new_parent, struct dentry *new_dentry)
 {
-        int err, rc;
+        int err = 0, rc = VINF_SUCCESS;
         struct sf_glob_info *sf_g = GET_GLOB_INFO (old_parent->i_sb);
-        struct sf_inode_info *sf_old_i = GET_INODE_INFO (old_parent);
-        struct sf_inode_info *sf_new_i = GET_INODE_INFO (new_parent);
-        SHFLSTRING *old_path;
-        SHFLSTRING *new_path;
-        int is_dir = ((old_dentry->d_inode->i_mode & S_IFDIR) != 0);
 
         TRACE ();
-        BUG_ON (!sf_old_i);
-        BUG_ON (!sf_new_i);
 
         if (sf_g != GET_GLOB_INFO (new_parent->i_sb)) {
                 LogFunc(("rename with different roots\n"));
-                return -EINVAL;
-        }
+                err = -EINVAL;
+        } else {
+                struct sf_inode_info *sf_old_i = GET_INODE_INFO (old_parent);
+                struct sf_inode_info *sf_new_i = GET_INODE_INFO (new_parent);
+                /* As we save the relative path inside the inode structure, we need to change
+                  this if the rename is successful. */
+                struct sf_inode_info *sf_file_i = GET_INODE_INFO (old_dentry->d_inode);
+                SHFLSTRING *old_path;
+                SHFLSTRING *new_path;
 
-        err = sf_path_from_dentry (__func__, sf_g, sf_old_i,
-                                   old_dentry, &old_path);
-        if (err) {
-                LogFunc(("failed to create old path\n"));
-                return err;
-        }
+                BUG_ON (!sf_old_i);
+                BUG_ON (!sf_new_i);
+                BUG_ON (!sf_file_i);
 
-        err = sf_path_from_dentry (__func__, sf_g, sf_new_i,
-                                   new_dentry, &new_path);
-        if (err) {
-                LogFunc(("failed to create new path\n"));
-                goto fail0;
-        }
+                old_path = sf_file_i->path;
+                err = sf_path_from_dentry (__func__, sf_g, sf_new_i,
+                                          new_dentry, &new_path);
+                if (err) {
+                        LogFunc(("failed to create new path\n"));
+                } else {
+                        int is_dir = ((old_dentry->d_inode->i_mode & S_IFDIR) != 0);
 
-        rc = vboxCallRename (&client_handle, &sf_g->map, old_path,
-                             new_path, is_dir ? 0 : SHFL_RENAME_FILE);
-        if (VBOX_FAILURE (rc)) {
-                switch (rc) {
-                        /** @todo we need a function to convert VBox error
-                            codes back to Linux. */
-                        case VERR_ACCESS_DENIED:
-                                err = -EACCES;
-                                goto fail1;
-                        case VERR_DEV_IO_ERROR:
-                                return -EBUSY;
-                                goto fail1;
-                        case VERR_INVALID_POINTER:
-                                return -EFAULT;
-                                goto fail1;
-                        case VERR_FILE_NOT_FOUND:
-                        case VERR_PATH_NOT_FOUND:
-                                err = -ENOENT;
-                                goto fail1;
-
-                        default:
-                                err = -EPROTO;
+                        rc = vboxCallRename (&client_handle, &sf_g->map, old_path,
+                                             new_path, is_dir ? 0 : SHFL_RENAME_FILE | SHFL_RENAME_REPLACE_IF_EXISTS);
+                        if (RT_SUCCESS(rc)) {
+                                kfree (old_path);
+                                sf_new_i->force_restat = 1;
+                                sf_old_i->force_restat = 1; /* XXX: needed? */
+                                /* Set the new relative path in the inode. */
+                                sf_file_i->path = new_path;
+                        } else {
                                 LogFunc(("vboxCallRename failed rc=%Vrc\n", rc));
-                                goto fail1;
+                                switch (rc) {
+                                /** @todo we need a function to convert VBox error
+                                    codes back to Linux. */
+                                case VERR_ACCESS_DENIED:
+                                        err = -EACCES;
+                                        break;
+                                case VERR_DEV_IO_ERROR:
+                                        err = -EBUSY;
+                                        break;
+                                case VERR_INVALID_POINTER:
+                                        err = -EFAULT;
+                                        break;
+                                case VERR_FILE_NOT_FOUND:
+                                case VERR_PATH_NOT_FOUND:
+                                        err = -ENOENT;
+                                        break;
+                                default:
+                                        err = -EPROTO;
+                                }
+                        }
+                        if (0 != err) {
+                                kfree (new_path);
+                        }
                 }
         }
-
-        err = 0;
-
-        sf_new_i->force_restat = 1;
-        sf_old_i->force_restat = 1; /* XXX: needed? */
- fail1:
-        kfree (old_path);
- fail0:
-        kfree (new_path);
         return err;
 }
 
