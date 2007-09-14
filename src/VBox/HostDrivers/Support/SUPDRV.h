@@ -197,19 +197,19 @@ __END_DECLS
 
 
 /* dprintf */
-/* bird debugging - #if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(RT_OS_FREEBSD)
+#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(RT_OS_FREEBSD)
 # ifdef LOG_TO_COM
 #  include <VBox/log.h>
 #  define dprintf(a) RTLogComPrintf a
-# else */
+# else
 #  define dprintf(a) OSDBGPRINT(a)
-/*# endif
+# endif
 #else
 # define dprintf(a) do {} while (0)
-#endif*/
+#endif
 
 /* dprintf2 - extended logging. */
-#if 1//bird defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
 # define dprintf2 dprintf
 #else
 # define dprintf2(a) do { } while (0)
