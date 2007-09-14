@@ -247,6 +247,23 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PSUPGLOBALINFOPAGE pGip)
 }
 
 
+/**
+ * Request for generic VMMR0Entry calls.
+ */
+typedef struct SUPVMMR0REQHDR
+{
+    /** The magic. (SUPVMMR0REQHDR_MAGIC) */
+    uint32_t    u32Magic;
+    /** The size of the request. */
+    uint32_t    cbReq;
+} SUPVMMR0REQHDR;
+/** Pointer to a ring-0 request header. */
+typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
+/** the SUPVMMR0REQHDR::u32Magic value (Ethan Iverson - The Bad Plus). */
+#define SUPVMMR0REQHDR_MAGIC    UINT32_C(0x19730211)
+
+
+
 #ifdef IN_RING3
 
 /** @defgroup   grp_sup_r3     SUP Host Context Ring 3 API
@@ -336,7 +353,7 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
  *                      points at into a kernel buffer to avoid problems like the user page
  *                      being invalidated while we're executing the call.
  */
-SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, void *pvArg, unsigned cbArg);
+SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, void *pvArg, size_t cbArg);
 
 /**
  * Queries the paging mode of the host OS.
@@ -353,8 +370,8 @@ SUPR3DECL(SUPPAGINGMODE) SUPGetPagingMode(void);
  * to free the pages once done with them.
  *
  * @returns VBox status.
- * @param   cPages      Number of pages to allocate.
- * @param   ppvPages    Where to store the base pointer to the allocated pages.
+ * @param   cPages          Number of pages to allocate.
+ * @param   ppvPages        Where to store the base pointer to the allocated pages.
  */
 SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
 
@@ -362,8 +379,8 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
  * Frees pages allocated with SUPPageAlloc().
  *
  * @returns VBox status.
- * @param   pvPages     Pointer returned by SUPPageAlloc().
- * @param   cPages      Number of pages that was allocated.
+ * @param   pvPages         Pointer returned by SUPPageAlloc().
+ * @param   cPages          Number of pages that was allocated.
  */
 SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
 
@@ -375,17 +392,33 @@ SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
  * to free the pages once done with them.
  *
  * @returns VBox status.
- * @param   cPages      Number of pages to allocate.
- * @param   ppvPages    Where to store the base pointer to the allocated pages.
+ * @param   cPages          Number of pages to allocate.
+ * @param   ppvPages        Where to store the base pointer to the allocated pages.
  */
 SUPR3DECL(int) SUPPageAllocLocked(size_t cPages, void **ppvPages);
+
+/**
+ * Allocate zero-filled locked pages.
+ *
+ * Use this to allocate a number of pages rather than using RTMem*() and mess with
+ * alignment. The returned address is of course page aligned. Call SUPPageFreeLocked()
+ * to free the pages once done with them.
+ *
+ * @returns VBox status code.
+ * @param   cPages          Number of pages to allocate.
+ * @param   ppvPages        Where to store the base pointer to the allocated pages.
+ * @param   paPages         Where to store the physical page addresses returned.
+ *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
+ *                          NULL is allowed.
+ */
+SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages);
 
 /**
  * Frees locked pages allocated with SUPPageAllocLocked().
  *
  * @returns VBox status.
- * @param   pvPages     Pointer returned by SUPPageAlloc().
- * @param   cPages      Number of pages that was allocated.
+ * @param   pvPages         Pointer returned by SUPPageAlloc().
+ * @param   cPages          Number of pages that was allocated.
  */
 SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages);
 
@@ -572,20 +605,18 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName);
 
-SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PSUPPAGE paPages);
+SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
 SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
 SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
-SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPages);
+SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS paPages);
 SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
 SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
 SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages);
 SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
-SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR3PTR ppvR3);
-SUPR0DECL(int) SUPR0PageGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, uint32_t cPages, PSUPPAGE paPages);
-SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
-SUPR0DECL(bool) SUPR0PageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
-SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGid);
+SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
+SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
+SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 

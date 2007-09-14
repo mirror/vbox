@@ -65,6 +65,9 @@
 # define global_flush_tlb __flush_tlb_global
 #endif
 
+#include <iprt/mem.h>
+
+
 /* devfs defines */
 #if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -235,31 +238,31 @@ extern int nmi_active;
 /**
  * Device extention & session data association structure.
  */
-static SUPDRVDEVEXT     g_DevExt;
+static SUPDRVDEVEXT         g_DevExt;
 
 /** Timer structure for the GIP update. */
-static struct timer_list g_GipTimer;
+static struct timer_list    g_GipTimer;
 /** Pointer to the page structure for the GIP. */
-struct page            *g_pGipPage;
+struct page                *g_pGipPage;
 
 /** Registered devfs device handle. */
 #if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static void            *g_hDevFsVBoxDrv = NULL;
+static void                *g_hDevFsVBoxDrv = NULL;
 # else
-static devfs_handle_t   g_hDevFsVBoxDrv = NULL;
+static devfs_handle_t       g_hDevFsVBoxDrv = NULL;
 # endif
 #endif
 
 #ifndef CONFIG_VBOXDRV_AS_MISC
 /** Module major number */
-#define DEVICE_MAJOR   234
+#define DEVICE_MAJOR        234
 /** Saved major device number */
-static int              g_iModuleMajor;
+static int                  g_iModuleMajor;
 #endif /* !CONFIG_VBOXDRV_AS_MISC */
 
 /** The module name. */
-#define DEVICE_NAME    "vboxdrv"
+#define DEVICE_NAME         "vboxdrv"
 
 #ifdef RT_ARCH_AMD64
 /**
@@ -280,32 +283,32 @@ __asm__(".section execmemory, \"awx\", @progbits\n\t"
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int      VBoxSupDrvInit(void);
-static void     VBoxSupDrvUnload(void);
-static int      VBoxSupDrvCreate(struct inode *pInode, struct file *pFilp);
-static int      VBoxSupDrvClose(struct inode *pInode, struct file *pFilp);
-static int      VBoxSupDrvDeviceControl(struct inode *pInode, struct file *pFilp,
-                                        unsigned int IOCmd, unsigned long IOArg);
+static int      VBoxDrvLinuxInit(void);
+static void     VBoxDrvLinuxUnload(void);
+static int      VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
+static int      VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp);
+static int      VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+static int      VBoxDrvLinuxIOCtlSlow(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 #ifndef USE_NEW_OS_INTERFACE_FOR_MM
-static RTR3PTR  VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags);
+static RTR3PTR  VBoxDrvLinuxMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags);
 #endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
-static int      VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt);
-static int      VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt);
-static void     VBoxSupGipTimer(unsigned long ulUser);
+static int      VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt);
+static int      VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt);
+static void     VBoxDrvLinuxGipTimer(unsigned long ulUser);
 #ifdef CONFIG_SMP
-static void     VBoxSupGipTimerPerCpu(unsigned long ulUser);
-static void     VBoxSupGipResumePerCpu(void *pvUser);
+static void     VBoxDrvLinuxGipTimerPerCpu(unsigned long ulUser);
+static void     VBoxDrvLinuxGipResumePerCpu(void *pvUser);
 #endif
-static int      VBoxSupDrvErr2LinuxErr(int);
+static int      VBoxDrvLinuxErr2LinuxErr(int);
 
 
 /** The file_operations structure. */
 static struct file_operations gFileOpsVBoxDrv =
 {
     owner:      THIS_MODULE,
-    open:       VBoxSupDrvCreate,
-    release:    VBoxSupDrvClose,
-    ioctl:      VBoxSupDrvDeviceControl,
+    open:       VBoxDrvLinuxCreate,
+    release:    VBoxDrvLinuxClose,
+    ioctl:      VBoxDrvLinuxIOCtl,
 };
 
 #ifdef CONFIG_VBOXDRV_AS_MISC
@@ -432,7 +435,7 @@ static void nmi_shutdown(void)
  *
  * @returns appropriate status code.
  */
-static int __init VBoxSupDrvInit(void)
+static int __init VBoxDrvLinuxInit(void)
 {
     int                 rc;
 
@@ -616,7 +619,7 @@ nmi_activated:
                 /*
                  * Create the GIP page.
                  */
-                rc = VBoxSupDrvInitGip(&g_DevExt);
+                rc = VBoxDrvLinuxInitGip(&g_DevExt);
                 if (!rc)
                 {
                     dprintf(("VBoxDrv::ModuleInit returning %#x\n", rc));
@@ -653,10 +656,10 @@ nmi_activated:
 /**
  * Unload the module.
  */
-static void __exit VBoxSupDrvUnload(void)
+static void __exit VBoxDrvLinuxUnload(void)
 {
     int                 rc;
-    dprintf(("VBoxSupDrvUnload\n"));
+    dprintf(("VBoxDrvLinuxUnload\n"));
 
     /*
      * I Don't think it's possible to unload a driver which processes have
@@ -685,7 +688,7 @@ static void __exit VBoxSupDrvUnload(void)
     /*
      * Destroy GIP, delete the device extension and terminate IPRT.
      */
-    VBoxSupDrvTermGip(&g_DevExt);
+    VBoxDrvLinuxTermGip(&g_DevExt);
     supdrvDeleteDevExt(&g_DevExt);
     RTR0Term();
 }
@@ -697,11 +700,11 @@ static void __exit VBoxSupDrvUnload(void)
  * @param   pInode      Pointer to inode info structure.
  * @param   pFilp       Associated file pointer.
  */
-static int VBoxSupDrvCreate(struct inode *pInode, struct file *pFilp)
+static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
 {
     int                 rc;
     PSUPDRVSESSION      pSession;
-    dprintf(("VBoxSupDrvCreate: pFilp=%p\n", pFilp));
+    dprintf(("VBoxDrvLinuxCreate: pFilp=%p\n", pFilp));
 
     /*
      * Call common code for the rest.
@@ -715,10 +718,10 @@ static int VBoxSupDrvCreate(struct inode *pInode, struct file *pFilp)
         pSession->R0Process = RTR0ProcHandleSelf();
     }
 
-    dprintf(("VBoxSupDrvCreate: g_DevExt=%p pSession=%p rc=%d\n", &g_DevExt, pSession, rc));
+    dprintf(("VBoxDrvLinuxCreate: g_DevExt=%p pSession=%p rc=%d\n", &g_DevExt, pSession, rc));
     pFilp->private_data = pSession;
 
-    return VBoxSupDrvErr2LinuxErr(rc);
+    return VBoxDrvLinuxErr2LinuxErr(rc);
 }
 
 
@@ -728,9 +731,9 @@ static int VBoxSupDrvCreate(struct inode *pInode, struct file *pFilp)
  * @param   pInode      Pointer to inode info structure.
  * @param   pFilp       Associated file pointer.
  */
-static int VBoxSupDrvClose(struct inode *pInode, struct file *pFilp)
+static int VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp)
 {
-    dprintf(("VBoxSupDrvClose: pFilp=%p private_data=%p\n", pFilp, pFilp->private_data));
+    dprintf(("VBoxDrvLinuxClose: pFilp=%p private_data=%p\n", pFilp, pFilp->private_data));
     supdrvCloseSession(&g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
     pFilp->private_data = NULL;
     return 0;
@@ -742,91 +745,114 @@ static int VBoxSupDrvClose(struct inode *pInode, struct file *pFilp)
  *
  * @param   pInode      Pointer to inode info structure.
  * @param   pFilp       Associated file pointer.
- * @param   IOCmd       The function specified to ioctl().
- * @param   IOArg       The argument specified to ioctl().
+ * @param   uCmd        The function specified to ioctl().
+ * @param   ulArg       The argument specified to ioctl().
  */
-static int VBoxSupDrvDeviceControl(struct inode *pInode, struct file *pFilp,
-                                   unsigned int IOCmd, unsigned long IOArg)
+static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
+{
+#ifdef VBOX_WITHOUT_IDT_PATCHING
+    /*
+     * Deal with the two high-speed IOCtl that takes it's arguments from
+     * the session and iCmd, and only returns a VBox status code.
+     */
+    if (RT_LIKELY(   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+                  || uCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+                  || uCmd == SUP_IOCTL_FAST_DO_NOP))
+        return supdrvIOCtlFast(iCmd, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
+#endif
+    return VBoxDrvLinuxIOCtlSlow(pInode, pFilp, uCmd, ulArg);
+}
+
+
+/**
+ * Device I/O Control entry point.
+ *
+ * @param   pInode      Pointer to inode info structure.
+ * @param   pFilp       Associated file pointer.
+ * @param   uCmd        The function specified to ioctl().
+ * @param   ulArg       The argument specified to ioctl().
+ */
+static int VBoxDrvLinuxIOCtlSlow(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
 {
     int                 rc;
-    SUPDRVIOCTLDATA     Args;
-    void               *pvBuf = NULL;
-    int                 cbBuf = 0;
-    unsigned            cbOut = 0;
+    SUPREQHDR           Hdr;
+    PSUPREQHDR          pHdr;
+    uint32_t            cbBuf;
 
-    dprintf2(("VBoxSupDrvDeviceControl: pFilp=%p IOCmd=%x IOArg=%p\n", pFilp, IOCmd, (void *)IOArg));
+    dprintf2(("VBoxDrvLinuxIOCtl: pFilp=%p uCmd=%#x ulArg=%p\n", pFilp, uCmd, (void *)ulArg));
 
     /*
-     * Copy ioctl data structure from user space.
+     * Read the header.
      */
-    if (_IOC_SIZE(IOCmd) != sizeof(SUPDRVIOCTLDATA))
+    if (RT_UNLIKELY(copy_from_user(&Hdr, (void *)ulArg, sizeof(Hdr))))
     {
-        dprintf(("VBoxSupDrvDeviceControl: incorrect input length! cbArgs=%d\n", _IOC_SIZE(IOCmd)));
-        return -EINVAL;
-    }
-    if (copy_from_user(&Args, (void *)IOArg, _IOC_SIZE(IOCmd)))
-    {
-        dprintf(("VBoxSupDrvDeviceControl: copy_from_user(&Args) failed.\n"));
+        dprintf(("VBoxDrvLinuxIOCtl: copy_from_user(,%#lx,) failed; uCmd=%#x.\n", ulArg, uCmd));
         return -EFAULT;
     }
+    if (RT_UNLIKELY((Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
+    {
+        dprintf(("VBoxDrvLinuxIOCtl: bad header magic %#x; uCmd=%#x\n", Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK, uCmd));
+        return -EINVAL;
+    }
 
     /*
-     * Allocate and copy user space input data buffer to kernel space.
+     * Buffer the request.
      */
-    if (Args.cbIn > 0 || Args.cbOut > 0)
+    cbBuf = RT_MAX(Hdr.cbIn, Hdr.cbOut);
+    if (RT_UNLIKELY(cbBuf > _1M*16))
     {
-        cbBuf = max(Args.cbIn, Args.cbOut);
-        pvBuf = vmalloc(cbBuf);
-        if (pvBuf == NULL)
-        {
-            dprintf(("VBoxSupDrvDeviceControl: failed to allocate buffer of %d bytes.\n", cbBuf));
-            return -ENOMEM;
-        }
-
-        if (copy_from_user(pvBuf, (void *)Args.pvIn, Args.cbIn))
-        {
-            dprintf(("VBoxSupDrvDeviceControl: copy_from_user(pvBuf) failed.\n"));
-            vfree(pvBuf);
-            return -EFAULT;
-        }
+        dprintf(("VBoxDrvLinuxIOCtl: too big cbBuf=%#x; uCmd=%#x\n", cbBuf, uCmd));
+        return -E2BIG;
+    }
+    if (RT_UNLIKELY(cbBuf != _IOC_SIZE(uCmd) && _IOC_SIZE(uCmd)))
+    {
+        dprintf(("VBoxDrvLinuxIOCtl: bad ioctl cbBuf=%#x _IOC_SIZE=%#x; uCmd=%#x.\n", cbBuf, _IOC_SIZE(uCmd), uCmd));
+        return -EINVAL;
+    }
+    pHdr = RTMemAlloc(cbBuf);
+    if (RT_UNLIKELY(!pHdr))
+    {
+        OSDBGPRINT(("VBoxDrvLinuxIOCtl: failed to allocate buffer of %d bytes for uCmd=%#x.\n", cbBuf, uCmd));
+        return -ENOMEM;
+    }
+    if (RT_UNLIKELY(copy_from_user(pHdr, (void *)ulArg, Hdr.cbIn)))
+    {
+        dprintf(("VBoxDrvLinuxIOCtl: copy_from_user(,%#lx, %#x) failed; uCmd=%#x.\n", ulArg, Hdr.cbIn, uCmd));
+        RTMemFree(pHdr);
+        return -EFAULT;
     }
 
     /*
      * Process the IOCtl.
      */
-    rc = supdrvIOCtl(IOCmd, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data,
-                     pvBuf, Args.cbIn, pvBuf, Args.cbOut, &cbOut);
+    rc = supdrvIOCtl(uCmd, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data, pHdr);
 
     /*
      * Copy ioctl data and output buffer back to user space.
      */
-    if (rc)
+    if (RT_LIKELY(!rc))
     {
-        dprintf(("VBoxSupDrvDeviceControl: pFilp=%p IOCmd=%x IOArg=%p failed, rc=%d (linux rc=%d)\n",
-                 pFilp, IOCmd, (void *)IOArg, rc, VBoxSupDrvErr2LinuxErr(rc)));
-        rc = VBoxSupDrvErr2LinuxErr(rc);
-    }
-    else if (cbOut > 0)
-    {
-        if (pvBuf != NULL && cbOut <= cbBuf)
+        uint32_t cbOut = pHdr->cbOut;
+        if (RT_UNLIKELY(cbOut > cbBuf))
         {
-            if (copy_to_user((void *)Args.pvOut, pvBuf, cbOut))
-            {
-                dprintf(("copy_to_user failed.\n"));
-                rc = -EFAULT;
-            }
+            OSDBGPRINT(("VBoxDrvLinuxIOCtl: too much output! %#x > %#x; uCmd=%#x!\n", cbOut, cbBuf, uCmd));
+            cbOut = cbBuf;
         }
-        else
+        if (RT_UNLIKELY(copy_to_user((void *)ulArg, pHdr, cbOut)))
         {
-            dprintf(("WHAT!?! supdrvIOCtl messed up! cbOut=%d cbBuf=%d pvBuf=%p\n", cbOut, cbBuf, pvBuf));
-            rc = -EPERM;
+            /* this is really bad! */
+            OSDBGPRINT(("VBoxDrvLinuxIOCtl: copy_to_user(%#lx,,%#x); uCmd=%#x!\n", ulArg, cbOut, uCmd));
+            rc = -EFAULT;
         }
     }
+    else
+    {
+        dprintf(("VBoxDrvLinuxIOCtl: pFilp=%p uCmd=%#x ulArg=%p failed, rc=%d\n", pFilp, uCmd, (void *)ulArg, rc));
+        rc = -EINVAL;
+    }
+    RTMemFree(pHdr);
 
-    if (pvBuf)
-        vfree(pvBuf);
-
-    dprintf2(("VBoxSupDrvDeviceControl: returns %d\n", rc));
+    dprintf2(("VBoxDrvLinuxIOCtl: returns %d\n", rc));
     return rc;
 }
 
@@ -870,7 +896,7 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
  * @returns order.
  * @param   cPages      Number of pages.
  */
-static int VBoxSupDrvOrder(unsigned long cPages)
+static int VBoxDrvOrder(unsigned long cPages)
 {
     int             iOrder;
     unsigned long   cTmp;
@@ -1009,7 +1035,7 @@ int VBOXCALL supdrvOSContAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR p
     unsigned    iPage;
     unsigned    cbAligned = RT_ALIGN(pMem->cb, PAGE_SIZE);
     unsigned    cPages = cbAligned >> PAGE_SHIFT;
-    unsigned    cOrder = VBoxSupDrvOrder(cPages);
+    unsigned    cOrder = VBoxDrvOrder(cPages);
     unsigned long ulAddr;
     dma_addr_t  HCPhys;
     int         rc = 0;
@@ -1159,7 +1185,7 @@ void VBOXCALL supdrvOSContFreeOne(PSUPDRVMEMREF pMem)
         if (!PageHighMem(&pMem->u.cont.paPages[iPage]) && pgprot_val(MY_PAGE_KERNEL_EXEC) != pgprot_val(PAGE_KERNEL))
             MY_CHANGE_PAGE_ATTR(&pMem->u.cont.paPages[iPage], 1, PAGE_KERNEL);
     }
-    __free_pages(pMem->u.cont.paPages, VBoxSupDrvOrder(pMem->u.cont.cPages));
+    __free_pages(pMem->u.cont.paPages, VBoxDrvOrder(pMem->u.cont.cPages));
 
     pMem->u.cont.cPages = 0;
 }
@@ -1181,7 +1207,7 @@ int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR
     const unsigned  cbAligned = RT_ALIGN(pMem->cb, PAGE_SIZE);
     const unsigned  cPages = cbAligned >> PAGE_SHIFT;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
-    unsigned        cOrder = VBoxSupDrvOrder(cPages);
+    unsigned        cOrder = VBoxDrvOrder(cPages);
     struct page    *paPages;
 #endif
     struct page   **papPages;
@@ -1257,7 +1283,7 @@ int  VBOXCALL   supdrvOSMemAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR
          * Create the ring3 mapping.
          */
         if (ppvR3)
-            *ppvR3 = pMem->pvR3 = VBoxSupDrvMapUser(papPages, cPages, PROT_READ | PROT_WRITE | PROT_EXEC, pgFlags);
+            *ppvR3 = pMem->pvR3 = VBoxDrvLinuxMapUser(papPages, cPages, PROT_READ | PROT_WRITE | PROT_EXEC, pgFlags);
         if (pMem->pvR3 || !ppvR3)
             return 0;
         dprintf(("supdrvOSMemAllocOne: failed to map into r3! cPages=%u\n", cPages));
@@ -1346,7 +1372,7 @@ void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem)
             __free_page(papPages[iPage]);
 #else
         if (cPages > 0)
-            __free_pages(papPages[0], VBoxSupDrvOrder(cPages));
+            __free_pages(papPages[0], VBoxDrvOrder(cPages));
 #endif
         /* Free the page pointer array. */
         kfree(papPages);
@@ -1366,7 +1392,7 @@ void VBOXCALL   supdrvOSMemFreeOne(PSUPDRVMEMREF pMem)
  * @param   fProt       The mapping protection.
  * @param   pgFlags     The page level protection.
  */
-static RTR3PTR VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags)
+static RTR3PTR VBoxDrvLinuxMapUser(struct page **papPages, unsigned cPages, unsigned fProt, pgprot_t pgFlags)
 {
     int             rc = SUPDRV_ERR_NO_MEMORY;
     unsigned long   ulAddr;
@@ -1415,9 +1441,9 @@ static RTR3PTR VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsign
 
         /* no, cleanup! */
         if (rc)
-            dprintf(("VBoxSupDrvMapUser: remap_[page|pfn]_range failed! rc=%d\n", rc));
+            dprintf(("VBoxDrvLinuxMapUser: remap_[page|pfn]_range failed! rc=%d\n", rc));
         else
-            dprintf(("VBoxSupDrvMapUser: find_vma failed!\n"));
+            dprintf(("VBoxDrvLinuxMapUser: find_vma failed!\n"));
 
         MY_DO_MUNMAP(current->mm, ulAddr, cPages << PAGE_SHIFT);
     }
@@ -1440,7 +1466,7 @@ static RTR3PTR VBoxSupDrvMapUser(struct page **papPages, unsigned cPages, unsign
  * @returns negative errno.
  * @param   pDevExt     Instance data. GIP stuff may be updated.
  */
-static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
+static int VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt)
 {
     struct page *pPage;
     dma_addr_t  HCPhys;
@@ -1448,7 +1474,7 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
 #ifdef CONFIG_SMP
     unsigned i;
 #endif
-    dprintf(("VBoxSupDrvInitGip:\n"));
+    dprintf(("VBoxDrvLinuxInitGip:\n"));
 
     /*
      * Allocate the page.
@@ -1456,7 +1482,7 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
     pPage = alloc_pages(GFP_USER, 0);
     if (!pPage)
     {
-        dprintf(("VBoxSupDrvInitGip: failed to allocate the GIP page\n"));
+        dprintf(("VBoxDrvLinuxInitGip: failed to allocate the GIP page\n"));
         return -ENOMEM;
     }
 
@@ -1474,11 +1500,11 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
     pDevExt->ulLastJiffies  = jiffies;
 #ifdef TICK_NSEC
     pDevExt->u64LastMonotime = (uint64_t)pDevExt->ulLastJiffies * TICK_NSEC;
-    dprintf(("VBoxSupDrvInitGIP: TICK_NSEC=%ld HZ=%d jiffies=%ld now=%lld\n",
+    dprintf(("VBoxDrvInitGIP: TICK_NSEC=%ld HZ=%d jiffies=%ld now=%lld\n",
              TICK_NSEC, HZ, pDevExt->ulLastJiffies, pDevExt->u64LastMonotime));
 #else
     pDevExt->u64LastMonotime = (uint64_t)pDevExt->ulLastJiffies * (1000000 / HZ);
-    dprintf(("VBoxSupDrvInitGIP: TICK_NSEC=%d HZ=%d jiffies=%ld now=%lld\n",
+    dprintf(("VBoxDrvInitGIP: TICK_NSEC=%d HZ=%d jiffies=%ld now=%lld\n",
              (int)(1000000 / HZ), HZ, pDevExt->ulLastJiffies, pDevExt->u64LastMonotime));
 #endif
     supdrvGipInit(pDevExt, pGip, HCPhys, pDevExt->u64LastMonotime,
@@ -1489,7 +1515,7 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
      */
     init_timer(&g_GipTimer);
     g_GipTimer.data = (unsigned long)pDevExt;
-    g_GipTimer.function = VBoxSupGipTimer;
+    g_GipTimer.function = VBoxDrvLinuxGipTimer;
     g_GipTimer.expires = jiffies;
 #ifdef CONFIG_SMP
     for (i = 0; i < RT_ELEMENTS(pDevExt->aCPUs); i++)
@@ -1499,7 +1525,7 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
         pDevExt->aCPUs[i].iSmpProcessorId = -512;
         init_timer(&pDevExt->aCPUs[i].Timer);
         pDevExt->aCPUs[i].Timer.data      = i;
-        pDevExt->aCPUs[i].Timer.function  = VBoxSupGipTimerPerCpu;
+        pDevExt->aCPUs[i].Timer.function  = VBoxDrvLinuxGipTimerPerCpu;
         pDevExt->aCPUs[i].Timer.expires   = jiffies;
     }
 #endif
@@ -1514,14 +1540,14 @@ static int VBoxSupDrvInitGip(PSUPDRVDEVEXT pDevExt)
  * @returns negative errno.
  * @param   pDevExt     Instance data. GIP stuff may be updated.
  */
-static int VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt)
+static int VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt)
 {
     struct page *pPage;
     PSUPGLOBALINFOPAGE pGip;
 #ifdef CONFIG_SMP
     unsigned i;
 #endif
-    dprintf(("VBoxSupDrvTermGip:\n"));
+    dprintf(("VBoxDrvLinuxTermGip:\n"));
 
     /*
      * Delete the timer if it's pending.
@@ -1564,7 +1590,7 @@ static int VBoxSupDrvTermGip(PSUPDRVDEVEXT pDevExt)
  *
  * @param   ulUser  The device extension pointer.
  */
-static void     VBoxSupGipTimer(unsigned long ulUser)
+static void     VBoxDrvLinuxGipTimer(unsigned long ulUser)
 {
     PSUPDRVDEVEXT       pDevExt;
     PSUPGLOBALINFOPAGE  pGip;
@@ -1619,7 +1645,7 @@ static void     VBoxSupGipTimer(unsigned long ulUser)
  *
  * @param   iTimerCPU     The APIC ID of this timer.
  */
-static void VBoxSupGipTimerPerCpu(unsigned long iTimerCPU)
+static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
 {
     PSUPDRVDEVEXT       pDevExt;
     PSUPGLOBALINFOPAGE  pGip;
@@ -1778,7 +1804,7 @@ void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
     else
     {
         mod_timer(&g_GipTimer, jiffies);
-        smp_call_function(VBoxSupGipResumePerCpu, pDevExt, 0 /* retry */, 1 /* wait */);
+        smp_call_function(VBoxDrvLinuxGipResumePerCpu, pDevExt, 0 /* retry */, 1 /* wait */);
     }
 #endif
 }
@@ -1792,7 +1818,7 @@ void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
  *
  * @param   pvUser  Pointer to the device instance.
  */
-static void VBoxSupGipResumePerCpu(void *pvUser)
+static void VBoxDrvLinuxGipResumePerCpu(void *pvUser)
 {
     PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
     uint8_t iCPU = ASMGetApicId();
@@ -1868,7 +1894,7 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(void)
  * @returns corresponding linux error code.
  * @param   rc  supdrv error code (SUPDRV_ERR_* defines).
  */
-static int     VBoxSupDrvErr2LinuxErr(int rc)
+static int     VBoxDrvLinuxErr2LinuxErr(int rc)
 {
     switch (rc)
     {
@@ -1939,8 +1965,8 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 unsigned __gxx_personality_v0 = 0xcccccccc;
 
 
-module_init(VBoxSupDrvInit);
-module_exit(VBoxSupDrvUnload);
+module_init(VBoxDrvLinuxInit);
+module_exit(VBoxDrvLinuxUnload);
 
 MODULE_AUTHOR("innotek GmbH");
 MODULE_DESCRIPTION("VirtualBox Support Driver");

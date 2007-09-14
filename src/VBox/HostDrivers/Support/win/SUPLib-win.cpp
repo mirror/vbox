@@ -20,7 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP
-#include <windows.h>
+#include <Windows.h>
 
 #include <VBox/sup.h>
 #include <VBox/types.h>
@@ -31,6 +31,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include "SUPLibInternal.h"
+#include "SUPDRVIOC.h"
 
 
 /*******************************************************************************
@@ -602,20 +603,22 @@ int     suplibOsTerm(void)
  * @returns 0 on success.
  * @returns VBOX error code on failure.
  * @param   uFunction   IO Control function.
- * @param   pvIn        Input data buffer.
- * @param   cbIn        Size of input data.
- * @param   pvOut       Output data buffer.
- * @param   cbOut       Size of output data.
+ * @param   pvIn        The request buffer.
+ * @param   cbReq       The size of the request buffer.
  */
-int     suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, size_t cbOut)
+int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     AssertMsg(g_hDevice != INVALID_HANDLE_VALUE, ("SUPLIB not initiated successfully!\n"));
+
     /*
-     * Issue device I/O control.
+     * Issue the device I/O control.
      */
-    DWORD cbReturned = (ULONG)cbOut;
-    if (DeviceIoControl(g_hDevice, uFunction, pvIn, (ULONG)cbIn, pvOut, (ULONG)cbOut, &cbReturned, NULL))
+    PSUPREQHDR pHdr = (PSUPREQHDR)pvReq;
+    Assert(cbReq == RT_MAX(pHdr->cbIn, pHdr->cbOut));
+    DWORD cbReturned = (ULONG)pHdr->cbOut;
+    if (DeviceIoControl(g_hDevice, uFunction, pvReq, pHdr->cbIn, pvReq, cbReturned, &cbReturned, NULL))
         return 0;
+
     return suplibConvertWin32Err(GetLastError());
 }
 

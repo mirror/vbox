@@ -216,8 +216,7 @@ static int VBoxDrvFreeBSDUnload(void)
         g_pVBoxDrvFreeBSDChrDev = NULL;
     }
 
-    rc = supdrvDeleteDevExt(&g_DevExt);
-    AssertRC(rc);
+    supdrvDeleteDevExt(&g_DevExt);
 
     rc = RTSpinlockDestroy(g_Spinlock);
     AssertRC(rc);
@@ -305,7 +304,7 @@ SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
     va_start(va, pszFormat);
     cch = RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, va);
     va_end(va);
-    
+
     printf("%s", szMsg);
 
     return cch;

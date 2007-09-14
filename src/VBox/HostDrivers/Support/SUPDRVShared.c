@@ -63,6 +63,16 @@
  * u32UpdateIntervalNS GIP members. The value must be a power of 2. */
 #define GIP_UPDATEHZ_RECALC_FREQ            0x800
 
+/**
+ * Validates a session pointer.
+ *
+ * @returns true/false accordingly.
+ * @param   pSession    The session.
+ */
+#define SUP_IS_SESSION_VALID(pSession)  \
+    (   VALID_PTR(pSession) \
+     && pSession->u32Cookie == BIRD_INV)
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -86,7 +96,6 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0MemFree",                           (void *)SUPR0MemFree },
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
     { "SUPR0PageAlloc",                         (void *)SUPR0PageAlloc },
-    { "SUPR0PageGetPhys",                       (void *)SUPR0PageGetPhys },
     { "SUPR0PageFree",                          (void *)SUPR0PageFree },
 #endif
     { "SUPR0Printf",                            (void *)SUPR0Printf },
@@ -146,40 +155,40 @@ static SUPFUNC g_aFunctions[] =
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
 static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
 static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
 #ifndef VBOX_WITHOUT_IDT_PATCHING
-static int      supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL_IN pIn, PSUPIDTINSTALL_OUT pOut);
+static int      supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL pReq);
 static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
 static int      supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 static void     supdrvIdtRemoveOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
 static void     supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTEntry);
 #endif /* !VBOX_WITHOUT_IDT_PATCHING */
-static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN_IN pIn, PSUPLDROPEN_OUT pOut);
-static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD_IN pIn);
-static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE_IN pIn);
-static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL_IN pIn, PSUPLDRGETSYMBOL_OUT pOut);
+static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
+static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
+static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
+static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
 static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0Entry);
 static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
 static void     supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
-static int      supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut);
+static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void);
 static SUPGIPMODE supdrvGipDeterminTscMode(void);
+#ifdef RT_OS_WINDOWS
+static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
+static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3);
+#endif
 #ifdef USE_NEW_OS_INTERFACE_FOR_GIP
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
-static int      supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
+static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser);
 #endif
-
-__END_DECLS
 
 
 /**
  * Initializes the device extentsion structure.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_ on failure.
+ * @returns IPRT status code.
  * @param   pDevExt     The device extension to initialize.
  */
 int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
@@ -202,12 +211,12 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                 rc = supdrvGipCreate(pDevExt);
                 if (RT_SUCCESS(rc))
                 {
-                    pDevExt->u32Cookie = BIRD;
-                    return 0;
+                    pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
+                    return VINF_SUCCESS;
                 }
 #else
                 pDevExt->u32Cookie = BIRD;
-                return 0;
+                return VINF_SUCCESS;
 #endif
             }
             RTSemFastMutexDestroy(pDevExt->mtxLdr);
@@ -219,13 +228,13 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
     return rc;
 }
 
+
 /**
  * Delete the device extension (e.g. cleanup members).
  *
- * @returns 0.
  * @param   pDevExt     The device extension to delete.
  */
-int VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
+void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
 {
 #ifndef VBOX_WITHOUT_IDT_PATCHING
     PSUPDRVPATCH        pPatch;
@@ -246,7 +255,6 @@ int VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     /*
      * Free lists.
      */
-
 #ifndef VBOX_WITHOUT_IDT_PATCHING
     /* patches */
     /** @todo make sure we don't uninstall patches which has been patched by someone else. */
@@ -287,16 +295,13 @@ int VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     /* kill the GIP */
     supdrvGipDestroy(pDevExt);
 #endif
-
-    return 0;
 }
 
 
 /**
  * Create session.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_ on failure.
+ * @returns IPRT status code.
  * @param   pDevExt     Device extension.
  * @param   ppSession   Where to store the pointer to the session data.
  */
@@ -305,7 +310,7 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSessio
     /*
      * Allocate memory for the session data.
      */
-    int rc = SUPDRV_ERR_NO_MEMORY;
+    int rc = VERR_NO_MEMORY;
     PSUPDRVSESSION pSession = *ppSession = (PSUPDRVSESSION)RTMemAllocZ(sizeof(*pSession));
     if (pSession)
     {
@@ -324,7 +329,7 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSessio
             pSession->Bundle.cUsed      = 0 */
 
             dprintf(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
-            return 0;
+            return VINF_SUCCESS;
         }
 
         RTMemFree(pSession);
@@ -460,14 +465,14 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
         /*
          * Check and unlock all entries in the bundle.
          */
-        for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+        for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
         {
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
             if (pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ)
             {
                 int rc;
-                dprintf2(("eType=%d pvR0=%p pvR3=%p cb=%d\n", pBundle->aMem[i].eType,
-                          RTR0MemObjAddress(pBundle->aMem[i].MapObj), RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3), RTR0MemObjSize(pBundle->aMem[i].MemObj)));
+                dprintf2(("eType=%d pvR0=%p pvR3=%p cb=%ld\n", pBundle->aMem[i].eType, RTR0MemObjAddress(pBundle->aMem[i].MemObj),
+                          (void *)RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3), (long)RTR0MemObjSize(pBundle->aMem[i].MemObj)));
                 if (pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ)
                 {
                     rc = RTR0MemObjFree(pBundle->aMem[i].MapObjR3, false);
@@ -570,13 +575,12 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
 /**
  * Fast path I/O Control worker.
  *
- * @returns 0 on success.
- * @returns One of the SUPDRV_ERR_* on failure.
+ * @returns VBox status code that should be passed down to ring-3 unchanged.
  * @param   uIOCtl      Function number.
  * @param   pDevExt     Device extention.
  * @param   pSession    Session data.
  */
-int  VBOXCALL   supdrvIOCtlFast(unsigned uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
     /*
      * Disable interrupts before invoking VMMR0Entry() because it ASSUMES
@@ -618,63 +622,147 @@ int  VBOXCALL   supdrvIOCtlFast(unsigned uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVS
  * I/O Control worker.
  *
  * @returns 0 on success.
- * @returns One of the SUPDRV_ERR_* on failure.
+ * @returns VERR_INVALID_PARAMETER if the request is invalid.
+ *
  * @param   uIOCtl      Function number.
  * @param   pDevExt     Device extention.
  * @param   pSession    Session data.
- * @param   pvIn        Input data.
- * @param   cbIn        Size of input data.
- * @param   pvOut       Output data.
- *                      IMPORTANT! This buffer may be shared with the input
- *                                 data, thus no writing before done reading
- *                                 input data!!!
- * @param   cbOut       Size of output data.
- * @param   pcbReturned Size of the returned data.
+ * @param   pReqHdr     The request header.
  */
-int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
-                         void *pvIn, unsigned cbIn, void *pvOut, unsigned cbOut, unsigned *pcbReturned)
+int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr)
 {
-    *pcbReturned = 0;
-    switch (uIOCtl)
+    /*
+     * Validate the request.
+     */
+    /* this first check could probably be omitted as its also done by the OS specific code... */
+    if (RT_UNLIKELY(    (pReqHdr->fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC
+                    ||  pReqHdr->cbIn < sizeof(*pReqHdr)
+                    ||  pReqHdr->cbOut < sizeof(*pReqHdr)))
     {
-        case SUP_IOCTL_COOKIE:
+        OSDBGPRINT(("vboxdrv: Bad ioctl request header; cbIn=%#lx cbOut=%#lx fFlags=%#lx\n",
+                    (long)pReqHdr->cbIn, (long)pReqHdr->cbOut, (long)pReqHdr->fFlags));
+        return VERR_INVALID_PARAMETER;
+    }
+    if (RT_UNLIKELY(uIOCtl == SUP_IOCTL_COOKIE))
+    {
+        if (pReqHdr->u32Cookie != SUPCOOKIE_INITIAL_COOKIE)
         {
-            PSUPCOOKIE_IN  pIn = (PSUPCOOKIE_IN)pvIn;
-            PSUPCOOKIE_OUT pOut = (PSUPCOOKIE_OUT)pvOut;
+            OSDBGPRINT(("SUP_IOCTL_COOKIE: bad cookie %#lx\n", (long)pReqHdr->u32Cookie));
+            return VERR_INVALID_PARAMETER;
+        }
+    }
+    else if (RT_UNLIKELY(    pReqHdr->u32Cookie != pDevExt->u32Cookie
+                         ||  pReqHdr->u32SessionCookie != pSession->u32Cookie))
+    {
+        OSDBGPRINT(("vboxdrv: bad cookie %#lx / %#lx.\n", (long)pReqHdr->u32Cookie, (long)pReqHdr->u32SessionCookie));
+        return VERR_INVALID_PARAMETER;
+    }
 
+/*
+ * Validation macros
+ */
+#define REQ_CHECK_SIZES_EX(Name, cbInExpect, cbOutExpect) \
+    do { \
+        if (RT_UNLIKELY(pReqHdr->cbIn != (cbInExpect) || pReqHdr->cbOut != (cbOutExpect))) \
+        { \
+            OSDBGPRINT(( #Name ": Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n", \
+                        (long)pReq->Hdr.cbIn, (long)(cbInExpect), (long)pReq->Hdr.cbOut, (long)(cbOutExpect))); \
+            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+        } \
+    } while (0)
+
+#define REQ_CHECK_SIZES(Name) REQ_CHECK_SIZES_EX(Name, Name ## _SIZE_IN, Name ## _SIZE_OUT)
+
+#define REQ_CHECK_SIZE_IN(Name, cbInExpect) \
+    do { \
+        if (RT_UNLIKELY(pReqHdr->cbIn != (cbInExpect))) \
+        { \
+            OSDBGPRINT(( #Name ": Invalid input/output sizes. cbIn=%ld expected %ld.\n", \
+                        (long)pReq->Hdr.cbIn, (long)(cbInExpect))); \
+            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+        } \
+    } while (0)
+
+#define REQ_CHECK_SIZE_OUT(Name, cbOutExpect) \
+    do { \
+        if (RT_UNLIKELY(pReqHdr->cbOut != (cbOutExpect))) \
+        { \
+            OSDBGPRINT(( #Name ": Invalid input/output sizes. cbOut=%ld expected %ld.\n", \
+                        (long)pReq->Hdr.cbOut, (long)(cbOutExpect))); \
+            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+        } \
+    } while (0)
+
+#define REQ_CHECK_EXPR(Name, expr) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            OSDBGPRINT(( #Name ": %s\n", #expr)); \
+            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+        } \
+    } while (0)
+
+#define REQ_CHECK_EXPR_FMT(expr, fmt) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            OSDBGPRINT( fmt ); \
+            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+        } \
+    } while (0)
+
+
+    /*
+     * The switch.
+     */
+    switch (SUP_CTL_CODE_NO_SIZE(uIOCtl))
+    {
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_COOKIE):
+        {
+            PSUPCOOKIE pReq = (PSUPCOOKIE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_COOKIE);
+            if (strncmp(pReq->u.In.szMagic, SUPCOOKIE_MAGIC, sizeof(pReq->u.In.szMagic)))
+            {
+                OSDBGPRINT(("SUP_IOCTL_COOKIE: invalid magic %.16s\n", pReq->u.In.szMagic));
+                pReq->Hdr.rc = VERR_INVALID_MAGIC;
+                return 0;
+            }
+
+#if 0
             /*
-             * Validate.
+             * Call out to the OS specific code and let it do permission checks on the
+             * client process.
              */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != sizeof(*pOut))
+            if (!supdrvOSValidateClientProcess(pDevExt, pSession))
             {
-                OSDBGPRINT(("SUP_IOCTL_COOKIE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                            (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
+                pReq->u.Out.u32Cookie         = 0xffffffff;
+                pReq->u.Out.u32SessionCookie  = 0xffffffff;
+                pReq->u.Out.u32SessionVersion = 0xffffffff;
+                pReq->u.Out.u32DriverVersion  = SUPDRVIOC_VERSION;
+                pReq->u.Out.pSession          = NULL;
+                pReq->u.Out.cFunctions        = 0;
+                pReq->Hdr.rc = VERR_PERMISSION_DENIED;
+                return 0;
             }
-            if (strncmp(pIn->szMagic, SUPCOOKIE_MAGIC, sizeof(pIn->szMagic)))
-            {
-                OSDBGPRINT(("SUP_IOCTL_COOKIE: invalid magic %.16s\n", pIn->szMagic));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
+#endif
 
             /*
              * Match the version.
              * The current logic is very simple, match the major interface version.
              */
-            if (    pIn->u32MinVersion > SUPDRVIOC_VERSION
-                ||  (pIn->u32MinVersion & 0xffff0000) != (SUPDRVIOC_VERSION & 0xffff0000))
+            if (    pReq->u.In.u32MinVersion > SUPDRVIOC_VERSION
+                ||  (pReq->u.In.u32MinVersion & 0xffff0000) != (SUPDRVIOC_VERSION & 0xffff0000))
             {
                 OSDBGPRINT(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
-                            pIn->u32ReqVersion, pIn->u32MinVersion, SUPDRVIOC_VERSION));
-                pOut->u32Cookie         = 0xffffffff;
-                pOut->u32SessionCookie  = 0xffffffff;
-                pOut->u32SessionVersion = 0xffffffff;
-                pOut->u32DriverVersion  = SUPDRVIOC_VERSION;
-                pOut->pSession          = NULL;
-                pOut->cFunctions        = 0;
-                *pcbReturned = sizeof(*pOut);
-                return SUPDRV_ERR_VERSION_MISMATCH;
+                            pReq->u.In.u32ReqVersion, pReq->u.In.u32MinVersion, SUPDRVIOC_VERSION));
+                pReq->u.Out.u32Cookie         = 0xffffffff;
+                pReq->u.Out.u32SessionCookie  = 0xffffffff;
+                pReq->u.Out.u32SessionVersion = 0xffffffff;
+                pReq->u.Out.u32DriverVersion  = SUPDRVIOC_VERSION;
+                pReq->u.Out.pSession          = NULL;
+                pReq->u.Out.cFunctions        = 0;
+                pReq->Hdr.rc = VERR_VERSION_MISMATCH;
+                return 0;
             }
 
             /*
@@ -682,780 +770,330 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
              * N.B. The first one to change SUPDRVIOC_VERSION shall makes sure that
              *      u32SessionVersion <= u32ReqVersion!
              */
-            /** @todo A more secure cookie negotiation? */
-            pOut->u32Cookie         = pDevExt->u32Cookie;
-            pOut->u32SessionCookie  = pSession->u32Cookie;
-            pOut->u32SessionVersion = SUPDRVIOC_VERSION;
-            pOut->u32DriverVersion  = SUPDRVIOC_VERSION;
-            pOut->pSession          = pSession;
-            pOut->cFunctions        = sizeof(g_aFunctions) / sizeof(g_aFunctions[0]);
-            *pcbReturned = sizeof(*pOut);
+            /** @todo Somehow validate the client and negotiate a secure cookie... */
+            pReq->u.Out.u32Cookie         = pDevExt->u32Cookie;
+            pReq->u.Out.u32SessionCookie  = pSession->u32Cookie;
+            pReq->u.Out.u32SessionVersion = SUPDRVIOC_VERSION;
+            pReq->u.Out.u32DriverVersion  = SUPDRVIOC_VERSION;
+            pReq->u.Out.pSession          = pSession;
+            pReq->u.Out.cFunctions        = sizeof(g_aFunctions) / sizeof(g_aFunctions[0]);
+            pReq->Hdr.rc = VINF_SUCCESS;
             return 0;
         }
 
-
-        case SUP_IOCTL_QUERY_FUNCS:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_QUERY_FUNCS(0)):
         {
-            unsigned            cFunctions;
-            PSUPQUERYFUNCS_IN   pIn = (PSUPQUERYFUNCS_IN)pvIn;
-            PSUPQUERYFUNCS_OUT  pOut = (PSUPQUERYFUNCS_OUT)pvOut;
+            /* validate */
+            PSUPQUERYFUNCS pReq = (PSUPQUERYFUNCS)pReqHdr;
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_QUERY_FUNCS, SUP_IOCTL_QUERY_FUNCS_SIZE_IN, SUP_IOCTL_QUERY_FUNCS_SIZE_OUT(RT_ELEMENTS(g_aFunctions)));
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut < sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_QUERY_FUNCS: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_QUERY_FUNCS: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Copy the functions.
-             */
-            cFunctions = (cbOut - RT_OFFSETOF(SUPQUERYFUNCS_OUT, aFunctions)) / sizeof(pOut->aFunctions[0]);
-            cFunctions = RT_MIN(cFunctions, ELEMENTS(g_aFunctions));
-            AssertMsg(cFunctions == ELEMENTS(g_aFunctions),
-                      ("Why aren't R3 querying all the functions!?! cFunctions=%d while there are %d available\n",
-                       cFunctions, ELEMENTS(g_aFunctions)));
-            pOut->cFunctions = cFunctions;
-            memcpy(&pOut->aFunctions[0], g_aFunctions, sizeof(pOut->aFunctions[0]) * cFunctions);
-            *pcbReturned = RT_OFFSETOF(SUPQUERYFUNCS_OUT, aFunctions[cFunctions]);
+            /* execute */
+            pReq->u.Out.cFunctions = RT_ELEMENTS(g_aFunctions);
+            memcpy(&pReq->u.Out.aFunctions[0], g_aFunctions, sizeof(g_aFunctions));
+            pReq->Hdr.rc = VINF_SUCCESS;
             return 0;
         }
 
-
-        case SUP_IOCTL_IDT_INSTALL:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_IDT_INSTALL):
         {
-            PSUPIDTINSTALL_IN   pIn = (PSUPIDTINSTALL_IN)pvIn;
-            PSUPIDTINSTALL_OUT  pOut = (PSUPIDTINSTALL_OUT)pvOut;
+            /* validate */
+            PSUPIDTINSTALL pReq = (PSUPIDTINSTALL)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_IDT_INSTALL);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_INSTALL: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_INSTALL: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie,  pDevExt->u32Cookie,
-                         pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            *pcbReturned = sizeof(*pOut);
+            /* execute */
 #ifndef VBOX_WITHOUT_IDT_PATCHING
-            return supdrvIOCtl_IdtInstall(pDevExt, pSession, pIn, pOut);
+            pReq->Hdr.rc = supdrvIOCtl_IdtInstall(pDevExt, pSession, pReq);
 #else
-            pOut->u8Idt = 3;
-            return 0;
+            pReq->u.Out.u8Idt = 3;
+            pReq->Hdr.rc = VERR_NOT_SUPPORTED;
 #endif
+            return 0;
         }
 
-
-        case SUP_IOCTL_IDT_REMOVE:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_IDT_REMOVE):
         {
-            PSUPIDTREMOVE_IN   pIn = (PSUPIDTREMOVE_IN)pvIn;
+            /* validate */
+            PSUPIDTREMOVE pReq = (PSUPIDTREMOVE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_IDT_REMOVE);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
-            {
-                dprintf(("SUP_IOCTL_REMOVE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_REMOVE: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
+            /* execute */
 #ifndef VBOX_WITHOUT_IDT_PATCHING
-            return supdrvIOCtl_IdtRemoveAll(pDevExt, pSession);
+            pReq->Hdr.rc = supdrvIOCtl_IdtRemoveAll(pDevExt, pSession);
 #else
-            return 0;
+            pReq->Hdr.rc = VERR_NOT_SUPPORTED;
 #endif
+            return 0;
         }
 
-
-        case SUP_IOCTL_PINPAGES:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_LOCK):
         {
-            int                 rc;
-            PSUPPINPAGES_IN     pIn = (PSUPPINPAGES_IN)pvIn;
-            PSUPPINPAGES_OUT    pOut = (PSUPPINPAGES_OUT)pvOut;
+            /* validate */
+            PSUPPAGELOCK pReq = (PSUPPAGELOCK)pReqHdr;
+            REQ_CHECK_SIZE_IN(SUP_IOCTL_PAGE_LOCK, SUP_IOCTL_PAGE_LOCK_SIZE_IN);
+            REQ_CHECK_SIZE_OUT(SUP_IOCTL_PAGE_LOCK, SUP_IOCTL_PAGE_LOCK_SIZE_OUT(pReq->u.In.cPages));
+            REQ_CHECK_EXPR(SUP_IOCTL_PAGE_LOCK, pReq->u.In.cPages > 0);
+            REQ_CHECK_EXPR(SUP_IOCTL_PAGE_LOCK, pReq->u.In.pvR3 >= PAGE_SIZE);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut < sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_PINPAGES: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_PINPAGES: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie,  pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            if (pIn->cPages <= 0 || !pIn->pvR3)
-            {
-                dprintf(("SUP_IOCTL_PINPAGES: Illegal request %p %d\n", (void *)pIn->pvR3, pIn->cPages));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if ((unsigned)RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cPages]) > cbOut)
-            {
-                dprintf(("SUP_IOCTL_PINPAGES: Output buffer is too small! %d required %d passed in.\n",
-                         RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cPages]), cbOut));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-
-            /*
-             * Execute.
-             */
-            *pcbReturned = RT_OFFSETOF(SUPPINPAGES_OUT, aPages[pIn->cPages]);
-            rc = SUPR0LockMem(pSession, pIn->pvR3, pIn->cPages, &pOut->aPages[0]);
-            if (rc)
-                *pcbReturned = 0;
-            return rc;
+            /* execute */
+            pReq->Hdr.rc = SUPR0LockMem(pSession, pReq->u.In.pvR3, pReq->u.In.cPages, &pReq->u.Out.aPages[0]);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
         }
 
-
-        case SUP_IOCTL_UNPINPAGES:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_UNLOCK):
         {
-            PSUPUNPINPAGES_IN   pIn = (PSUPUNPINPAGES_IN)pvIn;
+            /* validate */
+            PSUPPAGEUNLOCK pReq = (PSUPPAGEUNLOCK)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_PAGE_UNLOCK);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
-            {
-                dprintf(("SUP_IOCTL_UNPINPAGES: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_UNPINPAGES: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Execute.
-             */
-            return SUPR0UnlockMem(pSession, pIn->pvR3);
+            /* execute */
+            pReq->Hdr.rc = SUPR0UnlockMem(pSession, pReq->u.In.pvR3);
+            return 0;
         }
 
-        case SUP_IOCTL_CONT_ALLOC:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CONT_ALLOC):
         {
-            int                 rc;
-            PSUPCONTALLOC_IN    pIn = (PSUPCONTALLOC_IN)pvIn;
-            PSUPCONTALLOC_OUT   pOut = (PSUPCONTALLOC_OUT)pvOut;
+            /* validate */
+            PSUPCONTALLOC pReq = (PSUPCONTALLOC)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_CONT_ALLOC);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut < sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_CONT_ALLOC: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_CONT_ALLOC: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Execute.
-             */
-            rc = SUPR0ContAlloc(pSession, pIn->cPages, &pOut->pvR0, &pOut->pvR3, &pOut->HCPhys);
-            if (!rc)
-                *pcbReturned = sizeof(*pOut);
-            return rc;
+            /* execute */
+            pReq->Hdr.rc = SUPR0ContAlloc(pSession, pReq->u.In.cPages, &pReq->u.Out.pvR0, &pReq->u.Out.pvR3, &pReq->u.Out.HCPhys);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
         }
 
-
-        case SUP_IOCTL_CONT_FREE:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CONT_FREE):
         {
-            PSUPCONTFREE_IN   pIn = (PSUPCONTFREE_IN)pvIn;
+            /* validate */
+            PSUPCONTFREE pReq = (PSUPCONTFREE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_CONT_FREE);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
-            {
-                dprintf(("SUP_IOCTL_CONT_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_CONT_FREE: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Execute.
-             */
-            return SUPR0ContFree(pSession, (RTHCUINTPTR)pIn->pvR3);
+            /* execute */
+            pReq->Hdr.rc = SUPR0ContFree(pSession, (RTHCUINTPTR)pReq->u.In.pvR3);
+            return 0;
         }
 
-
-        case SUP_IOCTL_LDR_OPEN:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LDR_OPEN):
         {
-            PSUPLDROPEN_IN  pIn = (PSUPLDROPEN_IN)pvIn;
-            PSUPLDROPEN_OUT pOut = (PSUPLDROPEN_OUT)pvOut;
+            /* validate */
+            PSUPLDROPEN pReq = (PSUPLDROPEN)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_LDR_OPEN);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImage > 0);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImage < _1M*16);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !strpbrk(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_LDR_OPEN: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_LDR_OPEN: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            if (    pIn->cbImage <= 0
-                ||  pIn->cbImage >= 16*1024*1024 /*16MB*/)
-            {
-                dprintf(("SUP_IOCTL_LDR_OPEN: Invalid size %d. (max is 16MB)\n", pIn->cbImage));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (!memchr(pIn->szName, '\0', sizeof(pIn->szName)))
-            {
-                dprintf(("SUP_IOCTL_LDR_OPEN: The image name isn't terminated!\n"));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (!pIn->szName[0])
-            {
-                dprintf(("SUP_IOCTL_LDR_OPEN: The image name is too short\n"));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (strpbrk(pIn->szName, ";:()[]{}/\\|&*%#@!~`\"'"))
-            {
-                dprintf(("SUP_IOCTL_LDR_OPEN: The name is invalid '%s'\n", pIn->szName));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-
-            *pcbReturned = sizeof(*pOut);
-            return supdrvIOCtl_LdrOpen(pDevExt, pSession, pIn, pOut);
+            /* execute */
+            pReq->Hdr.rc = supdrvIOCtl_LdrOpen(pDevExt, pSession, pReq);
+            return 0;
         }
 
-
-        case SUP_IOCTL_LDR_LOAD:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LDR_LOAD):
         {
-            PSUPLDRLOAD_IN  pIn = (PSUPLDRLOAD_IN)pvIn;
+            /* validate */
+            PSUPLDRLOAD pReq = (PSUPLDRLOAD)pReqHdr;
+            REQ_CHECK_EXPR(Name, pReq->Hdr.cbIn >= sizeof(*pReq));
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImage), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_LOAD, pReq->u.In.cSymbols <= 16384);
+            REQ_CHECK_EXPR_FMT(     !pReq->u.In.cSymbols
+                               ||   (   pReq->u.In.offSymbols < pReq->u.In.cbImage
+                                     && pReq->u.In.offSymbols + pReq->u.In.cSymbols * sizeof(SUPLDRSYM) <= pReq->u.In.cbImage),
+                               ("SUP_IOCTL_LDR_LOAD: offSymbols=%#lx cSymbols=%#lx cbImage=%#lx\n", (long)pReq->u.In.offSymbols,
+                                (long)pReq->u.In.cSymbols, (long)pReq->u.In.cbImage));
+            REQ_CHECK_EXPR_FMT(     !pReq->u.In.cbStrTab
+                               ||   (   pReq->u.In.offStrTab < pReq->u.In.cbImage
+                                     && pReq->u.In.offStrTab + pReq->u.In.cbStrTab <= pReq->u.In.cbImage
+                                     && pReq->u.In.cbStrTab <= pReq->u.In.cbImage),
+                               ("SUP_IOCTL_LDR_LOAD: offStrTab=%#lx cbStrTab=%#lx cbImage=%#lx\n", (long)pReq->u.In.offStrTab,
+                                (long)pReq->u.In.cbStrTab, (long)pReq->u.In.cbImage));
 
-            /*
-             * Validate.
-             */
-            if (    cbIn <= sizeof(*pIn)
-                ||  cbOut != 0)
+            if (pReq->u.In.cSymbols)
             {
-                dprintf(("SUP_IOCTL_LDR_LOAD: Invalid input/output sizes. cbIn=%ld expected greater than %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_LDR_LOAD: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            if ((unsigned)RT_OFFSETOF(SUPLDRLOAD_IN, achImage[pIn->cbImage]) > cbIn)
-            {
-                dprintf(("SUP_IOCTL_LDR_LOAD: Invalid size %d. InputBufferLength=%d\n",
-                         pIn->cbImage, cbIn));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (pIn->cSymbols > 16384)
-            {
-                dprintf(("SUP_IOCTL_LDR_LOAD: Too many symbols. cSymbols=%u max=16384\n", pIn->cSymbols));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->cSymbols
-                &&  (   pIn->offSymbols >= pIn->cbImage
-                     || pIn->offSymbols + pIn->cSymbols * sizeof(SUPLDRSYM) > pIn->cbImage)
-               )
-            {
-                dprintf(("SUP_IOCTL_LDR_LOAD: symbol table is outside the image bits! offSymbols=%u cSymbols=%d cbImage=%d\n",
-                         pIn->offSymbols, pIn->cSymbols, pIn->cbImage));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->cbStrTab
-                &&  (   pIn->offStrTab >= pIn->cbImage
-                     || pIn->offStrTab + pIn->cbStrTab > pIn->cbImage
-                     || pIn->offStrTab + pIn->cbStrTab < pIn->offStrTab)
-               )
-            {
-                dprintf(("SUP_IOCTL_LDR_LOAD: string table is outside the image bits! offStrTab=%u cbStrTab=%d cbImage=%d\n",
-                         pIn->offStrTab, pIn->cbStrTab, pIn->cbImage));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-
-            if (pIn->cSymbols)
-            {
-                uint32_t    i;
-                PSUPLDRSYM  paSyms = (PSUPLDRSYM)&pIn->achImage[pIn->offSymbols];
-                for (i = 0; i < pIn->cSymbols; i++)
+                uint32_t i;
+                PSUPLDRSYM paSyms = (PSUPLDRSYM)&pReq->u.In.achImage[pReq->u.In.offSymbols];
+                for (i = 0; i < pReq->u.In.cSymbols; i++)
                 {
-                    if (paSyms[i].offSymbol >= pIn->cbImage)
-                    {
-                        dprintf(("SUP_IOCTL_LDR_LOAD: symbol i=%d has an invalid symbol offset: %#x (max=%#x)\n",
-                                 i, paSyms[i].offSymbol, pIn->cbImage));
-                        return SUPDRV_ERR_INVALID_PARAM;
-                    }
-                    if (paSyms[i].offName >= pIn->cbStrTab)
-                    {
-                        dprintf(("SUP_IOCTL_LDR_LOAD: symbol i=%d has an invalid name offset: %#x (max=%#x)\n",
-                                 i, paSyms[i].offName, pIn->cbStrTab));
-                        return SUPDRV_ERR_INVALID_PARAM;
-                    }
-                    if (!memchr(&pIn->achImage[pIn->offStrTab + paSyms[i].offName], '\0', pIn->cbStrTab - paSyms[i].offName))
-                    {
-                        dprintf(("SUP_IOCTL_LDR_LOAD: symbol i=%d has an unterminated name! offName=%#x (max=%#x)\n",
-                                 i, paSyms[i].offName, pIn->cbStrTab));
-                        return SUPDRV_ERR_INVALID_PARAM;
-                    }
+                    REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImage,
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImage));
+                    REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImage));
+                    REQ_CHECK_EXPR_FMT(memchr(&pReq->u.In.achImage[pReq->u.In.offStrTab + paSyms[i].offName], '\0', pReq->u.In.cbStrTab - paSyms[i].offName),
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImage));
                 }
             }
 
-            return supdrvIOCtl_LdrLoad(pDevExt, pSession, pIn);
-        }
-
-
-        case SUP_IOCTL_LDR_FREE:
-        {
-            PSUPLDRFREE_IN  pIn = (PSUPLDRFREE_IN)pvIn;
-
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
-            {
-                dprintf(("SUP_IOCTL_LDR_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_LDR_FREE: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            return supdrvIOCtl_LdrFree(pDevExt, pSession, pIn);
-        }
-
-
-        case SUP_IOCTL_LDR_GET_SYMBOL:
-        {
-            PSUPLDRGETSYMBOL_IN  pIn  = (PSUPLDRGETSYMBOL_IN)pvIn;
-            PSUPLDRGETSYMBOL_OUT pOut = (PSUPLDRGETSYMBOL_OUT)pvOut;
-            char                *pszEnd;
-
-            /*
-             * Validate.
-             */
-            if (    cbIn < (unsigned)RT_OFFSETOF(SUPLDRGETSYMBOL_IN, szSymbol[2])
-                ||  cbOut != sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: Invalid input/output sizes. cbIn=%d expected >=%d. cbOut=%d expected at%d.\n",
-                         cbIn, RT_OFFSETOF(SUPLDRGETSYMBOL_IN, szSymbol[2]), cbOut, 0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            pszEnd = memchr(pIn->szSymbol, '\0', cbIn - RT_OFFSETOF(SUPLDRGETSYMBOL_IN, szSymbol));
-            if (!pszEnd)
-            {
-                dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: The symbol name isn't terminated!\n"));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (pszEnd - &pIn->szSymbol[0] >= 1024)
-            {
-                dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: The symbol name too long (%ld chars, max is %d)!\n",
-                         (long)(pszEnd - &pIn->szSymbol[0]), 1024));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-
-            pOut->pvSymbol = NULL;
-            *pcbReturned = sizeof(*pOut);
-            return supdrvIOCtl_LdrGetSymbol(pDevExt, pSession, pIn, pOut);
-        }
-
-
-        /** @todo this interface needs re-doing, we're accessing Ring-3 buffers directly here! */
-        case SUP_IOCTL_CALL_VMMR0:
-        {
-            PSUPCALLVMMR0_IN    pIn = (PSUPCALLVMMR0_IN)pvIn;
-            PSUPCALLVMMR0_OUT   pOut = (PSUPCALLVMMR0_OUT)pvOut;
-            RTCCUINTREG         uFlags;
-
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_CALL_VMMR0: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_CALL_VMMR0: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Do we have an entrypoint?
-             */
-            if (!pDevExt->pfnVMMR0Entry)
-                return SUPDRV_ERR_GENERAL_FAILURE;
-
-            /*
-             * Execute.
-             */
-            uFlags = ASMGetFlags();
-            ASMIntDisable();
-            pOut->rc = pDevExt->pfnVMMR0Entry(pIn->pVMR0, pIn->uOperation, (void *)pIn->pvArg); /** @todo address the pvArg problem! */
-            ASMSetFlags(uFlags);
-            *pcbReturned = sizeof(*pOut);
+            /* execute */
+            pReq->Hdr.rc = supdrvIOCtl_LdrLoad(pDevExt, pSession, pReq);
             return 0;
         }
 
-
-        case SUP_IOCTL_GET_PAGING_MODE:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LDR_FREE):
         {
-            int                     rc;
-            PSUPGETPAGINGMODE_IN    pIn = (PSUPGETPAGINGMODE_IN)pvIn;
-            PSUPGETPAGINGMODE_OUT   pOut = (PSUPGETPAGINGMODE_OUT)pvOut;
+            /* validate */
+            PSUPLDRFREE pReq = (PSUPLDRFREE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_LDR_FREE);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_GET_PAGING_MODE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_GET_PAGING_MODE: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Execute.
-             */
-            *pcbReturned = sizeof(*pOut);
-            rc = supdrvIOCtl_GetPagingMode(pOut);
-            if (rc)
-                *pcbReturned = 0;
-            return rc;
+            /* execute */
+            pReq->Hdr.rc = supdrvIOCtl_LdrFree(pDevExt, pSession, pReq);
+            return 0;
         }
 
-
-        case SUP_IOCTL_LOW_ALLOC:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LDR_GET_SYMBOL):
         {
-            int                 rc;
-            PSUPLOWALLOC_IN     pIn = (PSUPLOWALLOC_IN)pvIn;
-            PSUPLOWALLOC_OUT    pOut = (PSUPLOWALLOC_OUT)pvOut;
+            /* validate */
+            PSUPLDRGETSYMBOL pReq = (PSUPLDRGETSYMBOL)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_LDR_GET_SYMBOL);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_GET_SYMBOL, memchr(pReq->u.In.szSymbol, '\0', sizeof(pReq->u.In.szSymbol)));
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut < sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_LOW_ALLOC: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie )
-            {
-                dprintf(("SUP_IOCTL_LOW_ALLOC: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie,  pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            if ((unsigned)RT_OFFSETOF(SUPLOWALLOC_OUT, aPages[pIn->cPages]) > cbOut)
-            {
-                dprintf(("SUP_IOCTL_LOW_ALLOC: Output buffer is too small! %d required %d passed in.\n",
-                         RT_OFFSETOF(SUPLOWALLOC_OUT, aPages[pIn->cPages]), cbOut));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-
-            /*
-             * Execute.
-             */
-            *pcbReturned = RT_OFFSETOF(SUPLOWALLOC_OUT, aPages[pIn->cPages]);
-            rc = SUPR0LowAlloc(pSession, pIn->cPages, &pOut->pvR0, &pOut->pvR3, &pOut->aPages[0]);
-            if (rc)
-                *pcbReturned = 0;
-            return rc;
+            /* execute */
+            pReq->Hdr.rc = supdrvIOCtl_LdrGetSymbol(pDevExt, pSession, pReq);
+            return 0;
         }
 
-
-        case SUP_IOCTL_LOW_FREE:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CALL_VMMR0(0)):
         {
-            PSUPLOWFREE_IN  pIn = (PSUPLOWFREE_IN)pvIn;
-
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
+            /* validate */
+            PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)pReqHdr;
+            if (pReq->Hdr.cbIn == SUP_IOCTL_CALL_VMMR0(0))
             {
-                dprintf(("SUP_IOCTL_LOW_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_LOW_FREE: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
+                REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_VMMR0, SUP_IOCTL_CALL_VMMR0_SIZE_IN(0), SUP_IOCTL_CALL_VMMR0_SIZE_OUT(0));
 
-            /*
-             * Execute.
-             */
-            return SUPR0LowFree(pSession, (RTHCUINTPTR)pIn->pvR3);
+                /* execute */
+                if (RT_LIKELY(pDevExt->pfnVMMR0Entry))
+                    pReq->Hdr.rc = pDevExt->pfnVMMR0Entry(pReq->u.In.pVMR0, pReq->u.In.uOperation, (void *)pReq->u.In.uArg);
+                else
+                    pReq->Hdr.rc = VERR_WRONG_ORDER;
+            }
+            else
+            {
+                PSUPVMMR0REQHDR pVMMReq = (PSUPVMMR0REQHDR)&pReq->abReqPkt[0];
+                REQ_CHECK_EXPR(SUP_IOCTL_CALL_VMMR0, pReq->Hdr.cbIn >= SUP_IOCTL_CALL_VMMR0_SIZE(sizeof(SUPVMMR0REQHDR)));
+                REQ_CHECK_EXPR(SUP_IOCTL_CALL_VMMR0, pVMMReq->u32Magic == SUPVMMR0REQHDR_MAGIC);
+                REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_VMMR0, SUP_IOCTL_CALL_VMMR0_SIZE_IN(pVMMReq->cbReq), SUP_IOCTL_CALL_VMMR0_SIZE_OUT(pVMMReq->cbReq));
+
+                /* execute */
+                if (RT_LIKELY(pDevExt->pfnVMMR0Entry))
+                    pReq->Hdr.rc = pDevExt->pfnVMMR0Entry(pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq);
+                else
+                    pReq->Hdr.rc = VERR_WRONG_ORDER;
+            }
+            return 0;
         }
 
-
-        case SUP_IOCTL_GIP_MAP:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_GET_PAGING_MODE):
         {
-            int             rc;
-            PSUPGIPMAP_IN   pIn = (PSUPGIPMAP_IN)pvIn;
-            PSUPGIPMAP_OUT  pOut = (PSUPGIPMAP_OUT)pvOut;
+            /* validate */
+            PSUPGETPAGINGMODE pReq = (PSUPGETPAGINGMODE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_GET_PAGING_MODE);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_GIP_MAP: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_GIP_MAP: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Execute.
-             */
-            rc = SUPR0GipMap(pSession, &pOut->pGipR3, &pOut->HCPhysGip);
-            if (!rc)
-            {
-                pOut->pGipR0 = pDevExt->pGip;
-                *pcbReturned = sizeof(*pOut);
-            }
-            return rc;
+            /* execute */
+            pReq->Hdr.rc = VINF_SUCCESS;
+            pReq->u.Out.enmMode = supdrvIOCtl_GetPagingMode();
+            return 0;
         }
 
-
-        case SUP_IOCTL_GIP_UNMAP:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LOW_ALLOC):
         {
-            PSUPGIPUNMAP_IN pIn = (PSUPGIPUNMAP_IN)pvIn;
+            /* validate */
+            PSUPLOWALLOC pReq = (PSUPLOWALLOC)pReqHdr;
+            REQ_CHECK_EXPR(SUP_IOCTL_LOW_ALLOC, pReq->Hdr.cbIn <= SUP_IOCTL_LOW_ALLOC_SIZE_IN);
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_LOW_ALLOC, SUP_IOCTL_LOW_ALLOC_SIZE_IN, SUP_IOCTL_LOW_ALLOC_SIZE_OUT(pReq->u.In.cPages));
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
-            {
-                dprintf(("SUP_IOCTL_GIP_UNMAP: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_GIP_UNMAP: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-
-            /*
-             * Execute.
-             */
-            return SUPR0GipUnmap(pSession);
+            /* execute */
+            pReq->Hdr.rc = SUPR0LowAlloc(pSession, pReq->u.In.cPages, &pReq->u.Out.pvR0, &pReq->u.Out.pvR3, &pReq->u.Out.aPages[0]);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
         }
 
-
-        case SUP_IOCTL_SET_VM_FOR_FAST:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LOW_FREE):
         {
-            PSUPSETVMFORFAST_IN pIn = (PSUPSETVMFORFAST_IN)pvIn;
+            /* validate */
+            PSUPLOWFREE pReq = (PSUPLOWFREE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_LOW_FREE);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
-            {
-                dprintf(("SUP_IOCTL_SET_VM_FOR_FAST: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_SET_VM_FOR_FAST: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            if (    pIn->pVMR0 != NULL
-                && (    !VALID_PTR(pIn->pVMR0)
-                    ||  ((uintptr_t)pIn->pVMR0 & (PAGE_SIZE - 1))
-                   )
-                )
-            {
-                dprintf(("SUP_IOCTL_SET_VM_FOR_FAST: pVMR0=%p! Must be a valid, page aligned, pointer.\n", pIn->pVMR0));
-                return SUPDRV_ERR_INVALID_POINTER;
-            }
+            /* execute */
+            pReq->Hdr.rc = SUPR0LowFree(pSession, (RTHCUINTPTR)pReq->u.In.pvR3);
+            return 0;
+        }
 
-            /*
-             * Execute.
-             */
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_GIP_MAP):
+        {
+            /* validate */
+            PSUPGIPMAP pReq = (PSUPGIPMAP)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_GIP_MAP);
+
+            /* execute */
+            pReq->Hdr.rc = SUPR0GipMap(pSession, &pReq->u.Out.pGipR3, &pReq->u.Out.HCPhysGip);
+            if (RT_SUCCESS(pReq->Hdr.rc))
+                pReq->u.Out.pGipR0 = pDevExt->pGip;
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_GIP_UNMAP):
+        {
+            /* validate */
+            PSUPGIPUNMAP pReq = (PSUPGIPUNMAP)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_GIP_UNMAP);
+
+            /* execute */
+            pReq->Hdr.rc = SUPR0GipUnmap(pSession);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_SET_VM_FOR_FAST):
+        {
+            /* validate */
+            PSUPSETVMFORFAST pReq = (PSUPSETVMFORFAST)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_SET_VM_FOR_FAST);
+            REQ_CHECK_EXPR_FMT(     !pReq->u.In.pVMR0
+                               ||   (   VALID_PTR(pReq->u.In.pVMR0)
+                                     && !((uintptr_t)pReq->u.In.pVMR0 & (PAGE_SIZE - 1))),
+                               ("SUP_IOCTL_SET_VM_FOR_FAST: pVMR0=%p!\n", pReq->u.In.pVMR0));
+            /* execute */
 #ifndef VBOX_WITHOUT_IDT_PATCHING
             OSDBGPRINT(("SUP_IOCTL_SET_VM_FOR_FAST: !VBOX_WITHOUT_IDT_PATCHING\n"));
-            return SUPDRV_ERR_GENERAL_FAILURE;
+            pReq->Hdr.rc = VERR_NOT_SUPPORTED;
 #else
-            pSession->pVM = pIn->pVMR0;
-            return 0;
+            pSession->pVM = pReq->u.In.pVMR0;
+            pReq->Hdr.rc = VINF_SUCCESS;
 #endif
+            return 0;
         }
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
-        case SUP_IOCTL_PAGE_ALLOC:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_ALLOC):
         {
-            int               rc;
-            PSUPALLOCPAGE_IN  pIn  = (PSUPALLOCPAGE_IN)pvIn;
-            PSUPALLOCPAGE_OUT pOut = (PSUPALLOCPAGE_OUT)pvOut;
+            /* validate */
+            PSUPPAGEALLOC pReq = (PSUPPAGEALLOC)pReqHdr;
+            REQ_CHECK_EXPR(SUP_IOCTL_PAGE_ALLOC, pReq->Hdr.cbIn <= SUP_IOCTL_PAGE_ALLOC_SIZE_IN);
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_PAGE_ALLOC, SUP_IOCTL_PAGE_ALLOC_SIZE_IN, SUP_IOCTL_PAGE_ALLOC_SIZE_OUT(pReq->u.In.cPages));
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut < sizeof(*pOut))
-            {
-                dprintf(("SUP_IOCTL_PAGE_ALLOC: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)sizeof(*pOut)));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie 
-                ||  pOut->u32Cookie != pDevExt->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_PAGE_ALLOC: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie,  pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            /*
-             * Execute.
-             */
-            *pcbReturned = sizeof(*pOut);
-            rc = SUPR0PageAlloc(pSession, pIn->cPages, &pOut->pvR3);
-            if (rc)
-                *pcbReturned = 0;
-            return rc;
+            /* execute */
+            pReq->Hdr.rc = SUPR0PageAlloc(pSession, pReq->u.In.cPages, &pReq->u.Out.pvR3, &pReq->u.Out.aPages[0]);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
         }
 
-        case SUP_IOCTL_PAGE_FREE:
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_FREE):
         {
-            PSUPFREEPAGE_IN pIn = (PSUPFREEPAGE_IN)pvIn;
+            /* validate */
+            PSUPPAGEFREE pReq = (PSUPPAGEFREE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_PAGE_FREE);
 
-            /*
-             * Validate.
-             */
-            if (    cbIn != sizeof(*pIn)
-                ||  cbOut != 0)
-            {
-                dprintf(("SUP_IOCTL_PAGE_FREE: Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n",
-                         (long)cbIn, (long)sizeof(*pIn), (long)cbOut, (long)0));
-                return SUPDRV_ERR_INVALID_PARAM;
-            }
-            if (    pIn->u32Cookie != pDevExt->u32Cookie
-                ||  pIn->u32SessionCookie != pSession->u32Cookie)
-            {
-                dprintf(("SUP_IOCTL_PAGE_FREE: Cookie mismatch {%#x,%#x} != {%#x,%#x}!\n",
-                         pIn->u32Cookie, pDevExt->u32Cookie, pIn->u32SessionCookie, pSession->u32Cookie));
-                return SUPDRV_ERR_INVALID_MAGIC;
-            }
-            /*
-             * Execute.
-             */
-            return SUPR0PageFree(pSession, (RTHCUINTPTR)pIn->pvR3);
+            /* execute */
+            pReq->Hdr.rc = SUPR0PageFree(pSession, pReq->u.In.pvR3);
+            return 0;
         }
 #endif /* USE_NEW_OS_INTERFACE_FOR_MM */
 
         default:
-            dprintf(("Unknown IOCTL %#x\n", uIOCtl));
+            dprintf(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;
     }
     return SUPDRV_ERR_GENERAL_FAILURE;
@@ -1483,22 +1121,9 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
     /*
      * Validate the input.
      */
-    if (!pSession)
-    {
-        AssertMsgFailed(("Invalid pSession=%p\n", pSession));
-        return NULL;
-    }
-    if (    enmType <= SUPDRVOBJTYPE_INVALID
-        ||  enmType >= SUPDRVOBJTYPE_END)
-    {
-        AssertMsgFailed(("Invalid enmType=%d\n", enmType));
-        return NULL;
-    }
-    if (!pfnDestructor)
-    {
-        AssertMsgFailed(("Invalid pfnDestructor=%d\n", pfnDestructor));
-        return NULL;
-    }
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), NULL);
+    AssertReturn(enmType > SUPDRVOBJTYPE_INVALID && enmType < SUPDRVOBJTYPE_END, NULL);
+    AssertPtrReturn(pfnDestructor, NULL);
 
     /*
      * Allocate and initialize the object.
@@ -1564,8 +1189,7 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
  * Increment the reference counter for the object associating the reference
  * with the specified session.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pvObj           The identifier returned by SUPR0ObjRegister().
  * @param   pSession        The session which is referencing the object.
  */
@@ -1580,17 +1204,10 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
     /*
      * Validate the input.
      */
-    if (!pSession)
-    {
-        AssertMsgFailed(("Invalid pSession=%p\n", pSession));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
-    if (!pObj || pObj->u32Magic != SUPDRVOBJ_MAGIC)
-    {
-        AssertMsgFailed(("Invalid pvObj=%p magic=%#x (exepcted %#x)\n",
-                         pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
+                    ("Invalid pvObj=%p magic=%#x (exepcted %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Preallocate the usage record.
@@ -1605,7 +1222,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
         RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
         pUsagePre = (PSUPDRVUSAGE)RTMemAlloc(sizeof(*pUsagePre));
         if (!pUsagePre)
-            return SUPDRV_ERR_NO_MEMORY;
+            return VERR_NO_MEMORY;
         RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
     }
 
@@ -1648,7 +1265,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 
     RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -1657,8 +1274,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
  *
  * The object is uniquely identified by pfnDestructor+pvUser1+pvUser2.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pvObj           The identifier returned by SUPR0ObjRegister().
  * @param   pSession        The session which is referencing the object.
  */
@@ -1674,17 +1290,10 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     /*
      * Validate the input.
      */
-    if (!pSession)
-    {
-        AssertMsgFailed(("Invalid pSession=%p\n", pSession));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
-    if (!pObj || pObj->u32Magic != SUPDRVOBJ_MAGIC)
-    {
-        AssertMsgFailed(("Invalid pvObj=%p magic=%#x (exepcted %#x)\n",
-                         pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
+                    ("Invalid pvObj=%p magic=%#x (exepcted %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Acquire the spinlock and look for the usage record.
@@ -1757,15 +1366,16 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     }
 
     AssertMsg(pUsage, ("pvObj=%p\n", pvObj));
-    return pUsage ? 0 : SUPDRV_ERR_INVALID_PARAM;
+    return pUsage ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
 }
 
 /**
  * Verifies that the current process can access the specified object.
  *
- * @returns 0 if access is granted.
- * @returns SUPDRV_ERR_PERMISSION_DENIED if denied access.
- * @returns SUPDRV_ERR_INVALID_PARAM if invalid parameter.
+ * @returns The following IPRT status code:
+ * @retval  VINF_SUCCESS if access was granted.
+ * @retval  VERR_PERMISSION_DENIED if denied access.
+ * @retval  VERR_INVALID_PARAMETER if invalid parameter.
  *
  * @param   pvObj           The identifier returned by SUPR0ObjRegister().
  * @param   pSession        The session which wishes to access the object.
@@ -1777,26 +1387,20 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
 SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName)
 {
     PSUPDRVOBJ  pObj = (PSUPDRVOBJ)pvObj;
-    int         rc   = SUPDRV_ERR_GENERAL_FAILURE;
+    int         rc;
 
     /*
      * Validate the input.
      */
-    if (!pSession)
-    {
-        AssertMsgFailed(("Invalid pSession=%p\n", pSession));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
-    if (!pObj || pObj->u32Magic != SUPDRVOBJ_MAGIC)
-    {
-        AssertMsgFailed(("Invalid pvObj=%p magic=%#x (exepcted %#x)\n",
-                         pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
+                    ("Invalid pvObj=%p magic=%#x (exepcted %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Check access. (returns true if a decision has been made.)
      */
+    rc = VERR_INTERNAL_ERROR;
     if (supdrvOSObjCanAccess(pObj, pSession, pszObjName, &rc))
         return rc;
 
@@ -1805,47 +1409,47 @@ SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const 
      * stuff but nothing else.
      */
     if (pObj->CreatorUid == pSession->Uid)
-        return 0;
-    return SUPDRV_ERR_PERMISSION_DENIED;
+        return VINF_SUCCESS;
+    return VERR_PERMISSION_DENIED;
 }
 
 
 /**
  * Lock pages.
  *
+ * @returns IPRT status code.
  * @param   pSession    Session to which the locked memory should be associated.
  * @param   pvR3        Start of the memory range to lock.
  *                      This must be page aligned.
  * @param   cb          Size of the memory range to lock.
  *                      This must be page aligned.
  */
-SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PSUPPAGE paPages)
+SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
     const size_t    cb = (size_t)cPages << PAGE_SHIFT;
-    dprintf(("SUPR0LockMem: pSession=%p pvR3=%p cPages=%d paPages=%p\n",
-             pSession, (void *)pvR3, cPages, paPages));
+    dprintf(("SUPR0LockMem: pSession=%p pvR3=%p cPages=%d paPages=%p\n", pSession, (void *)pvR3, cPages, paPages));
 
     /*
      * Verify input.
      */
-    if (RT_ALIGN_R3PT(pvR3, PAGE_SIZE, RTR3PTR) != pvR3 || !pvR3)
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
+    if (    RT_ALIGN_R3PT(pvR3, PAGE_SIZE, RTR3PTR) != pvR3
+        ||  !pvR3)
     {
         dprintf(("pvR3 (%p) must be page aligned and not NULL!\n", (void *)pvR3));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
-    if (!paPages)
-    {
-        dprintf(("paPages is NULL!\n"));
-        return SUPDRV_ERR_INVALID_PARAM;
+        return VERR_INVALID_PARAMETER;
     }
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
+# ifdef RT_OS_WINDOWS /* A temporary hack for windows, will be removed once all ring-3 code has been cleaned up. */
     /* First check if we allocated it using SUPPageAlloc; if so then we don't need to lock it again */
-    rc = SUPR0PageGetPhys(pSession, pvR3, cPages, paPages);
+    rc = supdrvPageGetPhys(pSession, pvR3, cPages, paPages);
     if (RT_SUCCESS(rc))
         return rc;
+# endif
 
     /*
      * Let IPRT do the job.
@@ -1854,15 +1458,14 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
     rc = RTR0MemObjLockUser(&Mem.MemObj, pvR3, cb, RTR0ProcHandleSelf());
     if (RT_SUCCESS(rc))
     {
-        unsigned iPage = cPages;
+        uint32_t iPage = cPages;
         AssertMsg(RTR0MemObjAddressR3(Mem.MemObj) == pvR3, ("%p == %p\n", RTR0MemObjAddressR3(Mem.MemObj), pvR3));
         AssertMsg(RTR0MemObjSize(Mem.MemObj) == cb, ("%x == %x\n", RTR0MemObjSize(Mem.MemObj), cb));
 
         while (iPage-- > 0)
         {
-            paPages[iPage].uReserved = 0;
-            paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(Mem.MemObj, iPage);
-            if (RT_UNLIKELY(paPages[iPage].Phys == NIL_RTCCPHYS))
+            paPages[iPage] = RTR0MemObjGetPagePhysAddr(Mem.MemObj, iPage);
+            if (RT_UNLIKELY(paPages[iPage] == NIL_RTCCPHYS))
             {
                 AssertMsgFailed(("iPage=%d\n", iPage));
                 rc = VERR_INTERNAL_ERROR;
@@ -1905,22 +1508,25 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
 /**
  * Unlocks the memory pointed to by pv.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure
+ * @returns IPRT status code.
  * @param   pSession    Session to which the memory was locked.
  * @param   pvR3        Memory to unlock.
  */
 SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 {
     dprintf(("SUPR0UnlockMem: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
-
-    /* SUPR0PageFree will unlock SUPR0PageAlloc allocations; ignore this call */
-    if (SUPR0PageWasLockedByPageAlloc(pSession, pvR3))
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+#ifdef RT_OS_WINDOWS
+    /*
+     * Temporary hack for windows - SUPR0PageFree will unlock SUPR0PageAlloc
+     * allocations; ignore this call.
+     */
+    if (supdrvPageWasLockedByPageAlloc(pSession, pvR3))
     {
         dprintf(("Page will be unlocked in SUPR0PageFree -> ignore\n"));
-        return 0;
+        return VINF_SUCCESS;
     }
-
+#endif
     return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED);
 }
 
@@ -1929,8 +1535,7 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
  * Allocates a chunk of page aligned memory with contiguous and fixed physical
  * backing.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession    Session data.
  * @param   cb          Number of bytes to allocate.
  * @param   ppvR0       Where to put the address of Ring-0 mapping the allocated memory.
@@ -1946,17 +1551,18 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     /*
      * Validate input.
      */
-    if (!pSession || !ppvR3 || !ppvR0 || !pHCPhys)
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    if (!ppvR3 || !ppvR0 || !pHCPhys)
     {
         dprintf(("Null pointer. All of these should be set: pSession=%p ppvR0=%p ppvR3=%p pHCPhys=%p\n",
                  pSession, ppvR0, ppvR3, pHCPhys));
-        return SUPDRV_ERR_INVALID_PARAM;
+        return VERR_INVALID_PARAMETER;
 
     }
-    if (cPages == 0 || cPages >= 256)
+    if (cPages < 1 || cPages >= 256)
     {
         dprintf(("Illegal request cPages=%d, must be greater than 0 and smaller than 256\n", cPages));
-        return SUPDRV_ERR_INVALID_PARAM;
+        return VERR_INVALID_PARAMETER;
     }
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
@@ -2018,14 +1624,14 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
 /**
  * Frees memory allocated using SUPR0ContAlloc().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession    The session to which the memory was allocated.
  * @param   uPtr        Pointer to the memory (ring-3 or ring-0).
  */
 SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
     dprintf(("SUPR0ContFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_CONT);
 }
 
@@ -2033,15 +1639,14 @@ SUPR0DECL(int) SUPR0ContFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 /**
  * Allocates a chunk of page aligned memory with fixed physical backing below 4GB.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession    Session data.
  * @param   cPages      Number of pages to allocate.
  * @param   ppvR0       Where to put the address of Ring-0 mapping of the allocated memory.
  * @param   ppvR3       Where to put the address of Ring-3 mapping of the allocated memory.
  * @param   paPages     Where to put the physical addresses of allocated memory.
  */
-SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPages)
+SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS paPages)
 {
     unsigned        iPage;
     int             rc;
@@ -2051,17 +1656,18 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
     /*
      * Validate input.
      */
-    if (!pSession || !ppvR3 || !ppvR0 || !paPages)
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    if (!ppvR3 || !ppvR0 || !paPages)
     {
         dprintf(("Null pointer. All of these should be set: pSession=%p ppvR3=%p ppvR0=%p paPages=%p\n",
                  pSession, ppvR3, ppvR0, paPages));
-        return SUPDRV_ERR_INVALID_PARAM;
+        return VERR_INVALID_PARAMETER;
 
     }
     if (cPages < 1 || cPages > 256)
     {
         dprintf(("Illegal request cPages=%d, must be greater than 0 and smaller than 256.\n", cPages));
-        return SUPDRV_ERR_INVALID_PARAM;
+        return VERR_INVALID_PARAMETER;
     }
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
@@ -2082,9 +1688,8 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
             {
                 for (iPage = 0; iPage < cPages; iPage++)
                 {
-                    paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(Mem.MemObj, iPage);
-                    paPages[iPage].uReserved = 0;
-                    AssertMsg(!(paPages[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPages[iPage].Phys));
+                    paPages[iPage] = RTR0MemObjGetPagePhysAddr(Mem.MemObj, iPage);
+                    AssertMsg(!(paPages[iPage] & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPages[iPage]));
                 }
                 *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
                 *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
@@ -2130,14 +1735,14 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
 /**
  * Frees memory allocated using SUPR0LowAlloc().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession    The session to which the memory was allocated.
  * @param   uPtr        Pointer to the memory (ring-3 or ring-0).
  */
 SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
     dprintf(("SUPR0LowFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_LOW);
 }
 
@@ -2147,8 +1752,7 @@ SUPR0DECL(int) SUPR0LowFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
  * Allocates a chunk of memory with both R0 and R3 mappings.
  * The memory is fixed and it's possible to query the physical addresses using SUPR0MemGetPhys().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession    The session to associated the allocation with.
  * @param   cb          Number of bytes to allocate.
  * @param   ppvR0       Where to store the address of the Ring-0 mapping.
@@ -2163,17 +1767,13 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
     /*
      * Validate input.
      */
-    if (!pSession || !ppvR0 || !ppvR3)
-    {
-        dprintf(("Null pointer. All of these should be set: pSession=%p ppvR0=%p ppvR3=%p\n",
-                 pSession, ppvR0, ppvR3));
-        return SUPDRV_ERR_INVALID_PARAM;
-
-    }
-    if (cb < 1 || cb >= PAGE_SIZE * 256)
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppvR0, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
+    if (cb < 1 || cb >= _4M)
     {
         dprintf(("Illegal request cb=%u; must be greater than 0 and smaller than 4MB.\n", cb));
-        return SUPDRV_ERR_INVALID_PARAM;
+        return VERR_INVALID_PARAMETER;
     }
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
@@ -2194,7 +1794,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
             {
                 *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
                 *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
-                return 0;
+                return VINF_SUCCESS;
             }
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
             AssertRC(rc2);
@@ -2233,13 +1833,12 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
 /**
  * Get the physical addresses of memory allocated using SUPR0MemAlloc().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession        The session to which the memory was allocated.
  * @param   uPtr            The Ring-0 or Ring-3 address returned by SUPR0MemAlloc().
  * @param   paPages         Where to store the physical addresses.
  */
-SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages)
+SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages) /** @todo switch this bugger to RTHCPHYS */
 {
     PSUPDRVBUNDLE pBundle;
     RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
@@ -2248,16 +1847,9 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
     /*
      * Validate input.
      */
-    if (!pSession)
-    {
-        dprintf(("pSession must not be NULL!"));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
-    if (!uPtr || !paPages)
-    {
-        dprintf(("Illegal address uPtr=%p or/and paPages=%p\n", (void *)uPtr, paPages));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(paPages, VERR_INVALID_POINTER);
+    AssertReturn(uPtr, VERR_INVALID_PARAMETER);
 
     /*
      * Search for the address.
@@ -2268,7 +1860,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
         if (pBundle->cUsed > 0)
         {
             unsigned i;
-            for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
@@ -2287,7 +1879,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
                         paPages[iPage].uReserved = 0;
                     }
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-                    return 0;
+                    return VINF_SUCCESS;
                 }
 #else /* !USE_NEW_OS_INTERFACE_FOR_MM */
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
@@ -2304,21 +1896,21 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
     }
     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
     dprintf(("Failed to find %p!!!\n", (void *)uPtr));
-    return SUPDRV_ERR_INVALID_PARAM;
+    return VERR_INVALID_PARAMETER;
 }
 
 
 /**
  * Free memory allocated by SUPR0MemAlloc().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession        The session owning the allocation.
  * @param   uPtr            The Ring-0 or Ring-3 address returned by SUPR0MemAlloc().
  */
 SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
     dprintf(("SUPR0MemFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_MEM);
 }
 
@@ -2328,38 +1920,33 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
  * Allocates a chunk of memory with only a R3 mappings.
  * The memory is fixed and it's possible to query the physical addresses using SUPR0MemGetPhys().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession    The session to associated the allocation with.
- * @param   cb          Number of bytes to allocate.
+ * @param   cPages      The number of pages to allocate.
  * @param   ppvR3       Where to store the address of the Ring-3 mapping.
+ * @param   paPages     Where to store the addresses of the pages. Optional.
  */
-SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR3PTR ppvR3)
+SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages)
 {
     int             rc;
     SUPDRVMEMREF    Mem = {0};
-    dprintf(("SUPR0PageAlloc: pSession=%p cb=%d ppvR3=%p\n", pSession, cb, ppvR3));
+    dprintf(("SUPR0PageAlloc: pSession=%p cb=%d ppvR3=%p\n", pSession, cPages, ppvR3));
 
     /*
      * Validate input.
      */
-    if (!pSession || !ppvR3)
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
+    if (cPages < 1 || cPages >= 4096)
     {
-        dprintf(("Null pointer. All of these should be set: pSession=%p ppvR3=%p\n",
-                 pSession, ppvR3));
-        return SUPDRV_ERR_INVALID_PARAM;
-
-    }
-    if (cb < 1 || cb >= 4096)
-    {
-        dprintf(("Illegal request cb=%u; must be greater than 0 and smaller than 16MB.\n", cb));
-        return SUPDRV_ERR_INVALID_PARAM;
+        dprintf(("SUPR0PageAlloc: Illegal request cb=%u; must be greater than 0 and smaller than 16MB.\n", cPages));
+        return VERR_INVALID_PARAMETER;
     }
 
     /*
      * Let IPRT do the work.
      */
-    rc = RTR0MemObjAllocPhysNC(&Mem.MemObj, cb * PAGE_SIZE, NIL_RTHCPHYS);
+    rc = RTR0MemObjAllocPhysNC(&Mem.MemObj, (size_t)cPages * PAGE_SIZE, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
         int rc2;
@@ -2372,8 +1959,16 @@ SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR3PTR ppv
             if (!rc)
             {
                 *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
-                dprintf(("SUPR0PageAlloc returned %p\n", *ppvR3));
-                return 0;
+                if (paPages)
+                {
+                    uint32_t iPage = cPages;
+                    while (iPage-- > 0)
+                    {
+                        paPages[iPage] = RTR0MemObjGetPagePhysAddr(Mem.MapObjR3, iPage);
+                        Assert(paPages[iPage] != NIL_RTHCPHYS);
+                    }
+                }
+                return VINF_SUCCESS;
             }
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
             AssertRC(rc2);
@@ -2385,32 +1980,23 @@ SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR3PTR ppv
     return rc;
 }
 
+
+#ifdef RT_OS_WINDOWS
 /**
  * Check if the pages were locked by SUPR0PageAlloc
  *
+ * This function will be removed along with the lock/unlock hacks when
+ * we've cleaned up the ring-3 code properly.
+ *
  * @returns boolean
  * @param   pSession        The session to which the memory was allocated.
- * @param   uPtr            The Ring-3 address returned by SUPR0PageAlloc().
+ * @param   pvR3            The Ring-3 address returned by SUPR0PageAlloc().
  */
-SUPR0DECL(bool) SUPR0PageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
+static bool supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 {
     PSUPDRVBUNDLE pBundle;
     RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    dprintf(("SUPR0PageIsLockedByPageAlloc: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
-
-    /*
-     * Validate input.
-     */
-    if (!pSession)
-    {
-        dprintf(("pSession must not be NULL!"));
-        return false;
-    }
-    if (!uPtr)
-    {
-        dprintf(("Illegal address uPtr=%p\n", (void *)uPtr));
-        return false;
-    }
+    dprintf(("SUPR0PageIsLockedByPageAlloc: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
 
     /*
      * Search for the address.
@@ -2421,15 +2007,12 @@ SUPR0DECL(bool) SUPR0PageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTHCUINTP
         if (pBundle->cUsed > 0)
         {
             unsigned i;
-            for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_LOCKED_SUP
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
-                    &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
-                         || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                             && RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == uPtr)
-                        )
-                   )
+                    &&  pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
+                    &&  RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3)
                 {
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
                     return true;
@@ -2441,35 +2024,24 @@ SUPR0DECL(bool) SUPR0PageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTHCUINTP
     return false;
 }
 
+
 /**
  * Get the physical addresses of memory allocated using SUPR0PageAlloc().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * This function will be removed along with the lock/unlock hacks when
+ * we've cleaned up the ring-3 code properly.
+ *
+ * @returns IPRT status code.
  * @param   pSession        The session to which the memory was allocated.
- * @param   uPtr            The Ring-3 address returned by SUPR0PageAlloc().
+ * @param   pvR3            The Ring-3 address returned by SUPR0PageAlloc().
  * @param   cPages          Number of pages in paPages
  * @param   paPages         Where to store the physical addresses.
  */
-SUPR0DECL(int) SUPR0PageGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, uint32_t cPages, PSUPPAGE paPages)
+static int supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages)
 {
     PSUPDRVBUNDLE pBundle;
     RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    dprintf(("SUPR0PageGetPhys: pSession=%p uPtr=%p paPages=%p\n", pSession, (void *)uPtr, paPages));
-
-    /*
-     * Validate input.
-     */
-    if (!pSession)
-    {
-        dprintf(("pSession must not be NULL!"));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
-    if (!uPtr || !paPages)
-    {
-        dprintf(("Illegal address uPtr=%p or/and paPages=%p\n", (void *)uPtr, paPages));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
+    dprintf(("supdrvPageGetPhys: pSession=%p pvR3=%p cPages=%#lx paPages=%p\n", pSession, (void *)pvR3, (long)cPages, paPages));
 
     /*
      * Search for the address.
@@ -2480,47 +2052,40 @@ SUPR0DECL(int) SUPR0PageGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, uint3
         if (pBundle->cUsed > 0)
         {
             unsigned i;
-            for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_LOCKED_SUP
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
-                    &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
-                         || (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                             && RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == uPtr)
-                        )
-                   )
+                    &&  pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
+                    &&  RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3)
                 {
-                    unsigned iPage;
-                    cPages = RT_MIN(RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT, cPages);
+                    uint32_t iPage = RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT;
+                    cPages = RT_MIN(iPage, cPages);
                     for (iPage = 0; iPage < cPages; iPage++)
-                    {
-                        paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(pBundle->aMem[i].MemObj, iPage);
-                        paPages[iPage].uReserved = 0;
-                    }
+                        paPages[iPage] = RTR0MemObjGetPagePhysAddr(pBundle->aMem[i].MemObj, iPage);
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-                    return 0;
+                    return VINF_SUCCESS;
                 }
             }
         }
     }
     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-    dprintf(("Failed to find %p!!!\n", (void *)uPtr));
-    return SUPDRV_ERR_INVALID_PARAM;
+    return VERR_INVALID_PARAMETER;
 }
-
+#endif /* RT_OS_WINDOWS */
 
 /**
  * Free memory allocated by SUPR0PageAlloc().
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession        The session owning the allocation.
- * @param   uPtr            The Ring-3 address returned by SUPR0PageAlloc().
+ * @param   pvR3             The Ring-3 address returned by SUPR0PageAlloc().
  */
-SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
+SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 {
-    dprintf(("SUPR0PageFree: pSession=%p uPtr=%p\n", pSession, (void *)uPtr));
-    return supdrvMemRelease(pSession, uPtr, MEMREF_TYPE_LOCKED_SUP);
+    dprintf(("SUPR0PageFree: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED_SUP);
 }
 #endif /* USE_NEW_OS_INTERFACE_FOR_MM */
 
@@ -2528,8 +2093,7 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 /**
  * Maps the GIP into userspace and/or get the physical address of the GIP.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession        Session to which the GIP mapping should belong.
  * @param   ppGipR3         Where to store the address of the ring-3 mapping. (optional)
  * @param   pHCPhysGip      Where to store the physical address. (optional)
@@ -2538,19 +2102,20 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
  *          count globally as one reference. One call to SUPR0GipUnmap() is will unmap GIP
  *          and remove the session as a GIP user.
  */
-SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGid)
+SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip)
 {
     int             rc = 0;
     PSUPDRVDEVEXT   pDevExt = pSession->pDevExt;
     RTR3PTR         pGip = NIL_RTR3PTR;
     RTHCPHYS        HCPhys = NIL_RTHCPHYS;
-    dprintf(("SUPR0GipMap: pSession=%p ppGipR3=%p pHCPhysGid=%p\n", pSession, ppGipR3, pHCPhysGid));
+    dprintf(("SUPR0GipMap: pSession=%p ppGipR3=%p pHCPhysGip=%p\n", pSession, ppGipR3, pHCPhysGip));
 
     /*
      * Validate
      */
-    if (!ppGipR3 && !pHCPhysGid)
-        return 0;
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(ppGipR3, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHCPhysGip, VERR_INVALID_POINTER);
 
     RTSemFastMutexRequest(pDevExt->mtxGip);
     if (pDevExt->pGip)
@@ -2580,7 +2145,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
         /*
          * Get physical address.
          */
-        if (pHCPhysGid && !rc)
+        if (pHCPhysGip && !rc)
             HCPhys = pDevExt->HCPhysGip;
 
         /*
@@ -2603,7 +2168,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_GIP
                 rc = RTTimerStart(pDevExt->pGipTimer, 0);
-                AssertRC(rc); rc = 0;
+                AssertRC(rc); rc = VINF_SUCCESS;
 #else
                 supdrvOSGipResume(pDevExt);
 #endif
@@ -2620,15 +2185,15 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
     /*
      * Write returns.
      */
-    if (pHCPhysGid)
-        *pHCPhysGid = HCPhys;
+    if (pHCPhysGip)
+        *pHCPhysGip = HCPhys;
     if (ppGipR3)
         *ppGipR3 = pGip;
 
 #ifdef DEBUG_DARWIN_GIP
-    OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGip=%p GipMapObjR3\n", rc, (unsigned long)HCPhys, pGip, pSession->GipMapObjR3));
+    OSDBGPRINT(("SUPR0GipMap: returns %d *pHCPhysGip=%lx *ppGip=%p GipMapObjR3\n", rc, (unsigned long)HCPhys, pGip, pSession->GipMapObjR3));
 #else
-    dprintf(("SUPR0GipMap: returns %d *pHCPhysGid=%lx *ppGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)(uintptr_t)pGip));
+    dprintf(("SUPR0GipMap: returns %d *pHCPhysGip=%lx *ppGipR3=%p\n", rc, (unsigned long)HCPhys, (void *)(uintptr_t)pGip));
 #endif
     return rc;
 }
@@ -2638,13 +2203,12 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
  * Unmaps any user mapping of the GIP and terminates all GIP access
  * from this session.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pSession        Session to which the GIP mapping should belong.
  */
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 {
-    int                     rc = 0;
+    int                     rc = VINF_SUCCESS;
     PSUPDRVDEVEXT           pDevExt = pSession->pDevExt;
 #ifdef DEBUG_DARWIN_GIP
     OSDBGPRINT(("SUPR0GipUnmap: pSession=%p pGip=%p GipMapObjR3=%p\n",
@@ -2654,6 +2218,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 #else
     dprintf(("SUPR0GipUnmap: pSession=%p\n", pSession));
 #endif
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
 
     RTSemFastMutexRequest(pDevExt->mtxGip);
 
@@ -2704,8 +2269,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 /**
  * Adds a memory object to the session.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pMem        Memory tracking structure containing the
  *                      information to track.
  * @param   pSession    The session.
@@ -2721,10 +2285,10 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
     RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
     for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
     {
-        if (pBundle->cUsed < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]))
+        if (pBundle->cUsed < RT_ELEMENTS(pBundle->aMem))
         {
             unsigned i;
-            for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (pBundle->aMem[i].MemObj == NIL_RTR0MEMOBJ)
@@ -2736,7 +2300,7 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
                     pBundle->cUsed++;
                     pBundle->aMem[i] = *pMem;
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-                    return 0;
+                    return VINF_SUCCESS;
                 }
             }
             AssertFailed();             /* !!this can't be happening!!! */
@@ -2750,11 +2314,11 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
      */
     pBundle = (PSUPDRVBUNDLE)RTMemAllocZ(sizeof(*pBundle));
     if (!pBundle)
-        return SUPDRV_ERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
 
     /* take last entry. */
     pBundle->cUsed++;
-    pBundle->aMem[sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]) - 1] = *pMem;
+    pBundle->aMem[RT_ELEMENTS(pBundle->aMem) - 1] = *pMem;
 
     /* insert into list. */
     RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
@@ -2762,15 +2326,14 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
     pSession->Bundle.pNext = pBundle;
     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Releases a memory object referenced by pointer and type.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_INVALID_PARAM on failure.
+ * @returns IPRT status code.
  * @param   pSession    Session data.
  * @param   uPtr        Pointer to memory. This is matched against both the R0 and R3 addresses.
  * @param   eType       Memory type.
@@ -2783,15 +2346,10 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
     /*
      * Validate input.
      */
-    if (!pSession)
-    {
-        dprintf(("pSession must not be NULL!"));
-        return SUPDRV_ERR_INVALID_PARAM;
-    }
     if (!uPtr)
     {
         dprintf(("Illegal address %p\n", (void *)uPtr));
-        return SUPDRV_ERR_INVALID_PARAM;
+        return VERR_INVALID_PARAMETER;
     }
 
     /*
@@ -2803,7 +2361,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
         if (pBundle->cUsed > 0)
         {
             unsigned i;
-            for (i = 0; i < sizeof(pBundle->aMem) / sizeof(pBundle->aMem[0]); i++)
+            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
 #ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (    pBundle->aMem[i].eType == eType
@@ -2830,7 +2388,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                         int rc = RTR0MemObjFree(Mem.MemObj, false);
                         AssertRC(rc); /** @todo figure out how to handle this. */
                     }
-                    return 0;
+                    return VINF_SUCCESS;
                 }
 #else /* !USE_NEW_OS_INTERFACE_FOR_MM */
                 if (    pBundle->aMem[i].eType == eType
@@ -2864,7 +2422,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                         case MEMREF_TYPE_UNUSED:
                             break;
                     }
-                    return 0;
+                    return VINF_SUCCESS;
                }
 #endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
             }
@@ -2872,7 +2430,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
     }
     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
     dprintf(("Failed to find %p!!! (eType=%d)\n", (void *)uPtr, eType));
-    return SUPDRV_ERR_INVALID_PARAM;
+    return VERR_INVALID_PARAMETER;
 }
 
 
@@ -2880,12 +2438,15 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
 /**
  * Install IDT for the current CPU.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_NO_MEMORY or SUPDRV_ERROR_IDT_FAILED on failure.
- * @param   pIn         Input data.
- * @param   pOut        Output data.
+ * @returns One of the following IPRT status codes:
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_IDT_FAILED.
+ * @retval  VERR_NO_MEMORY.
+ * @param   pDevExt     The device extension.
+ * @param   pSession    The session data.
+ * @param   pReq        The request.
  */
-static int supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL_IN pIn, PSUPIDTINSTALL_OUT pOut)
+static int supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL pReq)
 {
     PSUPDRVPATCHUSAGE   pUsagePre;
     PSUPDRVPATCH        pPatchPre;
@@ -2900,7 +2461,7 @@ static int supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
      */
     pUsagePre = (PSUPDRVPATCHUSAGE)RTMemAlloc(sizeof(*pUsagePre));
     if (!pUsagePre)
-        return SUPDRV_ERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
 
     /*
      * Take the spinlock and see what we need to do.
@@ -2917,7 +2478,7 @@ static int supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
 
         pPatchPre = (PSUPDRVPATCH)RTMemExecAlloc(sizeof(*pPatchPre));
         if (!pPatchPre)
-            return SUPDRV_ERR_NO_MEMORY;
+            return VERR_NO_MEMORY;
 
         RTSpinlockAcquireNoInts(pDevExt->Spinlock, &SpinlockTmp);
     }
@@ -2994,9 +2555,9 @@ static int supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
     if (pUsagePre)
         RTMemFree(pUsagePre);
 
-    pOut->u8Idt = pDevExt->u8Idt;
+    pReq->u.Out.u8Idt = pDevExt->u8Idt;
 
-    return pPatch ? 0 : SUPDRV_ERR_IDT_FAILED;
+    return pPatch ? VINF_SUCCESS : VERR_IDT_FAILED;
 }
 
 
@@ -3372,7 +2933,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
  * Removes the sessions IDT references.
  * This will uninstall our IDT patch if we left unreferenced.
  *
- * @returns 0 indicating success.
+ * @returns VINF_SUCCESS.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
  */
@@ -3388,7 +2949,7 @@ static int supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     RTSpinlockAcquireNoInts(pDevExt->Spinlock, &SpinlockTmp);
 
     /*
-     * Walk usage list.
+     * Walk usage list, removing patches as their usage count reaches zero.
      */
     pUsage = pSession->pPatchUsage;
     while (pUsage)
@@ -3422,12 +2983,14 @@ static int supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
         RTMemFree(pvToFree);
     }
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Remove one patch.
+ *
+ * Worker for supdrvIOCtl_IdtRemoveAll.
  *
  * @param   pDevExt     Device globals.
  * @param   pPatch      Patch entry to remove.
@@ -3539,19 +3102,17 @@ static void supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTE
  *
  * This is the 1st step of the loading.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
- * @param   pIn         Input.
- * @param   pOut        Output. (May overlap pIn.)
+ * @param   pReq        The open request.
  */
-static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN_IN pIn, PSUPLDROPEN_OUT pOut)
+static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq)
 {
     PSUPDRVLDRIMAGE pImage;
     unsigned        cb;
     void           *pv;
-    dprintf(("supdrvIOCtl_LdrOpen: szName=%s cbImage=%d\n", pIn->szName, pIn->cbImage));
+    dprintf(("supdrvIOCtl_LdrOpen: szName=%s cbImage=%d\n", pReq->u.In.szName, pReq->u.In.cbImage));
 
     /*
      * Check if we got an instance of the image already.
@@ -3559,14 +3120,14 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     RTSemFastMutexRequest(pDevExt->mtxLdr);
     for (pImage = pDevExt->pLdrImages; pImage; pImage = pImage->pNext)
     {
-        if (!strcmp(pImage->szName, pIn->szName))
+        if (!strcmp(pImage->szName, pReq->u.In.szName))
         {
             pImage->cUsage++;
-            pOut->pvImageBase   = pImage->pvImage;
-            pOut->fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
+            pReq->u.Out.pvImageBase   = pImage->pvImage;
+            pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
             supdrvLdrAddUsage(pSession, pImage);
             RTSemFastMutexRelease(pDevExt->mtxLdr);
-            return 0;
+            return VINF_SUCCESS;
         }
     }
     /* (not found - add it!) */
@@ -3574,12 +3135,12 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Allocate memory.
      */
-    cb = pIn->cbImage + sizeof(SUPDRVLDRIMAGE) + 31;
+    cb = pReq->u.In.cbImage + sizeof(SUPDRVLDRIMAGE) + 31;
     pv = RTMemExecAlloc(cb);
     if (!pv)
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
-        return SUPDRV_ERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
     }
 
     /*
@@ -3587,22 +3148,22 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     pImage = (PSUPDRVLDRIMAGE)pv;
     pImage->pvImage         = ALIGNP(pImage + 1, 32);
-    pImage->cbImage         = pIn->cbImage;
+    pImage->cbImage         = pReq->u.In.cbImage;
     pImage->pfnModuleInit   = NULL;
     pImage->pfnModuleTerm   = NULL;
     pImage->uState          = SUP_IOCTL_LDR_OPEN;
     pImage->cUsage          = 1;
-    strcpy(pImage->szName, pIn->szName);
+    strcpy(pImage->szName, pReq->u.In.szName);
 
     pImage->pNext           = pDevExt->pLdrImages;
     pDevExt->pLdrImages     = pImage;
 
     supdrvLdrAddUsage(pSession, pImage);
 
-    pOut->pvImageBase       = pImage->pvImage;
-    pOut->fNeedsLoading     = 1;
+    pReq->u.Out.pvImageBase = pImage->pvImage;
+    pReq->u.Out.fNeedsLoading = true;
     RTSemFastMutexRelease(pDevExt->mtxLdr);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -3611,38 +3172,37 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
  *
  * This is the 2nd step of the loading.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
- * @param   pIn         Input.
+ * @param   pReq        The request.
  */
-static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD_IN pIn)
+static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq)
 {
     PSUPDRVLDRUSAGE pUsage;
     PSUPDRVLDRIMAGE pImage;
     int             rc;
-    dprintf(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImage=%d\n", pIn->pvImageBase, pIn->cbImage));
+    dprintf(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImage=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImage));
 
     /*
      * Find the ldr image.
      */
     RTSemFastMutexRequest(pDevExt->mtxLdr);
     pUsage = pSession->pLdrUsage;
-    while (pUsage && pUsage->pImage->pvImage != pIn->pvImageBase)
+    while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
         pUsage = pUsage->pNext;
     if (!pUsage)
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
         dprintf(("SUP_IOCTL_LDR_LOAD: couldn't find image!\n"));
-        return SUPDRV_ERR_INVALID_HANDLE;
+        return VERR_INVALID_HANDLE;
     }
     pImage = pUsage->pImage;
-    if (pImage->cbImage != pIn->cbImage)
+    if (pImage->cbImage != pReq->u.In.cbImage)
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
-        dprintf(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load)\n", pImage->cbImage, pIn->cbImage));
-        return SUPDRV_ERR_INVALID_HANDLE;
+        dprintf(("SUP_IOCTL_LDR_LOAD: image size mismatch!! %d(prep) != %d(load)\n", pImage->cbImage, pReq->u.In.cbImage));
+        return VERR_INVALID_HANDLE;
     }
     if (pImage->uState != SUP_IOCTL_LDR_OPEN)
     {
@@ -3652,72 +3212,72 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             AssertMsgFailed(("SUP_IOCTL_LDR_LOAD: invalid image state %d (%#x)!\n", uState, uState));
         return SUPDRV_ERR_ALREADY_LOADED;
     }
-    switch (pIn->eEPType)
+    switch (pReq->u.In.eEPType)
     {
         case EP_NOTHING:
             break;
         case EP_VMMR0:
-            if (!pIn->EP.VMMR0.pvVMMR0 || !pIn->EP.VMMR0.pvVMMR0Entry)
+            if (!pReq->u.In.EP.VMMR0.pvVMMR0 || !pReq->u.In.EP.VMMR0.pvVMMR0Entry)
             {
                 RTSemFastMutexRelease(pDevExt->mtxLdr);
-                dprintf(("pvVMMR0=%p or pIn->EP.VMMR0.pvVMMR0Entry=%p is NULL!\n",
-                         pIn->EP.VMMR0.pvVMMR0, pIn->EP.VMMR0.pvVMMR0Entry));
-                return SUPDRV_ERR_INVALID_PARAM;
+                dprintf(("pvVMMR0=%p or pReq->u.In.EP.VMMR0.pvVMMR0Entry=%p is NULL!\n",
+                         pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0Entry));
+                return VERR_INVALID_PARAMETER;
             }
-            if ((uintptr_t)pIn->EP.VMMR0.pvVMMR0Entry - (uintptr_t)pImage->pvImage >= pIn->cbImage)
+            if ((uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0Entry - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
             {
                 RTSemFastMutexRelease(pDevExt->mtxLdr);
                 dprintf(("SUP_IOCTL_LDR_LOAD: pvVMMR0Entry=%p is outside the image (%p %d bytes)\n",
-                         pIn->EP.VMMR0.pvVMMR0Entry, pImage->pvImage, pIn->cbImage));
-                return SUPDRV_ERR_INVALID_PARAM;
+                         pReq->u.In.EP.VMMR0.pvVMMR0Entry, pImage->pvImage, pReq->u.In.cbImage));
+                return VERR_INVALID_PARAMETER;
             }
             break;
         default:
             RTSemFastMutexRelease(pDevExt->mtxLdr);
-            dprintf(("Invalid eEPType=%d\n", pIn->eEPType));
-            return SUPDRV_ERR_INVALID_PARAM;
+            dprintf(("Invalid eEPType=%d\n", pReq->u.In.eEPType));
+            return VERR_INVALID_PARAMETER;
     }
-    if (    pIn->pfnModuleInit
-        &&  (uintptr_t)pIn->pfnModuleInit - (uintptr_t)pImage->pvImage >= pIn->cbImage)
+    if (    pReq->u.In.pfnModuleInit
+        &&  (uintptr_t)pReq->u.In.pfnModuleInit - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
         dprintf(("SUP_IOCTL_LDR_LOAD: pfnModuleInit=%p is outside the image (%p %d bytes)\n",
-                 pIn->pfnModuleInit, pImage->pvImage, pIn->cbImage));
-        return SUPDRV_ERR_INVALID_PARAM;
+                 pReq->u.In.pfnModuleInit, pImage->pvImage, pReq->u.In.cbImage));
+        return VERR_INVALID_PARAMETER;
     }
-    if (    pIn->pfnModuleTerm
-        &&  (uintptr_t)pIn->pfnModuleTerm - (uintptr_t)pImage->pvImage >= pIn->cbImage)
+    if (    pReq->u.In.pfnModuleTerm
+        &&  (uintptr_t)pReq->u.In.pfnModuleTerm - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
         dprintf(("SUP_IOCTL_LDR_LOAD: pfnModuleTerm=%p is outside the image (%p %d bytes)\n",
-                 pIn->pfnModuleTerm, pImage->pvImage, pIn->cbImage));
-        return SUPDRV_ERR_INVALID_PARAM;
+                 pReq->u.In.pfnModuleTerm, pImage->pvImage, pReq->u.In.cbImage));
+        return VERR_INVALID_PARAMETER;
     }
 
     /*
      * Copy the memory.
      */
     /* no need to do try/except as this is a buffered request. */
-    memcpy(pImage->pvImage, &pIn->achImage[0], pImage->cbImage);
+    memcpy(pImage->pvImage, &pReq->u.In.achImage[0], pImage->cbImage);
     pImage->uState = SUP_IOCTL_LDR_LOAD;
-    pImage->pfnModuleInit = pIn->pfnModuleInit;
-    pImage->pfnModuleTerm = pIn->pfnModuleTerm;
-    pImage->offSymbols    = pIn->offSymbols;
-    pImage->cSymbols      = pIn->cSymbols;
-    pImage->offStrTab     = pIn->offStrTab;
-    pImage->cbStrTab      = pIn->cbStrTab;
+    pImage->pfnModuleInit = pReq->u.In.pfnModuleInit;
+    pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
+    pImage->offSymbols    = pReq->u.In.offSymbols;
+    pImage->cSymbols      = pReq->u.In.cSymbols;
+    pImage->offStrTab     = pReq->u.In.offStrTab;
+    pImage->cbStrTab      = pReq->u.In.cbStrTab;
 
     /*
      * Update any entry points.
      */
-    switch (pIn->eEPType)
+    switch (pReq->u.In.eEPType)
     {
         default:
         case EP_NOTHING:
-            rc = 0;
+            rc = VINF_SUCCESS;
             break;
         case EP_VMMR0:
-            rc = supdrvLdrSetR0EP(pDevExt, pIn->EP.VMMR0.pvVMMR0, pIn->EP.VMMR0.pvVMMR0Entry);
+            rc = supdrvLdrSetR0EP(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0Entry);
             break;
     }
 
@@ -3744,18 +3304,17 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 /**
  * Frees a previously loaded (prep'ed) image.
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
- * @param   pIn         Input.
+ * @param   pReq        The request.
  */
-static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE_IN pIn)
+static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq)
 {
     PSUPDRVLDRUSAGE pUsagePrev;
     PSUPDRVLDRUSAGE pUsage;
     PSUPDRVLDRIMAGE pImage;
-    dprintf(("supdrvIOCtl_LdrFree: pvImageBase=%p\n", pIn->pvImageBase));
+    dprintf(("supdrvIOCtl_LdrFree: pvImageBase=%p\n", pReq->u.In.pvImageBase));
 
     /*
      * Find the ldr image.
@@ -3763,7 +3322,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     RTSemFastMutexRequest(pDevExt->mtxLdr);
     pUsagePrev = NULL;
     pUsage = pSession->pLdrUsage;
-    while (pUsage && pUsage->pImage->pvImage != pIn->pvImageBase)
+    while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
     {
         pUsagePrev = pUsage;
         pUsage = pUsage->pNext;
@@ -3772,7 +3331,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
         dprintf(("SUP_IOCTL_LDR_FREE: couldn't find image!\n"));
-        return SUPDRV_ERR_INVALID_HANDLE;
+        return VERR_INVALID_HANDLE;
     }
 
     /*
@@ -3809,7 +3368,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
 
     RTSemFastMutexRelease(pDevExt->mtxLdr);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -3820,33 +3379,32 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
  * @returns SUPDRV_ERR_* on failure.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
- * @param   pIn         Input.
- * @param   pOut        Output. (May overlap pIn.)
+ * @param   pReq        The request buffer.
  */
-static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL_IN pIn, PSUPLDRGETSYMBOL_OUT pOut)
+static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq)
 {
     PSUPDRVLDRIMAGE pImage;
     PSUPDRVLDRUSAGE pUsage;
     uint32_t        i;
     PSUPLDRSYM      paSyms;
     const char     *pchStrings;
-    const size_t    cbSymbol = strlen(pIn->szSymbol) + 1;
+    const size_t    cbSymbol = strlen(pReq->u.In.szSymbol) + 1;
     void           *pvSymbol = NULL;
-    int             rc = SUPDRV_ERR_GENERAL_FAILURE; /** @todo better error code. */
-    dprintf2(("supdrvIOCtl_LdrGetSymbol: pvImageBase=%p szSymbol=\"%s\"\n", pIn->pvImageBase, pIn->szSymbol));
+    int             rc = VERR_GENERAL_FAILURE;
+    dprintf2(("supdrvIOCtl_LdrGetSymbol: pvImageBase=%p szSymbol=\"%s\"\n", pReq->u.In.pvImageBase, pReq->u.In.szSymbol));
 
     /*
      * Find the ldr image.
      */
     RTSemFastMutexRequest(pDevExt->mtxLdr);
     pUsage = pSession->pLdrUsage;
-    while (pUsage && pUsage->pImage->pvImage != pIn->pvImageBase)
+    while (pUsage && pUsage->pImage->pvImage != pReq->u.In.pvImageBase)
         pUsage = pUsage->pNext;
     if (!pUsage)
     {
         RTSemFastMutexRelease(pDevExt->mtxLdr);
         dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: couldn't find image!\n"));
-        return SUPDRV_ERR_INVALID_HANDLE;
+        return VERR_INVALID_HANDLE;
     }
     pImage = pUsage->pImage;
     if (pImage->uState != SUP_IOCTL_LDR_LOAD)
@@ -3854,7 +3412,7 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
         unsigned uState = pImage->uState;
         RTSemFastMutexRelease(pDevExt->mtxLdr);
         dprintf(("SUP_IOCTL_LDR_GET_SYMBOL: invalid image state %d (%#x)!\n", uState, uState)); NOREF(uState);
-        return SUPDRV_ERR_ALREADY_LOADED;
+        return VERR_ALREADY_LOADED;
     }
 
     /*
@@ -3866,15 +3424,15 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     {
         if (    paSyms[i].offSymbol < pImage->cbImage /* paranoia */
             &&  paSyms[i].offName + cbSymbol <= pImage->cbStrTab
-            &&  !memcmp(pchStrings + paSyms[i].offName, pIn->szSymbol, cbSymbol))
+            &&  !memcmp(pchStrings + paSyms[i].offName, pReq->u.In.szSymbol, cbSymbol))
         {
             pvSymbol = (uint8_t *)pImage->pvImage + paSyms[i].offSymbol;
-            rc = 0;
+            rc = VINF_SUCCESS;
             break;
         }
     }
     RTSemFastMutexRelease(pDevExt->mtxLdr);
-    pOut->pvSymbol = pvSymbol;
+    pReq->u.Out.pvSymbol = pvSymbol;
     return rc;
 }
 
@@ -3883,8 +3441,7 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
  * Updates the IDT patches to point to the specified VMM R0 entry
  * point (i.e. VMMR0Enter()).
  *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
+ * @returns IPRT status code.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
  * @param   pVMMR0      VMMR0 image handle.
@@ -3893,14 +3450,13 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
  */
 static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0Entry)
 {
-    int     rc;
+    int rc = VINF_SUCCESS;
     dprintf(("supdrvLdrSetR0EP pvVMMR0=%p pvVMMR0Entry=%p\n", pvVMMR0, pvVMMR0Entry));
 
 
     /*
      * Check if not yet set.
      */
-    rc = 0;
     if (!pDevExt->pvVMMR0)
     {
 #ifndef VBOX_WITHOUT_IDT_PATCHING
@@ -3934,7 +3490,7 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
             ||  (void *)pDevExt->pfnVMMR0Entry != pvVMMR0Entry)
         {
             AssertMsgFailed(("SUP_IOCTL_LDR_SETR0EP: Already set pointing to a different module!\n"));
-            rc = SUPDRV_ERR_INVALID_PARAM;
+            rc = VERR_INVALID_PARAMETER;
         }
     }
     return rc;
@@ -4064,11 +3620,13 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 /**
  * Gets the current paging mode of the CPU and stores in in pOut.
  */
-static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
+static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
 {
+    SUPPAGINGMODE enmMode;
+
     RTUINTREG cr0 = ASMGetCR0();
     if ((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
-        pOut->enmMode = SUPPAGINGMODE_INVALID;
+        enmMode = SUPPAGINGMODE_INVALID;
     else
     {
         RTUINTREG cr4 = ASMGetCR4();
@@ -4089,52 +3647,52 @@ static int supdrvIOCtl_GetPagingMode(PSUPGETPAGINGMODE_OUT pOut)
         switch ((cr4 & (X86_CR4_PAE | X86_CR4_PGE)) | fNXEPlusLMA)
         {
             case 0:
-                pOut->enmMode = SUPPAGINGMODE_32_BIT;
+                enmMode = SUPPAGINGMODE_32_BIT;
                 break;
 
             case X86_CR4_PGE:
-                pOut->enmMode = SUPPAGINGMODE_32_BIT_GLOBAL;
+                enmMode = SUPPAGINGMODE_32_BIT_GLOBAL;
                 break;
 
             case X86_CR4_PAE:
-                pOut->enmMode = SUPPAGINGMODE_PAE;
+                enmMode = SUPPAGINGMODE_PAE;
                 break;
 
             case X86_CR4_PAE | BIT(0):
-                pOut->enmMode = SUPPAGINGMODE_PAE_NX;
+                enmMode = SUPPAGINGMODE_PAE_NX;
                 break;
 
             case X86_CR4_PAE | X86_CR4_PGE:
-                pOut->enmMode = SUPPAGINGMODE_PAE_GLOBAL;
+                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
                 break;
 
             case X86_CR4_PAE | X86_CR4_PGE | BIT(0):
-                pOut->enmMode = SUPPAGINGMODE_PAE_GLOBAL;
+                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
                 break;
 
             case BIT(1) | X86_CR4_PAE:
-                pOut->enmMode = SUPPAGINGMODE_AMD64;
+                enmMode = SUPPAGINGMODE_AMD64;
                 break;
 
             case BIT(1) | X86_CR4_PAE | BIT(0):
-                pOut->enmMode = SUPPAGINGMODE_AMD64_NX;
+                enmMode = SUPPAGINGMODE_AMD64_NX;
                 break;
 
             case BIT(1) | X86_CR4_PAE | X86_CR4_PGE:
-                pOut->enmMode = SUPPAGINGMODE_AMD64_GLOBAL;
+                enmMode = SUPPAGINGMODE_AMD64_GLOBAL;
                 break;
 
             case BIT(1) | X86_CR4_PAE | X86_CR4_PGE | BIT(0):
-                pOut->enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
+                enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
                 break;
 
             default:
                 AssertMsgFailed(("Cannot happen! cr4=%#x fNXEPlusLMA=%d\n", cr4, fNXEPlusLMA));
-                pOut->enmMode = SUPPAGINGMODE_INVALID;
+                enmMode = SUPPAGINGMODE_INVALID;
                 break;
         }
     }
-    return 0;
+    return enmMode;
 }
 
 
@@ -4177,7 +3735,7 @@ int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR pp
                 }
                 *ppvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
                 *ppvR3 = RTR0MemObjAddressR3(pMem->u.iprt.MapObjR3);
-                return 0;
+                return VINF_SUCCESS;
             }
 
             rc2 = RTR0MemObjFree(pMem->u.iprt.MapObjR3, false);
@@ -4303,17 +3861,16 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
      * We're good.
      */
     supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Terminates the GIP.
  *
- * @returns negative errno.
  * @param   pDevExt     Instance data. GIP stuff may be updated.
  */
-static int supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
+static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
 {
     int rc;
 #ifdef DEBUG_DARWIN_GIP
@@ -4328,7 +3885,7 @@ static int supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
     if (pDevExt->pGip)
     {
         supdrvGipTerm(pDevExt->pGip);
-        pDevExt->pGip = 0;
+        pDevExt->pGip = NULL;
     }
 
     /*
@@ -4354,8 +3911,6 @@ static int supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
         rc = RTTimerReleaseSystemGranularity(pDevExt->u32SystemTimerGranularityGrant); AssertRC(rc);
         pDevExt->u32SystemTimerGranularityGrant = 0;
     }
-
-    return 0;
 }
 
 
@@ -4375,7 +3930,7 @@ static DECLCALLBACK(void) supdrvGipTimer(PRTTIMER pTimer, void *pvUser)
 /**
  * Initializes the GIP data.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   pDevExt     Pointer to the device instance data.
  * @param   pGip        Pointer to the read-write kernel mapping of the GIP.
  * @param   HCPhys      The physical address of the GIP.
@@ -4431,7 +3986,7 @@ int VBOXCALL supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCP
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -4599,7 +4154,7 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
  * @param   pGip        Pointer to the GIP.
  * @param   u64NanoTS   The current nanosecond timesamp.
  */
-void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
+void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
 {
     /*
      * Determin the relevant CPU data.
@@ -4666,7 +4221,7 @@ void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
  * @param   u64NanoTS   The current nanosecond timesamp.
  * @param   iCpu        The CPU index.
  */
-void VBOXCALL   supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, unsigned iCpu)
+void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, unsigned iCpu)
 {
     PSUPGIPCPU  pGipCpu;
 

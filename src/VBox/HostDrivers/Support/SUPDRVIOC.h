@@ -15,8 +15,8 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __SUPDRVIOC_h__
-#define __SUPDRVIOC_h__
+#ifndef ___SUPDRVIOC_h___
+#define ___SUPDRVIOC_h___
 
 /*
  * Basic types.
@@ -38,112 +38,63 @@
 #endif
 
 #ifdef RT_OS_WINDOWS
-# define SUP_CTL_CODE(Function)         CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_BUFFERED, FILE_WRITE_ACCESS)
-# define SUP_CTL_CODE_FAST(Function)    CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_NEITHER, FILE_WRITE_ACCESS)
-
-/** @todo get rid of this duplication of window header #defines! */
 # ifndef CTL_CODE
-#  define CTL_CODE(DeviceType, Function, Method, Access) \
-    ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) )
+#  include <Windows.h>
 # endif
-# ifndef METHOD_BUFFERED
-#  define METHOD_BUFFERED        0
-# endif
-# ifndef METHOD_NEITHER
-#  define METHOD_NEITHER         3
-# endif
-# ifndef FILE_WRITE_ACCESS
-#  define FILE_WRITE_ACCESS      0x0002
-# endif
-# ifndef FILE_DEVICE_UNKNOWN
-#  define FILE_DEVICE_UNKNOWN    0x00000022
-# endif
+  /* Automatic buffering, size not encoded. */
+# define SUP_CTL_CODE_SIZE(Function, Size)      CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_BUFFERED, FILE_WRITE_ACCESS)
+# define SUP_CTL_CODE_BIG(Function)             CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_BUFFERED, FILE_WRITE_ACCESS)
+# define SUP_CTL_CODE_FAST(Function)            CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_NEITHER,  FILE_WRITE_ACCESS)
+# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           (uIOCtl)
+
+#elif defined(RT_OS_SOLARIS)
+  /* No automatic buffering, size limited to 255 bytes. */
+# include <sys/ioccom.h>
+# define SUP_CTL_CODE_SIZE(Function, Size)      _IOWRN('V', (Function) | SUP_IOCTL_FLAG, sizeof(SUPREQHDR))
+# define SUP_CTL_CODE_BIG(Function)             _IO(   'V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_FAST(Function)            _IO(   'V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           (uIOCtl)
 
 #elif defined(RT_OS_OS2)
-# define SUP_CTL_CATEGORY               0xc0
-# define SUP_CTL_CODE(Function)         ((unsigned char)(Function))
-# define SUP_CTL_CATEGORY_FAST          0xc1
-# define SUP_CTL_CODE_FAST(Function)    ((unsigned char)(Function))
+  /* No automatic buffering, size not encoded. */
+# define SUP_CTL_CATEGORY                       0xc0
+# define SUP_CTL_CODE_SIZE(Function, Size)      ((unsigned char)(Function))
+# define SUP_CTL_CODE_BIG(Function)             ((unsigned char)(Function))
+# define SUP_CTL_CATEGORY_FAST                  0xc1
+# define SUP_CTL_CODE_FAST(Function)            ((unsigned char)(Function))
+# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           (uIOCtl)
 
 #elif defined(RT_OS_LINUX)
-# ifdef RT_ARCH_X86 /** @todo With the next major version change, drop this branch. */
-#  define SUP_CTL_CODE(Function) \
-    ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (sizeof(SUPDRVIOCTLDATA) << 16) )
-#  define SUP_CTL_CODE_FAST(Function) \
-    ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (0 << 16) )
-# else
-#  include <linux/ioctl.h>
-#  if 1 /* figure out when this changed. */
-#   define SUP_CTL_CODE(Function)         _IOWR('V', (Function) | SUP_IOCTL_FLAG, SUPDRVIOCTLDATA)
-#   define SUP_CTL_CODE_FAST(Function)    _IO(  'V', (Function) | SUP_IOCTL_FLAG)
-#  else /* now: _IO_BAD and _IOWR_BAD */
-#   define SUP_CTL_CODE(Function)         _IOWR('V', (Function) | SUP_IOCTL_FLAG, sizeof(SUPDRVIOCTLDATA))
-#   define SUP_CTL_CODE_FAST(Function)    _IO(  'V', (Function) | SUP_IOCTL_FLAG)
-#  endif
-# endif
+  /* No automatic buffering, size limited to 16KB. */
+# include <linux/ioctl.h>
+# define SUP_CTL_CODE_SIZE(Function, Size)      _IOC(_IOC_READ | _IOC_WRITE, 'V', (Function) | SUP_IOCTL_FLAG, (Size))
+# define SUP_CTL_CODE_BIG(Function)             _IO('V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_FAST(Function)            _IO('V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           ((uIOCtl) & ~IOCSIZE_MASK)
 
 #elif defined(RT_OS_L4)
-# define SUP_CTL_CODE(Function) \
-    ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (sizeof(SUPDRVIOCTLDATA) << 16) )
-# define SUP_CTL_CODE_FAST(Function) \
-    ( (3U << 30) | ((0x22) << 8) | ((Function) | SUP_IOCTL_FLAG) | (0 << 16) )
+  /* Implemented in suplib, no worries. */
+# define SUP_CTL_CODE_SIZE(Function, Size)      (Function)
+# define SUP_CTL_CODE_BIG(Function)             (Function)
+# define SUP_CTL_CODE_FAST(Function)            (Function)
+# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           (uIOCtl)
 
-#else /* BSD */
+#else /* BSD Like */
+  /* Automatic buffering, size limited to 4KB on *BSD and 8KB on Darwin - commands the limit, 4KB. */
 # include <sys/ioccom.h>
-# define SUP_CTL_CODE(Function)         _IOWR('V', (Function) | SUP_IOCTL_FLAG, SUPDRVIOCTLDATA)
-# define SUP_CTL_CODE_FAST(Function)    _IO(  'V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_SIZE(Function, Size)      _IOC(IOC_INOUT, 'V', (Function) | SUP_IOCTL_FLAG, (Size))
+# define SUP_CTL_CODE_BIG(Function)             _IO('V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_FAST(Function)            _IO('V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_NO_SIZE(uIOCtl)           ( (uIOCtl) & ~_IOC(0,0,0,IOCPARM_MASK) )
 #endif
 
-
-/** Negotiate cookie. */
-#define SUP_IOCTL_COOKIE            SUP_CTL_CODE( 1)
-/** Query SUPR0 functions. */
-#define SUP_IOCTL_QUERY_FUNCS       SUP_CTL_CODE( 2)
-/** Install IDT patch for calling processor. */
-#define SUP_IOCTL_IDT_INSTALL       SUP_CTL_CODE( 3)
-/** Remove IDT patch for calling processor. */
-#define SUP_IOCTL_IDT_REMOVE        SUP_CTL_CODE( 4)
-/** Pin down physical pages. */
-#define SUP_IOCTL_PINPAGES          SUP_CTL_CODE( 5)
-/** Unpin physical pages. */
-#define SUP_IOCTL_UNPINPAGES        SUP_CTL_CODE( 6)
-/** Allocate contious memory. */
-#define SUP_IOCTL_CONT_ALLOC        SUP_CTL_CODE( 7)
-/** Free contious memory. */
-#define SUP_IOCTL_CONT_FREE         SUP_CTL_CODE( 8)
-/** Open an image. */
-#define SUP_IOCTL_LDR_OPEN          SUP_CTL_CODE( 9)
-/** Upload the image bits. */
-#define SUP_IOCTL_LDR_LOAD          SUP_CTL_CODE(10)
-/** Free an image. */
-#define SUP_IOCTL_LDR_FREE          SUP_CTL_CODE(11)
-/** Get address of a symbol within an image. */
-#define SUP_IOCTL_LDR_GET_SYMBOL    SUP_CTL_CODE(12)
-/** Call the R0 VMM Entry point. */
-#define SUP_IOCTL_CALL_VMMR0        SUP_CTL_CODE(14)
-/** Get the host paging mode. */
-#define SUP_IOCTL_GET_PAGING_MODE   SUP_CTL_CODE(15)
-/** Allocate memory below 4GB (physically). */
-#define SUP_IOCTL_LOW_ALLOC         SUP_CTL_CODE(16)
-/** Free low memory. */
-#define SUP_IOCTL_LOW_FREE          SUP_CTL_CODE(17)
-/** Map the GIP into user space. */
-#define SUP_IOCTL_GIP_MAP           SUP_CTL_CODE(18)
-/** Unmap the GIP. */
-#define SUP_IOCTL_GIP_UNMAP         SUP_CTL_CODE(19)
-/** Set the VM handle for doing fast call ioctl calls. */
-#define SUP_IOCTL_SET_VM_FOR_FAST   SUP_CTL_CODE(20)
-/** Allocate memory and map into the user process. */
-#define SUP_IOCTL_PAGE_ALLOC        SUP_CTL_CODE(21)
-/** Free memory allocated with SUP_IOCTL_PAGE_ALLOC. */
-#define SUP_IOCTL_PAGE_FREE         SUP_CTL_CODE(22)
-
 /** Fast path IOCtl: VMMR0_DO_RAW_RUN */
-#define SUP_IOCTL_FAST_DO_RAW_RUN   SUP_CTL_CODE_FAST(64)
+#define SUP_IOCTL_FAST_DO_RAW_RUN               SUP_CTL_CODE_FAST(64)
 /** Fast path IOCtl: VMMR0_DO_HWACC_RUN */
-#define SUP_IOCTL_FAST_DO_HWACC_RUN SUP_CTL_CODE_FAST(65)
+#define SUP_IOCTL_FAST_DO_HWACC_RUN             SUP_CTL_CODE_FAST(65)
 /** Just a NOP call for profiling the latency of a fast ioctl call to VMMR0. */
-#define SUP_IOCTL_FAST_DO_NOP       SUP_CTL_CODE_FAST(66)
+#define SUP_IOCTL_FAST_DO_NOP                   SUP_CTL_CODE_FAST(66)
+
 
 
 /*******************************************************************************
@@ -155,71 +106,118 @@
 # pragma pack(4)                        /* paranoia. */
 #endif
 
-#ifndef RT_OS_WINDOWS
+
 /**
- * Structure used by OSes with less advanced ioctl interfaces, i.e. most
- * Unix like OSes :-)
+ * Common In/Out header.
  */
-typedef struct SUPDRVIOCTLDATA
+typedef struct SUPREQHDR
 {
-    void 	   *pvIn;
-    unsigned long   cbIn;
-    void           *pvOut;
-    unsigned long   cbOut;
-#ifdef RT_OS_OS2
-    int             rc;
-#endif
-} SUPDRVIOCTLDATA, *PSUPDRVIOCTLDATA;
-#endif
+    /** Cookie. */
+    uint32_t        u32Cookie;
+    /** Session cookie. */
+    uint32_t        u32SessionCookie;
+    /** The size of the input. */
+    uint32_t        cbIn;
+    /** The size of the output. */
+    uint32_t        cbOut;
+    /** Flags. See SUPREQHDR_FLAGS_* for details and values. */
+    uint32_t        fFlags;
+    /** The VBox status code of the operation, out direction only. */
+    int32_t         rc;
+} SUPREQHDR;
+/** Pointer to a IOC header. */
+typedef SUPREQHDR *PSUPREQHDR;
+
+/** @name SUPREQHDR::fFlags values
+ * @{  */
+/** Masks out the magic value.  */
+#define SUPREQHDR_FLAGS_MAGIC_MASK                      UINT32_C(0xff0000ff)
+/** The generic mask. */
+#define SUPREQHDR_FLAGS_GEN_MASK                        UINT32_C(0x0000ff00)
+/** The request specific mask. */
+#define SUPREQHDR_FLAGS_REQ_MASK                        UINT32_C(0x00ff0000)
+
+/** There is extra input that needs copying on some platforms. */
+#define SUPREQHDR_FLAGS_EXTRA_IN                        UINT32_C(0x00000100)
+/** There is extra output that needs copying on some platforms. */
+#define SUPREQHDR_FLAGS_EXTRA_OUT                       UINT32_C(0x00000200)
+
+/** The magic value. */
+#define SUPREQHDR_FLAGS_MAGIC                           UINT32_C(0x42000042)
+/** The default value. Use this when no special stuff is requested. */
+#define SUPREQHDR_FLAGS_DEFAULT                         SUPREQHDR_FLAGS_MAGIC
+/** @} */
 
 
+/** @name SUP_IOCTL_COOKIE
+ * @{
+ */
+/** Negotiate cookie. */
+#define SUP_IOCTL_COOKIE                                SUP_CTL_CODE_SIZE(1, SUP_IOCTL_COOKIE_SIZE)
+/** The request size. */
+#define SUP_IOCTL_COOKIE_SIZE                           sizeof(SUPCOOKIE)
+/** The SUPREQHDR::cbIn value. */
+#define SUP_IOCTL_COOKIE_SIZE_IN                        sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPCOOKIE, u.In)
+/** The SUPREQHDR::cbOut value. */
+#define SUP_IOCTL_COOKIE_SIZE_OUT                       sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPCOOKIE, u.Out)
 /** SUPCOOKIE_IN magic word. */
-#define SUPCOOKIE_MAGIC             "The Magic Word!"
+#define SUPCOOKIE_MAGIC                                 "The Magic Word!"
+/** The initial cookie. */
+#define SUPCOOKIE_INITIAL_COOKIE                        0x69726f74 /* 'tori' */
+
 /** Current interface version.
  * The upper 16-bit is the major version, the the lower the minor version.
  * When incompatible changes are made, the upper major number has to be changed. */
-#define SUPDRVIOC_VERSION           0x00050001
+#define SUPDRVIOC_VERSION                               0x00060000
 
-/** SUP_IOCTL_COOKIE Input. */
-typedef struct SUPCOOKIE_IN
+/** SUP_IOCTL_COOKIE. */
+typedef struct SUPCOOKIE
 {
-    /** Magic word. */
-    char            szMagic[16];
-    /** The requested interface version number. */
-    uint32_t        u32ReqVersion;
-    /** The minimum interface version number. */
-    uint32_t        u32MinVersion;
-} SUPCOOKIE_IN, *PSUPCOOKIE_IN;
+    /** The header.
+     * u32Cookie must be set to SUPCOOKIE_INITIAL_COOKIE.
+     * u32SessionCookie should be set to some random value. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Magic word. */
+            char            szMagic[16];
+            /** The requested interface version number. */
+            uint32_t        u32ReqVersion;
+            /** The minimum interface version number. */
+            uint32_t        u32MinVersion;
+        } In;
+        struct
+        {
+            /** Cookie. */
+            uint32_t        u32Cookie;
+            /** Session cookie. */
+            uint32_t        u32SessionCookie;
+            /** Interface version for this session. */
+            uint32_t        u32SessionVersion;
+            /** The actual interface version in the driver. */
+            uint32_t        u32DriverVersion;
+            /** Number of functions available for the SUP_IOCTL_QUERY_FUNCS request. */
+            uint32_t        cFunctions;
+            /** Session handle. */
+            R0PTRTYPE(PSUPDRVSESSION)   pSession;
+        } Out;
+    } u;
+} SUPCOOKIE, *PSUPCOOKIE;
+/** @} */
 
-/** SUP_IOCTL_COOKIE Output. */
-typedef struct SUPCOOKIE_OUT
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Interface version for this session. */
-    uint32_t        u32SessionVersion;
-    /** The actual interface version in the driver. */
-    uint32_t        u32DriverVersion;
-    /** Number of functions available for the SUP_IOCTL_QUERY_FUNCS request. */
-    uint32_t        cFunctions;
-    /** Session handle. */
-    R0PTRTYPE(PSUPDRVSESSION)   pSession;
-} SUPCOOKIE_OUT, *PSUPCOOKIE_OUT;
 
+/** @name SUP_IOCTL_QUERY_FUNCS
+ * Query SUPR0 functions.
+ * @{
+ */
+#define SUP_IOCTL_QUERY_FUNCS(cFuncs)                   SUP_CTL_CODE_SIZE(2, SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs))
+#define SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs)              RT_OFFSETOF(SUPQUERYFUNCS, u.Out.aFunctions[(cFuncs)])
+#define SUP_IOCTL_QUERY_FUNCS_SIZE_IN                   sizeof(SUPREQHDR)
+#define SUP_IOCTL_QUERY_FUNCS_SIZE_OUT(cFuncs)          SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs)
 
-
-/** SUP_IOCTL_QUERY_FUNCS Input. */
-typedef struct SUPQUERYFUNCS_IN
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-} SUPQUERYFUNCS_IN, *PSUPQUERYFUNCS_IN;
-
-/** Function. */
+/** A function. */
 typedef struct SUPFUNC
 {
     /** Name - mangled. */
@@ -228,145 +226,107 @@ typedef struct SUPFUNC
     RTR0PTR         pfn;
 } SUPFUNC, *PSUPFUNC;
 
-/** SUP_IOCTL_QUERY_FUNCS Output. */
-typedef struct SUPQUERYFUNCS_OUT
+typedef struct SUPQUERYFUNCS
 {
-    /** Number of functions returned. */
-    uint32_t        cFunctions;
-    /** Array of functions. */
-    SUPFUNC         aFunctions[1];
-} SUPQUERYFUNCS_OUT, *PSUPQUERYFUNCS_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Number of functions returned. */
+            uint32_t        cFunctions;
+            /** Array of functions. */
+            SUPFUNC         aFunctions[1];
+        } Out;
+    } u;
+} SUPQUERYFUNCS, *PSUPQUERYFUNCS;
+/** @} */
 
 
-
-/** SUP_IOCTL_IDT_INSTALL Input. */
-typedef struct SUPIDTINSTALL_IN
+/** @name SUP_IOCTL_IDT_INSTALL
+ * Install IDT patch for calling processor.
+ * @{
+ */
+#define SUP_IOCTL_IDT_INSTALL                           SUP_CTL_CODE_SIZE(3, SUP_IOCTL_IDT_INSTALL_SIZE)
+#define SUP_IOCTL_IDT_INSTALL_SIZE                      sizeof(SUPIDTINSTALL)
+#define SUP_IOCTL_IDT_INSTALL_SIZE_IN                   sizeof(SUPREQHDR)
+#define SUP_IOCTL_IDT_INSTALL_SIZE_OUT                  sizeof(SUPIDTINSTALL)
+typedef struct SUPIDTINSTALL
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-} SUPIDTINSTALL_IN, *PSUPIDTINSTALL_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The IDT entry number. */
+            uint8_t         u8Idt;
+        } Out;
+    } u;
+} SUPIDTINSTALL, *PSUPIDTINSTALL;
+/** @} */
 
-/** SUP_IOCTL_IDT_INSTALL Output. */
-typedef struct SUPIDTINSTALL_OUT
+
+/** @name SUP_IOCTL_IDT_REMOVE
+ * Remove IDT patch for calling processor.
+ * @{
+ */
+#define SUP_IOCTL_IDT_REMOVE                            SUP_CTL_CODE_SIZE(4, SUP_IOCTL_IDT_REMOVE_SIZE)
+#define SUP_IOCTL_IDT_REMOVE_SIZE                       sizeof(SUPIDTREMOVE)
+#define SUP_IOCTL_IDT_REMOVE_SIZE_IN                    sizeof(SUPIDTREMOVE)
+#define SUP_IOCTL_IDT_REMOVE_SIZE_OUT                   sizeof(SUPIDTREMOVE)
+typedef struct SUPIDTREMOVE
 {
-    /** Cookie. */
-    uint8_t         u8Idt;
-} SUPIDTINSTALL_OUT, *PSUPIDTINSTALL_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+} SUPIDTREMOVE, *PSUPIDTREMOVE;
+/** @}*/
 
 
-
-/** SUP_IOCTL_IDT_REMOVE Input. */
-typedef struct SUPIDTREMOVE_IN
+/** @name SUP_IOCTL_LDR_OPEN
+ * Open an image.
+ * @{
+ */
+#define SUP_IOCTL_LDR_OPEN                              SUP_CTL_CODE_SIZE(5, SUP_IOCTL_LDR_OPEN_SIZE)
+#define SUP_IOCTL_LDR_OPEN_SIZE                         sizeof(SUPLDROPEN)
+#define SUP_IOCTL_LDR_OPEN_SIZE_IN                      sizeof(SUPLDROPEN)
+#define SUP_IOCTL_LDR_OPEN_SIZE_OUT                     (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPLDROPEN, u.Out))
+typedef struct SUPLDROPEN
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-} SUPIDTREMOVE_IN, *PSUPIDTREMOVE_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Size of the image we'll be loading. */
+            uint32_t        cbImage;
+            /** Image name.
+             * This is the NAME of the image, not the file name. It is used
+             * to share code with other processes. (Max len is 32 chars!)  */
+            char            szName[32];
+        } In;
+        struct
+        {
+            /** The base address of the image. */
+            RTR0PTR         pvImageBase;
+            /** Indicate whether or not the image requires loading. */
+            bool            fNeedsLoading;
+        } Out;
+    } u;
+} SUPLDROPEN, *PSUPLDROPEN;
+/** @} */
 
 
-
-/** SUP_IOCTL_PINPAGES Input. */
-typedef struct SUPPINPAGES_IN
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Start of page range. Must be PAGE aligned. */
-    RTR3PTR         pvR3;
-    /** Size of the range. Must be PAGE aligned. */
-    uint32_t        cPages;
-} SUPPINPAGES_IN, *PSUPPINPAGES_IN;
-
-/** SUP_IOCTL_PINPAGES Output. */
-typedef struct SUPPINPAGES_OUT
-{
-    /** Array of pages. */
-    SUPPAGE         aPages[1];
-} SUPPINPAGES_OUT, *PSUPPINPAGES_OUT;
-
-
-
-/** SUP_IOCTL_UNPINPAGES Input. */
-typedef struct SUPUNPINPAGES_IN
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Start of page range of a range previuosly pinned. */
-    RTR3PTR         pvR3;
-} SUPUNPINPAGES_IN, *PSUPUNPINPAGES_IN;
-
-
-
-/** SUP_IOCTL_CONT_ALLOC Input. */
-typedef struct SUPCONTALLOC_IN
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Number of bytes to allocate. */
-    uint32_t        cPages;
-} SUPCONTALLOC_IN, *PSUPCONTALLOC_IN;
-
-
-
-/** SUP_IOCTL_CONT_ALLOC Output. */
-typedef struct SUPCONTALLOC_OUT
-{
-    /** The address of the ring-0 mapping of the allocated memory. */
-    RTR0PTR         pvR0;
-    /** The address of the ring-3 mapping of the allocated memory. */
-    RTR3PTR         pvR3;
-    /** The physical address of the allocation. */
-    RTHCPHYS        HCPhys;
-} SUPCONTALLOC_OUT, *PSUPCONTALLOC_OUT;
-
-
-
-/** SUP_IOCTL_CONT_FREE Input. */
-typedef struct SUPCONTFREE_IN
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** The ring-3 address of the memory to free. */
-    RTR3PTR         pvR3;
-} SUPCONTFREE_IN, *PSUPCONTFREE_IN;
-
-
-
-/** SUP_IOCTL_LDR_OPEN Input. */
-typedef struct SUPLDROPEN_IN
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Size of the image we'll be loading. */
-    uint32_t        cbImage;
-    /** Image name.
-     * This is the NAME of the image, not the file name. It is used
-     * to share code with other processes. (Max len is 32 chars!)  */
-    char            szName[32];
-} SUPLDROPEN_IN, *PSUPLDROPEN_IN;
-
-/** SUP_IOCTL_LDR_OPEN Output. */
-typedef struct SUPLDROPEN_OUT
-{
-    /** The base address of the image. */
-    RTR0PTR         pvImageBase;
-    /** Indicate whether or not the image requires loading. */
-    bool            fNeedsLoading;
-} SUPLDROPEN_OUT, *PSUPLDROPEN_OUT;
-
-
+/** @name SUP_IOCTL_LDR_LOAD
+ * Upload the image bits.
+ * @{
+ */
+#define SUP_IOCTL_LDR_LOAD                              SUP_CTL_CODE_BIG(6)
+#define SUP_IOCTL_LDR_LOAD_SIZE(cbImage)                RT_OFFSETOF(SUPLDRLOAD, u.In.achImage[cbImage])
+#define SUP_IOCTL_LDR_LOAD_SIZE_IN(cbImage)             RT_OFFSETOF(SUPLDRLOAD, u.In.achImage[cbImage])
+#define SUP_IOCTL_LDR_LOAD_SIZE_OUT                     sizeof(SUPREQHDR)
 
 /**
  * Module initialization callback function.
@@ -398,236 +358,460 @@ typedef struct SUPLDRSYM
     uint32_t        offSymbol;
 } SUPLDRSYM, *PSUPLDRSYM;
 
-/** SUP_IOCTL_LDR_LOAD Input. */
-typedef struct SUPLDRLOAD_IN
+typedef struct SUPLDRLOAD
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** The address of module initialization function. Similar to _DLL_InitTerm(hmod, 0). */
-    PFNR0MODULEINIT pfnModuleInit;
-    /** The address of module termination function. Similar to _DLL_InitTerm(hmod, 1). */
-    PFNR0MODULETERM pfnModuleTerm;
-    /** Special entry points. */
+    /** The header. */
+    SUPREQHDR               Hdr;
     union
     {
         struct
         {
-            /** The module handle (i.e. address). */
-            RTR0PTR         pvVMMR0;
-            /** Address of VMMR0Entry function. */
-            RTR0PTR         pvVMMR0Entry;
-        } VMMR0;
-    }               EP;
-    /** Address. */
-    RTR0PTR         pvImageBase;
-    /** Entry point type. */
-    enum { EP_NOTHING, EP_VMMR0 }
-                    eEPType;
-    /** The offset of the symbol table. */
-    uint32_t        offSymbols;
-    /** The number of entries in the symbol table. */
-    uint32_t        cSymbols;
-    /** The offset of the string table. */
-    uint32_t        offStrTab;
-    /** Size of the string table. */
-    uint32_t        cbStrTab;
-    /** Size of image (including string and symbol tables). */
-    uint32_t        cbImage;
-    /** The image data. */
-    char            achImage[1];
-} SUPLDRLOAD_IN, *PSUPLDRLOAD_IN;
+            /** The address of module initialization function. Similar to _DLL_InitTerm(hmod, 0). */
+            PFNR0MODULEINIT pfnModuleInit;
+            /** The address of module termination function. Similar to _DLL_InitTerm(hmod, 1). */
+            PFNR0MODULETERM pfnModuleTerm;
+            /** Special entry points. */
+            union
+            {
+                struct
+                {
+                    /** The module handle (i.e. address). */
+                    RTR0PTR         pvVMMR0;
+                    /** Address of VMMR0Entry function. */
+                    RTR0PTR         pvVMMR0Entry;
+                } VMMR0;
+            }               EP;
+            /** Address. */
+            RTR0PTR         pvImageBase;
+            /** Entry point type. */
+            enum { EP_NOTHING, EP_VMMR0 }
+                            eEPType;
+            /** The offset of the symbol table. */
+            uint32_t        offSymbols;
+            /** The number of entries in the symbol table. */
+            uint32_t        cSymbols;
+            /** The offset of the string table. */
+            uint32_t        offStrTab;
+            /** Size of the string table. */
+            uint32_t        cbStrTab;
+            /** Size of image (including string and symbol tables). */
+            uint32_t        cbImage;
+            /** The image data. */
+            char            achImage[1];
+        } In;
+    } u;
+} SUPLDRLOAD, *PSUPLDRLOAD;
+/** @} */
 
 
-
-/** SUP_IOCTL_LDR_FREE Input. */
-typedef struct SUPLDRFREE_IN
+/** @name SUP_IOCTL_LDR_FREE
+ * Free an image.
+ * @{
+ */
+#define SUP_IOCTL_LDR_FREE                              SUP_CTL_CODE_SIZE(7, SUP_IOCTL_LDR_FREE_SIZE)
+#define SUP_IOCTL_LDR_FREE_SIZE                         sizeof(SUPLDRFREE)
+#define SUP_IOCTL_LDR_FREE_SIZE_IN                      sizeof(SUPLDRFREE)
+#define SUP_IOCTL_LDR_FREE_SIZE_OUT                     sizeof(SUPREQHDR)
+typedef struct SUPLDRFREE
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Address. */
-    RTR0PTR         pvImageBase;
-} SUPLDRFREE_IN, *PSUPLDRFREE_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Address. */
+            RTR0PTR         pvImageBase;
+        } In;
+    } u;
+} SUPLDRFREE, *PSUPLDRFREE;
+/** @} */
 
 
-
-/** SUP_IOCTL_LDR_GET_SYMBOL Input. */
-typedef struct SUPLDRGETSYMBOL_IN
+/** @name SUP_IOCTL_LDR_GET_SYMBOL
+ * Get address of a symbol within an image.
+ * @{
+ */
+#define SUP_IOCTL_LDR_GET_SYMBOL                        SUP_CTL_CODE_SIZE(8, SUP_IOCTL_LDR_GET_SYMBOL_SIZE)
+#define SUP_IOCTL_LDR_GET_SYMBOL_SIZE                   sizeof(SUPLDRGETSYMBOL)
+#define SUP_IOCTL_LDR_GET_SYMBOL_SIZE_IN                sizeof(SUPLDRGETSYMBOL)
+#define SUP_IOCTL_LDR_GET_SYMBOL_SIZE_OUT               (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPLDRGETSYMBOL, u.Out))
+typedef struct SUPLDRGETSYMBOL
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Address. */
-    RTR0PTR         pvImageBase;
-    /** The symbol name (variable length). */
-    char            szSymbol[1];
-} SUPLDRGETSYMBOL_IN, *PSUPLDRGETSYMBOL_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Address. */
+            RTR0PTR         pvImageBase;
+            /** The symbol name. */
+            char            szSymbol[64];
+        } In;
+        struct
+        {
+            /** The symbol address. */
+            RTR0PTR         pvSymbol;
+        } Out;
+    } u;
+} SUPLDRGETSYMBOL, *PSUPLDRGETSYMBOL;
+/** @} */
 
-/** SUP_IOCTL_LDR_GET_SYMBOL Output. */
-typedef struct SUPLDRGETSYMBOL_OUT
+
+/** @name SUP_IOCTL_CALL_VMMR0
+ * Call the R0 VMM Entry point.
+ *
+ * @todo Might have to convert this to a big request...
+ * @{
+ */
+#define SUP_IOCTL_CALL_VMMR0(cbReq)                     SUP_CTL_CODE_SIZE(9, SUP_IOCTL_CALL_VMMR0_SIZE(cbReq))
+#define SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)                RT_OFFSETOF(SUPCALLVMMR0, abReqPkt[cbReq])
+#define SUP_IOCTL_CALL_VMMR0_SIZE_IN(cbReq)             SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)
+#define SUP_IOCTL_CALL_VMMR0_SIZE_OUT(cbReq)            SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)
+typedef struct SUPCALLVMMR0
 {
-    /** The symbol address. */
-    RTR0PTR         pvSymbol;
-} SUPLDRGETSYMBOL_OUT, *PSUPLDRGETSYMBOL_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The VM handle. */
+            PVMR0           pVMR0;
+            /** Which operation to execute. */
+            uint32_t        uOperation;
+#if R0_ARCH_BITS == 64
+            /** Alignment. */
+            uint32_t        u32Reserved;
+#endif
+            /** Argument to use when no request packet is supplied. */
+            RTR0UINTPTR     uArg;
+        } In;
+    } u;
+    /** The VMMR0Entry request packet. */
+    uint8_t                 abReqPkt[1];
+} SUPCALLVMMR0, *PSUPCALLVMMR0;
+/** @} */
 
 
-
-/** SUP_IOCTL_CALL_VMMR0 Input. */
-typedef struct SUPCALLVMMR0_IN
+/** @name SUP_IOCTL_LOW_ALLOC
+ * Allocate memory below 4GB (physically).
+ * @{
+ */
+#define SUP_IOCTL_LOW_ALLOC                             SUP_CTL_CODE_BIG(10)
+#define SUP_IOCTL_LOW_ALLOC_SIZE(cPages)                RT_OFFSETOF(SUPLOWALLOC, u.Out.aPages[cPages])
+#define SUP_IOCTL_LOW_ALLOC_SIZE_IN                     (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPLOWALLOC, u.In))
+#define SUP_IOCTL_LOW_ALLOC_SIZE_OUT(cPages)            SUP_IOCTL_LOW_ALLOC_SIZE(cPages)
+typedef struct SUPLOWALLOC
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** The VM handle. */
-    PVMR0           pVMR0;
-    /** Which operation to execute. */
-    uint32_t        uOperation;
-    /** The size of the buffer pointed to by pvArg. */
-    uint32_t        cbArg;
-    /** Argument to that operation. */
-    RTR3PTR         pvArg;
-} SUPCALLVMMR0_IN, *PSUPCALLVMMR0_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Number of pages to allocate. */
+            uint32_t        cPages;
+        } In;
+        struct
+        {
+            /** The ring-3 address of the allocated memory. */
+            RTR3PTR         pvR3;
+            /** The ring-0 address of the allocated memory. */
+            RTR0PTR         pvR0;
+            /** Array of pages. */
+            RTHCPHYS        aPages[1];
+        } Out;
+    } u;
+} SUPLOWALLOC, *PSUPLOWALLOC;
+/** @} */
 
-/** SUP_IOCTL_CALL_VMMR0 Output. */
-typedef struct SUPCALLVMMR0_OUT
+
+/** @name SUP_IOCTL_LOW_FREE
+ * Free low memory.
+ * @{
+ */
+#define SUP_IOCTL_LOW_FREE                              SUP_CTL_CODE_SIZE(11, SUP_IOCTL_LOW_FREE_SIZE)
+#define SUP_IOCTL_LOW_FREE_SIZE                         sizeof(SUPLOWFREE)
+#define SUP_IOCTL_LOW_FREE_SIZE_IN                      sizeof(SUPLOWFREE)
+#define SUP_IOCTL_LOW_FREE_SIZE_OUT                     sizeof(SUPREQHDR)
+typedef struct SUPLOWFREE
 {
-    /** The VBox status code for the operation. */
-    int32_t         rc;
-} SUPCALLVMMR0_OUT, *PSUPCALLVMMR0_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The ring-3 address of the memory to free. */
+            RTR3PTR         pvR3;
+        } In;
+    } u;
+} SUPLOWFREE, *PSUPLOWFREE;
+/** @} */
 
 
-
-/** SUP_IOCTL_GET_PAGING_MODE Input. */
-typedef struct SUPGETPAGINGMODE_IN
+/** @name SUP_IOCTL_PAGE_ALLOC
+ * Allocate memory and map into the user process.
+ * The memory is of course locked.
+ * @{
+ */
+#define SUP_IOCTL_PAGE_ALLOC                            SUP_CTL_CODE_BIG(12)
+#define SUP_IOCTL_PAGE_ALLOC_SIZE(cPages)               RT_OFFSETOF(SUPPAGEALLOC, u.Out.aPages[cPages])
+#define SUP_IOCTL_PAGE_ALLOC_SIZE_IN                    (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPPAGEALLOC, u.In))
+#define SUP_IOCTL_PAGE_ALLOC_SIZE_OUT(cPages)           SUP_IOCTL_PAGE_ALLOC_SIZE(cPages)
+typedef struct SUPPAGEALLOC
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-} SUPGETPAGINGMODE_IN, *PSUPGETPAGINGMODE_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Number of pages to allocate */
+            uint32_t        cPages;
+        } In;
+        struct
+        {
+            /** Returned ring-3 address. */
+            RTR3PTR         pvR3;
+            /** The physical addresses of the allocated pages. */
+            RTHCPHYS        aPages[1];
+        } Out;
+    } u;
+} SUPPAGEALLOC, *PSUPPAGEALLOC;
+/** @} */
 
-/** SUP_IOCTL_GET_PAGING_MODE Output. */
-typedef struct SUPGETPAGINGMODE_OUT
+
+/** @name SUP_IOCTL_PAGE_FREE
+ * Free memory allocated with SUP_IOCTL_PAGE_ALLOC.
+ * @{
+ */
+#define SUP_IOCTL_PAGE_FREE                             SUP_CTL_CODE_SIZE(13, SUP_IOCTL_PAGE_FREE_SIZE_IN)
+#define SUP_IOCTL_PAGE_FREE_SIZE                        sizeof(SUPPAGEFREE)
+#define SUP_IOCTL_PAGE_FREE_SIZE_IN                     sizeof(SUPPAGEFREE)
+#define SUP_IOCTL_PAGE_FREE_SIZE_OUT                    sizeof(SUPREQHDR)
+typedef struct SUPPAGEFREE
 {
-    /** The paging mode. */
-    SUPPAGINGMODE       enmMode;
-} SUPGETPAGINGMODE_OUT, *PSUPGETPAGINGMODE_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Address of memory range to free. */
+            RTR3PTR         pvR3;
+        } In;
+    } u;
+} SUPPAGEFREE, *PSUPPAGEFREE;
+/** @} */
 
 
-
-/** SUP_IOCTL_LOW_ALLOC Input. */
-typedef struct SUPLOWALLOC_IN
+/** @name SUP_IOCTL_PAGE_LOCK
+ * Pin down physical pages.
+ * @{
+ */
+#define SUP_IOCTL_PAGE_LOCK                             SUP_CTL_CODE_BIG(14)
+#define SUP_IOCTL_PAGE_LOCK_SIZE(cPages)                (RT_MAX((size_t)SUP_IOCTL_PAGE_LOCK_SIZE_IN, (size_t)SUP_IOCTL_PAGE_LOCK_SIZE_OUT(cPages)))
+#define SUP_IOCTL_PAGE_LOCK_SIZE_IN                     (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPPAGELOCK, u.In))
+#define SUP_IOCTL_PAGE_LOCK_SIZE_OUT(cPages)            RT_OFFSETOF(SUPPAGELOCK, u.Out.aPages[cPages])
+typedef struct SUPPAGELOCK
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Number of pages to allocate. */
-    uint32_t        cPages;
-} SUPLOWALLOC_IN, *PSUPLOWALLOC_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Start of page range. Must be PAGE aligned. */
+            RTR3PTR         pvR3;
+            /** The range size given as a page count. */
+            uint32_t        cPages;
+        } In;
 
-/** SUP_IOCTL_LOW_ALLOC Output. */
-typedef struct SUPLOWALLOC_OUT
+        struct
+        {
+            /** Array of pages. */
+            RTHCPHYS        aPages[1];
+        } Out;
+    } u;
+} SUPPAGELOCK, *PSUPPAGELOCK;
+/** @} */
+
+
+/** @name SUP_IOCTL_PAGE_UNLOCK
+ * Unpin physical pages.
+ * @{ */
+#define SUP_IOCTL_PAGE_UNLOCK                           SUP_CTL_CODE_SIZE(15, SUP_IOCTL_PAGE_UNLOCK_SIZE)
+#define SUP_IOCTL_PAGE_UNLOCK_SIZE                      sizeof(SUPPAGEUNLOCK)
+#define SUP_IOCTL_PAGE_UNLOCK_SIZE_IN                   sizeof(SUPPAGEUNLOCK)
+#define SUP_IOCTL_PAGE_UNLOCK_SIZE_OUT                  sizeof(SUPREQHDR)
+typedef struct SUPPAGEUNLOCK
 {
-    /** The ring-3 address of the allocated memory. */
-    RTR3PTR         pvR3;
-    /** The ring-0 address of the allocated memory. */
-    RTR0PTR         pvR0;
-    /** Array of pages. */
-    SUPPAGE         aPages[1];
-} SUPLOWALLOC_OUT, *PSUPLOWALLOC_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Start of page range of a range previuosly pinned. */
+            RTR3PTR         pvR3;
+        } In;
+    } u;
+} SUPPAGEUNLOCK, *PSUPPAGEUNLOCK;
+/** @} */
 
 
-
-/** SUP_IOCTL_LOW_FREE Input. */
-typedef struct SUPLOWFREE_IN
+/** @name SUP_IOCTL_CONT_ALLOC
+ * Allocate contious memory.
+ * @{
+ */
+#define SUP_IOCTL_CONT_ALLOC                            SUP_CTL_CODE_SIZE(16, SUP_IOCTL_CONT_ALLOC_SIZE)
+#define SUP_IOCTL_CONT_ALLOC_SIZE                       sizeof(SUPCONTALLOC)
+#define SUP_IOCTL_CONT_ALLOC_SIZE_IN                    (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPCONTALLOC, u.In))
+#define SUP_IOCTL_CONT_ALLOC_SIZE_OUT                   sizeof(SUPCONTALLOC)
+typedef struct SUPCONTALLOC
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** The ring-3 address of the memory to free. */
-    RTR3PTR         pvR3;
-} SUPLOWFREE_IN, *PSUPLOWFREE_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The allocation size given as a page count. */
+            uint32_t        cPages;
+        } In;
+
+        struct
+        {
+            /** The address of the ring-0 mapping of the allocated memory. */
+            RTR0PTR         pvR0;
+            /** The address of the ring-3 mapping of the allocated memory. */
+            RTR3PTR         pvR3;
+            /** The physical address of the allocation. */
+            RTHCPHYS        HCPhys;
+        } Out;
+    } u;
+} SUPCONTALLOC, *PSUPCONTALLOC;
+/** @} */
 
 
-
-/** SUP_IOCTL_GIP_MAP Input. */
-typedef struct SUPGIPMAP_IN
+/** @name SUP_IOCTL_CONT_FREE Input.
+ * @{
+ */
+/** Free contious memory. */
+#define SUP_IOCTL_CONT_FREE                             SUP_CTL_CODE_SIZE(17, SUP_IOCTL_CONT_FREE_SIZE)
+#define SUP_IOCTL_CONT_FREE_SIZE                        sizeof(SUPCONTFREE)
+#define SUP_IOCTL_CONT_FREE_SIZE_IN                     sizeof(SUPCONTFREE)
+#define SUP_IOCTL_CONT_FREE_SIZE_OUT                    sizeof(SUPREQHDR)
+typedef struct SUPCONTFREE
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-} SUPGIPMAP_IN, *PSUPGIPMAP_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The ring-3 address of the memory to free. */
+            RTR3PTR         pvR3;
+        } In;
+    } u;
+} SUPCONTFREE, *PSUPCONTFREE;
+/** @} */
 
-/** SUP_IOCTL_GIP_MAP Output. */
-typedef struct SUPGIPMAP_OUT
+
+/** @name SUP_IOCTL_GET_PAGING_MODE
+ * Get the host paging mode.
+ * @{
+ */
+#define SUP_IOCTL_GET_PAGING_MODE                       SUP_CTL_CODE_SIZE(18, SUP_IOCTL_GET_PAGING_MODE_SIZE)
+#define SUP_IOCTL_GET_PAGING_MODE_SIZE                  sizeof(SUPGETPAGINGMODE)
+#define SUP_IOCTL_GET_PAGING_MODE_SIZE_IN               sizeof(SUPREQHDR)
+#define SUP_IOCTL_GET_PAGING_MODE_SIZE_OUT              sizeof(SUPGETPAGINGMODE)
+typedef struct SUPGETPAGINGMODE
 {
-    /** Pointer to the read-only usermode GIP mapping for this session. */
-    R3PTRTYPE(PSUPGLOBALINFOPAGE)   pGipR3;
-    /** Pointer to the supervisor mode GIP mapping. */
-    R0PTRTYPE(PSUPGLOBALINFOPAGE)   pGipR0;
-    /** The physical address of the GIP. */
-    RTHCPHYS                        HCPhysGip;
-} SUPGIPMAP_OUT, *PSUPGIPMAP_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The paging mode. */
+            SUPPAGINGMODE   enmMode;
+        } Out;
+    } u;
+} SUPGETPAGINGMODE, *PSUPGETPAGINGMODE;
+/** @} */
 
 
-
-/** SUP_IOCTL_GIP_UNMAP Input. */
-typedef struct SUPGIPUNMAP_IN
+/** @name SUP_IOCTL_SET_VM_FOR_FAST
+ * Set the VM handle for doing fast call ioctl calls.
+ * @{
+ */
+#define SUP_IOCTL_SET_VM_FOR_FAST                       SUP_CTL_CODE_SIZE(19, SUP_IOCTL_SET_VM_FOR_FAST_SIZE)
+#define SUP_IOCTL_SET_VM_FOR_FAST_SIZE                  sizeof(SUPSETVMFORFAST)
+#define SUP_IOCTL_SET_VM_FOR_FAST_SIZE_IN               sizeof(SUPSETVMFORFAST)
+#define SUP_IOCTL_SET_VM_FOR_FAST_SIZE_OUT              sizeof(SUPREQHDR)
+typedef struct SUPSETVMFORFAST
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-} SUPGIPUNMAP_IN, *PSUPGIPUNMAP_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The ring-0 VM handle (pointer). */
+            PVMR0           pVMR0;
+        } In;
+    } u;
+} SUPSETVMFORFAST, *PSUPSETVMFORFAST;
+/** @} */
 
 
-
-/** SUP_IOCTL_SET_VM_FOR_FAST Input. */
-typedef struct SUPSETVMFORFAST_IN
+/** @name SUP_IOCTL_GIP_MAP
+ * Map the GIP into user space.
+ * @{
+ */
+#define SUP_IOCTL_GIP_MAP                               SUP_CTL_CODE_SIZE(20, SUP_IOCTL_GIP_MAP_SIZE)
+#define SUP_IOCTL_GIP_MAP_SIZE                          sizeof(SUPGIPMAP)
+#define SUP_IOCTL_GIP_MAP_SIZE_IN                       sizeof(SUPREQHDR)
+#define SUP_IOCTL_GIP_MAP_SIZE_OUT                      sizeof(SUPGIPMAP)
+typedef struct SUPGIPMAP
 {
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** The ring-0 VM handle (pointer). */
-    PVMR0           pVMR0;
-} SUPSETVMFORFAST_IN, *PSUPSETVMFORFAST_IN;
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The physical address of the GIP. */
+            RTHCPHYS        HCPhysGip;
+            /** Pointer to the read-only usermode GIP mapping for this session. */
+            R3PTRTYPE(PSUPGLOBALINFOPAGE)   pGipR3;
+            /** Pointer to the supervisor mode GIP mapping. */
+            R0PTRTYPE(PSUPGLOBALINFOPAGE)   pGipR0;
+        } Out;
+    } u;
+} SUPGIPMAP, *PSUPGIPMAP;
+/** @} */
 
-typedef struct SUPALLOCPAGE_IN
-{
-    /** Cookie. */
-    uint32_t        u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Number of pages to allocate */
-    uint32_t        cPages;
-} SUPALLOCPAGE_IN, *PSUPALLOCPAGE_IN;
 
-typedef struct SUPALLOCPAGE_OUT
+/** @name SUP_IOCTL_GIP_UNMAP
+ * Unmap the GIP.
+ * @{
+ */
+#define SUP_IOCTL_GIP_UNMAP                             SUP_CTL_CODE_SIZE(21, SUP_IOCTL_GIP_UNMAP_SIZE)
+#define SUP_IOCTL_GIP_UNMAP_SIZE                        sizeof(SUPGIPUNMAP)
+#define SUP_IOCTL_GIP_UNMAP_SIZE_IN                     sizeof(SUPGIPUNMAP)
+#define SUP_IOCTL_GIP_UNMAP_SIZE_OUT                    sizeof(SUPGIPUNMAP)
+typedef struct SUPGIPUNMAP
 {
-    /** Cookie. */
-    uint32_t            u32Cookie;
-    /** Returned ring-3 address */
-    R3PTRTYPE(void *)   pvR3;
-} SUPALLOCPAGE_OUT, *PSUPALLOCPAGE_OUT;
+    /** The header. */
+    SUPREQHDR               Hdr;
+} SUPGIPUNMAP, *PSUPGIPUNMAP;
+/** @} */
 
-typedef struct SUPFREEPAGE_IN
-{
-    /** Cookie. */
-    uint32_t            u32Cookie;
-    /** Session cookie. */
-    uint32_t        u32SessionCookie;
-    /** Address of memory range to free */
-    R3PTRTYPE(void *)   pvR3;
-} SUPFREEPAGE_IN, *PSUPFREEPAGE_IN;
 
 #pragma pack()                          /* paranoia */
 

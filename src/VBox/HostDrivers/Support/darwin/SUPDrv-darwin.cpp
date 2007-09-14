@@ -270,8 +270,7 @@ static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData
     Assert(rc == g_iMajorDeviceNo);
     g_iMajorDeviceNo = -1;
 
-    rc = supdrvDeleteDevExt(&g_DevExt);
-    AssertRC(rc);
+    supdrvDeleteDevExt(&g_DevExt);
 
     rc = RTSpinlockDestroy(g_Spinlock);
     AssertRC(rc);
@@ -384,7 +383,7 @@ static int VBoxSupDrvClose(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxSupDrvClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n", 
+        OSDBGPRINT(("VBoxSupDrvClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n",
                     (int)Process));
         return EINVAL;
     }
@@ -427,7 +426,7 @@ static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n", 
+        OSDBGPRINT(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n",
                     (int)Process, iCmd));
         return EINVAL;
     }

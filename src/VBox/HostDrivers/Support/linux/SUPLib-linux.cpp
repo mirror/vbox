@@ -200,24 +200,17 @@ int suplibOsUninstall(void)
  * @returns 0 on success.
  * @returns VBOX error code on failure.
  * @param   uFunction   IO Control function.
- * @param   pvIn        Input data buffer.
- * @param   cbIn        Size of input data.
- * @param   pvOut       Output data buffer.
- * @param   cbOut       Size of output data.
+ * @param   pvReq       The request buffer.
+ * @param   cbReq       The size of the request buffer.
  */
-int     suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, size_t cbOut)
+int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     AssertMsg(g_hDevice != -1, ("SUPLIB not initiated successfully!\n"));
+
     /*
      * Issue device iocontrol.
      */
-    SUPDRVIOCTLDATA Args;
-    Args.pvIn = pvIn;
-    Args.cbIn = cbIn;
-    Args.pvOut = pvOut;
-    Args.cbOut = cbOut;
-
-    if (ioctl(g_hDevice, uFunction, &Args) >= 0)
+    if (RT_LIKELY(ioctl(g_hDevice, uFunction, pvReq) >= 0))
 	return VINF_SUCCESS;
 
     /* This is the reverse operation of the one found in SUPDrv-linux.c */

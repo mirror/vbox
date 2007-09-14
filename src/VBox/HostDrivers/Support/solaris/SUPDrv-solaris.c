@@ -234,15 +234,15 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         if (pState)
             break;
     }
-    
+
     if (instance >= DEVICE_MAXINSTANCES)
     {
         cmn_err(CE_NOTE, "VBoxDrvSolarisOpen: All instances exhausted\n");
         return ENXIO;
     }
-    
+
     *pDev = makedevice(getmajor(*pDev), instance);
-        
+
     return VBoxSupDrvErr2SolarisErr(rc);
 }
 
@@ -289,7 +289,7 @@ static int VBoxDrvSolarisClose(dev_t pDev, int flag, int otyp, cred_t *cred)
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxDrvSolarisClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n", 
+        OSDBGPRINT(("VBoxDrvSolarisClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n",
                     (int)Process));
         return DDI_FAILURE;
     }
@@ -327,7 +327,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
     int rc = VINF_SUCCESS;
     int instance = 0;
     vbox_devstate_t *pState;
-    
+
     switch (enmCmd)
     {
         case DDI_ATTACH:
@@ -339,9 +339,9 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: state alloc failed");
                 return DDI_FAILURE;
             }
-            
+
             pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
-            
+
             /*
              * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
              */
@@ -424,9 +424,8 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 
             ddi_remove_minor_node(pDip, NULL);
             ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
-            
-            rc = supdrvDeleteDevExt(&g_DevExt);
-            AssertRC(rc);
+
+            supdrvDeleteDevExt(&g_DevExt);
 
             rc = RTSpinlockDestroy(g_Spinlock);
             AssertRC(rc);
@@ -477,7 +476,7 @@ static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cr
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n", 
+        OSDBGPRINT(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n",
                     (int)Process, Cmd));
         return EINVAL;
     }
@@ -501,75 +500,90 @@ static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cr
  *
  * @returns Solaris errno.
  *
- * @param pSession  The session.
- * @param Cmd       The IOCtl command.
- * @param Mode      Information bitfield (for specifying ownership of data)
- * @param pArgs     Pointer to the kernel copy of the SUPDRVIOCTLDATA buffer.
+ * @param   pSession    The session.
+ * @param   Cmd         The IOCtl command.
+ * @param   Mode        Information bitfield (for specifying ownership of data)
+ * @param   iArg        User space address of the request buffer.
  */
-static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int Cmd, int Mode, intptr_t pArgs)
+static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int iCmd, int Mode, intptr_t iArg)
 {
-    int                 rc;
-    void               *pvBuf = NULL;
-    unsigned long       cbBuf = 0;
-    unsigned            cbOut = 0;
-    PSUPDRVIOCTLDATA    pArgData = (PSUPDRVIOCTLDATA)pArgs;
+    int         rc;
+    uint32_t    cbBuf = 0;
+    SUPREQHDR   Hdr;
+    PSUPREQHDR  pHdr;
 
-   /*
-     * Allocate and copy user space input data buffer to kernel space.
+
+    /*
+     * Read the header.
      */
-    if (pArgData->cbIn > 0 || pArgData->cbOut > 0)
+    rc = ddi_copyin(&Hdr, (void *)iArg, sizeof(Hdr), Mode);
+    if (RT_UNLIKELY(rc))
     {
-        cbBuf = max(pArgData->cbIn, pArgData->cbOut);
-        pvBuf = RTMemTmpAlloc(cbBuf);
-
-        if (pvBuf == NULL)
-        {
-            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: failed to allocate buffer of %d bytes.\n", cbBuf));
-            return ENOMEM;
-        }
-        
-        rc = ddi_copyin(pArgData->pvIn, pvBuf, pArgData->cbIn, Mode);
-        
-        if (rc != 0)
-        {
-            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(%p,%d) failed.\n", pArgData->pvIn, pArgData->cbIn));
-
-            RTMemTmpFree(pvBuf);
-            return EFAULT;
-        }
+        dprintf(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(,%#lx,) failed; iCmd=%#x. rc=%d\n", iArg, iCmd, rc));
+        return EFAULT;
     }
-    
+    if (RT_UNLIKELY((Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
+    {
+        dprintf(("VBoxDrvSolarisIOCtlSlow: bad header magic %#x; iCmd=%#x\n", Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK, iCmd));
+        return EINVAL;
+    }
+
+    /*
+     * Buffer the request.
+     */
+    cbBuf = RT_MAX(Hdr.cbIn, Hdr.cbOut);
+    if (RT_UNLIKELY(cbBuf > _1M*16))
+    {
+        dprintf(("VBoxDrvSolarisIOCtlSlow: too big cbBuf=%#x; iCmd=%#x\n", cbBuf, iCmd));
+        return E2BIG;
+    }
+    if (RT_UNLIKELY(cbBuf < sizeof(Hdr)))
+    {
+        dprintf(("VBoxDrvSolarisIOCtlSlow: bad ioctl cbBuf=%#x; iCmd=%#x.\n", cbBuf, iCmd));
+        return EINVAL;
+    }
+    pHdr = RTMemAlloc(cbBuf);
+    if (RT_UNLIKELY(!pHdr))
+    {
+        OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: failed to allocate buffer of %d bytes for iCmd=%#x.\n", cbBuf, iCmd));
+        return ENOMEM;
+    }
+    rc = ddi_copyin(pHdr, (void *)iArg, cbBuf, Mode);
+    if (RT_UNLIKELY(rc))
+    {
+        dprintf(("VBoxDrvSolarisIOCtlSlow: copy_from_user(,%#lx, %#x) failed; iCmd=%#x. rc=%d\n", iArg, Hdr.cbIn, iCmd, rc));
+        RTMemFree(pHdr);
+        return EFAULT;
+    }
+
     /*
      * Process the IOCtl.
      */
-    rc = supdrvIOCtl(Cmd, &g_DevExt, pSession, pvBuf, pArgData->cbIn, pvBuf, pArgData->cbOut, &cbOut);
-    
+    rc = supdrvIOCtl(Cmd, &g_DevExt, pSession, pHdr);
+
     /*
      * Copy ioctl data and output buffer back to user space.
      */
-    if (rc != 0)
-        rc = VBoxSupDrvErr2SolarisErr(rc);
-    else if (cbOut > 0)
+    if (RT_LIKELY(!rc))
     {
-        if (pvBuf != NULL && cbOut <= cbBuf)
+        uint32_t cbOut = pHdr->cbOut;
+        if (RT_UNLIKELY(cbOut > cbBuf))
         {
-            rc = ddi_copyout(pvBuf, pArgData->pvOut, cbOut, Mode);
-            if (rc != 0)
-            {
-                OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyout(,%p,%d) failed.\n", pArgData->pvOut, cbBuf));
-                rc = EFAULT;
-            }
+            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: too much output! %#x > %#x; iCmd=%#x!\n", cbOut, cbBuf, iCmd));
+            cbOut = cbBuf;
         }
-        else
+        rc = ddi_copyout(pHdr, (void *)iArg, cbOut, Mode);
+        if (RT_UNLIKELY(rc != 0))
         {
-            OSDBGPRINT(("WHAT!?! supdrvIOCtl messed up! cbOut=%d cbBuf=%d pvBuf=%p\n", cbOut, cbBuf, pvBuf));
-            rc = EPERM;
+            /* this is really bad */
+            OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyout(,%p,%d) failed. rc=%d\n", (void *)iArg, cbBuf, rc));
+            rc = EFAULT;
         }
     }
+    else
+        rc = EINVAL;
 
-    if (pvBuf)
-        RTMemTmpFree(pvBuf);
-    
+    RTMemTmpFree(pHdr);
     return rc;
 }
 
