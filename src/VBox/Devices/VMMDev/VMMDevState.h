@@ -174,7 +174,7 @@ typedef struct VMMDevState
         /** The LED ports. */
         PDMILEDPORTS                        ILeds;
         /** Partner of ILeds. */
-        HCPTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
+        R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
     } SharedFolders;
 
 } VMMDevState;

@@ -228,15 +228,15 @@ typedef struct VM
     /** Pointer to the array of page descriptors for the VM structure allocation. */
     R3PTRTYPE(PSUPPAGE)         paVMPagesR3;
     /** Session handle. For use when calling SUPR0 APIs. */
-    HCPTRTYPE(PSUPDRVSESSION)   pSession;
+    R3R0PTRTYPE(PSUPDRVSESSION) pSession;
     /** Pointer to the next VM.
      * We keep a per process list of VM for the event that a process could
      * contain more than one VM.
      */
-    HCPTRTYPE(struct VM *)      pNext;
+    R3PTRTYPE(struct VM *)      pNext;
     /** Host Context VM Pointer.
      * @obsolete don't use in new code! */
-    HCPTRTYPE(struct VM *)      pVMHC;
+    R3PTRTYPE(struct VM *)      pVMHC;
     /** Ring-3 Host Context VM Pointer. */
     R3PTRTYPE(struct VM *)      pVMR3;
     /** Ring-0 Host Context VM Pointer. */

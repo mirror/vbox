@@ -215,15 +215,15 @@ typedef struct DBGF
     DBGFCMDDATA             VMMCmdData;
 
     /** List of registered info handlers. */
-    HCPTRTYPE(PDBGFINFO)    pInfoFirst;
+    R3PTRTYPE(PDBGFINFO)    pInfoFirst;
     /** Critical section protecting the above list. */
     RTCRITSECT              InfoCritSect;
 
     /** Range tree containing the loaded symbols of the a VM.
      * This tree will never have blind spots. */
-    HCPTRTYPE(AVLRGCPTRTREE) SymbolTree;
+    R3PTRTYPE(AVLRGCPTRTREE) SymbolTree;
     /** Symbol name space. */
-    HCPTRTYPE(PRTSTRSPACE)  pSymbolSpace;
+    R3PTRTYPE(PRTSTRSPACE)  pSymbolSpace;
     /** Indicates whether DBGFSym.cpp is initialized or not.
      * This part is initialized in a lazy manner for performance reasons. */
     bool                    fSymInited;

@@ -123,7 +123,7 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
             }
             STAM_COUNTER_INC(&pVM->patm.s.StatPatchWriteInterpretedFailed);
         }
-        HCPTRTYPE(PPATCHINFO) *paPatch = (HCPTRTYPE(PPATCHINFO) *)MMHyperHC2GC(pVM, pPatchPage->aPatch);
+        R3PTRTYPE(PPATCHINFO) *paPatch = (R3PTRTYPE(PPATCHINFO) *)MMHyperHC2GC(pVM, pPatchPage->aPatch);
 
         /* Increase the invalid write counter for each patch that's registered for that page. */
         for (uint32_t i=0;i<pPatchPage->cCount;i++)

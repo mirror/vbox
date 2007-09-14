@@ -59,7 +59,7 @@ typedef struct RTCRITSECT
         /** Strict: The current owner thread. */
         RTTHREAD volatile                   ThreadOwner;
         /** Strict: Where the section was entered. */
-        HCPTRTYPE(const char * volatile)    pszEnterFile;
+        R3PTRTYPE(const char * volatile)    pszEnterFile;
         /** Strict: Where the section was entered. */
         uint32_t volatile                   u32EnterLine;
 #if HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64

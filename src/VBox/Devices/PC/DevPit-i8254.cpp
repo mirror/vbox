@@ -78,18 +78,18 @@
 typedef struct PITChannelState
 {
     /** Pointer to the instance data - HCPtr. */
-    HCPTRTYPE(struct PITState *) pPitHC;
+    R3R0PTRTYPE(struct PITState *)  pPitHC;
     /** The timer - HCPtr. */
-    PTMTIMERHC          pTimerHC;
+    R3R0PTRTYPE(PTMTIMER)           pTimerHC;
     /** Pointer to the instance data - GCPtr. */
-    GCPTRTYPE(struct PITState *) pPitGC;
+    GCPTRTYPE(struct PITState *)    pPitGC;
     /** The timer - HCPtr. */
-    PTMTIMERGC          pTimerGC;
+    PTMTIMERGC                      pTimerGC;
     /** The virtual time stamp at the last reload. (only used in mode 2 for now) */
-    uint64_t            u64ReloadTS;
+    uint64_t                        u64ReloadTS;
     /** The actual time of the next tick.
      * As apposed to the next_transition_time which contains the correct time of the next tick. */
-    uint64_t            u64NextTS;
+    uint64_t                        u64NextTS;
 
     /** (count_load_time is only set by TMTimerGet() which returns uint64_t) */
     uint64_t count_load_time;
@@ -128,7 +128,7 @@ typedef struct PITState
     uint32_t                Alignment1;
 #endif
     /** Pointer to the device instance. */
-    HCPTRTYPE(PPDMDEVINS)   pDevIns;
+    R3PTRTYPE(PPDMDEVINS)   pDevIns;
 #if HC_ARCH_BITS == 32
     uint32_t                Alignment0;
 #endif

@@ -186,13 +186,13 @@ typedef struct APICState {
     struct APICState *next_apic;
 #else /* VBOX */
     /** HC pointer to the device instance. */
-    PPDMDEVINSHC    pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
     /** Pointer to the APIC HC helpers. */
-    PCPDMAPICHLPR3  pApicHlpR3;
+    PCPDMAPICHLPR3          pApicHlpR3;
     /** The APIC timer - HC Ptr. */
-    PTMTIMERHC      pTimerHC;
+    R3R0PTRTYPE(PTMTIMER)   pTimerHC;
     /** Pointer to the APIC R0 helpers. */
-    PCPDMAPICHLPR0  pApicHlpR0;
+    PCPDMAPICHLPR0          pApicHlpR0;
 
     /** GC pointer to the device instance. */
     PPDMDEVINSGC    pDevInsGC;
@@ -223,19 +223,19 @@ struct IOAPICState {
 
 #ifdef VBOX
     /** HC pointer to the device instance. */
-    PPDMDEVINSHC        pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
     /** Pointer to the IOAPIC R3 helpers. */
-    PCPDMIOAPICHLPR3    pIoApicHlpR3;
+    PCPDMIOAPICHLPR3        pIoApicHlpR3;
 
     /** GC pointer to the device instance. */
-    PPDMDEVINSGC        pDevInsGC;
+    PPDMDEVINSGC            pDevInsGC;
     /** Pointer to the IOAPIC GC helpers. */
-    PCPDMIOAPICHLPGC    pIoApicHlpGC;
+    PCPDMIOAPICHLPGC        pIoApicHlpGC;
 
     /** Pointer to the IOAPIC R0 helpers. */
-    PCPDMIOAPICHLPR0    pIoApicHlpR0;
+    PCPDMIOAPICHLPR0        pIoApicHlpR0;
 # if HC_ARCH_BITS == 32
-    uint32_t            Alignment0;
+    uint32_t                Alignment0;
 # endif
 # ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER StatMMIOReadGC;
@@ -1434,7 +1434,7 @@ static void ioapic_reset(void *opaque)
 {
     IOAPICState *s = (IOAPICState*)opaque;
 #ifdef VBOX
-    PPDMDEVINSHC        pDevIns    = s->pDevInsHC;
+    PPDMDEVINSR3        pDevIns    = s->pDevInsHC;
     PCPDMIOAPICHLPR3    pIoApicHlp = s->pIoApicHlpR3;
 #endif
     int i;

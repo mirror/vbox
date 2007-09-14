@@ -111,7 +111,7 @@ typedef struct IOMMMIORANGEGC
     /** Pointer to fill (memset) callback function. */
     GCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallback;
     /** Description / Name. For easing debugging. */
-    HCPTRTYPE(const char *)     pszDesc;
+    R3PTRTYPE(const char *)     pszDesc;
 } IOMMMIORANGEGC;
 /** Pointer to a MMIO range descriptor, GC version. */
 typedef struct IOMMMIORANGEGC *PIOMMMIORANGEGC;
@@ -246,7 +246,7 @@ typedef struct IOMIOPORTRANGEGC
     /** Pointer to string IN callback function. */
     GCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
     /** Description / Name. For easing debugging. */
-    HCPTRTYPE(const char *)     pszDesc;
+    R3PTRTYPE(const char *)     pszDesc;
 } IOMIOPORTRANGEGC;
 /** Pointer to I/O port range descriptor, GC version. */
 typedef IOMIOPORTRANGEGC *PIOMIOPORTRANGEGC;
@@ -348,21 +348,21 @@ typedef struct IOM
     /** Pointer to the trees - GC ptr. */
     GCPTRTYPE(PIOMTREES)            pTreesGC;
     /** Pointer to the trees - HC ptr. */
-    HCPTRTYPE(PIOMTREES)            pTreesHC;
+    R3R0PTRTYPE(PIOMTREES)          pTreesHC;
 
 
     /** @name Caching of I/O Port ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
      * @{ */
-    HCPTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
-    HCPTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
-    HCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR3;
-    HCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR3;
+    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
+    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
+    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR3;
+    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR3;
 
-    HCPTRTYPE(PIOMIOPORTRANGER0)    pRangeLastReadR0;
-    HCPTRTYPE(PIOMIOPORTRANGER0)    pRangeLastWriteR0;
-    HCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR0;
-    HCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR0;
+    R3R0PTRTYPE(PIOMIOPORTRANGER0)  pRangeLastReadR0;
+    R3R0PTRTYPE(PIOMIOPORTRANGER0)  pRangeLastWriteR0;
+    R3R0PTRTYPE(PIOMIOPORTSTATS)    pStatsLastReadR0;
+    R3R0PTRTYPE(PIOMIOPORTSTATS)    pStatsLastWriteR0;
 
     GCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastReadGC;
     GCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastWriteGC;

@@ -828,7 +828,7 @@ typedef RTFILE                                     *PRTFILE;
 #define NIL_RTFILE                                  (~(RTFILE)0)
 
 /** Loader module handle. */
-typedef HCPTRTYPE(struct RTLDRMODINTERNAL *)        RTLDRMOD;
+typedef R3PTRTYPE(struct RTLDRMODINTERNAL *)        RTLDRMOD;
 /** Pointer to a loader module handle. */
 typedef RTLDRMOD                                   *PRTLDRMOD;
 /** Nil loader module handle. */
@@ -864,7 +864,7 @@ typedef RTR0PROCESS                                *PRTR0PROCESS;
 
 /** @typedef RTSEMEVENT
  * Event Semaphore handle. */
-typedef HCPTRTYPE(struct RTSEMEVENTINTERNAL *)      RTSEMEVENT;
+typedef R3R0PTRTYPE(struct RTSEMEVENTINTERNAL *)    RTSEMEVENT;
 /** Pointer to an event semaphore handle. */
 typedef RTSEMEVENT                                 *PRTSEMEVENT;
 /** Nil event semaphore handle. */
@@ -872,7 +872,7 @@ typedef RTSEMEVENT                                 *PRTSEMEVENT;
 
 /** @typedef RTSEMEVENTMULTI
  * Event Multiple Release Semaphore handle. */
-typedef HCPTRTYPE(struct RTSEMEVENTMULTIINTERNAL *) RTSEMEVENTMULTI;
+typedef R3R0PTRTYPE(struct RTSEMEVENTMULTIINTERNAL *) RTSEMEVENTMULTI;
 /** Pointer to an event multiple release semaphore handle. */
 typedef RTSEMEVENTMULTI                            *PRTSEMEVENTMULTI;
 /** Nil multiple release event semaphore handle. */
@@ -880,7 +880,7 @@ typedef RTSEMEVENTMULTI                            *PRTSEMEVENTMULTI;
 
 /** @typedef RTSEMFASTMUTEX
  * Fast mutex Semaphore handle. */
-typedef HCPTRTYPE(struct RTSEMFASTMUTEXINTERNAL *)  RTSEMFASTMUTEX;
+typedef R3R0PTRTYPE(struct RTSEMFASTMUTEXINTERNAL *) RTSEMFASTMUTEX;
 /** Pointer to a mutex semaphore handle. */
 typedef RTSEMFASTMUTEX                             *PRTSEMFASTMUTEX;
 /** Nil fast mutex semaphore handle. */
@@ -888,7 +888,7 @@ typedef RTSEMFASTMUTEX                             *PRTSEMFASTMUTEX;
 
 /** @typedef RTSEMMUTEX
  * Mutex Semaphore handle. */
-typedef HCPTRTYPE(struct RTSEMMUTEXINTERNAL *)      RTSEMMUTEX;
+typedef R3R0PTRTYPE(struct RTSEMMUTEXINTERNAL *)    RTSEMMUTEX;
 /** Pointer to a mutex semaphore handle. */
 typedef RTSEMMUTEX                                 *PRTSEMMUTEX;
 /** Nil mutex semaphore handle. */
@@ -896,14 +896,14 @@ typedef RTSEMMUTEX                                 *PRTSEMMUTEX;
 
 /** @typedef RTSEMRW
  * Read/Write Semaphore handle. */
-typedef HCPTRTYPE(struct RTSEMRWINTERNAL *)         RTSEMRW;
+typedef R3R0PTRTYPE(struct RTSEMRWINTERNAL *)       RTSEMRW;
 /** Pointer to a read/write semaphore handle. */
 typedef RTSEMRW                                    *PRTSEMRW;
 /** Nil read/write semaphore handle. */
 #define NIL_RTSEMRW                                 0
 
 /** Spinlock handle. */
-typedef HCPTRTYPE(struct RTSPINLOCKINTERNAL *)      RTSPINLOCK;
+typedef R3R0PTRTYPE(struct RTSPINLOCKINTERNAL *)    RTSPINLOCK;
 /** Pointer to a spinlock handle. */
 typedef RTSPINLOCK                                 *PRTSPINLOCK;
 /** Nil spinlock handle. */
@@ -917,21 +917,21 @@ typedef RTSOCKET *PRTSOCKET;
 #define NIL_RTSOCKET                                (~(RTSOCKET)0)
 
 /** Thread handle.*/
-typedef HCPTRTYPE(struct RTTHREADINT *)             RTTHREAD;
+typedef R3R0PTRTYPE(struct RTTHREADINT *)           RTTHREAD;
 /** Pointer to thread handle. */
 typedef RTTHREAD                                   *PRTTHREAD;
 /** Nil thread handle. */
 #define NIL_RTTHREAD                                0
 
 /** Handle to a simple heap. */
-typedef HCPTRTYPE(struct RTHEAPSIMPLEINTERNAL *)    RTHEAPSIMPLE;
+typedef R3R0PTRTYPE(struct RTHEAPSIMPLEINTERNAL *)  RTHEAPSIMPLE;
 /** Pointer to a handle to a simple heap. */
 typedef RTHEAPSIMPLE                               *PRTHEAPSIMPLE;
 /** NIL simple heap handle. */
 #define NIL_RTHEAPSIMPLE                            ((RTHEAPSIMPLE)0)
 
 /** Handle to an environment block. */
-typedef HCPTRTYPE(struct RTENVINTERNAL *)           RTENV;
+typedef R3PTRTYPE(struct RTENVINTERNAL *)           RTENV;
 /** Pointer to a handle to an environment block. */
 typedef RTENV                                      *PRTENV;
 /** NIL simple heap handle. */

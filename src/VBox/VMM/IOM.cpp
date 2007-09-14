@@ -505,8 +505,8 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 IOMR3DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
-                                     HCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, HCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                     HCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, HCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
+                                     R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                     R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
 {
     LogFlow(("IOMR3IOPortRegisterR3: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%VHv pfnOutCallback=%#x pfnInCallback=%#x pfnOutStrCallback=%#x pfnInStrCallback=%#x pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pszDesc, pfnOutStrCallback, pfnInStrCallback));
@@ -1147,8 +1147,8 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                    HCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, HCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    HCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
+                                    R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                                    R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
     LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%#x cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));

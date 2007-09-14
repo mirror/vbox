@@ -190,7 +190,7 @@ typedef struct VMM
     /** VMM stack, pointer to the top of the stack in HC.
      * Stack is allocated from the hypervisor heap and is page aligned
      * and always writable in GC. */
-    HCPTRTYPE(uint8_t *)        pbHCStack;
+    R3PTRTYPE(uint8_t *)        pbHCStack;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
     GCPTRTYPE(uint8_t *)        pbGCStack;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
@@ -203,11 +203,11 @@ typedef struct VMM
     RTUINT                      cbLoggerGC;
     /** Pointer to the GC logger instance - HC Ptr.
      * This is NULL if logging is disabled. */
-    HCPTRTYPE(PRTLOGGERGC)      pLoggerHC;
+    R3PTRTYPE(PRTLOGGERGC)      pLoggerHC;
 
     /** Pointer to the R0 logger instance.
      * This is NULL if logging is disabled. */
-    HCPTRTYPE(PVMMR0LOGGER)     pR0Logger;
+    R3R0PTRTYPE(PVMMR0LOGGER)   pR0Logger;
 
 #ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
     /** Pointer to the GC release logger instance - GC Ptr. */
@@ -216,14 +216,14 @@ typedef struct VMM
      * This may differ from cbLoggerGC. */
     RTUINT                      cbRelLoggerGC;
     /** Pointer to the GC release logger instance - HC Ptr. */
-    HCPTRTYPE(PRTLOGGERGC)      pRelLoggerHC;
+    R3PTRTYPE(PRTLOGGERGC)      pRelLoggerHC;
 #endif /* VBOX_WITH_GC_AND_R0_RELEASE_LOG */
 
     /** Global VM critical section. */
     RTCRITSECT                  CritSectVMLock;
 
     /** The EMT yield timer. */
-    PTMTIMERHC                  pYieldTimer;
+    PTMTIMERR3                  pYieldTimer;
     /** The period to the next timeout when suspended or stopped.
      * This is 0 when running. */
     uint32_t                    cYieldResumeMillies;

@@ -355,12 +355,12 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         {
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
-            pVM->pgm.s.pGuestPDHC = (HCPTRTYPE(PX86PD))HCPtrGuestCR3;
+            pVM->pgm.s.pGuestPDHC = (R3R0PTRTYPE(PX86PD))HCPtrGuestCR3;
             pVM->pgm.s.pGuestPDGC = (GCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
             const unsigned off = GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
-            pVM->pgm.s.pGstPaePDPTRHC = (HCPTRTYPE(PX86PDPTR))((RTHCUINTPTR)HCPtrGuestCR3 | off);
+            pVM->pgm.s.pGstPaePDPTRHC = (R3R0PTRTYPE(PX86PDPTR))((RTHCUINTPTR)HCPtrGuestCR3 | off);
             pVM->pgm.s.pGstPaePDPTRGC = (GCPTRTYPE(PX86PDPTR))((RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping | off);
 
             /*
@@ -379,7 +379,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     {
                         rc = PGMMap(pVM, GCPtr, HCPhys & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);
                         AssertRCReturn(rc, rc);
-                        pVM->pgm.s.apGstPaePDsHC[i]     = (HCPTRTYPE(PX86PDPAE))HCPtr;
+                        pVM->pgm.s.apGstPaePDsHC[i]     = (R3R0PTRTYPE(PX86PDPAE))HCPtr;
                         pVM->pgm.s.apGstPaePDsGC[i]     = (GCPTRTYPE(PX86PDPAE))GCPtr;
                         pVM->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
                         PGM_INVL_PG(GCPtr);

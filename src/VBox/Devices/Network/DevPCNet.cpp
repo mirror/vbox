@@ -126,9 +126,9 @@ struct PCNetState_st
     PCIDEVICE                           PciDev;
 #ifndef PCNET_NO_POLLING
     /** Poll timer (address for host context) */
-    PTMTIMERHC                          pTimerPollHC;
+    R3R0PTRTYPE(PTMTIMER)               pTimerPollHC;
     /** Poll timer (address for guest context) */
-    PTMTIMERGC                          pTimerPollGC;
+    GCPTRTYPE(PTMTIMER)                 pTimerPollGC;
 #endif
     /** Register Address Pointer */
     uint32_t                            u32RAP;
@@ -166,22 +166,22 @@ struct PCNetState_st
 
     /** Transmit signaller */
     GCPTRTYPE(PPDMQUEUE)                pXmitQueueGC;
-    HCPTRTYPE(PPDMQUEUE)                pXmitQueueHC;
+    R3R0PTRTYPE(PPDMQUEUE)              pXmitQueueHC;
 
     /** Receive signaller */
-    HCPTRTYPE(PPDMQUEUE)                pCanRxQueueHC;
+    R3R0PTRTYPE(PPDMQUEUE)              pCanRxQueueHC;
     GCPTRTYPE(PPDMQUEUE)                pCanRxQueueGC;
     /** Pointer to the device instance. */
     GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
     /** Pointer to the device instance. */
-    HCPTRTYPE(PPDMDEVINS)               pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
-    PTMTIMERHC                          pTimerRestore;
+    PTMTIMERR3                          pTimerRestore;
     /** Pointer to the connector of the attached network driver. */
-    HCPTRTYPE(PPDMINETWORKCONNECTOR)    pDrv;
+    R3PTRTYPE(PPDMINETWORKCONNECTOR)    pDrv;
     /** Pointer to the attached network driver. */
-    HCPTRTYPE(PPDMIBASE)                pDrvBase;
+    R3PTRTYPE(PPDMIBASE)                pDrvBase;
     /** The base interface. */
     PDMIBASE                            IBase;
     /** The network port interface. */
@@ -212,7 +212,7 @@ struct PCNetState_st
     /** The LED ports. */
     PDMILEDPORTS                        ILeds;
     /** Partner of ILeds. */
-    HCPTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
+    R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
 
     /** Async send thread */
     RTSEMEVENT                          hSendEventSem;

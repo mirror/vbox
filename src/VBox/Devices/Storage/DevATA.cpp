@@ -166,7 +166,7 @@ typedef struct ATADevState {
     /** Size of I/O buffer. */
     uint32_t cbIOBuffer;
     /** Pointer to the I/O buffer. */
-    HCPTRTYPE(uint8_t *) pbIOBufferHC;
+    R3R0PTRTYPE(uint8_t *) pbIOBufferHC;
     /** Pointer to the I/O buffer. */
     GCPTRTYPE(uint8_t *) pbIOBufferGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
@@ -228,13 +228,13 @@ typedef struct ATADevState {
     RTUINT                          Alignment2; /**< Align pDevInsHC correctly. */
 #endif
     /** Pointer to device instance. */
-    HCPTRTYPE(PPDMDEVINS)           pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
     /** Pointer to controller instance. */
-    HCPTRTYPE(struct ATACONTROLLER *) pControllerHC;
+    R3R0PTRTYPE(struct ATACONTROLLER *) pControllerHC;
     /** Pointer to device instance. */
-    GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
+    GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
     /** Pointer to controller instance. */
-    GCPTRTYPE(struct ATACONTROLLER *) pControllerGC;
+    GCPTRTYPE(struct ATACONTROLLER *)   pControllerGC;
 } ATADevState;
 
 
@@ -325,7 +325,7 @@ typedef struct ATACONTROLLER
     ATADevState aIfs[2];
 
     /** Pointer to device instance. */
-    HCPTRTYPE(PPDMDEVINS)           pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS)         pDevInsHC;
     /** Pointer to device instance. */
     GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
 

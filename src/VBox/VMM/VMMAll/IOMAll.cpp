@@ -232,6 +232,7 @@ inline void iomGCMMIOStatLength(PVM pVM, unsigned cb)
 #endif
 }
 
+#ifndef IN_RING0
 /**
  * Registers a Port IO GC handler.
  *
@@ -451,7 +452,7 @@ IOMDECL(int)  IOMMMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStar
 
     return rc;
 }
-
+#endif
 
 /**
  * Registers a Port IO R0 handler.
