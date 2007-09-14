@@ -1139,6 +1139,7 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
         {
             PSUPCALLVMMR0_IN    pIn = (PSUPCALLVMMR0_IN)pvIn;
             PSUPCALLVMMR0_OUT   pOut = (PSUPCALLVMMR0_OUT)pvOut;
+            RTCCUINTREG         uFlags;
 
             /*
              * Validate.
@@ -1167,7 +1168,10 @@ int VBOXCALL supdrvIOCtl(unsigned int uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /*
              * Execute.
              */
+            uFlags = ASMGetFlags();
+            ASMIntDisable();
             pOut->rc = pDevExt->pfnVMMR0Entry(pIn->pVMR0, pIn->uOperation, (void *)pIn->pvArg); /** @todo address the pvArg problem! */
+            ASMSetFlags(uFlags);
             *pcbReturned = sizeof(*pOut);
             return 0;
         }
@@ -2368,6 +2372,7 @@ SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR3PTR ppv
             if (!rc)
             {
                 *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
+                dprintf(("SUPR0PageAlloc returned %p\n", *ppvR3));
                 return 0;
             }
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
