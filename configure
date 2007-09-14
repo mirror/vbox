@@ -1166,7 +1166,9 @@ Paths:
   --with-mkisofs=PATH     location of mkisofs [$MKISOFS]
   --with-qt-dir=DIR       directory for QT headers/libraries [$QTDIR]
   --with-xalan=LIB        location of the xalan library [$LIBXALAN]
+  --with-xalan-inc=DIR    location of the xalan headers [$INCXALAN]
   --with-xerces=LIB       location of the xerces library [$LIBXERCES]
+  --with-xerces-inc=DIR   location of the xerces headers [$INCXERCES]
 
 Build type:
   -d, --build-debug       build with debugging symbols and assertions
@@ -1217,8 +1219,14 @@ for option in $*; do
     --with-xalan=*)
       LIBXALAN=`echo $option | cut -d'=' -f2`
       ;;
+    --with-xalan-inc=*)
+      INCXALAN=`echo $option | cut -d'=' -f2`
+      ;;
     --with-xerces=*)
       LIBXERCES=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-xserces-inc=*)
+      INCXERCES=`echo $option | cut -d'=' -f2`
       ;;
     --disable-xpcom)
       WITH_XPCOM=0
