@@ -82,8 +82,8 @@
 # ifdef __LINUX__
 #  define RT_OS_LINUX
 #  warning "__LINUX__ without RT_OS_LINUX!"
-# endif 
-#endif 
+# endif
+#endif
 
 /** @def RT_ARCH_X86
  * Indicates that we're compiling for the X86 architecture.
@@ -259,8 +259,8 @@
 #define GCPTRTYPE(GCType)       CTXTYPE(GCType, RTGCPTR, RTGCPTR)
 
 /** @def R3R0PTRTYPE
- * Declare a pointer which is used in HC, is explicitely valid in ring 3 and 0, 
- * but appears in structure(s) used by both HC and GC. The main purpose is to 
+ * Declare a pointer which is used in HC, is explicitely valid in ring 3 and 0,
+ * but appears in structure(s) used by both HC and GC. The main purpose is to
  * make sure structures have the same size when built for different architectures.
  *
  * @param   R3R0Type  The R3R0 type.
@@ -502,22 +502,14 @@
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the variable member.
  */
-#ifdef IN_RING3
-# define DECLCALLBACKPTR(type, name)  type (RTCALL * name)
-#else
-# define DECLCALLBACKPTR(type, name)  RTR3PTR name
-#endif
+#define DECLCALLBACKPTR(type, name)  type (RTCALL * name)
 
 /** @def DECLCALLBACKMEMBER
  * How to declare an call back function pointer member.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
  */
-#ifdef IN_RING3
-# define DECLCALLBACKMEMBER(type, name)  type (RTCALL * name)
-#else
-# define DECLCALLBACKMEMBER(type, name)  RTR3PTR name
-#endif
+#define DECLCALLBACKMEMBER(type, name)  type (RTCALL * name)
 
 /** @def DECLR3CALLBACKMEMBER
  * How to declare an call back function pointer member - R3 Ptr.
@@ -854,10 +846,10 @@
 #define RT_ELEMENTS(aArray)         ( sizeof(aArray) / sizeof((aArray)[0]) )
 
 #ifdef RT_OS_OS2
-/* Undefine RT_MAX since there is an unfortunate clash with the max 
+/* Undefine RT_MAX since there is an unfortunate clash with the max
    resource type define in os2.h. */
 # undef RT_MAX
-#endif 
+#endif
 
 /** @def RT_MAX
  * Finds the maximum value.
