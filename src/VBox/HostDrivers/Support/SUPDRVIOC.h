@@ -358,6 +358,16 @@ typedef struct SUPLDRSYM
     uint32_t        offSymbol;
 } SUPLDRSYM, *PSUPLDRSYM;
 
+/**
+ * SUPLDRLOAD::u::In::EP type.
+ */
+typedef enum SUPLDRLOADEP
+{
+    SUPLDRLOADEP_NOTHING = 0,
+    SUPLDRLOADEP_VMMR0,
+    SUPLDRLOADEP_32BIT_HACK = 0x7fffffff
+} SUPLDRLOADEP;
+
 typedef struct SUPLDRLOAD
 {
     /** The header. */
@@ -384,8 +394,7 @@ typedef struct SUPLDRLOAD
             /** Address. */
             RTR0PTR         pvImageBase;
             /** Entry point type. */
-            enum { EP_NOTHING, EP_VMMR0 }
-                            eEPType;
+            SUPLDRLOADEP    eEPType;
             /** The offset of the symbol table. */
             uint32_t        offSymbols;
             /** The number of entries in the symbol table. */
