@@ -19,15 +19,19 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-/* Deal with conflicts first.
- * (This is mess inherited from BSD. The *BSDs has clean this up long ago.) */
+/* 
+ * Deal with conflicts first.
+ * PVM - BSD mess, that FreeBSD has correct a long time ago.
+ * iprt/types.h before sys/param.h - prevents UINT32_C and friends.
+ */
+#include <iprt/types.h>
 #include <sys/param.h>
 #undef PVM
+
 #include <IOKit/IOLib.h> /* Assert as function */
 
 #include "SUPDRV.h"
 #include <VBox/version.h>
-#include <iprt/types.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -59,15 +63,15 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 __BEGIN_DECLS
-static kern_return_t    VBoxSupDrvStart(struct kmod_info *pKModInfo, void *pvData);
-static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData);
+static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pvData);
+static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvData);
 
-static int              VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
-static int              VBoxSupDrvClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
-static int              VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
-static int              VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess);
+static int              VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
+static int              VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
+static int              VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
+static int              VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess);
 
-static int              VBoxSupDrvErr2DarwinErr(int rc);
+static int              VBoxDrvDarwinErr2DarwinErr(int rc);
 __END_DECLS
 
 
@@ -135,8 +139,8 @@ __private_extern__ kmod_stop_func_t  *_antimain;
 __private_extern__ int                _kext_apple_cc;
 
 KMOD_EXPLICIT_DECL(VBoxDrv, VBOX_VERSION_STRING, _start, _stop)
-kmod_start_func_t *_realmain = VBoxSupDrvStart;
-kmod_stop_func_t  *_antimain = VBoxSupDrvStop;
+kmod_start_func_t *_realmain = VBoxDrvDarwinStart;
+kmod_stop_func_t  *_antimain = VBoxDrvDarwinStop;
 int                _kext_apple_cc = __APPLE_CC__;
 __END_DECLS
 
@@ -152,11 +156,11 @@ static SUPDRVDEVEXT     g_DevExt;
 static struct cdevsw    g_DevCW =
 {
     /** @todo g++ doesn't like this syntax - it worked with gcc before renaming to .cpp. */
-    /*.d_open  = */VBoxSupDrvOpen,
-    /*.d_close = */VBoxSupDrvClose,
+    /*.d_open  = */VBoxDrvDarwinOpen,
+    /*.d_close = */VBoxDrvDarwinClose,
     /*.d_read  = */eno_rdwrt,
     /*.d_write = */eno_rdwrt,
-    /*.d_ioctl = */VBoxSupDrvIOCtl,
+    /*.d_ioctl = */VBoxDrvDarwinIOCtl,
     /*.d_stop  = */eno_stop,
     /*.d_reset = */eno_reset,
     /*.d_ttys  = */NULL,
@@ -184,10 +188,10 @@ static PSUPDRVSESSION   g_apSessionHashTab[19];
 /**
  * Start the kernel module.
  */
-static kern_return_t    VBoxSupDrvStart(struct kmod_info *pKModInfo, void *pvData)
+static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
     int rc;
-    dprintf(("VBoxSupDrvStart\n"));
+    dprintf(("VBoxDrvDarwinStart\n"));
 
     /*
      * Initialize IPRT.
@@ -252,10 +256,10 @@ static kern_return_t    VBoxSupDrvStart(struct kmod_info *pKModInfo, void *pvDat
 /**
  * Stop the kernel module.
  */
-static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData)
+static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvData)
 {
     int rc;
-    dprintf(("VBoxSupDrvStop\n"));
+    dprintf(("VBoxDrvDarwinStop\n"));
 
     /** @todo I've got a nagging feeling that we'll have to keep track of users and refuse
      * unloading if we're busy. Investigate and implement this! */
@@ -279,7 +283,7 @@ static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData
     RTR0Term();
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
-    dprintf(("VBoxSupDrvStop - done\n"));
+    dprintf(("VBoxDrvDarwinStop - done\n"));
     return KMOD_RETURN_SUCCESS;
 }
 
@@ -290,7 +294,7 @@ static kern_return_t    VBoxSupDrvStop(struct kmod_info *pKModInfo, void *pvData
  * @param   pInode      Pointer to inode info structure.
  * @param   pFilp       Associated file pointer.
  */
-static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
+static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
     int                 rc;
     PSUPDRVSESSION      pSession;
@@ -298,7 +302,7 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
     char szName[128];
     szName[0] = '\0';
     proc_name(proc_pid(pProcess), szName, sizeof(szName));
-    dprintf(("VBoxSupDrvOpen: pid=%d '%s'\n", proc_pid(pProcess), szName));
+    dprintf(("VBoxDrvDarwinOpen: pid=%d '%s'\n", proc_pid(pProcess), szName));
 #endif
 
     /*
@@ -329,25 +333,25 @@ static int VBoxSupDrvOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPro
     }
 
 #ifdef DEBUG_DARWIN_GIP
-    OSDBGPRINT(("VBoxSupDrvOpen: pid=%d '%s' pSession=%p rc=%d\n", proc_pid(pProcess), szName, pSession, rc));
+    OSDBGPRINT(("VBoxDrvDarwinOpen: pid=%d '%s' pSession=%p rc=%d\n", proc_pid(pProcess), szName, pSession, rc));
 #else
-    dprintf(("VBoxSupDrvOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, proc_pid(pProcess)));
+    dprintf(("VBoxDrvDarwinOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, proc_pid(pProcess)));
 #endif
-    return VBoxSupDrvErr2DarwinErr(rc);
+    return VBoxDrvDarwinErr2DarwinErr(rc);
 }
 
 
 /**
  * Close device.
  */
-static int VBoxSupDrvClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
+static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS Process = proc_pid(pProcess);
     const unsigned  iHash = SESSION_HASH(Process);
     PSUPDRVSESSION  pSession;
 
-    dprintf(("VBoxSupDrvClose: pid=%d\n", (int)Process));
+    dprintf(("VBoxDrvDarwinClose: pid=%d\n", (int)Process));
 
     /*
      * Remove from the hash table.
@@ -383,7 +387,7 @@ static int VBoxSupDrvClose(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxSupDrvClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n",
+        OSDBGPRINT(("VBoxDrvDarwinClose: WHAT?!? pSession == NULL! This must be a mistake... pid=%d (close)\n",
                     (int)Process));
         return EINVAL;
     }
@@ -406,7 +410,7 @@ static int VBoxSupDrvClose(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
  * @param   fFlags      Flag saying we're a character device (like we didn't know already).
  * @param   pProcess    The process issuing this request.
  */
-static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
+static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
     RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = proc_pid(pProcess);
@@ -426,7 +430,7 @@ static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
     if (!pSession)
     {
-        OSDBGPRINT(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n",
+        OSDBGPRINT(("VBoxDrvDarwinIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n",
                     (int)Process, iCmd));
         return EINVAL;
     }
@@ -439,12 +443,12 @@ static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
         ||  iCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  iCmd == SUP_IOCTL_FAST_DO_NOP)
         return supdrvIOCtlFast(iCmd, &g_DevExt, pSession);
-    return VBoxSupDrvIOCtlSlow(pSession, iCmd, pData, pProcess);
+    return VBoxDrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
 }
 
 
 /**
- * Worker for VBoxSupDrvIOCtl that takes the slow IOCtl functions.
+ * Worker for VBoxDrvDarwinIOCtl that takes the slow IOCtl functions.
  *
  * @returns Darwin errno.
  *
@@ -453,47 +457,79 @@ static int VBoxSupDrvIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, st
  * @param pData     Pointer to the kernel copy of the SUPDRVIOCTLDATA buffer.
  * @param pProcess  The calling process.
  */
-static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess)
+static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess)
 {
-    int                 rc;
-    void               *pvPageBuf = NULL;
-    void               *pvBuf = NULL;
-    unsigned long       cbBuf = 0;
-    unsigned            cbOut = 0;
-    PSUPDRVIOCTLDATA    pArgs = (PSUPDRVIOCTLDATA)pData;
-    dprintf(("VBoxSupDrvIOCtlSlow: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
+    dprintf(("VBoxDrvDarwinIOCtlSlow: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
+
 
     /*
-     * Copy ioctl data structure from user space.
+     * Buffered or unbuffered?
      */
-    if (IOCPARM_LEN(iCmd) != sizeof(SUPDRVIOCTLDATA))
+    void *pvPageBuf = NULL;
+    PSUPREQHDR pHdr;
+    uint32_t cb = IOCPARM_LEN(iCmd);
+    if (cb)
     {
-        dprintf(("VBoxSupDrvIOCtlSlow: incorrect input length! cbArgs=%d\n", IOCPARM_LEN(iCmd)));
-        return EINVAL;
-    }
-
-    /*
-     * Allocate and copy user space input data buffer to kernel space.
-     */
-    if (pArgs->cbIn > 0 || pArgs->cbOut > 0)
-    {
-        cbBuf = max(pArgs->cbIn, pArgs->cbOut);
-        pvBuf = RTMemTmpAlloc(cbBuf);
-        if (pvBuf == NULL)
-            pvPageBuf = pvBuf = IOMallocAligned(cbBuf, 8);
-        if (pvBuf == NULL)
+        pHdr = (PSUPREQHDR)pData;
+        if (RT_UNLIKELY(cb < sizeof(*pHdr)))
         {
-            dprintf(("VBoxSupDrvIOCtlSlow: failed to allocate buffer of %d bytes.\n", cbBuf));
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: cb=%#x < %#x; iCmd=%#lx\n", cb, (int)sizeof(*pHdr), iCmd));
+            return EINVAL;
+        }
+        if (RT_UNLIKELY((pHdr->fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
+        {
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", pHdr->fFlags, iCmd)); 
+            return EINVAL;
+        }
+        if (RT_UNLIKELY(RT_MAX(pHdr->cbIn, pHdr->cbOut) != cb))
+        {
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: max(%#x,%#x) != %#x; iCmd=%#lx\n", pHdr->cbIn, pHdr->cbOut, cb, iCmd));
+            return EINVAL;
+        }
+    }
+    else
+    {
+        /* 
+         * Get the header and figure out how much we're gonna have to read.
+         */ 
+        SUPREQHDR Hdr;
+        int rc = copyin((const user_addr_t)pData, &Hdr, sizeof(Hdr));
+        if (RT_UNLIKELY(rc))
+        {
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyin(%lx,Hdr,) -> %#x; iCmd=%#lx\n", pData, rc, iCmd));
+            return rc;
+        }
+        if (RT_UNLIKELY((Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
+        {
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", Hdr.fFlags, iCmd)); 
+            return EINVAL;
+        }
+        cb = RT_MAX(Hdr.cbIn, Hdr.cbOut);
+        if (RT_UNLIKELY(cb < sizeof(Hdr) || cb > _1M*16))
+        {
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: max(%#x,%#x); iCmd=%#lx\n", Hdr.cbIn, Hdr.cbOut, iCmd));
+            return EINVAL;
+        }
+
+        /*
+         * Allocate buffer and copy in the data.
+         */
+        pHdr = (PSUPREQHDR)RTMemTmpAlloc(cb);
+        if (!pHdr)
+            pvPageBuf = pHdr = (PSUPREQHDR)IOMallocAligned(RT_ALIGN_Z(cb, PAGE_SIZE), 8);
+        if (RT_UNLIKELY(!pHdr))
+        {
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: failed to allocate buffer of %d bytes; iCmd=%#lx\n", cb, iCmd));
             return ENOMEM;
         }
-        rc = copyin((const user_addr_t)pArgs->pvIn, pvBuf, pArgs->cbIn);
-        if (rc)
+        rc = copyin((const user_addr_t)pData, pHdr, Hdr.cbIn);
+        if (RT_UNLIKELY(rc))
         {
-            dprintf(("VBoxSupDrvIOCtlSlow: copyin(%p,,%d) failed.\n", pArgs->pvIn, cbBuf));
+            OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyin(%lx,,%#x) -> %#x; iCmd=%#lx\n", pData, Hdr.cbIn, rc, iCmd));
             if (pvPageBuf)
-                IOFreeAligned(pvPageBuf, cbBuf);
+                IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cb, PAGE_SIZE));
             else
-                RTMemTmpFree(pvBuf);
+                RTMemTmpFree(pHdr);
             return rc;
         }
     }
@@ -501,42 +537,49 @@ static int VBoxSupDrvIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pDa
     /*
      * Process the IOCtl.
      */
-    rc = supdrvIOCtl(iCmd, &g_DevExt, pSession,
-                     pvBuf, pArgs->cbIn, pvBuf, pArgs->cbOut, &cbOut);
-
-    /*
-     * Copy ioctl data and output buffer back to user space.
-     */
-    if (rc)
+    int rc = supdrvIOCtl(iCmd, &g_DevExt, pSession, pHdr);
+    if (RT_LIKELY(!rc))
     {
-        dprintf(("VBoxSupDrvIOCtlSlow: pid=%d iCmd=%x pData=%p failed, rc=%d (darwin rc=%d)\n",
-                 proc_pid(pProcess), iCmd, (void *)pData, rc, VBoxSupDrvErr2DarwinErr(rc)));
-        rc = VBoxSupDrvErr2DarwinErr(rc);
-    }
-    else if (cbOut > 0)
-    {
-        if (pvBuf != NULL && cbOut <= cbBuf)
+        /*
+         * If not buffered, copy back the buffer before returning.
+         */
+        if (!IOCPARM_LEN(iCmd))
         {
-            int rc2 = copyout(pvBuf, (user_addr_t)pArgs->pvOut, cbOut);
-            if (rc2)
+            uint32_t cbOut = pHdr->cbOut;
+            if (cbOut > cb)
             {
-                dprintf(("VBoxSupDrvIOCtlSlow: copyout(,%p,%d) failed.\n", pArgs->pvOut, cbBuf));
-                rc = rc2;
+                OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: too much output! %#x > %#x; uCmd=%#lx!\n", cbOut, cb, iCmd));
+                cbOut = cb;
             }
-        }
-        else
-        {
-            dprintf(("WHAT!?! supdrvIOCtl messed up! cbOut=%d cbBuf=%d pvBuf=%p\n", cbOut, cbBuf, pvBuf));
-            rc = EPERM;
+            rc = copyout(pHdr, (user_addr_t)pData, cbOut);
+            if (RT_UNLIKELY(rc))
+                OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: copyout(,%p,%#x) -> %d; uCmd=%#lx!\n", pData, cbOut, rc, iCmd));
+
+            /* cleanup */
+            if (pvPageBuf)
+                IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cb, PAGE_SIZE));
+            else
+                RTMemTmpFree(pHdr);
         }
     }
+    else
+    {
+        /* 
+         * The request failed, just clean up.
+         */
+        if (!IOCPARM_LEN(iCmd))
+        {
+            if (pvPageBuf)
+                IOFreeAligned(pvPageBuf, RT_ALIGN_Z(cb, PAGE_SIZE));
+            else
+                RTMemTmpFree(pHdr);
+        }
 
-    if (pvPageBuf)
-        IOFreeAligned(pvPageBuf, cbBuf);
-    else if (pvBuf)
-        RTMemTmpFree(pvBuf);
+        dprintf(("VBoxDrvDarwinIOCtlSlow: pid=%d iCmd=%lx pData=%p failed, rc=%d\n", proc_pid(pProcess), iCmd, (void *)pData, rc));
+        rc = EINVAL;
+    }
 
-    dprintf2(("VBoxSupDrvIOCtlSlow: returns %d\n", rc));
+    dprintf2(("VBoxDrvDarwinIOCtlSlow: returns %d\n", rc));
     return rc;
 }
 
@@ -579,7 +622,7 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
  * @returns corresponding darwin error code.
  * @param   rc  supdrv error code (SUPDRV_ERR_* defines).
  */
-static int VBoxSupDrvErr2DarwinErr(int rc)
+static int VBoxDrvDarwinErr2DarwinErr(int rc)
 {
     switch (rc)
     {
