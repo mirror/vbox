@@ -29,10 +29,6 @@
 #include <iprt/thread.h>
 #include <iprt/process.h>
 #include <iprt/log.h>
-#ifdef VBOX_WITHOUT_IDT_PATCHING
-# include <VBox/vmm.h>
-# include <VBox/err.h>
-#endif
 
 
 /*******************************************************************************
@@ -168,7 +164,7 @@ static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
 static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
 static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
 static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
-static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0Entry);
+static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
 static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
 static void     supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
@@ -571,7 +567,6 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
 }
 
 
-#ifdef VBOX_WITHOUT_IDT_PATCHING
 /**
  * Fast path I/O Control worker.
  *
@@ -591,18 +586,18 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSES
     RTCCUINTREG uFlags = ASMGetFlags();
     ASMIntDisable();
 
-    if (RT_LIKELY(pSession->pVM && pDevExt->pfnVMMR0Entry))
+    if (RT_LIKELY(pSession->pVM && pDevExt->pfnVMMR0EntryFast))
     {
         switch (uIOCtl)
         {
             case SUP_IOCTL_FAST_DO_RAW_RUN:
-                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_RAW_RUN, NULL);
+                rc = pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
                 break;
             case SUP_IOCTL_FAST_DO_HWACC_RUN:
-                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_HWACC_RUN, NULL);
+                rc = pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
                 break;
             case SUP_IOCTL_FAST_DO_NOP:
-                rc = pDevExt->pfnVMMR0Entry(pSession->pVM, VMMR0_DO_NOP, NULL);
+                rc = pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_NOP);
                 break;
             default:
                 rc = VERR_INTERNAL_ERROR;
@@ -615,7 +610,6 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSES
     ASMSetFlags(uFlags);
     return rc;
 }
-#endif /* VBOX_WITHOUT_IDT_PATCHING */
 
 
 /**
@@ -963,8 +957,8 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_VMMR0, SUP_IOCTL_CALL_VMMR0_SIZE_IN(0), SUP_IOCTL_CALL_VMMR0_SIZE_OUT(0));
 
                 /* execute */
-                if (RT_LIKELY(pDevExt->pfnVMMR0Entry))
-                    pReq->Hdr.rc = pDevExt->pfnVMMR0Entry(pReq->u.In.pVMR0, pReq->u.In.uOperation, (void *)pReq->u.In.uArg);
+                if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
+                    pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg);
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
             }
@@ -976,8 +970,8 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_VMMR0, SUP_IOCTL_CALL_VMMR0_SIZE_IN(pVMMReq->cbReq), SUP_IOCTL_CALL_VMMR0_SIZE_OUT(pVMMReq->cbReq));
 
                 /* execute */
-                if (RT_LIKELY(pDevExt->pfnVMMR0Entry))
-                    pReq->Hdr.rc = pDevExt->pfnVMMR0Entry(pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq);
+                if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
+                    pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg);
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
             }
@@ -1055,13 +1049,8 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                                      && !((uintptr_t)pReq->u.In.pVMR0 & (PAGE_SIZE - 1))),
                                ("SUP_IOCTL_SET_VM_FOR_FAST: pVMR0=%p!\n", pReq->u.In.pVMR0));
             /* execute */
-#ifndef VBOX_WITHOUT_IDT_PATCHING
-            OSDBGPRINT(("SUP_IOCTL_SET_VM_FOR_FAST: !VBOX_WITHOUT_IDT_PATCHING\n"));
-            pReq->Hdr.rc = VERR_NOT_SUPPORTED;
-#else
             pSession->pVM = pReq->u.In.pVMR0;
             pReq->Hdr.rc = VINF_SUCCESS;
-#endif
             return 0;
         }
 
@@ -2736,7 +2725,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     *u.pb++ = 0x57;                     //  push    rdi                             ; pVM
 # endif
 
-    *u.pb++ = 0xff;                     //  call    qword [pfnVMMR0Entry wrt rip]
+    *u.pb++ = 0xff;                     //  call    qword [pfnVMMR0EntryInt wrt rip]
     *u.pb++ = 0x15;
     uFixCall = u;
     *u.pu32++ = 0;
@@ -2758,10 +2747,10 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
     while ((uintptr_t)u.pb & 0x7)       //  align 8
         *u.pb++ = 0xcc;
 
-    /* Pointer to the VMMR0Entry. */    //  pfnVMMR0Entry dq StubVMMR0Entry
+    /* Pointer to the VMMR0Entry. */    //  pfnVMMR0EntryInt dq StubVMMR0Entry
     *uFixCall.pu32 = (uint32_t)(u.pb - uFixCall.pb - 4);                uFixCall.pb = NULL;
     pPatch->offVMMR0EntryFixup = (uint16_t)(u.pb - &pPatch->auCode[0]);
-    *u.pu64++ = pDevExt->pvVMMR0 ? (uint64_t)pDevExt->pfnVMMR0Entry : (uint64_t)u.pb + 8;
+    *u.pu64++ = pDevExt->pvVMMR0 ? (uint64_t)pDevExt->pfnVMMR0EntryInt : (uint64_t)u.pb + 8;
 
     /* stub entry. */                   //  StubVMMR0Entry:
     pPatch->offStub = (uint16_t)(u.pb - &pPatch->auCode[0]);
@@ -2888,7 +2877,7 @@ static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch
 
     /* Fixup the VMMR0Entry call. */
     if (pDevExt->pvVMMR0)
-        *uFixCall.pu32 = (uint32_t)pDevExt->pfnVMMR0Entry - (uint32_t)(uFixCall.pu32 + 1);
+        *uFixCall.pu32 = (uint32_t)pDevExt->pfnVMMR0EntryInt - (uint32_t)(uFixCall.pu32 + 1);
     else
         *uFixCall.pu32 = (uint32_t)&pPatch->auCode[pPatch->offStub] - (uint32_t)(uFixCall.pu32 + 1);
 
@@ -3217,18 +3206,25 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         case SUPLDRLOADEP_NOTHING:
             break;
         case SUPLDRLOADEP_VMMR0:
-            if (!pReq->u.In.EP.VMMR0.pvVMMR0 || !pReq->u.In.EP.VMMR0.pvVMMR0Entry)
+            if (    !pReq->u.In.EP.VMMR0.pvVMMR0
+                ||  !pReq->u.In.EP.VMMR0.pvVMMR0EntryInt
+                ||  !pReq->u.In.EP.VMMR0.pvVMMR0EntryFast
+                ||  !pReq->u.In.EP.VMMR0.pvVMMR0EntryEx)
             {
                 RTSemFastMutexRelease(pDevExt->mtxLdr);
-                dprintf(("pvVMMR0=%p or pReq->u.In.EP.VMMR0.pvVMMR0Entry=%p is NULL!\n",
-                         pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0Entry));
+                dprintf(("NULL pointer: pvVMMR0=%p pvVMMR0EntryInt=%p pvVMMR0EntryFast=%p pvVMMR0EntryEx=%p!\n",
+                         pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
+                         pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx));
                 return VERR_INVALID_PARAMETER;
             }
-            if ((uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0Entry - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
+            if (    (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryInt  - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage
+                ||  (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryFast - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage
+                ||  (uintptr_t)pReq->u.In.EP.VMMR0.pvVMMR0EntryEx   - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
             {
                 RTSemFastMutexRelease(pDevExt->mtxLdr);
-                dprintf(("SUP_IOCTL_LDR_LOAD: pvVMMR0Entry=%p is outside the image (%p %d bytes)\n",
-                         pReq->u.In.EP.VMMR0.pvVMMR0Entry, pImage->pvImage, pReq->u.In.cbImage));
+                dprintf(("Out of range (%p LB %#x): pvVMMR0EntryInt=%p, pvVMMR0EntryFast=%p or pvVMMR0EntryEx=%p is NULL!\n",
+                         pImage->pvImage, pReq->u.In.cbImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
+                         pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx));
                 return VERR_INVALID_PARAMETER;
             }
             break;
@@ -3277,7 +3273,8 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             rc = VINF_SUCCESS;
             break;
         case SUPLDRLOADEP_VMMR0:
-            rc = supdrvLdrSetR0EP(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0Entry);
+            rc = supdrvLdrSetR0EP(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
+                                  pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
             break;
     }
 
@@ -3285,7 +3282,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      * On success call the module initialization.
      */
     dprintf(("supdrvIOCtl_LdrLoad: pfnModuleInit=%p\n", pImage->pfnModuleInit));
-    if (!rc && pImage->pfnModuleInit)
+    if (RT_SUCCESS(rc) && pImage->pfnModuleInit)
     {
         dprintf(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
         rc = pImage->pfnModuleInit();
@@ -3442,16 +3439,18 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
  * point (i.e. VMMR0Enter()).
  *
  * @returns IPRT status code.
- * @param   pDevExt     Device globals.
- * @param   pSession    Session data.
- * @param   pVMMR0      VMMR0 image handle.
- * @param   pVMMR0Entry VMMR0Entry address.
+ * @param   pDevExt             Device globals.
+ * @param   pSession            Session data.
+ * @param   pVMMR0              VMMR0 image handle.
+ * @param   pvVMMR0EntryInt     VMMR0EntryInt address.
+ * @param   pvVMMR0EntryFast    VMMR0EntryFast address.
+ * @param   pvVMMR0EntryEx      VMMR0EntryEx address.
  * @remark  Caller must own the loader mutex.
  */
-static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0Entry)
+static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx)
 {
     int rc = VINF_SUCCESS;
-    dprintf(("supdrvLdrSetR0EP pvVMMR0=%p pvVMMR0Entry=%p\n", pvVMMR0, pvVMMR0Entry));
+    dprintf(("supdrvLdrSetR0EP pvVMMR0=%p pvVMMR0EntryInt=%p\n", pvVMMR0, pvVMMR0EntryInt));
 
 
     /*
@@ -3466,8 +3465,10 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
         /*
          * Set it and update IDT patch code.
          */
-        pDevExt->pvVMMR0        = pvVMMR0;
-        pDevExt->pfnVMMR0Entry  = pvVMMR0Entry;
+        pDevExt->pvVMMR0            = pvVMMR0;
+        pDevExt->pfnVMMR0EntryInt   = pvVMMR0EntryInt;
+        pDevExt->pfnVMMR0EntryFast  = pvVMMR0EntryFast;
+        pDevExt->pfnVMMR0EntryEx    = pvVMMR0EntryEx;
 #ifndef VBOX_WITHOUT_IDT_PATCHING
         for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)
         {
@@ -3483,11 +3484,12 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
     else
     {
         /*
-         * Return failure or success depending on whether the
-         * values match or not.
+         * Return failure or success depending on whether the values match or not.
          */
         if (    pDevExt->pvVMMR0 != pvVMMR0
-            ||  (void *)pDevExt->pfnVMMR0Entry != pvVMMR0Entry)
+            ||  (void *)pDevExt->pfnVMMR0EntryInt   != pvVMMR0EntryInt
+            ||  (void *)pDevExt->pfnVMMR0EntryFast  != pvVMMR0EntryFast
+            ||  (void *)pDevExt->pfnVMMR0EntryEx    != pvVMMR0EntryEx)
         {
             AssertMsgFailed(("SUP_IOCTL_LDR_SETR0EP: Already set pointing to a different module!\n"));
             rc = VERR_INVALID_PARAMETER;
@@ -3508,8 +3510,10 @@ static void supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt)
     PSUPDRVPATCH pPatch;
 #endif
 
-    pDevExt->pvVMMR0        = NULL;
-    pDevExt->pfnVMMR0Entry  = NULL;
+    pDevExt->pvVMMR0            = NULL;
+    pDevExt->pfnVMMR0EntryInt   = NULL;
+    pDevExt->pfnVMMR0EntryFast  = NULL;
+    pDevExt->pfnVMMR0EntryEx    = NULL;
 
 #ifndef VBOX_WITHOUT_IDT_PATCHING
     for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)

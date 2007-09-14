@@ -270,7 +270,6 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
     PSUPDRVSESSION      pSession = (PSUPDRVSESSION)pStack->FileObject->FsContext;
 
-#ifdef VBOX_WITHOUT_IDT_PATCHING
     /*
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
@@ -297,7 +296,6 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         IoCompleteRequest(pIrp, IO_NO_INCREMENT);
         return rcNt;
     }
-#endif /* VBOX_WITHOUT_IDT_PATCHING */
 
     return VBoxDrvNtDeviceControlSlow(pDevExt, pSession, pIrp, pStack);
 }

@@ -233,6 +233,21 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 
 
 /**
+ * Fast I/O Control path, no buffers.
+ *
+ * @returns VBox status code.
+ * @param   uFunction   The operation.
+ */
+int suplibOSIOCtlFast(uintptr_t uFunction)
+{
+    int rc = ioctl(g_hDevice, uFunction, NULL);
+    if (rc == -1)
+        rc = -errno;
+    return rc;
+}
+
+
+/**
  * Allocate a number of zero-filled pages in user space.
  *
  * @returns VBox status code.

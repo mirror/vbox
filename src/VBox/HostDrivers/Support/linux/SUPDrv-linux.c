@@ -750,7 +750,6 @@ static int VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp)
  */
 static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
 {
-#ifdef VBOX_WITHOUT_IDT_PATCHING
     /*
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
@@ -758,8 +757,7 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
     if (RT_LIKELY(   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_NOP))
-        return supdrvIOCtlFast(iCmd, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
-#endif
+        return supdrvIOCtlFast(uCmd, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
     return VBoxDrvLinuxIOCtlSlow(pInode, pFilp, uCmd, ulArg);
 }
 

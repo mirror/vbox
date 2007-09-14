@@ -44,9 +44,7 @@ int     suplibOsUninstall(void);
 int     suplibOsInit(size_t cbReserve);
 int     suplibOsTerm(void);
 int     suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq);
-#ifdef VBOX_WITHOUT_IDT_PATCHING
 int     suplibOSIOCtlFast(uintptr_t uFunction);
-#endif
 int     suplibOsPageAlloc(size_t cPages, void **ppvPages);
 int     suplibOsPageFree(void *pvPages, size_t cPages);
 __END_DECLS

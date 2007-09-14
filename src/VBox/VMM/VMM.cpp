@@ -374,14 +374,12 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-#ifdef VBOX_WITHOUT_IDT_PATCHING
     /*
      * Register the Ring-0 VM handle with the session for fast ioctl calls.
      */
     rc = SUPSetVMForFastIOCtl(pVM->pVMR0);
     if (VBOX_FAILURE(rc))
         return rc;
-#endif
 
     /*
      * Init core code.
@@ -1958,7 +1956,12 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL, 0);
+            //rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL, 0);
+# if !defined(RT_OS_LINUX) /* Alternative for debugging - currently untested on linux. */
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN);
+# else
+            rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_HWACC_RUN, NULL);
+# endif
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -2188,7 +2191,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
             pVM->vmm.s.rcCallHost = PGM3PhysGrowRange(pVM, pVM->vmm.s.u64CallHostArg);
             break;
         }
-#endif 
+#endif
 
         /*
          * Acquire the PGM lock.

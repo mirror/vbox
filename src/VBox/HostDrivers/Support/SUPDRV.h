@@ -564,10 +564,9 @@ typedef struct SUPDRVSESSION
 #ifndef VBOX_WITHOUT_IDT_PATCHING
     /** Patch usage records. (protected by SUPDRVDEVEXT::SpinLock) */
     PSUPDRVPATCHUSAGE volatile  pPatchUsage;
-#else
+#endif
     /** The VM associated with the session. */
     PVM                         pVM;
-#endif
     /** List of generic usage records. (protected by SUPDRVDEVEXT::SpinLock) */
     PSUPDRVUSAGE volatile       pUsage;
 
@@ -641,8 +640,12 @@ typedef struct SUPDRVDEVEXT
     /** VMM Module 'handle'.
      * 0 if the code VMM isn't loaded and Idt are nops. */
     void * volatile         pvVMMR0;
-    /** VMMR0Entry() pointer. */
-    DECLR0CALLBACKMEMBER(int, pfnVMMR0Entry, (PVM pVM, unsigned uOperation, void *pvArg));
+    /** VMMR0EntryInt() pointer. */
+    DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryInt, (PVM pVM, unsigned uOperation, void *pvArg));
+    /** VMMR0EntryFast() pointer. */
+    DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryFast, (PVM pVM, unsigned uOperation));
+    /** VMMR0EntryEx() pointer. */
+    DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryEx, (PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg));
 
     /** Linked list of loaded code. */
     PSUPDRVLDRIMAGE volatile pLdrImages;
@@ -735,9 +738,7 @@ bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(void);
 *   Shared Functions                                                           *
 *******************************************************************************/
 int  VBOXCALL   supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr);
-#ifdef VBOX_WITHOUT_IDT_PATCHING
 int  VBOXCALL   supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
-#endif
 int  VBOXCALL   supdrvInitDevExt(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSession);
