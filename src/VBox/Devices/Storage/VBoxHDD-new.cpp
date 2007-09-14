@@ -101,7 +101,7 @@ struct VBOXHDD
     void                *pvErrorUser;
 
     /** Handle for the shared object / DLL. */
-    RTLDRMOD            pluginHandle;
+    RTLDRMOD            hPlugin;
     /** Function pointers for the various backend methods. */
     PVBOXHDDBACKEND     Backend;
 };
@@ -493,7 +493,7 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
     /* If no static backend is found try loading a shared module with pszBackend as filename. */
     if (!pBackend)
     {
-        RTLDRMOD ldrHandle;
+        RTLDRMOD hPlugin;
         char *pszPluginName;
         int cbPluginName;
 
@@ -508,13 +508,13 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
         else
         {
             /* try to load the plugin (RTldrLoad appends the suffix for the shared object/DLL). */
-            rc = RTLdrLoad(pszPluginName, &ldrHandle);
+            rc = RTLdrLoad(pszPluginName, &hPlugin);
             if (VBOX_SUCCESS(rc))
             {
                 PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad;
 
-                rc = RTLdrGetSymbol (ldrHandle, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
-                if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+                rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
+                if (VBOX_FAILURE(rc))
                 {
                     Log(("%s: Error resolving the entry point %s, rc = %d, pfnHDDFormat = %p\n", VBOX_HDDFORMAT_LOAD_NAME, rc, pfnHDDFormatLoad));
                     if (VBOX_SUCCESS(rc))
@@ -560,6 +560,7 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
             pDisk->pfnError     = pfnError;
             pDisk->pvErrorUser  = pvErrorUser;
             pDisk->Backend      = pBackend;
+            pDisk->hPlugin      = NIL_RTLDRMOD;
             *ppDisk = pDisk;
         }
         else
@@ -590,7 +591,11 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
     if (pDisk)
     {
         VDCloseAll(pDisk);
-        RTLdrClose(pDisk->pluginHandle);
+        if (pDisk->hPlugin != NIL_RTLDRMOD)
+        {
+            RTLdrClose(pDisk->hPlugin);
+            pDisk->hPlugin = NIL_RTLDRMOD;
+        }
         RTMemFree(pDisk->Backend);
         RTMemFree(pDisk);
     }
