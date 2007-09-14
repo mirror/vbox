@@ -80,7 +80,7 @@ typedef enum VMMCALLHOST
 #ifndef NEW_PHYS_CODE
     /** Dynamically allocate physical guest RAM. */
     VMMCALLHOST_PGM_RAM_GROW_RANGE,
-#endif 
+#endif
     /** Replay the REM handler notifications. */
     VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS,
     /** Flush the GC/R0 logger. */
