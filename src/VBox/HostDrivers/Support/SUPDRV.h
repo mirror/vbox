@@ -197,19 +197,19 @@ __END_DECLS
 
 
 /* dprintf */
-#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(RT_OS_FREEBSD)
+/* bird debugging - #if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(RT_OS_FREEBSD)
 # ifdef LOG_TO_COM
 #  include <VBox/log.h>
 #  define dprintf(a) RTLogComPrintf a
-# else
+# else */
 #  define dprintf(a) OSDBGPRINT(a)
-# endif
+/*# endif
 #else
 # define dprintf(a) do {} while (0)
-#endif
+#endif*/
 
 /* dprintf2 - extended logging. */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
+#if 1//bird defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
 # define dprintf2 dprintf
 #else
 # define dprintf2(a) do { } while (0)
@@ -734,13 +734,12 @@ bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(void);
 /*******************************************************************************
 *   Shared Functions                                                           *
 *******************************************************************************/
-int  VBOXCALL   supdrvIOCtl(unsigned uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
-                            void *pvIn, unsigned cbIn, void *pvOut, unsigned cbOut, unsigned *pcbReturned);
+int  VBOXCALL   supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr);
 #ifdef VBOX_WITHOUT_IDT_PATCHING
-int  VBOXCALL   supdrvIOCtlFast(unsigned uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
+int  VBOXCALL   supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 #endif
 int  VBOXCALL   supdrvInitDevExt(PSUPDRVDEVEXT pDevExt);
-int  VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
+void VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION *ppSession);
 void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);

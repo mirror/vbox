@@ -130,31 +130,22 @@ int suplibOsUninstall(void)
 }
 
 
-int suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, size_t cbOut)
+int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     AssertMsg(g_hDevice != (HFILE)-1, ("SUPLIB not initiated successfully!\n"));
 
-    SUPDRVIOCTLDATA Args;
-    Args.pvIn = pvIn;
-    Args.cbIn = cbIn;
-    Args.pvOut = pvOut;
-    Args.cbOut = cbOut;
-    Args.rc = VERR_INTERNAL_ERROR;
-
-    ULONG cbReturned = sizeof(Args);
+    ULONG cbReturned = sizeof(SUPREQHDR);
     int rc = DosDevIOCtl(g_hDevice, SUP_CTL_CATEGORY, uFunction,
-                         &Args, sizeof(Args), &cbReturned,
+                         &cbIn, cbReturned, &cbReturned,
                          NULL, 0, NULL);
     if (RT_LIKELY(rc == NO_ERROR))
-        rc = Args.rc;
-    else
-        rc = RTErrConvertFromOS2(rc);
-    return rc;
+        return VINF_SUCCESS;
+    return RTErrConvertFromOS2(rc);
 }
 
 
 #ifdef VBOX_WITHOUT_IDT_PATCHING
-int suplibOSIOCtlFast(unsigned uFunction)
+int suplibOSIOCtlFast(uintptr_t uFunction)
 {
     int32_t rcRet = VERR_INTERNAL_ERROR;
     ULONG cbRet = sizeof(rcRet);

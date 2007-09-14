@@ -95,76 +95,29 @@ int suplibOsTerm(void)
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
 int suplibOsInstall(void)
 {
-//    int rc = mknod(DEVICE_NAME, S_IFCHR, );
-
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
 int suplibOsUninstall(void)
 {
-//    int rc = unlink(DEVICE_NAME);
-
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-/**
- * Send a I/O Control request to the device.
- *
- * @returns 0 on success.
- * @returns VBOX error code on failure.
- * @param   uFunction   IO Control function.
- * @param   pvIn        Input data buffer.
- * @param   cbIn        Size of input data.
- * @param   pvOut       Output data buffer.
- * @param   cbOut       Size of output data.
- */
-int suplibOsIOCtl(unsigned uFunction, void *pvIn, size_t cbIn, void *pvOut, size_t cbOut)
+int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     AssertMsg(g_hDevice != -1, ("SUPLIB not initiated successfully!\n"));
-    /*
-     * Issue device iocontrol.
-     */
-    SUPDRVIOCTLDATA Args;
-    Args.pvIn = pvIn;
-    Args.cbIn = cbIn;
-    Args.pvOut = pvOut;
-    Args.cbOut = cbOut;
 
-    if (ioctl(g_hDevice, uFunction, &Args) >= 0)
-	return 0;
-    /* This is the reverse operation of the one found in SUPDrv-linux.c */
-    switch (errno)
-    {
-        case EACCES: return VERR_GENERAL_FAILURE;
-        case EINVAL: return VERR_INVALID_PARAMETER;
-        case ENOSYS: return VERR_INVALID_MAGIC;
-        case ENXIO:  return VERR_INVALID_HANDLE;
-        case EFAULT: return VERR_INVALID_POINTER;
-        case ENOLCK: return VERR_LOCK_FAILED;
-        case EEXIST: return VERR_ALREADY_LOADED;
-    }
-
+    if (RT_LIKELY(ioctl((g_hDevice, uFunction, pvReq) >= 0))
+	return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
 }
 
 #ifdef VBOX_WITHOUT_IDT_PATCHING
-int suplibOSIOCtlFast(unsigned uFunction)
+int suplibOSIOCtlFast(uintptr_t uFunction)
 {
     int rc = ioctl(g_hDevice, uFunction, NULL);
     if (rc == -1)
@@ -174,13 +127,6 @@ int suplibOSIOCtlFast(unsigned uFunction)
 #endif
 
 
-/**
- * Allocate a number of zero-filled pages in user space.
- *
- * @returns VBox status code.
- * @param   cPages      Number of pages to allocate.
- * @param   ppvPages    Where to return the base pointer.
- */
 int suplibOsPageAlloc(size_t cPages, void **ppvPages)
 {
     *ppvPages = RTMemPageAllocZ(cPages << PAGE_SHIFT);
@@ -190,12 +136,6 @@ int suplibOsPageAlloc(size_t cPages, void **ppvPages)
 }
 
 
-/**
- * Frees pages allocated by suplibOsPageAlloc().
- *
- * @returns VBox status code.
- * @param   pvPages     Pointer to pages.
- */
 int suplibOsPageFree(void *pvPages, size_t /* cPages */)
 {
     RTMemPageFree(pvPages);
