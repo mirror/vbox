@@ -1010,7 +1010,7 @@ SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, 
                     paPages[iPage].uReserved = 0;
                     paPages[iPage].Phys = pReq->u.Out.aPages[iPage];
                     Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
-                    Assert(paPages[iPage].Phys <= UINT32_C(0xffffff000));
+                    Assert(paPages[iPage].Phys <= UINT32_C(0xfffff000));
                 }
         }
         RTMemTmpFree(pReq);
