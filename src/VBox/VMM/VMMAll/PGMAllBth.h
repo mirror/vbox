@@ -2456,7 +2456,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
         if (VBOX_SUCCESS(rc))
         {
             /* Page was successfully synced */
-            Log(("PGMVerifyAccess: success (sync)\n"));
+            Log2(("PGMVerifyAccess: success (sync)\n"));
             rc = VINF_SUCCESS;
         }
         else
