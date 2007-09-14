@@ -3214,9 +3214,9 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
     switch (pReq->u.In.eEPType)
     {
-        case EP_NOTHING:
+        case SUPLDRLOADEP_NOTHING:
             break;
-        case EP_VMMR0:
+        case SUPLDRLOADEP_VMMR0:
             if (!pReq->u.In.EP.VMMR0.pvVMMR0 || !pReq->u.In.EP.VMMR0.pvVMMR0Entry)
             {
                 RTSemFastMutexRelease(pDevExt->mtxLdr);
@@ -3273,10 +3273,10 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     switch (pReq->u.In.eEPType)
     {
         default:
-        case EP_NOTHING:
+        case SUPLDRLOADEP_NOTHING:
             rc = VINF_SUCCESS;
             break;
-        case EP_VMMR0:
+        case SUPLDRLOADEP_VMMR0:
             rc = supdrvLdrSetR0EP(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0Entry);
             break;
     }

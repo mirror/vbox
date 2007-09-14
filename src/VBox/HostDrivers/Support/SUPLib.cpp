@@ -1543,12 +1543,12 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                             pLoadReq->u.In.pfnModuleTerm              = (RTR0PTR)ModuleTerm;
                             if (fIsVMMR0)
                             {
-                                pLoadReq->u.In.eEPType                = pLoadReq->u.In.EP_VMMR0;
+                                pLoadReq->u.In.eEPType                = SUPLDRLOADEP_VMMR0;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0       = OpenReq.u.Out.pvImageBase;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0Entry  = (RTR0PTR)VMMR0Entry;
                             }
                             else
-                                pLoadReq->u.In.eEPType                = pLoadReq->u.In.EP_NOTHING;
+                                pLoadReq->u.In.eEPType                = SUPLDRLOADEP_NOTHING;
                             pLoadReq->u.In.offStrTab                  = offStrTab;
                             pLoadReq->u.In.cbStrTab                   = (uint32_t)CalcArgs.cbStrings;
                             AssertRelease(pLoadReq->u.In.cbStrTab == CalcArgs.cbStrings);
