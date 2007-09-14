@@ -298,12 +298,11 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
  */
 RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *pszFormat, va_list InArgs)
 {
-    /* make a copy so we can reference it (AMD64 / gcc). */
-    va_list args;
+    va_list     args;
     KSIZE       cch = 0;
     const char *pszStartOutput = pszFormat;
 
-    va_copy(args, InArgs);
+    va_copy(args, InArgs); /* make a copy so we can reference it (AMD64 / gcc). */
 
     while (*pszFormat != '\0')
     {
