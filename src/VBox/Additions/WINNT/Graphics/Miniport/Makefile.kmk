@@ -26,7 +26,7 @@ ifdef VBOX_SIGN_ADDITIONS
  VBoxVideo_NOINST     = true
 endif
 VBoxVideo_SDKS        = W2K3DDKX86 WINPSDKINCS
-VBoxVideo_DEFS        = LOG_TO_BACKDOOR
+VBoxVideo_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_8BPP_MODES
 #VBoxVideo_DEFS        += LOG_ENABLED
 VBoxVideo_INCS        = ../../include
 VBoxVideo_LDFLAGS     = /Entry:DriverEntry@8
