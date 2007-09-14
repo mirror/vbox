@@ -1473,7 +1473,11 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 RTPrintf("vrdpmulticon=\"%s\"\n", fMultiCon ? "on" : "off");
             }
             else
+            {
+                if (address.isEmpty())
+                    address = "0.0.0.0";
                 RTPrintf("VRDP:            enabled (Address %lS, Port %d, MultiConn: %s, Authentication type: %s)\n", address.raw(), port, fMultiCon ? "on" : "off", strAuthType);
+            }
         }
         else
         {
