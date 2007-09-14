@@ -418,7 +418,7 @@ PATMR3DECL(RTGCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTGCPTR pAddrGC);
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     Guest context address
  */
-PATMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, HCPTRTYPE(uint8_t *) pAddrHC);
+PATMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, R3PTRTYPE(uint8_t *) pAddrHC);
 
 /**
  * Convert a GC patch block pointer to a HC patch pointer
@@ -427,7 +427,7 @@ PATMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, HCPTRTYPE(uint8_t *) pAddrHC);
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     GC pointer
  */
-PATMR3DECL(HCPTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTGCPTR pAddrGC);
+PATMR3DECL(R3PTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTGCPTR pAddrGC);
 
 
 /**

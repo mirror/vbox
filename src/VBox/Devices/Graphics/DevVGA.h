@@ -180,7 +180,7 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 /* bird: vram_offset have been remove, function pointers declared external,
          some type changes, and some padding have been added. */
 #define VGA_STATE_COMMON                                                \
-    HCPTRTYPE(uint8_t *) vram_ptrHC;                                    \
+    R3R0PTRTYPE(uint8_t *) vram_ptrHC;                                  \
     uint32_t vram_size;                                                 \
     uint32_t latch;                                                     \
     uint8_t sr_index;                                                   \
@@ -259,7 +259,7 @@ typedef struct VGAState {
     /** Bitmap tracking dirty pages. */
     uint32_t                    au32DirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 32];
     /** Pointer to the device instance - HC Ptr. */
-    PPDMDEVINSHC                pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS)     pDevInsHC;
     /* * Pointer to the device instance - GC Ptr. */
     /*GCPTRTYPE(PPDMDEVINS)   pDevInsGC;*/
 
@@ -272,7 +272,7 @@ typedef struct VGAState {
     /** Pointer to display connector interface of the driver. */
     R3PTRTYPE(PPDMIDISPLAYCONNECTOR) pDrv;
     /** Refresh timer handle - HC. */
-    PTMTIMERHC                  RefreshTimer;
+    PTMTIMERR3                  RefreshTimer;
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
 

@@ -123,9 +123,6 @@ typedef PPDMIBASE *PPPDMIBASE;
 typedef struct PDMDEVINS *PPDMDEVINS;
 /** Pointer to a pointer to a PDM Device Instance. */
 typedef PPDMDEVINS *PPPDMDEVINS;
-/** HC pointer to a PDM Device Instance.
- * @deprecated */
-typedef HCPTRTYPE(PPDMDEVINS) PPDMDEVINSHC;
 /** R3 pointer to a PDM Device Instance. */
 typedef R3PTRTYPE(PPDMDEVINS) PPDMDEVINSR3;
 /** R0 pointer to a PDM Device Instance. */
@@ -148,13 +145,6 @@ typedef struct PDMSRVINS *PPDMSRVINS;
 /** Pointer to a pointer to a PDM Service Instance. */
 typedef PPDMSRVINS *PPPDMSRVINS;
 
-/** HC pointer to a timer.
- * @deprecated */
-typedef HCPTRTYPE(struct TMTIMER *) PTMTIMERHC;
-/** Pointer to a HC pointer to a timer.
- * @deprecated */
-typedef PTMTIMERHC *PPTMTIMERHC;
-
 /** R3 pointer to a timer. */
 typedef R3PTRTYPE(struct TMTIMER *) PTMTIMERR3;
 /** Pointer to a R3 pointer to a timer. */
@@ -171,9 +161,9 @@ typedef GCPTRTYPE(struct TMTIMER *) PTMTIMERGC;
 typedef PTMTIMERGC *PPTMTIMERGC;
 
 /** Pointer to a timer. */
-typedef CTXSUFF(PTMTIMER)   PTMTIMER;
+typedef CTXALLSUFF(PTMTIMER)   PTMTIMER;
 /** Pointer to a pointer to a timer. */
-typedef CTXSUFF(PPTMTIMER)  PPTMTIMER;
+typedef CTXALLSUFF(PPTMTIMER)  PPTMTIMER;
 
 /** SSM Operation handle. */
 typedef struct SSMHANDLE *PSSMHANDLE;

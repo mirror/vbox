@@ -681,9 +681,9 @@ typedef struct PDMPCIHLPR3
     uint32_t                    u32TheEnd;
 } PDMPCIHLPR3;
 /** Pointer to PCI helpers. */
-typedef HCPTRTYPE(PDMPCIHLPR3 *) PPDMPCIHLPR3;
+typedef R3PTRTYPE(PDMPCIHLPR3 *) PPDMPCIHLPR3;
 /** Pointer to const PCI helpers. */
-typedef HCPTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
+typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 /** Current PDMPCIHLPR3 version number. */
 #define PDM_PCIHLPR3_VERSION  0xf1010000
@@ -904,9 +904,9 @@ typedef struct PDMPICHLPR3
 } PDMPICHLPR3;
 
 /** Pointer to PIC HC helpers. */
-typedef HCPTRTYPE(PDMPICHLPR3 *) PPDMPICHLPR3;
+typedef R3PTRTYPE(PDMPICHLPR3 *) PPDMPICHLPR3;
 /** Pointer to const PIC HC helpers. */
-typedef HCPTRTYPE(const PDMPICHLPR3 *) PCPDMPICHLPR3;
+typedef R3PTRTYPE(const PDMPICHLPR3 *) PCPDMPICHLPR3;
 
 /** Current PDMPICHLPR3 version number. */
 #define PDM_PICHLPR3_VERSION  0xf0010000
@@ -1211,9 +1211,9 @@ typedef struct PDMAPICHLPR3
     uint32_t                u32TheEnd;
 } PDMAPICHLPR3;
 /** Pointer to APIC helpers. */
-typedef HCPTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
+typedef R3PTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
 /** Pointer to const APIC helpers. */
-typedef HCPTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
+typedef R3PTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
 
 /** Current PDMAPICHLP version number. */
 #define PDM_APICHLPR3_VERSION  0xfd010000
@@ -1430,9 +1430,9 @@ typedef struct PDMIOAPICHLPR3
     uint32_t                u32TheEnd;
 } PDMIOAPICHLPR3;
 /** Pointer to IOAPIC HC helpers. */
-typedef HCPTRTYPE(PDMIOAPICHLPR3 *) PPDMIOAPICHLPR3;
+typedef R3PTRTYPE(PDMIOAPICHLPR3 *) PPDMIOAPICHLPR3;
 /** Pointer to const IOAPIC helpers. */
-typedef HCPTRTYPE(const PDMIOAPICHLPR3 *) PCPDMIOAPICHLPR3;
+typedef R3PTRTYPE(const PDMIOAPICHLPR3 *) PCPDMIOAPICHLPR3;
 
 /** Current PDMIOAPICHLPR3 version number. */
 #define PDM_IOAPICHLPR3_VERSION   0xff010000
@@ -1835,7 +1835,7 @@ typedef struct PDMDEVHLP
      *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      * @param   ppTimer         Where to store the timer on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
      * Creates an external timer.
@@ -1848,7 +1848,7 @@ typedef struct PDMDEVHLP
      * @param   pszDesc         Pointer to description string which must stay around
      *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      */
-    DECLR3CALLBACKMEMBER(PTMTIMERHC, pfnTMTimerCreateExternal,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc));
+    DECLR3CALLBACKMEMBER(PTMTIMERR3, pfnTMTimerCreateExternal,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc));
 
     /**
      * Registers the device with the default PCI bus.
@@ -2566,9 +2566,9 @@ typedef struct PDMDEVHLP
 } PDMDEVHLP;
 #endif /* !IN_RING3 */
 /** Pointer PDM Device API. */
-typedef HCPTRTYPE(struct PDMDEVHLP *) PPDMDEVHLP;
+typedef R3PTRTYPE(struct PDMDEVHLP *) PPDMDEVHLP;
 /** Pointer PDM Device API. */
-typedef HCPTRTYPE(const struct PDMDEVHLP *) PCPDMDEVHLP;
+typedef R3PTRTYPE(const struct PDMDEVHLP *) PCPDMDEVHLP;
 
 /** Current PDMDEVHLP version number. */
 #define PDM_DEVHLP_VERSION  0xf2050000
@@ -2822,9 +2822,9 @@ typedef struct PDMDEVHLPR0
     uint32_t                        u32TheEnd;
 } PDMDEVHLPR0;
 /** Pointer PDM Device R0 API. */
-typedef HCPTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
+typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 /** Pointer PDM Device GC API. */
-typedef HCPTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
+typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
 #define PDM_DEVHLPR0_VERSION  0xfb010000
@@ -2932,7 +2932,7 @@ typedef struct PDMDEVINS
 /** @def PDMDEVINS_2_R3PTR
  * Converts a PDM Device instance pointer a HC PDM Device instance pointer.
  */
-#define PDMDEVINS_2_R3PTR(pDevIns)  ( (HCPTRTYPE(PPDMDEVINS))((RTHCUINTPTR)(pDevIns)->pvInstanceDataR3 - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
+#define PDMDEVINS_2_R3PTR(pDevIns)  ( (R3PTRTYPE(PPDMDEVINS))((RTHCUINTPTR)(pDevIns)->pvInstanceDataR3 - RT_OFFSETOF(PDMDEVINS, achInstanceData)) )
 
 /** @def PDMDEVINS_2_R0PTR
  * Converts a PDM Device instance pointer a R0 PDM Device instance pointer.
@@ -3058,7 +3058,7 @@ DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, const char *pszName, ui
 /**
  * @copydoc PDMDEVHLP::pfnTMTimerCreate
  */
-DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer)
+DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     return pDevIns->pDevHlp->pfnTMTimerCreate(pDevIns, enmClock, pfnCallback, pszDesc, ppTimer);
 }

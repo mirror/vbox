@@ -727,7 +727,7 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 
     PVM pVM = pR0Logger->pVM;
     if (    !VALID_PTR(pVM)
-        ||  pVM->pVMHC != pVM)
+        ||  pVM->pVMR0 != pVM)
     {
         LogCom(("vmmR0LoggerFlush: pVM=%p! pLogger=%p\n", pVM, pLogger));
         return;

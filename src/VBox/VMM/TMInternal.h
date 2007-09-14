@@ -399,7 +399,7 @@ typedef struct TM
      * This timer will do freqent check on pending queue schedulations and
      * raise VM_FF_TIMER to pull EMTs attention to them.
      */
-    HCPTRTYPE(PRTTIMER)         pTimer;
+    R3PTRTYPE(PRTTIMER)         pTimer;
     /** Interval in milliseconds of the pTimer timer. */
     uint32_t                    u32TimerMillies;
 

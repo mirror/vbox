@@ -438,7 +438,7 @@ typedef struct PDMDRVHLP
      *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      * @param   ppTimer         Where to store the timer on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
      * Register a save state data unit.
@@ -603,24 +603,24 @@ typedef struct PDMDRVINS
     } Internal;
 
     /** Pointer the PDM Driver API. */
-    HCPTRTYPE(PCPDMDRVHLP)      pDrvHlp;
+    R3PTRTYPE(PCPDMDRVHLP)      pDrvHlp;
     /** Pointer to driver registration structure.  */
-    HCPTRTYPE(PCPDMDRVREG)      pDrvReg;
+    R3PTRTYPE(PCPDMDRVREG)      pDrvReg;
     /** Configuration handle. */
-    HCPTRTYPE(PCFGMNODE)        pCfgHandle;
+    R3PTRTYPE(PCFGMNODE)        pCfgHandle;
     /** Driver instance number. */
     RTUINT                      iInstance;
     /** Pointer to the base interface of the device/driver instance above. */
-    HCPTRTYPE(PPDMIBASE)        pUpBase;
+    R3PTRTYPE(PPDMIBASE)        pUpBase;
     /** Pointer to the base interface of the driver instance below. */
-    HCPTRTYPE(PPDMIBASE)        pDownBase;
+    R3PTRTYPE(PPDMIBASE)        pDownBase;
     /** The base interface of the driver.
      * The driver constructor initializes this. */
     PDMIBASE                    IBase;
     /* padding to make achInstanceData aligned at 16 byte boundrary. */
     uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 3 : 1];
     /** Pointer to driver instance data. */
-    HCPTRTYPE(void *)           pvInstanceData;
+    R3PTRTYPE(void *)           pvInstanceData;
     /** Driver instance data. The size of this area is defined
      * in the PDMDRVREG::cbInstanceData field. */
     char                        achInstanceData[4];

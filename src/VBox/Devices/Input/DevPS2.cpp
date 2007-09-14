@@ -223,7 +223,7 @@ typedef struct KBDState {
     /** Pointer to the device instance. */
     PPDMDEVINSGC                pDevInsGC;
     /** Pointer to the device instance. */
-    PPDMDEVINSHC                pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS)     pDevInsHC;
     /**
      * Keyboard port - LUN#0.
      */
@@ -235,9 +235,9 @@ typedef struct KBDState {
         PDMIKEYBOARDPORT                    Port;
 
         /** The base interface of the attached keyboard driver. */
-        HCPTRTYPE(PPDMIBASE)                pDrvBase;
+        R3PTRTYPE(PPDMIBASE)                pDrvBase;
         /** The keyboard interface of the attached keyboard driver. */
-        HCPTRTYPE(PPDMIKEYBOARDCONNECTOR)   pDrv;
+        R3PTRTYPE(PPDMIKEYBOARDCONNECTOR)   pDrv;
     } Keyboard;
 
     /**
@@ -251,9 +251,9 @@ typedef struct KBDState {
         PDMIMOUSEPORT                       Port;
 
         /** The base interface of the attached mouse driver. */
-        HCPTRTYPE(PPDMIBASE)                pDrvBase;
+        R3PTRTYPE(PPDMIBASE)                pDrvBase;
         /** The mouse interface of the attached mouse driver. */
-        HCPTRTYPE(PPDMIMOUSECONNECTOR)      pDrv;
+        R3PTRTYPE(PPDMIMOUSECONNECTOR)      pDrv;
     } Mouse;
 #endif
 } KBDState;

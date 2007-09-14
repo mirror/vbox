@@ -204,7 +204,7 @@ typedef struct PDMSRVHLP
      *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      * @param   ppTimer         Where to store the timer on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMSRVINS pSrvIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMSRVINS pSrvIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
      * Query the virtual timer frequency.
@@ -252,18 +252,18 @@ typedef struct PDMSRVINS
     } Internal;
 
     /** Pointer the PDM Service API. */
-    HCPTRTYPE(PCPDMSRVHLP)      pHlp;
+    R3PTRTYPE(PCPDMSRVHLP)      pHlp;
     /** Pointer to driver registration structure.  */
-    HCPTRTYPE(PCPDMSRVREG)      pReg;
+    R3PTRTYPE(PCPDMSRVREG)      pReg;
     /** Configuration handle. */
-    HCPTRTYPE(PCFGMNODE)        pCfg;
+    R3PTRTYPE(PCFGMNODE)        pCfg;
     /** The base interface of the service.
      * The service constructor initializes this. */
     PDMIBASE                    IBase;
     /* padding to make achInstanceData aligned at 16 byte boundrary. */
     uint32_t                    au32Padding[2];
     /** Pointer to driver instance data. */
-    HCPTRTYPE(void *)           pvInstanceData;
+    R3PTRTYPE(void *)           pvInstanceData;
     /** Driver instance data. The size of this area is defined
      * in the PDMSRVREG::cbInstanceData field. */
     char                        achInstanceData[4];

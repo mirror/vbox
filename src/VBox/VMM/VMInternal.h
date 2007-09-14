@@ -222,38 +222,38 @@ typedef struct VMINT
     RTINT                           offVM;
 
     /** List of registered reset callbacks. */
-    HCPTRTYPE(PVMATRESET)           pAtReset;
+    R3PTRTYPE(PVMATRESET)           pAtReset;
     /** List of registered reset callbacks. */
-    HCPTRTYPE(PVMATRESET *)         ppAtResetNext;
+    R3PTRTYPE(PVMATRESET *)         ppAtResetNext;
 
     /** List of registered state change callbacks. */
-    HCPTRTYPE(PVMATSTATE)           pAtState;
+    R3PTRTYPE(PVMATSTATE)           pAtState;
     /** List of registered state change callbacks. */
-    HCPTRTYPE(PVMATSTATE *)         ppAtStateNext;
+    R3PTRTYPE(PVMATSTATE *)         ppAtStateNext;
 
     /** List of registered error callbacks. */
-    HCPTRTYPE(PVMATERROR)           pAtError;
+    R3PTRTYPE(PVMATERROR)           pAtError;
     /** List of registered error callbacks. */
-    HCPTRTYPE(PVMATERROR *)         ppAtErrorNext;
+    R3PTRTYPE(PVMATERROR *)         ppAtErrorNext;
 
     /** List of registered error callbacks. */
-    HCPTRTYPE(PVMATRUNTIMEERROR)    pAtRuntimeError;
+    R3PTRTYPE(PVMATRUNTIMEERROR)    pAtRuntimeError;
     /** List of registered error callbacks. */
-    HCPTRTYPE(PVMATRUNTIMEERROR *)  ppAtRuntimeErrorNext;
+    R3PTRTYPE(PVMATRUNTIMEERROR *)  ppAtRuntimeErrorNext;
 
     /** Head of the request queue. Atomic. */
-    volatile HCPTRTYPE(PVMREQ)      pReqs;
+    volatile R3PTRTYPE(PVMREQ)      pReqs;
     /** The last index used during alloc/free. */
     volatile uint32_t               iReqFree;
     /** Array of pointers to lists of free request packets. Atomic. */
-    volatile HCPTRTYPE(PVMREQ)      apReqFree[9];
+    volatile R3PTRTYPE(PVMREQ)      apReqFree[9];
     /** Number of free request packets. */
     volatile uint32_t               cReqFree;
 
     /** Wait/Idle indicator. */
     volatile uint32_t               fWait;
     /** Wait event semaphore. */
-    HCPTRTYPE(RTSEMEVENT)           EventSemWait;
+    R3PTRTYPE(RTSEMEVENT)           EventSemWait;
 
     /** VM Error Message. */
     R3PTRTYPE(PVMERROR)             pErrorR3;
@@ -262,7 +262,7 @@ typedef struct VMINT
     R3PTRTYPE(PVMRUNTIMEERROR)      pRuntimeErrorR3;
 
     /** Pointer to the DBGC instance data. */
-    HCPTRTYPE(void *)               pvDBGC;
+    R3PTRTYPE(void *)               pvDBGC;
 
     /** If set the EMT does the final VM cleanup when it exits.
      * If clear the VMR3Destroy() caller does so. */

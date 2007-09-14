@@ -114,17 +114,17 @@ struct RTCState {
 #endif
     int32_t irq;
     /* periodic timer */
-    PTMTIMERGC  pPeriodicTimerGC;
-    PTMTIMERHC  pPeriodicTimerHC;
+    GCPTRTYPE(PTMTIMER)   pPeriodicTimerGC;
+    R3R0PTRTYPE(PTMTIMER) pPeriodicTimerHC;
     int64_t next_periodic_time;
     /* second update */
     int64_t next_second_time;
-    PTMTIMERHC      pSecondTimerHC;
-    PTMTIMERGC      pSecondTimerGC;
-    PTMTIMERGC      pSecondTimer2GC;
-    PTMTIMERHC      pSecondTimer2HC;
+    R3R0PTRTYPE(PTMTIMER) pSecondTimerHC;
+    GCPTRTYPE(PTMTIMER)   pSecondTimerGC;
+    GCPTRTYPE(PTMTIMER)   pSecondTimer2GC;
+    R3R0PTRTYPE(PTMTIMER) pSecondTimer2HC;
     /** Pointer to the device instance - HC Ptr. */
-    PPDMDEVINSHC    pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS)    pDevInsHC;
     /** Pointer to the device instance - GC Ptr. */
     PPDMDEVINSGC    pDevInsGC;
     /** Use UTC or local time initially. */
@@ -132,7 +132,7 @@ struct RTCState {
     /** The RTC registration structure. */
     PDMRTCREG       RtcReg;
     /** The RTC device helpers. */
-    HCPTRTYPE(PCPDMRTCHLP) pRtcHlpHC;
+    R3PTRTYPE(PCPDMRTCHLP) pRtcHlpHC;
     /** Number of release log entries. Used to prevent flooding. */
     uint32_t        cRelLogEntries;
     /** The current/previous timer period. Used to prevent flooding changes. */

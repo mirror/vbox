@@ -116,20 +116,20 @@ struct SerialState
     PDMCRITSECT                     CritSect;
 
     /** Pointer to the device instance. */
-    HCPTRTYPE(PPDMDEVINS)           pDevInsHC;
+    R3PTRTYPE(PPDMDEVINS)           pDevInsHC;
     /** Pointer to the device instance. */
     GCPTRTYPE(PPDMDEVINS)           pDevInsGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
     RTGCPTR                         Alignment0;
 #endif
     /** The base interface. */
-    HCPTRTYPE(PDMIBASE)             IBase;
+    R3PTRTYPE(PDMIBASE)             IBase;
     /** The character port interface. */
-    HCPTRTYPE(PDMICHARPORT)         ICharPort;
+    R3PTRTYPE(PDMICHARPORT)         ICharPort;
     /** Pointer to the attached base driver. */
-    HCPTRTYPE(PPDMIBASE)            pDrvBase;
+    R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached character driver. */
-    HCPTRTYPE(PPDMICHAR)            pDrvChar;
+    R3PTRTYPE(PPDMICHAR)            pDrvChar;
 
     uint16_t                        divider;
     uint16_t                        auAlignment[3];

@@ -911,7 +911,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     /*
      * Allocate the timer.
      */
-    PTMTIMERHC pTimer = NULL;
+    PTMTIMERR3 pTimer = NULL;
     if (pVM->tm.s.pFree && VM_IS_EMT(pVM))
     {
         pTimer = pVM->tm.s.pFree;
@@ -968,7 +968,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-TMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer)
+TMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     /*
      * Allocate and init stuff.
@@ -998,7 +998,7 @@ TMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmCloc
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-TMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer)
+TMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     /*
      * Allocate and init stuff.
@@ -1028,7 +1028,7 @@ TMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmCloc
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-TMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERHC ppTimer)
+TMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     /*
      * Allocate and init  stuff.
@@ -1059,12 +1059,12 @@ TMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT p
  * @param   pszDesc         Pointer to description string which must stay around
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  */
-TMR3DECL(PTMTIMERHC) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc)
+TMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc)
 {
     /*
      * Allocate and init stuff.
      */
-    PTMTIMERHC pTimer;
+    PTMTIMERR3 pTimer;
     int rc = tmr3TimerCreate(pVM, enmClock, pszDesc, &pTimer);
     if (VBOX_SUCCESS(rc))
     {
@@ -1640,7 +1640,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
  * @param   pTimer          Timer to save.
  * @param   pSSM            Save State Manager handle.
  */
-TMR3DECL(int) TMR3TimerSave(PTMTIMERHC pTimer, PSSMHANDLE pSSM)
+TMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
 {
     LogFlow(("TMR3TimerSave: pTimer=%p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
     switch (pTimer->enmState)
@@ -1682,7 +1682,7 @@ TMR3DECL(int) TMR3TimerSave(PTMTIMERHC pTimer, PSSMHANDLE pSSM)
  * @param   pTimer          Timer to restore.
  * @param   pSSM            Save State Manager handle.
  */
-TMR3DECL(int) TMR3TimerLoad(PTMTIMERHC pTimer, PSSMHANDLE pSSM)
+TMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
 {
     Assert(pTimer); Assert(pSSM); VM_ASSERT_EMT(pTimer->pVMR3);
     LogFlow(("TMR3TimerLoad: pTimer=%p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
@@ -1774,7 +1774,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                                                 "Time",
                                                 "Expire",
                                                 "State");
-    for (PTMTIMERHC pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
+    for (PTMTIMERR3 pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {
         pHlp->pfnPrintf(pHlp,
                         "%p %08RX32 %08RX32 %08RX32 %s %18RU64 %18RU64 %-25s %s\n",
@@ -1814,7 +1814,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                                                 "State");
     for (unsigned iQueue = 0; iQueue < TMCLOCK_MAX; iQueue++)
     {
-        for (PTMTIMERHC pTimer = TMTIMER_GET_HEAD(&pVM->tm.s.paTimerQueuesR3[iQueue]);
+        for (PTMTIMERR3 pTimer = TMTIMER_GET_HEAD(&pVM->tm.s.paTimerQueuesR3[iQueue]);
              pTimer;
              pTimer = TMTIMER_GET_NEXT(pTimer))
         {

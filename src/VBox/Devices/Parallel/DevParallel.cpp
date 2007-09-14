@@ -60,20 +60,20 @@ typedef struct ParallelState
     PDMCRITSECT                         CritSect;
 
     /** Pointer to the device instance. */
-    HCPTRTYPE(PPDMDEVINS)               pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS)             pDevInsHC;
     /** Pointer to the device instance. */
     GCPTRTYPE(PPDMDEVINS)               pDevInsGC;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS != 64
     RTGCPTR                             Alignment0;
 #endif
     /** The base interface. */
-    HCPTRTYPE(PDMIBASE)                 IBase;
+    R3PTRTYPE(PDMIBASE)                 IBase;
     /** The host device port interface. */
-    HCPTRTYPE(PDMIHOSTDEVICEPORT)       IHostDevicePort;
+    R3PTRTYPE(PDMIHOSTDEVICEPORT)       IHostDevicePort;
     /** Pointer to the attached base driver. */
-    HCPTRTYPE(PPDMIBASE)                pDrvBase;
+    R3PTRTYPE(PPDMIBASE)                pDrvBase;
     /** Pointer to the attached host device. */
-    HCPTRTYPE(PPDMIHOSTDEVICECONNECTOR) pDrvHostDeviceConnector;
+    R3PTRTYPE(PPDMIHOSTDEVICECONNECTOR) pDrvHostDeviceConnector;
 
     uint8_t                             reg_data;
     uint8_t                             reg_status;

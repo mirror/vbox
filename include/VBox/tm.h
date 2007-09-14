@@ -398,17 +398,6 @@ TMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer);
  */
 TMDECL(PTMTIMERGC) TMTimerGCPtr(PTMTIMER pTimer);
 
-/**
- * Gets the GC pointer of the timer.
- *
- * @returns GC pointer.
- * @param   pTimer      Timer handle as returned by one of the create functions.
- * @deprecated
- */
-DECLINLINE(PTMTIMERHC) TMTimerHCPtr(PTMTIMER pTimer)
-{
-    return (PTMTIMERHC)TMTimerR3Ptr(pTimer);
-}
 
 /**
  * Destroy a timer
@@ -650,7 +639,7 @@ TMR3DECL(int) TMR3GetImportGC(PVM pVM, const char *pszSymbol, PRTGCPTR pGCPtrVal
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-TMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer);
+TMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
 
 /**
  * Creates a driver timer.
@@ -664,7 +653,7 @@ TMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmCloc
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-TMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer);
+TMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
 
 /**
  * Creates an internal timer.
@@ -678,7 +667,7 @@ TMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmCloc
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-TMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERHC ppTimer);
+TMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer);
 
 /**
  * Creates an external timer.
@@ -692,7 +681,7 @@ TMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT p
  * @param   pszDesc         Pointer to description string which must stay around
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  */
-TMR3DECL(PTMTIMERHC) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
+TMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
 
 /**
  * Destroy all timers owned by a device.
@@ -719,7 +708,7 @@ TMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
  * @param   pTimer          Timer to save.
  * @param   pSSM            Save State Manager handle.
  */
-TMR3DECL(int) TMR3TimerSave(PTMTIMERHC pTimer, PSSMHANDLE pSSM);
+TMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
 
 /**
  * Loads the state of a timer from a saved state.
@@ -728,7 +717,7 @@ TMR3DECL(int) TMR3TimerSave(PTMTIMERHC pTimer, PSSMHANDLE pSSM);
  * @param   pTimer          Timer to restore.
  * @param   pSSM            Save State Manager handle.
  */
-TMR3DECL(int) TMR3TimerLoad(PTMTIMERHC pTimer, PSSMHANDLE pSSM);
+TMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
 
 /**
  * Schedules and runs any pending timers.

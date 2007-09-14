@@ -1276,8 +1276,8 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
     /*
      * Do the big list and check that active timers all are in the active lists.
      */
-    PTMTIMERHC pPrev = NULL;
-    for (PTMTIMERHC pCur = pVM->tm.s.pCreated; pCur; pPrev = pCur, pCur = pCur->pBigNext)
+    PTMTIMERR3 pPrev = NULL;
+    for (PTMTIMERR3 pCur = pVM->tm.s.pCreated; pCur; pPrev = pCur, pCur = pCur->pBigNext)
     {
         Assert(pCur->pBigPrev == pPrev);
         Assert((unsigned)pCur->enmClock < (unsigned)TMCLOCK_MAX);
@@ -1291,7 +1291,7 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
             case TMTIMERSTATE_PENDING_RESCHEDULE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
             {
-                PTMTIMERHC pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTXALLSUFF(paTimerQueues)[pCur->enmClock]);
+                PTMTIMERR3 pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTXALLSUFF(paTimerQueues)[pCur->enmClock]);
                 Assert(pCur->offPrev || pCur == pCurAct);
                 while (pCurAct && pCurAct != pCur)
                     pCurAct = TMTIMER_GET_NEXT(pCurAct);
@@ -1307,7 +1307,7 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
             {
                 Assert(!pCur->offNext);
                 Assert(!pCur->offPrev);
-                for (PTMTIMERHC pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTXALLSUFF(paTimerQueues)[pCur->enmClock]);
+                for (PTMTIMERR3 pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTXALLSUFF(paTimerQueues)[pCur->enmClock]);
                       pCurAct;
                       pCurAct = TMTIMER_GET_NEXT(pCurAct))
                 {

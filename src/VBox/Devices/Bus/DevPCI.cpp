@@ -140,12 +140,12 @@ typedef struct PCIBus
     /** Config register. */
     uint32_t            uConfigReg;
     /** Array of PCI devices. */
-    HCPTRTYPE(PPCIDEVICE) devices[256];
+    R3PTRTYPE(PPCIDEVICE) devices[256];
 
     /** HC pointer to the device instance. */
-    PPDMDEVINSHC        pDevInsHC;
+    R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
     /** Pointer to the PCI R3  helpers. */
-    PCPDMPCIHLPR3       pPciHlpR3;
+    PCPDMPCIHLPR3           pPciHlpR3;
 
     /** GC pointer to the device instance. */
     PPDMDEVINSGC        pDevInsGC;
@@ -1398,7 +1398,6 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
     }
     return VINF_SUCCESS;
 }
-
 
 /**
  * @copydoc FNPDMDEVRELOCATE

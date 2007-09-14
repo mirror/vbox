@@ -30,7 +30,7 @@ typedef struct PCIIOREGION
     uint8_t                         type; /* PCIADDRESSSPACE */
     uint8_t                         padding[HC_ARCH_BITS == 32 ? 3 : 7];
     /** Callback called when the region is mapped. */
-    HCPTRTYPE(PFNPCIIOREGIONMAP)    map_func;
+    R3PTRTYPE(PFNPCIIOREGIONMAP)    map_func;
 } PCIIOREGION, PCIIORegion;
 /** Pointer to PCI I/O region. */
 typedef PCIIOREGION *PPCIIOREGION;

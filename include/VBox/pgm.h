@@ -1596,7 +1596,7 @@ PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
 PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
                                          PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
                                          PFNPGMHCVIRTHANDLER pfnHandlerHC, RTGCPTR pfnHandlerGC,
-                                         HCPTRTYPE(const char *) pszDesc);
+                                         R3PTRTYPE(const char *) pszDesc);
 
 /**
  * Register a access handler for a virtual range.

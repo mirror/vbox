@@ -638,8 +638,8 @@ IOMR3DECL(int) IOMR3Term(PVM pVM);
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 IOMR3DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
-                                     HCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, HCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                     HCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStringCallback, HCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStringCallback,
+                                     R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                     R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStringCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStringCallback,
                                      const char *pszDesc);
 
 /**
@@ -661,8 +661,8 @@ IOMR3DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortS
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                    HCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, HCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    HCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc);
+                                    R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                                    R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc);
 
 
 

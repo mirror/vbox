@@ -143,14 +143,14 @@ typedef struct fdrive_t {
     BlockDriverState *bs;
 #else /* VBOX */
     /** Pointer to the attached driver's base interface. */
-    HCPTRTYPE(PPDMIBASE)            pDrvBase;
+    R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached driver's block interface. */
-    HCPTRTYPE(PPDMIBLOCK)           pDrvBlock;
+    R3PTRTYPE(PPDMIBLOCK)           pDrvBlock;
     /** Pointer to the attached driver's block bios interface. */
-    HCPTRTYPE(PPDMIBLOCKBIOS)       pDrvBlockBios;
+    R3PTRTYPE(PPDMIBLOCKBIOS)       pDrvBlockBios;
     /** Pointer to the attached driver's mount interface.
      * This is NULL if the driver isn't a removable unit. */
-    HCPTRTYPE(PPDMIMOUNT)           pDrvMount;
+    R3PTRTYPE(PPDMIMOUNT)           pDrvMount;
     /** The base interface. */
     PDMIBASE                        IBase;
     /** The block port interface. */
