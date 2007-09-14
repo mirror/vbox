@@ -500,7 +500,7 @@ typedef struct SUPCALLVMMR0
  * @{
  */
 #define SUP_IOCTL_LOW_ALLOC                             SUP_CTL_CODE_BIG(10)
-#define SUP_IOCTL_LOW_ALLOC_SIZE(cPages)                RT_OFFSETOF(SUPLOWALLOC, u.Out.aPages[cPages])
+#define SUP_IOCTL_LOW_ALLOC_SIZE(cPages)                (uint32_t)RT_OFFSETOF(SUPLOWALLOC, u.Out.aPages[cPages]))
 #define SUP_IOCTL_LOW_ALLOC_SIZE_IN                     (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPLOWALLOC, u.In))
 #define SUP_IOCTL_LOW_ALLOC_SIZE_OUT(cPages)            SUP_IOCTL_LOW_ALLOC_SIZE(cPages)
 typedef struct SUPLOWALLOC
