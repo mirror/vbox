@@ -521,8 +521,9 @@ EOF
     [ -n "$INCXALAN" ] && I_INCXALAN="-I$INCXALAN"
     if test_compile "$LIBXALAN $LIBPTHREAD $I_INCXALAN" xalan xalanc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XALAN_LIBS" "`strip_l "$LIBXALAN"`"
-        cnf_append "SDK_VBOX_XALAN_INCS" "$INCXALAN"
+        cnf_append "SDK_VBOX_XALAN_LIBS"    "`strip_l "$LIBXALAN"`"
+        cnf_append "SDK_VBOX_XALAN_LIBPATH" "`strip_L "$LIBXALAN"`"
+        cnf_append "SDK_VBOX_XALAN_INCS"    "$INCXALAN"
       fi
     fi
   else
@@ -559,8 +560,9 @@ EOF
     [ -n "$INCXERCES" ] && I_INCXERCES="-I$INCXERCES"
     if test_compile "$LIBXERCES $LIBPTHREAD $I_INCXERCES" xerces xercesc; then
       if test_execute; then
-        cnf_append "SDK_VBOX_XERCES_LIBS" "`strip_l "$LIBXERCES"`"
-        cnf_append "SDK_VBOX_XERCES_INCS" "$INCXERCES"
+        cnf_append "SDK_VBOX_XERCES_LIBS"    "`strip_l "$LIBXERCES"`"
+        cnf_append "SDK_VBOX_XERCES_LIBPATH" "`strip_L "$LIBXERCES"`"
+        cnf_append "SDK_VBOX_XERCES_INCS"    "$INCXERCES"
       fi
     fi
   else
