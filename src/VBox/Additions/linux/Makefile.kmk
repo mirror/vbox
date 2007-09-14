@@ -45,8 +45,7 @@ include	$(PATH_KBUILD)/footer.kmk
 # We need to depend on all source files for the additions and shared
 # folders kernel modules.
 $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
-		$(PATH_OBJ)/src/VBox/Additions/linux/module/vboxadd/vboxadd$(TEMPLATE_VBOXLNX32GUESTR0_SYSSUFF) \
-		$(PATH_OBJ)/src/VBox/Additions/linux/sharedfolders/vboxvfs/vboxvfs$(TEMPLATE_VBOXLNX32GUESTR0_SYSSUFF) \
+		$(INSTARGET_vboxmod-bin) \
 		$(PATH_BIN)/additions/vboxadd-timesync \
 		$(PATH_BIN)/additions/vboxadd-xclient \
 		installer/vboxadd-timesync.sh \
