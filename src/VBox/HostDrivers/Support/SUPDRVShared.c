@@ -153,13 +153,13 @@ static SUPFUNC g_aFunctions[] =
 *******************************************************************************/
 static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
 static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
 static int      supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL pReq);
 static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
 static int      supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 static void     supdrvIdtRemoveOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
 static void     supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTEntry);
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
 static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
 static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
@@ -232,7 +232,7 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
  */
 void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
 {
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     PSUPDRVPATCH        pPatch;
 #endif
     PSUPDRVOBJ          pObj;
@@ -251,7 +251,7 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     /*
      * Free lists.
      */
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     /* patches */
     /** @todo make sure we don't uninstall patches which has been patched by someone else. */
     pPatch = pDevExt->pIdtPatchesFree;
@@ -262,7 +262,7 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
         pPatch = pPatch->pNext;
         RTMemExecFree(pvFree);
     }
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 
     /* objects. */
     pObj = pDevExt->pObjs;
@@ -383,7 +383,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
      */
     RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pSession);
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     /*
      * Uninstall any IDT patches installed for this session.
      */
@@ -795,7 +795,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_SIZES(SUP_IOCTL_IDT_INSTALL);
 
             /* execute */
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
             pReq->Hdr.rc = supdrvIOCtl_IdtInstall(pDevExt, pSession, pReq);
 #else
             pReq->u.Out.u8Idt = 3;
@@ -811,7 +811,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_SIZES(SUP_IOCTL_IDT_REMOVE);
 
             /* execute */
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
             pReq->Hdr.rc = supdrvIOCtl_IdtRemoveAll(pDevExt, pSession);
 #else
             pReq->Hdr.rc = VERR_NOT_SUPPORTED;
@@ -2424,7 +2424,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
 }
 
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
 /**
  * Install IDT for the current CPU.
  *
@@ -3083,7 +3083,7 @@ static void supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTE
     ASMSetCR0(uCR0);
     ASMSetFlags(uFlags);
 }
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 
 
 /**
@@ -3459,7 +3459,7 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
      */
     if (!pDevExt->pvVMMR0)
     {
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
         PSUPDRVPATCH pPatch;
 #endif
 
@@ -3470,7 +3470,7 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
         pDevExt->pfnVMMR0EntryInt   = pvVMMR0EntryInt;
         pDevExt->pfnVMMR0EntryFast  = pvVMMR0EntryFast;
         pDevExt->pfnVMMR0EntryEx    = pvVMMR0EntryEx;
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
         for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)
         {
 # ifdef RT_ARCH_AMD64
@@ -3480,7 +3480,7 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
                              (uint32_t)pvVMMR0 - (uint32_t)&pPatch->auCode[pPatch->offVMMR0EntryFixup + 4]);
 # endif
         }
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
     }
     else
     {
@@ -3507,7 +3507,7 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
  */
 static void supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt)
 {
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     PSUPDRVPATCH pPatch;
 #endif
 
@@ -3516,7 +3516,7 @@ static void supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt)
     pDevExt->pfnVMMR0EntryFast  = NULL;
     pDevExt->pfnVMMR0EntryEx    = NULL;
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)
     {
 # ifdef RT_ARCH_AMD64
@@ -3527,7 +3527,7 @@ static void supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt)
                          (uint32_t)&pPatch->auCode[pPatch->offStub] - (uint32_t)&pPatch->auCode[pPatch->offVMMR0EntryFixup + 4]);
 # endif
     }
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 }
 
 

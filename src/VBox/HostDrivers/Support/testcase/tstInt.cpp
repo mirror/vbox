@@ -147,7 +147,7 @@ int main(int argc, char **argv)
                         RTPrintf("tstInt: SUPCallVMMR0     - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
                                  i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
                         /*
                          * The fast path.
                          */
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 
                         RTPrintf("tstInt: SUPCallVMMR0Fast - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
                                  i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 
                         /*
                          * The ordinary path.

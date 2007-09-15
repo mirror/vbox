@@ -5,7 +5,7 @@
 
 ;
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
@@ -113,7 +113,7 @@ BEGINPROC trpmR0DispatchHostInterrupt
 ENDPROC trpmR0DispatchHostInterrupt
 
 
-%ifndef VBOX_WITHOUT_IDT_PATCHING
+%ifdef VBOX_WITH_IDT_PATCHING
 
     align 16
 ;;
@@ -154,7 +154,7 @@ BEGINPROC trpmR0InterruptDispatcher
 %endif ; !RT_ARCH_AMD64
 ENDPROC   trpmR0InterruptDispatcher
 
-%endif ; !VBOX_WITHOUT_IDT_PATCHING
+%endif ; VBOX_WITH_IDT_PATCHING
 
 
 ;;

@@ -462,8 +462,6 @@ TRPMGCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc);
  */
 TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM);
 
-# ifndef VBOX_WITHOUT_IDT_PATCHING
-
 /**
  * Changes the VMMR0Entry() call frame and stack used by the IDT patch code
  * so that we'll dispatch an interrupt rather than returning directly to Ring-3
@@ -473,8 +471,6 @@ TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM);
  * @param   pvRet       Pointer to the return address of VMMR0Entry() on the stack.
  */
 TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet);
-
-# endif /* !VBOX_WITHOUT_IDT_PATCHING */
 
 /** @} */
 #endif

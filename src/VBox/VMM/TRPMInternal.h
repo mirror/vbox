@@ -218,13 +218,13 @@ DECLASM(void) trpmR0DispatchHostInterrupt(RTR0UINTPTR uIP, RTSEL SelCS, RTR0UINT
  */
 DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
 
-# ifndef VBOX_WITHOUT_IDT_PATCHING
+# ifdef VBOX_WITH_IDT_PATCHING
 /**
  * Code used for the dispatching of interrupts in HC.
  * @internal
  */
 DECLASM(int) trpmR0InterruptDispatcher(void);
-# endif /* !VBOX_WITHOUT_IDT_PATCHING */
+# endif /* VBOX_WITH_IDT_PATCHING */
 
 #endif
 
