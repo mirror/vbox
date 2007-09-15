@@ -33,7 +33,6 @@ int main(int argc, char **argv)
     int         rc;
     int         rcRet = 0;
     RTHCPHYS    HCPhys;
-    void       *pv;
 
     RTR3Init(true, ~0);
     rc = SUPInit(NULL, ~0);
@@ -58,7 +57,7 @@ int main(int argc, char **argv)
         rc = SUPPageUnlock(pv);
         RTPrintf("rc=%d\n", rc);
         RTThreadSleep(1500);
-#endif 
+#endif
 
         /*
          * More extensive.
