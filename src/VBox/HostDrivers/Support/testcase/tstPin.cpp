@@ -190,6 +190,7 @@ int main(int argc, char **argv)
             }
             SUPPageFree(pv, BIG_SIZEPP >> PAGE_SHIFT);
         }
+
         rc = SUPTerm();
         RTPrintf("SUPTerm -> rc=%d\n", rc);
         rcRet += rc != 0;
