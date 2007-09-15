@@ -490,7 +490,7 @@ sf_unlink_aux (struct inode *parent, struct dentry *dentry, int dirop)
         if (VBOX_FAILURE (rc)) {
                 LogFunc(("(%d): vboxCallRemove(%s) failed rc=%Vrc\n", dirop,
                          path->String.utf8, rc));
-                         err = -RTErrnoConvertFromErr(rc);
+                         err = -RTErrConvertToErrno (rc);
                 goto fail1;
         }
 
@@ -560,7 +560,7 @@ sf_rename (struct inode *old_parent, struct dentry *old_dentry,
                                 sf_file_i->path = new_path;
                         } else {
                                 LogFunc(("vboxCallRename failed rc=%Vrc\n", rc));
-                                err = -RTErrnoConvertFromErr(err);
+                                err = -RTErrConvertToErrno (err);
                         }
                         if (0 != err) {
                                 kfree (new_path);
