@@ -51,7 +51,7 @@
   /* No automatic buffering, size limited to 255 bytes. */
 # include <sys/ioccom.h>
 # define SUP_CTL_CODE_SIZE(Function, Size)      _IOWRN('V', (Function) | SUP_IOCTL_FLAG, sizeof(SUPREQHDR))
-# define SUP_CTL_CODE_BIG(Function)             _IO(   'V', (Function) | SUP_IOCTL_FLAG)
+# define SUP_CTL_CODE_BIG(Function)             _IOWRN('V', (Function) | SUP_IOCTL_FLAG, sizeof(SUPREQHDR))
 # define SUP_CTL_CODE_FAST(Function)            _IO(   'V', (Function) | SUP_IOCTL_FLAG)
 # define SUP_CTL_CODE_NO_SIZE(uIOCtl)           (uIOCtl)
 

@@ -493,6 +493,16 @@ static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cr
     return VBoxDrvSolarisIOCtlSlow(pSession, Cmd, Mode, pArgs);
 }
 
+
+/** @def IOCPARM_LEN
+ * Gets the length from the ioctl number.
+ * This is normally defined by sys/ioccom.h on BSD systems...
+ */
+#ifndef IOCPARM_LEN
+# define IOCPARM_LEN(x)     ( ((x) >> 16) & IOCPARM_MASK )
+#endif 
+
+
 /**
  * Worker for VBoxSupDrvIOCtl that takes the slow IOCtl functions.
  *
@@ -514,33 +524,35 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int iCmd, int Mode, 
     /*
      * Read the header.
      */
+    if (RT_UNLIKELY(IOC_PARMLEN(iCmd) != sizeof(Hdr)))
+    {
+        OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: iCmd=%#x len %d expected %d\n", iCmd, IOC_PARMLEN(iCmd), sizeof(Hdr)));
+        return EINVAL;
+    }
     rc = ddi_copyin(&Hdr, (void *)iArg, sizeof(Hdr), Mode);
     if (RT_UNLIKELY(rc))
     {
-        dprintf(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(,%#lx,) failed; iCmd=%#x. rc=%d\n", iArg, iCmd, rc));
+        OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(,%#lx,) failed; iCmd=%#x. rc=%d\n", iArg, iCmd, rc));
         return EFAULT;
     }
     if (RT_UNLIKELY((Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
     {
-        dprintf(("VBoxDrvSolarisIOCtlSlow: bad header magic %#x; iCmd=%#x\n", Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK, iCmd));
+        OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: bad header magic %#x; iCmd=%#x\n", Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK, iCmd));
+        return EINVAL;
+    }
+    cbBuf = RT_MAX(Hdr.cbIn, Hdr.cbOut);
+    if (RT_UNLIKELY(    Hdr.cbIn < sizeof(Hdr)
+                    ||  Hdr.cbOut < sizeof(Hdr)
+                    ||  cbReq > _1M*16))
+    {
+        OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: max(%#x,%#x); iCmd=%#x\n", Hdr.cbIn, Hdr.cbOut, iCmd));
         return EINVAL;
     }
 
     /*
      * Buffer the request.
      */
-    cbBuf = RT_MAX(Hdr.cbIn, Hdr.cbOut);
-    if (RT_UNLIKELY(cbBuf > _1M*16))
-    {
-        dprintf(("VBoxDrvSolarisIOCtlSlow: too big cbBuf=%#x; iCmd=%#x\n", cbBuf, iCmd));
-        return E2BIG;
-    }
-    if (RT_UNLIKELY(cbBuf < sizeof(Hdr)))
-    {
-        dprintf(("VBoxDrvSolarisIOCtlSlow: bad ioctl cbBuf=%#x; iCmd=%#x.\n", cbBuf, iCmd));
-        return EINVAL;
-    }
-    pHdr = RTMemAlloc(cbBuf);
+    pHdr = RTMemTmpAlloc(cbBuf);
     if (RT_UNLIKELY(!pHdr))
     {
         OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: failed to allocate buffer of %d bytes for iCmd=%#x.\n", cbBuf, iCmd));
