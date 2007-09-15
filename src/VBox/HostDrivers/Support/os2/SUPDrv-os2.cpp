@@ -32,6 +32,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define __STDC_CONSTANT_MACROS
+#define __STDC_LIMIT_MACROS
+
 #include <os2ddk/bsekee.h>
 #undef RT_MAX
 
@@ -43,6 +46,7 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
+#include <iprt/param.h>
 
 
 /*******************************************************************************
@@ -296,67 +300,61 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
         Assert(!pvData);
 
         /*
-         * Lock the buffers.
+         * Lock the header.
          */
-        PSUPDRVIOCTLDATA pArgs = (PSUPDRVIOCTLDATA)pvParm;
-        AssertReturn(*pcbParm == sizeof(*pArgs), VERR_INVALID_PARAMETER);
-        KernVMLock_t ParmLock;
-        int rc = KernVMLock(VMDHL_WRITE, pvParm, *pcbParm, &ParmLock, (KernPageList_t *)-1, NULL);
-        AssertMsgReturn(!rc, ("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pvParm, *pcbParm, &ParmLock, rc), VERR_LOCK_FAILED);
+        PSUPREQHDR pHdr = (PSUPREQHDR)pvParm;
+        AssertReturn(*pcbParm == sizeof(*pHdr), VERR_INVALID_PARAMETER);
+        KernVMLock_t Lock;
+        int rc = KernVMLock(VMDHL_WRITE, pHdr, *pcbParm, &Lock, (KernPageList_t *)-1, NULL);
+        AssertMsgReturn(!rc, ("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pHdr, *pcbParm, &Lock, rc), VERR_LOCK_FAILED);
 
-        /* lock the in and out buffers. */
-        KernVMLock_t    InLock;
-        bool            fInLocked = pArgs->pvIn && pArgs->cbIn;
-        if (fInLocked)
+        /*
+         * Validate the header.
+         */
+        if (RT_LIKELY((pHdr->fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) == SUPREQHDR_FLAGS_MAGIC))
         {
-            rc = KernVMLock(VMDHL_WRITE, pArgs->pvIn, pArgs->cbIn, &InLock, (KernPageList_t *)-1, NULL);
-            if (rc)
+            uint32_t cbReq = RT_MAX(pHdr->cbIn, pHdr->cbOut);
+            if (RT_LIKELY(    pHdr->cbIn >= sizeof(*pHdr)
+                          &&  pHdr->cbOut >= sizeof(*pHdr)
+                          &&  cbReq <= _1M*16))
             {
-                AssertMsgFailed(("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pArgs->pvIn, pArgs->cbIn, &InLock, rc));
-                KernVMUnlock(&ParmLock);
-                return VERR_LOCK_FAILED;
+                /*
+                 * Lock the rest of the buffer if necessary.
+                 */
+                if (((uintptr_t)pHdr & PAGE_OFFSET_MASK) + cbReq > PAGE_SIZE)
+                {
+                    rc = KernVMUnlock(&Lock);
+                    AssertMsgReturn(!rc, ("KernVMUnlock(Lock) -> %#x\n", rc), VERR_LOCK_FAILED);
+
+                    rc = KernVMLock(VMDHL_WRITE, pHdr, cbReq, &Lock, (KernPageList_t *)-1, NULL);
+                    AssertMsgReturn(!rc, ("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pHdr, cbReq, &Lock, rc), VERR_LOCK_FAILED);
+                }
+
+                /*
+                 * Process the IOCtl.
+                 */
+                rc = supdrvIOCtl(iFunction, &g_DevExt, pSession, pHdr);
+            }
+            else
+            {
+                OSDBGPRINT(("VBoxDrvIOCtl: max(%#x,%#x); iCmd=%#x\n", pHdr->cbIn, pHdr->cbOut, iFunction));
+                rc = VERR_INVALID_PARAMETER;
             }
         }
-
-        KernVMLock_t    OutLock;
-        bool            fOutLocked = pArgs->pvOut && pArgs->cbOut;
-        if (fOutLocked)
+        else
         {
-            rc = KernVMLock(VMDHL_WRITE, pArgs->pvOut, pArgs->cbOut, &OutLock, (KernPageList_t *)-1, NULL);
-            if (rc)
-            {
-                AssertMsgFailed(("KernVMLock(VMDHL_WRITE, %p, %#x, &p, NULL, NULL) -> %d\n", pArgs->pvOut, pArgs->cbOut, &OutLock, rc));
-                KernVMUnlock(&ParmLock);
-                if (fInLocked)
-                    KernVMUnlock(&InLock);
-                return VERR_LOCK_FAILED;
-            }
+            OSDBGPRINT(("VBoxDrvIOCtl: bad magic fFlags=%#x; iCmd=%#x\n", pHdr->fFlags, iFunction));
+            rc = VERR_INVALID_PARAMETER;
         }
 
         /*
-         * Process the IOCtl.
+         * Unlock and return.
          */
-        unsigned cbReturned = 0;
-        pArgs->rc = rc = supdrvIOCtl(iFunction, &g_DevExt, pSession, pArgs->pvIn, pArgs->cbIn, pArgs->pvOut, pArgs->cbOut, &cbReturned);
-
-        /*
-         * Unlock the buffers.
-         */
-        if (fOutLocked)
-        {
-            int rc2 = KernVMUnlock(&OutLock);
-            AssertMsg(!rc2, ("rc2=%d\n", rc2));
-        }
-        if (fInLocked)
-        {
-            int rc2 = KernVMUnlock(&InLock);
-            AssertMsg(!rc2, ("rc2=%d\n", rc2));
-        }
-        int rc2 = KernVMUnlock(&ParmLock);
+        int rc2 = KernVMUnlock(&Lock);
         AssertMsg(!rc2, ("rc2=%d\n", rc2));
 
-        dprintf2(("VBoxDrvIOCtl: returns VINF_SUCCESS / %d\n", rc));
-        return VINF_SUCCESS;
+        dprintf2(("VBoxDrvIOCtl: returns %d\n", rc));
+        return rc;
     }
     return VERR_NOT_SUPPORTED;
 }
