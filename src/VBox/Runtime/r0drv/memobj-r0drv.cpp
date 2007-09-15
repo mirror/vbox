@@ -153,10 +153,12 @@ RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
 {
     /* Validate the object handle. */
     PRTR0MEMOBJINTERNAL pMem;
-    AssertPtrReturn(MemObj, 0);
+    if (RT_UNLIKELY(MemObj == NIL_RTR0MEMOBJ))
+        return NULL;
+    AssertPtrReturn(MemObj, NULL);
     pMem = (PRTR0MEMOBJINTERNAL)MemObj;
-    AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), 0);
-    AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), 0);
+    AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), NULL);
+    AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), NULL);
 
     /* return the mapping address. */
     return pMem->pv;
@@ -177,21 +179,24 @@ RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
  */
 RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
 {
-    /* Validate the object handle. */
     PRTR0MEMOBJINTERNAL pMem;
+
+    /* Validate the object handle. */
+    if (RT_UNLIKELY(MemObj == NIL_RTR0MEMOBJ))
+        return NIL_RTR3PTR;
     AssertPtrReturn(MemObj, NIL_RTR3PTR);
     pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), NIL_RTR3PTR);
     AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), NIL_RTR3PTR);
-    AssertMsgReturn(    (   pMem->enmType == RTR0MEMOBJTYPE_MAPPING
-                         && pMem->u.Mapping.R0Process != NIL_RTR0PROCESS)
-                    ||  (   pMem->enmType == RTR0MEMOBJTYPE_LOCK
-                         && pMem->u.Lock.R0Process != NIL_RTR0PROCESS)
-                    ||  (   pMem->enmType == RTR0MEMOBJTYPE_PHYS_NC
-                         && pMem->u.Lock.R0Process != NIL_RTR0PROCESS)
-                    ||  (   pMem->enmType == RTR0MEMOBJTYPE_RES_VIRT
-                         && pMem->u.ResVirt.R0Process != NIL_RTR0PROCESS),
-                    ("%p: %d\n", pMem, pMem->enmType), NIL_RTR3PTR);
+    if (RT_UNLIKELY(    (   pMem->enmType != RTR0MEMOBJTYPE_MAPPING
+                         || pMem->u.Mapping.R0Process == NIL_RTR0PROCESS)
+                    &&  (   pMem->enmType != RTR0MEMOBJTYPE_LOCK
+                         || pMem->u.Lock.R0Process == NIL_RTR0PROCESS)
+                    &&  (   pMem->enmType != RTR0MEMOBJTYPE_PHYS_NC
+                         || pMem->u.Lock.R0Process == NIL_RTR0PROCESS)
+                    &&  (   pMem->enmType != RTR0MEMOBJTYPE_RES_VIRT
+                         || pMem->u.ResVirt.R0Process == NIL_RTR0PROCESS)))
+        return NIL_RTR3PTR;
 
     /* return the mapping address. */
     return (RTR3PTR)pMem->pv;
@@ -202,13 +207,16 @@ RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
  * Gets the size of a ring-0 memory object.
  *
  * @returns The address of the memory object.
- * @returns NULL if the handle is invalid (asserts in strict builds) or if there isn't any mapping.
+ * @returns 0 if the handle is invalid (asserts in strict builds) or if there isn't any mapping.
  * @param   MemObj  The ring-0 memory object handle.
  */
 RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
 {
-    /* Validate the object handle. */
     PRTR0MEMOBJINTERNAL pMem;
+
+    /* Validate the object handle. */
+    if (RT_UNLIKELY(MemObj == NIL_RTR0MEMOBJ))
+        return 0;
     AssertPtrReturn(MemObj, 0);
     pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), 0);
