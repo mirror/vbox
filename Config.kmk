@@ -167,10 +167,13 @@ VBOX_WITH_VRDP_NO_COM = 1
 VBOX_WITH_VRDP_AUTHMOD = 1
 # build enhanced version of rdesktop
 VBOX_WITH_VRDP_RDESKTOP = 1
-ifeq ($(filter-out darwin.x86 darwin.amd64 os2.x86 win.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
+ifeq ($(filter-out darwin.x86 darwin.amd64 win.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
 # build the support driver & library without IDT patching.
 ## @todo invert this!
 VBOX_WITHOUT_IDT_PATCHING = 1
+else
+# build the support driver & library with IDT patching.
+VBOX_WITH_IDT_PATCHING = 1
 endif
 # The kernel driver/module and related runtime libraries.
 VBOX_WITH_VBOXDRV = 1
@@ -665,9 +668,6 @@ ifdef VBOX_WITH_STATISTICS
 endif
 ifdef VBOX_STRICT
  DEFS += VBOX_STRICT
-endif
-ifdef VBOX_WITHOUT_IDT_PATCHING
- DEFS += VBOX_WITHOUT_IDT_PATCHING
 endif
 ifdef LOG_ENABLED
  DEFS += LOG_ENABLED

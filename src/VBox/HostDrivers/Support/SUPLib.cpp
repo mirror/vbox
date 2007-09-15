@@ -101,7 +101,7 @@ PSUPDRVSESSION      g_pSession;
 /** R0 SUP Functions used for resolving referenced to the SUPR0 module. */
 static PSUPQUERYFUNCS g_pFunctions;
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
 /** The negotiated interrupt number. */
 static uint8_t      g_u8Interrupt = 3;
 /** Pointer to the generated code fore calling VMMR0. */
@@ -122,7 +122,7 @@ static uint32_t     g_u32FakeMode = ~0;
 *******************************************************************************/
 static int supInitFake(PSUPDRVSESSION *ppSession);
 static int supLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase);
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
 static int supInstallIDTE(void);
 #endif
 static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
@@ -359,7 +359,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         g_pSession = (PSUPDRVSESSION)(void *)g_pFunctions;
         if (ppSession)
             *ppSession = g_pSession;
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
         Assert(g_u8Interrupt == 3);
 #endif
 
@@ -411,7 +411,7 @@ SUPR3DECL(int) SUPTerm(bool fForced)
 
         g_u32Cookie         = 0;
         g_u32SessionCookie  = 0;
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
         g_u8Interrupt       = 3;
 #endif
         g_cInits            = 0;
@@ -551,7 +551,7 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg,
 
 SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg)
 {
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#if defined(VBOX_WITH_IDT_PATCHING) && !defined(RT_OS_OS2)
     return g_pfnCallVMMR0(pVMR0, uOperation, pvArg);
 
 #else
@@ -1064,7 +1064,7 @@ SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, voi
      * If it's VMMR0.r0 we need to install the IDTE.
      */
     int rc = supLoadModule(pszFilename, pszModule, ppvImageBase);
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     if (    RT_SUCCESS(rc)
         &&  !strcmp(pszModule, "VMMR0.r0"))
     {
@@ -1072,13 +1072,13 @@ SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, voi
         if (RT_FAILURE(rc))
             SUPFreeModule(*ppvImageBase);
     }
-#endif /* VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 
     return rc;
 }
 
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
 /**
  * Generates the code for calling the interrupt gate.
  *
@@ -1273,7 +1273,7 @@ static int supInstallIDTE(void)
     }
     return rc;
 }
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 
 
 /**
@@ -1635,7 +1635,7 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase)
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
     {
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
         g_u8Interrupt = 3;
         RTMemExecFree(*(void **)&g_pfnCallVMMR0);
         g_pfnCallVMMR0 = NULL;
@@ -1644,7 +1644,7 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase)
         return VINF_SUCCESS;
     }
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     /*
      * There is one special module. When this is freed we'll
      * free the IDT entry that goes with it.
@@ -1670,7 +1670,7 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase)
         RTMemExecFree(*(void **)&g_pfnCallVMMR0);
         g_pfnCallVMMR0 = NULL;
     }
-#endif /* VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 
     /*
      * Free the requested module.

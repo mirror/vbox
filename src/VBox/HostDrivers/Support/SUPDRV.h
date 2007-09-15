@@ -250,7 +250,7 @@ __END_DECLS
 /** Pointer to the device extension. */
 typedef struct SUPDRVDEVEXT *PSUPDRVDEVEXT;
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
 
 /**
  * An IDT Entry.
@@ -338,7 +338,7 @@ typedef struct SUPDRVPATCHUSAGE
     uint32_t volatile   cUsage;
 } SUPDRVPATCHUSAGE, *PSUPDRVPATCHUSAGE;
 
-#endif /* !VBOX_WITHOUT_IDT_PATCHING */
+#endif /* VBOX_WITH_IDT_PATCHING */
 
 
 /**
@@ -561,7 +561,7 @@ typedef struct SUPDRVSESSION
 
     /** Load usage records. (protected by SUPDRVDEVEXT::mtxLdr) */
     PSUPDRVLDRUSAGE volatile    pLdrUsage;
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     /** Patch usage records. (protected by SUPDRVDEVEXT::SpinLock) */
     PSUPDRVPATCHUSAGE volatile  pPatchUsage;
 #endif
@@ -614,7 +614,7 @@ typedef struct SUPDRVDEVEXT
      * usage counting and destruction of the IDT entry override. */
     RTSPINLOCK              Spinlock;
 
-#ifndef VBOX_WITHOUT_IDT_PATCHING
+#ifdef VBOX_WITH_IDT_PATCHING
     /** List of patches. */
     PSUPDRVPATCH volatile   pIdtPatches;
     /** List of patches Free. */
