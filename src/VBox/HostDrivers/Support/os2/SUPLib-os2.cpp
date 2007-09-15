@@ -135,7 +135,7 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 
     ULONG cbReturned = sizeof(SUPREQHDR);
     int rc = DosDevIOCtl(g_hDevice, SUP_CTL_CATEGORY, uFunction,
-                         &cbReq, cbReturned, &cbReturned,
+                         pvReq, cbReturned, &cbReturned,
                          NULL, 0, NULL);
     if (RT_LIKELY(rc == NO_ERROR))
         return VINF_SUCCESS;
