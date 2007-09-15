@@ -41,6 +41,28 @@ int main(int argc, char **argv)
     rcRet += rc != 0;
     if (!rc)
     {
+        /*
+         * Simple test.
+         */
+        void *pv;
+        int rc = SUPPageAlloc(1, &pv);
+        AssertRC(rc);
+        RTPrintf("pv=%p\n", pv);
+        SUPPAGE aPages[1];
+        rc = SUPPageLock(pv, 1, &aPages[0]);
+        RTPrintf("rc=%d aPages[0]=%RHp\n", rc, pv, aPages[0]);
+        RTThreadSleep(1500);
+#if 0
+        RTPrintf("Unlocking...\n");
+        RTThreadSleep(250);
+        rc = SUPPageUnlock(pv);
+        RTPrintf("rc=%d\n", rc);
+        RTThreadSleep(1500);
+#endif 
+
+        /*
+         * More extensive.
+         */
         static struct
         {
             void       *pv;
@@ -168,7 +190,6 @@ int main(int argc, char **argv)
             }
             SUPPageFree(pv, BIG_SIZEPP >> PAGE_SHIFT);
         }
-
         rc = SUPTerm();
         RTPrintf("SUPTerm -> rc=%d\n", rc);
         rcRet += rc != 0;
