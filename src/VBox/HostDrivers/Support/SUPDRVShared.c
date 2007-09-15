@@ -90,10 +90,8 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0MemAlloc",                          (void *)SUPR0MemAlloc },
     { "SUPR0MemGetPhys",                        (void *)SUPR0MemGetPhys },
     { "SUPR0MemFree",                           (void *)SUPR0MemFree },
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     { "SUPR0PageAlloc",                         (void *)SUPR0PageAlloc },
     { "SUPR0PageFree",                          (void *)SUPR0PageFree },
-#endif
     { "SUPR0Printf",                            (void *)SUPR0Printf },
     { "RTMemAlloc",                             (void *)RTMemAlloc },
     { "RTMemAllocZ",                            (void *)RTMemAllocZ },
@@ -463,7 +461,6 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
          */
         for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
         {
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
             if (pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ)
             {
                 int rc;
@@ -480,33 +477,6 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                 pBundle->aMem[i].MemObj = NIL_RTR0MEMOBJ;
                 pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
             }
-
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-            if (    pBundle->aMem[i].pvR0
-                ||  pBundle->aMem[i].pvR3)
-            {
-                dprintf2(("eType=%d pvR0=%p pvR3=%p cb=%d\n", pBundle->aMem[i].eType,
-                          pBundle->aMem[i].pvR0, pBundle->aMem[i].pvR3, pBundle->aMem[i].cb));
-                switch (pBundle->aMem[i].eType)
-                {
-                    case MEMREF_TYPE_LOCKED:
-                        supdrvOSUnlockMemOne(&pBundle->aMem[i]);
-                        break;
-                    case MEMREF_TYPE_CONT:
-                        supdrvOSContFreeOne(&pBundle->aMem[i]);
-                        break;
-                    case MEMREF_TYPE_LOW:
-                        supdrvOSLowFreeOne(&pBundle->aMem[i]);
-                        break;
-                    case MEMREF_TYPE_MEM:
-                        supdrvOSMemFreeOne(&pBundle->aMem[i]);
-                        break;
-                    default:
-                        break;
-                }
-                pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
-            }
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
         }
 
         /*
@@ -1055,7 +1025,6 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             return 0;
         }
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
         case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_ALLOC):
         {
             /* validate */
@@ -1080,7 +1049,6 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->Hdr.rc = SUPR0PageFree(pSession, pReq->u.In.pvR3);
             return 0;
         }
-#endif /* USE_NEW_OS_INTERFACE_FOR_MM */
 
         default:
             dprintf(("Unknown IOCTL %#lx\n", (long)uIOCtl));
@@ -1433,13 +1401,12 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
         return VERR_INVALID_PARAMETER;
     }
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
-# ifdef RT_OS_WINDOWS /* A temporary hack for windows, will be removed once all ring-3 code has been cleaned up. */
+#ifdef RT_OS_WINDOWS /* A temporary hack for windows, will be removed once all ring-3 code has been cleaned up. */
     /* First check if we allocated it using SUPPageAlloc; if so then we don't need to lock it again */
     rc = supdrvPageGetPhys(pSession, pvR3, cPages, paPages);
     if (RT_SUCCESS(rc))
         return rc;
-# endif
+#endif
 
     /*
      * Let IPRT do the job.
@@ -1471,26 +1438,6 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
         }
     }
 
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-
-    /*
-     * Let the OS specific code have a go.
-     */
-    Mem.pvR0    = NULL;
-    Mem.pvR3    = pvR3;
-    Mem.eType   = MEMREF_TYPE_LOCKED;
-    Mem.cb      = cb;
-    rc = supdrvOSLockMemOne(&Mem, paPages);
-    if (rc)
-        return rc;
-
-    /*
-     * Everything when fine, add the memory reference to the session.
-     */
-    rc = supdrvMemAdd(&Mem, pSession);
-    if (rc)
-        supdrvOSUnlockMemOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
     return rc;
 }
 
@@ -1555,7 +1502,6 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
         return VERR_INVALID_PARAMETER;
     }
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /*
      * Let IPRT do the job.
      */
@@ -1583,29 +1529,6 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
         rc2 = RTR0MemObjFree(Mem.MemObj, false);
         AssertRC(rc2);
     }
-
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-
-    /*
-     * Let the OS specific code have a go.
-     */
-    Mem.pvR0    = NULL;
-    Mem.pvR3    = NIL_RTR3PTR;
-    Mem.eType   = MEMREF_TYPE_CONT;
-    Mem.cb      = cPages << PAGE_SHIFT;
-    rc = supdrvOSContAllocOne(&Mem, ppvR0, ppvR3, pHCPhys);
-    if (rc)
-        return rc;
-    AssertMsg(!((uintptr_t)*ppvR3 & (PAGE_SIZE - 1)) || !(*pHCPhys & (PAGE_SIZE - 1)),
-              ("Memory is not page aligned! *ppvR0=%p *ppvR3=%p phys=%VHp\n", ppvR0 ? *ppvR0 : NULL, *ppvR3, *pHCPhys));
-
-    /*
-     * Everything when fine, add the memory reference to the session.
-     */
-    rc = supdrvMemAdd(&Mem, pSession);
-    if (rc)
-        supdrvOSContFreeOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
 
     return rc;
 }
@@ -1660,7 +1583,6 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
         return VERR_INVALID_PARAMETER;
     }
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /*
      * Let IPRT do the work.
      */
@@ -1694,30 +1616,6 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
         AssertRC(rc2);
     }
 
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-
-    /*
-     * Let the OS specific code have a go.
-     */
-    Mem.pvR0    = NULL;
-    Mem.pvR3    = NIL_RTR3PTR;
-    Mem.eType   = MEMREF_TYPE_LOW;
-    Mem.cb      = cPages << PAGE_SHIFT;
-    rc = supdrvOSLowAllocOne(&Mem, ppvR0, ppvR3, paPages);
-    if (rc)
-        return rc;
-    AssertMsg(!((uintptr_t)*ppvR3 & (PAGE_SIZE - 1)), ("Memory is not page aligned! virt=%p\n", *ppvR3));
-    AssertMsg(!((uintptr_t)*ppvR0 & (PAGE_SIZE - 1)), ("Memory is not page aligned! virt=%p\n", *ppvR0));
-    for (iPage = 0; iPage < cPages; iPage++)
-        AssertMsg(!(paPages[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPages[iPage].Phys));
-
-    /*
-     * Everything when fine, add the memory reference to the session.
-     */
-    rc = supdrvMemAdd(&Mem, pSession);
-    if (rc)
-        supdrvOSLowFreeOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
     return rc;
 }
 
@@ -1766,7 +1664,6 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
         return VERR_INVALID_PARAMETER;
     }
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
     /*
      * Let IPRT do the work.
      */
@@ -1794,28 +1691,6 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
         AssertRC(rc2);
     }
 
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-
-    /*
-     * Let the OS specific code have a go.
-     */
-    Mem.pvR0    = NULL;
-    Mem.pvR3    = NIL_RTR3PTR;
-    Mem.eType   = MEMREF_TYPE_MEM;
-    Mem.cb      = cb;
-    rc = supdrvOSMemAllocOne(&Mem, ppvR0, ppvR3);
-    if (rc)
-        return rc;
-    AssertMsg(!((uintptr_t)*ppvR0 & (PAGE_SIZE - 1)), ("Memory is not page aligned! pvR0=%p\n", *ppvR0));
-    AssertMsg(!((uintptr_t)*ppvR3 & (PAGE_SIZE - 1)), ("Memory is not page aligned! pvR3=%p\n", *ppvR3));
-
-    /*
-     * Everything when fine, add the memory reference to the session.
-     */
-    rc = supdrvMemAdd(&Mem, pSession);
-    if (rc)
-        supdrvOSMemFreeOne(&Mem);
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
     return rc;
 }
 
@@ -1852,7 +1727,6 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
             unsigned i;
             for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
@@ -1871,16 +1745,6 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
                     return VINF_SUCCESS;
                 }
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-                if (    pBundle->aMem[i].eType == MEMREF_TYPE_MEM
-                    &&  (   (RTHCUINTPTR)pBundle->aMem[i].pvR0 == uPtr
-                         || (RTHCUINTPTR)pBundle->aMem[i].pvR3 == uPtr))
-                {
-                    supdrvOSMemGetPages(&pBundle->aMem[i], paPages);
-                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-                    return 0;
-                }
-#endif
             }
         }
     }
@@ -1905,7 +1769,6 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 }
 
 
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
 /**
  * Allocates a chunk of memory with only a R3 mappings.
  * The memory is fixed and it's possible to query the physical addresses using SUPR0MemGetPhys().
@@ -2064,6 +1927,7 @@ static int supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPa
 }
 #endif /* RT_OS_WINDOWS */
 
+
 /**
  * Free memory allocated by SUPR0PageAlloc().
  *
@@ -2077,7 +1941,6 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED_SUP);
 }
-#endif /* USE_NEW_OS_INTERFACE_FOR_MM */
 
 
 /**
@@ -2280,12 +2143,7 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
             unsigned i;
             for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (pBundle->aMem[i].MemObj == NIL_RTR0MEMOBJ)
-#else  /* !USE_NEW_OS_INTERFACE_FOR_MM */
-                if (    !pBundle->aMem[i].pvR0
-                    &&  !pBundle->aMem[i].pvR3)
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
                 {
                     pBundle->cUsed++;
                     pBundle->aMem[i] = *pMem;
@@ -2353,7 +2211,6 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
             unsigned i;
             for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
-#ifdef USE_NEW_OS_INTERFACE_FOR_MM
                 if (    pBundle->aMem[i].eType == eType
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  (   (RTHCUINTPTR)RTR0MemObjAddress(pBundle->aMem[i].MemObj) == uPtr
@@ -2380,41 +2237,6 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                     }
                     return VINF_SUCCESS;
                 }
-#else /* !USE_NEW_OS_INTERFACE_FOR_MM */
-                if (    pBundle->aMem[i].eType == eType
-                    &&  (   (RTHCUINTPTR)pBundle->aMem[i].pvR0 == uPtr
-                         || (RTHCUINTPTR)pBundle->aMem[i].pvR3 == uPtr))
-                {
-                    /* Make a copy of it and release it outside the spinlock. */
-                    SUPDRVMEMREF Mem = pBundle->aMem[i];
-                    pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
-                    pBundle->aMem[i].pvR0  = NULL;
-                    pBundle->aMem[i].pvR3  = NIL_RTR3PTR;
-                    pBundle->aMem[i].cb    = 0;
-                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-
-                    /* Type specific free operation. */
-                    switch (Mem.eType)
-                    {
-                        case MEMREF_TYPE_LOCKED:
-                            supdrvOSUnlockMemOne(&Mem);
-                            break;
-                        case MEMREF_TYPE_CONT:
-                            supdrvOSContFreeOne(&Mem);
-                            break;
-                        case MEMREF_TYPE_LOW:
-                            supdrvOSLowFreeOne(&Mem);
-                            break;
-                        case MEMREF_TYPE_MEM:
-                            supdrvOSMemFreeOne(&Mem);
-                            break;
-                        default:
-                        case MEMREF_TYPE_UNUSED:
-                            break;
-                    }
-                    return VINF_SUCCESS;
-               }
-#endif /* !USE_NEW_OS_INTERFACE_FOR_MM */
             }
         }
     }
@@ -3699,98 +3521,6 @@ static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
     }
     return enmMode;
 }
-
-
-#if !defined(SUPDRV_OS_HAVE_LOW) && !defined(USE_NEW_OS_INTERFACE_FOR_MM)  /* Use same backend as the contiguous stuff */
-/**
- * OS Specific code for allocating page aligned memory with fixed
- * physical backing below 4GB.
- *
- * @returns 0 on success.
- * @returns SUPDRV_ERR_* on failure.
- * @param   pMem        Memory reference record of the memory to be allocated.
- *                      (This is not linked in anywhere.)
- * @param   ppvR3       Where to store the Ring-0 mapping of the allocated memory.
- * @param   ppvR3       Where to store the Ring-3 mapping of the allocated memory.
- * @param   paPagesOut  Where to store the physical addresss.
- */
-int VBOXCALL supdrvOSLowAllocOne(PSUPDRVMEMREF pMem, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PSUPPAGE paPagesOut)
-{
-#if defined(USE_NEW_OS_INTERFACE_FOR_LOW)  /* a temp hack */
-    int rc = RTR0MemObjAllocLow(&pMem->u.iprt.MemObj, pMem->cb, true /* executable ring-0 mapping */);
-    if (RT_SUCCESS(rc))
-    {
-        int rc2;
-        rc = RTR0MemObjMapUser(&pMem->u.iprt.MapObjR3, pMem->u.iprt.MemObj, (RTR3PTR)-1, 0,
-                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
-        if (RT_SUCCESS(rc))
-        {
-            pMem->eType = MEMREF_TYPE_LOW;
-            pMem->pvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
-            pMem->pvR3 = RTR0MemObjAddressR3(pMem->u.iprt.MapObjR3);
-            /*if (RT_SUCCESS(rc))*/
-            {
-                size_t  cPages = pMem->cb >> PAGE_SHIFT;
-                size_t  iPage;
-                for (iPage = 0; iPage < cPages; iPage++)
-                {
-                    paPagesOut[iPage].Phys = RTR0MemObjGetPagePhysAddr(pMem->u.iprt.MemObj, iPage);
-                    paPagesOut[iPage].uReserved = 0;
-                    AssertMsg(!(paPagesOut[iPage].Phys & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPagesOut[iPage].Phys));
-                }
-                *ppvR0 = RTR0MemObjAddress(pMem->u.iprt.MemObj);
-                *ppvR3 = RTR0MemObjAddressR3(pMem->u.iprt.MapObjR3);
-                return VINF_SUCCESS;
-            }
-
-            rc2 = RTR0MemObjFree(pMem->u.iprt.MapObjR3, false);
-            AssertRC(rc2);
-        }
-
-        rc2 = RTR0MemObjFree(pMem->u.iprt.MemObj, false);
-        AssertRC(rc2);
-    }
-    return rc;
-#else
-    RTHCPHYS HCPhys;
-    int rc = supdrvOSContAllocOne(pMem, ppvR0, ppvR3, &HCPhys);
-    if (!rc)
-    {
-        unsigned iPage = pMem->cb >> PAGE_SHIFT;
-        while (iPage-- > 0)
-        {
-            paPagesOut[iPage].Phys = HCPhys + (iPage << PAGE_SHIFT);
-            paPagesOut[iPage].uReserved = 0;
-        }
-    }
-    return rc;
-#endif
-}
-
-
-/**
- * Frees low memory.
- *
- * @param   pMem    Memory reference record of the memory to be freed.
- */
-void VBOXCALL supdrvOSLowFreeOne(PSUPDRVMEMREF pMem)
-{
-# if defined(USE_NEW_OS_INTERFACE_FOR_LOW)
-    if (pMem->u.iprt.MapObjR3)
-    {
-        int rc = RTR0MemObjFree(pMem->u.iprt.MapObjR3, false);
-        AssertRC(rc); /** @todo figure out how to handle this. */
-    }
-    if (pMem->u.iprt.MemObj)
-    {
-        int rc = RTR0MemObjFree(pMem->u.iprt.MemObj, false);
-        AssertRC(rc); /** @todo figure out how to handle this. */
-    }
-# else
-    supdrvOSContFreeOne(pMem);
-# endif
-}
-#endif /* !SUPDRV_OS_HAVE_LOW && !USE_NEW_OS_INTERFACE_FOR_MM */
 
 
 #ifdef USE_NEW_OS_INTERFACE_FOR_GIP
