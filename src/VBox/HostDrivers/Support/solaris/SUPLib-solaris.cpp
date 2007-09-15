@@ -116,27 +116,8 @@ int suplibOsUninstall(void)
 int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     AssertMsg(g_hDevice != -1, ("SUPLIB not initiated successfully!\n"));
-
-    /*
-     * Issue device iocontrol.
-     */
-    if (RT_LIKELY(ioctl(g_hDevice, uFunction, &pvReq) >= 0))
+    if (RT_LIKELY(ioctl(g_hDevice, uFunction, pvReq) >= 0))
         return VINF_SUCCESS;
-
-    /* This is the reverse operation of the one found in SUPDrv-solaris.c */
-    switch (errno)
-    {
-        case EACCES: return VERR_GENERAL_FAILURE;
-        case EINVAL: return VERR_INVALID_PARAMETER;
-        case EILSEQ: return VERR_INVALID_MAGIC;
-        case ENOSYS: return VERR_VERSION_MISMATCH;
-        case ENXIO:  return VERR_INVALID_HANDLE;
-        case EFAULT: return VERR_INVALID_POINTER;
-        case ENOLCK: return VERR_LOCK_FAILED;
-        case EEXIST: return VERR_ALREADY_LOADED;
-        case EPERM:  return VERR_PERMISSION_DENIED;
-    }
-
     return RTErrConvertFromErrno(errno);
 }
 
