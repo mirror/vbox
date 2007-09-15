@@ -568,7 +568,7 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                                 break;
 
                         default:
-                                err = -RTErrnoConvertFromErr(rc);
+                                err = -RTErrConvertToErrno (rc);
                                 LogFunc(("vboxCallDirInfo failed rc=%Vrc\n", rc));
                                 goto fail1;
                 }
