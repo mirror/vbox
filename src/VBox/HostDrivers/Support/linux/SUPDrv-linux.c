@@ -1599,9 +1599,9 @@ static void     VBoxDrvLinuxGipTimer(unsigned long ulUser)
 
     local_irq_save(SavedFlags);
 
+    ulNow   = jiffies;
     pDevExt = (PSUPDRVDEVEXT)ulUser;
     pGip    = pDevExt->pGip;
-    ulNow   = jiffies;
 
 #ifdef CONFIG_SMP
     if (pGip && pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
@@ -1631,7 +1631,7 @@ static void     VBoxDrvLinuxGipTimer(unsigned long ulUser)
     if (RT_LIKELY(pGip))
         supdrvGipUpdate(pDevExt->pGip, u64Monotime);
     if (RT_LIKELY(!pDevExt->fGIPSuspended))
-        mod_timer(&g_GipTimer, ulNow + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
+        mod_timer(&g_GipTimer, ulNow + (HZ <= 1000 ? 1 : ONE_MSEC_IN_JIFFIES));
 
     local_irq_restore(SavedFlags);
 }
@@ -1650,9 +1650,11 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
     uint8_t             iCPU;
     uint64_t            u64Monotime;
     unsigned long       SavedFlags;
+    unsigned long       ulNow;
 
     local_irq_save(SavedFlags);
 
+    ulNow   = jiffies;
     pDevExt = &g_DevExt;
     pGip    = pDevExt->pGip;
     iCPU    = ASMGetApicId();
@@ -1661,7 +1663,6 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
     {
         if (RT_LIKELY(iTimerCPU == iCPU))
         {
-            unsigned long   ulNow  = jiffies;
             unsigned long   ulDiff = ulNow - pDevExt->aCPUs[iCPU].ulLastJiffies;
             pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
 #ifdef TICK_NSEC
@@ -1673,7 +1674,7 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
             if (RT_LIKELY(pGip))
                 supdrvGipUpdatePerCpu(pGip, u64Monotime, iCPU);
             if (RT_LIKELY(!pDevExt->fGIPSuspended))
-                mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + (HZ <= 1000 ? 0 : ONE_MSEC_IN_JIFFIES));
+                mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + (HZ <= 1000 ? 1 : ONE_MSEC_IN_JIFFIES));
         }
         else
             printk("vboxdrv: error: GIP CPU update timer executing on the wrong CPU: apicid=%d != timer-apicid=%ld (cpuid=%d !=? timer-cpuid=%d)\n",
