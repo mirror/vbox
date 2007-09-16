@@ -39,6 +39,7 @@
 #include <iprt/process.h>
 #include <iprt/initterm.h>
 #include <iprt/alloc.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -169,6 +170,7 @@ int _init (void)
     if (e != 0)
         ddi_soft_state_fini(&g_pVBoxDrvSolarisState);
 
+    cmn_err(CE_CONT, "VBoxDrvSolaris _init returns %d", e);
     return e;
 }
 
@@ -187,7 +189,9 @@ int _fini (void)
 int _info (struct modinfo *pModInfo)
 {
     cmn_err(CE_CONT, "VBoxDrvSolaris _info");
-    return mod_info (&g_VBoxDrvSolarisModLinkage, pModInfo);
+    int e = mod_info (&g_VBoxDrvSolarisModLinkage, pModInfo);
+    cmn_err(CE_CONT, "VBoxDrvSolaris _info returns %d", e);
+    return e;
 }
 
 /**
@@ -500,7 +504,7 @@ static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cr
  */
 #ifndef IOCPARM_LEN
 # define IOCPARM_LEN(x)     ( ((x) >> 16) & IOCPARM_MASK )
-#endif 
+#endif
 
 
 /**
@@ -524,12 +528,12 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int iCmd, int Mode, 
     /*
      * Read the header.
      */
-    if (RT_UNLIKELY(IOC_PARMLEN(iCmd) != sizeof(Hdr)))
+    if (RT_UNLIKELY(IOCPARM_LEN(iCmd) != sizeof(Hdr)))
     {
-        OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: iCmd=%#x len %d expected %d\n", iCmd, IOC_PARMLEN(iCmd), sizeof(Hdr)));
+        OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: iCmd=%#x len %d expected %d\n", iCmd, IOCPARM_LEN(iCmd), sizeof(Hdr)));
         return EINVAL;
     }
-    rc = ddi_copyin(&Hdr, (void *)iArg, sizeof(Hdr), Mode);
+    rc = ddi_copyin((void *)iArg, &Hdr, sizeof(Hdr), Mode);
     if (RT_UNLIKELY(rc))
     {
         OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: ddi_copyin(,%#lx,) failed; iCmd=%#x. rc=%d\n", iArg, iCmd, rc));
@@ -543,7 +547,7 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int iCmd, int Mode, 
     cbBuf = RT_MAX(Hdr.cbIn, Hdr.cbOut);
     if (RT_UNLIKELY(    Hdr.cbIn < sizeof(Hdr)
                     ||  Hdr.cbOut < sizeof(Hdr)
-                    ||  cbReq > _1M*16))
+                    ||  cbBuf > _1M*16))
     {
         OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: max(%#x,%#x); iCmd=%#x\n", Hdr.cbIn, Hdr.cbOut, iCmd));
         return EINVAL;
@@ -558,7 +562,7 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int iCmd, int Mode, 
         OSDBGPRINT(("VBoxDrvSolarisIOCtlSlow: failed to allocate buffer of %d bytes for iCmd=%#x.\n", cbBuf, iCmd));
         return ENOMEM;
     }
-    rc = ddi_copyin(pHdr, (void *)iArg, cbBuf, Mode);
+    rc = ddi_copyin((void *)iArg, pHdr, cbBuf, Mode);
     if (RT_UNLIKELY(rc))
     {
         dprintf(("VBoxDrvSolarisIOCtlSlow: copy_from_user(,%#lx, %#x) failed; iCmd=%#x. rc=%d\n", iArg, Hdr.cbIn, iCmd, rc));
@@ -569,7 +573,7 @@ static int VBoxDrvSolarisIOCtlSlow(PSUPDRVSESSION pSession, int iCmd, int Mode, 
     /*
      * Process the IOCtl.
      */
-    rc = supdrvIOCtl(Cmd, &g_DevExt, pSession, pHdr);
+    rc = supdrvIOCtl(iCmd, &g_DevExt, pSession, pHdr);
 
     /*
      * Copy ioctl data and output buffer back to user space.
@@ -660,10 +664,11 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     char        szMsg[512];
 
     va_start(args, pszFormat);
-    vsnprintf(szMsg, sizeof(szMsg) - 1, pszFormat, args);
+    RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, args);
     va_end(args);
 
     szMsg[sizeof(szMsg) - 1] = '\0';
-    uprintf("%s", szMsg);
+    uprintf("SUPR0Printf: %s", szMsg);
     return 0;
 }
+
