@@ -1636,7 +1636,9 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
         else
             rc = RTDirRemove(pszFullPath);
 
+#ifndef DEBUG_dmik
         Assert(rc == VINF_SUCCESS || rc == VERR_DIR_NOT_EMPTY);
+#endif
         /* free the path string */
         vbsfFreeFullPath(pszFullPath);
     }
@@ -1681,7 +1683,9 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
             rc = RTDirRename(pszFullPathSrc, pszFullPathDest, (flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTPATHRENAME_FLAGS_REPLACE : 0);
         }
 
+#ifndef DEBUG_dmik
         AssertRC(rc);
+#endif
         /* free the path string */
         vbsfFreeFullPath(pszFullPathDest);
     }
