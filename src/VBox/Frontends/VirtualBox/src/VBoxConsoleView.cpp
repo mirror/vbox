@@ -70,8 +70,10 @@ const int XKeyRelease = KeyRelease;
 #undef FocusIn
 #endif
 #include "XKeyboard.h"
-#include <X11/Xcursor/Xcursor.h>
+#ifndef VBOX_WITHOUT_XCURSOR
+# include <X11/Xcursor/Xcursor.h>
 #endif
+#endif // Q_WS_X11
 
 #if defined (Q_WS_MAC)
 # include "DarwinKeyboard.h"
@@ -2987,7 +2989,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         if (hBitmap)
             DeleteObject (hBitmap);
 
-#elif defined (Q_WS_X11)
+#elif defined (Q_WS_X11) && !defined (VBOX_WITHOUT_XCURSOR)
 
         XcursorImage *img = XcursorImageCreate (me->width(), me->height());
         Assert (img);

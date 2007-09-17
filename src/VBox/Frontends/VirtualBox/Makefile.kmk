@@ -34,19 +34,34 @@ IMAGES :=
 DEPTH = ../../../..
 include $(PATH_KBUILD)/header.kmk
 
-PROGRAMS = VirtualBox
-DLLS.linux = VBoxKeyboard
 
+#
+# The targets.
+#
+PROGRAMS = VirtualBox
+ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(BUILD_TARGET)),) # X11
+DLLS = VBoxKeyboard
+endif
 INSTALLS = VirtualBox.nls
 
+
+#
+# VBoxKeyboard - keyboard library for X11.
+#
 VBoxKeyboard_TEMPLATE = VBOXR3
 VBoxKeyboard_SOURCES  = \
 	src/linux/keyboard.c
 
+
+#
+# VirtualBox - The GUI program.
+#
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
-VirtualBox_SDKS.linux = LIBSDL
-VirtualBox_SDKS.os2 = LIBSDL
+#ifeq ($(filter-out freebsd linux netbsd openbsd os2 solaris,$(BUILD_TARGET)),) - later
+ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(BUILD_TARGET)),)
+VirtualBox_SDKS += LIBSDL
+endif
 
 ifeq ($(BUILD_TARGET),darwin)
 # For the launch trick we need different inode numbers.
@@ -89,7 +104,7 @@ VirtualBox_QT_MOCHDRS = \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_QT_MOCSRCS += src/VBoxGlobal.cpp
 endif
 ifdef VBOX_WITH_XPCOM
@@ -151,14 +166,16 @@ VirtualBox_SOURCES = \
 	src/VBoxFrameBuffer.cpp \
 	src/HappyHttp.cpp
 
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+VirtualBox_SOURCES += \
+	src/linux/XKeyboard.cpp
+endif
+
 VirtualBox_SOURCES.win += \
 	src/win32/VirtualBox.rc
 
 VirtualBox_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp
-
-VirtualBox_SOURCES.linux = \
-	src/linux/XKeyboard.cpp
 
 VirtualBox_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
@@ -166,12 +183,11 @@ VirtualBox_SOURCES.darwin = \
 	src/darwin/VBoxAquaStyle.cpp \
 	src/darwin/VBoxUtils-darwin.cpp
 
-src/HappyHttp.cpp_CXXFLAGS.linux += -fexceptions -O2
-src/HappyHttp.cpp_CXXFLAGS.darwin += -fexceptions
-src/HappyHttp.cpp_CXXFLAGS.os2 += -fexceptions
-src/VBoxDownloaderWgt.cpp_CXXFLAGS.linux += -fexceptions
-src/VBoxDownloaderWgt.cpp_CXXFLAGS.darwin += -fexceptions
-src/VBoxDownloaderWgt.cpp_CXXFLAGS.os2 += -fexceptions
+ifneq ($(BUILD_TARGET),win)
+src/HappyHttp.cpp_CXXFLAGS += -fexceptions
+src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
+endif
+src/HappyHttp.cpp_CXXFLAGS.linux += -O2
 
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
@@ -183,10 +199,14 @@ endif
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
+VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.linux     = VBOX_GUI_USE_SDL
+VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
+VirtualBox_DEFS.os2       = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL QT_DLL
+VirtualBox_DEFS.solaris   = VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_XCURSOR #VBOX_GUI_USE_SDL
 VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
 VirtualBox_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
-VirtualBox_DEFS.os2       = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL QT_DLL
 #ifndef VBOX_OSE
  VirtualBox_DEFS.darwin  += VBOX_WITH_HACKED_QT
 #endif
@@ -228,10 +248,12 @@ VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
-VirtualBox_LIBS.linux     = $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+VirtualBox_LIBS          += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+endif
 
 
-ifdef VBOX_WITH_DEBUGGER_GUI
+ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
  ifeq ($(BUILD_TARGET),win)
   VirtualBox_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
  else
@@ -296,7 +318,6 @@ $(PATH_TARGET)/VM-Info.plist: src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $(ca
 #
 # Translation installation
 #
-
 VirtualBox.nls_INST = $(INST_BIN)nls/
 VirtualBox.nls_SOURCES =  $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS)))
 VirtualBox.nls_SOURCES += $(patsubst %.ts,$(PATH_VirtualBox)/nls/%.qm,$(notdir $(VirtualBox_QT_TRANSLATIONS_QT)))
