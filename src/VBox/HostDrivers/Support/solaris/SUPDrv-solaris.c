@@ -37,6 +37,7 @@
 #include "SUPDRV.h"
 #include <iprt/spinlock.h>
 #include <iprt/process.h>
+#include <iprt/thread.h>
 #include <iprt/initterm.h>
 #include <iprt/alloc.h>
 #include <iprt/string.h>
@@ -389,6 +390,8 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         pState->pSession = pSession;
         *pDev = makedevice(getmajor(*pDev), iOpenInstance);
         dprintf(("VBoxDrvSolarisOpen: returns pDev=%#x pSession=%p pState=%p\n", *pDev, pSession, pState));
+        OSDBGPRINT(("VBoxDrvSolarisOpen: Dev=%#x pSession=%p pid=%d r0proc=%p thread=%p\n",
+                    *pDev, pSession, RTProcSelf(), RTR0ProcHandleSelf(), RTThreadNativeSelf() ));
         return 0;
     }
 
@@ -467,6 +470,7 @@ static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
         OSDBGPRINT(("VBoxDrvSolarisClose: no session in state data for %#x (%d)\n", Dev, getminor(Dev)));
         return DDI_SUCCESS;
     }
+    OSDBGPRINT(("VBoxDrvSolarisClose: Dev=%#x pSession=%p pid=%d r0proc=%p thread=%p\n", Dev, pSession, RTProcSelf(), RTR0ProcHandleSelf(), RTThreadNativeSelf() ));
 
 #else
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
@@ -518,6 +522,7 @@ static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
      * Close the session.
      */
     supdrvCloseSession(&g_DevExt, pSession);
+    OSDBGPRINT(("VBoxDrvSolarisClose: returns\n"));
     return DDI_SUCCESS;
 }
 
@@ -779,8 +784,12 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     va_end(args);
 
     szMsg[sizeof(szMsg) - 1] = '\0';
+#if 1
     uprintf("SUPR0Printf: %s", szMsg);
-//    cmn_err(CE_CONT, "VBoxDrv: %s", szMsg);
+#endif
+#if 1
+    cmn_err(CE_CONT, "VBoxDrv: %s", szMsg);
+#endif
 
     return 0;
 }
