@@ -1065,13 +1065,26 @@ VBoxXPCOM_LDFLAGS.linux = -Wl,--whole-archive \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
 	-Wl,--no-whole-archive
+VBoxXPCOM_LDFLAGS.solaris = -Wl,-z,allextract \
+	$(TARGET_VBox-xpcom-typelib) \
+	$(TARGET_VBox-xpcom-string) \
+	$(TARGET_VBox-xpcom-base) \
+	$(TARGET_VBox-xpcom-ds) \
+	$(TARGET_VBox-xpcom-io) \
+	$(TARGET_VBox-xpcom-components) \
+	$(TARGET_VBox-xpcom-threads) \
+	$(TARGET_VBox-xpcom-xptinfo) \
+	$(TARGET_VBox-xpcom-xptcall) \
+	$(TARGET_VBox-xpcom-proxy) \
+	$(TARGET_VBox-xpcom-nspr) \
+	-Wl,-z,defaultextract
+
 #VBoxXPCOM_LIBS.l4 = $(L4_LIBDIR)/libxpcomstubs.a $(L4_LIBDIR)/../libuc_c++.a \
 #    $(VBOX_PATH_L4_GCC3_INSTALL)/libsupc++.a $(VBOX_PATH_L4_GCC3_INSTALL)/libgcc_eh.a
 # EF heap
 #VBoxXPCOM_LIBS += $(LIB_RUNTIME_EF)
 #VBoxXPCOM_LDFLAGS = -Wl,--whole-archive $(VBoxXPCOM_LIBS) -Wl,--no-whole-archive $(LIB_RUNTIME)
 VBoxXPCOM_LDFLAGS.darwin = -install_name @executable_path/VBoxXPCOM.dylib
-VBoxXPCOM_LDFLAGS.solaris += -Wl,-M solarislink.map
 
 ifdef VBOX_IPC_RELEASE_LOG
 IPC_LOGGING = 1
