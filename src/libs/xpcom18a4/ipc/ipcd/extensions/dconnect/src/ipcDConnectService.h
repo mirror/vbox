@@ -227,7 +227,9 @@ public:
   NS_HIDDEN_(void)     ReleaseWrappers(nsVoidArray &wrappers);
 
   NS_HIDDEN_(nsresult) CreateStub(const nsID &, PRUint32, DConAddr, DConnectStub **);
+#if 0
   NS_HIDDEN_(PRBool)   FindStubAndAddRef(PRUint32, const DConAddr, DConnectStub **);
+#endif
   // public only for DConnectStub::~DConnectStub()
   NS_HIDDEN_(void)     DeleteStub(DConnectStub *);
 
@@ -268,7 +270,7 @@ private:
 private:
   nsCOMPtr<nsIInterfaceInfoManager> mIIM;
 
-  // lock to protect access to instance and stub sets and the disconnected flag
+  // lock to protect access to instance sets and the disconnected flag
   PRLock *mLock;
 
   // table of local object instances allocated on behalf of a peer
@@ -277,6 +279,10 @@ private:
   // hashset containing the same instances as above
   // (used for quick parameter validity checks)
   DConnectInstanceSet mInstanceSet;
+
+  // lock to protect access to mStubs and DConnectStub::mRefCntLevels
+  // (also guards every DConnectStub::Release call to provide atomicity)
+  PRLock *mStubLock;
 
   // table of remote object stubs allocated to communicate with peer's instances
   DConnectStubMap mStubs;
@@ -287,9 +293,6 @@ private:
   // our IPC client ID
   PRUint32 mSelfID;
   
-  // global lock to protect access to DConnectStub internal data
-  PRLock *mStubLock;
-
   // global lock to protect access to protect DConnectStub::QueryInterface()
   // (we cannot use mStubLock because it isn't supposed to be held long,
   // like in case of an IPC call and such)

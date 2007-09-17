@@ -990,8 +990,8 @@ private:
   // cached nsISupports stub for this object
   DConnectStub *mCachedISupports;
   
-  // stack of reference counter values returned by AddRef made in CreateStub
-  // (access must be protected using the ipcDConnectService::stubLock())
+  // stack of reference counter values (protected by
+  // ipcDConnectService::StubLock())
   nsDeque mRefCntLevels;
 };
 
@@ -1004,13 +1004,16 @@ DConnectStub::AddRefIPC()
   // object in order to balance AddRef() the peer does on DConnectInstance every
   // time it passes an object over IPC.
 
+  // NOTE: this function is to be called from DConnectInstance::CreateStub only!
+
   nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
   NS_ASSERTION(dConnect, "no ipcDConnectService (uninitialized?)");
   if (!dConnect)
     return 0;
-  
-  nsAutoLock stubLock (dConnect->StubLock()); 
-  
+
+  // dConnect->StubLock() must be already locked here by
+  // DConnectInstance::CreateStub
+
   nsrefcnt count = AddRef();
   mRefCntLevels.Push((void *) count);
   return count;
@@ -1030,7 +1033,11 @@ ipcDConnectService::CreateStub(const nsID &iid, PRUint32 peer, DConAddr instance
   nsAutoLock lock (mLock);
 
   if (mDisconnected)
-      return NS_ERROR_NOT_INITIALIZED;
+    return NS_ERROR_NOT_INITIALIZED;
+
+  // we also need the stub lock which protects DConnectStub::mRefCntLevels and
+  // ipcDConnectService::mStubs
+  nsAutoLock stubLock (mStubLock);
 
   DConnectStub *stub = nsnull;
 
@@ -1623,18 +1630,6 @@ DConnectStub::~DConnectStub()
        this, mPeerID, mInstance, name));
 #endif    
     
-  nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
-  if (dConnect)
-  {
-#ifdef NS_DEBUG
-    {
-      nsAutoLock stubLock (dConnect->StubLock());
-      NS_ASSERTION(mRefCntLevels.GetSize() == 0, "refcnt levels are still left");
-    }
-#endif    
-    dConnect->DeleteStub(this);
-  }
-
   // release the cached nsISupports instance if it's not the same object
   if (mCachedISupports != 0 && mCachedISupports != this)
     NS_RELEASE(mCachedISupports);
@@ -1652,14 +1647,22 @@ DConnectStub::AddRef()
 NS_IMETHODIMP_(nsrefcnt)
 DConnectStub::Release()
 {
-  nsrefcnt count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
-  NS_LOG_RELEASE(this, count, "DConnectStub");
+  nsrefcnt count;
 
   nsRefPtr <ipcDConnectService> dConnect (ipcDConnectService::GetInstance());
   if (dConnect)
   {
+    // lock the stub lock on every release to make sure that once the counter
+    // drops to zero, we delete the stub from the set of stubs before a new
+    // request to create a stub on other thread tries to find the existing
+    // stub in the set (wchich could otherwise AddRef the object after it had
+    // Released to zero and pass it to the client right before its
+    // destruction).
     nsAutoLock stubLock (dConnect->StubLock());
-      
+
+    count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+    NS_LOG_RELEASE(this, count, "DConnectStub");
+
     // mRefCntLevels may already be empty here (due to the "stabilize" trick below)
     if (mRefCntLevels.GetSize() > 0)
     {
@@ -1674,6 +1677,16 @@ DConnectStub::Release()
         // remove the top refcount value
         mRefCntLevels.Pop();
 
+        if (0 == count)
+        {
+          // this is the last reference, remove from the set before we leave
+          // the lock, to provide atomicity of these two operations
+          dConnect->DeleteStub (this);
+
+          NS_ASSERTION(mRefCntLevels.GetSize() == 0, "refcnt levels are still left");
+        }
+
+        // leave the lock before sending a message
         stubLock.unlock();
       
         nsresult rv;
@@ -1691,6 +1704,11 @@ DConnectStub::Release()
           NS_WARNING("failed to send RELEASE event");
       }
     }
+  }
+  else
+  {
+    count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+    NS_LOG_RELEASE(this, count, "DConnectStub");
   }
   
   if (0 == count)
@@ -2321,8 +2339,8 @@ ipcDConnectService::CreateWorker()
 
 ipcDConnectService::ipcDConnectService()
  : mLock(NULL)
- , mDisconnected(PR_TRUE)
  , mStubLock(NULL)
+ , mDisconnected(PR_TRUE)
  , mStubQILock(NULL)
 {
 }
@@ -2382,16 +2400,16 @@ ipcDConnectService::Init()
   if (!mInstanceSet.Init())
     return NS_ERROR_OUT_OF_MEMORY;
 
+  mStubLock = PR_NewLock();
+  if (!mStubLock)
+    return NS_ERROR_OUT_OF_MEMORY;
+
   if (!mStubs.Init())
     return NS_ERROR_OUT_OF_MEMORY;
 
   mIIM = do_GetService(NS_INTERFACEINFOMANAGER_SERVICE_CONTRACTID, &rv);
   if (NS_FAILED(rv))
     return rv;
-
-  mStubLock = PR_NewLock();
-  if (!mStubLock)
-    return NS_ERROR_OUT_OF_MEMORY;
 
   mStubQILock = PR_NewLock();
   if (!mStubQILock)
@@ -2620,25 +2638,26 @@ ipcDConnectService::DeleteStub(DConnectStub *stub)
        stub, stub->Instance(), name));
 #endif
 
-  nsAutoLock lock (mLock);
-
-  // this method is intended to be called only from DConnectStub destructor.
+  // this method is intended to be called only from DConnectStub::Release().
   // the stub object is not deleted when removed from the table, because
   // DConnectStub pointers are not owned by mStubs.
   mStubs.Remove(stub->GetKey());
 }
 
+// not currently used
+#if 0
 PRBool
 ipcDConnectService::FindStubAndAddRef(PRUint32 peer, const DConAddr instance,
                                       DConnectStub **stub)
 {
-  nsAutoLock lock (mLock);
+  nsAutoLock stubLock (mStubLock);
 
   PRBool result = mStubs.Get(DConnectStubKey::Key(peer, instance), stub);
   if (result)
     NS_ADDREF(*stub);
   return result;
 }
+#endif
 
 NS_IMPL_THREADSAFE_ISUPPORTS3(ipcDConnectService, ipcIDConnectService,
                                                   ipcIMessageObserver,
