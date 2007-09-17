@@ -116,6 +116,19 @@ int main (int argc, char **argv)
 
     LogFlowFuncEnter();
 
+#ifdef Q_WS_WIN
+    /* Initialize COM early, before QApplication calls OleInitialize(), to
+     * make sure we enter the multi threded apartment instead of a single
+     * threaded one. Note that this will make some non-threadsafe system
+     * services that use OLE and require STA (such as Drag&Drop) not work
+     * anymore, however it's still better because otherwise VBox will not work
+     * on some Windows XP systems at all since it requires MTA (we cannot
+     * leave STA by calling CoUninitialize() and re-enter MTA on those systems
+     * for some unknown reason), see also src/VBox/Main/glue/initterm.cpp. */
+    /// @todo find a proper solution that satisfies both OLE and VBox
+    HRESULT hrc = COMBase::initializeCOM();
+#endif
+
 #if defined(DEBUG) && defined(Q_WS_X11)
     /* install our signal handler to backtrace the call stack */
     struct sigaction sa;
@@ -129,96 +142,118 @@ int main (int argc, char **argv)
 
     qInstallMsgHandler (QtMessageOutput);
 
-    QIApplication a (argc, argv);
+    int rc = 1; /* failure */
+
+    /* scope the QIApplication variable */
+    {
+        QIApplication a (argc, argv);
 
 #ifdef Q_WS_WIN
-    /* Drag in the sound drivers and DLLs early to get rid of the delay taking
-     * place when the main menu bar (or any action from that menu bar) is
-     * activated for the first time. This delay is especially annoying if it
-     * happens when the VM is executing in real mode (which gives 100% CPU
-     * load and slows down the load process that happens on the main GUI
-     * thread to several seconds). */
-    PlaySound (NULL, NULL, 0);
+        /* Drag in the sound drivers and DLLs early to get rid of the delay taking
+         * place when the main menu bar (or any action from that menu bar) is
+         * activated for the first time. This delay is especially annoying if it
+         * happens when the VM is executing in real mode (which gives 100% CPU
+         * load and slows down the load process that happens on the main GUI
+         * thread to several seconds). */
+        PlaySound (NULL, NULL, 0);
 #endif
 
 #ifndef RT_OS_DARWIN
-    /* some gui qt-styles has it's own different color for buttons
-     * causing tool-buttons and dropped menu displayed in
-     * different annoying color, so fixing palette button's color */
-    QPalette pal = a.palette();
-    pal.setColor (QPalette::Disabled, QColorGroup::Button,
-                  pal.color (QPalette::Disabled, QColorGroup::Background));
-    pal.setColor (QPalette::Active, QColorGroup::Button,
-                  pal.color (QPalette::Active, QColorGroup::Background));
-    pal.setColor (QPalette::Inactive, QColorGroup::Button,
-                  pal.color (QPalette::Inactive, QColorGroup::Background));
-    a.setPalette (pal);
+        /* some gui qt-styles has it's own different color for buttons
+         * causing tool-buttons and dropped menu displayed in
+         * different annoying color, so fixing palette button's color */
+        QPalette pal = a.palette();
+        pal.setColor (QPalette::Disabled, QColorGroup::Button,
+                      pal.color (QPalette::Disabled, QColorGroup::Background));
+        pal.setColor (QPalette::Active, QColorGroup::Button,
+                      pal.color (QPalette::Active, QColorGroup::Background));
+        pal.setColor (QPalette::Inactive, QColorGroup::Button,
+                      pal.color (QPalette::Inactive, QColorGroup::Background));
+        a.setPalette (pal);
 #endif
 
 #ifdef Q_WS_X11
-    /* version check (major.minor are sensitive, fix number is ignored) */
-    QString ver_str = QString::fromLatin1 (QT_VERSION_STR);
-    QString ver_str_base = ver_str.section ('.', 0, 1);
-    QString rt_ver_str = QString::fromLatin1 (qVersion());
-    uint ver =
-        (ver_str.section ('.', 0, 0).toInt() << 16) +
-        (ver_str.section ('.', 1, 1).toInt() << 8) +
-        ver_str.section ('.', 2, 2).toInt();
-    uint rt_ver =
-        (rt_ver_str.section ('.', 0, 0).toInt() << 16) +
-        (rt_ver_str.section ('.', 1, 1).toInt() << 8) +
-        rt_ver_str.section ('.', 2, 2).toInt();
-    if (rt_ver < (ver & 0xFFFF00)) {
-        QString msg =
-            QApplication::tr ("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
-                .arg (QString::fromLatin1 (qAppName()))
-                .arg (ver_str_base)
-                .arg (rt_ver_str);
-        QMessageBox::critical (
-            0, QApplication::tr ("Incompatible Qt Library Error"),
-            msg, QMessageBox::Abort, 0
-        );
-        qFatal (msg.ascii());
-    }
+        /* version check (major.minor are sensitive, fix number is ignored) */
+        QString ver_str = QString::fromLatin1 (QT_VERSION_STR);
+        QString ver_str_base = ver_str.section ('.', 0, 1);
+        QString rt_ver_str = QString::fromLatin1 (qVersion());
+        uint ver =
+            (ver_str.section ('.', 0, 0).toInt() << 16) +
+            (ver_str.section ('.', 1, 1).toInt() << 8) +
+            ver_str.section ('.', 2, 2).toInt();
+        uint rt_ver =
+            (rt_ver_str.section ('.', 0, 0).toInt() << 16) +
+            (rt_ver_str.section ('.', 1, 1).toInt() << 8) +
+            rt_ver_str.section ('.', 2, 2).toInt();
+        if (rt_ver < (ver & 0xFFFF00))
+        {
+            QString msg =
+                QApplication::tr ("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
+                                  .arg (QString::fromLatin1 (qAppName()))
+                                  .arg (ver_str_base)
+                                  .arg (rt_ver_str);
+            QMessageBox::critical (
+                0, QApplication::tr ("Incompatible Qt Library Error"),
+                msg, QMessageBox::Abort, 0);
+            qFatal (msg.ascii());
+        }
 #endif
 
-    /* load a translation based on the current locale */
-    VBoxGlobal::loadLanguage();
+        /* load a translation based on the current locale */
+        VBoxGlobal::loadLanguage();
 
-    int rc = 1;
+        do
+        {
+#ifdef Q_WS_WIN
+            /* Check for the COM error after we've initialized Qt */
+            if (FAILED (hrc))
+            {
+                vboxProblem().cannotInitCOM (hrc);
+                break;
+            }
+#endif
 
-    if (vboxGlobal().isValid())
-    {
+            if (!vboxGlobal().isValid())
+                break;
+
 #ifndef VBOX_OSE
 #ifdef Q_WS_X11
-        /* show the user license file */
-        if (!vboxGlobal().showVirtualBoxLicense())
-            return rc;
+            /* show the user license file */
+            if (!vboxGlobal().showVirtualBoxLicense())
+                break;
 #endif
 #endif
 
-        VBoxGlobalSettings settings = vboxGlobal().settings();
-        /* Process known keys */
-        bool noSelector = settings.isFeatureActive ("noSelector");
+            VBoxGlobalSettings settings = vboxGlobal().settings();
+            /* Process known keys */
+            bool noSelector = settings.isFeatureActive ("noSelector");
 
-        if (vboxGlobal().isVMConsoleProcess())
-        {
-            a.setMainWidget( &vboxGlobal().consoleWnd());
-            if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
+            if (vboxGlobal().isVMConsoleProcess())
+            {
+                a.setMainWidget( &vboxGlobal().consoleWnd());
+                if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
+                    rc = a.exec();
+            }
+            else if (noSelector)
+            {
+                vboxProblem().cannotRunInSelectorMode();
+            }
+            else
+            {
+                a.setMainWidget (&vboxGlobal().selectorWnd());
+                vboxGlobal().selectorWnd().show();
+                vboxGlobal().startEnumeratingMedia();
                 rc = a.exec();
+            }
         }
-        else if (noSelector)
-        {
-            vboxProblem().cannotRunInSelectorMode();
-        }
-        else
-        {
-            a.setMainWidget (&vboxGlobal().selectorWnd());
-            vboxGlobal().selectorWnd().show();
-            vboxGlobal().startEnumeratingMedia();
-            rc = a.exec();
-        }
+        while (0);
     }
+
+#ifdef Q_WS_WIN
+    /* See COMBase::initializeCOM() above */
+    if (SUCCEEDED (hrc))
+        COMBase::cleanupCOM();
+#endif
 
     LogFlowFunc (("rc=%d\n", rc));
     LogFlowFuncLeave();

@@ -177,6 +177,17 @@ HRESULT Initialize()
 
     rc = CoInitializeEx (NULL, flags);
 
+    /// @todo the below rough method of changing the aparment type doesn't
+    /// work on some systems for unknown reason (CoUninitialize() simply does
+    /// nothing there, or at least all 10 000 of subsequent CoInitializeEx()
+    /// continue to return RPC_E_CHANGED_MODE there). The problem on those
+    /// systems is related to the "Extend support for advanced text services
+    /// to all programs" checkbox in the advanced language settings dialog,
+    /// i.e. the problem appears when this checkbox is checked and disappears
+    /// if you clear it. For this reason, we disable the code below and
+    /// instead initialize COM in MTA as early as possible, before 3rd party
+    /// libraries we use have done so (i.e. Qt3).
+#if 0
     /* If we fail to set the necessary apartment model, it may mean that some
      * DLL that was indirectly loaded by the process calling this function has
      * already initialized COM on the given thread in an incompatible way
@@ -185,31 +196,55 @@ HRESULT Initialize()
 
     if (rc == RPC_E_CHANGED_MODE)
     {
-        LogFlowFunc (("COM already initialized in wrong apartment mode, "
-                      "will reinitialize.\n"));
+        /* Before we use brute force, we need to check if we are in the
+         * neutral threaded apartment -- in this case there is no need to
+         * worry at all. */
 
-        enum { MaxTries = 10000 };
-        int tries = MaxTries;
-        while (rc == RPC_E_CHANGED_MODE && tries --)
+        rc = CoInitializeEx (NULL, COINIT_APARTMENTTHREADED);
+        if (rc == RPC_E_CHANGED_MODE)
         {
+            /* This is a neutral apartment, reset the error */
+            rc = S_OK;
+
+            LogFlowFunc (("COM is already initialized in neutral threaded "
+                          "apartment mode,\nwill accept it.\n"));
+        }
+        else if (rc == S_FALSE)
+        {
+            /* balance the test CoInitializeEx above */
             CoUninitialize();
-            rc = CoInitializeEx (NULL, flags);
-            if (rc == S_OK)
+            rc = RPC_E_CHANGED_MODE;
+
+            LogFlowFunc (("COM is already initialized in single threaded "
+                          "apartment mode,\nwill reinitialize as "
+                          "multi threaded.\n"));
+
+            enum { MaxTries = 10000 };
+            int tries = MaxTries;
+            while (rc == RPC_E_CHANGED_MODE && tries --)
             {
-                /* We've successfully reinitialized COM; restore the
-                 * initialization reference counter */
-
-                LogFlowFunc (("Will call CoInitializeEx() %d times.\n",
-                              MaxTries - tries));
-
-                while (tries ++ < MaxTries)
+                CoUninitialize();
+                rc = CoInitializeEx (NULL, flags);
+                if (rc == S_OK)
                 {
-                    rc = CoInitializeEx (NULL, flags);
-                    Assert (rc == S_FALSE);
+                    /* We've successfully reinitialized COM; restore the
+                     * initialization reference counter */
+
+                    LogFlowFunc (("Will call CoInitializeEx() %d times.\n",
+                                  MaxTries - tries));
+
+                    while (tries ++ < MaxTries)
+                    {
+                        rc = CoInitializeEx (NULL, flags);
+                        Assert (rc == S_FALSE);
+                    }
                 }
             }
         }
+        else
+            AssertMsgFailed (("rc=%08X\n", rc));
     }
+#endif
 
     /* the overall result must be either S_OK or S_FALSE (S_FALSE means
      * "already initialized using the same apartment model") */
