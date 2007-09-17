@@ -449,7 +449,7 @@ IPC_Connect(const char *daemonPath)
 {
   // synchronous connect, spawn daemon if necessary.
 
-  PRFileDesc *fd;
+  PRFileDesc *fd = NULL;
   nsresult rv = NS_ERROR_FAILURE;
 
   if (gConnState)
