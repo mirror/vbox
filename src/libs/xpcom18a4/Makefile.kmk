@@ -50,7 +50,7 @@ TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" XP
 TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  XP_UNIX=1 _GNU_SOURCE HAVE_VISIBILITY_ATTRIBUTE=1 ## @todo LINUX=1
 TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC BSD_SELECT OS2=4
-TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" XP_UNIX=1 XP_SOLARIS=1 HAVE_LIBDL=1 HAVE_SENDFILEV=1 SOLARIS=1
+TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" XP_UNIX=1 XP_SOLARIS=1 HAVE_LIBDL=1 HAVE_SENDFILEV=1 SOLARIS=1 _REENTRANT
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
                                      -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
