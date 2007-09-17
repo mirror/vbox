@@ -138,7 +138,7 @@ int suplibOsInit(size_t cbReserve)
     if (fcntl(g_hDevice, F_SETFD, FD_CLOEXEC) != 0)
     {
         int rc = errno;
-        LogRel(("suplibOSInit: setting FD_CLOEXEC failed, errno=%d\n", errno));
+        LogRel(("suplibOSInit: setting FD_CLOEXEC failed, errno=%d\n", rc));
         close(g_hDevice);
         g_hDevice = -1;
         return RTErrConvertFromErrno(rc);
