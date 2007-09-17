@@ -54,7 +54,7 @@ xpidl_malloc(size_t nbytes)
     return p;
 }
 
-#ifdef XP_MAC
+#if defined(XP_MAC) || defined(XP_SOLARIS)
 static char *strdup(const char *c)
 {
 	char	*newStr = malloc(strlen(c) + 1);

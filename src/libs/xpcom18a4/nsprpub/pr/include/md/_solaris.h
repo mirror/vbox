@@ -69,6 +69,15 @@
 #define	USE_DLFCN
 #define NEED_STRFTIME_LOCK
 
+#if defined(_LARGEFILE64_SOURCE)                                    /* vbox */
+#define _PR_HAVE_OFF64_T                                            /* vbox */
+#elif defined(_LP64) || _FILE_OFFSET_BITS == 32                     /* vbox */
+#define _PR_HAVE_LARGE_OFF_T                                        /* vbox */
+#else                                                               /* vbox */
+#define _PR_NO_LARGE_FILES                                          /* vbox */
+#endif                                                              /* vbox */
+
+
 /*
  * Intel x86 has atomic instructions.
  *
@@ -115,6 +124,9 @@
 #define _PR_HAVE_GETADDRINFO
 #define _PR_INET6_PROBE
 #define _PR_ACCEPT_INHERIT_NONBLOCK
+#if !defined(_XPG4_2) || defined(_XPG6) || defined(__EXTENSIONS__)  /* vbox */
+#define _PR_INET6                                                   /* vbox */
+#endif                                                              /* vbox */
 #ifdef _PR_INET6
 #define _PR_HAVE_INET_NTOP
 #else
