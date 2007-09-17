@@ -105,7 +105,6 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_LOCK:
         {
-            cmn_err(CE_NOTE, "rtR0MemObjNativeFree: LOCK\n");
             struct as *addrSpace;
             if (pMemSolaris->Core.u.Lock.R0Process == NIL_RTR0PROCESS)
                 addrSpace = &kas;
@@ -120,18 +119,15 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         {
             struct hat *hatSpace;
             struct as *addrSpace;
-            cmn_err(CE_NOTE, "rtR0MemObjNativeFree: MAPPING\n");
             if (pMemSolaris->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
             {
                 /* Kernel process*/
-                cmn_err(CE_NOTE, "rtR0MemObjNativeFree: MAPPING: kernel\n");
                 hatSpace = kas.a_hat;
                 addrSpace = &kas;
             }
             else
             {
                 /* User process */
-                cmn_err(CE_NOTE, "rtR0MemObjNativeFree: MAPPING: userProcess\n");
                 proc_t *userProc = (proc_t *)pMemSolaris->Core.u.Mapping.R0Process;
                 hatSpace = userProc->p_as->a_hat;
                 addrSpace = userProc->p_as;
@@ -139,7 +135,6 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
             hat_unload(hatSpace, pMemSolaris->Core.pv, pMemSolaris->Core.cb, HAT_UNLOAD_UNLOCK);
             as_unmap(addrSpace, pMemSolaris->Core.pv, pMemSolaris->Core.cb);
-            cmn_err(CE_NOTE, "rtR0MemObjNativeFree: MAPPING: removed fine\n");
             break;
         }
 
@@ -402,7 +397,6 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     pMemSolaris->Core.u.Mapping.R0Process = NIL_RTR0PROCESS; /* means kernel */
     pMemSolaris->Core.pv = addr;
     *ppMem = &pMemSolaris->Core;
-    cmn_err(CE_NOTE, "done rtR0MemObjNativeMapKernel: Core.pv=%p\n", addr);
     return VINF_SUCCESS;
 }
 
@@ -510,7 +504,6 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     pMemSolaris->Core.u.Mapping.R0Process = (RTR0PROCESS)userproc;
     pMemSolaris->Core.pv = addr;
     *ppMem = &pMemSolaris->Core;
-    cmn_err(CE_NOTE, "done MemObjNativeMapUser: Core.pv=%p\n", addr);
     return VINF_SUCCESS;
 }
 
