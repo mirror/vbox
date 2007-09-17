@@ -30,9 +30,11 @@
 using namespace com;
 
 #if defined (VBOXSDL_WITH_X11)
-#include <X11/Xlib.h>
-#include <X11/cursorfont.h>      /* for XC_left_ptr */
-#include <X11/Xcursor/Xcursor.h>
+# include <X11/Xlib.h>
+# include <X11/cursorfont.h>      /* for XC_left_ptr */
+# if !defined (VBOX_WITHOUT_XCURSOR)
+#  include <X11/Xcursor/Xcursor.h>
+# endif
 #endif
 
 #ifndef RT_OS_DARWIN
@@ -1830,11 +1832,13 @@ int main(int argc, char *argv[])
         goto leave;
     }
 
+# if !defined(VBOX_WITHOUT_XCURSOR)
     /* SDL uses its own (plain) default cursor. Use the left arrow cursor instead which might look
      * much better if a mouse cursor theme is installed. */
     gpDefaultOrigX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
     *(Cursor*)gpDefaultCursor->wm_cursor = XCreateFontCursor(gSdlInfo.info.x11.display, XC_left_ptr);
     SDL_SetCursor(gpDefaultCursor);
+# endif
 #endif /* VBOXSDL_WITH_X11 */
 
     /* create a fake empty cursor */
@@ -2499,7 +2503,7 @@ leave:
         *(Cursor*)gpDefaultCursor->wm_cursor = gpDefaultOrigX11Cursor;
 #endif /* VBOXSDL_WITH_X11 */
         SDL_SetCursor(gpDefaultCursor);
-#ifdef VBOXSDL_WITH_X11
+#if defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR)
         XFreeCursor(gSdlInfo.info.x11.display, pDefaultTempX11Cursor);
 #endif /* VBOXSDL_WITH_X11 */
     }
@@ -2513,7 +2517,7 @@ leave:
         {
 #if defined (RT_OS_WINDOWS)
             ::DestroyCursor(*(HCURSOR *) pCustomTempWMCursor);
-#elif defined (VBOXSDL_WITH_X11)
+#elif defined (VBOXSDL_WITH_X11) && !defined (VBOX_WITHOUT_XCURSOR)
             XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
 #endif
             free(pCustomTempWMCursor);
@@ -4006,7 +4010,7 @@ static void SetPointerShape (const PointerShapeChangeData *data)
         if (hBitmap)
             ::DeleteObject (hBitmap);
 
-#elif defined (VBOXSDL_WITH_X11)
+#elif defined (VBOXSDL_WITH_X11) && !defined (VBOX_WITHOUT_XCURSOR)
 
         XcursorImage *img = XcursorImageCreate (data->width, data->height);
         Assert (img);
