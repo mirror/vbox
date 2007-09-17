@@ -125,6 +125,7 @@
 #  include <unistd.h>
 # elif defined(RT_OS_SOLARIS)
 #  define _STRUCTURED_PROC 1
+#  undef _FILE_OFFSET_BITS /* procfs doesn't like this */
 #  include <sys/procfs.h>
 #  include <unistd.h>
 # elif defined(RT_OS_L4)
