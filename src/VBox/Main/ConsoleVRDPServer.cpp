@@ -1021,6 +1021,7 @@ int ConsoleVRDPServer::Launch (void)
     }
 #else
     int rc = VERR_NOT_SUPPORTED;
+    LogRel(("VRDP: this version does not include the VRDP server.\n"));
 #endif /* VBOX_VRDP */
     return rc;
 }
