@@ -39,6 +39,8 @@
 #   define VBOX_XML_PLATFORM     "macosx"
 #elif defined (RT_OS_OS2)
 #   define VBOX_XML_PLATFORM     "os2"
+#elif defined (RT_OS_SOLARIS)
+#   define VBOX_XML_PLATFORM     "solaris"
 #else
 #   error Unsupported platform!
 #endif

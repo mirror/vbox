@@ -5221,6 +5221,9 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
 #elif defined(RT_OS_OS2)
         /** @todo Implement tap networking for OS/2. */
         int rcVBox = VERR_NOT_IMPLEMENTED;
+#elif defined(RT_OS_SOLARIS)
+        /** @todo Implemented tap networking for Solaris. */
+        int rcVBox = VERR_NOT_IMPLEMENTED;
 #elif defined(VBOX_WITH_UNIXY_TAP_NETWORKING)
 # error "PORTME: Implement OS specific TAP interface open/creation."
 #else
