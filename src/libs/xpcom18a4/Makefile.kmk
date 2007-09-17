@@ -126,7 +126,6 @@ TEMPLATE_XPCOMEXE_LIBS             = \
 TEMPLATE_XPCOMEXE_LIBS.linux       = dl $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.l4          = $(LIB_RUNTIME) $(VBOX_GCC_LIBGCC)
 TEMPLATE_XPCOMEXE_LDFLAGS.darwin   = -bind_at_load $(TEMPLATE_XPCOM_LDFLAGS.darwin)
-TEMPLATE_XPCOMEXE_LDFLAGS.solaris  = -mimpure-text ## @todo why?
 TEMPLATE_XPCOMEXE_LDFLAGS.l4       = $(L4_DIR)/lib/x86_586/crt0.o \
     -T$(L4_DIR)/lib/x86_586/main_dyn.ld -nostdlib -lgcc \
     -Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
