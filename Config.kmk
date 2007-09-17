@@ -283,6 +283,7 @@ ifeq ($(BUILD_TARGET),os2)
 endif
 
 ifeq ($(BUILD_TARGET),solaris)
+ VBOX_WITH_VBOXSDL=
  VBOX_WITH_QTGUI=
  VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_INSTALLER=
@@ -1256,10 +1257,10 @@ TEMPLATE_VBOXGC_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-tri
 ifeq ($(BUILD_TARGET),solaris)
  TEMPLATE_VBOXGC_LDFLAGS            = -r
 else
- TEMPLATE_VBOXGC_LDFLAGS             = -nostdlib -Bsymbolic
+ TEMPLATE_VBOXGC_LDFLAGS            = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
- TEMPLATE_VBOXGC_LDFLAGS            += $(if $(VBOX_DO_STRIP_MODULES),-S,)
- TEMPLATE_VBOXGC_LDFLAGS.release     = $(if $(VBOX_DO_STRIP_MODULES),-S,)
+ TEMPLATE_VBOXGC_LDFLAGS           += $(if $(VBOX_DO_STRIP_MODULES),-S,)
+ TEMPLATE_VBOXGC_LDFLAGS.release    = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
 ifneq ($(filter-out solaris freebsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXGC_LIBS                = \
@@ -1657,7 +1658,7 @@ TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
-TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG # Avoid the GNU libiconv, for now at least.
+TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
 TEMPLATE_VBOXR3EXE_LIBS                = rt socket
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
@@ -1873,6 +1874,7 @@ TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
+TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
  else
 $(warning Warning: VBOX Build: Target $(BUILD_TARGET) is not officially supported!)
@@ -2022,6 +2024,7 @@ ifeq ($(BUILD_TARGET),win)
 else # the gcc guys:
  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
+ TEMPLATE_VBOXQTGUIEXE_DEFS.solaris = _REENTRANT
 
  TEMPLATE_VBOXQTGUIEXE_INCS += \
 	$(LIB_SDL_INC)
