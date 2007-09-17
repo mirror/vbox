@@ -133,11 +133,22 @@ static struct modlinkage g_VBoxDrvSolarisModLinkage =
     NULL                    /* terminate array of linkage structures */
 };
 
+#ifndef USE_SESSION_HASH
+/**
+ * State info for each open file handle.
+ */
+typedef struct
+{
+    /**< Pointer to the session data. */
+    PSUPDRVSESSION pSession;
+} vbox_devstate_t;
+#else
 /** State info. for each driver instance. */
 typedef struct
 {
     dev_info_t     *pDip;   /* Device handle */
 } vbox_devstate_t;
+#endif
 
 /** Opaque pointer to state */
 static void *g_pVBoxDrvSolarisState;
@@ -158,23 +169,26 @@ static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
 /**
  * Kernel entry points
  */
-int _init (void)
+int _init(void)
 {
     cmn_err(CE_CONT, "VBoxDrvSolaris _init");
 
-    int e = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof (vbox_devstate_t), 1);
-    if (e != 0)
-        return e;
+    int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
+    if (!rc)
+    {
+        rc = mod_install(&g_VBoxDrvSolarisModLinkage);
+        if (!rc)
+            return 0; /* success */
 
-    e = mod_install(&g_VBoxDrvSolarisModLinkage);
-    if (e != 0)
         ddi_soft_state_fini(&g_pVBoxDrvSolarisState);
+    }
 
-    cmn_err(CE_CONT, "VBoxDrvSolaris _init returns %d", e);
-    return e;
+    cmn_err(CE_CONT, "VBoxDrvSolaris _init failed with rc=%d", rc);
+    return rc;
 }
 
-int _fini (void)
+
+int _fini(void)
 {
     cmn_err(CE_CONT, "VBoxDrvSolaris _fini");
 
@@ -186,10 +200,11 @@ int _fini (void)
     return e;
 }
 
-int _info (struct modinfo *pModInfo)
+
+int _info(struct modinfo *pModInfo)
 {
     cmn_err(CE_CONT, "VBoxDrvSolaris _info");
-    int e = mod_info (&g_VBoxDrvSolarisModLinkage, pModInfo);
+    int e = mod_info(&g_VBoxDrvSolarisModLinkage, pModInfo);
     cmn_err(CE_CONT, "VBoxDrvSolaris _info returns %d", e);
     return e;
 }
@@ -199,11 +214,50 @@ int _info (struct modinfo *pModInfo)
  */
 static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
-    cmn_err(CE_CONT, "VBoxDrvSolarisOpen");
-
     int                 rc;
     PSUPDRVSESSION      pSession;
+    dprintf(("VBoxDrvSolarisOpen: pDev=%p:%#x\n", pDev, *pDev));
 
+#ifndef USE_SESSION_HASH
+    /*
+     * Locate a new device open instance.
+     *
+     * For each open call we'll allocate an item in the soft state of the device.
+     * The item index is stored in the dev_t. I hope this is ok...
+     */
+    vbox_devstate_t *pState = NULL;
+    unsigned iOpenInstance;
+    for (iOpenInstance = 0; iOpenInstance < 4096; iOpenInstance++)
+    {
+        if (    !ddi_get_soft_state(g_pVBoxDrvSolarisState, iOpenInstance) /* faster */
+            &&  ddi_soft_state_zalloc(g_pVBoxDrvSolarisState, iOpenInstance) == DDI_SUCCESS)
+        {
+            pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, iOpenInstance);
+            break;
+        }
+    }
+    if (!pState)
+    {
+        cmn_err(CE_NOTE,"VBoxDrvSolarisOpen: too many open instances.");
+        return ENXIO;
+    }
+
+    /*
+     * Create a new session.
+     */
+    rc = supdrvCreateSession(&g_DevExt, &pSession);
+    if (RT_SUCCESS(rc))
+    {
+        pState->pSession = pSession;
+        *pDev = makedevice(getmajor(*pDev), iOpenInstance);
+        dprintf(("VBoxDrvSolarisOpen: returns pDev=%#x pSession=%p pState=%p\n", *pDev, pSession, pState));
+        return 0;
+    }
+
+    /* failed - clean up */
+    ddi_soft_state_free(g_pVBoxDrvSolarisState, iOpenInstance);
+
+#else
     /*
      * Create a new session.
      * Sessions in Solaris driver are mostly useless. It's however needed
@@ -234,7 +288,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     int instance;
     for (instance = 0; instance < DEVICE_MAXINSTANCES; instance++)
     {
-        vbox_devstate_t *pState = ddi_get_soft_state (g_pVBoxDrvSolarisState, instance);
+        vbox_devstate_t *pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
         if (pState)
             break;
     }
@@ -248,12 +302,35 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     *pDev = makedevice(getmajor(*pDev), instance);
 
     return VBoxSupDrvErr2SolarisErr(rc);
+#endif
 }
 
-static int VBoxDrvSolarisClose(dev_t pDev, int flag, int otyp, cred_t *cred)
-{
-    cmn_err(CE_CONT, "VBoxDrvSolarisClose");
 
+static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
+{
+    dprintf(("VBoxDrvSolarisClose: Dev=%#x\n", Dev));
+#ifndef USE_SESSION_HASH
+    /*
+     * Get the session and free the soft state item.
+     */
+    vbox_devstate_t *pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, getminor(Dev));
+    if (!pState)
+    {
+        OSDBGPRINT(("VBoxDrvSolarisClose: no state data for %#x (%d)\n", Dev, getminor(Dev)));
+        return DDI_SUCCESS;
+    }
+
+    PSUPDRVSESSION pSession = pState->pSession;
+    pState->pSession = NULL;
+    ddi_soft_state_free(g_pVBoxDrvSolarisState, getminor(Dev));
+
+    if (!pSession)
+    {
+        OSDBGPRINT(("VBoxDrvSolarisClose: no session in state data for %#x (%d)\n", Dev, getminor(Dev)));
+        return DDI_SUCCESS;
+    }
+
+#else
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS Process = RTProcSelf();
     const unsigned  iHash = SESSION_HASH(Process);
@@ -297,6 +374,7 @@ static int VBoxDrvSolarisClose(dev_t pDev, int flag, int otyp, cred_t *cred)
                     (int)Process));
         return DDI_FAILURE;
     }
+#endif
 
     /*
      * Close the session.
@@ -305,11 +383,13 @@ static int VBoxDrvSolarisClose(dev_t pDev, int flag, int otyp, cred_t *cred)
     return DDI_SUCCESS;
 }
 
+
 static int VBoxDrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     cmn_err(CE_CONT, "VBoxDrvSolarisRead");
     return DDI_SUCCESS;
 }
+
 
 static int VBoxDrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
@@ -328,15 +408,15 @@ static int VBoxDrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
     cmn_err(CE_CONT, "VBoxDrvSolarisAttach");
-    int rc = VINF_SUCCESS;
-    int instance = 0;
-    vbox_devstate_t *pState;
 
     switch (enmCmd)
     {
         case DDI_ATTACH:
         {
-            instance = ddi_get_instance (pDip);
+            int rc;
+            int instance = ddi_get_instance(pDip);
+#ifdef USE_SESSION_HASH
+            vbox_devstate_t *pState;
 
             if (ddi_soft_state_zalloc(g_pVBoxDrvSolarisState, instance) != DDI_SUCCESS)
             {
@@ -345,6 +425,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             }
 
             pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
+#endif
 
             /*
              * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
@@ -368,10 +449,11 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                         /*
                          * Register ourselves as a character device, pseudo-driver
                          */
-                        if (ddi_create_minor_node(pDip, "0", S_IFCHR,
-                                instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
+                        if (ddi_create_minor_node(pDip, "0", S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
                         {
+#ifdef USE_SESSION_HASH
                             pState->pDip = pDip;
+#endif
                             ddi_report_dev(pDip);
                             return DDI_SUCCESS;
                         }
@@ -415,19 +497,21 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
     int rc = VINF_SUCCESS;
-    int instance;
-    register vbox_devstate_t *pState;
+
 
     cmn_err(CE_CONT, "VBoxDrvSolarisDetach");
     switch (enmCmd)
     {
         case DDI_DETACH:
         {
-            instance = ddi_get_instance(pDip);
-            pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
-
+            int instance = ddi_get_instance(pDip);
+#ifndef USE_SESSION_HASH
+            ddi_remove_minor_node(pDip, NULL);
+#else
+            vbox_devstate_t *pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
             ddi_remove_minor_node(pDip, NULL);
             ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
+#endif
 
             supdrvDeleteDevExt(&g_DevExt);
 
@@ -459,14 +543,31 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  *
  * @return  corresponding solaris error code.
  */
-static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cred_t* pCred, int* pVal)
+static int VBoxDrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cred_t *pCred, int *pVal)
 {
+#ifndef USE_SESSION_HASH
+    /*
+     * Get the session from the soft state item.
+     */
+    vbox_devstate_t *pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, getminor(Dev));
+    if (!pState)
+    {
+        OSDBGPRINT(("VBoxDrvSolarisIOCtl: no state data for %#x (%d)\n", Dev, getminor(Dev)));
+        return EINVAL;
+    }
+
+    PSUPDRVSESSION  pSession = pState->pSession;
+    if (!pSession)
+    {
+        OSDBGPRINT(("VBoxDrvSolarisIOCtl: no session in state data for %#x (%d)\n", Dev, getminor(Dev)));
+        return DDI_SUCCESS;
+    }
+#else
     RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = RTProcSelf();
     const unsigned      iHash = SESSION_HASH(Process);
     PSUPDRVSESSION      pSession;
 
-    cmn_err(CE_CONT, "VBoxDrvSolarisIOCtl\n");
     /*
      * Find the session.
      */
@@ -484,6 +585,7 @@ static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cr
                     (int)Process, Cmd));
         return EINVAL;
     }
+#endif
 
     /*
      * Deal with the two high-speed IOCtl that takes it's arguments from
@@ -492,7 +594,10 @@ static int VBoxDrvSolarisIOCtl (dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cr
     if (    Cmd == SUP_IOCTL_FAST_DO_RAW_RUN
         ||  Cmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  Cmd == SUP_IOCTL_FAST_DO_NOP)
-        return supdrvIOCtlFast(Cmd, &g_DevExt, pSession);
+    {
+        *pVal = supdrvIOCtlFast(Cmd, &g_DevExt, pSession);
+        return 0;
+    }
 
     return VBoxDrvSolarisIOCtlSlow(pSession, Cmd, Mode, pArgs);
 }
@@ -669,6 +774,8 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 
     szMsg[sizeof(szMsg) - 1] = '\0';
     uprintf("SUPR0Printf: %s", szMsg);
+//    cmn_err(CE_CONT, "VBoxDrv: %s", szMsg);
+
     return 0;
 }
 
