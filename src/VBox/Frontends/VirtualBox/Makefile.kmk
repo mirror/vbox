@@ -59,7 +59,7 @@ VBoxKeyboard_SOURCES  = \
 VirtualBox_TEMPLATE = VBOXQTGUIEXE
 VirtualBox_SDKS.win = WINPSDK DXSDK
 #ifeq ($(filter-out freebsd linux netbsd openbsd os2 solaris,$(BUILD_TARGET)),) - later
-ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(BUILD_TARGET)),)
+ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(BUILD_TARGET)),) # X11 + os2
 VirtualBox_SDKS += LIBSDL
 endif
 
@@ -69,7 +69,7 @@ VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
 
 ifndef VBOX_OSE
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # linux only, yea, right.
 # Note: I'm doing this right here because the GUI will _not_ run
 #       without that file which might be annoying for developers!
 $(PATH_BIN)/VirtualBox: $(VBOX_LICENSE_BIN)
