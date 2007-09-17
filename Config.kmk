@@ -2063,7 +2063,7 @@ else # the gcc guys:
 	$(VBOX_LIBPATH_X11)
   ifeq ($(BUILD_TARGET),solaris)
    TEMPLATE_VBOXQTGUIEXE_LIBS += \
-     	rt socket
+     	rt socket nsl
   endif
  endif
 
@@ -2515,7 +2515,7 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(MV) -f $@.tmp $@
 
 ifndef VBOX_OSE
-ifeq ($(BUILD_TARGET),linux)
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # linux only, yea, right.
 VBOX_LICENSE_SRC := $(PATH_ROOT)/doc/License.html
 VBOX_LICENSE_VER := $(shell grep Version $(VBOX_LICENSE_SRC)|sed -e 's/.*Version \([0-9.]*\),.*/\1/g')
 VBOX_LICENSE_BIN := $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
