@@ -231,33 +231,42 @@ private:
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
     QTextBrowser *mBrowser;
-    QBrush mBrowserPaper;
+    QLabel *mLabel;
 };
 
 VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
                                               const char *aName)
     : QWidget (aParent, aName)
     , mItem (NULL), mParent (aParent)
-    , mBtnEdit (0), mBrowser (0)
+    , mBtnEdit (0), mBrowser (0), mLabel (0)
 {
-    /* main layout creation */
+    /* main layout */
     QVBoxLayout *mainLayout = new QVBoxLayout (this, 0, 10, "mainLayout");
 
-    /* mBrowser creation */
+    /* mBrowser */
     mBrowser = new QTextBrowser (this, "mBrowser");
-    mBrowserPaper = mBrowser->paper();
     mBrowser->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     mBrowser->setFocusPolicy (QWidget::StrongFocus);
     mBrowser->setLinkUnderline (false);
     mainLayout->addWidget (mBrowser);
+    /* hidden by default */
+    mBrowser->setHidden (true);
 
-    /* button layout creation */
+    mLabel = new QLabel (this, "mLabel");
+    mLabel->setFrameStyle (mBrowser->frameStyle());
+    mLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+    mLabel->setAlignment (AlignCenter);
+    mainLayout->addWidget (mLabel);
+    /* always disabled */
+    mLabel->setEnabled (false);
+
+    /* button layout */
     QHBoxLayout *btnLayout = new QHBoxLayout (mainLayout, 10, "btnLayout");
     btnLayout->addItem (new QSpacerItem (0, 0,
                                          QSizePolicy::Expanding,
                                          QSizePolicy::Minimum));
 
-    /* button creation */
+    /* button */
     mBtnEdit = new QToolButton (this, "mBtnEdit");
     mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
     mBtnEdit->setFocusPolicy (QWidget::StrongFocus);
@@ -290,15 +299,15 @@ void VBoxVMDescriptionPage::setMachineItem (VBoxVMListBoxItem *aItem)
 
     if (!text.isEmpty())
     {
+        mLabel->setHidden (true);
         mBrowser->setText (text);
-        mBrowser->setPaper (mBrowserPaper);
-        mBrowser->setEnabled (true);
+        mBrowser->setShown (true);
     }
     else
     {
-        mBrowser->setText (tr ("No description. Press the Edit button below to add it."));
-        mBrowser->setEnabled (false);
-        mBrowser->setPaper (backgroundBrush());
+        mBrowser->setHidden (true);
+        mBrowser->clear();
+        mLabel->setShown (true);
     }
 
     /* check initial machine and session states */
@@ -307,6 +316,8 @@ void VBoxVMDescriptionPage::setMachineItem (VBoxVMListBoxItem *aItem)
 
 void VBoxVMDescriptionPage::languageChange()
 {
+    mLabel->setText (tr ("No description. Press the Edit button below to add it."));
+
     mBtnEdit->setTextLabel (tr ("Edit"));
     mBtnEdit->setAccel (tr ("Ctrl+E"));
     QToolTip::add (mBtnEdit, tr ("Edit (Ctrl+E)"));
