@@ -63,13 +63,18 @@ VBoxSDL_LIBS = \
 endif
 VBoxSDL_LIBS.linux = \
 	$(LIB_XCURSOR)
-VBoxSDL_LDFLAGS.darwin = \
-	-framework Foundation -framework AppKit
+VBoxSDL_LIBS.solaris = \
+	$(LIB_XCURSOR) \
+	$(LIB_X11)
 ifdef VBOX_OPENGL
  #VBoxSDL_LIBS.linux += GL
 endif
 VBoxSDL_LIBPATH.linux = \
 	$(VBOX_LIBPATH_X11)
+VBoxSDL_LIBPATH.solaris = \
+	$(VBOX_LIBPATH_X11)
+VBoxSDL_LDFLAGS.darwin = \
+	-framework Foundation -framework AppKit
 
 VBoxSDL_CLEAN = $(PATH_VBoxSDL)/Ico64x01.h
 Framebuffer.cpp_DEPS = $(PATH_VBoxSDL)/Ico64x01.h
@@ -100,10 +105,12 @@ endif
 ifdef VBOX_OPENGL
 tstSDL_LIBS.linux += GL
 endif
-tstSDL_LIBPATH.linux = \
-	$(VBOX_LIBPATH_X11)
 tstSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
+tstSDL_LIBPATH.linux = \
+	$(VBOX_LIBPATH_X11)
+tstSDL_LIBPATH.solaris = \
+	$(VBOX_LIBPATH_X11)
 
 tstSDL_CXXFLAGS.win = \
 	-EHsc
