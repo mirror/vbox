@@ -3476,12 +3476,16 @@ void VBoxGlobal::init()
     verString += " [DEBUG]";
 #endif
 
+#ifdef Q_WS_WIN
+    /* COM for the main thread is initialized in main() */
+#else
     HRESULT rc = COMBase::initializeCOM();
     if (FAILED (rc))
     {
         vboxProblem().cannotInitCOM (rc);
         return;
     }
+#endif
 
     vbox.createInstance (CLSID_VirtualBox);
     if (!vbox.isOk())
@@ -3727,7 +3731,11 @@ void VBoxGlobal::cleanup()
      * before uninitializing the COM subsystem. */
     QApplication::removePostedEvents (this);
 
+#ifdef Q_WS_WIN
+    /* COM for the main thread is shutdown in main() */
+#else
     COMBase::cleanupCOM();
+#endif
 
     valid = false;
 }
