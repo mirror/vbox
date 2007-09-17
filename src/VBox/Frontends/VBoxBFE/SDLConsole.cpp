@@ -48,7 +48,9 @@
 
 #ifdef VBOXBFE_WITH_X11
 # include <X11/Xlib.h>
-# include <X11/Xcursor/Xcursor.h>
+# ifndef VBOXBFE_WITHOUT_XCURSOR
+#  include <X11/Xcursor/Xcursor.h>
+# endif
 #endif
 
 #include "VBoxBFE.h"
@@ -1393,7 +1395,7 @@ void SDLConsole::setPointerShape (const PointerShapeChangeData *data)
         if (hBitmap)
             ::DeleteObject (hBitmap);
 
-#elif defined(VBOXBFE_WITH_X11)
+#elif defined(VBOXBFE_WITH_X11) && !defined(VBOXBFE_WITHOUT_XCURSOR)
 
         XcursorImage *img = XcursorImageCreate (data->width, data->height);
         Assert (img);

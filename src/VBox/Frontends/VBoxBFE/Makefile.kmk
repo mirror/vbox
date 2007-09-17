@@ -39,8 +39,10 @@ endif
 ifdef VBOX_WITHOUT_LINUX_COMPILER_H
 VBoxBFE_DEFS += VBOX_WITHOUT_LINUX_COMPILER_H
 endif
+VBoxBFE_DEFS.freebsd = VBOXBFE_WITH_X11
 VBoxBFE_DEFS.l4 = _GNU_SOURCE
 VBoxBFE_DEFS.linux = _GNU_SOURCE VBOXBFE_WITH_X11
+VBoxBFE_DEFS.solaris = VBOXBFE_WITH_X11 VBOXBFE_WITHOUT_XCURSOR
 VBoxBFE_DEFS.win.x86 = _WIN32_WINNT=0x0500
 
 VBoxBFE_SOURCES = \
@@ -80,8 +82,8 @@ VBoxBFE_SOURCES.darwin = \
 	SDLConsole.cpp \
 	SDLFramebuffer.cpp
 VBoxBFE_SOURCES.solaris = \
-    SDLConsole.cpp \
-    SDLFramebuffer.cpp
+	SDLConsole.cpp \
+	SDLFramebuffer.cpp
 
 VBoxBFE_INCS = \
 	$(PATH_VBoxBFE) \
