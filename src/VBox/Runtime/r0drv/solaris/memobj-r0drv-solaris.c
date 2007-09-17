@@ -51,7 +51,7 @@ typedef struct RTR0MEMOBJSOLARIS
  * Used for supplying the solaris kernel info. about memory limits
  * during contiguous allocations (i_ddi_mem_alloc)
  */
-struct ddi_dma_attr g_SolarisX86PhysMemLimits = 
+struct ddi_dma_attr g_SolarisX86PhysMemLimits =
 {
     DMA_ATTR_V0,            /* Version Number */
     (uint64_t)0,            /* lower limit */
@@ -115,7 +115,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             as_pageunlock(addrSpace, pMemSolaris->ppShadowPages, pMemSolaris->Core.pv, pMemSolaris->Core.cb, S_WRITE);
             break;
         }
-        
+
         case RTR0MEMOBJTYPE_MAPPING:
         {
             struct hat *hatSpace;
@@ -142,7 +142,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             cmn_err(CE_NOTE, "rtR0MemObjNativeFree: MAPPING: removed fine\n");
             break;
         }
-        
+
         /* unused */
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PHYS:
@@ -151,7 +151,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             AssertMsgFailed(("enmType=%d\n", pMemSolaris->Core.enmType));
             return VERR_INTERNAL_ERROR;
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -169,7 +169,7 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_NO_PAGE_MEMORY;
     }
-    
+
     pMemSolaris->Core.pv = virtAddr;
     pMemSolaris->ppShadowPages = NULL;
     *ppMem = &pMemSolaris->Core;
@@ -188,7 +188,6 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
             if (rtR0MemObjNativeGetPagePhysAddr(*ppMem, iPage) > (_4G - PAGE_SIZE))
             {
                 /* Failed! Fall back to physical contiguous alloc */
-                cmn_err(CE_NOTE, "4G boundary exceeded\n");
                 RTR0MemObjFree(*ppMem, false);
                 rc = rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
                 break;
@@ -218,7 +217,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
     pMemSolaris->Core.pv = virtAddr;
     pMemSolaris->Core.u.Cont.Phys = rtR0MemObjSolarisVirtToPhys(kas.a_hat, virtAddr);
-    pMemSolaris->ppShadowPages = NULL;   
+    pMemSolaris->ppShadowPages = NULL;
     *ppMem = &pMemSolaris->Core;
     return VINF_SUCCESS;
 }
@@ -245,7 +244,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
     PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_PHYS, NULL, cb);
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
-    
+
     /* There is no allocation here, it needs to be mapped somewhere first */
     pMemSolaris->Core.u.Phys.fAllocated = false;
     pMemSolaris->Core.u.Phys.PhysBase = Phys;
@@ -264,7 +263,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
     proc_t *userproc = curproc;
     if (R0Process != NIL_RTR0PROCESS)
         userproc = (proc_t *)R0Process;
-    
+
     struct as *useras = userproc->p_as;
     page_t **ppl;
 
@@ -282,7 +281,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
         cmn_err(CE_NOTE, "rtR0MemObjNativeLockUser: as_pagelock failed to get shadow pages\n");
         return VERR_LOCK_FAILED;
     }
-    
+
     pMemSolaris->Core.u.Lock.R0Process = (RTR0PROCESS)userproc;
     pMemSolaris->ppShadowPages = ppl;
     *ppMem = &pMemSolaris->Core;
@@ -299,7 +298,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 
     caddr_t virtAddr = (caddr_t)((uintptr_t)pv & (uintptr_t)PAGEMASK);
     page_t **ppl;
-    
+
     /* Lock down kernel pages */
     int rc = as_pagelock(&kas, &ppl, virtAddr, cb, S_WRITE);
     if (rc != 0)
@@ -335,7 +334,7 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
 
 int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
-    PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;    
+    PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;
     size_t size = pMemToMapSolaris->Core.cb;
     void *pv = pMemToMapSolaris->Core.pv;
     pgcnt_t cPages = btop(size);
@@ -353,7 +352,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     {
         /* Use user specified address */
         addr = (caddr_t)pvFixed;
-        
+
         /* Blow away any previous mapping */
         as_unmap(&kas, addr, size);
     }
@@ -367,7 +366,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
             cmn_err(CE_NOTE, "rtR0MemObjNativeMapKernel: map_addr failed\n");
             return VERR_NO_MEMORY;
         }
-        
+
         /* Check address against alignment, fail if it doesn't match */
         if ((uintptr_t)addr & (uAlignment - 1))
         {
@@ -376,9 +375,9 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
             return VERR_MAP_FAILED;
         }
     }
-    
+
     /* Our protection masks are identical to <sys/mman.h> but we
-     * need to add PROT_USER for the pages to be accessible by user 
+     * need to add PROT_USER for the pages to be accessible by user
      */
     struct segvn_crargs crArgs = SEGVN_ZFOD_ARGS(fProt | PROT_USER, PROT_ALL);
     rc = as_map(&kas, addr, size, segvn_create, &crArgs);
@@ -388,7 +387,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
         cmn_err(CE_NOTE, "rtR0MemObjNativeMapKernel: as_map failure.\n");
         return VERR_NO_MEMORY;
     }
-    
+
     /* Map each page into kernel space */
     caddr_t kernAddr = pv;
     caddr_t pageAddr = addr;
@@ -410,7 +409,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
-    PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;    
+    PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;
     size_t size = pMemToMapSolaris->Core.cb;
     proc_t *userproc = (proc_t *)R0Process;
     struct as *useras = userproc->p_as;
@@ -430,7 +429,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     {
         /* Use user specified address */
         addr = (caddr_t)R3PtrFixed;
-        
+
         /* Verify user address (a bit paranoid) */
         rc = valid_usr_range(addr, size, fProt, useras, (caddr_t)USERLIMIT32);
         if (rc != RANGE_OKAY)
@@ -439,7 +438,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
             cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: valid_usr_range failed, returned %d\n", rc);
             return VERR_INVALID_POINTER;
         }
-        
+
         /* Blow away any previous mapping */
         as_unmap(useras, addr, size);
     }
@@ -453,7 +452,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
             cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr failed\n");
             return VERR_MAP_FAILED;
         }
-        
+
         /* Check address against alignment, fail if it doesn't match */
         if ((uintptr_t)addr & (uAlignment - 1))
         {
@@ -462,9 +461,9 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
             return VERR_MAP_FAILED;
         }
     }
-    
+
     /* Our protection masks are identical to <sys/mman.h> but we
-     * need to add PROT_USER for the pages to be accessible by user 
+     * need to add PROT_USER for the pages to be accessible by user
      */
     struct segvn_crargs crArgs = SEGVN_ZFOD_ARGS(fProt | PROT_USER, PROT_ALL);
     rc = as_map(useras, addr, size, segvn_create, &crArgs);
@@ -541,7 +540,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, unsigned iPag
             }
             else    /* Kernel */
                 hatSpace = kas.a_hat;
-            
+
             uint8_t *pb = (uint8_t *)pMemSolaris->Core.pv + ((size_t)iPage << PAGE_SHIFT);
             return rtR0MemObjSolarisVirtToPhys(hatSpace, pb);
         }
