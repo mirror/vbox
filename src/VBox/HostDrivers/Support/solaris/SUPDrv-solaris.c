@@ -209,6 +209,144 @@ int _info(struct modinfo *pModInfo)
     return e;
 }
 
+
+/**
+ * Attach entry point, to attach a device to the system or resume it.
+ *
+ * @param   pDip            The module structure instance.
+ * @param   enmCmd          Attach type (ddi_attach_cmd_t)
+ *
+ * @return  corresponding solaris error code.
+ */
+static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
+{
+    cmn_err(CE_CONT, "VBoxDrvSolarisAttach");
+
+    switch (enmCmd)
+    {
+        case DDI_ATTACH:
+        {
+            int rc;
+            int instance = ddi_get_instance(pDip);
+#ifdef USE_SESSION_HASH
+            vbox_devstate_t *pState;
+
+            if (ddi_soft_state_zalloc(g_pVBoxDrvSolarisState, instance) != DDI_SUCCESS)
+            {
+                cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: state alloc failed");
+                return DDI_FAILURE;
+            }
+
+            pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
+#endif
+
+            /*
+             * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
+             */
+            rc = RTR0Init(0);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Initialize the device extension
+                 */
+                rc = supdrvInitDevExt(&g_DevExt);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Initialize the session hash table.
+                     */
+                    memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
+                    rc = RTSpinlockCreate(&g_Spinlock);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Register ourselves as a character device, pseudo-driver
+                         */
+                        if (ddi_create_minor_node(pDip, "0", S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
+                        {
+#ifdef USE_SESSION_HASH
+                            pState->pDip = pDip;
+#endif
+                            ddi_report_dev(pDip);
+                            return DDI_SUCCESS;
+                        }
+
+                        /* Is this really necessary? */
+                        ddi_remove_minor_node(pDip, NULL);
+                        cmn_err(CE_NOTE,"VBoxDrvSolarisAttach: ddi_create_minor_node failed.");
+
+                        RTSpinlockDestroy(g_Spinlock);
+                        g_Spinlock = NIL_RTSPINLOCK;
+                    }
+                    else
+                        cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: RTSpinlockCreate failed");
+                    supdrvDeleteDevExt(&g_DevExt);
+                }
+                else
+                    cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: supdrvInitDevExt failed");
+                RTR0Term ();
+            }
+            else
+                cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: failed to init R0Drv");
+            memset(&g_DevExt, 0, sizeof(g_DevExt));
+            break;
+        }
+
+        default:
+            return DDI_FAILURE;
+    }
+
+    return DDI_FAILURE;
+}
+
+
+/**
+ * Detach entry point, to detach a device to the system or suspend it.
+ *
+ * @param   pDip            The module structure instance.
+ * @param   enmCmd          Attach type (ddi_attach_cmd_t)
+ *
+ * @return  corresponding solaris error code.
+ */
+static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
+{
+    int rc = VINF_SUCCESS;
+
+
+    cmn_err(CE_CONT, "VBoxDrvSolarisDetach");
+    switch (enmCmd)
+    {
+        case DDI_DETACH:
+        {
+            int instance = ddi_get_instance(pDip);
+#ifndef USE_SESSION_HASH
+            ddi_remove_minor_node(pDip, NULL);
+#else
+            vbox_devstate_t *pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
+            ddi_remove_minor_node(pDip, NULL);
+            ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
+#endif
+
+            supdrvDeleteDevExt(&g_DevExt);
+
+            rc = RTSpinlockDestroy(g_Spinlock);
+            AssertRC(rc);
+            g_Spinlock = NIL_RTSPINLOCK;
+
+            RTR0Term();
+
+            memset(&g_DevExt, 0, sizeof(g_DevExt));
+            cmn_err(CE_CONT, "VBoxDrvSolarisDetach: Clean Up Done.");
+            return DDI_SUCCESS;
+        }
+
+        default:
+            return DDI_FAILURE;
+    }
+}
+
+
+
 /**
  * User context entry points
  */
@@ -397,139 +535,6 @@ static int VBoxDrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
     return DDI_SUCCESS;
 }
 
-/**
- * Attach entry point, to attach a device to the system or resume it.
- *
- * @param   pDip            The module structure instance.
- * @param   enmCmd          Attach type (ddi_attach_cmd_t)
- *
- * @return  corresponding solaris error code.
- */
-static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
-{
-    cmn_err(CE_CONT, "VBoxDrvSolarisAttach");
-
-    switch (enmCmd)
-    {
-        case DDI_ATTACH:
-        {
-            int rc;
-            int instance = ddi_get_instance(pDip);
-#ifdef USE_SESSION_HASH
-            vbox_devstate_t *pState;
-
-            if (ddi_soft_state_zalloc(g_pVBoxDrvSolarisState, instance) != DDI_SUCCESS)
-            {
-                cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: state alloc failed");
-                return DDI_FAILURE;
-            }
-
-            pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
-#endif
-
-            /*
-             * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
-             */
-            rc = RTR0Init(0);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Initialize the device extension
-                 */
-                rc = supdrvInitDevExt(&g_DevExt);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Initialize the session hash table.
-                     */
-                    memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
-                    rc = RTSpinlockCreate(&g_Spinlock);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /*
-                         * Register ourselves as a character device, pseudo-driver
-                         */
-                        if (ddi_create_minor_node(pDip, "0", S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
-                        {
-#ifdef USE_SESSION_HASH
-                            pState->pDip = pDip;
-#endif
-                            ddi_report_dev(pDip);
-                            return DDI_SUCCESS;
-                        }
-
-                        /* Is this really necessary? */
-                        ddi_remove_minor_node(pDip, NULL);
-                        cmn_err(CE_NOTE,"VBoxDrvSolarisAttach: ddi_create_minor_node failed.");
-
-                        RTSpinlockDestroy(g_Spinlock);
-                        g_Spinlock = NIL_RTSPINLOCK;
-                    }
-                    else
-                        cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: RTSpinlockCreate failed");
-                    supdrvDeleteDevExt(&g_DevExt);
-                }
-                else
-                    cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: supdrvInitDevExt failed");
-                RTR0Term ();
-            }
-            else
-                cmn_err(CE_NOTE, "VBoxDrvSolarisAttach: failed to init R0Drv");
-            memset(&g_DevExt, 0, sizeof(g_DevExt));
-            break;
-        }
-
-        default:
-            return DDI_FAILURE;
-    }
-
-    return DDI_FAILURE;
-}
-
-/**
- * Detach entry point, to detach a device to the system or suspend it.
- *
- * @param   pDip            The module structure instance.
- * @param   enmCmd          Attach type (ddi_attach_cmd_t)
- *
- * @return  corresponding solaris error code.
- */
-static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
-{
-    int rc = VINF_SUCCESS;
-
-
-    cmn_err(CE_CONT, "VBoxDrvSolarisDetach");
-    switch (enmCmd)
-    {
-        case DDI_DETACH:
-        {
-            int instance = ddi_get_instance(pDip);
-#ifndef USE_SESSION_HASH
-            ddi_remove_minor_node(pDip, NULL);
-#else
-            vbox_devstate_t *pState = ddi_get_soft_state(g_pVBoxDrvSolarisState, instance);
-            ddi_remove_minor_node(pDip, NULL);
-            ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
-#endif
-
-            supdrvDeleteDevExt(&g_DevExt);
-
-            rc = RTSpinlockDestroy(g_Spinlock);
-            AssertRC(rc);
-            g_Spinlock = NIL_RTSPINLOCK;
-
-            RTR0Term();
-
-            memset(&g_DevExt, 0, sizeof(g_DevExt));
-            cmn_err(CE_CONT, "VBoxDrvSolarisDetach: Clean Up Done.");
-            return DDI_SUCCESS;
-        }
-
-        default:
-            return DDI_FAILURE;
-    }
-}
 
 /**
  * Driver ioctl, an alternate entry point for this character driver.
@@ -731,6 +736,7 @@ static int VBoxSupDrvErr2SolarisErr(int rc)
 
     return EPERM;
 }
+
 
 /**
  * Initializes any OS specific object creator fields.
