@@ -24,8 +24,6 @@
 #include "waitcompat.h"
 #include <VBox/log.h>
 
-#define VERSION "0.5"
-
 MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
 MODULE_AUTHOR("innotek GmbH");
 MODULE_LICENSE("GPL");
@@ -37,10 +35,6 @@ MODULE_VERSION(VBOX_VERSION_STRING);
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
                         const char *pszFile, const char *pszFunction)
 {
-    elog("!!Assertion Failed!!\n"
-         "Expression: %s\n"
-         "Location  : %s(%d) %s\n",
-         pszExpr, pszFile, uLine, pszFunction);
     Log(("!!Assertion Failed!!\n"
          "Expression: %s\n"
          "Location  : %s(%d) %s\n",
@@ -57,7 +51,6 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     va_start(ap, pszFormat);
     vsnprintf(msg, sizeof(msg) - 1, pszFormat, ap);
     msg[sizeof(msg) - 1] = '\0';
-    elog("%s", msg);
     Log(("%s", msg));
     va_end(ap);
 }
@@ -68,26 +61,6 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
     return false;
 }
 EXPORT_SYMBOL(RTAssertDoBreakpoint);
-#if !defined(DEBUG) && defined(IN_MODULE)
-/** Write a string to the backdoor logger. */
-RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
-{
-    const uint8_t *pu8;
-    for (pu8 = (const uint8_t *)pch; cb-- > 0; pu8++)
-        ASMOutU8(RTLOG_DEBUG_PORT, *pu8);
-    /** @todo a rep outs could be more efficient, I don't know...
-     * @code
-     * __asm {
-     *      mov     ecx, [cb]
-     *      mov     esi, [pch]
-     *      mov     dx, RTLOG_DEFAULT_PORT
-     *      rep outsb
-     * }
-     * @endcode
-     */
-}
-EXPORT_SYMBOL(RTLogWriteUser);
-#endif /* DEBUG not defined and IN_MODULE defined */
 
 /** device extension structure (we only support one device instance) */
 static VBoxDevice *vboxDev = NULL;
@@ -669,7 +642,9 @@ static __init int init(void)
     struct pci_dev *pcidev = NULL;
     VMMDevReportGuestInfo *infoReq = NULL;
 
-    printk(KERN_INFO "vboxadd: initializing version %s\n", VERSION);
+    printk(KERN_INFO "vboxadd: initializing version %s\n", VBOX_VERSION_STRING);
+    LogRel(("Starting VirtualBox Guest Additions version %s\n",
+            VBOX_VERSION_STRING));
 
     if (vboxadd_cmc_init ())
     {

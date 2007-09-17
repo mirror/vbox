@@ -250,8 +250,7 @@ sf_make_path (const char *caller, struct sf_inode_info *sf_i,
         shflstring_len = offsetof (SHFLSTRING, String.utf8) + path_len;
         tmp = kmalloc (shflstring_len, GFP_KERNEL);
         if (!tmp) {
-                LogRelPrintFunc("kmalloc failed, caller=");
-                LogRelPrint(caller);
+                LogRelFunc(("kmalloc failed, caller=%s\n", caller));
                 return -ENOMEM;
         }
         tmp->u16Length = path_len - 1;
@@ -418,7 +417,7 @@ sf_dir_buf_alloc (void)
         TRACE ();
         b = kmalloc (sizeof (*b), GFP_KERNEL);
         if (!b) {
-                LogRelPrintFunc("could not alloc directory buffer\n");
+                LogRelFunc(("could not alloc directory buffer\n"));
                 return NULL;
         }
 
@@ -429,7 +428,7 @@ sf_dir_buf_alloc (void)
 #endif
         if (!b->buf) {
                 kfree (b);
-                LogRelPrintFunc("could not alloc directory buffer storage\n");
+                LogRelFunc(("could not alloc directory buffer storage\n"));
                 return NULL;
         }
 
@@ -479,7 +478,7 @@ sf_dir_info_alloc (void)
         TRACE ();
         p = kmalloc (sizeof (*p), GFP_KERNEL);
         if (!p) {
-                LogRelPrintFunc("could not alloc directory info\n");
+                LogRelFunc(("could not alloc directory info\n"));
                 return NULL;
         }
 
@@ -535,7 +534,7 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                         b = sf_dir_buf_alloc ();
                         if (!b) {
                                 err = -ENOMEM;
-                                LogRelPrintFunc("could not alloc directory buffer\n");
+                                LogRelFunc(("could not alloc directory buffer\n"));
                                 goto fail1;
                         }
                 }

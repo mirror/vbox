@@ -41,9 +41,8 @@ sf_dir_open (struct inode *inode, struct file *file)
         sf_d = sf_dir_info_alloc ();
 
         if (!sf_d) {
-                LogRelPrintFunc("could not allocate directory info for");
-                LogRelPrint(sf_i->path->String.utf8);
-                LogRelPrint("\n");
+                LogRelFunc(("could not allocate directory info for %s\n",
+                            sf_i->path->String.utf8));
                 return -ENOMEM;
         }
 
@@ -210,7 +209,7 @@ sf_dir_read (struct file *dir, void *opaque, filldir_t filldir)
                 sanity = dir->f_pos + 0xbeef;
                 fake_ino = sanity;
                 if (sanity - fake_ino) {
-                        LogRelPrintFunc("can not compute ino\n");
+                        LogRelFunc(("can not compute ino\n"));
                         return -EINVAL;
                 }
 
@@ -285,7 +284,7 @@ sf_lookup (struct inode *parent, struct dentry *dentry
         else {
                 sf_new_i = kmalloc (sizeof (*sf_new_i), GFP_KERNEL);
                 if (!sf_new_i) {
-                        LogRelPrintFunc("could not allocate memory for new inode info\n");
+                        LogRelFunc(("could not allocate memory for new inode info\n"));
                         err = -ENOMEM;
                         goto fail1;
                 }
@@ -336,9 +335,7 @@ sf_instantiate (const char *caller, struct inode *parent,
 
         sf_new_i = kmalloc (sizeof (*sf_new_i), GFP_KERNEL);
         if (!sf_new_i) {
-                LogRelPrintFunc("could not allocate inode info.  caller=");
-                LogRelPrint(caller);
-                LogRelPrint("\n");
+                LogRelFunc(("could not allocate inode info.  caller=%s\n", caller));
                 err = -ENOMEM;
                 goto fail0;
         }

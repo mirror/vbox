@@ -528,6 +528,27 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #define LogTraceMsg(m) \
     do {  LogTrace(); LogFlow(m); } while (0)
 
+/** @def LogFunc
+ * Level 1 logging inside C/C++ functions.
+ * Prepends the given log message with the function name followed by a semicolon
+ * and space.
+ * @param m    log message in format <tt>("string\n" [, args])</tt>
+ * @todo use a Log macro with a variable argument list (requires MSVC8) to
+ * join two separate Log* calls and make this op atomic
+ */
+#define LogFunc(m) \
+    do { Log(("%s: ", __PRETTY_FUNCTION__)); Log(m); } while (0)
+
+/** @def LogThisFunc
+ * The same as LogFunc but for class functions (methods): the resulting log
+ * line is additionally perpended with a hex value of |this| pointer.
+ * @param m    log message in format <tt>("string\n" [, args])</tt>
+ * @todo use a Log macro with a variable argument list (requires MSVC8) to
+ * join two separate Log* calls and make this op atomic
+ */
+#define LogThisFunc(m) \
+    do { Log(("{%p} %s: ", this, __PRETTY_FUNCTION__)); Log(m); } while (0)
+
 /** @def LogFlowFunc
  * Macro to log the execution flow inside C/C++ functions.
  * Prepends the given log message with the function name followed by a semicolon

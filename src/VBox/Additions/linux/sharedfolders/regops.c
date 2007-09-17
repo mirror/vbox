@@ -64,9 +64,7 @@ sf_reg_read (struct file *file, char *buf, size_t size, loff_t *off)
 
         tmp = kmalloc (CHUNK_SIZE, GFP_KERNEL);
         if (!tmp) {
-                LogRelPrintFunc("could not allocate bounce buffer memory ");
-                LogRelPrintQuote(CHUNK_SIZE);
-                LogRelPrint(" bytes\n");
+                LogRelFunc(("could not allocate bounce buffer memory %d bytes\n", CHUNK_SIZE));
                 return -ENOMEM;
         }
 
@@ -136,9 +134,7 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
 
         tmp = kmalloc (CHUNK_SIZE, GFP_KERNEL);
         if (!tmp) {
-                LogRelPrintFunc("could not allocate bounce buffer memory ");
-                LogRelPrintQuote(CHUNK_SIZE);
-                LogRelPrint("bytes\n");
+                LogRelFunc(("could not allocate bounce buffer memory %d\n", CHUNK_SIZE));
                 return -ENOMEM;
         }
 
@@ -204,7 +200,7 @@ sf_reg_open (struct inode *inode, struct file *file)
 
         sf_r = kmalloc (sizeof (*sf_r), GFP_KERNEL);
         if (!sf_r) {
-                LogRelPrintFunc("could not allocate reg info\n");
+                LogRelFunc(("could not allocate reg info\n"));
                 return -ENOMEM;
         }
 
@@ -222,20 +218,13 @@ sf_reg_open (struct inode *inode, struct file *file)
                 params.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
                 /* We ignore O_EXCL, as the Linux kernel seems to call create
                    beforehand itself, so O_EXCL should always fail. */
-//                if (file->f_flags & O_EXCL) {
-//                        LogFunc(("O_EXCL set\n"));
-//                        params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS;
-//                }
-//                else {
-                        /* O_TRUNC combined with O_EXCL is undefined. */
-                        if (file->f_flags & O_TRUNC) {
-                                LogFunc(("O_TRUNC set\n"));
-                                params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
-                        }
-                        else {
-                                params.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
-                        }
-//                }
+                if (file->f_flags & O_TRUNC) {
+                        LogFunc(("O_TRUNC set\n"));
+                        params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+                }
+                else {
+                        params.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
+                }
         }
         else {
                 params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
@@ -247,20 +236,20 @@ sf_reg_open (struct inode *inode, struct file *file)
 
         if (!(params.CreateFlags & SHFL_CF_ACCESS_READWRITE)) {
                 switch (file->f_flags & O_ACCMODE) {
-                        case O_RDONLY:
-                                params.CreateFlags |= SHFL_CF_ACCESS_READ;
-                                break;
+                case O_RDONLY:
+                        params.CreateFlags |= SHFL_CF_ACCESS_READ;
+                        break;
 
-                        case O_WRONLY:
-                                params.CreateFlags |= SHFL_CF_ACCESS_WRITE;
-                                break;
+                case O_WRONLY:
+                        params.CreateFlags |= SHFL_CF_ACCESS_WRITE;
+                        break;
 
-                        case O_RDWR:
-                                params.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
-                                break;
+                case O_RDWR:
+                        params.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+                        break;
 
-                        default:
-                                BUG ();
+                default:
+                        BUG ();
                 }
         }
 
@@ -272,7 +261,7 @@ sf_reg_open (struct inode *inode, struct file *file)
                 LogFunc(("vboxCallCreate failed flags=%d,%#x rc=%Vrc\n",
                          file->f_flags, params.CreateFlags, rc));
                 kfree (sf_r);
-                return -EPROTO;
+                return -RTErrConvertToErrno(rc);
         }
 
         if (SHFL_HANDLE_NIL == params.Handle) {
@@ -346,7 +335,7 @@ sf_reg_nopage (struct vm_area_struct *vma, unsigned long vaddr, int *type)
 
         page = alloc_page (GFP_HIGHUSER);
         if (!page) {
-                LogRelPrintFunc("failed to allocate page\n");
+                LogRelFunc(("failed to allocate page\n"));
                 SET_TYPE (VM_FAULT_OOM);
                 return NOPAGE_OOM;
         }

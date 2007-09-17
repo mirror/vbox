@@ -21,32 +21,10 @@
 
 #if defined(RT_OS_LINUX)
 
-/* Since I don't know the background for the stuff below, I prefer not to change
-   it.  I don't need it or want it for backdoor logging inside the Linux
-   Guest Additions kernel modules though. */
+/* Since I don't know the background for the stuff below, I prefer not to
+   change it.  I don't need it or want it for backdoor logging inside the
+   Linux Guest Additions kernel modules though. */
 # include <VBox/log.h>
-# define LogRelPrint(a) \
-      do { \
-          RTLogWriteUser (a, strlen(a)); \
-      } while (0)
-
-# define LogRelPrintQuote(a) \
-      do { \
-          LogRelPrint (#a); \
-      } while (0)
-
-# define LogRelPrintFunc(a) \
-      do { \
-          LogRelPrint (__PRETTY_FUNCTION__); \
-          LogRelPrint (": "); \
-          LogRelPrint (a); \
-      } while (0)
-
-# define LogFunc(a) \
-      do { \
-          Log(("%s: ", __PRETTY_FUNCTION__)); \
-          Log(a); \
-      } while (0)
 
 #else  /* RT_OS_LINUX not defined */
 /* Save LOG_ENABLED state, because "VBox/rt/log.h"

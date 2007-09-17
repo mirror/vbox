@@ -83,11 +83,6 @@ RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
  * symbols available to other modules as well.
  */
 # include <linux/module.h>
-# ifdef DEBUG
-/* We only export the full logging infrastructure to the guest kernel
-   modules in debug builds. */
 EXPORT_SYMBOL(RTLogBackdoorPrintf);
-# endif
 EXPORT_SYMBOL(RTLogWriteUser);
 #endif /* RT_OS_LINUX && IN_MODULE */
-
