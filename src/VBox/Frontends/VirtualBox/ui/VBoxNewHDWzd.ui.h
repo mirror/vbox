@@ -316,7 +316,7 @@ QString VBoxNewHDWzd::imageFileName()
 
     QString ext = QFileInfo (name).extension();
     /* compare against the proper case */
-#if defined (Q_OS_LINUX)
+#if defined (Q_OS_FREEBSD) || defined (Q_OS_LINUX) || defined (Q_OS_NETBSD) || defined (Q_OS_OPENBSD) || defined (Q_OS_SOLARIS)
 #elif defined (Q_OS_WIN) || defined (Q_OS_OS2) || defined (Q_OS_MACX)
     ext = ext.lower();
 #else

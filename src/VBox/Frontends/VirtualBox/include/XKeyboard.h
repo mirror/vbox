@@ -19,10 +19,6 @@
 #ifndef __XKeyboard_h__
 #define __XKeyboard_h__
 
-#ifndef RT_OS_LINUX
-#error This file is X11/Linux specific!
-#endif
-
 // our structure used to return keyboard event information
 typedef struct _WINEKEYBOARDINFO
 {
