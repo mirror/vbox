@@ -122,7 +122,10 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
             "\n!!Assertion Failed!!\n"
             "Expression: %s\n"
             "Location  : %s(%d) %s\n",
-            pszExpr, pszFile, uLine, pszFunction);
+            VALID_PTR(pszExpr) ? pszExpr : "<none>",
+            VALID_PTR(pszFile) ? pszFile : "<none>",
+            uLine,
+            VALID_PTR(pszFunction) ? pszFunction : "");
     fflush(stderr);
 #endif
 
