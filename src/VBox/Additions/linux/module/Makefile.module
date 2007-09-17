@@ -32,15 +32,12 @@ OBJS   = \
 	moddi3.o \
 	udivdi3.o \
 	umoddi3.o \
-	qdivrem.o
-ifeq ($(BUILD_TYPE),debug)
-OBJS  += \
+	qdivrem.o \
 	logbackdoor.o \
 	logformat.o \
 	strformat.o \
 	strformatrt.o \
 	strformat-vbox.o
-endif
 
 ifneq ($(MAKECMDGOALS),clean)
 

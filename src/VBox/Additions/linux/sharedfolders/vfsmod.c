@@ -72,7 +72,7 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
         sf_g = kmalloc (sizeof (*sf_g), GFP_KERNEL);
         if (!sf_g) {
                 err = -ENOMEM;
-                LogRelPrintFunc("could not allocate memory for global info\n");
+                LogRelFunc(("could not allocate memory for global info\n"));
                 goto fail0;
         }
 
@@ -90,7 +90,7 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
         str_name = kmalloc (str_len, GFP_KERNEL);
         if (!str_name) {
                 err = -ENOMEM;
-                LogRelPrintFunc("could not allocate memory for host name\n");
+                LogRelFunc(("could not allocate memory for host name\n"));
                 goto fail1;
         }
 
@@ -195,14 +195,14 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         sf_i = kmalloc (sizeof (*sf_i), GFP_KERNEL);
         if (!sf_i) {
                 err = -ENOMEM;
-                LogRelPrintFunc ("could not allocate memory for root inode info\n");
+                LogRelFunc (("could not allocate memory for root inode info\n"));
                 goto fail1;
         }
 
         sf_i->path = kmalloc (sizeof (SHFLSTRING) + 1, GFP_KERNEL);
         if (!sf_i->path) {
                 err = -ENOMEM;
-                LogRelPrintFunc ("could not allocate memory for root inode path\n");
+                LogRelFunc (("could not allocate memory for root inode path\n"));
                 goto fail2;
         }
 
@@ -417,22 +417,19 @@ init (void)
 
         rc = vboxInit ();
         if (VBOX_FAILURE (rc)) {
-                LogRelPrintFunc ("vboxInit failed\n");
-                Log (("rc=%d\n", rc));
+                LogRelFunc (("vboxInit failed, rc=%d\n", rc));
                 goto fail0;
         }
 
         rc = vboxConnect (&client_handle);
         if (VBOX_FAILURE (rc)) {
-                LogRelPrintFunc ("vboxConnect failed\n");
-                Log (("rc=%d\n", rc));
+                LogRelFunc (("vboxConnect failed, rc=%d\n", rc));
                 goto fail1;
         }
 
         rc = vboxCallSetUtf8 (&client_handle);
         if (VBOX_FAILURE (rc)) {
-                LogRelPrintFunc ("vboxCallSetUtf8 failed\n");
-                Log (("rc=%d\n", rc));
+                LogRelFunc (("vboxCallSetUtf8 failed, rc=%d\n", rc));
                 goto fail2;
         }
 
