@@ -5809,10 +5809,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             char nowUct[64];
             RTTimeSpecToString(RTTimeNow(&timeSpec), nowUct, sizeof(nowUct));
             RTLogRelLogger(loggerRelease, 0, ~0U,
-                           "VirtualBox %s r%d (%s %s) release log\n"
+                           "VirtualBox %s r%d %s (%s %s) release log\n"
                            "Log opened %s\n",
-                           VBOX_VERSION_STRING, VBOX_SVN_REV, __DATE__, __TIME__,
-                           nowUct);
+                           VBOX_VERSION_STRING, VBOX_SVN_REV, BUILD_TARGET,
+                           __DATE__, __TIME__, nowUct);
 
             /* register this logger as the release logger */
             RTLogRelSetDefaultInstance(loggerRelease);
