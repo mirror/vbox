@@ -357,6 +357,7 @@ endif
 # ConsoleImpl.cpp uses VBOX_SVN_REV.
 ConsoleImpl.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 ConsoleImpl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+ConsoleImpl.cpp_DEFS += BUILD_TARGET=\"$(BUILD_TARGET).$(BUILD_TARGET_ARCH)\"
 
 win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs
 
