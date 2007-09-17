@@ -28,6 +28,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/ldr.h>
+#include <iprt/alloca.h>
 
 #include <VBox/err.h>
 
@@ -379,12 +380,12 @@ static void findTopLeftBorder (const uint8_t *pu8AndMask, const uint8_t *pu8XorM
 static void mousePointerGenerateANDMask (uint8_t *pu8DstAndMask, int cbDstAndMask, const uint8_t *pu8SrcAlpha, int w, int h)
 {
     memset (pu8DstAndMask, 0xFF, cbDstAndMask);
-    
+
     int y;
     for (y = 0; y < h; y++)
     {
         uint8_t bitmask = 0x80;
-            
+
         int x;
         for (x = 0; x < w; x++, bitmask >>= 1)
         {
@@ -392,14 +393,14 @@ static void mousePointerGenerateANDMask (uint8_t *pu8DstAndMask, int cbDstAndMas
             {
                 bitmask = 0x80;
             }
-            
+
             /* Whether alpha channel value is not transparent enough for the pixel to be seen. */
             if (pu8SrcAlpha[x * 4 + 3] > 0x7f)
             {
                 pu8DstAndMask[x / 8] &= ~bitmask;
             }
         }
-    
+
         /* Point to next source and dest scans. */
         pu8SrcAlpha += w * 4;
         pu8DstAndMask += (w + 7) / 8;
@@ -644,7 +645,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
         {
             com::Bstr address;
             server->mConsole->getVRDPServer ()->COMGETTER(NetAddress) (address.asOutParam());
-            
+
             if (cbBuffer >= address.length ())
             {
                 if (address.length () > 0)
@@ -653,7 +654,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
                 }
                 rc = VINF_SUCCESS;
             }
-            
+
             *pcbOut = address.length ();
         } break;
 
@@ -662,7 +663,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
             ULONG cMonitors = 1;
 
             server->mConsole->machine ()->COMGETTER(MonitorCount)(&cMonitors);
-    
+
             if (cbBuffer >= sizeof (uint32_t))
             {
                 *(uint32_t *)pvBuffer = (uint32_t)cMonitors;
@@ -686,28 +687,28 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
 DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackClientLogon (void *pvCallback, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-    
+
     return server->mConsole->VRDPClientLogon (u32ClientId, pszUser, pszPassword, pszDomain);
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientConnect (void *pvCallback, uint32_t u32ClientId)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-    
+
     server->mConsole->VRDPClientConnect (u32ClientId);
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect (void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercepted)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-    
+
     server->mConsole->VRDPClientDisconnect (u32ClientId, fu32Intercepted);
 }
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackIntercept (void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercept, void **ppvIntercept)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-    
+
     LogFlowFunc(("%x\n", fu32Intercept));
 
     int rc = VERR_NOT_SUPPORTED;
@@ -753,7 +754,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackUSB (void *pvCallback, void *p
     return USBClientResponseCallback (pvIntercept, u32ClientId, u8Code, pvRet, cbRet);
 #else
     return VERR_NOT_SUPPORTED;
-#endif 
+#endif
 }
 
 DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackClipboard (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData)
@@ -801,9 +802,9 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery (void *pvCall
         pInfo->cHeight = height;
         pInfo->cBitsPerPixel = bitsPerPixel;
         pInfo->cbLine = lineSize;
-        
+
         pfb->Unlock ();
-        
+
         fAvailable = true;
     }
 
@@ -819,7 +820,7 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery (void *pvCall
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferLock (void *pvCallback, unsigned uScreenId)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-    
+
     if (server->maFramebuffers[uScreenId])
     {
         server->maFramebuffers[uScreenId]->Lock ();
@@ -829,7 +830,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferLock (void *pvCallb
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferUnlock (void *pvCallback, unsigned uScreenId)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
-    
+
     if (server->maFramebuffers[uScreenId])
     {
         server->maFramebuffers[uScreenId]->Unlock ();
@@ -927,14 +928,14 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 
     int rc = RTCritSectInit (&mCritSect);
     AssertRC (rc);
-    
+
     mcClipboardRefs = 0;
     mpfnClipboardCallback = NULL;
 
 #ifdef VBOX_WITH_USB
     mUSBBackends.pHead = NULL;
     mUSBBackends.pTail = NULL;
-    
+
     mUSBBackends.thread = NIL_RTTHREAD;
     mUSBBackends.fThreadRunning = false;
     mUSBBackends.event = 0;
@@ -942,14 +943,14 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 
 #ifdef VBOX_VRDP
     mhServer = 0;
-    
+
 #ifdef VRDP_NO_COM
     m_fGuestWantsAbsolute = false;
     m_mousex = 0;
     m_mousey = 0;
-    
+
     memset (maFramebuffers, 0, sizeof (maFramebuffers));
-    
+
     mConsoleCallback = new VRDPConsoleCallback(this);
     mConsoleCallback->AddRef();
     console->RegisterCallback(mConsoleCallback);
@@ -1128,13 +1129,13 @@ static DECLCALLBACK(int) threadRemoteUSB (RTTHREAD self, void *pvUser)
     ConsoleVRDPServer *pOwner = (ConsoleVRDPServer *)pvUser;
 
     LogFlow(("Console::threadRemoteUSB: start. owner = %p.\n", pOwner));
-    
+
     pOwner->notifyRemoteUSBThreadRunning (self);
 
     while (pOwner->isRemoteUSBThreadRunning ())
     {
         RemoteUSBBackend *pRemoteUSBBackend = NULL;
-        
+
         while ((pRemoteUSBBackend = pOwner->usbBackendGetNext (pRemoteUSBBackend)) != NULL)
         {
             pRemoteUSBBackend->PollRemoteDevices ();
@@ -1155,12 +1156,12 @@ void ConsoleVRDPServer::notifyRemoteUSBThreadRunning (RTTHREAD thread)
     int rc = RTThreadUserSignal (thread);
     AssertRC (rc);
 }
-    
+
 bool ConsoleVRDPServer::isRemoteUSBThreadRunning (void)
 {
     return mUSBBackends.fThreadRunning;
 }
-    
+
 void ConsoleVRDPServer::waitRemoteUSBThreadEvent (unsigned cMillies)
 {
     int rc = RTSemEventWait (mUSBBackends.event, cMillies);
@@ -1177,13 +1178,13 @@ void ConsoleVRDPServer::remoteUSBThreadStart (void)
         AssertFailed ();
         mUSBBackends.event = 0;
     }
-    
+
     if (VBOX_SUCCESS (rc))
     {
         rc = RTThreadCreate (&mUSBBackends.thread, threadRemoteUSB, this, 65536,
                              RTTHREADTYPE_VRDP_IO, RTTHREADFLAGS_WAITABLE, "remote usb");
     }
-    
+
     if (VBOX_FAILURE (rc))
     {
         LogRel(("Warning: could not start the remote USB thread, rc = %Vrc!!!\n", rc));
@@ -1201,19 +1202,19 @@ void ConsoleVRDPServer::remoteUSBThreadStart (void)
 void ConsoleVRDPServer::remoteUSBThreadStop (void)
 {
     mUSBBackends.fThreadRunning = false;
-    
+
     if (mUSBBackends.thread != NIL_RTTHREAD)
     {
         Assert (mUSBBackends.event != 0);
-        
+
         RTSemEventSignal (mUSBBackends.event);
-        
+
         int rc = RTThreadWait (mUSBBackends.thread, 60000, NULL);
         AssertRC (rc);
-        
+
         mUSBBackends.thread = NIL_RTTHREAD;
     }
-    
+
     if (mUSBBackends.event)
     {
         RTSemEventDestroy (mUSBBackends.event);
@@ -1370,11 +1371,11 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback (void *pvCallback,
                  pvCallback, u32ClientId, u32Function, u32Format, pvData, cbData));
 
     int rc = VINF_SUCCESS;
-    
+
     ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvCallback);
-    
+
     NOREF(u32ClientId);
-    
+
     switch (u32Function)
     {
         case VRDP_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE:
@@ -1386,8 +1387,8 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback (void *pvCallback,
                                                 (void *)pvData,
                                                 cbData);
             }
-        } break; 
-        
+        } break;
+
         case VRDP_CLIPBOARD_FUNCTION_DATA_READ:
         {
             if (pServer->mpfnClipboardCallback)
@@ -1397,12 +1398,12 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback (void *pvCallback,
                                                 (void *)pvData,
                                                 cbData);
             }
-        } break; 
+        } break;
 
-        default: 
+        default:
             rc = VERR_NOT_SUPPORTED;
     }
-    
+
     return rc;
 }
 
@@ -1413,14 +1414,14 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 {
     LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
                  pvExtension, u32Function, pvParms, cbParms));
-    
+
     int rc = VINF_SUCCESS;
-    
+
 #ifdef VBOX_VRDP
     ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvExtension);
-    
+
     VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
-    
+
     switch (u32Function)
     {
         case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
@@ -1434,7 +1435,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 #ifdef VRDP_NO_COM
             if (mpEntryPoints && pServer->mhServer)
             {
-                mpEntryPoints->VRDPClipboard (pServer->mhServer, 
+                mpEntryPoints->VRDPClipboard (pServer->mhServer,
                                               VRDP_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
                                               pParms->u32Format,
                                               NULL,
@@ -1444,7 +1445,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 #else
             if (mpfnVRDPClipboard)
             {
-                mpfnVRDPClipboard (pServer->mhServer, 
+                mpfnVRDPClipboard (pServer->mhServer,
                                    VRDP_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
                                    pParms->u32Format,
                                    NULL,
@@ -1463,7 +1464,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 #ifdef VRDP_NO_COM
             if (mpEntryPoints && pServer->mhServer)
             {
-                mpEntryPoints->VRDPClipboard (pServer->mhServer, 
+                mpEntryPoints->VRDPClipboard (pServer->mhServer,
                                               VRDP_CLIPBOARD_FUNCTION_DATA_READ,
                                               pParms->u32Format,
                                               pParms->pvData,
@@ -1473,7 +1474,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 #else
             if (mpfnVRDPClipboard)
             {
-                mpfnVRDPClipboard (pServer->mhServer, 
+                mpfnVRDPClipboard (pServer->mhServer,
                                    VRDP_CLIPBOARD_FUNCTION_DATA_READ,
                                    pParms->u32Format,
                                    pParms->pvData,
@@ -1488,7 +1489,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 #ifdef VRDP_NO_COM
             if (mpEntryPoints && pServer->mhServer)
             {
-                mpEntryPoints->VRDPClipboard (pServer->mhServer, 
+                mpEntryPoints->VRDPClipboard (pServer->mhServer,
                                               VRDP_CLIPBOARD_FUNCTION_DATA_WRITE,
                                               pParms->u32Format,
                                               pParms->pvData,
@@ -1498,7 +1499,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 #else
             if (mpfnVRDPClipboard)
             {
-                mpfnVRDPClipboard (pServer->mhServer, 
+                mpfnVRDPClipboard (pServer->mhServer,
                                    VRDP_CLIPBOARD_FUNCTION_DATA_WRITE,
                                    pParms->u32Format,
                                    pParms->pvData,
@@ -1507,8 +1508,8 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
             }
 #endif /* VRDP_NO_COM */
         } break;
-        
-        default: 
+
+        default:
             rc = VERR_NOT_SUPPORTED;
     }
 #endif /* VBOX_VRDP */
@@ -1523,19 +1524,19 @@ void ConsoleVRDPServer::ClipboardCreate (uint32_t u32ClientId, PFNVRDPCLIPBOARDC
 #endif /* VRDP_NO_COM */
 {
     int rc = lockConsoleVRDPServer ();
-        
+
     if (VBOX_SUCCESS (rc))
     {
         if (mcClipboardRefs == 0)
         {
             rc = HGCMHostRegisterServiceExtension (&mhClipboard, "VBoxSharedClipboard", ClipboardServiceExtension, this);
-            
+
             if (VBOX_SUCCESS (rc))
             {
                 mcClipboardRefs++;
             }
         }
-        
+
 #ifdef VRDP_NO_COM
 #else
         if (VBOX_SUCCESS (rc))
@@ -1552,11 +1553,11 @@ void ConsoleVRDPServer::ClipboardCreate (uint32_t u32ClientId, PFNVRDPCLIPBOARDC
 void ConsoleVRDPServer::ClipboardDelete (uint32_t u32ClientId)
 {
     int rc = lockConsoleVRDPServer ();
-        
+
     if (VBOX_SUCCESS (rc))
     {
         mcClipboardRefs--;
-        
+
         if (mcClipboardRefs == 0)
         {
             HGCMHostUnregisterServiceExtension (mhClipboard);
@@ -1577,17 +1578,17 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBA
 {
 #ifdef VBOX_WITH_USB
     LogFlow(("ConsoleVRDPServer::USBBackendCreate: u32ClientId = %d\n", u32ClientId));
-    
+
     /* Create a new instance of the USB backend for the new client. */
     RemoteUSBBackend *pRemoteUSBBackend = new RemoteUSBBackend (mConsole, this, u32ClientId);
 
     if (pRemoteUSBBackend)
     {
         pRemoteUSBBackend->AddRef (); /* 'Release' called in USBBackendDelete. */
-            
+
         /* Append the new instance in the list. */
         int rc = lockConsoleVRDPServer ();
-        
+
         if (VBOX_SUCCESS (rc))
         {
             pRemoteUSBBackend->pNext = mUSBBackends.pHead;
@@ -1599,11 +1600,11 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, PFNVRDPUSBCALLBA
             {
                 mUSBBackends.pTail = pRemoteUSBBackend;
             }
-            
+
             mUSBBackends.pHead = pRemoteUSBBackend;
-            
+
             unlockConsoleVRDPServer ();
-            
+
 #ifdef VRDP_NO_COM
             if (ppvIntercept)
             {
@@ -1628,23 +1629,23 @@ void ConsoleVRDPServer::USBBackendDelete (uint32_t u32ClientId)
     LogFlow(("ConsoleVRDPServer::USBBackendDelete: u32ClientId = %d\n", u32ClientId));
 
     RemoteUSBBackend *pRemoteUSBBackend = NULL;
-    
+
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
-        
+
     if (VBOX_SUCCESS (rc))
     {
         pRemoteUSBBackend = usbBackendFind (u32ClientId);
-        
+
         if (pRemoteUSBBackend)
         {
             /* Notify that it will be deleted. */
             pRemoteUSBBackend->NotifyDelete ();
         }
-        
+
         unlockConsoleVRDPServer ();
     }
-    
+
     if (pRemoteUSBBackend)
     {
         /* Here the instance has been excluded from the list and can be dereferenced. */
@@ -1657,19 +1658,19 @@ void *ConsoleVRDPServer::USBBackendRequestPointer (uint32_t u32ClientId, const G
 {
 #ifdef VBOX_WITH_USB
     RemoteUSBBackend *pRemoteUSBBackend = NULL;
-    
+
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
-        
+
     if (VBOX_SUCCESS (rc))
     {
         pRemoteUSBBackend = usbBackendFind (u32ClientId);
-        
+
         if (pRemoteUSBBackend)
         {
             /* Inform the backend instance that it is referenced by the Guid. */
             bool fAdded = pRemoteUSBBackend->addUUID (pGuid);
-            
+
             if (fAdded)
             {
                 /* Reference the instance because its pointer is being taken. */
@@ -1680,15 +1681,15 @@ void *ConsoleVRDPServer::USBBackendRequestPointer (uint32_t u32ClientId, const G
                 pRemoteUSBBackend = NULL;
             }
         }
-        
+
         unlockConsoleVRDPServer ();
     }
-    
+
     if (pRemoteUSBBackend)
     {
         return pRemoteUSBBackend->GetBackendCallbackPointer ();
     }
-    
+
 #endif
     return NULL;
 }
@@ -1697,21 +1698,21 @@ void ConsoleVRDPServer::USBBackendReleasePointer (const Guid *pGuid)
 {
 #ifdef VBOX_WITH_USB
     RemoteUSBBackend *pRemoteUSBBackend = NULL;
-    
+
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
-        
+
     if (VBOX_SUCCESS (rc))
     {
         pRemoteUSBBackend = usbBackendFindByUUID (pGuid);
-        
+
         if (pRemoteUSBBackend)
         {
             pRemoteUSBBackend->removeUUID (pGuid);
         }
-        
+
         unlockConsoleVRDPServer ();
-        
+
         if (pRemoteUSBBackend)
         {
             pRemoteUSBBackend->Release ();
@@ -1726,9 +1727,9 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemot
 
     RemoteUSBBackend *pNextRemoteUSBBackend = NULL;
 #ifdef VBOX_WITH_USB
-        
+
     int rc = lockConsoleVRDPServer ();
-        
+
     if (VBOX_SUCCESS (rc))
     {
         if (pRemoteUSBBackend == NULL)
@@ -1741,21 +1742,21 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemot
             /* Get pointer to the next backend. */
             pNextRemoteUSBBackend = (RemoteUSBBackend *)pRemoteUSBBackend->pNext;
         }
-        
+
         if (pNextRemoteUSBBackend)
         {
             pNextRemoteUSBBackend->AddRef ();
         }
-        
+
         unlockConsoleVRDPServer ();
-        
+
         if (pRemoteUSBBackend)
         {
             pRemoteUSBBackend->Release ();
         }
     }
 #endif
-    
+
     return pNextRemoteUSBBackend;
 }
 
@@ -1764,17 +1765,17 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemot
 RemoteUSBBackend *ConsoleVRDPServer::usbBackendFind (uint32_t u32ClientId)
 {
     RemoteUSBBackend *pRemoteUSBBackend = mUSBBackends.pHead;
-        
+
     while (pRemoteUSBBackend)
     {
         if (pRemoteUSBBackend->ClientId () == u32ClientId)
         {
             break;
         }
-            
+
         pRemoteUSBBackend = (RemoteUSBBackend *)pRemoteUSBBackend->pNext;
     }
-    
+
     return pRemoteUSBBackend;
 }
 
@@ -1782,17 +1783,17 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendFind (uint32_t u32ClientId)
 RemoteUSBBackend *ConsoleVRDPServer::usbBackendFindByUUID (const Guid *pGuid)
 {
     RemoteUSBBackend *pRemoteUSBBackend = mUSBBackends.pHead;
-        
+
     while (pRemoteUSBBackend)
     {
         if (pRemoteUSBBackend->findUUID (pGuid))
         {
             break;
         }
-            
+
         pRemoteUSBBackend = (RemoteUSBBackend *)pRemoteUSBBackend->pNext;
     }
-    
+
     return pRemoteUSBBackend;
 }
 #endif
@@ -1803,7 +1804,7 @@ void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBa
 #ifdef VBOX_WITH_USB
     int rc = lockConsoleVRDPServer ();
     AssertRC (rc);
-        
+
     /* Exclude the found instance from the list. */
     if (pRemoteUSBBackend->pNext)
     {
@@ -1813,7 +1814,7 @@ void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBa
     {
         mUSBBackends.pTail = (RemoteUSBBackend *)pRemoteUSBBackend->pPrev;
     }
-                
+
     if (pRemoteUSBBackend->pPrev)
     {
         pRemoteUSBBackend->pPrev->pNext = pRemoteUSBBackend->pNext;
@@ -1822,9 +1823,9 @@ void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBa
     {
         mUSBBackends.pHead = (RemoteUSBBackend *)pRemoteUSBBackend->pNext;
     }
-                
+
     pRemoteUSBBackend->pNext = pRemoteUSBBackend->pPrev = NULL;
-    
+
     unlockConsoleVRDPServer ();
 #endif
 }
