@@ -143,7 +143,7 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 }
 
 
-int suplibOSIOCtlFast(uintptr_t uFunction)
+int suplibOsIOCtlFast(uintptr_t uFunction)
 {
     int32_t rcRet = VERR_INTERNAL_ERROR;
     ULONG cbRet = sizeof(rcRet);
