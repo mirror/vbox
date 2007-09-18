@@ -33,7 +33,7 @@
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
 
-#if defined(DEBUG) && defined(Q_WS_X11)
+#if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
 
 #include <signal.h>
 #include <execinfo.h>
@@ -129,7 +129,7 @@ int main (int argc, char **argv)
     HRESULT hrc = COMBase::initializeCOM();
 #endif
 
-#if defined(DEBUG) && defined(Q_WS_X11)
+#if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
     /* install our signal handler to backtrace the call stack */
     struct sigaction sa;
     sa.sa_sigaction = bt_sighandler;
