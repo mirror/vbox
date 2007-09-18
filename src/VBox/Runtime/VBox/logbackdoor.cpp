@@ -82,7 +82,7 @@ RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
  * When we build this in the Linux kernel module, we wish to make the
  * symbols available to other modules as well.
  */
-# include <linux/module.h>
+# include "the-linux-kernel.h"
 EXPORT_SYMBOL(RTLogBackdoorPrintf);
 EXPORT_SYMBOL(RTLogWriteUser);
 #endif /* RT_OS_LINUX && IN_MODULE */
