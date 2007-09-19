@@ -27,7 +27,7 @@
 
 # if defined(RT_OS_DARWIN) && defined(KERNEL)
     /*
-     * Klugde for the darwin kernel:
+     * Kludge for the darwin kernel:
      *  stddef.h is missing IIRC.
      */
 #  ifndef _PTRDIFF_T
@@ -113,6 +113,9 @@
 #ifndef __cplusplus
 # if defined(__GNUC__)
 #  if defined(RT_OS_DARWIN) && defined(_STDBOOL_H)
+#   undef bool
+#  elif defined(RT_OS_LINUX)
+#   include <stdbool.h>
 #   undef bool
 #  endif
 typedef _Bool bool;
