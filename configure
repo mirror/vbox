@@ -1172,11 +1172,11 @@ Paths:
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
   --with-qt-dir=DIR        directory for QT headers/libraries [$QTDIR]
   --with-xalan=LIB         location of the xalan library [$LIBXALAN]
-  --with-xalan-incdir=DIR  location of the xalan headers [/usr/include]
+  --with-xalan-incdir=DIR  location of the xalan headers [/usr/include /usr/local/include]
   --with-xalan-libdir=DIR  location of the xalan library [/usr/lib /usr/local/lib]
   --with-xerces=LIB        location of the xerces library [$LIBXERCES]
   --with-xerces-incdir=DIR location of the xerces headers [/usr/include /usr/local/include]
-  --with-xerces-libdir=DIR location of the xerces library [/usr/lib]
+  --with-xerces-libdir=DIR location of the xerces library [/usr/lib /usr/local/lib]
 
 Build type:
   -d, --build-debug        build with debugging symbols and assertions
