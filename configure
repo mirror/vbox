@@ -45,10 +45,12 @@ AS86="as86"
 XSLTPROC="xsltproc"
 GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
-INCXALAN=""
+INCXALAN="/usr/local/include"
 LIBXALAN="-lxalan-c"
-INCXERCES=""
+LIBXALAN_DIR="/usr/local/lib"
+INCXERCES="/usr/local/include"
 LIBXERCES="-lxerces-c"
+LIBXERCES_DIR="/usr/local/lib"
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -lXext -lX11"
@@ -1171,9 +1173,9 @@ Paths:
   --with-qt-dir=DIR        directory for QT headers/libraries [$QTDIR]
   --with-xalan=LIB         location of the xalan library [$LIBXALAN]
   --with-xalan-incdir=DIR  location of the xalan headers [/usr/include]
-  --with-xalan-libdir=DIR  location of the xalan library [/usr/lib]
+  --with-xalan-libdir=DIR  location of the xalan library [/usr/lib /usr/local/lib]
   --with-xerces=LIB        location of the xerces library [$LIBXERCES]
-  --with-xerces-incdir=DIR location of the xerces headers [/usr/include]
+  --with-xerces-incdir=DIR location of the xerces headers [/usr/include /usr/local/include]
   --with-xerces-libdir=DIR location of the xerces library [/usr/lib]
 
 Build type:
