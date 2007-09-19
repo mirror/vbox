@@ -114,6 +114,8 @@
 # if defined(__GNUC__)
 #  if defined(RT_OS_DARWIN) && defined(_STDBOOL_H)
 #   undef bool
+#  elif defined(RT_OS_LINUX) && (__GNUC__ < 3)
+#   define _Bool uint8_t
 #  endif
 typedef _Bool bool;
 # else
