@@ -106,6 +106,18 @@
 #define _PR_IPV6_V6ONLY_PROBE
 #endif
 
+/* VBOX - START (expect somthing similar to arrive in the mozilla tree) */
+#if (__FreeBSD_version >= 700016) || (__FreeBSD_version < 700000 && __FreeBSD_version >= 601103)
+#if defined(_PR_PTHREADS)
+#define _PR_HAVE_GETPROTO_R
+#define _PR_HAVE_5_ARG_GETPROTO_R
+#define _PR_HAVE_GETHOST_R
+#define _PR_HAVE_GETHOST_R_INT
+#define _PR_HAVE_THREADSAFE_GETHOST
+#endif
+#endif
+/* VBOX - END */
+
 #define USE_SETJMP
 
 #ifndef _PR_PTHREADS
