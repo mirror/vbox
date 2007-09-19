@@ -973,9 +973,8 @@ EOF
       echo "compiling the following source file:" >> $LOG
       cat .tmp_src.cc >> $LOG
       echo "using the following command line:" >> $LOG
-      echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt" >> $LOG
-    
-      $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt >> $LOG 2>&1
+      echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt $LIBPTHREAD" >> $LOG
+      $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt $LIBPTHREAD >> $LOG 2>&1
       if [ $? -eq 0 ]; then
         if test_execute; then
           cnf_append "QTDIR" "`cd $q ; pwd`"
