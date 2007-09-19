@@ -13,6 +13,7 @@
 #  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
@@ -33,6 +34,7 @@ TEMPLATE_XPCOM_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_XPCOM_CXXFLAGS.release    = -O
 TEMPLATE_XPCOM_CXXFLAGS.profile    = -O
 TEMPLATE_XPCOM_CXXFLAGS.darwin     = -fpascal-strings -fshort-wchar -fno-common -fno-rtti
+TEMPLATE_XPCOM_CXXFLAGS.freebsd    = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.l4         = -fno-exceptions -nostdinc
 TEMPLATE_XPCOM_CXXFLAGS.linux      = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.solaris    = -fno-omit-frame-pointer # for now anyway.
@@ -40,6 +42,7 @@ TEMPLATE_XPCOM_CFLAGS              = -pipe -Wall -Wno-unused -Wno-parentheses -W
 TEMPLATE_XPCOM_CFLAGS.debug        = -fno-inline
 TEMPLATE_XPCOM_CFLAGS.release      = -O
 TEMPLATE_XPCOM_CFLAGS.profile      = -O
+TEMPLATE_XPCOM_CFLAGS.freebsd      = -pthread
 TEMPLATE_XPCOM_CFLAGS.l4           = -nostdinc
 TEMPLATE_XPCOM_CFLAGS.linux        = -pthread -ansi
 TEMPLATE_XPCOM_CFLAGS.solaris      = -fno-omit-frame-pointer # for now anyway.
@@ -49,6 +52,7 @@ TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1 _IMPL_NS_COM \
 TEMPLATE_XPCOM_DEFS.x86            = i386=1
 TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\(a\,b\)=__builtin_va_copy\(a\,b\)
 TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1 DARWIN=1
+TEMPLATE_XPCOM_DEFS.freebsd        = OSTYPE=\"FreeBSD5+\"   OSARCH=\"FreeBSD\" XP_UNIX=1 FREEBSD=1 HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  XP_UNIX=1 _GNU_SOURCE HAVE_VISIBILITY_ATTRIBUTE=1 ## @todo LINUX=1
 TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC BSD_SELECT OS2=4
@@ -125,6 +129,7 @@ TEMPLATE_XPCOMEXE_INCS             = $(PATH_TARGET) \
 TEMPLATE_XPCOMEXE_LIBS             = \
 	$(TARGET_VBox-xpcom-ipcshared) \
 	$(TARGET_VBoxXPCOM)
+TEMPLATE_XPCOMEXE_LIBS.freebsd     = $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.linux       = dl $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.l4          = $(LIB_RUNTIME) $(VBOX_GCC_LIBGCC)
 TEMPLATE_XPCOMEXE_LDFLAGS.darwin   = -bind_at_load $(TEMPLATE_XPCOM_LDFLAGS.darwin)
@@ -148,13 +153,15 @@ TEMPLATE_XPCOMBLDPROG_DEFS                      = $(TEMPLATE_BLDPROG_DEFS)      
 TEMPLATE_XPCOMBLDPROG_DEFS.$(BUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(BUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(BUILD_TARGET))
 TEMPLATE_XPCOMBLDPROG_DEFS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_BLDPROG_DEFS.$(BUILD_TARGET_ARCH)) $(TEMPLATE_XPCOMEXE_DEFS.$(BUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.linux    = -pthread
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.release  = -O
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.profile  = -O
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.freebsd  = -pthread
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.linux    = -pthread
 TEMPLATE_XPCOMBLDPROG_CFLAGS            = -pipe -ansi -Wall -Wno-unused
-TEMPLATE_XPCOMBLDPROG_CFLAGS.linux      = -pthread
 TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
+TEMPLATE_XPCOMBLDPROG_CFLAGS.freebsd    = -pthread
+TEMPLATE_XPCOMBLDPROG_CFLAGS.linux      = -pthread
 TEMPLATE_XPCOMBLDPROG_INCS              = $(VBOX_PATH_SDK)/include \
                                           $(VBOX_PATH_SDK)/include/xpcom \
                                           $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
@@ -609,8 +616,10 @@ VBox-xpcom-nspr_DEFS.darwin = \
 	HAVE_BSD_FLOCK=1 \
 	_PR_PTHREADS
 VBox-xpcom-nspr_DEFS.freebsd = \
+	FREEBSD=1 \
 	HAVE_CVAR_BUILT_ON_SEM \
 	_PR_PTHREADS
+## @todo filling in the missing stuff, please don't just copy it from linux.
 # FIXME: LINUX should be defined by _linux.cfg
 VBox-xpcom-nspr_DEFS.linux = \
 	LINUX=1 \
@@ -706,21 +715,26 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/lib/libc/src/plerror.c \
 	nsprpub/lib/libc/src/plgetopt.c
 
-VBox-xpcom-nspr_SOURCES.darwin  = \
+ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # unixish
+VBox-xpcom-nspr_SOURCES += \
 	nsprpub/pr/src/md/unix/unix.c \
 	nsprpub/pr/src/md/unix/unix_errors.c \
 	nsprpub/pr/src/md/unix/uxproces.c \
 	nsprpub/pr/src/md/unix/uxrng.c \
 	nsprpub/pr/src/md/unix/uxshm.c \
 	nsprpub/pr/src/md/unix/uxwrap.c \
-	nsprpub/pr/src/md/unix/darwin.c \
 	nsprpub/pr/src/pthreads/ptio.c \
 	nsprpub/pr/src/pthreads/ptsynch.c \
 	nsprpub/pr/src/pthreads/ptthread.c \
 	nsprpub/pr/src/pthreads/ptmisc.c
+endif
+
+VBox-xpcom-nspr_SOURCES.darwin = nsprpub/pr/src/md/unix/darwin.c
 VBox-xpcom-nspr_SOURCES.darwin.x86 = nsprpub/pr/src/md/unix/os_Darwin_x86.s
 
-VBox-xpcom-nspr_SOURCES.l4  = \
+VBox-xpcom-nspr_SOURCES.freebsd = nsprpub/pr/src/md/unix/freebsd.c
+
+VBox-xpcom-nspr_SOURCES.l4 = \
 	nsprpub/pr/src/io/prfile.c /* why not for Linux? */ \
 	nsprpub/pr/src/io/prio.c   /*  ""   ""  ""   ""  */ \
 	nsprpub/pr/src/io/prsocket.c \
@@ -744,22 +758,11 @@ VBox-xpcom-nspr_SOURCES.l4  = \
 VBox-xpcom-nspr_SOURCES.l4.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
 VBox-xpcom-nspr_SOURCES.l4.amd64 = nsprpub/pr/src/md/unix/os_Linux_x86_64.s
 
-VBox-xpcom-nspr_SOURCES.linux  = \
-	nsprpub/pr/src/md/unix/unix.c \
-	nsprpub/pr/src/md/unix/unix_errors.c \
-	nsprpub/pr/src/md/unix/uxproces.c \
-	nsprpub/pr/src/md/unix/uxrng.c \
-	nsprpub/pr/src/md/unix/uxshm.c \
-	nsprpub/pr/src/md/unix/uxwrap.c \
-	nsprpub/pr/src/md/unix/linux.c \
-	nsprpub/pr/src/pthreads/ptio.c \
-	nsprpub/pr/src/pthreads/ptsynch.c \
-	nsprpub/pr/src/pthreads/ptthread.c \
-	nsprpub/pr/src/pthreads/ptmisc.c
+VBox-xpcom-nspr_SOURCES.linux = nsprpub/pr/src/md/unix/linux.c
 VBox-xpcom-nspr_SOURCES.linux.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
 VBox-xpcom-nspr_SOURCES.linux.amd64 = nsprpub/pr/src/md/unix/os_Linux_x86_64.s
 
-VBox-xpcom-nspr_SOURCES.os2  = \
+VBox-xpcom-nspr_SOURCES.os2 = \
 	nsprpub/pr/src/io/prdir.c \
 	nsprpub/pr/src/io/prfile.c \
 	nsprpub/pr/src/io/prio.c \
@@ -785,25 +788,14 @@ VBox-xpcom-nspr_SOURCES.os2  = \
 	nsprpub/pr/src/threads/combined/prustack.c \
 	nsprpub/pr/src/threads/combined/pruthr.c
 # gcc/emx sources
-VBox-xpcom-nspr_SOURCES.os2  += \
+VBox-xpcom-nspr_SOURCES.os2 += \
 	nsprpub/pr/src/md/os2/os2emx.s \
 	nsprpub/pr/src/md/os2/os2vaclegacy.s
 # IBM VAC sources (not used)
 #VBox-xpcom-nspr_SOURCES.os2  += \
 #	nsprpub/pr/src/md/os2/os2vacpp.asm
 
-VBox-xpcom-nspr_SOURCES.solaris  = \
-	nsprpub/pr/src/md/unix/unix.c \
-	nsprpub/pr/src/md/unix/unix_errors.c \
-	nsprpub/pr/src/md/unix/uxproces.c \
-	nsprpub/pr/src/md/unix/uxrng.c \
-	nsprpub/pr/src/md/unix/uxshm.c \
-	nsprpub/pr/src/md/unix/uxwrap.c \
-	nsprpub/pr/src/md/unix/solaris.c \
-	nsprpub/pr/src/pthreads/ptio.c \
-	nsprpub/pr/src/pthreads/ptsynch.c \
-	nsprpub/pr/src/pthreads/ptthread.c \
-	nsprpub/pr/src/pthreads/ptmisc.c
+VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
 VBox-xpcom-nspr_SOURCES.solaris.x86 = nsprpub/pr/src/md/unix/os_SunOS_x86.s
 VBox-xpcom-nspr_SOURCES.solaris.amd64 = nsprpub/pr/src/md/unix/os_SunOS_amd64.s
 
@@ -977,6 +969,10 @@ VBox-xpcom-xptcall_DEFS.l4             = L4
 VBox-xpcom-xptcall_SOURCES             = xpcom/reflect/xptcall/src/xptcall.cpp
 VBox-xpcom-xptcall_SOURCES.darwin.x86  = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_unixish_x86.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_unixish_x86.cpp
+VBox-xpcom-xptcall_SOURCES.freebsd.x86 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
+                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
+VBox-xpcom-xptcall_SOURCES.freebsd.amd64= xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
+                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp ## ???
 VBox-xpcom-xptcall_SOURCES.linux.x86   = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
 VBox-xpcom-xptcall_SOURCES.linux.amd64 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
@@ -1061,7 +1057,8 @@ VBoxXPCOM_LIBS = \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr)
 
-VBoxXPCOM_LDFLAGS.linux = -Wl,--whole-archive \
+ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(BUILD_TARGET)),) # gnu ld.
+VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
 	$(TARGET_VBox-xpcom-typelib) \
 	$(TARGET_VBox-xpcom-string) \
 	$(TARGET_VBox-xpcom-base) \
@@ -1074,6 +1071,8 @@ VBoxXPCOM_LDFLAGS.linux = -Wl,--whole-archive \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
 	-Wl,--no-whole-archive
+endif
+
 VBoxXPCOM_LDFLAGS.solaris = -Wl,-z,allextract \
 	$(TARGET_VBox-xpcom-typelib) \
 	$(TARGET_VBox-xpcom-string) \
@@ -1172,18 +1171,13 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcService.cpp \
 	ipc/ipcd/client/src/ipcModuleFactory.cpp \
 	ipc/ipcd/extensions/dconnect/src/ipcDConnectService.cpp
-VBoxXPCOMIPCC_SOURCES.win = \
+ifeq ($(BUILD_TARGET),win)
+VBoxXPCOMIPCC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionWin.cpp
-VBoxXPCOMIPCC_SOURCES.darwin = \
+else
+VBoxXPCOMIPCC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
-VBoxXPCOMIPCC_SOURCES.l4 = \
-	ipc/ipcd/client/src/ipcConnectionUnix.cpp
-VBoxXPCOMIPCC_SOURCES.linux = \
-	ipc/ipcd/client/src/ipcConnectionUnix.cpp
-VBoxXPCOMIPCC_SOURCES.os2 = \
-	ipc/ipcd/client/src/ipcConnectionUnix.cpp
-VBoxXPCOMIPCC_SOURCES.solaris = \
-    ipc/ipcd/client/src/ipcConnectionUnix.cpp
+endif
 VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name @executable_path/components/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \
 	$(TARGET_VBox-xpcom-ipcutils) \
@@ -1201,18 +1195,13 @@ VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcClient.cpp \
 	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
 	ipc/ipcd/daemon/src/ipcCommandModule.cpp
-VBoxXPCOMIPCD_SOURCES.win = \
+ifeq ($(BUILD_TARGET),win)
+VBoxXPCOMIPCD_SOURCES += \
 	ipc/ipcd/daemon/src/ipcdWin.cpp
-VBoxXPCOMIPCD_SOURCES.darwin = \
+else
+VBoxXPCOMIPCD_SOURCES += \
 	ipc/ipcd/daemon/src/ipcdUnix.cpp
-VBoxXPCOMIPCD_SOURCES.l4 = \
-	ipc/ipcd/daemon/src/ipcdUnix.cpp
-VBoxXPCOMIPCD_SOURCES.linux = \
-	ipc/ipcd/daemon/src/ipcdUnix.cpp
-VBoxXPCOMIPCD_SOURCES.os2 = \
-	ipc/ipcd/daemon/src/ipcdUnix.cpp
-VBoxXPCOMIPCD_SOURCES.solaris = \
-    ipc/ipcd/daemon/src/ipcdUnix.cpp
+endif
 
 #
 # testcases
