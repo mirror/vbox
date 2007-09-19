@@ -131,7 +131,7 @@ strip_I()
 
 prefix_I()
 {
-  echo "$1"|$KBUILD_SED 's|^\/|-I/|g; s| \/|-I/|g'
+  echo "$1"|$KBUILD_SED 's|^\/|-I/|g; s| \/| -I/|g'
 }
 
 # Wrapper for ancient /usr/bin/which on darwin that always returns 0
