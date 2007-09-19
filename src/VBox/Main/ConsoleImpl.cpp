@@ -5218,6 +5218,9 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
 #elif defined(RT_OS_DARWIN)
         /** @todo Implement tap networking for Darwin. */
         int rcVBox = VERR_NOT_IMPLEMENTED;
+#elif defined(RT_OS_FREEBSD)
+        /** @todo Implement tap networking for FreeBSD. */
+        int rcVBox = VERR_NOT_IMPLEMENTED;
 #elif defined(RT_OS_OS2)
         /** @todo Implement tap networking for OS/2. */
         int rcVBox = VERR_NOT_IMPLEMENTED;
