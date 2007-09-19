@@ -62,20 +62,19 @@ ifndef ($(filter-out win solaris,$(BUILD_TARGET),)
 VBoxSDL_LIBS = \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
-VBoxSDL_LIBS.linux = \
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+ifneq ($(BUILD_TARGET),solaris) ## @todo Xcursor on solaris.
+VBoxSDL_LIBS += \
 	$(LIB_XCURSOR)
-# @todo deal with missing xcursor on solaris.
-#VBoxSDL_LIBS.solaris = \
-#	$(LIB_XCURSOR)
-VBoxSDL_LIBS.solaris += \
+endif
+VBoxSDL_LIBPATH = \
+	$(VBOX_LIBPATH_X11)
+endif
+VBoxSDL_LIBS.solaris = \
 	$(LIB_X11)
 ifdef VBOX_OPENGL
  #VBoxSDL_LIBS.linux += GL
 endif
-VBoxSDL_LIBPATH.linux = \
-	$(VBOX_LIBPATH_X11)
-VBoxSDL_LIBPATH.solaris = \
-	$(VBOX_LIBPATH_X11)
 VBoxSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
 
@@ -105,15 +104,17 @@ ifneq ($(filter-out win,$(BUILD_TARGET)),) # someone PLEASE explain why we don't
 tstSDL_LIBS += \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
+
 ifdef VBOX_OPENGL
 tstSDL_LIBS.linux += GL
 endif
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+tstSDL_LIBPATH = \
+	$(VBOX_LIBPATH_X11)
+endif
+
 tstSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
-tstSDL_LIBPATH.linux = \
-	$(VBOX_LIBPATH_X11)
-tstSDL_LIBPATH.solaris = \
-	$(VBOX_LIBPATH_X11)
 
 tstSDL_CXXFLAGS.win = \
 	-EHsc
