@@ -347,6 +347,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                 pszError = N_("VirtualBox support library out of memory");
                 break;
             case VERR_VERSION_MISMATCH:
+            case VERR_VM_DRIVER_VERSION_MISMATCH:
                 pszError = N_("The VirtualBox support driver which is running is from a different "
                               "version of VirtualBox.  You can correct this by stopping all "
                               "running instances of VirtualBox and reinstalling the software.");
