@@ -33,7 +33,7 @@
 /** VirtualBox XML settings version string */
 #if defined (RT_OS_DARWIN)
 #   define VBOX_XML_PLATFORM     "macosx"
-#if defined (RT_OS_FREEBSD)
+#elif defined (RT_OS_FREEBSD)
 #   define VBOX_XML_PLATFORM     "freebsd"
 #elif defined (RT_OS_LINUX)
 #   define VBOX_XML_PLATFORM     "linux"
@@ -45,7 +45,7 @@
 #   define VBOX_XML_PLATFORM     "os2"
 #elif defined (RT_OS_SOLARIS)
 #   define VBOX_XML_PLATFORM     "solaris"
-#if defined (RT_OS_WINDOWS)
+#elif defined (RT_OS_WINDOWS)
 #   define VBOX_XML_PLATFORM     "windows"
 #else
 #   error Unsupported platform!
