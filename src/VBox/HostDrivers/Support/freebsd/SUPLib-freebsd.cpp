@@ -123,7 +123,7 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     AssertMsg(g_hDevice != -1, ("SUPLIB not initiated successfully!\n"));
 
-    if (RT_LIKELY(ioctl((g_hDevice, uFunction, pvReq) >= 0))
+    if (RT_LIKELY(ioctl(g_hDevice, uFunction, pvReq) >= 0))
 	return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
 }
