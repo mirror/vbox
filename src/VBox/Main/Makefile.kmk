@@ -376,6 +376,10 @@ VBoxXML_INCS       = \
 	$(PATH_TARGET)
 VBoxXML_SOURCES    = \
 	xml/cfgldr.cpp
+VBoxXML_INCS.freebsd = \
+	/usr/local/include ## @todo probably belongs in the template
+VBoxXML_LIBPATH.freebsd = \
+	/usr/local/lib ## @todo probably belongs in the template
 VBoxXML_LDFLAGS.darwin = -install_name @executable_path/VBoxXML.dylib -Wl,-x # no debug info please.
 
 ## @todo (dmik): temporarily embed SettingsConverter.xsl into VBoxXML,
@@ -455,6 +459,7 @@ VBOX_XML_ENTITIES_COMMON = $(PATH_TARGET)/VirtualBoxXMLUtil_common_entities.h
 VBOX_XML_SCHEMA_COMMON = xml/VirtualBox-settings-common.xsd
 VBOX_XML_SCHEMA.darwin = xml/VirtualBox-settings-macosx.xsd
 VBOX_XML_SCHEMA.linux  = xml/VirtualBox-settings-linux.xsd
+VBOX_XML_SCHEMA.freebsd  = xml/VirtualBox-settings-freebsd.xsd
 VBOX_XML_SCHEMA.win    = xml/VirtualBox-settings-windows.xsd
 VBOX_XML_SCHEMA.os2    = xml/VirtualBox-settings-os2.xsd
 VBOX_XML_SCHEMA.solaris= xml/VirtualBox-settings-solaris.xsd
