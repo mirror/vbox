@@ -167,13 +167,11 @@ MMR3DECL(int) MMR3Init(PVM pVM)
                                        NULL, mmR3Load, NULL);
             if (VBOX_SUCCESS(rc))
                 return rc;
-        }
 
-        /* .... failure .... */
-        mmR3Term(pVM, true /* keep the heap */);
+            /* .... failure .... */
+        }
     }
-    else
-        mmr3HeapDestroy(pVM->mm.s.pHeap);
+    mmR3Term(pVM, true /* keep the heap */);
     return rc;
 }
 
