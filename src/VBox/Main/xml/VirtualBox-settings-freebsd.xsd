@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ *  :tabSize=2:indentSize=2:noTabs=true:
+ *  :folding=explicit:collapseFolds=1:
+ *
+ *  innotek VirtualBox Settings Schema Version 1.0-freebsd
+
+     Copyright (C) 2004-2007 innotek GmbH
+    
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License as published by the Free Software Foundation,
+     in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+     distribution. VirtualBox OSE is distributed in the hope that it will
+     be useful, but WITHOUT ANY WARRANTY of any kind.
+-->
+
+<xsd:schema
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://www.innotek.de/VirtualBox-settings"
+  xmlns:vb="http://www.innotek.de/VirtualBox-settings"
+  targetNamespace="http://www.innotek.de/VirtualBox-settings"
+  elementFormDefault="qualified"
+>
+
+<xsd:annotation>
+  <xsd:documentation xml:lang="en">
+    innotek VirtualBox Settings Schema Version 1.0-freebsd.
+    Copyright (c) 2004-2007 innotek GmbH.
+  </xsd:documentation>
+</xsd:annotation>
+
+<xsd:include schemaLocation="VirtualBox-settings-common.xsd"/>
+
+<!--
+// Simple types
+/////////////////////////////////////////////////////////////////////////
+-->
+
+<!--
+// Complex types
+/////////////////////////////////////////////////////////////////////////
+-->
+
+<xsd:complexType name="TMemory">
+  <xsd:attribute name="RAMSize" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedInt">
+        <xsd:minInclusive value="4"/>
+        <xsd:maxInclusive value="2000"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+</xsd:complexType>
+
+<xsd:complexType name="TNetwork">
+  <xsd:sequence>
+    <xsd:element name="Adapter" minOccurs="0" maxOccurs="unbounded">
+      <xsd:complexType>
+        <xsd:complexContent>
+          <xsd:extension base="TAdapter">
+            <xsd:choice minOccurs="0">
+              <xsd:element name="NAT">
+                <xsd:complexType/>
+              </xsd:element>
+              <xsd:element name="HostInterface">
+                <xsd:complexType>
+                  <xsd:attribute name="name" type="TLocalFile"/>
+                  <xsd:attribute name="TAPSetup" type="TLocalFile"/>
+                  <xsd:attribute name="TAPTerminate" type="TLocalFile"/>
+                </xsd:complexType>
+              </xsd:element>
+              <xsd:element name="InternalNetwork">
+                <xsd:complexType>
+                  <xsd:attribute name="name" type="xsd:string" use="required"/>
+                </xsd:complexType>
+              </xsd:element>
+            </xsd:choice>
+          </xsd:extension>
+        </xsd:complexContent>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="TAudioAdapter">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+  <xsd:attribute name="driver" use="required">
+    <!--- @todo (dmik) capitalize enum values on next format change! -->
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:token">
+        <xsd:enumeration value="null"/>
+        <xsd:enumeration value="oss"/>
+        <xsd:enumeration value="alsa"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+</xsd:complexType>
+
+<!--
+// Root element
+/////////////////////////////////////////////////////////////////////////
+-->
+
+<xsd:element name="VirtualBox">
+  <xsd:complexType>
+    <xsd:complexContent>
+      <xsd:extension base="TVirtualBox">
+        <xsd:attribute name="version" type="xsd:token" fixed="1.2-freebsd" use="required"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+</xsd:element>
+
+</xsd:schema>
