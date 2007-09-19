@@ -1537,6 +1537,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                             rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryFast", &VMMR0EntryFast);
                         if (RT_SUCCESS(rc))
                             rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryEx", &VMMR0EntryEx);
+                        LogRel(("VMMR0.r0 module loaded. VMMR0EntryEx located at %RTptr.\n", VMMR0EntryEx));
                     }
                     if (RT_SUCCESS(rc))
                     {
