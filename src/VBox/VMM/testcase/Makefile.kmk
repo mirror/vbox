@@ -213,7 +213,7 @@ ifndef DONT_USE_YASM
 			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
 		) \
 		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS),-I$(inc)/) -o $@.o -l $@.lst $<
+		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase,-I$(inc)/) -o $@.o -l $@.lst $<
 	$(SED) -f $(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm-lst.sed $@.lst > $@
 else
 	$(QUIET)$(TOOL_NASM_AS) \
