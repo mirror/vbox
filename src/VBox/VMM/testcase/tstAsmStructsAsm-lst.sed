@@ -19,7 +19,9 @@ s/^ *//g
 #
 /^[A-Za-z][A-Za-z0-9_]*:/b struct
 /<gap>/b member
+/^\.[A-Za-z][A-Za-z0-9_.:]* res.*$/b member_two
 b error
+b member_two
 
 
 #
@@ -47,6 +49,21 @@ s/^\([^ ]*\) \(.*\)$/global \2\1 ; member/
 s/\n//m
 
 b end
+
+
+#
+# Struct member, no address. yasm r1842 and later.
+#
+:member_two
+s/[:]*  *res[bwdtq] .*$//
+s/$/ /
+/^\.[a-zA-Z0-9_.]* *$/!t error
+G
+s/^\([^ ]*\) \(.*\)$/global \2\1 ; member2/
+s/\n//m
+
+b end
+
 
 :error
 s/^/\nSed script logic error!\nBuffer: /
