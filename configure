@@ -129,6 +129,11 @@ strip_I()
   echo "$1"|$KBUILD_SED 's|-I\([^ ]\+\)|\1|g; s|-[^I]\([^ ]\+\)||g; s|^ ||; s| *$||g'
 }
 
+prefix_I()
+{
+  echo "$1"|$KBUILD_SED 's|^\/|-I/|g; s| \/|-I/|g'
+}
+
 # Wrapper for ancient /usr/bin/which on darwin that always returns 0
 which_wrapper()
 {
@@ -518,7 +523,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-    [ -n "$INCXALAN" ] && I_INCXALAN="-I$INCXALAN"
+    [ -n "$INCXALAN" ] && I_INCXALAN=`prefix_I "$INCXALAN"`
     if test_compile "$LIBXALAN $LIBPTHREAD $I_INCXALAN" xalan xalanc; then
       if test_execute; then
         cnf_append "SDK_VBOX_XALAN_LIBS"    "`strip_l "$LIBXALAN"`"
@@ -557,7 +562,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-    [ -n "$INCXERCES" ] && I_INCXERCES="-I$INCXERCES"
+    [ -n "$INCXERCES" ] && I_INCXERCES=`prefix_I "$INCXERCES"`
     if test_compile "$LIBXERCES $LIBPTHREAD $I_INCXERCES" xerces xercesc; then
       if test_execute; then
         cnf_append "SDK_VBOX_XERCES_LIBS"    "`strip_l "$LIBXERCES"`"
@@ -686,7 +691,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  [ -n "$INCZ" ] && I_INCZ="-I$INCZ"
+  [ -n "$INCZ" ] && I_INCZ=`prefix_I "$INCZ"`
   if test_compile "$LIBZ $I_INCZ" zlib zlib; then
     if test_execute; then
       cnf_append "SDK_VBOX_ZLIB_LIBS" "`strip_l "$LIBZ"`"
@@ -716,7 +721,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  [ -n "$INCPNG" ] && I_INCPNG="-I$INCPNG"
+  [ -n "$INCPNG" ] && I_INCPNG=`prefix_I "$INCPNG"`
 #  if test_compile "$LIBPNG $I_INCPNG" libpng libpng nofatal; then
   if test_compile "$LIBPNG $I_INCPNG" libpng libpng; then
 #    if test_execute nofatal; then
@@ -813,7 +818,7 @@ extern "C" int main(void)
 #endif
 }
 EOF
-    [ -n "$INCSDL" ] && I_INCSDL="-I$INCSDL"
+    [ -n "$INCSDL" ] && I_INCSDL=`prefix_I "$INCSDL"`
     if test_compile "$LIBSDL $LIBSDLMAIN $I_INCSDL" SDL SDL; then
       if test_execute; then
         cnf_append "LIB_SDK_LIBSDL_SDL"     "`strip_l "$LIBSDL"`"
