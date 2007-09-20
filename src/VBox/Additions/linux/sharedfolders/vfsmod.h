@@ -92,6 +92,13 @@ extern int
 sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                  struct sf_dir_info *sf_d, SHFLHANDLE handle);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
+#define STRUCT_STATFS  struct statfs
+#else
+#define STRUCT_STATFS  struct kstatfs
+#endif
+int sf_get_volume_info(struct super_block *sb,STRUCT_STATFS *stat);
+
 #ifdef ALIGN
 #undef ALIGN
 #endif

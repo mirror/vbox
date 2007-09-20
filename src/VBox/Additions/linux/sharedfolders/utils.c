@@ -18,6 +18,8 @@
  */
 
 #include "vfsmod.h"
+#include <linux/nfs_fs.h>
+#include <linux/vfs.h>
 
 /* #define USE_VMALLOC */
 
@@ -587,6 +589,37 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
         kfree (mask);
  fail0:
         return err;
+}
+
+int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS *stat)
+{
+        struct sf_glob_info *sf_g;
+        SHFLVOLINFO SHFLVolumeInfo;
+        uint32_t cbBuffer;
+        int rc;
+
+        sf_g = GET_GLOB_INFO (sb);
+        cbBuffer = sizeof(SHFLVolumeInfo);
+        rc = vboxCallFSInfo(&client_handle, &sf_g->map, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
+                            &cbBuffer, (PSHFLDIRINFO)&SHFLVolumeInfo);
+        if (VBOX_FAILURE(rc))
+            return -RTErrConvertToErrno(rc);
+
+        stat->f_type        = NFS_SUPER_MAGIC; /* XXX vboxsf type? */
+        stat->f_bsize       = SHFLVolumeInfo.ulBytesPerAllocationUnit;
+        stat->f_blocks      = SHFLVolumeInfo.ullTotalAllocationBytes
+                            / SHFLVolumeInfo.ulBytesPerAllocationUnit;
+        stat->f_bfree       = SHFLVolumeInfo.ullAvailableAllocationBytes
+                            / SHFLVolumeInfo.ulBytesPerAllocationUnit;
+        stat->f_bavail      = SHFLVolumeInfo.ullAvailableAllocationBytes
+                            / SHFLVolumeInfo.ulBytesPerAllocationUnit;
+        stat->f_files       = 1000;
+        stat->f_ffree       = 1000; /* don't return 0 here since the guest may think
+                                     * that it is not possible to create any more files */
+        stat->f_fsid.val[0] = 0;
+        stat->f_fsid.val[1] = 0;
+        stat->f_namelen     = 255;
+        return 0;
 }
 
 struct dentry_operations sf_dentry_ops = {

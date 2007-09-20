@@ -310,23 +310,20 @@ sf_put_super (struct super_block *sb)
         sf_glob_free (sf_g);
 }
 
-static int
-sf_statfs (
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 18)
-           struct super_block *sb,
-#else
-	   struct dentry *dentry,
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
-           struct statfs *stat
-#else
-           struct kstatfs *stat
-#endif
-        )
+static int
+sf_statfs (struct super_block *sb, STRUCT_STATFS *stat)
 {
-        TRACE ();
-        return -ENOSYS;
+        return sf_get_volume_info(sb, stat);
 }
+#else
+static int
+sf_statfs (struct dentry *dentry, STRUCT_STATFS *stat)
+{
+        struct super_block *sb = dentry->d_inode->i_sb;
+        return sf_get_volume_info(sb, stat);
+}
+#endif
 
 static int
 sf_remount_fs (struct super_block *sb, int *flags, char *data)
