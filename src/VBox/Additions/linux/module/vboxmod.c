@@ -150,7 +150,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             vboxadd_wait_for_event (&info);
 
             ptr += offsetof (VBoxGuestWaitEventInfo, u32EventFlagsOut);
-            if (put_user (info.u32EventFlagsOut, ptr))
+            if (put_user (info.u32EventFlagsOut, (uint32_t*)ptr))
             {
                 printk (KERN_ERR "vboxadd_ioctl: can not put out_mask\n");
                 return -EFAULT;
