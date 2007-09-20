@@ -313,7 +313,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+О</translation>
+        <translation>Alt+о</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
@@ -886,7 +886,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+О</translation>
+        <translation>Alt+о</translation>
     </message>
     <message>
         <source>Accept dialog</source>
@@ -1910,7 +1910,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+О</translation>
+        <translation>Alt+о</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -2796,7 +2796,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Окно виртуальной машины оптимизировано для работы в режиме &lt;b&gt;%1-битной&lt;/b&gt; цветопередачи, однако в настоящий момент виртуальный дисплей работает в &lt;b&gt;%2-битном&lt;/b&gt;режиме.&lt;/p&gt;&lt;p&gt;Откройте диалог свойств дисплея гостевой ОС и выберите &lt;b&gt;%3-битный&lt;/b&gt; режим цветопередачи (если он доступен) для обеспечения наилучшей произвожительности виртуальной видеоподсистемы.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание&lt;/b&gt;. Некоторые операционные системы, такие как OS/2, могут фактически работать в 32-битном режиме, но показывать его в настройках как 24-битный (16 миллионов цветов). Вы можете попробовать выбрать другой режим цветопередачи, чтобы проверить, не исчезнет ли это сообщение. Помимо этого, Вы можете запретить показ данного сообщения, если Вы уверены, что требуемый режим цветопередачи (%4&amp;nbsp;бит) недоступен в данной гостевой ОС.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Окно виртуальной машины оптимизировано для работы в режиме &lt;b&gt;%1-битной&lt;/b&gt; цветопередачи, однако в настоящий момент виртуальный дисплей работает в &lt;b&gt;%2-битном&lt;/b&gt; режиме.&lt;/p&gt;&lt;p&gt;Откройте диалог свойств дисплея гостевой ОС и выберите &lt;b&gt;%3-битный&lt;/b&gt; режим цветопередачи (если он доступен) для обеспечения наилучшей производительности виртуальной видеоподсистемы.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание&lt;/b&gt;. Некоторые операционные системы, такие как OS/2, могут фактически работать в 32-битном режиме, но показывать его в настройках как 24-битный (16 миллионов цветов). Вы можете попробовать выбрать другой режим цветопередачи, чтобы проверить, не исчезнет ли это сообщение. Помимо этого, Вы можете запретить показ данного сообщения, если Вы уверены, что требуемый режим цветопередачи (%4&amp;nbsp;бит) недоступен в данной гостевой ОС.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -3200,7 +3200,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+О</translation>
+        <translation>Alt+о</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
@@ -3417,7 +3417,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+О</translation>
+        <translation>Alt+о</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
