@@ -488,34 +488,6 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
         }
 
         /*
-         * Run guest code using the available hardware acceleration technology.
-         */
-        case VMMR0_DO_HWACC_RUN:
-        {
-            STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
-            int rc = HWACCMR0Enable(pVM);
-            if (VBOX_SUCCESS(rc))
-            {
-#ifdef DEBUG_NO_RING0_ASSERTIONS
-                g_pVMAssert = pVM;
-#endif
-                rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM); /* this may resume code. */
-#ifdef DEBUG_NO_RING0_ASSERTIONS
-                g_pVMAssert = 0;
-#endif
-                int rc2 = HWACCMR0Disable(pVM);
-                AssertRC(rc2);
-            }
-            pVM->vmm.s.iLastGCRc = rc;
-
-#ifdef VBOX_WITH_STATISTICS
-            vmmR0RecordRC(pVM, rc);
-#endif
-            /* No special action required for external interrupts, just return. */
-            return rc;
-        }
-
-        /*
          * Initialize the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_INIT:
@@ -533,17 +505,6 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
         {
             RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = VMMR0Term(pVM);
-            ASMSetFlags(fFlags);
-            return rc;
-        }
-
-        /*
-         * Setup the hardware accelerated raw-mode session.
-         */
-        case VMMR0_DO_HWACC_SETUP_VM:
-        {
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = HWACCMR0SetupVMX(pVM);
             ASMSetFlags(fFlags);
             return rc;
         }
@@ -678,20 +639,6 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
 {
     switch (enmOperation)
     {
-#if 1 /* disable later? */
-        /*
-         * Alternative to the fast path, all we need to do is disable interrupts.
-         */
-        case VMMR0_DO_RAW_RUN:
-        case VMMR0_DO_HWACC_RUN:
-        {
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = VMMR0EntryFast(pVM, enmOperation);
-            ASMSetFlags(fFlags);
-            return rc;
-        }
-#endif
-
         /*
          * Initialize the R0 part of a VM instance.
          */
