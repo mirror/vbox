@@ -598,8 +598,10 @@ static void _stdcall VBoxDrvNtGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID 
             supdrvGipUpdate(pGip, supdrvOSMonotime());
         else
         {
-            RTCCUINTREG xFL = ASMGetFlags();
-            ASMIntDisable();
+            KIRQL oldIrql;
+
+            Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+            KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
 
             /*
              * We cannot do other than assume a 1:1 relation ship between the
@@ -619,7 +621,7 @@ static void _stdcall VBoxDrvNtGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID 
             /* Run the normal update. */
             supdrvGipUpdate(pGip, supdrvOSMonotime());
 
-            ASMSetFlags(xFL);
+            KeLowerIrql(oldIrql);
         }
     }
 }
