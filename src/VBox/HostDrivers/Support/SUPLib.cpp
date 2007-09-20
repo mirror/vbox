@@ -1537,7 +1537,6 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                             rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryFast", &VMMR0EntryFast);
                         if (RT_SUCCESS(rc))
                             rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryEx", &VMMR0EntryEx);
-                        LogRel(("VMMR0.r0 module loaded. VMMR0EntryEx located at %RTptr.\n", VMMR0EntryEx));
                     }
                     if (RT_SUCCESS(rc))
                     {
@@ -1606,8 +1605,18 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                                 ||  rc == VERR_ALREADY_LOADED /* A competing process. */
                                )
                             {
+                                LogRel(("SUP: Loaded %s (%s) at %#p - ModuleInit at %RTptr and ModuleTerm at %RTptr\n", pszModule, pszFilename,
+                                        OpenReq.u.Out.pvImageBase, ModuleInit, ModuleTerm));
                                 if (fIsVMMR0)
+                                {
                                     g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
+                                    LogRel(("SUP: VMMR0EntryEx located at %RTptr, VMMR0EntryFast at %RTptr and VMMR0EntryInt at %RTptr\n",
+                                            VMMR0EntryEx, VMMR0EntryFast, VMMR0EntryInt));
+                                }
+#ifdef RT_OS_WINDOWS
+                                LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
+#endif
+
                                 RTMemTmpFree(pLoadReq);
                                 RTLdrClose(hLdrMod);
                                 return VINF_SUCCESS;
@@ -1623,8 +1632,15 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                 rc = VERR_NO_TMP_MEMORY;
             }
         }
-        else if (RT_SUCCESS(rc) && fIsVMMR0)
-            g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
+        else if (RT_SUCCESS(rc))
+        {
+            if (fIsVMMR0)
+                g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
+            LogRel(("SUP: Opened %s (%s) at %#p.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase));
+#ifdef RT_OS_WINDOWS
+            LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
+#endif
+        }
     }
     RTLdrClose(hLdrMod);
     return rc;
