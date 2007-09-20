@@ -158,11 +158,12 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                                  */
                                 case 'd':
                                 {
+                                    int cch = 0;
+                                    int off = 0;
+
                                     if (cchPrecision <= 0)
                                         cchPrecision = 16;
 
-                                    int cch = 0;
-                                    int off = 0;
                                     while (off < cchWidth)
                                     {
                                         int i;
@@ -310,6 +311,9 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                  * Figure out number of bits.
                  */
                 int64_t i64 = 0;
+                char szNum[64];
+                int cch;
+
                 ch = *(*ppszFormat)++;
                 if (ch == '8')
                     i64 = (int8_t)va_arg(*pArgs, int);
@@ -340,8 +344,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                 else
                     AssertMsgFailed(("Invalid format %%VI%c.10s\n", ch, *ppszFormat));
 
-                char szNum[64];
-                int cch = RTStrFormatNumber(szNum, i64, 10, cchWidth, cchPrecision, fFlags | RTSTR_F_VALSIGNED);
+                cch = RTStrFormatNumber(szNum, i64, 10, cchWidth, cchPrecision, fFlags | RTSTR_F_VALSIGNED);
                 Assert(cch < (int)sizeof(szNum));
                 return pfnOutput(pvArgOutput, szNum, cch);
             }
@@ -359,6 +362,9 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                  * Figure out number of bits and read the value.
                  */
                 uint64_t u64 = 0;
+                char szNum[64];
+                int cch;
+
                 ch = *(*ppszFormat)++;
                 if (ch == '8')
                     u64 = (uint8_t)va_arg(*pArgs, unsigned);
@@ -389,8 +395,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                 else
                     AssertMsgFailed(("Invalid format %%VI%c.10s\n", ch, *ppszFormat));
 
-                char szNum[64];
-                int cch = RTStrFormatNumber(szNum, u64, iBase, cchWidth, cchPrecision, fFlags);
+                cch = RTStrFormatNumber(szNum, u64, iBase, cchWidth, cchPrecision, fFlags);
                 Assert(cch < (int)sizeof(szNum));
                 return pfnOutput(pvArgOutput, szNum, cch);
             }
@@ -403,8 +408,10 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                     &&  (*ppszFormat)[1] == 'i'
                     &&  (*ppszFormat)[2] == 'd')
                 {
-                    (*ppszFormat) += 3;
                     PRTUUID pUuid = va_arg(*pArgs, PRTUUID);
+                    static const char szNull[] = "<NULL>";
+
+                    (*ppszFormat) += 3;
                     if (VALID_PTR(pUuid))
                     {
                         /* cannot call RTUuidToStr because of GC/R0. */
@@ -423,7 +430,6 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                                            pUuid->Gen.au8Node[5]);
                     }
 
-                    static const char szNull[] = "<NULL>";
                     return pfnOutput(pvArgOutput, szNull, sizeof(szNull) - 1);
                 }
                 /* fall thru */
