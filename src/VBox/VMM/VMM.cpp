@@ -2232,6 +2232,12 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
             VMR3SetRuntimeErrorWorker(pVM);
             break;
 
+        /*
+         * Signal a ring 0 hypervisor assertion.
+         */
+        case VMMCALLHOST_VM_R0_HYPER_ASSERTION:
+            return VINF_EM_DBG_HYPER_ASSERTION;
+
         default:
             AssertMsgFailed(("enmCallHostOperation=%d\n", pVM->vmm.s.enmCallHostOperation));
             return VERR_INTERNAL_ERROR;

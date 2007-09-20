@@ -695,6 +695,8 @@ TMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
  */
 TMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
 {
+    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -728,6 +730,8 @@ TMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 TMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
 {
+    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -761,6 +765,8 @@ TMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 TMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
 {
+    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -793,6 +799,8 @@ TMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 TMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
 {
+    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -825,6 +833,8 @@ TMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
  */
 TMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
 {
+    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -857,6 +867,8 @@ TMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
  */
 TMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS)
 {
+    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
