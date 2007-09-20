@@ -488,7 +488,15 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 
         checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
 
-        pFramebuffer->NotifyUpdate(x, y, w, h, &finished);
+        if (w == 0 || h == 0)
+        {
+            /* Nothing to be updated. */
+            finished = TRUE;
+        }
+        else
+        {
+            pFramebuffer->NotifyUpdate(x, y, w, h, &finished);
+        }
 
         if (!finished)
         {
