@@ -388,6 +388,7 @@ static const char main_key_DE_nodead[MAIN_LEN][4] =
  "yY","xX","cC","vV","bB","nN","mM",",;",".:","-_",
  "<>"
 };
+#endif
 
 /*** German keyboard layout without dead keys 105 Keys (contributed by Matthias Fechner)*/
 static const char main_key_DE_nodead_105[MAIN_LEN][4] =
@@ -395,9 +396,8 @@ static const char main_key_DE_nodead_105[MAIN_LEN][4] =
  "^°","1!","2\"²","3§³","4$","5%","6&","7/{","8([","9)]","0=}","ß?\\","'`",
  "qQ@","wW","eE","rR","tT","zZ","uU","iI","oO","pP","üÜ","+*~",
  "aA","sS","dD","fF","gG","hH","jJ","kK","lL","öÖ","äÄ","#'",
- "<>|","yY","xX","cC","vV","bB","nN","mM",",;",".:","-_",
+ "yY","xX","cC","vV","bB","nN","mM",",;",".:","-_", "<>|"
 };
-#endif
 
 /*** Swiss German keyboard layout (setxkbmap ch -variant de) */
 static const char main_key_SG[MAIN_LEN][4] =
@@ -1120,8 +1120,8 @@ static const struct {
 #ifndef OUTOFWINE
  {0x0407, "German keyboard layout without dead keys", &main_key_DE_nodead, &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x0407, "German keyboard layout for logitech desktop pro", &main_key_DE_logitech,  &main_key_scan_qwerty, &main_key_vkey_qwertz},
- {0x0407, "German keyboard layout without dead keys 105", &main_key_DE_nodead_105, &main_key_scan_qwerty, &main_key_vkey_qwertz_105},
 #endif
+ {0x0407, "German keyboard layout without dead keys 105", &main_key_DE_nodead_105, &main_key_scan_qwerty, &main_key_vkey_qwertz_105},
  {0x0807, "Swiss German keyboard layout", &main_key_SG, &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x100c, "Swiss French keyboard layout", &main_key_SF, &main_key_scan_qwerty, &main_key_vkey_qwertz},
  {0x041d, "Swedish keyboard layout", &main_key_SE, &main_key_scan_qwerty, &main_key_vkey_qwerty_v2},
