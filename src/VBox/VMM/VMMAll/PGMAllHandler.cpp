@@ -44,7 +44,6 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PPGMPHYSHANDLER pCur);
 static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDLER pCur, PPGMRAMRANGE pRam);
 static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur);
 static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
@@ -233,7 +232,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
 #else
     const int       rc = VINF_PGM_GCPHYS_ALIASED;
 #endif
-    const unsigned  fFlags = pgmHandlerPhysicalCalcFlags(pCur); Assert(!(fFlags & X86_PTE_PAE_PG_MASK));
+    const unsigned  fFlags = pgmHandlerPhysicalCalcFlags(pVM, pCur); Assert(!(fFlags & X86_PTE_PAE_PG_MASK));
     RTUINT          cPages = pCur->cPages;
     RTUINT          i = (pCur->Core.Key - pRam->GCPhys) >> PAGE_SHIFT;
     for (;;)
@@ -432,7 +431,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    !pBelow
                 ||  (pBelow->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT))
                 break;
-            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
+            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pVM, pCur), &pRamHint);
 
             /* next? */
             if (    (pBelow->Core.Key >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT)
@@ -454,7 +453,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    !pAbove
                 ||  (pAbove->Core.Key >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT))
                 break;
-            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
+            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pVM, pCur), &pRamHint);
 
             /* next? */
             if (    (pAbove->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT)

@@ -942,6 +942,20 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
 # undef LOG_GROUP
 # define LOG_GROUP LOG_GROUP_EM
 
+DECLEXPORT(void) RTCALL RTR0AssertBreakpoint(void *pvVM)
+{
+    if (pvVM)
+    {
+        PVM pVM = (PVM)pvVM;
+        pVM->vmm.s.enmCallHostOperation = VMMCALLHOST_VM_R0_HYPER_ASSERTION;
+        pVM->vmm.s.u64CallHostArg = 0;
+        pVM->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
+        int rc = vmmR0CallHostLongJmp(&pVM->vmm.s.CallHostR0JmpBuf, VERR_INTERNAL_ERROR);
+        if (rc == VINF_SUCCESS)
+            rc = pVM->vmm.s.rcCallHost;
+    }
+}
+
 /** Runtime assert implementation for Native Win32 Ring-0. */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {

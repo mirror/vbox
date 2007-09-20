@@ -2871,9 +2871,10 @@ DECLINLINE(bool) pgmRamTestFlags(PPGM pPGM, RTGCPHYS GCPhys, uint64_t fFlags)
  * Gets the ram flags for a handler.
  *
  * @returns The ram flags.
- * @param   pCur        The physical handler in question.
+ * @param   pVM     The VM handle.
+ * @param   pCur    The physical handler in question.
  */
-DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PPGMPHYSHANDLER pCur)
+DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PVM pVM, PPGMPHYSHANDLER pCur)
 {
     switch (pCur->enmType)
     {
@@ -2896,11 +2897,11 @@ DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PPGMPHYSHANDLER pCur)
 /**
  * Clears one physical page of a virtual handler
  *
- * @param   pPGM    Pointer to the PGM instance.
+ * @param   pVM     The VM handle.
  * @param   pCur    Virtual handler structure
  * @param   iPage   Physical page index
  */
-DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, unsigned iPage)
+DECLINLINE(void) pgmHandlerVirtualClearPage(PVM pVM, PPGM pPGM, PPGMVIRTHANDLER pCur, unsigned iPage)
 {
     const PPGMPHYS2VIRTHANDLER pPhys2Virt = &pCur->aPhysToVirt[iPage];
 
@@ -2999,10 +3000,11 @@ DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, uns
  * Internal worker for finding a 'in-use' shadow page give by it's physical address.
  *
  * @returns Pointer to the shadow page structure.
+ * @param   pVM         The VM handle.
  * @param   pPool       The pool.
  * @param   HCPhys      The HC physical address of the shadow page.
  */
-DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
+DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PVM pVM, PPGMPOOL pPool, RTHCPHYS HCPhys)
 {
     /*
      * Look up the page.
@@ -3017,10 +3019,11 @@ DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
  * Internal worker for finding a 'in-use' shadow page give by it's physical address.
  *
  * @returns Pointer to the shadow page structure.
+ * @param   pVM         The VM handle.
  * @param   pPool       The pool.
  * @param   idx         The pool page index.
  */
-DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPageByIdx(PPGMPOOL pPool, unsigned idx)
+DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPageByIdx(PVM pVM, PPGMPOOL pPool, unsigned idx)
 {
     AssertFatalMsg(idx >= PGMPOOL_IDX_FIRST && idx < pPool->cCurPages, ("idx=%d\n", idx));
     return &pPool->aPages[idx];
