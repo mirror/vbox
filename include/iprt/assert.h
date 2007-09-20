@@ -495,7 +495,7 @@ __END_DECLS
 #  define AssertReleaseBreakpoint()   do { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
 # endif
 #elif defined(_MSC_VER)
-# ifdef IN_VMM_R0
+# ifdef RT_NO_RING0_ASSERTIONS
 #  define AssertReleaseBreakpoint()      RTR0AssertBreakpoint(pVM)
 # else
 #  define AssertReleaseBreakpoint()      __debugbreak()
