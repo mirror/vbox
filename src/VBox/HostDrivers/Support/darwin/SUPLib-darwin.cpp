@@ -124,12 +124,21 @@ int suplibOsInit(size_t cbReserve)
     g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
     if (g_hDevice < 0)
     {
-        int rc = errno;
-        LogRel(("Failed to open \"%s\", errno=%d\n", rc));
+        int rc;
+        switch (errno)
+        {
+            case ENODEV:    rc = VERR_VM_DRIVER_LOAD_ERROR; break;
+            case EPERM:
+            case EACCES:    rc = VERR_VM_DRIVER_NOT_ACCESSIBLE; break;
+            case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
+            default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
+        }
+        LogRel(("Failed to open \"%s\", errno=%d, rc=%Vrc\n", DEVICE_NAME, errno, rc));
+
         kr = IOServiceClose(g_Connection);
         if (kr != kIOReturnSuccess)
             LogRel(("Warning: IOServiceClose(%p) returned %d\n", g_Connection, kr));
-        return RTErrConvertFromErrno(rc);
+        return rc;
     }
 
     /*

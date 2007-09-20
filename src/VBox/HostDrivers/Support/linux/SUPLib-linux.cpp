@@ -99,16 +99,18 @@ int     suplibOsInit(size_t cbReserve)
         g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
         if (g_hDevice < 0)
         {
+            int rc;
             switch (errno)
             {
                 case ENXIO: /* see man 2 open, ENODEV is actually a kernel bug */
-                case ENODEV:    return VERR_VM_DRIVER_LOAD_ERROR;
+                case ENODEV:    rc = VERR_VM_DRIVER_LOAD_ERROR; break;
                 case EPERM:
-                case EACCES:    return VERR_VM_DRIVER_NOT_ACCESSIBLE;
-                case ENOENT:    return VERR_VM_DRIVER_NOT_INSTALLED;
-                default:
-                    return VERR_VM_DRIVER_OPEN_ERROR;
+                case EACCES:    rc = VERR_VM_DRIVER_NOT_ACCESSIBLE; break;
+                case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
+                default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
             }
+            LogRel(("Failed to open \"%s\", errno=%d, rc=%Vrc\n", DEVICE_NAME, errno, rc));
+            return rc;
         }
     }
 
