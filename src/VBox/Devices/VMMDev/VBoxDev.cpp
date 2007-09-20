@@ -1231,7 +1231,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             Log(("VMMDevReq_ChangeMemBalloon\n"));
             if (    requestHeader->size < sizeof(VMMDevChangeMemBalloon)
                 ||  memBalloonChange->cPages != VMMDEV_MEMORY_BALLOON_CHUNK_PAGES
-                ||  requestHeader->size != RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[memBalloonChange->cPages]))
+                ||  requestHeader->size != (uint32_t)RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[memBalloonChange->cPages]))
             {
                 AssertFailed();
                 requestHeader->rc = VERR_INVALID_PARAMETER;
