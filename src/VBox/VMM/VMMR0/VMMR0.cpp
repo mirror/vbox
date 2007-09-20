@@ -944,7 +944,7 @@ DECLEXPORT(void) RTCALL RTR0AssertBreakpoint(void *pvVM)
     if (pvVM)
     {
         PVM pVM = (PVM)pvVM;
-        VMMR0CallHost(g_pVMAssert, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
+        VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
         /* does not return */
     }
 }
