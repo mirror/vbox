@@ -26,6 +26,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
 
@@ -117,15 +118,26 @@ static DECLCALLBACK(int) drvTAPOs2Send(PPDMINETWORKCONNECTOR pInterface, const v
     STAM_COUNTER_ADD(&pThis->StatPktSentBytes, cb);
     STAM_PROFILE_START(&pThis->StatTransmit, a);
 
+    /* 
+     * If the pvBuf is a high address, we'll have to copy it onto a 
+     * stack buffer of the tap driver will trap.
+     */
+    if ((uintptr_t)pvBuf >= _1M*512)
+    {
+        void *pvBufCopy = alloca(cb);
+        memcpy(pvBufCopy, pvBuf, cb);
+        pvBuf = pvBufCopy;
+    }
+
 #ifdef LOG_ENABLED
     uint64_t u64Now = RTTimeProgramNanoTS();
     LogFlow(("%s: Send: %-4d bytes at %RU64 ns  deltas: recv=%RU64 xmit=%RU64\n", pThis->szName,
              cb, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
     pThis->u64LastTransferTS = u64Now;
-#endif
     Log2(("%s Send: pvBuf=%p cb=%#zx\n"
           "%.*Vhxd\n",
           pThis->szName, pvBuf, cb, cb, pvBuf));
+#endif
 
     ULONG Parm[2] = { ~0UL, ~0UL }; /* mysterious output */
     ULONG cbParm = sizeof(Parm);
