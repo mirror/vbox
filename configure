@@ -1255,8 +1255,10 @@ for option in $*; do
       BUILD_TYPE=debug
       ;;
     --build-xalan)
-      LIBXERCES=``
-      LIBXALAN=``
+      LIBXERCES=
+      LIBXERCES_DIR=
+      LIBXALAN=
+      LIBXALAN_DIR=
       ;;
     --build-headless)
       HEADLESS=1
