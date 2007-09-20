@@ -101,7 +101,7 @@ ifeq ($(BUILD_TARGET),os2)
  ifndef USE_OS2_TOOLKIT_HEADERS
   TEMPLATE_XPCOM_DEFS.os2         += OS2EMX_PLAIN_CHAR
  endif
- TEMPLATE_XPCOM_DEFS.os2          += XP_OS2_EMX OS2
+ TEMPLATE_XPCOM_DEFS.os2          += XP_OS2_EMX OS2=4
  # this is at least for strnicmp()
  TEMPLATE_XPCOM_DEFS.os2          += _EMX_SOURCE
  # @@todo shouldn't this be somehow default for ASTOOL?
