@@ -1444,15 +1444,14 @@ int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, 
     return rc;
 }
 
-int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
+int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE|SHFL_HF_TYPE_VOLUME);
     int            rc = VINF_SUCCESS;
     SHFLVOLINFO   *pSFDEntry;
     char          *pszFullPath = NULL;
     SHFLSTRING     dummy;
 
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(SHFLVOLINFO))
+    if (pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(SHFLVOLINFO))
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
@@ -1494,9 +1493,7 @@ exit:
 
 int vbsfQueryFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE|SHFL_HF_TYPE_VOLUME);
-
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0)
+    if (pcbBuffer == 0 || pBuffer == 0)
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
@@ -1506,7 +1503,7 @@ int vbsfQueryFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, u
         return vbsfQueryFileInfo(pClient, root, Handle, flags, pcbBuffer, pBuffer);
 
     if (flags & SHFL_INFO_VOLUME)
-        return vbsfQueryVolumeInfo(pClient, root, Handle, flags, pcbBuffer, pBuffer);
+        return vbsfQueryVolumeInfo(pClient, root, flags, pcbBuffer, pBuffer);
 
     AssertFailed();
     return VERR_INVALID_PARAMETER;
