@@ -244,15 +244,35 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     { STRMEM("X8"),      sizeof(uint8_t),        16, RTSF_INT,   0 },
 #undef STRMEM
                 };
+                const char *pszType = *ppszFormat - 1;
+                int         iStart  = 0;
+                int         iEnd    = ELEMENTS(s_aTypes) - 1;
+                int         i       = ELEMENTS(s_aTypes) / 2;
+
+                union
+                {
+                    uint8_t     u8;
+                    uint16_t    u16;
+                    uint32_t    u32;
+                    uint64_t    u64;
+                    int8_t      i8;
+                    int16_t     i16;
+                    int32_t     i32;
+                    int64_t     i64;
+                    RTFAR16     fp16;
+                    RTFAR32     fp32;
+                    RTFAR64     fp64;
+                    bool        fBool;
+                    PCRTUUID    pUuid;
+                } u;
+                char        szBuf[80];
+                unsigned    cch;
+
                 AssertMsg(!chArgSize, ("Not argument size '%c' for RT types! '%.10s'\n", chArgSize, pszFormatOrg));
 
                 /*
                  * Lookup the type - binary search.
                  */
-                const char *pszType = *ppszFormat - 1;
-                int         iStart  = 0;
-                int         iEnd    = ELEMENTS(s_aTypes) - 1;
-                int         i       = ELEMENTS(s_aTypes) / 2;
                 for (;;)
                 {
                     int iDiff = strncmp(pszType, s_aTypes[i].sz, s_aTypes[i].cch);
@@ -285,22 +305,6 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                  * Fetch the argument.
                  * It's important that a signed value gets sign-extended up to 64-bit.
                  */
-                union
-                {
-                    uint8_t     u8;
-                    uint16_t    u16;
-                    uint32_t    u32;
-                    uint64_t    u64;
-                    int8_t      i8;
-                    int16_t     i16;
-                    int32_t     i32;
-                    int64_t     i64;
-                    RTFAR16     fp16;
-                    RTFAR32     fp32;
-                    RTFAR64     fp64;
-                    bool        fBool;
-                    PCRTUUID    pUuid;
-                } u;
                 u.u64 = 0;
                 if (fFlags & RTSTR_F_VALSIGNED)
                 {
@@ -362,8 +366,6 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 /*
                  * Format the output.
                  */
-                char        szBuf[80];
-                unsigned    cch;
                 switch (s_aTypes[i].enmFormat)
                 {
                     case RTSF_INT:
@@ -421,6 +423,8 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
 
                     case RTSF_UUID:
                     {
+                        static const char szNull[] = "<NULL>";
+
                         if (VALID_PTR(u.pUuid))
                         {
                             /* cannot call RTUuidToStr because of GC/R0. */
@@ -438,8 +442,6 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                                                u.pUuid->Gen.au8Node[4],
                                                u.pUuid->Gen.au8Node[5]);
                         }
-
-                        static const char szNull[] = "<NULL>";
                         return pfnOutput(pvArgOutput, szNull, sizeof(szNull) - 1);
                     }
 
@@ -495,11 +497,12 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                                  */
                                 case 'd':
                                 {
+                                    size_t cch = 0;
+                                    int off = 0;
+
                                     if (cchPrecision <= 0)
                                         cchPrecision = 16;
 
-                                    size_t cch = 0;
-                                    int off = 0;
                                     while (off < cchWidth)
                                     {
                                         int i;
@@ -660,16 +663,23 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     { STRMEM("Dtimespec"),   sizeof(PCRTTIMESPEC),  RTST_FLAGS_POINTER, RTST_TIMESPEC},
 #undef STRMEM
                 };
+                const char *pszType = *ppszFormat - 1;
+                int         iStart  = 0;
+                int         iEnd    = ELEMENTS(s_aTypes) - 1;
+                int         i       = ELEMENTS(s_aTypes) / 2;
+
+                union
+                {
+                    const void     *pv;
+                    uint64_t        u64;
+                    PCRTTIMESPEC    pTimeSpec;
+                } u;
 
                 AssertMsg(!chArgSize, ("Not argument size '%c' for RT types! '%.10s'\n", chArgSize, pszFormatOrg));
 
                 /*
                  * Lookup the type - binary search.
                  */
-                const char *pszType = *ppszFormat - 1;
-                int         iStart  = 0;
-                int         iEnd    = ELEMENTS(s_aTypes) - 1;
-                int         i       = ELEMENTS(s_aTypes) / 2;
                 for (;;)
                 {
                     int iDiff = strncmp(pszType, s_aTypes[i].sz, s_aTypes[i].cch);
@@ -696,12 +706,6 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 /*
                  * Fetch the argument.
                  */
-                union
-                {
-                    const void     *pv;
-                    uint64_t        u64;
-                    PCRTTIMESPEC    pTimeSpec;
-                } u;
                 u.u64 = 0;
                 switch (s_aTypes[i].cb)
                 {
