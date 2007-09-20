@@ -870,6 +870,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
  */
 VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 {
+_asm int 3;
     /*
      * Convert the pLogger into a VM handle and 'call' back to Ring-3.
      * (This is a bit paranoid code.)
@@ -925,10 +926,7 @@ DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
 {
     if (g_pVMAssert)
     {
-        g_pVMAssert->vmm.s.enmCallHostOperation = VMMCALLHOST_VMM_LOGGER_FLUSH;
-        g_pVMAssert->vmm.s.u64CallHostArg = 0;
-        g_pVMAssert->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
-        int rc = vmmR0CallHostLongJmp(&g_pVMAssert->vmm.s.CallHostR0JmpBuf, VERR_INTERNAL_ERROR);
+        int rc = VMMR0CallHost(g_pVMAssert, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
         if (rc == VINF_SUCCESS)
             rc = g_pVMAssert->vmm.s.rcCallHost;
     }
@@ -947,12 +945,8 @@ DECLEXPORT(void) RTCALL RTR0AssertBreakpoint(void *pvVM)
     if (pvVM)
     {
         PVM pVM = (PVM)pvVM;
-        pVM->vmm.s.enmCallHostOperation = VMMCALLHOST_VM_R0_HYPER_ASSERTION;
-        pVM->vmm.s.u64CallHostArg = 0;
-        pVM->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
-        int rc = vmmR0CallHostLongJmp(&pVM->vmm.s.CallHostR0JmpBuf, VERR_INTERNAL_ERROR);
-        if (rc == VINF_SUCCESS)
-            rc = pVM->vmm.s.rcCallHost;
+        VMMR0CallHost(g_pVMAssert, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
+        /* does not return */
     }
 }
 
