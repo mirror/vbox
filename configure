@@ -53,7 +53,8 @@ LIBXERCES="-lxerces-c"
 LIBXERCES_DIR="/usr/local/lib"
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
-LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -lXext -lX11"
+LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
+INCX11="/usr/local/include"
 LIBXCURSOR="-lXcursor"
 INCZ=""
 LIBZ="-lz"
@@ -909,7 +910,8 @@ extern "C" int main(void)
   return 0;
 }
 EOF
-  if test_compile "$LIBX11 $LIBXCURSOR" Xcursor Xcursor; then
+  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
+  if test_compile "$LIBX11 $LIBXCURSOR $I_INCX11" Xcursor Xcursor; then
     log_success "found"
     cnf_append "LIB_XCURSOR" "`strip_l "$LIBXCURSOR"`"
   fi
@@ -939,7 +941,8 @@ extern "C" int main(void)
   XDestroyWindow(dpy, win);
 }
 EOF
-  if test_compile "$LIBX11" Xlibs Xlibs; then
+  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
+  if test_compile "$LIBX11 $I_INCX11" Xlibs Xlibs; then
     log_success "found"
   fi
 }
