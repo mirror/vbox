@@ -28,6 +28,7 @@
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <iprt/path.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -187,7 +188,7 @@ int suplibOsPageFree(void *pvPages, size_t /* cPages */)
     if (pvPages)
     {
         int rc = DosFreeMem(pvPages);
-        Assert(!rc);
+        Assert(!rc); NOREF(rc);
     }
     return VINF_SUCCESS;
 }

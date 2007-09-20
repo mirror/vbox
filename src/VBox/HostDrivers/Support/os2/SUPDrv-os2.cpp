@@ -351,7 +351,7 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
          * Unlock and return.
          */
         int rc2 = KernVMUnlock(&Lock);
-        AssertMsg(!rc2, ("rc2=%d\n", rc2));
+        AssertMsg(!rc2, ("rc2=%d\n", rc2)); NOREF(rc2);
 
         dprintf2(("VBoxDrvIOCtl: returns %d\n", rc));
         return rc;
