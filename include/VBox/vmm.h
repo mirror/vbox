@@ -420,7 +420,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
  * @param   enmOperation    Which operation to execute.
- * @remarks Assume called with interrupts disabled.
+ * @remarks Assume called with interrupts _enabled_.
  */
 VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
 
