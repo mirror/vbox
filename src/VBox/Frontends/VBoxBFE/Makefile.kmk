@@ -80,6 +80,9 @@ endif
 VBoxBFE_INCS = \
 	$(PATH_VBoxBFE) \
 	$(PATH_BIN)/sdk/include
+VBoxBFE_INCS.freebsd = \
+	/usr/include \
+	/usr/local/include
 VBoxBFE_INCS.linux = \
 	$(PATH_BIN)/sdk/include \
 	$(VBOX_XPCOM_INCS)

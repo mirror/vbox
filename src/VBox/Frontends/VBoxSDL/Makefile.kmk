@@ -69,6 +69,10 @@ VBoxSDL_LIBS += \
 endif
 VBoxSDL_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
+VBoxSDL_INCS.freebsd = \
+	/usr/include \
+	/usr/local/include \
+	/usr/X11R6/include ## @todo figure this out.
 endif
 VBoxSDL_LIBS.solaris = \
 	$(LIB_X11)
@@ -111,6 +115,10 @@ endif
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 tstSDL_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
+tstSDL_INCS.freebsd = \
+	/usr/include \
+	/usr/local/include \
+	/usr/X11R6/include ## @todo figure this out.
 endif
 
 tstSDL_LDFLAGS.darwin = \
