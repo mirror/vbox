@@ -279,7 +279,15 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
     {
+        KIRQL oldIrql;
+
+        /* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */
+        Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+        KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
+
         int rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
+
+        KeLowerIrql(oldIrql);
 
         /* Complete the I/O request. */
         NTSTATUS rcNt = pIrp->IoStatus.Status = STATUS_SUCCESS;
@@ -608,7 +616,6 @@ static void _stdcall VBoxDrvNtGipTimer(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID 
              * affinity mask and the process despite the warnings in the docs.
              * If someone knows a better way to get this done, please let bird know.
              */
-            /** @todo our IRQL is too high for KeQueryActiveProcessors!! */
             unsigned iSelf = KeGetCurrentProcessorNumber();
             KAFFINITY Mask = KeQueryActiveProcessors();
 
