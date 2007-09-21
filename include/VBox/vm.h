@@ -228,7 +228,7 @@ typedef struct VM
     /** Pointer to the array of page descriptors for the VM structure allocation. */
     R3PTRTYPE(PSUPPAGE)         paVMPagesR3;
     /** Session handle. For use when calling SUPR0 APIs. */
-    R3R0PTRTYPE(PSUPDRVSESSION) pSession;
+    PSUPDRVSESSION              pSession;
     /** Pointer to the next VM.
      * We keep a per process list of VM for the event that a process could
      * contain more than one VM.
