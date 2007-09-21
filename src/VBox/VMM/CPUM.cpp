@@ -1511,33 +1511,24 @@ typedef struct CPUMDISASSTATE
     void           *pvPageHC;
     /** Pointer to the current page - GC Ptr. */
     RTGCPTR         pvPageGC;
-    /** The rc of the operation.
-     *
-     * @todo r=bird: it's rather annoying that we have to keep track of the status code of the operation.
-     *               When we've got time we should adjust the disassembler to use VBox status codes and not
-     *               boolean returns.
-     */
-    int             rc;
 } CPUMDISASSTATE, *PCPUMDISASSTATE;
 
 
 /**
  * Instruction reader.
  *
- * @returns VBox status code. (Why this is a int32_t and not just an int is also beyond me.)
+ * @returns VBox status code.
  * @param   PtrSrc      Address to read from.
  *                      In our case this is relative to the selector pointed to by the 2nd user argument of uDisCpu.
  * @param   pu8Dst      Where to store the bytes.
  * @param   cbRead      Number of bytes to read.
- * @param   uDisCpu     Pointer to the disassembler cpu state. (Why this is a VBOXHUINTPTR is beyond me...)
+ * @param   uDisCpu     Pointer to the disassembler cpu state.
  *                      In this context it's always pointer to the Core of a DBGFDISASSTATE.
- * @todo r=bird: The status code should be an int. The PtrSrc should *NOT* be a RTHCUINTPTR. The uDisCpu could just as well be
- *               declared as what it actually is a PDISCPUSTATE.
  */
-static DECLCALLBACK(int32_t) cpumR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Dst, uint32_t cbRead, RTHCUINTPTR uDisCpu)
+static DECLCALLBACK(int) cpumR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Dst, uint32_t cbRead, void *uDisCpu)
 {
     PDISCPUSTATE pCpu = (PDISCPUSTATE)uDisCpu;
-    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pCpu->dwUserData[0]; /** @todo r=bird: Invalid prefix, dw='double word' which it isn't. Besides it's an array too. And btw. RTHCUINTPTR isn't the right thing either in a 32-bit host 64-bit guest situation */
+    PCPUMDISASSTATE pState = (PCPUMDISASSTATE)pCpu->apvUserData[0];
     Assert(cbRead > 0);
     for (;;)
     {
@@ -1547,26 +1538,28 @@ static DECLCALLBACK(int32_t) cpumR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *p
         if (    !pState->pvPageHC
             ||  (GCPtr >> PAGE_SHIFT) != (pState->pvPageGC >> PAGE_SHIFT))
         {
+            int rc = VINF_SUCCESS;
+
             /* translate the address */
             pState->pvPageGC = GCPtr & PAGE_BASE_GC_MASK;
             if (MMHyperIsInsideArea(pState->pVM, pState->pvPageGC))
             {
                 pState->pvPageHC = MMHyperGC2HC(pState->pVM, pState->pvPageGC);
                 if (!pState->pvPageHC)
-                    pState->rc = VERR_INVALID_POINTER;
+                    rc = VERR_INVALID_POINTER;
             }
             else
-                pState->rc = PGMPhysGCPtr2HCPtr(pState->pVM, pState->pvPageGC, &pState->pvPageHC);
-            if (VBOX_FAILURE(pState->rc))
+                rc = PGMPhysGCPtr2HCPtr(pState->pVM, pState->pvPageGC, &pState->pvPageHC);
+            if (VBOX_FAILURE(rc))
             {
                 pState->pvPageHC = NULL;
-                return pState->rc;
+                return rc;
             }
         }
 
         /* check the segemnt limit */
         if (PtrSrc > pState->cbSegLimit)
-            return pState->rc = VERR_OUT_OF_SELECTOR_BOUNDS;
+            return VERR_OUT_OF_SELECTOR_BOUNDS;
 
         /* calc how much we can read */
         uint32_t cb = PAGE_SIZE - (GCPtr & PAGE_OFFSET_MASK);
@@ -1606,7 +1599,6 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     State.pCpu            = pCpu;
     State.pvPageGC        = 0;
     State.pvPageHC        = NULL;
-    State.rc              = VINF_SUCCESS;
     State.pVM             = pVM;
 
     /*
@@ -1661,15 +1653,17 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
      * Disassemble the instruction.
      */
     pCpu->pfnReadBytes    = cpumR3DisasInstrRead;
-    pCpu->dwUserData[0]   = (uintptr_t)&State;
+    pCpu->apvUserData[0]  = &State;
 
     uint32_t cbInstr;
 #ifdef LOG_ENABLED
-    if (DISInstr(pCpu, GCPtrPC, 0, &cbInstr, NULL))
+    rc = DISInstr(pCpu, GCPtrPC, 0, &cbInstr, NULL);
+    if (VBOX_SUCCESS(rc))
     {
 #else
     char szOutput[160];
-    if (DISInstr(pCpu, GCPtrPC, 0, &cbInstr, &szOutput[0]))
+    rc = DISInstr(pCpu, GCPtrPC, 0, &cbInstr, &szOutput[0]);
+    if (VBOX_SUCCESS(rc))
     {
         /* log it */
         if (pszPrefix)
@@ -1680,14 +1674,7 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
         return VINF_SUCCESS;
     }
 
-    /* DISInstr failure */
-    if (VBOX_FAILURE(State.rc))
-    {
-        Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%VGv rc=%Vrc\n", pCtx->cs, GCPtrPC, State.rc));
-        return State.rc;
-    }
-    Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%VGv\n", pCtx->cs, GCPtrPC));
-    rc = VERR_GENERAL_FAILURE;
+    Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%VGv rc=%Vrc\n", pCtx->cs, GCPtrPC, rc));
     return rc;
 }
 

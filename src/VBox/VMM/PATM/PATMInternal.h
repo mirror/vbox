@@ -661,10 +661,10 @@ PATMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatch
  * @param   pSrc        GC source pointer
  * @param   pDest       HC destination pointer
  * @param   size        Number of bytes to read
- * @param   dwUserdata  Callback specific user data (pCpu)
+ * @param   pvUserdata  Callback specific user data (pCpu)
  *
  */
-int32_t patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t size, RTHCUINTPTR dwUserdata);
+int patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
 
 
 #ifndef IN_GC
@@ -696,8 +696,8 @@ inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPT
     disinfo.pInstrGC = InstrGC;
     disinfo.fReadFlags = fReadFlags;
     (pCpu)->pfnReadBytes  = patmReadBytes;
-    (pCpu)->dwUserData[0] = (RTHCUINTPTR)&disinfo;
-    return DISInstr(pCpu, InstrGC, 0, pOpsize, pszOutput);
+    (pCpu)->apvUserData[0] = &disinfo;
+    return VBOX_SUCCESS(DISInstr(pCpu, InstrGC, 0, pOpsize, pszOutput));
 }
 #endif /* !IN_GC */
 

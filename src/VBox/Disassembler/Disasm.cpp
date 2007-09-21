@@ -35,7 +35,7 @@
 /**
  * Disassembles a code block.
  *
- * @returns Success indicator.
+ * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
  * @param   pvCodeBlock     Pointer to the strunction to disassemble.
@@ -52,16 +52,17 @@
  * @remark  cbMax isn't respected as a boundry. DISInstr() will read beyond cbMax.
  *          This means *pcbSize >= cbMax sometimes.
  */
-DISDECL(bool) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, int32_t cbMax, uint32_t *pSize)
+DISDECL(int) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, unsigned cbMax, unsigned *pSize)
 {
-    int32_t i = 0;
+    unsigned i = 0;
     char szOutput[256];
 
     while (i < cbMax)
     {
-        uint32_t cbInstr;
-        if (!DISInstr(pCpu, pvCodeBlock + i, 0, &cbInstr, szOutput))
-            return false;
+        unsigned cbInstr;
+        int rc = DISInstr(pCpu, pvCodeBlock + i, 0, &cbInstr, szOutput);
+        if (VBOX_FAILURE(rc))
+            return rc;
 
         i += cbInstr;
     }
@@ -74,7 +75,7 @@ DISDECL(bool) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, int32_t cbMax, 
 /**
  * Disassembles one instruction
  *
- * @returns Success indicator.
+ * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
  * @param   pu8Instruction  Pointer to the strunction to disassemble.
@@ -85,7 +86,7 @@ DISDECL(bool) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, int32_t cbMax, 
  *
  * @todo    Define output callback.
  */
-DISDECL(bool) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32EipOffset, uint32_t *pcbSize,
+DISDECL(int) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32EipOffset, unsigned *pcbSize,
                        char *pszOutput)
 {
     return DISInstrEx(pCpu, pu8Instruction, u32EipOffset, pcbSize, pszOutput, OPTYPE_ALL);
@@ -94,7 +95,7 @@ DISDECL(bool) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32
 /**
  * Disassembles one instruction; only fully disassembly an instruction if it matches the filter criteria
  *
- * @returns Success indicator.
+ * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
  * @param   pu8Instruction  Pointer to the strunction to disassemble.
@@ -106,11 +107,11 @@ DISDECL(bool) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32
  *
  * @todo    Define output callback.
  */
-DISDECL(bool) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32EipOffset, uint32_t *pcbSize,
-                         char *pszOutput, uint32_t uFilter)
+DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32EipOffset, unsigned *pcbSize,
+                         char *pszOutput, unsigned uFilter)
 {
-    int i = 0, prefixbytes;
-    int idx, inc;
+    unsigned i = 0, prefixbytes;
+    unsigned idx, inc;
 #ifdef __L4ENV__
     jmp_buf jumpbuffer;
 #endif
@@ -164,7 +165,7 @@ DISDECL(bool) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u
 #if 0 //defined (DEBUG_Sander)
                     AssertMsgFailed(("Invalid opcode!!\n"));
 #endif
-                    return false;
+                    return VERR_DIS_INVALID_OPCODE;
 
                 // segment override prefix byte
                 case OP_SEG:
@@ -244,13 +245,13 @@ DISDECL(bool) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u
     {
         if (pcbSize)
             *pcbSize = 0;
-        return false;
+        return VERR_DIS_GEN_FAILURE;
     }
 
     if (pcbSize)
         *pcbSize = i;
 
-    return true;
+    return VINF_SUCCESS;
 }
 //*****************************************************************************
 //*****************************************************************************
