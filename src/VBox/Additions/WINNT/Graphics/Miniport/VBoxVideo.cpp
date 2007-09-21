@@ -429,7 +429,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         wchar_t keyname[24];
         uint32_t xres, yres, bpp = 0;
         swprintf(keyname, L"CustomMode%dWidth", curKeyNo);
-        status = VideoPortGetRegistryParameters(DeviceExtension,
+        status = VideoPortGetRegistryParameters(DeviceExtension->pPrimary,
                                                 keyname,
                                                 FALSE,
                                                 VBoxRegistryCallback,
@@ -438,7 +438,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         if (status != NO_ERROR)
             break;
         swprintf(keyname, L"CustomMode%dHeight", curKeyNo);
-        status = VideoPortGetRegistryParameters(DeviceExtension,
+        status = VideoPortGetRegistryParameters(DeviceExtension->pPrimary,
                                                 keyname,
                                                 FALSE,
                                                 VBoxRegistryCallback,
@@ -447,7 +447,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         if (status != NO_ERROR)
             break;
         swprintf(keyname, L"CustomMode%dBPP", curKeyNo);
-        status = VideoPortGetRegistryParameters(DeviceExtension,
+        status = VideoPortGetRegistryParameters(DeviceExtension->pPrimary,
                                                 keyname,
                                                 FALSE,
                                                 VBoxRegistryCallback,
