@@ -93,7 +93,10 @@ LINUXNOSTRIP = \
 	VBox.png \
 	VBoxAddIF.sh \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox.desktop,) \
-	$(if $(VBOX_WITH_QTGUI),nls,) \
+	$(if $(VBOX_WITH_QTGUI),$(foreach f,\
+	  $(shell $(CAT_EXT) \
+	    $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
+	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),) \
 	src \
 	sdk
 
