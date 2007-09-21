@@ -115,7 +115,7 @@
     </message>
     <message>
         <source>Menu</source>
-        <translation>Menu</translation>
+        <translation>Ponuka</translation>
     </message>
     <message>
         <source>Help</source>
@@ -143,7 +143,7 @@
     </message>
     <message>
         <source>Volume Mute</source>
-        <translation>Potichu</translation>
+        <translation>Stlmiť hlasitosť</translation>
     </message>
     <message>
         <source>Volume Up</source>
@@ -151,7 +151,7 @@
     </message>
     <message>
         <source>Bass Boost</source>
-        <translation>Bass Boost</translation>
+        <translation>Posilniť basy</translation>
     </message>
     <message>
         <source>Bass Up</source>
@@ -291,7 +291,7 @@
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>Program &apos;%1&apos; vyžaduje Qt %2, nájdené Qt %3.</translation>
+        <translation>Program „%1“ vyžaduje Qt %2, nájdené Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
@@ -395,7 +395,7 @@
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>Čo je to?</translation>
+        <translation>Čo je toto?</translation>
     </message>
 </context>
 <context>
@@ -414,7 +414,7 @@
     </message>
     <message>
         <source>Warning:</source>
-        <translation>Varovanie:</translation>
+        <translation>Upozornenie:</translation>
     </message>
     <message>
         <source>Fatal Error:</source>
@@ -473,7 +473,7 @@
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation>&amp;Meno súboru:</translation>
+        <translation>&amp;Názov súboru:</translation>
     </message>
     <message>
         <source>File &amp;type:</source>
@@ -497,7 +497,7 @@
     </message>
     <message>
         <source>Detail View</source>
-        <translation>Detaily</translation>
+        <translation>Podrobnosti</translation>
     </message>
     <message>
         <source>Preview File Info</source>
@@ -617,7 +617,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Naozaj chcete odstrániť %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Naozaj chcete odstrániť %1 „%2“?&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
@@ -684,183 +684,183 @@ Overte cestu a meno súboru.</translation>
     <name>QFont</name>
     <message>
         <source>Latin</source>
-        <translation>Latinka</translation>
+        <translation>latinka</translation>
     </message>
     <message>
         <source>Greek</source>
-        <translation>Grécke</translation>
+        <translation>grécke</translation>
     </message>
     <message>
         <source>Cyrillic</source>
-        <translation>Azbuka</translation>
+        <translation>azbuka</translation>
     </message>
     <message>
         <source>Armenian</source>
-        <translation>Arménske</translation>
+        <translation>arménske</translation>
     </message>
     <message>
         <source>Georgian</source>
-        <translation>Gruzínske</translation>
+        <translation>gruzínske</translation>
     </message>
     <message>
         <source>Runic</source>
-        <translation>Runy</translation>
+        <translation>runy</translation>
     </message>
     <message>
         <source>Ogham</source>
-        <translation>Ogham</translation>
+        <translation>ogam</translation>
     </message>
     <message>
         <source>Hebrew</source>
-        <translation>Hebrejské</translation>
+        <translation>hebrejské</translation>
     </message>
     <message>
         <source>Arabic</source>
-        <translation>Arabské</translation>
+        <translation>arabské</translation>
     </message>
     <message>
         <source>Syriac</source>
-        <translation>Sýrske</translation>
+        <translation>sýrske</translation>
     </message>
     <message>
         <source>Thaana</source>
-        <translation>Thaana</translation>
+        <translation>tána</translation>
     </message>
     <message>
         <source>Devanagari</source>
-        <translation>Devanagari</translation>
+        <translation>devanagari</translation>
     </message>
     <message>
         <source>Bengali</source>
-        <translation>Bengali</translation>
+        <translation>bengálske</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation>Gurmukhi</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Gujarati</source>
-        <translation>Gujarati</translation>
+        <translation>gudžarátske</translation>
     </message>
     <message>
         <source>Oriya</source>
-        <translation>Oriya</translation>
+        <translation>uríjske</translation>
     </message>
     <message>
         <source>Tamil</source>
-        <translation>Tamilské</translation>
+        <translation>tamilské</translation>
     </message>
     <message>
         <source>Telugu</source>
-        <translation>Telugu</translation>
+        <translation>telugské</translation>
     </message>
     <message>
         <source>Kannada</source>
-        <translation>Kannada</translation>
+        <translation>kannadské</translation>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation>Malayalam</translation>
+        <translation>malajálamske</translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation>Sinhala</translation>
+        <translation>sinhalské</translation>
     </message>
     <message>
         <source>Thai</source>
-        <translation>Thajské</translation>
+        <translation>thajské</translation>
     </message>
     <message>
         <source>Lao</source>
-        <translation>Laoské</translation>
+        <translation>laoské</translation>
     </message>
     <message>
         <source>Tibetan</source>
-        <translation>Tibetské</translation>
+        <translation>tibetské</translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation>Myanmar</translation>
+        <translation>mjanmarské</translation>
     </message>
     <message>
         <source>Khmer</source>
-        <translation>Khmérske</translation>
+        <translation>khmérske</translation>
     </message>
     <message>
         <source>Han</source>
-        <translation>Han</translation>
+        <translation>han</translation>
     </message>
     <message>
         <source>Hiragana</source>
-        <translation>Hiragana</translation>
+        <translation>hiragana</translation>
     </message>
     <message>
         <source>Katakana</source>
-        <translation>Katakana</translation>
+        <translation>katakana</translation>
     </message>
     <message>
         <source>Hangul</source>
-        <translation>Hangul</translation>
+        <translation>hangul</translation>
     </message>
     <message>
         <source>Bopomofo</source>
-        <translation>Bopomofo</translation>
+        <translation>bopomofo</translation>
     </message>
     <message>
         <source>Yi</source>
-        <translation>Yi</translation>
+        <translation>s’čchuanská ioština</translation>
     </message>
     <message>
         <source>Ethiopic</source>
-        <translation>Etiópske</translation>
+        <translation>etiópske</translation>
     </message>
     <message>
         <source>Cherokee</source>
-        <translation>Cherokee</translation>
+        <translation>čerokíjske</translation>
     </message>
     <message>
         <source>Canadian Aboriginal</source>
-        <translation>Kanadský pôvodní obyvatelia</translation>
+        <translation>kanadských pôvodných obyvateľov</translation>
     </message>
     <message>
         <source>Mongolian</source>
-        <translation>Mongolské</translation>
+        <translation>mongolské</translation>
     </message>
     <message>
         <source>Currency Symbols</source>
-        <translation>Symboly mien</translation>
+        <translation>symboly mien</translation>
     </message>
     <message>
         <source>Letterlike Symbols</source>
-        <translation>Symboly písmen</translation>
+        <translation>symboly písmen</translation>
     </message>
     <message>
         <source>Number Forms</source>
-        <translation>Číselné formáty</translation>
+        <translation>číselné tvary</translation>
     </message>
     <message>
         <source>Mathematical Operators</source>
-        <translation>Matematické operátory</translation>
+        <translation>matematické operátory</translation>
     </message>
     <message>
         <source>Technical Symbols</source>
-        <translation>Technické symboly</translation>
+        <translation>technické symboly</translation>
     </message>
     <message>
         <source>Geometric Symbols</source>
-        <translation>Geometrické symboly</translation>
+        <translation>geometrické symboly</translation>
     </message>
     <message>
         <source>Miscellaneous Symbols</source>
-        <translation>Rôzne symboly</translation>
+        <translation>rôzne symboly</translation>
     </message>
     <message>
         <source>Enclosed and Square</source>
-        <translation>Zabalené</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Braille</source>
-        <translation>Braille</translation>
+        <translation>braillovo</translation>
     </message>
     <message>
         <source>Unicode</source>
@@ -1070,7 +1070,7 @@ Overte cestu a meno súboru.</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation type="unfinished"></translation>
+        <translation>Spojenie s %1 zatvorené</translation>
     </message>
     <message>
         <source>Connection closed</source>
@@ -1201,7 +1201,7 @@ na
     <name>QMenuBar</name>
     <message>
         <source>About</source>
-        <translation>O programe</translation>
+        <translation>O aplikácii</translation>
     </message>
     <message>
         <source>Config</source>
@@ -1668,7 +1668,7 @@ Mac&amp;nbsp;OS&amp;nbsp;X, Linux, a mnohé ďalšie komerčné verzie Unixu.
     <name>QTitleBar</name>
     <message>
         <source>System Menu</source>
-        <translation>Systémové menu</translation>
+        <translation>Systémová ponuka</translation>
     </message>
     <message>
         <source>Shade</source>
@@ -1706,35 +1706,35 @@ Mac&amp;nbsp;OS&amp;nbsp;X, Linux, a mnohé ďalšie komerčné verzie Unixu.
     <name>QUrlOperator</name>
     <message>
         <source>The protocol `%1&apos; is not supported</source>
-        <translation>Protokol %1 nie je podporovaný</translation>
+        <translation>Protokol „%1“ nie je podporovaný</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation>Protokol %1 nepodporuje výpis priečinkov</translation>
+        <translation>Protokol „%1“ nepodporuje výpis priečinkov</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation>Protokol %1 nepodporuje vytváranie nových priečinkov</translation>
+        <translation>Protokol „%1“ nepodporuje vytváranie nových priečinkov</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation>Protokol %1 nepodporuje odstránenie súborov a priečinkov</translation>
+        <translation>Protokol „%1“ nepodporuje odstránenie súborov a priečinkov</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation>Protokol %1 nepodporuje premenovanie súborov a priečinkov</translation>
+        <translation>Protokol „%1“ nepodporuje premenovanie súborov a priečinkov</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
-        <translation>Protokol %1 nepodporuje získavanie súborov</translation>
+        <translation>Protokol „%1“ nepodporuje získavanie súborov</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support putting files</source>
-        <translation>Protokol %1 nepodporuje ukladanie súborov</translation>
+        <translation>Protokol „%1“ nepodporuje ukladanie súborov</translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation>Protokol %1 nepodporuje kopírovanie alebo presun súborov a priečinkov</translation>
+        <translation>Protokol „%1“ nepodporuje kopírovanie alebo presun súborov a priečinkov</translation>
     </message>
     <message>
         <source>(unknown)</source>
@@ -1807,11 +1807,11 @@ Mac&amp;nbsp;OS&amp;nbsp;X, Linux, a mnohé ďalšie komerčné verzie Unixu.
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Dozadu</translation>
+        <translation>&lt; &amp;Späť</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>Do&amp;predu &gt;</translation>
+        <translation>Ď&amp;alej &gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
@@ -1885,7 +1885,7 @@ Mac&amp;nbsp;OS&amp;nbsp;X, Linux, a mnohé ďalšie komerčné verzie Unixu.
     </message>
     <message>
         <source>error triggered by consumer</source>
-        <translation>chyba vyvolaná zákazníkom</translation>
+        <translation>chyba vyvolaná spotrebiteľom</translation>
     </message>
     <message>
         <source>unexpected end of file</source>
