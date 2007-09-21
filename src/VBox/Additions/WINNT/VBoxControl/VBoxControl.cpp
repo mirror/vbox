@@ -15,6 +15,8 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <malloc.h>
 
 void printHelp()
 {
@@ -26,9 +28,422 @@ void printHelp()
            "\n"
            "VBoxControl   addcustommode <width> <height> <bpp>\n"
            "\n"
-           "VBoxControl   removecustommode <width> <height> <bpp>\n");
+           "VBoxControl   removecustommode <width> <height> <bpp>\n"
+           "\n"
+           "VBoxControl   setvideomode <width> <height> <bpp> <screen>\n");
 }
 
+#if defined(DEBUG) || defined(LOG_ENABLED)
+#define dprintf(a) do { int err = GetLastError (); printf a; SetLastError (err); } while (0)
+#else
+#define dprintf(a) do {} while (0)
+#endif /* DEBUG */
+
+LONG (WINAPI * gpfnChangeDisplaySettingsEx)(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
+
+static unsigned nextAdjacentRectXP (RECTL *paRects, unsigned nRects, unsigned iRect)
+{
+    unsigned i;
+    for (i = 0; i < nRects; i++)
+    {
+        if (paRects[iRect].right == paRects[i].left)
+        {
+            return i;
+        }
+    }
+    return ~0;
+}
+
+static unsigned nextAdjacentRectXN (RECTL *paRects, unsigned nRects, unsigned iRect)
+{
+    unsigned i;
+    for (i = 0; i < nRects; i++)
+    {
+        if (paRects[iRect].left == paRects[i].right)
+        {
+            return i;
+        }
+    }
+    return ~0;
+}
+
+static unsigned nextAdjacentRectYP (RECTL *paRects, unsigned nRects, unsigned iRect)
+{
+    unsigned i;
+    for (i = 0; i < nRects; i++)
+    {
+        if (paRects[iRect].bottom == paRects[i].top)
+        {
+            return i;
+        }
+    }
+    return ~0;
+}
+
+unsigned nextAdjacentRectYN (RECTL *paRects, unsigned nRects, unsigned iRect)
+{
+    unsigned i;
+    for (i = 0; i < nRects; i++)
+    {
+        if (paRects[iRect].top == paRects[i].bottom)
+        {
+            return i;
+        }
+    }
+    return ~0;
+}
+
+void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iResized, int NewWidth, int NewHeight)
+{
+    RECTL *paNewRects = (RECTL *)alloca (sizeof (RECTL) * nRects);
+    memcpy (paNewRects, paRects, sizeof (RECTL) * nRects);
+    paNewRects[iResized].right += NewWidth - (paNewRects[iResized].right - paNewRects[iResized].left);
+    paNewRects[iResized].bottom += NewHeight - (paNewRects[iResized].bottom - paNewRects[iResized].top);
+    
+    /* Verify all pairs of originally adjacent rectangles for all 4 directions. 
+     * If the pair has a "good" delta (that is the first rectangle intersects the second)
+     * at a direction and the second rectangle is not primary one (which can not be moved),
+     * move the second rectangle to make it adjacent to the first one.
+     */
+    
+    /* X positive. */
+    unsigned iRect;
+    for (iRect = 0; iRect < nRects; iRect++)
+    {
+        /* Find the next adjacent original rect in x positive direction. */
+        unsigned iNextRect = nextAdjacentRectXP (paRects, nRects, iRect);
+        dprintf(("next %d -> %d\n", iRect, iNextRect));
+        
+        if (iNextRect == ~0 || iNextRect == iPrimary)
+        {
+            continue;
+        }
+        
+        /* Check whether there is an X intesection between these adjacent rects in the new rectangles
+         * and fix the intersection if delta is "good".
+         */
+        int delta = paNewRects[iRect].right - paNewRects[iNextRect].left;
+        
+        if (delta > 0)
+        {
+            dprintf(("XP intersection right %d left %d, diff %d\n",
+                     paNewRects[iRect].right, paNewRects[iNextRect].left,
+                     delta));
+            
+            paNewRects[iNextRect].left += delta;
+            paNewRects[iNextRect].right += delta;
+        }
+    }
+    
+    /* X negative. */
+    for (iRect = 0; iRect < nRects; iRect++)
+    {
+        /* Find the next adjacent original rect in x negative direction. */
+        unsigned iNextRect = nextAdjacentRectXN (paRects, nRects, iRect);
+        dprintf(("next %d -> %d\n", iRect, iNextRect));
+        
+        if (iNextRect == ~0 || iNextRect == iPrimary)
+        {
+            continue;
+        }
+        
+        /* Check whether there is an X intesection between these adjacent rects in the new rectangles
+         * and fix the intersection if delta is "good".
+         */
+        int delta = paNewRects[iRect].left - paNewRects[iNextRect].right;
+        
+        if (delta < 0)
+        {
+            dprintf(("XN intersection left %d right %d, diff %d\n",
+                     paNewRects[iRect].left, paNewRects[iNextRect].right,
+                     delta));
+            
+            paNewRects[iNextRect].left += delta;
+            paNewRects[iNextRect].right += delta;
+        }
+    }
+    
+    /* Y positive (in the computer sence, top->down). */
+    for (iRect = 0; iRect < nRects; iRect++)
+    {
+        /* Find the next adjacent original rect in y positive direction. */
+        unsigned iNextRect = nextAdjacentRectYP (paRects, nRects, iRect);
+        dprintf(("next %d -> %d\n", iRect, iNextRect));
+        
+        if (iNextRect == ~0 || iNextRect == iPrimary)
+        {
+            continue;
+        }
+        
+        /* Check whether there is an Y intesection between these adjacent rects in the new rectangles
+         * and fix the intersection if delta is "good".
+         */
+        int delta = paNewRects[iRect].bottom - paNewRects[iNextRect].top;
+        
+        if (delta > 0)
+        {
+            dprintf(("YP intersection bottom %d top %d, diff %d\n",
+                     paNewRects[iRect].bottom, paNewRects[iNextRect].top,
+                     delta));
+            
+            paNewRects[iNextRect].top += delta;
+            paNewRects[iNextRect].bottom += delta;
+        }
+    }
+    
+    /* Y negative (in the computer sence, down->top). */
+    for (iRect = 0; iRect < nRects; iRect++)
+    {
+        /* Find the next adjacent original rect in x negative direction. */
+        unsigned iNextRect = nextAdjacentRectYN (paRects, nRects, iRect);
+        dprintf(("next %d -> %d\n", iRect, iNextRect));
+        
+        if (iNextRect == ~0 || iNextRect == iPrimary)
+        {
+            continue;
+        }
+        
+        /* Check whether there is an Y intesection between these adjacent rects in the new rectangles
+         * and fix the intersection if delta is "good".
+         */
+        int delta = paNewRects[iRect].top - paNewRects[iNextRect].bottom;
+        
+        if (delta < 0)
+        {
+            dprintf(("YN intersection top %d bottom %d, diff %d\n",
+                     paNewRects[iRect].top, paNewRects[iNextRect].bottom,
+                     delta));
+            
+            paNewRects[iNextRect].top += delta;
+            paNewRects[iNextRect].bottom += delta;
+        }
+    }
+    
+    memcpy (paRects, paNewRects, sizeof (RECTL) * nRects);
+    return;
+}
+
+/* Returns TRUE to try again. */
+static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel)
+{
+    BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0);
+    
+    DISPLAY_DEVICE DisplayDevice;
+
+    ZeroMemory(&DisplayDevice, sizeof(DisplayDevice));
+    DisplayDevice.cb = sizeof(DisplayDevice);
+    
+    /* Find out how many display devices the system has */
+    DWORD NumDevices = 0;
+    DWORD i = 0;
+    while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
+    { 
+        dprintf(("[%d] %s\n", i, DisplayDevice.DeviceName));
+
+        if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+        {
+            dprintf(("Found primary device. err %d\n", GetLastError ()));
+            NumDevices++;
+        }
+        else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
+        {
+            
+            dprintf(("Found secondary device. err %d\n", GetLastError ()));
+            NumDevices++;
+        }
+        
+        ZeroMemory(&DisplayDevice, sizeof(DisplayDevice));
+        DisplayDevice.cb = sizeof(DisplayDevice);
+        i++;
+    }
+    
+    dprintf(("Found total %d devices. err %d\n", NumDevices, GetLastError ()));
+    
+    if (NumDevices == 0 || Id >= NumDevices)
+    {
+        dprintf(("Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
+        return FALSE;
+    }
+    
+    DISPLAY_DEVICE *paDisplayDevices = (DISPLAY_DEVICE *)alloca (sizeof (DISPLAY_DEVICE) * NumDevices);
+    DEVMODE *paDeviceModes = (DEVMODE *)alloca (sizeof (DEVMODE) * NumDevices);
+    RECTL *paRects = (RECTL *)alloca (sizeof (RECTL) * NumDevices);
+    
+    /* Fetch information about current devices and modes. */
+    DWORD DevNum = 0;
+    DWORD DevPrimaryNum = 0;
+    
+    ZeroMemory(&DisplayDevice, sizeof(DISPLAY_DEVICE));
+    DisplayDevice.cb = sizeof(DISPLAY_DEVICE);
+    
+    i = 0;
+    while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
+    { 
+        dprintf(("[%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
+        
+        BOOL bFetchDevice = FALSE;
+
+        if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+        {
+            dprintf(("Found primary device. err %d\n", GetLastError ()));
+            DevPrimaryNum = DevNum;
+            bFetchDevice = TRUE;
+        }
+        else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
+        {
+            
+            dprintf(("Found secondary device. err %d\n", GetLastError ()));
+            bFetchDevice = TRUE;
+        }
+        
+        if (bFetchDevice)
+        {
+            if (DevNum >= NumDevices)
+            {
+                dprintf(("%d >= %d\n", NumDevices, DevNum));
+                return FALSE;
+            }
+        
+            paDisplayDevices[DevNum] = DisplayDevice;
+            
+            ZeroMemory(&paDeviceModes[DevNum], sizeof(DEVMODE));
+            paDeviceModes[DevNum].dmSize = sizeof(DEVMODE);
+            if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
+                 ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
+            {
+                dprintf(("EnumDisplaySettings err %d\n", GetLastError ()));
+                return FALSE;
+            }
+            
+            dprintf(("%dx%d at %d,%d\n",
+                    paDeviceModes[DevNum].dmPelsWidth,
+                    paDeviceModes[DevNum].dmPelsHeight,
+                    paDeviceModes[DevNum].dmPosition.x,
+                    paDeviceModes[DevNum].dmPosition.y));
+                    
+            paRects[DevNum].left   = paDeviceModes[DevNum].dmPosition.x;
+            paRects[DevNum].top    = paDeviceModes[DevNum].dmPosition.y;
+            paRects[DevNum].right  = paDeviceModes[DevNum].dmPosition.x + paDeviceModes[DevNum].dmPelsWidth;
+            paRects[DevNum].bottom = paDeviceModes[DevNum].dmPosition.y + paDeviceModes[DevNum].dmPelsHeight;
+            DevNum++;
+        }
+        
+        ZeroMemory(&DisplayDevice, sizeof(DISPLAY_DEVICE));
+        DisplayDevice.cb = sizeof(DISPLAY_DEVICE);
+        i++;
+    }
+    
+    if (Width == 0)
+    {
+        Width = paRects[Id].right - paRects[Id].left;
+    }
+
+    if (Height == 0)
+    {
+        Height = paRects[Id].bottom - paRects[Id].top;
+    }
+
+    /* Check whether a mode reset or a change is requested. */
+    if (   !fModeReset
+        && paRects[Id].right - paRects[Id].left == Width
+        && paRects[Id].bottom - paRects[Id].top == Height
+        && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
+    {
+        dprintf(("VBoxDisplayThread : already at desired resolution.\n"));
+        return FALSE;
+    }
+
+    resizeRect(paRects, NumDevices, DevPrimaryNum, Id, Width, Height);
+#ifdef dprintf
+    for (i = 0; i < NumDevices; i++)
+    {
+        dprintf(("[%d]: %d,%d %dx%d\n",
+                i, paRects[i].left, paRects[i].top,
+                paRects[i].right - paRects[i].left,
+                paRects[i].bottom - paRects[i].top));
+    }
+#endif /* dprintf */
+    
+    /* Without this, Windows will not ask the miniport for its
+     * mode table but uses an internal cache instead.
+     */
+    DEVMODE tempDevMode;
+    ZeroMemory (&tempDevMode, sizeof (tempDevMode));
+    tempDevMode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
+
+    /* Assign the new rectangles to displays. */
+    for (i = 0; i < NumDevices; i++)
+    {
+        paDeviceModes[i].dmPosition.x = paRects[i].left;
+        paDeviceModes[i].dmPosition.y = paRects[i].top;
+        paDeviceModes[i].dmPelsWidth  = paRects[i].right - paRects[i].left;
+        paDeviceModes[i].dmPelsHeight = paRects[i].bottom - paRects[i].top;
+        
+        paDeviceModes[i].dmFields = DM_POSITION | DM_PELSHEIGHT | DM_PELSWIDTH;
+        
+        if (   i == Id
+            && BitsPerPixel != 0)
+        {
+            paDeviceModes[i].dmFields |= DM_BITSPERPEL;
+            paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
+        }
+        dprintf(("calling pfnChangeDisplaySettingsEx %x\n", gpfnChangeDisplaySettingsEx));     
+        gpfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
+                 &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL); 
+        dprintf(("ChangeDisplaySettings position err %d\n", GetLastError ()));
+    }
+    
+    /* A second call to ChangeDisplaySettings updates the monitor. */
+    LONG status = ChangeDisplaySettings(NULL, 0); 
+    dprintf(("ChangeDisplaySettings update status %d\n", status));
+    if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
+    {
+        /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
+        return FALSE;
+    }
+
+    /* Retry the request. */
+    return TRUE;
+}
+
+void handleSetVideoMode(int argc, char *argv[])
+{
+    if (argc != 3 && argc != 4)
+    {
+        printf("Error: not enough parameters!\n");
+        return;
+    }
+
+    DWORD xres = atoi(argv[0]);
+    DWORD yres = atoi(argv[1]);
+    DWORD bpp  = atoi(argv[2]);
+    DWORD scr  = 0;
+
+    if (argc == 4)
+    {
+        scr = atoi(argv[3]);
+    }
+
+    HMODULE hUser = GetModuleHandle("USER32");
+
+    if (hUser)
+    {
+        *(uintptr_t *)&gpfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
+        dprintf(("VBoxService: pChangeDisplaySettingsEx = %p\n", gpfnChangeDisplaySettingsEx));
+        
+        if (gpfnChangeDisplaySettingsEx)
+        {
+            /* The screen index is 0 based in the ResizeDisplayDevice call. */
+            scr = scr > 0? scr - 1: 0;
+            
+            /* Horizontal resolution must be a multiple of 8, round down. */
+            xres &= ~0x7;
+
+            ResizeDisplayDevice(scr, xres, yres, bpp);
+        }
+    }
+}
 
 HKEY getVideoKey(bool writable)
 {
@@ -363,6 +778,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[1], "removecustommode") == 0)
     {
         handleRemoveCustomMode(argc - 2, &argv[2]);
+    }
+    else if (strcmp(argv[1], "setvideomode") == 0)
+    {
+        handleSetVideoMode(argc - 2, &argv[2]);
     }
     else
     {
