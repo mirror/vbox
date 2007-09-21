@@ -495,11 +495,7 @@ __END_DECLS
 #  define AssertReleaseBreakpoint()   do { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
 # endif
 #elif defined(_MSC_VER)
-# ifdef RT_NO_RING0_ASSERTIONS
-#  define AssertReleaseBreakpoint()      RTR0AssertBreakpoint(pVM)
-# else
-#  define AssertReleaseBreakpoint()      __debugbreak()
-# endif
+# define AssertReleaseBreakpoint()      __debugbreak()
 #else
 # error "Unknown compiler"
 #endif
@@ -1186,15 +1182,6 @@ RTDECL(void)    AssertMsg2(const char *pszFormat, ...);
  */
 RTDECL(bool)    RTAssertDoBreakpoint(void);
 
-
-/**
- * Ring 0 VMM breakpoint function.
- * 
- * Generates a guru meditation 
- * 
- * @remark does not return
- */
-RTDECL(void)    RTR0AssertBreakpoint(void *pVM);
 
 /** The last assert message, 1st part. */
 extern RTDATADECL(char) g_szRTAssertMsg1[1024];
