@@ -279,7 +279,14 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
     {
-        int rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
+        KIRQL oldIrql;
+        int   rc;
+
+	 	/* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */ 
+	 	Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+	 	KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);        
+        rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
+        KeLowerIrql(oldIrql);
 
         /* Complete the I/O request. */
         NTSTATUS rcNt = pIrp->IoStatus.Status = STATUS_SUCCESS;
