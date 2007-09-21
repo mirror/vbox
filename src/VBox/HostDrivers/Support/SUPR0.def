@@ -25,6 +25,8 @@ EXPORTS
     SUPR0UnlockMem
     SUPR0ContAlloc
     SUPR0ContFree
+    SUPR0LowAlloc
+    SUPR0LowFree
     SUPR0MemAlloc
     SUPR0MemGetPhys
     SUPR0MemFree
