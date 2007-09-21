@@ -597,7 +597,7 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsig
     DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
     PVM           pVM      = (PVM)pCpu->apvUserData[0];
     RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pCpu->apvUserData[1];
-    RTGCUINTPTR   pInstrGC = (RTGCUINTPTR)pCpu->apvUserData[2];
+    RTGCUINTPTR   pInstrGC = (uintptr_t)pCpu->apvUserData[2];
     int           orgsize  = size;
 
     /* We are not interested in patched instructions, so read the original opcode bytes. */
