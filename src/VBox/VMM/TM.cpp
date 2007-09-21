@@ -671,7 +671,7 @@ TMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     for (PTMTIMER pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {
         pTimer->pVMGC = pVM->pVMGC;
-        pTimer->pVMR0 = (PVMR0)pVM->pVMHC; /// @todo pTimer->pVMR0 = pVM->pVMR0;
+        pTimer->pVMR0 = pVM->pVMR0;
     }
 }
 

@@ -98,7 +98,8 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
      */
     pVM->cpum.s.offVM = RT_OFFSETOF(VM, cpum);
     pVM->cpum.s.pCPUMHC = &pVM->cpum.s;
-    pVM->cpum.s.pHyperCoreHC = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
+    pVM->cpum.s.pHyperCoreR3 = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
+    pVM->cpum.s.pHyperCoreR0 = VM_R0_ADDR(pVM, CPUMCTX2CORE(&pVM->cpum.s.Hyper));
 
     /* Hidden selector registers are invalid by default. */
     pVM->cpum.s.fValidHiddenSelRegs  = false;
@@ -398,7 +399,8 @@ CPUMR3DECL(void) CPUMR3Relocate(PVM pVM)
      * Switcher pointers.
      */
     pVM->cpum.s.pCPUMGC = VM_GUEST_ADDR(pVM, &pVM->cpum.s);
-    pVM->cpum.s.pHyperCoreGC = MMHyperHC2GC(pVM, pVM->cpum.s.pHyperCoreHC);
+    pVM->cpum.s.pHyperCoreGC = MMHyperCCToGC(pVM, pVM->cpum.s.pHyperCoreR3);
+    Assert(pVM->cpum.s.pHyperCoreGC != NIL_RTGCPTR);
 }
 
 
@@ -856,7 +858,7 @@ static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     const char *pszComment;
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Hypervisor CPUM state: %s\n", pszComment);
-    cpumR3InfoOne(&pVM->cpum.s.Hyper, pVM->cpum.s.pHyperCoreHC, pHlp, enmType, ".");
+    cpumR3InfoOne(&pVM->cpum.s.Hyper, pVM->cpum.s.pHyperCoreR3, pHlp, enmType, ".");
     pHlp->pfnPrintf(pHlp, "CR4OrMask=%#x CR4AndMask=%#x\n", pVM->cpum.s.CR4.OrMask, pVM->cpum.s.CR4.AndMask);
 }
 

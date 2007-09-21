@@ -356,7 +356,8 @@ struc CPUM
     ;
     alignb 32
     ; hypervisor core context.
-    .pHyperCoreHC         RTHCPTR_RES 1
+    .pHyperCoreR3         RTR3PTR_RES 1
+    .pHyperCoreR0         RTR0PTR_RES 1
     .pHyperCoreGC         RTGCPTR_RES 1
     ;...
     .fUseFlags            resd    1
@@ -372,9 +373,9 @@ struc CPUM
     ; entered rawmode?
     .fRawEntered          resb    1
 %if RTHCPTR_CB == 8
-    .abPadding            resb    3
-%else
     .abPadding            resb    7
+%else
+    .abPadding            resb    3
 %endif
 
     ; CPUID leafs

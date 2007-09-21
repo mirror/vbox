@@ -234,15 +234,17 @@ typedef struct VM
      * contain more than one VM.
      */
     R3PTRTYPE(struct VM *)      pNext;
-    /** Host Context VM Pointer.
-     * @obsolete don't use in new code! */
-    R3PTRTYPE(struct VM *)      pVMHC;
     /** Ring-3 Host Context VM Pointer. */
     R3PTRTYPE(struct VM *)      pVMR3;
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(struct VM *)      pVMR0;
     /** Guest Context VM Pointer. */
     GCPTRTYPE(struct VM *)      pVMGC;
+
+    /** The GVM VM handle. Only the GVM should modify this field. */
+    uint32_t                    hSelf;
+    /** Reserved / padding. */
+    uint32_t                    u32Reserved;
 
     /** @name Public VMM Switcher APIs
      * @{ */
@@ -316,9 +318,9 @@ typedef struct VM
 
 
     /* padding to make gnuc put the StatQemuToGC where msc does. */
-/*#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     uint32_t            padding0;
-#endif */
+#endif
 
     /** Profiling the total time from Qemu to GC. */
     STAMPROFILEADV      StatTotalQemuToGC;
@@ -345,7 +347,7 @@ typedef struct VM
     STAMPROFILEADV      StatSwitcherTSS;
 
     /* padding - the unions must be aligned on 32 bytes boundraries. */
-    uint32_t            padding[HC_ARCH_BITS == 32 ? 6 : 6];
+    uint32_t            padding[HC_ARCH_BITS == 32 ? 4 : 6];
 
     /** CPUM part. */
     union
