@@ -549,7 +549,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
  * @param   enmOperation    Which operation to execute.
- * @remarks Assume called with interrupts disabled.
+ * @remarks Assume called with interrupts _enabled_.
  */
 VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
 {
@@ -593,6 +593,10 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
         {
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
 
+#ifndef RT_OS_WINDOWS /* @todo check other hosts */
+            /* We must disable interrupts here */
+            RTCCUINTREG uFlags = ASMIntDisableFlags();
+#endif
             int rc = HWACCMR0Enable(pVM);
             if (VBOX_SUCCESS(rc))
             {
@@ -607,6 +611,9 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
                 AssertRC(rc2);
             }
             pVM->vmm.s.iLastGCRc = rc;
+#ifndef RT_OS_WINDOWS /* @todo check other hosts */
+            ASMSetFlags(uFlags);
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
             vmmR0RecordRC(pVM, rc);
