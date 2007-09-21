@@ -695,19 +695,35 @@ void handleAddCustomMode(int argc, char *argv[])
 
     if (hkeyVideo)
     {
+        int i;
+        int fModeExists = 0;
         getCustomModes(hkeyVideo);
-        for (int i = 0; i < MAX_CUSTOM_MODES; i++)
+        for (i = 0; i < MAX_CUSTOM_MODES; i++)
         {
-            /* item free? */
-            if (!customModes[i].xres)
+            /* mode exists? */
+            if (   customModes[i].xres == xres
+                && customModes[i].yres == yres
+                && customModes[i].bpp  == bpp
+               )
             {
-                customModes[i].xres = xres;
-                customModes[i].yres = yres;
-                customModes[i].bpp  = bpp;
-                break;
+                fModeExists = 1;
             }
         }
-        writeCustomModes(hkeyVideo);
+        if (!fModeExists)
+        {
+            for (i = 0; i < MAX_CUSTOM_MODES; i++)
+            {
+                /* item free? */
+                if (!customModes[i].xres)
+                {
+                    customModes[i].xres = xres;
+                    customModes[i].yres = yres;
+                    customModes[i].bpp  = bpp;
+                    break;
+                }
+            }
+            writeCustomModes(hkeyVideo);
+        }
         RegCloseKey(hkeyVideo);
     }
 }
