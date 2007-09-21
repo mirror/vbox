@@ -1132,7 +1132,7 @@ static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTY
         rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, szOutput);
         if (VBOX_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
-        disret = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
+        rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
 #endif
         STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
         if (VBOX_FAILURE(rc2))
