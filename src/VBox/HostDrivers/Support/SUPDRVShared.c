@@ -1781,13 +1781,13 @@ SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR
     dprintf(("SUPR0PageAlloc: pSession=%p cb=%d ppvR3=%p\n", pSession, cPages, ppvR3));
 
     /*
-     * Validate input.
+     * Validate input. The allowed allocation size must be at least equal to the maximum guest VRAM size.
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
-    if (cPages < 1 || cPages >= 4096)
+    if (cPages < 1 || cPages > (128 * _1M)/PAGE_SIZE)
     {
-        dprintf(("SUPR0PageAlloc: Illegal request cb=%u; must be greater than 0 and smaller than 16MB.\n", cPages));
+        dprintf(("SUPR0PageAlloc: Illegal request cb=%u; must be greater than 0 and smaller than 128MB.\n", cPages));
         return VERR_INVALID_PARAMETER;
     }
 
