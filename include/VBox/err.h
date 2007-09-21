@@ -1115,6 +1115,12 @@
 #define VERR_GMM_SEED_ME                            (-4150)
 /** @} */
 
+/** @name VBox GVM Status Codes 
+ * @{
+ */
+/** The GVM is out of VM handle space. */
+#define VERR_GVM_TOO_MANY_VMS                       (-4200)
+/** @} */
 
 /** @name VBox Disassembler Status Codes 
  * @{

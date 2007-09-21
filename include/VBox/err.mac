@@ -360,4 +360,8 @@
 %define VERR_SVM_DISABLED    (-4053)
 %define VERR_HWACCM_UNKNOWN_CPU    (-4100)
 %define VERR_HWACCM_NO_CPUID    (-4101)
+%define VERR_GMM_SEED_ME    (-4150)
+%define VERR_GVM_TOO_MANY_VMS    (-4200)
+%define VERR_DIS_INVALID_OPCODE    (-5000)
+%define VERR_DIS_GEN_FAILURE    (-5001)
 %include "iprt/err.mac"

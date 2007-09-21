@@ -515,7 +515,8 @@ typedef struct SUPDRVOBJ
     SUPDRVOBJTYPE                   enmType;
     /** Pointer to the next in the global list. */
     struct SUPDRVOBJ * volatile     pNext;
-    /** Pointer to the object destructor. */
+    /** Pointer to the object destructor.
+     * This may be set to NULL if the image containing the destructor get unloaded. */
     PFNSUPDRVDESTRUCTOR             pfnDestructor;
     /** User argument 1. */
     void                           *pvUser1;
@@ -611,7 +612,7 @@ typedef struct SUPDRVSESSION
 typedef struct SUPDRVDEVEXT
 {
     /** Spinlock to serialize the initialization,
-     * usage counting and destruction of the IDT entry override. */
+     * usage counting and destruction of the IDT entry override and objects. */
     RTSPINLOCK              Spinlock;
 
 #ifdef VBOX_WITH_IDT_PATCHING
@@ -621,7 +622,7 @@ typedef struct SUPDRVDEVEXT
     PSUPDRVPATCH volatile   pIdtPatchesFree;
 #endif
 
-    /** List of registered objects. */
+    /** List of registered objects. Protected by the spinlock. */
     PSUPDRVOBJ volatile     pObjs;
     /** List of free object usage records. */
     PSUPDRVUSAGE volatile   pUsageFree;
