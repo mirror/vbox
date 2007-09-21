@@ -315,12 +315,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>キャンセル(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
@@ -902,8 +898,8 @@
         <translation>ダイアログに同意</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>キャンセル(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3203,12 +3199,8 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>キャンセル(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3432,12 +3424,8 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>キャンセル(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>

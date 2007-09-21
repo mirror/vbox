@@ -317,12 +317,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>취소(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>취소</translation>
     </message>
 </context>
 <context>
@@ -894,8 +890,8 @@
         <translation>변경 사항을 적용합니다</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>취소(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation>취소</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3190,12 +3186,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>취소(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>취소</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3419,12 +3411,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>취소(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>취소</translation>
     </message>
 </context>
 <context>

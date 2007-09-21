@@ -1156,9 +1156,6 @@ to the system default language.&lt;/qt&gt;
                     <property name="text">
                         <string>Cancel</string>
                     </property>
-                    <property name="accel">
-                        <string></string>
-                    </property>
                     <property name="autoDefault">
                         <bool>true</bool>
                     </property>

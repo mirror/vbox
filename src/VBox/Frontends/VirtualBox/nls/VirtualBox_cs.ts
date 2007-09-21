@@ -312,12 +312,8 @@
         <translation></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Zrušit</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation></translation>
+        <source>Cancel</source>
+        <translation>Zrušit</translation>
     </message>
 </context>
 <context>
@@ -889,8 +885,8 @@
         <translation>Přijme dialog</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Zrušit</translation>
+        <source>Cancel</source>
+        <translation>Zrušit</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3197,12 +3193,8 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Zrušit</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation></translation>
+        <source>Cancel</source>
+        <translation>Zrušit</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3414,12 +3406,8 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Zrušit</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation></translation>
+        <source>Cancel</source>
+        <translation>Zrušit</translation>
     </message>
 </context>
 <context>

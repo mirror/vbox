@@ -343,12 +343,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -877,8 +873,8 @@
         <translation>接受对话框</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3257,12 +3253,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="unfinished">Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation type="unfinished">Alt+C</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3474,12 +3466,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="unfinished">Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation type="unfinished">Alt+C</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
 </context>
 <context>

@@ -316,12 +316,8 @@
         <translation>Alt+о</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>О&amp;тменить</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+т</translation>
+        <source>Cancel</source>
+        <translation>Отменить</translation>
     </message>
 </context>
 <context>
@@ -893,8 +889,8 @@
         <translation>Принять сделанные изменения</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>О&amp;тменить</translation>
+        <source>Cancel</source>
+        <translation>Отменить</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3203,12 +3199,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+о</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>О&amp;тменить</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+т</translation>
+        <source>Cancel</source>
+        <translation>Отменить</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3420,12 +3412,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+о</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>О&amp;тменить</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+т</translation>
+        <source>Cancel</source>
+        <translation>Отменить</translation>
     </message>
 </context>
 <context>

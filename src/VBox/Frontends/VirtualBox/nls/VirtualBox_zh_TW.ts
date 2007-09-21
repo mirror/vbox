@@ -461,8 +461,8 @@
         <translation>確定(&amp;O)</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -491,10 +491,6 @@
     <message>
         <source>Alt+O</source>
         <translation>Alt+O</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
     </message>
 </context>
 <context>
@@ -1097,8 +1093,8 @@
         <translation>同意對話框</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -1399,8 +1395,8 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">取消(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -2110,8 +2106,8 @@ image and 鈕之一。要建立新的虛擬硬碟映像檔，就
         <translation>確定(&amp;O)</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">取消(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
     </message>
     <message>
         <source>Category</source>
@@ -3876,12 +3872,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -4105,12 +4097,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>取消(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -5080,8 +5068,8 @@ value.&lt;/qt&gt;</source>
         <translation>確定(&amp;O)</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">取消(&amp;C)</translation>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
     </message>
     <message>
         <source>Category</source>

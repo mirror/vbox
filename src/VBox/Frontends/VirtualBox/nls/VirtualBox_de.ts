@@ -312,12 +312,8 @@
         <translation></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Abbrechen</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -792,8 +788,8 @@
         <translation>Änderungen übernehmen</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Abbrechen</translation>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3030,12 +3026,8 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Abbrechen</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3239,12 +3231,8 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Abbrechen</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>

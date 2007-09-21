@@ -312,12 +312,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Avbryt</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Avbryt</translation>
     </message>
 </context>
 <context>
@@ -792,8 +788,8 @@
         <translation>Acceptera</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Avbryt</translation>
+        <source>Cancel</source>
+        <translation>Avbryt</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3064,12 +3060,8 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Avbryt</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Avbryt</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3273,12 +3265,8 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Avbryt</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Avbryt</translation>
     </message>
 </context>
 <context>
