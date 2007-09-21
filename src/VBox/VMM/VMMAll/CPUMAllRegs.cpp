@@ -53,25 +53,20 @@
  */
 CPUMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
-    LogFlow(("CPUMHyperSetCtxCore: %p -> %p\n", pVM->cpum.s.CTXSUFF(pHyperCore), pCtxCore));
+    LogFlow(("CPUMHyperSetCtxCore: %p/%p/%p -> %p\n", pVM->cpum.s.CTXALLSUFF(pHyperCore), pCtxCore));
     if (!pCtxCore)
     {
         pCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
-#ifdef IN_GC
-        pVM->cpum.s.pHyperCoreHC = VM_HOST_ADDR(pVM, pCtxCore);
-#else
-        pVM->cpum.s.pHyperCoreGC = VM_GUEST_ADDR(pVM, pCtxCore);
-#endif
+        pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))VM_R3_ADDR(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))VM_R0_ADDR(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreGC = (GCPTRTYPE(PCPUMCTXCORE))VM_GUEST_ADDR(pVM, pCtxCore);
     }
     else
     {
-#ifdef IN_GC
-        pVM->cpum.s.pHyperCoreHC = MMHyperGC2HC(pVM, pCtxCore);
-#else
-        pVM->cpum.s.pHyperCoreGC = MMHyperHC2GC(pVM, pCtxCore);
-#endif
+        pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))MMHyperCCToR3(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))MMHyperCCToR0(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreGC = (GCPTRTYPE(PCPUMCTXCORE))MMHyperCCToGC(pVM, pCtxCore);
     }
-    pVM->cpum.s.CTXSUFF(pHyperCore) = pCtxCore;
 }
 
 
@@ -83,7 +78,7 @@ CPUMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
  */
 CPUMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore);
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore);
 }
 
 
@@ -128,48 +123,48 @@ CPUMDECL(void) CPUMSetHyperCR3(PVM pVM, uint32_t cr3)
 
 CPUMDECL(void) CPUMSetHyperCS(PVM pVM, RTSEL SelCS)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->cs = SelCS;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->cs = SelCS;
 }
 
 CPUMDECL(void) CPUMSetHyperDS(PVM pVM, RTSEL SelDS)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->ds = SelDS;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->ds = SelDS;
 }
 
 CPUMDECL(void) CPUMSetHyperES(PVM pVM, RTSEL SelES)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->es = SelES;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->es = SelES;
 }
 
 CPUMDECL(void) CPUMSetHyperFS(PVM pVM, RTSEL SelFS)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->fs = SelFS;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->fs = SelFS;
 }
 
 CPUMDECL(void) CPUMSetHyperGS(PVM pVM, RTSEL SelGS)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->gs = SelGS;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->gs = SelGS;
 }
 
 CPUMDECL(void) CPUMSetHyperSS(PVM pVM, RTSEL SelSS)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->ss = SelSS;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->ss = SelSS;
 }
 
 CPUMDECL(void) CPUMSetHyperESP(PVM pVM, uint32_t u32ESP)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->esp = u32ESP;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->esp = u32ESP;
 }
 
 CPUMDECL(int) CPUMSetHyperEFlags(PVM pVM, uint32_t Efl)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->eflags.u32 = Efl;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->eflags.u32 = Efl;
     return VINF_SUCCESS;
 }
 
 CPUMDECL(void) CPUMSetHyperEIP(PVM pVM, uint32_t u32EIP)
 {
-    pVM->cpum.s.CTXSUFF(pHyperCore)->eip = u32EIP;
+    pVM->cpum.s.CTXALLSUFF(pHyperCore)->eip = u32EIP;
 }
 
 CPUMDECL(void) CPUMSetHyperTR(PVM pVM, RTSEL SelTR)
@@ -221,32 +216,32 @@ CPUMDECL(void) CPUMSetHyperDR7(PVM pVM, RTGCUINTREG uDr7)
 
 CPUMDECL(RTSEL) CPUMGetHyperCS(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->cs;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->cs;
 }
 
 CPUMDECL(RTSEL) CPUMGetHyperDS(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->ds;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ds;
 }
 
 CPUMDECL(RTSEL) CPUMGetHyperES(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->es;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->es;
 }
 
 CPUMDECL(RTSEL) CPUMGetHyperFS(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->fs;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->fs;
 }
 
 CPUMDECL(RTSEL) CPUMGetHyperGS(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->gs;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->gs;
 }
 
 CPUMDECL(RTSEL) CPUMGetHyperSS(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->ss;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ss;
 }
 
 #if 0 /* these are not correct. */
@@ -275,52 +270,52 @@ CPUMDECL(uint32_t) CPUMGetHyperCR4(PVM pVM)
 
 CPUMDECL(uint32_t) CPUMGetHyperEAX(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->eax;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->eax;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperEBX(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->ebx;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ebx;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperECX(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->ecx;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ecx;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperEDX(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->edx;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->edx;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperESI(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->esi;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->esi;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperEDI(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->edi;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->edi;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperEBP(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->ebp;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ebp;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperESP(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->esp;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->esp;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperEFlags(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->eflags.u32;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->eflags.u32;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperEIP(PVM pVM)
 {
-    return pVM->cpum.s.CTXSUFF(pHyperCore)->eip;
+    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->eip;
 }
 
 CPUMDECL(uint32_t) CPUMGetHyperIDTR(PVM pVM, uint16_t *pcbLimit)

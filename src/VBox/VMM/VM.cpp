@@ -197,7 +197,6 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
              * Do basic init of the VM structure.
              */
             memset(pVM, 0, sizeof(*pVM));
-            pVM->pVMHC = pVM;
             pVM->pVMR0 = pVMR0;
             pVM->pVMR3 = pVM;
             pVM->paVMPagesR3 = paPages;
