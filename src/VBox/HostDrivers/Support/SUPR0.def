@@ -53,6 +53,7 @@ EXPORTS
     RTSpinlockAcquireNoInts
     RTSpinlockReleaseNoInts
     RTThreadSelf
+    RTThreadNativeSelf
     RTThreadSleep
     RTThreadYield
     RTLogDefaultInstance
