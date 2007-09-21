@@ -557,15 +557,15 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
     {
         /*
          * Switch to GC and run guest raw mode code.
+         * Disable interrupts before doing the world switch.
          */
         case VMMR0_DO_RAW_RUN:
         {
-            /* We must disable interrupts here */
-            RTCCUINTREG uFlags = ASMIntDisableFlags();
-
             /* Safety precaution as hwaccm disables the switcher. */
             if (RT_LIKELY(!pVM->vmm.s.fSwitcherDisabled))
             {
+                RTCCUINTREG uFlags = ASMIntDisableFlags();
+
                 int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
                 pVM->vmm.s.iLastGCRc = rc;
 
@@ -573,14 +573,14 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
                     ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
                     TRPMR0DispatchHostInterrupt(pVM);
 
+                ASMSetFlags(uFlags);
+
 #ifdef VBOX_WITH_STATISTICS
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
                 vmmR0RecordRC(pVM, rc);
 #endif
-                ASMSetFlags(uFlags);
                 return rc;
             }
-            ASMSetFlags(uFlags);
 
             Assert(!pVM->vmm.s.fSwitcherDisabled);
             return VERR_NOT_SUPPORTED;
@@ -588,13 +588,16 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
 
         /*
          * Run guest code using the available hardware acceleration technology.
+         *
+         * Disable interrupts before we do anything interesting. On Windows we avoid
+         * this by having the support driver raise the IRQL before calling us, this way
+         * we hope to get away we page faults and later calling into the kernel.
          */
         case VMMR0_DO_HWACC_RUN:
         {
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
 
-#ifndef RT_OS_WINDOWS /* @todo check other hosts */
-            /* We must disable interrupts here */
+#ifndef RT_OS_WINDOWS /** @todo check other hosts */
             RTCCUINTREG uFlags = ASMIntDisableFlags();
 #endif
             int rc = HWACCMR0Enable(pVM);
@@ -611,7 +614,7 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
                 AssertRC(rc2);
             }
             pVM->vmm.s.iLastGCRc = rc;
-#ifndef RT_OS_WINDOWS /* @todo check other hosts */
+#ifndef RT_OS_WINDOWS /** @todo check other hosts */
             ASMSetFlags(uFlags);
 #endif
 
