@@ -17,9 +17,9 @@ s/^ *//g
 #
 # Figure which type of line this is and process it accordingly.
 #
-/^[A-Za-z][A-Za-z0-9_]*:/b struct
+/^[A-Za-z_][A-Za-z0-9_]*:/b struct
 /<gap>/b member
-/^\.[A-Za-z][A-Za-z0-9_.:]* res.*$/b member_two
+/^\.[A-Za-z_][A-Za-z0-9_.:]* res.*$/b member_two
 b error
 b member_two
 
