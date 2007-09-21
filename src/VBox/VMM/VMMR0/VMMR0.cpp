@@ -28,6 +28,7 @@
 #include <VBox/tm.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/gvm.h>
 #include <VBox/intnet.h>
 #include <VBox/hwaccm.h>
 
@@ -84,22 +85,34 @@ PINTNET g_pIntNet = 0;
  */
 VMMR0DECL(int) ModuleInit(void)
 {
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
-    LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
-    g_pIntNet = NULL;
-    LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
-    int rc = INTNETR0Create(&g_pIntNet);
-    if (VBOX_SUCCESS(rc))
+    LogFlow(("ModuleInit:\n"));
+
+    /*
+     * Initialize GVM.
+     */
+    int rc = GVMR0Init();
+    if (RT_SUCCESS(rc))
     {
-        LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
-        return 0;
-    }
-    g_pIntNet = NULL;
-    LogFlow(("ModuleTerm: returns %Vrc\n", rc));
-    return rc;
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
+        LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
+        g_pIntNet = NULL;
+        LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
+        rc = INTNETR0Create(&g_pIntNet);
+        if (VBOX_SUCCESS(rc))
+        {
+            LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
+            return VINF_SUCCESS;
+        }
+        g_pIntNet = NULL;
+        LogFlow(("ModuleTerm: returns %Vrc\n", rc));
 #else
-    return 0;
+        LogFlow(("ModuleInit: returns success.\n"));
+        return VINF_SUCCESS;
 #endif
+    }
+
+    LogFlow(("ModuleInit: failed %Vrc\n", rc));
+    return rc;
 }
 
 
@@ -109,15 +122,25 @@ VMMR0DECL(int) ModuleInit(void)
  */
 VMMR0DECL(void) ModuleTerm(void)
 {
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
     LogFlow(("ModuleTerm:\n"));
+
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
+    /*
+     * Destroy the internal networking instance.
+     */
     if (g_pIntNet)
     {
         INTNETR0Destroy(g_pIntNet);
         g_pIntNet = NULL;
     }
-    LogFlow(("ModuleTerm: returns\n"));
 #endif
+
+    /*
+     * Destroy the GVM instance.
+     */
+    GVMR0Term();
+
+    LogFlow(("ModuleTerm: returns\n"));
 }
 
 
@@ -181,24 +204,33 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
     }
 
-
     /*
-     * Init VMXM.
+     * Try register the VM with GVM.
      */
-    int rc = HWACCMR0Init(pVM);
-    if (VBOX_FAILURE(rc))
+    int rc = GVMR0RegisterVM(pVM);
+    if (RT_SUCCESS(rc))
     {
-        RTLogSetDefaultInstanceThread(NULL, 0);
-        return rc;
+        /*
+         * Init HWACCM.
+         */
+        RTCCUINTREG fFlags = ASMIntDisableFlags();
+        rc = HWACCMR0Init(pVM);
+        ASMSetFlags(fFlags);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Init CPUM.
+             */
+            rc = CPUMR0Init(pVM);
+            if (RT_SUCCESS(rc))
+                return rc;
+        }
+
+        GVMR0DeregisterVM(pVM);
     }
 
-    /*
-     * Init CPUM.
-     */
-    rc = CPUMR0Init(pVM);
-
-    if (RT_FAILURE(rc))
-        RTLogSetDefaultInstanceThread(NULL, 0);
+    /* failed */
+    RTLogSetDefaultInstanceThread(NULL, 0);
     return rc;
 }
 
@@ -215,6 +247,7 @@ static int VMMR0Term(PVM pVM)
     /*
      * Deregister the logger.
      */
+    GVMR0DeregisterVM(pVM);
     RTLogSetDefaultInstanceThread(NULL, 0);
     return VINF_SUCCESS;
 }
@@ -488,28 +521,6 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
         }
 
         /*
-         * Initialize the R0 part of a VM instance.
-         */
-        case VMMR0_DO_VMMR0_INIT:
-        {
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = VMMR0Init(pVM, (unsigned)(uintptr_t)pvArg);
-            ASMSetFlags(fFlags);
-            return rc;
-        }
-
-        /*
-         * Terminate the R0 part of a VM instance.
-         */
-        case VMMR0_DO_VMMR0_TERM:
-        {
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = VMMR0Term(pVM);
-            ASMSetFlags(fFlags);
-            return rc;
-        }
-
-        /*
          * Switch to GC to execute Hypervisor function.
          */
         case VMMR0_DO_CALL_HYPERVISOR:
@@ -521,6 +532,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
 
             RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            /** @todo dispatch interrupts? */
             ASMSetFlags(fFlags);
             return rc;
         }
@@ -660,9 +672,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
          */
         case VMMR0_DO_VMMR0_INIT:
         {
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = VMMR0Init(pVM, (unsigned)u64Arg);
-            ASMSetFlags(fFlags);
             return rc;
         }
 
@@ -671,9 +681,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
          */
         case VMMR0_DO_VMMR0_TERM:
         {
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = VMMR0Term(pVM);
-            ASMSetFlags(fFlags);
             return rc;
         }
 
@@ -700,6 +708,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
 
             RTCCUINTREG fFlags = ASMIntDisableFlags();
             int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            /** @todo dispatch interrupts? */
             ASMSetFlags(fFlags);
             return rc;
         }
@@ -906,14 +915,20 @@ DECLEXPORT(void) RTCALL RTR0AssertBreakpoint(void *pvVM)
     }
 }
 
-/** Runtime assert implementation for Native Win32 Ring-0. */
+
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
+    SUPR0Printf("\n!!R0-Assertion Failed!!\n"
+                "Expression: %s\n"
+                "Location  : %s(%d) %s\n",
+                pszExpr, pszFile, uLine, pszFunction);
+
     LogRel(("\n!!R0-Assertion Failed!!\n"
-         "Expression: %s\n"
-         "Location  : %s(%d) %s\n",
-         pszExpr, pszFile, uLine, pszFunction));
+            "Expression: %s\n"
+            "Location  : %s(%d) %s\n",
+            pszExpr, pszFile, uLine, pszFunction));
 }
+
 
 /**
  * Callback for RTLogFormatV which writes to the com port.
@@ -921,11 +936,15 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
  */
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars)
 {
-    for (size_t i=0;i<cbChars;i++)
+    for (size_t i = 0; i < cbChars; i++)
+    {
         LogRel(("%c", pachChars[i]));
+        SUPR0Printf("%c", pachChars[i]);
+    }
 
     return cbChars;
 }
+
 
 DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
 {

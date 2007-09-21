@@ -324,28 +324,30 @@ ifeq ($(VBOX_LDR_FMT),elf)
 endif
 VMMR0_SYSSUFF   = .r0
 VMMR0_SOURCES   = \
-	VMMR0/VMMR0.cpp \
+	VMMR0/CPUMR0.cpp \
 	VMMR0/DBGFR0.cpp \
-	VMMAll/DBGFAll.cpp \
-	VMMAll/TRPMAll.cpp \
-	VMMAll/CPUMAllRegs.cpp \
+	VMMR0/GVMR0.cpp \
+	VMMR0/HWACCMR0.cpp \
+	VMMR0/HWACCMR0A.asm \
+	VMMR0/HWSVMR0.cpp \
+	VMMR0/HWVMXR0.cpp \
+	VMMR0/PDMR0Device.cpp \
+	VMMR0/PGMR0.cpp \
+	VMMR0/TRPMR0.cpp \
+	VMMR0/TRPMR0A.asm \
+	VMMR0/VMMR0.cpp \
+	VMMR0/VMMR0A.asm \
 	VMMAll/CPUMAllA.asm \
+	VMMAll/CPUMAllRegs.cpp \
+	VMMAll/DBGFAll.cpp \
+	VMMAll/EMAll.cpp \
+	VMMAll/EMAllA.asm \
+	VMMAll/IOMAll.cpp \
+	VMMAll/IOMAllMMIO.cpp \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
 	VMMAll/MMAllPagePool.cpp \
 	VMMAll/MMAllPhys.cpp \
-	VMMR0/VMMR0A.asm \
-	VMMR0/HWACCMR0.cpp \
-	VMMR0/HWACCMR0A.asm \
-	VMMR0/HWVMXR0.cpp \
-	VMMR0/HWSVMR0.cpp \
-	VMMR0/CPUMR0.cpp \
-	VMMR0/TRPMR0.cpp \
-	VMMR0/TRPMR0A.asm \
-	VMMR0/PDMR0Device.cpp \
-	VMMR0/PGMR0.cpp \
-	VMMAll/EMAll.cpp \
-	VMMAll/EMAllA.asm \
 	VMMAll/PDMAll.cpp \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllQueue.cpp \
@@ -355,14 +357,13 @@ VMMR0_SOURCES   = \
 	VMMAll/PGMAllPhys.cpp \
 	VMMAll/PGMAllPool.cpp \
 	VMMAll/REMAll.cpp \
-	VMMAll/IOMAll.cpp \
-	VMMAll/IOMAllMMIO.cpp \
 	VMMAll/SELMAll.cpp \
 	VMMAll/TMAll.cpp \
 	VMMAll/TMAllCpu.cpp \
 	VMMAll/TMAllReal.cpp \
 	VMMAll/TMAllVirtual.cpp \
-	VMMAll/VMAll.cpp
+	VMMAll/TRPMAll.cpp \
+	VMMAll/VMAll.cpp \
 
 ifeq ($(VBOX_LDR_FMT),pe)
 VMMR0_SOURCES += VMMR0/VMMR0.def

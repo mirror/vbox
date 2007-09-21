@@ -600,6 +600,8 @@ typedef enum SUPDRVOBJTYPE
 {
     /** The usual invalid object. */
     SUPDRVOBJTYPE_INVALID = 0,
+    /** A Virtual Machine instance. */
+    SUPDRVOBJTYPE_VM,
     /** Internal network. */
     SUPDRVOBJTYPE_INTERNAL_NETWORK,
     /** Internal network interface. */

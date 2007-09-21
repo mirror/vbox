@@ -87,6 +87,8 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0UnlockMem",                         (void *)SUPR0UnlockMem },
     { "SUPR0ContAlloc",                         (void *)SUPR0ContAlloc },
     { "SUPR0ContFree",                          (void *)SUPR0ContFree },
+    { "SUPR0LowAlloc",                          (void *)SUPR0LowAlloc },
+    { "SUPR0LowFree",                           (void *)SUPR0LowFree },
     { "SUPR0MemAlloc",                          (void *)SUPR0MemAlloc },
     { "SUPR0MemGetPhys",                        (void *)SUPR0MemGetPhys },
     { "SUPR0MemFree",                           (void *)SUPR0MemFree },
@@ -428,7 +430,8 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                 }
                 RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
 
-                pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
+                if (pObj->pfnDestructor)
+                    pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
                 RTMemFree(pObj);
             }
 
@@ -1314,7 +1317,8 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     if (fDestroy)
     {
         pObj->u32Magic++;
-        pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
+        if (pObj->pfnDestructor)
+            pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
         RTMemFree(pObj);
     }
 
@@ -3126,6 +3130,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
  */
 static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq)
 {
+    int             rc;
     PSUPDRVLDRUSAGE pUsagePrev;
     PSUPDRVLDRUSAGE pUsage;
     PSUPDRVLDRIMAGE pImage;
@@ -3152,26 +3157,59 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Check if we can remove anything.
      */
+    rc = VINF_SUCCESS;
     pImage = pUsage->pImage;
     if (pImage->cUsage <= 1 || pUsage->cUsage <= 1)
     {
-        /* unlink it */
-        if (pUsagePrev)
-            pUsagePrev->pNext = pUsage->pNext;
-        else
-            pSession->pLdrUsage = pUsage->pNext;
-        /* free it */
-        pUsage->pImage = NULL;
-        pUsage->pNext = NULL;
-        RTMemFree(pUsage);
-
         /*
-         * Derefrence the image.
+         * Check if there are any objects with destructors in the image, if
+         * so leave it for the session cleanup routine so we get a chance to
+         * clean things up in the right order and not leave them all dangling.
          */
+        RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
         if (pImage->cUsage <= 1)
-            supdrvLdrFree(pDevExt, pImage);
+        {
+            PSUPDRVOBJ pObj;
+            for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
+                if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
+                {
+                    rc = VERR_SHARING_VIOLATION; /** @todo VERR_DANGLING_OBJECTS */
+                    break;
+                }
+        }
         else
-            pImage->cUsage--;
+        {
+            PSUPDRVUSAGE pGenUsage;
+            for (pGenUsage = pSession->pUsage; pGenUsage; pGenUsage = pGenUsage->pNext)
+                if (RT_UNLIKELY((uintptr_t)pGenUsage->pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
+                {
+                    rc = VERR_SHARING_VIOLATION; /** @todo VERR_DANGLING_OBJECTS */
+                    break;
+                }
+        }
+        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        if (rc == VINF_SUCCESS)
+        {
+            /* unlink it */
+            if (pUsagePrev)
+                pUsagePrev->pNext = pUsage->pNext;
+            else
+                pSession->pLdrUsage = pUsage->pNext;
+
+            /* free it */
+            pUsage->pImage = NULL;
+            pUsage->pNext = NULL;
+            RTMemFree(pUsage);
+
+            /*
+             * Derefrence the image.
+             */
+            if (pImage->cUsage <= 1)
+                supdrvLdrFree(pDevExt, pImage);
+            else
+                pImage->cUsage--;
+        }
     }
     else
     {
@@ -3422,6 +3460,24 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     /* check if this is VMMR0.r0 and fix the Idt patches if it is. */
     if (pDevExt->pvVMMR0 == pImage->pvImage)
         supdrvLdrUnsetR0EP(pDevExt);
+
+    /* check for objects with destructors in this image. (Shouldn't happen.) */
+    if (pDevExt->pObjs)
+    {
+        unsigned        cObjs = 0;
+        PSUPDRVOBJ      pObj;
+        RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+        for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
+            if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImage))
+            {
+                pObj->pfnDestructor = NULL;
+                cObjs++;
+            }
+        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        if (cObjs)
+            OSDBGPRINT(("supdrvLdrFree: Image '%s' has %d dangling objects!\n", pImage->szName, cObjs));
+    }
 
     /* call termination function if fully loaded. */
     if (    pImage->pfnModuleTerm

@@ -630,7 +630,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPCallVMMR0(pVM->pVMR0, VMMR0_DO_VMMR0_INIT, (void *)VBOX_VERSION);
+        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_VMMR0_INIT, VBOX_VERSION, NULL);
 #endif
         if (    pVM->vmm.s.pR0Logger
             &&  pVM->vmm.s.pR0Logger->Logger.offScratch > 0)
@@ -737,7 +737,34 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
  */
 VMMR3DECL(int) VMMR3Term(PVM pVM)
 {
-    /** @todo must call ring-0 so the logger thread instance can be properly removed. */
+    /*
+     * Call Ring-0 entry with termination code.
+     */
+    int rc;
+    for (;;)
+    {
+#ifdef NO_SUPCALLR0VMM
+        //rc = VERR_GENERAL_FAILURE;
+        rc = VINF_SUCCESS;
+#else
+        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_VMMR0_TERM, VBOX_VERSION, NULL);
+#endif
+        if (    pVM->vmm.s.pR0Logger
+            &&  pVM->vmm.s.pR0Logger->Logger.offScratch > 0)
+            RTLogFlushToLogger(&pVM->vmm.s.pR0Logger->Logger, NULL);
+        if (rc != VINF_VMM_CALL_HOST)
+            break;
+        rc = vmmR3ServiceCallHostRequest(pVM);
+        if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+            break;
+        break; // remove this when we do setjmp for all ring-0 stuff.
+    }
+    if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+    {
+        LogRel(("VMMR3Term: R0 term failed, rc=%Vra. (warning)\n", rc));
+        if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
+            rc = VERR_INTERNAL_ERROR;
+    }
 
 #ifdef VBOX_STRICT_VMM_STACK
     /*
@@ -746,7 +773,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     RTMemProtect(pVM->vmm.s.pbHCStack - PAGE_SIZE,      PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     RTMemProtect(pVM->vmm.s.pbHCStack + VMM_STACK_SIZE, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
 #endif
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
