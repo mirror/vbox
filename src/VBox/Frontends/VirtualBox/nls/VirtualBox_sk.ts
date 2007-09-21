@@ -312,12 +312,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Zrušiť</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Zrušiť</translation>
     </message>
 </context>
 <context>
@@ -792,8 +788,8 @@
         <translation>Prijať dialóg</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Zrušiť</translation>
+        <source>Cancel</source>
+        <translation>Zrušiť</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3057,11 +3053,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
+        <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3266,11 +3258,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
+        <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

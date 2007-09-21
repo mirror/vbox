@@ -315,12 +315,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Peruuta</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+S</translation>
+        <source>Cancel</source>
+        <translation>Peruuta</translation>
     </message>
 </context>
 <context>
@@ -849,8 +845,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Peruuta</translation>
+        <source>Cancel</source>
+        <translation>Peruuta</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3106,12 +3102,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Peruuta</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+P</translation>
+        <source>Cancel</source>
+        <translation>Peruuta</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3319,12 +3311,8 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Peruuta</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+P</translation>
+        <source>Cancel</source>
+        <translation>Peruuta</translation>
     </message>
 </context>
 <context>

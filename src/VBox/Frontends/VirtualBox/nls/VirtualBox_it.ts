@@ -316,12 +316,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Annulla</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Annulla</translation>
     </message>
 </context>
 <context>
@@ -893,8 +889,8 @@
         <translation>Finestra di conferma</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Annulla</translation>
+        <source>Cancel</source>
+        <translation>Annulla</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3212,12 +3208,8 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Annulla</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Annulla</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3441,12 +3433,8 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Annulla</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Annulla</translation>
     </message>
 </context>
 <context>

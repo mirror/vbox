@@ -316,12 +316,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Mé&amp;gsem</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Mégsem</translation>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
@@ -876,8 +872,8 @@
         <translation>Válasz elfogadása</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Mé&amp;gsem</translation>
+        <source>Cancel</source>
+        <translation>Mégsem</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3200,12 +3196,8 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Mé&amp;gsem</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Mégsem</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3429,12 +3421,8 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Mé&amp;gsem</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Mégsem</translation>
     </message>
 </context>
 <context>

@@ -343,12 +343,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Revo&amp;care</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>
@@ -940,8 +936,8 @@
         <translation>Acceptă dialog</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Revo&amp;care</translation>
+        <source>Cancel</source>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3384,12 +3380,8 @@ pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Revo&amp;care</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Revocare</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3613,12 +3605,8 @@ pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>Revo&amp;care</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <source>Cancel</source>
+        <translation>Revocare</translation>
     </message>
 </context>
 <context>

@@ -2876,9 +2876,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <property name="text">
                         <string>Cancel</string>
                     </property>
-                    <property name="accel">
-                        <string></string>
-                    </property>
                     <property name="autoDefault">
                         <bool>true</bool>
                     </property>

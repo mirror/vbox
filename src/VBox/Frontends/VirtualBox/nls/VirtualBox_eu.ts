@@ -312,12 +312,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Utzi</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+U</translation>
+        <source>Cancel</source>
+        <translation>Utzi</translation>
     </message>
 </context>
 <context>
@@ -773,8 +769,8 @@
         <translation>Liehoa onartu</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Utzi</translation>
+        <source>Cancel</source>
+        <translation>Utzi</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -2936,12 +2932,8 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
         <translation>ALt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Utzi</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+U</translation>
+        <source>Cancel</source>
+        <translation>Utzi</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3145,12 +3137,8 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Utzi</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+U</translation>
+        <source>Cancel</source>
+        <translation>Utzi</translation>
     </message>
 </context>
 <context>

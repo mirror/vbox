@@ -261,10 +261,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                         <cstring>buttonCancel</cstring>
                     </property>
                     <property name="text">
-                        <string>&amp;Cancel</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+C</string>
+                        <string>Cancel</string>
                     </property>
                     <property name="autoDefault">
                         <bool>true</bool>

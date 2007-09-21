@@ -316,12 +316,8 @@
         <translation>Alt+O</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Anuluj</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Anuluj</translation>
     </message>
 </context>
 <context>
@@ -898,8 +894,8 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
         <translation>Zaakceptuj treść dialogu</translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Anuluj</translation>
+        <source>Cancel</source>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3236,12 +3232,8 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Anuluj</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt-A</translation>
+        <source>Cancel</source>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3453,12 +3445,8 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation></translation>
     </message>
     <message>
-        <source>&amp;Cancel</source>
-        <translation>&amp;Anuluj</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <source>Cancel</source>
+        <translation>Anuluj</translation>
     </message>
 </context>
 <context>
