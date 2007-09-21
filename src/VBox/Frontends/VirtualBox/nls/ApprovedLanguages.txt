@@ -6,7 +6,7 @@ ro
 es
 ru
 fr
-ja_JP
+ja
 pl
 ko
 pt_BR
