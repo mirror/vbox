@@ -105,7 +105,8 @@ PATMR3DECL(int) PATMR3Init(PVM pVM)
 
     Log(("PATMR3Init: Patch record size %d\n", sizeof(PATCHINFO)));
 
-    AssertReleaseMsg(PATMInterruptFlag == (VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST), ("Interrupt flags out of sync!!\n"));
+    AssertReleaseMsg(PATMInterruptFlag == (VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST),
+                     ("Interrupt flags out of sync!! PATMInterruptFlag=%#x expected %#x. broken assembler?\n", PATMInterruptFlag, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST));
 
     /* Allocate patch memory and GC patch state memory. */
     pVM->patm.s.cbPatchMem = PATCH_MEMORY_SIZE;
