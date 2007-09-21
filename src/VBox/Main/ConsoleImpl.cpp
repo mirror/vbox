@@ -28,6 +28,9 @@
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <string.h>
+#elif defined(VBOX_WITH_UNIXY_TAP_NETWORKING)
+#   include <sys/wait.h>
+#   include <sys/fcntl.h>
 #endif
 
 #include "ConsoleImpl.h"
@@ -702,7 +705,7 @@ DECLCALLBACK(void) Console::vrdp_ClientDisconnect (void *pvUser,
 
 #ifdef VBOX_VRDP
     uint32_t u32Clients = ASMAtomicDecU32(&console->mcVRDPClients);
-    
+
     if (u32Clients == 0)
     {
         console->getVMMDev()->getVMMDevPort()->
