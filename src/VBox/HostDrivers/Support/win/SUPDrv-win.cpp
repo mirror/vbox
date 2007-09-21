@@ -283,8 +283,8 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         int   rc;
 
 	 	/* Raise the IRQL to DISPATCH_LEVEl to prevent Windows from rescheduling us to another CPU/core. */ 
-	 	Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
-	 	KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);        
+        Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+        KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);        
         rc = supdrvIOCtlFast(ulCmd, pDevExt, pSession);
         KeLowerIrql(oldIrql);
 
