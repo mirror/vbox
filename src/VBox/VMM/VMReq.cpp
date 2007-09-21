@@ -620,7 +620,8 @@ VMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
         {
             rc = RTSemEventWait(pReq->EventSem, RT_INDEFINITE_WAIT);
             Assert(rc != VERR_TIMEOUT);
-        } while (pReq->enmState != VMREQSTATE_COMPLETED);
+        } while (   pReq->enmState != VMREQSTATE_COMPLETED
+                 && pReq->enmState != VMREQSTATE_INVALID);
     }
     if (VBOX_SUCCESS(rc))
         ASMAtomicXchgSize(&pReq->fEventSemClear, true);
