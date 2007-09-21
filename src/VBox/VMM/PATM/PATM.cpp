@@ -505,13 +505,13 @@ PATMR3DECL(int) PATMR3Reset(PVM pVM)
  * @param   pSrc        GC source pointer
  * @param   pDest       HC destination pointer
  * @param   size        Number of bytes to read
- * @param   dwUserdata  Callback specific user data (pCpu)
+ * @param   pvUserdata  Callback specific user data (pCpu)
  *
  */
-int32_t patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t size, RTHCUINTPTR dwUserdata)
+int patmReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata)
 {
-    DISCPUSTATE  *pCpu     = (DISCPUSTATE *)dwUserdata;
-    PATMDISASM   *pDisInfo = (PATMDISASM *)pCpu->dwUserData[0];
+    DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
+    PATMDISASM   *pDisInfo = (PATMDISASM *)pCpu->apvUserData[0];
     int           orgsize  = size;
 
     Assert(size);

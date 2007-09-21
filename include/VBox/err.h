@@ -1116,6 +1116,15 @@
 /** @} */
 
 
+/** @name VBox Disassembler Status Codes 
+ * @{
+ */
+/** Invalid opcode byte(s) */
+#define VERR_DIS_INVALID_OPCODE                     (-5000)
+/** Generic failure during disassembly. */
+#define VERR_DIS_GEN_FAILURE                        (-5001)
+/** @} */
+
 /* SED-END */
 
 

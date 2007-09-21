@@ -39,7 +39,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int32_t) dbgfR3DisasInstrRead(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t size, RTHCUINTPTR dwUserdata);
+static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTHCUINTPTR pSrc, uint8_t *pDest, uint32_t size, void *pvUserdata);
 
 
 /**
@@ -64,12 +64,6 @@ typedef struct
     void           *pvPageHC;
     /** Pointer to the current page - GC Ptr. */
     RTGCPTR         pvPageGC;
-    /** The rc of the operation.
-     * @todo r=bird: it's rather annoying that we have to keep track of the status code of the operation.
-     *               When we've got time we should adjust the disassembler to use VBox status codes and not
-     *               boolean returns.
-     */
-    int             rc;
     /** Pointer to the next instruction (relative to GCPtrSegBase). */
     RTGCUINTPTR     GCPtrNext;
 } DBGFDISASSTATE, *PDBGFDISASSTATE;
@@ -96,18 +90,16 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     pState->enmMode         = enmMode;
     pState->pvPageGC        = 0;
     pState->pvPageHC        = NULL;
-    pState->rc              = VINF_SUCCESS;
     pState->pVM             = pVM;
     Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
-    if (DISInstr(&pState->Cpu, GCPtr, 0, &cbInstr, NULL))
+    int rc = DISInstr(&pState->Cpu, GCPtr, 0, &cbInstr, NULL);
+    if (VBOX_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
         return VINF_SUCCESS;
     }
-    if (VBOX_FAILURE(pState->rc))
-        return pState->rc;
-    return VERR_GENERAL_FAILURE;
+    return rc;
 }
 
 
@@ -122,14 +114,13 @@ static int dbgfR3DisasInstrNext(PDBGFDISASSTATE pState)
 {
     pState->rc              = VINF_SUCCESS;
     uint32_t cbInstr;
-    if (DISInstr(&pState->Cpu, (void *)pState->GCPtrNext, 0, &cbInstr, NULL))
+    int rc = DISInstr(&pState->Cpu, (void *)pState->GCPtrNext, 0, &cbInstr, NULL);
+    if (VBOX_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
         return VINF_SUCCESS;
     }
-    if (VBOX_FAILURE(pState->rc))
-        return pState->rc;
-    return VERR_GENERAL_FAILURE;
+    return rc;
 }
 #endif
 
@@ -145,9 +136,9 @@ static int dbgfR3DisasInstrNext(PDBGFDISASSTATE pState)
  * @param   uDisCpu     Pointer to the disassembler cpu state. (Why this is a VBOXHUINTPTR is beyond me...)
  *                      In this context it's always pointer to the Core of a DBGFDISASSTATE.
  */
-static DECLCALLBACK(int32_t) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Dst, uint32_t cbRead, RTHCUINTPTR uDisCpu)
+static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Dst, unsigned cbRead, void *pvDisCpu)
 {
-    PDBGFDISASSTATE pState = (PDBGFDISASSTATE)uDisCpu;
+    PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pvDisCpu;
     Assert(cbRead > 0);
     for (;;)
     {
@@ -157,28 +148,30 @@ static DECLCALLBACK(int32_t) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *p
         if (    !pState->pvPageHC
             ||  (GCPtr >> PAGE_SHIFT) != (pState->pvPageGC >> PAGE_SHIFT))
         {
+            int rc = VINF_SUCCESS;
+
             /* translate the address */
             pState->pvPageGC = GCPtr & PAGE_BASE_GC_MASK;
             if (MMHyperIsInsideArea(pState->pVM, pState->pvPageGC))
             {
                 pState->pvPageHC = MMHyperGC2HC(pState->pVM, pState->pvPageGC);
                 if (!pState->pvPageHC)
-                    pState->rc = VERR_INVALID_POINTER;
+                    rc = VERR_INVALID_POINTER;
             }
             else if (pState->enmMode <= PGMMODE_PROTECTED)
-                pState->rc = PGMPhysGCPhys2HCPtr(pState->pVM, pState->pvPageGC, PAGE_SIZE, &pState->pvPageHC);
+                rc = PGMPhysGCPhys2HCPtr(pState->pVM, pState->pvPageGC, PAGE_SIZE, &pState->pvPageHC);
             else
-                pState->rc = PGMPhysGCPtr2HCPtr(pState->pVM, pState->pvPageGC, &pState->pvPageHC);
-            if (VBOX_FAILURE(pState->rc))
+                rc = PGMPhysGCPtr2HCPtr(pState->pVM, pState->pvPageGC, &pState->pvPageHC);
+            if (VBOX_FAILURE(rc))
             {
                 pState->pvPageHC = NULL;
-                return pState->rc;
+                return rc;
             }
         }
 
         /* check the segemnt limit */
         if (PtrSrc > pState->cbSegLimit)
-            return pState->rc = VERR_OUT_OF_SELECTOR_BOUNDS;
+            return VERR_OUT_OF_SELECTOR_BOUNDS;
 
         /* calc how much we can read */
         uint32_t cb = PAGE_SIZE - (GCPtr & PAGE_OFFSET_MASK);
@@ -543,7 +536,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
     {
         size_t  cbBits = State.Cpu.opsize;
         uint8_t *pau8Bits = (uint8_t *)alloca(cbBits);
-        rc = dbgfR3DisasInstrRead(GCPtr, pau8Bits, cbBits, (uintptr_t)&State);
+        rc = dbgfR3DisasInstrRead(GCPtr, pau8Bits, cbBits, &State);
         AssertRC(rc);
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
             RTStrPrintf(pszOutput, cchOutput, "%.*Vhxs%*s %s",

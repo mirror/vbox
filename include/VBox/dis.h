@@ -32,8 +32,12 @@ __BEGIN_DECLS
 /** CPU mode flags (DISCPUSTATE::mode).
  * @{
  */
-#define CPUMODE_16BIT                   1
-#define CPUMODE_32BIT                   2
+typedef enum
+{
+    CPUMODE_16BIT = 1,
+    CPUMODE_32BIT = 2,
+    CPUMODE_64BIT = 3
+} DISCPUMODE;
 /** @} */
 
 /** Prefix byte flags
@@ -312,7 +316,7 @@ typedef struct _OPCODE *POPCODE;
 /** Pointer to const opcode. */
 typedef const struct _OPCODE *PCOPCODE;
 
-typedef DECLCALLBACK(int32_t) FN_DIS_READBYTES(RTUINTPTR pSrc, uint8_t *pDest, uint32_t size, RTUINTPTR dwUserdata);
+typedef DECLCALLBACK(int) FN_DIS_READBYTES(RTUINTPTR pSrc, uint8_t *pDest, uint32_t size, void *pvUserdata);
 typedef FN_DIS_READBYTES *PFN_DIS_READBYTES;
 
 /* forward decl */
@@ -322,7 +326,7 @@ typedef struct _DISCPUSTATE *PDISCPUSTATE;
 
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal (really, I'm too lazy to update all the functions). */
-typedef int FNDISPARSE(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
+typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 typedef FNDISPARSE *PFNDISPARSE;
 
 typedef struct _DISCPUSTATE
@@ -369,7 +373,7 @@ typedef struct _DISCPUSTATE
     /** Pointer to the current instruction. */
     PCOPCODE        pCurInstr;
 
-    RTUINTPTR       dwUserData[3];
+    void           *apvUserData[3];
 
     /** Optional read function */
     PFN_DIS_READBYTES pfnReadBytes;
@@ -401,7 +405,7 @@ typedef struct _OPCODE
 /**
  * Disassembles a code block.
  *
- * @returns Success indicator.
+ * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
  * @param   pvCodeBlock     Pointer to the strunction to disassemble.
@@ -418,12 +422,12 @@ typedef struct _OPCODE
  * @remark  cbMax isn't respected as a boundry. DISInstr() will read beyond cbMax.
  *          This means *pcbSize >= cbMax sometimes.
  */
-DISDECL(bool) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, int32_t cbMax, uint32_t *pSize);
+DISDECL(int) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, unsigned cbMax, unsigned *pSize);
 
 /**
  * Disassembles one instruction
  *
- * @returns Success indicator.
+ * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
  * @param   pu8Instruction  Pointer to the instrunction to disassemble.
@@ -434,12 +438,12 @@ DISDECL(bool) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, int32_t cbMax, 
  *
  * @todo    Define output callback.
  */
-DISDECL(bool) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32EipOffset, uint32_t *pcbSize, char *pszOutput);
+DISDECL(int) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32EipOffset, unsigned *pcbSize, char *pszOutput);
 
 /**
  * Disassembles one instruction
  *
- * @returns Success indicator.
+ * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
  * @param   pu8Instruction  Pointer to the strunction to disassemble.
@@ -451,20 +455,20 @@ DISDECL(bool) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32
  *
  * @todo    Define output callback.
  */
-DISDECL(bool) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32EipOffset, uint32_t *pcbSize,
-                         char *pszOutput, uint32_t uFilter);
+DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, uint32_t u32EipOffset, uint32_t *pcbSize,
+                         char *pszOutput, unsigned uFilter);
 
 /**
  * Parses one instruction.
  * The result is found in pCpu.
  *
- * @returns Success indicator.
+ * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which has DISCPUSTATE::mode set correctly.
  * @param   InstructionAddr Pointer to the instruction to parse.
  * @param   pcbInstruction  Where to store the size of the instruction.
  *                          NULL is allowed.
  */
-DISDECL(bool) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction);
+DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pcbInstruction);
 
 /**
  * Parses one guest instruction.
