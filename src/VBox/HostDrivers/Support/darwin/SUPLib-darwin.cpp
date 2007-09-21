@@ -102,8 +102,8 @@ int suplibOsInit(size_t cbReserve)
     IOObjectRelease(Iterator);
     if (!ServiceObject)
     {
-        LogRel(("Couldn't find any matches.\n"));
-        return VERR_GENERAL_FAILURE;
+        LogRel(("SUP: Couldn't find any matches. The kernel module is probably not loaded.\n"));
+        return VERR_VM_DRIVER_NOT_INSTALLED;
     }
 
     /*
@@ -114,8 +114,8 @@ int suplibOsInit(size_t cbReserve)
     IOObjectRelease(ServiceObject);
     if (kr != kIOReturnSuccess)
     {
-        LogRel(("IOServiceOpen returned %d\n", kr));
-        return VERR_GENERAL_FAILURE;
+        LogRel(("SUP: IOServiceOpen returned %d. Driver open failed.\n", kr));
+        return VERR_VM_DRIVER_OPEN_ERROR;
     }
 
     /*
@@ -133,7 +133,7 @@ int suplibOsInit(size_t cbReserve)
             case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
             default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
         }
-        LogRel(("Failed to open \"%s\", errno=%d, rc=%Vrc\n", DEVICE_NAME, errno, rc));
+        LogRel(("SUP: Failed to open \"%s\", errno=%d, rc=%Vrc\n", DEVICE_NAME, errno, rc));
 
         kr = IOServiceClose(g_Connection);
         if (kr != kIOReturnSuccess)
