@@ -133,7 +133,9 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 addrSpace = userProc->p_as;
             }
 
+            rw_enter(&addrSpace->a_lock, RW_READER);
             hat_unload(hatSpace, pMemSolaris->Core.pv, pMemSolaris->Core.cb, HAT_UNLOAD_UNLOCK);
+            rw_exit(&addrSpace->a_lock, RW_READER);
             as_unmap(addrSpace, pMemSolaris->Core.pv, pMemSolaris->Core.cb);
             break;
         }
@@ -384,6 +386,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     }
 
     /* Map each page into kernel space */
+    rw_enter(&kas.a_lock, RW_READER);
     caddr_t kernAddr = pv;
     caddr_t pageAddr = addr;
     for (iPage = 0; iPage < cPages; iPage++)
@@ -393,6 +396,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
         pageAddr += ptob(1);
         kernAddr += ptob(1);
     }
+    rw_exit(&kas.a_lock, RW_READER);
 
     pMemSolaris->Core.u.Mapping.R0Process = NIL_RTR0PROCESS; /* means kernel */
     pMemSolaris->Core.pv = addr;
@@ -481,6 +485,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     }
 
     /* Map each page into user space */
+    rw_enter(&useras->a_lock, RW_READER);
     caddr_t pageAddr = addr;
     for (iPage = 0; iPage < cPages; iPage++)
     {
@@ -488,8 +493,10 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
                 HAT_LOAD_NOCONSIST | HAT_STRICTORDER | HAT_LOAD_LOCK);
         pageAddr += ptob(1);
     }
+    rw_exit(&useras->a_lock, RW_READER);
 #else
     /* Map each page into user space */
+    rw_enter(&useras->a_lock, RW_READER);
     caddr_t kernAddr = pv;
     caddr_t pageAddr = addr;
     for (iPage = 0; iPage < cPages; iPage++)
@@ -499,6 +506,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         pageAddr += ptob(1);
         kernAddr += ptob(1);
     }
+    rw_exit(&useras->a_lock, RW_READER);
 #endif
 
     pMemSolaris->Core.u.Mapping.R0Process = (RTR0PROCESS)userproc;
