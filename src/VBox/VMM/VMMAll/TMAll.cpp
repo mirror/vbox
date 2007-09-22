@@ -156,7 +156,7 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
      */
     const uint64_t u64Now = TMVirtualGet(pVM);
 
-    /* 
+    /*
      * TMCLOCK_VIRTUAL
      */
     const uint64_t u64Expire1 = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
@@ -172,9 +172,9 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
         return 0;
     }
 
-    /* 
+    /*
      * TMCLOCK_VIRTUAL_SYNC
-     * This isn't quite as stright forward if in a catch-up, not only do 
+     * This isn't quite as stright forward if in a catch-up, not only do
      * we have to adjust the 'now' but when have to adjust the delta as well.
      */
     const uint64_t u64Expire2 = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
@@ -695,8 +695,6 @@ TMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
  */
 TMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
 {
-    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -730,8 +728,6 @@ TMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 TMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
 {
-    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -765,8 +761,6 @@ TMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 TMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
 {
-    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -799,8 +793,6 @@ TMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
  */
 TMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
 {
-    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -833,8 +825,6 @@ TMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
  */
 TMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
 {
-    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -867,8 +857,6 @@ TMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
  */
 TMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS)
 {
-    PVM pVM = pTimer->CTXALLSUFF(pVM);  NOREF(pVM);
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
