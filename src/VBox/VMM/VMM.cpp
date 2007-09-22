@@ -640,13 +640,13 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         rc = vmmR3ServiceCallHostRequest(pVM);
         if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
             break;
-        break; // remove this when we do setjmp for all ring-0 stuff.
+        /* Resume R0 */
     }
 
     if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
         LogRel(("R0 init failed, rc=%Vra\n", rc));
-        if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
+        if (VBOX_SUCCESS(rc))
             rc = VERR_INTERNAL_ERROR;
     }
     return rc;
@@ -757,12 +757,12 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
         rc = vmmR3ServiceCallHostRequest(pVM);
         if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
             break;
-        break; // remove this when we do setjmp for all ring-0 stuff.
+        /* Resume R0 */
     }
     if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
         LogRel(("VMMR3Term: R0 term failed, rc=%Vra. (warning)\n", rc));
-        if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
+        if (VBOX_SUCCESS(rc))
             rc = VERR_INTERNAL_ERROR;
     }
 
@@ -2256,8 +2256,15 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
 
         /*
          * Signal a ring 0 hypervisor assertion.
+         * Cancel the longjmp operation that's in progress.
          */
         case VMMCALLHOST_VM_R0_HYPER_ASSERTION:
+            pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call = false;
+#ifdef RT_ARCH_X86
+            pVM->vmm.s.CallHostR0JmpBuf.eip = 0;
+#else
+            pVM->vmm.s.CallHostR0JmpBuf.rip = 0;
+#endif
             return VINF_EM_DBG_HYPER_ASSERTION;
 
         default:

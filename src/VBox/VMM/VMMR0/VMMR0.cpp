@@ -54,19 +54,6 @@ VMMR0DECL(void) ModuleTerm(void);
 __END_DECLS
 
 
-/** @def DEBUG_NO_RING0_ASSERTIONS
- * Define this if you don't wish to BSOD on debug assertions in
- * the VMMR0.r0 code. If would of course be nice to have this
- * feature enabled by default of course, but it's not currently
- * safe when more than one VM is running or when using internal
- * networking. */
-#if defined(DEBUG_sandervl) /*|| defined(DEBUG_bird)*/
-# define DEBUG_NO_RING0_ASSERTIONS
-#endif
-#ifdef DEBUG_NO_RING0_ASSERTIONS
-static PVM g_pVMAssert = 0;
-#endif
-
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -615,13 +602,7 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
             int rc = HWACCMR0Enable(pVM);
             if (VBOX_SUCCESS(rc))
             {
-#ifdef DEBUG_NO_RING0_ASSERTIONS
-                g_pVMAssert = pVM;
-#endif
                 rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM); /* this may resume code. */
-#ifdef DEBUG_NO_RING0_ASSERTIONS
-                g_pVMAssert = NULL;
-#endif
                 int rc2 = HWACCMR0Disable(pVM);
                 AssertRC(rc2);
             }
@@ -654,7 +635,8 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
 
 
 /**
- * The Ring 0 entry point, called by the support library (SUP).
+ * VMMR0EntryEx worker function, either called directly or when ever possible
+ * called thru a longjmp so we can exit safely on failure.
  *
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
@@ -663,7 +645,7 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
  * @param   u64Arg          Some simple constant argument.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg)
+static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg)
 {
     switch (enmOperation)
     {
@@ -671,19 +653,13 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
          * Initialize the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_INIT:
-        {
-            int rc = VMMR0Init(pVM, (unsigned)u64Arg);
-            return rc;
-        }
+            return VMMR0Init(pVM, (unsigned)u64Arg);
 
         /*
          * Terminate the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_TERM:
-        {
-            int rc = VMMR0Term(pVM);
-            return rc;
-        }
+            return VMMR0Term(pVM);
 
         /*
          * Setup the hardware accelerated raw-mode session.
@@ -832,6 +808,73 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
 }
 
 
+/**
+ * Argument for vmmR0EntryExWrapper containing the argument s ofr VMMR0EntryEx.
+ */
+typedef struct VMMR0ENTRYEXARGS
+{
+    PVM                 pVM;
+    VMMR0OPERATION      enmOperation;
+    PSUPVMMR0REQHDR     pReq;
+    uint64_t            u64Arg;
+} VMMR0ENTRYEXARGS;
+/** Pointer to a vmmR0EntryExWrapper argument package. */
+typedef VMMR0ENTRYEXARGS *PVMMR0ENTRYEXARGS;
+
+/**
+ * This is just a longjmp wrapper function for VMMR0EntryEx calls.
+ *
+ * @returns VBox status code.
+ * @param   pvArgs      The argument package
+ */
+static int vmmR0EntryExWrapper(void *pvArgs)
+{
+    return vmmR0EntryExWorker(((PVMMR0ENTRYEXARGS)pvArgs)->pVM,
+                              ((PVMMR0ENTRYEXARGS)pvArgs)->enmOperation,
+                              ((PVMMR0ENTRYEXARGS)pvArgs)->pReq,
+                              ((PVMMR0ENTRYEXARGS)pvArgs)->u64Arg);
+}
+
+
+/**
+ * The Ring 0 entry point, called by the support library (SUP).
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM to operate on.
+ * @param   enmOperation    Which operation to execute.
+ * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
+ * @param   u64Arg          Some simple constant argument.
+ * @remarks Assume called with interrupts _enabled_.
+ */
+VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg)
+{
+    /*
+     * Requests that should only happen on the EMT thread will be
+     * wrapped in a setjmp so we can assert without causing trouble.
+     */
+    if (    VALID_PTR(pVM)
+        &&  pVM->pVMR0)
+    {
+        switch (enmOperation)
+        {
+            case VMMR0_DO_VMMR0_INIT:
+            case VMMR0_DO_VMMR0_TERM:
+            {
+                VMMR0ENTRYEXARGS Args;
+                Args.pVM = pVM;
+                Args.enmOperation = enmOperation;
+                Args.pReq = pReq;
+                Args.u64Arg = u64Arg;
+                return vmmR0CallHostSetJmpEx(&pVM->vmm.s.CallHostR0JmpBuf, vmmR0EntryExWrapper, &Args);
+            }
+
+            default:
+                break;
+        }
+    }
+    return vmmR0EntryExWorker(pVM, enmOperation, pReq, u64Arg);
+}
+
 
 
 /**
@@ -882,40 +925,45 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 }
 
 
-#ifdef DEBUG_NO_RING0_ASSERTIONS
-/**
- * Check if we really want to hit a breakpoint.
- * Can jump back to ring-3 when the longjmp is armed.
- */
-DECLEXPORT(bool) RTCALL  RTAssertDoBreakpoint()
-{
-    if (g_pVMAssert)
-    {
-        int rc = VMMR0CallHost(g_pVMAssert, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
-        if (rc == VINF_SUCCESS)
-            rc = g_pVMAssert->vmm.s.rcCallHost;
-    }
 
-    return false;
+/**
+ * Jump back to ring-3 if we're the EMT and the longjmp is armed.
+ *
+ * @returns true if the breakpoint should be hit, false if it should be ignored.
+ * @remark  The RTDECL() makes this a bit difficult to override on windows. Sorry.
+ */
+DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint()
+{
+    PVM pVM = GVMR0ByEMT(NIL_RTNATIVETHREAD);
+    if (pVM)
+    {
+#ifdef RT_ARCH_X86
+        if (pVM->vmm.s.CallHostR0JmpBuf.eip)
+#else
+        if (pVM->vmm.s.CallHostR0JmpBuf.rip)
+#endif
+        {
+            int rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
+            return RT_FAILURE_NP(rc);
+        }
+    }
+    return true;
 }
-#endif /* !DEBUG_NO_RING0_ASSERTIONS */
 
 
 
 # undef LOG_GROUP
 # define LOG_GROUP LOG_GROUP_EM
 
-DECLEXPORT(void) RTCALL RTR0AssertBreakpoint(void *pvVM)
-{
-    if (pvVM)
-    {
-        PVM pVM = (PVM)pvVM;
-        VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
-        /* does not return */
-    }
-}
-
-
+/**
+ * Override this so we can push
+ *
+ * @param   pszExpr     Expression. Can be NULL.
+ * @param   uLine       Location line number.
+ * @param   pszFile     Location file name.
+ * @param   pszFunction Location function name.
+ * @remark  This API exists in HC Ring-3 and GC.
+ */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     SUPR0Printf("\n!!R0-Assertion Failed!!\n"
@@ -938,7 +986,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 {
     for (size_t i = 0; i < cbChars; i++)
     {
-        LogRel(("%c", pachChars[i]));
+        LogRel(("%c", pachChars[i])); /** @todo this isn't any release logging in ring-0 from what I can tell... */
         SUPR0Printf("%c", pachChars[i]);
     }
 
@@ -958,3 +1006,5 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
         va_end(args);
     }
 }
+
+
