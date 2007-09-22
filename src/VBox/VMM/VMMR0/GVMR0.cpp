@@ -198,6 +198,7 @@ GVMR0DECL(void) GVMR0Term(void)
 }
 
 
+#if 0 /* not currently used */
 /**
  * Allocates the VM structure and registers it with GVM.
  *
@@ -314,6 +315,7 @@ GVMR0DECL(int) GVMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
     RTSemFastMutexRelease(pGVM->Lock);
     return rc;
 }
+#endif /* not used yet. */
 
 
 /**
