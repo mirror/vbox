@@ -403,6 +403,27 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
 DECLASM(int)    vmmR0CallHostSetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM);
 
 /**
+ * Callback function for vmmR0CallHostSetJmpEx.
+ *
+ * @returns VBox status code.
+ * @param   pvUser      The user argument.
+ */
+typedef DECLCALLBACK(int) FNVMMR0SETJMPEX(void *pvUser);
+/** Pointer to FNVMMR0SETJMP(). */
+typedef FNVMMR0SETJMPEX *PFNVMMR0SETJMPEX;
+
+/**
+ * Same as vmmR0CallHostSetJmp except for the function signature.
+ *
+ * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallHostLongJmp.
+ * @param   pJmpBuf     The jmp_buf to set.
+ * @param   pfn         The function to be called when not resuming..
+ * @param   pvUser      The argument of that function.
+ */
+DECLASM(int)    vmmR0CallHostSetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn, void *pvUser);
+
+
+/**
  * Worker for VMMR0CallHost.
  * This will save the stack and registers.
  *
