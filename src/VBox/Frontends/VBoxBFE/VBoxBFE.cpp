@@ -162,9 +162,9 @@ static bool g_fAudio  = false;
 static bool g_fUSB    = false;
 #endif
 static char *g_pszHdaFile   = NULL;
-static bool g_HdaSpf = false;
+static bool g_fHdaSpf = false;
 static char *g_pszHdbFile   = NULL;
-static bool g_HdbSpf = false;
+static bool g_fHdbSpf = false;
 static char *g_pszCdromFile = NULL;
 static char *g_pszFdaFile   = NULL;
 static const char *pszBootDevice = "IDE";
