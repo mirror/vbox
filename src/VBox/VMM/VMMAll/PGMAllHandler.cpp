@@ -232,7 +232,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
 #else
     const int       rc = VINF_PGM_GCPHYS_ALIASED;
 #endif
-    const unsigned  fFlags = pgmHandlerPhysicalCalcFlags(pVM, pCur); Assert(!(fFlags & X86_PTE_PAE_PG_MASK));
+    const unsigned  fFlags = pgmHandlerPhysicalCalcFlags(pCur); Assert(!(fFlags & X86_PTE_PAE_PG_MASK));
     RTUINT          cPages = pCur->cPages;
     RTUINT          i = (pCur->Core.Key - pRam->GCPhys) >> PAGE_SHIFT;
     for (;;)
@@ -376,7 +376,7 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
     /*
      * Tell REM.
      */
-    const bool fRestoreAsRAM = pCur->pfnHandlerR3 
+    const bool fRestoreAsRAM = pCur->pfnHandlerR3
                             && pCur->enmType != PGMPHYSHANDLERTYPE_MMIO; /** @todo this isn't entirely correct. */
 #ifndef IN_RING3
     REMNotifyHandlerPhysicalDeregister(pVM, pCur->enmType, GCPhysStart, GCPhysLast - GCPhysStart + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
@@ -431,7 +431,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    !pBelow
                 ||  (pBelow->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT))
                 break;
-            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pVM, pCur), &pRamHint);
+            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
 
             /* next? */
             if (    (pBelow->Core.Key >> PAGE_SHIFT) != (pCur->Core.Key >> PAGE_SHIFT)
@@ -453,7 +453,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    !pAbove
                 ||  (pAbove->Core.Key >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT))
                 break;
-            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pVM, pCur), &pRamHint);
+            pgmRamFlagsSetByGCPhysWithHint(pPGM, GCPhys, pgmHandlerPhysicalCalcFlags(pCur), &pRamHint);
 
             /* next? */
             if (    (pAbove->Core.KeyLast >> PAGE_SHIFT) != (pCur->Core.KeyLast >> PAGE_SHIFT)

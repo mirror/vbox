@@ -2672,7 +2672,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                 SHWPDE PdeDst = *pPDEDst;
                 if (PdeDst.n.u1Present)
                 {
-                    PPGMPOOLPAGE pShwPage = pgmPoolGetPage(pVM, pPool, PdeDst.u & SHW_PDE_PG_MASK);
+                    PPGMPOOLPAGE pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
                     RTGCPHYS     GCPhys;
                     if (    !PdeSrc.b.u1Size
                         ||  !(cr4 & X86_CR4_PSE))
@@ -2752,7 +2752,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
             {
                 if (pPDEDst->n.u1Present)
                 {
-                    pgmPoolFreeByPage(pPool, pgmPoolGetPage(pVM, pPool, pPDEDst->u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdShw);
+                    pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst->u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdShw);
                     pPDEDst->u = 0;
                     MY_STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,SyncCR3DstFreedSrcNP));
                 }

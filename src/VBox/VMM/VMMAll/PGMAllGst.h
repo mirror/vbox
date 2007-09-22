@@ -608,10 +608,9 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 {
     PPGMVIRTHANDLER pCur  = (PPGMVIRTHANDLER)pNode;
     PPGMHVUSTATE    pState = (PPGMHVUSTATE)pvUser;
-    PVM             pVM = pState->pVM;
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PX86PD          pPDSrc = pVM->pgm.s.CTXSUFF(pGuestPD);
+    PX86PD          pPDSrc = pState->pVM->pgm.s.CTXSUFF(pGuestPD);
 #endif
 
     RTGCUINTPTR     GCPtr = (RTUINTPTR)pCur->GCPtr;
@@ -667,7 +666,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                         if (pCur->aPhysToVirt[iPage].Core.Key != GCPhysNew)
                         {
                             if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
-                                pgmHandlerVirtualClearPage(pState->pVM, &pState->pVM->pgm.s, pCur, iPage);
+                                pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                             AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
                                              ("{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%VGp\n",
@@ -690,7 +689,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                     {
                         if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
                         {
-                            pgmHandlerVirtualClearPage(pState->pVM, &pState->pVM->pgm.s, pCur, iPage);
+                            pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                             AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
                                              ("{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
@@ -717,7 +716,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                     if (pCur->aPhysToVirt[iPage].Core.Key != GCPhysNew)
                     {
                         if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
-                            pgmHandlerVirtualClearPage(pState->pVM, &pState->pVM->pgm.s, pCur, iPage);
+                            pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                         AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
                                          ("{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%VGp\n",
@@ -739,7 +738,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
             {
                 if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
                 {
-                    pgmHandlerVirtualClearPage(pState->pVM, &pState->pVM->pgm.s, pCur, iPage);
+                    pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
                     pCur->aPhysToVirt[iPage].Core.Key = NIL_RTGCPHYS;
                     pState->fTodo |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
                 }
