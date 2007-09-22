@@ -932,7 +932,7 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
  * @returns true if the breakpoint should be hit, false if it should be ignored.
  * @remark  The RTDECL() makes this a bit difficult to override on windows. Sorry.
  */
-DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint()
+DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint(void)
 {
     PVM pVM = GVMR0ByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
