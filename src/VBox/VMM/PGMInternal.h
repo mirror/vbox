@@ -467,12 +467,12 @@ typedef struct PGMVIRTHANDLER
 typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
 
 
-/** 
+/**
  * A Physical Guest Page tracking structure.
- * 
- * The format of this structure is complicated because we have to fit a lot 
- * of information into as few bits as possible. The format is also subject 
- * to change (there is one comming up soon). Which means that for we'll be 
+ *
+ * The format of this structure is complicated because we have to fit a lot
+ * of information into as few bits as possible. The format is also subject
+ * to change (there is one comming up soon). Which means that for we'll be
  * using PGM_PAGE_GET_* and PGM_PAGE_SET_* macros for all accessess to the
  * structure.
  */
@@ -508,13 +508,13 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_STATE_ALLOCATED        1
 /** A allocated page that's being monitored for writes.
- * The shadow page table mappings are read-only. When a write occurs, the 
+ * The shadow page table mappings are read-only. When a write occurs, the
  * fWrittenTo member is set, the page remapped as read-write and the state
  * moved back to allocated. */
 #define PGM_PAGE_STATE_WRITE_MONITORED  2
 /** The page is shared, aka. copy-on-write.
  * This is a page that's shared with other VMs. */
-#define PGM_PAGE_STATE_SHARED           3    
+#define PGM_PAGE_STATE_SHARED           3
 /** @} */
 
 
@@ -576,7 +576,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->idPage = (_idPage); } while (0)
-/* later: 
+/* later:
 #define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->HCPhys = (((pPage)->HCPhys) & UINT64_C(0x0000fffffffff000)) \
                                                                   | ((_idPage) & 0xfff) \
                                                                   | (((_idPage) & 0x0ffff000) << (48-12)); } while (0)
@@ -723,7 +723,7 @@ typedef PPGMCHUNKR3MAP *PPPGMCHUNKR3MAP;
 
 /**
  * Ring-3 tracking structore for an allocation chunk ring-3 mapping.
- * 
+ *
  * The primary tree (Core) uses the chunk id as key.
  * The secondary tree (AgeCore) is used for ageing and uses ageing sequence number as key.
  */
@@ -752,31 +752,31 @@ typedef struct PGMCHUNKR3MAPTLBE
     uint32_t volatile                   idChunk;
 #if HC_ARCH_BITS == 64
     uint32_t                            u32Padding; /**< alignment padding. */
-#endif 
+#endif
     /** The chunk map. */
     R3R0PTRTYPE(PPGMCHUNKR3MAP) volatile  pChunk;
 } PGMCHUNKR3MAPTLBE;
 /** Pointer to the an allocation chunk ring-3 mapping TLB entry. */
 typedef PGMCHUNKR3MAPTLBE *PPGMCHUNKR3MAPTLBE;
 
-/** The number of TLB entries in PGMCHUNKR3MAPTLB. 
+/** The number of TLB entries in PGMCHUNKR3MAPTLB.
  * @remark Must be a power of two value. */
 #define PGM_CHUNKR3MAPTLB_ENTRIES   32
 
 /**
  * Allocation chunk ring-3 mapping TLB.
- * 
+ *
  * @remarks We use a TLB to speed up lookups by avoiding walking the AVL.
- *          At first glance this might look kinda odd since AVL trees are 
+ *          At first glance this might look kinda odd since AVL trees are
  *          supposed to give the most optimial lookup times of all trees
- *          due to their balancing. However, take a tree with 1023 nodes 
+ *          due to their balancing. However, take a tree with 1023 nodes
  *          in it, that's 10 levels, meaning that most searches has to go
  *          down 9 levels before they find what they want. This isn't fast
  *          compared to a TLB hit. There is the factor of cache misses,
  *          and of course the problem with trees and branch prediction.
  *          This is why we use TLBs in front of most of the trees.
- * 
- * @todo    Generalize this TLB + AVL stuff, shouldn't be all that 
+ *
+ * @todo    Generalize this TLB + AVL stuff, shouldn't be all that
  *          difficult when we switch to inlined AVL trees (from kStuff).
  */
 typedef struct PGMCHUNKR3MAPTLB
@@ -803,7 +803,7 @@ typedef struct PGMPAGER3MAPTLBE
     RTGCPHYS volatile                    GCPhys;
 #if HC_ARCH_BITS == 64
     uint32_t                             u32Padding; /**< alignment padding. */
-#endif 
+#endif
     /** The guest page. */
     R3R0PTRTYPE(PPGMPAGE) volatile       pPage;
     /** Pointer to the page mapping tracking structure, PGMCHUNKR3MAP. */
@@ -815,10 +815,10 @@ typedef struct PGMPAGER3MAPTLBE
 typedef PGMPAGER3MAPTLBE *PPGMPAGER3MAPTLBE;
 
 
-/** The number of entries in the ring-3 guest page mapping TLB. 
+/** The number of entries in the ring-3 guest page mapping TLB.
  * @remarks The value must be a power of two. */
 #define PGM_PAGER3MAPTLB_ENTRIES 64
-         
+
 /**
  * Ring-3 guest page mapping TLB.
  * @remarks used in ring-0 as well at the moment.
@@ -832,19 +832,19 @@ typedef struct PGMPAGER3MAPTLB
 typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 
 /**
- * Calculates the index of the TLB entry for the specified guest page. 
+ * Calculates the index of the TLB entry for the specified guest page.
  * @returns Physical TLB index.
  * @param   GCPhys      The guest physical address.
  */
 #define PGM_PAGER3MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER3MAPTLB_ENTRIES - 1) )
 
 
-/** @name Context neutrual page mapper TLB. 
- * 
+/** @name Context neutrual page mapper TLB.
+ *
  * Hoping to avoid some code and bug duplication parts of the GCxxx->CCPtr
- * code is writting in a kind of context neutrual way. Time will show whether 
+ * code is writting in a kind of context neutrual way. Time will show whether
  * this actually makes sense or not...
- * 
+ *
  * @{ */
 /** @typedef PPGMPAGEMAPTLB
  * The page mapper TLB pointer type for the current context. */
@@ -867,7 +867,7 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 // typedef PPGMPAGEGCMAPTLBE      PPGMPAGEMAPTLBE;
 // typedef PPGMPAGEGCMAPTLBE     *PPPGMPAGEMAPTLBE;
 # define PGM_PAGEMAPTLB_ENTRIES     PGM_PAGEGCMAPTLB_ENTRIES
-# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGEGCMAPTLB_IDX(GCPhys)     
+# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGEGCMAPTLB_IDX(GCPhys)
  typedef void *                 PPGMPAGEMAP;
  typedef void **                PPPGMPAGEMAP;
 //#elif IN_RING0
@@ -875,7 +875,7 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 // typedef PPGMPAGER0MAPTLBE      PPGMPAGEMAPTLBE;
 // typedef PPGMPAGER0MAPTLBE     *PPPGMPAGEMAPTLBE;
 //# define PGM_PAGEMAPTLB_ENTRIES     PGM_PAGER0MAPTLB_ENTRIES
-//# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGER0MAPTLB_IDX(GCPhys)     
+//# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGER0MAPTLB_IDX(GCPhys)
 // typedef PPGMCHUNKR0MAP         PPGMPAGEMAP;
 // typedef PPPGMCHUNKR0MAP        PPPGMPAGEMAP;
 #else
@@ -883,10 +883,10 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  typedef PPGMPAGER3MAPTLBE      PPGMPAGEMAPTLBE;
  typedef PPGMPAGER3MAPTLBE     *PPPGMPAGEMAPTLBE;
 # define PGM_PAGEMAPTLB_ENTRIES     PGM_PAGER3MAPTLB_ENTRIES
-# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGER3MAPTLB_IDX(GCPhys)     
+# define PGM_PAGEMAPTLB_IDX(GCPhys) PGM_PAGER3MAPTLB_IDX(GCPhys)
  typedef PPGMCHUNKR3MAP         PPGMPAGEMAP;
  typedef PPPGMCHUNKR3MAP        PPPGMPAGEMAP;
-#endif 
+#endif
 /** @} */
 
 
@@ -1814,10 +1814,10 @@ typedef struct PGM
     /** PGMPhysWrite cache */
     PGMPHYSCACHE                    pgmphyswritecache;
 
-    /** 
+    /**
      * Data associated with managing the ring-3 mappings of the allocation chunks.
      */
-    struct 
+    struct
     {
         /** The chunk tree, ordered by chunk id. */
         R3R0PTRTYPE(PAVLU32NODECORE)  pTree;
@@ -1825,7 +1825,7 @@ typedef struct PGM
         PGMCHUNKR3MAPTLB            Tlb;
         /** The number of mapped chunks. */
         uint32_t                    c;
-        /** The maximum number of mapped chunks. 
+        /** The maximum number of mapped chunks.
          * @cfgm    PGM/MaxRing3Chunks */
         uint32_t                    cMax;
         /** The chunk age tree, ordered by ageing sequence number. */
@@ -1836,7 +1836,7 @@ typedef struct PGM
         uint32_t                    AgeingCountdown;
     }                               ChunkR3Map;
 
-    /** 
+    /**
      * The page mapping TLB for ring-3 and (for the time being) ring-0.
      */
     PGMPAGER3MAPTLB                 PhysTlbHC;
@@ -1845,11 +1845,11 @@ typedef struct PGM
      * @{ */
     /** The host physical address of the zero page. */
     RTHCPHYS                        HCPhysZeroPg;
-    /** The ring-3 mapping of the zero page. */ 
+    /** The ring-3 mapping of the zero page. */
     RTR3PTR                         pvZeroPgR3;
-    /** The ring-0 mapping of the zero page. */ 
+    /** The ring-0 mapping of the zero page. */
     RTR0PTR                         pvZeroPgR0;
-    /** The GC mapping of the zero page. */ 
+    /** The GC mapping of the zero page. */
     RTGCPTR                         pvZeroPgGC;
 #if GC_ARCH_BITS != 32
     uint32_t                        u32ZeroAlignment; /**< Alignment padding. */
@@ -1858,17 +1858,17 @@ typedef struct PGM
 
     /** The number of handy pages. */
     uint32_t                        cHandyPages;
-    /** 
+    /**
      * Array of handy pages.
-     * 
-     * This array is used in a two way communication between pgmPhysAllocPage 
+     *
+     * This array is used in a two way communication between pgmPhysAllocPage
      * and GMMR0AllocateHandyPages, with PGMR3PhysAllocateHandyPages serving as
      * an intermediary.
-     * 
+     *
      * The size of this array is important, see pgmPhysEnsureHandyPage for details.
      * (The current size of 32 pages, means 128 KB of memory.)
      */
-    struct 
+    struct
     {
         /** The host physical address before pgmPhysAllocPage uses it,
          * and the guest physical address afterwards.
@@ -1884,7 +1884,7 @@ typedef struct PGM
     }                               aHandyPages[32];
 
     /** @name Release Statistics
-     * @{ */                                                     
+     * @{ */
     uint32_t                        cAllPages;          /**< The total number of pages. (Should be Private + Shared + Zero.) */
     uint32_t                        cPrivatePages;      /**< The number of private pages. */
     uint32_t                        cSharedPages;       /**< The number of shared pages. */
@@ -2252,7 +2252,7 @@ __END_DECLS
  *
  * @returns Pointer to the page on success.
  * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
- * 
+ *
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
  */
@@ -2279,13 +2279,13 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PPGM pPGM, RTGCPHYS GCPhys)
 
 /**
  * Gets the PGMPAGE structure for a guest page.
- * 
+ *
  * Old Phys code: Will make sure the page is present.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS and a valid *ppPage on success.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if the address isn't valid.
- * 
+ *
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
  * @param   ppPage      Where to store the page poitner on success.
@@ -2331,7 +2331,7 @@ DECLINLINE(int) pgmPhysGetPageEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
         }
         Assert(rc == VINF_SUCCESS);
     }
-#endif 
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2340,13 +2340,13 @@ DECLINLINE(int) pgmPhysGetPageEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 
 /**
  * Gets the PGMPAGE structure for a guest page.
- * 
+ *
  * Old Phys code: Will make sure the page is present.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS and a valid *ppPage on success.
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if the address isn't valid.
- * 
+ *
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
  * @param   ppPage      Where to store the page poitner on success.
@@ -2398,7 +2398,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
         }
         Assert(rc == VINF_SUCCESS);
     }
-#endif 
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2408,7 +2408,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
  *
  * @returns Pointer to the page on success.
  * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
- * 
+ *
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
  * @param   ppRam       Where to store the pointer to the PGMRAMRANGE.
@@ -2442,7 +2442,7 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPageAndRange(PPGM pPGM, RTGCPHYS GCPhys, PPGMRAMR
  *
  * @returns Pointer to the page on success.
  * @returns NULL on a VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS condition.
- * 
+ *
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
  * @param   ppPage      Where to store the pointer to the PGMPAGE structure.
@@ -2493,7 +2493,7 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
         Assert(rc == VINF_SUCCESS);
 
     }
-#endif 
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2505,8 +2505,8 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
  * @param   pHCPhys     Where to store the corresponding HC physical address.
- * 
- * @deprecated  Doesn't deal with zero, shared or write monitored pages. 
+ *
+ * @deprecated  Doesn't deal with zero, shared or write monitored pages.
  *              Avoid when writing new code!
  */
 DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
@@ -2532,7 +2532,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
  * @param   GCPhys      The address of the guest page.
  * @param   ppTlbe      Where to store the pointer to the TLB entry.
  */
-  
+
 DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLBE ppTlbe)
 {
     int rc;
@@ -2558,7 +2558,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
  * @param   pHCPtr      Where to store the corresponding HC virtual address.
- * 
+ *
  * @deprecated  This will be eliminated by PGMPhysGCPhys2CCPtr.
  */
 DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
@@ -2598,7 +2598,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
  * @param   pRam        Ram range
  * @param   GCPhys      The GC physical address.
  * @param   pHCPtr      Where to store the corresponding HC virtual address.
- * 
+ *
  * @deprecated  This will be eliminated. Don't use it.
  */
 DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
@@ -2618,7 +2618,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS
             int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
 #endif
             if (rc != VINF_SUCCESS)
-            {   
+            {
                 *pHCPtr = 0; /* GCC crap */
                 return rc;
             }
@@ -2644,8 +2644,8 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS
  * @param   GCPhys      The GC physical address.
  * @param   pHCPtr      Where to store the corresponding HC virtual address.
  * @param   pHCPhys     Where to store the HC Physical address and its flags.
- * 
- * @deprecated  Will go away or be changed. Only user is MapCR3. MapCR3 will have to do ring-3 
+ *
+ * @deprecated  Will go away or be changed. Only user is MapCR3. MapCR3 will have to do ring-3
  *              and ring-0 locking of the CR3 in a lazy fashion I'm fear... or perhaps not. we'll see.
  */
 DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr, PRTHCPHYS pHCPhys)
@@ -2871,10 +2871,9 @@ DECLINLINE(bool) pgmRamTestFlags(PPGM pPGM, RTGCPHYS GCPhys, uint64_t fFlags)
  * Gets the ram flags for a handler.
  *
  * @returns The ram flags.
- * @param   pVM     The VM handle.
  * @param   pCur    The physical handler in question.
  */
-DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PVM pVM, PPGMPHYSHANDLER pCur)
+DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PPGMPHYSHANDLER pCur)
 {
     switch (pCur->enmType)
     {
@@ -2897,11 +2896,11 @@ DECLINLINE(unsigned) pgmHandlerPhysicalCalcFlags(PVM pVM, PPGMPHYSHANDLER pCur)
 /**
  * Clears one physical page of a virtual handler
  *
- * @param   pVM     The VM handle.
+ * @param   pPGM    Pointer to the PGM instance.
  * @param   pCur    Virtual handler structure
  * @param   iPage   Physical page index
  */
-DECLINLINE(void) pgmHandlerVirtualClearPage(PVM pVM, PPGM pPGM, PPGMVIRTHANDLER pCur, unsigned iPage)
+DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, unsigned iPage)
 {
     const PPGMPHYS2VIRTHANDLER pPhys2Virt = &pCur->aPhysToVirt[iPage];
 
@@ -3000,11 +2999,10 @@ DECLINLINE(void) pgmHandlerVirtualClearPage(PVM pVM, PPGM pPGM, PPGMVIRTHANDLER 
  * Internal worker for finding a 'in-use' shadow page give by it's physical address.
  *
  * @returns Pointer to the shadow page structure.
- * @param   pVM         The VM handle.
  * @param   pPool       The pool.
  * @param   HCPhys      The HC physical address of the shadow page.
  */
-DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PVM pVM, PPGMPOOL pPool, RTHCPHYS HCPhys)
+DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
 {
     /*
      * Look up the page.
@@ -3019,11 +3017,10 @@ DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PVM pVM, PPGMPOOL pPool, RTHCPHYS HCPhys
  * Internal worker for finding a 'in-use' shadow page give by it's physical address.
  *
  * @returns Pointer to the shadow page structure.
- * @param   pVM         The VM handle.
  * @param   pPool       The pool.
  * @param   idx         The pool page index.
  */
-DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPageByIdx(PVM pVM, PPGMPOOL pPool, unsigned idx)
+DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPageByIdx(PPGMPOOL pPool, unsigned idx)
 {
     AssertFatalMsg(idx >= PGMPOOL_IDX_FIRST && idx < pPool->cCurPages, ("idx=%d\n", idx));
     return &pPool->aPages[idx];
