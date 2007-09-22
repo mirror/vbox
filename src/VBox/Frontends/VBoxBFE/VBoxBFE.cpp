@@ -162,7 +162,9 @@ static bool g_fAudio  = false;
 static bool g_fUSB    = false;
 #endif
 static char *g_pszHdaFile   = NULL;
+static bool g_HdaSpf = false;
 static char *g_pszHdbFile   = NULL;
+static bool g_HdbSpf = false;
 static char *g_pszCdromFile = NULL;
 static char *g_pszFdaFile   = NULL;
 static const char *pszBootDevice = "IDE";
@@ -511,6 +513,10 @@ int main(int argc, char **argv)
             if (!g_pszHdaFile)
                 return SyntaxError("The path to the specified harddisk, '%s', could not be resolved.\n", argv[curArg]);
         }
+        else if (strcmp(pszArg, "-hdaspf") == 0)
+        {
+            g_fHdaSpf = true;
+        }
         else if (strcmp(pszArg, "-hdb") == 0)
         {
             if (++curArg >= argc)
@@ -521,6 +527,10 @@ int main(int argc, char **argv)
                 g_pszHdbFile = RTPathRealDup(argv[curArg]);
             if (!g_pszHdbFile)
                 return SyntaxError("The path to the specified harddisk, '%s', could not be resolved.\n", argv[curArg]);
+        }
+        else if (strcmp(pszArg, "-hdbspf") == 0)
+        {
+            g_fHdbSpf = true;
         }
         else if (strcmp(pszArg, "-fda") == 0)
         {
@@ -1475,6 +1485,11 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         rc = CFGMR3InsertString(pDrv,   "Driver",         szDriver);                UPDATE_RC();
         rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
         rc = CFGMR3InsertString(pCfg,   "Path",           g_pszHdaFile);            UPDATE_RC();
+
+        if (g_fHdaSpf)
+        {
+            rc = CFGMR3InsertString(pCfg, "Format",       "SPF");                   UPDATE_RC();
+        }
     }
 
     if (g_pszHdbFile)
@@ -1495,6 +1510,11 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
         rc = CFGMR3InsertString(pDrv,   "Driver",         szDriver);                UPDATE_RC();
         rc = CFGMR3InsertNode(pDrv,     "Config",         &pCfg);                   UPDATE_RC();
         rc = CFGMR3InsertString(pCfg,   "Path",           g_pszHdbFile);            UPDATE_RC();
+
+        if (g_fHdbSpf)
+        {
+            rc = CFGMR3InsertString(pCfg, "Format",       "SPF");                   UPDATE_RC();
+        }
     }
 
     if (g_pszCdromFile)
