@@ -1362,6 +1362,13 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 
 
 /** Runtime assert implementation for Linux Ring-0. */
+RTDECL(bool) RTAssertDoBreakpoint(void)
+{
+    return true;
+}
+
+
+/** Runtime assert implementation for Linux Ring-0. */
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     printk("!!Assertion Failed!!\n"
