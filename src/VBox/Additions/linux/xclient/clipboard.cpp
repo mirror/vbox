@@ -1555,7 +1555,10 @@ int vboxClipboardConnect (void)
         return RTErrConvertFromErrno(err);
     }
 
-    rc = ioctl(g_ctx.sendDevice, IOCTL_VBOXGUEST_CLIPBOARD_CONNECT, (void*)&g_ctx.client);
+    VBoxGuestHGCMConnectInfo info;
+    info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+    strcpy (info.Loc.u.host.achName, "VBoxSharedClipboard");
+    rc = ioctl(g_ctx.sendDevice, IOCTL_VBOXGUEST_HGCM_CONNECT, (void*)&info);
     if (rc >= 0)
     {
         if (g_ctx.client == 0)
