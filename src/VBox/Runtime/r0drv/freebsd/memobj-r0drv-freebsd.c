@@ -310,7 +310,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
     /** @todo rtR0MemObjNativeAllocPhys / freebsd */
-    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest);
+    return VERR_NOT_SUPPORTED;
 }
 
 
