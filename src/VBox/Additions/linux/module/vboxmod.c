@@ -23,6 +23,8 @@
 #include "vboxmod.h"
 #include "waitcompat.h"
 #include <VBox/log.h>
+#include <iprt/asm.h>
+#include <iprt/assert.h>
 
 MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
 MODULE_AUTHOR("innotek GmbH");
@@ -84,6 +86,92 @@ DECLVBGL (void) vboxadd_cmc_close (void *opaque)
 EXPORT_SYMBOL (vboxadd_cmc_open);
 EXPORT_SYMBOL (vboxadd_cmc_close);
 
+#define MAX_HGCM_CONNECTIONS 1024
+
+/**
+ * Structure for keeping track of HGCM connections owned by user space processes, so that
+ * we can close the connection if a process does not clean up properly (for example if it
+ * was terminated too abruptly).
+ */
+/* We just define a fixed number of these so far.  This can be changed if it ever becomes
+   a problem. */
+static struct {
+        /** Open file structure that this connection handle is associated with */
+        struct file *filp;
+        /** HGCM connection ID */
+        uint32_t client_id;
+} hgcm_connections[MAX_HGCM_CONNECTIONS] = { { 0 } };
+
+/**
+ * Register an HGCM connection as being connected with a given file descriptor, so that it
+ * will be closed automatically when that file descriptor is.
+ *
+ * @returns 0 on success or Linux kernel error number
+ * @param clientID the client ID of the HGCM connection
+ * @param filep    the file structure that the connection is to be associated with
+ */
+static int vboxadd_register_hgcm_connection(uint32_t client_id, struct file *filp)
+{
+        int i;
+        bool found = false;
+
+        for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
+                Assert(hgcm_connections[i].client_id != client_id);
+        }
+        for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
+                if (ASMAtomicCmpXchgU32(&hgcm_connections[i].client_id, client_id, 0)) {
+                        hgcm_connections[i].filp = filp;
+                        found = true;
+                }
+        }
+        return found ? 0 : -ENFILE;  /* Any ideas for a better error code? */
+}
+
+/**
+ * Unregister an HGCM connection associated with a given file descriptor without closing
+ * the connection.
+ *
+ * @returns 0 on success or Linux kernel error number
+ * @param clientID the client ID of the HGCM connection
+ */
+static int vboxadd_unregister_hgcm_connection_no_close(uint32_t client_id)
+{
+        int i;
+        bool found = false;
+
+        for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
+                if (hgcm_connections[i].client_id == client_id) {
+                        hgcm_connections[i].client_id = 0;
+                        found = true;
+                }
+        }
+        for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
+                Assert(hgcm_connections[i].client_id != client_id);
+        }
+        return found ? 0 : -ENOENT;
+}
+
+/**
+ * Unregister all HGCM connections associated with a given file descriptor, closing
+ * the connections in the process.  This should be called when a file descriptor is
+ * closed.
+ *
+ * @returns 0 on success or Linux kernel error number
+ * @param clientID the client ID of the HGCM connection
+ */
+static int vboxadd_unregister_all_hgcm_connections(struct file *filp)
+{
+        int i;
+
+        for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
+                if (hgcm_connections[i].filp == filp) {
+                        hgcm_connections[i].client_id = 0;
+                }
+        }
+        return 0;
+}
+
+
 /**
  * File open handler
  *
@@ -95,13 +183,13 @@ static int vboxadd_open(struct inode *inode, struct file *filp)
 }
 
 /**
- * File close handler
- *
+ * File close handler.  Clean up any HGCM connections associated with the open file
+ * which might still be open.
  */
 static int vboxadd_release(struct inode *inode, struct file * filp)
 {
-    /* no action required */
-    return 0;
+        vboxadd_unregister_all_hgcm_connections(filp);
+        return 0;
 }
 
 /**
@@ -128,6 +216,56 @@ vboxadd_wait_for_event (VBoxGuestWaitEventInfo * info)
 
 
 /**
+ * IOCTL handler.  Initiate an HGCM connection for a user space application.  If the connection
+ * succeeds, it will be associated with the file structure used to open it, so that it will be
+ * automatically shut down again if the file descriptor is closed.
+ *
+ * @returns 0 on success, or a Linux kernel errno value
+ * @param  filp           the file structure with which the application opened the driver
+ * @param  userspace_info userspace pointer to the hgcm connection information
+ *                        (VBoxGuestHGCMConnectInfo structure)
+ * @retval userspace_info userspace pointer to the hgcm connection information
+ */
+static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
+{
+        VBoxGuestHGCMConnectInfo info;
+        VBoxGuestHGCMDisconnectInfo infoDisconnect;
+        int rc = 0, rcVBox;
+
+        if (0 != copy_from_user ((void *)&info, (void *)userspace_info, sizeof (info))) {
+                LogRelFunc (("IOCTL_VBOXGUEST_HGCM_CONNECT: can not get connection info\n"));
+                return -EFAULT;
+        }
+        rcVBox = vboxadd_cmc_call(vboxDev, IOCTL_VBOXGUEST_HGCM_CONNECT, &info);
+        if (RT_FAILURE(rcVBox) || (RT_FAILURE(info.result))) {
+                LogRelFunc(("IOCTL_VBOXGUEST_HGCM_CONNECT: hgcm connection failed.  internal ioctl result %Vrc, hgcm result %Vrc\n", rcVBox, info.result));
+                rc = RT_FAILURE(rcVBox) ?   -RTErrConvertToErrno(rcVBox)
+                                          : -RTErrConvertToErrno(info.result);
+        } else {
+                /* Register that the connection is associated with this file pointer. */
+                rc = vboxadd_register_hgcm_connection(info.u32ClientID, filp);
+                if (0 != rc) {
+                        LogRelFunc(("IOCTL_VBOXGUEST_HGCM_CONNECT: failed to register the HGCM connection\n"));
+                } else {
+                        if (copy_to_user ((void *)userspace_info, (void *)&info,
+                                          sizeof(info))) {
+                                LogRelFunc (("IOCTL_VBOXGUEST_HGCM_CONNECT: failed to return the connection structure\n"));
+                                rc = -EFAULT;
+                        } else {
+                                return 0;
+                        }
+                        /* Unregister again, as we didn't get as far as informing userspace. */
+                        vboxadd_unregister_hgcm_connection_no_close(info.u32ClientID);
+                }
+                /* And disconnect the hgcm connection again, as we told userspace it failed. */
+                infoDisconnect.u32ClientID = info.u32ClientID;
+                vboxadd_cmc_call(vboxDev, IOCTL_VBOXGUEST_HGCM_DISCONNECT,
+                                  &infoDisconnect);
+        }
+        return rc;
+}
+
+/**
  * IOCTL handler
  *
  */
@@ -143,7 +281,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 
             if (copy_from_user (&info, ptr, sizeof (info)))
             {
-                printk (KERN_ERR "vboxadd_ioctl: can not get event info\n");
+                LogRelFunc (("IOCTL_VBOXGUEST_WAITEVENT: can not get event info\n"));
                 return -EFAULT;
             }
 
@@ -152,7 +290,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             ptr += offsetof (VBoxGuestWaitEventInfo, u32EventFlagsOut);
             if (put_user (info.u32EventFlagsOut, (uint32_t*)ptr))
             {
-                printk (KERN_ERR "vboxadd_ioctl: can not put out_mask\n");
+                LogRelFunc (("IOCTL_VBOXGUEST_WAITEVENT: can not put out_mask\n"));
                 return -EFAULT;
             }
             return 0;
@@ -168,47 +306,44 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 
             if (_IOC_SIZE(cmd) != sizeof(VMMDevRequestHeader))
             {
-                printk(KERN_ERR "vboxadd_ioctl: invalid VMM request structure size: %d\n",
-                       _IOC_SIZE(cmd));
+                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: invalid VMM request structure size: %d\n",
+                         _IOC_SIZE(cmd)));
                 return -EINVAL;
             }
             if (copy_from_user(&reqHeader, (void*)arg, _IOC_SIZE(cmd)))
             {
-                printk(KERN_ERR "vboxadd_ioctl: copy_from_user failed for vmm request!\n");
+                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: copy_from_user failed for vmm request!\n"));
                 return -EFAULT;
             }
             /* get the request size */
             cbVanillaRequestSize = vmmdevGetRequestSize(reqHeader.requestType);
             if (!cbVanillaRequestSize)
             {
-                printk(KERN_ERR "vboxadd_ioctl: invalid request type: %d\n",
-                       reqHeader.requestType);
+                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: invalid request type: %d\n",
+                         reqHeader.requestType));
                 return -EINVAL;
             }
 
             cbRequestSize = reqHeader.size;
             if (cbRequestSize < cbVanillaRequestSize)
             {
-                printk(KERN_ERR
-                       "vboxadd_ioctl: invalid request size: %d min: %d type: %d\n",
-                       cbRequestSize,
-                       cbVanillaRequestSize,
-                       reqHeader.requestType);
+                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: invalid request size: %d min: %d type: %d\n",
+                         cbRequestSize,
+                         cbVanillaRequestSize,
+                         reqHeader.requestType));
                 return -EINVAL;
             }
             /* request storage for the full request */
             rc = VbglGRAlloc(&reqFull, cbRequestSize, reqHeader.requestType);
             if (VBOX_FAILURE(rc))
             {
-                printk(KERN_ERR
-                       "vboxadd_ioctl: could not allocate request structure! rc = %d\n", rc);
+                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: could not allocate request structure! rc = %d\n", rc));
                 return -EFAULT;
             }
             /* now get the full request */
             if (copy_from_user(reqFull, (void*)arg, cbRequestSize))
             {
-                printk(KERN_ERR
-                       "vboxadd_ioctl: failed to fetch full request from user space!\n");
+                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: failed to fetch full request from user space!\n"));
                 VbglGRFree(reqFull);
                 return -EFAULT;
             }
@@ -227,17 +362,17 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             /* failed? */
             if (VBOX_FAILURE(rc) || VBOX_FAILURE(reqFull->rc))
             {
-                printk(KERN_ERR "vboxadd_ioctl: request execution failed!\n");
+                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: request execution failed!\n"));
                 VbglGRFree(reqFull);
-                return -EFAULT;
+                return VBOX_FAILURE(rc) ?   -RTErrConvertToErrno(rc)
+                                          : -RTErrConvertToErrno(reqFull->rc);
             }
             else
             {
                 /* success, copy the result data to user space */
                 if (copy_to_user((void*)arg, (void*)reqFull, cbRequestSize))
                 {
-                    printk(KERN_ERR
-                           "vboxadd_ioctl: error copying request result to user space!\n");
+                    LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: error copying request result to user space!\n"));
                     VbglGRFree(reqFull);
                     return -EFAULT;
                 }
@@ -248,119 +383,24 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
 
         case IOCTL_VBOXGUEST_HGCM_CALL:
         {
-            /* This IOCTL allows the guest to make an HGCM call from user space.  The
-               OS-independant part of the Guest Additions already contain code for making an
-               HGCM call from the guest, but this code assumes that the call is made from the
-               kernel's address space.  So before calling it, we have to copy all parameters
-               to the HGCM call from user space to kernel space and reconstruct the structures
-               passed to the call (which include pointers to other memory) inside the kernel's
-               address space. */
-            return vbox_ioctl_hgcm_call(arg, vboxDev);
+        /* This IOCTL allows the guest to make an HGCM call from user space.  The
+           OS-independant part of the Guest Additions already contain code for making an
+           HGCM call from the guest, but this code assumes that the call is made from the
+           kernel's address space.  So before calling it, we have to copy all parameters
+           to the HGCM call from user space to kernel space and reconstruct the structures
+           passed to the call (which include pointers to other memory) inside the kernel's
+           address space. */
+                return vbox_ioctl_hgcm_call(arg, vboxDev);
         }
 
-        case IOCTL_VBOXGUEST_CLIPBOARD_CONNECT:
+        case IOCTL_VBOXGUEST_HGCM_CONNECT:
         {
-            static uint32_t u32ClientID = 0;
-            VMMDevHGCMDisconnect *reqDisconnect = NULL;
-            VMMDevHGCMConnect *reqConnect = NULL;
-            size_t cbRequestSize;
-            int rc;
-
-            /* First, disconnect any old client. */
-            if (u32ClientID != 0)
-            {
-                /* get the request size */
-                cbRequestSize = vmmdevGetRequestSize(VMMDevReq_HGCMDisconnect);
-                /* request storage for the request */
-                rc = VbglGRAlloc((VMMDevRequestHeader **) &reqDisconnect, cbRequestSize,
-                                 VMMDevReq_HGCMDisconnect);
-                if (VBOX_FAILURE(rc))
-                {
-                    printk(KERN_ERR
-                          "vboxadd_ioctl: could not allocate request structure! rc = %d\n", rc);
-                    return -EFAULT;
-                }
-                /* now get the full request */
-                vmmdevInitRequest(&reqDisconnect->header.header, VMMDevReq_HGCMDisconnect);
-                reqDisconnect->u32ClientID = u32ClientID;
-
-                /* now issue the request */
-                rc = VbglGRPerform(&reqDisconnect->header.header);
-
-                /* asynchronous processing? */
-                if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                {
-                    VMMDevHGCMRequestHeader *reqHGCM = &reqDisconnect->header;
-                    wait_event (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
-                    rc = reqHGCM->header.rc;
-                }
-
-                /* failed? */
-                if (VBOX_FAILURE(rc) || VBOX_FAILURE(reqDisconnect->header.header.rc))
-                {
-                    printk(KERN_ERR "vboxadd_ioctl: request execution failed!\n");
-                    VbglGRFree(&reqDisconnect->header.header);
-                    return -EFAULT;
-                }
-                VbglGRFree(&reqDisconnect->header.header);
-            }
-
-            /* And connect... */
-            /* get the request size */
-            cbRequestSize = vmmdevGetRequestSize(VMMDevReq_HGCMConnect);
-            /* request storage for the request */
-            rc = VbglGRAlloc((VMMDevRequestHeader **) &reqConnect, cbRequestSize, VMMDevReq_HGCMConnect);
-            if (VBOX_FAILURE(rc))
-            {
-                printk(KERN_ERR
-                       "vboxadd_ioctl: could not allocate request structure! rc = %d\n", rc);
-                return -EFAULT;
-            }
-            /* now get the full request */
-            vmmdevInitRequest((VMMDevRequestHeader*)reqConnect, VMMDevReq_HGCMConnect);
-            reqConnect->loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-            strcpy (reqConnect->loc.u.host.achName, "VBoxSharedClipboard");
-
-            /* now issue the request */
-            rc = VbglGRPerform(&reqConnect->header.header);
-
-            /* asynchronous processing? */
-            if (rc == VINF_HGCM_ASYNC_EXECUTE)
-            {
-                VMMDevHGCMRequestHeader *reqHGCM = &reqConnect->header;
-                wait_event (vboxDev->eventq, reqHGCM->fu32Flags & VBOX_HGCM_REQ_DONE);
-                rc = reqHGCM->header.rc;
-            }
-
-            /* failed? */
-            if (VBOX_FAILURE(rc) || VBOX_FAILURE(reqConnect->header.header.rc))
-            {
-                printk(KERN_ERR "vboxadd_ioctl: request execution failed!\n");
-                VbglGRFree(&reqConnect->header.header);
-                return -EFAULT;
-            }
-            else
-            {
-                /* success, copy the result data to user space */
-                u32ClientID = reqConnect->u32ClientID;
-                if (copy_to_user((void*)arg, (void*)&(reqConnect->u32ClientID), sizeof(uint32_t)))
-                {
-                    printk(KERN_ERR
-                           "vboxadd_ioctl: error copying request result to user space!\n");
-                    VbglGRFree(&reqConnect->header.header);
-                    return -EFAULT;
-                }
-            }
-            VbglGRFree(&reqConnect->header.header);
-            break;
+                return vboxadd_hgcm_connect(filp, arg);
         }
 
         default:
         {
-            elog("vboxadd_ioctl: unknown command: %x, IOCTL_VBOXGUEST_HGCM_CALL is %x\n", cmd,
-                 IOCTL_VBOXGUEST_HGCM_CALL);
-            Log(("vboxadd_ioctl: unknown command: %x, IOCTL_VBOXGUEST_HGCM_CALL is %x\n", cmd,
-                 IOCTL_VBOXGUEST_HGCM_CALL));
+            LogRelFunc(("unknown command: %x\n", cmd));
             return -EINVAL;
         }
     }
@@ -447,9 +487,8 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
         else
         {
             /* impossible... */
-            printk(KERN_ERR
-                   "vboxadd: failed acknowledging IRQ! rc = %x, header.rc = %d\n",
-                   rcVBox, vboxDev->irqAckRequest->header.rc);
+            LogRelFunc(("IRQ was not acknowledged! rc = %Vrc, header.rc = %Vrc\n",
+                        rcVBox, vboxDev->irqAckRequest->header.rc));
             BUG ();
         }
 
@@ -487,8 +526,7 @@ static int vboxadd_reserve_hypervisor(void)
         );
     if (VBOX_FAILURE(rcVBox))
     {
-        printk(KERN_ERR "vboxadd: failed to allocate hypervisor info structure! rc = %d\n",
-               rcVBox);
+        LogRelFunc(("failed to allocate hypervisor info structure! rc = %Vrc\n", rcVBox));
         goto bail_out;
     }
     /* query the hypervisor information */
@@ -520,24 +558,22 @@ static int vboxadd_reserve_hypervisor(void)
                 }
                 else
                 {
-                    printk(KERN_ERR "vboxadd: failed to set hypervisor region! "
-                           "rc = %d, header.rc = %d\n",
-                           rcVBox, req->header.rc);
+                    LogRelFunc(("failed to set hypervisor region! rc = %Vrc, header.rc = %Vrc\n",
+                                rcVBox, req->header.rc));
                     goto bail_out;
                 }
             }
             else
             {
-                printk(KERN_ERR "vboxadd: failed to allocate 0x%x bytes of IO space\n",
-                       hypervisorSize);
+                LogRelFunc(("failed to allocate 0x%x bytes of IO space\n", hypervisorSize));
                 goto bail_out;
             }
         }
     }
     else
     {
-        printk(KERN_ERR "vboxadd: failed to query hypervisor info! rc = %d, header.rc = %d\n",
-               rcVBox, req->header.rc);
+        LogRelFunc(("failed to query hypervisor info! rc = %Vrc, header.rc = %Vrc\n",
+                    rcVBox, req->header.rc));
         goto bail_out;
     }
     /* successful return */
@@ -567,8 +603,7 @@ static int vboxadd_free_hypervisor(void)
         );
     if (VBOX_FAILURE(rcVBox))
     {
-        printk(KERN_ERR
-               "vboxadd: failed to allocate hypervisor info structure! rc = %d\n", rcVBox);
+        LogRelFunc(("failed to allocate hypervisor info structure! rc = %Vrc\n", rcVBox));
         goto bail_out;
     }
     /* reset the hypervisor information */
@@ -583,8 +618,8 @@ static int vboxadd_free_hypervisor(void)
     }
     else
     {
-        printk(KERN_ERR "vboxadd: failed to reset hypervisor info! rc = %d, header.rc = %d\n",
-               rcVBox, req->header.rc);
+        LogRelFunc(("failed to reset hypervisor info! rc = %Vrc, header.rc = %Vrc\n",
+                    rcVBox, req->header.rc));
         goto bail_out;
     }
     return 0;
@@ -643,8 +678,6 @@ static __init int init(void)
     VMMDevReportGuestInfo *infoReq = NULL;
 
     printk(KERN_INFO "vboxadd: initializing version %s\n", VBOX_VERSION_STRING);
-    LogRel(("Starting VirtualBox Guest Additions version %s\n",
-            VBOX_VERSION_STRING));
 
     if (vboxadd_cmc_init ())
     {
@@ -670,12 +703,16 @@ static __init int init(void)
         return -ENODEV;
     }
 
+    LogRel(("Starting VirtualBox version %s Guest Additions\n",
+            VBOX_VERSION_STRING));
     /* register a character device */
     err = register_chrdev(vbox_major, "vboxadd", &vbox_fops);
     if (err < 0 || ((vbox_major & err) || (!vbox_major && !err)))
     {
         printk(KERN_ERR "vboxadd: register_chrdev failed: vbox_major: %d, err = %d\n",
                vbox_major, err);
+        LogRelFunc(("register_chrdev failed: vbox_major: %d, err = %d\n",
+                     vbox_major, err));
         PCI_DEV_PUT(pcidev);
         return -ENODEV;
     }
@@ -688,6 +725,7 @@ static __init int init(void)
     if (!vboxDev)
     {
         printk(KERN_ERR "vboxadd: cannot allocate device!\n");
+        LogRelFunc(("cannot allocate device!\n"));
         err = -ENOMEM;
         goto fail;
     }
@@ -705,6 +743,7 @@ static __init int init(void)
     if (!vboxDev->io_port || !vboxDev->vmmdevmem || !vboxDev->vmmdevmem_size)
     {
         printk(KERN_ERR "vboxadd: did not find expected hardware resources!\n");
+        LogRelFunc(("did not find expected hardware resources!\n"));
         goto fail;
     }
 
@@ -712,6 +751,7 @@ static __init int init(void)
     if (request_mem_region(vboxDev->vmmdevmem, vboxDev->vmmdevmem_size, "vboxadd") == 0)
     {
         printk(KERN_ERR "vboxadd: failed to request adapter memory!\n");
+        LogRelFunc(("failed to request adapter memory!\n"));
         goto fail;
     }
 
@@ -721,6 +761,7 @@ static __init int init(void)
     if (!vboxDev->pVMMDevMemory)
     {
         printk (KERN_ERR "vboxadd: ioremap failed\n");
+        LogRelFunc(("ioremap failed\n"));
         goto fail;
     }
 
@@ -729,6 +770,8 @@ static __init int init(void)
         printk(KERN_ERR
                "vboxadd: invalid VMM device memory version! (got 0x%x, expected 0x%x)\n",
                vboxDev->pVMMDevMemory->u32Version, VMMDEV_MEMORY_VERSION);
+        LogRelFunc(("invalid VMM device memory version! (got 0x%x, expected 0x%x)\n",
+                    vboxDev->pVMMDevMemory->u32Version, VMMDEV_MEMORY_VERSION));
         goto fail;
     }
 
@@ -737,6 +780,7 @@ static __init int init(void)
     if (VBOX_FAILURE(rcVBox))
     {
         printk(KERN_ERR "vboxadd: could not initialize VBGL subsystem! rc = %d\n", rcVBox);
+        LogRelFunc(("could not initialize VBGL subsystem! rc = %Vrc\n", rcVBox));
         goto fail;
     }
 
@@ -746,6 +790,7 @@ static __init int init(void)
     if (VBOX_FAILURE(rcVBox))
     {
         printk(KERN_ERR "vboxadd: could not allocate request structure! rc = %d\n", rcVBox);
+        LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
         goto fail;
     }
 
@@ -762,6 +807,8 @@ static __init int init(void)
         printk(KERN_ERR
                "vboxadd: error reporting guest info to host! rc = %d, header.rc = %d\n",
                rcVBox, infoReq->header.rc);
+        LogRelFunc(("error reporting guest info to host! rc = %Vrc, header.rc = %Vrc\n",
+                    rcVBox, infoReq->header.rc));
         VbglGRFree(&infoReq->header);
         goto fail;
     }
@@ -779,6 +826,7 @@ static __init int init(void)
     if (VBOX_FAILURE(rcVBox))
     {
         printk(KERN_ERR "vboxadd: could not allocate request structure! rc = %d\n", rcVBox);
+        LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
         goto fail;
     }
 
@@ -793,6 +841,7 @@ static __init int init(void)
     if (err)
     {
         printk(KERN_ERR "vboxadd: Could not request IRQ %d, err: %d\n", pcidev->irq, err);
+        LogRelFunc(("could not request IRQ %d, err: %d\n", pcidev->irq, err));
         goto fail;
     }
     vboxDev->irq = pcidev->irq;
@@ -807,6 +856,12 @@ static __init int init(void)
            vbox_major, vboxDev->irq, vboxDev->io_port,
            vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
            vboxDev->hypervisorStart, vboxDev->hypervisorSize);
+    LogRelFunc(("major code: %d, using irq %d, "
+                "io port 0x%x, memory at 0x%x (size %d bytes), "
+                "hypervisor window at 0x%p (size 0x%x bytes)\n",
+                vbox_major, vboxDev->irq, vboxDev->io_port,
+                vboxDev->vmmdevmem, vboxDev->vmmdevmem_size,
+                vboxDev->hypervisorStart, vboxDev->hypervisorSize));
 
     /* successful return */
     PCI_DEV_PUT(pcidev);
@@ -826,11 +881,13 @@ fail:
 static __exit void fini(void)
 {
     printk(KERN_DEBUG "vboxadd: unloading...\n");
+    LogRelFunc(("unloading...\n"));
 
     unregister_chrdev(vbox_major, "vboxadd");
     free_resources();
     vboxadd_cmc_fini ();
     printk(KERN_DEBUG "vboxadd: unloaded\n");
+    LogRelFunc(("unloaded\n"));
 }
 
 module_init(init);
