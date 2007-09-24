@@ -2550,7 +2550,7 @@ void remR3GrowDynRange(unsigned long physaddr)
  * @param   cb          The size of the ROM.
  * @param   pvCopy      Pointer to the ROM copy.
  * @param   fShadow     Whether it's currently writable shadow ROM or normal readonly ROM.
- *                      This function will be called when ever the protection of the 
+ *                      This function will be called when ever the protection of the
  *                      shadow ROM changes (at reset and end of POST).
  */
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy, bool fShadow)
@@ -3425,7 +3425,9 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
     {
         unsigned        off = 0;
         char            szOutput[256];
-        DISCPUSTATE     Cpu = {0};
+        DISCPUSTATE     Cpu;
+
+        memset(&Cpu, 0, sizeof(Cpu));
         Cpu.mode = CPUMODE_32BIT;
 
         RTLogPrintf("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
