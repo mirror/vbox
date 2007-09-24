@@ -469,7 +469,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
 /**
  * Unblock the send thread so it can respond to a state change.
- * 
+ *
  * @returns a VBox status code.
  * @param     pDrvIns     The driver instance.
  * @param     pThread     The send thread.
@@ -478,7 +478,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMT
 {
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc;
-    
+
     rc = RTSemEventSignal(pData->SendSem);
     if (RT_FAILURE(rc))
         return rc;
@@ -636,7 +636,7 @@ static DECLCALLBACK(int) drvHostSerialReceiveThread(PPDMDRVINS pDrvIns, PPDMTHRE
 
 /**
  * Unblock the send thread so it can respond to a state change.
- * 
+ *
  * @returns a VBox status code.
  * @param     pDrvIns     The driver instance.
  * @param     pThread     The send thread.
@@ -678,6 +678,11 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init basic data members and interfaces.
      */
+#ifdef RT_OS_LINUX
+    pData->DeviceFile  = NIL_RTFILE;
+    pData->WakeupPipeR = NIL_RTFILE;
+    pData->WakeupPipeW = NIL_RTFILE;
+#endif
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvHostSerialQueryInterface;
     /* IChar. */
