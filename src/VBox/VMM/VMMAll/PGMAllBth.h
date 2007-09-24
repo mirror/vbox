@@ -1190,7 +1190,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, VBOXPDE 
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
                 else
                 {
-                    Log2(("SyncPageWorker: monitored page (%VGp) -> mark not present\n", (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL))));
+                    LogFlow(("SyncPageWorker: monitored page (%VGp) -> mark not present\n", (HCPhys & (MM_RAM_FLAGS_PHYSICAL_ALL | MM_RAM_FLAGS_VIRTUAL_ALL))));
                     PteDst.u = 0;
                 }
                 /** @todo count these two kinds. */
@@ -1205,7 +1205,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, VBOXPDE 
                  */
                 if (!PteSrc.n.u1Accessed || !PdeSrc.n.u1Accessed)
                 {
-                    Log2(("SyncPageWorker: page and or page directory not accessed -> mark not present\n"));
+                    LogFlow(("SyncPageWorker: page and or page directory not accessed -> mark not present\n"));
                     STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,AccessedPage));
                     PteDst.u = 0;
                 }
@@ -1265,7 +1265,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, VBOXPDE 
     }
     else
     {
-        Log2(("SyncPageWorker: page not present in Pte\n"));
+        LogFlow(("SyncPageWorker: page not present in Pte\n"));
         /*
          * Page not-present.
          */
