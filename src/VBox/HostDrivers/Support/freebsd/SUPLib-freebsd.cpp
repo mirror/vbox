@@ -42,7 +42,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** BSD Device name. */
+/** FreeBSD base device name. */
 #define DEVICE_NAME     "/dev/vboxdrv"
 
 
@@ -64,7 +64,15 @@ int suplibOsInit(size_t cbReserve)
     /*
      * Try open the BSD device.
      */
-    g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
+    char szDevice[sizeof(DEVICE_NAME) + 16];
+    for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
+    {
+        errno = 0;
+        RTStrPrintf(szDevice, sizeof(szDevice), DEVICE_NAME "%d", iUnit);
+        g_hDevice = open(szDevice, O_RDWR, 0);
+        if (g_hDevice >= 0 || errno != EBUSY)
+            break;
+    }
     if (g_hDevice < 0)
     {
         int rc;
@@ -76,8 +84,8 @@ int suplibOsInit(size_t cbReserve)
             case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
             default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
         }
-        LogRel(("Failed to open \"%s\", errno=%d, rc=%Vrc\n", DEVICE_NAME, errno, rc));
-        return RTErrConvertFromErrno(rc);
+        LogRel(("Failed to open \"%s\", errno=%d, rc=%Vrc\n", szDevice, errno, rc));
+        return rc;
     }
 
     /*
