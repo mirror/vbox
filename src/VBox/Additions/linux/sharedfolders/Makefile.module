@@ -117,7 +117,7 @@ ifeq ($(KERN_VERSION), 24)
 # 2.4
 #
 
-CFLAGS := -DVBOX_LINUX_2_4 $(INCL) $(KFLAGS) $(KDEBUG)
+CFLAGS := -O2 -DVBOX_LINUX_2_4 $(INCL) $(KFLAGS) $(KDEBUG)
 MODULE_EXT := o
 
 # 2.4 Module linking
