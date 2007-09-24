@@ -1442,7 +1442,10 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                     }
                 }
                 else /* MMIO or invalid page: emulated in #PF handler. */
+                {
+                    LogFlow(("PGM_GCPHYS_2_PTR %VGp failed with %Vrc\n", GCPhys, rc));
                     Assert(!pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK].n.u1Present);
+                }
             }
             else
             {
@@ -1512,6 +1515,8 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                           GCPtrPage, PdeSrc.n.u1Present, PdeSrc.n.u1Write, PdeSrc.n.u1User, (uint64_t)PdeSrc.u, GCPhys,
                           PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                 }
+                else
+                    LogFlow(("PGM_GCPHYS_2_PTR %VGp (big) failed with %Vrc\n", GCPhys, rc));
             }
             return VINF_SUCCESS;
         }
