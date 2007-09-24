@@ -97,6 +97,9 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19) && !defined(KERNEL_FC6)
         inode->i_blksize = 4096;
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,11)
+        inode->i_blkbits = 12;
+#endif
         inode->i_blocks = (info->cbObject + 4095) / 4096;
 
         sf_ftime_from_timespec (&inode->i_atime, &info->AccessTime);
