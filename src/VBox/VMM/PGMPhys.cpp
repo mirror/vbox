@@ -445,6 +445,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         LogRel(("pgmr3PhysGrowRange: VM execution resumed -> retry.\n"));
         return pgmr3PhysGrowRange(pVM, GCPhys);
     }
+    LogRel(("SUPPageAlloc %x pages failed with %Vrc\n", cPages, rc));
     return rc;
 }
 
