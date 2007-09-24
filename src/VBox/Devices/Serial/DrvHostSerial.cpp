@@ -283,7 +283,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
     termiosSetup->c_lflag = ~(ICANON | ECHO | ECHOE | ISIG);
 
     tcsetattr(pData->DeviceFile, TCSANOW, termiosSetup);
-    RTMemFree(termiosSetup);
+    RTMemTmpFree(termiosSetup);
 #elif defined(RT_OS_WINDOWS)
     comSetup = (LPDCB)RTMemTmpAllocZ(sizeof(DCB));
 
@@ -379,7 +379,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
     comSetup->EvtChar = 0;
 
     SetCommState(pData->hDeviceFile, comSetup);
-    RTMemFree(comSetup);
+    RTMemTmpFree(comSetup);
 #endif /* RT_OS_WINDOWS */
 
     return VINF_SUCCESS;
@@ -737,7 +737,6 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
 #else
 
-    pData->DeviceFile = NIL_RTFILE;
     rc = RTFileOpen(&pData->DeviceFile, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
 
 #endif
