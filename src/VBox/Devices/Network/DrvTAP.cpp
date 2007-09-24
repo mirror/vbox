@@ -1,11 +1,9 @@
+/** $Id: */
 /** @file
- *
- * VBox network devices:
- * Linux TAP network transport driver
+ * Universial TAP network transport driver.
  */
 
 /*
- *
  * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -29,21 +27,25 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #ifdef ASYNC_NET
-#include <iprt/thread.h>
-#include <iprt/asm.h>
-#include <iprt/semaphore.h>
+# include <iprt/thread.h>
+# include <iprt/asm.h>
+# include <iprt/semaphore.h>
 #endif
 
 #include <sys/ioctl.h>
 #include <sys/poll.h>
-#include <sys/fcntl.h>
+#ifdef RT_OS_SOLARIS
+# include <fcntl.h>
+#else
+# include <sys/fcntl.h>
+#endif
 #include <errno.h>
 #ifdef ASYNC_NET
-#include <unistd.h>
+# include <unistd.h>
 #endif
 
 #ifdef RT_OS_L4
-#include <l4/vboxserver/file.h>
+# include <l4/vboxserver/file.h>
 #endif
 
 #include "Builtins.h"
@@ -201,8 +203,8 @@ static DECLCALLBACK(void) drvTAPNotifyCanReceive(PPDMINETWORKCONNECTOR pInterfac
      * more receive descriptors become available, the receive thread will be stuck
      * until it times out and cause a hickup in the network traffic.
      * There is a simple, but not perfect, workaround for this problem in DrvTAPOs2.cpp.
-     * 
-     * A better solution would be to ditch the NotifyCanReceive callback and instead 
+     *
+     * A better solution would be to ditch the NotifyCanReceive callback and instead
      * change the CanReceive to do all the work. This will reduce the amount of code
      * duplication, and would permit pcnet to avoid queuing unnecessary ring-3 tasks.
      */
@@ -654,3 +656,4 @@ const PDMDRVREG g_DrvHostInterface =
     /* pfnPowerOff */
     NULL
 };
+
