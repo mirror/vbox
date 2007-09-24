@@ -858,6 +858,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	RTErrConvertFromErrno.cpp \
+	RTErrConvertToErrno.cpp \
 	string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	thread.cpp \
