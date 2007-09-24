@@ -107,240 +107,189 @@
 
 
 /** @page pg_pgmPhys PGMPhys - Physical Guest Memory Management.
- * 
- * 
+ *
+ *
  * Objectives:
- *      - Guest RAM over-commitment using memory ballooning, 
+ *      - Guest RAM over-commitment using memory ballooning,
  *        zero pages and general page sharing.
  *      - Moving or mirroring a VM onto a different physical machine.
  *
- * 
+ *
  * @subsection subsec_pgmPhys_Definitions       Definitions
- * 
- * Allocation chunk - A RTR0MemObjAllocPhysNC object and the tracking 
- * machinery assoicated with it. 
- * 
- * 
- * 
- * 
+ *
+ * Allocation chunk - A RTR0MemObjAllocPhysNC object and the tracking
+ * machinery assoicated with it.
+ *
+ *
+ *
+ *
  * @subsection subsec_pgmPhys_AllocPage         Allocating a page.
- * 
- * Initially we map *all* guest memory to the (per VM) zero page, which 
+ *
+ * Initially we map *all* guest memory to the (per VM) zero page, which
  * means that none of the read functions will cause pages to be allocated.
- * 
+ *
  * Exception, access bit in page tables that have been shared. This must
- * be handled, but we must also make sure PGMGst*Modify doesn't make 
+ * be handled, but we must also make sure PGMGst*Modify doesn't make
  * unnecessary modifications.
- * 
+ *
  * Allocation points:
  *      - PGMPhysWriteGCPhys and PGMPhysWrite.
  *      - Replacing a zero page mapping at \#PF.
  *      - Replacing a shared page mapping at \#PF.
  *      - ROM registration (currently MMR3RomRegister).
  *      - VM restore (pgmR3Load).
- * 
- * For the first three it would make sense to keep a few pages handy 
- * until we've reached the max memory commitment for the VM. 
- * 
- * For the ROM registration, we know exactly how many pages we need 
- * and will request these from ring-0. For restore, we will save 
+ *
+ * For the first three it would make sense to keep a few pages handy
+ * until we've reached the max memory commitment for the VM.
+ *
+ * For the ROM registration, we know exactly how many pages we need
+ * and will request these from ring-0. For restore, we will save
  * the number of non-zero pages in the saved state and allocate
  * them up front. This would allow the ring-0 component to refuse
  * the request if the isn't sufficient memory available for VM use.
- * 
- * Btw. for both ROM and restore allocations we won't be requiring 
+ *
+ * Btw. for both ROM and restore allocations we won't be requiring
  * zeroed pages as they are going to be filled instantly.
  *
  *
  * @subsection subsec_pgmPhys_FreePage          Freeing a page
- * 
+ *
  * There are a few points where a page can be freed:
  *      - After being replaced by the zero page.
  *      - After being replaced by a shared page.
  *      - After being ballooned by the guest additions.
  *      - At reset.
  *      - At restore.
- * 
+ *
  * When freeing one or more pages they will be returned to the ring-0
  * component and replaced by the zero page.
  *
  * The reasoning for clearing out all the pages on reset is that it will
  * return us to the exact same state as on power on, and may thereby help
- * us reduce the memory load on the system. Further it might have a 
+ * us reduce the memory load on the system. Further it might have a
  * (temporary) positive influence on memory fragmentation (@see subsec_pgmPhys_Fragmentation).
- * 
- * On restore, as mention under the allocation topic, pages should be 
+ *
+ * On restore, as mention under the allocation topic, pages should be
  * freed / allocated depending on how many is actually required by the
  * new VM state. The simplest approach is to do like on reset, and free
  * all non-ROM pages and then allocate what we need.
- * 
+ *
  * A measure to prevent some fragmentation, would be to let each allocation
  * chunk have some affinity towards the VM having allocated the most pages
  * from it. Also, try make sure to allocate from allocation chunks that
  * are almost full. Admittedly, both these measures might work counter to
- * our intentions and its probably not worth putting a lot of effort, 
+ * our intentions and its probably not worth putting a lot of effort,
  * cpu time or memory into this.
- * 
- * 
+ *
+ *
  * @subsection subsec_pgmPhys_SharePage         Sharing a page
- * 
- * The basic idea is that there there will be a idle priority kernel 
- * thread walking the non-shared VM pages hashing them and looking for 
- * pages with the same checksum. If such pages are found, it will compare 
+ *
+ * The basic idea is that there there will be a idle priority kernel
+ * thread walking the non-shared VM pages hashing them and looking for
+ * pages with the same checksum. If such pages are found, it will compare
  * them byte-by-byte to see if they actually are identical. If found to be
- * identical it will allocate a shared page, copy the content, check that 
+ * identical it will allocate a shared page, copy the content, check that
  * the page didn't change while doing this, and finally request both the
- * VMs to use the shared page instead. If the page is all zeros (special 
- * checksum and byte-by-byte check) it will request the VM that owns it 
+ * VMs to use the shared page instead. If the page is all zeros (special
+ * checksum and byte-by-byte check) it will request the VM that owns it
  * to replace it with the zero page.
- * 
+ *
  * To make this efficient, we will have to make sure not to try share a page
  * that will change its contents soon. This part requires the most work.
- * A simple idea would be to request the VM to write monitor the page for 
+ * A simple idea would be to request the VM to write monitor the page for
  * a while to make sure it isn't modified any time soon. Also, it may
  * make sense to skip pages that are being write monitored since this
- * information is readily available to the thread if it works on the 
+ * information is readily available to the thread if it works on the
  * per-VM guest memory structures (presently called PGMRAMRANGE).
- * 
- * 
+ *
+ *
  * @subsection subsec_pgmPhys_Fragmentation     Fragmentation Concerns and Counter Measures
- * 
+ *
  * The pages are organized in allocation chunks in ring-0, this is a necessity
- * if we wish to have an OS agnostic approach to this whole thing. (On Linux we 
+ * if we wish to have an OS agnostic approach to this whole thing. (On Linux we
  * could easily work on a page-by-page basis if we liked. Whether this is possible
- * or efficient on NT I don't quite know.) Fragmentation within these chunks may 
+ * or efficient on NT I don't quite know.) Fragmentation within these chunks may
  * become a problem as part of the idea here is that we wish to return memory to
- * the host system. 
- * 
+ * the host system.
+ *
  * For instance, starting two VMs at the same time, they will both allocate the
- * guest memory on-demand and if permitted their page allocations will be 
- * intermixed. Shut down one of the two VMs and it will be difficult to return 
- * any memory to the host system because the page allocation for the two VMs are 
+ * guest memory on-demand and if permitted their page allocations will be
+ * intermixed. Shut down one of the two VMs and it will be difficult to return
+ * any memory to the host system because the page allocation for the two VMs are
  * mixed up in the same allocation chunks.
- * 
- * To further complicate matters, when pages are freed because they have been 
+ *
+ * To further complicate matters, when pages are freed because they have been
  * ballooned or become shared/zero the whole idea is that the page is supposed
  * to be reused by another VM or returned to the host system. This will cause
  * allocation chunks to contain pages belonging to different VMs and prevent
  * returning memory to the host when one of those VM shuts down.
- * 
- * The only way to really deal with this problem is to move pages. This can 
- * either be done at VM shutdown and or by the idle priority worker thread 
+ *
+ * The only way to really deal with this problem is to move pages. This can
+ * either be done at VM shutdown and or by the idle priority worker thread
  * that will be responsible for finding sharable/zero pages. The mechanisms
- * involved for coercing a VM to move a page (or to do it for it) will be 
+ * involved for coercing a VM to move a page (or to do it for it) will be
  * the same as when telling it to share/zero a page.
  *
- * 
+ *
  * @subsection subsec_pgmPhys_Tracking      Tracking Structures And Their Cost
- * 
- * There's a difficult balance between keeping the per-page tracking structures 
- * (global and guest page) easy to use and keeping them from eating too much 
+ *
+ * There's a difficult balance between keeping the per-page tracking structures
+ * (global and guest page) easy to use and keeping them from eating too much
  * memory. We have limited virtual memory resources available when operating in
- * 32-bit kernel space (on 64-bit there'll it's quite a different story). The 
+ * 32-bit kernel space (on 64-bit there'll it's quite a different story). The
  * tracking structures will be attemted designed such that we can deal with up
  * to 32GB of memory on a 32-bit system and essentially unlimited on 64-bit ones.
- * 
- * 
+ *
+ *
  * @subsubsection subsubsec_pgmPhys_Tracking_Kernel     Kernel Space
- * 
- * The allocation chunks are of fixed sized, the size defined at build time. 
- * Each chunk is given an unquie ID. Each page can be addressed by
- * (idChunk << CHUNK_SHIFT) | iPage, where CHUNK_SHIFT is log2(cbChunk / PAGE_SIZE). 
- * Meaning that each page have an unique ID, a sort of virtual page frame number
- * if you like, so that a page can be referenced to in an efficient manner. 
- * No surprise, the allocation chunks are organized in an AVL tree with 
- * their IDs being the key.
- * 
- * The physical address of each page in an allocation chunk is maintained by 
- * the RTR0MEMOBJ and obtained using RTR0MemObjGetPagePhysAddr. There is no 
- * need to duplicate this information unnecessarily. 
- * 
- * We wish to maintain a reference to the VM owning the page. For the purposes
- * of defragmenting allocation chunks, it would make sense to keep track of 
- * which page within the VM that it's being used as, although this will 
- * obviously make the handy pages a wee more work to realize. For shared 
- * pages we need a reference count so we know when to free the page. But tracking
- * which VMs using shared pages will be too complicated and expensive, so we'll
- * just forget about it. And finally, free pages needs to be chained somehow,
- * so we can do allocations in an efficient manner.
- * 
- * Putting shared pages in dedicated allocation chunks will simplify matters
- * quite a bit. It will more or less eliminate the problem with defragmenting
- * shared pages, but arranging it so that we will never encounter shared pages
- * and normal pages in the same allocation chunks. And it will I think permit
- * us to get away with a 32-bit field for each page.
- * 
- * We'll chain the free pages using this field to indicate the index of the 
- * next page. (I'm undecided whether this chain should be on a per-chunk 
- * level or not, it depends a bit on whether it's desirable to keep chunks
- * with free pages in a priority list by free page count (ascending) in order 
- * to maximize the number of full chunks.) In any case, there'll be two free 
- * lists, one for shared pages and one for normal pages.
- * 
- * Shared pages that have been allocated will use the 32-bit field for keeping
- * the reference counter.
- * 
- * Normal pages that have been allocated will use the first 24 bits for guest
- * page frame number (i.e. shift by PAGE_SHIFT and you'll have the physical 
- * address, all 24-bit set means unknown or out of range). The top 8 bits will
- * be used as VM handle index - we assign each VM a unique handle [0..255] for
- * this purpose. This implies a max of 256 VMs and 64GB of base RAM per VM. 
- * Neither limits should cause any trouble for the time being.
- * 
- * The per page cost in kernel space is 32-bit plus whatever RTR0MEMOBJ 
- * entails. In addition there is the chunk cost of approximately
- * (sizeof(RT0MEMOBJ) + sizof(CHUNK)) / 2^CHUNK_SHIFT bytes per page.
- * 
- * On Windows the per page RTR0MEMOBJ cost is 32-bit on 32-bit windows 
- * and 64-bit on 64-bit windows (a PFN_NUMBER in the MDL). So, 64-bit per page.
- * The cost on Linux is identical, but here it's because of sizeof(struct page *).
- * 
+ *
+ * @see pg_GMM
  *
  * @subsubsection subsubsec_pgmPhys_Tracking_PerVM      Per-VM
- * 
- * Fixed info is the physical address of the page (HCPhys) and the page id 
+ *
+ * Fixed info is the physical address of the page (HCPhys) and the page id
  * (described above). Theoretically we'll need 48(-12) bits for the HCPhys part.
  * Today we've restricting ourselves to 40(-12) bits because this is the current
- * restrictions of all AMD64 implementations (I think Barcelona will up this 
- * to 48(-12) bits, not that it really matters) and I needed the bits for 
+ * restrictions of all AMD64 implementations (I think Barcelona will up this
+ * to 48(-12) bits, not that it really matters) and I needed the bits for
  * tracking mappings of a page. 48-12 = 36. That leaves 28 bits, which means a
  * decent range for the page id: 2^(28+12) = 1024TB.
- * 
- * In additions to these, we'll have to keep maintaining the page flags as we 
- * currently do. Although it wouldn't harm to optimize these quite a bit, like 
+ *
+ * In additions to these, we'll have to keep maintaining the page flags as we
+ * currently do. Although it wouldn't harm to optimize these quite a bit, like
  * for instance the ROM shouldn't depend on having a write handler installed
  * in order for it to become read-only. A RO/RW bit should be considered so
- * that the page syncing code doesn't have to mess about checking multiple 
+ * that the page syncing code doesn't have to mess about checking multiple
  * flag combinations (ROM || RW handler || write monitored) in order to
- * figure out how to setup a shadow PTE. But this of course, is second 
+ * figure out how to setup a shadow PTE. But this of course, is second
  * priority at present. Current this requires 12 bits, but could probably
  * be optimized to ~8.
- * 
- * Then there's the 24 bits used to track which shadow page tables are 
- * currently mapping a page for the purpose of speeding up physical 
- * access handlers, and thereby the page pool cache. More bit for this 
+ *
+ * Then there's the 24 bits used to track which shadow page tables are
+ * currently mapping a page for the purpose of speeding up physical
+ * access handlers, and thereby the page pool cache. More bit for this
  * purpose wouldn't hurt IIRC.
- * 
+ *
  * Then there is a new bit in which we need to record what kind of page
- * this is, shared, zero, normal or write-monitored-normal. This'll 
- * require 2 bits. One bit might be needed for indicating whether a 
+ * this is, shared, zero, normal or write-monitored-normal. This'll
+ * require 2 bits. One bit might be needed for indicating whether a
  * write monitored page has been written to. And yet another one or
  * two for tracking migration status. 3-4 bits total then.
- * 
+ *
  * Whatever is left will can be used to record the sharabilitiy of a
  * page. The page checksum will not be stored in the per-VM table as
- * the idle thread will not be permitted to do modifications to it. 
+ * the idle thread will not be permitted to do modifications to it.
  * It will instead have to keep its own working set of potentially
  * shareable pages and their check sums and stuff.
- * 
- * For the present we'll keep the current packing of the 
+ *
+ * For the present we'll keep the current packing of the
  * PGMRAMRANGE::aHCPhys to keep the changes simple, only of course,
- * we'll have to change it to a struct with a total of 128-bits at 
+ * we'll have to change it to a struct with a total of 128-bits at
  * our disposal.
- * 
+ *
  * The initial layout will be like this:
  * @verbatim
-    RTHCPHYS HCPhys;            The current stuff.       
+    RTHCPHYS HCPhys;            The current stuff.
         63:40                   Current shadow PT tracking stuff.
         39:12                   The physical page frame number.
         11:0                    The current flags.
@@ -350,10 +299,10 @@
     uint32_t u1Reserved : 1;    Reserved for later.
     uint32_t u32Reserved;       Reserved for later, mostly sharing stats.
  @endverbatim
- * 
+ *
  * The final layout will be something like this:
  * @verbatim
-    RTHCPHYS HCPhys;            The current stuff.       
+    RTHCPHYS HCPhys;            The current stuff.
         63:48                   High page id (12+).
         47:12                   The physical page frame number.
         11:0                    Low page id.
@@ -366,13 +315,13 @@
     uint32_t u20Reserved : 20;  Reserved for later, mostly sharing stats.
     uint32_t u32Tracking;       The shadow PT tracking stuff, roughly.
  @endverbatim
- * 
- * Cost wise, this means we'll double the cost for guest memory. There isn't anyway 
+ *
+ * Cost wise, this means we'll double the cost for guest memory. There isn't anyway
  * around that I'm afraid. It means that the cost of dealing out 32GB of memory
- * to one or more VMs is: (32GB >> PAGE_SHIFT) * 16 bytes, or 128MBs. Or another 
+ * to one or more VMs is: (32GB >> PAGE_SHIFT) * 16 bytes, or 128MBs. Or another
  * example, the VM heap cost when assigning 1GB to a VM will be: 4MB.
- * 
- * A couple of cost examples for the total cost per-VM + kernel. 
+ *
+ * A couple of cost examples for the total cost per-VM + kernel.
  * 32-bit Windows and 32-bit linux:
  *      1GB guest ram, 256K pages:  4MB +  2MB(+) =   6MB
  *      4GB guest ram, 1M pages:   16MB +  8MB(+) =  24MB
@@ -381,13 +330,13 @@
  *      1GB guest ram, 256K pages:  4MB +  3MB(+) =   7MB
  *      4GB guest ram, 1M pages:   16MB + 12MB(+) =  28MB
  *     32GB guest ram, 8M pages:  128MB + 96MB(+) = 224MB
- * 
- * 
+ *
+ *
  * @subsection subsec_pgmPhys_Serializing       Serializing Access
- * 
+ *
  * Initially, we'll try a simple scheme:
- * 
- *      - The per-VM RAM tracking structures (PGMRAMRANGE) is only modified 
+ *
+ *      - The per-VM RAM tracking structures (PGMRAMRANGE) is only modified
  *        by the EMT thread of that VM while in the pgm critsect.
  *      - Other threads in the VM process that needs to make reliable use of
  *        the per-VM RAM tracking structures will enter the critsect.
@@ -396,28 +345,28 @@
  *      - The idle thread (and similar threads) doesn't not need 100% reliable
  *        data when performing it tasks as the EMT thread will be the one to
  *        do the actual changes later anyway. So, as long as it only accesses
- *        the main ram range, it can do so by somehow preventing the VM from 
- *        being destroyed while it works on it... 
- * 
+ *        the main ram range, it can do so by somehow preventing the VM from
+ *        being destroyed while it works on it...
+ *
  *      - The over-commitment management, including the allocating/freeing
  *        chunks, is serialized by a ring-0 mutex lock (a fast one since the
  *        more mundane mutex implementation is broken on Linux).
- *      - A separeate mutex is protecting the set of allocation chunks so 
- *        that pages can be shared or/and freed up while some other VM is 
- *        allocating more chunks. This mutex can be take from under the other 
+ *      - A separeate mutex is protecting the set of allocation chunks so
+ *        that pages can be shared or/and freed up while some other VM is
+ *        allocating more chunks. This mutex can be take from under the other
  *        one, but not the otherway around.
- * 
- * 
+ *
+ *
  * @subsection subsec_pgmPhys_Request           VM Request interface
- * 
+ *
  * When in ring-0 it will become necessary to send requests to a VM so it can
  * for instance move a page while defragmenting during VM destroy. The idle
- * thread will make use of this interface to request VMs to setup shared 
+ * thread will make use of this interface to request VMs to setup shared
  * pages and to perform write monitoring of pages.
- * 
- * I would propose an interface similar to the current VMReq interface, similar 
- * in that it doesn't require locking and that the one sending the request may 
- * wait for completion if it wishes to. This shouldn't be very difficult to 
+ *
+ * I would propose an interface similar to the current VMReq interface, similar
+ * in that it doesn't require locking and that the one sending the request may
+ * wait for completion if it wishes to. This shouldn't be very difficult to
  * realize.
  *
  * The requests themselves are also pretty simple. They are basically:
@@ -425,56 +374,56 @@
  *      -# Do the update.
  *      -# Update all shadow page tables involved with the page.
  *
- * The 3rd step is identical to what we're already doing when updating a 
+ * The 3rd step is identical to what we're already doing when updating a
  * physical handler, see pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs.
- * 
- * 
- * 
+ *
+ *
+ *
  * @section sec_pgmPhys_MappingCaches   Mapping Caches
- * 
- * In order to be able to map in and out memory and to be able to support 
+ *
+ * In order to be able to map in and out memory and to be able to support
  * guest with more RAM than we've got virtual address space, we'll employing
  * a mapping cache. There is already a tiny one for GC (see PGMGCDynMapGCPageEx)
  * and we'll create a similar one for ring-0 unless we decide to setup a dedicate
  * memory context for the HWACCM execution.
- * 
- * 
+ *
+ *
  * @subsection subsec_pgmPhys_MappingCaches_R3  Ring-3
- * 
+ *
  * We've considered implementing the ring-3 mapping cache page based but found
- * that this was bother some when one had to take into account TLBs+SMP and 
- * portability (missing the necessary APIs on several platforms). There were 
- * also some performance concerns with this approach which hadn't quite been 
+ * that this was bother some when one had to take into account TLBs+SMP and
+ * portability (missing the necessary APIs on several platforms). There were
+ * also some performance concerns with this approach which hadn't quite been
  * worked out.
- * 
+ *
  * Instead, we'll be mapping allocation chunks into the VM process. This simplifies
- * matters greatly quite a bit since we don't need to invent any new ring-0 stuff, 
+ * matters greatly quite a bit since we don't need to invent any new ring-0 stuff,
  * only some minor RTR0MEMOBJ mapping stuff. The main concern here is that mapping
  * compared to the previous idea is that mapping or unmapping a 1MB chunk is more
- * costly than a single page, although how much more costly is uncertain. We'll 
+ * costly than a single page, although how much more costly is uncertain. We'll
  * try address this by using a very big cache, preferably bigger than the actual
- * VM RAM size if possible. The current VM RAM sizes should give some idea for 
- * 32-bit boxes, while on 64-bit we can probably get away with employing an 
+ * VM RAM size if possible. The current VM RAM sizes should give some idea for
+ * 32-bit boxes, while on 64-bit we can probably get away with employing an
  * unlimited cache.
  *
  * The cache have to parts, as already indicated, the ring-3 side and the
- * ring-0 side. 
- * 
- * The ring-0 will be tied to the page allocator since it will operate on the 
- * memory objects it contains. It will therefore require the first ring-0 mutex 
+ * ring-0 side.
+ *
+ * The ring-0 will be tied to the page allocator since it will operate on the
+ * memory objects it contains. It will therefore require the first ring-0 mutex
  * discussed in @ref subsec_pgmPhys_Serializing. We
- * some double house keeping wrt to who has mapped what I think, since both 
+ * some double house keeping wrt to who has mapped what I think, since both
  * VMMR0.r0 and RTR0MemObj will keep track of mapping relataions
- * 
- * The ring-3 part will be protected by the pgm critsect. For simplicity, we'll 
- * require anyone that desires to do changes to the mapping cache to do that 
- * from within this critsect. Alternatively, we could employ a separate critsect 
+ *
+ * The ring-3 part will be protected by the pgm critsect. For simplicity, we'll
+ * require anyone that desires to do changes to the mapping cache to do that
+ * from within this critsect. Alternatively, we could employ a separate critsect
  * for serializing changes to the mapping cache as this would reduce potential
  * contention with other threads accessing mappings unrelated to the changes
  * that are in process. We can see about this later, contention will show
  * up in the statistics anyway, so it'll be simple to tell.
  *
- * The organization of the ring-3 part will be very much like how the allocation 
+ * The organization of the ring-3 part will be very much like how the allocation
  * chunks are organized in ring-0, that is in an AVL tree by chunk id. To avoid
  * having to walk the tree all the time, we'll have a couple of lookaside entries
  * like in we do for I/O ports and MMIO in IOM.
@@ -485,39 +434,39 @@
  *      -# Calc the Allocation Chunk ID from the Page ID.
  *      -# Check the lookaside entries and then the AVL tree for the Chunk ID.
  *         If not found in cache:
- *              -# Call ring-0 and request it to be mapped and supply 
+ *              -# Call ring-0 and request it to be mapped and supply
  *                 a chunk to be unmapped if the cache is maxed out already.
- *              -# Insert the new mapping into the AVL tree (id + R3 address). 
+ *              -# Insert the new mapping into the AVL tree (id + R3 address).
  *      -# Update the relevant lookaside entry and return the mapping address.
  *      -# Do the read/write according to monitoring flags and everything.
  *      -# Leave the critsect.
  *
- * 
+ *
  * @section sec_pgmPhys_Fallback            Fallback
- * 
+ *
  * Current all the "second tier" hosts will not support the RTR0MemObjAllocPhysNC
  * API and thus require a fallback.
- * 
+ *
  * So, when RTR0MemObjAllocPhysNC returns VERR_NOT_SUPPORTED the page allocator
  * will return to the ring-3 caller (and later ring-0) and asking it to seed
  * the page allocator with some fresh pages (VERR_GMM_SEED_ME). Ring-3 will
- * then perform an SUPPageAlloc(cbChunk >> PAGE_SHIFT) call and make a 
+ * then perform an SUPPageAlloc(cbChunk >> PAGE_SHIFT) call and make a
  * "SeededAllocPages" call to ring-0.
- * 
+ *
  * The first time ring-0 sees the VERR_NOT_SUPPORTED failure it will disable
  * all page sharing (zero page detection will continue). It will also force
- * all allocations to come from the VM which seeded the page. Both these 
+ * all allocations to come from the VM which seeded the page. Both these
  * measures are taken to make sure that there will never be any need for
  * mapping anything into ring-3 - everything will be mapped already.
  *
- * Whether we'll continue to use the current MM locked memory management 
+ * Whether we'll continue to use the current MM locked memory management
  * for this I don't quite know (I'd prefer not to and just ditch that all
  * togther), we'll see what's simplest to do.
- * 
- * 
- * 
+ *
+ *
+ *
  * @section sec_pgmPhys_Changes             Changes
- * 
+ *
  * Breakdown of the changes involved?
  */
 
@@ -924,7 +873,7 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /* 
+    /*
      * Initialize the PGM critical section and flush the phys TLBs
      */
     rc = PDMR3CritSectInit(pVM, &pVM->pgm.s.CritSect, "PGM");
@@ -2045,8 +1994,8 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
                     "State    : %VGp-%VGp %VGp bytes %s\n",
                     pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvHC ? "bits" : "nobits",
                     GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits"));
-            /* 
-             * If we're loading a state for debugging purpose, don't make a fuss if 
+            /*
+             * If we're loading a state for debugging purpose, don't make a fuss if
              * the MMIO[2] and ROM stuff isn't 100% right, just skip the mismatches.
              */
             if (    SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT

@@ -30,6 +30,7 @@
 #include <VBox/dis.h>
 #include <VBox/dbgf.h>
 #include <VBox/log.h>
+#include <VBox/gmm.h>
 #include <iprt/avl.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -549,17 +550,6 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
                                         do { (pPage)->HCPhys = (((pPage)->HCPhys) & UINT64_C(0xffff000000000fff)) \
                                                              | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
-
-/** The chunk shift. (2^20 = 1 MB) */
-#define GMM_CHUNK_SHIFT                 20
-/** The allocation chunk size. */
-#define GMM_CHUNK_SIZE                  (1U << GMM_CHUNK_SHIFT)
-/** The shift factor for converting a page id into a chunk id. */
-#define GMM_CHUNKID_SHIFT               (GMM_CHUNK_SHIFT - PAGE_SHIFT)
-/** The NIL Chunk ID value. */
-#define NIL_GMM_CHUNKID                 0
-/** The NIL Page ID value. */
-#define NIL_GMM_PAGEID                  0
 
 /**
  * Get the Page ID.
