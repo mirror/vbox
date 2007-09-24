@@ -80,6 +80,12 @@ typedef struct DRVHOSTSERIAL
     /** Send event semephore */
     RTSEMEVENT                  SendSem;
 
+#ifdef RT_OS_LINUX
+    /** The receive thread wakeup pipe. */
+    RTFILE                      WakeupPipeR;
+    RTFILE                      WakeupPipeW;
+#endif
+
     /** the device path */
     char                        *pszDevicePath;
     /** the device handle */
@@ -99,7 +105,12 @@ typedef struct DRVHOSTSERIAL
 /** Converts a pointer to DRVCHAR::IChar to a PDRVHOSTSERIAL. */
 #define PDMICHAR_2_DRVHOSTSERIAL(pInterface) ( (PDRVHOSTSERIAL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTSERIAL, IChar)) )
 
-
+#ifdef RT_OS_LINUX
+/** String written to the wakeup pipe. */
+#define WAKE_UP_STRING      "WakeUp!"
+/** Length of the string written. */
+#define WAKE_UP_STRING_LEN  ( sizeof (WAKE_UP_STRING) - 1 )
+#endif
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -444,14 +455,29 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
             size_t        cbRead;
 
 #ifdef RT_OS_LINUX
-            struct pollfd pfd;
+            struct pollfd pfd[2];
 
-            pfd.fd = pData->DeviceFile;
-            pfd.events = POLLIN;
+            pfd[0].fd = pData->DeviceFile;
+            pfd[0].events = POLLIN;
+            pfd[1].fd = pData->WakeupPipeR;
+            pfd[1].events = POLLIN | POLLERR | POLLHUP;
 
-            rc = poll(&pfd, 1, -1);
+            rc = poll(&pfd[0], 2, -1);
+
             if (rc < 0)
                 break;
+
+            if (rc > 0)
+            {
+                if (pfd[1].revents & POLLIN)
+                {
+                    /* Empty the pipe. */
+                    char szBuf[WAKE_UP_STRING_LEN];
+                    rc = RTFileRead (pData->WakeupPipeR, szBuf, sizeof (szBuf), NULL);
+                    AssertRC (rc);
+                    break;
+                }
+            }
 #elif defined(RT_OS_WINDOWS)
             BOOL retval;
             DWORD dwEventMask = EV_RXCHAR;
@@ -522,6 +548,10 @@ static DECLCALLBACK(int) drvHostSerialReceiveLoop(RTTHREAD ThreadSelf, void *pvU
 static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+#ifdef RT_OS_LINUX
+    int filedes[2];
+#endif
+
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     /*
@@ -578,6 +608,12 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* Set to non blocking I/O */
 #ifdef RT_OS_LINUX
     fcntl(pData->DeviceFile, F_SETFL, O_NONBLOCK);
+    /* Create the wakeup pipe. */
+    if (!pipe(filedes))
+    {
+        pData->WakeupPipeR = filedes[0];
+        pData->WakeupPipeW = filedes[1];
+    }
 #elif defined(RT_OS_WINDOWS)
     /* Set the COMMTIMEOUTS to get non blocking I/O */
     COMMTIMEOUTS comTimeout;
@@ -628,13 +664,21 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTSERIAL     pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
+    int rc;
 
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
     ASMAtomicXchgBool(&pData->fShutdown, true);
+
+#ifdef RT_OS_LINUX
+    /* Notify the receive thread that we want to shutdown. */
+    rc = RTFileWrite (pData->WakeupPipeW, WAKE_UP_STRING, WAKE_UP_STRING_LEN, NULL);
+    if (VBOX_SUCCESS (rc))
+        RTFileFlush (pData->WakeupPipeW);
+#endif
     if (pData->ReceiveThread != NIL_RTTHREAD)
     {
-        int rc = RTThreadWait(pData->ReceiveThread, 15000, NULL);
+        rc = RTThreadWait(pData->ReceiveThread, 15000, NULL);
         if (RT_FAILURE(rc))
             LogRel(("HostSerial%d: receive thread did not terminate (rc=%Rrc)\n", pDrvIns->iInstance, rc));
         pData->ReceiveThread = NIL_RTTHREAD;
@@ -654,6 +698,13 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
             LogRel(("HostSerial%d: send thread did not terminate (rc=%Rrc)\n", pDrvIns->iInstance, rc));
         pData->SendThread = NIL_RTTHREAD;
     }
+
+#ifdef RT_OS_LINUX
+    RTFileClose(pData->WakeupPipeR);
+    RTFileClose(pData->WakeupPipeW);
+#endif
+
+    RTFileClose(pData->DeviceFile);
 }
 
 /**
