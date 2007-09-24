@@ -247,7 +247,7 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
                             GipMapReq.u.Out.pGipR3 = NULL;
                             rc = suplibOsIOCtl(SUP_IOCTL_GIP_MAP, &GipMapReq, SUP_IOCTL_GIP_MAP_SIZE);
                             if (RT_SUCCESS(rc))
-                                rc = pFuncsReq->Hdr.rc;
+                                rc = GipMapReq.Hdr.rc;
                             if (RT_SUCCESS(rc))
                             {
                                 AssertRelease(GipMapReq.u.Out.pGipR3->u32Magic == SUPGLOBALINFOPAGE_MAGIC);
