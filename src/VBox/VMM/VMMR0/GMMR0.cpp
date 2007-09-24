@@ -177,7 +177,7 @@ typedef union GMMPAGE
         /** The guest page frame number. (Max addressable: 2 ^ 44) */
         uint32_t    pfn;
         /** The GVM handle. (64K VMs) */
-        uint32_t    iGVM : 16;
+        uint32_t    hGVM : 16;
         /** Reserved. */
         uint32_t    u16Reserved : 14;
         /** The page state. */
@@ -189,7 +189,7 @@ typedef union GMMPAGE
     {
         /** The reference count. */
         uint32_t    cRefs;
-        /** Reserved. Checksum or something? Two iGVMs for forking? */
+        /** Reserved. Checksum or something? Two hGVMs for forking? */
         uint32_t    u30Reserved : 30;
         /** The page state. */
         uint32_t    u2State : 2;
@@ -221,7 +221,7 @@ typedef union GMMPAGE
         /** The guest page frame number. (Max addressable: 2 ^ 36) */
         uint32_t    pfn : 24;
         /** The GVM handle. (127 VMs) */
-        uint32_t    iGVM : 7;
+        uint32_t    hGVM : 7;
         /** The top page state bit, MBZ. */
         uint32_t    fZero : 1;
     } Private;
@@ -338,7 +338,7 @@ typedef struct GMMCHUNK
     /** The GVM handle of the VM that first allocated pages from this chunk, this
      * is used as a preference when there are several chunks to choose from.
      * When in legacy mode this isn't a preference any longer. */
-    uint16_t        iGVM;
+    uint16_t        hGVM;
     /** The number of private pages. */
     uint16_t        cPrivate;
     /** The number of shared pages. */
@@ -395,6 +395,8 @@ typedef GMMCHUNKFREESET *PGMMCHUNKFREESET;
  */
 typedef struct GMM
 {
+    /** Magic / eye catcher. GMM_MAGIC */
+    uint32_t            u32Magic;
     /** The fast mutex protecting the GMM.
      * More fine grained locking can be implemented later if necessary. */
     RTSEMFASTMUTEX      Mtx;
@@ -415,5 +417,173 @@ typedef struct GMM
 } GMM;
 /** Pointer to the GMM instance. */
 typedef GMM *PGMM;
+
+/** The value of GMM::u32Magic (Katsuhiro Otomo). */
+#define GMM_MAGIC       0x19540414
+
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static DECLCALLBACK int gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
+
+
+
+/**
+ * Initializes the GMM component.
+ *
+ * This is called when the VMMR0.r0 module is loaded and protected by the
+ * loader semaphore.
+ *
+ * @returns VBox status code.
+ */
+GMMR0DECL(int) GMMR0Init(void)
+{
+    LogFlow(("GMMInit:\n"));
+
+    /*
+     * Allocate the instance data and the lock(s).
+     */
+    PGMM pGMM = (PGMM)RTMemAllocZ(sizeof(*pGMM));
+    if (!pGMM)
+        return VERR_NO_MEMORY;
+    pGMM->u32Magic = GMM_MAGIC;
+    for (unsigned i = 0; i < RT_ELEMENTS(pGMM->ChunkTLB.aEntries); i++)
+        pGMM->ChunkTLB.aEntries[i].idChunk = NIL_GMM_CHUNKID;
+
+    int rc = RTSemFastMutexCreate(&pGMM->Mtx);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Check and see if RTR0MemObjAllocPhysNC works.
+         */
+        RTR0MEMOBJ MemObj;
+        rc = RTR0MemObjAllocPhysNC(&MemObj, _64K, NIL_RTHCPHYS);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTR0MemObjFree(MemObj, true);
+            AssertRC(rc);
+        }
+        else if (rc == VERR_NOT_SUPPORTED)
+            pGMM->fLegacyMode = true;
+        else
+            SUPR0Printf("GMMR0Init: RTR0MemObjAllocPhysNC(,64K,Any) -> %d!\n", rc);
+
+        g_pGMM = pGMM;
+        LogFlow(("GMMInit: pGMM=%p fLegacy=%RTbool\n", pGMM, pGMM->fLegacyMode));
+        return VINF_SUCCESS;
+    }
+
+    RTMemFree(pGMM);
+    SUPR0Printf("GMMR0Init: failed! rc=%d\n", rc);
+    return rc;
+}
+
+
+/**
+ * Terminates the GMM component.
+ */
+GMMR0DECL(void) GMMR0Term(void)
+{
+    LogFlow(("GMMTerm:\n"));
+
+    /*
+     * Take care / be paranoid...
+     */
+    PGMM pGMM = g_pGMM;
+    if (!VALID_PTR(pGMM))
+        return;
+    if (pGMM->u32Magic != GMM_MAGIC)
+    {
+        SUPR0Printf("GMMR0Term: u32Magic=%#x\n", pGMM->u32Magic);
+        return;
+    }
+
+    /*
+     * Undo what init did and free any resources we've acquired.
+     */
+    /* Destroy the fundamentals. */
+    g_pGMM = NULL;
+    pGMM->u32Magic++;
+    RTSemEventDestroy(&pGMM->Mtx);
+    pGMM->Mtx = NIL_RTSEMFASTMUTEX;
+
+    /* free any chunks still hanging around. */
+    RTAvlU32Destroy(pGMM->Chunks, gmmR0TermDestroyChunk, pGMM);
+
+    /* finally the instance data itself. */
+    RTMemFree(pGMM);
+    LogFlow(("GMMTerm: done\n"));
+}
+
+
+/**
+ * RTAvlU32Destroy callback.
+ *
+ * @returns 0
+ * @param   pNode   The node to destroy.
+ * @param   pvGMM   The GMM handle.
+ */
+static DECLCALLBACK int gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM)
+{
+    PGMMCHUNK pChunk = (PGMMCHUNK) pNode;
+
+    if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
+        SUPR0Printf("GMMR0Term: %p/%#x: cFree=%d cPrivate=%d cShared=%d cMappings=%d\n", pChunk,
+                    pChunk->Core.Key, pChunk->cFree, pChunk->cPrivate, pChunk->cShared, pChunk->cMappings);
+
+    int rc = RTR0MemObjFree(pChunk->MemObj, true /* fFreeMappings */);
+    if (RT_FAILURE(rc))
+    {
+        SUPR0Printf("GMMR0Term: %p/%#x: RTRMemObjFree(%p,true) -> %d (cMappings=%d)\n", pChunk,
+                    pChunk->Core.Key, pChunk->MemObj, rc, pChunk->cMappings);
+        AssertRC(rc);
+    }
+    pChunk->MemObj = NIL_RTR0MEMOBJ;
+
+    RTMemFree(pChunk->paMappings);
+    pChunk->paMappings = NULL;
+
+    RTMemFree(pChunk);
+    NOREF(pvGMM);
+    return 0;
+}
+
+
+/**
+ * Cleans up when a VM is terminated.
+ *
+ * @param   pVM     The VM structure.
+ * @param   hGVM    The global VM handle.
+ */
+GMMR0DECL(void) GMMR0CleanupVM(PVM pVM, uint32_t hGVM)
+{
+    LogFlow(("GMMR0CleanupVM: pVM=%p hGVM=%#x\n", pVM, hGVM));
+
+    PGMM pGMM = g_pGMM;
+    if (    !VALID_PTR(pGMM)
+        ||  pGMM->u32Magic != GMM_MAGIC)
+        return;
+
+    int rc =  RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+    /*
+     * Walk the entire pool looking for pages that belongs to this VM.
+     * This is slow but necessary. Of course it won't work for shared
+     * pages, but we'll deal with that later.
+     */
+
+
+    /*
+     * Update over-commitment management and free chunks that are no
+     * longer needed. If no VMs are around, free everything.
+     */
+
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0CleanupVM: returns\n"));
+}
 
 
