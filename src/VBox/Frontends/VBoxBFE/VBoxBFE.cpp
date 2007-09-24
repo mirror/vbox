@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: Basic Frontend (BFE):
- * VBoxBFE main routines
+ * Basic Frontend (BFE): VBoxBFE main routines.
  *
  * VBoxBFE is a limited frontend that sits directly on the Virtual Machine
  * Manager (VMM) and does _not_ use COM to communicate.
@@ -241,6 +240,7 @@ static int networkArg2Index(const char *pszArg, int cchRoot)
     return n;
 }
 
+
 /**
  *  Generates a new unique MAC address based on our vendor ID and
  *  parts of a GUID.
@@ -267,7 +267,8 @@ int GenerateMACAddress(char pszAddress[MAC_STRING_LEN + 1])
                 uuid.au8[0], uuid.au8[1], uuid.au8[2]);
     LogFlowFunc(("generated MAC: '%s'\n", pszAddress));
     return VINF_SUCCESS;
-}                         
+}
+
 
 /**
  * Print a syntax error.
@@ -641,7 +642,7 @@ int main(int argc, char **argv)
                 ||  argv[curArg][3] < '0'
                 ||  argv[curArg][3] >= '8'
                 ||  argv[curArg][4])
-                return SyntaxError("bad interface name '%s' specified with '%s'. Expected 'lan0', 'lan1' and similar.\n", 
+                return SyntaxError("bad interface name '%s' specified with '%s'. Expected 'lan0', 'lan1' and similar.\n",
                                    argv[curArg], pszArg);
             g_aNetDevs[i].iConnectTo = argv[curArg][3] - '0';
             g_aNetDevs[i].fHaveConnectTo = true;
@@ -814,7 +815,7 @@ int main(int argc, char **argv)
 
 #ifdef RT_OS_L4
     /* The L4 console provides (currently) a fixed resolution. */
-    if (g_u32VRamSizeMB * _1M >=   gFramebuffer->getHostXres() 
+    if (g_u32VRamSizeMB * _1M >=   gFramebuffer->getHostXres()
                           * gFramebuffer->getHostYres()
                           * (gDisplay->getBitsPerPixel() / 8))
         gDisplay->SetVideoModeHint(gFramebuffer->getHostXres(), gFramebuffer->getHostYres(), 0, 0);
@@ -986,7 +987,7 @@ DECLCALLBACK(void) setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_
     {
         va_list va2;
         va_copy(va2, args); /* Have to make a copy here or GCC will break. */
-        RTStrPrintf(szError, sizeof(szError), 
+        RTStrPrintf(szError, sizeof(szError),
                     "%N!\nVBox status code: %d (%Vrc)", pszFormat, &va2, rc, rc);
         RTPrintf("%s\n", szError);
         va_end(va2);
@@ -1659,13 +1660,13 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
 #elif defined(RT_OS_OS2)
                     /*
-                     * The TAP driver does all the opening and setting up, 
+                     * The TAP driver does all the opening and setting up,
                      * as it was originally was ment to be (stupid fork() problems).
                      */
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName); UPDATE_RC();
                     if (g_aNetDevs[ulInstance].fHaveConnectTo)
                     {
-                        rc = CFGMR3InsertInteger(pCfg, "ConnectTo", g_aNetDevs[ulInstance].iConnectTo); 
+                        rc = CFGMR3InsertInteger(pCfg, "ConnectTo", g_aNetDevs[ulInstance].iConnectTo);
                         UPDATE_RC();
                     }
 #elif defined(RT_OS_WINDOWS)
@@ -1764,3 +1765,4 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
     return rc;
 }
+
