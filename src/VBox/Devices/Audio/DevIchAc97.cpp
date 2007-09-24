@@ -327,7 +327,11 @@ static void update_sr (AC97LinkState *s, AC97BusMasterRegs *r, uint32_t new_sr)
 
     if (event)
     {
-        s->glob_sta |= masks[r - s->bm_regs];
+        if (level)
+            s->glob_sta |= masks[r - s->bm_regs];
+        else
+            s->glob_sta &= ~masks[r - s->bm_regs];
+
         Log (("ac97: set irq level=%d\n", !!level));
         PDMDevHlpPCISetIrq (pDevIns, 0, !!level);
     }
