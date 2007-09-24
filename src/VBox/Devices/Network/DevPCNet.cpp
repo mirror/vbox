@@ -2648,6 +2648,7 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
         case BCR_BSBC:
         case BCR_EECAS:
         case BCR_PLAT:
+        case BCR_MIICAS:
         case BCR_MIIADDR:
             LOG_REGISTER(("PCNet#%d: WRITE BCR%d, %#06x\n",
                          PCNETSTATE_2_DEVINS(pData)->iInstance, u32RAP, val));
@@ -2669,45 +2670,75 @@ static int pcnetBCRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t val)
 static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
 {
     uint32_t val;
+    bool autoneg, duplex, fast;
     STAM_COUNTER_INC(&pData->StatMIIReads);
+
+    autoneg = (pData->aBCR[BCR_MIICAS] & 0x20) != 0;
+    duplex  = (pData->aBCR[BCR_MIICAS] & 0x10) != 0;
+    fast    = (pData->aBCR[BCR_MIICAS] & 0x08) != 0;
 
     switch (miiaddr)
     {
         case 0:
             /* MII basic mode control register. */
-            val = 0x1000;   /* Enable auto negotiation. */
+            val = 0;
+            if (autoneg)
+                val |= 0x1000;  /* Enable auto negotiation. */
+            if (fast)
+                val |= 0x2000;  /* 100 Mbps */
+            if (duplex) /* Full duplex forced */
+                val |= 0x0010;  /* Full duplex */
             break;
 
         case 1:
             /* MII basic mode status register. */
-            if (pData->fLinkUp && !pData->fLinkTempDown)
-                val =   0x7800  /* Can do 100mbps FD/HD and 10mbps FD/HD. */
-                      | 0x0020  /* Auto-negotiation complete. */
-                      | 0x0008  /* Able to do auto-negotiation. */
-                      | 0x0004  /* Link status. */
-                      | 0x0001; /* Extended Capability, i.e. registers 4+ valid. */
-            else
-            {
-                val =   0x7800  /* Can do 100mbps FD/HD and 10mbps FD/HD. */
-                      | 0x0008  /* Able to do auto-negotiation. */
-                      | 0x0001; /* Extended Capability, i.e. registers 4+ valid. */
+            val = 0x7800    /* Can do 100mbps FD/HD and 10mbps FD/HD. */
+                | 0x0040    /* Mgmt frame preamble not required. */
+                | 0x0020    /* Auto-negotiation complete. */
+                | 0x0008    /* Able to do auto-negotiation. */
+                | 0x0004    /* Link up. */
+                | 0x0001;   /* Extended Capability, i.e. registers 4+ valid. */
+            if (!pData->fLinkUp || pData->fLinkTempDown) {
+                val &= ~(0x0020 | 0x0004);
                 pData->cLinkDownReported++;
+            }
+            if (!autoneg) {
+                /* Auto-negotiation disabled. */
+                val &= ~(0x0020 | 0x0008);
+                if (duplex)
+                    /* Full duplex forced. */
+                    val &= ~0x2800;
+                else
+                    /* Half duplex forced. */
+                    val &= ~0x5000;
+
+                if (fast)
+                    /* 100 Mbps forced */
+                    val &= ~0x1800;
+                else
+                    /* 10 Mbps forced */
+                    val &= ~0x6000;
             }
             break;
 
         case 2:
             /* PHY identifier 1. */
-            val = 0;    /* No name PHY. */
+            val = 0x22;     /* Am79C874 PHY */ 
             break;
 
         case 3:
             /* PHY identifier 2. */
-            val = 0;    /* No name PHY. */
+            val = 0x561b;   /* Am79C874 PHY */  
             break;
 
         case 4:
             /* Advertisement control register. */
-            val =   0x05e0  /* Try flow control, 100mbps FD/HD and 10mbps FD/HD. */
+            val =   0x01e0  /* Try 100mbps FD/HD and 10mbps FD/HD. */
+#if 0
+                // Advertising flow control is a) not the default, and b) confuses
+                // the link speed detection routine in Windows PCnet driver 
+                  | 0x0400  /* Try flow control. */
+#endif
                   | 0x0001; /* CSMA selector. */
             break;
 
@@ -2716,7 +2747,8 @@ static uint32_t pcnetMIIReadU16(PCNetState *pData, uint32_t miiaddr)
             if (pData->fLinkUp && !pData->fLinkTempDown)
                 val =   0x8000  /* Next page bit. */
                       | 0x4000  /* Link partner acked us. */
-                      | 0x05e0  /* Can do flow control, 100mbps FD/HD and 10mbps FD/HD. */
+                      | 0x0400  /* Can do flow control. */
+                      | 0x01e0  /* Can do 100mbps FD/HD and 10mbps FD/HD. */
                       | 0x0001; /* Use CSMA selector. */
             else
             {
@@ -2824,6 +2856,7 @@ static void pcnetHardReset(PCNetState *pData)
     pData->aBCR[BCR_SWS  ] = 0x0200;
     pData->iLog2DescSize   = 3;
     pData->aBCR[BCR_PLAT ] = 0xff06;
+    pData->aBCR[BCR_MIIADDR ] = 0;  /* Internal PHY on Am79C973 would be (0x1e << 5) */
     pData->aBCR[BCR_PCIVID] = PCIDevGetVendorId(&pData->PciDev);
     pData->aBCR[BCR_PCISID] = PCIDevGetSubSystemId(&pData->PciDev);
     pData->aBCR[BCR_PCISVID] = PCIDevGetSubSystemVendorId(&pData->PciDev);
@@ -4229,7 +4262,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pData->PciDev.config[0x05] = 0x00;
     pData->PciDev.config[0x06] = 0x80; /* status */
     pData->PciDev.config[0x07] = 0x02;
-    pData->PciDev.config[0x08] = pData->fAm79C973 ? 0x30 : 0x10; /* revision */
+    pData->PciDev.config[0x08] = pData->fAm79C973 ? 0x40 : 0x10; /* revision */
     pData->PciDev.config[0x09] = 0x00;
     pData->PciDev.config[0x0a] = 0x00; /* ethernet network controller */
     pData->PciDev.config[0x0b] = 0x02;
