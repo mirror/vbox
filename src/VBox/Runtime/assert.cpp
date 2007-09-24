@@ -65,6 +65,10 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     va_end(args);
 }
 
+#if defined(RT_OS_LINUX) && defined(IN_MODULE)
+EXPORT_SYMBOL(AssertMsg1);
+EXPORT_SYMBOL(AssertMsg2);
+#endif
 
 #elif defined(IN_RING0)
 
