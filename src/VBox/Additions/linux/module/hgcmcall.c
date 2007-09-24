@@ -42,15 +42,13 @@ static int vbox_hgcm_get_r3_struct(int cParms, void *pUser, VBoxGuestHGCMCallInf
     hgcmR3 = kmalloc(sizeof(*hgcmR3) + cParms * sizeof(HGCMFunctionParameter), GFP_KERNEL);
     if (!hgcmR3)
     {
-        elog("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n");
-        Log(("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n"));
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n"));
         return -ENOMEM;
     }
     /* Get the call parameters from user space. */
     if (copy_from_user(hgcmR3, pUser, sizeof(*hgcmR3) + cParms * sizeof(HGCMFunctionParameter)))
     {
-        elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n");
-        Log(("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n"));
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n"));
         kfree(hgcmR3);
         return -EFAULT;
     }
@@ -82,8 +80,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
                         GFP_KERNEL);
     if (!hgcmR0)
     {
-        elog("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n");
-        Log(("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n"));
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: cannot allocate memory!\n"));
         return -ENOMEM;
     }
     /* Set up the structure header */
@@ -104,8 +101,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
             cbPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
             break;
         default:
-            elog("IOCTL_VBOXGUEST_HGCM_CALL: unsupported or unknown parameter type\n");
-            Log(("IOCTL_VBOXGUEST_HGCM_CALL: unsupported or unknown parameter type\n"));
+            LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: unsupported or unknown parameter type\n"));
             kfree(hgcmR0);
             return -EINVAL;
         }
@@ -114,9 +110,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
     /* Reconstruct the pointer parameter data in kernel space */
     if (pu8PointerData == NULL)
     {
-        elog("IOCTL_VBOXGUEST_HGCM_CALL: out of memory allocating %d bytes for pointer data\n",
-                cbPointerData);
-        Log(("IOCTL_VBOXGUEST_HGCM_CALL: out of memory allocating %d bytes for pointer data\n",
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: out of memory allocating %d bytes for pointer data\n",
                 cbPointerData));
         kfree(hgcmR0);
         return -ENOMEM;
@@ -139,8 +133,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
                                 pvR3LinAddr,
                                 VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size))
             {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n");
-                Log(("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n"));
+                LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n"));
                 kfree(hgcmR0);
                 kfree(pu8PointerData);
                 return -EFAULT;
@@ -174,8 +167,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
 }
 
 /**
- * Dump the contents of an hgcm call info structure to the system log and to the back door logger
- * if it is active.
+ * Dump the contents of an hgcm call info structure to the back door logger
  *
  * @param hgcmR0 The structure to dump.
  */
@@ -189,24 +181,14 @@ static void vbox_hgcm_dump_params(VBoxGuestHGCMCallInfo *hgcmR0)
         switch(VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].type)
         {
         case VMMDevHGCMParmType_32bit:
-            elog("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type 32bit: %u\n",
-                  i, VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.value32);
             Log(("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type 32bit: %u\n",
                   i, VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.value32));
             break;
         case VMMDevHGCMParmType_64bit:
-            elog("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type 64bit: %lu\n",
-                  i, VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.value64);
             Log(("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type 64bit: %lu\n",
                   i, VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.value64));
             break;
         case VMMDevHGCMParmType_LinAddr:
-            elog("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type LinAddr, size %u: %.*s...\n",
-                  i,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size > 10 ?
-                      VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size : 10,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size);
             Log(("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type LinAddr, size %u: %.*s...\n",
                   i,
                   VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size > 10 ?
@@ -215,12 +197,6 @@ static void vbox_hgcm_dump_params(VBoxGuestHGCMCallInfo *hgcmR0)
                   VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size));
             break;
         case VMMDevHGCMParmType_LinAddr_In:
-            elog("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type LinAddr_In, size %u: %.*s...\n",
-                  i,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size > 10 ?
-                      VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size : 10,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size);
             Log(("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type LinAddr_In, size %u: %.*s...\n",
                   i,
                   VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size > 10 ?
@@ -229,12 +205,6 @@ static void vbox_hgcm_dump_params(VBoxGuestHGCMCallInfo *hgcmR0)
                   VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size));
             break;
         case VMMDevHGCMParmType_LinAddr_Out:
-            elog("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type LinAddr_Out, size %u: %.*s...\n",
-                  i,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size > 10 ?
-                      VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size : 10,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr,
-                  VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size);
             Log(("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of type LinAddr_Out, size %u: %.*s...\n",
                   i,
                   VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size > 10 ?
@@ -243,7 +213,6 @@ static void vbox_hgcm_dump_params(VBoxGuestHGCMCallInfo *hgcmR0)
                   VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size));
             break;
         default:
-            elog("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of unknown type!", i);
             Log(("IOCTL_VBOXGUEST_HGCM_CALL: parameter %d is of unknown type!", i));
         }
     }
@@ -278,8 +247,7 @@ static int vbox_hgcm_return_r0_struct(VBoxGuestHGCMCallInfo *hgcmR3, void *pUser
             if (copy_to_user(pvR3LinAddr, pvR0LinAddr,
                               VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size))
             {
-                elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n");
-                Log(("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n"));
+                LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n"));
                 return -EFAULT;
             }
             VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size
@@ -297,8 +265,7 @@ static int vbox_hgcm_return_r0_struct(VBoxGuestHGCMCallInfo *hgcmR3, void *pUser
     if (copy_to_user(pUser, hgcmR3,
                      sizeof(*hgcmR3) + hgcmR3->cParms * sizeof(HGCMFunctionParameter)))
     {
-        elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n");
-        Log(("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n"));
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: copy_to_user failed!\n"));
         return -EFAULT;
     }
     return 0;
@@ -326,8 +293,7 @@ int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev)
     /* Get the call header from user space to see how many call parameters there are. */
     if (copy_from_user(&callHeader, (void*)arg, sizeof(callHeader)))
     {
-        elog("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n");
-        Log(("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n"));
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: copy_from_user failed!\n"));
         return -EFAULT;
     }
     /* Copy the ioctl structure from user to kernel space. */
@@ -351,10 +317,8 @@ int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev)
     rc = vboxadd_cmc_call(vboxDev, IOCTL_VBOXGUEST_HGCM_CALL, hgcmR0);
     if (VBOX_FAILURE(rc))
     {
-        elog("IOCTL_VBOXGUEST_HGCM_CALL: internal ioctl call failed, rc=%d\n", rc);
-        Log(("IOCTL_VBOXGUEST_HGCM_CALL: internal ioctl call failed, rc=%d\n", rc));
-        /** @todo We need a function to convert VBox error codes back to Linux. */
-        rc = -EINVAL;
+        LogRel(("IOCTL_VBOXGUEST_HGCM_CALL: internal ioctl call failed, rc=%Vrc\n", rc));
+        rc = -RTErrConvertToErrno(rc);
     }
     else
     {
