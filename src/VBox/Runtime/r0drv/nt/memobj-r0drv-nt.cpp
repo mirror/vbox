@@ -296,6 +296,8 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
             }
             __except(EXCEPTION_EXECUTE_HANDLER)
             {
+                NTSTATUS rcNt = GetExceptionCode();
+                Log(("rtR0MemObjNativeAllocLow: Exception Code %#x\n", rcNt));
                 /* nothing */
             }
         }
@@ -687,6 +689,9 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
         }
         __except(EXCEPTION_EXECUTE_HANDLER)
         {
+            NTSTATUS rcNt = GetExceptionCode();
+            Log(("rtR0MemObjNtMap: Exception Code %#x\n", rcNt));
+
             /* nothing */
             rc = VERR_MAP_FAILED;
         }
