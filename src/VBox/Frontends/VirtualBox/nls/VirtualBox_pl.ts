@@ -859,15 +859,15 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation>D&amp;yski twarde</translation>
+        <translation>&amp;Dyski twarde</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
-        <translation>Obrazy &amp;CD/DVD</translation>
+        <translation>O&amp;brazy CD/DVD</translation>
     </message>
     <message>
         <source>&amp;Floppy Images</source>
-        <translation>Obrazy dyskiete&amp;k</translation>
+        <translation>Ob&amp;razy dyskietek</translation>
     </message>
     <message>
         <source>Help</source>
@@ -968,7 +968,7 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     </message>
     <message>
         <source>&amp;Actions</source>
-        <translation>&amp;Akcje</translation>
+        <translation>A&amp;kcje</translation>
     </message>
     <message>
         <source>Location</source>
@@ -1678,7 +1678,7 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Wyłączony</translation>
+        <translation>Wyłączone</translation>
     </message>
     <message>
         <source>Serial Ports</source>
@@ -2184,19 +2184,19 @@ takim samym rozmiarze, jak rozmiar wirtualnego dysku.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding image</source>
-        <translation>&amp;Dynamicznie rozszerzany obraz</translation>
+        <translation>D&amp;ynamicznie rozszerzany obraz</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation></translation>
+        <translation>Alt+Y</translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
-        <translation>Obraz o &amp;stałym rozmiarze</translation>
+        <translation>&amp;Obraz o stałym rozmiarze</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>Alt+S</translation>
+        <translation>Alt+O</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -2308,7 +2308,7 @@ Będzie ona używana przez wszystkie produkty VirtualBox, aby zidentyfikować st
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation>N&amp;azwa</translation>
+        <translation>&amp;Nazwa</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
@@ -2364,7 +2364,7 @@ opuścić ten krok i podłączyć dysk później, korzystając z okna Ustawień 
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation>Dysk &amp;bootowalny (Pierwszy Nadrzędny)</translation>
+        <translation>D&amp;ysk bootowalny (Pierwszy Nadrzędny)</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
@@ -2595,7 +2595,7 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Czy chcesz usunąć plik obrazu tego dysku twardego &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Jeśli wybierzesz &lt;b&gt;Nie&lt;/b&gt;, wtedy wirtualny dysk twardy zostanie wyrejestrowany i usunięty z listy dysków, ale powyższy plik obrazu pozostanie nienaruszony na Twoim fizycznym dysku twardym.&lt;/p&gt;&lt;p&gt;Jeśli wybierzesz &lt;b&gt;Tak&lt;/b&gt;, wtedy plik obrazu zostanie nieodwracalnie usunięty z fizycznego dysku twardego po uprzednim wyrejestrowaniu wirtualnego dysku twardego. &lt;b&gt;Uwaga&lt;/b&gt;: tej czynności nie da się cofnąć!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Czy chcesz usunąć plik obrazu dysku twardego &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Jeśli wybierzesz &lt;b&gt;Nie&lt;/b&gt;, wirtualny dysk twardy zostanie wyrejestrowany i usunięty z listy dysków, ale powyższy plik obrazu tego dysku pozostanie nienaruszony na dysku twardym Twojego komputera.&lt;/p&gt;&lt;p&gt;Jeśli wybierzesz &lt;b&gt;Tak&lt;/b&gt;, plik ten także zostanie usunięty z dysku twardego. &lt;b&gt;Uwaga&lt;/b&gt;: tej czynności nie da się cofnąć! Jeśli usuniesz plik, nie bedziesz mógł odzyskać danych w nim zapisanych!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -3663,19 +3663,19 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation>Płyta &amp;CD/DVD-ROM</translation>
+        <translation>&amp;Płyta CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <translation>Alt+P</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation>Dy&amp;skietka</translation>
+        <translation>D&amp;yskietka</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>Alt+S</translation>
+        <translation>Alt+Y</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
@@ -3695,11 +3695,11 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation>&amp;Plik obrazu</translation>
+        <translation>P&amp;lik obrazu</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation>Alt+P</translation>
+        <translation>Alt+L</translation>
     </message>
     <message>
         <source>VDM</source>
@@ -3739,7 +3739,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Właśnie po raz pierwszy uruchomiłeś stworzoną przez siebie maszynę wirtualną. Kreator ten pomoże Ci w przeprowadzeniu kroków koniecznych do uruchomienia w niej wybranego przez Ciebie systemu operacyjnego. &lt;/p&gt;&lt;p&gt;Zauważ, że aktualnie nie będziesz mógł zainstalować systemu operacyjnego w tej maszynie, ponieważ nie podłączyłeś do niej żadnego dysku twardego. W tym celu możesz zamknąć kreator, wybrać opcję &lt;b&gt;Ustawienia&lt;/b&gt; z menu &lt;b&gt;Maszyna&lt;/b&gt; okna głownego VirtualBox, a następnie zmienić konfigurację dysków twardych bieżącej maszyny.&lt;/p&gt;&lt;p&gt;Użyj przycisku &lt;b&gt;Dalej&lt;/b&gt;, aby przejść do następnego kroku lub przycisku &lt;b&gt;Wstecz&lt;/b&gt;, aby powrócić do kroku poprzedniego. Możesz także &lt;b&gt;Anulować&lt;/b&gt; pracę tego kreatora.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Właśnie po raz pierwszy uruchomiłeś stworzoną przez siebie maszynę wirtualną. Kreator ten pomoże Ci w przeprowadzeniu kroków koniecznych do uruchomienia w niej wybranego przez Ciebie systemu operacyjnego. &lt;/p&gt;&lt;p&gt;Zauważ, że aktualnie nie będziesz mógł zainstalować systemu operacyjnego w tej maszynie, ponieważ nie podłączyłeś do niej żadnego dysku twardego. Jeśli chcesz poprawić to teraz, zamknij kreator, wybierz opcję &lt;b&gt;Ustawienia&lt;/b&gt; z menu &lt;b&gt;Maszyna&lt;/b&gt; okna głownego VirtualBox, a następnie zmień konfigurację dysków twardych bieżącej maszyny.&lt;/p&gt;&lt;p&gt;Użyj przycisku &lt;b&gt;Dalej&lt;/b&gt;, aby przejść do następnego kroku lub przycisku &lt;b&gt;Wstecz&lt;/b&gt;, aby powrócić do kroku poprzedniego. Możesz także &lt;b&gt;Anulować&lt;/b&gt; pracę tego kreatora.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -3943,7 +3943,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation>Pokazuje nazwę wybranego interfejsu sieciowy gospodarza dla tego adaptera.</translation>
+        <translation>Pokazuje nazwę interfejsu sieciowowego gospodarza wybraną dla tego adaptera.</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
