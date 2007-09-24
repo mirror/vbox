@@ -646,7 +646,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupReceiveThread(PPDMDRVINS pDrvIns, PP
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
 #ifdef RT_OS_LINUX
     return RTFileWrite(pData->WakeupPipeW, "", 1, NULL);
-#elif RT_OS_WINDOWS
+#elif defined(RT_OS_WINDOWS)
     if (!SetEvent(pData->hHaltEventSem))
         return RTErrConvertFromWin32(GetLastError());
     return VINF_SUCCESS;
