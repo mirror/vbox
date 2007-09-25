@@ -23,6 +23,7 @@
 #include "VBoxConsoleWnd.h"
 #include "VBoxProblemReporter.h"
 #include "QIHotKeyEdit.h"
+#include "VBoxRegistrationDlg.h"
 
 #include <qapplication.h>
 #include <qmessagebox.h>
@@ -203,6 +204,20 @@ public:
             QString sVal = QString::fromUcs2 (value);
             if (sKey.startsWith ("GUI/"))
             {
+                if (!sVal.isEmpty() &&
+                    sKey == VBoxDefs::GUI_RegistrationDlgWinID)
+                {
+                    if (sVal == QString ("%1")
+                        .arg (qApp->mainWidget()->winId()))
+                    {
+                        *allowChange = TRUE;
+                        QApplication::postEvent (&global, new VBoxShowRegDlgEvent());
+                    }
+                    else
+                        *allowChange = FALSE;
+                    return S_OK;
+                }
+
                 /* try to set the global setting to check its syntax */
                 VBoxGlobalSettings gs (false /* non-null */);
                 if (gs.setPublicProperty (sKey, sVal))
@@ -653,6 +668,7 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 VBoxGlobal::VBoxGlobal()
     : valid (false)
     , selector_wnd (0), console_wnd (0)
+    , mRegDlg (0)
     , media_enum_thread (0)
     , verString ("1.0")
     , vm_state_color (CEnums::MachineState_COUNT)
@@ -1626,6 +1642,17 @@ bool VBoxGlobal::showVirtualBoxLicense()
     return result;
 }
 #endif
+
+void VBoxGlobal::showRegistrationDialog()
+{
+    /* check if the registration already passed */
+    if (virtualBox().GetExtraData (VBoxDefs::GUI_RegistrationTryLeft) == "0")
+        return;
+
+    /* store the winid of main app wgt to ensure only one reg dlg running */
+    virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
+                               QString ("%1").arg (qApp->mainWidget()->winId()));
+}
 
 /**
  *  Opens a direct session for a machine with the given ID.
@@ -3427,6 +3454,18 @@ bool VBoxGlobal::event (QEvent *e)
             emit machineRegistered (*(VBoxMachineRegisteredEvent *) e);
             return true;
         }
+        case VBoxDefs::ShowRegDlgEventType:
+        {
+            /* show unique registration dialog */
+            if (!mRegDlg)
+            {
+                VBoxRegistrationDlg *dlg = new VBoxRegistrationDlg();
+                dlg->setup (&mRegDlg, "http://www.innotek.de/register762.php");
+                Assert (dlg == mRegDlg);
+                mRegDlg->show();
+            }
+            return true;
+        }
         case VBoxDefs::SessionStateChangeEventType:
         {
             emit sessionStateChanged (*(VBoxSessionStateChangeEvent *) e);
@@ -3718,6 +3757,8 @@ void VBoxGlobal::cleanup()
         delete console_wnd;
     if (selector_wnd)
         delete selector_wnd;
+    if (mRegDlg)
+        delete mRegDlg;
 
     /* ensure CGuestOSType objects are no longer used */
     vm_os_types.clear();

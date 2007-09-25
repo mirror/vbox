@@ -208,6 +208,12 @@ public:
     void warnAboutOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutNewAdditions (QWidget *, const QString &, const QString &);
 
+    void cannotConnectRegister (QWidget *aParent,
+                                const QString &aURL,
+                                const QString &aReason);
+    void showRegisterResult (QWidget *aParent,
+                             const QString &aResult);
+
     bool remindAboutInputCapture();
     bool remindAboutAutoCapture();
     bool remindAboutMouseIntegration (bool supportsAbsolute);

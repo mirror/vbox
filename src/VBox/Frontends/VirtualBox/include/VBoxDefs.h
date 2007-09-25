@@ -131,6 +131,7 @@ struct VBoxDefs
         MediaChangeEventType,
         MachineDataChangeEventType,
         MachineRegisteredEventType,
+        ShowRegDlgEventType,
         SessionStateChangeEventType,
         SnapshotEventType,
         NetworkAdapterChangeEventType,
@@ -162,6 +163,8 @@ struct VBoxDefs
 #ifdef Q_WS_X11
     static const char* GUI_LicenseKey;
 #endif
+    static const char* GUI_RegistrationTryLeft;
+    static const char* GUI_RegistrationDlgWinID;
 };
 
 #endif // __VBoxDefs_h__
