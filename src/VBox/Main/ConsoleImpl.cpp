@@ -3558,7 +3558,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     if (pShape != NULL)
     {
         size_t cb = (width + 7) / 8 * height; /* size of the AND mask */
-        cb += ((cb + 3) & ~3) + width * 4 * height; /* + gap + size of the XOR mask */
+        cb = ((cb + 3) & ~3) + width * 4 * height; /* + gap + size of the XOR mask */
         /* try to reuse the old shape buffer if the size is the same */
         if (!wasValid)
             mCallbackData.mpsc.shape = NULL;
