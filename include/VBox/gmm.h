@@ -1,5 +1,5 @@
 /** @file
- * GMM - Global Memory Manager.
+ * GMM - The Global Memory Manager.
  */
 
 /*
@@ -20,7 +20,7 @@
 
 #include <VBox/types.h>
 
-#include "gvm.h"
+#include "gvmm.h"
 
 /** @defgroup   grp_gmm     GMM - The Global Memory Manager
  * @{
@@ -34,10 +34,10 @@
  * Ring 0 GMM export or import declaration.
  * @param   type    The return type of the function declaration.
  */
-#ifdef IN_GVM_R0
-# define GVMR0DECL(type)    DECLEXPORT(type) VBOXCALL
+#ifdef IN_GMM_R0
+# define GMMR0DECL(type)    DECLEXPORT(type) VBOXCALL
 #else
-# define GVMR0DECL(type)    DECLIMPORT(type) VBOXCALL
+# define GMMR0DECL(type)    DECLIMPORT(type) VBOXCALL
 #endif
 
 

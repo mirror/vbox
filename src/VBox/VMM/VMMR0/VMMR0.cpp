@@ -28,7 +28,7 @@
 #include <VBox/tm.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
-#include <VBox/gvm.h>
+#include <VBox/gvmm.h>
 #include <VBox/intnet.h>
 #include <VBox/hwaccm.h>
 
@@ -75,9 +75,9 @@ VMMR0DECL(int) ModuleInit(void)
     LogFlow(("ModuleInit:\n"));
 
     /*
-     * Initialize GVM.
+     * Initialize the GVMM.
      */
-    int rc = GVMR0Init();
+    int rc = GVMMR0Init();
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_INTERNAL_NETWORKING
@@ -123,9 +123,9 @@ VMMR0DECL(void) ModuleTerm(void)
 #endif
 
     /*
-     * Destroy the GVM instance.
+     * Destroy the GVMM instance.
      */
-    GVMR0Term();
+    GVMMR0Term();
 
     LogFlow(("ModuleTerm: returns\n"));
 }
@@ -192,9 +192,9 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
     }
 
     /*
-     * Try register the VM with GVM.
+     * Try register the VM with GVMM.
      */
-    int rc = GVMR0RegisterVM(pVM);
+    int rc = GVMMR0RegisterVM(pVM);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -213,7 +213,7 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
                 return rc;
         }
 
-        GVMR0DeregisterVM(pVM);
+        GVMMR0DeregisterVM(pVM);
     }
 
     /* failed */
@@ -232,9 +232,9 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
 static int VMMR0Term(PVM pVM)
 {
     /*
-     * Deregister the logger.
+     * Deregister the VM and the logger.
      */
-    GVMR0DeregisterVM(pVM);
+    GVMMR0DeregisterVM(pVM);
     RTLogSetDefaultInstanceThread(NULL, 0);
     return VINF_SUCCESS;
 }
@@ -934,7 +934,7 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
  */
 DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint(void)
 {
-    PVM pVM = GVMR0ByEMT(NIL_RTNATIVETHREAD);
+    PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
     {
 #ifdef RT_ARCH_X86

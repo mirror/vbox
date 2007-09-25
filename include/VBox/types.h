@@ -80,6 +80,9 @@ typedef R3PTRTYPE(struct VM *)  PVMR3;
 /** Pointer to a VM - GC Ptr. */
 typedef GCPTRTYPE(struct VM *)  PVMGC;
 
+/** Pointer to a the ring-0 (global) VM structure. */
+typedef R0PTRTYPE(struct GVM *) PGVM;
+
 
 /** VM State
  */
