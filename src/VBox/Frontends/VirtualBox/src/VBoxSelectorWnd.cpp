@@ -255,7 +255,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent,
     mLabel = new QLabel (this, "mLabel");
     mLabel->setFrameStyle (mBrowser->frameStyle());
     mLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
-    mLabel->setAlignment (AlignCenter);
+    mLabel->setAlignment (AlignCenter | WordBreak);
     mainLayout->addWidget (mLabel);
     /* always disabled */
     mLabel->setEnabled (false);
