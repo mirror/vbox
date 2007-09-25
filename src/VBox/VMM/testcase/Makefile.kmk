@@ -189,6 +189,18 @@ else
  VBOX_NM ?= nm -p
 endif
 
+MY_ASA_ASM_STUFF = \
+		$(addprefix -D, \
+			$(DEFS) \
+			$(DEFS.$(BUILD_TYPE)) \
+			$(DEFS.$(BUILD_TARGET)) \
+			IN_RING3 \
+			$(DEFS.$(BUILD_TARGET_ARCH)) \
+			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
+		) \
+		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
+		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(PATH_TARGET),-I$(inc)/)
+
 # 1a. make a header file which makes all the structures+members globals.
 $(PATH_TARGET)/tstAsmStructsAsm.mac: \
 		$(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm.asm \
@@ -203,32 +215,11 @@ $(PATH_TARGET)/tstAsmStructsAsm.mac: \
 		| $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
 ifndef DONT_USE_YASM
-	$(QUIET)$(TOOL_YASM_AS) \
-		$(addprefix -D, \
-			$(DEFS) \
-			$(DEFS.$(BUILD_TYPE)) \
-			$(DEFS.$(BUILD_TARGET)) \
-			IN_RING3 \
-			$(DEFS.$(BUILD_TARGET_ARCH)) \
-			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
-		) \
-		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase,-I$(inc)/) -o $@.o -l $@.lst $<
+	$(QUIET)$(TOOL_YASM_AS) $(MY_ASA_ASM_STUFF) -o $@.o -l $@.lst $<
 	$(SED) -f $(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm-lst.sed $@.lst > $@
 else
-	$(QUIET)$(TOOL_NASM_AS) \
-		-g \
-		$(addprefix -D, \
-			$(DEFS) \
-			$(DEFS.$(BUILD_TYPE)) \
-			$(DEFS.$(BUILD_TARGET)) \
-			IN_RING3 \
-			$(DEFS.$(BUILD_TARGET_ARCH)) \
-			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
-		) \
-		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase,-I$(inc)/) -o $@.o -l $@.lst $<
-		$(VBOX_NM) $@.o | $(SED) \
+	$(QUIET)$(TOOL_NASM_AS) -g $(MY_ASA_ASM_STUFF) -o $@.o -l $@.lst $<
+	$(VBOX_NM) $@.o | $(SED) \
 			-e '/[0-9a-fA-F][0-9a-fA-F]* [^a] /d' \
 			-e 's/[0-9a-fA-F][0-9a-fA-F]* a \([^ ]*\)/global \1/' \
 			> $@
@@ -242,31 +233,9 @@ $(PATH_TARGET)/tstAsmStructsAsm.o: \
 		| $(call DIRDEP,$(PATH_TARGET))
 	$(call MSG_COMPILE,tstAsmStructsasm,$<,$@,AS)
 ifndef DONT_USE_YASM
-	$(QUIET)$(TOOL_YASM_AS) \
-		$(addprefix -D, \
-			DO_GLOBALS \
-			$(DEFS) \
-			$(DEFS.$(BUILD_TYPE)) \
-			$(DEFS.$(BUILD_TARGET)) \
-			IN_RING3 \
-			$(DEFS.$(BUILD_TARGET_ARCH)) \
-			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
-		) \
-		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf -g stabs) \
-		$(foreach inc,$(INCS) $(PATH_TARGET),-I$(inc)/) -o $@ $<
+	$(QUIET)$(TOOL_YASM_AS) $(MY_ASA_ASM_STUFF) -DDO_GLOBALS -o $@ $<
 else
-	$(QUIET)$(TOOL_NASM_AS) \
-		$(addprefix -D, \
-			DO_GLOBALS \
-			$(DEFS) \
-			$(DEFS.$(BUILD_TYPE)) \
-			$(DEFS.$(BUILD_TARGET)) \
-			IN_RING3 \
-			$(DEFS.$(BUILD_TARGET_ARCH)) \
-			$(DEFS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH)) \
-		) \
-		-f $(if $(eq $(BUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS) $(PATH_TARGET) $(VBOX_PATH_VMM_SRC)/testcase,-I$(inc)/) -o $@ $<
+	$(QUIET)$(TOOL_NASM_AS) $(MY_ASA_ASM_STUFF) -DDO_GLOBALS -o $@ $<
 endif
 
 # 2. use nm and sed to transform this into the header we want.
