@@ -138,6 +138,7 @@ VMMR0DECL(void) ModuleTerm(void)
  *
  * @param   pVM         The VM instance in question.
  * @param   uVersion    The minimum module version required.
+ * @thread  EMT.
  */
 static int VMMR0Init(PVM pVM, unsigned uVersion)
 {
@@ -192,9 +193,9 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
     }
 
     /*
-     * Try register the VM with GVMM.
+     * Associate the ring-0 EMT thread with the GVM.
      */
-    int rc = GVMMR0RegisterVM(pVM);
+    int rc = GVMMR0AssociateEMTWithVM(pVM);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -212,8 +213,6 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
             if (RT_SUCCESS(rc))
                 return rc;
         }
-
-        GVMMR0DeregisterVM(pVM);
     }
 
     /* failed */
@@ -228,13 +227,14 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
  * @returns VBox status code.
  *
  * @param   pVM         The VM instance in question.
+ * @thread  EMT.
  */
 static int VMMR0Term(PVM pVM)
 {
     /*
-     * Deregister the VM and the logger.
+     * Deregister the logger.
      */
-    GVMMR0DeregisterVM(pVM);
+    GVMMR0DisassociateEMTFromVM(pVM);
     RTLogSetDefaultInstanceThread(NULL, 0);
     return VINF_SUCCESS;
 }
@@ -641,14 +641,28 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
  * @param   enmOperation    Which operation to execute.
- * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
+ * @param   pReqHdr         This points to a SUPVMMR0REQHDR packet. Optional.
  * @param   u64Arg          Some simple constant argument.
  * @remarks Assume called with interrupts _enabled_.
  */
-static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg)
+static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg)
 {
     switch (enmOperation)
     {
+        /*
+         * GVM requests
+         */
+        case VMMR0_DO_GVMM_CREATE_VM:
+            if (pVM || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            SUPR0Printf("-> GVMMR0CreateVMReq\n");
+            return GVMMR0CreateVMReq(pReqHdr);
+
+        case VMMR0_DO_GVMM_DESTROY_VM:
+            if (pReqHdr || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            return GVMMR0DestroyVM(pVM);
+
         /*
          * Initialize the R0 part of a VM instance.
          */

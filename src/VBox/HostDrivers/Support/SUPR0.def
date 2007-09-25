@@ -13,6 +13,7 @@
 ;  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 ;  distribution. VirtualBox OSE is distributed in the hope that it will
 ;  be useful, but WITHOUT ANY WARRANTY of any kind.
+;
 
 LIBRARY SUPR0.dll
 
@@ -34,6 +35,20 @@ EXPORTS
     RTMemAlloc
     RTMemAllocZ
     RTMemFree
+    RTMemRealloc
+    RTR0MemObjAllocLow
+    RTR0MemObjAllocPage
+    RTR0MemObjAllocPhys
+    RTR0MemObjAllocPhysNC
+    RTR0MemObjLockUser
+    RTR0MemObjMapKernel
+    RTR0MemObjMapUser
+    RTR0MemObjAddress
+    RTR0MemObjAddressR3
+    RTR0MemObjSize
+    RTR0MemObjIsMapping
+    RTR0MemObjGetPagePhysAddr
+    RTR0MemObjFree
     ; broken - RTSemMutexCreate
     ; broken - RTSemMutexRequest
     ; broken - RTSemMutexRelease

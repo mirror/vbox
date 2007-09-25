@@ -68,6 +68,94 @@ static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const
 
 
 /**
+ * Loads the VMMR0.r0 module before the VM is created.
+ *
+ * The opqaue VMMR0 module pointer is passed on to PDMR3Init later in
+ * the init process or PDMR3LdrUnloadVMMR0 in case of some init failure before PDMR3Init.
+ *
+ * @returns VBox status code.
+ * @param   ppvOpaque       Where to return the opaque VMMR0.r0 module handle one success.
+ *
+ * @remarks Yes, this is a kind of hacky and should go away. See @todo in VMR3Create.
+ */
+PDMR3DECL(int) PDMR3LdrLoadVMMR0(void **ppvOpaque)
+{
+    *ppvOpaque = NULL;
+
+    /*
+     * Resolve the filename and allocate the module list node.
+     */
+    char *pszFilename = pdmR3FileR0(VMMR0_MAIN_MODULE_NAME);
+    PPDMMOD pModule = (PPDMMOD)RTMemAllocZ(sizeof(*pModule) + strlen(pszFilename));
+    if (!pModule)
+    {
+        RTMemTmpFree(pszFilename);
+        return VERR_NO_MEMORY;
+    }
+    strcpy(pModule->szName, VMMR0_MAIN_MODULE_NAME);
+    pModule->eType = PDMMOD_TYPE_R0;
+    strcpy(pModule->szFilename, pszFilename);
+    RTMemTmpFree(pszFilename);
+
+    /*
+     * Ask the support library to load it.
+     */
+    void *pvImageBase;
+    int rc = SUPLoadModule(pModule->szFilename, pModule->szName, &pvImageBase);
+    if (RT_SUCCESS(rc))
+    {
+        pModule->hLdrMod = NIL_RTLDRMOD;
+        pModule->ImageBase = (uintptr_t)pvImageBase;
+        *ppvOpaque = pModule;
+
+        Log(("PDMR3LdrLoadVMMR0: Loaded %s at %VGvx (%s)\n", pModule->szName, (RTGCPTR)pModule->ImageBase, pModule->szFilename));
+        return VINF_SUCCESS;
+    }
+
+    LogRel(("PDMR3LdrLoadVMMR0: rc=%Vrc szName=%s szFilename=%s\n", rc, pModule->szName, pModule->szFilename));
+    RTMemFree(pModule);
+    return rc;
+}
+
+
+/**
+ * Register the VMMR0.r0 module with the created VM or unload it if
+ * we failed to create the VM (pVM == NULL).
+ *
+ * @param   pVM         The VM pointer. NULL if we failed to create the VM and
+ *                      the module should be unloaded and freed.
+ * @param   pvOpaque    The value returned by PDMR3LDrLoadVMMR0().
+ *
+ * @remarks Yes, this is a kind of hacky and should go away. See @todo in VMR3Create.
+ */
+PDMR3DECL(void) PDMR3LdrLoadVMMR0Part2(PVM pVM, void *pvOpaque)
+{
+    PPDMMOD pModule = (PPDMMOD)pvOpaque;
+    AssertPtrReturnVoid(pModule);
+
+    if (pVM)
+    {
+        /*
+         * Register the R0 module loaded by PDMR3LdrLoadVMMR0
+         */
+        Assert(!pVM->pdm.s.pModules);
+        pModule->pNext = pVM->pdm.s.pModules;
+        pVM->pdm.s.pModules = pModule;
+    }
+    else
+    {
+        /*
+         * Failed, unload the module.
+         */
+        int rc2 = SUPFreeModule((void *)(uintptr_t)pModule->ImageBase);
+        AssertRC(rc2);
+        pModule->ImageBase = 0;
+        RTMemFree(pvOpaque);
+    }
+}
+
+
+/**
  * Init the module loader part of PDM.
  *
  * This routine will load the Host Context Ring-0 and Guest
@@ -75,6 +163,7 @@ static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const
  *
  * @returns VBox stutus code.
  * @param   pVM         VM handle.
+ * @param   pvVMMR0Mod  The opqaue returned by PDMR3LdrLoadVMMR0.
  */
 int pdmR3LdrInit(PVM pVM)
 {
@@ -84,14 +173,12 @@ int pdmR3LdrInit(PVM pVM)
 #else
 
     /*
-     * Load the mandatory R0 and GC modules.
+     * Load the mandatory GC module, the VMMR0.r0 is loaded before VM creation.
      */
-    int rc = pdmR3LoadR0(pVM, NULL, "VMMR0.r0");
-    if (VBOX_SUCCESS(rc))
-        rc = PDMR3LoadGC(pVM, NULL, VMMGC_MAIN_MODULE_NAME);
-    return rc;
+    return PDMR3LoadGC(pVM, NULL, VMMGC_MAIN_MODULE_NAME);
 #endif
 }
+
 
 /**
  * Terminate the module loader part of PDM.
@@ -520,6 +607,7 @@ static int pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName)
         /* next */
         pCur = pCur->pNext;
     }
+    AssertReturn(!strcmp(pszName, VMMR0_MAIN_MODULE_NAME), VERR_INTERNAL_ERROR);
 
     /*
      * Find the file if not specified.
@@ -937,8 +1025,8 @@ static char * pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fSh
 {
     char szPath[RTPATH_MAX];
     int  rc;
-    
-    rc = fShared ? RTPathSharedLibs(szPath, sizeof(szPath)) 
+
+    rc = fShared ? RTPathSharedLibs(szPath, sizeof(szPath))
                  : RTPathAppPrivateArch(szPath, sizeof(szPath));
     if (!VBOX_SUCCESS(rc))
     {

@@ -1,0 +1,43 @@
+/* $Id$ */
+/** @file
+ * GVMM - The Global VM Manager, Internal header.
+ */
+
+/*
+ * Copyright (C) 2007 InnoTek Systemberatung GmbH
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation,
+ * in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+ * distribution. VirtualBox OSE is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ */
+
+#ifndef ___GVMMR0Internal_h
+#define ___GVMMR0Internal_h
+
+#include <iprt/mem.h>
+
+/**
+ * The GVMM per VM data.
+ */
+typedef struct GVMMPERVM
+{
+    /** The shared VM data structure allocation object (PVMR0). */
+    RTR0MEMOBJ          VMMemObj;
+    /** The Ring-3 mapping of the shared VM data structure (PVMR3). */
+    RTR0MEMOBJ          VMMapObj;
+    /** The allocation object for the VM pages. */
+    RTR0MEMOBJ          VMPagesMemObj;
+    /** The ring-3 mapping of the VM pages. */
+    RTR0MEMOBJ          VMPagesMapObj;
+} GVMMPERVM;
+/** Pointer to the GVMM per VM data. */
+typedef GVMMPERVM *PGVMMPERVM;
+
+
+#endif
+

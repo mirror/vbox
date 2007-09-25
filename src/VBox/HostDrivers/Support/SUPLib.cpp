@@ -524,7 +524,7 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg,
     else if (SUP_IOCTL_CALL_VMMR0_SIZE(pReqHdr->cbReq) < _4K) /* FreeBSD won't copy more than 4K. */
     {
         AssertPtrReturn(pReqHdr, VERR_INVALID_POINTER);
-        AssertReturn(pReqHdr->u32Magic != SUPVMMR0REQHDR_MAGIC, VERR_INVALID_MAGIC);
+        AssertReturn(pReqHdr->u32Magic == SUPVMMR0REQHDR_MAGIC, VERR_INVALID_MAGIC);
         const size_t cbReq = pReqHdr->cbReq;
 
         PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)alloca(SUP_IOCTL_CALL_VMMR0_SIZE(cbReq));
