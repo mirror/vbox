@@ -230,9 +230,12 @@ int main (int argc, char **argv)
 
             if (vboxGlobal().isVMConsoleProcess())
             {
-                a.setMainWidget( &vboxGlobal().consoleWnd());
+                a.setMainWidget (&vboxGlobal().consoleWnd());
                 if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
+                {
+                    vboxGlobal().showRegistrationDialog();
                     rc = a.exec();
+                }
             }
             else if (noSelector)
             {
@@ -241,6 +244,7 @@ int main (int argc, char **argv)
             else
             {
                 a.setMainWidget (&vboxGlobal().selectorWnd());
+                vboxGlobal().showRegistrationDialog();
                 vboxGlobal().selectorWnd().show();
                 vboxGlobal().startEnumeratingMedia();
                 rc = a.exec();

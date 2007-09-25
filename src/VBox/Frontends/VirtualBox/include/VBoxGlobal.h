@@ -99,6 +99,14 @@ public:
     const bool registered;
 };
 
+class VBoxShowRegDlgEvent : public QEvent
+{
+public:
+    VBoxShowRegDlgEvent()
+        : QEvent ((QEvent::Type) VBoxDefs::ShowRegDlgEventType)
+        {}
+};
+
 class VBoxSessionStateChangeEvent : public QEvent
 {
 public:
@@ -135,6 +143,7 @@ public:
 
 class VBoxSelectorWnd;
 class VBoxConsoleWnd;
+class VBoxRegistrationDlg;
 
 class VBoxGlobal : public QObject
 {
@@ -367,6 +376,8 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
+    void showRegistrationDialog();
+
     CSession openSession (const QUuid &id);
 
     bool startMachine (const QUuid &id);
@@ -518,6 +529,8 @@ private:
 
     VBoxSelectorWnd *selector_wnd;
     VBoxConsoleWnd *console_wnd;
+
+    VBoxRegistrationDlg *mRegDlg;
 
     QUuid vmUuid;
 

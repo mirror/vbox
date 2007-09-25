@@ -1403,6 +1403,28 @@ void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
         "warnAboutNewAdditions");
 }
 
+void VBoxProblemReporter::cannotConnectRegister (QWidget *aParent,
+                                                 const QString &aURL,
+                                                 const QString &aReason)
+{
+    message (aParent, Error,
+             tr ("<p>Failed to connect to the VirtualBox network "
+                 "registration form "
+                 "<nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
+                 .arg (aURL).arg (aURL).arg (aReason));
+}
+
+void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
+                                              const QString &aResult)
+{
+    aResult == "OK" ?
+        message (aParent, Info,
+                 tr ("<p><nobr>You have successfully registered with innotek. "
+                     "Thank you for registration.</nobr></p>")) :
+        message (aParent, Error,
+                 tr ("<p>Registration failed (%1)</p>").arg (aResult));
+}
+
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
 bool VBoxProblemReporter::remindAboutInputCapture()
 {

@@ -102,7 +102,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxConsoleWnd.h \
 	include/VBoxConsoleView.h \
 	include/VBoxProblemReporter.h \
-	include/VBoxDownloaderWgt.h
+	include/VBoxDownloaderWgt.h \
+	include/VBoxNetworkFramework.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro
 VirtualBox_QT_MOCSRCS = src/VBoxSelectorWnd.cpp
@@ -166,7 +167,8 @@ VirtualBox_SOURCES = \
 	src/VBoxDownloaderWgt.cpp \
 	src/VBoxVMListBox.cpp \
 	src/VBoxFrameBuffer.cpp \
-	src/HappyHttp.cpp
+	src/HappyHttp.cpp \
+	src/VBoxNetworkFramework.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \
@@ -188,6 +190,7 @@ VirtualBox_SOURCES.darwin = \
 ifneq ($(BUILD_TARGET),win)
 src/HappyHttp.cpp_CXXFLAGS += -fexceptions
 src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
+src/VBoxNetworkFramework.cpp_CXXFLAGS += -fexceptions
 endif
 src/HappyHttp.cpp_CXXFLAGS.linux += -O2
 
