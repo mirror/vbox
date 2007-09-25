@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
         break;
     }
 
-#if 1
+#if 0
     // IUnknown identity test
     ////////////////////////////////////////////////////////////////////////////
     {
@@ -442,16 +442,21 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#if 0
+#if 1
     // register the existing hard disk image
     ///////////////////////////////////////////////////////////////////////////
     do
     {
         ComPtr <IHardDisk> hd;
         Bstr src = L"E:\\develop\\innotek\\images\\NewHardDisk.vdi";
-        printf ("Registerin the existing hard disk '%ls'...\n", src.raw());
+        printf ("Opening the existing hard disk '%ls'...\n", src.raw());
         CHECK_ERROR_BREAK (virtualBox, OpenHardDisk (src, hd.asOutParam()));
+        printf ("Enter to continue...\n");
+        getchar();
+        printf ("Registering the existing hard disk '%ls'...\n", src.raw());
         CHECK_ERROR_BREAK (virtualBox, RegisterHardDisk (hd));
+        printf ("Enter to continue...\n");
+        getchar();
     }
     while (FALSE);
     printf ("\n");
