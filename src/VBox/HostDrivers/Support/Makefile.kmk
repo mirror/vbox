@@ -212,9 +212,6 @@ endif # darwin
 ifeq ($(BUILD_TARGET),os2)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
-ifdef VBOX_WITH_IDT_PATCHING
-VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
-endif
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 #VBoxDrv_LDFLAGS       = -s -t -v
 VBoxDrv_SOURCES       = \
@@ -231,9 +228,6 @@ LIBRARIES += VBoxDrvLib
 VBoxDrvLib_TEMPLATE   = VBOXR0DRV
 VBoxDrvLib_NOINST     = 1
 VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0 USE_NEW_OS_INTERFACE
-ifdef VBOX_WITH_IDT_PATCHING
-VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
-endif
 VBoxDrvLib_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	$(PATH_TARGET) \
