@@ -4121,8 +4121,8 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
     if (FAILED (rc) || VBOX_FAILURE (vrc) || !errMsg.isNull())
     {
         LogWarningFunc (("'%ls' is not accessible "
-                         "(rc=%08X, vrc=%Vrc, errMsg='%ls')\n",
-                         mFilePathFull.raw(), rc, vrc, errMsg.raw()));
+                         "(rc=%08X, vrc=%Vrc, errMsg='%ls', mLastVDError='%s')\n",
+                         mFilePathFull.raw(), rc, vrc, errMsg.raw(), mLastVDError.raw()));
 
         if (aAccessError)
         {
@@ -4200,7 +4200,7 @@ DECLCALLBACK(void) HVMDKImage::VDError (void *pvUser, int rc, RT_SRC_POS_DECL,
     AssertReturnVoid (that != NULL);
 
     /// @todo pass the error message to the operation initiator
-    Utf8Str err = Utf8StrFmt (pszFormat, va);
+    Utf8Str err = Utf8StrFmtVA (pszFormat, va);
     if (VBOX_FAILURE (rc))
         err = Utf8StrFmt ("%s (%Vrc)", err.raw(), rc);
 
