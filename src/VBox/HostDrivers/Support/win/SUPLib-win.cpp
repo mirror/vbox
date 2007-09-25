@@ -143,6 +143,7 @@ int     suplibOsInit(size_t cbReserve)
      */
     /** @todo implement driver version checking. */
 
+#if 0 /* obsolete code and restricts our virtual address space for the new allocation method */
     /*
      * Reserve memory.
      */
@@ -227,6 +228,7 @@ int     suplibOsInit(size_t cbReserve)
         }
         /* ignore errors */
     }
+#endif /* end of obsolete memory reservation hack */
 
     /*
      * We're done.
