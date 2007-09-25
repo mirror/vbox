@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * GVM - Global VM Manager.
+ * GVMM - The Global VM Manager.
  */
 
 /*
@@ -16,28 +16,28 @@
  *
  */
 
-#ifndef ___VBox_gvm_h
-#define ___VBox_gvm_h
+#ifndef ___VBox_gvmm_h
+#define ___VBox_gvmm_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 
-/** @defgroup grp_GVM   GVM - Global VM Manager.
+/** @defgroup grp_GVMM  GVMM - The Global VM Manager.
  * @{
  */
 
-/** @def IN_GVM_R0
+/** @def IN_GVMM_R0
  * Used to indicate whether we're inside the same link module as the ring 0
  * part of the Global VM Manager or not.
  */
-/** @def GVMR0DECL
+/** @def GVMMR0DECL
  * Ring 0 VM export or import declaration.
  * @param   type    The return type of the function declaration.
  */
-#ifdef IN_GVM_R0
-# define GVMR0DECL(type)    DECLEXPORT(type) VBOXCALL
+#ifdef IN_GVMM_R0
+# define GVMMR0DECL(type)    DECLEXPORT(type) VBOXCALL
 #else
-# define GVMR0DECL(type)    DECLIMPORT(type) VBOXCALL
+# define GVMMR0DECL(type)    DECLIMPORT(type) VBOXCALL
 #endif
 
 /** @def NIL_GVM_HANDLE
@@ -45,14 +45,16 @@
  */
 #define NIL_GVM_HANDLE 0
 
-GVMR0DECL(int)  GVMR0Init(void);
-GVMR0DECL(void) GVMR0Term(void);
-GVMR0DECL(int)  GVMR0RegisterVM(PVM pVM);
-GVMR0DECL(int)  GVMR0DeregisterVM(PVM pVM);
-GVMR0DECL(PVM)  GVMR0ByEMT(RTNATIVETHREAD hEMT);
-GVMR0DECL(PVM)  GVMR0ByHandle(uint32_t hGVM);
+GVMMR0DECL(int)  GVMMR0Init(void);
+GVMMR0DECL(void) GVMMR0Term(void);
+GVMMR0DECL(int)  GVMMR0RegisterVM(PVM pVM);
+GVMMR0DECL(int)  GVMMR0DeregisterVM(PVM pVM);
+GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM);
+GVMMR0DECL(PVM)  GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
+GVMMR0DECL(PVM)  GVMMR0GetVMByHandle(uint32_t hGVM);
 
 
 /** @} */
 
-#endif 
+#endif
+

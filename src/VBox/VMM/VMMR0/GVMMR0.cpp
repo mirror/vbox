@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * GVM - Global VM Manager.
+ * GVMM - Global VM Manager.
  */
 
 /*
@@ -17,17 +17,17 @@
  */
 
 
-/** @page pg_GVM    GVM - Global VM Manager
+/** @page pg_GVMM   GVMM - The Global VM Manager
  *
  * The Global VM Manager lives in ring-0. It's main function at the moment
- * is to manage a list of all running VMs and assign unique identifiers to
- * each of them (so GMM can track page owners). The idea for the future is
- * to add an idle priority kernel thread that can take care of tasks like
- * page sharing.
+ * is to manage a list of all running VMs, keep a ring-0 only structure (GVM)
+ * for each of them, and assign them unique identifiers (so GMM can track
+ * page owners). The idea for the future is to add an idle priority kernel
+ * thread that can take care of tasks like page sharing.
  *
- * The GVM will create a ring-0 object for each VM when it's registered, this
- * is both for session cleanup purposes and for having a point where it's
- * possible to implement usage polices later (in SUPR0ObjRegister).
+ * The GVMM will create a ring-0 object for each VM when it's registered,
+ * this is both for session cleanup purposes and for having a point where
+ * it's possible to implement usage polices later (in SUPR0ObjRegister).
  */
 
 
@@ -35,8 +35,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GVM
-#include <VBox/gvm.h>
-/* #include "GVMInternal.h" */
+#include <VBox/gvmm.h>
+/* #include "GVMMInternal.h" */
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <iprt/alloc.h>
@@ -62,7 +62,9 @@ typedef struct GVMHANDLE
     uint16_t            iSelf;
     /** Whether to free the VM structure or not. */
     bool                fFreeVM;
-    /** The ring-0 mapping of the VM instance data. */
+    /** The pointer to the ring-0 only (aka global) VM structure. */
+    PGVM                pGVM;
+    /** The ring-0 mapping of the shared VM instance data. */
     PVM                 pVM;
     /** The virtual machine object. */
     void               *pvObj;
@@ -76,9 +78,9 @@ typedef struct GVMHANDLE
 typedef GVMHANDLE *PGVMHANDLE;
 
 /**
- * The GVM instance data.
+ * The GVMM instance data.
  */
-typedef struct
+typedef struct GVMM
 {
     /** Eyecatcher / magic. */
     uint32_t            u32Magic;
@@ -92,75 +94,75 @@ typedef struct
      * The size of this array defines the maximum number of currently running VMs.
      * The first entry is unused as it represents the NIL handle. */
     GVMHANDLE           aHandles[128];
-} GVM;
-/** Pointer to the GVM instance data. */
-typedef GVM *PGVM;
+} GVMM;
+/** Pointer to the GVMM instance data. */
+typedef GVMM *PGVMM;
 
-/** The GVM::u32Magic value (Charlie Haden). */
-#define GVM_MAGIC       0x19370806
+/** The GVMM::u32Magic value (Charlie Haden). */
+#define GVMM_MAGIC      0x19370806
 
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Pointer to the GVM instance data.
+/** Pointer to the GVMM instance data.
  * (Just my general dislike for global variables.) */
-static PGVM g_pGVM = NULL;
+static PGVMM g_pGVMM = NULL;
 
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(void) gvmR0HandleObjDestructor(void *pvObj, void *pvGVM, void *pvHandle);
+static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, void *pvHandle);
 
 
 /**
- * Initializes the GVM.
+ * Initializes the GVMM.
  *
  * This is called while owninng the loader sempahore (see supdrvIOCtl_LdrLoad()).
  *
  * @returns VBox status code.
  */
-GVMR0DECL(int) GVMR0Init(void)
+GVMMR0DECL(int) GVMMR0Init(void)
 {
-    SUPR0Printf("GVMR0Init:\n");
+    SUPR0Printf("GVMMR0Init:\n");
 
     /*
      * Allocate and initialize the instance data.
      */
-    PGVM pGVM = (PGVM)RTMemAllocZ(sizeof(*pGVM));
-    if (!pGVM)
+    PGVMM pGVMM = (PGVMM)RTMemAllocZ(sizeof(*pGVMM));
+    if (!pGVMM)
         return VERR_NO_MEMORY;
-    int rc = RTSemFastMutexCreate(&pGVM->Lock);
+    int rc = RTSemFastMutexCreate(&pGVMM->Lock);
     if (RT_SUCCESS(rc))
     {
-        pGVM->u32Magic = GVM_MAGIC;
-        pGVM->iUsedHead = 0;
-        pGVM->iFreeHead = 1;
+        pGVMM->u32Magic = GVMM_MAGIC;
+        pGVMM->iUsedHead = 0;
+        pGVMM->iFreeHead = 1;
 
         /* the nil handle */
-        pGVM->aHandles[0].iSelf = 0;
-        pGVM->aHandles[0].iNext = 0;
+        pGVMM->aHandles[0].iSelf = 0;
+        pGVMM->aHandles[0].iNext = 0;
 
         /* the tail */
-        unsigned i = RT_ELEMENTS(pGVM->aHandles);
-        pGVM->aHandles[i].iSelf = i;
-        pGVM->aHandles[i].iNext = 0; /* nil */
+        unsigned i = RT_ELEMENTS(pGVMM->aHandles);
+        pGVMM->aHandles[i].iSelf = i;
+        pGVMM->aHandles[i].iNext = 0; /* nil */
 
         /* the rest */
         while (i-- > 1)
         {
-            pGVM->aHandles[i].iSelf = i;
-            pGVM->aHandles[i].iNext = i + 1;
+            pGVMM->aHandles[i].iSelf = i;
+            pGVMM->aHandles[i].iNext = i + 1;
         }
 
-        g_pGVM = pGVM;
-        SUPR0Printf("GVMR0Init: pGVM=%p\n", pGVM);
+        g_pGVMM = pGVMM;
+        SUPR0Printf("GVMMR0Init: pGVMM=%p\n", pGVMM);
         return VINF_SUCCESS;
     }
 
-    RTMemFree(pGVM);
+    RTMemFree(pGVMM);
     return rc;
 }
 
@@ -172,29 +174,29 @@ GVMR0DECL(int) GVMR0Init(void)
  * And unless something is wrong, there should be absolutely no VMs
  * registered at this point.
  */
-GVMR0DECL(void) GVMR0Term(void)
+GVMMR0DECL(void) GVMMR0Term(void)
 {
-    SUPR0Printf("GVMR0Term:\n");
+    SUPR0Printf("GVMMR0Term:\n");
 
-    PGVM pGVM = g_pGVM;
-    g_pGVM = NULL;
-    if (RT_UNLIKELY(!VALID_PTR(pGVM)))
+    PGVMM pGVMM = g_pGVMM;
+    g_pGVMM = NULL;
+    if (RT_UNLIKELY(!VALID_PTR(pGVMM)))
     {
-        SUPR0Printf("GVMR0Term: pGVM=%p\n", pGVM);
+        SUPR0Printf("GVMMR0Term: pGVMM=%p\n", pGVMM);
         return;
     }
 
-    RTSemFastMutexDestroy(pGVM->Lock);
-    pGVM->Lock = NIL_RTSEMFASTMUTEX;
-    pGVM->u32Magic++;
-    pGVM->iFreeHead = 0;
-    if (pGVM->iUsedHead)
+    RTSemFastMutexDestroy(pGVMM->Lock);
+    pGVMM->Lock = NIL_RTSEMFASTMUTEX;
+    pGVMM->u32Magic++;
+    pGVMM->iFreeHead = 0;
+    if (pGVMM->iUsedHead)
     {
-        SUPR0Printf("GVMR0Term: iUsedHead=%#x!\n", pGVM->iUsedHead);
-        pGVM->iUsedHead = 0;
+        SUPR0Printf("GVMMR0Term: iUsedHead=%#x!\n", pGVMM->iUsedHead);
+        pGVMM->iUsedHead = 0;
     }
 
-    RTMemFree(pGVM);
+    RTMemFree(pGVMM);
 }
 
 
@@ -208,11 +210,11 @@ GVMR0DECL(void) GVMR0Term(void)
  *
  * @thread  EMT.
  */
-GVMR0DECL(int) GVMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
+GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
 {
-    SUPR0Printf("GVMR0CreateVM: pSession=%p\n", pSession);
-    PGVM pGVM = g_pGVM;
-    AssertPtrReturn(pGVM, VERR_INTERNAL_ERROR);
+    SUPR0Printf("GVMMR0CreateVM: pSession=%p\n", pSession);
+    PGVMM pGVMM = g_pGVMM;
+    AssertPtrReturn(pGVMM, VERR_INTERNAL_ERROR);
 
     AssertPtrReturn(ppVM, VERR_INVALID_POINTER);
     *ppVM = NULL;
@@ -223,34 +225,36 @@ GVMR0DECL(int) GVMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
     /*
      * The whole allocation process is protected by the lock.
      */
-    int rc = RTSemFastMutexRequest(pGVM->Lock);
+    int rc = RTSemFastMutexRequest(pGVMM->Lock);
     AssertRCReturn(rc, rc);
 
     /*
      * Allocate a handle first so we don't waste resources unnecessarily.
      */
-    uint16_t iHandle = pGVM->iFreeHead;
+    uint16_t iHandle = pGVMM->iFreeHead;
     if (iHandle)
     {
-        PGVMHANDLE pHandle = &pGVM->aHandles[iHandle];
+        PGVMMHANDLE pHandle = &pGVMM->aHandles[iHandle];
 
         /* consistency checks, a bit paranoid as always. */
         if (    !pHandle->pVM
+            /*&&  !pHandle->pGVM */
             &&  !pHandle->pvObj
             &&  pHandle->iSelf == iHandle)
         {
-            pHandle->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_VM, gvmR0HandleObjDestructor, pGVM, pHandle);
+            pHandle->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_VM, gvmmR0HandleObjDestructor, pGVMM, pHandle);
             if (pHandle->pvObj)
             {
                 /*
                  * Move the handle from the free to used list and perform permission checks.
                  */
-                pGVM->iFreeHead = pHandle->iNext;
-                pHandle->iNext = pGVM->iUsedHead;
-                pGVM->iUsedHead = iHandle;
+                pGVMM->iFreeHead = pHandle->iNext;
+                pHandle->iNext = pGVMM->iUsedHead;
+                pGVMM->iUsedHead = iHandle;
 
                 pHandle->fFreeVM = true;
                 pHandle->pVM = NULL;
+                pHandle->pGVM = NULL; /* to be allocated */
                 pHandle->pSession = pSession;
                 pHandle->hEMT = hEMT;
 
@@ -278,10 +282,10 @@ GVMR0DECL(int) GVMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                             pVM->pVMR0 = pVM;
                             pVM->pSession = pSession;
                             pVM->hSelf = iHandle;
-                            RTSemFastMutexRelease(pGVM->Lock);
+                            RTSemFastMutexRelease(pGVMM->Lock);
 
                             *ppVM = pVM;
-                            SUPR0Printf("GVMR0CreateVM: pVM=%p pVMR3=%p\n", pVM, pVMR3);
+                            SUPR0Printf("GVMMR0CreateVM: pVM=%p pVMR3=%p\n", pVM, pVMR3);
                             return VINF_SUCCESS;
                         }
 
@@ -291,16 +295,16 @@ GVMR0DECL(int) GVMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                 /* else: The user wasn't permitted to create this VM. */
 
                 /*
-                 * The handle will be freed by gvmR0HandleObjDestructor as we release the
+                 * The handle will be freed by gvmmR0HandleObjDestructor as we release the
                  * object reference here. A little extra mess because of non-recursive lock.
                  */
                 void *pvObj = pHandle->pvObj;
                 pHandle->pvObj = NULL;
-                RTSemFastMutexRelease(pGVM->Lock);
+                RTSemFastMutexRelease(pGVMM->Lock);
 
                 SUPR0ObjRelease(pvObj, pSession);
 
-                SUPR0Printf("GVMR0CreateVM: failed, rc=%d\n", rc);
+                SUPR0Printf("GVMMR0CreateVM: failed, rc=%d\n", rc);
                 return rc;
             }
 
@@ -312,7 +316,7 @@ GVMR0DECL(int) GVMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
     else
         rc = VERR_GVM_TOO_MANY_VMS;
 
-    RTSemFastMutexRelease(pGVM->Lock);
+    RTSemFastMutexRelease(pGVMM->Lock);
     return rc;
 }
 #endif /* not used yet. */
@@ -326,12 +330,12 @@ GVMR0DECL(int) GVMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
  *
  * @thread  EMT.
  */
-GVMR0DECL(int) GVMR0DestroyVM(PVM pVM)
+GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
 {
-    SUPR0Printf("GVMR0DestroyVM: pVM=%p\n", pVM);
+    SUPR0Printf("GVMMR0DestroyVM: pVM=%p\n", pVM);
 
-    PGVM pGVM = g_pGVM;
-    AssertPtrReturn(pGVM, VERR_INTERNAL_ERROR);
+    PGVMM pGVMM = g_pGVMM;
+    AssertPtrReturn(pGVMM, VERR_INTERNAL_ERROR);
 
     /*
      * Validate the VM structure, state and caller.
@@ -342,9 +346,9 @@ GVMR0DECL(int) GVMR0DestroyVM(PVM pVM)
 
     uint32_t hGVM = pVM->hSelf;
     AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_HANDLE);
-    AssertReturn(hGVM < RT_ELEMENTS(pGVM->aHandles), VERR_INVALID_HANDLE);
+    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_HANDLE);
 
-    PGVMHANDLE pHandle = &pGVM->aHandles[hGVM];
+    PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
     AssertReturn(pHandle->hEMT != NIL_RTNATIVETHREAD, VERR_WRONG_ORDER);
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
 
@@ -356,7 +360,7 @@ GVMR0DECL(int) GVMR0DestroyVM(PVM pVM)
      * Since the lock isn't recursive, we have to make sure nobody can
      * race us as we leave the lock and call SUPR0ObjRelease.
      */
-    int rc = RTSemFastMutexRequest(pGVM->Lock);
+    int rc = RTSemFastMutexRequest(pGVMM->Lock);
     AssertRC(rc);
 
     /* be very careful here because we might be racing someone else cleaning up... */
@@ -366,13 +370,13 @@ GVMR0DECL(int) GVMR0DestroyVM(PVM pVM)
     {
         void *pvObj = pHandle->pvObj;
         pHandle->pvObj = NULL;
-        RTSemFastMutexRelease(pGVM->Lock);
+        RTSemFastMutexRelease(pGVMM->Lock);
 
         SUPR0ObjRelease(pvObj, pVM->pSession);
     }
     else
     {
-        RTSemFastMutexRelease(pGVM->Lock);
+        RTSemFastMutexRelease(pGVMM->Lock);
         rc = VERR_INTERNAL_ERROR;
     }
 
@@ -393,11 +397,11 @@ GVMR0DECL(int) GVMR0DestroyVM(PVM pVM)
  *                      The VM::hGVM field may be updated by this call.
  * @thread  EMT.
  */
-GVMR0DECL(int) GVMR0RegisterVM(PVM pVM)
+GVMMR0DECL(int) GVMMR0RegisterVM(PVM pVM)
 {
-    SUPR0Printf("GVMR0RegisterVM: pVM=%p\n", pVM);
-    PGVM pGVM = g_pGVM;
-    AssertPtrReturn(pGVM, VERR_INTERNAL_ERROR);
+    SUPR0Printf("GVMMR0RegisterVM: pVM=%p\n", pVM);
+    PGVMM pGVMM = g_pGVMM;
+    AssertPtrReturn(pGVMM, VERR_INTERNAL_ERROR);
 
     /*
      * Validate the VM structure and state.
@@ -412,35 +416,36 @@ GVMR0DECL(int) GVMR0RegisterVM(PVM pVM)
     /*
      * Take the lock and call the worker function.
      */
-    int rc = RTSemFastMutexRequest(pGVM->Lock);
+    int rc = RTSemFastMutexRequest(pGVMM->Lock);
     AssertRCReturn(rc, rc);
 
     /*
      * Allocate a handle.
      */
-    uint16_t iHandle = pGVM->iFreeHead;
+    uint16_t iHandle = pGVMM->iFreeHead;
     if (iHandle)
     {
-        PGVMHANDLE pHandle = &pGVM->aHandles[iHandle];
+        PGVMHANDLE pHandle = &pGVMM->aHandles[iHandle];
 
         /* consistency checks, a bit paranoid as always. */
         if (    !pHandle->pVM
             &&  !pHandle->pvObj
             &&  pHandle->iSelf == iHandle)
         {
-            pHandle->pvObj = SUPR0ObjRegister(pVM->pSession, SUPDRVOBJTYPE_VM, gvmR0HandleObjDestructor, pGVM, pHandle);
+            pHandle->pvObj = SUPR0ObjRegister(pVM->pSession, SUPDRVOBJTYPE_VM, gvmmR0HandleObjDestructor, pGVMM, pHandle);
             if (pHandle->pvObj)
             {
                 /*
                  * Move the handle from the free to used list and
                  * perform permission checks.
                  */
-                pGVM->iFreeHead = pHandle->iNext;
-                pHandle->iNext = pGVM->iUsedHead;
-                pGVM->iUsedHead = iHandle;
+                pGVMM->iFreeHead = pHandle->iNext;
+                pHandle->iNext = pGVMM->iUsedHead;
+                pGVMM->iUsedHead = iHandle;
 
                 pHandle->fFreeVM = false;
                 pHandle->pVM = pVM;
+                pHandle->pGVM = NULL; /** @todo to be allocated */
                 pHandle->pSession = pVM->pSession;
                 pHandle->hEMT = hEMT;
 
@@ -448,23 +453,23 @@ GVMR0DECL(int) GVMR0RegisterVM(PVM pVM)
                 if (RT_SUCCESS(rc))
                 {
                     pVM->hSelf = iHandle;
-                    RTSemFastMutexRelease(pGVM->Lock);
+                    RTSemFastMutexRelease(pGVMM->Lock);
                 }
                 else
                 {
                     /*
                      * The user wasn't permitted to create this VM.
-                     * Must use gvmR0HandleObjDestructor via SUPR0ObjRelease to do the
+                     * Must use gvmmR0HandleObjDestructor via SUPR0ObjRelease to do the
                      * cleanups. The lock isn't recursive, thus the extra mess.
                      */
                     void *pvObj = pHandle->pvObj;
                     pHandle->pvObj = NULL;
-                    RTSemFastMutexRelease(pGVM->Lock);
+                    RTSemFastMutexRelease(pGVMM->Lock);
 
                     SUPR0ObjRelease(pvObj, pVM->pSession);
                 }
                 if (RT_FAILURE(rc))
-                    SUPR0Printf("GVMR0RegisterVM: permission denied, rc=%d\n", rc);
+                    SUPR0Printf("GVMMR0RegisterVM: permission denied, rc=%d\n", rc);
                 return rc;
             }
 
@@ -476,24 +481,24 @@ GVMR0DECL(int) GVMR0RegisterVM(PVM pVM)
     else
         rc = VERR_GVM_TOO_MANY_VMS;
 
-    RTSemFastMutexRelease(pGVM->Lock);
-    SUPR0Printf("GVMR0RegisterVM: failed, rc=%d, iHandle=%d\n", rc, iHandle);
+    RTSemFastMutexRelease(pGVMM->Lock);
+    SUPR0Printf("GVMMR0RegisterVM: failed, rc=%d, iHandle=%d\n", rc, iHandle);
     return rc;
 }
 
 
 /**
- * Deregister a VM previously registered using the GVMR0RegisterVM API.
+ * Deregister a VM previously registered using the GVMMR0RegisterVM API.
  *
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @thread  EMT.
  */
-GVMR0DECL(int) GVMR0DeregisterVM(PVM pVM)
+GVMMR0DECL(int) GVMMR0DeregisterVM(PVM pVM)
 {
-    SUPR0Printf("GVMR0DeregisterVM: pVM=%p\n", pVM);
-    return GVMR0DestroyVM(pVM);
+    SUPR0Printf("GVMMR0DeregisterVM: pVM=%p\n", pVM);
+    return GVMMR0DestroyVM(pVM);
 }
 #endif /* ... */
 
@@ -501,54 +506,54 @@ GVMR0DECL(int) GVMR0DeregisterVM(PVM pVM)
 /**
  * Handle destructor.
  *
- * @param   pvGVM       The GVM instance pointer.
+ * @param   pvGVMM       The GVM instance pointer.
  * @param   pvHandle    The handle pointer.
  */
-static DECLCALLBACK(void) gvmR0HandleObjDestructor(void *pvObj, void *pvGVM, void *pvHandle)
+static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, void *pvHandle)
 {
-    SUPR0Printf("gvmR0HandleObjDestructor: %p %p %p\n", pvObj, pvGVM, pvHandle);
+    SUPR0Printf("gvmmR0HandleObjDestructor: %p %p %p\n", pvObj, pvGVMM, pvHandle);
 
     /*
      * Some quick, paranoid, input validation.
      */
     PGVMHANDLE pHandle = (PGVMHANDLE)pvHandle;
     AssertPtr(pHandle);
-    PGVM pGVM = (PGVM)pvGVM;
-    Assert(pGVM == g_pGVM);
-    const uint16_t iHandle = pHandle - &pGVM->aHandles[0];
+    PGVMM pGVMM = (PGVMM)pvGVMM;
+    Assert(pGVMM == g_pGVMM);
+    const uint16_t iHandle = pHandle - &pGVMM->aHandles[0];
     if (    !iHandle
-        ||  iHandle >= RT_ELEMENTS(pGVM->aHandles)
+        ||  iHandle >= RT_ELEMENTS(pGVMM->aHandles)
         ||  iHandle != pHandle->iSelf)
     {
         SUPR0Printf("GVM: handle %d is out of range or corrupt (iSelf=%d)!\n", iHandle, pHandle->iSelf);
         return;
     }
 
-    int rc = RTSemFastMutexRequest(pGVM->Lock);
+    int rc = RTSemFastMutexRequest(pGVMM->Lock);
     AssertRC(rc);
 
     /*
      * This is a tad slow but a doubly linked list is too much hazzle.
      */
-    if (RT_UNLIKELY(pHandle->iNext >= RT_ELEMENTS(pGVM->aHandles)))
+    if (RT_UNLIKELY(pHandle->iNext >= RT_ELEMENTS(pGVMM->aHandles)))
     {
         SUPR0Printf("GVM: used list index %d is out of range!\n", pHandle->iNext);
-        RTSemFastMutexRelease(pGVM->Lock);
+        RTSemFastMutexRelease(pGVMM->Lock);
         return;
     }
 
-    if (pGVM->iUsedHead == iHandle)
-        pGVM->iUsedHead = pHandle->iNext;
+    if (pGVMM->iUsedHead == iHandle)
+        pGVMM->iUsedHead = pHandle->iNext;
     else
     {
-        uint16_t iPrev = pGVM->iUsedHead;
-        int c = RT_ELEMENTS(pGVM->aHandles) + 2;
+        uint16_t iPrev = pGVMM->iUsedHead;
+        int c = RT_ELEMENTS(pGVMM->aHandles) + 2;
         while (!iPrev)
         {
-            if (RT_UNLIKELY(iPrev >= RT_ELEMENTS(pGVM->aHandles)))
+            if (RT_UNLIKELY(iPrev >= RT_ELEMENTS(pGVMM->aHandles)))
             {
                 SUPR0Printf("GVM: used list index %d is out of range!\n");
-                RTSemFastMutexRelease(pGVM->Lock);
+                RTSemFastMutexRelease(pGVMM->Lock);
                 return;
             }
             if (RT_UNLIKELY(c-- <= 0))
@@ -557,18 +562,18 @@ static DECLCALLBACK(void) gvmR0HandleObjDestructor(void *pvObj, void *pvGVM, voi
                 break;
             }
 
-            if (pGVM->aHandles[iPrev].iNext == iHandle)
+            if (pGVMM->aHandles[iPrev].iNext == iHandle)
                 break;
-            iPrev = pGVM->aHandles[iPrev].iNext;
+            iPrev = pGVMM->aHandles[iPrev].iNext;
         }
         if (!iPrev)
         {
             SUPR0Printf("GVM: can't find the handle previous previous of %d!\n", pHandle->iSelf);
-            RTSemFastMutexRelease(pGVM->Lock);
+            RTSemFastMutexRelease(pGVMM->Lock);
             return;
         }
 
-        pGVM->aHandles[iPrev].iNext = pHandle->iNext;
+        pGVMM->aHandles[iPrev].iNext = pHandle->iNext;
     }
     pHandle->iNext = 0;
 
@@ -594,16 +599,44 @@ static DECLCALLBACK(void) gvmR0HandleObjDestructor(void *pvObj, void *pvGVM, voi
     /*
      * Free the handle.
      */
-    pHandle->iNext = pGVM->iFreeHead;
+    pHandle->iNext = pGVMM->iFreeHead;
     pHandle->fFreeVM = false;
-    pGVM->iFreeHead = iHandle;
+    pGVMM->iFreeHead = iHandle;
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pVM, NULL);
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pvObj, NULL);
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pSession, NULL);
     ASMAtomicXchgSize(&pHandle->hEMT, NIL_RTNATIVETHREAD);
 
-    RTSemFastMutexRelease(pGVM->Lock);
-    SUPR0Printf("gvmR0HandleObjDestructor: returns\n");
+    RTSemFastMutexRelease(pGVMM->Lock);
+    SUPR0Printf("gvmmR0HandleObjDestructor: returns\n");
+}
+
+
+/**
+ * Lookup a GVM pointer by its handle.
+ *
+ * @returns The GVM pointer on success, NULL on failure.
+ * @param   hGVM    The global VM handle. Asserts on bad handle.
+ */
+GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
+{
+    PGVMM pGVMM = g_pGVMM;
+    AssertPtrReturn(pGVMM, NULL);
+
+    /*
+     * Validate.
+     */
+    AssertReturn(hGVM != NIL_GVM_HANDLE, NULL);
+    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), NULL);
+
+    /*
+     * Look it up.
+     */
+    AssertReturn(VALID_PTR(pGVMM->aHandles[hGVM].pvObj), NULL);
+    AssertReturn(pGVMM->aHandles[hGVM].hEMT != NIL_RTNATIVETHREAD, NULL);
+    Assert(VALID_PTR(pGVMM->aHandles[hGVM].pVM));
+
+    return pGVMM->aHandles[hGVM].pGVM;
 }
 
 
@@ -613,25 +646,25 @@ static DECLCALLBACK(void) gvmR0HandleObjDestructor(void *pvObj, void *pvGVM, voi
  * @returns The VM handle on success, NULL on failure.
  * @param   hGVM    The global VM handle. Asserts on bad handle.
  */
-GVMR0DECL(PVM) GVMR0ByHandle(uint32_t hGVM)
+GVMMR0DECL(PVM) GVMMR0GetVMByHandle(uint32_t hGVM)
 {
-    PGVM pGVM = g_pGVM;
-    AssertPtrReturn(pGVM, NULL);
+    PGVMM pGVMM = g_pGVMM;
+    AssertPtrReturn(pGVMM, NULL);
 
     /*
      * Validate.
      */
     AssertReturn(hGVM != NIL_GVM_HANDLE, NULL);
-    AssertReturn(hGVM < RT_ELEMENTS(pGVM->aHandles), NULL);
+    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), NULL);
 
     /*
      * Look it up.
      */
-    AssertReturn(VALID_PTR(pGVM->aHandles[hGVM].pvObj), NULL);
-    AssertReturn(pGVM->aHandles[hGVM].hEMT != NIL_RTNATIVETHREAD, NULL);
-    Assert(VALID_PTR(pGVM->aHandles[hGVM].pVM));
+    AssertReturn(VALID_PTR(pGVMM->aHandles[hGVM].pvObj), NULL);
+    AssertReturn(pGVMM->aHandles[hGVM].hEMT != NIL_RTNATIVETHREAD, NULL);
+    Assert(VALID_PTR(pGVMM->aHandles[hGVM].pVM));
 
-    return pGVM->aHandles[hGVM].pVM;
+    return pGVMM->aHandles[hGVM].pVM;
 }
 
 
@@ -646,13 +679,13 @@ GVMR0DECL(PVM) GVMR0ByHandle(uint32_t hGVM)
  * @param   hEMT    The native thread handle of the EMT.
  *                  NIL_RTNATIVETHREAD means the current thread
  */
-GVMR0DECL(PVM) GVMR0ByEMT(RTNATIVETHREAD hEMT)
+GVMMR0DECL(PVM) GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT)
 {
     /*
      * Be very careful here as we're called in AssertMsgN context.
      */
-    PGVM pGVM = g_pGVM;
-    if (!VALID_PTR(pGVM))
+    PGVMM pGVMM = g_pGVMM;
+    if (!VALID_PTR(pGVMM))
         return NULL;
 
     if (hEMT == NIL_RTNATIVETHREAD)
@@ -661,12 +694,12 @@ GVMR0DECL(PVM) GVMR0ByEMT(RTNATIVETHREAD hEMT)
     /*
      * Search the handles, we don't dare take the lock (assert).
      */
-    for (unsigned i = 1; i < RT_ELEMENTS(pGVM->aHandles); i++)
-        if (    pGVM->aHandles[i].hEMT == hEMT
-            &&  pGVM->aHandles[i].iSelf == i
-            &&  VALID_PTR(pGVM->aHandles[i].pvObj)
-            &&  VALID_PTR(pGVM->aHandles[i].pVM))
-            return pGVM->aHandles[i].pVM;
+    for (unsigned i = 1; i < RT_ELEMENTS(pGVMM->aHandles); i++)
+        if (    pGVMM->aHandles[i].hEMT == hEMT
+            &&  pGVMM->aHandles[i].iSelf == i
+            &&  VALID_PTR(pGVMM->aHandles[i].pvObj)
+            &&  VALID_PTR(pGVMM->aHandles[i].pVM))
+            return pGVMM->aHandles[i].pVM;
 
     return NULL;
 }
