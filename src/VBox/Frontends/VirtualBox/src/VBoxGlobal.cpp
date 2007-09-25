@@ -208,7 +208,7 @@ public:
                     sKey == VBoxDefs::GUI_RegistrationDlgWinID)
                 {
                     if (sVal == QString ("%1")
-                        .arg (qApp->mainWidget()->winId()))
+                        .arg ((long)qApp->mainWidget()->winId()))
                     {
                         *allowChange = TRUE;
                         QApplication::postEvent (&global, new VBoxShowRegDlgEvent());
@@ -1651,7 +1651,7 @@ void VBoxGlobal::showRegistrationDialog()
 
     /* store the winid of main app wgt to ensure only one reg dlg running */
     virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
-                               QString ("%1").arg (qApp->mainWidget()->winId()));
+                               QString ("%1").arg ((long)qApp->mainWidget()->winId()));
 }
 
 /**
