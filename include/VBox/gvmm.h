@@ -21,6 +21,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <VBox/sup.h>
 
 /** @defgroup grp_GVMM  GVMM - The Global VM Manager.
  * @{
@@ -45,13 +46,35 @@
  */
 #define NIL_GVM_HANDLE 0
 
-GVMMR0DECL(int)  GVMMR0Init(void);
-GVMMR0DECL(void) GVMMR0Term(void);
-GVMMR0DECL(int)  GVMMR0RegisterVM(PVM pVM);
-GVMMR0DECL(int)  GVMMR0DeregisterVM(PVM pVM);
-GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM);
-GVMMR0DECL(PVM)  GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
-GVMMR0DECL(PVM)  GVMMR0GetVMByHandle(uint32_t hGVM);
+GVMMR0DECL(int)     GVMMR0Init(void);
+GVMMR0DECL(void)    GVMMR0Term(void);
+
+GVMMR0DECL(int)     GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM);
+GVMMR0DECL(int)     GVMMR0CreateVMReq(PSUPVMMR0REQHDR pReqHdr);
+GVMMR0DECL(int)     GVMMR0DestroyVM(PVM pVM);
+GVMMR0DECL(int)     GVMMR0AssociateEMTWithVM(PVM pVM);
+GVMMR0DECL(int)     GVMMR0DisassociateEMTFromVM(PVM pVM);
+GVMMR0DECL(PGVM)    GVMMR0ByHandle(uint32_t hGVM);
+GVMMR0DECL(PGVM)    GVMMR0ByVM(PVM pVM);
+GVMMR0DECL(PVM)     GVMMR0GetVMByHandle(uint32_t hGVM);
+GVMMR0DECL(PVM)     GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
+
+/**
+ * Request packet for calling GVMMR0CreateVM.
+ */
+typedef struct GVMMCREATEVMREQ
+{
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The support driver session. (IN) */
+    PSUPDRVSESSION  pSession;
+    /** Pointer to the ring-3 mapping of the shared VM structure on return. (OUT) */
+    PVMR3           pVMR3;
+    /** Pointer to the ring-0 mapping of the shared VM structure on return. (OUT) */
+    PVMR0           pVMR0;
+} GVMMCREATEVMREQ;
+/** Pointer to a GVMMR0CreateVM request packet. */
+typedef GVMMCREATEVMREQ *PGVMMCREATEVMREQ;
 
 
 /** @} */

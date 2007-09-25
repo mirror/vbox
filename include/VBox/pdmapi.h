@@ -1,7 +1,7 @@
 /** @file
  * PDM - Pluggable Device Manager, Core API.
- * 
- * The 'Core API' has been put in a different header because everyone 
+ *
+ * The 'Core API' has been put in a different header because everyone
  * is currently including pdm.h. So, pdm.h is for including all of the
  * PDM stuff, while pdmapi.h is for the core stuff.
  */
@@ -100,6 +100,9 @@ PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR);
  * @ingroup grp_pdm
  * @{
  */
+
+PDMR3DECL(int)  PDMR3LdrLoadVMMR0(void **ppvOpaque);
+PDMR3DECL(void) PDMR3LdrLoadVMMR0Part2(PVM pVM, void *pvOpaque);
 
 /**
  * Initializes the PDM.

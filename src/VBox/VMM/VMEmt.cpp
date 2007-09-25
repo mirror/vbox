@@ -85,7 +85,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
             rc = VINF_EM_TERMINATE;
             break;
         }
-        else if (pVM->vm.s.pReqs)
+        if (pVM->vm.s.pReqs)
         {
             /*
              * Service execute in EMT request.

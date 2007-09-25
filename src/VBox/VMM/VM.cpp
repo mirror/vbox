@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_VM
 #include <VBox/cfgm.h>
 #include <VBox/vmm.h>
+#include <VBox/gvmm.h>
 #include <VBox/mm.h>
 #include <VBox/cpum.h>
 #include <VBox/selm.h>
@@ -174,126 +175,136 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
     }
 
     /*
-     * Init support library.
+     * Init support library and load the VMMR0.r0 module.
      */
     PSUPDRVSESSION pSession = 0;
     int rc = SUPInit(&pSession, 0);
     if (VBOX_SUCCESS(rc))
     {
-        /*
-         * Allocate memory for the VM structure.
-         */
-        PVMR0 pVMR0 = NIL_RTR0PTR;
-        PVM pVM = NULL;
-        const unsigned cPages = RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT;
-        PSUPPAGE paPages = (PSUPPAGE)RTMemAllocZ(cPages * sizeof(SUPPAGE));
-        AssertReturn(paPages, VERR_NO_MEMORY);
-        rc = SUPLowAlloc(cPages, (void **)&pVM, &pVMR0, &paPages[0]);
-        if (VBOX_SUCCESS(rc))
+        /** @todo This is isn't very nice, it would be preferrable to move the loader bits
+         * out of the VM structure and into a ring-3 only thing. There's a big deal of the
+         * error path that we now won't unload the VMMR0.r0 module in. This isn't such a
+         * big deal right now, but I'll have to get back to this later. (bird) */
+        void *pvVMMR0Opaque;
+        rc = PDMR3LdrLoadVMMR0(&pvVMMR0Opaque);
+        if (RT_SUCCESS(rc))
         {
-            Log(("VMR3Create: Allocated pVM=%p pVMR0=%p\n", pVM, pVMR0));
-
             /*
-             * Do basic init of the VM structure.
+             * Request GVMM to create a new VM for us.
              */
-            memset(pVM, 0, sizeof(*pVM));
-            pVM->pVMR0 = pVMR0;
-            pVM->pVMR3 = pVM;
-            pVM->paVMPagesR3 = paPages;
-            pVM->pSession = pSession;
-            pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
-            pVM->vm.s.ppAtResetNext = &pVM->vm.s.pAtReset;
-            pVM->vm.s.ppAtStateNext = &pVM->vm.s.pAtState;
-            pVM->vm.s.ppAtErrorNext = &pVM->vm.s.pAtError;
-            pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
-            rc = RTSemEventCreate(&pVM->vm.s.EventSemWait);
-            AssertRCReturn(rc, rc);
-
-            /*
-             * Initialize STAM.
-             */
-            rc = STAMR3Init(pVM);
-            if (VBOX_SUCCESS(rc))
+            GVMMCREATEVMREQ CreateVMReq;
+            CreateVMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            CreateVMReq.Hdr.cbReq = sizeof(CreateVMReq);
+            CreateVMReq.pSession = pSession;
+            CreateVMReq.pVMR0 = NIL_RTR0PTR;
+            CreateVMReq.pVMR3 = NULL;
+            rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
+            if (RT_SUCCESS(rc))
             {
+                PVM pVM = CreateVMReq.pVMR3;
+                AssertRelease(VALID_PTR(pVM));
+                Log(("VMR3Create: Created pVM=%p pVMR0=%p\n", pVM, pVM->pVMR0));
+                PDMR3LdrLoadVMMR0Part2(pVM, pvVMMR0Opaque);
+
                 /*
-                 * Create the EMT thread and make it do VM initialization and go sleep
-                 * in EM waiting for requests.
+                 * Do basic init of the VM structure.
                  */
-                VMEMULATIONTHREADARGS Args;
-                Args.pVM = pVM;
-                rc = RTThreadCreate(&pVM->ThreadEMT, &vmR3EmulationThread, &Args, _1M,
-                                    RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
+                pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
+                pVM->vm.s.ppAtResetNext = &pVM->vm.s.pAtReset;
+                pVM->vm.s.ppAtStateNext = &pVM->vm.s.pAtState;
+                pVM->vm.s.ppAtErrorNext = &pVM->vm.s.pAtError;
+                pVM->vm.s.ppAtRuntimeErrorNext = &pVM->vm.s.pAtRuntimeError;
+                rc = RTSemEventCreate(&pVM->vm.s.EventSemWait);
+                AssertRCReturn(rc, rc);
+
+                /*
+                 * Initialize STAM.
+                 */
+                rc = STAMR3Init(pVM);
                 if (VBOX_SUCCESS(rc))
                 {
                     /*
-                     * Issue a VM Create request and wait for it to complete.
+                     * Create the EMT thread, it will start up and wait for requests to process.
                      */
-                    PVMREQ pReq;
-                    rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Create, 5, pVM, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM);
+                    VMEMULATIONTHREADARGS Args;
+                    Args.pVM = pVM;
+                    rc = RTThreadCreate(&pVM->ThreadEMT, vmR3EmulationThread, &Args, _1M,
+                                        RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
                     if (VBOX_SUCCESS(rc))
                     {
-                        rc = pReq->iStatus;
-                        VMR3ReqFree(pReq);
+                        /*
+                         * Issue a VM Create request and wait for it to complete.
+                         */
+                        PVMREQ pReq;
+                        rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Create, 5,
+                                         pVM, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM);
                         if (VBOX_SUCCESS(rc))
                         {
-                            *ppVM = pVM;
-                            LogFlow(("VMR3Create: returns VINF_SUCCESS *ppVM=%p\n", pVM));
-                            return VINF_SUCCESS;
+                            rc = pReq->iStatus;
+                            VMR3ReqFree(pReq);
+                            if (VBOX_SUCCESS(rc))
+                            {
+                                *ppVM = pVM;
+                                LogFlow(("VMR3Create: returns VINF_SUCCESS *ppVM=%p\n", pVM));
+                                return VINF_SUCCESS;
+                            }
+
+                            AssertMsgFailed(("vmR3Create failed rc=%Vrc\n", rc));
                         }
-                        AssertMsgFailed(("vmR3Create failed rc=%Vrc\n", rc));
-                    }
-                    else
-                        AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
+                        else
+                            AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
 
-                    const char *pszError;
-                    /*
-                     * An error occurred during VM creation. Set the error message directly
-                     * using the initial callback, as the callback list doesn't exist yet.
-                     */
-                    switch (rc)
-                    {
-                    case VERR_VMX_IN_VMX_ROOT_MODE:
+                        /*
+                         * An error occurred during VM creation. Set the error message directly
+                         * using the initial callback, as the callback list doesn't exist yet.
+                         */
+                        const char *pszError;
+                        switch (rc)
+                        {
+                            case VERR_VMX_IN_VMX_ROOT_MODE:
 #ifdef RT_OS_LINUX
-                        pszError = N_("VirtualBox can't operate in VMX root mode. "
-        		                      "Please disable the KVM kernel extension, recompile "
-                                      "your kernel and reboot");
+                                pszError = N_("VirtualBox can't operate in VMX root mode. "
+                                              "Please disable the KVM kernel extension, recompile your kernel and reboot");
 #else
-                        pszError = N_("VirtualBox can't operate in VMX root mode");
+                                pszError = N_("VirtualBox can't operate in VMX root mode");
 #endif
-                        break;
-                    default:
-                        pszError = N_("Unknown error creating VM (%Vrc)");
-                        AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
-                    }
-                    vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
+                                break;
+                            default:
+                                pszError = N_("Unknown error creating VM (%Vrc)");
+                                AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
+                        }
+                        vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, pszError, rc);
 
-                    /* Forcefully terminate the emulation thread. */
-                    VM_FF_SET(pVM, VM_FF_TERMINATE);
-                    VMR3NotifyFF(pVM, false);
-                    RTThreadWait(pVM->ThreadEMT, 1000, NULL);
+                        /* Forcefully terminate the emulation thread. */
+                        VM_FF_SET(pVM, VM_FF_TERMINATE);
+                        VMR3NotifyFF(pVM, false);
+                        RTThreadWait(pVM->ThreadEMT, 1000, NULL);
+                    }
+
+                    int rc2 = STAMR3Term(pVM);
+                    AssertRC(rc2);
                 }
 
-                int rc2 = STAMR3Term(pVM);
+                /* cleanup the heap. */
+                int rc2 = MMR3Term(pVM);
+                AssertRC(rc2);
+
+                /* Tell GVMM that it can destroy the VM now. */
+                rc2 = SUPCallVMMR0Ex(CreateVMReq.pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
                 AssertRC(rc2);
             }
-
-            /* cleanup the heap. */
-            int rc2 = MMR3Term(pVM);
-            AssertRC(rc2);
-
-            /* free the VM memory */
-            rc2 = SUPLowFree(pVM, cPages);
-            AssertRC(rc2);
+            else
+            {
+                PDMR3LdrLoadVMMR0Part2(NULL, pvVMMR0Opaque);
+                vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, N_("VM creation failed"));
+                AssertMsgFailed(("GMMR0CreateVMReq returned %Rrc\n", rc));
+            }
         }
         else
         {
-            rc = VERR_NO_MEMORY;
-            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS,
-                              N_("Failed to allocate %d bytes of low memory for the VM structure"),
-                              RT_ALIGN(sizeof(*pVM), PAGE_SIZE));
-            AssertMsgFailed(("Failed to allocate %d bytes of low memory for the VM structure!\n", RT_ALIGN(sizeof(*pVM), PAGE_SIZE)));
+            vmR3CallVMAtError(pfnVMAtError, pvUserVM, rc, RT_SRC_POS, N_("Failed to load VMMR0.r0"));
+            AssertMsgFailed(("PDMR3LdrLoadVMMR0 returned %Rrc\n", rc));
         }
-        RTMemFree(paPages);
 
         /* terminate SUPLib */
         int rc2 = SUPTerm(false);
@@ -301,12 +312,12 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
     }
     else
     {
-        const char *pszError;
         /*
          * An error occurred at support library initialization time (before the
          * VM could be created). Set the error message directly using the
          * initial callback, as the callback list doesn't exist yet.
          */
+        const char *pszError;
         switch (rc)
         {
             case VERR_VM_DRIVER_LOAD_ERROR:
@@ -368,6 +379,8 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
  */
 static void vmR3CallVMAtError(PFNVMATERROR pfnVMAtError, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, ...)
 {
+    if (!pfnVMAtError)
+        return;
     va_list va;
     va_start(va, pszError);
     pfnVMAtError(NULL, pvUser, rc, RT_SRC_POS_ARGS, pszError, va);
@@ -873,6 +886,7 @@ VMR3DECL(int) VMR3SuspendNoSave(PVM pVM)
     return VMR3Suspend(pVM);
 }
 
+
 /**
  * Suspends a running VM.
  *
@@ -949,7 +963,7 @@ VMR3DECL(int)   VMR3Resume(PVM pVM)
  * @returns 0 on success.
  * @returns VBox error code on failure.
  * @param   pVM         The VM to resume.
- * @thread      EMT
+ * @thread  EMT
  */
 static DECLCALLBACK(int) vmR3Resume(PVM pVM)
 {
@@ -1459,9 +1473,9 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
     AssertRC(rc);
     rc = HWACCMR3Term(pVM);
     AssertRC(rc);
-    rc = VMMR3Term(pVM);
-    AssertRC(rc);
     rc = PGMR3Term(pVM);
+    AssertRC(rc);
+    rc = VMMR3Term(pVM); /* Terminates the ring-0 code! */
     AssertRC(rc);
     rc = CPUMR3Term(pVM);
     AssertRC(rc);
@@ -1489,7 +1503,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 void vmR3DestroyFinalBit(PVM pVM)
 {
     /*
-     * Free the event semaphores associated with the request packets.s
+     * Free the event semaphores associated with the request packets.
      */
     unsigned cReqs = 0;
     for (unsigned i = 0; i < ELEMENTS(pVM->vm.s.apReqFree); i++)
@@ -1534,9 +1548,9 @@ void vmR3DestroyFinalBit(PVM pVM)
     AssertRC(rc);
 
     /*
-     * Free the VM structure.
+     * Tell GVMM that it can destroy the VM now.
      */
-    rc = SUPLowFree(pVM, RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT);
+    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
     AssertRC(rc);
     rc = SUPTerm();
     AssertRC(rc);
