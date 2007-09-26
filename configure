@@ -1158,12 +1158,20 @@ EOF
 setup_wine()
 {
   test_header "wine support"
+  if ! which_wrapper wine > /dev/null; then
+    echo "  wine not found"
+    fail
+  fi
+  if ! which_wrapper wineprefixcreate > /dev/null; then
+    echo "  wineprefixcreate not found"
+    fail
+  fi
   export WINEPREFIX="${ODIR}wine.$BUILD_MACHINE"
-  echo "export WINEPREFIX==\"${ODIR}wine.$BUILD_MACHINE\"" >> $ENV
+  echo "export WINEPREFIX=\"${ODIR}wine.$BUILD_MACHINE\"" >> $ENV
   rm -rf $WINEPREFIX
   mkdir -p $WINEPREFIX
   touch $WINEPREFIX/.no_prelaunch_window_flag
-  if ! wineprefixcreate -q; then
+  if ! wineprefixcreate -q > /dev/null 2>&1; then
     echo "  wineprefixcreate failed"
     fail
   fi
@@ -1180,7 +1188,7 @@ setup_wine()
   echo '[HKEY_CURRENT_USER\Software\Wine\AppDefaults\hhw.exe\DllOverrides]' >> $tmp
   echo '"itss"="native"' >> $tmp
   echo '' >> $tmp
-  if ! wine regedit $tmp; then
+  if ! wine regedit $tmp > /dev/null 2>&1; then
     rm -f $tmp
     echo "  failed to load registry changes (path)."
     fail
