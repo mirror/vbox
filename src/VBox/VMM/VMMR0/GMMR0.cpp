@@ -602,15 +602,24 @@ static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGM
 /**
  * Initializes the per-VM data for the GMM.
  *
+ * This is called from within the GVMM lock (from GVMMR0CreateVM)
+ * and should only initialize the data members so GMMR0CleanupVM
+ * can deal with them. We reserve no memory or anything here,
+ * that's done later in GMMR0InitVM.
+ *
  * @param   pGVM    Pointer to the Global VM structure.
  */
 GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
 {
-    pGVM->gmm.s.cRAMPages = 0;
-    pGVM->gmm.s.cPrivatePages = 0;
-    pGVM->gmm.s.cSharedPages = 0;
-    pGVM->gmm.s.enmPolicy = GMMOCPOLICY_TBD;
-    pGVM->gmm.s.enmPriority = GMMPRIORITY_NORMAL;
+    AssertCompile(RT_SIZEOFMEMB(GVM,gmm.s) <= RT_SIZEOFMEMB(GVM,gmm.padding));
+    AssertRelease(RT_SIZEOFMEMB(GVM,gmm.s) <= RT_SIZEOFMEMB(GVM,gmm.padding));
+
+    //pGVM->gmm.s.cBasePages = 0;
+    //pGVM->gmm.s.cPrivatePages = 0;
+    //pGVM->gmm.s.cSharedPages = 0;
+    pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
+    pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
+    pGVM->gmm.s.fMayAllocate = false;
 }
 
 
@@ -623,24 +632,36 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 {
     LogFlow(("GMMR0CleanupVM: pGVM=%p:{.pVM=%p, .hSelf=%#x}\n", pGVM, pGVM->pVM, pGVM->hSelf));
 
+    /*
+     * The policy is 'INVALID' until the initial reservation
+     * request has been serviced.
+     */
+    if (    pGVM->gmm.s.enmPolicy <= GMMOCPOLICY_INVALID
+        ||  pGVM->gmm.s.enmPolicy >= GMMOCPOLICY_END)
+    {
+    }
+
+
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE_VOID(pGMM);
 
-    int rc =  RTSemFastMutexRequest(pGMM->Mtx);
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     /*
-     * If it's the last VM around, we can skip walking all the chunk looking 
+     * If it's the last VM around, we can skip walking all the chunk looking
      * for the pages owned by this VM and instead flush the whole shebang.
      *
      * This takes care of the eventuality that a VM has left shared page
      * references behind (shouldn't happen of course, but you never know).
      */
-    if (pGMM->cActiveVMs == 1)
+    pGMM->cActiveVMs--;
+    if (!pGMM->cActiveVMs)
     {
-        
+
+
     }
-    else if (pGVM->gmm.s.cPrivatePages)
+    else if (0)//pGVM->gmm.s.cPrivatePages)
     {
         /*
          * Walk the entire pool looking for pages that belongs to this VM.
@@ -653,15 +674,15 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
          * Update over-commitment management and free chunks that are no
          * longer needed.
          */
-        
+
     }
 
     RTSemFastMutexRelease(pGMM->Mtx);
 
     /* trash the data */
-    pGVM->gmm.s.cRAMPages = 0;
-    pGVM->gmm.s.cPrivatePages = 0;
-    pGVM->gmm.s.cSharedPages = 0;
+//    pGVM->gmm.s.cBasePages = 0;
+//    pGVM->gmm.s.cPrivatePages = 0;
+//    pGVM->gmm.s.cSharedPages = 0;
     pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
     pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
 
@@ -716,14 +737,14 @@ static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pv
             else
                 cShared++;
 
-        /* 
+        /*
          * Did it add up?
          */
         if (RT_UNLIKELY(    pChunk->cFree != cFree
                         ||  pChunk->cPrivate != cPrivate
                         ||  pChunk->cShared != cShared))
         {
-            SUPR0Printf("GMM: Chunk %p/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n", 
+            SUPR0Printf("GMM: Chunk %p/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n",
                         pChunk->cFree, cFree, pChunk->cPrivate, cPrivate, pChunk->cShared, cShared);
             pChunk->cFree = cFree;
             pChunk->cPrivate = cPrivate;
@@ -732,6 +753,89 @@ static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pv
     }
 
     return 0;
+}
+
+
+/**
+ * The initial resource reservations.
+ *
+ * This will make memory reservations according to policy and priority. If there isn't
+ * sufficient resources available to sustain the VM this function will fail and all
+ * future allocations requests will fail as well.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GMM_NOT_SUFFICENT_MEMORY
+ * @retval  VERR_GMM_
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   cBasePages      The number of pages of RAM. This is *only* the RAM, it does
+ *                          not take additional pages for the ROMs and MMIO2 into account.
+ *                          These allocations will have to be reported when the initialization
+ *                          process has completed.
+ * @param   cShadowPages    The max number of pages that will be allocated for shadow pageing structures.
+ * @param   enmPolicy       The OC policy to use on this VM.
+ * @param   enmPriority     The priority in an out-of-memory situation.
+ */
+GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
+{
+    LogFlow(("GMMR0InitialReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x enmPolicy=%d enmPriority=%d\n",
+             pVM, cBasePages, cShadowPages, enmPolicy, enmPriority));
+
+    /*
+     * Validate, get basics and take the semaphore.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pVM)
+        return VERR_INVALID_PARAMETER;
+
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+
+    pGMM->cActiveVMs++;
+
+
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0InitialReservation: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * This updates the memory reservation with the additional MMIO2 and ROM pages.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GMM_NOT_SUFFICENT_MEMORY
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   cExtraPages     The number of pages that makes up ROM ranges outside the normal
+ *                          RAM and MMIO2 memory.
+ * @param   cMisc           Miscellaneous fixed commitments like the heap, VM structure and such.
+ */
+GMMR0DECL(int) GMMR0ReservationUpdate(PVM pVM, uint64_t cExtraPages)
+{
+    LogFlow(("GMMR0ReservationUpdate: pVM=%p cExtraPages=%#llx\n", pVM, cExtraPages));
+
+    /*
+     * Validate, get basics and take the semaphore.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pVM)
+        return VERR_INVALID_PARAMETER;
+
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0ReservationUpdate: returns %Rrc\n", rc));
+    return rc;
 }
 
 

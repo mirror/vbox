@@ -63,7 +63,7 @@ typedef struct GVM
 #ifdef ___GMMR0Internal_h
         struct GMMPERVM     s;
 #endif
-        uint8_t             padding[64];
+        uint8_t             padding[256];
     } gmm;
 
 } GVM;
