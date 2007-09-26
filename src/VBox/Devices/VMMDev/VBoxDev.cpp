@@ -34,6 +34,9 @@
 
 #include <iprt/assert.h>
 #include <iprt/time.h>
+#ifndef IN_GC
+#include <iprt/mem.h>
+#endif
 
 #include "VMMDevState.h"
 
@@ -407,47 +410,65 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 {
     VMMDevState *pData = (VMMDevState*)pvUser;
     int rcRet = VINF_SUCCESS;
-    int rc;
 
     /*
      * The caller has passed the guest context physical address
-     * of the request structure. Get the corresponding host virtual
-     * address.
+     * of the request structure. Copy the request packet.
      */
-    VMMDevRequestHeader *requestHeader = NULL;
-    rc = PDMDevHlpPhys2HCVirt(pDevIns, (RTGCPHYS)u32, 0, (PRTHCPTR)&requestHeader);
-    if (VBOX_FAILURE(rc) || !requestHeader)
-    {
-        AssertMsgFailed(("VMMDev could not convert guest physical address to host virtual! rc = %Vrc\n", rc));
-        return VINF_SUCCESS;
-    }
+    VMMDevRequestHeader requestHeader = {0};
+    VMMDevRequestHeader *pRequestHeader = NULL;
+
+    PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
 
     /* the structure size must be greater or equal to the header size */
-    if (requestHeader->size < sizeof(VMMDevRequestHeader))
+    if (requestHeader.size < sizeof(VMMDevRequestHeader))
     {
-        Log(("VMMDev request header size too small! size = %d\n", requestHeader->size));
-        return VINF_SUCCESS;
+        Log(("VMMDev request header size too small! size = %d\n", requestHeader.size));
+        rcRet = VINF_SUCCESS;
+        goto end;
     }
 
     /* check the version of the header structure */
-    if (requestHeader->version != VMMDEV_REQUEST_HEADER_VERSION)
+    if (requestHeader.version != VMMDEV_REQUEST_HEADER_VERSION)
     {
-        Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader->version, VMMDEV_REQUEST_HEADER_VERSION));
-        return VINF_SUCCESS;
+        Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader.version, VMMDEV_REQUEST_HEADER_VERSION));
+        rcRet = VINF_SUCCESS;
+        goto end;
     }
 
-    Log2(("VMMDev request issued: %d\n", requestHeader->requestType));
+    Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
 
-    if (requestHeader->requestType != VMMDevReq_ReportGuestInfo
+    if (    requestHeader.requestType != VMMDevReq_ReportGuestInfo
         && !pData->fu32AdditionsOk)
     {
         Log(("VMMDev: guest has not yet reported to us. Refusing operation.\n"));
-        requestHeader->rc = VERR_NOT_SUPPORTED;
-        return VINF_SUCCESS;
+        requestHeader.rc = VERR_NOT_SUPPORTED;
+        rcRet = VINF_SUCCESS;
+        goto end;
     }
 
+    /* Check upper limit */
+    if (requestHeader.size > VMMDEV_MAX_VMMDEVREQ_SIZE)
+    {
+        LogRel(("VMMDev: request packet too big (%x). Refusing operation.\n", requestHeader.size));
+        requestHeader.rc = VERR_NOT_SUPPORTED;
+        rcRet = VINF_SUCCESS;
+        goto end;
+    }
+
+    /* Read the entire request packet */
+    pRequestHeader = (VMMDevRequestHeader *)RTMemAlloc(requestHeader.size);
+    if (!pRequestHeader)
+    {
+        Log(("VMMDev: RTMemAlloc failed!\n"));
+        rcRet = VINF_SUCCESS;
+        requestHeader.rc = VERR_NO_MEMORY;
+        goto end;
+    }
+    PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, pRequestHeader, requestHeader.size);
+
     /* which request was sent? */
-    switch (requestHeader->requestType)
+    switch (pRequestHeader->requestType)
     {
         /*
          * Guest wants to give up a timeslice
@@ -455,7 +476,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         case VMMDevReq_Idle:
         {
             /* just return to EMT telling it that we want to halt */
-            return VINF_EM_HALT;
+            rcRet = VINF_EM_HALT;
             break;
         }
 
@@ -464,14 +485,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_ReportGuestInfo:
         {
-            if (requestHeader->size < sizeof(VMMDevReportGuestInfo))
+            if (pRequestHeader->size < sizeof(VMMDevReportGuestInfo))
             {
                 AssertMsgFailed(("VMMDev guest information structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReportGuestInfo *guestInfo = (VMMDevReportGuestInfo*)requestHeader;
+                VMMDevReportGuestInfo *guestInfo = (VMMDevReportGuestInfo*)pRequestHeader;
 
                 if (memcmp (&pData->guestInfo, &guestInfo->guestInfo, sizeof (guestInfo->guestInfo)) != 0)
                 {
@@ -489,11 +510,11 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 if (pData->fu32AdditionsOk)
                 {
-                    requestHeader->rc = VINF_SUCCESS;
+                    pRequestHeader->rc = VINF_SUCCESS;
                 }
                 else
                 {
-                    requestHeader->rc = VERR_VERSION_MISMATCH;
+                    pRequestHeader->rc = VERR_VERSION_MISMATCH;
                 }
             }
             break;
@@ -502,14 +523,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         /* Report guest capabilities */
         case VMMDevReq_ReportGuestCapabilities:
         {
-            if (requestHeader->size != sizeof(VMMDevReqGuestCapabilities))
+            if (pRequestHeader->size != sizeof(VMMDevReqGuestCapabilities))
             {
                 AssertMsgFailed(("VMMDev guest caps structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReqGuestCapabilities *guestCaps = (VMMDevReqGuestCapabilities*)requestHeader;
+                VMMDevReqGuestCapabilities *guestCaps = (VMMDevReqGuestCapabilities*)pRequestHeader;
 
                 if (pData->guestCaps != guestCaps->caps)
                 {
@@ -525,7 +546,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                     pData->pDrv->pfnUpdateGuestCapabilities(pData->pDrv, guestCaps->caps);
                 }
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -535,14 +556,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_GetMouseStatus:
         {
-            if (requestHeader->size != sizeof(VMMDevReqMouseStatus))
+            if (pRequestHeader->size != sizeof(VMMDevReqMouseStatus))
             {
                 AssertMsgFailed(("VMMDev mouse status structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)requestHeader;
+                VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)pRequestHeader;
                 mouseStatus->mouseFeatures = 0;
                 if (pData->mouseCapabilities & VMMDEV_MOUSEHOSTWANTSABS)
                 {
@@ -560,7 +581,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 mouseStatus->pointerYPos = pData->mouseYAbs;
                 Log2(("returning mouse status: features = %d, absX = %d, absY = %d\n", mouseStatus->mouseFeatures,
                       mouseStatus->pointerXPos, mouseStatus->pointerYPos));
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -570,17 +591,17 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_SetMouseStatus:
         {
-            if (requestHeader->size != sizeof(VMMDevReqMouseStatus))
+            if (pRequestHeader->size != sizeof(VMMDevReqMouseStatus))
             {
                 AssertMsgFailed(("VMMDev mouse status structure has invalid size %d (%#x) version=%d!\n",
-                                 requestHeader->size, requestHeader->size, requestHeader->size, requestHeader->version));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                                 pRequestHeader->size, pRequestHeader->size, pRequestHeader->size, pRequestHeader->version));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
                 bool bCapsChanged = false;
 
-                VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)requestHeader;
+                VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)pRequestHeader;
 
                 /* check if the guest wants absolute coordinates */
                 if (mouseStatus->mouseFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE)
@@ -614,7 +635,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     Log(("VMMDevReq_SetMouseStatus: capabilities changed (%x), informing connector\n", pData->mouseCapabilities));
                     pData->pDrv->pfnUpdateMouseCapabilities(pData->pDrv, pData->mouseCapabilities);
                 }
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
 
             break;
@@ -625,16 +646,16 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_SetPointerShape:
         {
-            if (requestHeader->size < sizeof(VMMDevReqMousePointer))
+            if (pRequestHeader->size < sizeof(VMMDevReqMousePointer))
             {
-                AssertMsg(requestHeader->size == 0x10028 && requestHeader->version == 10000,  /* don't bitch about legacy!!! */
+                AssertMsg(pRequestHeader->size == 0x10028 && pRequestHeader->version == 10000,  /* don't bitch about legacy!!! */
                           ("VMMDev mouse shape structure has invalid size %d (%#x) version=%d!\n",
-                           requestHeader->size, requestHeader->size, requestHeader->size, requestHeader->version));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                           pRequestHeader->size, pRequestHeader->size, pRequestHeader->size, pRequestHeader->version));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReqMousePointer *pointerShape = (VMMDevReqMousePointer*)requestHeader;
+                VMMDevReqMousePointer *pointerShape = (VMMDevReqMousePointer*)pRequestHeader;
 
                 bool fVisible = (pointerShape->fFlags & VBOX_MOUSE_POINTER_VISIBLE) != 0;
                 bool fAlpha = (pointerShape->fFlags & VBOX_MOUSE_POINTER_ALPHA) != 0;
@@ -662,7 +683,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                                                        0, 0,
                                                        NULL);
                 }
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -672,19 +693,19 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_GetHostTime:
         {
-            if (requestHeader->size != sizeof(VMMDevReqHostTime))
+            if (pRequestHeader->size != sizeof(VMMDevReqHostTime))
             {
                 AssertMsgFailed(("VMMDev host time structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (RT_UNLIKELY(pData->fGetHostTimeDisabled))
-                requestHeader->rc = VERR_NOT_SUPPORTED;
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
             else
             {
-                VMMDevReqHostTime *hostTimeReq = (VMMDevReqHostTime*)requestHeader;
+                VMMDevReqHostTime *hostTimeReq = (VMMDevReqHostTime*)pRequestHeader;
                 RTTIMESPEC now;
                 hostTimeReq->time = RTTimeSpecGetMilli(PDMDevHlpUTCNow(pDevIns, &now));
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -694,17 +715,17 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_GetHypervisorInfo:
         {
-            if (requestHeader->size != sizeof(VMMDevReqHypervisorInfo))
+            if (pRequestHeader->size != sizeof(VMMDevReqHypervisorInfo))
             {
                 AssertMsgFailed(("VMMDev hypervisor info structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)requestHeader;
+                VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)pRequestHeader;
                 PVM pVM = PDMDevHlpGetVM(pDevIns);
                 size_t hypervisorSize = 0;
-                requestHeader->rc = PGMR3MappingsSize(pVM, &hypervisorSize);
+                pRequestHeader->rc = PGMR3MappingsSize(pVM, &hypervisorSize);
                 hypervisorInfo->hypervisorSize = (uint32_t)hypervisorSize;
                 Assert(hypervisorInfo->hypervisorSize == hypervisorSize);
             }
@@ -716,32 +737,32 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_SetHypervisorInfo:
         {
-            if (requestHeader->size != sizeof(VMMDevReqHypervisorInfo))
+            if (pRequestHeader->size != sizeof(VMMDevReqHypervisorInfo))
             {
                 AssertMsgFailed(("VMMDev hypervisor info structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)requestHeader;
+                VMMDevReqHypervisorInfo *hypervisorInfo = (VMMDevReqHypervisorInfo*)pRequestHeader;
                 PVM pVM = PDMDevHlpGetVM(pDevIns);
                 if (hypervisorInfo->hypervisorStart == 0)
                 {
-                    requestHeader->rc = PGMR3MappingsUnfix(pVM);
+                    pRequestHeader->rc = PGMR3MappingsUnfix(pVM);
                 } else
                 {
                     /* only if the client has queried the size before! */
                     size_t mappingsSize;
-                    requestHeader->rc = PGMR3MappingsSize(pVM, &mappingsSize);
-                    if (VBOX_SUCCESS(requestHeader->rc) && (hypervisorInfo->hypervisorSize == mappingsSize))
+                    pRequestHeader->rc = PGMR3MappingsSize(pVM, &mappingsSize);
+                    if (VBOX_SUCCESS(pRequestHeader->rc) && (hypervisorInfo->hypervisorSize == mappingsSize))
                     {
                         /* new reservation */
-                        requestHeader->rc = PGMR3MappingsFix(pVM, hypervisorInfo->hypervisorStart,
+                        pRequestHeader->rc = PGMR3MappingsFix(pVM, hypervisorInfo->hypervisorStart,
                                                              hypervisorInfo->hypervisorSize);
                         LogRel(("Guest reported fixed hypervisor window at 0x%p (size = 0x%x, rc = %Vrc)\n",
                                 hypervisorInfo->hypervisorStart,
                                 hypervisorInfo->hypervisorSize,
-                                requestHeader->rc));
+                                pRequestHeader->rc));
                     }
                 }
             }
@@ -753,40 +774,40 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_SetPowerStatus:
         {
-            if (requestHeader->size != sizeof(VMMDevPowerStateRequest))
+            if (pRequestHeader->size != sizeof(VMMDevPowerStateRequest))
             {
                 AssertMsgFailed(("VMMDev power state request structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevPowerStateRequest *powerStateRequest = (VMMDevPowerStateRequest*)requestHeader;
+                VMMDevPowerStateRequest *powerStateRequest = (VMMDevPowerStateRequest*)pRequestHeader;
                 switch(powerStateRequest->powerState)
                 {
                     case VMMDevPowerState_Pause:
                     {
                         LogRel(("Guest requests the VM to be suspended (paused)\n"));
-                        requestHeader->rc = rcRet = PDMDevHlpVMSuspend(pDevIns);
+                        pRequestHeader->rc = rcRet = PDMDevHlpVMSuspend(pDevIns);
                         break;
                     }
 
                     case VMMDevPowerState_PowerOff:
                     {
                         LogRel(("Guest requests the VM to be turned off\n"));
-                        requestHeader->rc = rcRet = PDMDevHlpVMPowerOff(pDevIns);
+                        pRequestHeader->rc = rcRet = PDMDevHlpVMPowerOff(pDevIns);
                         break;
                     }
 
                     case VMMDevPowerState_SaveState:
                     {
                         /** @todo no API for that yet */
-                        requestHeader->rc = VERR_NOT_IMPLEMENTED;
+                        pRequestHeader->rc = VERR_NOT_IMPLEMENTED;
                         break;
                     }
 
                     default:
                         AssertMsgFailed(("VMMDev invalid power state request: %d\n", powerStateRequest->powerState));
-                        requestHeader->rc = VERR_INVALID_PARAMETER;
+                        pRequestHeader->rc = VERR_INVALID_PARAMETER;
                         break;
                 }
             }
@@ -798,18 +819,18 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_GetDisplayChangeRequest:
         {
-            if (requestHeader->size != sizeof(VMMDevDisplayChangeRequest))
+            if (pRequestHeader->size != sizeof(VMMDevDisplayChangeRequest))
             {
                 /* Assert only if the size also not equal to a previous version size to prevent
                  * assertion with old additions.
                  */
-                AssertMsg(requestHeader->size == sizeof(VMMDevDisplayChangeRequest) - sizeof (uint32_t),
+                AssertMsg(pRequestHeader->size == sizeof(VMMDevDisplayChangeRequest) - sizeof (uint32_t),
                           ("VMMDev display change request structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevDisplayChangeRequest *displayChangeRequest = (VMMDevDisplayChangeRequest*)requestHeader;
+                VMMDevDisplayChangeRequest *displayChangeRequest = (VMMDevDisplayChangeRequest*)pRequestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
                      pData->displayChangeRequest.xres, pData->displayChangeRequest.yres, pData->displayChangeRequest.bpp));
@@ -823,20 +844,20 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pData->lastReadDisplayChangeRequest = pData->displayChangeRequest;
                 }
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
 
         case VMMDevReq_GetDisplayChangeRequest2:
         {
-            if (requestHeader->size != sizeof(VMMDevDisplayChangeRequest2))
+            if (pRequestHeader->size != sizeof(VMMDevDisplayChangeRequest2))
             {
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevDisplayChangeRequest2 *displayChangeRequest = (VMMDevDisplayChangeRequest2*)requestHeader;
+                VMMDevDisplayChangeRequest2 *displayChangeRequest = (VMMDevDisplayChangeRequest2*)pRequestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
                      pData->displayChangeRequest.xres, pData->displayChangeRequest.yres, pData->displayChangeRequest.bpp, pData->displayChangeRequest.display));
@@ -851,7 +872,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pData->lastReadDisplayChangeRequest = pData->displayChangeRequest;
                 }
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -861,16 +882,16 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_VideoModeSupported:
         {
-            if (requestHeader->size != sizeof(VMMDevVideoModeSupportedRequest))
+            if (pRequestHeader->size != sizeof(VMMDevVideoModeSupportedRequest))
             {
                 AssertMsgFailed(("VMMDev video mode supported request structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevVideoModeSupportedRequest *videoModeSupportedRequest = (VMMDevVideoModeSupportedRequest*)requestHeader;
+                VMMDevVideoModeSupportedRequest *videoModeSupportedRequest = (VMMDevVideoModeSupportedRequest*)pRequestHeader;
                 /* forward the call */
-                requestHeader->rc = pData->pDrv->pfnVideoModeSupported(pData->pDrv,
+                pRequestHeader->rc = pData->pDrv->pfnVideoModeSupported(pData->pDrv,
                                                                        videoModeSupportedRequest->width,
                                                                        videoModeSupportedRequest->height,
                                                                        videoModeSupportedRequest->bpp,
@@ -884,16 +905,16 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_GetHeightReduction:
         {
-            if (requestHeader->size != sizeof(VMMDevGetHeightReductionRequest))
+            if (pRequestHeader->size != sizeof(VMMDevGetHeightReductionRequest))
             {
                 AssertMsgFailed(("VMMDev height reduction request structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevGetHeightReductionRequest *heightReductionRequest = (VMMDevGetHeightReductionRequest*)requestHeader;
+                VMMDevGetHeightReductionRequest *heightReductionRequest = (VMMDevGetHeightReductionRequest*)pRequestHeader;
                 /* forward the call */
-                requestHeader->rc = pData->pDrv->pfnGetHeightReduction(pData->pDrv,
+                pRequestHeader->rc = pData->pDrv->pfnGetHeightReduction(pData->pDrv,
                                                                        &heightReductionRequest->heightReduction);
             }
             break;
@@ -904,10 +925,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_AcknowledgeEvents:
         {
-            if (requestHeader->size != sizeof(VMMDevEvents))
+            if (pRequestHeader->size != sizeof(VMMDevEvents))
             {
                 AssertMsgFailed(("VMMDevReq_AcknowledgeEvents structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
@@ -925,7 +946,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         pData->u32GuestFilterMask = pData->u32NewGuestFilterMask;
                     }
 
-                    pAckRequest = (VMMDevEvents *) requestHeader;
+                    pAckRequest = (VMMDevEvents *)pRequestHeader;
                     pAckRequest->events =
                         pData->u32HostEventFlags & pData->u32GuestFilterMask;
 
@@ -933,7 +954,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pData->pVMMDevRAMHC->V.V1_04.fHaveEvents = false;
                     PDMDevHlpPCISetIrqNoWait (pData->pDevIns, 0, 0);
                 }
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -943,23 +964,23 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_CtlGuestFilterMask:
         {
-            if (requestHeader->size != sizeof(VMMDevCtlGuestFilterMask))
+            if (pRequestHeader->size != sizeof(VMMDevCtlGuestFilterMask))
             {
                 AssertMsgFailed(("VMMDevReq_AcknowledgeEvents structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
                 VMMDevCtlGuestFilterMask *pCtlMaskRequest;
 
-                pCtlMaskRequest = (VMMDevCtlGuestFilterMask *) requestHeader;
+                pCtlMaskRequest = (VMMDevCtlGuestFilterMask *)pRequestHeader;
                 /* The HGCM events are enabled by the VMMDev device automatically when any
                  * HGCM command is issued. The guest then can not disable these events.
                  */
                 vmmdevCtlGuestFilterMask_EMT (pData,
                                               pCtlMaskRequest->u32OrMask,
                                               pCtlMaskRequest->u32NotMask & ~VMMDEV_EVENT_HGCM);
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
 
             }
             break;
@@ -971,69 +992,69 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_HGCMConnect:
         {
-            if (requestHeader->size < sizeof(VMMDevHGCMConnect))
+            if (pRequestHeader->size < sizeof(VMMDevHGCMConnect))
             {
                 AssertMsgFailed(("VMMDevReq_HGCMConnect structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (!pData->pHGCMDrv)
             {
                 Log(("VMMDevReq_HGCMConnect HGCM Connector is NULL!\n"));
-                requestHeader->rc = VERR_NOT_SUPPORTED;
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
             }
             else
             {
-                VMMDevHGCMConnect *pHGCMConnect = (VMMDevHGCMConnect *)requestHeader;
+                VMMDevHGCMConnect *pHGCMConnect = (VMMDevHGCMConnect *)pRequestHeader;
 
                 Log(("VMMDevReq_HGCMConnect\n"));
 
-                requestHeader->rc = vmmdevHGCMConnect (pData, pHGCMConnect, (RTGCPHYS)u32);
+                pRequestHeader->rc = vmmdevHGCMConnect (pData, pHGCMConnect, (RTGCPHYS)u32);
             }
             break;
         }
 
         case VMMDevReq_HGCMDisconnect:
         {
-            if (requestHeader->size < sizeof(VMMDevHGCMDisconnect))
+            if (pRequestHeader->size < sizeof(VMMDevHGCMDisconnect))
             {
                 AssertMsgFailed(("VMMDevReq_HGCMDisconnect structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (!pData->pHGCMDrv)
             {
                 Log(("VMMDevReq_HGCMDisconnect HGCM Connector is NULL!\n"));
-                requestHeader->rc = VERR_NOT_SUPPORTED;
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
             }
             else
             {
-                VMMDevHGCMDisconnect *pHGCMDisconnect = (VMMDevHGCMDisconnect *)requestHeader;
+                VMMDevHGCMDisconnect *pHGCMDisconnect = (VMMDevHGCMDisconnect *)pRequestHeader;
 
                 Log(("VMMDevReq_VMMDevHGCMDisconnect\n"));
-                requestHeader->rc = vmmdevHGCMDisconnect (pData, pHGCMDisconnect, (RTGCPHYS)u32);
+                pRequestHeader->rc = vmmdevHGCMDisconnect (pData, pHGCMDisconnect, (RTGCPHYS)u32);
             }
             break;
         }
 
         case VMMDevReq_HGCMCall:
         {
-            if (requestHeader->size < sizeof(VMMDevHGCMCall))
+            if (pRequestHeader->size < sizeof(VMMDevHGCMCall))
             {
                 AssertMsgFailed(("VMMDevReq_HGCMCall structure has invalid size!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (!pData->pHGCMDrv)
             {
                 Log(("VMMDevReq_HGCMCall HGCM Connector is NULL!\n"));
-                requestHeader->rc = VERR_NOT_SUPPORTED;
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
             }
             else
             {
-                VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)requestHeader;
+                VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pRequestHeader;
 
                 Log2(("VMMDevReq_HGCMCall: sizeof (VMMDevHGCMRequest) = %04X\n", sizeof (VMMDevHGCMCall)));
-                Log2(("%.*Vhxd\n", requestHeader->size, requestHeader));
+                Log2(("%.*Vhxd\n", pRequestHeader->size, requestHeader));
 
-                requestHeader->rc = vmmdevHGCMCall (pData, pHGCMCall, (RTGCPHYS)u32);
+                pRequestHeader->rc = vmmdevHGCMCall (pData, pHGCMCall, (RTGCPHYS)u32);
             }
             break;
         }
@@ -1041,25 +1062,25 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
         case VMMDevReq_VideoAccelEnable:
         {
-            if (requestHeader->size < sizeof(VMMDevVideoAccelEnable))
+            if (pRequestHeader->size < sizeof(VMMDevVideoAccelEnable))
             {
                 Log(("VMMDevReq_VideoAccelEnable request size too small!!!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (!pData->pDrv)
             {
                 Log(("VMMDevReq_VideoAccelEnable Connector is NULL!!!\n"));
-                requestHeader->rc = VERR_NOT_SUPPORTED;
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
             }
             else
             {
-                VMMDevVideoAccelEnable *ptr = (VMMDevVideoAccelEnable *)requestHeader;
+                VMMDevVideoAccelEnable *ptr = (VMMDevVideoAccelEnable *)pRequestHeader;
 
                 if (ptr->cbRingBuffer != VBVA_RING_BUFFER_SIZE)
                 {
                     /* The guest driver seems compiled with another headers. */
                     Log(("VMMDevReq_VideoAccelEnable guest ring buffer size %d, should be %d!!!\n", ptr->cbRingBuffer, VBVA_RING_BUFFER_SIZE));
-                    requestHeader->rc = VERR_INVALID_PARAMETER;
+                    pRequestHeader->rc = VERR_INVALID_PARAMETER;
                 }
                 else
                 {
@@ -1068,12 +1089,12 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                     LogFlow(("VMMDevReq_VideoAccelEnable ptr->u32Enable = %d\n", ptr->u32Enable));
 
-                    requestHeader->rc = ptr->u32Enable?
+                    pRequestHeader->rc = ptr->u32Enable?
                         pData->pDrv->pfnVideoAccelEnable (pData->pDrv, true, &pData->pVMMDevRAMHC->vbvaMemory):
                         pData->pDrv->pfnVideoAccelEnable (pData->pDrv, false, NULL);
 
                     if (   ptr->u32Enable
-                        && VBOX_SUCCESS (requestHeader->rc))
+                        && VBOX_SUCCESS (pRequestHeader->rc))
                     {
                         ptr->fu32Status |= VBVA_F_STATUS_ENABLED;
 
@@ -1094,57 +1115,57 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
         case VMMDevReq_VideoAccelFlush:
         {
-            if (requestHeader->size < sizeof(VMMDevVideoAccelFlush))
+            if (pRequestHeader->size < sizeof(VMMDevVideoAccelFlush))
             {
                 AssertMsgFailed(("VMMDevReq_VideoAccelFlush request size too small.\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (!pData->pDrv)
             {
                 Log(("VMMDevReq_VideoAccelFlush Connector is NULL!\n"));
-                requestHeader->rc = VERR_NOT_SUPPORTED;
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
             }
             else
             {
                 pData->pDrv->pfnVideoAccelFlush (pData->pDrv);
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
 
         case VMMDevReq_VideoSetVisibleRegion:
         {
-            if (requestHeader->size < sizeof(VMMDevVideoSetVisibleRegion))
+            if (pRequestHeader->size < sizeof(VMMDevVideoSetVisibleRegion))
             {
                 Log(("VMMDevReq_VideoSetVisibleRegion request size too small!!!\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else if (!pData->pDrv)
             {
                 Log(("VMMDevReq_VideoSetVisibleRegion Connector is NULL!!!\n"));
-                requestHeader->rc = VERR_NOT_SUPPORTED;
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
             }
             else
             {
-                VMMDevVideoSetVisibleRegion *ptr = (VMMDevVideoSetVisibleRegion *)requestHeader;
+                VMMDevVideoSetVisibleRegion *ptr = (VMMDevVideoSetVisibleRegion *)pRequestHeader;
 
                 if (!ptr->cRect)
                 {
                     Log(("VMMDevReq_VideoSetVisibleRegion no rectangles!!!\n"));
-                    requestHeader->rc = VERR_INVALID_PARAMETER;
+                    pRequestHeader->rc = VERR_INVALID_PARAMETER;
                 }
                 else
-                if (requestHeader->size != sizeof(VMMDevVideoSetVisibleRegion) + (ptr->cRect-1)*sizeof(RTRECT))
+                if (pRequestHeader->size != sizeof(VMMDevVideoSetVisibleRegion) + (ptr->cRect-1)*sizeof(RTRECT))
                 {
                     Log(("VMMDevReq_VideoSetVisibleRegion request size too small!!!\n"));
-                    requestHeader->rc = VERR_INVALID_PARAMETER;
+                    pRequestHeader->rc = VERR_INVALID_PARAMETER;
                 }
                 else
                 {
                     Log(("VMMDevReq_VideoSetVisibleRegion %d rectangles\n", ptr->cRect));
                     /* forward the call */
-                    requestHeader->rc = pData->pDrv->pfnSetVisibleRegion(pData->pDrv, ptr->cRect, &ptr->Rect);
+                    pRequestHeader->rc = pData->pDrv->pfnSetVisibleRegion(pData->pDrv, ptr->cRect, &ptr->Rect);
                 }
             }
             break;
@@ -1152,13 +1173,13 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
         case VMMDevReq_GetSeamlessChangeRequest:
         {
-            if (requestHeader->size != sizeof(VMMDevSeamlessChangeRequest))
+            if (pRequestHeader->size != sizeof(VMMDevSeamlessChangeRequest))
             {
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevSeamlessChangeRequest *seamlessChangeRequest = (VMMDevSeamlessChangeRequest*)requestHeader;
+                VMMDevSeamlessChangeRequest *seamlessChangeRequest = (VMMDevSeamlessChangeRequest*)pRequestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning seamless change request mode=%d\n", pData->fSeamlessEnabled));
                 if (pData->fSeamlessEnabled)
@@ -1172,27 +1193,27 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pData->fLastSeamlessEnabled = pData->fSeamlessEnabled;
                 }
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
 
         case VMMDevReq_GetVRDPChangeRequest:
         {
-            if (requestHeader->size != sizeof(VMMDevVRDPChangeRequest))
+            if (pRequestHeader->size != sizeof(VMMDevVRDPChangeRequest))
             {
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevVRDPChangeRequest *vrdpChangeRequest = (VMMDevVRDPChangeRequest*)requestHeader;
+                VMMDevVRDPChangeRequest *vrdpChangeRequest = (VMMDevVRDPChangeRequest*)pRequestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning VRDP status %d level %d\n", pData->fVRDPEnabled, pData->u32VRDPExperienceLevel));
                 
                 vrdpChangeRequest->u8VRDPActive = pData->fVRDPEnabled;
                 vrdpChangeRequest->u32VRDPExperienceLevel = pData->u32VRDPExperienceLevel;
                 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -1200,14 +1221,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         case VMMDevReq_GetMemBalloonChangeRequest:
         {
             Log(("VMMDevReq_GetMemBalloonChangeRequest\n"));
-            if (requestHeader->size != sizeof(VMMDevGetMemBalloonChangeRequest))
+            if (pRequestHeader->size != sizeof(VMMDevGetMemBalloonChangeRequest))
             {
                 AssertFailed();
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevGetMemBalloonChangeRequest *memBalloonChangeRequest = (VMMDevGetMemBalloonChangeRequest*)requestHeader;
+                VMMDevGetMemBalloonChangeRequest *memBalloonChangeRequest = (VMMDevGetMemBalloonChangeRequest*)pRequestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning memory balloon size =%d\n", pData->u32MemoryBalloonSize));
                 memBalloonChangeRequest->u32BalloonSize = pData->u32MemoryBalloonSize;
@@ -1219,26 +1240,26 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pData->u32LastMemoryBalloonSize = pData->u32MemoryBalloonSize;
                 }
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
 
         case VMMDevReq_ChangeMemBalloon:
         {
-            VMMDevChangeMemBalloon *memBalloonChange = (VMMDevChangeMemBalloon*)requestHeader;
+            VMMDevChangeMemBalloon *memBalloonChange = (VMMDevChangeMemBalloon*)pRequestHeader;
 
             Log(("VMMDevReq_ChangeMemBalloon\n"));
-            if (    requestHeader->size < sizeof(VMMDevChangeMemBalloon)
+            if (    pRequestHeader->size < sizeof(VMMDevChangeMemBalloon)
                 ||  memBalloonChange->cPages != VMMDEV_MEMORY_BALLOON_CHUNK_PAGES
-                ||  requestHeader->size != (uint32_t)RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[memBalloonChange->cPages]))
+                ||  pRequestHeader->size != (uint32_t)RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[memBalloonChange->cPages]))
             {
                 AssertFailed();
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                requestHeader->rc = pData->pDrv->pfnChangeMemoryBalloon(pData->pDrv, !!memBalloonChange->fInflate, memBalloonChange->cPages, memBalloonChange->aPhysPage);
+                pRequestHeader->rc = pData->pDrv->pfnChangeMemoryBalloon(pData->pDrv, !!memBalloonChange->fInflate, memBalloonChange->cPages, memBalloonChange->aPhysPage);
             }
             break;
         }
@@ -1246,14 +1267,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         case VMMDevReq_GetStatisticsChangeRequest:
         {
             Log(("VMMDevReq_GetStatisticsChangeRequest\n"));
-            if (requestHeader->size != sizeof(VMMDevGetStatisticsChangeRequest))
+            if (pRequestHeader->size != sizeof(VMMDevGetStatisticsChangeRequest))
             {
                 AssertFailed();
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevGetStatisticsChangeRequest *statIntervalChangeRequest = (VMMDevGetStatisticsChangeRequest*)requestHeader;
+                VMMDevGetStatisticsChangeRequest *statIntervalChangeRequest = (VMMDevGetStatisticsChangeRequest*)pRequestHeader;
                 /* just pass on the information */
                 Log(("VMMDev: returning statistics interval %d seconds\n", pData->u32StatIntervalSize));
                 statIntervalChangeRequest->u32StatInterval = pData->u32StatIntervalSize;
@@ -1264,7 +1285,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pData->u32LastStatIntervalSize= pData->u32StatIntervalSize;
                 }
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -1272,13 +1293,13 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         case VMMDevReq_ReportGuestStats:
         {
             Log(("VMMDevReq_ReportGuestStats\n"));
-            if (requestHeader->size != sizeof(VMMDevReportGuestStats))
+            if (pRequestHeader->size != sizeof(VMMDevReportGuestStats))
             {
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReportGuestStats *stats = (VMMDevReportGuestStats*)requestHeader;
+                VMMDevReportGuestStats *stats = (VMMDevReportGuestStats*)pRequestHeader;
 
 #ifdef DEBUG
                 VBoxGuestStatistics *pGuestStats = &stats->guestStats;
@@ -1340,21 +1361,21 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 #endif
 
                 /* forward the call */
-                requestHeader->rc = pData->pDrv->pfnReportStatistics(pData->pDrv, &stats->guestStats);
+                pRequestHeader->rc = pData->pDrv->pfnReportStatistics(pData->pDrv, &stats->guestStats);
             }
             break;
         }
 
         case VMMDevReq_QueryCredentials:
         {
-            if (requestHeader->size != sizeof(VMMDevCredentials))
+            if (pRequestHeader->size != sizeof(VMMDevCredentials))
             {
                 AssertMsgFailed(("VMMDevReq_QueryCredentials request size too small.\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevCredentials *credentials = (VMMDevCredentials*)requestHeader;
+                VMMDevCredentials *credentials = (VMMDevCredentials*)pRequestHeader;
 
                 /* let's start by nulling out the data */
                 memset(credentials->szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
@@ -1418,21 +1439,21 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     memset(pData->credentialsJudge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
                 }
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
 
         case VMMDevReq_ReportCredentialsJudgement:
         {
-            if (requestHeader->size != sizeof(VMMDevCredentials))
+            if (pRequestHeader->size != sizeof(VMMDevCredentials))
             {
                 AssertMsgFailed(("VMMDevReq_ReportCredentialsJudgement request size too small.\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevCredentials *credentials = (VMMDevCredentials*)requestHeader;
+                VMMDevCredentials *credentials = (VMMDevCredentials*)pRequestHeader;
 
                 /* what does the guest think about the credentials? (note: the order is important here!) */
                 if (credentials->u32Flags & VMMDEV_CREDENTIALS_JUDGE_DENY)
@@ -1450,7 +1471,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 else
                     Log(("VMMDevReq_ReportCredentialsJudgement: invalid flags: %d!!!\n", credentials->u32Flags));
 
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
@@ -1458,14 +1479,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 #ifdef DEBUG
         case VMMDevReq_LogString:
         {
-            if (requestHeader->size < sizeof(VMMDevReqLogString))
+            if (pRequestHeader->size < sizeof(VMMDevReqLogString))
             {
                 AssertMsgFailed(("VMMDevReq_LogString request size too small.\n"));
-                requestHeader->rc = VERR_INVALID_PARAMETER;
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                VMMDevReqLogString *pReqLogString = (VMMDevReqLogString*)requestHeader;
+                VMMDevReqLogString *pReqLogString = (VMMDevReqLogString*)pRequestHeader;
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
 //                Log(("Guest Log: %s", pReqLogString->szString));
@@ -1473,21 +1494,33 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_DEV_VMM
-                requestHeader->rc = VINF_SUCCESS;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
 #endif
         default:
         {
-            requestHeader->rc = VERR_NOT_IMPLEMENTED;
+            pRequestHeader->rc = VERR_NOT_IMPLEMENTED;
 
-            Log(("VMMDev unknown request type %d\n", requestHeader->requestType));
+            Log(("VMMDev unknown request type %d\n", pRequestHeader->requestType));
 
             break;
         }
     }
 
+end:
+    /* Write the result back to guest memory */
+    if (pRequestHeader)
+    {
+        PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)u32, pRequestHeader, pRequestHeader->size);
+        RTMemFree(pRequestHeader);
+    }
+    else
+    {
+        /* early error case; write back header only */
+        PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
+    }
     return rcRet;
 }
 
@@ -1917,7 +1950,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION  5
+#define VMMDEV_SSM_VERSION  6
 
 /**
  * Saves a state of the VMM device.

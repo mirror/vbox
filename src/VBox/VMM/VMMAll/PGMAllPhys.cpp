@@ -758,6 +758,10 @@ PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  */
 PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr)
 {
+#ifdef NEW_PHYS_CODE
+    VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
+#endif
+
 #ifdef PGM_DYNAMIC_RAM_ALLOC
     if ((GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK) != ((GCPhys+cbRange-1) & PGM_DYNAMIC_CHUNK_BASE_MASK))
     {
@@ -849,6 +853,10 @@ PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
  */
 PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
 {
+#ifdef NEW_PHYS_CODE
+    VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
+#endif
+
     RTGCPHYS GCPhys;
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (VBOX_SUCCESS(rc))
@@ -873,6 +881,9 @@ PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
  */
 PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, unsigned fFlags, PRTHCPTR pHCPtr)
 {
+#ifdef NEW_PHYS_CODE
+    VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
+#endif
     /*
      * PAE or 32-bit?
      */

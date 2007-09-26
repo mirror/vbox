@@ -142,9 +142,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCP
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb);
 static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC);
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
-static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable);
 static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns);
@@ -176,8 +174,9 @@ static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_PhysWrite(PPDMDEVINS pDevIns, RT
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC);
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
+
 static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_A20IsEnabled(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_A20Set(PPDMDEVINS pDevIns, bool fEnable);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns);
@@ -340,8 +339,8 @@ const PDMDEVHLP g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysReadGCVirt,
     pdmR3DevHlp_PhysWriteGCVirt,
     pdmR3DevHlp_PhysReserve,
-    pdmR3DevHlp_Phys2HCVirt,
-    pdmR3DevHlp_PhysGCPtr2HCPtr,
+    pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt,
+    pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr,
     pdmR3DevHlp_A20IsEnabled,
     pdmR3DevHlp_A20Set,
     pdmR3DevHlp_VMReset,
@@ -429,8 +428,8 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_PhysReadGCVirt,
     pdmR3DevHlp_Untrusted_PhysWriteGCVirt,
     pdmR3DevHlp_Untrusted_PhysReserve,
-    pdmR3DevHlp_Untrusted_Phys2HCVirt,
-    pdmR3DevHlp_Untrusted_PhysGCPtr2HCPtr,
+    pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt,
+    pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr,
     pdmR3DevHlp_Untrusted_A20IsEnabled,
     pdmR3DevHlp_Untrusted_A20Set,
     pdmR3DevHlp_Untrusted_VMReset,
@@ -3267,46 +3266,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GC
     return rc;
 }
 
-
-/** @copydoc PDMDEVHLP::pfnPhys2HCVirt */
-static DECLCALLBACK(int) pdmR3DevHlp_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMHC;
-    VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_Phys2HCVirt: caller='%s'/%d: GCPhys=%VGp cbRange=%#x ppvHC=%p\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, cbRange, ppvHC));
-
-    if (!VM_IS_EMT(pVM))
-        return VERR_ACCESS_DENIED;
-
-    int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, ppvHC);
-
-    LogFlow(("pdmR3DevHlp_Phys2HCVirt: caller='%s'/%d: returns %Vrc *ppvHC=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *ppvHC));
-
-    return rc;
-}
-
-
-/** @copydoc PDMDEVHLP::pfnPhysGCPtr2HCPtr */
-static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMHC;
-    VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_PhysGCPtr2HCPtr: caller='%s'/%d: GCPtr=%VGv pHCPtr=%p\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPtr, pHCPtr));
-
-    if (!VM_IS_EMT(pVM))
-        return VERR_ACCESS_DENIED;
-
-    int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtr, pHCPtr);
-
-    LogFlow(("pdmR3DevHlp_PhysGCPtr2HCPtr: caller='%s'/%d: returns %Vrc *pHCPtr=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pHCPtr));
-
-    return rc;
-}
-
 /** @copydoc PDMDEVHLP::pfnPhysGCPtr2GCPhys */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
@@ -3768,7 +3727,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReserve(PPDMDEVINS pDevIns, R
 
 
 /** @copydoc PDMDEVHLP::pfnPhys2HCVirt */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC)
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
@@ -3780,7 +3739,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Phys2HCVirt(PPDMDEVINS pDevIns, R
 
 
 /** @copydoc PDMDEVHLP::pfnPhysGCPtr2HCPtr */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
@@ -3788,7 +3747,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysGCPtr2HCPtr(PPDMDEVINS pDevIn
     NOREF(pHCPtr);
     return VERR_ACCESS_DENIED;
 }
-
 
 /** @copydoc PDMDEVHLP::pfnA20IsEnabled */
 static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_A20IsEnabled(PPDMDEVINS pDevIns)
