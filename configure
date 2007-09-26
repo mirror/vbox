@@ -1194,6 +1194,7 @@ setup_wine()
     fail
   fi
   rm -f $tmp
+  log_success ""
 }
 
 
