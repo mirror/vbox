@@ -1515,6 +1515,8 @@ typedef struct CPUMDISASSTATE
     RTGCPTR         pvPageGC;
     /** The lock information that PGMPhysReleasePageMappingLock needs. */
     PGMPAGEMAPLOCK  PageMapLock;
+    /** Whether the PageMapLock is valid or not. */
+    bool            fLocked;
 } CPUMDISASSTATE, *PCPUMDISASSTATE;
 
 
@@ -1555,10 +1557,10 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Ds
             else
             {
                 /* Release mapping lock previously acquired. */
-                if (PGMPhysIsPageMappingLockValid(pState->pVM, &pState->PageMapLock))
+                if (pState->fLocked)
                     PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
-
                 rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->PageMapLock);
+                pState->fLocked = RT_SUCCESS_NP(rc);
             }
             if (VBOX_FAILURE(rc))
             {
@@ -1610,6 +1612,7 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
     State.pvPageGC        = 0;
     State.pvPageHC        = NULL;
     State.pVM             = pVM;
+    State.fLocked         = false;
 
     /*
      * Get selector information.
@@ -1687,7 +1690,7 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
         Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%VGv rc=%Vrc\n", pCtx->cs, GCPtrPC, rc));
 
     /* Release mapping lock acquired in cpumR3DisasInstrRead. */
-    if (PGMPhysIsPageMappingLockValid(pVM, &State.PageMapLock))
+    if (State.fLocked)
         PGMPhysReleasePageMappingLock(pVM, &State.PageMapLock);
 
     return rc;
