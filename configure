@@ -26,6 +26,8 @@ PATH="/usr/xpg4/bin:/usr/ucb:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
 # Defaults
 #
 OSE=1
+ODIR="`pwd`/"
+SETUP_WINE=
 TARGET_MACHINE=""
 TARGET_CPU=""
 WITH_XPCOM=1
@@ -1150,6 +1152,42 @@ EOF
   log_success ""
 }
 
+#
+# Setup wine
+#
+setup_wine()
+{
+  test_header "wine support"
+  export WINEPREFIX="${ODIR}wine.$BUILD_MACHINE"
+  echo "export WINEPREFIX==\"${ODIR}wine.$BUILD_MACHINE\"" >> $ENV
+  rm -rf $WINEPREFIX
+  mkdir -p $WINEPREFIX
+  touch $WINEPREFIX/.no_prelaunch_window_flag
+  if ! wineprefixcreate -q; then
+    echo "  wineprefixcreate failed"
+    fail
+  fi
+  tmp=.tmp.wine.reg
+  rm -f $tmp
+  echo 'REGEDIT4' > $tmp
+  echo '' >> $tmp
+  echo '[HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment]' >> $tmp
+  echo "\"PATH\"=\"c:\\\\\\\\windows\\\\\\\\system32;c:\\\\\\\\windows;z:$DEVDIR/win.x86/vcc/v8/bin/Microsoft.VC80.CRT;z:$DEVDIR/win.x86/HTML_Help_Workshop/v1.3\"" >> $tmp
+  echo '' >> $tmp
+  echo '[HKEY_CURRENT_USER\Software\Wine\AppDefaults\hhc.exe\DllOverrides]' >> $tmp
+  echo '"itss"="native"' >> $tmp
+  echo '' >> $tmp
+  echo '[HKEY_CURRENT_USER\Software\Wine\AppDefaults\hhw.exe\DllOverrides]' >> $tmp
+  echo '"itss"="native"' >> $tmp
+  echo '' >> $tmp
+  if ! wine regedit $tmp; then
+    rm -f $tmp
+    echo "  failed to load registry changes (path)."
+    fail
+  fi
+  rm -f $tmp
+}
+
 
 #
 # Show help
@@ -1165,6 +1203,7 @@ Configuration:
   --disable-xpcom          disable XPCOM and related stuff
   --disable-sdl-ttf        disable SDL_ttf detection
   --build-xalan            build xalan & xerces from shipped sources
+  --setup-wine             setup a Wine directory and register the hhc hack
 
 Paths:
   --with-gcc=PATH          location of the gcc compiler [$CC]
@@ -1271,6 +1310,9 @@ for option in $*; do
       ;;
     --odir=*)
       ODIR="`echo $option | cut -d'=' -f2`/"
+      ;;
+    --setup-wine)
+      SETUP_WINE=1
       ;;
     *)
       echo
@@ -1395,6 +1437,8 @@ if [ "$OS" = "linux" ]; then
   check_compiler_h
   [ "$BUILD_MACHINE" = "amd64" ] && check_32bit
 fi
+
+[ -n "$SETUP_WINE" ] && setup_wine
 
 # success!
 echo
