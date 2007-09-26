@@ -217,6 +217,9 @@ typedef union GMMPAGE
     } Free;
 
 #else /* 32-bit */
+    /** Unsigned integer view. */
+    uint32_t u;
+
     /** The common view. */
     struct GMMPAGECOMMON
     {
