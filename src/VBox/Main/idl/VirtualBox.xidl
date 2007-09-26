@@ -7105,6 +7105,12 @@
       </desc>
     </attribute>
 
+    <attribute name="lineSpeed" type="unsigned long">
+      <desc>
+        Line speed reported by custom drivers, in units of 1 kbps.
+      </desc>
+    </attribute>
+
     <attribute name="traceEnabled" type="boolean">
       <desc>
         Flag whether network traffic from/to the network card should be traced.

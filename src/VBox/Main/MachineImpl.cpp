@@ -4374,6 +4374,9 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             /* cable (required) */
             bool cableConnected;
             CFGLDRQueryBool (adapterNode, "cable", &cableConnected);
+            /* line speed (defaults to 100 Mbps) */
+            uint32_t lineSpeed = 100000;
+            CFGLDRQueryUInt32 (adapterNode, "speed", &lineSpeed);
             /* tracing (defaults to false) */
             bool traceEnabled;
             CFGLDRQueryBool (adapterNode, "trace", &traceEnabled);
@@ -4383,6 +4386,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             mNetworkAdapters [slot]->COMSETTER(Enabled) (enabled);
             mNetworkAdapters [slot]->COMSETTER(MACAddress) (macAddr);
             mNetworkAdapters [slot]->COMSETTER(CableConnected) (cableConnected);
+            mNetworkAdapters [slot]->COMSETTER(LineSpeed) (lineSpeed);
             mNetworkAdapters [slot]->COMSETTER(TraceEnabled) (traceEnabled);
             mNetworkAdapters [slot]->COMSETTER(TraceFile) (traceFile);
 
@@ -6213,6 +6217,9 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
                            mNetworkAdapters [slot]->data()->mMACAddress);
             CFGLDRSetBool (networkAdapterNode, "cable",
                            !!mNetworkAdapters [slot]->data()->mCableConnected);
+
+            CFGLDRSetUInt32 (networkAdapterNode, "speed", 
+                             mNetworkAdapters [slot]->data()->mLineSpeed);
 
             if (mNetworkAdapters [slot]->data()->mTraceEnabled)
                 CFGLDRSetBool (networkAdapterNode, "trace", true);

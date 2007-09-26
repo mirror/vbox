@@ -673,6 +673,46 @@ STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
     return S_OK;
 }
 
+STDMETHODIMP NetworkAdapter::COMGETTER(LineSpeed) (ULONG *aSpeed)
+{
+    if (!aSpeed)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aSpeed = mData->mLineSpeed;
+
+    return S_OK;
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    if (aSpeed != mData->mLineSpeed)
+    {
+        mData.backup();
+        mData->mLineSpeed = aSpeed;
+
+        /* leave the lock before informing callbacks */
+        alock.unlock();
+
+        mParent->onNetworkAdapterChange (this);
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
 {
     if (!aEnabled)
