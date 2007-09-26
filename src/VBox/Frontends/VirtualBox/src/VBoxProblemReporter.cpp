@@ -1407,11 +1407,14 @@ void VBoxProblemReporter::cannotConnectRegister (QWidget *aParent,
                                                  const QString &aURL,
                                                  const QString &aReason)
 {
+    /* we don't want to expose the registration script URL to the user
+     * if he simply doesn't have an internet connection */
+    Q_UNUSED (aURL);
+
     message (aParent, Error,
-             tr ("<p>Failed to connect to the VirtualBox network "
-                 "registration form "
-                 "<nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
-                 .arg (aURL).arg (aURL).arg (aReason));
+             tr ("<p>Failed to connect to the VirtualBox online "
+                 "registration service.</p><p>%1</p>")
+                 .arg (aReason));
 }
 
 void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
@@ -1419,10 +1422,13 @@ void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
 {
     aResult == "OK" ?
         message (aParent, Info,
-                 tr ("<p><nobr>You have successfully registered with innotek. "
-                     "Thank you for registration.</nobr></p>")) :
+                 tr ("<p>Congratulations! You have successfully registered the "
+                     "VirtualBox product.</p>"
+                     "<p>Thank you for finding time to fill out the "
+                     "registration form!</p>")) :
         message (aParent, Error,
-                 tr ("<p>Registration failed (%1)</p>").arg (aResult));
+                 tr ("<p>Failed to register the VirtualBox product (%1).</p>")
+                 .arg (aResult));
 }
 
 /** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */

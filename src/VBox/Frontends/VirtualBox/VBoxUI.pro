@@ -83,6 +83,7 @@ IMAGES	= images/tpixel.png \
 	images/online_snapshot_16px.png \
 	images/vmw_new_welcome.png \
 	images/vmw_new_harddisk.png \
+	images/vmw_new_user.png \
 	images/fd_16px.png \
 	images/fd_read_16px.png \
 	images/fd_write_16px.png \
