@@ -42,7 +42,7 @@ endif
 LIBRARIES += DevicesR3 Drivers ServicesR0
 DLLS      += VBoxDDU VBoxDD VBoxDD2
 #ifdef VBOX_WITH_ALSA
-DLLS      += VBoxAlsa
+DLLS.linux += VBoxAlsa
 #endif
 SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
