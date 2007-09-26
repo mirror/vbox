@@ -21,22 +21,47 @@
 
 #include <VBox/gmm.h>
 
+/**
+ * The allocation sizes.
+ */
+typedef struct GMMVMSIZES
+{
+    /** The number of pages of base memory.
+     * This is the sum of RAM, ROMs and handy pages. */
+    uint64_t        cBasePages;
+    /** The number of pages for the shadow pool. (Can be sequeezed for memory.) */
+    uint32_t        cShadowPages;
+    /** The number of pages for fixed allocations like MMIO2 and the hyper heap. */
+    uint32_t        cFixedPages;
+} GMMVMSIZES;
+typedef GMMVMSIZES *PGMMVMSIZES;
+
 
 /**
  * The per-VM GMM data.
  */
 typedef struct GMMPERVM
 {
-    /** The ram size, in pages. */
-    uint64_t        cRAMPages;
-    /** The number of private pages. */
+    /** The reservations. */
+    GMMVMSIZES      Reserved;
+    /** The actual allocations. */
+    GMMVMSIZES      Allocated;
+    /** The current number of private pages. */
     uint64_t        cPrivatePages;
-    /** The number of shared pages. */
+    /** The current number of shared pages. */
     uint64_t        cSharedPages;
+    /** The current number of ballooned pages. */
+    uint64_t        cBalloonedPages;
+    /** The max number of pages that can be ballooned. */
+    uint64_t        cMaxBalloonedPages;
     /** The current over-comitment policy. */
     GMMOCPOLICY     enmPolicy;
     /** The VM priority for arbitrating VMs in an out-of-memory situation. */
     GMMPRIORITY     enmPriority;
+    /** Whether the VM is allowed to allocate memory or not.
+     * This is used when the reservation update request fails or when the VM has
+     * been told to suspend/save/die in an out-of-memory case. */
+    bool            fMayAllocate;
 } GMMPERVM;
 /** Pointer to the per-VM GMM data. */
 typedef GMMPERVM *PGMMPERVM;
