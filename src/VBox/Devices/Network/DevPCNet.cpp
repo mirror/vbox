@@ -236,7 +236,7 @@ struct PCNetState_st
     bool                                fGCEnabled;
     bool                                fR0Enabled;
     bool                                fAm79C973;
-    bool                                afAlignment[5];
+    bool                                afAlignment[1];
     uint32_t                            u32LinkSpeed;
 
 #ifdef VBOX_WITH_STATISTICS
