@@ -32,7 +32,7 @@
 #include <alsa/asoundlib.h>
 
 #include "Builtins.h"
-#include "../../vl_vbox.h"
+#include "vl_vbox.h"
 #include "audio.h"
 #include <iprt/alloc.h>
 
@@ -1088,6 +1088,7 @@ static struct audio_pcm_ops alsa_pcm_ops = {
     alsa_ctl_in
 };
 
+extern DECLEXPORT(struct audio_driver) alsa_audio_driver;
 struct audio_driver alsa_audio_driver = {
     INIT_FIELD (name           = ) "alsa",
     INIT_FIELD (descr          = ) "ALSA http://www.alsa-project.org",

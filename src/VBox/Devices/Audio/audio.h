@@ -24,6 +24,10 @@
 #ifndef QEMU_AUDIO_H
 #define QEMU_AUDIO_H
 
+#ifdef VBOX
+# include <iprt/types.h>
+#endif
+
 #include "sys-queue.h"
 
 #if defined __STDC_VERSION__ && __STDC_VERSION__ > 199901L
@@ -104,8 +108,13 @@ typedef struct QEMUAudioTimeStamp {
     uint64_t old_ts;
 } QEMUAudioTimeStamp;
 
+#ifdef VBOX
+extern DECLEXPORT(void) AUD_vlog (const char *cap, const char *fmt, va_list ap);
+extern DECLEXPORT(void) AUD_log (const char *cap, const char *fmt, ...)
+#else
 void AUD_vlog (const char *cap, const char *fmt, va_list ap);
 void AUD_log (const char *cap, const char *fmt, ...)
+#endif
 #if defined (__GNUC__) && !defined (VBOX) /* VBox: oh, please, shut up. */
     __attribute__ ((__format__ (__printf__, 2, 3)))
 #endif
