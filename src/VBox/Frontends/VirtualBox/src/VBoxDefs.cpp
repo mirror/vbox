@@ -31,5 +31,5 @@ const char* VBoxDefs::GUI_PermanentSharedFoldersAtRuntime = "GUI/PermanentShared
 #ifdef Q_WS_X11
 const char* VBoxDefs::GUI_LicenseKey = "GUI/LicenseAgreed";
 #endif
-const char* VBoxDefs::GUI_RegistrationTryLeft = "GUI/RegistrationTryLeft";
+const char* VBoxDefs::GUI_RegistrationTriesLeft = "GUI/RegistrationTriesLeft";
 const char* VBoxDefs::GUI_RegistrationDlgWinID = "GUI/RegistrationDlgWinID";
