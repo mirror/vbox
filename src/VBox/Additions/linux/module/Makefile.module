@@ -34,6 +34,7 @@ OBJS   = \
 	udivdi3.o \
 	umoddi3.o \
 	qdivrem.o \
+	assert.o \
 	logbackdoor.o \
 	logformat.o \
 	strformat.o \
@@ -108,7 +109,7 @@ ifndef INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -D_X86_ \
 	    -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DVBGL_VBOXGUEST -DVBOX_HGCM \
-	    -DLOG_TO_BACKDOOR -DRT_WITH_VBOX -DIN_MODULE
+	    -DLOG_TO_BACKDOOR -DRT_WITH_VBOX -DIN_MODULE -DIN_GUEST_R0
 ifeq ($(BUILD_TYPE),debug)
 KFLAGS   += -DDEBUG
 endif

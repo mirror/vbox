@@ -62,6 +62,7 @@ FILES_VBOXADD_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/logbackdoor.cpp=>logbackdoor.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/strformat-vbox.cpp=>strformat-vbox.c \
     ${PATH_ROOT}/src/VBox/Runtime/RTErrConvertToErrno.cpp=>RTErrConvertToErrno.c \
+    ${PATH_ROOT}/src/VBox/Runtime/assert.cpp=>assert.c \
     ${PATH_ROOT}/src/VBox/Runtime/logformat.cpp=>logformat.c \
     ${PATH_ROOT}/src/VBox/Runtime/strformat.cpp=>strformat.c \
     ${PATH_ROOT}/src/VBox/Runtime/strformatrt.cpp=>strformatrt.c \
