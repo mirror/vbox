@@ -41,6 +41,9 @@ endif
 #
 LIBRARIES += DevicesR3 Drivers ServicesR0
 DLLS      += VBoxDDU VBoxDD VBoxDD2
+#ifdef VBOX_WITH_ALSA
+DLLS      += VBoxAlsa
+#endif
 SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
 
@@ -468,9 +471,13 @@ endif # VBOX_WITH_ISCSI
 
 ifdef VBOX_WITH_ALSA
  Drivers_DEFS.linux   += VBOX_WITH_ALSA
- Drivers_SOURCES.linux+= \
+ VBoxAlsa_TEMPLATE     = VBOXR3
+ VBoxAlsa_INCS        := \
+	$(PATH_SUB_CURRENT)
+ VBoxAlsa_DEFS         = $(Drivers_DEFS.linux)
+ VBoxAlsa_SOURCES      = \
 	Audio/alsaaudio.c
- VBoxDD_LIBS.linux    += asound
+ VBoxAlsa_LIBS         = $(PATH_BIN)/VBoxDD$(SUFF_DLL) asound
 endif
 
 ifdef VBOX_WITH_USB

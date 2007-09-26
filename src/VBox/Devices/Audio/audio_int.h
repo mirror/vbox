@@ -33,6 +33,10 @@
 /* #define RECIPROCAL */
 #endif
 
+#ifdef VBOX
+#include <iprt/types.h>
+#endif
+
 #include <limits.h>
 #include "mixeng.h"
 
@@ -214,15 +218,31 @@ extern struct audio_driver fmod_audio_driver;
 extern struct audio_driver alsa_audio_driver;
 extern struct audio_driver coreaudio_audio_driver;
 extern struct audio_driver dsound_audio_driver;
-extern volume_t nominal_volume;
 #ifdef VBOX
+extern DECLEXPORT(volume_t) nominal_volume;
 extern volume_t pcm_out_volume;
 extern volume_t pcm_in_volume;
+#else
+extern volume_t nominal_volume;
 #endif
 
 uint64_t audio_get_clock (void);
 uint64_t audio_get_ticks_per_sec (void);
 
+#ifdef VBOX
+extern DECLEXPORT(void) audio_pcm_init_info (struct audio_pcm_info *info, audsettings_t *as);
+void audio_pcm_info_clear_buf (struct audio_pcm_info *info, void *buf, int len);
+
+extern DECLEXPORT(int)  audio_pcm_sw_write (SWVoiceOut *sw, void *buf, int len);
+extern DECLEXPORT(int)  audio_pcm_hw_get_live_in (HWVoiceIn *hw);
+
+extern DECLEXPORT(int)  audio_pcm_sw_read (SWVoiceIn *sw, void *buf, int len);
+extern DECLEXPORT(int)  audio_pcm_hw_get_live_out (HWVoiceOut *hw);
+int  audio_pcm_hw_get_live_out2 (HWVoiceOut *hw, int *nb_live);
+
+int audio_bug (const char *funcname, int cond);
+extern DECLEXPORT(void *)audio_calloc (const char *funcname, int nmemb, size_t size);
+#else
 void audio_pcm_init_info (struct audio_pcm_info *info, audsettings_t *as);
 void audio_pcm_info_clear_buf (struct audio_pcm_info *info, void *buf, int len);
 
@@ -235,6 +255,7 @@ int  audio_pcm_hw_get_live_out2 (HWVoiceOut *hw, int *nb_live);
 
 int audio_bug (const char *funcname, int cond);
 void *audio_calloc (const char *funcname, int nmemb, size_t size);
+#endif
 
 #define VOICE_ENABLE 1
 #define VOICE_DISABLE 2
