@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * AMD PC-Net II (Am79C970A + Am79C973) Ethernet Controller Emulation.
+ * AMD PCnet-PCI II / PCnet-FAST III (Am79C970A / Am79C973) Ethernet Controller Emulation.
  */
 
 /*
@@ -96,7 +96,7 @@
 #define PCNET_IOPORT_SIZE               0x20
 #define PCNET_PNPMMIO_SIZE              0x20
 
-#define PCNET_SAVEDSTATE_VERSION        6
+#define PCNET_SAVEDSTATE_VERSION        7
 
 #define BCR_MAX_RAP                     50
 #define MII_MAX_REG                     32
@@ -237,6 +237,7 @@ struct PCNetState_st
     bool                                fR0Enabled;
     bool                                fAm79C973;
     bool                                afAlignment[5];
+    uint32_t                            u32LinkSpeed;
 
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV                      StatMMIOReadGC;
@@ -2564,6 +2565,21 @@ static int pcnetCSRWriteU16(PCNetState *pData, uint32_t u32RAP, uint32_t new_val
     return rc;
 }
 
+/**
+ * Encode a 32-bit link speed into a custom 16-bit floating-point value
+ */
+static uint32_t pcnetLinkSpd(uint32_t speed)
+{
+    unsigned    exp = 0;
+
+    while (speed & 0xFFFFE000)
+    {
+        speed /= 10;
+        ++exp;
+    }
+    return (exp << 13) | speed;
+}
+
 static uint32_t pcnetCSRReadU16(PCNetState *pData, uint32_t u32RAP)
 {
     uint32_t val;
@@ -2581,6 +2597,8 @@ static uint32_t pcnetCSRReadU16(PCNetState *pData, uint32_t u32RAP)
             return pcnetCSRReadU16(pData, 2);
         case 58:
             return pcnetBCRReadU16(pData, BCR_SWS);
+        case 68:    /* Custom register to pass link speed to driver */
+            return pcnetLinkSpd(pData->u32LinkSpeed);
         case 88:
             val = pData->aCSR[89];
             val <<= 16;
@@ -3832,6 +3850,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutU64(pSSMHandle, pData->u64LastPoll);
     SSMR3PutMem(pSSMHandle, &pData->MacConfigured, sizeof(pData->MacConfigured));
     SSMR3PutBool(pSSMHandle, pData->fAm79C973);
+    SSMR3PutU32(pSSMHandle, pData->u32LinkSpeed);
 #ifdef PCNET_NO_POLLING
     return VINF_SUCCESS;
 #else
@@ -3872,6 +3891,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     Assert(     !memcmp(&Mac, &pData->MacConfigured, sizeof(Mac))
            ||   SSMR3HandleGetAfter(pSSMHandle) == SSMAFTER_DEBUG_IT);
     SSMR3GetBool(pSSMHandle, &pData->fAm79C973);
+    SSMR3GetU32(pSSMHandle, &pData->u32LinkSpeed);
 #ifndef PCNET_NO_POLLING
     TMR3TimerLoad(pData->CTXSUFF(pTimerPoll), pSSMHandle);
 #endif
@@ -4191,7 +4211,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0CableConnected\0Am79C973\0GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0CableConnected\0Am79C973\0LineSpeed\0GCEnabled\0R0Enabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for pcnet device"));
 
@@ -4215,6 +4235,13 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Am79C973\" value"));
+
+    rc = CFGMR3QueryU32(pCfgHandle, "LineSpeed", &pData->u32LinkSpeed);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->u32LinkSpeed = 100000;    /* 100 Mbps (in kbps units)*/
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"LineSpeed\" value"));
 
 #ifdef PCNET_GC_ENABLED
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &pData->fGCEnabled);
