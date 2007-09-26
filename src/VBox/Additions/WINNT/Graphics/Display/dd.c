@@ -635,7 +635,7 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
     VIDEO_SHARE_MEMORY_INFORMATION  ShareMemoryInformation;
     DWORD                           ReturnedDataLength;
 
-    DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
+    DISPDBG((0, "%s: %p bMap %d\n", __FUNCTION__, pDev, lpMapMemory->bMap));
 
     if (lpMapMemory->bMap)
     {
@@ -717,7 +717,15 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 {
     PPDEV pDev = (PPDEV)lpLock->lpDD->dhpdev;
 
-    DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
+    DISPDBG((0, "%s: %p bHasRect = %d\n", __FUNCTION__, pDev, lpLock->bHasRect));
+    
+    pDev->ddLock.bHasRect = lpLock->bHasRect;
+    
+    if (lpLock->bHasRect)
+    {
+        DISPDBG((0, "%d,%d %dx%d\n", lpLock->rArea.left, lpLock->rArea.top, lpLock->rArea.right - lpLock->rArea.left, lpLock->rArea.bottom - lpLock->rArea.top));
+        pDev->ddLock.rArea = lpLock->rArea;
+    }
 
     // Because we correctly set 'fpVidMem' to be the offset into our frame
     // buffer when we created the surface, DirectDraw will automatically take
@@ -748,6 +756,34 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 {
     PPDEV pDev = (PPDEV)lpUnlock->lpDD->dhpdev;
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
+
+    if (pDev->ddLock.bHasRect)
+    {
+        DISPDBG((0, "%d,%d %dx%d\n", pDev->ddLock.rArea.left, pDev->ddLock.rArea.top, pDev->ddLock.rArea.right - pDev->ddLock.rArea.left, pDev->ddLock.rArea.bottom - pDev->ddLock.rArea.top));
+        
+        if (pDev->pInfo && vboxHwBufferBeginUpdate (pDev))
+        {
+            vbvaReportDirtyRect (pDev, &pDev->ddLock.rArea);
+
+            if (  pDev->pInfo->hostEvents.fu32Events
+                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
+            {
+                vrdpReset (pDev);
+
+                pDev->pInfo->hostEvents.fu32Events &=
+                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
+            }
+
+            if (pDev->vbva.pVbvaMemory->fu32ModeFlags
+                & VBVA_F_MODE_VRDP)
+            {
+                vrdpReportDirtyRect (pDev, &pDev->ddLock.rArea);
+            }
+
+            vboxHwBufferEndUpdate (pDev);
+        }
+        pDev->ddLock.bHasRect = 0;
+    }
 
     lpUnlock->ddRVal = DD_OK;
     return DDHAL_DRIVER_NOTHANDLED;

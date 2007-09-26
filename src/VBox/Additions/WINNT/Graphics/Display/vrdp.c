@@ -404,7 +404,7 @@ static BOOL vrdpWriteBits (PPDEV ppdev, uint8_t *pu8Bits, int lDelta, int32_t x,
     return bRc;
 }
 
-static void vrdpReportDirtyRect (PPDEV ppdev, RECTL *prcl)
+void vrdpReportDirtyRect (PPDEV ppdev, RECTL *prcl)
 {
     SURFOBJ *pso = ppdev->psoScreenBitmap;
 
