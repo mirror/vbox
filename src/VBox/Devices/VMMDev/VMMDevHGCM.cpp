@@ -695,6 +695,10 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                 pHGCMConnect->u32ClientID = pHGCMConnectCopy->u32ClientID;
                 break;
             }
+
+            default:
+                /* make gcc happy */
+                break;
             }
         }
         else
