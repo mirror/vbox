@@ -60,6 +60,10 @@ _PR_MD_PUT_ENV(const char *name)
 }
 
 
+/* see assembleEnvBlock() below */
+#define USE_DOSALLOCMEM
+
+
 /*
  **************************************************************************
  **************************************************************************
@@ -203,7 +207,17 @@ static int assembleEnvBlock(char **envp, char **envBlock)
     }
     envBlockSize++;
 
+    /* It seems that the Environment parameter of DosStartSession() and/or
+     * DosExecPgm() wants a memory block that is completely within the 64K
+     * memory object; otherwise we will get the environment truncated on the
+     * 64K boundary in the child process. PR_MALLOC() cannot guarantee this,
+     * so use DosAllocMem directly. */
+#ifdef USE_DOSALLOCMEM
+    DosAllocMem((PPVOID) envBlock, envBlockSize, PAG_COMMIT | PAG_READ | PAG_WRITE);
+    p = *envBlock;
+#else
     p = *envBlock = PR_MALLOC(envBlockSize);
+#endif
     if (p == NULL) {
         return -1;
     }
@@ -234,10 +248,10 @@ static int compare(const void *arg1, const void *arg2)
 }
 
 /*
- * On OS/2, you can only detach a new process -- you cannot make it detached
- * after it has been started. This is why _PR_CreateOS2ProcessEx() is
- * necessary. This function is called directly from PR_CreateProcessDetached().
- */
+ * On OS/2, a process can be detached only when it is started -- you cannot
+ * make it detached afterwards. This is why _PR_CreateOS2ProcessEx() is
+ * necessary. This function is called directly from
+ * PR_CreateProcessDetached().  */
 PRProcess * _PR_CreateOS2ProcessEx(
     const char *path,
     char *const *argv,
@@ -280,7 +294,7 @@ PRProcess * _PR_CreateOS2ProcessEx(
      * If attr->fdInheritBuffer is not NULL, we need to insert
      * it into the envp array, so envp cannot be NULL.
      */
-    if ((envp == NULL) && attr && attr->fdInheritBuffer) {
+    if (envp == NULL && attr && attr->fdInheritBuffer) {
         envp = environ;
     }
 
@@ -341,6 +355,13 @@ PRProcess * _PR_CreateOS2ProcessEx(
        goto errorExit;
     }
 
+    /* We don't want to use DosExecPgm for detached processes because
+     * they won't have stdin/stderr/stdout by default which will hang up
+     * the child process if it tries to write/read from there. Instead,
+     * we will detach console processes by starting them using the PM session
+     * (yes, it requires PM, but the whole XPCOM does so too).
+     */
+#if 0
     if (detached) {
         /* we don't care about parent/child process type matching,
          * DosExecPgm() should complain if there is a mismatch. */
@@ -383,16 +404,25 @@ PRProcess * _PR_CreateOS2ProcessEx(
             goto errorExit;
         }
 
-        proc->md.pid = res.codeTerminate;
+        /* use 0 to indicate the detached process in the internal
+         * process structure (I believe no process may have pid of 0) */
+        proc->md.pid = 0 /* res.codeTerminate */;
     }
-    else {
+    else
+#endif
+    {
         STARTDATA startData = {0};
 
         if ((ulAppType & FAPPTYP_WINDOWAPI) == FAPPTYP_WINDOWAPI) {
             startData.SessionType = SSF_TYPE_PM;
         }
         else if (ulAppType & FAPPTYP_WINDOWCOMPAT) {
-            startData.SessionType = SSF_TYPE_WINDOWABLEVIO;
+            startData.SessionType = detached ? SSF_TYPE_PM
+                                             : SSF_TYPE_WINDOWABLEVIO;
+        }
+        else if (ulAppType & FAPPTYP_NOTWINDOWCOMPAT) {
+            startData.SessionType = detached ? SSF_TYPE_PM
+                                             : SSF_TYPE_DEFAULT;
         }
         else {
             startData.SessionType = SSF_TYPE_DEFAULT;
@@ -417,8 +447,9 @@ PRProcess * _PR_CreateOS2ProcessEx(
         }
         startData.PgmName = pszEXEName;
 
+        startData.Related = detached ? SSF_RELATED_INDEPENDENT : SSF_RELATED_CHILD;
+
         startData.Length = sizeof(startData);
-        startData.Related = SSF_RELATED_INDEPENDENT;
         startData.ObjectBuffer = pszObjectBuffer;
         startData.ObjectBuffLen = CCHMAXPATH;
         startData.Environment = envBlock;
@@ -430,7 +461,11 @@ PRProcess * _PR_CreateOS2ProcessEx(
             goto errorExit;
         }
 
-        proc->md.pid = pid;
+        /* if Related is SSF_RELATED_INDEPENDENT, we don't get pid of the started
+         * process and use 0 to indicate the detached process in the internal
+         * process structure (I believe no process may have pid of 0).
+         */
+        proc->md.pid = detached ? 0 : pid;
     }
 
     if (pszFormatResult) {
@@ -443,7 +478,11 @@ PRProcess * _PR_CreateOS2ProcessEx(
         PR_DELETE(newEnvp);
     }
     if (envBlock) {
+#ifdef USE_DOSALLOCMEM
+        DosFreeMem(envBlock);
+#else
         PR_DELETE(envBlock);
+#endif
     }
     return proc;
 
@@ -458,7 +497,11 @@ errorExit:
         PR_DELETE(newEnvp);
     }
     if (envBlock) {
+#ifdef USE_DOSALLOCMEM
+        DosFreeMem(envBlock);
+#else
         PR_DELETE(envBlock);
+#endif
     }
     if (proc) {
         PR_DELETE(proc);
@@ -480,8 +523,17 @@ PRStatus _PR_DetachOS2Process(PRProcess *process)
     /* On OS/2, a process is either created as a child or not. 
      * You can't 'detach' it later on.
      */
-    PR_DELETE(process);
-    return PR_SUCCESS;
+    if (process->md.pid == 0) {
+        /* this is a detached process, just free memory */
+        PR_DELETE(process);
+        return PR_SUCCESS;
+    }
+    /* For a normal child process, we can't complete the request. Note that
+     * terminating the parent process w/o calling PR_WaitProcess() on the
+     * child will terminate the child as well (since it is not detached).
+     */
+    PR_SetError(PR_OPERATION_NOT_SUPPORTED_ERROR, 0);
+    return PR_FAILURE;
 }
 
 /*
@@ -509,7 +561,7 @@ PRStatus _PR_WaitOS2Process(PRProcess *process,
 
 PRStatus _PR_KillOS2Process(PRProcess *process)
 {
-   ULONG ulRetVal;
+    ULONG ulRetVal;
     if ((ulRetVal = DosKillProcess(DKP_PROCESS, process->md.pid)) == NO_ERROR) {
 	return PR_SUCCESS;
     }

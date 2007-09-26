@@ -739,18 +739,14 @@ PR_IMPLEMENT(PRStatus) PR_CreateProcessDetached(
     char *const *envp,
     const PRProcessAttr *attr)
 {
-#ifdef XP_OS2
-    PRProcess *process;
-    process = _PR_CreateOS2ProcessEx(path, argv, envp, attr, PR_TRUE);
-    if (NULL == process) {
-        return PR_FAILURE;
-    }
-    return PR_SUCCESS;
-#else
     PRProcess *process;
     PRStatus rv;
 
+#ifdef XP_OS2
+    process = _PR_CreateOS2ProcessEx(path, argv, envp, attr, PR_TRUE);
+#else
     process = PR_CreateProcess(path, argv, envp, attr);
+#endif
     if (NULL == process) {
         return PR_FAILURE;
     }
@@ -761,7 +757,6 @@ PR_IMPLEMENT(PRStatus) PR_CreateProcessDetached(
         return PR_FAILURE;
     }
     return PR_SUCCESS;
-#endif
 }
 
 PR_IMPLEMENT(PRStatus) PR_DetachProcess(PRProcess *process)
