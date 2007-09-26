@@ -75,20 +75,20 @@ typedef enum GMMOCPOLICY
 /**
  * VM / Memory priority.
  */
-typedef enum GMMPRORITY
+typedef enum GMMPRIORITY
 {
     /** The usual invalid 0 value. */
-    GMMPRORITY_INVALID = 0, 
+    GMMPRIORITY_INVALID = 0, 
     /** High - avoid interrupting it if at all possible */
-    GMMPRORITY_HIGH,
+    GMMPRIORITY_HIGH,
     /** Normal - pause, save it or kill it. */
-    GMMPRORITY_NORMAL,
+    GMMPRIORITY_NORMAL,
     /** Low - save or kill it. */
-    GMMPRORITY_LOW,
+    GMMPRIORITY_LOW,
     /** The end of the valid priority range. */
-    GMMPRORITY_END = 0, 
+    GMMPRIORITY_END = 0, 
     /** The custom 32-bit type blowup. */
-    GMMPRORITY_32BIT_HACK = 0x7fffffff
+    GMMPRIORITY_32BIT_HACK = 0x7fffffff
 } GMMPRIORITY;
 
 

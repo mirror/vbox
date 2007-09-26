@@ -610,7 +610,7 @@ GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
     pGVM->gmm.s.cPrivatePages = 0;
     pGVM->gmm.s.cSharedPages = 0;
     pGVM->gmm.s.enmPolicy = GMMOCPOLICY_TBD;
-    pGVM->gmm.s.enmPriority = GMMPRORITY_NORMAL;
+    pGVM->gmm.s.enmPriority = GMMPRIORITY_NORMAL;
 }
 
 
@@ -663,7 +663,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
     pGVM->gmm.s.cPrivatePages = 0;
     pGVM->gmm.s.cSharedPages = 0;
     pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
-    pGVM->gmm.s.enmPriority = GMMPRORITY_INVALID;
+    pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
 
     LogFlow(("GMMR0CleanupVM: returns\n"));
 }
