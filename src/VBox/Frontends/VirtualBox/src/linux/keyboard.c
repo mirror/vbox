@@ -344,6 +344,20 @@ static const char main_key_UK[MAIN_LEN][4] =
  "\\|"
 };
 
+#ifdef OUTOFWINE
+
+/*** British international keyboard layout */
+static const char main_key_UK_intl[MAIN_LEN][4] =
+{
+ "`","1!","2¨","3£","4$","5%","6^","7&","8*","9(","0)","-_","=+",
+ "qQ","wW","eE","rR","tT","yY","uU","iI","oO","pP","[{","]}",
+ "aA","sS","dD","fF","gG","hH","jJ","kK","lL",";:","´@","#~",
+ "zZ","xX","cC","vV","bB","nN","mM",",<",".>","/?",
+ "\\|"
+};
+
+#endif
+
 /*** French keyboard layout (setxkbmap fr) */
 static const char main_key_FR[MAIN_LEN][4] =
 {
@@ -1116,6 +1130,9 @@ static const struct {
  {0x0409, "United States International keyboard layout (phantom key version)", &main_key_US_intl_phantom, &main_key_scan_qwerty, &main_key_vkey_qwerty},
 #endif
  {0x0809, "British keyboard layout", &main_key_UK, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#ifdef OUTOFWINE
+ {0x0809, "British international keyboard layout", &main_key_UK_intl, &main_key_scan_qwerty, &main_key_vkey_qwerty},
+#endif
  {0x0407, "German keyboard layout", &main_key_DE, &main_key_scan_qwerty, &main_key_vkey_qwertz},
 #ifndef OUTOFWINE
  {0x0407, "German keyboard layout without dead keys", &main_key_DE_nodead, &main_key_scan_qwerty, &main_key_vkey_qwertz},
