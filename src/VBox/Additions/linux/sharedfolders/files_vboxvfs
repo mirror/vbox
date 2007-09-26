@@ -63,7 +63,6 @@ FILES_VBOXVFS_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semaphore-r0drv-linux.c=>r0drv/linux/semaphore-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
-    ${PATH_ROOT}/src/VBox/Runtime/RTErrConvertToErrno.cpp=>RTErrConvertToErrno.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/Makefile.module=>Makefile \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/dirops.c=>dirops.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/sharedfolders/regops.c=>regops.c \

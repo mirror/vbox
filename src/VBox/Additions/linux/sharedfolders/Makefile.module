@@ -30,7 +30,6 @@ OBJS   = \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/semaphore-r0drv-linux.o \
-	RTErrConvertToErrno.o \
 	divdi3.o \
 	moddi3.o \
 	udivdi3.o \
@@ -107,7 +106,8 @@ ifndef INCL
  export INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -D_X86_ -DIN_RT_R0 \
-	    -DIN_SUP_R0 -DVBOX -DVBOX_HGCM -DLOG_TO_BACKDOOR -DIN_MODULE
+	    -DIN_SUP_R0 -DVBOX -DVBOX_HGCM -DLOG_TO_BACKDOOR -DIN_MODULE \
+	    -DIN_GUEST_R0
 ifeq ($(BUILD_TYPE),debug)
 KFLAGS   += -DDEBUG
 endif

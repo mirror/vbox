@@ -431,3 +431,6 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
     }
 }
 
+#if defined(RT_OS_LINUX) && defined(IN_MODULE)
+EXPORT_SYMBOL(RTErrConvertToErrno);
+#endif

@@ -33,31 +33,9 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
 
-/* Runtime assert implementation for Linux ring 0 */
-RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine,
-                        const char *pszFile, const char *pszFunction)
-{
-    Log(("!!Assertion Failed!!\n"
-         "Expression: %s\n"
-         "Location  : %s(%d) %s\n",
-         pszExpr, pszFile, uLine, pszFunction));
-}
-EXPORT_SYMBOL(AssertMsg1);
-
-/* Runtime assert implementation for Linux ring 0 */
-RTDECL(void) AssertMsg2(const char *pszFormat, ...)
-{
-    va_list ap;
-    char    msg[256];
-
-    va_start(ap, pszFormat);
-    vsnprintf(msg, sizeof(msg) - 1, pszFormat, ap);
-    msg[sizeof(msg) - 1] = '\0';
-    Log(("%s", msg));
-    va_end(ap);
-}
-EXPORT_SYMBOL(AssertMsg2);
-
+/* This is called by our assert macros to find out whether we want
+   to insert a breakpoint after the assertion. In kernel modules we
+   do not of course. */
 RTDECL(bool)    RTAssertDoBreakpoint(void)
 {
     return false;
