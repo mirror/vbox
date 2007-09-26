@@ -3,7 +3,9 @@
  * VirtualBox Windows NT/2000/XP guest video driver
  *
  * VRDP graphics orders pipeline.
- *
+ */
+
+/*
  * Copyright (C) 2006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -168,7 +170,7 @@ void vrdpAdjustRect (SURFOBJ *pso, RECTL *prcl)
     int w;
     int h;
 
-    DISPDBG((1, "vrdpAdjustRect: %d-%d %d-%d\n", prcl->left, prcl->right, prcl->top, prcl->bottom));
+    DISPDBG((1, "vrdpAdjustRect: %d-%d %d-%d on %dx%d\n", prcl->left, prcl->right, prcl->top, prcl->bottom, pso->sizlBitmap.cx, pso->sizlBitmap.cy));
 
     if (prcl->left <= prcl->right)
     {
@@ -230,6 +232,8 @@ void vrdpAdjustRect (SURFOBJ *pso, RECTL *prcl)
     prcl->top    = y;
     prcl->right  = x + w;
     prcl->bottom = y + h;
+    
+    DISPDBG((1, "vrdpAdjustRect: result %d-%d %d-%d\n", prcl->left, prcl->right, prcl->top, prcl->bottom));
 }
 
 static int vrdpGetIntersectingClipRects (VRDPCLIPRECTS *pClipRects, SURFOBJ *pso, RECTL *prcl, CLIPOBJ *pco, POINTL *pptlSrc)
@@ -1165,11 +1169,14 @@ void vrdpTextOut(
     else if (   pstro->pwszOrg == NULL
              || prclExtra != NULL
              || (pfo->flFontType & FO_TYPE_RASTER) == 0
-             || pstro->cGlyphs > 256)
+             || pstro->cGlyphs > 256
+             || (pboOpaque && pboOpaque->iSolidColor == 0xFFFFFFFF)
+             || pfo->iUniq == 0
+            )
     {
         /* Unknown/unsupported parameters. */
-        DISPDBG((1, "VRDP::vrdpTextOut: unsupported: pstro->pwszOrg=%p, prclExtra=%p, pfo->flFontType & FO_TYPE_RASTER = 0x%08X, pstro->cGlyphs = %d\n",
-                    pstro->pwszOrg, prclExtra, pfo->flFontType & FO_TYPE_RASTER, pstro->cGlyphs));
+        DISPDBG((1, "VRDP::vrdpTextOut: unsupported: pstro->pwszOrg=%p, prclExtra=%p, pfo->flFontType & FO_TYPE_RASTER = 0x%08X, pstro->cGlyphs = %d, pboOpaque->iSolidColor %p, pfo->iUniq = %p\n",
+                    pstro->pwszOrg, prclExtra, pfo->flFontType & FO_TYPE_RASTER, pstro->cGlyphs, pboOpaque? pboOpaque->iSolidColor: 0, pfo->iUniq));
         vrdpReportDirtyRects (ppdev, &clipRects);
     }
     else
