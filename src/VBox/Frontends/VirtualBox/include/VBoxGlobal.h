@@ -514,6 +514,10 @@ protected:
     bool event (QEvent *e);
     bool eventFilter (QObject *, QEvent *);
 
+private slots:
+
+    void onOpenURL (const QString &aURL) { openURL (aURL); }
+
 private:
 
     VBoxGlobal();
