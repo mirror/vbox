@@ -27,7 +27,7 @@ VBoxDisp_SDKS        = W2K3DDKX86 WINPSDKINCS
 VBoxDisp_SYSSUFF     = .dll
 VBoxDisp_DEFS        = _WIN32_WINNT=0x0501 LOG_TO_BACKDOOR VBOX_WITH_DDRAW VBOX_WITH_OPENGL
 VBoxDisp_INCS        = ../../include
-#VBoxDisp_DEFS        += VBOX_VBVA_ADJUST_RECT
+VBoxDisp_DEFS        += VBOX_VBVA_ADJUST_RECT
 #VBoxDisp_DEFS        += LOG_ENABLED
 #VBoxDisp_DEFS        += STAT_sunlover
 VBoxDisp_SOURCES     = \
