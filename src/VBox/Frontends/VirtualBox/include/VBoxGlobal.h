@@ -403,8 +403,6 @@ public:
 
     /* various helpers */
 
-    bool openURL (const QString &aURL);
-
     QString languageName() const;
     QString languageCountry() const;
     QString languageNameEnglish() const;
@@ -509,14 +507,14 @@ signals:
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
 
+public slots:
+
+    bool openURL (const QString &aURL);
+
 protected:
 
     bool event (QEvent *e);
     bool eventFilter (QObject *, QEvent *);
-
-private slots:
-
-    void onOpenURL (const QString &aURL) { openURL (aURL); }
 
 private:
 
