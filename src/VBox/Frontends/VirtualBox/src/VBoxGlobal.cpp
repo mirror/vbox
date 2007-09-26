@@ -3459,7 +3459,8 @@ bool VBoxGlobal::event (QEvent *e)
             /* show unique registration dialog */
             if (!mRegDlg)
             {
-                VBoxRegistrationDlg *dlg = new VBoxRegistrationDlg();
+                VBoxRegistrationDlg *dlg =
+                    new VBoxRegistrationDlg (0, 0, false, WDestructiveClose);
                 dlg->setup (&mRegDlg, "http://www.innotek.de/register762.php");
                 Assert (dlg == mRegDlg);
                 mRegDlg->show();
@@ -3758,7 +3759,7 @@ void VBoxGlobal::cleanup()
     if (selector_wnd)
         delete selector_wnd;
     if (mRegDlg)
-        delete mRegDlg;
+        mRegDlg->close();
 
     /* ensure CGuestOSType objects are no longer used */
     vm_os_types.clear();
