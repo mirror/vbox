@@ -1988,11 +1988,11 @@ ifeq ($(BUILD_TARGET),win)
  ## @todo VCC70 flags?
  ifdef VBOX_USE_VCC80
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
-	-nologo -Zm200 -W3 -MD -EHsc -Zc:wchar_t-
+	-nologo -Zm200 -W3 -MD -Zi -EHsc -Zc:wchar_t-
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
  else
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
-	-nologo -Zm200 -W3 -MD -GX
+	-nologo -Zm200 -W3 -MD -Zi -GX
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -GZ
  endif
  TEMPLATE_VBOXQTGUIEXE_INCS += \
@@ -2547,8 +2547,10 @@ ifndef VBOX_SVN_REV
 
 # Rule for generating a timestamp and updating the real thing on change.
  ifneq ($(VBOX_SVN_DEP),)
+# fixed in svn - $(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK): $(VBOX_SVN_DEP)
 $(VBOX_SVN_REV_KMK).ts: $(VBOX_SVN_DEP)
  else
+# fixed in svn - $(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK): $(PATH_ROOT)/Config.kmk
 $(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
  endif
 	$(call MSG_GENERATE,,$(VBOX_SVN_REV_KMK))
@@ -2571,14 +2573,7 @@ $(VBOX_SVN_REV_KMK).ts: $(PATH_ROOT)/Config.kmk
 	fi
 	$(QUIET)$(CAT_EXT) $(VBOX_SVN_REV_KMK)
 
-# Dependency on timestamp without any commands, so we
-# won't be bother if nothing changed.
-$(VBOX_SVN_REV_KMK): $(VBOX_SVN_REV_KMK).ts
-
-## @todo kBuild: Fix problem with using '$(VBOX_SVN_REV_KMK).ts +| $(VBOX_SVN_REV_KMK)' so the
-# problem with missing $(VBOX_SVN_REV_KMK) and not $(VBOX_SVN_REV_KMK).ts can be addressed
-
-## @todo kbuild: Need $(CMP)!
+$(VBOX_SVN_REV_KMK): $(VBOX_SVN_REV_KMK).ts # remove when kBuild is updated.
 
  include $(VBOX_SVN_REV_KMK)
 else
