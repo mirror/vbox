@@ -166,11 +166,12 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                 startedOnce = true;
 
 #ifdef RT_OS_OS2
-                char *const args[] = { VBoxSVCPath, "--automate", 0 };
+                char * const args[] = { VBoxSVCPath, "--automate", 0 };
                 /* use NSPR because we want the process to be detached right
-                 * at startup (it isn't possible to detach it later on) */
+                 * at startup (it isn't possible to detach it later on),
+                 * RTProcCreate() isn't yet capable of doing that. */
                 PRStatus rv = PR_CreateProcessDetached (VBoxSVCPath,
-                                                        args, NULL, 0);
+                                                        args, NULL, NULL);
                 if (rv != PR_SUCCESS)
                 {
                     rc = NS_ERROR_FAILURE;
