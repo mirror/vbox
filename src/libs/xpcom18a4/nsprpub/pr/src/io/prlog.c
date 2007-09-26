@@ -54,7 +54,7 @@
 #undef VBOX
 #endif
 
-#if defined(VBOX)
+#if defined(VBOX) && defined(DEBUG)
 #define IN_RING3
 #include <iprt/initterm.h> /* for RTR3Init */
 #include <iprt/log.h>
@@ -128,7 +128,7 @@ static PRLock *_pr_logLock;
 ** NSPR_LOG_FILE is set to "WinDebug". The default IPRT log instance
 ** and the "default" log group will be used for logging.
 */
-#if defined(VBOX)
+#if defined(VBOX) && defined(DEBUG)
 #if defined(_PR_USE_STDIO_FOR_LOGGING)
 #define IPRT_DEBUG_FILE (FILE*)-3
 #else
@@ -161,7 +161,7 @@ static PRLock *_pr_logLock;
 #define __PUT_LOG(fd, buf, nb) _PR_MD_WRITE(fd, buf, nb)
 #endif
 
-#if defined(VBOX)
+#if defined(VBOX) && defined(DEBUG)
 #define _PUT_LOG(fd, buf, nb) \
     PR_BEGIN_MACRO \
     if (fd == IPRT_DEBUG_FILE) { \
@@ -325,7 +325,7 @@ void _PR_LogCleanup(void)
     if (logFile
         && logFile != stdout
         && logFile != stderr
-#ifdef VBOX
+#if defined(VBOX) && defined(DEBUG)
         && logFile != IPRT_DEBUG_FILE
 #endif
 #ifdef XP_PC
@@ -414,7 +414,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #ifdef _PR_USE_STDIO_FOR_LOGGING
     FILE *newLogFile;
 
-#if defined(VBOX) && (!defined(RT_OS_OS2) || defined(DEBUG) || defined(IPC_LOGGING))
+#if defined(VBOX) && defined(DEBUG)
     if ( strcmp( file, "IPRT") == 0)
     {
         /* initialize VBox Runtime */
@@ -441,7 +441,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
     if (logFile
         && logFile != stdout
         && logFile != stderr
-#ifdef VBOX
+#if defined(VBOX) && defined(DEBUG)
         && logFile != IPRT_DEBUG_FILE
 #endif
 #ifdef XP_PC
