@@ -45,10 +45,15 @@ foreach $cfg (@cfg_files)
                 {
                     $in_section = 1;
                 }
+                if ($section eq "serverlayout")
+                {
+                    $in_layout = 1;
+                }
             } else {
                 if ($line =~ /^\s*EndSection/i)
                 {
                     $in_section = 0;
+                    $in_layout = 0;
                 }
             }
 
@@ -61,14 +66,22 @@ foreach $cfg (@cfg_files)
                 }
 
                 # Other drivers sending events interfere badly with pointer integration
-                if ($line =~ /^\s*driver\s+\"(?:alwayscore|sendcoreevents)\"/i)
+                if ($line =~ /^\s*option\s+\"(?:alwayscore|sendcoreevents)\"/i)
                 {
-                    $line = "\n";
+                    $line = "";
                 }
 
                 if ($line =~ /^\s*driver\s+\"(?:fbdev|vga|vesa|vboxvideo|ChangeMe)\"/i)
                 {
                     $line = "    Driver      \"vboxvideo\"\n";
+                }
+            }
+            if ($in_layout)
+            {
+                # Other drivers sending events interfere badly with pointer integration
+                if (   $line =~ /^\s*inputdevice.*\"(?:alwayscore|sendcoreevents)\"/i)
+                {
+                    $line = "";
                 }
             }
             print TMP $line;
