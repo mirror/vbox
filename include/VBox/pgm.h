@@ -836,6 +836,7 @@ PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM);
  */
 typedef struct PGMPAGEMAPLOCK
 {
+    /** @todo see PGMPhysIsPageMappingLockValid for possibly incorrect assumptions */
 #ifdef IN_GC
     /** Just a dummy for the time being. */
     uint32_t    u32Dummy;
@@ -964,6 +965,23 @@ PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void * const *pp
  */
 PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
 
+
+/**
+ * Checks if the lock structure is valid
+ * 
+ * @param   pVM         The VM handle.
+ * @param   pLock       The lock structure initialized by the mapping function.
+ */
+DECLINLINE(bool) PGMPhysIsPageMappingLockValid(PVM pVM, PPGMPAGEMAPLOCK pLock)
+{
+    /** @todo -> complete/change this  */
+#ifdef IN_GC
+    return !!(pLock->u32Dummy);
+#else
+    return !!(pLock->pvPage);
+#endif
+}
+
 /**
  * Converts a GC physical address to a HC pointer.
  *
@@ -976,6 +994,8 @@ PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
  * @param   GCPhys  The GC physical address to convert.
  * @param   cbRange Physical range
  * @param   pHCPtr  Where to store the HC pointer on success.
+ *
+ * @remark  Do *not* assume this mapping will be around forever!
  */
 PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr);
 
@@ -988,6 +1008,8 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
  * @param   pVM         The VM Handle
  * @param   GCPtr       The guest pointer to convert.
  * @param   pHCPtr      Where to store the HC virtual address.
+ *
+ * @remark  Do *not* assume this mapping will be around forever!
  */
 PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
 
@@ -1001,6 +1023,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
  * @param   fFlags      Flags used for interpreting the PD correctly: X86_CR4_PSE and X86_CR4_PAE
  * @param   pHCPtr      Where to store the HC pointer.
  *
+ * @remark  Do *not* assume this mapping will be around forever!
  * @remark  This function is used by the REM at a time where PGM could
  *          potentially not be in sync. It could also be used by a
  *          future DBGF API to cpu state independent conversions.

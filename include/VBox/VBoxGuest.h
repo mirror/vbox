@@ -107,6 +107,9 @@ typedef uint32_t vmmDevHypPhys;
 #define VMMDEV_VERSION_MINOR (0x4)
 #define VMMDEV_VERSION ((VMMDEV_VERSION_MAJOR << 16) | VMMDEV_VERSION_MINOR)
 
+/* Maximum request packet size */
+#define VMMDEV_MAX_VMMDEVREQ_SIZE           _1M
+
 /**
  * VMMDev request types.
  * @note when updating this, adjust vmmdevGetRequestSize() as well

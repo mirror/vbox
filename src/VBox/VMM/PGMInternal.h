@@ -3092,54 +3092,6 @@ DECLINLINE(bool) pgmMapAreMappingsEnabled(PPGM pPGM)
     return !pPGM->fDisableMappings;
 }
 
-
-#if 0
-/** Soon to be obsolete conversion functions */
-
-/**
- * Converts a GC physical address to a HC pointer.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical
- *          page but has no physical backing.
- * @returns VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid
- *          GC physical address.
- * @param   pVM     The VM handle.
- * @param   GCPhys  The GC physical address to convert.
- * @param   cbRange Physical range
- * @param   pHCPtr  Where to store the HC pointer on success.
- */
-PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr);
-
-/**
- * Converts a guest pointer to a HC pointer.
- *
- * This uses the current CR3/CR0/CR4 of the guest.
- *
- * @returns VBox status code.
- * @param   pVM         The VM Handle
- * @param   GCPtr       The guest pointer to convert.
- * @param   pHCPtr      Where to store the HC virtual address.
- */
-PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
-
-/**
- * Converts a guest virtual address to a HC pointer by specfied CR3 and flags.
- *
- * @returns VBox status code.
- * @param   pVM         The VM Handle
- * @param   GCPtr       The guest pointer to convert.
- * @param   cr3         The guest CR3.
- * @param   fFlags      Flags used for interpreting the PD correctly: X86_CR4_PSE and X86_CR4_PAE
- * @param   pHCPtr      Where to store the HC pointer.
- *
- * @remark  This function is used by the REM at a time where PGM could
- *          potentially not be in sync. It could also be used by a
- *          future DBGF API to cpu state independent conversions.
- */
-PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, unsigned fFlags, PRTHCPTR pHCPtr);
-#endif
-
 /** @} */
 
 #endif

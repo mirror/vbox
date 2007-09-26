@@ -69,11 +69,11 @@ struct VBOXHGCMCMD
     /* The type of the command. */
     VBOXHGCMCMDTYPE enmCmdType;
 
-    /* GC pointer of the guest request. */
-    RTGCPHYS GCPtr;
+    /* GC physical address of the guest request. */
+    RTGCPHYS        GCPhys;
 
-    /* HC pointer to guest request. */
-    VMMDevHGCMRequestHeader *pHeader;
+    /* Request packet size */
+    uint32_t        cbSize;
 
     /* Pointer to converted host parameters in case of a Call request. */
     VBOXHGCMSVCPARM *paHostParms;
@@ -98,7 +98,7 @@ static void vmmdevHGCMCmdListUnlock (VMMDevState *pVMMDevState)
     AssertRC (rc);
 }
 
-static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, RTGCPHYS GCPtr, VBOXHGCMCMDTYPE enmCmdType)
+static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, RTGCPHYS GCPhys, uint32_t cbSize, VBOXHGCMCMDTYPE enmCmdType)
 {
     /* PPDMDEVINS pDevIns = pVMMDevState->pDevIns; */
 
@@ -120,7 +120,8 @@ static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, R
         pVMMDevState->pHGCMCmdList = pCmd;
         
         pCmd->enmCmdType = enmCmdType;
-        pCmd->GCPtr = GCPtr;
+        pCmd->GCPhys = GCPhys;
+        pCmd->cbSize = cbSize;
         
         /* Automatically enable HGCM events, if there are HGCM commands. */
         if (   enmCmdType == VBOXHGCMCMDTYPE_CONNECT
@@ -286,17 +287,20 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
     return rc;
 }
 
-int vmmdevHGCMConnect (VMMDevState *pVMMDevState, VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPtr)
+int vmmdevHGCMConnect (VMMDevState *pVMMDevState, VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPhys)
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ (sizeof (struct VBOXHGCMCMD));
+    PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ (sizeof (struct VBOXHGCMCMD) + pHGCMConnect->header.header.size);
 
     if (pCmd)
     {
-        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPtr, VBOXHGCMCMDTYPE_CONNECT);
+        VMMDevHGCMConnect *pHGCMConnectCopy = (VMMDevHGCMConnect *)(pCmd+1);
+        
+        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPhys, pHGCMConnect->header.header.size, VBOXHGCMCMDTYPE_CONNECT);
 
-        pCmd->pHeader = &pHGCMConnect->header;
+        memcpy(pHGCMConnectCopy, pHGCMConnect, pHGCMConnect->header.header.size);
+
         pCmd->paHostParms = NULL;
         pCmd->cLinPtrs = 0;
         pCmd->paLinPtrs = NULL;
@@ -305,7 +309,7 @@ int vmmdevHGCMConnect (VMMDevState *pVMMDevState, VMMDevHGCMConnect *pHGCMConnec
         Assert(pHGCMConnect->loc.type == VMMDevHGCMLoc_LocalHost_Existing);
         pHGCMConnect->loc.type = VMMDevHGCMLoc_LocalHost_Existing;
 
-        rc = pVMMDevState->pHGCMDrv->pfnConnect (pVMMDevState->pHGCMDrv, pCmd, &pHGCMConnect->loc, &pHGCMConnect->u32ClientID);
+        rc = pVMMDevState->pHGCMDrv->pfnConnect (pVMMDevState->pHGCMDrv, pCmd, &pHGCMConnectCopy->loc, &pHGCMConnectCopy->u32ClientID);
     }
     else
     {
@@ -315,7 +319,7 @@ int vmmdevHGCMConnect (VMMDevState *pVMMDevState, VMMDevHGCMConnect *pHGCMConnec
     return rc;
 }
 
-int vmmdevHGCMDisconnect (VMMDevState *pVMMDevState, VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPtr)
+int vmmdevHGCMDisconnect (VMMDevState *pVMMDevState, VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPhys)
 {
     int rc = VINF_SUCCESS;
 
@@ -323,9 +327,8 @@ int vmmdevHGCMDisconnect (VMMDevState *pVMMDevState, VMMDevHGCMDisconnect *pHGCM
 
     if (pCmd)
     {
-        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPtr, VBOXHGCMCMDTYPE_DISCONNECT);
+        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPhys, pHGCMDisconnect->header.header.size, VBOXHGCMCMDTYPE_DISCONNECT);
 
-        pCmd->pHeader = &pHGCMDisconnect->header;
         pCmd->paHostParms = NULL;
         pCmd->cLinPtrs = 0;
         pCmd->paLinPtrs = NULL;
@@ -341,7 +344,7 @@ int vmmdevHGCMDisconnect (VMMDevState *pVMMDevState, VMMDevHGCMDisconnect *pHGCM
 }
 
 
-int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPHYS GCPtr)
+int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPHYS GCPhys)
 {
     int rc = VINF_SUCCESS;
 
@@ -391,11 +394,13 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                 
                 Log(("vmmdevHGCMCall: linptr size = %d\n", pGuestParm->u.Pointer.size));
             } break;
+
             case VMMDevHGCMParmType_32bit:
             case VMMDevHGCMParmType_64bit:
             case VMMDevHGCMParmType_PhysAddr:
             {
             } break;
+
             default:
             {
                 AssertMsgFailed(("vmmdevHGCMCall: invalid parameter type %x\n", pGuestParm->type));
@@ -419,7 +424,6 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
 
     memset (pCmd, 0, sizeof (*pCmd));
     
-    pCmd->pHeader     = &pHGCMCall->header;
     pCmd->paHostParms = NULL;
     pCmd->cLinPtrs    = cLinPtrs;
     
@@ -493,8 +497,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                      pHostParm->u.pointer.size = size;
 
                      AssertFailed();
-                     /** @todo It's no longer allowed to save a conversion address for later use! */
-                     rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr);
+                     /* rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr); */
 
                      Log(("vmmdevHGCMCall: PhysAddr guest parameter %VGp\n", physAddr));
                      break;
@@ -554,7 +557,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
 
     if (VBOX_SUCCESS (rc))
     {
-        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPtr, VBOXHGCMCMDTYPE_CALL);
+        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPhys, pHGCMCall->header.header.size, VBOXHGCMCMDTYPE_CALL);
 
         /* Pass the function call to HGCM connector for actual processing */
         rc = pVMMDevState->pHGCMDrv->pfnCall (pVMMDevState->pHGCMDrv, pCmd, pHGCMCall->u32ClientID, pHGCMCall->u32Function, cParms, pCmd->paHostParms);
@@ -572,10 +575,8 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
     return rc;
 }
 
-static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd)
+static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd, VMMDevHGCMRequestHeader *pHeader)
 {
-    VMMDevHGCMRequestHeader *pHeader = pCmd->pHeader;
-
     switch (pCmd->enmCmdType)
     {
         case VBOXHGCMCMDTYPE_CONNECT:
@@ -601,13 +602,18 @@ static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd)
 
 #define PDMIHGCMPORT_2_VMMDEVSTATE(pInterface) ( (VMMDevState *) ((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, HGCMPort)) )
 
-DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
+DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
-    int rc = VINF_SUCCESS;
+    VMMDevState             *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+    VMMDevHGCMRequestHeader *pHeader;
+    int                      rc = VINF_SUCCESS;
 
-    VMMDevHGCMRequestHeader *pHeader = pCmd->pHeader;
+    pHeader = (VMMDevHGCMRequestHeader *)RTMemAllocZ (pCmd->cbSize);
+    Assert(pHeader);
+    if (pHeader == NULL)
+        return;
 
-    VMMDevState *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+    PDMDevHlpPhysRead(pVMMDevState->pDevIns, (RTGCPHYS)pCmd->GCPhys, pHeader, pCmd->cbSize);
 
     if (result != VINF_HGCM_SAVE_STATE)
     {
@@ -615,13 +621,15 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
         pHeader->result = result;
         
         /* Verify the request type. */
-        rc = vmmdevHGCMCmdVerify (pCmd);
+        rc = vmmdevHGCMCmdVerify (pCmd, pHeader);
 
         if (VBOX_SUCCESS (rc))
         {
             /* Update parameters and data buffers. */
-
-            if (pHeader->header.requestType == VMMDevReq_HGCMCall)
+           
+            switch (pHeader->header.requestType)
+            {
+            case VMMDevReq_HGCMCall:
             {
                 VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pHeader;
 
@@ -675,6 +683,18 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
                         }
                     }
                 }
+                break;
+            }
+
+            case VMMDevReq_HGCMConnect:
+            {
+                VMMDevHGCMConnect *pHGCMConnectCopy = (VMMDevHGCMConnect *)(pCmd+1);
+
+                /* save the client id in the guest request packet */
+                VMMDevHGCMConnect *pHGCMConnect = (VMMDevHGCMConnect *)pHeader;
+                pHGCMConnect->u32ClientID = pHGCMConnectCopy->u32ClientID;
+                break;
+            }
             }
         }
         else
@@ -685,6 +705,9 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
 
         /* Mark request as processed*/
         pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
+
+        /* Write back the request */
+        PDMDevHlpPhysWrite(pVMMDevState->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbSize);
 
         VMMDevNotifyGuest (pVMMDevState, VMMDEV_EVENT_HGCM);
 
@@ -698,8 +721,19 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
         
         RTMemFree (pCmd);
     }
+    RTMemFree(pHeader);
 
     return;
+}
+
+DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
+{
+    VMMDevState *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+
+    /* Not safe to execute asynchroneously; forward to EMT */
+    int rc = VMR3ReqCallEx(PDMDevHlpGetVM(pVMMDevState->pDevIns), NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
+                           (PFNRT)hgcmCompletedWorker, 3, pInterface, result, pCmd);
+    AssertRC(rc);
 }
 
 /* @thread EMT */
@@ -738,8 +772,11 @@ int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
         {
             PVBOXHGCMCMD pNext = pIter->pNext;
 
-            LogFlowFunc (("Saving %VGp\n", pIter->GCPtr));
-            rc = SSMR3PutGCPtr(pSSM, pIter->GCPtr);
+            LogFlowFunc (("Saving %VGp\n", pIter->GCPhys));
+            rc = SSMR3PutGCPhys(pSSM, pIter->GCPhys);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3PutU32(pSSM, pIter->cbSize);
             AssertRCReturn(rc, rc);
 
             vmmdevHGCMRemoveCommand (pVMMDevState, pIter);
@@ -767,16 +804,21 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
 
     while (cCmds--)
     {
-        RTGCPHYS GCPtr;
-        rc = SSMR3GetGCPtr(pSSM, &GCPtr);
+        RTGCPHYS GCPhys;
+        uint32_t cbSize;
+
+        rc = SSMR3GetGCPhys(pSSM, &GCPhys);
         AssertRCReturn(rc, rc);
 
-        LogFlowFunc (("Restoring %VGp\n", GCPtr));
+        rc = SSMR3GetU32(pSSM, &cbSize);
+        AssertRCReturn(rc, rc);
+
+        LogFlowFunc (("Restoring %VGp size %x bytes\n", GCPhys, cbSize));
 
         PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ (sizeof (struct VBOXHGCMCMD));
         AssertReturn(pCmd, VERR_NO_MEMORY);
 
-        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPtr, VBOXHGCMCMDTYPE_LOADSTATE);
+        vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPhys, cbSize, VBOXHGCMCMDTYPE_LOADSTATE);
     }
 
     return rc;
@@ -802,110 +844,112 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
 
             PVBOXHGCMCMD pNext = pIter->pNext;
 
-            VMMDevRequestHeader *requestHeader = NULL;
-            rc = PDMDevHlpPhys2HCVirt(pDevIns, pIter->GCPtr, 0, (PRTHCPTR)&requestHeader);
+            VMMDevRequestHeader *requestHeader = (VMMDevRequestHeader *)RTMemAllocZ (pIter->cbSize);
+            Assert(requestHeader);
+            if (requestHeader == NULL)
+                return VERR_NO_MEMORY;
 
-            if (VBOX_FAILURE(rc) || !requestHeader)
+            PDMDevHlpPhysRead(pVMMDevState->pDevIns, (RTGCPHYS)pIter->GCPhys, requestHeader, pIter->cbSize);
+
+            /* the structure size must be greater or equal to the header size */
+            if (requestHeader->size < sizeof(VMMDevRequestHeader))
             {
-                AssertMsgFailed(("VMMDev::LoadStateDone: could not convert guest physical address to host virtual!!! rc = %Vrc\n", rc));
+                Log(("VMMDev request header size too small! size = %d\n", requestHeader->size));
             }
             else
             {
-                /* the structure size must be greater or equal to the header size */
-                if (requestHeader->size < sizeof(VMMDevRequestHeader))
+                /* check the version of the header structure */
+                if (requestHeader->version != VMMDEV_REQUEST_HEADER_VERSION)
                 {
-                    Log(("VMMDev request header size too small! size = %d\n", requestHeader->size));
+                    Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader->version, VMMDEV_REQUEST_HEADER_VERSION));
                 }
                 else
                 {
-                    /* check the version of the header structure */
-                    if (requestHeader->version != VMMDEV_REQUEST_HEADER_VERSION)
-                    {
-                        Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader->version, VMMDEV_REQUEST_HEADER_VERSION));
-                    }
-                    else
-                    {
-                        Log(("VMMDev request issued: %d\n", requestHeader->requestType));
+                    Log(("VMMDev request issued: %d\n", requestHeader->requestType));
 
-                        switch (requestHeader->requestType)
+                    switch (requestHeader->requestType)
+                    {
+                        case VMMDevReq_HGCMConnect:
                         {
-                            case VMMDevReq_HGCMConnect:
+                            if (requestHeader->size < sizeof(VMMDevHGCMConnect))
                             {
-                                if (requestHeader->size < sizeof(VMMDevHGCMConnect))
-                                {
-                                    AssertMsgFailed(("VMMDevReq_HGCMConnect structure has invalid size!\n"));
-                                    requestHeader->rc = VERR_INVALID_PARAMETER;
-                                }
-                                else if (!pVMMDevState->pHGCMDrv)
-                                {
-                                    Log(("VMMDevReq_HGCMConnect HGCM Connector is NULL!\n"));
-                                    requestHeader->rc = VERR_NOT_SUPPORTED;
-                                }
-                                else
-                                {
-                                    VMMDevHGCMConnect *pHGCMConnect = (VMMDevHGCMConnect *)requestHeader;
-
-                                    Log(("VMMDevReq_HGCMConnect\n"));
-
-                                    requestHeader->rc = vmmdevHGCMConnect (pVMMDevState, pHGCMConnect, pIter->GCPtr);
-                                }
-                                break;
+                                AssertMsgFailed(("VMMDevReq_HGCMConnect structure has invalid size!\n"));
+                                requestHeader->rc = VERR_INVALID_PARAMETER;
                             }
-
-                            case VMMDevReq_HGCMDisconnect:
+                            else if (!pVMMDevState->pHGCMDrv)
                             {
-                                if (requestHeader->size < sizeof(VMMDevHGCMDisconnect))
-                                {
-                                    AssertMsgFailed(("VMMDevReq_HGCMDisconnect structure has invalid size!\n"));
-                                    requestHeader->rc = VERR_INVALID_PARAMETER;
-                                }
-                                else if (!pVMMDevState->pHGCMDrv)
-                                {
-                                    Log(("VMMDevReq_HGCMDisconnect HGCM Connector is NULL!\n"));
-                                    requestHeader->rc = VERR_NOT_SUPPORTED;
-                                }
-                                else
-                                {
-                                    VMMDevHGCMDisconnect *pHGCMDisconnect = (VMMDevHGCMDisconnect *)requestHeader;
-
-                                    Log(("VMMDevReq_VMMDevHGCMDisconnect\n"));
-                                    requestHeader->rc = vmmdevHGCMDisconnect (pVMMDevState, pHGCMDisconnect, pIter->GCPtr);
-                                }
-                                break;
+                                Log(("VMMDevReq_HGCMConnect HGCM Connector is NULL!\n"));
+                                requestHeader->rc = VERR_NOT_SUPPORTED;
                             }
-
-                            case VMMDevReq_HGCMCall:
+                            else
                             {
-                                if (requestHeader->size < sizeof(VMMDevHGCMCall))
-                                {
-                                    AssertMsgFailed(("VMMDevReq_HGCMCall structure has invalid size!\n"));
-                                    requestHeader->rc = VERR_INVALID_PARAMETER;
-                                }
-                                else if (!pVMMDevState->pHGCMDrv)
-                                {
-                                    Log(("VMMDevReq_HGCMCall HGCM Connector is NULL!\n"));
-                                    requestHeader->rc = VERR_NOT_SUPPORTED;
-                                }
-                                else
-                                {
-                                    VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)requestHeader;
+                                VMMDevHGCMConnect *pHGCMConnect = (VMMDevHGCMConnect *)requestHeader;
 
-                                    Log(("VMMDevReq_HGCMCall: sizeof (VMMDevHGCMRequest) = %04X\n", sizeof (VMMDevHGCMCall)));
+                                Log(("VMMDevReq_HGCMConnect\n"));
 
-                                    Log(("%.*Vhxd\n", requestHeader->size, requestHeader));
-
-                                    requestHeader->rc = vmmdevHGCMCall (pVMMDevState, pHGCMCall, pIter->GCPtr);
-                                }
-                                break;
+                                requestHeader->rc = vmmdevHGCMConnect (pVMMDevState, pHGCMConnect, pIter->GCPhys);
                             }
-                            default:
-                               AssertReleaseFailed();
+                            break;
                         }
+
+                        case VMMDevReq_HGCMDisconnect:
+                        {
+                            if (requestHeader->size < sizeof(VMMDevHGCMDisconnect))
+                            {
+                                AssertMsgFailed(("VMMDevReq_HGCMDisconnect structure has invalid size!\n"));
+                                requestHeader->rc = VERR_INVALID_PARAMETER;
+                            }
+                            else if (!pVMMDevState->pHGCMDrv)
+                            {
+                                Log(("VMMDevReq_HGCMDisconnect HGCM Connector is NULL!\n"));
+                                requestHeader->rc = VERR_NOT_SUPPORTED;
+                            }
+                            else
+                            {
+                                VMMDevHGCMDisconnect *pHGCMDisconnect = (VMMDevHGCMDisconnect *)requestHeader;
+
+                                Log(("VMMDevReq_VMMDevHGCMDisconnect\n"));
+                                requestHeader->rc = vmmdevHGCMDisconnect (pVMMDevState, pHGCMDisconnect, pIter->GCPhys);
+                            }
+                            break;
+                        }
+
+                        case VMMDevReq_HGCMCall:
+                        {
+                            if (requestHeader->size < sizeof(VMMDevHGCMCall))
+                            {
+                                AssertMsgFailed(("VMMDevReq_HGCMCall structure has invalid size!\n"));
+                                requestHeader->rc = VERR_INVALID_PARAMETER;
+                            }
+                            else if (!pVMMDevState->pHGCMDrv)
+                            {
+                                Log(("VMMDevReq_HGCMCall HGCM Connector is NULL!\n"));
+                                requestHeader->rc = VERR_NOT_SUPPORTED;
+                            }
+                            else
+                            {
+                                VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)requestHeader;
+
+                                Log(("VMMDevReq_HGCMCall: sizeof (VMMDevHGCMRequest) = %04X\n", sizeof (VMMDevHGCMCall)));
+
+                                Log(("%.*Vhxd\n", requestHeader->size, requestHeader));
+
+                                requestHeader->rc = vmmdevHGCMCall (pVMMDevState, pHGCMCall, pIter->GCPhys);
+                            }
+                            break;
+                        }
+                        default:
+                           AssertReleaseFailed();
                     }
                 }
             }
 
+            /* Write back the request */
+            PDMDevHlpPhysWrite(pVMMDevState->pDevIns, pIter->GCPhys, requestHeader, pIter->cbSize);
+            RTMemFree(requestHeader);
+
             vmmdevHGCMRemoveCommand (pVMMDevState, pIter);
+            RTMemFree(pIter);
             pIter = pNext;
         }
 

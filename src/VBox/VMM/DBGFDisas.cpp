@@ -66,6 +66,8 @@ typedef struct
     RTGCPTR         pvPageGC;
     /** Pointer to the next instruction (relative to GCPtrSegBase). */
     RTGCUINTPTR     GCPtrNext;
+    /** The lock information that PGMPhysReleasePageMappingLock needs. */
+    PGMPAGEMAPLOCK  pageMapLock;
 } DBGFDISASSTATE, *PDBGFDISASSTATE;
 
 
@@ -94,6 +96,11 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
     int rc = DISInstr(&pState->Cpu, GCPtr, 0, &cbInstr, NULL);
+
+    /* Release mapping lock acquired in dbgfR3DisasInstrRead */
+    if (PGMPhysIsPageMappingLockValid(pVM, &pState->pageMapLock))
+        PGMPhysReleasePageMappingLock(pVM, &pState->pageMapLock);
+
     if (VBOX_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
@@ -158,10 +165,16 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Ds
                 if (!pState->pvPageHC)
                     rc = VERR_INVALID_POINTER;
             }
-            else if (pState->enmMode <= PGMMODE_PROTECTED)
-                rc = PGMPhysGCPhys2HCPtr(pState->pVM, pState->pvPageGC, PAGE_SIZE, &pState->pvPageHC);
-            else
-                rc = PGMPhysGCPtr2HCPtr(pState->pVM, pState->pvPageGC, &pState->pvPageHC);
+            else 
+            {
+                if (PGMPhysIsPageMappingLockValid(pState->pVM, &pState->pageMapLock))
+                    PGMPhysReleasePageMappingLock(pState->pVM, &pState->pageMapLock);
+
+                if (pState->enmMode <= PGMMODE_PROTECTED)
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->pageMapLock);
+                else
+                    rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->pageMapLock);
+            }
             if (VBOX_FAILURE(rc))
             {
                 pState->pvPageHC = NULL;
@@ -538,6 +551,11 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         uint8_t *pau8Bits = (uint8_t *)alloca(cbBits);
         rc = dbgfR3DisasInstrRead(GCPtr, pau8Bits, cbBits, &State);
         AssertRC(rc);
+
+        /* Release mapping lock acquired in dbgfR3DisasInstrRead */
+        if (PGMPhysIsPageMappingLockValid(pVM, &State.pageMapLock))
+            PGMPhysReleasePageMappingLock(pVM, &State.pageMapLock);
+
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
             RTStrPrintf(pszOutput, cchOutput, "%.*Vhxs%*s %s",
                         cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",

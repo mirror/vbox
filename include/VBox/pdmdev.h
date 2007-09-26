@@ -2342,7 +2342,7 @@ typedef struct PDMDEVHLP
     DECLR3CALLBACKMEMBER(int, pfnPhysReserve,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc));
 
     /**
-     * Convert a guest physical address to a host virtual address.
+     * Convert a guest physical address to a host virtual address. (OBSOLETE)
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance.
@@ -2354,10 +2354,10 @@ typedef struct PDMDEVHLP
      * @remark  Careful with page boundraries.
      * @remark  Do not use the mapping after you return to the caller! (it could get invalidated/changed)
      */
-    DECLR3CALLBACKMEMBER(int, pfnPhys2HCVirt,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC));
+    DECLR3CALLBACKMEMBER(int, pfnObsoletePhys2HCVirt,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC));
 
     /**
-     * Convert a guest virtual address to a host virtual address.
+     * Convert a guest virtual address to a host virtual address. (OBSOLETE)
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance.
@@ -2368,7 +2368,7 @@ typedef struct PDMDEVHLP
      * @remark  Careful with page boundraries.
      * @remark  Do not use the mapping after you return to the caller! (it could get invalidated/changed)
      */
-    DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2HCPtr,(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr));
+    DECLR3CALLBACKMEMBER(int, pfnObsoletePhysGCPtr2HCPtr,(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr));
 
     /**
      * Checks if the Gate A20 is enabled or not.
@@ -3203,22 +3203,6 @@ DECLINLINE(int) PDMDevHlpPhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, 
 DECLINLINE(int) PDMDevHlpPhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc)
 {
     return pDevIns->pDevHlp->pfnPhysReserve(pDevIns, GCPhys, cbRange, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLP::pfnPhys2HCVirt
- */
-DECLINLINE(int) PDMDevHlpPhys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC)
-{
-    return pDevIns->pDevHlp->pfnPhys2HCVirt(pDevIns, GCPhys, cbRange, ppvHC);
-}
-
-/**
- * @copydoc PDMDEVHLP::pfnPhysGCPtr2HCPtr
- */
-DECLINLINE(int) PDMDevHlpPhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
-{
-    return pDevIns->pDevHlp->pfnPhysGCPtr2HCPtr(pDevIns, GCPtr, pHCPtr);
 }
 
 /**
