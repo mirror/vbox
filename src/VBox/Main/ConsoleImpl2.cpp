@@ -852,6 +852,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg, "CableConnected", fCableConnected ? 1 : 0);  RC_CHECK();
 
         /*
+         * Line speed to report from custom drivers
+         */
+        ULONG ulLineSpeed;
+        hrc = networkAdapter->COMGETTER(LineSpeed)(&ulLineSpeed);                   H();
+        rc = CFGMR3InsertInteger(pCfg, "LineSpeed", ulLineSpeed);                   RC_CHECK();
+
+        /*
          * Attach the status driver.
          */
         rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();

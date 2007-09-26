@@ -36,7 +36,7 @@ public:
         Data()
             : mSlot (0), mEnabled (FALSE)
             , mAttachmentType (NetworkAttachmentType_NoNetworkAttachment)
-            ,  mCableConnected (TRUE), mTraceEnabled (FALSE)
+            ,  mCableConnected (TRUE), mLineSpeed (0), mTraceEnabled (FALSE)
 #ifdef RT_OS_WINDOWS
             , mHostInterface ("") // cannot be null
 #endif
@@ -54,6 +54,7 @@ public:
                     mMACAddress == that.mMACAddress &&
                     mAttachmentType == that.mAttachmentType &&
                     mCableConnected == that.mCableConnected &&
+                    mLineSpeed == that.mLineSpeed &&
                     mTraceEnabled == that.mTraceEnabled &&
                     mHostInterface == that.mHostInterface &&
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
@@ -70,6 +71,7 @@ public:
         Bstr mMACAddress;
         NetworkAttachmentType_T mAttachmentType;
         BOOL mCableConnected;
+        ULONG mLineSpeed;
         BOOL mTraceEnabled;
         Bstr mTraceFile;
         Bstr mHostInterface;
@@ -130,6 +132,8 @@ public:
     STDMETHOD(COMSETTER(CableConnected)) (BOOL aConnected);
     STDMETHOD(COMGETTER(TraceEnabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(TraceEnabled)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(LineSpeed)) (ULONG *aSpeed);
+    STDMETHOD(COMSETTER(LineSpeed)) (ULONG aSpeed);
     STDMETHOD(COMGETTER(TraceFile)) (BSTR *aTraceFile);
     STDMETHOD(COMSETTER(TraceFile)) (INPTR BSTR aTraceFile);
 
