@@ -67,7 +67,9 @@ typedef struct
     /** Pointer to the next instruction (relative to GCPtrSegBase). */
     RTGCUINTPTR     GCPtrNext;
     /** The lock information that PGMPhysReleasePageMappingLock needs. */
-    PGMPAGEMAPLOCK  pageMapLock;
+    PGMPAGEMAPLOCK  PageMapLock;
+    /** Whether the PageMapLock is valid or not. */
+    bool            fLocked;
 } DBGFDISASSTATE, *PDBGFDISASSTATE;
 
 
@@ -93,18 +95,21 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     pState->pvPageGC        = 0;
     pState->pvPageHC        = NULL;
     pState->pVM             = pVM;
+    pState->fLocked         = false;
     Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
     int rc = DISInstr(&pState->Cpu, GCPtr, 0, &cbInstr, NULL);
-
-    /* Release mapping lock acquired in dbgfR3DisasInstrRead */
-    if (PGMPhysIsPageMappingLockValid(pVM, &pState->pageMapLock))
-        PGMPhysReleasePageMappingLock(pVM, &pState->pageMapLock);
-
     if (VBOX_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
         return VINF_SUCCESS;
+    }
+
+    /* cleanup */
+    if (pState->fLocked)
+    {
+        PGMPhysReleasePageMappingLock(pVM, &pState->PageMapLock);
+        pState->fLocked = false;
     }
     return rc;
 }
@@ -130,6 +135,21 @@ static int dbgfR3DisasInstrNext(PDBGFDISASSTATE pState)
     return rc;
 }
 #endif
+
+
+/**
+ * Done with the dissassembler state, free associated resources.
+ *
+ * @param   pState      The disas CPU state ++.
+ */
+static void dbgfR3DisasInstrDone(PDBGFDISASSTATE pState)
+{
+    if (pState->fLocked)
+    {
+        PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
+        pState->fLocked = false;
+    }
+}
 
 
 /**
@@ -165,15 +185,16 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Ds
                 if (!pState->pvPageHC)
                     rc = VERR_INVALID_POINTER;
             }
-            else 
+            else
             {
-                if (PGMPhysIsPageMappingLockValid(pState->pVM, &pState->pageMapLock))
-                    PGMPhysReleasePageMappingLock(pState->pVM, &pState->pageMapLock);
+                if (pState->fLocked)
+                    PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
 
                 if (pState->enmMode <= PGMMODE_PROTECTED)
-                    rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->pageMapLock);
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->PageMapLock);
                 else
-                    rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->pageMapLock);
+                    rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->PageMapLock);
+                pState->fLocked = RT_SUCCESS_NP(rc);
             }
             if (VBOX_FAILURE(rc))
             {
@@ -395,6 +416,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
                     else
                     {
                         AssertMsgFailed(("Oops!\n"));
+                        dbgfR3DisasInstrDone(&State);
                         return VERR_GENERAL_FAILURE;
                     }
                     RTGCUINTPTR GCPtrTarget = (RTGCUINTPTR)GCPtr + State.Cpu.opsize + i32Disp;
@@ -551,11 +573,6 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         uint8_t *pau8Bits = (uint8_t *)alloca(cbBits);
         rc = dbgfR3DisasInstrRead(GCPtr, pau8Bits, cbBits, &State);
         AssertRC(rc);
-
-        /* Release mapping lock acquired in dbgfR3DisasInstrRead */
-        if (PGMPhysIsPageMappingLockValid(pVM, &State.pageMapLock))
-            PGMPhysReleasePageMappingLock(pVM, &State.pageMapLock);
-
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
             RTStrPrintf(pszOutput, cchOutput, "%.*Vhxs%*s %s",
                         cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
@@ -580,6 +597,8 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
 
     if (pcbInstr)
         *pcbInstr = State.Cpu.opsize;
+
+    dbgfR3DisasInstrDone(&State);
     return VINF_SUCCESS;
 }
 
