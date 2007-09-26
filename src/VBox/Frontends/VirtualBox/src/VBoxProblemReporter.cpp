@@ -1427,7 +1427,7 @@ void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
                      "<p>Thank you for finding time to fill out the "
                      "registration form!</p>")) :
         message (aParent, Error,
-                 tr ("<p>Failed to register the VirtualBox product (%1).</p>")
+                 tr ("<p>Failed to register the VirtualBox product</p><p>%1</p>")
                  .arg (aResult));
 }
 
