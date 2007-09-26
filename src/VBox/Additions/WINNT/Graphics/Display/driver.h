@@ -132,7 +132,11 @@ struct  _PDEV
     DWORD            dwNewDDSurfaceOffset;
     DWORD            cHeaps;
     VIDEOMEMORY*     pvmList;
-#endif
+    struct {
+        DWORD bHasRect;
+        RECTL rArea;
+    } ddLock;
+#endif /* VBOX_WITH_DDRAW */
 };
 
 #ifdef VBOX_WITH_OPENGL 
@@ -237,6 +241,8 @@ void vrdpAdjustRect (SURFOBJ *pso, RECTL *prcl);
 BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, POINTL *pptlSrc);
 #endif /* VBOX_VBVA_ADJUST_RECT */
 
+void vrdpReportDirtyRect (PPDEV ppdev, RECTL *prcl);
+void vbvaReportDirtyRect (PPDEV ppdev, RECTL *prcl);
 
 #include <iprt/assert.h>
 
