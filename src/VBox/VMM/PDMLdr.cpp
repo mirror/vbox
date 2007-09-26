@@ -607,7 +607,9 @@ static int pdmR3LoadR0(PVM pVM, const char *pszFilename, const char *pszName)
         /* next */
         pCur = pCur->pNext;
     }
+#if 0 /* breaks VT-x */
     AssertReturn(!strcmp(pszName, VMMR0_MAIN_MODULE_NAME), VERR_INTERNAL_ERROR);
+#endif
 
     /*
      * Find the file if not specified.
