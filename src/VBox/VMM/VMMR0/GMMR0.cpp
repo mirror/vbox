@@ -16,6 +16,7 @@
  *
  */
 
+
 /** @page pg_gmm    GMM - The Global Memory Manager
  *
  * As the name indicates, this component is responsible for global memory
@@ -139,8 +140,17 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "../PGMInternal.h"
-
+#define LOG_GROUP LOG_GROUP_GMM
+#include <VBox/gmm.h>
+#include "GMMR0Internal.h"
+#include <VBox/gvm.h>
+#include <VBox/log.h>
+#include <VBox/param.h>
+#include <iprt/avl.h>
+#include <iprt/mem.h>
+#include <iprt/memobj.h>
+#include <iprt/semaphore.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -154,7 +164,7 @@
  * the 30th bit decides whether it's a free page or not.
  *
  * Because of the different layout on 32-bit and 64-bit hosts, macros
- * are used to set and get the data.
+ * are used to get and set some of the data.
  */
 typedef union GMMPAGE
 {
@@ -346,7 +356,7 @@ typedef struct GMMCHUNK
     /** Reserved for later. */
     uint16_t        au16Reserved;
     /** The pages. */
-    GMMPAGE         aPages[GMM_CHUNK_SIZE >> PAGE_SIZE];
+    GMMPAGE         aPages[GMM_CHUNK_SIZE >> PAGE_SHIFT];
 } GMMCHUNK;
 
 
@@ -358,7 +368,7 @@ typedef struct GMMCHUNKTLBE
     /** The chunk id. */
     uint32_t        idChunk;
     /** Pointer to the chunk. */
-    PGGMCHUNK       pChunk;
+    PGMMCHUNK       pChunk;
 } GMMCHUNKTLBE;
 /** Pointer to an allocation chunk TLB entry. */
 typedef GMMCHUNKTLBE *PGMMCHUNKTLBE;
@@ -414,6 +424,8 @@ typedef struct GMM
     /** The legacy mode indicator.
      * This is determined at initialization time. */
     bool                fLegacyMode;
+    /** The number of active VMs. */
+    uint16_t            cActiveVMs;
 } GMM;
 /** Pointer to the GMM instance. */
 typedef GMM *PGMM;
@@ -422,11 +434,44 @@ typedef GMM *PGMM;
 #define GMM_MAGIC       0x19540414
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Pointer to the GMM instance data. */
+static PGMM g_pGMM = NULL;
+
+/** Macro for obtaining and validating the g_pGMM pointer.
+ * On failure it will return from the invoking function with the specified return value.
+ *
+ * @param   pGMM    The name of the pGMM variable.
+ * @param   rc      The return value on failure. Use VERR_INTERNAL_ERROR for
+ *                  VBox status codes.
+ */
+#define GMM_GET_VALID_INSTANCE(pGMM, rc) \
+    do { \
+        (pGMM) = g_pGMM; \
+        AssertPtrReturn((pGMM), (rc)); \
+        AssertMsgReturn((pGMM)->u32Magic == GMM_MAGIC, ("%p - %#x\n", (pGMM), (pGMM)->u32Magic), (rc)); \
+    } while (0)
+
+/** Macro for obtaining and validating the g_pGMM pointer, void function variant.
+ * On failure it will return from the invoking function.
+ *
+ * @param   pGMM    The name of the pGMM variable.
+ */
+#define GMM_GET_VALID_INSTANCE_VOID(pGMM) \
+    do { \
+        (pGMM) = g_pGMM; \
+        AssertPtrReturnVoid((pGMM)); \
+        AssertMsgReturnVoid((pGMM)->u32Magic == GMM_MAGIC, ("%p - %#x\n", (pGMM), (pGMM)->u32Magic)); \
+    } while (0)
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK int gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
+static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
+static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pvhGVM);
 
 
 
@@ -506,11 +551,11 @@ GMMR0DECL(void) GMMR0Term(void)
     /* Destroy the fundamentals. */
     g_pGMM = NULL;
     pGMM->u32Magic++;
-    RTSemEventDestroy(&pGMM->Mtx);
+    RTSemFastMutexDestroy(pGMM->Mtx);
     pGMM->Mtx = NIL_RTSEMFASTMUTEX;
 
     /* free any chunks still hanging around. */
-    RTAvlU32Destroy(pGMM->Chunks, gmmR0TermDestroyChunk, pGMM);
+    RTAvlU32Destroy(&pGMM->pChunks, gmmR0TermDestroyChunk, pGMM);
 
     /* finally the instance data itself. */
     RTMemFree(pGMM);
@@ -525,9 +570,9 @@ GMMR0DECL(void) GMMR0Term(void)
  * @param   pNode   The node to destroy.
  * @param   pvGMM   The GMM handle.
  */
-static DECLCALLBACK int gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM)
+static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM)
 {
-    PGMMCHUNK pChunk = (PGMMCHUNK) pNode;
+    PGMMCHUNK pChunk = (PGMMCHUNK)pNode;
 
     if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
         SUPR0Printf("GMMR0Term: %p/%#x: cFree=%d cPrivate=%d cShared=%d cMappings=%d\n", pChunk,
@@ -552,38 +597,139 @@ static DECLCALLBACK int gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM
 
 
 /**
- * Cleans up when a VM is terminated.
+ * Initializes the per-VM data for the GMM.
  *
- * @param   pVM     The VM structure.
- * @param   hGVM    The global VM handle.
+ * @param   pGVM    Pointer to the Global VM structure.
  */
-GMMR0DECL(void) GMMR0CleanupVM(PVM pVM, uint32_t hGVM)
+GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
 {
-    LogFlow(("GMMR0CleanupVM: pVM=%p hGVM=%#x\n", pVM, hGVM));
+    pGVM->gmm.s.cRAMPages = 0;
+    pGVM->gmm.s.cPrivatePages = 0;
+    pGVM->gmm.s.cSharedPages = 0;
+    pGVM->gmm.s.enmPolicy = GMMOCPOLICY_TBD;
+    pGVM->gmm.s.enmPriority = GMMPRORITY_NORMAL;
+}
 
-    PGMM pGMM = g_pGMM;
-    if (    !VALID_PTR(pGMM)
-        ||  pGMM->u32Magic != GMM_MAGIC)
-        return;
+
+/**
+ * Cleans up when a VM is terminating.
+ *
+ * @param   pGVM    Pointer to the Global VM structure.
+ */
+GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
+{
+    LogFlow(("GMMR0CleanupVM: pGVM=%p:{.pVM=%p, .hSelf=%#x}\n", pGVM, pGVM->pVM, pGVM->hSelf));
+
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE_VOID(pGMM);
 
     int rc =  RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     /*
-     * Walk the entire pool looking for pages that belongs to this VM.
-     * This is slow but necessary. Of course it won't work for shared
-     * pages, but we'll deal with that later.
+     * If it's the last VM around, we can skip walking all the chunk looking 
+     * for the pages owned by this VM and instead flush the whole shebang.
+     *
+     * This takes care of the eventuality that a VM has left shared page
+     * references behind (shouldn't happen of course, but you never know).
      */
+    if (pGMM->cActiveVMs == 1)
+    {
+        
+    }
+    else if (pGVM->gmm.s.cPrivatePages)
+    {
+        /*
+         * Walk the entire pool looking for pages that belongs to this VM.
+         * This is slow but necessary. Of course it won't work for shared
+         * pages, but we'll deal with that later.
+         */
+        RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FreeVMPagesInChunk, (void *)pGVM->hSelf);
 
-
-    /*
-     * Update over-commitment management and free chunks that are no
-     * longer needed. If no VMs are around, free everything.
-     */
-
+        /*
+         * Update over-commitment management and free chunks that are no
+         * longer needed.
+         */
+        
+    }
 
     RTSemFastMutexRelease(pGMM->Mtx);
+
+    /* trash the data */
+    pGVM->gmm.s.cRAMPages = 0;
+    pGVM->gmm.s.cPrivatePages = 0;
+    pGVM->gmm.s.cSharedPages = 0;
+    pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
+    pGVM->gmm.s.enmPriority = GMMPRORITY_INVALID;
+
     LogFlow(("GMMR0CleanupVM: returns\n"));
 }
+
+
+/**
+ * RTAvlU32DoWithAll callback.
+ *
+ * @returns 0
+ * @param   pNode   The node to destroy.
+ * @param   pvhGVM  The GVM::hSelf value.
+ */
+static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pvhGVM)
+{
+    PGMMCHUNK pChunk = (PGMMCHUNK)pNode;
+    uint16_t hGVM = (uintptr_t)pvhGVM;
+
+#ifndef VBOx_STRICT
+    if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
+#endif
+    {
+        /*
+         * Perform some internal checks while we're scanning.
+         */
+        unsigned cPrivate = 0;
+        unsigned cShared = 0;
+        unsigned cFree = 0;
+
+        unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+        while (iPage-- > 0)
+            if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
+
+            {
+                if (pChunk->aPages[iPage].Private.hGVM == hGVM)
+                {
+                    /* Free it. */
+                    pChunk->aPages[iPage].u = 0;
+                    pChunk->aPages[iPage].Free.idNext = pChunk->idFreeHead;
+                    pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
+                    pChunk->idFreeHead = iPage;
+                    pChunk->cPrivate--;
+                    pChunk->cFree++;
+                    cFree++;
+                }
+                else
+                    cPrivate++;
+            }
+            else if (GMM_PAGE_IS_FREE(&pChunk->aPages[iPage]))
+                cFree++;
+            else
+                cShared++;
+
+        /* 
+         * Did it add up?
+         */
+        if (RT_UNLIKELY(    pChunk->cFree != cFree
+                        ||  pChunk->cPrivate != cPrivate
+                        ||  pChunk->cShared != cShared))
+        {
+            SUPR0Printf("GMM: Chunk %p/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n", 
+                        pChunk->cFree, cFree, pChunk->cPrivate, cPrivate, pChunk->cShared, cShared);
+            pChunk->cFree = cFree;
+            pChunk->cPrivate = cPrivate;
+            pChunk->cShared = cShared;
+        }
+    }
+
+    return 0;
+}
+
 
 
