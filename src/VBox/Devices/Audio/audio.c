@@ -1555,8 +1555,7 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
 
         for (i = 0; i < sizeof (drvtab) / sizeof (drvtab[0]); i++) {
             /* The ALSA entry can be null if we couldn't load the library */
-            if (drvtab[i] != NULL)
-            {
+            if (drvtab[i] != NULL) {
                 if (!strcmp (drvname, drvtab[i]->name)) {
                     done = !audio_driver_init (s, drvtab[i]);
                     found = 1;
@@ -1572,11 +1571,13 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
 
     if (!done) {
         for (i = 0; !done && i < sizeof (drvtab) / sizeof (drvtab[0]); i++) {
-            if (drvtab[i]->can_be_default) {
-                LogRel(("Audio: Initialization of driver '%s' failed, trying '%s'.\n",
-                       drvname, drvtab[i]->name));
-                drvname = drvtab[i]->name;
-                done = !audio_driver_init (s, drvtab[i]);
+            if (drvtab[i] != NULL) {
+                if (drvtab[i]->can_be_default) {
+                    LogRel(("Audio: Initialization of driver '%s' failed, trying '%s'.\n",
+                           drvname, drvtab[i]->name));
+                    drvname = drvtab[i]->name;
+                    done = !audio_driver_init (s, drvtab[i]);
+                }
             }
         }
     }
@@ -1878,27 +1879,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
 
     LogFlow(("drvAUDIOConstruct:\n"));
     /*
-     * Load the ALSA driver if needed
-     */
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_ALSA)
-    Log2(("Loading ALSA library %s\n", VBOX_LIB_ALSA));
-    rc = (RTLdrLoad(VBOX_LIB_ALSA, &hLibVBoxAlsa));
-    if (RT_FAILURE(rc))
-    {
-        Log(("Failed to load ALSA library %s.  Reason: %Rrc\n", VBOX_LIB_ALSA, rc));
-    }
-    else
-    {
-        rc = RTLdrGetSymbol(hLibVBoxAlsa, "alsa_audio_driver", (void **) &drvtab[1]);
-        if (RT_FAILURE(rc))
-        {
-            Log(("Failed to get symbol \"alsa_audio_driver\" from library %s.  Reason: %Rrc\n",
-                 VBOX_LIB_ALSA, rc));
-            drvtab[1] = NULL;
-        }
-    }
-#endif
-    /*
      * Validate the config.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "AudioDriver\0"))
@@ -1918,6 +1898,27 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     rc = CFGMR3QueryStringAlloc (pCfgHandle, "AudioDriver", &drvname);
     if (VBOX_FAILURE (rc))
         return rc;
+
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_ALSA)
+    /*
+     * Load the ALSA driver if needed.  This is a hack to remove the
+     * hard dependency on libasound.so.
+     */
+    if (0 == strcmp(drvname, "alsa")) {
+        Log2(("Loading ALSA library %s\n", VBOX_LIB_ALSA));
+        rc = (RTLdrLoad(VBOX_LIB_ALSA, &hLibVBoxAlsa));
+        if (RT_FAILURE(rc)) {
+            Log(("Failed to load ALSA library %s.  Reason: %Rrc\n", VBOX_LIB_ALSA, rc));
+        } else {
+            rc = RTLdrGetSymbol(hLibVBoxAlsa, "alsa_audio_driver", (void **) &drvtab[1]);
+            if (RT_FAILURE(rc)) {
+                Log(("Failed to get symbol \"alsa_audio_driver\" from library %s.  Reason: %Rrc\n",
+                     VBOX_LIB_ALSA, rc));
+                drvtab[1] = NULL;
+            }
+        }
+    }
+#endif
 
     rc = AUD_init (pDrvIns, drvname);
     if (VBOX_FAILURE (rc))
