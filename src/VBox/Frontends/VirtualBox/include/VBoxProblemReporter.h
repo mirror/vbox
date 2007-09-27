@@ -117,6 +117,7 @@ public:
     void cannotStartMachine (const CProgress &progress);
     void cannotPauseMachine (const CConsole &console);
     void cannotResumeMachine (const CConsole &console);
+    void cannotACPIShutdownMachine (const CConsole &console);
     void cannotSaveMachineState (const CConsole &console);
     void cannotSaveMachineState (const CProgress &progress);
     void cannotTakeSnapshot (const CConsole &console);

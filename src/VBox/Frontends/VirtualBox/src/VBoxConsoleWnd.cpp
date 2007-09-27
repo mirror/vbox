@@ -1134,9 +1134,10 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 {
     LogFlowFuncEnter();
 
-    static const char *Save = "save";
-    static const char *PowerOff = "powerOff";
-    static const char *DiscardCurState = "discardCurState";
+    static const char *kSave = "save";
+    static const char *kShutdown = "shutdown";
+    static const char *kPowerOff = "powerOff";
+    static const char *kDiscardCurState = "discardCurState";
 
     if (!console)
     {
@@ -1201,17 +1202,19 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
             if (machine_state != CEnums::Stuck)
             {
                 /* read the last user's choice for the given VM */
-                QStringList lastAction = QStringList::split (',',
-                                                             cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction));
+                QStringList lastAction =
+                    QStringList::split (',', cmachine.GetExtraData (VBoxDefs::GUI_LastCloseAction));
                 AssertWrapperOk (cmachine);
-                if (lastAction [0] == PowerOff)
+                if (lastAction [0] == kPowerOff)
                     dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
-                else if (lastAction [0] == Save)
+                else if (lastAction [0] == kShutdown)
+                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbShutdown));
+                else if (lastAction [0] == kSave)
                     dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbSave));
                 else
                     dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
                 dlg.cbDiscardCurState->setChecked (
-                    lastAction.count() > 1 && lastAction [1] == DiscardCurState);
+                    lastAction.count() > 1 && lastAction [1] == kDiscardCurState);
             }
             else
             {
@@ -1220,6 +1223,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                 dlg.rbSave->setEnabled (false);
                 dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
             }
+
+            bool wasShutdown = false;
 
             if (dlg.exec() == QDialog::Accepted)
             {
@@ -1242,6 +1247,23 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     }
                     else
                         vboxProblem().cannotSaveMachineState (cconsole);
+                }
+                else
+                if (dlg.rbShutdown->isChecked())
+                {
+                    /* unpause the VM to let it grab the ACPI shutdown event */
+                    console->pause (false);
+                    /* prevent the subsequent unpause request */
+                    wasPaused = true;
+                    /* signal ACPI shutdown (if there is no ACPI device, the
+                     * operation will fail) */
+                    cconsole.PowerButton();
+                    wasShutdown = cconsole.isOk();
+                    if (!wasShutdown)
+                        vboxProblem().cannotACPIShutdownMachine (cconsole);
+                    /* success is always false because we never accept the close
+                     * window action when doing ACPI shutdown */
+                    success = false;
                 }
                 else
                 if (dlg.rbPowerOff->isChecked())
@@ -1286,18 +1308,24 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 
                 if (success)
                 {
+                    /* accept the close action on success */
                     e->accept();
+                }
 
+                if (success || wasShutdown)
+                {
                     /* memorize the last user's choice for the given VM */
-                    QString lastAction;
+                    QString lastAction = kPowerOff;
                     if (dlg.rbSave->isChecked())
-                        lastAction = Save;
+                        lastAction = kSave;
+                    else if (dlg.rbShutdown->isChecked())
+                        lastAction = kShutdown;
                     else if (dlg.rbPowerOff->isChecked())
-                        lastAction = PowerOff;
+                        lastAction = kPowerOff;
                     else
                         AssertFailed();
                     if (dlg.cbDiscardCurState->isChecked())
-                        (lastAction += ",") += DiscardCurState;
+                        (lastAction += ",") += kDiscardCurState;
                     cmachine.SetExtraData (VBoxDefs::GUI_LastCloseAction, lastAction);
                     AssertWrapperOk (cmachine);
                 }
@@ -2237,7 +2265,10 @@ void VBoxConsoleWnd::vmACPIShutdown()
 {
     if (console)
     {
-        console->console().PowerButton();
+        CConsole cconsole = console->console();
+        cconsole.PowerButton();
+        if (!cconsole.isOk())
+            vboxProblem().cannotACPIShutdownMachine (cconsole);
     }
 }
 

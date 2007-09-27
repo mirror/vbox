@@ -43,7 +43,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
         </property>
         <widget class="QLayoutWidget">
             <property name="name">
-                <cstring>layout4</cstring>
+                <cstring>layout15</cstring>
             </property>
             <hbox>
                 <property name="name">
@@ -114,33 +114,115 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                     <property name="title">
                         <string>You want to:</string>
                     </property>
-                    <vbox>
+                    <grid>
                         <property name="name">
                             <cstring>unnamed</cstring>
                         </property>
-                        <widget class="QRadioButton">
+                        <widget class="QLabel" row="0" column="0">
+                            <property name="name">
+                                <cstring>txSave</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string></string>
+                            </property>
+                            <property name="pixmap">
+                                <pixmap>state_saved_16px.png</pixmap>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>rbSave</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QRadioButton" row="0" column="1">
                             <property name="name">
                                 <cstring>rbSave</cstring>
                             </property>
                             <property name="text">
                                 <string>&amp;Save the machine state</string>
                             </property>
-                            <property name="accel">
-                                <string>Alt+S</string>
+                            <property name="whatsThis" stdset="0">
+                                <string>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
+&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
+&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</string>
                             </property>
                         </widget>
-                        <widget class="QRadioButton">
+                        <widget class="QLabel" row="1" column="0">
+                            <property name="name">
+                                <cstring>txShutdown</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string></string>
+                            </property>
+                            <property name="pixmap">
+                                <pixmap>acpi_16px.png</pixmap>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>rbShutdown</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QRadioButton" row="1" column="1">
+                            <property name="name">
+                                <cstring>rbShutdown</cstring>
+                            </property>
+                            <property name="text">
+                                <string>S&amp;end the sthutdown signal</string>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
+&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
+&lt;p&gt;If the machine doesn't respond to this action then the guest operating system may be misconfigured or doesn't understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</string>
+                            </property>
+                        </widget>
+                        <widget class="QLabel" row="2" column="0">
+                            <property name="name">
+                                <cstring>txPowerOff</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>0</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="text">
+                                <string></string>
+                            </property>
+                            <property name="pixmap">
+                                <pixmap>state_powered_off_16px.png</pixmap>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>rbPowerOff</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QRadioButton" row="2" column="1">
                             <property name="name">
                                 <cstring>rbPowerOff</cstring>
                             </property>
                             <property name="text">
                                 <string>&amp;Power off the machine</string>
                             </property>
-                            <property name="accel">
-                                <string>Alt+P</string>
+                            <property name="whatsThis" stdset="0">
+                                <string>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
+&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside the it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</string>
                             </property>
                         </widget>
-                        <widget class="QLayoutWidget">
+                        <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
                             <property name="name">
                                 <cstring>layout13</cstring>
                             </property>
@@ -166,7 +248,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                     </property>
                                     <property name="sizeHint">
                                         <size>
-                                            <width>16</width>
+                                            <width>38</width>
                                             <height>20</height>
                                         </size>
                                     </property>
@@ -181,16 +263,16 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                     <property name="text">
                                         <string>&amp;Revert to the current snapshot</string>
                                     </property>
-                                    <property name="accel">
-                                        <string>Alt+R</string>
-                                    </property>
                                     <property name="toolTip" stdset="0">
                                         <string>Revert the machine state to the state stored in the current snapshot</string>
+                                    </property>
+                                    <property name="whatsThis" stdset="0">
+                                        <string>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</string>
                                     </property>
                                 </widget>
                             </hbox>
                         </widget>
-                    </vbox>
+                    </grid>
                 </widget>
             </hbox>
         </widget>
@@ -245,9 +327,6 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                     </property>
                     <property name="text">
                         <string>&amp;OK</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+O</string>
                     </property>
                     <property name="autoDefault">
                         <bool>true</bool>

@@ -691,6 +691,18 @@ void VBoxProblemReporter::cannotResumeMachine (const CConsole &console)
         formatErrorInfo (res));
 }
 
+void VBoxProblemReporter::cannotACPIShutdownMachine (const CConsole &console)
+{
+    /* preserve the current error info before calling the object again */
+    COMResult res (console);
+
+    message (mainWindowShown(),  Error,
+        tr ("Failed to send the ACPI Power Button press event to the "
+            "virtual machine <b>%1</b>.")
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (res));
+}
+
 void VBoxProblemReporter::cannotSaveMachineState (const CConsole &console)
 {
     /* preserve the current error info before calling the object again */
