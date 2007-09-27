@@ -44,20 +44,29 @@ typedef struct GMMPERVM
 {
     /** The reservations. */
     GMMVMSIZES      Reserved;
-    /** The actual allocations. */
+    /** The actual allocations.
+     * This includes both private and shared page allocations. */
     GMMVMSIZES      Allocated;
+
     /** The current number of private pages. */
     uint64_t        cPrivatePages;
     /** The current number of shared pages. */
     uint64_t        cSharedPages;
+    /** The current over-comitment policy. */
+    GMMOCPOLICY     enmPolicy;
+    /** The VM priority for arbitrating VMs in low and out of memory situation.
+     * Like which VMs to start sequeezing first. */
+    GMMPRIORITY     enmPriority;
+
     /** The current number of ballooned pages. */
     uint64_t        cBalloonedPages;
     /** The max number of pages that can be ballooned. */
     uint64_t        cMaxBalloonedPages;
-    /** The current over-comitment policy. */
-    GMMOCPOLICY     enmPolicy;
-    /** The VM priority for arbitrating VMs in an out-of-memory situation. */
-    GMMPRIORITY     enmPriority;
+    /** The number of pages we've currently requested the guest to give us. */
+    uint64_t        cReqBalloonedPages;
+    /** Whether ballooning is enabled or not. */
+    bool            fBallooningEnabled;
+
     /** Whether the VM is allowed to allocate memory or not.
      * This is used when the reservation update request fails or when the VM has
      * been told to suspend/save/die in an out-of-memory case. */

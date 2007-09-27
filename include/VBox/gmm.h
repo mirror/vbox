@@ -21,6 +21,7 @@
 #include <VBox/types.h>
 #include <VBox/gvmm.h>
 
+__BEGIN_DECLS
 
 /** @defgroup   grp_gmm     GMM - The Global Memory Manager
  * @{
@@ -52,6 +53,16 @@
 /** The NIL Page ID value. */
 #define NIL_GMM_PAGEID                  0
 
+#if 0 /* wrong - these are guest page pfns and not page ids! */
+/** Special Page ID used by unassigned pages. */
+#define GMM_PAGEID_UNASSIGNED           0x0fffffffU
+/** Special Page ID used by unsharable pages.
+ * Like MMIO2, shadow and heap. This is for later, obviously. */
+#define GMM_PAGEID_UNSHARABLE           0x0ffffffeU
+/** The end of the valid Page IDs. This is the first special one. */
+#define GMM_PAGEID_END                  0x0ffffff0U
+#endif
+
 
 /**
  * Over-commitment policy.
@@ -61,7 +72,7 @@ typedef enum GMMOCPOLICY
     /** The usual invalid 0 value. */
     GMMOCPOLICY_INVALID = 0,
     /** No over-commitment, fully backed.
-     * The GMM guarantees that it will be able to allocate all of the 
+     * The GMM guarantees that it will be able to allocate all of the
      * guest RAM for a VM with OC policy. */
     GMMOCPOLICY_NO_OC,
     /** to-be-determined. */
@@ -78,21 +89,134 @@ typedef enum GMMOCPOLICY
 typedef enum GMMPRIORITY
 {
     /** The usual invalid 0 value. */
-    GMMPRIORITY_INVALID = 0, 
-    /** High - avoid interrupting it if at all possible */
+    GMMPRIORITY_INVALID = 0,
+    /** High.
+     * When ballooning, ask these VMs last.
+     * When running out of memory, try not to interrupt these VMs. */
     GMMPRIORITY_HIGH,
-    /** Normal - pause, save it or kill it. */
+    /** Normal.
+     * When ballooning, don't wait to ask these.
+     * When running out of memory, pause, save and/or kill these VMs. */
     GMMPRIORITY_NORMAL,
-    /** Low - save or kill it. */
+    /** Low.
+     * When ballooning, maximize these first.
+     * When running out of memory, save or kill these VMs. */
     GMMPRIORITY_LOW,
     /** The end of the valid priority range. */
-    GMMPRIORITY_END = 0, 
+    GMMPRIORITY_END = 0,
     /** The custom 32-bit type blowup. */
     GMMPRIORITY_32BIT_HACK = 0x7fffffff
 } GMMPRIORITY;
 
 
+/**
+ * GMM Memory Accounts.
+ */
+typedef enum GMMACCOUNT
+{
+    /** The customary invalid zero entry. */
+    GMMACCOUNT_INVALID = 0,
+    /** Account with the base allocations. */
+    GMMACCOUNT_BASE,
+    /** Account with the shadow allocations. */
+    GMMACCOUNT_SHADOW,
+    /** Account with the fixed allocations. */
+    GMMACCOUNT_FIXED,
+    /** The end of the valid values. */
+    GMMACCOUNT_END,
+    /** The usual 32-bit value to finish it off. */
+    GMMACCOUNT_32BIT_HACK = 0x7fffffff
+} GMMACCOUNT;
+
+
+/**
+ * A page descriptor for use when freeing pages.
+ * See GMMR0FreePages, GMMR0BalloonedPages.
+ */
+typedef struct GMMFREEPAGEDESC
+{
+    /** The Page ID of the page to be freed. */
+    uint32_t idPage;
+} GMMFREEPAGEDESC;
+/** Pointer to a page descriptor for freeing pages. */
+typedef GMMFREEPAGEDESC *PGMMFREEPAGEDESC;
+
+
+/**
+ * A page descriptor for use when updating and allocating pages.
+ *
+ * This is a bit complicated because we want to do as much as possible
+ * with the same structure.
+ */
+typedef struct GMMPAGEDESC
+{
+    /** The physical address of the page.
+     *
+     * @input   GMMR0AllocateHandyPages expects the guest physical address
+     *          to update the GMMPAGE structure with. Pass GMM_GCPHYS_UNSHARABLE
+     *          when appropriate and NIL_RTHCPHYS when the page wasn't used
+     *          for any specific guest address.
+     *
+     *          GMMR0AllocatePage expects the guest physical address to put in
+     *          the GMMPAGE structure for the page it allocates for this entry.
+     *          Pass NIL_RTHCPHYS and GMM_GCPHYS_UNSHARABLE as above.
+     *
+     * @output  The host physical address of the allocated page.
+     *          NIL_RTHCPHYS on allocation failure.
+     *
+     * ASSUMES: sizeof(RTHCPHYS) >= sizeof(RTGCPHYS).
+     */
+    RTHCPHYS                    HCPhysGCPhys;
+
+    /** The Page ID.
+     *
+     * @intput  GMMR0AllocateHandyPages expects the Page ID of the page to
+     *          update here. NIL_GMM_PAGEID means no page should be updated.
+     *
+     *          GMMR0AllocatePages requires this to be initialized to
+     *          NIL_GMM_PAGEID currently.
+     *
+     * @output  The ID of the page, NIL_GMM_PAGEID if the allocation failed.
+     */
+    uint32_t                    idPage;
+
+    /** The Page ID of the shared page was replaced by this page.
+     *
+     * @input   GMMR0AllocateHandyPages expects this to indicate a shared
+     *          page that has been replaced by this page and should have its
+     *          reference counter decremented and perhaps be freed up. Use
+     *          NIL_GMM_PAGEID if no shared page was involved.
+     *
+     *          All other APIs expects NIL_GMM_PAGEID here.
+     *
+     * @output  All APIs sets this to NIL_GMM_PAGEID.
+     */
+    uint32_t                    idSharedPage;
+} GMMPAGEDESC;
+AssertCompileSize(GMMPAGEDESC, 16);
+/** Pointer to a page allocation. */
+typedef GMMPAGEDESC *PGMMPAGEDESC;
+
+/** GMMPAGEDESC::HCPhysGCPhys value that indicates that the page is shared. */
+#define GMM_GCPHYS_UNSHARABLE   (RTHCPHYS)(0xfffffff0)
+
+
+GMMR0DECL(int)  GMMR0Init(void);
+GMMR0DECL(void) GMMR0Term(void);
+GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM);
+GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM);
+GMMR0DECL(int)  GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
+                                        GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority);
+GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
+GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
+GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
+GMMR0DECL(int)  GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
+GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages);
+
+
 /** @} */
+
+__END_DECLS
 
 #endif
 
