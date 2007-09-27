@@ -138,7 +138,7 @@ typedef struct _DEVICE_EXTENSION
     /* Preallocated request for VBoxMouse_ServiceCallback */
     VMMDevReqMouseStatus *reqSC;
 
-    BOOLEAN HostInformed;
+    BOOLEAN HostMouse;
 // VBOX end
 
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
