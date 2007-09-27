@@ -48,6 +48,7 @@
 # include <linux/cdrom.h>
 # include <sys/fcntl.h>
 # include <errno.h>
+# include <limits.h>
 # define USE_MEDIA_POLLING
 
 #elif defined(RT_OS_WINDOWS)
