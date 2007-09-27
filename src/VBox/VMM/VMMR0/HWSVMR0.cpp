@@ -508,6 +508,7 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     SVM_VMCB   *pVMCB;
     bool        fForceTLBFlush = false;
     bool        fGuestStateSynced = false;
+    unsigned    cResume = 0;
 
     STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
 
@@ -517,6 +518,13 @@ HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
 ResumeExecution:
+    /* Safety precaution; looping for too long here can have a very bad effect on the host */
+    if (++cResume > HWACCM_MAX_RESUME_LOOPS)
+    {
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitMaxResume);
+        rc = VINF_EM_RAW_INTERRUPT;
+        goto end;
+    }
 
     /* Check for irq inhibition due to instruction fusing (sti, mov ss). */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
