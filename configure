@@ -1157,9 +1157,9 @@ EOF
 #
 setup_wine()
 {
-  test_header "wine support"
+  test_header "Wine support"
   if ! which_wrapper wine > /dev/null; then
-    echo "  wine not found"
+    echo "  wine binary not found"
     fail
   fi
   if ! which_wrapper wineprefixcreate > /dev/null; then
@@ -1194,7 +1194,7 @@ setup_wine()
     fail
   fi
   rm -f $tmp
-  log_success ""
+  log_success "found"
 }
 
 
