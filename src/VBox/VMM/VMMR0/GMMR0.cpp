@@ -67,7 +67,7 @@
  * limitations. The GMMPAGE structure shows the details.
  *
  *
- * @section sec_gmm_costs       Page Allocation Strategy
+ * @section sec_gmm_alloc_strat Page Allocation Strategy
  *
  * The strategy for allocating pages has to take fragmentation and shared
  * pages into account, or we may end up with with 2000 chunks with only
@@ -422,13 +422,28 @@ typedef struct GMM
     /** The shared free set. */
     GMMCHUNKFREESET     Shared;
 
-    /** The number of allocated pages. */
-    uint64_t            cPages;
+    /** The maximum number of pages we're allowed to allocate.
+     * @gcfgm   64-bit GMM/MaxPages Direct.
+     * @gcfgm   32-bit GMM/PctPages Relative to the number of host pages. */
+    uint64_t            cMaxPages;
+    /** The number of pages that has been reserved.
+     * The deal is that cReservedPages - cOverCommittedPages <= cMaxPages. */
+    uint64_t            cReservedPages;
+    /** The number of pages that we have over-committed in reservations. */
+    uint64_t            cOverCommittedPages;
+    /** The number of actually allocated (committed if you like) pages. */
+    uint64_t            cAllocatedPages;
+    /** The number of pages that are shared. A subset of cAllocatedPages. */
+    uint64_t            cSharedPages;
+    /** The number of allocation chunks.
+     * (The number of pages we've allocated from the host can be derived from this.) */
+    uint32_t            cChunks;
+
     /** The legacy mode indicator.
      * This is determined at initialization time. */
     bool                fLegacyMode;
-    /** The number of active VMs. */
-    uint16_t            cActiveVMs;
+    /** The number of registered VMs. */
+    uint16_t            cRegisteredVMs;
 } GMM;
 /** Pointer to the GMM instance. */
 typedef GMM *PGMM;
@@ -614,9 +629,6 @@ GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
     AssertCompile(RT_SIZEOFMEMB(GVM,gmm.s) <= RT_SIZEOFMEMB(GVM,gmm.padding));
     AssertRelease(RT_SIZEOFMEMB(GVM,gmm.s) <= RT_SIZEOFMEMB(GVM,gmm.padding));
 
-    //pGVM->gmm.s.cBasePages = 0;
-    //pGVM->gmm.s.cPrivatePages = 0;
-    //pGVM->gmm.s.cSharedPages = 0;
     pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
     pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
     pGVM->gmm.s.fMayAllocate = false;
@@ -655,8 +667,8 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
      * This takes care of the eventuality that a VM has left shared page
      * references behind (shouldn't happen of course, but you never know).
      */
-    pGMM->cActiveVMs--;
-    if (!pGMM->cActiveVMs)
+    pGMM->cRegisteredVMs--;
+    if (!pGMM->cRegisteredVMs)
     {
 
 
@@ -763,23 +775,28 @@ static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pv
  * sufficient resources available to sustain the VM this function will fail and all
  * future allocations requests will fail as well.
  *
+ * These are just the initial reservations made very very early during the VM creation
+ * process and will be adjusted later in the GMMR0UpdateReservation call after the
+ * ring-3 init has completed.
+ *
  * @returns VBox status code.
  * @retval  VERR_GMM_NOT_SUFFICENT_MEMORY
  * @retval  VERR_GMM_
  *
  * @param   pVM             Pointer to the shared VM structure.
- * @param   cBasePages      The number of pages of RAM. This is *only* the RAM, it does
- *                          not take additional pages for the ROMs and MMIO2 into account.
- *                          These allocations will have to be reported when the initialization
- *                          process has completed.
- * @param   cShadowPages    The max number of pages that will be allocated for shadow pageing structures.
+ * @param   cBasePages      The number of pages that may be allocated for the base RAM and ROMs.
+ *                          This does not include MMIO2 and similar.
+ * @param   cShadowPages    The number of pages that may be allocated for shadow pageing structures.
+ * @param   cFixedPages     The number of pages that may be allocated for fixed objects like the
+ *                          hyper heap, MMIO2 and similar.
  * @param   enmPolicy       The OC policy to use on this VM.
  * @param   enmPriority     The priority in an out-of-memory situation.
  */
-GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
+GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
+                                       GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
 {
-    LogFlow(("GMMR0InitialReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x enmPolicy=%d enmPriority=%d\n",
-             pVM, cBasePages, cShadowPages, enmPolicy, enmPriority));
+    LogFlow(("GMMR0InitialReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x enmPolicy=%d enmPriority=%d\n",
+             pVM, cBasePages, cShadowPages, cFixedPages, enmPolicy, enmPriority));
 
     /*
      * Validate, get basics and take the semaphore.
@@ -787,16 +804,44 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
     PGVM pGVM = GVMMR0ByVM(pVM);
-    if (!pVM)
+    if (!pGVM)
         return VERR_INVALID_PARAMETER;
+
+    AssertReturn(cBasePages, VERR_INVALID_PARAMETER);
+    AssertReturn(cShadowPages, VERR_INVALID_PARAMETER);
+    AssertReturn(cFixedPages, VERR_INVALID_PARAMETER);
+    AssertReturn(enmPolicy > GMMOCPOLICY_INVALID && enmPolicy < GMMOCPOLICY_END, VERR_INVALID_PARAMETER);
+    AssertReturn(enmPriority > GMMPRIORITY_INVALID && enmPriority < GMMPRIORITY_END, VERR_INVALID_PARAMETER);
 
     int rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
+    if (    !pGVM->gmm.s.Reserved.cBasePages
+        &&  !pGVM->gmm.s.Reserved.cFixedPages
+        &&  !pGVM->gmm.s.Reserved.cShadowPages)
+    {
+        /*
+         * Check if we can accomodate this.
+         */
+        /* ... later ... */
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Update the records.
+             */
+            pGVM->gmm.s.Reserved.cBasePages = cBasePages;
+            pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
+            pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
+            pGVM->gmm.s.enmPolicy = enmPolicy;
+            pGVM->gmm.s.enmPriority = enmPriority;
+            pGVM->gmm.s.fMayAllocate = true;
 
-    pGMM->cActiveVMs++;
-
-
+            pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
+            pGMM->cRegisteredVMs++;
+        }
+    }
+    else
+        rc = VERR_WRONG_ORDER;
 
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0InitialReservation: returns %Rrc\n", rc));
@@ -811,13 +856,18 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
  * @retval  VERR_GMM_NOT_SUFFICENT_MEMORY
  *
  * @param   pVM             Pointer to the shared VM structure.
- * @param   cExtraPages     The number of pages that makes up ROM ranges outside the normal
- *                          RAM and MMIO2 memory.
- * @param   cMisc           Miscellaneous fixed commitments like the heap, VM structure and such.
+ * @param   cBasePages      The number of pages that may be allocated for the base RAM and ROMs.
+ *                          This does not include MMIO2 and similar.
+ * @param   cShadowPages    The number of pages that may be allocated for shadow pageing structures.
+ * @param   cFixedPages     The number of pages that may be allocated for fixed objects like the
+ *                          hyper heap, MMIO2 and similar.
+ * @param   enmPolicy       The OC policy to use on this VM.
+ * @param   enmPriority     The priority in an out-of-memory situation.
  */
-GMMR0DECL(int) GMMR0ReservationUpdate(PVM pVM, uint64_t cExtraPages)
+GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages)
 {
-    LogFlow(("GMMR0ReservationUpdate: pVM=%p cExtraPages=%#llx\n", pVM, cExtraPages));
+    LogFlow(("GMMR0UpdateReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x\n",
+             pVM, cBasePages, cShadowPages, cFixedPages));
 
     /*
      * Validate, get basics and take the semaphore.
@@ -825,18 +875,123 @@ GMMR0DECL(int) GMMR0ReservationUpdate(PVM pVM, uint64_t cExtraPages)
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
     PGVM pGVM = GVMMR0ByVM(pVM);
-    if (!pVM)
+    if (!pGVM)
         return VERR_INVALID_PARAMETER;
+
+    AssertReturn(cBasePages, VERR_INVALID_PARAMETER);
+    AssertReturn(cShadowPages, VERR_INVALID_PARAMETER);
+    AssertReturn(cFixedPages, VERR_INVALID_PARAMETER);
 
     int rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
+    if (    pGVM->gmm.s.Reserved.cBasePages
+        &&  pGVM->gmm.s.Reserved.cFixedPages
+        &&  pGVM->gmm.s.Reserved.cShadowPages)
+    {
+        /*
+         * Check if we can accomodate this.
+         */
+        /* ... later ... */
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Update the records.
+             */
+            pGMM->cReservedPages -= pGVM->gmm.s.Reserved.cBasePages
+                                  + pGVM->gmm.s.Reserved.cFixedPages
+                                  + pGVM->gmm.s.Reserved.cShadowPages;
+            pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
 
+            pGVM->gmm.s.Reserved.cBasePages = cBasePages;
+            pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
+            pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
+        }
+    }
+    else
+        rc = VERR_WRONG_ORDER;
 
     RTSemFastMutexRelease(pGMM->Mtx);
-    LogFlow(("GMMR0ReservationUpdate: returns %Rrc\n", rc));
+    LogFlow(("GMMR0UpdateReservation: returns %Rrc\n", rc));
     return rc;
 }
 
+
+/**
+ * Updates the previous allocations and allocates more pages.
+ *
+ * The handy pages are always taken from the 'base' memory account.
+ *
+ * @returns VBox status code:
+ * @retval  xxx
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   cPagesToUpdate      The number of pages to update (starting from the head).
+ * @param   cPagesToAlloc       The number of pages to allocate (starting from the head).
+ * @param   paPages             The array of page descriptors.
+ *                              See GMMPAGEDESC for details on what is expected on input.
+ */
+GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Allocate one or more pages.
+ *
+ * This is typically used for ROMs and MMIO2 (VRAM) during VM creation.
+ *
+ * @returns VBox status code:
+ * @retval  xxx
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   cPages              The number of pages to allocate.
+ * @param   paPages             Pointer to the page descriptors.
+ *                              See GMMPAGEDESC for details on what is expected on input.
+ * @param   enmAccount          The account to charge.
+ */
+GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Free one or more pages.
+ *
+ * This is typically used at reset time or power off.
+ *
+ * @returns VBox status code:
+ * @retval  xxx
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   cPages              The number of pages to allocate.
+ * @param   paPages             Pointer to the page descriptors containing the Page IDs for each page.
+ * @param   enmAccount          The account this relates to.
+ */
+GMMR0DECL(int) GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Report ballooned pages optionally together with be page to free.
+ *
+ * The pages to be freed are always base (RAM) pages.
+ *
+ * @returns VBox status code:
+ * @retval  xxx
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   cBalloonedPages     The number of pages that was ballooned.
+ * @param   cPagesToFree        The number of pages to be freed.
+ * @param   paPages             Pointer to the page descriptors for the pages that's to be freed.
+ */
+GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
 
 

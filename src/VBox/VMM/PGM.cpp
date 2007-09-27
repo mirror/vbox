@@ -331,6 +331,11 @@
  *      4GB guest ram, 1M pages:   16MB + 12MB(+) =  28MB
  *     32GB guest ram, 8M pages:  128MB + 96MB(+) = 224MB
  *
+ * UPDATE - 2007-09-27:
+ * Will need a ballooned flag/state too because we cannot
+ * trust the guest 100% and reporting the same page as ballooned more
+ * than once will put the GMM off balance.
+ *
  *
  * @subsection subsec_pgmPhys_Serializing       Serializing Access
  *
