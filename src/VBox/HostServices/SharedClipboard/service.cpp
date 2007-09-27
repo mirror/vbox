@@ -192,17 +192,30 @@ void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Ms
         
         if (pClient->fAsync)
         {
+            /* The client waits for a responce. */
             bool fMessageReturned = vboxSvcClipboardReturnMsg (pClient, pClient->async.paParms);
+            
+            /* Make a copy of the handle. */
+            VBOXHGCMCALLHANDLE callHandle = pClient->async.callHandle;
+            
+            if (fMessageReturned)
+            {
+                /* There is a responce. */
+                pClient->fAsync = false;
+            }
+            
+            vboxSvcClipboardUnlock ();
             
             if (fMessageReturned)
             {
                 LogFlow(("vboxSvcClipboardReportMsg: CallComplete\n"));
-                g_pHelpers->pfnCallComplete (pClient->async.callHandle, VINF_SUCCESS);
-                pClient->fAsync = false;
+                g_pHelpers->pfnCallComplete (callHandle, VINF_SUCCESS);
             }
         }
-
-        vboxSvcClipboardUnlock ();
+        else
+        {
+            vboxSvcClipboardUnlock ();
+        }
     }
 }
 
