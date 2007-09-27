@@ -259,7 +259,7 @@ IMAGES	= images/tpixel.png \
 	images/about_tile.png \
 	images/dock_0.png \
 	images/dock_1.png \
-    images/dock_128x128_transparent.png
+	images/dock_128x128_transparent.png
 
 TRANSLATIONS = \
 	nls/VirtualBox_sk.ts \
