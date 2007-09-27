@@ -89,6 +89,7 @@ QIRichLabel::~QIRichLabel()
 void QIRichLabel::init()
 {
    mMaxHeightMode = false;
+   mIsMainTip = true;
    baseheight = 0;
    lpixmap = 0;
    lmovie = 0;
@@ -380,9 +381,26 @@ void QIRichLabel::mouseMoveEvent (QMouseEvent *aEvent)
 
     QString link = doc->anchorAt (aEvent->pos());
     if (!link.isEmpty()) /* Mouse cursor above link */
+    {
+        if (mIsMainTip)
+        {
+            mTipText = QToolTip::textFor (this);
+            QToolTip::remove (this);
+            QToolTip::add (this, link);
+            mIsMainTip = false;
+        }
         setCursor (QCursor (Qt::PointingHandCursor));
+    }
     else /* Mouse cursor above non-link */
+    {
+        if (!mIsMainTip)
+        {
+            QToolTip::remove (this);
+            QToolTip::add (this, mTipText);
+            mIsMainTip = true;
+        }
         setCursor (QCursor (Qt::ArrowCursor));
+    }
 }
 
 
