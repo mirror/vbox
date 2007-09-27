@@ -116,6 +116,8 @@ private:
    QSize       sizeForWidth (int w) const;
 
    QString     ltext;
+   QString     mTipText;
+   bool        mIsMainTip;
    QPixmap    *lpixmap;
    QPicture   *lpicture;
    QMovie     *lmovie;
