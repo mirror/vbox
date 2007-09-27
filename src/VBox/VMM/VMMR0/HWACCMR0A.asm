@@ -157,6 +157,9 @@ BEGINPROC VMXStartVM
     push    xBP
     mov     xBP, xSP
 
+    pushf
+    cli
+
     ;/* First we have to save some final CPU context registers. */
 %ifdef RT_ARCH_AMD64
     mov     rax, qword .vmlaunch_done
@@ -273,6 +276,7 @@ ALIGNCODE(16)
     mov     eax, VINF_SUCCESS
 
 .vmstart_end:
+    popf
     pop     xBP
     ret
 
@@ -331,6 +335,9 @@ ENDPROC VMXStartVM
 BEGINPROC VMXResumeVM
     push    xBP
     mov     xBP, xSP
+
+    pushf
+    cli
 
     ;/* First we have to save some final CPU context registers. */
 %ifdef RT_ARCH_AMD64
@@ -448,6 +455,7 @@ ALIGNCODE(16)
     mov     eax, VINF_SUCCESS
 
 .vmresume_end:
+    popf
     pop     xBP
     ret
 
