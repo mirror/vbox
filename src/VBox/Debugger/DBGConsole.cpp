@@ -3126,10 +3126,10 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
 /**
  * Best guess at which paging mode currently applies to the guest
  * paging structures.
- * 
+ *
  * This have to come up with a decent answer even when the guest
  * is in non-paged protected mode or real mode.
- * 
+ *
  * @returns cr3.
  * @param   pDbgc   The DBGC instance.
  * @param   pfPAE   Where to store the page address extension indicator.
@@ -3152,7 +3152,7 @@ static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool
 
 /**
  * Determin the shadow paging mode.
- * 
+ *
  * @returns cr3.
  * @param   pDbgc   The DBGC instance.
  * @param   pfPAE   Where to store the page address extension indicator.
@@ -3220,13 +3220,13 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
      * Guest or shadow page directories? Get the paging parameters.
      */
     bool fGuest = pCmd->pszCmd[3] != 'h';
-    if (!pCmd->pszCmd[3] || !pCmd->pszCmd[3] == 'a')
+    if (!pCmd->pszCmd[3] || pCmd->pszCmd[3] == 'a')
         fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
                ? pDbgc->fRegCtxGuest
                : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
 
     bool fPAE, fLME, fPSE, fPGE, fNXE;
-    uint64_t cr3 = fGuest 
+    uint64_t cr3 = fGuest
                  ? dbgcGetGuestPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE)
                  : dbgcGetShadowPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE);
     const unsigned cbEntry = fPAE ? sizeof(X86PTEPAE) : sizeof(X86PTE);
@@ -3269,12 +3269,12 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     }
 
     /*
-     * Locate the PDE to start displaying at. 
+     * Locate the PDE to start displaying at.
      *
-     * The 'dpda' command takes the address of a PDE, while the others are guest 
+     * The 'dpda' command takes the address of a PDE, while the others are guest
      * virtual address which PDEs should be displayed. So, 'dpda' is rather simple
      * while the others require us to do all the tedious walking thru the paging
-     * hierarchy to find the intended PDE. 
+     * hierarchy to find the intended PDE.
      */
     unsigned    iEntry = ~0U;           /* The page directory index. ~0U for 'dpta'. */
     DBGCVAR     VarGCPtr;               /* The GC address corresponding to the current PDE (iEntry != ~0U). */
@@ -3295,7 +3295,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     }
     else
     {
-        /* 
+        /*
          * Determin the range.
          */
         switch (paArgs[0].enmRangeType)
@@ -3379,7 +3379,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     /*
      * The display loop.
      */
-    DBGCCmdHlpPrintf(pCmdHlp, iEntry != ~0U ? "%DV (index %#x):\n" : "%DV:\n", 
+    DBGCCmdHlpPrintf(pCmdHlp, iEntry != ~0U ? "%DV (index %#x):\n" : "%DV:\n",
                      &VarPDEAddr, iEntry);
     do
     {
@@ -3402,39 +3402,39 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         }
         if (fPSE && Pde.b.u1Size)
             DBGCCmdHlpPrintf(pCmdHlp,
-                             fPAE 
+                             fPAE
                              ? "%016llx big phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s %s"
                              :   "%08llx big phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s %s",
-                             Pde.u, 
+                             Pde.u,
                              Pde.u & X86_PDE_PAE_PG_MASK,
-                             Pde.b.u1Present        ? "p "  : "np", 
+                             Pde.b.u1Present        ? "p "  : "np",
                              Pde.b.u1Write          ? "w"   : "r",
-                             Pde.b.u1User           ? "u"   : "s", 
-                             Pde.b.u1Accessed       ? "a "  : "na", 
+                             Pde.b.u1User           ? "u"   : "s",
+                             Pde.b.u1Accessed       ? "a "  : "na",
                              Pde.b.u1Dirty          ? "d "  : "nd",
-                             Pde.b.u3Available, 
-                             Pde.b.u1Global         ? (fPGE ? "g" : "G") : " ", 
+                             Pde.b.u3Available,
+                             Pde.b.u1Global         ? (fPGE ? "g" : "G") : " ",
                              Pde.b.u1WriteThru      ? "pwt" : "   ",
-                             Pde.b.u1CacheDisable   ? "pcd" : "   ", 
-                             Pde.b.u1PAT            ? "pat" : "", 
+                             Pde.b.u1CacheDisable   ? "pcd" : "   ",
+                             Pde.b.u1PAT            ? "pat" : "",
                              Pde.b.u1NoExecute      ? (fNXE ? "nx" : "NX") : "  ");
         else
             DBGCCmdHlpPrintf(pCmdHlp,
                              fPAE
                              ? "%016llx 4kb phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s"
                              :   "%08llx 4kb phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s",
-                             Pde.u, 
+                             Pde.u,
                              Pde.u & X86_PDE_PAE_PG_MASK,
-                             Pde.n.u1Present        ? "p "  : "np", 
+                             Pde.n.u1Present        ? "p "  : "np",
                              Pde.n.u1Write          ? "w"   : "r",
-                             Pde.n.u1User           ? "u"   : "s", 
-                             Pde.n.u1Accessed       ? "a "  : "na", 
+                             Pde.n.u1User           ? "u"   : "s",
+                             Pde.n.u1Accessed       ? "a "  : "na",
                              Pde.u & BIT(6)         ? "6 "  : "  ",
-                             Pde.n.u3Available, 
-                             Pde.u & BIT(8)         ? "8"   : " ", 
+                             Pde.n.u3Available,
+                             Pde.u & BIT(8)         ? "8"   : " ",
                              Pde.n.u1WriteThru      ? "pwt" : "   ",
-                             Pde.n.u1CacheDisable   ? "pcd" : "   ", 
-                             Pde.u & BIT(7)         ? "7"   : "", 
+                             Pde.n.u1CacheDisable   ? "pcd" : "   ",
+                             Pde.u & BIT(7)         ? "7"   : "",
                              Pde.n.u1NoExecute      ? (fNXE ? "nx" : "NX") : "  ");
         if (Pde.u & UINT64_C(0x7fff000000000000))
             DBGCCmdHlpPrintf(pCmdHlp, " weird=%RX64", (Pde.u & UINT64_C(0x7fff000000000000)));
@@ -3507,24 +3507,24 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
      * Guest or shadow page tables? Get the paging parameters.
      */
     bool fGuest = pCmd->pszCmd[3] != 'h';
-    if (!pCmd->pszCmd[3] || !pCmd->pszCmd[3] == 'a')
+    if (!pCmd->pszCmd[3] || pCmd->pszCmd[3] == 'a')
         fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
                ? pDbgc->fRegCtxGuest
                : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
-            
+
     bool fPAE, fLME, fPSE, fPGE, fNXE;
-    uint64_t cr3 = fGuest 
+    uint64_t cr3 = fGuest
                  ? dbgcGetGuestPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE)
                  : dbgcGetShadowPageMode(pDbgc, &fPAE, &fLME, &fPSE, &fPGE, &fNXE);
     const unsigned cbEntry = fPAE ? sizeof(X86PTEPAE) : sizeof(X86PTE);
 
     /*
-     * Locate the PTE to start displaying at. 
+     * Locate the PTE to start displaying at.
      *
-     * The 'dpta' command takes the address of a PTE, while the others are guest 
+     * The 'dpta' command takes the address of a PTE, while the others are guest
      * virtual address which PTEs should be displayed. So, 'pdta' is rather simple
      * while the others require us to do all the tedious walking thru the paging
-     * hierarchy to find the intended PTE. 
+     * hierarchy to find the intended PTE.
      */
     unsigned    iEntry = ~0U;           /* The page table index. ~0U for 'dpta'. */
     DBGCVAR     VarGCPtr;               /* The GC address corresponding to the current PTE (iEntry != ~0U). */
@@ -3545,7 +3545,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     }
     else
     {
-        /* 
+        /*
          * Determin the range.
          */
         switch (paArgs[0].enmRangeType)
@@ -3650,7 +3650,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     /*
      * The display loop.
      */
-    DBGCCmdHlpPrintf(pCmdHlp, iEntry != ~0U ? "%DV (base %DV / index %#x):\n" : "%DV:\n", 
+    DBGCCmdHlpPrintf(pCmdHlp, iEntry != ~0U ? "%DV (base %DV / index %#x):\n" : "%DV:\n",
                      &VarPTEAddr, &VarGCPtr, iEntry);
     do
     {
@@ -3672,7 +3672,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             iEntry++;
         }
         DBGCCmdHlpPrintf(pCmdHlp,
-                         fPAE 
+                         fPAE
                          ? "%016llx 4kb phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s %s"
                          :   "%08llx 4kb phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s %s",
                          Pte.u,
@@ -3686,7 +3686,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
                          Pte.n.u1Global          ? (fPGE ? "g" : "G") : " ",
                          Pte.n.u1WriteThru       ? "pwt" : "   ",
                          Pte.n.u1CacheDisable    ? "pcd" : "   ",
-                         Pte.n.u1PAT             ? "pat" : "   ", 
+                         Pte.n.u1PAT             ? "pat" : "   ",
                          Pte.n.u1NoExecute       ? (fNXE ? "nx" : "NX") : "  "
                          );
         if (Pte.u & UINT64_C(0x7fff000000000000))
