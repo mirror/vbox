@@ -351,19 +351,46 @@ static int vmR3HaltMethod12ReadConfig(PVM pVM)
     /*
      * The defaults.
      */
+#if 1 /* DEBUGGING STUFF - REMOVE LATER */
+    pVM->vm.s.Halt.Method12.u32LagBlockIntervalDivisorCfg = 4;
+    pVM->vm.s.Halt.Method12.u32MinBlockIntervalCfg =   2*1000000;
+    pVM->vm.s.Halt.Method12.u32MaxBlockIntervalCfg =  75*1000000;
+    pVM->vm.s.Halt.Method12.u32StartSpinningCfg    =  30*1000000;
+    pVM->vm.s.Halt.Method12.u32StopSpinningCfg     =  20*1000000;
+#else
     pVM->vm.s.Halt.Method12.u32LagBlockIntervalDivisorCfg = 4;
     pVM->vm.s.Halt.Method12.u32MinBlockIntervalCfg =   5*1000000;
     pVM->vm.s.Halt.Method12.u32MaxBlockIntervalCfg = 200*1000000;
     pVM->vm.s.Halt.Method12.u32StartSpinningCfg    =  20*1000000;
     pVM->vm.s.Halt.Method12.u32StopSpinningCfg     =   2*1000000;
+#endif
 
     /*
      * Query overrides.
+     *
+     * I don't have time to bother with niceities such as invalid value checks
+     * here right now. sorry.
      */
     PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/VMM/HaltedMethod1");
     if (pCfg)
     {
-
+        uint32_t u32;
+        if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "LagBlockIntervalDivisor", &u32)))
+            pVM->vm.s.Halt.Method12.u32LagBlockIntervalDivisorCfg = u32;
+        if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "MinBlockInterval", &u32)))
+            pVM->vm.s.Halt.Method12.u32MinBlockIntervalCfg = u32;
+        if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "MaxBlockInterval", &u32)))
+            pVM->vm.s.Halt.Method12.u32MaxBlockIntervalCfg = u32;
+        if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "StartSpinning", &u32)))
+            pVM->vm.s.Halt.Method12.u32StartSpinningCfg = u32;
+        if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "StopSpinning", &u32)))
+            pVM->vm.s.Halt.Method12.u32StopSpinningCfg = u32;
+        LogRel(("HaltedMethod1 config: %d/%d/%d/%d/%d\n",
+                pVM->vm.s.Halt.Method12.u32LagBlockIntervalDivisorCfg,
+                pVM->vm.s.Halt.Method12.u32MinBlockIntervalCfg,
+                pVM->vm.s.Halt.Method12.u32MaxBlockIntervalCfg,
+                pVM->vm.s.Halt.Method12.u32StartSpinningCfg,
+                pVM->vm.s.Halt.Method12.u32StopSpinningCfg));
     }
 
     return VINF_SUCCESS;
@@ -462,7 +489,11 @@ static DECLCALLBACK(int) vmR3HaltMethod1DoHalt(PVM pVM, const uint32_t fMask, ui
          */
         if (    (   !fSpinning
                  || fBlockOnce)
+#if 1 /* DEBUGGING STUFF - REMOVE LATER */
+            &&  u64NanoTS >= 100000) /* 0.100 ms */
+#else
             &&  u64NanoTS >= 250000) /* 0.250 ms */
+#endif
         {
             const uint64_t Start = pVM->vm.s.Halt.Method12.u64LastBlockTS = RTTimeNanoTS();
             VMMR3YieldStop(pVM);
