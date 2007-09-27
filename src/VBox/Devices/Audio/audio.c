@@ -32,11 +32,6 @@
 #include <iprt/string.h>
 #include <iprt/alloc.h>
 
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_ALSA)
-# include <iprt/ldr.h>
-# define VBOX_LIB_ALSA "VBoxAlsa"
-#endif
-
 #include "Builtins.h"
 #include "../../vl_vbox.h"
 
@@ -66,29 +61,24 @@ typedef struct DRVAUDIO
     PPDMDRVINS              pDrvIns;
 } DRVAUDIO, *PDRVAUDIO;
 
-#if !(defined(RT_OS_LINUX) && defined(VBOX_WITH_ALSA))
 static struct audio_driver *drvtab[] = {
-# ifdef RT_OS_LINUX
+#ifdef RT_OS_LINUX
     &oss_audio_driver,
-# endif
-# ifdef RT_OS_DARWIN
-    &coreaudio_audio_driver,
-# endif
-# ifdef RT_OS_WINDOWS
-    &dsound_audio_driver,
-# endif
-# ifdef RT_OS_L4
-    &oss_audio_driver,
-# endif
-    &no_audio_driver
-};
-#else
-static struct audio_driver *drvtab[] = {
-    &oss_audio_driver,
-    NULL, /* alsa_audio_driver is now in a shared object */
-    &no_audio_driver
-};
+#ifdef VBOX_WITH_ALSA
+    &alsa_audio_driver,
 #endif
+#endif
+#ifdef RT_OS_DARWIN
+    &coreaudio_audio_driver,
+#endif
+#ifdef RT_OS_WINDOWS
+    &dsound_audio_driver,
+#endif
+#ifdef RT_OS_L4
+    &oss_audio_driver,
+#endif
+    &no_audio_driver
+};
 
 struct fixed_settings {
     int enabled;
@@ -1554,13 +1544,10 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
         int found = 0;
 
         for (i = 0; i < sizeof (drvtab) / sizeof (drvtab[0]); i++) {
-            /* The ALSA entry can be null if we couldn't load the library */
-            if (drvtab[i] != NULL) {
-                if (!strcmp (drvname, drvtab[i]->name)) {
-                    done = !audio_driver_init (s, drvtab[i]);
-                    found = 1;
-                    break;
-                }
+            if (!strcmp (drvname, drvtab[i]->name)) {
+                done = !audio_driver_init (s, drvtab[i]);
+                found = 1;
+                break;
             }
         }
 
@@ -1571,13 +1558,11 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
 
     if (!done) {
         for (i = 0; !done && i < sizeof (drvtab) / sizeof (drvtab[0]); i++) {
-            if (drvtab[i] != NULL) {
-                if (drvtab[i]->can_be_default) {
-                    LogRel(("Audio: Initialization of driver '%s' failed, trying '%s'.\n",
-                           drvname, drvtab[i]->name));
-                    drvname = drvtab[i]->name;
-                    done = !audio_driver_init (s, drvtab[i]);
-                }
+            if (drvtab[i]->can_be_default) {
+                LogRel(("Audio: Initialization of driver '%s' failed, trying '%s'.\n",
+                       drvname, drvtab[i]->name));
+                drvname = drvtab[i]->name;
+                done = !audio_driver_init (s, drvtab[i]);
             }
         }
     }
@@ -1873,9 +1858,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     int rc;
     PDRVAUDIO pData = PDMINS2DATA(pDrvIns, PDRVAUDIO);
     char *drvname;
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_ALSA)
-    RTLDRMOD hLibVBoxAlsa;
-#endif
 
     LogFlow(("drvAUDIOConstruct:\n"));
     /*
@@ -1898,27 +1880,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     rc = CFGMR3QueryStringAlloc (pCfgHandle, "AudioDriver", &drvname);
     if (VBOX_FAILURE (rc))
         return rc;
-
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_ALSA)
-    /*
-     * Load the ALSA driver if needed.  This is a hack to remove the
-     * hard dependency on libasound.so.
-     */
-    if (0 == strcmp(drvname, "alsa")) {
-        Log2(("Loading ALSA library %s\n", VBOX_LIB_ALSA));
-        rc = (RTLdrLoad(VBOX_LIB_ALSA, &hLibVBoxAlsa));
-        if (RT_FAILURE(rc)) {
-            Log(("Failed to load ALSA library %s.  Reason: %Rrc\n", VBOX_LIB_ALSA, rc));
-        } else {
-            rc = RTLdrGetSymbol(hLibVBoxAlsa, "alsa_audio_driver", (void **) &drvtab[1]);
-            if (RT_FAILURE(rc)) {
-                Log(("Failed to get symbol \"alsa_audio_driver\" from library %s.  Reason: %Rrc\n",
-                     VBOX_LIB_ALSA, rc));
-                drvtab[1] = NULL;
-            }
-        }
-    }
-#endif
 
     rc = AUD_init (pDrvIns, drvname);
     if (VBOX_FAILURE (rc))

@@ -50,7 +50,6 @@ linux-doc_SOURCES = \
 
 # Strip these binaries
 LINUXSTRIPBIN = \
-	$(if $(VBOX_WITH_ALSA),VBoxAlsa.so,) \
 	VBoxDD.so \
 	VBoxDD2.so \
 	VBoxManage \
