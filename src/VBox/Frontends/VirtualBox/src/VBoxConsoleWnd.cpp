@@ -262,6 +262,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     helpWebAction = new QAction (this, "helpWebAction");
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
+    helpRegisterAction = new QAction (this, "helpRegisterAction");
+    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("refresh_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
     helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
     helpResetMessagesAction = new QAction (this, "helpResetMessagesAction");
@@ -370,6 +372,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     helpWebAction->addTo( helpMenu );
     helpMenu->insertSeparator();
+    helpRegisterAction->addTo( helpMenu );
     helpAboutAction->addTo( helpMenu );
     helpMenu->insertSeparator();
     helpResetMessagesAction->addTo (helpMenu);
@@ -518,6 +521,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
+    connect (helpRegisterAction, SIGNAL (activated()),
+             &vboxGlobal(), SLOT (showRegistrationDialog()));
     connect (helpAboutAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
     connect (helpResetMessagesAction, SIGNAL (activated()),
@@ -1473,6 +1478,10 @@ void VBoxConsoleWnd::languageChange()
     helpWebAction->setMenuText (tr ("&VirtualBox Web Site..."));
     helpWebAction->setStatusTip (
         tr ("Open the browser and go to the VirtualBox product web site"));
+
+    helpRegisterAction->setMenuText (tr ("&Register VirtualBox..."));
+    helpRegisterAction->setStatusTip (
+        tr ("Open VirtualBox registration form"));
 
     helpAboutAction->setMenuText (tr ("&About VirtualBox..."));
     helpAboutAction->setStatusTip (tr ("Show a dialog with product information"));

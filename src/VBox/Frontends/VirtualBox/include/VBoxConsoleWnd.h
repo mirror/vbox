@@ -226,6 +226,7 @@ private:
 
     // Help actions
     QAction *helpWebAction;
+    QAction *helpRegisterAction;
     QAction *helpAboutAction;
     QAction *helpResetMessagesAction;
 

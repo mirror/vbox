@@ -376,7 +376,7 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    void showRegistrationDialog();
+    void callRegistration();
 
     CSession openSession (const QUuid &id);
 
@@ -510,6 +510,8 @@ signals:
 public slots:
 
     bool openURL (const QString &aURL);
+
+    void showRegistrationDialog();
 
 protected:
 

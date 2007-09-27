@@ -1643,15 +1643,35 @@ bool VBoxGlobal::showVirtualBoxLicense()
 }
 #endif
 
-void VBoxGlobal::showRegistrationDialog()
+void VBoxGlobal::callRegistration()
 {
-    /* check if the registration already passed */
+    /* Check if the automatic registration already passed */
     if (virtualBox().GetExtraData (VBoxDefs::GUI_RegistrationTriesLeft) == "0")
         return;
 
-    /* store the winid of main app wgt to ensure only one reg dlg running */
+    /* Store the winid of main app wgt to ensure only one reg dlg running */
     virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
                                QString ("%1").arg ((long)qApp->mainWidget()->winId()));
+}
+
+void VBoxGlobal::showRegistrationDialog()
+{
+    if (mRegDlg)
+    {
+        /* Show already opened registration dialog */
+        mRegDlg->setWindowState (mRegDlg->windowState() & ~WindowMinimized);
+        mRegDlg->raise();
+        mRegDlg->setActiveWindow();
+    }
+    else
+    {
+        /* Create new registration dialog */
+        VBoxRegistrationDlg *dlg =
+            new VBoxRegistrationDlg (0, 0, false, WDestructiveClose);
+        dlg->setup (&mRegDlg, "http://www.innotek.de/register762.php");
+        Assert (dlg == mRegDlg);
+        mRegDlg->show();
+    }
 }
 
 /**
@@ -3459,15 +3479,7 @@ bool VBoxGlobal::event (QEvent *e)
         }
         case VBoxDefs::ShowRegDlgEventType:
         {
-            /* show unique registration dialog */
-            if (!mRegDlg)
-            {
-                VBoxRegistrationDlg *dlg =
-                    new VBoxRegistrationDlg (0, 0, false, WDestructiveClose);
-                dlg->setup (&mRegDlg, "http://www.innotek.de/register762.php");
-                Assert (dlg == mRegDlg);
-                mRegDlg->show();
-            }
+            showRegistrationDialog();
             return true;
         }
         case VBoxDefs::SessionStateChangeEventType:
