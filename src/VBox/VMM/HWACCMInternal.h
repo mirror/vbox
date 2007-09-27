@@ -106,10 +106,10 @@ __BEGIN_DECLS
 /** @} */
 
 
-/** @name Maxium resume loops allowed in ring 0 (safety precaution) */
+/** Maxium resume loops allowed in ring 0 (safety precaution) */
 #define HWACCM_MAX_RESUME_LOOPS             1024
 
-/** @name HWACCM SSM version
+/** HWACCM SSM version
  */
 #define HWACCM_SSM_VERSION                  3
 
