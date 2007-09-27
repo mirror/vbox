@@ -66,6 +66,11 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 }
 
 #if defined(RT_OS_LINUX) && defined(IN_MODULE)
+/*
+ * When we build this in the Linux kernel module, we wish to make the
+ * symbols available to other modules as well.
+ */
+# include "the-linux-kernel.h"
 EXPORT_SYMBOL(AssertMsg1);
 EXPORT_SYMBOL(AssertMsg2);
 #endif
