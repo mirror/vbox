@@ -106,6 +106,9 @@ __BEGIN_DECLS
 /** @} */
 
 
+/** @name Maxium resume loops allowed in ring 0 (safety precaution) */
+#define HWACCM_MAX_RESUME_LOOPS             1024
+
 /** @name HWACCM SSM version
  */
 #define HWACCM_SSM_VERSION                  3
@@ -289,6 +292,7 @@ typedef struct HWACCM
     STAMCOUNTER             StatExitIOStringWrite;
     STAMCOUNTER             StatExitIOStringRead;
     STAMCOUNTER             StatExitIrqWindow;
+    STAMCOUNTER             StatExitMaxResume;
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
 
