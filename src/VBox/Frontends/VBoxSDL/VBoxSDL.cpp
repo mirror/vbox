@@ -660,6 +660,17 @@ static void show_usage()
              "  -[no]csam                Enable or disable CSAM\n"
              "  -[no]hwvirtex            Permit or deny the usage of VMX/SVN\n"
 #endif
+             "\n"
+             "Key bindings:\n"
+             "  <hostkey> +  f           Switch to full screen / restore to previous view\n"
+             "               h           Press ACPI power button\n"
+             "               n           Take a snapshot and continue execution\n"
+             "               p           Pause / resume execution\n"
+             "               q           Power off\n"
+             "               r           VM reset\n"
+             "               s           Save state and power off\n"
+             "              <del>        Send <ctrl><alt><del>\n"
+             "       <F1>...<F12>        Send <ctrl><alt><Fx>\n"
              "\n");
 }
 
@@ -1302,7 +1313,10 @@ int main(int argc, char *argv[])
         /* just show the help screen */
         else
         {
-            RTPrintf("Error: unrecognized switch '%s'\n", argv[curArg]);
+            if (   strcmp(argv[curArg], "-h") != 0
+                && strcmp(argv[curArg], "-help") != 0
+                && strcmp(argv[curArg], "--help"))
+                RTPrintf("Error: unrecognized switch '%s'\n", argv[curArg]);
             show_usage();
             return 1;
         }
