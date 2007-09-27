@@ -32,8 +32,11 @@
 #include <alsa/asoundlib.h>
 
 #include "Builtins.h"
-#include "vl_vbox.h"
+#include "../../vl_vbox.h"
 #include "audio.h"
+#ifdef VBOX
+#include "alsa_stubs.h"
+#endif
 #include <iprt/alloc.h>
 
 #define AUDIO_CAP "alsa"
@@ -1034,6 +1037,13 @@ static void alsa_error_handler(const char *file, int line, const char *function,
 static void *alsa_audio_init (void)
 {
 #ifdef VBOX
+    int rc;
+
+    rc = audioLoadAlsaLib();
+    if (RT_FAILURE(rc)) {
+        LogRelFunc(("Failed to load the ALSA shared library!  Error %Rrc\n", rc));
+        return NULL;
+    }
     snd_lib_error_set_handler (alsa_error_handler);
 #endif
     return &conf;
@@ -1088,7 +1098,6 @@ static struct audio_pcm_ops alsa_pcm_ops = {
     alsa_ctl_in
 };
 
-extern DECLEXPORT(struct audio_driver) alsa_audio_driver;
 struct audio_driver alsa_audio_driver = {
     INIT_FIELD (name           = ) "alsa",
     INIT_FIELD (descr          = ) "ALSA http://www.alsa-project.org",
