@@ -119,6 +119,7 @@ private:
     QAction *vmShowLogsAction;
     QAction *helpContentsAction;
     QAction *helpWebAction;
+    QAction *helpRegisterAction;
     QAction *helpAboutAction;
     QAction *helpResetMessagesAction;
 

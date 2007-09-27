@@ -424,6 +424,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
     helpWebAction = new QAction (this, "helpWebAction");
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
+    helpRegisterAction = new QAction (this, "helpRegisterAction");
+    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("refresh_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
     helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
     helpResetMessagesAction = new QAction( this, "helpResetMessagesAction" );
@@ -521,6 +523,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     helpContentsAction->addTo ( helpMenu );
     helpWebAction->addTo( helpMenu );
     helpMenu->insertSeparator();
+    helpRegisterAction->addTo( helpMenu );
     helpAboutAction->addTo( helpMenu );
     helpMenu->insertSeparator();
     helpResetMessagesAction->addTo (helpMenu);
@@ -579,6 +582,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (helpContentsAction, SIGNAL (activated()), this, SLOT(showHelpContents()));
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
+    connect (helpRegisterAction, SIGNAL (activated()),
+             &vboxGlobal(), SLOT (showRegistrationDialog()));
     connect (helpAboutAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
     connect (helpResetMessagesAction, SIGNAL (activated()),
@@ -1098,6 +1103,11 @@ void VBoxSelectorWnd::languageChange()
     helpWebAction->setAccel( QString::null );
     helpWebAction->setStatusTip (
         tr ("Open the browser and go to the VirtualBox product web site"));
+
+    helpRegisterAction->setMenuText (tr ("&Register VirtualBox..."));
+    helpRegisterAction->setAccel( QString::null );
+    helpRegisterAction->setStatusTip (
+        tr ("Open VirtualBox registration form"));
 
     helpAboutAction->setMenuText (tr ("&About VirtualBox..."));
     helpAboutAction->setAccel( QString::null );
