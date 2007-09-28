@@ -1434,8 +1434,8 @@ void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
 {
     aResult == "OK" ?
         message (aParent, Info,
-                 tr ("<p>Congratulations! You have successfully registered the "
-                     "VirtualBox product.</p>"
+                 tr ("<p>Congratulations! You have been successfully registered "
+                     "as a user of VirtualBox.</p>"
                      "<p>Thank you for finding time to fill out the "
                      "registration form!</p>")) :
         message (aParent, Error,

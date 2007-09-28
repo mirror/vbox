@@ -14,6 +14,10 @@
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
 
+ifndef VBOX_OSE
+VBOX_WITH_REGISTRATION := 1
+endif
+
 # include qmake project file
 include VBoxUI.pro
 
@@ -23,6 +27,11 @@ VirtualBox_QT_UISRCS := $(FORMS)
 VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS)
 # Import images
 VirtualBox_QT_IMAGES := $(IMAGES)
+
+# exclude inappropriate UI content
+ifndef VBOX_WITH_REGISTRATION
+VirtualBox_QT_UISRCS := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS))
+endif
 
 # reset things to avoid possible conflicts with kBuild
 TEMPLATE :=
@@ -221,6 +230,9 @@ ifneq ($(BUILD_TYPE),release)
  VirtualBox_DEFS.win     += VBOX_GUI_USE_DDRAW
  VirtualBox_DEFS.linux   += VBOX_GUI_USE_QIMAGE
 endif
+ifdef VBOX_WITH_REGISTRATION
+ VirtualBox_DEFS         += VBOX_WITH_REGISTRATION
+endif
 ifdef VBOX_WITH_ALSA
  VirtualBox_DEFS         += VBOX_WITH_ALSA
 endif
@@ -228,7 +240,7 @@ ifdef VBOX_OSE
  VirtualBox_DEFS         += VBOX_OSE
 endif
 ifdef VBOX_WITH_DEBUGGER_GUI
-  VirtualBox_DEFS        += VBOX_WITH_DEBUGGER_GUI_MENU
+ VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
 endif
 
 VirtualBox_INCS           = \
