@@ -112,8 +112,8 @@
  * start executing. */
 #define VINF_EM_RESUME                      1112
 /** Indicating that we've got an out-of-memory condition and that we need
- * to take the appropriate actions to deal with this. 
- * @remarks It might seem odd at first that this has lower priority than VINF_EM_HALT, 
+ * to take the appropriate actions to deal with this.
+ * @remarks It might seem odd at first that this has lower priority than VINF_EM_HALT,
  *          VINF_EM_SUSPEND, and VINF_EM_RESUME. The reason is that these events are
  *          vital to correctly operating the VM. Also, they can't normally occur together
  *          with an out-of-memory condition, and even if that should happen the condition
@@ -1107,22 +1107,36 @@
 #define VERR_HWACCM_NO_CPUID                        (-4101)
 /** @} */
 
-/** @name VBox GMM Status Codes 
+/** @name VBox GMM Status Codes
  * @{
  */
-/** The GMM is out of pages and needs to be give another chunk of user memory that 
+/** The GMM is out of pages and needs to be give another chunk of user memory that
  * it can lock down and borrow pages from. */
 #define VERR_GMM_SEED_ME                            (-4150)
+/** Unable to allocate more pages from the host system. */
+#define VERR_GMM_OUT_OF_MEMORY                      (-4151)
+/** Hit the global allocation limit.
+ * If you know there is still sufficient memory available, try raise the limit. */
+#define VERR_GMM_HIT_GLOBAL_LIMIT                   (-4152)
+/** Hit the a VM account limit. */
+#define VERR_GMM_HIT_VM_ACCOUNT_LIMIT               (-4153)
+/** The page to be freed or updated was not found. */
+#define VERR_GMM_PAGE_NOT_FOUND                     (-4154)
+/** The specified shared page was not actually shared. */
+#define VERR_GMM_PAGE_NOT_SHARED                    (-4155)
+/** The reservation or reservation update was declined - too many VMs, too
+ * little memory, and/or too low GMM configuration. */
+#define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-4156)
 /** @} */
 
-/** @name VBox GVM Status Codes 
+/** @name VBox GVM Status Codes
  * @{
  */
 /** The GVM is out of VM handle space. */
 #define VERR_GVM_TOO_MANY_VMS                       (-4200)
 /** @} */
 
-/** @name VBox Disassembler Status Codes 
+/** @name VBox Disassembler Status Codes
  * @{
  */
 /** Invalid opcode byte(s) */
