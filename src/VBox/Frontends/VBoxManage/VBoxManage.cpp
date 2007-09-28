@@ -49,6 +49,7 @@
 #include <iprt/param.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/env.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/VBoxHDD.h>
@@ -5040,7 +5041,7 @@ static int handleStartVM(int argc, char *argv[],
 #ifdef RT_OS_LINUX
         /* make sure the VM process will start on the same display as VBoxManage */
         {
-            const char *display = getenv ("DISPLAY");
+            const char *display = RTEnvGet ("DISPLAY");
             if (display)
                 env = Utf8StrFmt ("DISPLAY=%s", display);
         }

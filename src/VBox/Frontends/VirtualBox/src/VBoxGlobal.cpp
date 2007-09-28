@@ -73,6 +73,7 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/env.h>
 
 #if defined (VBOX_GUI_DEBUG)
 uint64_t VMCPUTimer::ticks_per_msec = (uint64_t) -1LL; // declared in VBoxDefs.h
@@ -2804,11 +2805,11 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 QString VBoxGlobal::systemLanguageId()
 {
 #ifdef Q_OS_UNIX
-    const char *s = getenv ("LC_ALL");
+    const char *s = RTEnvGet ("LC_ALL");
     if (s == 0)
-        s = getenv ("LC_MESSAGES");
+        s = RTEnvGet ("LC_MESSAGES");
     if (s == 0)
-        s = getenv ("LANG");
+        s = RTEnvGet ("LANG");
     if (s != 0)
         return QLocale (s).name();
 #endif

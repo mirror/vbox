@@ -24,6 +24,7 @@
 #include <VBox/com/VirtualBox.h>
 
 #include <iprt/stream.h>
+#include <iprt/env.h>
 
 #ifdef RT_OS_OS2
 # undef RT_MAX
@@ -36,7 +37,6 @@ using namespace com;
 #define LOG_GROUP LOG_GROUP_GUI
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <stdlib.h>
 #include <signal.h>
 
 #include "VBoxSDL.h"
@@ -121,7 +121,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
 
 #ifdef RT_OS_WINDOWS
     /* default to DirectX if nothing else set */
-    if (!getenv("SDL_VIDEODRIVER"))
+    if (!RTEnvGet("SDL_VIDEODRIVER"))
     {
         _putenv("SDL_VIDEODRIVER=directx");
 //        _putenv("SDL_VIDEODRIVER=windib");
@@ -183,7 +183,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
                          videoInfo->blit_fill ? "yes" : "no",
                          videoInfo->video_mem,
                          videoInfo->vfmt->BitsPerPixel,
-                         getenv("SDL_VIDEODRIVER"));
+                         RTEnvGet("SDL_VIDEODRIVER"));
     }
 
     if (12320 == g_cbIco64x01)
