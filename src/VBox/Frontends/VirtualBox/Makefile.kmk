@@ -14,10 +14,6 @@
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
 
-ifndef VBOX_OSE
-VBOX_WITH_REGISTRATION := 1
-endif
-
 # include qmake project file
 include VBoxUI.pro
 
@@ -28,11 +24,6 @@ VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS)
 # Import images
 VirtualBox_QT_IMAGES := $(IMAGES)
 
-# exclude inappropriate UI content
-ifndef VBOX_WITH_REGISTRATION
-VirtualBox_QT_UISRCS := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS))
-endif
-
 # reset things to avoid possible conflicts with kBuild
 TEMPLATE :=
 LANGUAGE :=
@@ -42,6 +33,18 @@ IMAGES :=
 
 DEPTH = ../../../..
 include $(PATH_KBUILD)/header.kmk
+
+
+#
+# exclude inappropriate UI content
+#
+ifndef VBOX_OSE
+VBOX_WITH_REGISTRATION := 1
+endif
+
+ifndef VBOX_WITH_REGISTRATION
+VirtualBox_QT_UISRCS := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS))
+endif
 
 
 #
