@@ -1713,7 +1713,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         }
         if (!s->voice_po)
         {
-            len = RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices)-len, "%sPCM_out", 
+            len = RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices)-len, "%sPCM_out",
                               fComma ? ", " : "");
             fComma = true;
         }
