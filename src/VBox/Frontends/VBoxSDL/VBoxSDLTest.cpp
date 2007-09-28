@@ -27,6 +27,7 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 
+#include <stdlib.h>
 #include <signal.h>
 
 #ifdef VBOX_OPENGL
