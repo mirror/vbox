@@ -27,19 +27,20 @@
 
 
 
-/** 
+/**
  * Worker function for PGMR3PhysAllocateHandyPages and pgmPhysEnsureHandyPage.
- * 
+ *
  * @returns The following VBox status codes.
  * @retval  VINF_SUCCESS on success. FF cleared.
  * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is set in this case.
- * 
+ *
  * @param   pVM         The VM handle.
- * 
+ *
  * @remarks Must be called from within the PGM critical section.
  */
 PGMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM)
 {
+
     return VERR_NOT_IMPLEMENTED;
 }
 

@@ -782,22 +782,6 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
 
 
 /**
- * Argument package for the VMMR0_DO_GMM_MAP_UNMAP_CHUNK request.
- */
-typedef struct GMMMAPUNMAPCHUNKREQ
-{
-    /** The header. */
-    SUPVMMR0REQHDR  Hdr;
-    /** The chunk to map, UINT32_MAX if unmap only. (IN) */
-    uint32_t        idChunkMap;
-    /** The chunk to unmap, UINT32_MAX if map only. (IN) */
-    uint32_t        idChunkUnmap;
-    /** Where the mapping address is returned. (OUT) */
-    RTR3PTR         pvR3;
-} GMMMAPUNMAPCHUNKREQ;
-
-
-/**
  * Maps the given chunk into the ring-3 mapping cache.
  *
  * This will call ring-0.
