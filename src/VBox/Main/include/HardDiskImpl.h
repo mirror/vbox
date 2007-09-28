@@ -537,6 +537,117 @@ private:
     friend class HardDisk;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+class ATL_NO_VTABLE HCustomHardDisk :
+    public HardDisk,
+    public VirtualBoxSupportTranslation <HCustomHardDisk>,
+    public ICustomHardDisk
+{
+
+public:
+
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(HCustomHardDisk)
+
+    DECLARE_NOT_AGGREGATABLE(HCustomHardDisk)
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(HCustomHardDisk)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IHardDisk)
+        COM_INTERFACE_ENTRY(ICustomHardDisk)
+    END_COM_MAP()
+
+    NS_DECL_ISUPPORTS
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    // public initializer/uninitializer for internal purposes only
+
+    HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
+                  CFGNODE aHDNode, CFGNODE aCustomNode);
+    HRESULT init (VirtualBox *aVirtualBox, HardDisk *aParent,
+                  INPTR BSTR aLocation, BOOL aRegistered = FALSE);
+    void uninit();
+
+    // IHardDisk properties
+    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
+    STDMETHOD(COMSETTER(Description)) (INPTR BSTR aDescription);
+    STDMETHOD(COMGETTER(Size)) (ULONG64 *aSize);
+    STDMETHOD(COMGETTER(ActualSize)) (ULONG64 *aActualSize);
+
+    // IVirtualDiskImage properties
+    STDMETHOD(COMGETTER(Location)) (BSTR *aLocation);
+    STDMETHOD(COMSETTER(Location)) (INPTR BSTR aLocation);
+    STDMETHOD(COMGETTER(Format))   (BSTR *aFormat);
+    STDMETHOD(COMGETTER(Created))  (BOOL *aCreated);
+
+    // IVirtualDiskImage methods
+    STDMETHOD(CreateDynamicImage) (ULONG64 aSize, IProgress **aProgress);
+    STDMETHOD(CreateFixedImage) (ULONG64 aSize, IProgress **aProgress);
+    STDMETHOD(DeleteImage)();
+
+    // public methods for internal purposes only
+
+    const Bstr &Location() const { return mLocation; }
+
+    HRESULT trySetRegistered (BOOL aRegistered);
+    HRESULT getAccessible (Bstr &aAccessError);
+
+    HRESULT saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode);
+
+    Bstr toString (bool aShort = false);
+
+    HRESULT cloneToImage (const Guid &aId, const Utf8Str &aTargetPath,
+                          Progress *aProgress, bool &aDeleteTarget);
+    HRESULT createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
+                             Progress *aProgress);
+
+    // for VirtualBoxSupportErrorInfoImpl
+    static const wchar_t *getComponentName() { return L"CustomHardDisk"; }
+
+private:
+
+    HRESULT setLocation (const BSTR aLocation);
+    HRESULT queryInformation (Bstr *aAccessError);
+    HRESULT createImage (ULONG64 aSize, BOOL aDynamic, IProgress **aProgress);
+
+    /** VDI asynchronous operation thread function */
+    static DECLCALLBACK(int) VDITaskThread (RTTHREAD thread, void *pvUser);
+
+    static DECLCALLBACK(void) VDError (void *pvUser, int rc, RT_SRC_POS_DECL,
+                                       const char *pszFormat, va_list va);
+
+    enum State
+    {
+        NotCreated,
+        Created,
+        /* the following must be greater than Created */
+        Accessible,
+    };
+
+    State mState;
+    
+    RTSEMEVENTMULTI mStateCheckSem;
+    ULONG mStateCheckWaiters;
+
+    Bstr mDescription;
+
+    ULONG64 mSize;
+    ULONG64 mActualSize;
+
+    Bstr mLocation;
+    Bstr mFormat;
+
+    PVBOXHDD mContainer;
+
+    Utf8Str mLastVDError;
+
+    friend class HardDisk;
+};
+
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION (HardDisk)
 

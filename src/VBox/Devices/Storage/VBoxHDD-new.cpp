@@ -30,6 +30,8 @@
 #include <iprt/string.h>
 #include <iprt/asm.h>
 #include <iprt/ldr.h>
+#include <iprt/dir.h>
+#include <iprt/path.h>
 
 #include "VBoxHDD-newInternal.h"
 
@@ -500,7 +502,7 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
         /* HDD Format Plugins have VBoxHDD as prefix, thatswhy we have to prepend it. 
          * @todo: find out what to do if filenames are case sensitive.
          */
-        cbPluginName = RTStrAPrintf(&pszPluginName, "VBoxHDD%s", pszBackend);
+        cbPluginName = RTStrAPrintf(&pszPluginName, "%s%s", VBOX_HDDFORMAT_PLUGIN_PREFIX, pszBackend);
         if (cbPluginName == -1)
         {
             rc = VERR_NO_MEMORY;
@@ -576,6 +578,167 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
 }
 
 /**
+ * Try to get the backend name which can use this image. 
+ *
+ * @returns VBox status code.
+ * @param   pszFilename     Name of the image file for which the backend is queried.
+ * @param   ppszFormat      Where to store the name of the plugin.
+ */
+
+VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
+{
+    char pszProgramPath[1024]; /* Far too much I think but to be on the safe side. */
+    char *pszPluginFilter;
+    PRTDIR pPluginDir = NULL;
+    PRTDIRENTRY pPluginDirEntry = NULL;
+    unsigned cbPluginDirEntry;
+    int rc = VERR_NOT_SUPPORTED;
+    bool fPluginFound = false;
+
+    if (!ppszFormat)
+        return VERR_INVALID_PARAMETER;
+	
+    memset(pszProgramPath, 0, 1024);
+    rc = RTPathProgram(pszProgramPath, 1024);
+    if (VBOX_FAILURE(rc))
+    {
+        return rc;
+    }
+
+    /* To get all entries with VBoxHDD as prefix. */
+    rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", pszProgramPath, VBOX_HDDFORMAT_PLUGIN_PREFIX);
+    if (VBOX_FAILURE(rc))
+    {
+        RTStrFree(pszProgramPath);
+        rc = VERR_NO_MEMORY;
+        return rc;
+    }
+
+    /* The plugins are in the same directory as the program. */
+    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
+    if (VBOX_FAILURE(rc))
+        goto out;
+
+    pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(sizeof(RTDIRENTRY));
+    if (!pPluginDir)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+
+    while ((rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry)) != VERR_NO_MORE_FILES)
+    {
+        RTLDRMOD hPlugin = NIL_RTLDRMOD;
+        PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
+        PVBOXHDDBACKEND pBackend = NULL;
+
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            /* allocate new buffer. */
+            RTMemFree(pPluginDirEntry);
+            pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(cbPluginDirEntry);
+            /* Retry. */
+            rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry);
+            if (VBOX_FAILURE(rc))
+                break;
+        }
+        else if (VBOX_FAILURE(rc))
+                break;
+
+        /* We got the new entry. */
+        if (pPluginDirEntry->enmType != RTDIRENTRYTYPE_FILE)
+            continue;
+
+        rc = RTLdrLoad(pPluginDirEntry->szName, &hPlugin);
+        if (VBOX_SUCCESS(rc))
+        {
+            rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
+            if (VBOX_FAILURE(rc) || !pfnHDDFormatLoad)
+            {
+                Log(("%s: Error resolving the entry point %s, rc = %d, pfnHDDFormat = %p\n", VBOX_HDDFORMAT_LOAD_NAME, rc, pfnHDDFormatLoad));
+                if (VBOX_SUCCESS(rc))
+                    rc = VERR_SYMBOL_NOT_FOUND;
+            }
+            else
+            {
+                /* Get the function table. */
+                pBackend = (PVBOXHDDBACKEND)RTMemAllocZ(sizeof(VBOXHDDBACKEND));
+                if (!pBackend)
+                {
+                    rc = VERR_NO_MEMORY;
+                }
+                else
+                {
+                    pBackend->cbSize = sizeof(VBOXHDDBACKEND);
+                    rc = pfnHDDFormatLoad(pBackend);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        RTMemFree(pBackend);
+                        pBackend = NULL;
+                    }
+
+                    /* Check if the plugin can handle this file. */
+                    rc = pBackend->pfnCheckIfValid(pszFilename);
+                    if (VBOX_FAILURE(rc))
+                    {
+                        RTMemFree(pBackend);
+                        RTLdrClose(hPlugin);
+                    }
+                    else
+                    {
+                        RTMemFree(pBackend);
+                        RTLdrClose(hPlugin);
+                        fPluginFound = true;
+
+                        /* Report the format name. */
+                        char *pszName = pPluginDirEntry->szName + VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH; /* Point to the rest after the prefix. */
+                        char *pszFormat = NULL;
+                        unsigned cbFormat = 0;
+                          
+                        while((*pszName != '.') && (*pszName != '\0'))
+                        {
+                            cbFormat++;
+                            pszName++;
+                        }
+
+                        pszName = pPluginDirEntry->szName + VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH;
+
+                        /* Copy the name into the new string. */   
+                        pszFormat = (char *)RTMemAllocZ(cbFormat+1);
+
+                        if (!pszFormat)
+                        {
+                            rc = VERR_NO_MEMORY;
+                            break;
+                        }
+
+                        memcpy(pszFormat, pszName, cbFormat);
+                        
+                        *ppszFormat = pszFormat;
+
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+out:
+    if (pPluginDirEntry)
+        RTMemFree(pPluginDirEntry);
+    if (pPluginDir)
+        RTDirClose(pPluginDir);
+
+    RTStrFree(pszPluginFilter);
+    RTStrFree(pszProgramPath);
+
+    if ((fPluginFound == true) && (*ppszFormat != NULL))
+        rc = VINF_SUCCESS;
+
+    return rc;
+}
+
+/**
  * Destroys the VBox HDD container.
  * If container has opened image files they will be closed.
  *
@@ -583,7 +746,7 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError,
  */
 VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
 {
-    LogFlow(("%s: pDisk=%#p\n", pDisk));
+    LogFlow(("%s: pDisk=%#p\n", __FUNCTION__, pDisk));
     /* sanity check */
     Assert(pDisk);
     AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));

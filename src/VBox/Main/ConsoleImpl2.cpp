@@ -728,6 +728,23 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
             STR_FREE();
         }
+        else if (hddType == HardDiskStorageType_CustomHardDisk)
+        {
+            ComPtr<ICustomHardDisk> customHardDisk = hardDisk;
+            AssertBreak (!customHardDisk.isNull(), hrc = E_FAIL);
+
+            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver",         "VD");                    RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+            hrc = customHardDisk->COMGETTER(Location)(&str);                            H();
+            STR_CONV();
+            rc = CFGMR3InsertString(pCfg,   "Path",             psz);                   RC_CHECK();
+            STR_FREE();
+            hrc = customHardDisk->COMGETTER(Format)(&str);                              H();
+            STR_CONV();
+            rc = CFGMR3InsertString(pCfg,   "Format",           psz);                   RC_CHECK();
+            STR_FREE();
+        }
         else
            AssertFailed();
     }
