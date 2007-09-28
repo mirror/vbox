@@ -1573,10 +1573,14 @@ int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
     else
         fRTLock |= RTFILE_LOCK_IMMEDIATELY;
 
+#ifdef RT_OS_WINDOWS
     rc = RTFileLock(pHandle->file.Handle, fRTLock, offset, length);
     if (rc != VINF_SUCCESS)
         Log(("RTFileLock %RTfile %RX64 %RX64 failed with %Rrc\n", pHandle->file.Handle, offset, length, rc));
-
+#else
+    Log(("vbsfLock: Pretend success handle=%x\n", Handle));
+    rc = VINF_SUCCESS;
+#endif
     return rc;
 }
 
@@ -1598,9 +1602,14 @@ int vbsfUnlock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
        return VERR_INVALID_PARAMETER;
     }
 
+#ifdef RT_OS_WINDOWS
     rc = RTFileUnlock(pHandle->file.Handle, offset, length);
     if (rc != VINF_SUCCESS)
         Log(("RTFileUnlock %RTfile %RX64 %RTX64 failed with %Rrc\n", pHandle->file.Handle, offset, length, rc));
+#else
+    Log(("vbsfUnlock: Pretend success handle=%x\n", Handle));
+    rc = VINF_SUCCESS;
+#endif
 
     return rc;
 }
