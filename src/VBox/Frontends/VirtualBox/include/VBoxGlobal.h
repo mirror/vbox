@@ -153,11 +153,11 @@ public:
 
     static VBoxGlobal &instance();
 
-    bool isValid() { return valid; }
+    bool isValid() { return mValid; }
 
     QString versionString() { return verString; }
 
-    CVirtualBox virtualBox() const { return vbox; }
+    CVirtualBox virtualBox() const { return mVBox; }
 
     const VBoxGlobalSettings &settings() const { return gset; }
     bool setSettings (const VBoxGlobalSettings &gs);
@@ -525,16 +525,18 @@ private:
 
     void init();
 
-    bool valid;
+    bool mValid;
 
-    CVirtualBox vbox;
+    CVirtualBox mVBox;
 
     VBoxGlobalSettings gset;
 
-    VBoxSelectorWnd *selector_wnd;
-    VBoxConsoleWnd *console_wnd;
+    VBoxSelectorWnd *mSelectorWnd;
+    VBoxConsoleWnd *mConsoleWnd;
 
+#ifdef VBOX_WITH_REGISTRATION
     VBoxRegistrationDlg *mRegDlg;
+#endif
 
     QUuid vmUuid;
 

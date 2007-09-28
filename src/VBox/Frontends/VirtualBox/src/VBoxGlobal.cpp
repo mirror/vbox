@@ -23,7 +23,10 @@
 #include "VBoxConsoleWnd.h"
 #include "VBoxProblemReporter.h"
 #include "QIHotKeyEdit.h"
+
+#ifdef VBOX_WITH_REGISTRATION
 #include "VBoxRegistrationDlg.h"
+#endif
 
 #include <qapplication.h>
 #include <qmessagebox.h>
@@ -666,10 +669,12 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
  */
 
 VBoxGlobal::VBoxGlobal()
-    : valid (false)
-    , selector_wnd (0), console_wnd (0)
-    , mRegDlg (0)
-    , media_enum_thread (0)
+    : mValid (false)
+    , mSelectorWnd (NULL), mConsoleWnd (NULL)
+#ifdef VBOX_WITH_REGISTRATION
+    , mRegDlg (NULL)
+#endif
+    , media_enum_thread (NULL)
     , verString ("1.0")
     , vm_state_color (CEnums::MachineState_COUNT)
     , machineStates (CEnums::MachineState_COUNT)
@@ -747,11 +752,11 @@ VBoxGlobal &VBoxGlobal::instance()
  */
 bool VBoxGlobal::setSettings (const VBoxGlobalSettings &gs)
 {
-    gs.save (vbox);
+    gs.save (mVBox);
 
-    if (!vbox.isOk())
+    if (!mVBox.isOk())
     {
-        vboxProblem().cannotSaveGlobalConfig (vbox);
+        vboxProblem().cannotSaveGlobalConfig (mVBox);
         return false;
     }
 
@@ -775,22 +780,22 @@ VBoxSelectorWnd &VBoxGlobal::selectorWnd()
                ("Must NOT be a VM console process"));
 #endif
 
-    Assert (valid);
+    Assert (mValid);
 
-    if (!selector_wnd)
+    if (!mSelectorWnd)
     {
         /*
-         *  We pass the address of selector_wnd to the constructor to let it be
+         *  We pass the address of mSelectorWnd to the constructor to let it be
          *  initialized right after the constructor is called. It is necessary
          *  to avoid recursion, since this method may be (and will be) called
          *  from the below constructor or from constructors/methods it calls.
          */
-        VBoxSelectorWnd *w = new VBoxSelectorWnd (&selector_wnd, 0, "selectorWnd");
-        Assert (w == selector_wnd);
+        VBoxSelectorWnd *w = new VBoxSelectorWnd (&mSelectorWnd, 0, "selectorWnd");
+        Assert (w == mSelectorWnd);
         NOREF(w);
     }
 
-    return *selector_wnd;
+    return *mSelectorWnd;
 }
 
 /**
@@ -806,22 +811,22 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
                ("Must be a VM console process"));
 #endif
 
-    Assert (valid);
+    Assert (mValid);
 
-    if (!console_wnd)
+    if (!mConsoleWnd)
     {
         /*
-         *  We pass the address of console_wnd to the constructor to let it be
+         *  We pass the address of mConsoleWnd to the constructor to let it be
          *  initialized right after the constructor is called. It is necessary
          *  to avoid recursion, since this method may be (and will be) called
          *  from the below constructor or from constructors/methods it calls.
          */
-        VBoxConsoleWnd *w = new VBoxConsoleWnd (&console_wnd, 0, "consoleWnd");
-        Assert (w == console_wnd);
+        VBoxConsoleWnd *w = new VBoxConsoleWnd (&mConsoleWnd, 0, "consoleWnd");
+        Assert (w == mConsoleWnd);
         NOREF(w);
     }
 
-    return *console_wnd;
+    return *mConsoleWnd;
 }
 
 /**
@@ -1297,7 +1302,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
     {
         /* boot order */
         QString bootOrder;
-        for (ulong i = 1; i <= vbox.GetSystemProperties().GetMaxBootPosition(); i++)
+        for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); i++)
         {
             CEnums::DeviceType device = m.GetBootOrder (i);
             if (device == CEnums::NoDevice)
@@ -1430,7 +1435,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         /* network */
         {
             item = QString::null;
-            ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
+            ulong count = mVBox.GetSystemProperties().GetNetworkAdapterCount();
             int rows = 2; /* including section header and footer */
             for (ulong slot = 0; slot < count; slot ++)
             {
@@ -1473,7 +1478,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         /* serial ports */
         {
             item = QString::null;
-            ulong count = vbox.GetSystemProperties().GetSerialPortCount();
+            ulong count = mVBox.GetSystemProperties().GetSerialPortCount();
             int rows = 2; /* including section header and footer */
             for (ulong slot = 0; slot < count; slot ++)
             {
@@ -1656,6 +1661,7 @@ void VBoxGlobal::callRegistration()
 
 void VBoxGlobal::showRegistrationDialog()
 {
+#ifdef VBOX_WITH_REGISTRATION
     if (mRegDlg)
     {
         /* Show already opened registration dialog */
@@ -1668,10 +1674,11 @@ void VBoxGlobal::showRegistrationDialog()
         /* Create new registration dialog */
         VBoxRegistrationDlg *dlg =
             new VBoxRegistrationDlg (0, 0, false, WDestructiveClose);
-        dlg->setup (&mRegDlg, "http://www.innotek.de/register762.php");
+        dlg->setup (&mRegDlg);
         Assert (dlg == mRegDlg);
         mRegDlg->show();
     }
+#endif
 }
 
 /**
@@ -1691,11 +1698,11 @@ CSession VBoxGlobal::openSession (const QUuid &id)
         return session;
     }
 
-    vbox.OpenSession (session, id);
-    if (!vbox.isOk())
+    mVBox.OpenSession (session, id);
+    if (!mVBox.isOk())
     {
-        CMachine machine = CVirtualBox (vbox).GetMachine (id);
-        vboxProblem().cannotOpenSession (vbox, machine);
+        CMachine machine = CVirtualBox (mVBox).GetMachine (id);
+        vboxProblem().cannotOpenSession (mVBox, machine);
         session.detach();
     }
 
@@ -1707,7 +1714,7 @@ CSession VBoxGlobal::openSession (const QUuid &id)
  */
 bool VBoxGlobal::startMachine (const QUuid &id)
 {
-    AssertReturn (valid, false);
+    AssertReturn (mValid, false);
 
     CSession session = vboxGlobal().openSession (id);
     if (session.isNull())
@@ -1751,7 +1758,7 @@ void addMediaToList (VBoxMediaList &aList,
  */
 void VBoxGlobal::startEnumeratingMedia()
 {
-    Assert (valid);
+    Assert (mValid);
 
     /* check if already started but not yet finished */
     if (media_enum_thread)
@@ -1764,15 +1771,15 @@ void VBoxGlobal::startEnumeratingMedia()
     /* composes a list of all currently known media & their children */
     media_list.clear();
     {
-        CHardDiskEnumerator enHD = vbox.GetHardDisks().Enumerate();
+        CHardDiskEnumerator enHD = mVBox.GetHardDisks().Enumerate();
         while (enHD.HasMore())
             addMediaToList (media_list, CUnknown (enHD.GetNext()), VBoxDefs::HD);
 
-        CDVDImageEnumerator enCD = vbox.GetDVDImages().Enumerate();
+        CDVDImageEnumerator enCD = mVBox.GetDVDImages().Enumerate();
         while (enCD.HasMore())
             addMediaToList (media_list, CUnknown (enCD.GetNext()), VBoxDefs::CD);
 
-        CFloppyImageEnumerator enFD = vbox.GetFloppyImages().Enumerate();
+        CFloppyImageEnumerator enFD = mVBox.GetFloppyImages().Enumerate();
         while (enFD.HasMore())
             addMediaToList (media_list, CUnknown (enFD.GetNext()), VBoxDefs::FD);
     }
@@ -1789,7 +1796,7 @@ void VBoxGlobal::startEnumeratingMedia()
             LogFlow (("MediaEnumThread started.\n"));
             COMBase::initializeCOM();
 
-            CVirtualBox vbox = vboxGlobal().virtualBox();
+            CVirtualBox mVBox = vboxGlobal().virtualBox();
             QObject *target = &vboxGlobal();
 
             /* enumerating list */
@@ -1816,7 +1823,7 @@ void VBoxGlobal::startEnumeratingMedia()
                             QUuid machineId = hd.GetMachineId();
                             if (!machineId.isNull())
                             {
-                                CMachine machine = vbox.GetMachine (machineId);
+                                CMachine machine = mVBox.GetMachine (machineId);
                                 if (!machine.isNull() && (machine.GetState() >= CEnums::Running))
                                     media.status = VBoxMedia::Ok;
                             }
@@ -3542,15 +3549,15 @@ void VBoxGlobal::init()
     }
 #endif
 
-    vbox.createInstance (CLSID_VirtualBox);
-    if (!vbox.isOk())
+    mVBox.createInstance (CLSID_VirtualBox);
+    if (!mVBox.isOk())
     {
-        vboxProblem().cannotCreateVirtualBox (vbox);
+        vboxProblem().cannotCreateVirtualBox (mVBox);
         return;
     }
 
     // initialize guest OS type vector
-    CGuestOSTypeCollection coll = vbox.GetGuestOSTypes();
+    CGuestOSTypeCollection coll = mVBox.GetGuestOSTypes();
     int osTypeCount = coll.GetCount();
     AssertMsg (osTypeCount > 0, ("Number of OS types must not be zero"));
     if (osTypeCount > 0)
@@ -3649,10 +3656,10 @@ void VBoxGlobal::init()
     gset = VBoxGlobalSettings (false);
 
     // try to load global settings
-    gset.load (vbox);
-    if (!vbox.isOk() || !gset)
+    gset.load (mVBox);
+    if (!mVBox.isOk() || !gset)
     {
-        vboxProblem().cannotLoadGlobalConfig (vbox, gset.lastError());
+        vboxProblem().cannotLoadGlobalConfig (mVBox, gset.lastError());
         return;
     }
 
@@ -3686,9 +3693,9 @@ void VBoxGlobal::init()
                 if (!uuid.isNull()) {
                     vmUuid = uuid;
                 } else {
-                    CMachine m = vbox.FindMachine (param);
+                    CMachine m = mVBox.FindMachine (param);
                     if (m.isNull()) {
-                        vboxProblem().cannotFindMachineByName (vbox, param);
+                        vboxProblem().cannotFindMachineByName (mVBox, param);
                         return;
                     }
                     vmUuid = m.GetId();
@@ -3723,9 +3730,9 @@ void VBoxGlobal::init()
 
     // setup the callback
     callback = CVirtualBoxCallback (new VBoxCallback (*this));
-    vbox.RegisterCallback (callback);
-    AssertWrapperOk (vbox);
-    if (!vbox.isOk())
+    mVBox.RegisterCallback (callback);
+    AssertWrapperOk (mVBox);
+    if (!mVBox.isOk())
         return;
 
     /*
@@ -3737,7 +3744,7 @@ void VBoxGlobal::init()
     QIconSet::setIconSize (QIconSet::Small, QSize (16, 16));
     QIconSet::setIconSize (QIconSet::Large, QSize (22, 22));
 
-    valid = true;
+    mValid = true;
 }
 
 /** @internal
@@ -3756,8 +3763,8 @@ void VBoxGlobal::cleanup()
 
     if (!callback.isNull())
     {
-        vbox.UnregisterCallback (callback);
-        AssertWrapperOk (vbox);
+        mVBox.UnregisterCallback (callback);
+        AssertWrapperOk (mVBox);
         callback.detach();
     }
 
@@ -3769,19 +3776,22 @@ void VBoxGlobal::cleanup()
         media_enum_thread = 0;
     }
 
-    if (console_wnd)
-        delete console_wnd;
-    if (selector_wnd)
-        delete selector_wnd;
+#ifdef VBOX_WITH_REGISTRATION
     if (mRegDlg)
         mRegDlg->close();
+#endif
+
+    if (mConsoleWnd)
+        delete mConsoleWnd;
+    if (mSelectorWnd)
+        delete mSelectorWnd;
 
     /* ensure CGuestOSType objects are no longer used */
     vm_os_types.clear();
     /* media list contains a lot of CUUnknown, release them */
     media_list.clear();
     /* the last step to ensure we don't use COM any more */
-    vbox.detach();
+    mVBox.detach();
 
     /* There may be VBoxEnumerateMediaEvent instances still in the message
      * queue which reference COM objects. Remove them to release those objects
@@ -3794,7 +3804,7 @@ void VBoxGlobal::cleanup()
     COMBase::cleanupCOM();
 #endif
 
-    valid = false;
+    mValid = false;
 }
 
 /** @fn vboxGlobal
