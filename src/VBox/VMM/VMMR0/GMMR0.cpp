@@ -146,11 +146,18 @@
 #include <VBox/gvm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
+#include <VBox/err.h>
 #include <iprt/avl.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+
+/** @def GMM_MAX_GCPHYS
+ * The max guest physical address.
+ * This must reflect the constraints imposed by the RTGCPHYS type and the guest
+ * page frame number used internally in GMMPAGE. */
+#define GMM_MAX_GCPHYS      UINT32_MAX
 
 
 /*******************************************************************************
@@ -791,6 +798,8 @@ static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pv
  *                          hyper heap, MMIO2 and similar.
  * @param   enmPolicy       The OC policy to use on this VM.
  * @param   enmPriority     The priority in an out-of-memory situation.
+ *
+ * @thread  The creator thread / EMT.
  */
 GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
                                        GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
@@ -806,6 +815,8 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
     PGVM pGVM = GVMMR0ByVM(pVM);
     if (!pGVM)
         return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
 
     AssertReturn(cBasePages, VERR_INVALID_PARAMETER);
     AssertReturn(cShadowPages, VERR_INVALID_PARAMETER);
@@ -850,6 +861,26 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
 
 
 /**
+ * VMMR0 request wrapper for GMMR0InitialReservation.
+ *
+ * @returns see GMMR0InitialReservation.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, PGMMINITIALRESERVATIONREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq != sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GMMR0InitialReservation(pVM, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages, pReq->enmPolicy, pReq->enmPriority);
+}
+
+
+/**
  * This updates the memory reservation with the additional MMIO2 and ROM pages.
  *
  * @returns VBox status code.
@@ -863,6 +894,8 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
  *                          hyper heap, MMIO2 and similar.
  * @param   enmPolicy       The OC policy to use on this VM.
  * @param   enmPriority     The priority in an out-of-memory situation.
+ *
+ * @thread  EMT.
  */
 GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages)
 {
@@ -877,6 +910,8 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cSh
     PGVM pGVM = GVMMR0ByVM(pVM);
     if (!pGVM)
         return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
 
     AssertReturn(cBasePages, VERR_INVALID_PARAMETER);
     AssertReturn(cShadowPages, VERR_INVALID_PARAMETER);
@@ -918,6 +953,59 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cSh
 
 
 /**
+ * VMMR0 request wrapper for GMMR0UpdateReservation.
+ *
+ * @returns see GMMR0UpdateReservation.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, PGMMUPDATERESERVATIONREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq != sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GMMR0UpdateReservation(pVM, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages);
+}
+
+
+/**
+ * Finds a page.
+ *
+ * @returns Pointer to the page, NULL if not found.
+ * @param   pGMM    Pointer to the GMM instance.
+ * @param   idPage  The ID of the page to find.
+ */
+DECLINLINE(PGMMPAGE) gmmR0GetPage(PGMM pGMM, uint32_t idPage)
+{
+    return NULL;
+}
+
+
+
+/**
+ * Common worker for GMMR0AllocateHandyPages and GMMR0AllocatePages.
+ *
+ * @returns VBox status code:
+ * @retval  xxx
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   cPages              The number of pages to allocate.
+ * @param   paPages             Pointer to the page descriptors.
+ *                              See GMMPAGEDESC for details on what is expected on input.
+ * @param   enmAccount          The account to charge.
+ */
+static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
+{
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
  * Updates the previous allocations and allocates more pages.
  *
  * The handy pages are always taken from the 'base' memory account.
@@ -930,10 +1018,103 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cSh
  * @param   cPagesToAlloc       The number of pages to allocate (starting from the head).
  * @param   paPages             The array of page descriptors.
  *                              See GMMPAGEDESC for details on what is expected on input.
+ * @thread  EMT.
  */
 GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate, get basics and take the semaphore.
+     * (This is a relatively busy path, so make predictions where possible.)
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (RT_UNLIKELY(!pGVM))
+        return VERR_INVALID_PARAMETER;
+    if (RT_UNLIKELY(pGVM->hEMT != RTThreadNativeSelf()))
+        return VERR_NOT_OWNER;
+
+    AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(    (cPagesToUpdate && cPagesToUpdate < 1024)
+                    ||  (cPagesToAlloc  && cPagesToAlloc < 1024),
+                    ("cPagesToUpdate=%#x cPagesToAlloc=%#x\n", cPagesToUpdate, cPagesToAlloc),
+                    VERR_INVALID_PARAMETER);
+
+    unsigned iPage = 0;
+    for (; iPage < cPagesToUpdate; iPage++)
+    {
+        AssertMsgReturn(    (    paPages[iPage].HCPhysGCPhys < GMM_MAX_GCPHYS
+                             && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK))
+                        ||  paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS
+                        ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHARABLE,
+                        ("#%#x: %RHp\n", iPage, paPages[iPage].HCPhysGCPhys),
+                        VERR_INVALID_PARAMETER);
+        AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
+                        /*||  paPages[iPage].idPage == NIL_GMM_PAGEID*/,
+                        ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
+                        /*||  paPages[iPage].idSharedPage == NIL_GMM_PAGEID*/,
+                        ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage), VERR_INVALID_PARAMETER);
+    }
+
+    for (; iPage < cPagesToAlloc; iPage++)
+    {
+        AssertMsgReturn(paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS,   ("#%#x: %RHp\n", iPage, paPages[iPage].HCPhysGCPhys), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].idPage       == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idPage),        VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].idSharedPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage),  VERR_INVALID_PARAMETER);
+    }
+
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+    /* No allocations before the initial reservation has been made! */
+    if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
+                  &&  pGVM->gmm.s.Reserved.cFixedPages
+                  &&  pGVM->gmm.s.Reserved.cShadowPages))
+    {
+        /*
+         * Do the updates.
+         */
+        for (iPage = 0; iPage < cPagesToUpdate; iPage++)
+        {
+            if (paPages[iPage].idPage != NIL_GMM_PAGEID)
+            {
+                PGMMPAGE pPage = gmmR0GetPage(pGMM, paPages[iPage].idPage);
+                if (RT_LIKELY(pPage))
+                {
+
+                    paPages[iPage].idPage = NIL_GMM_PAGEID;
+                    paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
+                }
+                else
+                    rc = VERR_GMM_PAGE_NOT_FOUND;
+            }
+
+            if (paPages[iPage].idSharedPage != NIL_GMM_PAGEID)
+            {
+                PGMMPAGE pPage = gmmR0GetPage(pGMM, paPages[iPage].idSharedPage);
+                if (RT_LIKELY(pPage))
+                {
+
+                    paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
+                }
+                else
+                    rc = VERR_GMM_PAGE_NOT_FOUND;
+            }
+        }
+
+        /*
+         * And now do the allocation.
+         */
+        if (RT_SUCCESS(rc))
+            rc = gmmR0AllocatePages(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
+    }
+    else
+        rc = VERR_WRONG_ORDER;
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0UpdateReservation: returns %Rrc\n", rc));
+    return rc;
 }
 
 
@@ -950,10 +1131,80 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
  * @param   paPages             Pointer to the page descriptors.
  *                              See GMMPAGEDESC for details on what is expected on input.
  * @param   enmAccount          The account to charge.
+ *
+ * @thread  EMT.
  */
 GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
-    return VERR_NOT_IMPLEMENTED;
+    LogFlow(("GMMR0AllocatePages: pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pVM, cPages, paPages, enmAccount));
+
+    /*
+     * Validate, get basics and take the semaphore.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pGVM)
+        return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
+
+    AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(enmAccount > GMMACCOUNT_INVALID && enmAccount < GMMACCOUNT_END, ("%d\n", enmAccount), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPages > 0 && cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
+
+    for (unsigned iPage = 0; iPage < cPages; iPage++)
+    {
+        AssertMsgReturn(    paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS
+                        ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHARABLE
+                        ||  (    enmAccount == GMMACCOUNT_BASE
+                             &&  paPages[iPage].HCPhysGCPhys < GMM_MAX_GCPHYS
+                             && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK)),
+                        ("#%#x: %RHp enmAccount=%d\n", iPage, paPages[iPage].HCPhysGCPhys, enmAccount),
+                        VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].idPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].idSharedPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage), VERR_INVALID_PARAMETER);
+    }
+
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+    /* No allocations before the initial reservation has been made! */
+    if (    pGVM->gmm.s.Reserved.cBasePages
+        &&  pGVM->gmm.s.Reserved.cFixedPages
+        &&  pGVM->gmm.s.Reserved.cShadowPages)
+        rc = gmmR0AllocatePages(pGMM, pGVM, cPages, paPages, enmAccount);
+    else
+        rc = VERR_WRONG_ORDER;
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0UpdateReservation: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0AllocatePages.
+ *
+ * @returns see GMMR0AllocatePages.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq >= RT_UOFFSETOF(GMMALLOCATEPAGESREQ, aPages[0]),
+                    ("%#x < %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMALLOCATEPAGESREQ, aPages[0])),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pReq->Hdr.cbReq == RT_UOFFSETOF(GMMALLOCATEPAGESREQ, aPages[pReq->cPages]),
+                    ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMALLOCATEPAGESREQ, aPages[pReq->cPages])),
+                    VERR_INVALID_PARAMETER);
+
+    return GMMR0AllocatePages(pVM, pReq->cPages, &pReq->aPages[0], pReq->enmAccount);
 }
 
 
@@ -969,10 +1220,36 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages
  * @param   cPages              The number of pages to allocate.
  * @param   paPages             Pointer to the page descriptors containing the Page IDs for each page.
  * @param   enmAccount          The account this relates to.
+ * @thread  EMT.
  */
 GMMR0DECL(int) GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0FreePages.
+ *
+ * @returns see GMMR0FreePages.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, PGMMFREEPAGESREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq >= RT_UOFFSETOF(GMMFREEPAGESREQ, aPages[0]),
+                    ("%#x < %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMFREEPAGESREQ, aPages[0])),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pReq->Hdr.cbReq == RT_UOFFSETOF(GMMFREEPAGESREQ, aPages[pReq->cPages]),
+                    ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMFREEPAGESREQ, aPages[pReq->cPages])),
+                    VERR_INVALID_PARAMETER);
+
+    return GMMR0FreePages(pVM, pReq->cPages, &pReq->aPages[0], pReq->enmAccount);
 }
 
 
@@ -988,10 +1265,67 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages
  * @param   cBalloonedPages     The number of pages that was ballooned.
  * @param   cPagesToFree        The number of pages to be freed.
  * @param   paPages             Pointer to the page descriptors for the pages that's to be freed.
+ * @thread  EMT.
  */
 GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
+
+/**
+ * VMMR0 request wrapper for GMMR0BalloonedPages.
+ *
+ * @returns see GMMR0BalloonedPages.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, PGMMBALLOONEDPAGESREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq >= RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[0]),
+                    ("%#x < %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[0])),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pReq->Hdr.cbReq == RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[pReq->cPagesToFree]),
+                    ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[pReq->cPagesToFree])),
+                    VERR_INVALID_PARAMETER);
+
+    return GMMR0BalloonedPages(pVM, pReq->cBalloonedPages, pReq->cPagesToFree, &pReq->aPages[0]);
+}
+
+
+GMMR0DECL(int) GMMR0FreeMapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR pvR3)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0FreeMapUnmapChunk.
+ *
+ * @returns see GMMR0FreeMapUnmapChunk.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int)  GMMR0FreeMapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GMMR0FreeMapUnmapChunk(pVM, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
+}
+
+
+GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
 

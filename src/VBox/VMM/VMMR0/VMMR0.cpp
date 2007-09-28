@@ -29,8 +29,10 @@
 #include "VMMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/gvmm.h>
+#include <VBox/gmm.h>
 #include <VBox/intnet.h>
 #include <VBox/hwaccm.h>
+#include <VBox/param.h>
 
 #include <VBox/err.h>
 #include <VBox/version.h>
@@ -647,6 +649,27 @@ VMMR0DECL(int) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
  */
 static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg)
 {
+    /*
+     * Common VM pointer validation.
+     */
+    if (pVM)
+    {
+        if (RT_UNLIKELY(    !VALID_PTR(pVM)
+                        ||  ((uintptr_t)pVM & PAGE_OFFSET_MASK)))
+        {
+            SUPR0Printf("vmmR0EntryExWorker: Invalid pVM=%p! (op=%d)\n", pVM, enmOperation);
+            return VERR_INVALID_POINTER;
+        }
+        if (RT_UNLIKELY(    pVM->enmVMState < VMSTATE_CREATING
+                        ||  pVM->enmVMState > VMSTATE_TERMINATED
+                        ||  pVM->pVMR0 != pVM))
+        {
+            SUPR0Printf("vmmR0EntryExWorker: Invalid pVM=%p:{enmVMState=%d, .pVMR0=%p}! (op=%d)\n",
+                        pVM, pVM->enmVMState, pVM->pVMR0, enmOperation);
+            return VERR_INVALID_POINTER;
+        }
+    }
+
     switch (enmOperation)
     {
         /*
@@ -709,20 +732,25 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         case VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES:
             return PGMR0PhysAllocateHandyPages(pVM);
 
-#if 0
         /*
-         * GMM wrappers
+         * GMM wrappers.
          */
-        case VMMR0_DO_GMM_ALLOCATE_PAGES:
-            return GMMR0AllocatePages(pVM, ...);
-        case VMMR0_DO_GMM_FREE_PAGES:
-            return GMMR0FreePages(pVM, ...);
-        case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
-            return GMMR0FreeMapUnmapChunk(pVM, ...);
-        case VMMR0_DO_GMM_SEED_CHUNK:
-            return GMMR0SeedChunk(pVM, (RTR3PTR)pvArg);
-#endif
+        case VMMR0_DO_GMM_INITIAL_RESERVATION:
+            return GMMR0InitialReservationReq(pVM, (PGMMINITIALRESERVATIONREQ)pReqHdr);
+        case VMMR0_DO_GMM_UPDATE_RESERVATION:
+            return GMMR0UpdateReservationReq(pVM, (PGMMUPDATERESERVATIONREQ)pReqHdr);
 
+        case VMMR0_DO_GMM_ALLOCATE_PAGES:
+            return GMMR0AllocatePagesReq(pVM, (PGMMALLOCATEPAGESREQ)pReqHdr);
+        case VMMR0_DO_GMM_FREE_PAGES:
+            return GMMR0FreePagesReq(pVM, (PGMMFREEPAGESREQ)pReqHdr);
+        case VMMR0_DO_GMM_BALLOONED_PAGES:
+            return GMMR0BalloonedPagesReq(pVM, (PGMMBALLOONEDPAGESREQ)pReqHdr);
+
+        case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
+            return GMMR0FreeMapUnmapChunkReq(pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
+        case VMMR0_DO_GMM_SEED_CHUNK:
+            return GMMR0SeedChunk(pVM, (RTR3PTR)u64Arg);
 
 
 #if 0//def VBOX_WITH_INTERNAL_NETWORKING - currently busted

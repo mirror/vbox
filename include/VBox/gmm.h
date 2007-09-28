@@ -20,6 +20,7 @@
 
 #include <VBox/types.h>
 #include <VBox/gvmm.h>
+#include <VBox/sup.h>
 
 __BEGIN_DECLS
 
@@ -48,6 +49,12 @@ __BEGIN_DECLS
 #define GMM_CHUNK_SIZE                  (1U << GMM_CHUNK_SHIFT)
 /** The shift factor for converting a page id into a chunk id. */
 #define GMM_CHUNKID_SHIFT               (GMM_CHUNK_SHIFT - PAGE_SHIFT)
+/** The last valid Chunk ID value. */
+#define GMM_CHUNK_LAST                  (GMM_PAGEID_LAST >> GMM_CHUNKID_SHIFT)
+/** The last valid Page ID value.
+ * The current limit is 2^28 - 1, or almost 1TB if you like.
+ * The constraints are currently dictated by PGMPAGE. */
+#define GMM_PAGEID_LAST                 (RT_BIT_32(28) - 1)
 /** The NIL Chunk ID value. */
 #define NIL_GMM_CHUNKID                 0
 /** The NIL Page ID value. */
@@ -200,7 +207,6 @@ typedef GMMPAGEDESC *PGMMPAGEDESC;
 /** GMMPAGEDESC::HCPhysGCPhys value that indicates that the page is shared. */
 #define GMM_GCPHYS_UNSHARABLE   (RTHCPHYS)(0xfffffff0)
 
-
 GMMR0DECL(int)  GMMR0Init(void);
 GMMR0DECL(void) GMMR0Term(void);
 GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM);
@@ -212,6 +218,130 @@ GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32
 GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages);
+GMMR0DECL(int)  GMMR0FreeMapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR pvR3);
+GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3);
+
+
+/**
+ * Request buffer for GMMR0InitialReservationReq / VMMR0_DO_GMM_INITIAL_RESERVATION.
+ * @see GMMR0InitialReservation
+ */
+typedef struct GMMINITIALRESERVATIONREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    uint64_t        cBasePages;         /**< @see GMMR0InitialReservation */
+    uint32_t        cShadowPages;       /**< @see GMMR0InitialReservation */
+    uint32_t        cFixedPages;        /**< @see GMMR0InitialReservation */
+    GMMOCPOLICY     enmPolicy;          /**< @see GMMR0InitialReservation */
+    GMMPRIORITY     enmPriority;        /**< @see GMMR0InitialReservation */
+} GMMINITIALRESERVATIONREQ;
+/** Pointer to a GMMR0InitialReservationReq / VMMR0_DO_GMM_INITIAL_RESERVATION request buffer. */
+typedef GMMINITIALRESERVATIONREQ *PGMMINITIALRESERVATIONREQ;
+
+GMMR0DECL(int)  GMMR0InitialReservationReq(PVM pVM, PGMMINITIALRESERVATIONREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0UpdateReservationReq / VMMR0_DO_GMM_UPDATE_RESERVATION.
+ * @see GMMR0UpdateReservation
+ */
+typedef struct GMMUPDATERESERVATIONREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    uint64_t        cBasePages;         /**< @see GMMR0UpdateReservation */
+    uint32_t        cShadowPages;       /**< @see GMMR0UpdateReservation */
+    uint32_t        cFixedPages;        /**< @see GMMR0UpdateReservation */
+} GMMUPDATERESERVATIONREQ;
+/** Pointer to a GMMR0InitialReservationReq / VMMR0_DO_GMM_INITIAL_RESERVATION request buffer. */
+typedef GMMUPDATERESERVATIONREQ *PGMMUPDATERESERVATIONREQ;
+
+GMMR0DECL(int)  GMMR0UpdateReservationReq(PVM pVM, PGMMUPDATERESERVATIONREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0AllocatePagesReq / VMMR0_DO_GMM_ALLOCATE_PAGES.
+ * @see GMMR0AllocatePages.
+ */
+typedef struct GMMALLOCATEPAGESREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The account to charge the allocation to. */
+    GMMACCOUNT      enmAccount;
+    /** The number of pages to allocate. */
+    uint32_t        cPages;
+    /** Array of page descriptors. */
+    GMMPAGEDESC     aPages[1];
+} GMMALLOCATEPAGESREQ;
+/** Pointer to a GMMR0AllocatePagesReq / VMMR0_DO_GMM_ALLOCATE_PAGES request buffer. */
+typedef GMMALLOCATEPAGESREQ *PGMMALLOCATEPAGESREQ;
+
+GMMR0DECL(int)  GMMR0AllocatePagesReq(PVM pVM, PGMMALLOCATEPAGESREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0FreePagesReq / VMMR0_DO_GMM_FREE_PAGES.
+ * @see GMMR0FreePages.
+ */
+typedef struct GMMFREEPAGESREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The account this relates to. */
+    GMMACCOUNT      enmAccount;
+    /** The number of pages to free. */
+    uint32_t        cPages;
+    /** Array of free page descriptors. */
+    GMMFREEPAGEDESC aPages[1];
+} GMMFREEPAGESREQ;
+/** Pointer to a GMMR0FreePagesReq / VMMR0_DO_GMM_FREE_PAGES request buffer. */
+typedef GMMFREEPAGESREQ *PGMMFREEPAGESREQ;
+
+GMMR0DECL(int)  GMMR0FreePagesReq(PVM pVM, PGMMFREEPAGESREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0BalloonedPagesReq / VMMR0_DO_GMM_BALLOONED_PAGES.
+ * @see GMMR0BalloonedPages.
+ */
+typedef struct GMMBALLOONEDPAGESREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The number of ballooned pages. */
+    uint32_t        cBalloonedPages;
+    /** The number of pages to free. */
+    uint32_t        cPagesToFree;
+    /** Array of free page descriptors. */
+    GMMFREEPAGEDESC aPages[1];
+} GMMBALLOONEDPAGESREQ;
+/** Pointer to a GMMR0BalloonedPagesReq / VMMR0_DO_GMM_BALLOONED_PAGES request buffer. */
+typedef GMMBALLOONEDPAGESREQ *PGMMBALLOONEDPAGESREQ;
+
+GMMR0DECL(int)  GMMR0BalloonedPagesReq(PVM pVM, PGMMBALLOONEDPAGESREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0FreeMapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK.
+ * @see GMMR0FreeMapUnmapChunk
+ */
+typedef struct GMMMAPUNMAPCHUNKREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The chunk to map, UINT32_MAX if unmap only. (IN) */
+    uint32_t        idChunkMap;
+    /** The chunk to unmap, UINT32_MAX if map only. (IN) */
+    uint32_t        idChunkUnmap;
+    /** Where the mapping address is returned. (OUT) */
+    RTR3PTR         pvR3;
+} GMMMAPUNMAPCHUNKREQ;
+/** Pointer to a GMMR0FreeMapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK request buffer. */
+typedef GMMMAPUNMAPCHUNKREQ *PGMMMAPUNMAPCHUNKREQ;
+
+GMMR0DECL(int)  GMMR0FreeMapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq);
 
 
 /** @} */

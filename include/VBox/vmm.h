@@ -374,10 +374,17 @@ typedef enum VMMR0OPERATION
 
     /** Call PGMR0PhysAllocateHandyPages(). */
     VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES,
+
+    /** Call GMMR0InitialReservation(). */
+    VMMR0_DO_GMM_INITIAL_RESERVATION,
+    /** Call GMMR0UpdateReservation(). */
+    VMMR0_DO_GMM_UPDATE_RESERVATION,
     /** Call GMMR0AllocatePages(). */
     VMMR0_DO_GMM_ALLOCATE_PAGES,
     /** Call GMMR0FreePages(). */
     VMMR0_DO_GMM_FREE_PAGES,
+    /** Call GMMR0BalloonedPages(). */
+    VMMR0_DO_GMM_BALLOONED_PAGES,
     /** Call GMMR0MapUnmapChunk(). */
     VMMR0_DO_GMM_MAP_UNMAP_CHUNK,
     /** Call GMMR0SeedChunk(). */
