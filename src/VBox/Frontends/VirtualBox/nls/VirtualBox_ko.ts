@@ -147,8 +147,7 @@
     </message>
     <message>
         <source>Ignore</source>
-        <translation>&lt;qt&gt;오디오 출력 드라이버를 제어합니다. &lt;b&gt;빈 오디오 드라이버&lt;/b&gt;를 선택하면
-게스트 운영 체제에서는 사운드 카드를 볼 수 있지만 모든 요청이 무시됩니다.&lt;/qt&gt;</translation>
+        <translation type="unfinished">무시</translation>
     </message>
 </context>
 <context>
@@ -318,7 +317,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation>취소(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -891,7 +890,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation>취소(&amp;C)</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3187,7 +3186,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation>취소(&amp;C)</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3412,7 +3411,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation>취소(&amp;C)</translation>
     </message>
 </context>
 <context>
