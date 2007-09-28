@@ -1680,7 +1680,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
         LogRel(("AC97: WARNING: Unable to open PCM IN!\n"));
     if (!s->voice_mc)
         LogRel(("AC97: WARNING: Unable to open PCM MC!\n"));
-#endif 
+#endif
     if (!s->voice_po)
         LogRel(("AC97: WARNING: Unable to open PCM OUT!\n"));
 
