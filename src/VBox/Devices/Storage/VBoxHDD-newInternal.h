@@ -31,6 +31,15 @@ typedef struct VBOXHDDBACKEND
     uint32_t cbSize;
 
     /**
+     * Check if an file is valid for the backend.
+     *
+     * @returns VBox status code.
+     * @param   pszFilename     Name of the image file to open. Guaranteed to be available and
+     *                          unchanged during the lifetime of this image.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename));
+
+    /**
      * Open a disk image.
      *
      * @returns VBox status code.
@@ -284,5 +293,10 @@ typedef struct VBOXHDDBACKEND
 typedef DECLCALLBACK(int) VBOXHDDFORMATLOAD(PVBOXHDDBACKEND pBackendTable);
 typedef VBOXHDDFORMATLOAD *PFNVBOXHDDFORMATLOAD;
 #define VBOX_HDDFORMAT_LOAD_NAME "VBoxHDDFormatLoad"
+
+/** The prefix to identify Storage Plugins. */
+#define VBOX_HDDFORMAT_PLUGIN_PREFIX "VBoxHDD"
+/** The size of the prefix excluding the '\0' terminator. */
+#define VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH (sizeof(VBOX_HDDFORMAT_PLUGIN_PREFIX)-1)
 
 #endif
