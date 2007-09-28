@@ -342,7 +342,7 @@ static void voice_set_active (AC97LinkState *s, int bm_index, int on)
     switch (bm_index)
     {
     case PI_INDEX: AUD_set_active_in (s->voice_pi, on); break;
-    case PO_INDEX: AUD_set_active_out(s->voice_po, on); break;  
+    case PO_INDEX: AUD_set_active_out(s->voice_po, on); break;
     case MC_INDEX: AUD_set_active_in (s->voice_mc, on); break;
     default:       AssertFailed ();
                    break;
