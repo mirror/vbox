@@ -1856,22 +1856,9 @@ typedef struct PGM
      * an intermediary.
      *
      * The size of this array is important, see pgmPhysEnsureHandyPage for details.
-     * (The current size of 32 pages, means 128 KB of memory.)
+     * (The current size of 32 pages, means 128 KB of handy memory.)
      */
-    struct
-    {
-        /** The host physical address before pgmPhysAllocPage uses it,
-         * and the guest physical address afterwards.
-         * This is NIL_RTHCPHYS if the array entry isn't valid.
-         * ASSUMES: sizeof(RTHCPHYS) >= sizeof(RTHCPHYS). */
-        RTHCPHYS                    HCPhysGCPhys;
-        /** The Page ID.
-         * This is NIL_GMM_PAGEID if the array entry isn't valid. */
-        uint32_t                    idPage;
-        /** The Page ID of the shared page that pgmPageAllocPage replaced.
-         * This is NIL_GMM_PAGEID if no shared page was replaced. */
-        uint32_t                    idSharedPage;
-    }                               aHandyPages[32];
+    GMMPAGEDESC                     aHandyPages[32];
 
     /** @name Release Statistics
      * @{ */
