@@ -317,7 +317,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소(&amp;C)</translation>
+        <translation>취소</translation>
     </message>
 </context>
 <context>
@@ -890,7 +890,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소(&amp;C)</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>Cancel dialog</source>
@@ -3186,7 +3186,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소(&amp;C)</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <source>Details of %1 (%2)</source>
@@ -3411,7 +3411,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소(&amp;C)</translation>
+        <translation>취소</translation>
     </message>
 </context>
 <context>
