@@ -803,18 +803,32 @@
 
 
 /** @def RT_OFFSETOF
- * Our own special offsetof() variant.
+ * Our own special offsetof() variant, returns a signed result.
  *
  * This differs from the usual offsetof() in that it's not relying on builtin
  * compiler stuff and thus can use variables in arrays the structure may
  * contain. If in this usful to determin the sizes of structures ending
  * with a variable length field.
  *
- * @returns offset into the structure of the specified member.
+ * @returns offset into the structure of the specified member. signed.
  * @param   type    Structure type.
  * @param   member  Member.
  */
 #define RT_OFFSETOF(type, member)   ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
+
+/** @def RT_UOFFSETOF
+ * Our own special offsetof() variant, returns an unsigned result.
+ *
+ * This differs from the usual offsetof() in that it's not relying on builtin
+ * compiler stuff and thus can use variables in arrays the structure may
+ * contain. If in this usful to determin the sizes of structures ending
+ * with a variable length field.
+ *
+ * @returns offset into the structure of the specified member. unsigned.
+ * @param   type    Structure type.
+ * @param   member  Member.
+ */
+#define RT_UOFFSETOF(type, member)   ( (uintptr_t)&( ((type *)(void *)0)->member) )
 
 /** @def RT_SIZEOFMEMB
  * Get the size of a structure member.
