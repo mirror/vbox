@@ -253,6 +253,12 @@
           <xsd:attribute name="path" type="TLocalFile" use="required"/>
         </xsd:complexType>
       </xsd:element>
+      <xsd:element name="CustomHardDisk">
+        <xsd:complexType>
+           <xsd:attribute name="location" type="TLocalFile" use="required"/>
+           <xsd:attribute name="format" type="xsd:string" use="required"/>
+        </xsd:complexType>
+      </xsd:element>
     </xsd:choice>
     <xsd:element name="DiffHardDisk" type="TDiffHardDisk" minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>

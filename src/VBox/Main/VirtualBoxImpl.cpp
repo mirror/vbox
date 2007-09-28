@@ -947,6 +947,14 @@ STDMETHODIMP VirtualBox::CreateHardDisk (HardDiskStorageType_T aStorageType,
             hardDisk = vmdk;
             break;
        }
+       case HardDiskStorageType_CustomHardDisk:
+       {
+            ComObjPtr <HCustomHardDisk> custom;
+            custom.createObject();
+            rc = custom->init (this, NULL, NULL);
+            hardDisk = custom;
+            break;
+       }
        default:
            AssertFailed();
     };
@@ -3598,6 +3606,14 @@ HRESULT VirtualBox::loadHardDisks (CFGNODE aNode)
                     rc = vmdk->init (this, NULL, hdNode, storageNode);
                     break;
                 }
+                CFGLDRGetChildNode (hdNode, "CustomHardDisk", 0, &storageNode);
+                if (storageNode)
+                {
+                    ComObjPtr <HCustomHardDisk> custom;
+                    custom.createObject();
+                    rc = custom->init (this, NULL, hdNode, storageNode);
+                    break;
+                }
 
                 /// @todo (dmik) later
 //                CFGLDRGetChildNode (hdNode, "PhysicalVolume", 0, &storageNode);
@@ -3854,6 +3870,13 @@ HRESULT VirtualBox::saveHardDisks (CFGNODE aNode)
             case HardDiskStorageType_VMDKImage:
             {
                 CFGLDRAppendChildNode (hdNode, "VMDKImage", &storageNode);
+                ComAssertBreak (storageNode, rc = E_FAIL);
+                rc = hd->saveSettings (hdNode, storageNode);
+                break;
+            }
+            case HardDiskStorageType_CustomHardDisk:
+            {
+                CFGLDRAppendChildNode (hdNode, "CustomHardDisk", &storageNode);
                 ComAssertBreak (storageNode, rc = E_FAIL);
                 rc = hd->saveSettings (hdNode, storageNode);
                 break;

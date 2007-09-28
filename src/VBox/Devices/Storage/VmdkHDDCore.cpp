@@ -3481,6 +3481,8 @@ VBOXHDDBACKEND g_VmdkBackend =
 {
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
+    /* pfnCheckIfValid */
+    NULL,
     /* pfnOpen */
     vmdkOpen,
     /* pfnCreate */
