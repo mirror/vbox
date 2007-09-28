@@ -312,7 +312,7 @@ static void update_sr (AC97LinkState *s, AC97BusMasterRegs *r, uint32_t new_sr)
         {
             event = 1;
             level = 1;
-        } 
+        }
         else if ((new_mask & SR_BCIS) && (r->cr & CR_IOCE))
         {
             event = 1;
