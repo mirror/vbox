@@ -199,6 +199,15 @@ VBOXDDU_DECL(int) VDCreate(const char *pszBackend, PFNVDERROR pfnError, void *pv
 VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk);
 
 /**
+ * Try to get the backend name which can use this image. 
+ *
+ * @returns VBox status code.
+ * @param   pszFilename     Name of the image file for which the backend is queried.
+ * @param   ppszFormat      Where to store the name of the plugin.
+ */
+VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat);
+
+/**
  * Opens an image file.
  *
  * The first opened image file in a HDD container must have a base image type,
