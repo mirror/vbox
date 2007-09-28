@@ -22,11 +22,11 @@
 #include <SDL.h>
 
 #include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 
-#include <stdlib.h>
 #include <signal.h>
 
 #ifdef VBOX_OPENGL
@@ -89,7 +89,7 @@ main(int argc, char **argv)
 
 #ifdef RT_OS_WINDOWS
     /* Default to DirectX if nothing else set. "windib" would be possible.  */
-    if (!getenv("SDL_VIDEODRIVER"))
+    if (!RTEnvGet("SDL_VIDEODRIVER"))
     {
         _putenv("SDL_VIDEODRIVER=directx");
     }
@@ -130,7 +130,7 @@ main(int argc, char **argv)
     RTPrintf("  Video memory in kilobytes:                   %d\n", videoInfo->video_mem);
     RTPrintf("  Optimal bpp mode:                            %d\n", videoInfo->vfmt->BitsPerPixel);
     char buf[256];
-    RTPrintf("Video driver SDL_VIDEODRIVER / active:         %s/%s\n", getenv("SDL_VIDEODRIVER"),
+    RTPrintf("Video driver SDL_VIDEODRIVER / active:         %s/%s\n", RTEnvGet("SDL_VIDEODRIVER"),
                                                                        SDL_VideoDriverName(buf, sizeof(buf)));
 
     RTPrintf("\n"

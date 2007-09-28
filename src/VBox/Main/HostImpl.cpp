@@ -50,7 +50,6 @@
 #endif /* RT_OS_WINDOWS */
 
 
-
 #include "HostImpl.h"
 #include "HostDVDDriveImpl.h"
 #include "HostFloppyDriveImpl.h"
@@ -76,6 +75,7 @@
 #include <iprt/system.h>
 #include <iprt/time.h>
 #include <iprt/param.h>
+#include <iprt/env.h>
 
 #include <stdio.h>
 
@@ -207,9 +207,9 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     // API to parse it) for CDROM devices. Ok, let's start!
 
     {
-        if (getenv("VBOX_CDROM"))
+        if (RTEnvGet("VBOX_CDROM"))
         {
-            char *cdromEnv = strdupa(getenv("VBOX_CDROM"));
+            char *cdromEnv = strdupa(RTEnvGet("VBOX_CDROM"));
             char *cdromDrive;
             cdromDrive = strtok(cdromEnv, ":");
             while (cdromDrive)
@@ -313,9 +313,9 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     // variable and skip the detection.
 
     {
-        if (getenv("VBOX_FLOPPY"))
+        if (RTEnvGet("VBOX_FLOPPY"))
         {
-            char *floppyEnv = getenv("VBOX_FLOPPY");
+            char *floppyEnv = strdupa(RTEnvGet("VBOX_FLOPPY"));
             char *floppyDrive;
             floppyDrive = strtok(floppyEnv, ":");
             while (floppyDrive)

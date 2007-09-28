@@ -43,6 +43,10 @@
 #include <qlayout.h>
 #include <qvbox.h>
 
+#ifdef Q_WS_X11
+#include <iprt/env.h>
+#endif
+
 
 // VBoxVMDetailsView class
 ////////////////////////////////////////////////////////////////////////////////
@@ -863,7 +867,7 @@ void VBoxSelectorWnd::vmStart()
 #if defined (Q_WS_X11)
     /* make sure the VM process will start on the same display as the Selector */
     {
-        const char *display = getenv ("DISPLAY");
+        const char *display = RTEnvGet ("DISPLAY");
         if (display)
             env.sprintf ("DISPLAY=%s", display);
     }
