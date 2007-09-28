@@ -51,12 +51,11 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
+#include <iprt/env.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
-
-#include <stdlib.h> /* getenv */
 
 
 /*******************************************************************************
@@ -409,7 +408,7 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
             /*
              * If executing in fake suplib mode disable RR3 and RR0 in the config.
              */
-            const char *psz = getenv("VBOX_SUPLIB_FAKE");
+            const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
             if (psz && !strcmp(psz, "fake"))
             {
                 CFGMR3RemoveValue(CFGMR3GetRoot(pVM), "RawR3Enabled");
@@ -656,7 +655,7 @@ static int vmR3InitRing0(PVM pVM)
      * Check for FAKE suplib mode.
      */
     int rc = VINF_SUCCESS;
-    const char *psz = getenv("VBOX_SUPLIB_FAKE");
+    const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
     if (!psz || strcmp(psz, "fake"))
     {
         /*
@@ -688,7 +687,7 @@ static int vmR3InitGC(PVM pVM)
      * Check for FAKE suplib mode.
      */
     int rc = VINF_SUCCESS;
-    const char *psz = getenv("VBOX_SUPLIB_FAKE");
+    const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
     if (!psz || strcmp(psz, "fake"))
     {
         /*
