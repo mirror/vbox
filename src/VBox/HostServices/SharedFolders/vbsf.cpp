@@ -821,11 +821,11 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         /** r=bird: This is likely to create race conditions.
          * What is a file now can be a directory when you open it. */
         rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
-        Log2(("RTPathQueryInfo returned %Vrc\n", rc));
+        LogFlow(("RTPathQueryInfo returned %Vrc\n", rc));
 
         if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_LOOKUP))
         {
-            Log2(("SHFL_CF_LOOKUP\n"));
+            LogFlow(("SHFL_CF_LOOKUP\n"));
             /* Client just wants to know if the object exists. */
             switch (rc)
             {
@@ -922,7 +922,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         else 
         if (rc == VERR_FILE_NOT_FOUND)
         {
-            Log2(("pParms->CreateFlags = %x\n", pParms->CreateFlags));
+            LogFlow(("pParms->CreateFlags = %x\n", pParms->CreateFlags));
 
             rc = VINF_SUCCESS;
 
@@ -1575,7 +1575,7 @@ int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
 
     rc = RTFileLock(pHandle->file.Handle, fRTLock, offset, length);
     if (rc != VINF_SUCCESS)
-        Log(("RTFileUnlock %RTfile %RX64 %RX64 failed with %Rrc\n", pHandle->file.Handle, offset, length, rc));
+        Log(("RTFileLock %RTfile %RX64 %RX64 failed with %Rrc\n", pHandle->file.Handle, offset, length, rc));
 
     return rc;
 }
