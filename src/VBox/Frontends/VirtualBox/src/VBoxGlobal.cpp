@@ -2055,6 +2055,8 @@ void VBoxGlobal::languageChange()
         tr ("iSCSI", "DiskStorageType");
     diskStorageTypes [CEnums::VMDKImage] =
         tr ("VMDK Image", "DiskStorageType");
+    diskStorageTypes [CEnums::CustomHardDisk] =
+        tr ("Custom Hard Disk", "DiskStorageType");
 
     vrdpAuthTypes [CEnums::VRDPAuthNull] =
         tr ("Null", "VRDPAuthType");
