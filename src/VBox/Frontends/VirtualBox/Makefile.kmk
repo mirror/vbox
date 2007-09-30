@@ -63,8 +63,6 @@ INSTALLS = VirtualBox.nls
 VBoxKeyboard_TEMPLATE = VBOXR3
 VBoxKeyboard_SOURCES  = \
 	src/linux/keyboard.c
-VBoxKeyboard_INCS.freebsd = \
-	/usr/local/include ## @todo should probably be in the VBOXR3 template...
 
 
 #

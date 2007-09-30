@@ -1654,6 +1654,10 @@ TEMPLATE_VBOXR3EXE_INCS               += $(VBOX_PATH_MACOSX_SDK_INCS)
  else ifeq ($(filter-out freebsd netbsd openbsd,$(BUILD_TARGET)),)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
+TEMPLATE_VBOXR3EXE_INCS               += \
+	/usr/include \
+	/usr/X11R6/include \
+	/usr/local/include
  else ifeq ($(BUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
@@ -2063,6 +2067,12 @@ else # the gcc guys:
 	$(LIB_PTHREAD)
   TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
 	$(VBOX_LIBPATH_X11)
+  ifeq ($(BUILD_TARGET),freebsd)
+   TEMPLATE_VBOXQTGUIEXE_INCS += \
+	/usr/include \
+	/usr/X11R6/include \
+	/usr/local/include
+  endif
   ifeq ($(BUILD_TARGET),solaris)
    TEMPLATE_VBOXQTGUIEXE_LIBS += \
      	rt socket nsl
