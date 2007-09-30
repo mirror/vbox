@@ -1157,8 +1157,15 @@ else ifeq ($(BUILD_TARGET),darwin)
  endif
 else
  ifndef QTDIR
-  # This is a pretty safe shot.
-  export QTDIR := $(wildcard /usr/share/qt3)
+  ifdef VBOX_WITH_QTGUI
+   QTDIR := $(wildcard /usr/share/qt3)
+   ifeq ($(QTDIR),)
+    QTDIR := $(patsubst %/bin/moc,%,$(firstword $(wildcard /usr/bin/moc /usr/local/bin/moc /usr/X11R6/bin/moc)))
+   endif
+   ifneq ($(QTDIR),)
+    export QTDIR
+   endif
+  endif
  endif
 endif
 ifndef VBOX_PATH_QT
