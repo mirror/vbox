@@ -639,6 +639,7 @@ private:
     ULONG64 mActualSize;
 
     Bstr mLocation;
+    Bstr mLocationFull;
     Bstr mFormat;
 
     PVBOXHDD mContainer;

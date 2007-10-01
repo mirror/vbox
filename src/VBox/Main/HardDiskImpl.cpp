@@ -4303,26 +4303,41 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
         Bstr location;
         CFGLDRQueryBSTR (aCustomNode, "location", location.asOutParam());
 
-        /* format (required) */
-        Bstr format;
-        char *pszFormat;
-        CFGLDRQueryBSTR (aCustomNode, "format", format.asOutParam());
-        vrc = RTStrUcs2ToUtf8(&pszFormat, format);
-
-        /* initialize the container */
-        vrc = VDCreate (pszFormat, VDError, this, &mContainer);
-        ComAssertRCRet (vrc, E_FAIL);
-
-        RTStrFree(pszFormat);
-
         rc = setLocation (location);
         CheckComRCBreakRC (rc);
 
-        mFormat = format;
+        LogFlowThisFunc (("'%ls'\n", mLocationFull.raw()));
+
+        /* format (required) */
+        CFGLDRQueryBSTR (aCustomNode, "format", mFormat.asOutParam());
+
+        /* initialize the container */
+        vrc = VDCreate (Utf8Str (mFormat), VDError, this, &mContainer);
+        if (VBOX_FAILURE (vrc))
+        {
+            AssertRC (vrc);
+            if (mLastVDError.isEmpty())
+                rc = setError (E_FAIL,
+                    tr ("Unknown format '%ls' of the custom "
+                        "hard disk '%ls' (%Vrc)"),
+                    mFormat.raw(), toString().raw(), vrc);
+            else
+                rc = setErrorBstr (E_FAIL, mLastVDError);
+            break;
+        }
 
         /* load basic settings and children */
         rc = loadSettings (aHDNode);
         CheckComRCBreakRC (rc);
+
+        if (mType != HardDiskType_WritethroughHardDisk)
+        {
+            rc = setError (E_FAIL,
+                tr ("Currently, non-Writethrough custom hard disks "
+                    "are not allowed ('%ls')"),
+                toString().raw());
+            break;
+        }
 
         mState = Created;
         mRegistered = TRUE;
@@ -4383,34 +4398,31 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
 
         if (aLocation && *aLocation)
         {
-            int vrc;
-            char *pszLocation = NULL;
-            char *pszFormat = NULL;
-
             mRegistered = aRegistered;
             mState = Created;
 
-            vrc = RTStrUcs2ToUtf8(&pszLocation, aLocation);
+            char *pszFormat = NULL;
+
+            int vrc = VDGetFormat (Utf8Str (mLocation), &pszFormat);
             if (VBOX_FAILURE(vrc))
             {
-                rc = E_FAIL;
+                AssertRC (vrc);
+                rc = setError (E_FAIL,
+                    tr ("Cannot recognize the format of the custom "
+                        "hard disk '%ls' (%Vrc)"),
+                    toString().raw(), vrc);
+                break;
             }
-
-            vrc = VDGetFormat(pszLocation, &pszFormat);
-            if (VBOX_FAILURE(vrc))
-            {
-                if (vrc == VERR_NOT_SUPPORTED)
-                {
-                    /* @todo: show a understandable error string. */
-                }
-                rc = E_FAIL;
-            }
-
-            mFormat = Bstr(pszFormat);
 
             /* Create the corresponding container. */
             vrc = VDCreate (pszFormat, VDError, this, &mContainer);
-            ComAssertRCRet (vrc, E_FAIL);
+
+            RTStrFree (pszFormat);
+
+            /* the format has been already checked for presence at this point */
+            ComAssertRCBreak (vrc, rc = E_FAIL);
+
+            mFormat = Bstr (pszFormat);
 
             /* Call queryInformation() anyway (even if it will block), because
              * it is the only way to get the UUID of the existing VDI and
@@ -4520,7 +4532,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(Location) (BSTR *aLocation)
     AutoLock alock (this);
     CHECK_READY();
 
-    mLocation.cloneTo (aLocation);
+    mLocationFull.cloneTo (aLocation);
     return S_OK;
 }
 
@@ -4535,6 +4547,10 @@ STDMETHODIMP HCustomHardDisk::COMSETTER(Location) (INPTR BSTR aLocation)
             toString().raw());
 
     CHECK_BUSY_AND_READERS();
+
+    /// @todo currently, we assume that location is always a file path for
+    /// all custom hard disks. This is not generally correct, and needs to be
+    /// parametrized in the VD plugin interface.
 
     /* append the default path if only a name is given */
     Bstr path = aLocation;
@@ -4630,8 +4646,8 @@ HRESULT HCustomHardDisk::trySetRegistered (BOOL aRegistered)
     {
         if (mState == NotCreated)
             return setError (E_FAIL,
-                tr ("The storage location '%ls' is not yet created for this hard disk"),
-                mLocation.raw());
+                tr ("Storage location '%ls' is not yet created for this hard disk"),
+                mLocationFull.raw());
     }
     else
     {
@@ -4690,7 +4706,7 @@ HRESULT HCustomHardDisk::getAccessible (Bstr &aAccessError)
     }
 
     aAccessError = Utf8StrFmt ("Hard disk '%ls' is not yet created",
-                               mLocation.raw());
+                               mLocationFull.raw());
     return S_OK;
 }
 
@@ -4709,9 +4725,11 @@ HRESULT HCustomHardDisk::saveSettings (CFGNODE aHDNode, CFGNODE aStorageNode)
     CHECK_READY();
 
     /* location (required) */
-    CFGLDRSetBSTR (aStorageNode, "location", mLocation);
+    CFGLDRSetBSTR (aStorageNode, "location", mLocationFull);
 
+    /* format (required) */
     CFGLDRSetBSTR (aStorageNode, "format", mFormat);
+
     /* save basic settings and children */
     return HardDisk::saveSettings (aHDNode);
 }
@@ -4727,12 +4745,16 @@ Bstr HCustomHardDisk::toString (bool aShort /* = false */)
 {
     AutoLock alock (this);
 
+    /// @todo currently, we assume that location is always a file path for
+    /// all custom hard disks. This is not generally correct, and needs to be
+    /// parametrized in the VD plugin interface.
+
     if (!aShort)
-        return mLocation;
+        return mLocationFull;
     else
     {
-        Utf8Str fname = mLocation;
-        return fname.mutableRaw();
+        Utf8Str fname = mLocationFull;
+        return RTPathFilename (fname.mutableRaw());
     }
 }
 
@@ -4785,13 +4807,27 @@ HCustomHardDisk::createDiffImage (const Guid &aId, const Utf8Str &aTargetPath,
  */
 HRESULT HCustomHardDisk::setLocation (const BSTR aLocation)
 {
+    /// @todo currently, we assume that location is always a file path for
+    /// all custom hard disks. This is not generally correct, and needs to be
+    /// parametrized in the VD plugin interface.
+
     if (aLocation && *aLocation)
     {
+        /* get the full file name */
+        char locationFull [RTPATH_MAX];
+        int vrc = RTPathAbsEx (mVirtualBox->homeDir(), Utf8Str (aLocation),
+                               locationFull, sizeof (locationFull));
+        if (VBOX_FAILURE (vrc))
+            return setError (E_FAIL,
+                tr ("Invalid hard disk location '%ls' (%Vrc)"), aLocation, vrc);
+
         mLocation = aLocation;
+        mLocationFull = locationFull;
     }
     else
     {
         mLocation.setNull();
+        mLocationFull.setNull();
     }
 
     return S_OK;
@@ -4833,7 +4869,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
     /* VBoxVHDD management interface needs to be optimized: we're opening a
      * file three times in a raw to get three bits of information. */
 
-    Utf8Str location = mLocation;
+    Utf8Str location = mLocationFull;
     Bstr errMsg;
 
     /* reset any previous error report from VDError() */
@@ -4941,7 +4977,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
     {
         LogWarningFunc (("'%ls' is not accessible "
                          "(rc=%08X, vrc=%Vrc, errMsg='%ls')\n",
-                         mLocation.raw(), rc, vrc, errMsg.raw()));
+                         mLocationFull.raw(), rc, vrc, errMsg.raw()));
 
         if (aAccessError)
         {
@@ -4952,7 +4988,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
             else if (VBOX_FAILURE (vrc))
                 *aAccessError = Utf8StrFmt (
                     tr ("Could not access hard disk '%ls' (%Vrc)"),
-                        mLocation.raw(), vrc);
+                        mLocationFull.raw(), vrc);
         }
 
         /* downgrade to not accessible */
