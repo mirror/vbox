@@ -47,10 +47,12 @@ __BEGIN_DECLS
 #define GMM_CHUNK_SHIFT                 20
 /** The allocation chunk size. */
 #define GMM_CHUNK_SIZE                  (1U << GMM_CHUNK_SHIFT)
+/** The allocation chunk size in pages. */
+#define GMM_CHUNK_NUM_PAGES             (1U << (GMM_CHUNK_SHIFT - PAGE_SHIFT))
 /** The shift factor for converting a page id into a chunk id. */
 #define GMM_CHUNKID_SHIFT               (GMM_CHUNK_SHIFT - PAGE_SHIFT)
 /** The last valid Chunk ID value. */
-#define GMM_CHUNK_LAST                  (GMM_PAGEID_LAST >> GMM_CHUNKID_SHIFT)
+#define GMM_CHUNKID_LAST                (GMM_PAGEID_LAST >> GMM_CHUNKID_SHIFT)
 /** The last valid Page ID value.
  * The current limit is 2^28 - 1, or almost 1TB if you like.
  * The constraints are currently dictated by PGMPAGE. */
@@ -160,13 +162,13 @@ typedef struct GMMPAGEDESC
     /** The physical address of the page.
      *
      * @input   GMMR0AllocateHandyPages expects the guest physical address
-     *          to update the GMMPAGE structure with. Pass GMM_GCPHYS_UNSHARABLE
+     *          to update the GMMPAGE structure with. Pass GMM_GCPHYS_UNSHAREABLE
      *          when appropriate and NIL_RTHCPHYS when the page wasn't used
      *          for any specific guest address.
      *
      *          GMMR0AllocatePage expects the guest physical address to put in
      *          the GMMPAGE structure for the page it allocates for this entry.
-     *          Pass NIL_RTHCPHYS and GMM_GCPHYS_UNSHARABLE as above.
+     *          Pass NIL_RTHCPHYS and GMM_GCPHYS_UNSHAREABLE as above.
      *
      * @output  The host physical address of the allocated page.
      *          NIL_RTHCPHYS on allocation failure.
@@ -205,7 +207,7 @@ AssertCompileSize(GMMPAGEDESC, 16);
 typedef GMMPAGEDESC *PGMMPAGEDESC;
 
 /** GMMPAGEDESC::HCPhysGCPhys value that indicates that the page is shared. */
-#define GMM_GCPHYS_UNSHARABLE   (RTHCPHYS)(0xfffffff0)
+#define GMM_GCPHYS_UNSHAREABLE  (RTHCPHYS)(0xfffffff0)
 
 GMMR0DECL(int)  GMMR0Init(void);
 GMMR0DECL(void) GMMR0Term(void);
