@@ -1063,6 +1063,9 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
     }
     storageTypes[] =
     {
+        /* try the plugin format first if there is no extension match */
+        { HardDiskStorageType_CustomHardDisk, NULL },
+        /* then try the rest */
         { HardDiskStorageType_VMDKImage, ".vmdk" },
         { HardDiskStorageType_VirtualDiskImage, ".vdi" },
     };
@@ -1075,7 +1078,8 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
 
     for (size_t i = 0; i < ELEMENTS (storageTypes); ++ i)
     {
-        if (RTPathCompare (ext, storageTypes [i].ext) == 0)
+        if (storageTypes [i].ext &&
+            RTPathCompare (ext, storageTypes [i].ext) == 0)
         {
             first = i;
             haveFirst = true;
@@ -1087,20 +1091,6 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
 
     HRESULT firstRC = S_OK;
     com::ErrorInfoKeeper firstErr (true /* aIsNull */);
-
-    if (haveFirst == false)
-    {
-        /* Try if a plugin supports this format. */
-        ComObjPtr <HCustomHardDisk> obj;
-        obj.createObject();
-        rc = obj->init (aVirtualBox, NULL, aLocation,
-                        FALSE /* aRegistered */);
-        if (SUCCEEDED (rc))
-        {
-            hardDisk = obj;
-            return rc;
-        }
-    }
 
     for (size_t i = 0; i < ELEMENTS (storageTypes); ++ i)
     {
@@ -1123,6 +1113,19 @@ HRESULT HardDisk::openHardDisk (VirtualBox *aVirtualBox, INPTR BSTR aLocation,
             case HardDiskStorageType_VMDKImage:
             {
                 ComObjPtr <HVMDKImage> obj;
+                obj.createObject();
+                rc = obj->init (aVirtualBox, NULL, aLocation,
+                                FALSE /* aRegistered */);
+                if (SUCCEEDED (rc))
+                {
+                    hardDisk = obj;
+                    return rc;
+                }
+                break;
+            }
+            case HardDiskStorageType_CustomHardDisk:
+            {
+                ComObjPtr <HCustomHardDisk> obj;
                 obj.createObject();
                 rc = obj->init (aVirtualBox, NULL, aLocation,
                                 FALSE /* aRegistered */);
@@ -1593,7 +1596,7 @@ STDMETHODIMP HVirtualDiskImage::COMSETTER(FilePath) (INPTR BSTR aFilePath)
 
     CHECK_BUSY_AND_READERS();
 
-    // append the default path if only a name is given
+    /* append the default path if only a name is given */
     Bstr path = aFilePath;
     if (aFilePath && *aFilePath)
     {
@@ -4346,7 +4349,7 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
  *  @param aLocation    Location of the virtual disk, or @c NULL to create an
  *                      image-less object.
  *  @param aRegistered  Whether to mark this disk as registered or not
- *                      (ignored when @a aFilePath is @c NULL, assuming @c FALSE)
+ *                      (ignored when @a aLocation is @c NULL, assuming @c FALSE)
  */
 HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
                                const BSTR aLocation, BOOL aRegistered /* = FALSE */)
@@ -4506,7 +4509,7 @@ STDMETHODIMP HCustomHardDisk::COMGETTER(ActualSize) (ULONG64 *aActualSize)
     return S_OK;
 }
 
-// IVirtualDiskImage properties
+// ICustomHardDisk properties
 ////////////////////////////////////////////////////////////////////////////////
 
 STDMETHODIMP HCustomHardDisk::COMGETTER(Location) (BSTR *aLocation)
@@ -4686,7 +4689,7 @@ HRESULT HCustomHardDisk::getAccessible (Bstr &aAccessError)
         return queryInformation (&aAccessError);
     }
 
-    aAccessError = Utf8StrFmt ("Hard disk location '%ls' is not yet created",
+    aAccessError = Utf8StrFmt ("Hard disk '%ls' is not yet created",
                                mLocation.raw());
     return S_OK;
 }
@@ -4948,7 +4951,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
                 *aAccessError = mLastVDError;
             else if (VBOX_FAILURE (vrc))
                 *aAccessError = Utf8StrFmt (
-                    tr ("Could not access hard disk image '%ls' (%Vrc)"),
+                    tr ("Could not access hard disk '%ls' (%Vrc)"),
                         mLocation.raw(), vrc);
         }
 
