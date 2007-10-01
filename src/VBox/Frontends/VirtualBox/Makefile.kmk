@@ -56,6 +56,13 @@ DLLS = VBoxKeyboard
 endif
 INSTALLS = VirtualBox.nls
 
+ifeq ($(BUILD_TARGET),os2)
+ INSTALLS += qt.dll
+ qt.dll_INST = $(INST_BIN)
+ qt.dll_SOURCES += \
+	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
+endif
+
 
 #
 # VBoxKeyboard - keyboard library for X11.
