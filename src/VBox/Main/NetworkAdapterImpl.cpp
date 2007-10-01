@@ -325,15 +325,36 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
              * Verify given MAC address
              */
             Utf8Str macAddressUtf = aMACAddress;
-            char *macAddressStr = (char*)macAddressUtf.raw();
+            char *macAddressStr = macAddressUtf.mutableRaw();
             int i = 0;
-            while ((i < 12) && macAddressStr && (rc == S_OK))
+            while ((i < 13) && macAddressStr && *macAddressStr && (rc == S_OK))
             {
                 char c = *macAddressStr;
+                /* strip any occurrence of colons in the string. */
+                if (c == ':')
+                {
+                    /* cannot use strcpy, as the areas do overlap. */
+                    /* remember that in this context
+                     * strlen(macAddressStr) == strlen(macAddressStr+1)+1 */
+                    memmove(macAddressStr, macAddressStr + 1,
+                            strlen(macAddressStr));
+                    continue;
+                }
+                /* canonicalize hex digits to capital letters */
+                if (c >= 'a' && c <= 'f')
+                {
+                    /** @todo the runtime lacks an ascii lower/upper conv */
+                    c &= 0xdf;
+                    *macAddressStr = c;
+                }
                 /* we only accept capital letters */
                 if (((c < '0') || (c > '9')) &&
                     ((c < 'A') || (c > 'F')))
                     rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
+                /* the second digit must be even for unicast addresses */
+                if ((i == 1) && (c & 1))
+                    rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
+                
                 macAddressStr++;
                 i++;
             }
@@ -345,7 +366,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
             {
                 mData.backup();
 
-                mData->mMACAddress = aMACAddress;
+                mData->mMACAddress = macAddressUtf;
                 emitChangeEvent = true;
             }
         }
@@ -924,7 +945,7 @@ STDMETHODIMP NetworkAdapter::Detach()
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  @note Locks this object for writing.
  */
 bool NetworkAdapter::rollback()
@@ -948,7 +969,7 @@ bool NetworkAdapter::rollback()
     return changed;
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object (also
  *  for writing) if there is one.
  */
@@ -976,7 +997,7 @@ void NetworkAdapter::commit()
     }
 }
 
-/** 
+/**
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
