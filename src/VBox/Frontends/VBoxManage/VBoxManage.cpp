@@ -333,6 +333,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-cableconnected<1-N> on|off]\n"
                  "                            [-nictrace<1-N> on|off]\n"
                  "                            [-nictracefile<1-N> <filename>]\n"
+                 "                            [-nicspeed<1-N> <kbps>]\n"
                  "                            [-hostifdev<1-N> none|<devicename>]\n"
                  "                            [-intnet<1-N> <network>]\n"
                  "                            [-macaddress<1-N> auto|<mac>]\n"
@@ -1226,6 +1227,26 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 Bstr traceFile;
                 nic->COMGETTER(TraceFile)(traceFile.asOutParam());
 
+                /* NIC type */
+                Utf8Str strNICType;
+                NetworkAdapterType NICType;
+                nic->COMGETTER(AdapterType)(&NICType);
+                switch (NICType) {
+                case NetworkAdapterType_NetworkAdapterAm79C970A:
+                    strNICType = "Am79C970A";
+                    break;
+                case NetworkAdapterType_NetworkAdapterAm79C973:
+                    strNICType = "Am79C973";
+                    break;
+                default:
+                    strNICType = "unknown";
+                    break;
+                }
+
+                /* reported line speed */
+                ULONG ulLineSpeed;
+                nic->COMGETTER(LineSpeed)(&ulLineSpeed);
+
                 if (details == VMINFO_MACHINEREADABLE)
                 {
                     RTPrintf("macaddress%d=\"%lS\"\n", currentNIC + 1, strMACAddress.raw());
@@ -1233,10 +1254,12 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     RTPrintf("nic%d=\"%s\"\n", currentNIC + 1, strAttachment.raw());
                 }
                 else
-                    RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS)\n",
+                    RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS), Type: %s, Reported speed: %d Mbps\n",
                              currentNIC + 1, strMACAddress.raw(), strAttachment.raw(),
                              fConnected ? "on" : "off",
-                             fTraceEnabled ? "on" : "off", traceFile.raw());
+                             fTraceEnabled ? "on" : "off", traceFile.raw(),
+                             strNICType.raw(),
+                             ulLineSpeed / 1000);
             }
         }
     }
@@ -3550,6 +3573,7 @@ static int handleModifyVM(int argc, char *argv[],
     std::vector <char *> cableconnected (NetworkAdapterCount, 0);
     std::vector <char *> nictrace (NetworkAdapterCount, 0);
     std::vector <char *> nictracefile (NetworkAdapterCount, 0);
+    std::vector <char *> nicspeed (NetworkAdapterCount, 0);
     std::vector <char *> hostifdev (NetworkAdapterCount, 0);
     std::vector <const char *> intnet (NetworkAdapterCount, 0);
 #ifdef RT_OS_LINUX
@@ -3851,6 +3875,18 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             }
             nictype[n - 1] = argv[i + 1];
+            i++;
+        }
+        else if (strncmp(argv[i], "-nicspeed", 9) == 0)
+        {
+            unsigned n = parseNum(&argv[i][9], NetworkAdapterCount, "NIC");
+            if (!n)
+                return 1;
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            nicspeed[n - 1] = argv[i + 1];
             i++;
         }
         else if (strncmp(argv[i], "-nic", 4) == 0)
@@ -4716,6 +4752,25 @@ static int handleModifyVM(int argc, char *argv[],
                 else
                 {
                     CHECK_ERROR_RET(nic, COMSETTER(MACAddress)(Bstr(macs[n])), 1);
+                }
+            }
+
+            /* something about the reported link speed? */
+            if (nicspeed[n])
+            {
+                uint32_t    u32LineSpeed;
+
+                u32LineSpeed = atoi(nicspeed[n]);
+
+                if (u32LineSpeed < 1000 || u32LineSpeed > 4000000) 
+                {
+                    errorArgument("Invalid -nicspeed%lu argument '%s'", n + 1, nicspeed[n]);
+                    rc = E_FAIL;
+                    break;
+                } 
+                else 
+                {
+                    CHECK_ERROR_RET(nic, COMSETTER(LineSpeed)(u32LineSpeed), 1);
                 }
             }
 
