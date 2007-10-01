@@ -1229,7 +1229,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
                 /* NIC type */
                 Utf8Str strNICType;
-                NetworkAdapterType NICType;
+                NetworkAdapterType_T NICType;
                 nic->COMGETTER(AdapterType)(&NICType);
                 switch (NICType) {
                 case NetworkAdapterType_NetworkAdapterAm79C970A:
