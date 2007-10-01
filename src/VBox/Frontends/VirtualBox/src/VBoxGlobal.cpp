@@ -1652,7 +1652,14 @@ bool VBoxGlobal::showVirtualBoxLicense()
 void VBoxGlobal::callRegistration()
 {
     /* Check if the automatic registration already passed */
-    if (virtualBox().GetExtraData (VBoxDefs::GUI_RegistrationTriesLeft) == "0")
+    QString regData = virtualBox().GetExtraData (VBoxDefs::GUI_RegistrationData);
+    if (regData.startsWith ("triesLeft="))
+    {
+        QString triesLeft = regData.section ("=", 1, 1);
+        if (triesLeft == "0")
+            return;
+    }
+    else if (!regData.isEmpty())
         return;
 
     /* Store the winid of main app wgt to ensure only one reg dlg running */
