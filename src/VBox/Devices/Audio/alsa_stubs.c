@@ -1,5 +1,4 @@
 #include <iprt/assert.h>
-#include <iprt/semaphore.h>
 #include <iprt/ldr.h>
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/log.h>
@@ -11,7 +10,6 @@
 
 #define VBOX_ALSA_LIB "libasound.so.2"
 
-static RTSEMMUTEX mutexAsound;
 static enum { NO = 0, YES, FAIL } isLibLoaded = NO;
 static RTLDRMOD hLibAsound = NULL;
 
@@ -34,20 +32,11 @@ int audioLoadAlsaLib(void)
         AssertMsgFailed(("isLibLoaded == %s\n", YES == isLibLoaded ? "YES" : "NO"));
         return YES == isLibLoaded ? VINF_SUCCESS : VERR_NOT_SUPPORTED;
     }
-    rc = RTSemMutexCreate(&mutexAsound);
+    isLibLoaded = FAIL;
+    rc = RTLdrLoad(VBOX_ALSA_LIB, &hLibAsound);
     if (RT_FAILURE(rc))
     {
-        LogFunc(("Failed to create mutex.\n"));
-        isLibLoaded = FAIL;
-    }
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTLdrLoad(VBOX_ALSA_LIB, &hLibAsound);
-        if (RT_FAILURE(rc))
-        {
-            LogFunc(("Failed to load library %s\n", VBOX_ALSA_LIB));
-            isLibLoaded = FAIL;
-        }
+        LogRelFunc(("Failed to load library %s\n", VBOX_ALSA_LIB));
     }
     if (RT_SUCCESS(rc))
     {
@@ -61,26 +50,28 @@ int audioLoadAlsaLib(void)
 extern rettype function signature; \
 rettype function signature \
 { \
-    static int isInitialised = 0; \
-    static rettype (*pFunc) signature = NULL; \
+    static rettype (*pfnFunc) signature = NULL; \
+    void *pfnResolvedFunc; \
     int rc; \
+    rettype rcFunc = retval; \
 \
-    if (0 != isInitialised) \
+    if (RT_LIKELY(NULL != pfnFunc)) \
     { \
-        return pFunc shortsig; \
+        return pfnFunc shortsig; \
     } \
     AssertReturn(YES == isLibLoaded, retval); \
-    rc = RTSemMutexRequest(mutexAsound, RT_INDEFINITE_WAIT); \
+    rc = RTLdrGetSymbol(hLibAsound, #function, &pfnResolvedFunc); \
     if (RT_SUCCESS(rc)) \
     { \
-        rc = RTLdrGetSymbol(hLibAsound, #function, (void **)&pFunc); \
+        Log2(("%s: resolving symbol on first call.\n", __PRETTY_FUNCTION__)); \
+        pfnFunc = (rettype (*) signature) pfnResolvedFunc; \
+        rcFunc = pfnFunc shortsig; \
     } \
-    if (RT_SUCCESS(rc)) \
+    else \
     { \
-        return pFunc shortsig; \
+        LogRelFunc(("failed to resolve symbol on first call, rc=%Rrc\n", rc)); \
     } \
-    LogFunc(("stub call failed, rc=%Rrc\n", rc)); \
-    return retval; \
+    return rcFunc; \
 } \
 
 
