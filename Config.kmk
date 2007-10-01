@@ -2558,8 +2558,10 @@ VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
  VBOX_SVN_REV_FALLBACK := $(patsubst %:,,  $Rev$  )
  VBOX_SVN_DEP          := $(wildcard $(PATH_ROOT)/.svn/entries)
- ifneq ($(shell $(SVN) --version > /dev/null 2>&1 || echo 'svn not installed'),)
-  VBOX_SVN_DEP         :=
+ ifneq ($(USERNAME),bird) # Wastes nearly half a second on windows, very annoying. TODO: $(which ).
+  ifneq ($(shell $(SVN) --version > /dev/null 2>&1 || echo 'svn not installed'),)
+   VBOX_SVN_DEP         :=
+  endif
  endif
 
 # Rule for generating a timestamp and updating the real thing on change.
