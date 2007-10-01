@@ -38,6 +38,8 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 #if defined (Q_WS_WIN32)
     hostkey = 0xA3; // VK_RCONTROL
 //    hostkey = 165; // VK_RMENU
+#elif defined (Q_WS_PM)
+    hostkey = VK_CTRL;
 #elif defined (Q_WS_X11)
     hostkey = 0xffe4; // XK_Control_R
 //    hostkey = 65514; // XK_Alt_R
@@ -55,7 +57,8 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     languageId  = QString::null;
 }
 
-VBoxGlobalSettingsData::VBoxGlobalSettingsData( const VBoxGlobalSettingsData &that ) {
+VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
+{
     hostkey = that.hostkey;
     autoCapture = that.autoCapture;
     guiFeatures = that.guiFeatures;
@@ -66,14 +69,13 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 {
 }
 
-bool VBoxGlobalSettingsData::operator==( const VBoxGlobalSettingsData &that ) const
+bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
-    return this == &that || (
-        hostkey == that.hostkey &&
-        autoCapture == that.autoCapture &&
-        guiFeatures == that.guiFeatures &&
-        languageId  == that.languageId
-    );
+    return this == &that ||
+        (hostkey == that.hostkey &&
+         autoCapture == that.autoCapture &&
+         guiFeatures == that.guiFeatures &&
+         languageId  == that.languageId);
 }
 
 /** @class VBoxGlobalSettings
@@ -252,6 +254,10 @@ void VBoxGlobalSettings::setPropertyPrivate (int index, const QString &value)
         Assert (ok);
         if (ok)
         {
+            /* The individual setter may have set a specific error */
+            if (!last_err.isNull())
+                return;
+
             last_err = QString::null;
             emit propertyChanged (gPropertyMap [index].publicName,
                                   gPropertyMap [index].name);

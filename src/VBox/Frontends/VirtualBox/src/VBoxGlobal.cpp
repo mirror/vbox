@@ -2137,8 +2137,8 @@ void VBoxGlobal::languageChange()
 
     detailReportTemplatesReady = false;
 
-#if defined (Q_WS_X11)
-    /* As X11 does not (to my knowledge) have functionality for providing
+#if defined (Q_WS_PM) || defined (Q_WS_X11)
+    /* As PM and X11 do not (to my knowledge) have functionality for providing
      * human readable key names, we keep a table of them, which must be
      * updated when the language is changed. */
     QIHotKeyEdit::languageChange();
