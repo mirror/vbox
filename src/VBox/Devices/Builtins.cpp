@@ -190,7 +190,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
-#if defined(RT_OS_L4) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_L4) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostInterface);
     if (VBOX_FAILURE(rc))
         return rc;

@@ -21,11 +21,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_TUN
+#include <VBox/log.h>
 #include <VBox/pdmdrv.h>
 
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
+#include <iprt/path.h>
 #ifdef ASYNC_NET
 # include <iprt/thread.h>
 # include <iprt/asm.h>
@@ -35,7 +37,20 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #ifdef RT_OS_SOLARIS
+# include <sys/stat.h>
+# include <sys/ethernet.h>
+# include <sys/sockio.h>
+# include <netinet/in.h>
+# include <netinet/in_systm.h>
+# include <netinet/ip.h>
+# include <netinet/ip_icmp.h>
+# include <netinet/udp.h>
+# include <netinet/tcp.h>
+# include <net/if.h>
+# include <stropts.h>
 # include <fcntl.h>
+# include <ctype.h>
+# include <stdlib.h>
 #else
 # include <sys/fcntl.h>
 #endif
@@ -74,6 +89,16 @@ typedef struct DRVTAP
     PPDMDRVINS              pDrvIns;
     /** TAP device file handle. */
     RTFILE                  FileDevice;
+    /** The configured TAP device name. */
+    char                   *pszDeviceName;
+#ifdef RT_OS_SOLARIS
+    /** The actual TAP device name. */
+    char                   *pszDeviceNameActual;
+#endif 
+    /** TAP setup application. */
+    char                   *pszSetupApplication;
+    /** TAP terminate application. */
+    char                   *pszTerminateApplication;
 #ifdef ASYNC_NET
     /** The write end of the control pipe. */
     RTFILE                  PipeWrite;
@@ -118,6 +143,14 @@ typedef struct DRVTAP
 
 /** Converts a pointer to TAP::INetworkConnector to a PRDVTAP. */
 #define PDMINETWORKCONNECTOR_2_DRVTAP(pInterface) ( (PDRVTAP)((uintptr_t)pInterface - RT_OFFSETOF(DRVTAP, INetworkConnector)) )
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifdef RT_OS_SOLARIS
+static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns);
+#endif
 
 
 /**
@@ -414,6 +447,270 @@ static DECLCALLBACK(void) drvTAPPoller(PPDMDRVINS pDrvIns)
 #endif
 
 
+#if defined(RT_OS_SOLARIS)
+/**
+ * Calls OS-specific TAP setup application/script.
+ *
+ * @returns VBox error code.
+ * @param   pData           The instance data.
+ */
+static int drvTAPSetupApplication(PDRVTAP pData)
+{
+    char *pszArgs[3];
+    pszArgs[0] = pData->pszSetupApplication;
+    pszArgs[1] = pData->pszDeviceNameActual;
+    pszArgs[2] = NULL;
+
+/** @todo use RTProcCreate */
+
+    Log2(("Starting TAP setup application: %s %s\n", pData->pszSetupApplication, pData->pszDeviceNameActual));
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        /* Bad. fork() failed! */
+        LogRel(("TAP#%d: Failed to fork() process for running TAP setup application: %s\n", pDrvIns->iInstance,
+              pData->pszSetupApplication, strerror(errno)));
+        return VERR_HOSTIF_INIT_FAILED;
+    }
+    if (pid == 0)
+    {
+        /* Child process. */
+        execv(pszArgs[0], pszArgs);
+        _exit(1);
+    }
+
+    /* Parent process. */
+    int result;
+    while (waitpid(pid, &result, 0) < 0)
+        ;
+    if (!WIFEXITED(result) || WEXITSTATUS(result) != 0)
+    {
+        LogRel(("TAP#%d: Failed to run TAP setup application: %s\n", pDrvIns->iInstance, pData->pszSetupApplication));
+        return VERR_HOSTIF_INIT_FAILED;
+    }
+    
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Calls OS-specific TAP terminate application/script.
+ *
+ * @returns VBox error code.
+ * @param   pData           The instance data.
+ */
+static int drvTAPTerminateApplication(PDRVTAP pData)
+{
+    char *pszArgs[3];
+    pszArgs[0] = pData->pszTerminateApplication;
+    pszArgs[1] = pData->pszDeviceNameActual;
+    pszArgs[2] = NULL;
+
+/** @todo use RTProcCreate */
+
+    Log2(("Starting TAP terminate application: %s %s\n", pData->pszTerminateApplication, pData->pszDeviceNameActual));
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        /* Bad. fork() failed! */
+        LogRel(("TAP#%d: Failed to fork() process for running TAP terminate application: %s\n", pDrvIns->iInstance,
+              pData->pszTerminateApplication, strerror(errno)));
+        return VERR_HOSTIF_TERM_FAILED;
+    }
+    if (pid == 0)
+    {
+        /* Child process. */
+        execv(pszArgs[0], pszArgs);
+        _exit(1); 
+    }
+        
+    /* Parent process. */
+    int result;
+    while (waitpid(pid, &result, 0) < 0)
+        ;
+    if (!WIFEXITED(result) || WEXITSTATUS(result) != 0)
+    {
+        LogRel(("TAP#%d: Failed to run TAP terminate application: %s\n", pDrvIns->iInstance, pData->pszSetupApplication));
+        return VERR_HOSTIF_TERM_FAILED;
+    }
+    
+    return VINF_SUCCESS;
+}
+
+#endif /* RT_OS_SOLARIS */
+
+
+#ifdef RT_OS_SOLARIS
+/** From net/if_tun.h, installed by Universal TUN/TAP driver */
+# define TUNNEWPPA                   (('T'<<16) | 0x0001)
+/** Whether to enable ARP for TAP. */
+# define VBOX_SOLARIS_TAP_ARP        1
+
+/**
+ * Creates/Attaches TAP device to IP.
+ *
+ * @returns VBox error code.
+ * @param   pDrvIns          The driver instance data.
+ * @param   pszDevName       Pointer to device name.
+ */
+static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
+{
+    PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
+    LogFlow(("SolarisTapAttach: pData=%p\n", pData));
+    
+    
+    /* Close previously opened file desc., if any. */
+    static int s_IPFileDes = -1; /** @todo r=bird: what's the point of keeping this open? */
+    if (s_IPFileDes >= 0)
+        close(s_IPFileDes);
+    
+    s_IPFileDes = open("/dev/udp", O_RDWR, 0);
+    if (s_IPFileDes < 0)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
+                                   N_("Failed to open /dev/udp. errno=%d"), errno);
+    
+    int TapFileDes = open("/dev/tap", O_RDWR, 0);
+    if (TapFileDes < 0)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
+                                   N_("Failed to open /dev/tap for TAP. errno=%d"), errno);
+    
+    /* Use the PPA from the ifname if possible (e.g "tap2", then use 2 as PPA) */
+    int iPPA = -1;
+    if (pData->pszDeviceName)
+    {
+        size_t cch = strlen(pData->pszDeviceName);
+        if (cch > 1 && isdigit(pData->pszDeviceName[cch - 1]) != 0)
+            iPPA = pData->pszDeviceName[cch - 1] - '0';
+    }
+    
+    struct strioctl ioIF;
+    ioIF.ic_cmd = TUNNEWPPA;
+    ioIF.ic_len = sizeof(iPPA);
+    ioIF.ic_dp = (char *)(&iPPA);
+    ioIF.ic_timout = 0;
+    iPPA = ioctl(TapFileDes, I_STR, &ioIF);
+    if (iPPA < 0) /** @todo r=bird: leaving at least one file descriptor open. */
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+                                   N_("Failed to get new interface. errno=%d"), errno);
+    
+    int InterfaceFD = open("/dev/tap", O_RDWR, 0);
+    if (!InterfaceFD)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
+                                   N_("Failed to open interface /dev/tap. errno=%d"), errno);
+    
+    if (ioctl(InterfaceFD, I_PUSH, "ip") == -1)
+    {
+        close(InterfaceFD);
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+                                   N_("Failed to push IP. errno=%d"), errno);
+    }
+    
+    struct lifreq ifReq;
+    memset(&ifReq, 0, sizeof(ifReq));
+    if (ioctl(InterfaceFD, SIOCGLIFFLAGS, &ifReq) == -1)
+        LogRel(("TAP#%d: Failed to get interface flags.\n", pDrvIns->iInstance));
+
+    char szTmp[16];
+    char *pszDevName = pData->pszDeviceName;    
+    if (!pData->pszDeviceName || !*pData->pszDeviceName)
+    {
+        RTStrPrintf(szTmp, sizeof(szTmp), "tap%d", iPPA);
+        pszDevName = szTmp;
+    }
+    
+    ifReq.lifr_ppa = iPPA;
+    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pszDevName);
+    
+    if (ioctl(InterfaceFD, SIOCSLIFNAME, &ifReq) == -1)
+        LogRel(("TAP#%d: Failed to set PPA. errno=%d\n", pDrvIns->iInstance, errno));
+    
+    if (ioctl(InterfaceFD, SIOCGLIFFLAGS, &ifReq) == -1)
+        LogRel(("TAP#%d: Failed to get interface flags after setting PPA. errno=%d\n", pDrvIns->iInstance, errno));
+
+#ifdef VBOX_SOLARIS_TAP_ARP
+    /* Interface */
+    if (ioctl(InterfaceFD, I_PUSH, "arp") == -1)
+        LogRel(("TAP#%d: Failed to push ARP to Interface FD. errno=%d\n", pDrvIns->iInstance, errno));
+
+    /* IP */
+    if (ioctl(s_IPFileDes, I_POP, NULL) == -1)
+        LogRel(("TAP#%d: Failed I_POP from IP FD. errno=%d\n", pDrvIns->iInstance, errno));
+
+    if (ioctl(s_IPFileDes, I_PUSH, "arp") == -1)
+        LogRel(("TAP#%d: Failed to push ARP to IP FD. errno=%d\n", pDrvIns->iInstance, errno));
+    
+    /* ARP */
+    int ARPFileDes = open("/dev/tap", O_RDWR, 0);
+    if (ARPFileDes < 0)
+        LogRel(("TAP#%d: Failed to open for /dev/tap for ARP. errno=%d", pDrvIns->iInstance, errno));
+    
+    if (ioctl(ARPFileDes, I_PUSH, "arp") == -1)
+        LogRel(("TAP#%d: Failed to push ARP to ARP FD. errno=%d\n", pDrvIns->iInstance, errno));
+    
+    ioIF.ic_cmd = SIOCSLIFNAME;
+    ioIF.ic_timout = 0;
+    ioIF.ic_len = sizeof(ifReq);
+    ioIF.ic_dp = (char *)&ifReq;
+    if (ioctl(ARPFileDes, I_STR, &ioIF) == -1)
+        LogRel(("TAP#%d: Failed to set interface name to ARP.\n", pDrvIns->iInstance));
+#endif
+
+    /* We must use I_LINK and not I_PLINK as I_PLINK makes the link persistent.
+     * Then we would not be able unlink the interface if we reuse it.
+     * Even 'unplumb' won't work after that.
+     */
+    int IPMuxID = ioctl(s_IPFileDes, I_LINK, InterfaceFD);
+    if (IPMuxID == -1)
+    {
+        close(InterfaceFD);
+#ifdef VBOX_SOLARIS_TAP_ARP
+        close(ARPFileDes);
+#endif
+        LogRel(("TAP#%d: Cannot link TAP device to IP.\n", pDrvIns->iInstance));
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+                    N_("Failed to link TAP device to IP. Check TAP interface name. errno=%d"), errno);
+    }
+    
+#ifdef VBOX_SOLARIS_TAP_ARP
+    int ARPMuxID = ioctl(s_IPFileDes, I_LINK, ARPFileDes);
+    if (ARPMuxID == -1)
+        LogRel(("TAP#%d: Failed to link TAP device to ARP\n", pDrvIns->iInstance));
+    
+    close(ARPFileDes);
+#endif
+    close(InterfaceFD);
+
+    /* Reuse ifReq */
+    memset(&ifReq, 0, sizeof(ifReq));
+    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pszDevName);
+    ifReq.lifr_ip_muxid  = IPMuxID;
+#ifdef VBOX_SOLARIS_TAP_ARP
+    ifReq.lifr_arp_muxid = ARPMuxID;
+#endif
+
+    if (ioctl(s_IPFileDes, SIOCSLIFMUXID, &ifReq) == -1)
+    {
+#ifdef VBOX_SOLARIS_TAP_ARP
+        ioctl(IPFileDes, I_PUNLINK, ARPMuxID);
+#endif
+        ioctl(IPFileDes, I_PUNLINK, IPMuxID);
+        close(s_IPFileDes);
+        s_IPFileDes = -1;
+        LogRel(("TAP#%d: Failed to set Mux ID.\n", pDrvIns->iInstance));
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
+                                   N_("Failed to set Mux ID. Check TAP interface name. errno=%d"), errno);
+    }
+
+    /* what's the point? */
+    pData->FileDevice = (RTFILE)TapFileDes;
+    pData->pszDeviceNameActual = RTStrDup(pszDevName);
+    
+    return VINF_SUCCESS;
+}
+
+#endif  /* RT_OS_SOLARIS */
+
+
 /**
  * Queries an interface to the driver.
  *
@@ -450,9 +747,9 @@ static DECLCALLBACK(void *) drvTAPQueryInterface(PPDMIBASE pInterface, PDMINTERF
 static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvTAPDestruct\n"));
-#ifdef ASYNC_NET
     PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
 
+#ifdef ASYNC_NET
     /*
      * Terminate the Async I/O Thread.
      */
@@ -486,6 +783,16 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
         pData->PipeRead = NIL_RTFILE;
     }
 #endif
+
+#ifdef RT_OS_SOLARIS
+    if (pData->pszTerminateApplication)
+        drvTAPTerminateApplication(pData);
+
+    RTStrFree(pData->pszDeviceNameActual);
+#endif
+    MMR3HeapFree(pData->pszDeviceName);
+    MMR3HeapFree(pData->pszSetupApplication);
+    MMR3HeapFree(pData->pszTerminateApplication);
 }
 
 
@@ -508,6 +815,12 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      */
     pData->pDrvIns                      = pDrvIns;
     pData->FileDevice                   = NIL_RTFILE;
+    pData->pszDeviceName                = NULL;
+#ifdef RT_OS_SOLARIS
+    pData->pszDeviceNameActual          = NULL;
+#endif 
+    pData->pszSetupApplication          = NULL;
+    pData->pszTerminateApplication      = NULL;
 #ifdef ASYNC_NET
     pData->Thread                       = NIL_RTTHREAD;
     pData->enmState                     = ASYNCSTATE_RUNNING;
@@ -523,7 +836,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0InitProg\0TermProg\0FileHandle\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0InitProg\0TermProg\0FileHandle\0TAPSetupApplication\0TAPTerminateApplication"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "");
 
     /*
@@ -545,6 +858,49 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Read the configuration.
      */
+#if defined(RT_OS_SOLARIS)   /** @todo Other platforms' TAP code should be moved here from ConsoleImpl & VBoxBFE. */
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPSetupApplication", &pData->pszSetupApplication);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (!RTPathExists(pData->pszSetupApplication))
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                       N_("Invalid TAP setup program path: %s"), pData->pszSetupApplication);
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
+
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TAPTerminateApplication", &pData->pszTerminateApplication);
+    if (VBOX_SUCCESS(rc))
+    {
+        if (!RTPathExists(pData->pszTerminateApplication))
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                       N_("Invalid TAP terminate program path: %s"), pData->pszTerminateApplication);
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
+
+    
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Device", &pData->pszDeviceName);
+    if (VBOX_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Query for \"Device\" string failed!"));
+
+    /*
+     * Do the setup.
+     */
+    rc = SolarisTAPAttach(pDrvIns);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    if (pData->pszSetupApplication)
+    {
+        rc = drvTAPSetupApplication(pData);
+        if (RT_SUCCESS(rc))
+            return rc;
+    }
+
+#else /* !SOLARIS */
+
     int32_t iFile;
     rc = CFGMR3QueryS32(pCfgHandle, "FileHandle", &iFile);
     if (VBOX_FAILURE(rc))
@@ -554,6 +910,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (!RTFileIsValid(pData->FileDevice))
         return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_HANDLE, RT_SRC_POS,
                                    N_("The TAP file handle %RTfile is not valid!"), pData->FileDevice);
+#endif /* !SOLARIS */
 
     /*
      * Make sure the descriptor is non-blocking and valid.

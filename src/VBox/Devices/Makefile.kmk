@@ -448,7 +448,8 @@ ifeq ($(BUILD_TARGET),solaris)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))
-Drivers_SOURCES.os2   =
+Drivers_SOURCES.solaris = \
+    Network/DrvTAP.cpp
 endif
 
 Drivers_SOURCES.win   = \
