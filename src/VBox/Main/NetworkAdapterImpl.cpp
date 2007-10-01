@@ -790,9 +790,6 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile) (BSTR *aTraceFile)
 
 STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (INPTR BSTR aTraceFile)
 {
-    if (!aTraceFile)
-        return E_INVALIDARG;
-
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 

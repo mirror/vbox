@@ -576,6 +576,7 @@ protected:
 
     inline Machine *machine();
 
+    HRESULT initDataAndChildObjects();
     void uninitDataAndChildObjects();
 
     void checkStateDependencies (AutoLock &aLock);
