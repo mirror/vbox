@@ -27,7 +27,8 @@
 
 void VBoxVMNetworkSettings::init()
 {
-    leMACAddress->setValidator (new QRegExpValidator (QRegExp ("[0-9,A-F]{12,12}"), this));
+    leMACAddress->setValidator (new QRegExpValidator
+                                (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
 
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NoNetworkAttachment));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (CEnums::NATNetworkAttachment));

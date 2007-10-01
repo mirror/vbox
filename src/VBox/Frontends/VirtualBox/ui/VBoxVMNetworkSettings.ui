@@ -115,7 +115,7 @@
                                 <enum>Sunken</enum>
                             </property>
                             <property name="whatsThis" stdset="0">
-                                        <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</string>
+                                        <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
                             </property>
                         </widget>
                         <widget class="QComboBox" row="0" column="1" rowspan="1" colspan="2">

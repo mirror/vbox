@@ -531,7 +531,7 @@
   <xsd:attribute name="MACAddress">
     <xsd:simpleType>
       <xsd:restriction base="xsd:hexBinary">
-        <xsd:length value="6"/>
+        <xsd:pattern value="[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
