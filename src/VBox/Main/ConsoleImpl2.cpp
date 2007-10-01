@@ -948,7 +948,30 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         }
                         rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface"); RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
+# if defined(RT_OS_SOLARIS)
+                        /* Device name/number is required for Solaris as we need it for TAP PPA. */
+                        Bstr tapDeviceName;
+                        networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
+                        if (!tapDeviceName.isEmpty())
+                            rc = CFGMR3InsertString(pCfg, "Device", Utf8Str(tapDeviceName)); RC_CHECK();
+
+                        /* TAP setup application/script */
+                        Bstr tapSetupApp;
+                        networkAdapter->COMGETTER(TAPSetupApplication)(tapSetupApp.asOutParam());
+                        if (!tapSetupApp.isEmpty())
+                            rc = CFGMR3InsertString(pCfg, "TAPSetupApplication", Utf8Str(tapSetupApp)); RC_CHECK();
+                        
+                        /* TAP terminate application/script */
+                        Bstr tapTerminateApp;
+                        networkAdapter->COMGETTER(TAPTerminateApplication)(tapTerminateApp.asOutParam());
+                        if (!tapTerminateApp.isEmpty())
+                            rc = CFGMR3InsertString(pCfg, "TAPTerminateApplication", Utf8Str(tapTerminateApp)); RC_CHECK();
+                        
+                        /* "FileHandle" must NOT be inserted here, it is done in DrvTAP.cpp */
+
+# else
                         rc = CFGMR3InsertInteger(pCfg, "FileHandle", pConsole->maTapFD[ulInstance]); RC_CHECK();
+# endif
                     }
 #elif defined(RT_OS_WINDOWS)
                     if (fSniffer)

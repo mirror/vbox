@@ -965,6 +965,8 @@
 /** If a Host Interface Networking filehandle was specified it's not allowed to
  * have any init or term programs. */
 #define VERR_HOSTIF_FD_AND_INIT_TERM                (-3104)
+/** The Host Interface Networking terminate program failed. */
+#define VERR_HOSTIF_TERM_FAILED                     (-3105)
 /** @} */
 
 

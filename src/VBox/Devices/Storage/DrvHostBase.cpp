@@ -41,6 +41,10 @@
 # include <sys/fcntl.h>
 # include <errno.h>
 
+#elif defined(RT_OS_SOLARIS)
+# include <fcntl.h>
+# include <errno.h>
+
 #elif defined(RT_OS_WINDOWS)
 # define WIN32_NO_STATUS
 # include <Windows.h>

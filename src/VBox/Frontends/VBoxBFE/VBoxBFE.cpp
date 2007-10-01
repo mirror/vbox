@@ -1658,6 +1658,9 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName);        UPDATE_RC();
                     rc = CFGMR3InsertInteger(pCfg, "FileHandle", (RTFILE)tapFD);                    UPDATE_RC();
 
+#elif defined(RT_OS_SOLARIS)
+                    rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName); UPDATE_RC();
+
 #elif defined(RT_OS_OS2)
                     /*
                      * The TAP driver does all the opening and setting up,
@@ -1678,7 +1681,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     rc = CFGMR3InsertString(pCfg, "GUID", g_aNetDevs[ulInstance].pszName /*pszGUID*/);  UPDATE_RC();
 
 
-#else /* !RT_OS_LINUX && !RT_OS_L4 */
+#else
                     FatalError("Name based HIF devices not implemented yet for this host platform\n");
                     return VERR_NOT_IMPLEMENTED;
 #endif
