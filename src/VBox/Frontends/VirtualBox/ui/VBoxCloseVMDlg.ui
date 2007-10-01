@@ -204,7 +204,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                 <string></string>
                             </property>
                             <property name="pixmap">
-                                <pixmap>state_powered_off_16px.png</pixmap>
+                                <pixmap>poweroff_16px.png</pixmap>
                             </property>
                             <property name="buddy" stdset="0">
                                 <cstring>rbPowerOff</cstring>

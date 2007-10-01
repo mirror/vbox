@@ -429,7 +429,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     helpWebAction = new QAction (this, "helpWebAction");
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
     helpRegisterAction = new QAction (this, "helpRegisterAction");
-    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("refresh_16px.png"));
+    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("register_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
     helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
     helpResetMessagesAction = new QAction( this, "helpResetMessagesAction" );
@@ -1108,7 +1108,7 @@ void VBoxSelectorWnd::languageChange()
     helpWebAction->setStatusTip (
         tr ("Open the browser and go to the VirtualBox product web site"));
 
-    helpRegisterAction->setMenuText (tr ("&Register VirtualBox..."));
+    helpRegisterAction->setMenuText (tr ("R&egister VirtualBox..."));
     helpRegisterAction->setAccel( QString::null );
     helpRegisterAction->setStatusTip (
         tr ("Open VirtualBox registration form"));
