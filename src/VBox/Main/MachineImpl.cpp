@@ -369,13 +369,9 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
      * unregister on failure */
     mParent->addDependentChild (this);
 
-    /* create machine data structures */
+    /* allocate the essential machine data structure (the rest will be
+     * allocated later by initDataAndChildObjects() */
     mData.allocate();
-    mSSData.allocate();
-
-    mUserData.allocate();
-    mHWData.allocate();
-    mHDData.allocate();
 
     char configFileFull [RTPATH_MAX] = {0};
 
@@ -435,56 +431,6 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
 
     CheckComRCReturnRC (rc);
 
-    /* initialize mOSTypeId */
-    mUserData->mOSTypeId = mParent->getUnknownOSType()->id();
-
-    /* create associated BIOS settings object */
-    unconst (mBIOSSettings).createObject();
-    mBIOSSettings->init(this);
-
-#ifdef VBOX_VRDP
-    /* create an associated VRDPServer object (default is disabled) */
-    unconst (mVRDPServer).createObject();
-    mVRDPServer->init(this);
-#endif
-
-    /* create an associated DVD drive object */
-    unconst (mDVDDrive).createObject();
-    mDVDDrive->init (this);
-
-    /* create an associated floppy drive object */
-    unconst (mFloppyDrive).createObject();
-    mFloppyDrive->init (this);
-
-    /* create associated serial port objects */
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
-    {
-        unconst (mSerialPorts [slot]).createObject();
-        mSerialPorts [slot]->init (this, slot);
-    }
-
-    /* create associated parallel port objects */
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
-    {
-        unconst (mParallelPorts [slot]).createObject();
-        mParallelPorts [slot]->init (this, slot);
-    }
-
-    /* create the audio adapter object (always present, default is disabled) */
-    unconst (mAudioAdapter).createObject();
-    mAudioAdapter->init(this);
-
-    /* create the USB controller object (always present, default is disabled) */
-    unconst (mUSBController).createObject();
-    mUSBController->init(this);
-
-    /* create associated network adapter objects */
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
-    {
-        unconst (mNetworkAdapters [slot]).createObject();
-        mNetworkAdapters [slot]->init (this, slot);
-    }
-
     if (aMode == Init_Registered)
     {
         /* store the supplied UUID (will be used to check for UUID consistency
@@ -496,28 +442,33 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     }
     else
     {
-        if (aMode != Init_New)
-        {
-            rc = loadSettings (false /* aRegistered */);
-        }
-        else
-        {
-            /* create the machine UUID */
-            unconst (mData->mUuid).create();
+        rc = initDataAndChildObjects();
 
-            /* memorize the provided new machine's name */
-            mUserData->mName = aName;
-            mUserData->mNameSync = aNameSync;
-
-            /* initialize the default snapshots folder
-             * (note: depends on the name value set above!) */
-            rc = COMSETTER(SnapshotFolder) (NULL);
-            AssertComRC (rc);
-        }
-
-        /* commit all changes made during the initialization */
         if (SUCCEEDED (rc))
-            commit();
+        {
+            if (aMode != Init_New)
+            {
+                rc = loadSettings (false /* aRegistered */);
+            }
+            else
+            {
+                /* create the machine UUID */
+                unconst (mData->mUuid).create();
+
+                /* memorize the provided new machine's name */
+                mUserData->mName = aName;
+                mUserData->mNameSync = aNameSync;
+
+                /* initialize the default snapshots folder
+                 * (note: depends on the name value set above!) */
+                rc = COMSETTER(SnapshotFolder) (NULL);
+                AssertComRC (rc);
+            }
+
+            /* commit all changes made during the initialization */
+            if (SUCCEEDED (rc))
+                commit();
+        }
     }
 
     /* Confirm a successful initialization when it's the case */
@@ -531,8 +482,8 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
 
     LogFlowThisFunc (("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool "
                       "rc=%08X\n",
-                      mUserData->mName.raw(), mData->mRegistered,
-                      mData->mAccessible, rc));
+                      !!mUserData ? mUserData->mName.raw() : NULL,
+                      mData->mRegistered, mData->mAccessible, rc));
 
     LogFlowThisFuncLeave();
 
@@ -556,7 +507,8 @@ HRESULT Machine::registeredInit()
     AssertReturn (mType == IsMachine, E_FAIL);
     AssertReturn (!mData->mUuid.isEmpty(), E_FAIL);
 
-    HRESULT rc = S_OK;
+    HRESULT rc = initDataAndChildObjects();
+    CheckComRCReturnRC (rc);
 
     if (!mData->mAccessible)
         rc = lockConfig();
@@ -600,6 +552,10 @@ HRESULT Machine::registeredInit()
         /* rollback all changes */
         rollback (false /* aNotify */);
 
+        /* uninitialize the common part to make sure all data is reset to
+         * default (null) values */
+        uninitDataAndChildObjects();
+
         rc = S_OK;
     }
 
@@ -632,7 +588,7 @@ void Machine::uninit()
         return;
 
     Assert (mType == IsMachine);
-    Assert (!!mData && !!mUserData && !!mHWData && !!mHDData && !!mSSData);
+    Assert (!!mData);
 
     LogFlowThisFunc (("initFailed()=%d\n", autoUninitSpan.initFailed()));
     LogFlowThisFunc (("mRegistered=%d\n", mData->mRegistered));
@@ -694,7 +650,11 @@ void Machine::uninit()
         rollback (false /* aNotify */);
     }
 
-    uninitDataAndChildObjects();
+    if (mData->mAccessible)
+        uninitDataAndChildObjects();
+
+    /* free the essential data structure last */
+    mData.free();
 
     mParent->removeDependentChild (this);
 
@@ -1156,12 +1116,13 @@ STDMETHODIMP Machine::COMGETTER(SnapshotFolder) (BSTR *aSnapshotFolder)
 
 STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
 {
-    /// @todo (r=dmik):
-    //  1. Allow to change the name of the snapshot folder containing snapshots
-    //  2. Rename the folder on disk instead of just changing the property
-    //     value (to be smart and not to leave garbage). Note that it cannot be
-    //     done here because the change may be rolled back. Thus, the right
-    //     place is #saveSettings().
+    /* @todo (r=dmik):
+     *  1. Allow to change the name of the snapshot folder containing snapshots
+     *  2. Rename the folder on disk instead of just changing the property
+     *     value (to be smart and not to leave garbage). Note that it cannot be
+     *     done here because the change may be rolled back. Thus, the right
+     *     place is #saveSettings().
+     */
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -3373,27 +3334,101 @@ HRESULT Machine::checkStateDependency (StateDependency aDepType)
 }
 
 /**
+ *  Helper to initialize all associated child objects
+ *  and allocate data structures.
+ *
+ *  This method must be called as a part of the object's initialization
+ *  procedure (usually done in the #init() method).
+ *
+ *  @note Must be called only from #init() or from #registeredInit().
+ */
+HRESULT Machine::initDataAndChildObjects()
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+    AssertComRCReturn (autoCaller.state() == InInit ||
+                       autoCaller.state() == Limited, E_FAIL);
+
+    /* allocate data structures */
+    mSSData.allocate();
+    mUserData.allocate();
+    mHWData.allocate();
+    mHDData.allocate();
+
+    /* initialize mOSTypeId */
+    mUserData->mOSTypeId = mParent->getUnknownOSType()->id();
+
+    /* create associated BIOS settings object */
+    unconst (mBIOSSettings).createObject();
+    mBIOSSettings->init (this);
+
+#ifdef VBOX_VRDP
+    /* create an associated VRDPServer object (default is disabled) */
+    unconst (mVRDPServer).createObject();
+    mVRDPServer->init (this);
+#endif
+
+    /* create an associated DVD drive object */
+    unconst (mDVDDrive).createObject();
+    mDVDDrive->init (this);
+
+    /* create an associated floppy drive object */
+    unconst (mFloppyDrive).createObject();
+    mFloppyDrive->init (this);
+
+    /* create associated serial port objects */
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    {
+        unconst (mSerialPorts [slot]).createObject();
+        mSerialPorts [slot]->init (this, slot);
+    }
+
+    /* create associated parallel port objects */
+    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    {
+        unconst (mParallelPorts [slot]).createObject();
+        mParallelPorts [slot]->init (this, slot);
+    }
+
+    /* create the audio adapter object (always present, default is disabled) */
+    unconst (mAudioAdapter).createObject();
+    mAudioAdapter->init (this);
+
+    /* create the USB controller object (always present, default is disabled) */
+    unconst (mUSBController).createObject();
+    mUSBController->init (this);
+
+    /* create associated network adapter objects */
+    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    {
+        unconst (mNetworkAdapters [slot]).createObject();
+        mNetworkAdapters [slot]->init (this, slot);
+    }
+
+    return S_OK;
+}
+
+/**
  *  Helper to uninitialize all associated child objects
  *  and to free all data structures.
  *
  *  This method must be called as a part of the object's uninitialization
- *  procedure (usually done in the uninit() method).
+ *  procedure (usually done in the #uninit() method).
  *
- *  @note Must be called only from uninit().
+ *  @note Must be called only from #uninit() or from #registeredInit().
  */
 void Machine::uninitDataAndChildObjects()
 {
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), (void) 0);
-    AssertComRCReturn (autoCaller.state( ) == InUninit, (void) 0);
+    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid (autoCaller.state() == InUninit ||
+                           autoCaller.state() == Limited);
 
-    /* tell all our child objects we've been uninitialized */
-
-    /*
-     *  uninit all children using addDependentChild()/removeDependentChild()
-     *  in their init()/uninit() methods
-     */
+    /* uninit all children using addDependentChild()/removeDependentChild()
+     * in their init()/uninit() methods */
     uninitDependentChildren();
+
+    /* tell all our other child objects we've been uninitialized */
 
     for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
     {
@@ -3416,21 +3451,21 @@ void Machine::uninitDataAndChildObjects()
         unconst (mAudioAdapter).setNull();
     }
 
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
-    {
-        if (mSerialPorts [slot])
-        {
-            mSerialPorts [slot]->uninit();
-            unconst (mSerialPorts [slot]).setNull();
-        }
-    }
-
     for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
     {
         if (mParallelPorts [slot])
         {
             mParallelPorts [slot]->uninit();
             unconst (mParallelPorts [slot]).setNull();
+        }
+    }
+
+    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    {
+        if (mSerialPorts [slot])
+        {
+            mSerialPorts [slot]->uninit();
+            unconst (mSerialPorts [slot]).setNull();
         }
     }
 
@@ -3460,12 +3495,28 @@ void Machine::uninitDataAndChildObjects()
         unconst (mBIOSSettings).setNull();
     }
 
-    /* free data structures */
-    mSSData.free();
+    /* De-associate hard disks */
+    for (HDData::HDAttachmentList::const_iterator it =
+             mHDData->mHDAttachments.begin();
+         it != mHDData->mHDAttachments.end();
+         ++ it)
+    {
+        (*it)->hardDisk()->setMachineId (Guid());
+    }
+
+    if (mType == IsMachine)
+    {
+        /* reset some important fields of mData */
+        mData->mCurrentSnapshot.setNull();
+        mData->mFirstSnapshot.setNull();
+    }
+
+    /* free data structures (the essential mData structure is not freed here
+     * since it still may be in use) */
     mHDData.free();
     mHWData.free();
     mUserData.free();
-    mData.free();
+    mSSData.free();
 }
 
 
@@ -4245,7 +4296,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                         rc = mDVDDrive->CaptureHostDrive (hostDrive);
                     }
                     else
-                        ComAssertComRCBreak (rc, rc = rc);
+                        ComAssertComRCBreakRC (rc);
                 }
             }
         }
@@ -4315,7 +4366,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                         rc = mFloppyDrive->CaptureHostDrive (hostDrive);
                     }
                     else
-                        ComAssertComRCBreak (rc, rc = rc);
+                        ComAssertComRCBreakRC (rc);
                 }
             }
         }
@@ -4383,12 +4434,18 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             Bstr traceFile;
             CFGLDRQueryBSTR (adapterNode, "tracefile", traceFile.asOutParam());
 
-            mNetworkAdapters [slot]->COMSETTER(Enabled) (enabled);
-            mNetworkAdapters [slot]->COMSETTER(MACAddress) (macAddr);
-            mNetworkAdapters [slot]->COMSETTER(CableConnected) (cableConnected);
-            mNetworkAdapters [slot]->COMSETTER(LineSpeed) (lineSpeed);
-            mNetworkAdapters [slot]->COMSETTER(TraceEnabled) (traceEnabled);
-            mNetworkAdapters [slot]->COMSETTER(TraceFile) (traceFile);
+            rc = mNetworkAdapters [slot]->COMSETTER(Enabled) (enabled);
+            CheckComRCBreakRC (rc);
+            rc = mNetworkAdapters [slot]->COMSETTER(MACAddress) (macAddr);
+            CheckComRCBreakRC (rc);
+            rc = mNetworkAdapters [slot]->COMSETTER(CableConnected) (cableConnected);
+            CheckComRCBreakRC (rc);
+            rc = mNetworkAdapters [slot]->COMSETTER(LineSpeed) (lineSpeed);
+            CheckComRCBreakRC (rc);
+            rc = mNetworkAdapters [slot]->COMSETTER(TraceEnabled) (traceEnabled);
+            CheckComRCBreakRC (rc);
+            rc = mNetworkAdapters [slot]->COMSETTER(TraceFile) (traceFile);
+            CheckComRCBreakRC (rc);
 
             if (adapterType.compare(Bstr("Am79C970A")) == 0)
                 mNetworkAdapters [slot]->COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C970A);
@@ -4400,7 +4457,8 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             CFGNODE attachmentNode = 0;
             if (CFGLDRGetChildNode (adapterNode, "NAT", 0, &attachmentNode), attachmentNode)
             {
-                mNetworkAdapters [slot]->AttachToNAT();
+                rc = mNetworkAdapters [slot]->AttachToNAT();
+                CheckComRCBreakRC (rc);
             }
             else
             if (CFGLDRGetChildNode (adapterNode, "HostInterface", 0, &attachmentNode), attachmentNode)
@@ -4412,17 +4470,21 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                 /* @name can be empty on Win32, but not null */
                 ComAssertBreak (!name.isNull(), rc = E_FAIL);
 #endif
-                mNetworkAdapters [slot]->COMSETTER(HostInterface) (name);
+                rc = mNetworkAdapters [slot]->COMSETTER(HostInterface) (name);
+                CheckComRCBreakRC (rc);
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
                 Bstr tapSetupApp;
                 CFGLDRQueryBSTR (attachmentNode, "TAPSetup", tapSetupApp.asOutParam());
                 Bstr tapTerminateApp;
                 CFGLDRQueryBSTR (attachmentNode, "TAPTerminate", tapTerminateApp.asOutParam());
 
-                mNetworkAdapters [slot]->COMSETTER(TAPSetupApplication) (tapSetupApp);
-                mNetworkAdapters [slot]->COMSETTER(TAPTerminateApplication) (tapTerminateApp);
+                rc = mNetworkAdapters [slot]->COMSETTER(TAPSetupApplication) (tapSetupApp);
+                CheckComRCBreakRC (rc);
+                rc = mNetworkAdapters [slot]->COMSETTER(TAPTerminateApplication) (tapTerminateApp);
+                CheckComRCBreakRC (rc);
 #endif // VBOX_WITH_UNIXY_TAP_NETWORKING
-                mNetworkAdapters [slot]->AttachToHostInterface();
+                rc = mNetworkAdapters [slot]->AttachToHostInterface();
+                CheckComRCBreakRC (rc);
             }
             else
             if (CFGLDRGetChildNode(adapterNode, "InternalNetwork", 0, &attachmentNode), attachmentNode)
@@ -4431,13 +4493,16 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                 Bstr name;
                 CFGLDRQueryBSTR (attachmentNode, "name", name.asOutParam());
                 ComAssertBreak (!name.isNull(), rc = E_FAIL);
-                mNetworkAdapters[slot]->AttachToInternalNetwork();
-                mNetworkAdapters[slot]->COMSETTER(InternalNetwork) (name);
+                rc = mNetworkAdapters[slot]->AttachToInternalNetwork();
+                CheckComRCBreakRC (rc);
+                rc = mNetworkAdapters[slot]->COMSETTER(InternalNetwork) (name);
+                CheckComRCBreakRC (rc);
             }
             else
             {
                 /* Adapter has no children */
-                mNetworkAdapters [slot]->Detach();
+                rc = mNetworkAdapters [slot]->Detach();
+                CheckComRCBreakRC (rc);
             }
             if (attachmentNode)
                 CFGLDRReleaseNode (attachmentNode);
@@ -4446,8 +4511,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         }
 
         CFGLDRReleaseNode (networkNode);
-        if (FAILED (rc))
-            return rc;
+        CheckComRCReturnRC (rc);
     }
 
     /* Serial node (optional) */
@@ -4461,9 +4525,11 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         for (unsigned slot = 0; slot < cPorts; slot++)
         {
             rc = mSerialPorts [slot]->loadSettings (serialNode, slot);
-            CheckComRCReturnRC (rc);
+            CheckComRCBreakRC (rc);
         }
+
         CFGLDRReleaseNode (serialNode);
+        CheckComRCReturnRC (rc);
     }
 
     /* Parallel node (optional) */
@@ -4477,9 +4543,11 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         for (unsigned slot = 0; slot < cPorts; slot++)
         {
             rc = mParallelPorts [slot]->loadSettings (parallelNode, slot);
-            CheckComRCReturnRC (rc);
+            CheckComRCBreakRC (rc);
         }
+
         CFGLDRReleaseNode (parallelNode);
+        CheckComRCReturnRC (rc);
     }
 
     /* AudioAdapter node (required) */
@@ -4489,23 +4557,23 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
         CFGLDRGetChildNode (aNode, "AudioAdapter", 0, &audioAdapterNode);
         ComAssertRet (audioAdapterNode, E_FAIL);
 
-        // is the adapter enabled?
+        /* is the adapter enabled? */
         bool enabled = false;
         CFGLDRQueryBool (audioAdapterNode, "enabled", &enabled);
         mAudioAdapter->COMSETTER(Enabled) (enabled);
-        // now check the audio driver
+        /* now check the audio driver */
         Bstr driver;
         CFGLDRQueryBSTR (audioAdapterNode, "driver", driver.asOutParam());
         AudioDriverType_T audioDriver;
         audioDriver = AudioDriverType_NullAudioDriver;
         if      (driver == L"null")
-            ; // Null has been set above
+            ; /* Null has been set above */
 #ifdef RT_OS_WINDOWS
         else if (driver == L"winmm")
 #ifdef VBOX_WITH_WINMM
             audioDriver = AudioDriverType_WINMMAudioDriver;
 #else
-            // fall back to dsound
+        /* fall back to dsound */
             audioDriver = AudioDriverType_DSOUNDAudioDriver;
 #endif
         else if (driver == L"dsound")
@@ -4518,7 +4586,7 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
 #ifdef VBOX_WITH_ALSA
             audioDriver = AudioDriverType_ALSAAudioDriver;
 #else
-            // fall back to OSS
+            /* fall back to OSS */
             audioDriver = AudioDriverType_OSSAudioDriver;
 #endif
 #endif // RT_OS_LINUX
@@ -4532,9 +4600,11 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
 #endif
         else
             AssertMsgFailed (("Invalid driver: %ls\n", driver.raw()));
-        mAudioAdapter->COMSETTER(AudioDriver) (audioDriver);
+
+        HRESULT rc = mAudioAdapter->COMSETTER(AudioDriver) (audioDriver);
 
         CFGLDRReleaseNode (audioAdapterNode);
+        CheckComRCReturnRC (rc);
     }
 
     /* Shared folders (optional) */
@@ -4567,15 +4637,13 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
             CFGLDRQueryBSTR (folderNode, "hostPath", hostPath.asOutParam());
 
             rc = CreateSharedFolder (name, hostPath);
-            if (FAILED (rc))
-                break;
+            CheckComRCBreakRC (rc);
 
             CFGLDRReleaseNode (folderNode);
         }
 
         CFGLDRReleaseNode (sharedFoldersNode);
-        if (FAILED (rc))
-            return rc;
+        CheckComRCReturnRC (rc);
     }
     while (0);
 
@@ -7957,6 +8025,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 # error "Port me!"
 #endif
         uninitDataAndChildObjects();
+        mData.free();
         unconst (mParent).setNull();
         unconst (mPeer).setNull();
         LogFlowThisFuncLeave();
@@ -8110,7 +8179,10 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 
     uninitDataAndChildObjects();
 
-    /* leave the shared lock before setting the above two to NULL */
+    /* free the essential data structure last */
+    mData.free();
+
+    /* leave the shared lock before setting the below two to NULL */
     alock.leave();
 
     unconst (mParent).setNull();
@@ -10551,6 +10623,9 @@ void SnapshotMachine::uninit()
         return;
 
     uninitDataAndChildObjects();
+
+    /* free the essential data structure last */
+    mData.free();
 
     unconst (mParent).setNull();
     unconst (mPeer).setNull();
