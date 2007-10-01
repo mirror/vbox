@@ -330,16 +330,6 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
             while ((i < 13) && macAddressStr && *macAddressStr && (rc == S_OK))
             {
                 char c = *macAddressStr;
-                /* strip any occurrence of colons in the string. */
-                if (c == ':')
-                {
-                    /* cannot use strcpy, as the areas do overlap. */
-                    /* remember that in this context
-                     * strlen(macAddressStr) == strlen(macAddressStr+1)+1 */
-                    memmove(macAddressStr, macAddressStr + 1,
-                            strlen(macAddressStr));
-                    continue;
-                }
                 /* canonicalize hex digits to capital letters */
                 if (c >= 'a' && c <= 'f')
                 {
@@ -354,7 +344,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
                 /* the second digit must be even for unicast addresses */
                 if ((i == 1) && (c & 1))
                     rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
-                
+
                 macAddressStr++;
                 i++;
             }
