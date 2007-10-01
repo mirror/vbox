@@ -4929,9 +4929,8 @@
     </const>
     <const name="CustomHardDisk" value="3">
       <desc>
-        Disk formats supported through plugins (the access type (
-        wether regular file in the host OS or something else) is up to
-        the plugin, see <link to="ICustomHardDisk"/>)
+        Disk formats supported through plugins (see
+        <link to="ICustomHardDisk"/>)
       </desc>
     </const>
   </enum>
@@ -5599,23 +5598,17 @@
         Full file name of the virtual disk image of this hard disk. For
         newly created hard disk objects, this value is <tt>null</tt>.
 
-        When assigning a new path, it can be absolute (full path) or
-        relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
-          home directory</link>. If only a file name without any path is
-        given, the <link to="ISystemProperties::defaultVDIFolder">
-          default VDI folder</link> will be used as a path to the image
-        file.
+        When assigning a new path, it can be absolute (full path) or relative
+        to the <link to="IVirtualBox::homeFolder"> VirtualBox home
+        directory</link>. If only a file name without any path is given,
+        the <link to="ISystemProperties::defaultVDIFolder"> default VDI
+        folder</link> will be used as a path to the image file.
 
         When reading this propery, a full path is always returned.
 
         <note>
           This property cannot be changed when <link to="#created"/>
-          returns <tt>true</tt>. In this case, the specified file name can be
-          absolute (full path) or relative to
-          the <link to="IVirtualBox::homeFolder"> VirtualBox home
-          directory</link>.  If only a file name without any path is given,
-          the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-          folder</link> will be used as a path to the image file.
+          returns <tt>true</tt>.
         </note>
 
       </desc>
@@ -5871,12 +5864,7 @@
 
         <note>
           This property cannot be changed when <link to="#created"/>
-          returns <tt>true</tt>. In this case, the specified file name can be
-          absolute (full path) or relative to
-          the <link to="IVirtualBox::homeFolder"> VirtualBox home
-          directory</link>.  If only a file name without any path is given,
-          the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-          folder</link> will be used as a path to the image file.
+          returns <tt>true</tt>.
         </note>
 
       </desc>
@@ -5982,9 +5970,9 @@
     <desc>
 
       The ICustomHardDisk interface represents <link to="IHardDisk">virtual hard
-      disks</link> that are supported through third-parite plugins.
+      disks</link> that are supported through third-party plugins.
 
-      Hard disks using custom images can be opened using
+      Hard disks using custom hard disk images can be opened using
       <link to="IVirtualBox::openHardDisk()"/>.
 
       Objects that support this interface also support the
@@ -6012,19 +6000,28 @@
     <attribute name="location" type="wstring">
       <desc>
 
-        Full location path of the custom image of this hard disk.
+        Location of this custom hard disk. For
+        newly created hard disk objects, this value is <tt>null</tt>.
 
-        When assigning a new path, it must be absolute (full path).
-        When reading this propery, a full path is always returned.
+        The format of the location string is plugin-dependent. In case if the
+        plugin uses a regular file in the local file system to store hard disk
+        data, then the location is a file path and the following rules apply:
+        <ul>
+          <li>
+            when assigning a new path, it must be absolute (full path) or
+            relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
+            home directory</link>.  If only a file name without any path is
+            given, the <link to="ISystemProperties::defaultVDIFolder"> default
+            VDI folder</link> will be used as a path to the image file.
+          </li>
+          <li>
+            When reading this propery, a full path is always returned.
+          </li>
+        </ul>
 
         <note>
           This property cannot be changed when <link to="#created"/>
-          returns <tt>true</tt>. In this case, the specified file name can be
-          absolute (full path) or relative to
-          the <link to="IVirtualBox::homeFolder"> VirtualBox home
-          directory</link>.  If only a file name without any path is given,
-          the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-          folder</link> will be used as a path to the image file.
+          returns <tt>true</tt>.
         </note>
 
       </desc>
