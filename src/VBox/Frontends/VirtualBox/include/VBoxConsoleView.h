@@ -109,14 +109,16 @@ signals:
 protected:
 
     // events
-    bool event( QEvent *e );
-    bool eventFilter( QObject *watched, QEvent *e );
+    bool event (QEvent *e);
+    bool eventFilter (QObject *watched, QEvent *e);
 
 #if defined(Q_WS_WIN32)
     bool winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &event);
     bool winEvent (MSG *msg);
+#elif defined(Q_WS_PM)
+    bool pmEvent (QMSG *aMsg);
 #elif defined(Q_WS_X11)
-    bool x11Event (XEvent *event );
+    bool x11Event (XEvent *event);
 #elif defined(Q_WS_MAC)
     bool darwinKeyboardEvent (EventRef inEvent);
     void darwinGrabKeyboardEvents (bool fGrab);
@@ -124,7 +126,7 @@ protected:
 
 private:
 
-    // flags for keyEvent()
+    /** Flags for keyEvent(). */
     enum {
         KeyExtended = 0x01,
         KeyPressed = 0x02,
@@ -133,7 +135,8 @@ private:
     };
 
     void focusEvent (bool focus);
-    bool keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniKey = NULL);
+    bool keyEvent (int aKey, uint8_t aScan, int aFlags,
+                   wchar_t *aUniKey = NULL);
     bool mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
                      ButtonState aButton,
                      ButtonState aState, ButtonState aStateAfter,

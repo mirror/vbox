@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 innotek GmbH
+ * Copyright (C) 22006-2007 innotek GmbH
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,10 @@
 #include "VBoxFrameBuffer.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+
+#ifdef Q_WS_PM
+#include "QIHotKeyEdit.h"
+#endif
 
 #include <qapplication.h>
 #include <qstatusbar.h>
@@ -992,7 +996,8 @@ bool VBoxConsoleView::event (QEvent *e)
             }
             case QEvent::FocusOut:
             {
-                focusEvent (false);
+                if (isRunning())
+                    focusEvent (false);
                 break;
             }
 
@@ -1502,7 +1507,7 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
 /**
  * Get Win32 messages before they are passed to Qt. This allows us to get
  * the keyboard events directly and bypass the harmful Qt translation. A
- * return value of TRUE indicates to Qt that the event has been handled.
+ * return value of @c true indicates to Qt that the event has been handled.
  */
 bool VBoxConsoleView::winEvent (MSG *msg)
 {
@@ -1517,15 +1522,6 @@ bool VBoxConsoleView::winEvent (MSG *msg)
         return false;
 
 #if 0
-    LogFlow (("*** WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d rzv=%01X ctx=%01d prev=%01d tran=%01d",
-              msg->message, msg->wParam,
-              (msg->lParam & 0xFFFF),
-              ((msg->lParam >> 16) & 0xFF),
-              ((msg->lParam >> 24) & 0x1),
-              ((msg->lParam >> 25) & 0xF),
-              ((msg->lParam >> 29) & 0x1),
-              ((msg->lParam >> 30) & 0x1),
-              ((msg->lParam >> 31) & 0x1)));
     char buf [256];
     sprintf (buf, "WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d rzv=%01X ctx=%01d prev=%01d tran=%01d",
              msg->message, msg->wParam,
@@ -1537,6 +1533,7 @@ bool VBoxConsoleView::winEvent (MSG *msg)
              ((msg->lParam >> 30) & 0x1),
              ((msg->lParam >> 31) & 0x1));
     mainwnd->statusBar()->message (buf);
+    LogFlow (("%s\n", buf));
 #endif
 
     int scan = (msg->lParam >> 16) & 0x7F;
@@ -1603,6 +1600,105 @@ bool VBoxConsoleView::winEvent (MSG *msg)
          * special flag in the reserved area of lParam (to avoid recursion). */
         ::SendMessage (msg->hwnd, msg->message,
                        msg->wParam, msg->lParam | (0x1 << 25));
+        return true;
+    }
+    return result;
+}
+
+#elif defined (Q_WS_PM)
+
+/**
+ *  Get PM messages before they are passed to Qt. This allows us to get
+ *  the keyboard events directly and bypass the harmful Qt translation. A
+ *  return value of @c true indicates to Qt that the event has been handled.
+ */
+bool VBoxConsoleView::pmEvent (QMSG *aMsg)
+{
+    if (!attached || aMsg->msg != WM_CHAR)
+        return false;
+
+    /* check for the special flag possibly set at the end of this function */
+    if (SHORT2FROMMP (aMsg->mp2) & 0x8000)
+        return false;
+
+#if 0
+    {
+        char buf [256];
+        sprintf (buf, "*** WM_CHAR: f=%04X rep=%03d scan=%02X ch=%04X vk=%04X",
+                 SHORT1FROMMP (aMsg->mp1), CHAR3FROMMP (aMsg->mp1),
+                 CHAR4FROMMP (aMsg->mp1), SHORT1FROMMP (aMsg->mp2),
+                 SHORT2FROMMP (aMsg->mp2));
+        mainwnd->statusBar()->message (buf);
+        LogFlow (("%s\n", buf));
+    }
+#endif
+
+    USHORT ch = SHORT1FROMMP (aMsg->mp2);
+    USHORT f = SHORT1FROMMP (aMsg->mp1);
+
+    int scan = (unsigned int) CHAR4FROMMP (aMsg->mp1);
+    if (!scan || scan > 0x7F)
+        return true;
+
+    int vkey = QIHotKeyEdit::virtualKey (aMsg);
+
+    int flags = 0;
+
+    if ((ch & 0xFF) == 0xE0)
+    {
+        flags |= KeyExtended;
+        scan = ch >> 8; 
+    }
+    else if (scan == 0x5C && (ch & 0xFF) == '/')
+    {
+        /* this is the '/' key on the keypad */
+        scan = 0x35;
+        flags |= KeyExtended;
+    }
+    else
+    {
+        /* For some keys, the scan code passed in QMSG is a pseudo scan
+         * code. We replace it with a real hardware scan code, according to
+         * http://www.computer-engineering.org/ps2keyboard/scancodes1.html.
+         * Also detect Pause and PrtScn and set flags. */
+        switch (vkey)
+        {
+            case VK_ENTER:     scan = 0x1C; flags |= KeyExtended; break;
+            case VK_CTRL:      scan = 0x1D; flags |= KeyExtended; break;
+            case VK_ALTGRAF:   scan = 0x38; flags |= KeyExtended; break;
+            case VK_LWIN:      scan = 0x5B; flags |= KeyExtended; break;
+            case VK_RWIN:      scan = 0x5C; flags |= KeyExtended; break;
+            case VK_WINMENU:   scan = 0x5D; flags |= KeyExtended; break;
+            case VK_FORWARD:   scan = 0x69; flags |= KeyExtended; break;
+            case VK_BACKWARD:  scan = 0x6A; flags |= KeyExtended; break;
+#if 0
+            /// @todo this would send 0xE0 0x46 0xE0 0xC6. It's not fully
+            // clear what is more correct
+            case VK_BREAK:     scan = 0x46; flags |= KeyExtended; break;
+#else
+            case VK_BREAK:     scan = 0;    flags |= KeyPause; break;
+#endif
+            case VK_PAUSE:     scan = 0;    flags |= KeyPause;    break;
+            case VK_PRINTSCRN: scan = 0;    flags |= KeyPrint;    break;
+            default:;
+        }
+    }
+
+    if (!(f & KC_KEYUP))
+        flags |= KeyPressed;
+
+    bool result = keyEvent (vkey, scan, flags);
+    if (!result && kbd_captured)
+    {
+        /* keyEvent() returned that it didn't process the message, but since the
+         * keyboard is captured, we don't want to pass it to PM. We just want
+         * to let Qt process the message (to handle non-alphanumeric <HOST>+key
+         * shortcuts for example). So send it direcltly to the window with the
+         * special flag in the reserved area of lParam (to avoid recursion). */
+        ::WinSendMsg (aMsg->hwnd, aMsg->msg,
+                      aMsg->mp1,
+                      MPFROM2SHORT (SHORT1FROMMP (aMsg->mp2),
+                                    SHORT2FROMMP (aMsg->mp2) | 0x8000));
         return true;
     }
     return result;
@@ -1828,7 +1924,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
     }
 }
 
-#endif
+#endif // defined (Q_WS_WIN)
 
 //
 // Private members
@@ -1971,28 +2067,32 @@ void VBoxConsoleView::toggleFSMode (const QSize &aResizeTo)
  *
  *  @return     true to consume the event and false to pass it to Qt
  */
-bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniKey/* = NULL*/)
+bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
+                                wchar_t *aUniKey/* = NULL*/)
 {
-//    char bbbuf[256];
-//    sprintf (bbbuf,
-//             "key=%08X scan=%02X flags=%08X",
-//             key, scan, flags);
-//    ((QMainWindow*)mainwnd)->statusBar()->message (bbbuf);
+#if 0
+    {
+        char buf [256];
+        sprintf (buf, "aKey=%08X aScan=%02X aFlags=%08X",
+                 aKey, aScan, aFlags);
+        mainwnd->statusBar()->message (buf);
+    }
+#endif
 
-    const bool is_hostkey = key == gs.hostKey();
+    const bool isHostKey = aKey == gs.hostKey();
 
     LONG buf [16];
     LONG *codes = buf;
     uint count = 0;
-    uint8_t what_pressed = 0;
+    uint8_t whatPressed = 0;
 
-    if (!is_hostkey)
+    if (!isHostKey)
     {
-        if (flags & KeyPrint)
+        if (aFlags & KeyPrint)
         {
             static LONG PrintMake[] = { 0xE0, 0x2A, 0xE0, 0x37 };
             static LONG PrintBreak[] = { 0xE0, 0xB7, 0xE0, 0xAA };
-            if (flags & KeyPressed)
+            if (aFlags & KeyPressed)
             {
                 codes = PrintMake;
                 count = SIZEOF_ARRAY (PrintMake);
@@ -2003,64 +2103,73 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
                 count = SIZEOF_ARRAY (PrintBreak);
             }
         }
-        else if ((flags & (KeyPause | KeyPressed)) == (KeyPause | KeyPressed))
+        else if (aFlags & KeyPause)
         {
-            static LONG Pause[] = { 0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5 };
-            codes = Pause;
-            count = SIZEOF_ARRAY (Pause);
+            if (aFlags & KeyPressed)
+            {
+                static LONG Pause[] = { 0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5 };
+                codes = Pause;
+                count = SIZEOF_ARRAY (Pause);
+            }
+            else
+            {
+                /* Pause shall not produce a break code */
+                return true;
+            }
         }
         else
         {
-            if (flags & KeyPressed)
+            if (aFlags & KeyPressed)
             {
-                // Check if the guest has the same view on the modifier keys (NumLock,
-                // CapsLock, ScrollLock) as the X server. If not, send KeyPress events
-                // to synchronize the state.
+                /* Check if the guest has the same view on the modifier keys (NumLock,
+                 * CapsLock, ScrollLock) as the X server. If not, send KeyPress events
+                 * to synchronize the state. */
                 fixModifierState (codes, &count);
             }
 
-            // process the scancode and update the table of pressed keys
-            what_pressed = IsKeyPressed;
+            /* process the scancode and update the table of pressed keys */
+            whatPressed = IsKeyPressed;
 
-            if (flags & KeyExtended)
+            if (aFlags & KeyExtended)
             {
                 codes [count++] = 0xE0;
-                what_pressed = IsExtKeyPressed;
+                whatPressed = IsExtKeyPressed;
             }
 
-            if (flags & KeyPressed)
+            if (aFlags & KeyPressed)
             {
-                codes [count++] = scan;
-                keys_pressed [scan] |= what_pressed;
+                codes [count++] = aScan;
+                keys_pressed [aScan] |= whatPressed;
             }
             else
             {
-                // if we haven't got this key's press message, we ignore its release
-                if (!(keys_pressed [scan] & what_pressed))
+                /* if we haven't got this key's press message, we ignore its
+                 * release */
+                if (!(keys_pressed [aScan] & whatPressed))
                     return true;
-                codes [count++] = scan | 0x80;
-                keys_pressed [scan] &= ~what_pressed;
+                codes [count++] = aScan | 0x80;
+                keys_pressed [aScan] &= ~whatPressed;
             }
 
             if (kbd_captured)
-                keys_pressed [scan] |= IsKbdCaptured;
+                keys_pressed [aScan] |= IsKbdCaptured;
             else
-                keys_pressed [scan] &= ~IsKbdCaptured;
+                keys_pressed [aScan] &= ~IsKbdCaptured;
         }
     }
     else
     {
-        // currently this is used in winLowKeyboardEvent() only
+        /* currently this is used in winLowKeyboardEvent() only */
         hostkey_in_capture = kbd_captured;
     }
 
     bool emit_signal = false;
     int hotkey = 0;
 
-    // process the host key
-    if (flags & KeyPressed)
+    /* process the host key */
+    if (aFlags & KeyPressed)
     {
-        if (is_hostkey)
+        if (isHostKey)
         {
             if (!hostkey_pressed)
             {
@@ -2076,7 +2185,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
             {
                 if (hostkey_alone)
                 {
-                    hotkey = key;
+                    hotkey = aKey;
                     hostkey_alone = false;
                 }
             }
@@ -2084,7 +2193,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
     }
     else
     {
-        if (is_hostkey)
+        if (isHostKey)
         {
             if (hostkey_pressed)
             {
@@ -2117,12 +2226,13 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
                 hostkey_alone = false;
         }
     }
-    // emit the keyboard state change signal
+
+    /* emit the keyboard state change signal */
     if (emit_signal)
         emitKeyboardStateChanged();
 
-    // process HOST+<key> shortcuts. currently, <key> is limited to
-    // alphanumeric chars.
+    /* process HOST+<key> shortcuts. currently, <key> is limited to
+     * alphanumeric chars. */
     if (hotkey)
     {
         bool processed = false;
@@ -2148,7 +2258,7 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
         NOREF(aUniKey);
         Display *display = x11Display();
         int keysyms_per_keycode = getKeysymsPerKeycode();
-        KeyCode kc = XKeysymToKeycode (display, key);
+        KeyCode kc = XKeysymToKeycode (display, aKey);
         // iterate over the first level (not shifted) keysyms in every group
         for (int i = 0; i < keysyms_per_keycode && !processed; i += 2)
         {
@@ -2170,40 +2280,47 @@ bool VBoxConsoleView::keyEvent (int key, uint8_t scan, int flags, wchar_t *aUniK
                                                      QChar (aUniKey [0]).upper().unicode()),
                                        mainwnd->menuBar());
 
-        /* Don't consider the hot key as pressed since the guest never saw it. (probably a generic thing) */
-        keys_pressed [scan] &= ~what_pressed;
+        /* Don't consider the hot key as pressed since the guest never saw
+         * it. (probably a generic thing) */
+        keys_pressed [aScan] &= ~whatPressed;
 #endif
 
-        // grab the key from Qt if processed, or pass it to Qt otherwise
-        // in order to process non-alphanumeric keys in event(), after they are
-        // converted to Qt virtual keys.
+        /* grab the key from Qt if processed, or pass it to Qt otherwise
+         * in order to process non-alphanumeric keys in event(), after they are
+         * converted to Qt virtual keys. */
         return processed;
     }
 
-    // no more to do, if the host key is in action or the VM is paused
-    if (hostkey_pressed || is_hostkey || isPaused())
+    /* no more to do, if the host key is in action or the VM is paused */
+    if (hostkey_pressed || isHostKey || isPaused())
     {
-        // grab the key from Qt and from VM if it's a host key,
-        // otherwise just pass it to Qt
-        return is_hostkey;
+        /* grab the key from Qt and from VM if it's a host key,
+         * otherwise just pass it to Qt */
+        return isHostKey;
     }
 
     CKeyboard keyboard = cconsole.GetKeyboard();
     Assert (!keyboard.isNull());
 
 #if defined (Q_WS_WIN32)
-    // send pending WM_PAINT events
+    /* send pending WM_PAINT events */
     ::UpdateWindow (viewport()->winId());
 #endif
 
-//    LogFlow (("*** Putting scan codes: "));
-//    for (unsigned i = 0; i < count; i++)
-//        LogFlow (("%02x ", codes [i]));
-//    LogFlow (("\n"));
+#if 0
+    {
+        char buf [256];
+        sprintf (buf, "*** SCANS: ");
+        for (uint i = 0; i < count; ++ i)
+            sprintf (buf + strlen (buf), "%02X ", codes [i]);
+        mainwnd->statusBar()->message (buf);
+        LogFlow (("%s\n", buf));
+    }
+#endif
 
     keyboard.PutScancodes (codes, count);
 
-    // grab the key from Qt
+    /* grab the key from Qt */
     return true;
 }
 
@@ -2224,7 +2341,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
              "wdelta=%03d wdir=%03d",
              aType, aPos.x(), aPos.y(), aButton, aState, aStateAfter,
              aWheelDelta, aWheelDir);
-    ((QMainWindow*)mainwnd)->statusBar()->message (buf);
+    mainwnd->statusBar()->message (buf);
 #else
     Q_UNUSED (aButton);
     Q_UNUSED (aState);
