@@ -1320,7 +1320,7 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
             /// @todo (r=dmik) grab the last access error once
             //  IDVDImage::lastAccessError is there
             return setError (E_FAIL,
-                tr ("VM cannot start because the DVD image '%ls' is not accessible"),
+                tr ("The virtual machine could not be started because the DVD image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
                 filePath.raw());
         }
     }
@@ -1342,7 +1342,7 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
             /// @todo (r=dmik) grab the last access error once
             //  IDVDImage::lastAccessError is there
             return setError (E_FAIL,
-                tr ("VM cannot start because the floppy image '%ls' is not accessible"),
+                tr ("The virtual machine could not be started because the floppy image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
                 filePath.raw());
         }
     }

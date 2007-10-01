@@ -1175,7 +1175,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
     else
     {
         vmR3SetState(pVM, VMSTATE_LOAD_FAILURE);
-        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to restore VM state from '%s' (%Vrc)"), pszFilename, rc);
+        rc = VMSetError(pVM, rc, RT_SRC_POS, N_("Unable to restore the virtual machine's saved state from '%s'.  It may be damaged or from an older version of VirtualBox.  Please discard the saved state before starting the virtual machine.  (Error: %Vrc)"), pszFilename, rc);
     }
 
     return rc;
