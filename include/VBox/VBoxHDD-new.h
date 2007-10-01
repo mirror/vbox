@@ -203,7 +203,8 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk);
  *
  * @returns VBox status code.
  * @param   pszFilename     Name of the image file for which the backend is queried.
- * @param   ppszFormat      Where to store the name of the plugin.
+ * @param   ppszFormat      Receives pointer of the UTF-8 string which contains the format name.
+ *                          The returned pointer must be freed using RTStrFree().
  */
 VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat);
 
