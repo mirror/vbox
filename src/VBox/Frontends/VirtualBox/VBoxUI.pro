@@ -118,6 +118,8 @@ IMAGES	= images/tpixel.png \
 	images/help_16px.png \
 	images/about_16px.png \
 	images/site_16px.png \
+	images/register_16px.png \
+	images/register_disabled_16px.png \
 	images/reset_16px.png \
 	images/reset_disabled_16px.png \
 	images/pause_16px.png \
@@ -132,6 +134,8 @@ IMAGES	= images/tpixel.png \
 	images/auto_resize_off_16px.png \
 	images/auto_resize_off_disabled_16px.png \
 	images/exit_16px.png \
+	images/poweroff_16px.png \
+	images/poweroff_disabled_16px.png \
 	images/fd_unmount_16px.png \
 	images/fd_unmount_dis_16px.png \
 	images/guesttools_16px.png \
