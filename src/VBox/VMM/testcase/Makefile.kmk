@@ -22,6 +22,9 @@ include	$(PATH_KBUILD)/subheader.kmk
 # Target lists.
 #
 PROGRAMS   += tstVMStructSize tstVMStructGC tstAsmStructs tstAsmStructsGC tstVMM tstVMM-HwAccm
+ifneq ($(BUILD_TARGET),win)
+PROGRAMS   += tstVMMFork
+endif
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS  += tstCFGM tstSSM tstMMHyperHeap tstVMM-2 tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
  ifneq ($(BUILD_TARGET),l4)
@@ -119,6 +122,10 @@ tstVMM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstVMM-HwAccm_TEMPLATE  = VBOXR3EXE
 tstVMM-HwAccm_SOURCES   = tstVMM-HwAccm.cpp
 tstVMM-HwAccm_LIBS      = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+
+tstVMMFork_TEMPLATE     = VBOXR3EXE
+tstVMMFork_SOURCES      = tstVMMFork.cpp
+tstVMMFork_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstVMM-2_TEMPLATE       = VBOXR3EXE
 tstVMM-2_SOURCES        = tstVMM-2.cpp
