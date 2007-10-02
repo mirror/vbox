@@ -719,12 +719,19 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 
     DISPDBG((0, "%s: %p bHasRect = %d\n", __FUNCTION__, pDev, lpLock->bHasRect));
     
-    pDev->ddLock.bHasRect = lpLock->bHasRect;
+    pDev->ddLock.bLocked = TRUE;
     
     if (lpLock->bHasRect)
     {
         DISPDBG((0, "%d,%d %dx%d\n", lpLock->rArea.left, lpLock->rArea.top, lpLock->rArea.right - lpLock->rArea.left, lpLock->rArea.bottom - lpLock->rArea.top));
         pDev->ddLock.rArea = lpLock->rArea;
+    }
+    else
+    {
+        pDev->ddLock.rArea.left   = 0;
+        pDev->ddLock.rArea.top    = 0;
+        pDev->ddLock.rArea.right  = pDev->cxScreen;
+        pDev->ddLock.rArea.bottom = pDev->cyScreen;
     }
 
     // Because we correctly set 'fpVidMem' to be the offset into our frame
@@ -757,7 +764,7 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
     PPDEV pDev = (PPDEV)lpUnlock->lpDD->dhpdev;
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
-    if (pDev->ddLock.bHasRect)
+    if (pDev->ddLock.bLocked)
     {
         DISPDBG((0, "%d,%d %dx%d\n", pDev->ddLock.rArea.left, pDev->ddLock.rArea.top, pDev->ddLock.rArea.right - pDev->ddLock.rArea.left, pDev->ddLock.rArea.bottom - pDev->ddLock.rArea.top));
         
@@ -782,7 +789,7 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 
             vboxHwBufferEndUpdate (pDev);
         }
-        pDev->ddLock.bHasRect = 0;
+        pDev->ddLock.bLocked = FALSE;
     }
 
     lpUnlock->ddRVal = DD_OK;

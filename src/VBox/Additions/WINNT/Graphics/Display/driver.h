@@ -133,7 +133,7 @@ struct  _PDEV
     DWORD            cHeaps;
     VIDEOMEMORY*     pvmList;
     struct {
-        DWORD bHasRect;
+        DWORD bLocked;
         RECTL rArea;
     } ddLock;
 #endif /* VBOX_WITH_DDRAW */
