@@ -45,6 +45,7 @@
 #include "AudioSnifferInterface.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
+#include "Version.h"
 
 // generated header
 #include "SchemaDefs.h"
@@ -5736,7 +5737,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
      * exact build was used to produce the core. */
     static char saBuildID[40];
     RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%d %s%s%s%s",
-                "BU", "IL", "DI", "D", VBOX_VERSION_STRING, VBOX_SVN_REV, "BU", "IL", "DI", "D");
+                "BU", "IL", "DI", "D", VBOX_VERSION_STRING, VBoxSVNRev (), "BU", "IL", "DI", "D");
 
     ComObjPtr <Console> console = task->mConsole;
 
@@ -5817,7 +5818,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             RTLogRelLogger(loggerRelease, 0, ~0U,
                            "VirtualBox %s r%d %s (%s %s) release log\n"
                            "Log opened %s\n",
-                           VBOX_VERSION_STRING, VBOX_SVN_REV, BUILD_TARGET,
+                           VBOX_VERSION_STRING, VBoxSVNRev (), VBOX_BUILD_TARGET,
                            __DATE__, __TIME__, nowUct);
 
             /* register this logger as the release logger */

@@ -7231,7 +7231,7 @@ int main(int argc, char *argv[])
                  || strcmp(argv[i], "--version") == 0)
         {
             /* Print version number, and do nothing else. */
-            RTPrintf("%sr%d\n", VBOX_VERSION_STRING, VBOX_SVN_REV);
+            RTPrintf("%sr%d\n", VBOX_VERSION_STRING, VBoxSVNRev ());
             exit(0);
         }
         else if (strcmp(argv[i], "-nologo") == 0)
