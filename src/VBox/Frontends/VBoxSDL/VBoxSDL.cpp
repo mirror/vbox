@@ -3081,7 +3081,7 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
     {
         // first handle the debugger hotkeys
         uint8_t *keystate = SDL_GetKeyState(NULL);
-#if 0
+#if 1
         // CTRL+ALT+Fn is not free on Linux hosts with Xorg ..
         if (keystate[SDLK_LALT] && !keystate[SDLK_LCTRL])
 #else
