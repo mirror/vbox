@@ -74,8 +74,6 @@ public slots:
                                           bool aSnapshots,
                                           bool aDescription);
 
-    void showHelpContents();
-
 protected:
 
     /* events */

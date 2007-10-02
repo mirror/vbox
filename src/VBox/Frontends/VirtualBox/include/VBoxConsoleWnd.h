@@ -225,6 +225,7 @@ private:
 #endif
 
     // Help actions
+    QAction *helpContentsAction;
     QAction *helpWebAction;
     QAction *helpRegisterAction;
     QAction *helpAboutAction;

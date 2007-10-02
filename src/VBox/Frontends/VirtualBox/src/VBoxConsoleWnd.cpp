@@ -260,6 +260,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* Help menu actions */
 
+    helpContentsAction = new QAction (this, "helpContentsAction");
+    helpContentsAction->setIconSet (VBoxGlobal::iconSet ("help_16px.png"));
     helpWebAction = new QAction (this, "helpWebAction");
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
     helpRegisterAction = new QAction (this, "helpRegisterAction");
@@ -370,9 +372,12 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
 
     QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
 
+    helpContentsAction->addTo (helpMenu);
     helpWebAction->addTo( helpMenu );
     helpMenu->insertSeparator();
-    helpRegisterAction->addTo( helpMenu );
+#ifdef VBOX_WITH_REGISTRATION
+    helpRegisterAction->addTo (helpMenu);
+#endif
     helpAboutAction->addTo( helpMenu );
     helpMenu->insertSeparator();
     helpResetMessagesAction->addTo (helpMenu);
@@ -519,6 +524,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (devicesNetworkMenu, SIGNAL (aboutToHide()),
              this, SLOT (clearStatusBar()));
 
+    connect (helpContentsAction, SIGNAL (activated()),
+             &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
     connect (helpRegisterAction, SIGNAL (activated()),
@@ -1502,6 +1509,10 @@ void VBoxConsoleWnd::languageChange()
 #endif
 
     /* Help actions */
+
+    helpContentsAction->setMenuText (tr ("&Contents..."));
+    helpContentsAction->setAccel (tr ("F1"));
+    helpContentsAction->setStatusTip (tr ("Show the online help contents"));
 
     helpWebAction->setMenuText (tr ("&VirtualBox Web Site..."));
     helpWebAction->setStatusTip (
