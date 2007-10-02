@@ -479,6 +479,9 @@ typedef struct GMM
     uint64_t            cAllocatedPages;
     /** The number of pages that are shared. A subset of cAllocatedPages. */
     uint64_t            cSharedPages;
+    /** The number of pages that are shared that has been left behind by
+     * VMs not doing proper cleanups. */
+    uint64_t            cLeftBehindSharedPages;
     /** The number of allocation chunks.
      * (The number of pages we've allocated from the host can be derived from this.) */
     uint32_t            cChunks;
@@ -543,7 +546,11 @@ static PGMM g_pGMM = NULL;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
-static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pvhGVM);
+static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pvGMM);
+/*static*/ DECLCALLBACK(int) gmmR0CleanupVMDestroyChunk(PAVLU32NODECORE pNode, void *pvGVM);
+DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
+DECLINLINE(void) gmmR0UnlinkChunk(PGMMCHUNK pChunk);
+static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk);
 static void gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
 
 
@@ -569,7 +576,7 @@ GMMR0DECL(int) GMMR0Init(void)
     pGMM->u32Magic = GMM_MAGIC;
     for (unsigned i = 0; i < RT_ELEMENTS(pGMM->ChunkTLB.aEntries); i++)
         pGMM->ChunkTLB.aEntries[i].idChunk = NIL_GMM_CHUNKID;
-    ASMBitSet(&pGMM->bmChunkId [0], NIL_GMM_CHUNKID);
+    ASMBitSet(&pGMM->bmChunkId[0], NIL_GMM_CHUNKID);
 
     int rc = RTSemFastMutexCreate(&pGMM->Mtx);
     if (RT_SUCCESS(rc))
@@ -700,16 +707,6 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 {
     LogFlow(("GMMR0CleanupVM: pGVM=%p:{.pVM=%p, .hSelf=%#x}\n", pGVM, pGVM->pVM, pGVM->hSelf));
 
-    /*
-     * The policy is 'INVALID' until the initial reservation
-     * request has been serviced.
-     */
-    if (    pGVM->gmm.s.enmPolicy <= GMMOCPOLICY_INVALID
-        ||  pGVM->gmm.s.enmPolicy >= GMMOCPOLICY_END)
-    {
-    }
-
-
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE_VOID(pGMM);
 
@@ -717,42 +714,105 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
     AssertRC(rc);
 
     /*
-     * If it's the last VM around, we can skip walking all the chunk looking
-     * for the pages owned by this VM and instead flush the whole shebang.
-     *
-     * This takes care of the eventuality that a VM has left shared page
-     * references behind (shouldn't happen of course, but you never know).
+     * The policy is 'INVALID' until the initial reservation
+     * request has been serviced.
      */
-    pGMM->cRegisteredVMs--;
-    if (!pGMM->cRegisteredVMs)
-    {
-
-
-    }
-    else if (0)//pGVM->gmm.s.cPrivatePages)
+    if (    pGVM->gmm.s.enmPolicy > GMMOCPOLICY_INVALID
+        ||  pGVM->gmm.s.enmPolicy < GMMOCPOLICY_END)
     {
         /*
-         * Walk the entire pool looking for pages that belongs to this VM.
-         * This is slow but necessary. Of course it won't work for shared
-         * pages, but we'll deal with that later.
+         * If it's the last VM around, we can skip walking all the chunk looking
+         * for the pages owned by this VM and instead flush the whole shebang.
+         *
+         * This takes care of the eventuality that a VM has left shared page
+         * references behind (shouldn't happen of course, but you never know).
          */
-        RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FreeVMPagesInChunk, (void *)pGVM->hSelf);
+        Assert(pGMM->cRegisteredVMs);
+        pGMM->cRegisteredVMs--;
+#if 0 /* disabled so it won't hide bugs. */
+        if (!pGMM->cRegisteredVMs)
+        {
+            RTAvlU32Destroy(&pGMM->pChunks, gmmR0CleanupVMDestroyChunk, pGMM);
 
-        /*
-         * Update over-commitment management and free chunks that are no
-         * longer needed.
-         */
+            for (unsigned i = 0; i < RT_ELEMENTS(pGMM->ChunkTLB.aEntries); i++)
+            {
+                pGMM->ChunkTLB.aEntries[i].idChunk = NIL_GMM_CHUNKID;
+                pGMM->ChunkTLB.aEntries[i].pChunk = NULL;
+            }
 
+            memset(&pGMM->Private, 0, sizeof(pGMM->Private));
+            memset(&pGMM->Shared, 0, sizeof(pGMM->Shared));
+
+            memset(&pGMM->bmChunkId[0], 0, sizeof(pGMM->bmChunkId));
+            ASMBitSet(&pGMM->bmChunkId[0], NIL_GMM_CHUNKID);
+
+            pGMM->cReservedPages = 0;
+            pGMM->cOverCommittedPages = 0;
+            pGMM->cAllocatedPages = 0;
+            pGMM->cSharedPages = 0;
+            pGMM->cLeftBehindSharedPages = 0;
+            pGMM->cChunks = 0;
+            pGMM->cBalloonedPages = 0;
+        }
+        else
+#endif
+        {
+            /*
+             * Walk the entire pool looking for pages that belongs to this VM
+             * and left over mappings. (This'll only catch private pages, shared
+             * pages will be 'left behind'.)
+             */
+            uint64_t cPrivatePages = pGVM->gmm.s.cPrivatePages; /* save */
+            RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0CleanupVMScanChunk, pGVM);
+            if (pGVM->gmm.s.cPrivatePages)
+                SUPR0Printf("GMMR0CleanupVM: hGVM=%#x has %#x private pages that cannot be found!\n", pGVM->hSelf, pGVM->gmm.s.cPrivatePages);
+            pGMM->cAllocatedPages -= cPrivatePages;
+
+            /* free empty chunks. */
+            if (cPrivatePages)
+            {
+                PGMMCHUNK pCur = pGMM->Private.apLists[RT_ELEMENTS(pGMM->Private.apLists) - 1];
+                while (pCur)
+                {
+                    PGMMCHUNK pNext = pCur->pFreeNext;
+                    if (    pCur->cFree == GMM_CHUNK_NUM_PAGES
+                        &&  (!pGMM->fLegacyMode || pCur->hGVM == pGVM->hSelf))
+                        gmmR0FreeChunk(pGMM, pCur);
+                    pCur = pNext;
+                }
+            }
+
+            /* account for shared pages that weren't freed. */
+            if (pGVM->gmm.s.cSharedPages)
+            {
+                Assert(pGMM->cSharedPages >= pGVM->gmm.s.cSharedPages);
+                SUPR0Printf("GMMR0CleanupVM: hGVM=%#x left %#x shared pages behind!\n", pGVM->hSelf, pGVM->gmm.s.cSharedPages);
+                pGMM->cLeftBehindSharedPages += pGVM->gmm.s.cSharedPages;
+            }
+
+            /*
+             * Update the over-commitment management statistics.
+             */
+            pGMM->cReservedPages -= pGVM->gmm.s.Reserved.cBasePages
+                                  + pGVM->gmm.s.Reserved.cFixedPages
+                                  + pGVM->gmm.s.Reserved.cShadowPages;
+            switch (pGVM->gmm.s.enmPolicy)
+            {
+                case GMMOCPOLICY_NO_OC:
+                    break;
+                default:
+                    /** @todo Update GMM->cOverCommittedPages */
+                    break;
+            }
+        }
     }
 
-    RTSemFastMutexRelease(pGMM->Mtx);
-
-    /* trash the data */
-//    pGVM->gmm.s.cBasePages = 0;
-//    pGVM->gmm.s.cPrivatePages = 0;
-//    pGVM->gmm.s.cSharedPages = 0;
+    /* zap the GVM data. */
     pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
     pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
+    pGVM->gmm.s.fMayAllocate = false;
+
+    RTSemFastMutexRelease(pGMM->Mtx);
 
     LogFlow(("GMMR0CleanupVM: returns\n"));
 }
@@ -762,38 +822,54 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
  * RTAvlU32DoWithAll callback.
  *
  * @returns 0
- * @param   pNode   The node to destroy.
- * @param   pvhGVM  The GVM::hSelf value.
+ * @param   pNode   The node to search.
+ * @param   pvGVM   Pointer to the shared VM structure.
  */
-static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pvhGVM)
+static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pvGVM)
 {
     PGMMCHUNK pChunk = (PGMMCHUNK)pNode;
-    uint16_t hGVM = (uintptr_t)pvhGVM;
+    PGVM pGVM = (PGVM)pvGVM;
 
-#ifndef VBOx_STRICT
+    /*
+     * Look for pages belonging to the VM.
+     * (Perform some internal checks while we're scanning.)
+     */
+#ifndef VBOX_STRICT
     if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
 #endif
     {
-        /*
-         * Perform some internal checks while we're scanning.
-         */
         unsigned cPrivate = 0;
         unsigned cShared = 0;
         unsigned cFree = 0;
 
+        uint16_t hGVM = pGVM->hSelf;
         unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
         while (iPage-- > 0)
             if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
             {
                 if (pChunk->aPages[iPage].Private.hGVM == hGVM)
                 {
-                    /* Free it. */
+                    /*
+                     * Free the page.
+                     *
+                     * The reason for not using gmmR0FreePrivatePage here is that we
+                     * must *not* cause the chunk to be freed from under us - we're in
+                     * a AVL tree walk here.
+                     */
                     pChunk->aPages[iPage].u = 0;
                     pChunk->aPages[iPage].Free.iNext = pChunk->iFreeHead;
                     pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
                     pChunk->iFreeHead = iPage;
                     pChunk->cPrivate--;
-                    pChunk->cFree++;
+                    if ((pChunk->cFree & GMM_CHUNK_FREE_SET_MASK) == 0)
+                    {
+                        gmmR0UnlinkChunk(pChunk);
+                        pChunk->cFree++;
+                        gmmR0LinkChunk(pChunk, pChunk->cShared ? &g_pGMM->Shared : &g_pGMM->Private);
+                    }
+                    else
+                        pChunk->cFree++;
+                    pGVM->gmm.s.cPrivatePages--;
                     cFree++;
                 }
                 else
@@ -811,7 +887,7 @@ static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pv
                         ||  pChunk->cPrivate != cPrivate
                         ||  pChunk->cShared != cShared))
         {
-            SUPR0Printf("GMM: Chunk %p/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n",
+            SUPR0Printf("gmmR0CleanupVMScanChunk: Chunk %p/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n",
                         pChunk->cFree, cFree, pChunk->cPrivate, cPrivate, pChunk->cShared, cShared);
             pChunk->cFree = cFree;
             pChunk->cPrivate = cPrivate;
@@ -819,6 +895,93 @@ static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pv
         }
     }
 
+    /*
+     * Look for the mapping belonging to the terminating VM.
+     */
+    for (unsigned i = 0; i < pChunk->cMappings; i++)
+        if (pChunk->paMappings[i].pGVM == pGVM)
+        {
+            RTR0MEMOBJ MemObj = pChunk->paMappings[i].MapObj;
+
+            pChunk->cMappings--;
+            if (i < pChunk->cMappings)
+                 pChunk->paMappings[i] = pChunk->paMappings[pChunk->cMappings];
+            pChunk->paMappings[pChunk->cMappings].pGVM = NULL;
+            pChunk->paMappings[pChunk->cMappings].MapObj = NIL_RTR0MEMOBJ;
+
+            int rc = RTR0MemObjFree(MemObj, false /* fFreeMappings (NA) */);
+            if (RT_FAILURE(rc))
+            {
+                SUPR0Printf("gmmR0CleanupVMScanChunk: %p/%#x: mapping #%x: RTRMemObjFree(%p,false) -> %d \n",
+                            pChunk, pChunk->Core.Key, i, MemObj, rc);
+                AssertRC(rc);
+            }
+            break;
+        }
+
+    /*
+     * If not in legacy mode, we should reset the hGVM field
+     * if it has our handle in it.
+     */
+    if (pChunk->hGVM == pGVM->hSelf)
+    {
+        if (!g_pGMM->fLegacyMode)
+            pChunk->hGVM = NIL_GVM_HANDLE;
+        else if (pChunk->cFree != GMM_CHUNK_NUM_PAGES)
+        {
+            SUPR0Printf("gmmR0CleanupVMScanChunk: %p/%#x: cFree=%#x - it should be 0 in legacy mode!\n",
+                        pChunk, pChunk->Core.Key, pChunk->cFree);
+            AssertMsgFailed(("%p/%#x: cFree=%#x - it should be 0 in legacy mode!\n", pChunk, pChunk->Core.Key, pChunk->cFree));
+
+            gmmR0UnlinkChunk(pChunk);
+            pChunk->cFree = GMM_CHUNK_NUM_PAGES;
+            gmmR0LinkChunk(pChunk, pChunk->cShared ? &g_pGMM->Shared : &g_pGMM->Private);
+        }
+    }
+
+    return 0;
+}
+
+
+/**
+ * RTAvlU32Destroy callback for GMMR0CleanupVM.
+ *
+ * @returns 0
+ * @param   pNode   The node (allocation chunk) to destroy.
+ * @param   pvGVM   Pointer to the shared VM structure.
+ */
+/*static*/ DECLCALLBACK(int) gmmR0CleanupVMDestroyChunk(PAVLU32NODECORE pNode, void *pvGVM)
+{
+    PGMMCHUNK pChunk = (PGMMCHUNK)pNode;
+    PGVM pGVM = (PGVM)pvGVM;
+
+    for (unsigned i = 0; i < pChunk->cMappings; i++)
+    {
+        if (pChunk->paMappings[i].pGVM != pGVM)
+            SUPR0Printf("gmmR0CleanupVMDestroyChunk: %p/%#x: mapping #%x: pGVM=%p exepcted %p\n", pChunk,
+                        pChunk->Core.Key, i, pChunk->paMappings[i].pGVM, pGVM);
+        int rc = RTR0MemObjFree(pChunk->paMappings[i].MapObj, false /* fFreeMappings (NA) */);
+        if (RT_FAILURE(rc))
+        {
+            SUPR0Printf("gmmR0CleanupVMDestroyChunk: %p/%#x: mapping #%x: RTRMemObjFree(%p,false) -> %d \n", pChunk,
+                        pChunk->Core.Key, i, pChunk->paMappings[i].MapObj, rc);
+            AssertRC(rc);
+        }
+    }
+
+    int rc = RTR0MemObjFree(pChunk->MemObj, true /* fFreeMappings */);
+    if (RT_FAILURE(rc))
+    {
+        SUPR0Printf("gmmR0CleanupVMDestroyChunk: %p/%#x: RTRMemObjFree(%p,true) -> %d (cMappings=%d)\n", pChunk,
+                    pChunk->Core.Key, pChunk->MemObj, rc, pChunk->cMappings);
+        AssertRC(rc);
+    }
+    pChunk->MemObj = NIL_RTR0MEMOBJ;
+
+    RTMemFree(pChunk->paMappings);
+    pChunk->paMappings = NULL;
+
+    RTMemFree(pChunk);
     return 0;
 }
 
@@ -1021,6 +1184,26 @@ GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, PGMMUPDATERESERVATIONREQ pReq)
 
 
 /**
+ * Looks up a chunk in the tree and fill in the TLB entry for it.
+ *
+ * This is not expected to fail and will bitch if it does.
+ *
+ * @returns Pointer to the allocation chunk, NULL if not found.
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   idChunk     The ID of the chunk to find.
+ * @param   pTlbe       Pointer to the TLB entry.
+ */
+static PGMMCHUNK gmmR0GetChunkSlow(PGMM pGMM, uint32_t idChunk, PGMMCHUNKTLBE pTlbe)
+{
+    PGMMCHUNK pChunk = (PGMMCHUNK)RTAvlU32Get(&pGMM->pChunks, idChunk);
+    AssertMsgReturn(pChunk, ("Chunk %#x not found!\n", idChunk), NULL);
+    pTlbe->idChunk = idChunk;
+    pTlbe->pChunk = pChunk;
+    return pChunk;
+}
+
+
+/**
  * Finds a allocation chunk.
  *
  * This is not expected to fail and will bitch if it does.
@@ -1031,7 +1214,14 @@ GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, PGMMUPDATERESERVATIONREQ pReq)
  */
 DECLINLINE(PGMMCHUNK) gmmR0GetChunk(PGMM pGMM, uint32_t idChunk)
 {
-    return NULL;
+    /*
+     * Do a TLB lookup, branch if not in the TLB.
+     */
+    PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(idChunk)];
+    if (    pTlbe->idChunk != idChunk
+        ||  !pTlbe->pChunk)
+        return gmmR0GetChunkSlow(pGMM, idChunk, pTlbe);
+    return pTlbe->pChunk;
 }
 
 
@@ -1046,7 +1236,9 @@ DECLINLINE(PGMMCHUNK) gmmR0GetChunk(PGMM pGMM, uint32_t idChunk)
  */
 DECLINLINE(PGMMPAGE) gmmR0GetPage(PGMM pGMM, uint32_t idPage)
 {
-    /* must log pages that aren't found.  */
+    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    if (RT_LIKELY(pChunk))
+        return &pChunk->aPages[idPage & GMM_PAGEID_IDX_MASK];
     return NULL;
 }
 
@@ -2313,12 +2505,12 @@ static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
         if (pChunk->paMappings[i].pGVM == pGVM)
         {
             /* unmap */
-            int rc = RTR0MemObjFree(pChunk->paMappings[i].MapObj, false /* fFreeMappings */);
+            int rc = RTR0MemObjFree(pChunk->paMappings[i].MapObj, false /* fFreeMappings (NA) */);
             if (RT_SUCCESS(rc))
             {
                 /* update the record. */
                 pChunk->cMappings--;
-                if (pChunk->cMappings > i)
+                if (i < pChunk->cMappings)
                     pChunk->paMappings[i] = pChunk->paMappings[pChunk->cMappings];
                 pChunk->paMappings[pChunk->cMappings].MapObj = NIL_RTR0MEMOBJ;
                 pChunk->paMappings[pChunk->cMappings].pGVM = NULL;
@@ -2372,7 +2564,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
             void *pvMappings = RTMemRealloc(pChunk->paMappings, (pChunk->cMappings + 2 /*8*/) * sizeof(pChunk->paMappings[0]));
             if (RT_UNLIKELY(pvMappings))
             {
-                rc = RTR0MemObjFree(MapObj, false /* fFreeMappings */);
+                rc = RTR0MemObjFree(MapObj, false /* fFreeMappings (NA) */);
                 AssertRC(rc);
                 return VERR_NO_MEMORY;
             }

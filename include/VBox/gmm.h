@@ -57,6 +57,8 @@ __BEGIN_DECLS
  * The current limit is 2^28 - 1, or almost 1TB if you like.
  * The constraints are currently dictated by PGMPAGE. */
 #define GMM_PAGEID_LAST                 (RT_BIT_32(28) - 1)
+/** Mask out the page index from the Page ID. */
+#define GMM_PAGEID_IDX_MASK             ((1U << GMM_CHUNKID_SHIFT) - 1)
 /** The NIL Chunk ID value. */
 #define NIL_GMM_CHUNKID                 0
 /** The NIL Page ID value. */
