@@ -1649,22 +1649,18 @@ bool VBoxGlobal::showVirtualBoxLicense()
 }
 #endif
 
-void VBoxGlobal::callRegistration()
+void VBoxGlobal::checkRegistration()
 {
-    /* Check if the automatic registration already passed */
-    QString regData = virtualBox().GetExtraData (VBoxDefs::GUI_RegistrationData);
-    if (regData.startsWith ("triesLeft="))
-    {
-        QString triesLeft = regData.section ("=", 1, 1);
-        if (triesLeft == "0")
-            return;
-    }
-    else if (!regData.isEmpty())
+#ifdef VBOX_WITH_REGISTRATION
+    if (!VBoxRegistrationDlg::hasToBeShown())
         return;
 
-    /* Store the winid of main app wgt to ensure only one reg dlg running */
+    /* Store the ID of the main window to ensure that only one registration
+     * dialog is shown at a time. This operation will implicitly cause the
+     * dialog to show if it's not already shown. */
     virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
-                               QString ("%1").arg ((long)qApp->mainWidget()->winId()));
+                               QString ("%1").arg ((long) qApp->mainWidget()->winId()));
+#endif
 }
 
 void VBoxGlobal::showRegistrationDialog()

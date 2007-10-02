@@ -233,7 +233,7 @@ int main (int argc, char **argv)
                 a.setMainWidget (&vboxGlobal().consoleWnd());
                 if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
                 {
-                    vboxGlobal().callRegistration();
+                    vboxGlobal().checkRegistration();
                     rc = a.exec();
                 }
             }
@@ -244,7 +244,7 @@ int main (int argc, char **argv)
             else
             {
                 a.setMainWidget (&vboxGlobal().selectorWnd());
-                vboxGlobal().callRegistration();
+                vboxGlobal().checkRegistration();
                 vboxGlobal().selectorWnd().show();
                 vboxGlobal().startEnumeratingMedia();
                 rc = a.exec();
