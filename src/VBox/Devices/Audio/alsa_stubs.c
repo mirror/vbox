@@ -51,7 +51,7 @@ extern rettype function signature; \
 rettype function signature \
 { \
     static rettype (*pfnFunc) signature = NULL; \
-    void *pfnResolvedFunc; \
+    rettype (*pfnResolvedFunc) signature; \
     int rc; \
     rettype rcFunc = retval; \
 \
@@ -60,11 +60,11 @@ rettype function signature \
         return pfnFunc shortsig; \
     } \
     AssertReturn(YES == isLibLoaded, retval); \
-    rc = RTLdrGetSymbol(hLibAsound, #function, &pfnResolvedFunc); \
+    rc = RTLdrGetSymbol(hLibAsound, #function, (void**)&pfnResolvedFunc); \
     if (RT_SUCCESS(rc)) \
     { \
         Log2(("%s: resolving symbol on first call.\n", __PRETTY_FUNCTION__)); \
-        pfnFunc = (rettype (*) signature) pfnResolvedFunc; \
+        pfnFunc = pfnResolvedFunc; \
         rcFunc = pfnFunc shortsig; \
     } \
     else \
