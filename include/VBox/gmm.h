@@ -219,7 +219,8 @@ GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cS
 GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
 GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
-GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages);
+GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
+GMMR0DECL(int)  GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages);
 GMMR0DECL(int)  GMMR0FreeMapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR pvR3);
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3);
 
@@ -316,6 +317,8 @@ typedef struct GMMBALLOONEDPAGESREQ
     uint32_t        cBalloonedPages;
     /** The number of pages to free. */
     uint32_t        cPagesToFree;
+    /** Whether the ballooning request is completed or more pages are still to come. */
+    bool            fCompleted;
     /** Array of free page descriptors. */
     GMMFREEPAGEDESC aPages[1];
 } GMMBALLOONEDPAGESREQ;

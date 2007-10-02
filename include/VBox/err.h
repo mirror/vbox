@@ -1122,15 +1122,23 @@
 #define VERR_GMM_HIT_GLOBAL_LIMIT                   (-4152)
 /** Hit the a VM account limit. */
 #define VERR_GMM_HIT_VM_ACCOUNT_LIMIT               (-4153)
+/** Attempt to free more memory than what was previously allocated. */
+#define VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH           (-4154)
+/** Attempted to report too many pages as deflated.  */
+#define VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH        (-4155)
 /** The page to be freed or updated was not found. */
-#define VERR_GMM_PAGE_NOT_FOUND                     (-4154)
+#define VERR_GMM_PAGE_NOT_FOUND                     (-4156)
 /** The specified shared page was not actually private. */
-#define VERR_GMM_PAGE_NOT_PRIVATE                   (-4155)
+#define VERR_GMM_PAGE_NOT_PRIVATE                   (-4157)
 /** The specified shared page was not actually shared. */
-#define VERR_GMM_PAGE_NOT_SHARED                    (-4156)
+#define VERR_GMM_PAGE_NOT_SHARED                    (-4158)
+/** The page to be freed was already freed. */
+#define VERR_GMM_PAGE_ALREADY_FREE                  (-4159)
+/** The page to be updated or freed was noted owned by the caller. */
+#define VERR_GMM_NOT_PAGE_OWNER                     (-4160)
 /** The reservation or reservation update was declined - too many VMs, too
  * little memory, and/or too low GMM configuration. */
-#define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-4157)
+#define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-4161)
 /** @} */
 
 /** @name VBox GVM Status Codes
