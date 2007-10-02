@@ -191,6 +191,12 @@
 # error "HZ is not a multiple of 1000, the GIP stuff won't work right!"
 #endif
 
+/** @def TICK_NSEC
+ * The time between ticks in nsec */
+#ifndef TICK_NSEC
+# define TICK_NSEC (1000000UL / HZ)
+#endif
+
 #ifdef CONFIG_X86_LOCAL_APIC
 
 /* If an NMI occurs while we are inside the world switcher the machine will
@@ -921,15 +927,9 @@ static int VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt)
     HCPhys = page_to_phys(pPage);
     pGip = (PSUPGLOBALINFOPAGE)page_address(pPage);
     pDevExt->ulLastJiffies  = jiffies;
-#ifdef TICK_NSEC
     pDevExt->u64LastMonotime = (uint64_t)pDevExt->ulLastJiffies * TICK_NSEC;
     dprintf(("VBoxDrvInitGIP: TICK_NSEC=%ld HZ=%d jiffies=%ld now=%lld\n",
              TICK_NSEC, HZ, pDevExt->ulLastJiffies, pDevExt->u64LastMonotime));
-#else
-    pDevExt->u64LastMonotime = (uint64_t)pDevExt->ulLastJiffies * (1000000 / HZ);
-    dprintf(("VBoxDrvInitGIP: TICK_NSEC=%d HZ=%d jiffies=%ld now=%lld\n",
-             (int)(1000000 / HZ), HZ, pDevExt->ulLastJiffies, pDevExt->u64LastMonotime));
-#endif
     supdrvGipInit(pDevExt, pGip, HCPhys, pDevExt->u64LastMonotime,
                   HZ <= 1000 ? HZ : 1000);
 
@@ -1013,7 +1013,7 @@ static int VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt)
  *
  * @param   ulUser  The device extension pointer.
  */
-static void     VBoxDrvLinuxGipTimer(unsigned long ulUser)
+static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
 {
     PSUPDRVDEVEXT       pDevExt;
     PSUPGLOBALINFOPAGE  pGip;
@@ -1034,11 +1034,7 @@ static void     VBoxDrvLinuxGipTimer(unsigned long ulUser)
         uint8_t iCPU = ASMGetApicId();
         ulDiff = ulNow - pDevExt->aCPUs[iCPU].ulLastJiffies;
         pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
-#ifdef TICK_NSEC
         u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
-#else
-        u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * (1000000 / HZ);
-#endif
         pDevExt->aCPUs[iCPU].u64LastMonotime = u64Monotime;
     }
     else
@@ -1046,11 +1042,7 @@ static void     VBoxDrvLinuxGipTimer(unsigned long ulUser)
     {
         ulDiff = ulNow - pDevExt->ulLastJiffies;
         pDevExt->ulLastJiffies = ulNow;
-#ifdef TICK_NSEC
         u64Monotime = pDevExt->u64LastMonotime + ulDiff * TICK_NSEC;
-#else
-        u64Monotime = pDevExt->u64LastMonotime + ulDiff * (1000000 / HZ);
-#endif
         pDevExt->u64LastMonotime = u64Monotime;
     }
     if (RT_LIKELY(pGip))
@@ -1090,11 +1082,7 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
         {
             unsigned long   ulDiff = ulNow - pDevExt->aCPUs[iCPU].ulLastJiffies;
             pDevExt->aCPUs[iCPU].ulLastJiffies = ulNow;
-#ifdef TICK_NSEC
             u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * TICK_NSEC;
-#else
-            u64Monotime = pDevExt->aCPUs[iCPU].u64LastMonotime + ulDiff * (1000000 / HZ);
-#endif
             pDevExt->aCPUs[iCPU].u64LastMonotime = u64Monotime;
             if (RT_LIKELY(pGip))
                 supdrvGipUpdatePerCpu(pGip, u64Monotime, iCPU);
