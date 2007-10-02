@@ -746,6 +746,8 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             return GMMR0FreePagesReq(pVM, (PGMMFREEPAGESREQ)pReqHdr);
         case VMMR0_DO_GMM_BALLOONED_PAGES:
             return GMMR0BalloonedPagesReq(pVM, (PGMMBALLOONEDPAGESREQ)pReqHdr);
+        case VMMR0_DO_GMM_DEFLATED_BALLOON:
+            return GMMR0DeflatedBalloon(pVM, (uint32_t)u64Arg);
 
         case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
             return GMMR0FreeMapUnmapChunkReq(pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
@@ -901,7 +903,16 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
         {
             case VMMR0_DO_VMMR0_INIT:
             case VMMR0_DO_VMMR0_TERM:
+            case VMMR0_DO_GMM_INITIAL_RESERVATION:
+            case VMMR0_DO_GMM_UPDATE_RESERVATION:
+            case VMMR0_DO_GMM_ALLOCATE_PAGES:
+            case VMMR0_DO_GMM_FREE_PAGES:
+            case VMMR0_DO_GMM_BALLOONED_PAGES:
+            case VMMR0_DO_GMM_DEFLATED_BALLOON:
+            case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
+            case VMMR0_DO_GMM_SEED_CHUNK:
             {
+                /** @todo validate this EMT claim... GVM knows. */
                 VMMR0ENTRYEXARGS Args;
                 Args.pVM = pVM;
                 Args.enmOperation = enmOperation;

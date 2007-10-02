@@ -482,6 +482,8 @@ typedef struct GMM
     /** The number of allocation chunks.
      * (The number of pages we've allocated from the host can be derived from this.) */
     uint32_t            cChunks;
+    /** The number of current ballooned pages. */
+    uint64_t            cBalloonedPages;
 
     /** The legacy mode indicator.
      * This is determined at initialization time. */
@@ -542,6 +544,7 @@ static PGMM g_pGMM = NULL;
 *******************************************************************************/
 static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
 static DECLCALLBACK(int) gmmR0FreeVMPagesInChunk(PAVLU32NODECORE pNode, void *pvhGVM);
+static void gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
 
 
 
@@ -1020,6 +1023,8 @@ GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, PGMMUPDATERESERVATIONREQ pReq)
 /**
  * Finds a allocation chunk.
  *
+ * This is not expected to fail and will bitch if it does.
+ *
  * @returns Pointer to the allocation chunk, NULL if not found.
  * @param   pGMM        Pointer to the GMM instance.
  * @param   idChunk     The ID of the chunk to find.
@@ -1033,14 +1038,18 @@ DECLINLINE(PGMMCHUNK) gmmR0GetChunk(PGMM pGMM, uint32_t idChunk)
 /**
  * Finds a page.
  *
+ * This is not expected to fail and will bitch if it does.
+ *
  * @returns Pointer to the page, NULL if not found.
  * @param   pGMM        Pointer to the GMM instance.
  * @param   idPage      The ID of the page to find.
  */
 DECLINLINE(PGMMPAGE) gmmR0GetPage(PGMM pGMM, uint32_t idPage)
 {
+    /* must log pages that aren't found.  */
     return NULL;
 }
+
 
 /**
  * Unlinks the chunk from the free list it's currently on (if any).
@@ -1158,144 +1167,6 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
     AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%d\n", idChunk), NIL_GVM_HANDLE);
 
     return pGMM->idChunkPrev = idChunk;
-}
-
-
-/**
- * Frees a chunk, giving it back to the host OS.
- *
- * @param   pGMM        Pointer to the GMM instance.
- * @param   pChunk      The chunk to free.
- */
-static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
-{
-    /*
-     * If there are current mappings of the chunk, then request the
-     * VMs to unmap them. Reposition the chunk in the free list so
-     * it won't be a likely candidate for allocations.
-     */
-    if (pChunk->cMappings)
-    {
-        /** @todo R0 -> VM request */
-
-    }
-    else
-    {
-        /*
-         * Try free the memory object.
-         */
-        int rc = RTR0MemObjFree(pChunk->MemObj, false /* fFreeMappings */);
-        if (RT_SUCCESS(rc))
-        {
-            pChunk->MemObj = NIL_RTR0MEMOBJ;
-
-            /*
-             * Unlink it from everywhere.
-             */
-            gmmR0UnlinkChunk(pChunk);
-
-            PAVLU32NODECORE pCore = RTAvlU32Remove(&pGMM->pChunks, pChunk->Core.Key);
-            Assert(pCore == &pChunk->Core); NOREF(pCore);
-
-            PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pCore->Key)];
-            if (pTlbe->pChunk == pChunk)
-            {
-                pTlbe->idChunk = NIL_GMM_CHUNKID;
-                pTlbe->pChunk = NULL;
-            }
-
-            Assert(pGMM->cChunks > 0);
-            pGMM->cChunks--;
-
-            /*
-             * Free the Chunk ID and struct.
-             */
-            gmmR0FreeChunkId(pGMM, pChunk->Core.Key);
-            pChunk->Core.Key = NIL_GMM_CHUNKID;
-
-            RTMemFree(pChunk->paMappings);
-            pChunk->paMappings = NULL;
-
-            RTMemFree(pChunk);
-        }
-        else
-            AssertRC(rc);
-    }
-}
-
-
-/**
- * Free page worker.
- *
- * The caller does all the statistic decrementing, we do all the incrementing.
- *
- * @param   pGMM        Pointer to the GMM instance data.
- * @param   pChunk      Pointer to the chunk this page belongs to.
- * @param   pPage       Pointer to the page.
- */
-static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, PGMMPAGE pPage)
-{
-    /*
-     * Put the page on the free list.
-     */
-    pPage->u = 0;
-    pPage->Free.u2State = GMM_PAGE_STATE_FREE;
-    Assert(pChunk->iFreeHead < RT_ELEMENTS(pChunk->aPages) || pChunk->iFreeHead == UINT16_MAX);
-    pPage->Free.iNext = pChunk->iFreeHead;
-    pChunk->iFreeHead = pPage - &pChunk->aPages[0];
-
-    /*
-     * Update statistics (the cShared/cPrivate stats are up to date already),
-     * and relink the chunk if necessary.
-     */
-    if ((pChunk->cFree & GMM_CHUNK_FREE_SET_MASK) == 0)
-    {
-        gmmR0UnlinkChunk(pChunk);
-        pChunk->cFree++;
-        gmmR0LinkChunk(pChunk, pChunk->cShared ? &pGMM->Shared : &pGMM->Private);
-    }
-    else
-    {
-        pChunk->cFree++;
-        pChunk->pSet->cPages++;
-
-        /*
-         * If the chunk becomes empty, consider giving memory back to the host OS.
-         *
-         * The current strategy is to try give it back if there are other chunks
-         * in this free list, meaning if there are at least 240 free pages in this
-         * category. Note that since there are probably mappings of the chunk,
-         * it won't be freed up instantly, which probably screws up this logic
-         * a bit...
-         */
-        if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
-                        && pChunk->pFreeNext
-                        && pChunk->pFreePrev))
-            gmmR0FreeChunk(pGMM, pChunk);
-    }
-}
-
-
-/**
- * Frees a shared page, the page is known to exist and be valid and such.
- *
- * @param   pGMM        Pointer to the GMM instance.
- * @param   idPage      The Page ID
- * @param   pPage       The page structure.
- */
-static void gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
-{
-    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
-    Assert(pChunk);
-    Assert(pChunk->cFree < GMM_CHUNK_NUM_PAGES);
-    Assert(pChunk->cShared > 0);
-    Assert(pGMM->cSharedPages > 0);
-    Assert(pGMM->cAllocatedPages > 0);
-
-    pChunk->cShared--;
-    pGMM->cAllocatedPages--;
-    pGMM->cSharedPages--;
-    gmmR0FreePageWorker(pGMM, pChunk, pPage);
 }
 
 
@@ -1470,15 +1341,27 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     {
         case GMMACCOUNT_BASE:
             if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + cPages > pGVM->gmm.s.Reserved.cBasePages))
+            {
+                Log(("gmmR0AllocatePages: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
+                     pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
+            }
             break;
         case GMMACCOUNT_SHADOW:
             if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cShadowPages + cPages > pGVM->gmm.s.Reserved.cShadowPages))
+            {
+                Log(("gmmR0AllocatePages: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
+                     pGVM->gmm.s.Reserved.cShadowPages, pGVM->gmm.s.Allocated.cShadowPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
+            }
             break;
         case GMMACCOUNT_FIXED:
             if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cFixedPages + cPages > pGVM->gmm.s.Reserved.cFixedPages))
+            {
+                Log(("gmmR0AllocatePages: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
+                     pGVM->gmm.s.Reserved.cFixedPages, pGVM->gmm.s.Allocated.cFixedPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
+            }
             break;
         default:
             AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
@@ -1564,14 +1447,14 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
      */
     switch (enmAccount)
     {
-        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages += iPage;
+        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   += iPage;
         case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages += iPage;
-        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages += iPage;
+        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  += iPage;
         default:
             AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
     }
     pGVM->gmm.s.cPrivatePages += iPage;
-    pGMM->cAllocatedPages += iPage;
+    pGMM->cAllocatedPages     += iPage;
 
     AssertMsgReturn(iPage == cPages, ("%d != %d\n", iPage, cPages), VERR_INTERNAL_ERROR);
 
@@ -1601,6 +1484,9 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
  */
 GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
 {
+    LogFlow(("GMMR0AllocateHandyPages: pVM=%p cPagesToUpdate=%#x cPagesToAlloc=%#x paPages=%p\n",
+             pVM, cPagesToUpdate, cPagesToAlloc, paPages));
+
     /*
      * Validate, get basics and take the semaphore.
      * (This is a relatively busy path, so make predictions where possible.)
@@ -1653,6 +1539,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
     {
         /*
          * Perform the updates.
+         * Stop on the first error.
          */
         for (iPage = 0; iPage < cPagesToUpdate; iPage++)
         {
@@ -1663,21 +1550,39 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
                 {
                     if (RT_LIKELY(GMM_PAGE_IS_PRIVATE(pPage)))
                     {
-                        AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_END && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_END);
-                        if (RT_LIKELY(paPages[iPage].HCPhysGCPhys) < GMM_GCPHYS_END)
-                            pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
-                        else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
-                            pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
-                        /* else: NIL_RTHCPHYS nothing */
+                        if (RT_LIKELY(pPage->Private.hGVM == pGVM->hSelf))
+                        {
+                            AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_END && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_END);
+                            if (RT_LIKELY(paPages[iPage].HCPhysGCPhys) < GMM_GCPHYS_END)
+                                pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
+                            else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
+                                pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
+                            /* else: NIL_RTHCPHYS nothing */
 
-                        paPages[iPage].idPage = NIL_GMM_PAGEID;
-                        paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
+                            paPages[iPage].idPage = NIL_GMM_PAGEID;
+                            paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
+                        }
+                        else
+                        {
+                            Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not owner! hGVM=%#x hSelf=%#x\n",
+                                 iPage, paPages[iPage].idPage, pPage->Private.hGVM, pGVM->hSelf));
+                            rc = VERR_GMM_NOT_PAGE_OWNER;
+                            break;
+                        }
                     }
                     else
+                    {
+                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not private!\n", iPage, paPages[iPage].idPage));
                         rc = VERR_GMM_PAGE_NOT_PRIVATE;
+                        break;
+                    }
                 }
                 else
+                {
+                    Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not found! (private)\n", iPage, paPages[iPage].idPage));
                     rc = VERR_GMM_PAGE_NOT_FOUND;
+                    break;
+                }
             }
 
             if (paPages[iPage].idSharedPage != NIL_GMM_PAGEID)
@@ -1689,27 +1594,34 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
                     {
                         AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_END && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_END);
                         Assert(pPage->Shared.cRefs);
+                        Assert(pGVM->gmm.s.cSharedPages);
+                        Assert(pGVM->gmm.s.Allocated.cBasePages);
+
+                        pGVM->gmm.s.cSharedPages--;
+                        pGVM->gmm.s.Allocated.cBasePages--;
                         if (!--pPage->Shared.cRefs)
-                        {
-                            Assert(pGVM->gmm.s.cSharedPages);
-                            pGVM->gmm.s.cSharedPages--;
-                            Assert(pGVM->gmm.s.Allocated.cBasePages);
-                            pGVM->gmm.s.Allocated.cBasePages--;
                             gmmR0FreeSharedPage(pGMM, paPages[iPage].idSharedPage, pPage);
-                        }
 
                         paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
                     }
                     else
+                    {
+                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not shared!\n", iPage, paPages[iPage].idSharedPage));
                         rc = VERR_GMM_PAGE_NOT_SHARED;
+                        break;
+                    }
                 }
                 else
+                {
+                    Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not found! (shared)\n", iPage, paPages[iPage].idSharedPage));
                     rc = VERR_GMM_PAGE_NOT_FOUND;
+                    break;
+                }
             }
         }
 
         /*
-         * And the allocation.
+         * Join paths with GMMR0AllocatePages for the allocation.
          */
         if (RT_SUCCESS(rc))
             rc = gmmR0AllocatePages(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
@@ -1718,7 +1630,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
         rc = VERR_WRONG_ORDER;
 
     RTSemFastMutexRelease(pGMM->Mtx);
-    LogFlow(("GMMR0UpdateReservation: returns %Rrc\n", rc));
+    LogFlow(("GMMR0AllocateHandyPages: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1814,6 +1726,284 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
 
 
 /**
+ * Frees a chunk, giving it back to the host OS.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   pChunk      The chunk to free.
+ */
+static void gmmR0FreeChunk(PGMM pGMM, PGMMCHUNK pChunk)
+{
+    /*
+     * If there are current mappings of the chunk, then request the
+     * VMs to unmap them. Reposition the chunk in the free list so
+     * it won't be a likely candidate for allocations.
+     */
+    if (pChunk->cMappings)
+    {
+        /** @todo R0 -> VM request */
+
+    }
+    else
+    {
+        /*
+         * Try free the memory object.
+         */
+        int rc = RTR0MemObjFree(pChunk->MemObj, false /* fFreeMappings */);
+        if (RT_SUCCESS(rc))
+        {
+            pChunk->MemObj = NIL_RTR0MEMOBJ;
+
+            /*
+             * Unlink it from everywhere.
+             */
+            gmmR0UnlinkChunk(pChunk);
+
+            PAVLU32NODECORE pCore = RTAvlU32Remove(&pGMM->pChunks, pChunk->Core.Key);
+            Assert(pCore == &pChunk->Core); NOREF(pCore);
+
+            PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pCore->Key)];
+            if (pTlbe->pChunk == pChunk)
+            {
+                pTlbe->idChunk = NIL_GMM_CHUNKID;
+                pTlbe->pChunk = NULL;
+            }
+
+            Assert(pGMM->cChunks > 0);
+            pGMM->cChunks--;
+
+            /*
+             * Free the Chunk ID and struct.
+             */
+            gmmR0FreeChunkId(pGMM, pChunk->Core.Key);
+            pChunk->Core.Key = NIL_GMM_CHUNKID;
+
+            RTMemFree(pChunk->paMappings);
+            pChunk->paMappings = NULL;
+
+            RTMemFree(pChunk);
+        }
+        else
+            AssertRC(rc);
+    }
+}
+
+
+/**
+ * Free page worker.
+ *
+ * The caller does all the statistic decrementing, we do all the incrementing.
+ *
+ * @param   pGMM        Pointer to the GMM instance data.
+ * @param   pChunk      Pointer to the chunk this page belongs to.
+ * @param   pPage       Pointer to the page.
+ */
+static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, PGMMPAGE pPage)
+{
+    /*
+     * Put the page on the free list.
+     */
+    pPage->u = 0;
+    pPage->Free.u2State = GMM_PAGE_STATE_FREE;
+    Assert(pChunk->iFreeHead < RT_ELEMENTS(pChunk->aPages) || pChunk->iFreeHead == UINT16_MAX);
+    pPage->Free.iNext = pChunk->iFreeHead;
+    pChunk->iFreeHead = pPage - &pChunk->aPages[0];
+
+    /*
+     * Update statistics (the cShared/cPrivate stats are up to date already),
+     * and relink the chunk if necessary.
+     */
+    if ((pChunk->cFree & GMM_CHUNK_FREE_SET_MASK) == 0)
+    {
+        gmmR0UnlinkChunk(pChunk);
+        pChunk->cFree++;
+        gmmR0LinkChunk(pChunk, pChunk->cShared ? &pGMM->Shared : &pGMM->Private);
+    }
+    else
+    {
+        pChunk->cFree++;
+        pChunk->pSet->cPages++;
+
+        /*
+         * If the chunk becomes empty, consider giving memory back to the host OS.
+         *
+         * The current strategy is to try give it back if there are other chunks
+         * in this free list, meaning if there are at least 240 free pages in this
+         * category. Note that since there are probably mappings of the chunk,
+         * it won't be freed up instantly, which probably screws up this logic
+         * a bit...
+         */
+        if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
+                        && pChunk->pFreeNext
+                        && pChunk->pFreePrev))
+            gmmR0FreeChunk(pGMM, pChunk);
+    }
+}
+
+
+/**
+ * Frees a shared page, the page is known to exist and be valid and such.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   idPage      The Page ID
+ * @param   pPage       The page structure.
+ */
+DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
+{
+    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    Assert(pChunk);
+    Assert(pChunk->cFree < GMM_CHUNK_NUM_PAGES);
+    Assert(pChunk->cShared > 0);
+    Assert(pGMM->cSharedPages > 0);
+    Assert(pGMM->cAllocatedPages > 0);
+    Assert(!pPage->Shared.cRefs);
+
+    pChunk->cShared--;
+    pGMM->cAllocatedPages--;
+    pGMM->cSharedPages--;
+    gmmR0FreePageWorker(pGMM, pChunk, pPage);
+}
+
+
+/**
+ * Frees a private page, the page is known to exist and be valid and such.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   idPage      The Page ID
+ * @param   pPage       The page structure.
+ */
+DECLINLINE(void) gmmR0FreePrivatePage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
+{
+    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    Assert(pChunk);
+    Assert(pChunk->cFree < GMM_CHUNK_NUM_PAGES);
+    Assert(pChunk->cPrivate > 0);
+    Assert(pGMM->cAllocatedPages > 0);
+
+    pChunk->cPrivate--;
+    pGMM->cAllocatedPages--;
+    gmmR0FreePageWorker(pGMM, pChunk, pPage);
+}
+
+
+/**
+ * Common worker for GMMR0FreePages and GMMR0BalloonedPages.
+ *
+ * @returns VBox status code:
+ * @retval  xxx
+ *
+ * @param   pGMM                Pointer to the GMM instance data.
+ * @param   pGVM                Pointer to the shared VM structure.
+ * @param   cPages              The number of pages to free.
+ * @param   paPages             Pointer to the page descriptors.
+ * @param   enmAccount          The account this relates to.
+ */
+static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
+{
+    /*
+     * Check that the request isn't impossible wrt to the account status.
+     */
+    switch (enmAccount)
+    {
+        case GMMACCOUNT_BASE:
+            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages < cPages))
+            {
+                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cBasePages, cPages));
+                return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+            }
+            break;
+        case GMMACCOUNT_SHADOW:
+            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cShadowPages < cPages))
+            {
+                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cShadowPages, cPages));
+                return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+            }
+            break;
+        case GMMACCOUNT_FIXED:
+            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cFixedPages < cPages))
+            {
+                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cFixedPages, cPages));
+                return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+            }
+            break;
+        default:
+            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
+    }
+
+    /*
+     * Walk the descriptors and free the pages.
+     *
+     * Statistics (except the account) are being updated as we go along,
+     * unlike the alloc code. Also, stop on the first error.
+     */
+    int rc = VINF_SUCCESS;
+    uint32_t iPage;
+    for (iPage = 0; iPage < cPages; iPage++)
+    {
+        uint32_t idPage = paPages[iPage].idPage;
+        PGMMPAGE pPage = gmmR0GetPage(pGMM, idPage);
+        if (RT_LIKELY(pPage))
+        {
+            if (RT_LIKELY(GMM_PAGE_IS_PRIVATE(pPage)))
+            {
+                if (RT_LIKELY(pPage->Private.hGVM == pGVM->hSelf))
+                {
+                    Assert(pGVM->gmm.s.cPrivatePages);
+                    pGVM->gmm.s.cPrivatePages--;
+                    gmmR0FreePrivatePage(pGMM, idPage, pPage);
+                }
+                else
+                {
+                    Log(("gmmR0AllocatePages: #%#x/%#x: not owner! hGVM=%#x hSelf=%#x\n", iPage, idPage,
+                         pPage->Private.hGVM, pGVM->hEMT));
+                    rc = VERR_GMM_NOT_PAGE_OWNER;
+                    break;
+                }
+            }
+            else if (RT_LIKELY(GMM_PAGE_IS_SHARED(pPage)))
+            {
+                Assert(pGVM->gmm.s.cSharedPages);
+                pGVM->gmm.s.cSharedPages--;
+                Assert(pPage->Shared.cRefs);
+                if (!--pPage->Shared.cRefs)
+                    gmmR0FreeSharedPage(pGMM, idPage, pPage);
+            }
+            else
+            {
+                Log(("gmmR0AllocatePages: #%#x/%#x: already free!\n", iPage, idPage));
+                rc = VERR_GMM_PAGE_ALREADY_FREE;
+                break;
+            }
+        }
+        else
+        {
+            Log(("gmmR0AllocatePages: #%#x/%#x: not found!\n", iPage, idPage));
+            rc = VERR_GMM_PAGE_NOT_FOUND;
+            break;
+        }
+        paPages[iPage].idPage = NIL_GMM_PAGEID;
+    }
+
+    /*
+     * Update the account.
+     */
+    switch (enmAccount)
+    {
+        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= iPage;
+        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= iPage;
+        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= iPage;
+        default:
+            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
+    }
+
+    /*
+     * Any threshold stuff to be done here?
+     */
+
+    return rc;
+}
+
+
+/**
  * Free one or more pages.
  *
  * This is typically used at reset time or power off.
@@ -1829,7 +2019,39 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
  */
 GMMR0DECL(int) GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
-    return VERR_NOT_IMPLEMENTED;
+    LogFlow(("GMMR0FreePages: pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pVM, cPages, paPages, enmAccount));
+
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pGVM)
+        return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
+
+    AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(enmAccount > GMMACCOUNT_INVALID && enmAccount < GMMACCOUNT_END, ("%d\n", enmAccount), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPages > 0 && cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
+
+    for (unsigned iPage = 0; iPage < cPages; iPage++)
+        AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
+                        /*||  paPages[iPage].idPage == NIL_GMM_PAGEID*/,
+                        ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
+
+    /*
+     * Take the semaphore and call the worker function.
+     */
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+    rc = gmmR0FreePages(pGMM, pGVM, cPages, paPages, enmAccount);
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0FreePages: returns %Rrc\n", rc));
+    return rc;
 }
 
 
@@ -1859,9 +2081,15 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, PGMMFREEPAGESREQ pReq)
 
 
 /**
- * Report ballooned pages optionally together with be page to free.
+ * Report back on a memory ballooning request.
  *
- * The pages to be freed are always base (RAM) pages.
+ * The request may or may not have been initiated by the GMM. If it was initiated
+ * by the GMM it is important that this function is called even if no pages was
+ * ballooned.
+ *
+ * Since the whole purpose of ballooning is to free up guest RAM pages, this API
+ * may also be given a set of related pages to be freed. These pages are assumed
+ * to be on the base account.
  *
  * @returns VBox status code:
  * @retval  xxx
@@ -1870,11 +2098,86 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, PGMMFREEPAGESREQ pReq)
  * @param   cBalloonedPages     The number of pages that was ballooned.
  * @param   cPagesToFree        The number of pages to be freed.
  * @param   paPages             Pointer to the page descriptors for the pages that's to be freed.
+ * @param   fCompleted          Indicates whether the ballooning request was completed (true) or
+ *                              if there is more pages to come (false). If the ballooning was not
+ *                              not triggered by the GMM, don't set this.
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages)
+GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted)
 {
-    return VERR_NOT_IMPLEMENTED;
+    LogFlow(("GMMR0BalloonedPages: pVM=%p cBalloonedPages=%#x cPagestoFree=%#x paPages=%p enmAccount=%d fCompleted=%RTbool\n",
+             pVM, cBalloonedPages, cPagesToFree, paPages, fCompleted));
+
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pGVM)
+        return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
+
+    AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cBalloonedPages >= 0 && cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPagesToFree >= 0 && cPagesToFree <= cBalloonedPages, ("%#x\n", cPagesToFree), VERR_INVALID_PARAMETER);
+
+    for (unsigned iPage = 0; iPage < cPagesToFree; iPage++)
+        AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
+                        /*||  paPages[iPage].idPage == NIL_GMM_PAGEID*/,
+                        ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (pGVM->gmm.s.Allocated.cBasePages >= cPagesToFree)
+    {
+        /*
+         * Record the ballooned memory.
+         */
+        pGMM->cBalloonedPages += cBalloonedPages;
+        if (pGVM->gmm.s.cReqBalloonedPages)
+        {
+            pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
+            pGVM->gmm.s.cReqActuallyBalloonedPages += cBalloonedPages;
+            if (fCompleted)
+            {
+                Log(("GMMR0BalloonedPages: +%#x - Global=%#llx;  / VM: Total=%#llx Req=%#llx Actual=%#llx (completed)\n", cBalloonedPages,
+                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
+
+                /*
+                 * Anything we need to do here now when the request has been completed?
+                 */
+                pGVM->gmm.s.cReqBalloonedPages = 0;
+            }
+            else
+                Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx Req=%#llx Actual=%#llx (pending)\n", cBalloonedPages,
+                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
+        }
+        else
+        {
+            pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
+            Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx (user)\n",
+                 cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+        }
+
+        /*
+         * Any pages to free?
+         */
+        if (cPagesToFree)
+            rc = gmmR0FreePages(pGMM, pGVM, cPagesToFree, paPages, GMMACCOUNT_BASE);
+    }
+    else
+    {
+        rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+    }
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0BalloonedPages: returns %Rrc\n", rc));
+    return rc;
 }
 
 
@@ -1899,7 +2202,77 @@ GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, PGMMBALLOONEDPAGESREQ pReq)
                     ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[pReq->cPagesToFree])),
                     VERR_INVALID_PARAMETER);
 
-    return GMMR0BalloonedPages(pVM, pReq->cBalloonedPages, pReq->cPagesToFree, &pReq->aPages[0]);
+    return GMMR0BalloonedPages(pVM, pReq->cBalloonedPages, pReq->cPagesToFree, &pReq->aPages[0], pReq->fCompleted);
+}
+
+
+/**
+ * Report balloon deflating.
+ *
+ * @returns VBox status code:
+ * @retval  xxx
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   cPages              The number of pages that was let out of the balloon.
+ * @thread  EMT.
+ */
+GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages)
+{
+    LogFlow(("GMMR0DeflatedBalloon: pVM=%p cPages=%#x\n", pVM, cPages));
+
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pGVM)
+        return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
+
+    AssertMsgReturn(cPages >= 0 && cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+    if (pGVM->gmm.s.cBalloonedPages < cPages)
+    {
+        Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
+
+        /*
+         * Record it.
+         */
+        pGMM->cBalloonedPages -= cPages;
+        pGVM->gmm.s.cBalloonedPages -= cPages;
+        if (pGVM->gmm.s.cReqDeflatePages)
+        {
+            Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx Req=%#llx\n", cPages,
+                 pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqDeflatePages));
+
+            /*
+             * Anything we need to do here now when the request has been completed?
+             */
+            pGVM->gmm.s.cReqDeflatePages = 0;
+        }
+        else
+        {
+            Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx\n", cPages,
+                 pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+        }
+    }
+    else
+    {
+        Log(("GMMR0DeflatedBalloon: cBalloonedPages=%#llx cPages=%#x\n", pGVM->gmm.s.cBalloonedPages, cPages));
+        rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
+    }
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0BalloonedPages: returns %Rrc\n", rc));
+    return rc;
 }
 
 
