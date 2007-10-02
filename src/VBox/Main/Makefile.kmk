@@ -305,6 +305,7 @@ VBoxC_LIBS += \
 VBoxC_SOURCES = \
 	Logging.cpp \
 	VBoxDll.cpp \
+	Version.cpp \
 	USBDeviceImpl.cpp \
 	RemoteUSBDeviceImpl.cpp \
 	VirtualBoxBase.cpp \
@@ -354,10 +355,11 @@ $(PATH_TARGET)/VBoxC.def: $(MAKEFILE_CURRENT)
 	$(APPEND) $@ _VBoxDriversRegister
 endif
 
-# ConsoleImpl.cpp uses VBOX_SVN_REV.
-ConsoleImpl.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
-ConsoleImpl.cpp_DEPS = $(VBOX_SVN_REV_KMK)
-ConsoleImpl.cpp_DEFS += BUILD_TARGET=\"$(BUILD_TARGET).$(BUILD_TARGET_ARCH)\"
+# Version.cpp uses VBOX_SVN_REV.
+Version.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+Version.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
+ConsoleImpl.cpp_DEFS = VBOX_BUILD_TARGET=\"$(BUILD_TARGET).$(BUILD_TARGET_ARCH)\"
 
 win32/VBoxC.rc_DEPS = $(PATH_TARGET)/VBoxC.rgs
 

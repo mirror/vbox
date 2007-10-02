@@ -19,6 +19,10 @@
 #ifndef __H_VBOXMANAGE
 #define __H_VBOXMANAGE
 
+#include <iprt/types.h>
+#include <VBox/com/ptr.h>
+#include <VBox/com/VirtualBox.h>
+
 /** Syntax diagram category. */
 #define USAGE_DUMPOPTS              0
 #define USAGE_LIST                  BIT64(0)
@@ -88,6 +92,6 @@ int errorArgument(const char *pszFormat, ...);
 void printUsageInternal(USAGECATEGORY u64Cmd);
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
-
+unsigned long VBoxSVNRev ();
 
 #endif /* !__H_VBOXMANAGE */

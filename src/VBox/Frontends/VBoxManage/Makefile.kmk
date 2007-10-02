@@ -23,7 +23,8 @@ PROGRAMS = VBoxManage
 VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
 VBoxManage_SOURCES    = \
 	VBoxManage.cpp \
-	VBoxInternalManage.cpp
+	VBoxInternalManage.cpp \
+	VBoxManageSVN.cpp
 ifndef VBOX_OSE
 VBoxManage_SOURCES   += \
 	VBoxInternalManageVmdk.cpp
@@ -43,10 +44,10 @@ else
 	$(PATH_BIN)/VBoxDDU$(VBOX_SUFF_DLL) \
 	$(PATH_BIN)/VBoxXML$(VBOX_SUFF_DLL)
 endif
-# VBoxManage.cpp uses VBOX_SVN_REV.
-VBoxManage.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
-VBoxManage.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
+# VBoxManageSVN.cpp uses VBOX_SVN_REV.
+VBoxManageSVN.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxManageSVN.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 
 include $(PATH_KBUILD)/footer.kmk
-
