@@ -524,11 +524,13 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     menuBar()->insertItem (QString::null, vmMenu, 2);
 
     QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );
-    helpContentsAction->addTo ( helpMenu );
-    helpWebAction->addTo( helpMenu );
+    helpContentsAction->addTo (helpMenu);
+    helpWebAction->addTo (helpMenu);
     helpMenu->insertSeparator();
-    helpRegisterAction->addTo( helpMenu );
-    helpAboutAction->addTo( helpMenu );
+#ifdef VBOX_WITH_REGISTRATION
+    helpRegisterAction->addTo (helpMenu);
+#endif
+    helpAboutAction->addTo (helpMenu);
     helpMenu->insertSeparator();
     helpResetMessagesAction->addTo (helpMenu);
 
@@ -583,7 +585,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (vmRefreshAction, SIGNAL (activated()), this, SLOT (vmRefresh()));
     connect (vmShowLogsAction, SIGNAL (activated()), this, SLOT (vmShowLogs()));
 
-    connect (helpContentsAction, SIGNAL (activated()), this, SLOT(showHelpContents()));
+    connect (helpContentsAction, SIGNAL (activated()),
+             &vboxProblem(), SLOT (showHelpHelpDialog()));
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
     connect (helpRegisterAction, SIGNAL (activated()),
@@ -967,11 +970,6 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
         vmListBoxCurrentChanged (aDetails, aSnapshots, aDescription);
 }
 
-void VBoxSelectorWnd::showHelpContents()
-{
-    vboxProblem().showHelpHelpDialog();
-}
-
 // Protected members
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1076,14 +1074,12 @@ void VBoxSelectorWnd::languageChange()
 
     vmDeleteAction->setMenuText (tr ("&Delete"));
     vmDeleteAction->setText (tr ("Delete"));
-    vmDeleteAction->setAccel (QString::null);
     vmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
 
     /* Note: vmStartAction text is set up in vmListBoxCurrentChanged() */
 
     vmDiscardAction->setMenuText (tr ("D&iscard"));
     vmDiscardAction->setText (tr ("Discard"));
-    vmDiscardAction->setAccel (QString::null);
     vmDiscardAction->setStatusTip (
         tr ("Discard the saved state of the selected virtual machine"));
 
@@ -1104,21 +1100,17 @@ void VBoxSelectorWnd::languageChange()
     helpContentsAction->setStatusTip (tr ("Show the online help contents"));
 
     helpWebAction->setMenuText (tr ("&VirtualBox Web Site..."));
-    helpWebAction->setAccel( QString::null );
     helpWebAction->setStatusTip (
         tr ("Open the browser and go to the VirtualBox product web site"));
 
     helpRegisterAction->setMenuText (tr ("R&egister VirtualBox..."));
-    helpRegisterAction->setAccel( QString::null );
     helpRegisterAction->setStatusTip (
         tr ("Open VirtualBox registration form"));
 
     helpAboutAction->setMenuText (tr ("&About VirtualBox..."));
-    helpAboutAction->setAccel( QString::null );
     helpAboutAction->setStatusTip (tr ("Show a dialog with product information"));
 
     helpResetMessagesAction->setMenuText (tr ("&Reset All Warnings"));
-    helpResetMessagesAction->setAccel (QString::null);
     helpResetMessagesAction->setStatusTip (
         tr ("Cause all suppressed warnings and messages to be shown again"));
 
