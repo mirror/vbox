@@ -347,7 +347,7 @@ typedef struct GMMCHUNKMAP
     /** The mapping object. */
     RTR0MEMOBJ      MapObj;
     /** The VM owning the mapping. */
-    PVM             pVM;
+    PGVM            pGVM;
 } GMMCHUNKMAP;
 /** Pointer to a GMM allocation chunk mapping. */
 typedef struct GMMCHUNKMAP *PGMMCHUNKMAP;
@@ -1171,22 +1171,19 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
 
 
 /**
- * Allocate one new chunk and add it to the specified free set.
+ * Registers a new chunk of memory.
+ *
+ * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk.
  *
  * @returns VBox status code.
  * @param   pGMM        Pointer to the GMM instance.
  * @param   pSet        Pointer to the set.
+ * @param   MemObj      The memory object for the chunk.
+ * @param   hGVM        The hGVM value. (Only used by GMMR0SeedChunk.)
  */
-static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
+static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM)
 {
-    /*
-     * Allocate the memory.
-     */
-    RTR0MEMOBJ MemObj;
-    int rc = RTR0MemObjAllocPhysNC(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
-    if (RT_FAILURE(rc))
-        return rc;
-
+    int rc;
     PGMMCHUNK pChunk = (PGMMCHUNK)RTMemAllocZ(sizeof(*pChunk));
     if (pChunk)
     {
@@ -1195,7 +1192,7 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
          */
         pChunk->MemObj = MemObj;
         pChunk->cFree = GMM_CHUNK_NUM_PAGES;
-        pChunk->hGVM = NIL_GVM_HANDLE;
+        pChunk->hGVM = hGVM;
         pChunk->iFreeHead = 0;
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
         {
@@ -1224,7 +1221,30 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
     }
     else
         rc = VERR_NO_MEMORY;
-    RTR0MemObjFree(MemObj, false /* fFreeMappings */);
+    return rc;
+}
+
+
+/**
+ * Allocate one new chunk and add it to the specified free set.
+ *
+ * @returns VBox status code.
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   pSet        Pointer to the set.
+ */
+static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet)
+{
+    /*
+     * Allocate the memory.
+     */
+    RTR0MEMOBJ MemObj;
+    int rc = RTR0MemObjAllocPhysNC(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
+    if (RT_SUCCESS(rc))
+    {
+        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, NIL_GVM_HANDLE);
+        if (RT_FAILURE(rc))
+            RTR0MemObjFree(MemObj, false /* fFreeMappings */);
+    }
     return rc;
 }
 
@@ -2259,10 +2279,8 @@ GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages)
             pGVM->gmm.s.cReqDeflatePages = 0;
         }
         else
-        {
             Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx\n", cPages,
                  pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
-        }
     }
     else
     {
@@ -2276,20 +2294,209 @@ GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages)
 }
 
 
-GMMR0DECL(int) GMMR0FreeMapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR pvR3)
+/**
+ * Unmaps a chunk previously mapped into the address space of the current process.
+ *
+ * @returns VBox status code.
+ * @param   pGMM        Pointer to the GMM instance data.
+ * @param   pGVM        Pointer to the Global VM structure.
+ * @param   pChunk      Pointer to the chunk to be unmapped.
+ */
+static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Find the mapping and try unmapping it.
+     */
+    for (uint32_t i = 0; i < pChunk->cMappings; i++)
+    {
+        Assert(pChunk->paMappings[i].pGVM && pChunk->paMappings[i].MapObj != NIL_RTR0MEMOBJ);
+        if (pChunk->paMappings[i].pGVM == pGVM)
+        {
+            /* unmap */
+            int rc = RTR0MemObjFree(pChunk->paMappings[i].MapObj, false /* fFreeMappings */);
+            if (RT_SUCCESS(rc))
+            {
+                /* update the record. */
+                pChunk->cMappings--;
+                if (pChunk->cMappings > i)
+                    pChunk->paMappings[i] = pChunk->paMappings[pChunk->cMappings];
+                pChunk->paMappings[pChunk->cMappings].MapObj = NIL_RTR0MEMOBJ;
+                pChunk->paMappings[pChunk->cMappings].pGVM = NULL;
+            }
+            return rc;
+        }
+    }
+
+    Log(("gmmR0MapChunk: Chunk %#x is not mapped into pGVM=%p/%#x\n", pChunk->Core.Key, pGVM, pGVM->hSelf));
+    return VERR_GMM_CHUNK_NOT_MAPPED;
 }
 
 
 /**
- * VMMR0 request wrapper for GMMR0FreeMapUnmapChunk.
+ * Maps a chunk into the user address space of the current process.
  *
- * @returns see GMMR0FreeMapUnmapChunk.
+ * @returns VBox status code.
+ * @param   pGMM        Pointer to the GMM instance data.
+ * @param   pGVM        Pointer to the Global VM structure.
+ * @param   pChunk      Pointer to the chunk to be mapped.
+ * @param   ppvR3       Where to store the ring-3 address of the mapping.
+ *                      In the VERR_GMM_CHUNK_ALREADY_MAPPED case, this will be
+ *                      contain the address of the existing mapping.
+ */
+static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
+{
+    /*
+     * Check to see if the chunk is already mapped.
+     */
+    for (uint32_t i = 0; i < pChunk->cMappings; i++)
+    {
+        Assert(pChunk->paMappings[i].pGVM && pChunk->paMappings[i].MapObj != NIL_RTR0MEMOBJ);
+        if (pChunk->paMappings[i].pGVM == pGVM)
+        {
+            *ppvR3 = RTR0MemObjAddressR3(pChunk->paMappings[i].MapObj);
+            Log(("gmmR0MapChunk: chunk %#x is already mapped at %p!\n", pChunk->Core.Key, *ppvR3));
+            return VERR_GMM_CHUNK_ALREADY_MAPPED;
+        }
+    }
+
+    /*
+     * Do the mapping.
+     */
+    RTR0MEMOBJ MapObj;
+    int rc = RTR0MemObjMapUser(&MapObj, pChunk->MemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+    if (RT_SUCCESS(rc))
+    {
+        /* reallocate the array? */
+        if ((pChunk->cMappings & 1 /*7*/) == 0)
+        {
+            void *pvMappings = RTMemRealloc(pChunk->paMappings, (pChunk->cMappings + 2 /*8*/) * sizeof(pChunk->paMappings[0]));
+            if (RT_UNLIKELY(pvMappings))
+            {
+                rc = RTR0MemObjFree(MapObj, false /* fFreeMappings */);
+                AssertRC(rc);
+                return VERR_NO_MEMORY;
+            }
+            pChunk->paMappings = (PGMMCHUNKMAP)pvMappings;
+        }
+
+        /* insert new entry */
+        pChunk->paMappings[pChunk->cMappings].MapObj = MapObj;
+        pChunk->paMappings[pChunk->cMappings].pGVM = pGVM;
+        pChunk->cMappings++;
+
+        *ppvR3 = RTR0MemObjAddressR3(MapObj);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Map a chunk and/or unmap another chunk.
+ *
+ * The mapping and unmapping applies to the current process.
+ *
+ * This API does two things because it saves a kernel call per mapping when
+ * when the ring-3 mapping cache is full.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM.
+ * @param   idChunkMap      The chunk to map. NIL_GMM_CHUNKID if nothing to map.
+ * @param   idChunkUnmap    The chunk to unmap. NIL_GMM_CHUNKID if nothing to unmap.
+ * @param   ppvR3           Where to store the address of the mapped chunk. NULL is ok if nothing to map.
+ * @thread  EMT
+ */
+GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
+{
+    LogFlow(("GMMR0MapUnmapChunk: pVM=%p idChunkMap=%#x idChunkUnmap=%#x ppvR3=%p\n",
+             pVM, idChunkMap, idChunkUnmap, ppvR3));
+
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pGVM)
+        return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
+
+    AssertCompile(NIL_GMM_CHUNKID == 0);
+    AssertMsgReturn(idChunkMap <= GMM_CHUNKID_LAST, ("%#x\n", idChunkMap), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(idChunkUnmap <= GMM_CHUNKID_LAST, ("%#x\n", idChunkUnmap), VERR_INVALID_PARAMETER);
+
+    if (    idChunkMap == NIL_GMM_CHUNKID
+        &&  idChunkUnmap == NIL_GMM_CHUNKID)
+        return VERR_INVALID_PARAMETER;
+
+    if (idChunkMap != NIL_GMM_CHUNKID)
+    {
+        AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
+        *ppvR3 = NIL_RTR3PTR;
+    }
+
+    if (pGMM->fLegacyMode)
+    {
+        Log(("GMMR0MapUnmapChunk: legacy mode!\n"));
+        return VERR_NOT_SUPPORTED;
+    }
+
+    /*
+     * Take the semaphore and do the work.
+     *
+     * The unmapping is done last since it's easier to undo a mapping than
+     * undoing an unmapping. The ring-3 mapping cache cannot not be so big
+     * that it pushes the user virtual address space to within a chunk of
+     * it it's limits, so, no problem here.
+     */
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+
+    PGMMCHUNK pMap = NULL;
+    if (idChunkMap != NIL_GVM_HANDLE)
+    {
+        pMap = gmmR0GetChunk(pGMM, idChunkMap);
+        if (RT_LIKELY(pMap))
+            rc = gmmR0MapChunk(pGMM, pGVM, pMap, ppvR3);
+        else
+        {
+            Log(("GMMR0MapUnmapChunk: idChunkMap=%#x\n", idChunkMap));
+            rc = VERR_GMM_CHUNK_NOT_FOUND;
+        }
+    }
+
+    if (    idChunkUnmap != NIL_GMM_CHUNKID
+        &&  RT_SUCCESS(rc))
+    {
+        PGMMCHUNK pUnmap = gmmR0GetChunk(pGMM, idChunkUnmap);
+        if (RT_LIKELY(pUnmap))
+            rc = gmmR0UnmapChunk(pGMM, pGVM, pUnmap);
+        else
+        {
+            Log(("GMMR0MapUnmapChunk: idChunkUnmap=%#x\n", idChunkUnmap));
+            rc = VERR_GMM_CHUNK_NOT_FOUND;
+        }
+
+        if (RT_FAILURE(rc) && pMap)
+            gmmR0UnmapChunk(pGMM, pGVM, pMap);
+    }
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+
+    LogFlow(("GMMR0MapUnmapChunk: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0MapUnmapChunk.
+ *
+ * @returns see GMMR0MapUnmapChunk.
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int)  GMMR0FreeMapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
+GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -2298,12 +2505,63 @@ GMMR0DECL(int)  GMMR0FreeMapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0FreeMapUnmapChunk(pVM, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
+    return GMMR0MapUnmapChunk(pVM, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
 }
 
 
-GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3)
+/**
+ * Legacy mode API for supplying pages.
+ *
+ * The specified user address points to a allocation chunk sized block that
+ * will be locked down and used by the GMM when the GM asks for pages.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM.
+ * @param   pvR3            Pointer to the chunk size memory block to lock down.
+ */
+GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM = GVMMR0ByVM(pVM);
+    if (!pGVM)
+        return VERR_INVALID_PARAMETER;
+    if (pGVM->hEMT != RTThreadNativeSelf())
+        return VERR_NOT_OWNER;
+
+    AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
+    AssertReturn(!(PAGE_OFFSET_MASK & pvR3), VERR_INVALID_POINTER);
+
+    if (!pGMM->fLegacyMode)
+    {
+        Log(("GMMR0MapUnmapChunk: not in legacy mode!\n"));
+        return VERR_NOT_SUPPORTED;
+    }
+
+    /*
+     * Lock the memory before taking the semaphore.
+     */
+    RTR0MEMOBJ MemObj;
+    int rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, NIL_RTR0PROCESS);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Take the semaphore and add a new chunk with our hGVM.
+         */
+        int rc = RTSemFastMutexRequest(pGMM->Mtx);
+        AssertRC(rc);
+
+        rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf);
+
+        RTSemFastMutexRelease(pGMM->Mtx);
+
+        if (RT_FAILURE(rc))
+            RTR0MemObjFree(MemObj, false /* fFreeMappings */);
+    }
+
+    return rc;
 }
 
