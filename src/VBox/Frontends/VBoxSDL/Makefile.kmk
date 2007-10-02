@@ -58,7 +58,7 @@ VBoxSDL_DEFS.win.amd64 = _WIN32_WINNT=0x0510
 VBoxSDL_INCS = \
 	$(PATH_BIN)/sdk/include \
 	$(PATH_VBoxSDL)
-ifndef ($(filter-out win solaris,$(BUILD_TARGET),)
+ifneq ($(filter-out win solaris,$(BUILD_TARGET),)
 VBoxSDL_LIBS = \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
