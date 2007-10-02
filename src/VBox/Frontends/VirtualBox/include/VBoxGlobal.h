@@ -376,7 +376,7 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    void callRegistration();
+    void checkRegistration();
 
     CSession openSession (const QUuid &id);
 
