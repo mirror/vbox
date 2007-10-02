@@ -104,7 +104,7 @@ tstSDL_INCS = \
 
 tstSDL_LIBS = \
 	$(LIB_RUNTIME)
-ifneq ($(filter-out win,$(BUILD_TARGET)),) # someone PLEASE explain why we don't use sdl main!
+ifneq ($(filter-out win solaris,$(BUILD_TARGET)),)
 tstSDL_LIBS += \
 	$(LIB_SDK_LIBSDL_SDLMAIN)
 endif
