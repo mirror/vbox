@@ -468,7 +468,7 @@ static int drvTAPSetupApplication(PDRVTAP pData)
     if (pid < 0)
     {
         /* Bad. fork() failed! */
-        LogRel(("TAP#%d: Failed to fork() process for running TAP setup application: %s\n", pDrvIns->iInstance,
+        LogRel(("TAP#%d: Failed to fork() process for running TAP setup application: %s\n", pData->pDrvIns->iInstance,
               pData->pszSetupApplication, strerror(errno)));
         return VERR_HOSTIF_INIT_FAILED;
     }
@@ -485,7 +485,7 @@ static int drvTAPSetupApplication(PDRVTAP pData)
         ;
     if (!WIFEXITED(result) || WEXITSTATUS(result) != 0)
     {
-        LogRel(("TAP#%d: Failed to run TAP setup application: %s\n", pDrvIns->iInstance, pData->pszSetupApplication));
+        LogRel(("TAP#%d: Failed to run TAP setup application: %s\n", pData->pDrvIns->iInstance, pData->pszSetupApplication));
         return VERR_HOSTIF_INIT_FAILED;
     }
     
@@ -513,7 +513,7 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
     if (pid < 0)
     {
         /* Bad. fork() failed! */
-        LogRel(("TAP#%d: Failed to fork() process for running TAP terminate application: %s\n", pDrvIns->iInstance,
+        LogRel(("TAP#%d: Failed to fork() process for running TAP terminate application: %s\n", pData->pDrvIns->iInstance,
               pData->pszTerminateApplication, strerror(errno)));
         return VERR_HOSTIF_TERM_FAILED;
     }
@@ -530,7 +530,7 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
         ;
     if (!WIFEXITED(result) || WEXITSTATUS(result) != 0)
     {
-        LogRel(("TAP#%d: Failed to run TAP terminate application: %s\n", pDrvIns->iInstance, pData->pszSetupApplication));
+        LogRel(("TAP#%d: Failed to run TAP terminate application: %s\n", pData->pDrvIns->iInstance, pData->pszSetupApplication));
         return VERR_HOSTIF_TERM_FAILED;
     }
     
@@ -560,7 +560,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     
     
     /* Close previously opened file desc., if any. */
-    static int s_IPFileDes = -1; /** @todo r=bird: what's the point of keeping this open? */
+    static int s_IPFileDes = -1;
     if (s_IPFileDes >= 0)
         close(s_IPFileDes);
     
@@ -589,9 +589,12 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     ioIF.ic_dp = (char *)(&iPPA);
     ioIF.ic_timout = 0;
     iPPA = ioctl(TapFileDes, I_STR, &ioIF);
-    if (iPPA < 0) /** @todo r=bird: leaving at least one file descriptor open. */
+    if (iPPA < 0)
+    {
+        close(TapFileDes);
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Failed to get new interface. errno=%d"), errno);
+    }
     
     int InterfaceFD = open("/dev/tap", O_RDWR, 0);
     if (!InterfaceFD)
@@ -691,9 +694,9 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     if (ioctl(s_IPFileDes, SIOCSLIFMUXID, &ifReq) == -1)
     {
 #ifdef VBOX_SOLARIS_TAP_ARP
-        ioctl(IPFileDes, I_PUNLINK, ARPMuxID);
+        ioctl(s_IPFileDes, I_PUNLINK, ARPMuxID);
 #endif
-        ioctl(IPFileDes, I_PUNLINK, IPMuxID);
+        ioctl(s_IPFileDes, I_PUNLINK, IPMuxID);
         close(s_IPFileDes);
         s_IPFileDes = -1;
         LogRel(("TAP#%d: Failed to set Mux ID.\n", pDrvIns->iInstance));
@@ -895,8 +898,9 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (pData->pszSetupApplication)
     {
         rc = drvTAPSetupApplication(pData);
-        if (RT_SUCCESS(rc))
-            return rc;
+        if (VBOX_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                       N_("Error running TAP setup application. rc=%d"), rc);
     }
 
 #else /* !SOLARIS */
