@@ -750,7 +750,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             return GMMR0DeflatedBalloon(pVM, (uint32_t)u64Arg);
 
         case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
-            return GMMR0FreeMapUnmapChunkReq(pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
+            return GMMR0MapUnmapChunkReq(pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
         case VMMR0_DO_GMM_SEED_CHUNK:
             return GMMR0SeedChunk(pVM, (RTR3PTR)u64Arg);
 

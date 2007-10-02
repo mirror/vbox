@@ -1136,6 +1136,12 @@
 #define VERR_GMM_PAGE_ALREADY_FREE                  (-4159)
 /** The page to be updated or freed was noted owned by the caller. */
 #define VERR_GMM_NOT_PAGE_OWNER                     (-4160)
+/** The specified chunk was not found. */
+#define VERR_GMM_CHUNK_NOT_FOUND                    (-4161)
+/** The chunk has already been mapped into the process. */
+#define VERR_GMM_CHUNK_ALREADY_MAPPED               (-4162)
+/** The chunk to be unmapped isn't actually mapped into the process. */
+#define VERR_GMM_CHUNK_NOT_MAPPED                   (-4163)
 /** The reservation or reservation update was declined - too many VMs, too
  * little memory, and/or too low GMM configuration. */
 #define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-4161)

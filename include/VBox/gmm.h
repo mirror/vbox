@@ -221,7 +221,7 @@ GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPage
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
 GMMR0DECL(int)  GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages);
-GMMR0DECL(int)  GMMR0FreeMapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR pvR3);
+GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3);
 
 
@@ -329,8 +329,8 @@ GMMR0DECL(int)  GMMR0BalloonedPagesReq(PVM pVM, PGMMBALLOONEDPAGESREQ pReq);
 
 
 /**
- * Request buffer for GMMR0FreeMapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK.
- * @see GMMR0FreeMapUnmapChunk
+ * Request buffer for GMMR0MapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK.
+ * @see GMMR0MapUnmapChunk
  */
 typedef struct GMMMAPUNMAPCHUNKREQ
 {
@@ -343,10 +343,10 @@ typedef struct GMMMAPUNMAPCHUNKREQ
     /** Where the mapping address is returned. (OUT) */
     RTR3PTR         pvR3;
 } GMMMAPUNMAPCHUNKREQ;
-/** Pointer to a GMMR0FreeMapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK request buffer. */
+/** Pointer to a GMMR0MapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK request buffer. */
 typedef GMMMAPUNMAPCHUNKREQ *PGMMMAPUNMAPCHUNKREQ;
 
-GMMR0DECL(int)  GMMR0FreeMapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq);
+GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq);
 
 
 /** @} */
