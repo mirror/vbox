@@ -132,6 +132,7 @@ struct VBoxDefs
         MachineDataChangeEventType,
         MachineRegisteredEventType,
         ShowRegDlgEventType,
+        ToggleRegMenuItemEvent,
         SessionStateChangeEventType,
         SnapshotEventType,
         NetworkAdapterChangeEventType,
