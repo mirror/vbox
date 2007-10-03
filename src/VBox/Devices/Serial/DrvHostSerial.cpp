@@ -73,7 +73,7 @@ typedef struct DRVHOSTSERIAL
     /** Our char interface. */
     PDMICHAR                    IChar;
     /** Receive thread. */
-    PPDMTHREAD                  pReceiveThread;
+    PPDMTHREAD                  pRecvThread;
     /** Send thread. */
     PPDMTHREAD                  pSendThread;
     /** Send event semephore */
@@ -95,9 +95,13 @@ typedef struct DRVHOSTSERIAL
     /** The event semaphore for waking up the receive thread */
     HANDLE                      hHaltEventSem;
     /** The event semaphore for overlapped receiving */
-    HANDLE                      hEventReceive;
+    HANDLE                      hEventRecv;
+    /** For overlapped receiving */
+    OVERLAPPED                  overlappedRecv;
     /** The event semaphore for overlapped sending */
     HANDLE                      hEventSend;
+    /** For overlapped sending */
+    OVERLAPPED                  overlappedSend;
 #endif
 
     /** Internal send FIFO queue */
@@ -428,11 +432,10 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 #elif defined(RT_OS_WINDOWS)
 
             DWORD cbBytesWritten;
-            OVERLAPPED overlapped;
-            memset(&overlapped, 0, sizeof(overlapped));
-            overlapped.hEvent = pData->hEventSend;
+            memset(&pData->overlappedSend, 0, sizeof(pData->overlappedSend));
+            pData->overlappedSend.hEvent = pData->hEventSend;
 
-            if (!WriteFile(pData->hDeviceFile, &pData->aSendQueue[pData->iSendQueueTail], cbProcessed, &cbBytesWritten, &overlapped))
+            if (!WriteFile(pData->hDeviceFile, &pData->aSendQueue[pData->iSendQueueTail], cbProcessed, &cbBytesWritten, &pData->overlappedSend))
             {
                 DWORD dwRet = GetLastError();
                 if (dwRet == ERROR_IO_PENDING)
@@ -503,7 +506,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMT
  * @param   ThreadSelf  Thread handle to this thread.
  * @param   pvUser      User argument.
  */
-static DECLCALLBACK(int) drvHostSerialReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
     uint8_t abBuffer[256];
@@ -516,7 +519,7 @@ static DECLCALLBACK(int) drvHostSerialReceiveThread(PPDMDRVINS pDrvIns, PPDMTHRE
 
 #ifdef RT_OS_WINDOWS
     HANDLE haWait[2];
-    haWait[0] = pData->hEventReceive;
+    haWait[0] = pData->hEventRecv;
     haWait[1] = pData->hHaltEventSem;
 #endif
 
@@ -567,12 +570,11 @@ static DECLCALLBACK(int) drvHostSerialReceiveThread(PPDMDRVINS pDrvIns, PPDMTHRE
 
             DWORD dwEventMask = 0;
             DWORD dwNumberOfBytesTransferred;
-            OVERLAPPED overlapped;
 
-            memset(&overlapped, 0, sizeof(overlapped));
-            overlapped.hEvent = pData->hEventReceive;
+            memset(&pData->overlappedRecv, 0, sizeof(pData->overlappedRecv));
+            pData->overlappedRecv.hEvent = pData->hEventRecv;
 
-            if (!WaitCommEvent(pData->hDeviceFile, &dwEventMask, &overlapped))
+            if (!WaitCommEvent(pData->hDeviceFile, &dwEventMask, &pData->overlappedRecv))
             {
                 DWORD dwRet = GetLastError();
                 if (dwRet == ERROR_IO_PENDING)
@@ -593,7 +595,7 @@ static DECLCALLBACK(int) drvHostSerialReceiveThread(PPDMDRVINS pDrvIns, PPDMTHRE
             /* this might have changed in the meantime */
             if (pThread->enmState != PDMTHREADSTATE_RUNNING)
                 break;
-            if (!ReadFile(pData->hDeviceFile, abBuffer, sizeof(abBuffer), &dwNumberOfBytesTransferred, &overlapped))
+            if (!ReadFile(pData->hDeviceFile, abBuffer, sizeof(abBuffer), &dwNumberOfBytesTransferred, &pData->overlappedRecv))
             {
                 LogRel(("HostSerial#%d: Read failed with error %Vrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
                 break;
@@ -641,7 +643,7 @@ static DECLCALLBACK(int) drvHostSerialReceiveThread(PPDMDRVINS pDrvIns, PPDMTHRE
  * @param     pDrvIns     The driver instance.
  * @param     pThread     The send thread.
  */
-static DECLCALLBACK(int) drvHostSerialWakeupReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTSERIAL pData = PDMINS2DATA(pDrvIns, PDRVHOSTSERIAL);
 #ifdef RT_OS_LINUX
@@ -708,8 +710,8 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pData->hHaltEventSem = CreateEvent(NULL, FALSE, FALSE, NULL);
     AssertReturn(pData->hHaltEventSem != NULL, VERR_NO_MEMORY);
 
-    pData->hEventReceive = CreateEvent(NULL, FALSE, FALSE, NULL);
-    AssertReturn(pData->hEventReceive != NULL, VERR_NO_MEMORY);
+    pData->hEventRecv = CreateEvent(NULL, FALSE, FALSE, NULL);
+    AssertReturn(pData->hEventRecv != NULL, VERR_NO_MEMORY);
 
     pData->hEventSend = CreateEvent(NULL, FALSE, FALSE, NULL);
     AssertReturn(pData->hEventSend != NULL, VERR_NO_MEMORY);
@@ -801,7 +803,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     if (!pData->pDrvCharPort)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no char port interface above"), pDrvIns->iInstance);
 
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pReceiveThread, pData, drvHostSerialReceiveThread, drvHostSerialWakeupReceiveThread, 0, RTTHREADTYPE_IO, "Char Receive");
+    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pData->pRecvThread, pData, drvHostSerialRecvThread, drvHostSerialWakeupRecvThread, 0, RTTHREADTYPE_IO, "Serial Receive");
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create receive thread"), pDrvIns->iInstance);
 
@@ -863,7 +865,7 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
 
 #elif defined(RT_OS_WINDOWS)
 
-    CloseHandle(pData->hEventReceive);
+    CloseHandle(pData->hEventRecv);
     CloseHandle(pData->hEventSend);
     CancelIo(pData->hDeviceFile);
     CloseHandle(pData->hDeviceFile);
