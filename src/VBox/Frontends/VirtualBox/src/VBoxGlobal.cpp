@@ -130,7 +130,7 @@ class VBoxCallback : public IVirtualBoxCallback
 {
 public:
 
-    VBoxCallback (VBoxGlobal &aGlobal) : global (aGlobal)
+    VBoxCallback (VBoxGlobal &aGlobal) : global (aGlobal), mShowRegDlg (false)
     {
 #if defined (Q_OS_WIN32)
         refcnt = 0;
@@ -208,17 +208,18 @@ public:
             QString sVal = QString::fromUcs2 (value);
             if (sKey.startsWith ("GUI/"))
             {
-                if (!sVal.isEmpty() &&
-                    sKey == VBoxDefs::GUI_RegistrationDlgWinID)
+                if (sKey == VBoxDefs::GUI_RegistrationDlgWinID)
                 {
-                    if (sVal == QString ("%1")
-                        .arg ((long)qApp->mainWidget()->winId()))
+                    if (mShowRegDlg)
                     {
-                        *allowChange = TRUE;
-                        QApplication::postEvent (&global, new VBoxShowRegDlgEvent());
+                        if (sVal.isEmpty() ||
+                            sVal == QString ("%1").arg ((long)qApp->mainWidget()->winId()))
+                            *allowChange = TRUE;
+                        else
+                            *allowChange = FALSE;
                     }
                     else
-                        *allowChange = FALSE;
+                        *allowChange = TRUE;
                     return S_OK;
                 }
 
@@ -255,6 +256,23 @@ public:
             QString sVal = QString::fromUcs2 (value);
             if (sKey.startsWith ("GUI/"))
             {
+                if (sKey == VBoxDefs::GUI_RegistrationDlgWinID)
+                {
+                    if (sVal.isEmpty())
+                    {
+                        mShowRegDlg = false;
+                        QApplication::postEvent (&global, new VBoxToggleRegMenuItem (true));
+                    }
+                    else if (sVal == QString ("%1").arg ((long)qApp->mainWidget()->winId()))
+                    {
+                        mShowRegDlg = true;
+                        QApplication::postEvent (&global, new VBoxToggleRegMenuItem (true));
+                        QApplication::postEvent (&global, new VBoxShowRegDlgEvent());
+                    }
+                    else
+                        QApplication::postEvent (&global, new VBoxToggleRegMenuItem (false));
+                }
+
                 mutex.lock();
                 global.gset.setPublicProperty (sKey, sVal);
                 mutex.unlock();
@@ -328,6 +346,8 @@ private:
 
     /** protects #OnExtraDataChange() */
     QMutex mutex;
+
+    bool mShowRegDlg;
 
 #if defined (Q_OS_WIN32)
 private:
@@ -1649,23 +1669,12 @@ bool VBoxGlobal::showVirtualBoxLicense()
 }
 #endif
 
-void VBoxGlobal::checkRegistration()
+void VBoxGlobal::checkRegistration (bool aForced)
 {
 #ifdef VBOX_WITH_REGISTRATION
-    if (!VBoxRegistrationDlg::hasToBeShown())
+    if (!aForced && !VBoxRegistrationDlg::hasToBeShown())
         return;
 
-    /* Store the ID of the main window to ensure that only one registration
-     * dialog is shown at a time. This operation will implicitly cause the
-     * dialog to show if it's not already shown. */
-    virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
-                               QString ("%1").arg ((long) qApp->mainWidget()->winId()));
-#endif
-}
-
-void VBoxGlobal::showRegistrationDialog()
-{
-#ifdef VBOX_WITH_REGISTRATION
     if (mRegDlg)
     {
         /* Show already opened registration dialog */
@@ -1673,7 +1682,19 @@ void VBoxGlobal::showRegistrationDialog()
         mRegDlg->raise();
         mRegDlg->setActiveWindow();
     }
+    /* Store the ID of the main window to ensure that only one registration
+     * dialog is shown at a time. This operation will implicitly cause the
+     * dialog to show if it's not already shown. */
     else
+        virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
+            QString ("%1").arg ((long) qApp->mainWidget()->winId()));
+#endif
+}
+
+void VBoxGlobal::showRegistrationDialog()
+{
+#ifdef VBOX_WITH_REGISTRATION
+    if (!mRegDlg)
     {
         /* Create new registration dialog */
         VBoxRegistrationDlg *dlg =
@@ -3493,6 +3514,11 @@ bool VBoxGlobal::event (QEvent *e)
         case VBoxDefs::ShowRegDlgEventType:
         {
             showRegistrationDialog();
+            return true;
+        }
+        case VBoxDefs::ToggleRegMenuItemEvent:
+        {
+            emit toggleRegMenuItem (((VBoxToggleRegMenuItem *)e)->mEnable);
             return true;
         }
         case VBoxDefs::SessionStateChangeEventType:

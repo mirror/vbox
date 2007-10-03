@@ -377,6 +377,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     helpMenu->insertSeparator();
 #ifdef VBOX_WITH_REGISTRATION
     helpRegisterAction->addTo (helpMenu);
+    helpRegisterAction->setEnabled (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
 #endif
     helpAboutAction->addTo( helpMenu );
     helpMenu->insertSeparator();
@@ -529,7 +531,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
     connect (helpRegisterAction, SIGNAL (activated()),
-             &vboxGlobal(), SLOT (showRegistrationDialog()));
+             &vboxGlobal(), SLOT (checkRegistration()));
+    connect (&vboxGlobal(), SIGNAL (toggleRegMenuItem (bool)),
+             this, SLOT (onToggleRegMenuItem (bool)));
     connect (helpAboutAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
     connect (helpResetMessagesAction, SIGNAL (activated()),
@@ -1017,6 +1021,11 @@ void VBoxConsoleWnd::onExitFullscreen()
     mManualResize = false;
     console->setIgnoreMainwndResize (false);
     console->normalizeGeometry (true /* adjustPosition */);
+}
+
+void VBoxConsoleWnd::onToggleRegMenuItem (bool aEnable)
+{
+    helpRegisterAction->setEnabled (aEnable);
 }
 
 void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)

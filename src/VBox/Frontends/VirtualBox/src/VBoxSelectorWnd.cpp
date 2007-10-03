@@ -529,6 +529,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     helpMenu->insertSeparator();
 #ifdef VBOX_WITH_REGISTRATION
     helpRegisterAction->addTo (helpMenu);
+    helpRegisterAction->setEnabled (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
 #endif
     helpAboutAction->addTo (helpMenu);
     helpMenu->insertSeparator();
@@ -590,7 +592,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
     connect (helpRegisterAction, SIGNAL (activated()),
-             &vboxGlobal(), SLOT (showRegistrationDialog()));
+             &vboxGlobal(), SLOT (checkRegistration()));
+    connect (&vboxGlobal(), SIGNAL (toggleRegMenuItem (bool)),
+             this, SLOT (onToggleRegMenuItem (bool)));
     connect (helpAboutAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
     connect (helpResetMessagesAction, SIGNAL (activated()),
@@ -1383,6 +1387,11 @@ void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
                    false /* aDetails */,
                    true  /* aSnapshot */,
                    false /* aDescription */);
+}
+
+void VBoxSelectorWnd::onToggleRegMenuItem (bool aEnable)
+{
+    helpRegisterAction->setEnabled (aEnable);
 }
 
 #include "VBoxSelectorWnd.moc"

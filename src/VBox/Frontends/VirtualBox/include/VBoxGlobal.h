@@ -107,6 +107,17 @@ public:
         {}
 };
 
+class VBoxToggleRegMenuItem : public QEvent
+{
+public:
+    VBoxToggleRegMenuItem (bool aEnable)
+        : QEvent ((QEvent::Type) VBoxDefs::ToggleRegMenuItemEvent)
+        , mEnable (aEnable)
+        {}
+
+    bool mEnable;
+};
+
 class VBoxSessionStateChangeEvent : public QEvent
 {
 public:
@@ -376,8 +387,6 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    void checkRegistration();
-
     CSession openSession (const QUuid &id);
 
     bool startMachine (const QUuid &id);
@@ -506,17 +515,20 @@ signals:
     void machineRegistered (const VBoxMachineRegisteredEvent &e);
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
+    void toggleRegMenuItem (bool aEnable);
 
 public slots:
 
     bool openURL (const QString &aURL);
 
-    void showRegistrationDialog();
+    void checkRegistration (bool aForced = true);
 
 protected:
 
     bool event (QEvent *e);
     bool eventFilter (QObject *, QEvent *);
+
+    void showRegistrationDialog();
 
 private:
 
