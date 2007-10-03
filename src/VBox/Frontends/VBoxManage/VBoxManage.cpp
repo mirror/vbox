@@ -528,6 +528,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            machinefolder default|<folder> |\n"
                  "                            vrdpauthlibrary default|<library> |\n"
                  "                            hwvirtexenabled yes|no\n"
+                 "                            loghistorycount <value>\n"
                  "\n");
     }
 
@@ -2767,21 +2768,23 @@ static int handleList(int argc, char *argv[],
         BOOL flag;
 
         systemProperties->COMGETTER(MinGuestRAM)(&ulValue);
-        RTPrintf("Minimum guest RAM size:     %u Megabytes\n", ulValue);
+        RTPrintf("Minimum guest RAM size:      %u Megabytes\n", ulValue);
         systemProperties->COMGETTER(MaxGuestRAM)(&ulValue);
-        RTPrintf("Maximum guest RAM size:     %u Megabytes\n", ulValue);
+        RTPrintf("Maximum guest RAM size:      %u Megabytes\n", ulValue);
         systemProperties->COMGETTER(MaxGuestVRAM)(&ulValue);
-        RTPrintf("Maximum video RAM size:     %u Megabytes\n", ulValue);
+        RTPrintf("Maximum video RAM size:      %u Megabytes\n", ulValue);
         systemProperties->COMGETTER(MaxVDISize)(&ul64Value);
-        RTPrintf("Maximum VDI size:           %lu Megabytes\n", ul64Value);
+        RTPrintf("Maximum VDI size:            %lu Megabytes\n", ul64Value);
         systemProperties->COMGETTER(DefaultVDIFolder)(str.asOutParam());
-        RTPrintf("Default VDI filder:         %lS\n", str.raw());
+        RTPrintf("Default VDI filder:          %lS\n", str.raw());
         systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
-        RTPrintf("Default machine folder:     %lS\n", str.raw());
+        RTPrintf("Default machine folder:      %lS\n", str.raw());
         systemProperties->COMGETTER(RemoteDisplayAuthLibrary)(str.asOutParam());
         RTPrintf("VRDP authentication library: %lS\n", str.raw());
         systemProperties->COMGETTER(HWVirtExEnabled)(&flag);
         RTPrintf("Hardware virt. extensions:   %s\n", flag ? "yes" : "no");
+        systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
+        RTPrintf("Log history count:           %u\n", ulValue);
 
     }
     else
@@ -6339,37 +6342,25 @@ static int handleSetProperty(int argc, char *argv[],
     {
         /* reset to default? */
         if (strcmp(argv[1], "default") == 0)
-        {
             CHECK_ERROR(systemProperties, COMSETTER(DefaultVDIFolder)(NULL));
-        }
         else
-        {
             CHECK_ERROR(systemProperties, COMSETTER(DefaultVDIFolder)(Bstr(argv[1])));
-        }
     }
     else if (strcmp(argv[0], "machinefolder") == 0)
     {
         /* reset to default? */
         if (strcmp(argv[1], "default") == 0)
-        {
             CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(NULL));
-        }
         else
-        {
             CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(Bstr(argv[1])));
-        }
     }
     else if (strcmp(argv[0], "vrdpauthlibrary") == 0)
     {
         /* reset to default? */
         if (strcmp(argv[1], "default") == 0)
-        {
             CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(NULL));
-        }
         else
-        {
             CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(Bstr(argv[1])));
-        }
     }
     else if (strcmp(argv[0], "hwvirtexenabled") == 0)
     {
@@ -6380,10 +6371,17 @@ static int handleSetProperty(int argc, char *argv[],
         else
             return errorArgument("Invalid value '%s' for hardware virtualization extension flag", argv[1]);
     }
-    else
+    else if (strcmp(argv[0], "loghistorycount") == 0)
     {
-        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
+        uint32_t uVal;
+        int vrc;
+        vrc = RTStrToUInt32Ex(argv[1], NULL, 0, &uVal);
+        if (vrc != VINF_SUCCESS)
+            return errorArgument("Error parsing Log history count '%s'", argv[1]);
+        CHECK_ERROR(systemProperties, COMSETTER(LogHistoryCount)(uVal));
     }
+    else
+        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }

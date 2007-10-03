@@ -4373,6 +4373,11 @@
       </desc>
     </attribute>
 
+    <attribute name="LogHistoryCount" type="unsigned long">
+      <desc>
+        This value specifies how many old release log files are kept.
+       </desc>
+    </attribute>
   </interface>
 
   <!--

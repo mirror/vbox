@@ -69,6 +69,7 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
     setRemoteDisplayAuthLibrary (NULL);
 
     mHWVirtExEnabled = false;
+    mLogHistoryCount = 3;
 
     setReady(true);
     return S_OK;
@@ -323,6 +324,30 @@ STDMETHODIMP SystemProperties::COMSETTER(HWVirtExEnabled) (BOOL enabled)
     return mParent->saveSettings();
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
+{
+    if (!count)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    *count = mLogHistoryCount;
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    mLogHistoryCount = count;
+
+    alock.unlock();
+    return mParent->saveSettings();
+}
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -361,8 +386,11 @@ HRESULT SystemProperties::loadSettings (CFGNODE aGlobal)
         if (FAILED (rc))
             break;
 
-         CFGLDRQueryBool (properties, "HWVirtExEnabled", (bool*)&mHWVirtExEnabled);
+        CFGLDRQueryBool (properties, "HWVirtExEnabled", (bool*)&mHWVirtExEnabled);
 
+        uint32_t u32Count = 3;
+        CFGLDRQueryUInt32 (properties, "LogHistoryCount", &u32Count);
+        mLogHistoryCount = u32Count;
     }
     while (0);
 
@@ -403,6 +431,8 @@ HRESULT SystemProperties::saveSettings (CFGNODE aGlobal)
                        mRemoteDisplayAuthLibrary);
 
     CFGLDRSetBool (properties, "HWVirtExEnabled", !!mHWVirtExEnabled);
+
+    CFGLDRSetUInt32 (properties, "LogHistoryCount", mLogHistoryCount);
 
     return S_OK;
 }
