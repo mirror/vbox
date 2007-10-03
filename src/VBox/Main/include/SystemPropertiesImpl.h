@@ -51,16 +51,16 @@ public:
     void uninit();
 
     // ISystemProperties properties
-    STDMETHOD(COMGETTER(MinGuestRAM)(ULONG *minRAM));
-    STDMETHOD(COMGETTER(MaxGuestRAM)(ULONG *maxRAM));
-    STDMETHOD(COMGETTER(MinGuestVRAM)(ULONG *minVRAM));
-    STDMETHOD(COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM));
-    STDMETHOD(COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors));
-    STDMETHOD(COMGETTER(MaxVDISize)(ULONG64 *maxVDISize));
-    STDMETHOD(COMGETTER(NetworkAdapterCount)(ULONG *count));
-    STDMETHOD(COMGETTER(SerialPortCount)(ULONG *count));
-    STDMETHOD(COMGETTER(ParallelPortCount)(ULONG *count));
-    STDMETHOD(COMGETTER(MaxBootPosition)(ULONG *aMaxBootPosition));
+    STDMETHOD(COMGETTER(MinGuestRAM) (ULONG *minRAM));
+    STDMETHOD(COMGETTER(MaxGuestRAM) (ULONG *maxRAM));
+    STDMETHOD(COMGETTER(MinGuestVRAM) (ULONG *minVRAM));
+    STDMETHOD(COMGETTER(MaxGuestVRAM) (ULONG *maxVRAM));
+    STDMETHOD(COMGETTER(MaxGuestMonitors) (ULONG *maxMonitors));
+    STDMETHOD(COMGETTER(MaxVDISize) (ULONG64 *maxVDISize));
+    STDMETHOD(COMGETTER(NetworkAdapterCount) (ULONG *count));
+    STDMETHOD(COMGETTER(SerialPortCount) (ULONG *count));
+    STDMETHOD(COMGETTER(ParallelPortCount) (ULONG *count));
+    STDMETHOD(COMGETTER(MaxBootPosition) (ULONG *aMaxBootPosition));
     STDMETHOD(COMGETTER(DefaultVDIFolder)) (BSTR *aDefaultVDIFolder);
     STDMETHOD(COMSETTER(DefaultVDIFolder)) (INPTR BSTR aDefaultVDIFolder);
     STDMETHOD(COMGETTER(DefaultMachineFolder)) (BSTR *aDefaultMachineFolder);
@@ -69,6 +69,8 @@ public:
     STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (INPTR BSTR aRemoteDisplayAuthLibrary);
     STDMETHOD(COMGETTER(HWVirtExEnabled)) (BOOL *enabled);
     STDMETHOD(COMSETTER(HWVirtExEnabled)) (BOOL enabled);
+    STDMETHOD(COMGETTER(LogHistoryCount)) (ULONG *count);
+    STDMETHOD(COMSETTER(LogHistoryCount)) (ULONG count);
 
     // public methods only for internal purposes
 
@@ -101,6 +103,7 @@ private:
     Bstr mDefaultMachineFolderFull;
     Bstr mRemoteDisplayAuthLibrary;
     BOOL mHWVirtExEnabled;
+    ULONG mLogHistoryCount;
 };
 
 #endif // ____H_SYSTEMPROPERTIESIMPL

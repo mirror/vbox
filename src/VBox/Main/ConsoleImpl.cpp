@@ -5775,27 +5775,36 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
         /*
          * Age the old log files
-         * Rename .2 to .3, .1 to .2 and the last log file to .1
-         * Overwrite target files in case they exist;
+         * Rename .(n-1) to .(n), .(n-2) to .(n-1), ..., and the last log file to .1
+         * Overwrite target files in case they exist.
          */
-        for (int i = 2; i >= 0; i--)
+        ComPtr<IVirtualBox> virtualBox;
+        console->mMachine->COMGETTER(Parent)(virtualBox.asOutParam());
+        ComPtr <ISystemProperties> systemProperties;
+        virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+        ULONG uLogHistoryCount = 3;
+        systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
+        if (uLogHistoryCount)
         {
-            Utf8Str *files[] = { &logFile, &pngFile };
-            Utf8Str oldName, newName;
-
-            for (unsigned int j = 0; j < ELEMENTS (files); ++ j)
+            for (int i = uLogHistoryCount-1; i >= 0; i--)
             {
-                if (i > 0)
-                    oldName = Utf8StrFmt ("%s.%d", files [j]->raw(), i);
-                else
-                    oldName = *files [j];
-                newName = Utf8StrFmt ("%s.%d", files [j]->raw(), i + 1);
-                /* If the old file doesn't exist, delete the new file (if it
-                 * exists) to provide correct rotation even if the sequence is
-                 * broken */
-                if (RTFileRename (oldName, newName, RTFILEMOVE_FLAGS_REPLACE) ==
-                    VERR_FILE_NOT_FOUND)
-                    RTFileDelete (newName);
+                Utf8Str *files[] = { &logFile, &pngFile };
+                Utf8Str oldName, newName;
+
+                for (unsigned int j = 0; j < ELEMENTS (files); ++ j)
+                {
+                    if (i > 0)
+                        oldName = Utf8StrFmt ("%s.%d", files [j]->raw(), i);
+                    else
+                        oldName = *files [j];
+                    newName = Utf8StrFmt ("%s.%d", files [j]->raw(), i + 1);
+                    /* If the old file doesn't exist, delete the new file (if it
+                     * exists) to provide correct rotation even if the sequence is
+                     * broken */
+                    if (RTFileRename (oldName, newName, RTFILEMOVE_FLAGS_REPLACE) ==
+                            VERR_FILE_NOT_FOUND)
+                        RTFileDelete (newName);
+                }
             }
         }
 
