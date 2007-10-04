@@ -2510,7 +2510,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
         /* Check for the already registered required image: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
         QString name = QString ("VBoxGuestAdditions_%1.iso")
-                                 .arg (vbox.GetVersion());
+                                 .arg (vbox.GetVersion().remove ("_OSE"));
         CDVDImageEnumerator en = vbox.GetDVDImages().Enumerate();
         while (en.HasMore())
         {
@@ -2526,7 +2526,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
         if (rc == QIMessageBox::Yes)
         {
             QString url = QString ("http://www.virtualbox.org/download/%1/")
-                                   .arg (vbox.GetVersion()) + name;
+                                   .arg (vbox.GetVersion().remove ("_OSE")) + name;
             QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
                                    .absFilePath (name);
 
