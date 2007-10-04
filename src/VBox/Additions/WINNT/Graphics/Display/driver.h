@@ -51,8 +51,8 @@ typedef struct _SSB
 } SSB;
 
 /* VRAM
- *  |           |           |          |           |
- * 0+framebuffer+VBVA buffer+ddraw heap+displayinfo=cScreenSize
+ *  |           |          |           |           |
+ * 0+framebuffer+ddraw heap+VBVA buffer+displayinfo=cScreenSize
  */
 typedef struct _VRAMLAYOUT
 {
@@ -61,11 +61,11 @@ typedef struct _VRAMLAYOUT
     ULONG offFrameBuffer;
     ULONG cbFrameBuffer;
     
+    ULONG offDDRAWHeap; //@todo
+    ULONG cbDDRAWHeap;
+    
     ULONG offVBVABuffer;
     ULONG cbVBVABuffer;
-    
-    ULONG offDDRAWHeap;
-    ULONG cbDDRAWHeap;
     
     ULONG offDisplayInformation;
     ULONG cbDisplayInformation;

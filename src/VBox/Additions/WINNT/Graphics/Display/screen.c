@@ -93,12 +93,13 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             }
             else
             {
-                ppdev->layout.offVBVABuffer = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
+                /* Now the offscreen heap followed by the VBVA buffer. */
+                ppdev->layout.offDDRAWHeap = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
                 
                 cbAvailable -= ppdev->layout.cbVBVABuffer;
+                ppdev->layout.cbDDRAWHeap = cbAvailable;
                 
-                ppdev->layout.offDDRAWHeap = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
-                ppdev->layout.cbDDRAWHeap  = cbAvailable;
+                ppdev->layout.offVBVABuffer = ppdev->layout.offDDRAWHeap + ppdev->layout.cbDDRAWHeap;
             }
         }
     }
@@ -113,13 +114,13 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         ppdev->layout.offFrameBuffer = 0;
         ppdev->layout.cbFrameBuffer  = RT_ALIGN_32(pMemoryInformation->FrameBufferLength, 0x1000);
     
-        ppdev->layout.offVBVABuffer = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
-        ppdev->layout.cbVBVABuffer  = 0;
-    
-        ppdev->layout.offDDRAWHeap = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
+        ppdev->layout.offDDRAWHeap = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
         ppdev->layout.cbDDRAWHeap  = ppdev->layout.cbVRAM - ppdev->layout.offDDRAWHeap;
     
-        ppdev->layout.offDisplayInformation = ppdev->layout.offDDRAWHeap + ppdev->layout.cbDDRAWHeap;
+        ppdev->layout.offVBVABuffer = ppdev->layout.offDDRAWHeap + ppdev->layout.cbDDRAWHeap;
+        ppdev->layout.cbVBVABuffer  = 0;
+    
+        ppdev->layout.offDisplayInformation = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
         ppdev->layout.cbDisplayInformation  = 0;
     }
 
@@ -127,19 +128,19 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                 "    cbVRAM = 0x%X\n"
                 "    offFrameBuffer = 0x%X\n"
                 "    cbFrameBuffer = 0x%X\n"
-                "    offVBVABuffer = 0x%X\n"
-                "    cbVBVABuffer = 0x%X\n"
                 "    offDDRAWHeap = 0x%X\n"
                 "    cbDDRAWHeap = 0x%X\n"
+                "    offVBVABuffer = 0x%X\n"
+                "    cbVBVABuffer = 0x%X\n"
                 "    offDisplayInformation = 0x%X\n"
                 "    cbDisplayInformation = 0x%X\n",
                 ppdev->layout.cbVRAM,
                 ppdev->layout.offFrameBuffer,
                 ppdev->layout.cbFrameBuffer,
-                ppdev->layout.offVBVABuffer,
-                ppdev->layout.cbVBVABuffer,
                 ppdev->layout.offDDRAWHeap,
                 ppdev->layout.cbDDRAWHeap,
+                ppdev->layout.offVBVABuffer,
+                ppdev->layout.cbVBVABuffer,
                 ppdev->layout.offDisplayInformation,
                 ppdev->layout.cbDisplayInformation
                 ));
