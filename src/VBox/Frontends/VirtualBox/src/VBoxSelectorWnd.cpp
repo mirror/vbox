@@ -430,7 +430,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
     helpRegisterAction = new QAction (this, "helpRegisterAction");
     helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("register_16px.png",
-                                                "register_disabled_16px.png"));
+                                                         "register_disabled_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
     helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
     helpResetMessagesAction = new QAction( this, "helpResetMessagesAction" );
@@ -593,9 +593,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     connect (helpWebAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpWebDialog()));
     connect (helpRegisterAction, SIGNAL (activated()),
-             &vboxGlobal(), SLOT (checkRegistration()));
-    connect (&vboxGlobal(), SIGNAL (toggleRegMenuItem (bool)),
-             this, SLOT (onToggleRegMenuItem (bool)));
+             &vboxGlobal(), SLOT (showRegistrationDialog()));
+    connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
+             helpRegisterAction, SLOT (setEnabled (bool)));
     connect (helpAboutAction, SIGNAL (activated()),
              &vboxProblem(), SLOT (showHelpAboutDialog()));
     connect (helpResetMessagesAction, SIGNAL (activated()),
@@ -1388,11 +1388,6 @@ void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
                    false /* aDetails */,
                    true  /* aSnapshot */,
                    false /* aDescription */);
-}
-
-void VBoxSelectorWnd::onToggleRegMenuItem (bool aEnable)
-{
-    helpRegisterAction->setEnabled (aEnable);
 }
 
 #include "VBoxSelectorWnd.moc"

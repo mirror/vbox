@@ -99,25 +99,6 @@ public:
     const bool registered;
 };
 
-class VBoxShowRegDlgEvent : public QEvent
-{
-public:
-    VBoxShowRegDlgEvent()
-        : QEvent ((QEvent::Type) VBoxDefs::ShowRegDlgEventType)
-        {}
-};
-
-class VBoxToggleRegMenuItem : public QEvent
-{
-public:
-    VBoxToggleRegMenuItem (bool aEnable)
-        : QEvent ((QEvent::Type) VBoxDefs::ToggleRegMenuItemEvent)
-        , mEnable (aEnable)
-        {}
-
-    bool mEnable;
-};
-
 class VBoxSessionStateChangeEvent : public QEvent
 {
 public:
@@ -147,6 +128,17 @@ public:
 
     const QUuid machineId;
     const QUuid snapshotId;
+};
+
+class VBoxCanShowRegDlgEvent : public QEvent
+{
+public:
+    VBoxCanShowRegDlgEvent (bool aCanShow)
+        : QEvent ((QEvent::Type) VBoxDefs::CanShowRegDlgEventType)
+        , mCanShow (aCanShow)
+        {}
+
+    const bool mCanShow;
 };
 
 // VBoxGlobal
@@ -515,20 +507,19 @@ signals:
     void machineRegistered (const VBoxMachineRegisteredEvent &e);
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
-    void toggleRegMenuItem (bool aEnable);
+
+    void canShowRegDlg (bool aCanShow);
 
 public slots:
 
     bool openURL (const QString &aURL);
 
-    void checkRegistration (bool aForced = true);
+    void showRegistrationDialog (bool aForce = true);
 
 protected:
 
     bool event (QEvent *e);
     bool eventFilter (QObject *, QEvent *);
-
-    void showRegistrationDialog();
 
 private:
 

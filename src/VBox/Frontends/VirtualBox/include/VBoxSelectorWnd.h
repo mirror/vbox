@@ -102,8 +102,6 @@ private slots:
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
 
-    void onToggleRegMenuItem (bool aEnable);
-
 private:
 
     /* actions */
