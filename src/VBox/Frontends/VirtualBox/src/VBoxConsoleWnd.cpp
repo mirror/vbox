@@ -265,7 +265,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, const char* aName,
     helpWebAction = new QAction (this, "helpWebAction");
     helpWebAction->setIconSet (VBoxGlobal::iconSet ("site_16px.png"));
     helpRegisterAction = new QAction (this, "helpRegisterAction");
-    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("register_16px.png"));
+    helpRegisterAction->setIconSet (VBoxGlobal::iconSet ("register_16px.png",
+                                                "register_disabled_16px.png"));
     helpAboutAction = new QAction (this, "helpAboutAction");
     helpAboutAction->setIconSet (VBoxGlobal::iconSet ("about_16px.png"));
     helpResetMessagesAction = new QAction (this, "helpResetMessagesAction");
