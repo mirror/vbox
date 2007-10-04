@@ -156,9 +156,6 @@ VBoxDownloaderWgt::VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
     mainLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
                                                 QSizePolicy::Fixed));
 
-    /* Select the product version */
-    QString version = vboxGlobal().virtualBox().GetVersion();
-
     /* Prepare the connection */
     mConn->setcallbacks (OnBegin, OnData, OnComplete, this);
 
