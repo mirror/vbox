@@ -4828,7 +4828,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (mode_info_list[i].info.MemoryModel == VBE_MEMORYMODEL_TEXT_MODE)
             pixelWidth = 2;
         else
-            pixelWidth = mode_info_list[i].info.BitsPerPixel / 8;
+            pixelWidth = (mode_info_list[i].info.BitsPerPixel +7) / 8;
         reqSize = mode_info_list[i].info.XResolution
                 * mode_info_list[i].info.YResolution
                 * pixelWidth;
@@ -4860,7 +4860,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             if (pDefMode->info.MemoryModel == VBE_MEMORYMODEL_TEXT_MODE)
                 pixelWidth = 2;
             else
-                pixelWidth = pDefMode->info.BitsPerPixel / 8;
+                pixelWidth = (pDefMode->info.BitsPerPixel + 7) / 8;
             reqSize = pDefMode->info.XResolution * pDefMode->info.YResolution *  pixelWidth;
             if (reqSize >= pData->vram_size)
                 continue;
