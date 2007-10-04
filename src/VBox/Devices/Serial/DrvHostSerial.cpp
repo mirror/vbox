@@ -89,7 +89,7 @@ typedef struct DRVHOSTSERIAL
     RTFILE                      WakeupPipeR;
     /** The write end of the control pipe */
     RTFILE                      WakeupPipeW;
-#elif RT_OS_WINDOWS
+#elif defined(RT_OS_WINDOWS)
     /** the device handle */
     HANDLE                      hDeviceFile;
     /** The event semaphore for waking up the receive thread */
