@@ -185,8 +185,6 @@ private slots:
     void onEnterFullscreen();
     void onExitFullscreen();
 
-    void onToggleRegMenuItem (bool aEnable);
-
 private:
 
     /** Popup version of the main menu */
