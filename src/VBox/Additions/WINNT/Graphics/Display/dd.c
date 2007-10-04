@@ -648,7 +648,9 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
         // We map in starting at the top of the frame buffer:
 
         ShareMemory.ViewOffset = 0;
-        ShareMemory.ViewSize   = pDev->cyScreen * pDev->lDeltaScreen;
+
+        // We map down to the end of the frame buffer, including the offscreen heap.
+        ShareMemory.ViewSize   = pDev->layout.offVBVABuffer;
 
         DISPDBG((0, "ViewSize = %x\n", ShareMemory.ViewSize));
 
@@ -660,7 +662,7 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
                        sizeof(VIDEO_SHARE_MEMORY_INFORMATION),
                        &ReturnedDataLength))
         {
-            DISPDBG((0, "Failed IOCTL_VIDEO_SHARE_MEMORY"));
+            DISPDBG((0, "Failed IOCTL_VIDEO_SHARE_MEMORY\n"));
 
             lpMapMemory->ddRVal = DDERR_GENERIC;
      
@@ -716,22 +718,32 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
 DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 {
     PPDEV pDev = (PPDEV)lpLock->lpDD->dhpdev;
+    
+    PDD_SURFACE_LOCAL lpSurfaceLocal = lpLock->lpDDSurface;
 
-    DISPDBG((0, "%s: %p bHasRect = %d\n", __FUNCTION__, pDev, lpLock->bHasRect));
-    
-    pDev->ddLock.bLocked = TRUE;
-    
-    if (lpLock->bHasRect)
+    DISPDBG((0, "%s: %p bHasRect = %d fpProcess = %p\n", __FUNCTION__, pDev, lpLock->bHasRect, lpLock->fpProcess));
+
+    if (lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
     {
-        DISPDBG((0, "%d,%d %dx%d\n", lpLock->rArea.left, lpLock->rArea.top, lpLock->rArea.right - lpLock->rArea.left, lpLock->rArea.bottom - lpLock->rArea.top));
-        pDev->ddLock.rArea = lpLock->rArea;
+        /* The updated rectangle must be reported only for the primary surface. */
+        pDev->ddLock.bLocked = TRUE;
+
+        if (lpLock->bHasRect)
+        {
+            DISPDBG((0, "%d,%d %dx%d\n", lpLock->rArea.left, lpLock->rArea.top, lpLock->rArea.right - lpLock->rArea.left, lpLock->rArea.bottom - lpLock->rArea.top));
+            pDev->ddLock.rArea = lpLock->rArea;
+        }
+        else
+        {
+            pDev->ddLock.rArea.left   = 0;
+            pDev->ddLock.rArea.top    = 0;
+            pDev->ddLock.rArea.right  = pDev->cxScreen;
+            pDev->ddLock.rArea.bottom = pDev->cyScreen;
+        }
     }
     else
     {
-        pDev->ddLock.rArea.left   = 0;
-        pDev->ddLock.rArea.top    = 0;
-        pDev->ddLock.rArea.right  = pDev->cxScreen;
-        pDev->ddLock.rArea.bottom = pDev->cyScreen;
+        DISPDBG((0, "%s: secondary surface.\n", __FUNCTION__));
     }
 
     // Because we correctly set 'fpVidMem' to be the offset into our frame
