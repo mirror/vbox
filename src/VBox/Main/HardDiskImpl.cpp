@@ -4417,12 +4417,13 @@ HRESULT HCustomHardDisk::init (VirtualBox *aVirtualBox, HardDisk *aParent,
             /* Create the corresponding container. */
             vrc = VDCreate (pszFormat, VDError, this, &mContainer);
 
+            if (VBOX_SUCCESS(vrc))
+                mFormat = Bstr (pszFormat);
+
             RTStrFree (pszFormat);
 
             /* the format has been already checked for presence at this point */
             ComAssertRCBreak (vrc, rc = E_FAIL);
-
-            mFormat = Bstr (pszFormat);
 
             /* Call queryInformation() anyway (even if it will block), because
              * it is the only way to get the UUID of the existing VDI and
@@ -4879,12 +4880,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
     {
         Guid id, parentId;
 
-        /// @todo changed from VD_OPEN_FLAGS_READONLY to VD_OPEN_FLAGS_NORMAL,
-        /// because otherwise registering a virtual harddisk which so far has no UUID will
-        /// yield a null UUID. It cannot be added to a custom harddisk opened readonly,
-        /// obviously. This of course changes locking behavior, but for now
-        /// this is acceptable. A better solution needs to be found later.
-        vrc = VDOpen (mContainer, location, VD_OPEN_FLAGS_NORMAL);
+        vrc = VDOpen (mContainer, location, VD_OPEN_FLAGS_INFO);
         if (VBOX_FAILURE (vrc))
             break;
 
