@@ -168,7 +168,7 @@ static char *g_pszCdromFile = NULL;
 static char *g_pszFdaFile   = NULL;
 static const char *pszBootDevice = "IDE";
 static uint32_t g_u32MemorySizeMB = 128;
-static uint32_t g_u32VRamSizeMB = 4;
+static uint32_t g_u32VRamSize = 4 * _1M;
 #ifdef VBOXSDL_ADVANCED_OPTIONS
 static bool g_fRawR0 = true;
 static bool g_fRawR3 = true;
@@ -407,6 +407,10 @@ int main(int argc, char **argv)
     uint32_t secureLabelPointSize = 12;
     char *secureLabelFontFile = NULL;
 #endif
+#ifdef RT_OS_L4
+    uint32_t u32MaxVRAM;
+#endif
+
     RTPrintf("VirtualBox Simple SDL GUI built %s %s\n", __DATE__, __TIME__);
 
     // less than one parameter is not possible
@@ -475,7 +479,9 @@ int main(int argc, char **argv)
         {
             if (++curArg >= argc)
                 return SyntaxError("missing argument for vram size!\n");
-            rc = RTStrToUInt32Ex(argv[curArg], NULL, 0, &g_u32VRamSizeMB);
+            uint32_t uVRAMMB;
+            rc = RTStrToUInt32Ex(argv[curArg], NULL, 0, &uVRAMMB);
+            g_u32VRamSize = uVRAMMB * _1M;
             if (VBOX_FAILURE(rc))
                 return SyntaxError("bad video ram size: %s (error %Vrc)\n",
                                    argv[curArg], rc);
@@ -815,10 +821,20 @@ int main(int argc, char **argv)
 
 #ifdef RT_OS_L4
     /* The L4 console provides (currently) a fixed resolution. */
-    if (g_u32VRamSizeMB * _1M >=   gFramebuffer->getHostXres()
-                          * gFramebuffer->getHostYres()
-                          * (gDisplay->getBitsPerPixel() / 8))
+    if (g_u32VRamSize >= gFramebuffer->getHostXres()
+                       * gFramebuffer->getHostYres()
+                       * (gDisplay->getBitsPerPixel() / 8))
         gDisplay->SetVideoModeHint(gFramebuffer->getHostXres(), gFramebuffer->getHostYres(), 0, 0);
+    /* Limit the VRAM of the guest to the amount of memory we got actually
+     * mapped from the L4 console. */
+    u32MaxVRAM = (gFramebuffer->getHostYres() + 18) /* don't omit the status bar */
+               * gFramebuffer->getHostXres()
+               * (gDisplay->getBitsPerPixel() / 8);
+    if (g_u32VRamSize > u32MaxVRAM)
+    {
+        RTPrintf("Limiting the video memory to %u bytes\n", u32MaxVRAM);
+        g_u32VRamSize = u32MaxVRAM;
+    }
 #endif
 
     /*
@@ -1438,7 +1454,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    2);                           UPDATE_RC();
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                           UPDATE_RC();
     rc = CFGMR3InsertNode(pInst,    "Config",         &pCfg);                       UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",       g_u32VRamSizeMB * _1M);       UPDATE_RC();
+    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",       g_u32VRamSize);               UPDATE_RC();
 
 #ifdef RT_OS_L4
     /* XXX hard-coded */
