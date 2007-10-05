@@ -140,7 +140,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterruptible)
 {
     /*
      * Validate input.
@@ -160,12 +160,12 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
      */
     NTSTATUS rcNt;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, KernelMode, TRUE, NULL);
+        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, KernelMode, fInterruptible, NULL);
     else
     {
         LARGE_INTEGER Timeout;
         Timeout.QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, KernelMode, TRUE, &Timeout);
+        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, KernelMode, fInterruptible, &Timeout);
     }
     switch (rcNt)
     {
@@ -174,9 +174,9 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
                 return VINF_SUCCESS;
             return VERR_SEM_DESTROYED;
         case STATUS_ALERTED:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
+            return VERR_INTERRUPTED;
         case STATUS_USER_APC:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
+            return VERR_INTERRUPTED;
         case STATUS_TIMEOUT:
             return VERR_TIMEOUT;
         default:
@@ -186,6 +186,17 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
     }
 }
 
+
+RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+{
+    return rtSemEventWait(EventSem, cMillies, false /* fInterruptible */);
+}
+
+
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+{
+    return rtSemEventWait(EventSem, cMillies, true /* fInterruptible */);
+}
 
 
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
