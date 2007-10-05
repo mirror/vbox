@@ -56,6 +56,9 @@
 #  include <asm/nmi.h>
 # endif
 #endif
+#ifndef HAVE_UNLOCKED_IOCTL /* linux/fs.h defines this */
+# include <linux/smp_lock.h>
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # ifndef page_to_pfn
@@ -293,8 +296,12 @@ static int      VBoxDrvLinuxInit(void);
 static void     VBoxDrvLinuxUnload(void);
 static int      VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
 static int      VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp);
+#ifdef HAVE_UNLOCKED_IOCTL
+static long     VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+#else
 static int      VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
-static int      VBoxDrvLinuxIOCtlSlow(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+#endif
+static int      VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 static int      VBoxDrvLinuxInitGip(PSUPDRVDEVEXT pDevExt);
 static int      VBoxDrvLinuxTermGip(PSUPDRVDEVEXT pDevExt);
 static void     VBoxDrvLinuxGipTimer(unsigned long ulUser);
@@ -311,7 +318,11 @@ static struct file_operations gFileOpsVBoxDrv =
     owner:      THIS_MODULE,
     open:       VBoxDrvLinuxCreate,
     release:    VBoxDrvLinuxClose,
+#ifdef HAVE_UNLOCKED_IOCTL
+    unlocked_ioctl: VBoxDrvLinuxIOCtl,
+#else
     ioctl:      VBoxDrvLinuxIOCtl,
+#endif
 };
 
 #ifdef CONFIG_VBOXDRV_AS_MISC
@@ -746,34 +757,51 @@ static int VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp)
 /**
  * Device I/O Control entry point.
  *
- * @param   pInode      Pointer to inode info structure.
  * @param   pFilp       Associated file pointer.
  * @param   uCmd        The function specified to ioctl().
  * @param   ulArg       The argument specified to ioctl().
  */
+#ifdef HAVE_UNLOCKED_IOCTL
+static long VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
+#else
 static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
+#endif
 {
     /*
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
      */
+#ifdef HAVE_UNLOCKED_IOCTL
     if (RT_LIKELY(   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_NOP))
         return supdrvIOCtlFast(uCmd, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
-    return VBoxDrvLinuxIOCtlSlow(pInode, pFilp, uCmd, ulArg);
+    return VBoxDrvLinuxIOCtlSlow(pFilp, uCmd, ulArg);
+
+#else   /* !HAVE_UNLOCKED_IOCTL */
+
+    int rc;
+    unlock_kernel();
+    if (RT_LIKELY(   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+                  || uCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+                  || uCmd == SUP_IOCTL_FAST_DO_NOP))
+        rc = supdrvIOCtlFast(uCmd, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
+    else
+        rc = VBoxDrvLinuxIOCtlSlow(pFilp, uCmd, ulArg);
+    lock_kernel();
+    return rc;
+#endif  /* !HAVE_UNLOCKED_IOCTL */
 }
 
 
 /**
  * Device I/O Control entry point.
  *
- * @param   pInode      Pointer to inode info structure.
  * @param   pFilp       Associated file pointer.
  * @param   uCmd        The function specified to ioctl().
  * @param   ulArg       The argument specified to ioctl().
  */
-static int VBoxDrvLinuxIOCtlSlow(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
+static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
 {
     int                 rc;
     SUPREQHDR           Hdr;
