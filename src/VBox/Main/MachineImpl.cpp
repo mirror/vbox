@@ -4225,6 +4225,19 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                 }
             }
 
+            /* PXE debug logging (optional) */
+            {
+                CFGNODE pxedebugNode = 0;
+                CFGLDRGetChildNode (biosNode, "PXEDebug", 0, &pxedebugNode);
+                if (pxedebugNode)
+                {
+                    bool enabled;
+                    CFGLDRQueryBool (pxedebugNode, "enabled", &enabled);
+                    mBIOSSettings->COMSETTER(PXEDebugEnabled)(enabled);
+                    CFGLDRReleaseNode (pxedebugNode);
+                }
+            }
+
             /* time offset (optional) */
             {
                 CFGNODE timeOffsetNode = 0;
@@ -6152,6 +6165,14 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
             mBIOSSettings->COMGETTER(TimeOffset)(&timeOffset);
             CFGLDRSetInt64 (timeOffsetNode, "value", timeOffset);
             CFGLDRReleaseNode (timeOffsetNode);
+
+            /* PXE debug flag (optional) */
+            CFGNODE pxedebugNode = 0;
+            CFGLDRCreateChildNode (biosNode, "PXEDebug", &pxedebugNode);
+            mBIOSSettings->COMGETTER(PXEDebugEnabled)(&fSet);
+            CFGLDRSetBool (pxedebugNode, "enabled", !!fSet);
+            CFGLDRReleaseNode (pxedebugNode);
+
         }
         CFGLDRReleaseNode(biosNode);
     }

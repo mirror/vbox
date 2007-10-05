@@ -169,6 +169,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     BOOL fIOAPIC;
     hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                          H();
 
+    BOOL fPXEDebug;
+    hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                      H();
+
     /*
      * PDM config.
      *  Load drivers in VBoxC.[so|dll]
@@ -221,6 +224,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertString(pCfg,   "HardDiskDevice",       "piix3ide");            RC_CHECK();
     rc = CFGMR3InsertString(pCfg,   "FloppyDevice",         "i82078");              RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",               fIOAPIC);               RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "PXEDebug",             fPXEDebug);             RC_CHECK();
     rc = CFGMR3InsertBytes(pCfg,    "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
 
     DeviceType_T bootDevice;

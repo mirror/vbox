@@ -464,6 +464,11 @@
           <xsd:attribute name="value" type="xsd:integer" default="0"/>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="PXEDebug" minOccurs="0">
+      <xsd:complexType>
+          <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+      </xsd:complexType>
+    </xsd:element>
   </xsd:all>
 </xsd:complexType>
 

@@ -40,6 +40,7 @@ public:
             mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
             mACPIEnabled = true;
             mIOAPICEnabled = false;
+            mPXEDebugEnabled = false;
             mTimeOffset = 0;
         }
 
@@ -53,6 +54,7 @@ public:
                     mBootMenuMode    == that.mBootMenuMode &&
                     mACPIEnabled     == that.mACPIEnabled &&
                     mIOAPICEnabled   == that.mIOAPICEnabled &&
+                    mPXEDebugEnabled == that.mPXEDebugEnabled &&
                     mTimeOffset      == that.mTimeOffset);
         }
 
@@ -63,6 +65,7 @@ public:
         BIOSBootMenuMode_T mBootMenuMode;
         BOOL               mACPIEnabled;
         BOOL               mIOAPICEnabled;
+        BOOL               mPXEDebugEnabled;
         LONG64             mTimeOffset;
     };
 
@@ -100,6 +103,8 @@ public:
     STDMETHOD(COMSETTER(ACPIEnabled))(BOOL enable);
     STDMETHOD(COMGETTER(IOAPICEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(IOAPICEnabled))(BOOL enable);
+    STDMETHOD(COMGETTER(PXEDebugEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(PXEDebugEnabled))(BOOL enable);
     STDMETHOD(COMGETTER)(TimeOffset)(LONG64 *offset);
     STDMETHOD(COMSETTER)(TimeOffset)(LONG64 offset);
 
