@@ -142,11 +142,63 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+/**
+ * Worker for RTSemEvent and RTSemEventNoResume.
+ *
+ * @returns VBox status code.
+ * @param   pEventInt           The event semaphore.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @param   fInterruptible      Whether it's an interruptible wait or not.
+ */
+static int rtSemEventWait(PRTSEMEVENTINTERNAL pEventInt, unsigned cMillies, bool fInterruptible)
 {
     /*
-     * Validate input.
+     * Ok wait for it.
      */
+    DEFINE_WAIT(Wait);
+    int     rc       = VINF_SUCCESS;
+    long    lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
+    for (;;)
+    {
+        /* make everything thru schedule() atomic scheduling wise. */
+        prepare_to_wait(&pEventInt->Head, &Wait, fInterruptible ? TASK_INTERRUPTIBLE : TASK_UNINTERRUPTIBLE);
+
+        /* check the condition. */
+        if (ASMAtomicCmpXchgU32(&pEventInt->fState, 0, 1))
+            break;
+
+        /* check for pending signals. */
+        if (fInterruptible && signal_pending(current))
+        {
+            rc = VERR_INTERRUPTED;
+            break;
+        }
+
+        /* wait */
+        lTimeout = schedule_timeout(lTimeout);
+
+        /* Check if someone destroyed the semaphore while we were waiting. */
+        if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+        {
+            rc = VERR_SEM_DESTROYED;
+            break;
+        }
+
+        /* check for timeout. */
+        if (!lTimeout)
+        {
+            rc = VERR_TIMEOUT;
+            break;
+        }
+    }
+
+    finish_wait(&pEventInt->Head, &Wait);
+    return rc;
+}
+
+
+RTDECL(int) RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+{
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
     if (!pEventInt)
         return VERR_INVALID_PARAMETER;
@@ -157,56 +209,29 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
         return VERR_INVALID_PARAMETER;
     }
 
-    /*
-     * Try get it.
-     */
     if (ASMAtomicCmpXchgU32(&pEventInt->fState, 0, 1))
         return VINF_SUCCESS;
-    else
-    {
-        /*
-         * Ok wait for it.
-         */
-        DEFINE_WAIT(Wait);
-        int     rc       = VINF_SUCCESS;
-        long    lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
-        for (;;)
-        {
-            /* make everything thru schedule() atomic scheduling wise. */
-            prepare_to_wait(&pEventInt->Head, &Wait, TASK_INTERRUPTIBLE);
-
-            /* check the condition. */
-            if (ASMAtomicCmpXchgU32(&pEventInt->fState, 0, 1))
-                break;
-
-            /* check for pending signals. */
-            if (signal_pending(current))
-            {
-                rc = VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
-                break;
-            }
-
-            /* wait */
-            lTimeout = schedule_timeout(lTimeout);
-
-            /* Check if someone destroyed the semaphore while we were waiting. */
-            if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
-            {
-                rc = VERR_SEM_DESTROYED;
-                break;
-            }
-
-            /* check for timeout. */
-            if (!lTimeout)
-            {
-                rc = VERR_TIMEOUT;
-                break;
-            }
-        }
-        finish_wait(&pEventInt->Head, &Wait);
-        return rc;
-    }
+    return rtSemEventWait(pEventInt, cMillies, false /* fInterruptible */);
 }
+
+
+RTDECL(int) RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+{
+    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
+    if (!pEventInt)
+        return VERR_INVALID_PARAMETER;
+    if (    !pEventInt
+        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+    {
+        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (ASMAtomicCmpXchgU32(&pEventInt->fState, 0, 1))
+        return VINF_SUCCESS;
+    return rtSemEventWait(pEventInt, cMillies, true /* fInterruptible */);
+}
+
 
 
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
