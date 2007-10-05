@@ -21,7 +21,7 @@
 #include <VBox/types.h>
 #ifdef IN_RING3
 # include <iprt/time.h>
-#endif 
+#endif
 
 __BEGIN_DECLS
 
@@ -111,7 +111,7 @@ TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers);
 
 /**
  * Gets the current lag of the synchronous virtual clock (relative to the virtual clock).
- * 
+ *
  * @return  The current lag.
  * @param   pVM     VM handle.
  */
@@ -119,7 +119,7 @@ TMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM);
 
 /**
  * Get the current catch-up percent.
- * 
+ *
  * @return  The current catch0up percent. 0 means running at the same speed as the virtual clock.
  * @param   pVM     VM handle.
  */
@@ -291,7 +291,7 @@ TMDECL(uint64_t) TMCpuTickGetOffset(PVM pVM);
 
 /**
  * Checks if AMD-V / VT-x can use an offsetted hardware TSC or not.
- * 
+ *
  * @returns true/false accordingly.
  * @param   pVM             The VM handle.
  * @param   poffRealTSC     The offset against the TSC of the current CPU.
@@ -562,9 +562,23 @@ TMDECL(bool) TMTimerIsActive(PTMTIMER pTimer);
  * This function is called before FFs are checked in the inner execution EM loops.
  *
  * @returns Virtual timer ticks to the next event.
+ * @param   pVM         Pointer to the shared VM structure.
  * @thread  The emulation thread.
  */
 TMDECL(uint64_t) TMTimerPoll(PVM pVM);
+
+/**
+ * Set FF if we've passed the next virtual event.
+ *
+ * This function is called before FFs are checked in the inner execution EM loops.
+ *
+ * @returns The GIP timestamp of the next event.
+ *          0 if the next event has already expired.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pu64Delta   Where to store the delta.
+ * @thread  The emulation thread.
+ */
+TMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta);
 
 /** @} */
 

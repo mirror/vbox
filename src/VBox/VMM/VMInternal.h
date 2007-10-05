@@ -197,6 +197,8 @@ typedef enum
     VMHALTMETHOD_OLD,
     /** The first go at a block/spin method. */
     VMHALTMETHOD_1,
+    /** The first go at a more global approach. */
+    VMHALTMETHOD_GLOBAL_1,
     /** The end of valid methods. (not inclusive of course) */
     VMHALTMETHOD_END,
     /** The usual 32-bit max value. */

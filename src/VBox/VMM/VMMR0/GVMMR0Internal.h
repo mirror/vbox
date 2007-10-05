@@ -34,6 +34,14 @@ typedef struct GVMMPERVM
     RTR0MEMOBJ          VMPagesMemObj;
     /** The ring-3 mapping of the VM pages. */
     RTR0MEMOBJ          VMPagesMapObj;
+
+    /** The time the halted EMT thread expires.
+     * 0 if the EMT thread is blocked here. */
+    uint64_t volatile   u64HaltExpire;
+    /** The event semaphore the EMT thread is blocking on. */
+    RTSEMEVENT          HaltEvent;
+    /** The APIC ID of the CPU that EMT was scheduled on the last time we checked. */
+    uint8_t             iCpuEmt;
 } GVMMPERVM;
 /** Pointer to the GVMM per VM data. */
 typedef GVMMPERVM *PGVMMPERVM;

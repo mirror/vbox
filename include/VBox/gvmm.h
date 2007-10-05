@@ -51,13 +51,20 @@ GVMMR0DECL(void)    GVMMR0Term(void);
 
 GVMMR0DECL(int)     GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM);
 GVMMR0DECL(int)     GVMMR0CreateVMReq(PSUPVMMR0REQHDR pReqHdr);
-GVMMR0DECL(int)     GVMMR0DestroyVM(PVM pVM);
-GVMMR0DECL(int)     GVMMR0AssociateEMTWithVM(PVM pVM);
 GVMMR0DECL(int)     GVMMR0DisassociateEMTFromVM(PVM pVM);
+GVMMR0DECL(int)     GVMMR0InitVM(PVM pVM);
+GVMMR0DECL(int)     GVMMR0AssociateEMTWithVM(PVM pVM);
+GVMMR0DECL(int)     GVMMR0DestroyVM(PVM pVM);
 GVMMR0DECL(PGVM)    GVMMR0ByHandle(uint32_t hGVM);
 GVMMR0DECL(PGVM)    GVMMR0ByVM(PVM pVM);
+GVMMR0DECL(int)     GVMMR0ByVMAndEMT(PVM pVM, PGVM *ppGVM);
 GVMMR0DECL(PVM)     GVMMR0GetVMByHandle(uint32_t hGVM);
 GVMMR0DECL(PVM)     GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
+GVMMR0DECL(int)     GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime);
+GVMMR0DECL(int)     GVMMR0SchedWakeUp(PVM pVM);
+GVMMR0DECL(int)     GVMMR0SchedPoll(PVM pVM, bool fYield);
+
+
 
 /**
  * Request packet for calling GVMMR0CreateVM.

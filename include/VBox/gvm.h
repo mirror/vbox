@@ -54,7 +54,7 @@ typedef struct GVM
 #ifdef ___GVMMR0Internal_h
         struct GVMMPERVM    s;
 #endif
-        uint8_t             padding[64];
+        uint8_t             padding[128];
     } gvmm;
 
     /** The GMM per vm data. */

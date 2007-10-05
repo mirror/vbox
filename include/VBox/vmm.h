@@ -355,10 +355,17 @@ typedef enum VMMR0OPERATION
     /** Official NOP that we use for profiling. */
     VMMR0_DO_NOP = SUP_VMMR0_DO_NOP,
 
-    /** Ask GVMM to create a new VM. */
+    /** Ask the GVMM to create a new VM. */
     VMMR0_DO_GVMM_CREATE_VM,
-    /** Ask GVMM to destroy the VM. */
+    /** Ask the GVMM to destroy the VM. */
     VMMR0_DO_GVMM_DESTROY_VM,
+    /** Call GVMMR0SchedHalt(). */
+    VMMR0_DO_GVMM_SCHED_HALT,
+    /** Call GVMMR0SchedWakeUp(). */
+    VMMR0_DO_GVMM_SCHED_WAKE_UP,
+    /** Call GVMMR0SchedPoll(). */
+    VMMR0_DO_GVMM_SCHED_POLL,
+
     /** Call VMMR0 Per VM Init. */
     VMMR0_DO_VMMR0_INIT,
     /** Call VMMR0 Per VM Termination. */

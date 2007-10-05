@@ -138,6 +138,7 @@ DECLINLINE(bool) tmTimerTryWithLink(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, T
  * This function is called before FFs are checked in the inner execution EM loops.
  *
  * @returns Virtual timer ticks to the next event.
+ * @param   pVM         Pointer to the shared VM structure.
  * @thread  The emulation thread.
  */
 TMDECL(uint64_t) TMTimerPoll(PVM pVM)
@@ -219,6 +220,114 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
      */
     STAM_COUNTER_INC(&pVM->tm.s.StatPollMiss);
     return RT_MIN(i64Delta1, i64Delta2);
+}
+
+
+/**
+ * Set FF if we've passed the next virtual event.
+ *
+ * This function is called before FFs are checked in the inner execution EM loops.
+ *
+ * @returns The GIP timestamp of the next event.
+ *          0 if the next event has already expired.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pu64Delta   Where to store the delta.
+ * @thread  The emulation thread.
+ */
+TMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
+{
+    /*
+     * Return straight away if the timer FF is already set.
+     */
+    if (VM_FF_ISSET(pVM, VM_FF_TIMER))
+    {
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollAlreadySet);
+        *pu64Delta = 0;
+        return 0;
+    }
+
+    /*
+     * Get current time and check the expire times of the two relevant queues.
+     */
+    const uint64_t u64Now = TMVirtualGet(pVM);
+
+    /*
+     * TMCLOCK_VIRTUAL
+     */
+    const uint64_t u64Expire1 = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
+    const int64_t i64Delta1 = u64Expire1 - u64Now;
+    if (i64Delta1 <= 0)
+    {
+        LogFlow(("TMTimerPoll: expire1=%RU64 <= now=%RU64\n", u64Expire1, u64Now));
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtual);
+        VM_FF_SET(pVM, VM_FF_TIMER);
+#ifdef IN_RING3
+        REMR3NotifyTimerPending(pVM);
+#endif
+        *pu64Delta = 0;
+        return 0;
+    }
+
+    /*
+     * TMCLOCK_VIRTUAL_SYNC
+     * This isn't quite as stright forward if in a catch-up, not only do
+     * we have to adjust the 'now' but when have to adjust the delta as well.
+     */
+    const uint64_t u64Expire2 = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
+    uint64_t u64VirtualSyncNow;
+    if (!pVM->tm.s.fVirtualSyncTicking)
+        u64VirtualSyncNow = pVM->tm.s.u64VirtualSync;
+    else
+    {
+        if (!pVM->tm.s.fVirtualSyncCatchUp)
+            u64VirtualSyncNow = u64Now - pVM->tm.s.offVirtualSync;
+        else
+        {
+            uint64_t off = pVM->tm.s.offVirtualSync;
+            uint64_t u64Delta = u64Now - pVM->tm.s.u64VirtualSyncCatchUpPrev;
+            if (RT_LIKELY(!(u64Delta >> 32)))
+            {
+                uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
+                if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
+                    off -= u64Sub;
+                else
+                    off = pVM->tm.s.offVirtualSyncGivenUp;
+            }
+            u64VirtualSyncNow = u64Now - off;
+        }
+    }
+    int64_t i64Delta2 = u64Expire2 - u64VirtualSyncNow;
+    if (i64Delta2 <= 0)
+    {
+        LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
+        VM_FF_SET(pVM, VM_FF_TIMER);
+#ifdef IN_RING3
+        REMR3NotifyTimerPending(pVM);
+#endif
+        *pu64Delta = 0;
+        return 0;
+    }
+    if (pVM->tm.s.fVirtualSyncCatchUp)
+        i64Delta2 = ASMMultU64ByU32DivByU32(i64Delta2, 100, pVM->tm.s.u32VirtualSyncCatchUpPercentage + 100);
+
+    /*
+     * Return the GIP time of the next event.
+     * This is the reverse of what tmVirtualGetRaw is doing.
+     */
+    STAM_COUNTER_INC(&pVM->tm.s.StatPollMiss);
+    uint64_t u64GipTime = RT_MIN(i64Delta1, i64Delta2);
+    *pu64Delta = u64GipTime;
+    u64GipTime += u64Now + pVM->tm.s.u64VirtualOffset;
+    if (RT_UNLIKELY(!pVM->tm.s.fVirtualWarpDrive))
+    {
+        u64GipTime -= pVM->tm.s.u64VirtualWarpDriveStart; /* the start is GIP time. */
+        u64GipTime *= 100;
+        u64GipTime /= pVM->tm.s.u32VirtualWarpDrivePercentage;
+        u64GipTime += pVM->tm.s.u64VirtualWarpDriveStart;
+    }
+    return u64GipTime;
 }
 #endif
 
