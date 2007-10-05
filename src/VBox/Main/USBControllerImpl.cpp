@@ -209,8 +209,6 @@ STDMETHODIMP USBController::COMGETTER(Enabled) (BOOL *aEnabled)
 
     *aEnabled = mData->mEnabled;
 
-    LogFlowThisFunc (("returns %RTbool\n", *aEnabled));
-
     return S_OK;
 }
 
@@ -253,8 +251,6 @@ STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
     /* not accessing data -- no need to lock */
 
     *aUSBStandard = 0x0101;
-
-    LogFlowThisFunc (("returns %04hX\n", *aUSBStandard));
 
     return S_OK;
 }
