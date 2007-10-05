@@ -93,6 +93,8 @@ typedef struct DEVPCBIOS
     uint8_t        uBootDelay;
     /** I/O-APIC enabled? */
     uint8_t        u8IOAPIC;
+    /** PXE debug logging enabled? */
+    uint8_t        u8PXEDebug;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 
@@ -402,6 +404,11 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x3d, reg3d);
     pcbiosCmosWrite(pDevIns, 0x38, reg38);
     pcbiosCmosWrite(pDevIns, 0x3c, reg3c);
+
+    /*
+     * PXE debug option.
+     */
+    pcbiosCmosWrite(pDevIns, 0x3f, pData->u8PXEDebug);
 
     /*
      * Floppy drive type.
@@ -1108,6 +1115,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "ShowBootMenu\0"
                               "DelayBoot\0"
                               "LanBootRom\0"
+                              "PXEDebug\0"
                               "UUID\0"
                               "IOAPIC\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
@@ -1180,6 +1188,16 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, 0x1000, pData->au8DMIPage, false /* fShadow */, "DMI tables");
     if (VBOX_FAILURE(rc))
         return rc;
+
+    /*
+     * Read the PXE debug logging option.
+     */
+    rc = CFGMR3QueryU8(pCfgHandle, "PXEDebug", &pData->u8PXEDebug);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->u8PXEDebug = 0;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"PXEDebug\" as integer failed"));
 
     /*
      * Map the BIOS into memory.
