@@ -3495,13 +3495,19 @@ void Machine::uninitDataAndChildObjects()
         unconst (mBIOSSettings).setNull();
     }
 
-    /* De-associate hard disks */
-    for (HDData::HDAttachmentList::const_iterator it =
-             mHDData->mHDAttachments.begin();
-         it != mHDData->mHDAttachments.end();
-         ++ it)
+    /* Deassociate hard disks (only when a real Machine or a SnapshotMachine
+     * instance is uninitialized; SessionMachine instances refer to real
+     * Machine hard disks). This is necessary for a clean re-initialization of
+     * the VM after successfully re-checking the accessibility state. */
+    if (mType == IsMachine || mType == IsSnapshotMachine)
     {
-        (*it)->hardDisk()->setMachineId (Guid());
+        for (HDData::HDAttachmentList::const_iterator it =
+                 mHDData->mHDAttachments.begin();
+             it != mHDData->mHDAttachments.end();
+             ++ it)
+        {
+            (*it)->hardDisk()->setMachineId (Guid());
+        }
     }
 
     if (mType == IsMachine)
