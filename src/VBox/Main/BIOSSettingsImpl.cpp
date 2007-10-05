@@ -372,6 +372,38 @@ STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
     return S_OK;
 }
 
+STDMETHODIMP BIOSSettings::COMGETTER(PXEDebugEnabled)(BOOL *enabled)
+{
+    if (!enabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *enabled = mData->mPXEDebugEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    mData.backup();
+    mData->mPXEDebugEnabled = enable;
+
+    return S_OK;
+}
+
 STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
 {
     if (!offset)

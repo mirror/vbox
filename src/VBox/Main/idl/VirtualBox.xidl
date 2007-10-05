@@ -2067,6 +2067,13 @@
       </desc>
     </attribute>
 
+    <attribute name="PXEDebugEnabled" type="boolean">
+      <desc>
+        PXE debug logging flag. If set, VirtualBox will write extensive
+        PXE trace information to the release log.
+      </desc>
+    </attribute>
+
   </interface>
 
   <interface
