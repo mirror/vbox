@@ -18,7 +18,7 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 SYSMODS  = vboxmouse_drv
-DLLS     = vboxmouse_drv_70 vboxmouse_drv_71
+DLLS     = vboxmouse_drv_70 vboxmouse_drv_71 vboxmouse_drv_14
 
 # for BUILD_TARGET=l4
 SUFF_DLL = .so
@@ -80,6 +80,20 @@ vboxmouse_drv_71_INCS = \
 vboxmouse_drv_71_SOURCES  = \
 	xorg71/mouse.c \
 	xorg71/pnp.c \
+	VBoxUtils.c
+
+
+vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+vboxmouse_drv_14_DEFS = $(vboxmouse_drv_70_DEFS)
+vboxmouse_drv_14_LDFLAGS = -s
+vboxmouse_drv_14_INCS = \
+	../x11include/1.4 \
+	../x11include/1.4/X11 \
+	../x11include/1.4/xorg \
+	$(PATH_SUB_CURRENT)
+vboxmouse_drv_14_SOURCES  = \
+	xorg14/mouse.c \
+	xorg14/pnp.c \
 	VBoxUtils.c
 
 
