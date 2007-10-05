@@ -59,10 +59,12 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_BIN)/additions/vboxmouse_drv.o \
 		$(PATH_BIN)/additions/vboxmouse_drv_70.so \
 		$(PATH_BIN)/additions/vboxmouse_drv_71.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_14.so \
 		$(PATH_BIN)/additions/vboxvideo_drv.o \
 		$(PATH_BIN)/additions/vboxvideo_drv_70.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_71.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
+		$(PATH_BIN)/additions/vboxvideo_drv_14.so \
 		installer/vboxvfs.sh $(PATH_BIN)/additions/mountvboxsf \
 		$(wildcard $(PATH_BIN)/additions/src/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*) \
@@ -91,10 +93,12 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)objcopy -g -R .comment $(PATH_BIN)/additions/vboxmouse_drv.o  $(PATH_TARGET)/install/vboxmouse_drv.o
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_70.so $(PATH_TARGET)/install/vboxmouse_drv_70.so
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_71.so $(PATH_TARGET)/install/vboxmouse_drv_71.so
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxmouse_drv_14.so $(PATH_TARGET)/install/vboxmouse_drv_14.so
 	$(QUIET)objcopy -g -R .comment $(PATH_BIN)/additions/vboxvideo_drv.o  $(PATH_TARGET)/install/vboxvideo_drv.o
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_70.so $(PATH_TARGET)/install/vboxvideo_drv_70.so
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_71.so $(PATH_TARGET)/install/vboxvideo_drv_71.so
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_13.so $(PATH_TARGET)/install/vboxvideo_drv_13.so
+	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_14.so $(PATH_TARGET)/install/vboxvideo_drv_14.so
 	$(QUIET)$(INSTALL) -m 0755 installer/vboxvfs.sh $(PATH_TARGET)/install
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/mountvboxsf $(PATH_TARGET)/install/mount.vboxsf
 	$(QUIET)$(VBOX_MAKESELF) $(PATH_TARGET)/install $@ \

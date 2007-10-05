@@ -18,7 +18,7 @@ DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
 SYSMODS  = vboxvideo_drv
-DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13
+DLLS     = vboxvideo_drv_70 vboxvideo_drv_71 vboxvideo_drv_13 vboxvideo_drv_14
 
 # for BUILD_TARGET=l4
 SUFF_DLL = .so
@@ -142,5 +142,16 @@ vboxvideo_drv_13_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils.c
 
+vboxvideo_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
+vboxvideo_drv_14_DEFS := $(vboxvideo_drv_70_DEFS)
+vboxvideo_drv_14_CFLAGS.linux := $(vboxvideo_drv_70_CFLAGS.linux)
+vboxvideo_drv_14_LDFLAGS = -s 
+vboxvideo_drv_14_INCS = \
+	../x11include/1.4 \
+	../x11include/1.4/X11 \
+	../x11include/1.4/xorg
+vboxvideo_drv_14_SOURCES  = \
+	vboxvideo_14.c \
+	vboxutils.c
 
 include	$(PATH_KBUILD)/footer.kmk
