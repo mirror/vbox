@@ -322,6 +322,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-bioslogoimagepath <imagepath>]\n"
                  "                            [-biosbootmenu disabled|menuonly|messageandmenu]\n"
                  "                            [-biossystemtimeoffset <msec>]\n"
+                 "                            [-biospxedebug on|off]\n"
                  "                            [-boot<1-4> none|floppy|dvd|disk|net>]\n"
                  "                            [-hd<a|b|d> none|<uuid>|<filename>]\n"
                  "                            [-dvd none|<uuid>|<filename>|host:<drive>]\n"
@@ -3531,6 +3532,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *bioslogoimagepath = NULL;
     char *biosbootmenumode = NULL;
     char *biossystemtimeoffset = NULL;
+    char *biospxedebug = NULL;
     DeviceType_T bootDevice[4];
     int bootDeviceChanged[4] = { false };
     char *hdds[4] = {0};
@@ -3716,6 +3718,15 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
             biossystemtimeoffset = argv[i];
+        }
+        else if (strcmp(argv[i], "-biospxedebug") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            biospxedebug = argv[i];
         }
         else if (strncmp(argv[i], "-boot", 5) == 0)
         {
@@ -4303,6 +4314,23 @@ static int handleModifyVM(int argc, char *argv[],
         {
             LONG64 timeOffset = RTStrToInt64(biossystemtimeoffset);
             CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(timeOffset));
+        }
+        if (biospxedebug)
+        {
+            if (strcmp(biospxedebug, "on") == 0)
+            {
+                CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(true));
+            }
+            else if (strcmp(biospxedebug, "off") == 0)
+            {
+                CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(false));
+            }
+            else
+            {
+                errorArgument("Invalid -biospxedebug argument '%s'", biospxedebug);
+                rc = E_FAIL;
+                break;
+            }
         }
         for (int curBootDev = 0; curBootDev < 4; curBootDev++)
         {
