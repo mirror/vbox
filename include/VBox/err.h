@@ -1152,6 +1152,10 @@
  */
 /** The GVM is out of VM handle space. */
 #define VERR_GVM_TOO_MANY_VMS                       (-4200)
+/** The EMT thread was not blocked at the time of the call.  */
+#define VINF_GVM_NOT_BLOCKED                        4201
+/** RTThreadYield was called during a GVMMR0ShcedPoll call. */
+#define VINF_GVM_YIELDED                            4202
 /** @} */
 
 /** @name VBox Disassembler Status Codes

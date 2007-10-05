@@ -195,25 +195,32 @@ static int VMMR0Init(PVM pVM, unsigned uVersion)
     }
 
     /*
-     * Associate the ring-0 EMT thread with the GVM.
+     * Associate the ring-0 EMT thread with the GVM
+     * and initalize the GVMM and GMM per VM data.
      */
     int rc = GVMMR0AssociateEMTWithVM(pVM);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Init HWACCM.
-         */
-        RTCCUINTREG fFlags = ASMIntDisableFlags();
-        rc = HWACCMR0Init(pVM);
-        ASMSetFlags(fFlags);
+        rc = GVMMR0InitVM(pVM);
+        //if (RT_SUCCESS(rc))
+        //    rc = GMMR0InitVM(pVM);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Init CPUM.
+             * Init HWACCM.
              */
-            rc = CPUMR0Init(pVM);
+            RTCCUINTREG fFlags = ASMIntDisableFlags();
+            rc = HWACCMR0Init(pVM);
+            ASMSetFlags(fFlags);
             if (RT_SUCCESS(rc))
-                return rc;
+            {
+                /*
+                 * Init CPUM.
+                 */
+                rc = CPUMR0Init(pVM);
+                if (RT_SUCCESS(rc))
+                    return rc;
+            }
         }
     }
 
@@ -685,6 +692,21 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             if (pReqHdr || u64Arg)
                 return VERR_INVALID_PARAMETER;
             return GVMMR0DestroyVM(pVM);
+
+        case VMMR0_DO_GVMM_SCHED_HALT:
+            if (pReqHdr)
+                return VERR_INVALID_PARAMETER;
+            return GVMMR0SchedHalt(pVM, u64Arg);
+
+        case VMMR0_DO_GVMM_SCHED_WAKE_UP:
+            if (pReqHdr || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            return GVMMR0SchedWakeUp(pVM);
+
+        case VMMR0_DO_GVMM_SCHED_POLL:
+            if (pReqHdr || u64Arg > 1)
+                return VERR_INVALID_PARAMETER;
+            return GVMMR0SchedPoll(pVM, (bool)u64Arg);
 
         /*
          * Initialize the R0 part of a VM instance.
