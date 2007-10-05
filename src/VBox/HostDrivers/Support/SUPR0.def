@@ -60,6 +60,7 @@ EXPORTS
     RTSemEventCreate
     RTSemEventSignal
     RTSemEventWait
+    RTSemEventWaitNoResume
     RTSemEventDestroy
     RTSpinlockCreate
     RTSpinlockDestroy
