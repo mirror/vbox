@@ -97,7 +97,7 @@ VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call int-ge,$(KMK_REVISION),1065),1)
+ifneq ($(call int-ge,$(KMK_REVISION),1191),1)
  $(error You must update kBuild!)
 endif
 
