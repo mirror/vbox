@@ -4378,7 +4378,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>Aktiviere &amp;VT-x/AMD-V</translation>
+        <translation>&amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
         <source>Alt+V</source>
