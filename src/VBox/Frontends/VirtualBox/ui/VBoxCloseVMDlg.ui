@@ -180,7 +180,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                                 <cstring>rbShutdown</cstring>
                             </property>
                             <property name="text">
-                                <string>S&amp;end the sthutdown signal</string>
+                                <string>S&amp;end the shutdown signal</string>
                             </property>
                             <property name="whatsThis" stdset="0">
                                 <string>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
