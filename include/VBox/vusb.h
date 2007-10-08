@@ -646,7 +646,7 @@ typedef struct vusb_urb
             /** The address of the */
             uint32_t        TdAddr;
             /** A copy of the TD. */
-            uint32_t        TdCopy[8];
+            uint32_t        TdCopy[16];
         }              *paTds;
         /** URB chain pointer. */
         PVUSBURB        pNext;
