@@ -107,7 +107,7 @@ vboxvideo_drv_70_DEFS := \
 	IN_RING3 VBOX XORG_7X PIC RENDER=1
 vboxvideo_drv_70_CFLAGS.linux := \
 	-Wno-conversion -Wno-unused-parameter \
-	$(VBOX_GCC_Wno-variadic-macros)
+	$(VBOX_GCC_Wno-variadic-macros) -std=c99
 vboxvideo_drv_70_LDFLAGS = -s
 vboxvideo_drv_70_INCS = \
 	../x11include/7.0 \

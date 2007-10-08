@@ -33,7 +33,7 @@ vboxmouse_drv_DEFS = \
 	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
 	IN_MODULE XFree86Module PNP_MOUSE \
 	IN_RING3 VBOX
-vboxmouse_drv_CFLAGS = -fno-merge-constants
+vboxmouse_drv_CFLAGS = -fno-merge-constants -std=c99
 vboxmouse_drv_SYSSUFF = .o
 vboxmouse_drv_LDFLAGS.release = -S
 vboxmouse_drv_INCS := \
@@ -57,6 +57,7 @@ vboxmouse_drv_70_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxmouse_drv_70_DEFS = \
 	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT \
 	IN_RING3 VBOX XORG_7X PIC
+vboxmouse_drv_70_CFLAGS = -std=c99
 vboxmouse_drv_70_LDFLAGS = -s
 vboxmouse_drv_70_INCS := \
 	../x11include/7.0 \
@@ -71,6 +72,7 @@ vboxmouse_drv_70_SOURCES  = \
 
 vboxmouse_drv_71_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxmouse_drv_71_DEFS = $(vboxmouse_drv_70_DEFS)
+vboxmouse_drv_71_CFLAGS = -std=c99
 vboxmouse_drv_71_LDFLAGS = -s
 vboxmouse_drv_71_INCS = \
 	../x11include/7.1 \
@@ -85,6 +87,7 @@ vboxmouse_drv_71_SOURCES  = \
 
 vboxmouse_drv_14_TEMPLATE = VBOXLNX32GUESTR3DLLNOCPP
 vboxmouse_drv_14_DEFS = $(vboxmouse_drv_70_DEFS)
+vboxmouse_drv_14_CFLAGS = -std=c99
 vboxmouse_drv_14_LDFLAGS = -s
 vboxmouse_drv_14_INCS = \
 	../x11include/1.4 \
