@@ -219,7 +219,7 @@ VBox GUI: Close VM Dialog UI (Qt Designer).
                             </property>
                             <property name="whatsThis" stdset="0">
                                 <string>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
-&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside the it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</string>
+&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</string>
                             </property>
                         </widget>
                         <widget class="QLayoutWidget" row="3" column="0" rowspan="1" colspan="2">
