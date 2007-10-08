@@ -1019,7 +1019,7 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS;
     pInfo->device_control = MouseProc;
     pInfo->read_input = MouseReadInput;
-//    pInfo->motion_history_proc = xf86GetMotionEvents;
+/*    pInfo->motion_history_proc = xf86GetMotionEvents; */
     pInfo->history_size = 0;
     pInfo->control_proc = NULL;
     pInfo->close_proc = NULL;
