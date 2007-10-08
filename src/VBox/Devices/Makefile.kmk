@@ -13,6 +13,7 @@
 #  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 DEPTH = ../../..
 include $(PATH_KBUILD)/subheader.kmk
@@ -449,7 +450,9 @@ Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))
 Drivers_SOURCES.solaris = \
-    Network/DrvTAP.cpp
+	Network/DrvTAP.cpp \
+	Storage/DrvHostBase.cpp \
+	Storage/DrvHostDVD.cpp
 endif
 
 Drivers_SOURCES.win   = \

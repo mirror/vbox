@@ -51,6 +51,19 @@
 # include <limits.h>
 # define USE_MEDIA_POLLING
 
+#elif defined(RT_OS_SOLARIS)
+# include <stropts.h>
+# include <fcntl.h>
+# include <ctype.h>
+# include <errno.h>
+# include <pwd.h>
+# include <unistd.h>
+# include <auth_attr.h>
+# include <sys/dkio.h>
+# include <sys/sockio.h>
+# include <sys/scsi/scsi.h>
+# define USE_MEDIA_POLLING
+
 #elif defined(RT_OS_WINDOWS)
 # include <Windows.h>
 # include <winioctl.h>
@@ -116,6 +129,20 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
              else
                  rc = RTErrConvertFromErrno(errno);
          }
+
+#elif defined(RT_OS_SOLARIS)
+        rc = ioctl(pThis->FileDevice, DKIOCEJECT, 0);
+        if (rc < 0)
+        {
+            if (errno == EBUSY)
+                rc = VERR_PDM_MEDIA_LOCKED;
+            else if (errno == ENOSYS || errno == ENOTSUP)
+                rc = VERR_NOT_SUPPORTED;
+            else if (errno == ENODEV)
+                rc = VERR_PDM_MEDIA_NOT_MOUNTED;
+            else
+                rc = RTErrConvertFromErrno(errno);
+        }
 
 #elif defined(RT_OS_WINDOWS)
          RTFILE FileDevice = pThis->FileDevice;
@@ -187,6 +214,18 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
         if (errno == EBUSY)
             rc = VERR_ACCESS_DENIED;
         else if (errno == EDRIVE_CANT_DO_THIS)
+            rc = VERR_NOT_SUPPORTED;
+        else
+            rc = RTErrConvertFromErrno(errno);
+    }
+
+#elif defined(RT_OS_SOLARIS)
+    int rc = ioctl(pThis->FileDevice, fLock ? DKIOCLOCK : DKIOCUNLOCK, 0);
+    if (rc < 0)
+    {
+        if (errno == EBUSY)
+            rc = VERR_ACCESS_DENIED;
+        else if (errno == ENOTSUP || errno == ENOSYS)
             rc = VERR_NOT_SUPPORTED;
         else
             rc = RTErrConvertFromErrno(errno);
@@ -280,6 +319,20 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 #elif defined(RT_OS_LINUX)
     bool fMediaPresent = ioctl(pThis->FileDevice, CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
 
+#elif defined(RT_OS_SOLARIS)
+    bool fMediaPresent = false;
+    bool fMediaChanged = false;
+
+    /* Need to pass the previous state and DKIO_NONE for the first time. */
+    static dkio_state DeviceState = DKIO_NONE;
+    int rc2 = ioctl(pThis->FileDevice, DKIOCSTATE, &DeviceState);
+    if (rc2 == 0)
+    {
+        fMediaPresent = DeviceState == DKIO_INSERTED;
+        if (pThis->fMediaPresent != fMediaPresent || !fMediaPresent)
+            fMediaChanged = true;   /** @todo find proper way to detect media change. */
+    }
+
 #else
 # error "Unsupported platform."
 #endif
@@ -301,7 +354,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
         /*
          * Poll for media change.
          */
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
         /* taken care of above. */
 #elif defined(RT_OS_LINUX)
         bool fMediaChanged = ioctl(pThis->FileDevice, CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
@@ -410,6 +463,67 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
      * of data transferred (for packet commands with little data transfer
      * it's 0). So just assume that everything worked ok. */
 
+#elif defined(RT_OS_SOLARIS)
+    struct uscsi_cmd usc;
+    union scsi_cdb scdb;
+    memset(&usc, 0, sizeof(struct uscsi_cmd));
+    memset(&scdb, 0, sizeof(scdb));
+
+    switch (enmTxDir)
+    {
+        case PDMBLOCKTXDIR_NONE:
+            Assert(*pcbBuf == 0);
+            usc.uscsi_flags = USCSI_READ;
+            /* nothing to do */
+            break;
+
+        case PDMBLOCKTXDIR_FROM_DEVICE:
+            Assert(*pcbBuf != 0);
+            /* Make sure that the buffer is clear for commands reading
+             * data. The actually received data may be shorter than what
+             * we expect, and due to the unreliable feedback about how much
+             * data the ioctl actually transferred, it's impossible to
+             * prevent that. Returning previous buffer contents may cause
+             * security problems inside the guest OS, if users can issue
+             * commands to the CDROM device. */
+            memset(pvBuf, '\0', *pcbBuf);
+            usc.uscsi_flags = USCSI_READ;
+            break;
+        case PDMBLOCKTXDIR_TO_DEVICE:
+            Assert(*pcbBuf != 0);
+            usc.uscsi_flags = USCSI_WRITE;
+            break;
+        default:
+            AssertMsgFailedReturn(("%d\n", enmTxDir), VERR_INTERNAL_ERROR);
+    }
+    char aSense[32];
+    usc.uscsi_flags |= USCSI_RQENABLE;
+    usc.uscsi_rqbuf = aSense;
+    usc.uscsi_rqlen = 32;
+    usc.uscsi_cdb = (caddr_t)&scdb;
+    usc.uscsi_cdblen = 12;
+    memcpy (usc.uscsi_cdb, pbCmd, usc.uscsi_cdblen);
+    usc.uscsi_bufaddr = (caddr_t)pvBuf;
+    usc.uscsi_buflen = *pcbBuf;
+    usc.uscsi_timeout = (cTimeoutMillies + 999) / 1000;
+
+    /* We need root privileges for user-SCSI under Solaris. */
+    rc = ioctl(pThis->FileDevice, USCSICMD, &usc);
+    if (rc < 0)
+    {
+        if (errno == EPERM)
+            return VERR_PERMISSION_DENIED;
+        if (usc.uscsi_status)
+        {
+            *pbStat = aSense[2] & 0x0f;
+            rc = RTErrConvertFromErrno(errno);
+            Log2(("%s: error status. rc=%Vrc\n", __FUNCTION__, rc));
+        }
+        else
+            *pbStat = 0;
+    }
+    Log2(("%s: after ioctl: residual buflen=%d original buflen=%d\n", __FUNCTION__, usc.uscsi_resid, usc.uscsi_buflen));
+
 #elif defined(RT_OS_WINDOWS)
     int direction;
     struct _REQ
@@ -475,6 +589,72 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     return rc;
 }
 
+#if 0
+/* These functions would have to go into a seperate solaris binary with
+ * the setuid permission set, which would run the user-SCSI ioctl and
+ * return the value. BUT... this might be prohibitively slow.
+ */
+#ifdef RT_OS_SOLARIS
+/**
+ * Checks if the current user is authorized using Solaris' role-based access control.
+ * Made as a seperate function with so that it need not be invoked each time we need
+ * to gain root access.
+ *
+ * @returns VBox error code.
+ */
+static int solarisCheckUserAuth()
+{
+    /* Uses Solaris' role-based access control (RBAC).*/
+    struct passwd *pPass = getpwuid(getuid());
+    if (pPass == NULL || chkauthattr("solaris.device.cdrw", pPass->pw_name) == 0)
+        return VERR_PERMISSION_DENIED;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Setuid wrapper to gain root access.
+ *
+ * @returns VBox error code.
+ * @param   pUserID        Pointer to user ID.
+ * @param   pEffUserID     Pointer to effective user ID.
+ */
+static int solarisEnterRootMode(uid_t *pUserID, uid_t *pEffUserID)
+{
+    /* Increase privilege if required */
+    if (*pEffUserID == 0)
+        return VINF_SUCCESS;
+    if (seteuid(0) == 0)
+    {
+        *pEffUserID = 0;
+        return VINF_SUCCESS;
+    }
+    return VERR_PERMISSION_DENIED;
+}
+
+/**
+ * Setuid wrapper to relinquish root access.
+ *
+ * @returns VBox error code.
+ * @param   pUserID        Pointer to user ID.
+ * @param   pEffUserID     Pointer to effective user ID.
+ */
+static int solarisExitRootMode(uid_t *pUserID, uid_t *pEffUserID)
+{
+    /* Get back to user mode. */
+    if (*pEffUserID == 0)
+    {
+        if (seteuid(*pUserID) == 0)
+        {
+            *pEffUserID = *pUserID;
+            return VINF_SUCCESS;
+        }
+        return VERR_PERMISSION_DENIED;
+    }
+    return VINF_SUCCESS;
+}
+#endif   /* RT_OS_SOLARIS */
+#endif
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
