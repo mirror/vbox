@@ -1,4 +1,4 @@
-/** $Id: */
+/** $Id$ */
 /** @file
  * Universial TAP network transport driver.
  */
@@ -96,7 +96,7 @@ typedef struct DRVTAP
     char                   *pszDeviceNameActual;
     /** IP device file handle (/dev/udp). */
     RTFILE                  IPFileDevice;
-#endif 
+#endif
     /** TAP setup application. */
     char                   *pszSetupApplication;
     /** TAP terminate application. */
@@ -490,7 +490,7 @@ static int drvTAPSetupApplication(PDRVTAP pData)
         LogRel(("TAP#%d: Failed to run TAP setup application: %s\n", pData->pDrvIns->iInstance, pData->pszSetupApplication));
         return VERR_HOSTIF_INIT_FAILED;
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -523,9 +523,9 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
     {
         /* Child process. */
         execv(pszArgs[0], pszArgs);
-        _exit(1); 
+        _exit(1);
     }
-        
+
     /* Parent process. */
     int result;
     while (waitpid(pid, &result, 0) < 0)
@@ -535,7 +535,7 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
         LogRel(("TAP#%d: Failed to run TAP terminate application: %s\n", pData->pDrvIns->iInstance, pData->pszSetupApplication));
         return VERR_HOSTIF_TERM_FAILED;
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -559,18 +559,18 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
 {
     PDRVTAP pData = PDMINS2DATA(pDrvIns, PDRVTAP);
     LogFlow(("SolarisTapAttach: pData=%p\n", pData));
-    
-    
+
+
     int IPFileDes = open("/dev/udp", O_RDWR, 0);
     if (IPFileDes < 0)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to open /dev/udp. errno=%d"), errno);
-    
+
     int TapFileDes = open("/dev/tap", O_RDWR, 0);
     if (TapFileDes < 0)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to open /dev/tap for TAP. errno=%d"), errno);
-    
+
     /* Use the PPA from the ifname if possible (e.g "tap2", then use 2 as PPA) */
     int iPPA = -1;
     if (pData->pszDeviceName)
@@ -579,7 +579,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
         if (cch > 1 && isdigit(pData->pszDeviceName[cch - 1]) != 0)
             iPPA = pData->pszDeviceName[cch - 1] - '0';
     }
-    
+
     struct strioctl ioIF;
     ioIF.ic_cmd = TUNNEWPPA;
     ioIF.ic_len = sizeof(iPPA);
@@ -592,38 +592,38 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Failed to get new interface. errno=%d"), errno);
     }
-    
+
     int InterfaceFD = open("/dev/tap", O_RDWR, 0);
     if (!InterfaceFD)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to open interface /dev/tap. errno=%d"), errno);
-    
+
     if (ioctl(InterfaceFD, I_PUSH, "ip") == -1)
     {
         close(InterfaceFD);
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Failed to push IP. errno=%d"), errno);
     }
-    
+
     struct lifreq ifReq;
     memset(&ifReq, 0, sizeof(ifReq));
     if (ioctl(InterfaceFD, SIOCGLIFFLAGS, &ifReq) == -1)
         LogRel(("TAP#%d: Failed to get interface flags.\n", pDrvIns->iInstance));
 
     char szTmp[16];
-    char *pszDevName = pData->pszDeviceName;    
+    char *pszDevName = pData->pszDeviceName;
     if (!pData->pszDeviceName || !*pData->pszDeviceName)
     {
         RTStrPrintf(szTmp, sizeof(szTmp), "tap%d", iPPA);
         pszDevName = szTmp;
     }
-    
+
     ifReq.lifr_ppa = iPPA;
     RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pszDevName);
-    
+
     if (ioctl(InterfaceFD, SIOCSLIFNAME, &ifReq) == -1)
         LogRel(("TAP#%d: Failed to set PPA. errno=%d\n", pDrvIns->iInstance, errno));
-    
+
     if (ioctl(InterfaceFD, SIOCGLIFFLAGS, &ifReq) == -1)
         LogRel(("TAP#%d: Failed to get interface flags after setting PPA. errno=%d\n", pDrvIns->iInstance, errno));
 
@@ -638,15 +638,15 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
 
     if (ioctl(IPFileDes, I_PUSH, "arp") == -1)
         LogRel(("TAP#%d: Failed to push ARP to IP FD. errno=%d\n", pDrvIns->iInstance, errno));
-    
+
     /* ARP */
     int ARPFileDes = open("/dev/tap", O_RDWR, 0);
     if (ARPFileDes < 0)
         LogRel(("TAP#%d: Failed to open for /dev/tap for ARP. errno=%d", pDrvIns->iInstance, errno));
-    
+
     if (ioctl(ARPFileDes, I_PUSH, "arp") == -1)
         LogRel(("TAP#%d: Failed to push ARP to ARP FD. errno=%d\n", pDrvIns->iInstance, errno));
-    
+
     ioIF.ic_cmd = SIOCSLIFNAME;
     ioIF.ic_timout = 0;
     ioIF.ic_len = sizeof(ifReq);
@@ -670,12 +670,12 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                     N_("Failed to link TAP device to IP. Check TAP interface name. errno=%d"), errno);
     }
-    
+
 #ifdef VBOX_SOLARIS_TAP_ARP
     int ARPMuxID = ioctl(IPFileDes, I_LINK, ARPFileDes);
     if (ARPMuxID == -1)
         LogRel(("TAP#%d: Failed to link TAP device to ARP\n", pDrvIns->iInstance));
-    
+
     close(ARPFileDes);
 #endif
     close(InterfaceFD);
@@ -703,7 +703,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     pData->FileDevice = (RTFILE)TapFileDes;
     pData->IPFileDevice = (RTFILE)IPFileDes;
     pData->pszDeviceNameActual = RTStrDup(pszDevName);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -825,7 +825,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #ifdef RT_OS_SOLARIS
     pData->pszDeviceNameActual          = NULL;
     pData->IPFileDevice                 = NIL_RTFILE;
-#endif 
+#endif
     pData->pszSetupApplication          = NULL;
     pData->pszTerminateApplication      = NULL;
 #ifdef ASYNC_NET
@@ -886,7 +886,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
-    
+
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Device", &pData->pszDeviceName);
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
