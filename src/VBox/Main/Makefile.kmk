@@ -124,6 +124,7 @@ VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
 VBoxSVC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
+VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 
 VBoxSVC_INCS = \
 	include \
@@ -189,6 +190,9 @@ VBoxSVC_SOURCES.win = \
 	win32/VBoxSVC.rc
 
 VBoxSVC_SOURCES.linux = \
+	linux/vbox-libhal.cpp
+
+VBoxSVC_SOURCES.solaris = \
 	linux/vbox-libhal.cpp
 
 ifdef VBOX_WITH_XPCOM
