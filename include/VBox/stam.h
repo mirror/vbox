@@ -1196,13 +1196,14 @@ STAMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat);
  * @param   pVM             The VM handle.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
+ * @param   fWithDesc       Whether to include the descriptions.
  * @param   ppszSnapshot    Where to store the pointer to the snapshot data.
  *                          The format of the snapshot should be XML, but that will have to be discussed
  *                          when this function is implemented.
  *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
- * @param   cchSnapshot     Where to store the size of the snapshot data. (Excluding the trailing '\0')
+ * @param   pcchSnapshot    Where to store the size of the snapshot data. (Excluding the trailing '\0')
  */
-STAMR3DECL(int)  STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot);
+STAMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
 
 /**
  * Releases a statistics snapshot returned by STAMR3Snapshot().
