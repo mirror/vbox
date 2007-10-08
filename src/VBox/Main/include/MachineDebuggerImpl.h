@@ -69,6 +69,8 @@ public:
     // IMachineDebugger methods
     STDMETHOD(ResetStats());
     STDMETHOD(DumpStats());
+    STDMETHOD(GetStats(INPTR BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats));
+
 
     // "public-private methods"
     void flushQueuedSettings();

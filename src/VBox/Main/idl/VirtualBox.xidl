@@ -17,7 +17,7 @@
  * 1. src/VBox/Main/idl/midl.xsl =>
  *    out/<platform>/bin/sdk/idl/VirtualBox.idl
  *    (MS COM interface definition file for Main API)
- * 
+ *
  * 2. src/VBox/Main/idl/xpidl.xsl =>
  *    out/<platform>/bin/sdk/idl/VirtualBox_XPCOM.idl
  *    (XPCOM interface definition file for Main API)
@@ -41,7 +41,7 @@
  *    (Main API TypeLib block for the WiX installer)
  *
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -397,7 +397,7 @@
      >
     <desc>
       Scope of the operation.
-      
+
       A generic enumeration used in various methods to define the action or
       argument scope.
     </desc>
@@ -497,7 +497,7 @@
     </const>
     <const name="MaxVal"               value="17"/>
   </enum>
- 
+
   <!--
   // IVirtualBoxErrorInfo
   /////////////////////////////////////////////////////////////////////////
@@ -1616,7 +1616,7 @@
         all VM settings, as well as to execute the VM in the process
         space of the session object. There can be only one direct
         session open at a time for every virtual machine.
-      
+
         Upon successful return, the session object can be used to
         get access to the machine and to the VM console.
       </desc>
@@ -1646,7 +1646,7 @@
         session provides some level of control over the VM execution to the
         caller (using the IConsole interface); however, within the remote
         session context, not all VM settings are available for modification.
-        
+
         This operation can take some time, so the progress object
         is returned to let the caller be informed when the session is
         actually open. Until then, the remote session object remains in
@@ -5059,7 +5059,7 @@
 
         <li>
           <i>Custom HardDisk</i>, a disk accessed via a plugin which is loaded
-          when the disk is accessed (represented by the 
+          when the disk is accessed (represented by the
           <link to="ICustomHardDisk"/> interface).
         </li>
 
@@ -6622,7 +6622,7 @@
       to="IFramebuffer::pixelFormat"/>. See also <link
       to="IFramebuffer::requestResize()"/>.
 
-      See also www.fourcc.org for more informantion about FOURCC pixel formats. 
+      See also www.fourcc.org for more informantion about FOURCC pixel formats.
     </desc>
     <const name="PixelFormatOpaque"       value="0xFFFFFFFF">
       <desc>
@@ -6678,7 +6678,7 @@
         <note>
           This attribute must never return <link
           to="PixelFormat::PixelFormatOpaque"/> -- the format of the buffer
-          <link to="#address"/> points to must be always known. 
+          <link to="#address"/> points to must be always known.
         </note>
       </desc>
     </attribute>
@@ -6687,7 +6687,7 @@
       <desc>
         Defines whether this framebuffer uses the virtual video card's memory
         buffer (guest VRAM) directly or not. See <link
-        to="IFramebuffer::requestResize()"/> for more information. 
+        to="IFramebuffer::requestResize()"/> for more information.
       </desc>
     </attribute>
 
@@ -7097,7 +7097,7 @@
         are required for the request to be seen by guests. The caller
         should issue the request and wait for a resolution change and
         after a timeout retry.
-        
+
         Specifying <tt>0</tt> for either @a width, @a height or @a bitsPerPixel
         parameters means that the corresponding values should be taken from the
         current video mode (i.e. left unchanged).
@@ -7445,7 +7445,7 @@
 
   <interface
      name="IMachineDebugger" extends="$unknown"
-     uuid="358b05cd-6d43-42b9-9c2b-75d466a58cfc"
+     uuid="aabb012b-36c7-4d31-89fd-313f7d056034"
      wsmap="suppress"
      >
     <method name="resetStats">
@@ -7458,6 +7458,21 @@
       <desc>
         Dumps VM statistics.
       </desc>
+    </method>
+
+    <method name="getStats">
+      <desc>
+        Get the VM statistics in a XMLish format.
+      </desc>
+      <param name="pattern" type="wstring" dir="in">
+        <desc>The selection pattern. A bit similar to filename globbing.</desc>
+      </param>
+      <param name="withDescriptions" type="boolean" dir="in">
+        <desc>Whether to include the descriptions.</desc>
+      </param>
+      <param name="stats" type="wstring" dir="out">
+        <desc>The XML document containing the statistics.</desc>
+      </param>
     </method>
 
     <attribute name="singlestep" type="boolean">
@@ -8313,7 +8328,7 @@
         <li>Permanent definitions</li>
         <li>Global definitions</li>
       </ol>
-      
+
       For example, if MyMachine has a shared folder named
       <tt>C_DRIVE</tt> (that points to <tt>C:\\</tt>), then cretaing a
       transient shared folder named <tt>C_DRIVE</tt> (that points
@@ -8324,7 +8339,7 @@
       PC. Removing the transient shared folder <tt>C_DRIVE</tt> will restore
       the prevoious (permanent) definition of <tt>C_DRIVE</tt> that points
       to <tt>C:\\</tt> if it still exists.
-      
+
       Note that permanent and transient shared folders of different machines
       are in different name spaces, so they don't overlap and don't need to
       have unique logical names.

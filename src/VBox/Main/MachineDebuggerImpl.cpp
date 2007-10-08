@@ -130,9 +130,9 @@ STDMETHODIMP MachineDebugger::COMSETTER(Singlestep)(BOOL enable)
 }
 
 /**
- * Resets VM statistics
+ * Resets VM statistics.
  *
- * @returns COM status code
+ * @returns COM status code.
  */
 STDMETHODIMP MachineDebugger::ResetStats()
 {
@@ -143,15 +143,43 @@ STDMETHODIMP MachineDebugger::ResetStats()
 }
 
 /**
- * Dumps VM statistics to the log
+ * Dumps VM statistics to the log.
  *
- * @returns COM status code
+ * @returns COM status code.
  */
 STDMETHODIMP MachineDebugger::DumpStats()
 {
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
         STAMR3Dump(pVM, NULL);
+    return S_OK;
+}
+
+/**
+ * Get the VM statistics in an XML format.
+ *
+ * @returns COM status code.
+ * @param   aPattern            The selection pattern. A bit similar to filename globbing.
+ * @param   aWithDescriptions   Whether to include the descriptions.
+ * @param   aStats              The XML document containing the statistics.
+ */
+STDMETHODIMP MachineDebugger::GetStats(INPTR BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats)
+{
+    Console::SafeVMPtrQuiet pVM (mParent);
+    if (!pVM.isOk())
+        return E_FAIL;
+
+    char *pszSnapshot;
+    int vrc = STAMR3Snapshot(pVM, Utf8Str(aPattern).raw(), &pszSnapshot, NULL, aWithDescriptions);
+    if (RT_FAILURE(vrc))
+        return vrc == VERR_NO_MEMORY ? E_OUTOFMEMORY : E_FAIL;
+
+    /** @todo this is horribly inefficient! And it's kinda difficult to tell whether it failed...
+     * Must use UTF-8 or ASCII here and completely avoid these two extra copy operations.
+     * Until that's done, this method is kind of useless for debugger statistics GUI because
+     * of the amount statistics in a debug build. */
+    Bstr(pszSnapshot).cloneTo(aStats);
+
     return S_OK;
 }
 
@@ -479,7 +507,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled)(BOOL *enabled)
 
 /**
  * Returns the current virtual time rate.
- * 
+ *
  * @returns COM status code.
  * @param   pct     Where to store the rate.
  */
@@ -501,7 +529,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate)(ULONG *pct)
 
 /**
  * Returns the current virtual time rate.
- * 
+ *
  * @returns COM status code.
  * @param   pct     Where to store the rate.
  */
