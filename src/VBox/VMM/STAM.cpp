@@ -59,6 +59,29 @@ typedef struct STAMR3ENUMONEARGS
 } STAMR3ENUMONEARGS, *PSTAMR3ENUMONEARGS;
 
 
+/**
+ * The snapshot status structure.
+ * Argument package passed to stamR3SnapshotOne, stamR3SnapshotPrintf and stamR3SnapshotOutput.
+ */
+typedef struct STAMR3SNAPSHOTONE
+{
+    /** Pointer to the buffer start. */
+    char           *pszStart;
+    /** Pointer to the buffer end. */
+    char           *pszEnd;
+    /** Pointer to the current buffer position. */
+    char           *psz;
+    /** The VM handle (just in case). */
+    PVM             pVM;
+    /** The number of bytes allocated. */
+    size_t          cbAllocated;
+    /** The status code. */
+    int             rc;
+    /** Whether to include the description strings. */
+    bool            fWithDesc;
+} STAMR3SNAPSHOTONE, *PSTAMR3SNAPSHOTONE;
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -68,6 +91,8 @@ static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg);
 static DECLCALLBACK(void) stamR3EnumLogPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
 static DECLCALLBACK(void) stamR3EnumRelLogPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
 static DECLCALLBACK(void) stamR3EnumPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
+static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg);
+static int stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat, ...);
 static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg);
 static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg);
 static int stamR3Enum(PVM pVM, const char *pszPat, int (pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg);
@@ -565,16 +590,218 @@ static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg)
  * @param   pVM             The VM handle.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
+ * @param   fWithDesc       Whether to include the descriptions.
  * @param   ppszSnapshot    Where to store the pointer to the snapshot data.
  *                          The format of the snapshot should be XML, but that will have to be discussed
  *                          when this function is implemented.
  *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
  * @param   pcchSnapshot    Where to store the size of the snapshot data. (Excluding the trailing '\0')
  */
-STAMR3DECL(int)  STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot)
+STAMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
 {
-    AssertMsgFailed(("not implemented yet\n"));
-    return VERR_NOT_IMPLEMENTED;
+    STAMR3SNAPSHOTONE State = { NULL, NULL, NULL, pVM, 0, VINF_SUCCESS, fWithDesc };
+
+    /*
+     * Write the XML header.
+     */
+    /** @todo Make this proper & valid XML. */
+    stamR3SnapshotPrintf(&State, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+
+    /*
+     * Write the content.
+     */
+    stamR3SnapshotPrintf(&State, "<Statistics>\n");
+    STAM_LOCK_RD(pVM);
+    stamR3Enum(pVM, pszPat, stamR3SnapshotOne, &State);
+    STAM_UNLOCK_RD(pVM);
+    stamR3SnapshotPrintf(&State, "</Statistics>\n");
+
+    /*
+     * Done.
+     */
+    *ppszSnapshot = State.pszStart;
+    if (pcchSnapshot)
+        *pcchSnapshot = State.psz - State.pszStart;
+    return State.rc;
+}
+
+
+/**
+ * stamR3Enum callback employed by STAMR3Snapshot.
+ *
+ * @returns VBox status code, but it's interpreted as 0 == success / !0 == failure by enmR3Enum.
+ * @param   pDesc       The sample.
+ * @param   pvArg       The snapshot status structure.
+ */
+static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg)
+{
+    PSTAMR3SNAPSHOTONE pThis = (PSTAMR3SNAPSHOTONE)pvArg;
+
+    switch (pDesc->enmType)
+    {
+        case STAMTYPE_COUNTER:
+            stamR3SnapshotPrintf(pThis, "<Counter c=\"%lld\"", pDesc->u.pCounter->c);
+            break;
+
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            stamR3SnapshotPrintf(pThis, "<Profile cPeriods=\"%lld\" cTicks=\"%lld\" cTicksMin=\"%lld\" cTicksMax=\"%lld\"",
+                                 pDesc->u.pProfile->cPeriods, pDesc->u.pProfile->cTicks, pDesc->u.pProfile->cTicksMin,
+                                 pDesc->u.pProfile->cTicksMax);
+            break;
+
+        case STAMTYPE_RATIO_U32:
+        case STAMTYPE_RATIO_U32_RESET:
+            stamR3SnapshotPrintf(pThis, "<Ratio32 u32A=\"%lld\" u32B=\"%lld\"",
+                                 pDesc->u.pRatioU32->u32A, pDesc->u.pRatioU32->u32B);
+            break;
+
+        case STAMTYPE_CALLBACK:
+        {
+            char szBuf[512];
+            pDesc->u.Callback.pfnPrint(pThis->pVM, pDesc->u.Callback.pvSample, szBuf, sizeof(szBuf));
+            stamR3SnapshotPrintf(pThis, "<Callback val=\"%s\"", szBuf);
+            break;
+        }
+
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+            stamR3SnapshotPrintf(pThis, "<U8 val=\"%u\"", *pDesc->u.pu8);
+            break;
+
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+            stamR3SnapshotPrintf(pThis, "<X8 val=\"%#x\"", *pDesc->u.pu8);
+            break;
+
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+            stamR3SnapshotPrintf(pThis, "<U16 val=\"%u\"", *pDesc->u.pu16);
+            break;
+
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+            stamR3SnapshotPrintf(pThis, "<X16 val=\"%#x\"", *pDesc->u.pu16);
+            break;
+
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+            stamR3SnapshotPrintf(pThis, "<U32 val=\"%u\"", *pDesc->u.pu32);
+            break;
+
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+            stamR3SnapshotPrintf(pThis, "<X32 val=\"%#x\"", *pDesc->u.pu32);
+            break;
+
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+            stamR3SnapshotPrintf(pThis, "<U64 val=\"%llu\"", *pDesc->u.pu64);
+            break;
+
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+            stamR3SnapshotPrintf(pThis, "<X64 val=\"%#llx\"", *pDesc->u.pu64);
+            break;
+
+        default:
+            AssertMsgFailed(("%d\n", pDesc->enmType));
+            return 0;
+    }
+
+    stamR3SnapshotPrintf(pThis, " unit=\"%s\"", STAMR3GetUnit(pDesc->enmUnit));
+
+    switch (pDesc->enmVisibility)
+    {
+        default:
+        case STAMVISIBILITY_ALWAYS:
+            break;
+        case STAMVISIBILITY_USED:
+            stamR3SnapshotPrintf(pThis, " vis=\"used\"");
+            break;
+        case STAMVISIBILITY_NOT_GUI:
+            stamR3SnapshotPrintf(pThis, " vis=\"not-gui\"");
+            break;
+    }
+
+    stamR3SnapshotPrintf(pThis, " name=\"%s\"", pDesc->pszName);
+
+    if (pThis->fWithDesc && pDesc->pszDesc)
+        return stamR3SnapshotPrintf(pThis, " desc=\"%s\"/>\n", pDesc->pszDesc);
+    return stamR3SnapshotPrintf(pThis, "/>\n");
+}
+
+
+/**
+ * Output callback for stamR3SnapshotPrintf.
+ *
+ * @returns number of bytes written.
+ * @param   pvArg       The snapshot status structure.
+ * @param   pach        Pointer to an array of characters (bytes).
+ * @param   cch         The number or chars (bytes) to write from the array.
+ */
+static DECLCALLBACK(size_t) stamR3SnapshotOutput(void *pvArg, const char *pach, size_t cch)
+{
+    PSTAMR3SNAPSHOTONE pThis = (PSTAMR3SNAPSHOTONE)pvArg;
+
+    /*
+     * Make sure we've got space for it.
+     */
+    if (RT_UNLIKELY((uintptr_t)pThis->pszEnd - (uintptr_t)pThis->psz < cch + 1))
+    {
+        if (RT_FAILURE(pThis->rc))
+            return 0;
+
+        size_t cbNewSize = pThis->cbAllocated;
+        if (cbNewSize > cch)
+            cbNewSize *= 2;
+        else
+            cbNewSize += RT_ALIGN(cch + 1, 0x1000);
+        char *pszNew = (char *)RTMemRealloc(pThis->pszStart, cbNewSize);
+        if (!pszNew)
+        {
+            /*
+             * Free up immediately, out-of-memory is bad news and this
+             * isn't an important allocations / API.
+             */
+            pThis->rc = VERR_NO_MEMORY;
+            RTMemFree(pThis->pszStart);
+            pThis->pszStart = pThis->pszEnd = pThis->psz = NULL;
+            pThis->cbAllocated = 0;
+            return 0;
+        }
+
+        pThis->psz = pszNew + (pThis->psz - pThis->pszStart);
+        pThis->pszStart = pszNew;
+        pThis->pszEnd = pszNew + cbNewSize;
+        pThis->cbAllocated = cbNewSize;
+    }
+
+    /*
+     * Copy the chars to the buffer and terminate it.
+     */
+    memcpy(pThis->psz, pach, cch);
+    pThis->psz += cch;
+    *pThis->psz = '\0';
+    return cch;
+}
+
+
+/**
+ * Wrapper around RTStrFormatV for use by the snapshot API.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The snapshot status structure.
+ * @param   pszFormat   The format string.
+ * @param   ...         Optional arguments.
+ */
+static int stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTStrFormatV(stamR3SnapshotOutput, pThis, NULL, NULL, pszFormat, va);
+    va_end(va);
+    return pThis->rc;
 }
 
 
