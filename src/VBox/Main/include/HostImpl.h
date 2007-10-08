@@ -124,7 +124,7 @@ public:
 
 private:
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # ifdef VBOX_USE_LIBHAL
     bool getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list);
     bool getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list);

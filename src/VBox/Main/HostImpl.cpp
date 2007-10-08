@@ -36,6 +36,25 @@
 #include <errno.h>
 #endif /* RT_OS_LINUX */
 
+#ifdef RT_OS_SOLARIS
+# include <fcntl.h>
+# include <unistd.h>
+# include <stropts.h>
+# include <errno.h>
+# include <limits.h>
+# include <stdio.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <sys/cdio.h>
+# include <sys/dkio.h>
+# include <sys/mnttab.h>
+# include <sys/mntent.h>
+# ifdef VBOX_USE_LIBHAL
+#  include "vbox-libhal.h"
+extern "C" char *getfullrawname(char *);
+# endif
+#endif /* RT_OS_SOLARIS */
+
 #ifdef RT_OS_WINDOWS
 #define _WIN32_DCOM
 #include <windows.h>
@@ -76,6 +95,9 @@
 #include <iprt/time.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
+#ifdef RT_OS_SOLARIS
+# include <iprt/path.h>
+#endif
 
 #include <stdio.h>
 
@@ -195,6 +217,48 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     }
     while (*p);
     delete[] hostDrives;
+
+#elif defined(RT_OS_SOLARIS)
+# ifdef VBOX_USE_LIBHAL
+    if (!getDVDInfoFromHal(list))
+# endif
+    // Not all Solaris versions ship with libhal.
+    // So use a fallback approach similar to Linux.
+    {
+        if (RTEnvGet("VBOX_CDROM"))
+        {
+            char *cdromEnv = strdup(RTEnvGet("VBOX_CDROM"));
+            char *cdromDrive;
+            cdromDrive = strtok(cdromEnv, ":"); /** @todo use strtok_r. */
+            while (cdromDrive)
+            {
+                if (validateDevice(cdromDrive, true))
+                {
+                    ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                    hostDVDDriveObj.createObject();
+                    hostDVDDriveObj->init (Bstr (cdromDrive));
+                    list.push_back (hostDVDDriveObj);
+                }
+                cdromDrive = strtok(NULL, ":");
+            }
+            free(cdromEnv);
+        }
+        else
+        {
+            // this might work on Solaris version older than Nevada.
+            if (validateDevice("/cdrom/cdrom0", true))
+            {
+                ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                hostDVDDriveObj.createObject();
+                hostDVDDriveObj->init (Bstr ("cdrom/cdrom0"));
+                list.push_back (hostDVDDriveObj);
+            }
+
+            // check the mounted drives
+            parseMountTable(MNTTAB, list);
+        }
+    }
+
 #elif defined(RT_OS_LINUX)
 #ifdef VBOX_USE_LIBHAL
     if (!getDVDInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
@@ -211,7 +275,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
         {
             char *cdromEnv = strdupa(RTEnvGet("VBOX_CDROM"));
             char *cdromDrive;
-            cdromDrive = strtok(cdromEnv, ":");
+            cdromDrive = strtok(cdromEnv, ":"); /** @todo use strtok_r */
             while (cdromDrive)
             {
                 if (validateDevice(cdromDrive, true))
@@ -1513,7 +1577,7 @@ HRESULT Host::detachAllUSBDevices (SessionMachine *aMachine, BOOL aDone)
 // private methods
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # ifdef VBOX_USE_LIBHAL
 /**
  * Helper function to query the hal subsystem for information about DVD drives attached to the
@@ -1551,6 +1615,10 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                         {
                             char *devNode = gLibHalDeviceGetPropertyString(halContext,
                                                     halDevices[i], "block.device", &dbusError);
+#ifdef RT_OS_SOLARIS
+                            /* The CD/DVD ioctls are only working for raw device nodes. */
+                            devNode = getfullrawname(devNode);  /** @todo r=bird: you're leaking hal memory here. */
+#endif
                             if (devNode != 0)
                             {
                                 if (validateDevice(devNode, true))
@@ -1608,7 +1676,11 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                 {
                                     LogRel(("Host::COMGETTER(DVDDrives): failed to validate the block device %s as a DVD drive\n"));
                                 }
+#ifndef RT_OS_SOLARIS
                                 gLibHalFreeString(devNode);
+#else
+                                free(devNode);
+#endif
                             }
                             else
                             {
@@ -1821,6 +1893,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
  */
 void Host::parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive> > &list)
 {
+#ifdef RT_OS_LINUX
     FILE *mtab = setmntent(mountTable, "r");
     if (mtab)
     {
@@ -1879,6 +1952,43 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive>
         }
         endmntent(mtab);
     }
+#else  // RT_OS_SOLARIS
+    FILE *mntFile = fopen(mountTable, "r");
+    if (mntFile)
+    {
+        struct mnttab mntTab;
+        while (getmntent(mntFile, &mntTab) == 0)
+        {
+            char *mountName = strdup(mntTab.mnt_special);
+            char *mountPoint = strdup(mntTab.mnt_mountp);
+            char *mountFSType = strdup(mntTab.mnt_fstype);
+
+            // skip devices we are not interested in
+            if ((*mountName && mountName[0] == '/') &&                  // skip 'fake' devices (like -hosts, proc, fd, swap)
+                (*mountFSType && (strcmp(mountFSType, "devfs") != 0 &&  // skip devfs (i.e. /devices)
+                                  strcmp(mountFSType, "dev") != 0 &&    // skip dev (i.e. /dev)
+                                  strcmp(mountFSType, "lofs") != 0)) && // skip loop-back file-system (lofs)
+                (*mountPoint && strcmp(mountPoint, "/") != 0))          // skip point '/' (Can CD/DVD be mounted at '/' ???)
+            {
+                char *rawDevName = getfullrawname(mountName);
+                if (validateDevice(rawDevName, true))
+                {
+                    ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                    hostDVDDriveObj.createObject();
+                    hostDVDDriveObj->init (Bstr (rawDevName));
+                    list.push_back (hostDVDDriveObj);
+                }
+                free(rawDevName);
+            }
+
+            free(mountName);
+            free(mountPoint);
+            free(mountFSType);
+        }
+
+        fclose(mntFile);
+    }
+#endif
 }
 
 /**
@@ -1913,9 +2023,15 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
                     cdrom_subchnl cdChannelInfo;
                     cdChannelInfo.cdsc_format = CDROM_MSF;
                     // this call will finally reveal the whole truth
+#ifdef RT_OS_LINUX
                     if ((ioctl(fileHandle, CDROMSUBCHNL, &cdChannelInfo) == 0) ||
                         (errno == EIO) || (errno == ENOENT) ||
                         (errno == EINVAL) || (errno == ENOMEDIUM))
+#else
+                    if ((ioctl(fileHandle, CDROMSUBCHNL, &cdChannelInfo) == 0) ||
+                        (errno == EIO) || (errno == ENOENT) ||
+                        (errno == EINVAL))
+#endif
                     {
                         retValue = true;
                     }
@@ -1934,7 +2050,7 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
     }
     return retValue;
 }
-#endif // RT_OS_LINUX
+#endif // RT_OS_LINUX || RT_OS_SOLARIS
 
 /**
  *  Applies all (golbal and VM) filters to the given USB device. The device
