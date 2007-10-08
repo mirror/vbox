@@ -94,6 +94,8 @@ typedef struct DRVTAP
 #ifdef RT_OS_SOLARIS
     /** The actual TAP device name. */
     char                   *pszDeviceNameActual;
+    /** IP device file handle (/dev/udp). */
+    RTFILE                  IPFileDevice;
 #endif 
     /** TAP setup application. */
     char                   *pszSetupApplication;
@@ -559,13 +561,8 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     LogFlow(("SolarisTapAttach: pData=%p\n", pData));
     
     
-    /* Close previously opened file desc., if any. */
-    static int s_IPFileDes = -1;
-    if (s_IPFileDes >= 0)
-        close(s_IPFileDes);
-    
-    s_IPFileDes = open("/dev/udp", O_RDWR, 0);
-    if (s_IPFileDes < 0)
+    int IPFileDes = open("/dev/udp", O_RDWR, 0);
+    if (IPFileDes < 0)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to open /dev/udp. errno=%d"), errno);
     
@@ -636,10 +633,10 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
         LogRel(("TAP#%d: Failed to push ARP to Interface FD. errno=%d\n", pDrvIns->iInstance, errno));
 
     /* IP */
-    if (ioctl(s_IPFileDes, I_POP, NULL) == -1)
+    if (ioctl(IPFileDes, I_POP, NULL) == -1)
         LogRel(("TAP#%d: Failed I_POP from IP FD. errno=%d\n", pDrvIns->iInstance, errno));
 
-    if (ioctl(s_IPFileDes, I_PUSH, "arp") == -1)
+    if (ioctl(IPFileDes, I_PUSH, "arp") == -1)
         LogRel(("TAP#%d: Failed to push ARP to IP FD. errno=%d\n", pDrvIns->iInstance, errno));
     
     /* ARP */
@@ -662,7 +659,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
      * Then we would not be able unlink the interface if we reuse it.
      * Even 'unplumb' won't work after that.
      */
-    int IPMuxID = ioctl(s_IPFileDes, I_LINK, InterfaceFD);
+    int IPMuxID = ioctl(IPFileDes, I_LINK, InterfaceFD);
     if (IPMuxID == -1)
     {
         close(InterfaceFD);
@@ -675,7 +672,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     }
     
 #ifdef VBOX_SOLARIS_TAP_ARP
-    int ARPMuxID = ioctl(s_IPFileDes, I_LINK, ARPFileDes);
+    int ARPMuxID = ioctl(IPFileDes, I_LINK, ARPFileDes);
     if (ARPMuxID == -1)
         LogRel(("TAP#%d: Failed to link TAP device to ARP\n", pDrvIns->iInstance));
     
@@ -691,21 +688,20 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     ifReq.lifr_arp_muxid = ARPMuxID;
 #endif
 
-    if (ioctl(s_IPFileDes, SIOCSLIFMUXID, &ifReq) == -1)
+    if (ioctl(IPFileDes, SIOCSLIFMUXID, &ifReq) == -1)
     {
 #ifdef VBOX_SOLARIS_TAP_ARP
-        ioctl(s_IPFileDes, I_PUNLINK, ARPMuxID);
+        ioctl(IPFileDes, I_PUNLINK, ARPMuxID);
 #endif
-        ioctl(s_IPFileDes, I_PUNLINK, IPMuxID);
-        close(s_IPFileDes);
-        s_IPFileDes = -1;
+        ioctl(IPFileDes, I_PUNLINK, IPMuxID);
+        close(IPFileDes);
         LogRel(("TAP#%d: Failed to set Mux ID.\n", pDrvIns->iInstance));
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Failed to set Mux ID. Check TAP interface name. errno=%d"), errno);
     }
 
-    /* what's the point? */
     pData->FileDevice = (RTFILE)TapFileDes;
+    pData->IPFileDevice = (RTFILE)IPFileDes;
     pData->pszDeviceNameActual = RTStrDup(pszDevName);
     
     return VINF_SUCCESS;
@@ -791,6 +787,13 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
     if (pData->pszTerminateApplication)
         drvTAPTerminateApplication(pData);
 
+    if (pData->IPFileDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pData->IPFileDevice);
+        AssertRC(rc);
+        pData->IPFileDevice = NIL_RTFILE;
+    }
+
     RTStrFree(pData->pszDeviceNameActual);
 #endif
     MMR3HeapFree(pData->pszDeviceName);
@@ -821,6 +824,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->pszDeviceName                = NULL;
 #ifdef RT_OS_SOLARIS
     pData->pszDeviceNameActual          = NULL;
+    pData->IPFileDevice                 = NIL_RTFILE;
 #endif 
     pData->pszSetupApplication          = NULL;
     pData->pszTerminateApplication      = NULL;
