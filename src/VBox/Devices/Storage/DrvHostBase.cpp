@@ -44,6 +44,8 @@
 #elif defined(RT_OS_SOLARIS)
 # include <fcntl.h>
 # include <errno.h>
+# include <stropts.h>
+# include <sys/dkio.h>
 
 #elif defined(RT_OS_WINDOWS)
 # define WIN32_NO_STATUS
@@ -917,7 +919,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     IOObjectRelease(DVDServices);
     return rc;
 
-#elif defined(RT_OS_LINUX)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     /** @todo we've got RTFILE_O_NON_BLOCK now. Change the code to use RTFileOpen. */
     int FileDevice = open(pThis->pszDeviceOpen, (pThis->fReadOnlyConfig ? O_RDONLY : O_RDWR) | O_NONBLOCK);
     if (FileDevice < 0)
@@ -1012,6 +1014,20 @@ static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
         *pcb = (uint64_t)Buf.cBlocks * Buf.cbBlock;
     }
     return rc;
+
+#elif defined(RT_OS_SOLARIS)
+    /*
+     * Sun docs suggests using DKIOCGGEOM instead of DKIOCGMEDIAINFO, but
+     * Sun themselves use DKIOCGMEDIAINFO for DVDs/CDs, and use DKIOCGGEOM
+     * for secondary storage devices.
+     */
+    struct dk_minfo MediaInfo;
+    if (ioctl(pThis->FileDevice, DKIOCGMEDIAINFO, &MediaInfo) == 0)
+    {
+        *pcb = MediaInfo.dki_capacity * (uint64_t)MediaInfo.dki_lbsize;
+        return VINF_SUCCESS;
+    }
+    return RTFileSeek(pThis->FileDevice, 0, RTFILE_SEEK_END, pcb);
 
 #elif defined(RT_OS_WINDOWS)
     /* use NT api, retry a few times if the media is being verified. */
