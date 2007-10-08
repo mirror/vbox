@@ -1761,7 +1761,7 @@ static int remLoadLinuxObj(void)
                 {
                     RTUINTPTR Value;
                     rc = RTLdrGetSymbolEx(g_ModREM2, g_pvREM2, (RTUINTPTR)g_pvREM2, g_aExports[i].pszName, &Value);
-                    AssertMsgRC(rc, ("%s rc=%VRc\n", g_aExports[i].pszName, rc));
+                    AssertMsgRC(rc, ("%s rc=%Vrc\n", g_aExports[i].pszName, rc));
                     if (VBOX_FAILURE(rc))
                         break;
                     rc = remGenerateExportGlue(&Value, &g_aExports[i]);
@@ -1776,7 +1776,7 @@ static int remLoadLinuxObj(void)
         RTLdrClose(g_ModREM2);
         g_ModREM2 = NIL_RTLDRMOD;
     }
-    LogRel(("REM: failed loading '%s', rc=%VRc\n", szPath, rc));
+    LogRel(("REM: failed loading '%s', rc=%Vrc\n", szPath, rc));
     return rc;
 }
 
