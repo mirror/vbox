@@ -643,6 +643,8 @@ typedef struct vusb_urb
         /** Pointer to an array of TD info items.*/
         struct VUSBURBHCITD
         {
+            /** Type of TD (private) */
+            uint32_t        TdType;
             /** The address of the */
             uint32_t        TdAddr;
             /** A copy of the TD. */
