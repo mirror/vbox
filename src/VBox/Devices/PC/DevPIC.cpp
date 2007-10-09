@@ -173,9 +173,11 @@ static inline void pic_set_irq1(PicState *s, int irq, int level)
     if (s->elcr & mask) {
         /* level triggered */
         if (level) {
+            Log2(("pic_set_irq1(ls) irr=%d irrnew=%d\n", s->irr, s->irr | mask));
             s->irr |= mask;
             s->last_irr |= mask;
         } else {
+            Log2(("pic_set_irq1(lc) irr=%d irrnew=%d\n", s->irr, s->irr & ~mask));
             s->irr &= ~mask;
             s->last_irr &= ~mask;
         }
@@ -375,7 +377,10 @@ static inline void pic_intack(PicState *s, int irq)
     }
     /* We don't clear a level sensitive interrupt here */
     if (!(s->elcr & (1 << irq)))
+    {
+        Log2(("pic_intack: irr=%x irrnew=%x\n", s->irr, s->irr & ~(1 << irq)));
         s->irr &= ~(1 << irq);
+    }
 }
 
 
@@ -499,6 +504,7 @@ static int pic_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                         s->priority_add = (irq + 1) & 7;
                     rc = pic_update_irq(pData);
                     Assert(rc == VINF_SUCCESS);
+                    DumpPICState(s, "eoi");
                 }
                 break;
             }
@@ -509,6 +515,7 @@ static int pic_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                 s->isr &= ~(1 << irq);
                 rc = pic_update_irq(pData);
                 Assert(rc == VINF_SUCCESS);
+                DumpPICState(s, "eoi2");
                 break;
             }
             case 6:
@@ -526,6 +533,7 @@ static int pic_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                 s->priority_add = (irq + 1) & 7;
                 rc = pic_update_irq(pData);
                 Assert(rc == VINF_SUCCESS);
+                DumpPICState(s, "eoi3");
                 break;
             }
             default:
