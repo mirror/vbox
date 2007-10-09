@@ -167,7 +167,7 @@ static int gvmmR0ByVMAndEMT(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM);
  */
 GVMMR0DECL(int) GVMMR0Init(void)
 {
-    SUPR0Printf("GVMMR0Init:\n");
+    LogFlow(("GVMMR0Init:\n"));
 
     /*
      * Allocate and initialize the instance data.
@@ -202,7 +202,7 @@ GVMMR0DECL(int) GVMMR0Init(void)
             }
 
             g_pGVMM = pGVMM;
-            SUPR0Printf("GVMMR0Init: pGVMM=%p\n", pGVMM);
+            LogFlow(("GVMMR0Init: pGVMM=%p\n", pGVMM));
             return VINF_SUCCESS;
         }
 
@@ -223,7 +223,7 @@ GVMMR0DECL(int) GVMMR0Init(void)
  */
 GVMMR0DECL(void) GVMMR0Term(void)
 {
-    SUPR0Printf("GVMMR0Term:\n");
+    LogFlow(("GVMMR0Term:\n"));
 
     PGVMM pGVMM = g_pGVMM;
     g_pGVMM = NULL;
@@ -255,12 +255,10 @@ GVMMR0DECL(void) GVMMR0Term(void)
  * Request wrapper for the GVMMR0CreateVM API.
  *
  * @returns VBox status code.
- * @param   pReqHdr     The request buffer.
+ * @param   pReq        The request buffer.
  */
-GVMMR0DECL(int) GVMMR0CreateVMReq(PSUPVMMR0REQHDR pReqHdr)
+GVMMR0DECL(int) GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq)
 {
-    PGVMMCREATEVMREQ pReq = (PGVMMCREATEVMREQ)pReqHdr;
-
     /*
      * Validate the request.
      */
@@ -420,7 +418,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                                         RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
 
                                         *ppVM = pVM;
-                                        SUPR0Printf("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle);
+                                        Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle));
                                         return VINF_SUCCESS;
                                     }
 
@@ -857,7 +855,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
 
     RTSemFastMutexRelease(pGVMM->UsedLock);
     RTSemFastMutexRelease(pGVMM->CreateDestroyLock);
-    SUPR0Printf("gvmmR0HandleObjDestructor: returns\n");
+    LogFlow(("gvmmR0HandleObjDestructor: returns\n"));
 }
 
 
@@ -1210,6 +1208,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
     int rc = gvmmR0ByVMAndEMT(pVM, &pGVM, &pGVMM);
     if (RT_FAILURE(rc))
         return rc;
+    pGVM->gvmm.s.StatsSched.cHaltCalls++;
 
     Assert(!pGVM->gvmm.s.u64HaltExpire);
 
@@ -1225,7 +1224,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
 
     Assert(ASMGetFlags() & X86_EFL_IF);
     const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
-    gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+    pGVM->gvmm.s.StatsSched.cHaltWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
 
     /*
      * Go to sleep if we must...
@@ -1234,6 +1233,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
         &&  (   pGVMM->cVMs > 1
              || (u64ExpireGipTime - u64Now > 750000 /* 0.750 ms */))) /** @todo make this configurable */
     {
+        pGVM->gvmm.s.StatsSched.cHaltBlocking++;
         ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, u64ExpireGipTime);
         RTSemFastMutexRelease(pGVMM->UsedLock);
 
@@ -1241,10 +1241,16 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
         rc = RTSemEventWaitNoResume(pGVM->gvmm.s.HaltEvent, cMillies ? cMillies : 1);
         ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, 0);
         if (rc == VERR_TIMEOUT)
+        {
+            pGVM->gvmm.s.StatsSched.cHaltTimeouts++;
             rc = VINF_SUCCESS;
+        }
     }
     else
+    {
+        pGVM->gvmm.s.StatsSched.cHaltNotBlocking++;
         RTSemFastMutexRelease(pGVMM->UsedLock);
+    }
 
     return rc;
 }
@@ -1268,6 +1274,8 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM)
     int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /* fTakeUsedLock */);
     if (RT_SUCCESS(rc))
     {
+        pGVM->gvmm.s.StatsSched.cWakeUpCalls++;
+
         /*
          * Signal the semaphore regardless of whether it's current blocked on it.
          *
@@ -1276,10 +1284,16 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM)
          * delayed a bit en route. So, we will always signal the semaphore when
          * the it is flagged as halted in the VMM.
          */
-        rc = pGVM->gvmm.s.u64HaltExpire
-           ? VINF_SUCCESS
-           : VINF_GVM_NOT_BLOCKED;
-        ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, 0);
+        if (pGVM->gvmm.s.u64HaltExpire)
+        {
+            rc = VINF_SUCCESS;
+            ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, 0);
+        }
+        else
+        {
+            rc = VINF_GVM_NOT_BLOCKED;
+            pGVM->gvmm.s.StatsSched.cWakeUpNotHalted++;
+        }
 
         int rc2 = RTSemEventSignal(pGVM->gvmm.s.HaltEvent);
         AssertRC(rc2);
@@ -1289,7 +1303,8 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM)
          */
         Assert(ASMGetFlags() & X86_EFL_IF);
         const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
-        gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+        pGVM->gvmm.s.StatsSched.cWakeUpWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+
 
         rc2 = RTSemFastMutexRelease(pGVMM->UsedLock);
         AssertRC(rc2);
@@ -1326,12 +1341,13 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, bool fYield)
     {
         rc = RTSemFastMutexRequest(pGVMM->UsedLock);
         AssertRC(rc);
+        pGVM->gvmm.s.StatsSched.cPollCalls++;
 
         Assert(ASMGetFlags() & X86_EFL_IF);
         const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
 
         if (!fYield)
-            gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+            pGVM->gvmm.s.StatsSched.cPollWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
         else
         {
             /** @todo implement this... */
@@ -1343,5 +1359,107 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, bool fYield)
 
     LogFlow(("GVMMR0SchedWakeUp: returns %Rrc\n", rc));
     return rc;
+}
+
+
+
+/**
+ * Retrieves the GVMM statistics visible to the caller.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pStats      Where to put the statistics.
+ * @param   pSession    The current session.
+ * @param   pVM         The VM to obtain statistics for. Optional.
+ */
+GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+{
+    LogFlow(("GVMMR0QueryStatistics: pStats=%p pSession=%p pVM=%p\n", pStats, pSession, pVM));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStats, VERR_INVALID_POINTER);
+    pStats->cVMs = 0; /* (crash before taking the sem...) */
+
+    /*
+     * Take the lock and get the VM statistics.
+     */
+    PGVMM pGVMM;
+    if (pVM)
+    {
+        PGVM pGVM;
+        int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /*fTakeUsedLock*/);
+        if (RT_FAILURE(rc))
+            return rc;
+        pStats->SchedVM = pGVM->gvmm.s.StatsSched;
+    }
+    else
+    {
+        GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+        memset(&pStats->SchedVM, 0, sizeof(pStats->SchedVM));
+
+        int rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Enumerate the VMs and add the ones visibile to the statistics.
+     */
+    pStats->cVMs = 0;
+    memset(&pStats->SchedSum, 0, sizeof(pStats->SchedSum));
+
+    for (unsigned i = pGVMM->iUsedHead;
+         i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
+         i = pGVMM->aHandles[i].iNext)
+    {
+        PGVM pGVM = pGVMM->aHandles[i].pGVM;
+        void *pvObj = pGVMM->aHandles[i].pvObj;
+        if (    VALID_PTR(pvObj)
+            &&  VALID_PTR(pGVM)
+            &&  pGVM->u32Magic == GVM_MAGIC
+            &&  RT_SUCCESS(SUPR0ObjVerifyAccess(pvObj, pSession, NULL)))
+        {
+            pStats->cVMs++;
+
+            pStats->SchedSum.cHaltCalls        += pGVM->gvmm.s.StatsSched.cHaltCalls;
+            pStats->SchedSum.cHaltBlocking     += pGVM->gvmm.s.StatsSched.cHaltBlocking;
+            pStats->SchedSum.cHaltTimeouts     += pGVM->gvmm.s.StatsSched.cHaltTimeouts;
+            pStats->SchedSum.cHaltNotBlocking  += pGVM->gvmm.s.StatsSched.cHaltNotBlocking;
+            pStats->SchedSum.cHaltWakeUps      += pGVM->gvmm.s.StatsSched.cHaltWakeUps;
+
+            pStats->SchedSum.cWakeUpCalls      += pGVM->gvmm.s.StatsSched.cWakeUpCalls;
+            pStats->SchedSum.cWakeUpNotHalted  += pGVM->gvmm.s.StatsSched.cWakeUpNotHalted;
+            pStats->SchedSum.cWakeUpWakeUps    += pGVM->gvmm.s.StatsSched.cWakeUpWakeUps;
+
+            pStats->SchedSum.cPollCalls        += pGVM->gvmm.s.StatsSched.cPollCalls;
+            pStats->SchedSum.cPollHalts        += pGVM->gvmm.s.StatsSched.cPollHalts;
+            pStats->SchedSum.cPollWakeUps      += pGVM->gvmm.s.StatsSched.cPollWakeUps;
+        }
+    }
+
+    RTSemFastMutexRelease(pGVMM->UsedLock);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * VMMR0 request wrapper for GVMMR0QueryStatistics.
+ *
+ * @returns see GVMMR0QueryStatistics.
+ * @param   pVM             Pointer to the shared VM structure. Optional.
+ * @param   pReq            The request packet.
+ */
+GVMMR0DECL(int) GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GVMMR0QueryStatistics(&pReq->Stats, pReq->pSession, pVM);
 }
 

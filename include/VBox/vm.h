@@ -494,7 +494,7 @@ typedef struct VM
 #ifdef ___STAMInternal_h
         struct STAM s;
 #endif
-        char        padding[32];        /* multiple of 32 */
+        char        padding[256];       /* multiple of 32 */
     } stam;
 
     /** SSM part. */

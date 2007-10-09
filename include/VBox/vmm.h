@@ -365,6 +365,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GVMM_SCHED_WAKE_UP,
     /** Call GVMMR0SchedPoll(). */
     VMMR0_DO_GVMM_SCHED_POLL,
+    /** Call GVMMR0QueryStatistics(). */
+    VMMR0_DO_GVMM_QUERY_STATISTICS,
 
     /** Call VMMR0 Per VM Init. */
     VMMR0_DO_VMMR0_INIT,
@@ -398,6 +400,9 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_MAP_UNMAP_CHUNK,
     /** Call GMMR0SeedChunk(). */
     VMMR0_DO_GMM_SEED_CHUNK,
+
+    /** Gets the GMM and GVMM stats. */
+    VMMR0_DO_GET_GXX_STATS,
 
     /** The start of the R0 service operations. */
     VMMR0_DO_SRV_START,

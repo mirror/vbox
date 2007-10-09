@@ -42,6 +42,9 @@ typedef struct GVMMPERVM
     RTSEMEVENT          HaltEvent;
     /** The APIC ID of the CPU that EMT was scheduled on the last time we checked. */
     uint8_t             iCpuEmt;
+
+    /** The scheduler statistics. */
+    GVMMSTATSSCHED      StatsSched;
 } GVMMPERVM;
 /** Pointer to the GVMM per VM data. */
 typedef GVMMPERVM *PGVMMPERVM;

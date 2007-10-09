@@ -21,6 +21,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/stam.h>
+#include <VBox/gvmm.h>
 #include <iprt/semaphore.h>
 
 #if !defined(IN_STAM_R3) && !defined(IN_STAM_R0) && !defined(IN_STAM_GC)
@@ -114,6 +115,9 @@ struct STAM
     R3PTRTYPE(PSTAMDESC)    pHead;
     /** RW Lock for the list. */
     RTSEMRW                 RWSem;
+
+    /** The copy of the GVMM statistics. */
+    GVMMSTATS               GVMMStats;
 };
 
 /** Locks the sample descriptors for reading. */

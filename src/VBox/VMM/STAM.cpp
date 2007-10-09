@@ -82,6 +82,24 @@ typedef struct STAMR3SNAPSHOTONE
 } STAMR3SNAPSHOTONE, *PSTAMR3SNAPSHOTONE;
 
 
+/**
+ * Init record for a ring-0 statistic sample.
+ */
+typedef struct STAMINITR0SAMPLE
+{
+    /** The VM structure offset of the variable. */
+    unsigned        offVar;
+    /** The type. */
+    STAMTYPE        enmType;
+    /** The unit. */
+    STAMUNIT        enmUnit;
+    /** The name. */
+    const char     *pszName;
+    /** The description. */
+    const char     *pszDesc;
+} STAMINITR0SAMPLE;
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -95,7 +113,10 @@ static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg);
 static int stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat, ...);
 static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg);
 static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg);
-static int stamR3Enum(PVM pVM, const char *pszPat, int (pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg);
+static int stamR3Enum(PVM pVM, const char *pszPat, bool fUpdateRing0, int (pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg);
+static void stamR3Ring0StatsRegister(PVM pVM);
+static void stamR3Ring0StatsUpdate(PVM pVM, const char *pszPat);
+static void stamR3Ring0StatsUpdateMulti(PVM pVM, const char * const *papszExpressions, unsigned cExpressions);
 
 #ifdef VBOX_WITH_DEBUGGER
 static DECLCALLBACK(int)  stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
@@ -125,6 +146,38 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 
 
+/**
+ * The GVMM init records.
+ */
+static const STAMINITR0SAMPLE g_aGVMMStats[] =
+{
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltCalls),        STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltBlocking),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltTimeouts),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltNotBlocking),  STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltWakeUps),      STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpCalls),      STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpNotHalted),  STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpWakeUps),    STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollCalls),        STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/PollCalls", "The number of calls to GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollHalts),        STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollWakeUps),      STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
+
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltCalls),       STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltBlocking),    STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltTimeouts),    STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltNotBlocking), STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltWakeUps),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpCalls),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpNotHalted), STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpWakeUps),   STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollCalls),       STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/PollCalls", "The number of calls to GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollHalts),       STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollWakeUps),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
+
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.cVMs),                      STAMTYPE_U32, STAMUNIT_CALLS, "/GVMM/VMs", "The number of VMs accessible to the caller." },
+};
+
 
 /**
  * Initializes the STAM.
@@ -150,6 +203,11 @@ STAMR3DECL(int) STAMR3Init(PVM pVM)
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
         return rc;
+
+    /*
+     * Register the ring-0 statistics (GVMM/GMM).
+     */
+    stamR3Ring0StatsRegister(pVM);
 
 #ifdef VBOX_WITH_DEBUGGER
     /*
@@ -501,7 +559,7 @@ STAMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
 STAMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
 {
     STAM_LOCK_WR(pVM);
-    stamR3Enum(pVM, pszPat, stamR3ResetOne, pVM);
+    stamR3Enum(pVM, pszPat, false /* fUpdateRing0 */, stamR3ResetOne, pVM);
     STAM_UNLOCK_WR(pVM);
     return VINF_SUCCESS;
 }
@@ -612,7 +670,7 @@ STAMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot,
      */
     stamR3SnapshotPrintf(&State, "<Statistics>\n");
     STAM_LOCK_RD(pVM);
-    int rc = stamR3Enum(pVM, pszPat, stamR3SnapshotOne, &State);
+    int rc = stamR3Enum(pVM, pszPat, true /* fUpdateRing0 */, stamR3SnapshotOne, &State);
     STAM_UNLOCK_RD(pVM);
     stamR3SnapshotPrintf(&State, "</Statistics>\n");
 
@@ -868,7 +926,7 @@ STAMR3DECL(int)  STAMR3Dump(PVM pVM, const char *pszPat)
     Args.pfnPrintf = stamR3EnumLogPrintf;
 
     STAM_LOCK_RD(pVM);
-    stamR3Enum(pVM, pszPat, stamR3PrintOne, &Args);
+    stamR3Enum(pVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
     STAM_UNLOCK_RD(pVM);
     return VINF_SUCCESS;
 }
@@ -907,9 +965,8 @@ STAMR3DECL(int)  STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat)
     Args.pfnPrintf = stamR3EnumRelLogPrintf;
 
     STAM_LOCK_RD(pVM);
-    stamR3Enum(pVM, pszPat, stamR3PrintOne, &Args);
+    stamR3Enum(pVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
     STAM_UNLOCK_RD(pVM);
-
     return VINF_SUCCESS;
 }
 
@@ -947,7 +1004,7 @@ STAMR3DECL(int)  STAMR3Print(PVM pVM, const char *pszPat)
     Args.pfnPrintf = stamR3EnumPrintf;
 
     STAM_LOCK_RD(pVM);
-    stamR3Enum(pVM, pszPat, stamR3PrintOne, &Args);
+    stamR3Enum(pVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
     STAM_UNLOCK_RD(pVM);
     return VINF_SUCCESS;
 }
@@ -1103,7 +1160,7 @@ STAMR3DECL(int) STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, v
     Args.pvUser  = pvUser;
 
     STAM_LOCK_RD(pVM);
-    int rc = stamR3Enum(pVM, pszPat, stamR3EnumOne, &Args);
+    int rc = stamR3Enum(pVM, pszPat, true /* fUpdateRing0 */, stamR3EnumOne, &Args);
     STAM_UNLOCK_RD(pVM);
     return rc;
 }
@@ -1150,8 +1207,10 @@ static bool stamR3Match(const char *pszPat, const char *pszName)
         char chPat = *pszPat;
         switch (chPat)
         {
-            case '\0':
-                return !*pszName;
+            default:
+                if (*pszName != chPat)
+                    return false;
+                break;
 
             case '*':
             {
@@ -1177,10 +1236,8 @@ static bool stamR3Match(const char *pszPat, const char *pszName)
                     return false;
                 break;
 
-            default:
-                if (*pszName != chPat)
-                    return false;
-                break;
+            case '\0':
+                return !*pszName;
         }
         pszName++;
         pszPat++;
@@ -1195,20 +1252,19 @@ static bool stamR3Match(const char *pszPat, const char *pszName)
  * @returns true if it matches, false if it doesn't match.
  * @param   papszExpressions    The array of pattern expressions.
  * @param   cExpressions        The number of array entries.
- * @param   piExpression        Where to read/store the current skip index.
- *                              This is for future use.
+ * @param   piExpression        Where to read/store the current skip index. Optional.
  * @param   pszName             The name to match.
  */
 static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExpressions,
                              unsigned *piExpression, const char *pszName)
 {
-    for (unsigned i = *piExpression; i < cExpressions; i++)
+    for (unsigned i = piExpression ? *piExpression : 0; i < cExpressions; i++)
     {
         const char *pszPat = papszExpressions[i];
         if (stamR3Match(pszPat, pszName))
         {
             /* later:
-            if (i > *piExpression)
+            if (piExpression && i > *piExpression)
             {
                 check if we can skip some expressions
             }*/
@@ -1227,14 +1283,15 @@ static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExp
  * The call must own at least a read lock to the STAM data.
  *
  * @returns The rc from the callback.
- * @param   pVM         VM handle
- * @param   pszPat      Pattern.
- * @param   pfnCallback Callback function which shall be called for matching nodes.
- *                      If it returns anything but VINF_SUCCESS the enumeration is
- *                      terminated and the status code returned to the caller.
- * @param   pvArg       User parameter for the callback.
+ * @param   pVM             VM handle
+ * @param   pszPat          Pattern.
+ * @param   fUpdateRing0    Update the ring-0 .
+ * @param   pfnCallback     Callback function which shall be called for matching nodes.
+ *                          If it returns anything but VINF_SUCCESS the enumeration is
+ *                          terminated and the status code returned to the caller.
+ * @param   pvArg           User parameter for the callback.
  */
-static int stamR3Enum(PVM pVM, const char *pszPat, int (*pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg)
+static int stamR3Enum(PVM pVM, const char *pszPat, bool fUpdateRing0, int (*pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg)
 {
     int rc = VINF_SUCCESS;
 
@@ -1243,6 +1300,9 @@ static int stamR3Enum(PVM pVM, const char *pszPat, int (*pfnCallback)(PSTAMDESC 
      */
     if (!pszPat || !*pszPat || !strcmp(pszPat, "*"))
     {
+        if (fUpdateRing0)
+            stamR3Ring0StatsUpdate(pVM, "*");
+
         PSTAMDESC   pCur = pVM->stam.s.pHead;
         while (pCur)
         {
@@ -1260,6 +1320,9 @@ static int stamR3Enum(PVM pVM, const char *pszPat, int (*pfnCallback)(PSTAMDESC 
      */
     else if (!strchr(pszPat, '|'))
     {
+        if (fUpdateRing0)
+            stamR3Ring0StatsUpdate(pVM, pszPat);
+
         for (PSTAMDESC pCur = pVM->stam.s.pHead; pCur; pCur = pCur->pNext)
             if (stamR3Match(pszPat, pCur->pszName))
             {
@@ -1311,6 +1374,9 @@ static int stamR3Enum(PVM pVM, const char *pszPat, int (*pfnCallback)(PSTAMDESC 
         /*
          * Perform the enumeration.
          */
+        if (fUpdateRing0)
+            stamR3Ring0StatsUpdateMulti(pVM, papszExpressions, cExpressions);
+
         unsigned iExpression = 0;
         for (PSTAMDESC pCur = pVM->stam.s.pHead; pCur; pCur = pCur->pNext)
             if (stamR3MultiMatch(papszExpressions, cExpressions, &iExpression, pCur->pszName))
@@ -1325,6 +1391,68 @@ static int stamR3Enum(PVM pVM, const char *pszPat, int (*pfnCallback)(PSTAMDESC 
     }
 
     return rc;
+}
+
+
+/**
+ * Registers the ring-0 statistics.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ */
+static void stamR3Ring0StatsRegister(PVM pVM)
+{
+    /* GVMM */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aGVMMStats); i++)
+        stamR3Register(pVM, (uint8_t *)pVM + g_aGVMMStats[i].offVar, NULL, NULL,
+                       g_aGVMMStats[i].enmType, STAMVISIBILITY_ALWAYS, g_aGVMMStats[i].pszName,
+                       g_aGVMMStats[i].enmUnit, g_aGVMMStats[i].pszDesc);
+}
+
+
+/**
+ * Updates the ring-0 statistics (the copy).
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pszPat      The pattern.
+ */
+static void stamR3Ring0StatsUpdate(PVM pVM, const char *pszPat)
+{
+    stamR3Ring0StatsUpdateMulti(pVM, &pszPat, 1);
+}
+
+
+/**
+ * Updates the ring-0 statistics.
+ *
+ * The ring-0 statistics aren't directly addressable from ring-3 and
+ * must be copied when needed.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pszPat      The pattern (for knowing when to skip).
+ */
+static void stamR3Ring0StatsUpdateMulti(PVM pVM, const char * const *papszExpressions, unsigned cExpressions)
+{
+    if (!pVM->pSession)
+        return;
+
+    /* GVMM */
+    bool fUpdate = false;
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aGVMMStats); i++)
+        if (stamR3MultiMatch(papszExpressions, cExpressions, NULL, g_aGVMMStats[i].pszName))
+        {
+            fUpdate = true;
+            break;
+        }
+    if (fUpdate)
+    {
+        GVMMQUERYSTATISTICSSREQ Req;
+        Req.Hdr.cbReq = sizeof(Req);
+        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        Req.pSession = pVM->pSession;
+        int rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GVMM_QUERY_STATISTICS, 0, &Req.Hdr);
+        if (RT_SUCCESS(rc))
+            pVM->stam.s.GVMMStats = Req.Stats;
+    }
 }
 
 
@@ -1392,7 +1520,7 @@ static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     Args.pfnPrintf = stamR3EnumDbgfPrintf;
 
     STAM_LOCK_RD(pVM);
-    int rc = stamR3Enum(pVM, cArgs ? paArgs[0].u.pszString : NULL, stamR3PrintOne, &Args);
+    int rc = stamR3Enum(pVM, cArgs ? paArgs[0].u.pszString : NULL, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
     STAM_UNLOCK_RD(pVM);
 
     return rc;
