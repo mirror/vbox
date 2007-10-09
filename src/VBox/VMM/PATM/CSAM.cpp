@@ -2255,17 +2255,21 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
         for (unsigned i=0;i<RT_ELEMENTS(pVM->csam.s.pvCallInstruction);i++)
         {
             RTGCPTR pHandler = pVM->csam.s.pvCallInstruction[i];
-            CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
-            PCSAMPAGE pPage = NULL;
 
-            Log(("CSAMCheckGates: checking previous call instruction %VGv\n", pHandler));
-            STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
-            rc = csamAnalyseCodeStream(pVM, pHandler, pHandler, true, CSAMR3AnalyseCallback, pPage, &cacheRec);
-            STAM_PROFILE_STOP(&pVM->csam.s.StatTime, a);
-            if (rc != VINF_SUCCESS)
+            if (pHandler)
             {
-                Log(("CSAMCheckGates: csamAnalyseCodeStream failed with %d\n", rc));
-                continue;
+                CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
+                PCSAMPAGE pPage = NULL;
+
+                Log(("CSAMCheckGates: checking previous call instruction %VGv\n", pHandler));
+                STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
+                rc = csamAnalyseCodeStream(pVM, pHandler, pHandler, true, CSAMR3AnalyseCallback, pPage, &cacheRec);
+                STAM_PROFILE_STOP(&pVM->csam.s.StatTime, a);
+                if (rc != VINF_SUCCESS)
+                {
+                    Log(("CSAMCheckGates: csamAnalyseCodeStream failed with %d\n", rc));
+                    continue;
+                }
             }
         }
     }
