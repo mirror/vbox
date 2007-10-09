@@ -23,6 +23,8 @@
 #include <VBox/types.h>
 #include <VBox/sup.h>
 
+__BEGIN_DECLS
+
 /** @defgroup grp_GVMM  GVMM - The Global VM Manager.
  * @{
  */
@@ -46,11 +48,64 @@
  */
 #define NIL_GVM_HANDLE 0
 
+
+/**
+ * The scheduler statistics
+ */
+typedef struct GVMMSTATSSCHED
+{
+    /** The number of calls to GVMMR0SchedHalt. */
+    uint64_t        cHaltCalls;
+    /** The number of times we did go to sleep in GVMMR0SchedHalt. */
+    uint64_t        cHaltBlocking;
+    /** The number of times we timed out in GVMMR0SchedHalt. */
+    uint64_t        cHaltTimeouts;
+    /** The number of times we didn't go to sleep in GVMMR0SchedHalt. */
+    uint64_t        cHaltNotBlocking;
+    /** The number of wake ups done during GVMMR0SchedHalt. */
+    uint64_t        cHaltWakeUps;
+
+    /** The number of calls to GVMMR0WakeUp. */
+    uint64_t        cWakeUpCalls;
+    /** The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called. */
+    uint64_t        cWakeUpNotHalted;
+    /** The number of wake ups done during GVMMR0WakeUp (not counting the explicit one). */
+    uint64_t        cWakeUpWakeUps;
+
+    /** The number of calls to GVMMR0SchedPoll. */
+    uint64_t        cPollCalls;
+    /** The number of times the EMT has halted in a GVMMR0SchedPoll call. */
+    uint64_t        cPollHalts;
+    /** The number of wake ups done during GVMMR0SchedPoll. */
+    uint64_t        cPollWakeUps;
+    uint64_t        u64Alignment; /**< padding */
+} GVMMSTATSSCHED;
+/** Pointer to the GVMM scheduler statistics. */
+typedef GVMMSTATSSCHED *PGVMMSTATSSCHED;
+
+/**
+ * The GMM statistics.
+ */
+typedef struct GVMMSTATS
+{
+    /** The VM statistics if a VM was specified. */
+    GVMMSTATSSCHED  SchedVM;
+    /** The sum statistics of all VMs accessible to the caller. */
+    GVMMSTATSSCHED  SchedSum;
+    /** The number of VMs accessible to the caller. */
+    uint32_t        cVMs;
+    /** Alignment padding. */
+    uint32_t        u32Padding;
+} GVMMSTATS;
+/** Pointer to the GVMM statistics. */
+typedef GVMMSTATS *PGVMMSTATS;
+
+
+
 GVMMR0DECL(int)     GVMMR0Init(void);
 GVMMR0DECL(void)    GVMMR0Term(void);
 
 GVMMR0DECL(int)     GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM);
-GVMMR0DECL(int)     GVMMR0CreateVMReq(PSUPVMMR0REQHDR pReqHdr);
 GVMMR0DECL(int)     GVMMR0DisassociateEMTFromVM(PVM pVM);
 GVMMR0DECL(int)     GVMMR0InitVM(PVM pVM);
 GVMMR0DECL(int)     GVMMR0AssociateEMTWithVM(PVM pVM);
@@ -63,7 +118,7 @@ GVMMR0DECL(PVM)     GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
 GVMMR0DECL(int)     GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime);
 GVMMR0DECL(int)     GVMMR0SchedWakeUp(PVM pVM);
 GVMMR0DECL(int)     GVMMR0SchedPoll(PVM pVM, bool fYield);
-
+GVMMR0DECL(int)     GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
 
 
 /**
@@ -83,8 +138,32 @@ typedef struct GVMMCREATEVMREQ
 /** Pointer to a GVMMR0CreateVM request packet. */
 typedef GVMMCREATEVMREQ *PGVMMCREATEVMREQ;
 
+GVMMR0DECL(int)     GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq);
+
+
+/**
+ * Request buffer for GVMMR0QueryStatisticsReq / VMMR0_DO_GVMM_QUERY_STATISTICS.
+ * @see GVMMR0QueryStatistics.
+ */
+typedef struct GVMMQUERYSTATISTICSSREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The support driver session. */
+    PSUPDRVSESSION  pSession;
+    /** The statistics. */
+    GVMMSTATS       Stats;
+} GVMMQUERYSTATISTICSSREQ;
+/** Pointer to a GMMR0AllocatePagesReq / VMMR0_DO_GMM_ALLOCATE_PAGES request buffer. */
+typedef GVMMQUERYSTATISTICSSREQ *PGVMMQUERYSTATISTICSSREQ;
+
+GVMMR0DECL(int)     GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq);
+
+
 
 /** @} */
+
+__END_DECLS
 
 #endif
 
