@@ -1222,6 +1222,14 @@ void helper_external_event(void)
         remR3TimersRun(env);
     }
 }
+/* helper for recording call instruction addresses for later scanning */
+void helper_record_call()
+{
+    if (    !(env->state & CPU_RAW_RING0)
+        &&  (env->cr[0] & CR0_PG_MASK)
+        &&  !(env->eflags & X86_EFL_IF))
+        remR3RecordCall(env);
+}
 #endif /* VBOX */
 
 /* real mode interrupt */
@@ -2247,7 +2255,7 @@ void helper_lcall_protected_T0_T1(int shift, int next_eip_addend)
     uint32_t ss, ss_e1, ss_e2, sp, type, ss_dpl, sp_mask;
     uint32_t val, limit, old_sp_mask;
     target_ulong ssp, old_ssp, next_eip, new_eip;
-    
+
     new_cs = T0;
     new_eip = T1;
     next_eip = env->eip + next_eip_addend;
