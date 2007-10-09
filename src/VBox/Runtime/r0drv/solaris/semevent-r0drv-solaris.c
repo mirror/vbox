@@ -133,7 +133,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     return VINF_SUCCESS;
 }
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterruptible)
 {
     int rc;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
@@ -162,11 +162,14 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
         else
             cTicks = 0;
         timeout += cTicks;
-        
+
         ASMAtomicIncU32(&pEventInt->cWaiters);
 
-        /** @todo r=bird: Is this interruptible or non-interruptible? */
-        rc = cv_timedwait_sig(&pEventInt->Cnd, &pEventInt->Mtx, timeout);
+        if (fInterruptible)
+            rc = cv_timedwait_sig(&pEventInt->Cnd, &pEventInt->Mtx, timeout);
+        else
+            rc = cv_timedwait(&pEventInt->Cnd, &pEventInt->Mtx, timeout);
+
         if (rc > 0)
         {
             /* Retured due to call to cv_signal() or cv_broadcast() */
@@ -206,5 +209,14 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
     return rc;
 }
 
-/** @todo Implement RTSemEventWaitNoResume (interruptible variant of the uninterruptible RTSemEventWait()). */
 
+RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
+{
+    return rtSemEventWait(EventSem, cMillies, false /* not interruptible */);
+}
+
+
+RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
+{
+    return rtSemEventWait(EventSem, cMillies, true /* interruptible */);
+}

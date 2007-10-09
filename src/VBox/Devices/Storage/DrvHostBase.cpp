@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * Host base drive access driver
+ * DrvHostBase - Host base drive access driver.
  */
 
 /*
@@ -45,7 +44,9 @@
 # include <fcntl.h>
 # include <errno.h>
 # include <stropts.h>
+# include <malloc.h>
 # include <sys/dkio.h>
+extern "C" char *getfullblkname(char *);
 
 #elif defined(RT_OS_WINDOWS)
 # define WIN32_NO_STATUS
@@ -733,6 +734,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
 #endif /* RT_OS_DARWIN */
 
 
+#ifndef RT_OS_SOLARIS
 /**
  * Wrapper for open / RTFileOpen / IOKit.
  *
@@ -919,7 +921,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     IOObjectRelease(DVDServices);
     return rc;
 
-#elif defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_LINUX)
     /** @todo we've got RTFILE_O_NON_BLOCK now. Change the code to use RTFileOpen. */
     int FileDevice = open(pThis->pszDeviceOpen, (pThis->fReadOnlyConfig ? O_RDONLY : O_RDWR) | O_NONBLOCK);
     if (FileDevice < 0)
@@ -932,6 +934,30 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
                       (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
 #endif
 }
+
+#else   /* RT_OS_SOLARIS */
+
+/**
+ * Solaris wrapper for RTFileOpen.
+ *
+ * Solaris has to deal with two filehandles, a block and a raw one. Rather than messing
+ * with drvHostBaseOpen's function signature & body, having a seperate one is better.
+ *
+ * @returns VBox status code.
+ */
+static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pBlockFileDevice, PRTFILE pFileRawDevice, bool fReadOnly)
+{
+    unsigned fFlags = (pThis->fReadOnlyConfig ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_NON_BLOCK;
+    int rc = RTFileOpen(pBlockFileDevice, pThis->pszDeviceOpen, fFlags);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileOpen(pFileRawDevice, pThis->pszRawDeviceOpen, fFlags);
+        if (RT_FAILURE(rc))
+            RTFileClose(BlockFileDevice);
+    }
+    return rc;
+}
+#endif  /* RT_OS_SOLARIS */
 
 
 /**
@@ -950,13 +976,22 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
     LogFlow(("%s-%d: drvHostBaseReopen: '%s'\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, pThis->pszDeviceOpen));
 
     RTFILE FileDevice;
+#ifdef RT_OS_SOLARIS
+    RTFILE FileRawDevice;
+    int rc = drvHostBaseOpen(pThis, &FileDevice, &FileRawDevice, pThis->fReadOnlyConfig);
+#else
     int rc = drvHostBaseOpen(pThis, &FileDevice, pThis->fReadOnlyConfig);
+#endif
     if (VBOX_FAILURE(rc))
     {
         if (!pThis->fReadOnlyConfig)
         {
             LogFlow(("%s-%d: drvHostBaseReopen: '%s' - retry readonly (%Vrc)\n", pThis->pDrvIns->pDrvReg->szDriverName, pThis->pDrvIns->iInstance, pThis->pszDeviceOpen, rc));
+#ifdef RT_OS_SOLARIS
+            rc = drvHostBaseOpen(pThis, &FileDevice, &FileRawDevice, false);
+#else
             rc = drvHostBaseOpen(pThis, &FileDevice, false);
+#endif
         }
         if (VBOX_FAILURE(rc))
         {
@@ -968,6 +1003,12 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
     }
     else
         pThis->fReadOnly = pThis->fReadOnlyConfig;
+
+#ifdef RT_OS_SOLARIS
+    if (pThis->FileRawDevice != NIL_RTFILE)
+        RTFileClose(pThis->FileRawDevice);
+    pThis->FileRawDevice = FileRawDevice;
+#endif
 
     if (pThis->FileDevice != NIL_RTFILE)
         RTFileClose(pThis->FileDevice);
@@ -1022,7 +1063,7 @@ static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
      * for secondary storage devices.
      */
     struct dk_minfo MediaInfo;
-    if (ioctl(pThis->FileDevice, DKIOCGMEDIAINFO, &MediaInfo) == 0)
+    if (ioctl(pThis->FileRawDevice, DKIOCGMEDIAINFO, &MediaInfo) == 0)
     {
         *pcb = MediaInfo.dki_capacity * (uint64_t)MediaInfo.dki_lbsize;
         return VINF_SUCCESS;
@@ -1561,6 +1602,21 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     }
 #endif
 
+#ifdef RT_OS_SOLARIS
+    if (pThis->FileRawDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->FileRawDevice);
+        AssertRC(rc);
+        pThis->FileRawDevice = NIL_RTFILE;
+    }
+
+    if (pThis->pszRawDeviceOpen)
+    {
+        RTStrFree(pThis->pszRawDeviceOpen);
+        pThis->pszRawDeviceOpen = NULL;
+    }
+#endif
+
     if (pThis->pszDevice)
     {
         MMR3HeapFree(pThis->pszDevice);
@@ -1617,6 +1673,9 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     pThis->pDASession                       = NULL;
 #else
     pThis->FileDevice                       = NIL_RTFILE;
+#endif
+#ifdef RT_OS_SOLARIS
+    pThis->FileRawDevice                    = NIL_RTFILE;
 #endif
     pThis->enmType                          = enmType;
     //pThis->cErrors                          = 0;
@@ -1757,9 +1816,19 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     }
     pThis->fUnitMask = 1 << iBit;
     RTStrAPrintf(&pThis->pszDeviceOpen, "\\\\.\\%s", pThis->pszDevice);
+
+#elif defined(RT_OS_SOLARIS)
+    char *pszBlockDevName = getfullblkname(pThis->pszDevice);
+    if (!pszBlockDevName)
+        return VERR_NO_MEMORY;
+    pThis->pszDeviceOpen = RTStrDup(pszBlockDevName);  /* for RTStrFree() */
+    free(pszBlockDevName);
+    pThis->pszRawDeviceOpen = RTStrDup(pThis->pszDevice);
+
 #else
     pThis->pszDeviceOpen = RTStrDup(pThis->pszDevice);
 #endif
+
     if (!pThis->pszDeviceOpen)
         return VERR_NO_MEMORY;
 
@@ -1858,11 +1927,17 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
             pszDevice = szPathReal;
         pThis->FileDevice = NIL_RTFILE;
 #endif
-        /* Disable CD/DVD passthrough in case it was enabled. Would cause
+#ifdef RT_OS_SOLARIS
+        pThis->FileRawDevice = NIL_RTFILE;
+#endif
+
+        /*
+         * Disable CD/DVD passthrough in case it was enabled. Would cause
          * weird failures later when the guest issues commands. These would
          * all fail because of the invalid file handle. So use the normal
          * virtual CD/DVD code, which deals more gracefully with unavailable
-         * "media" - actually a complete drive in this case. */
+         * "media" - actually a complete drive in this case.
+         */
         pThis->IBlock.pfnSendCmd = NULL;
         AssertMsgFailed(("Could not open host device %s, rc=%Vrc\n", pszDevice, rc));
         switch (rc)

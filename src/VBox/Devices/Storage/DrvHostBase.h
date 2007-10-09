@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * Host base drive access driver
+ * DrvHostBase - Host base drive access driver.
  */
 
 /*
@@ -52,6 +51,10 @@ typedef struct DRVHOSTBASE
     char                   *pszDevice;
     /** Device name to open (RTStrFree). */
     char                   *pszDeviceOpen;
+#ifdef RT_OS_SOLARIS
+    /** Device name of raw device (RTStrFree). */
+    char                   *pszRawDeviceOpen;
+#endif
     /** Uuid of the drive. */
     RTUUID                  Uuid;
 
@@ -76,6 +79,10 @@ typedef struct DRVHOSTBASE
 #ifndef RT_OS_DARWIN
     /** The filehandle of the device. */
     RTFILE                  FileDevice;
+#endif
+#ifdef RT_OS_SOLARIS
+    /** The raw filehandle of the device. */
+    RTFILE                  FileRawDevice;
 #endif
 
     /** Handle of the poller thread. */
