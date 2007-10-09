@@ -5482,14 +5482,20 @@ static int handleControlVM(int argc, char *argv[],
                 rc = virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                 if (FAILED(rc) || !floppyImage)
                 {
-                    /* must be a filename */
-                    Guid emptyUUID;
-                    CHECK_ERROR(virtualBox, OpenFloppyImage(Bstr(argv[2]), emptyUUID, floppyImage.asOutParam()));
-                    if (SUCCEEDED(rc) && floppyImage)
+                    /* must be a filename, check if it's in the collection */
+                    ComPtr<IFloppyImageCollection> floppyImages;
+                    virtualBox->COMGETTER(FloppyImages)(floppyImages.asOutParam());
+                    rc = floppyImages->FindByPath(Bstr(argv[2]), floppyImage.asOutParam());
+                    /* not registered, do that on the fly */
+                    if (!floppyImage)
                     {
-                        /** @todo first iterate through the collection and try to find the image */
-                        /* time to register the image */
-                        CHECK_ERROR(virtualBox, RegisterFloppyImage(floppyImage));
+                        Guid emptyUUID;
+                        CHECK_ERROR(virtualBox, OpenFloppyImage(Bstr(argv[2]), emptyUUID, floppyImage.asOutParam()));
+                        if (SUCCEEDED(rc) && floppyImage)
+                        {
+                            /* time to register the image */
+                            CHECK_ERROR(virtualBox, RegisterFloppyImage(floppyImage));
+                        }
                     }
                 }
                 if (!floppyImage)
