@@ -126,6 +126,122 @@
         <source>&lt;key_%1&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F5</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F7</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F8</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F10</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F11</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F12</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F13</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F14</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F15</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F16</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F17</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F18</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F19</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F20</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F21</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F22</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F23</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F24</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIMessageBox</name>
@@ -271,23 +387,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Power off the machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Revert to the current snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -307,11 +411,32 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+O</source>
+        <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel</source>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
+&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
+&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
+&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
+&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
+&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -727,6 +852,26 @@
         <comment>Shared folders tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
@@ -776,10 +921,6 @@
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1010,18 +1151,6 @@
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not determine the file size.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not connect to the server (%1).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not download the file (%1).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1615,6 +1744,11 @@
         <comment>serial port</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Custom Hard Disk</source>
+        <comment>DiskStorageType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -1718,10 +1852,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+A</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;USB Device Filters</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1795,10 +1925,6 @@
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1947,11 +2073,18 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+V</source>
+        <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxLicenseViewer</name>
+    <message>
+        <source>I &amp;Agree</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
+        <source>I &amp;Disagree</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1974,19 +2107,11 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Search for the previous occurrence of the string</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+N</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2051,15 +2176,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+D</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Fixed-size image</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2647,6 +2764,81 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxRegistrationDlg</name>
+    <message>
+        <source>VirtualBox Registration Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter your full name using Latin characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;E-mail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter your valid e-mail address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Please do not use this information to contact me</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the VirtualBox Registration Form!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Confirm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not locate the registration form on the server (response: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
@@ -2894,6 +3086,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Show the log files of the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
@@ -3004,10 +3204,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3212,10 +3408,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+O</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3413,15 +3605,7 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Floppy Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3437,15 +3621,7 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+H</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3533,15 +3709,7 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3566,10 +3734,6 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3600,19 +3764,11 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+G</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Generates a new random MAC address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+B</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3656,10 +3812,6 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3685,6 +3837,10 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Selects the terminate application.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3736,10 +3892,6 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3962,15 +4114,7 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+P</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4010,19 +4154,11 @@ value.&lt;/qt&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+D</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4059,10 +4195,6 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+U</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4151,10 +4283,6 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4366,10 +4494,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4382,10 +4506,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Alt+R</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4395,10 +4515,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&amp;Enable Passthrough</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Alt+E</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

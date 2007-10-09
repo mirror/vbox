@@ -126,6 +126,122 @@
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;klawisz_%1&gt;</translation>
     </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F2</source>
+        <translation type="unfinished">F2</translation>
+    </message>
+    <message>
+        <source>F3</source>
+        <translation type="unfinished">F3</translation>
+    </message>
+    <message>
+        <source>F4</source>
+        <translation type="unfinished">F4</translation>
+    </message>
+    <message>
+        <source>F5</source>
+        <translation type="unfinished">F5</translation>
+    </message>
+    <message>
+        <source>F6</source>
+        <translation type="unfinished">F6</translation>
+    </message>
+    <message>
+        <source>F7</source>
+        <translation type="unfinished">F7</translation>
+    </message>
+    <message>
+        <source>F8</source>
+        <translation type="unfinished">F8</translation>
+    </message>
+    <message>
+        <source>F9</source>
+        <translation type="unfinished">F9</translation>
+    </message>
+    <message>
+        <source>F10</source>
+        <translation type="unfinished">F10</translation>
+    </message>
+    <message>
+        <source>F11</source>
+        <translation type="unfinished">F11</translation>
+    </message>
+    <message>
+        <source>F12</source>
+        <translation type="unfinished">F12</translation>
+    </message>
+    <message>
+        <source>F13</source>
+        <translation type="unfinished">F13</translation>
+    </message>
+    <message>
+        <source>F14</source>
+        <translation type="unfinished">F14</translation>
+    </message>
+    <message>
+        <source>F15</source>
+        <translation type="unfinished">F15</translation>
+    </message>
+    <message>
+        <source>F16</source>
+        <translation type="unfinished">F16</translation>
+    </message>
+    <message>
+        <source>F17</source>
+        <translation type="unfinished">F17</translation>
+    </message>
+    <message>
+        <source>F18</source>
+        <translation type="unfinished">F18</translation>
+    </message>
+    <message>
+        <source>F19</source>
+        <translation type="unfinished">F19</translation>
+    </message>
+    <message>
+        <source>F20</source>
+        <translation type="unfinished">F20</translation>
+    </message>
+    <message>
+        <source>F21</source>
+        <translation type="unfinished">F21</translation>
+    </message>
+    <message>
+        <source>F22</source>
+        <translation type="unfinished">F22</translation>
+    </message>
+    <message>
+        <source>F23</source>
+        <translation type="unfinished">F23</translation>
+    </message>
+    <message>
+        <source>F24</source>
+        <translation type="unfinished">F24</translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIMessageBox</name>
@@ -277,7 +393,7 @@
     </message>
     <message>
         <source>Alt+S</source>
-        <translation>Alt+Z</translation>
+        <translation type="obsolete">Alt+Z</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
@@ -285,7 +401,7 @@
     </message>
     <message>
         <source>Alt+P</source>
-        <translation>Alt+W</translation>
+        <translation type="obsolete">Alt+W</translation>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
@@ -293,7 +409,7 @@
     </message>
     <message>
         <source>Alt+R</source>
-        <translation>Alt+P</translation>
+        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
@@ -313,11 +429,36 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+O</translation>
+        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation>Anuluj</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
+&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
+&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
+&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
+&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
+&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -834,6 +975,26 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
         <comment>Shared folders tooltip</comment>
         <translation></translation>
     </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished">&amp;Zawartość...</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation type="unfinished">Pokaż zawartość pomocy online</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
@@ -887,7 +1048,7 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+O</translation>
+        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Accept dialog</source>
@@ -1129,15 +1290,15 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     </message>
     <message>
         <source>Could not determine the file size.</source>
-        <translation>Nie udało się określić rozmiaru pliku.</translation>
+        <translation type="obsolete">Nie udało się określić rozmiaru pliku.</translation>
     </message>
     <message>
         <source>Could not connect to the server (%1).</source>
-        <translation>Nie udało się połączyć z serwerem (%1).</translation>
+        <translation type="obsolete">Nie udało się połączyć z serwerem (%1).</translation>
     </message>
     <message>
         <source>Could not download the file (%1).</source>
-        <translation>Nie udało się pobrać pliku (%1).</translation>
+        <translation type="obsolete">Nie udało się pobrać pliku (%1).</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -1735,6 +1896,11 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
         <comment>serial port</comment>
         <translation>Użytkownika</translation>
     </message>
+    <message>
+        <source>Custom Hard Disk</source>
+        <comment>DiskStorageType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -1838,10 +2004,6 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
         <translation>&amp;Automatycznie przechwyć klawiaturę</translation>
     </message>
     <message>
-        <source>Alt+A</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;USB Device Filters</source>
         <translation>Filtry urządzeń &amp;USB</translation>
     </message>
@@ -1916,10 +2078,6 @@ nie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywo
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation></translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -2076,12 +2234,19 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
         <translation>Włącz obsługę &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Decyduje o tym, czy maszyny wirtualne powinny domyślnie korzystać z rozszerzeń sprzętowej wirtualizacji (np. Intel VT-x lub AMD-V), udostępnianych przez procesor Twojego komputera.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxLicenseViewer</name>
+    <message>
+        <source>I &amp;Agree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;Disagree</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2104,7 +2269,7 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
     </message>
     <message>
         <source>Alt+P</source>
-        <translation>Alt+P</translation>
+        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
@@ -2116,7 +2281,7 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
     </message>
     <message>
         <source>Alt+N</source>
-        <translation>Alt+N</translation>
+        <translation type="obsolete">Alt+N</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
@@ -2188,7 +2353,7 @@ takim samym rozmiarze, jak rozmiar wirtualnego dysku.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation>Alt+Y</translation>
+        <translation type="obsolete">Alt+Y</translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
@@ -2196,7 +2361,7 @@ takim samym rozmiarze, jak rozmiar wirtualnego dysku.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>Alt+O</translation>
+        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -2839,6 +3004,81 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nie podłączyłeś dysku twardego do maszyny wirtualnej. Maszyna nie będzie mogła wystartować systemu, dopóki nie podłączysz dysku twardego z zainstalowanym systemem operacyjnym lub innego bootwalnego medium, korzystając z okna ustawień maszyny lub pomocy Kreatora Pierwszego Uruchomienia.&lt;/p&gt;&lt;p&gt;Czy chcesz kontynuować?&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxRegistrationDlg</name>
+    <message>
+        <source>VirtualBox Registration Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="unfinished">&amp;Nazwa</translation>
+    </message>
+    <message>
+        <source>Enter your full name using Latin characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;E-mail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter your valid e-mail address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Please do not use this information to contact me</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the VirtualBox Registration Form!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Confirm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="unfinished">Upłynął czas limitu odpowiedzi.</translation>
+    </message>
+    <message>
+        <source>Could not locate the registration form on the server (response: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
@@ -3086,6 +3326,14 @@ Będzie ona później używana przez pozostałe moduły VirtualBox, aby pomóc C
         <source>Show the log files of the selected virtual machine</source>
         <translation>Pokaż pliki z logami wybranej na liście maszyny wirtualnej</translation>
     </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
@@ -3226,10 +3474,6 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation></translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3439,10 +3683,6 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation></translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3667,7 +3907,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+P</translation>
+        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
@@ -3675,7 +3915,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>Alt+Y</translation>
+        <translation type="obsolete">Alt+Y</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
@@ -3691,7 +3931,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+H</source>
-        <translation>Alt+N</translation>
+        <translation type="obsolete">Alt+N</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -3699,7 +3939,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+I</source>
-        <translation>Alt+L</translation>
+        <translation type="obsolete">Alt+L</translation>
     </message>
     <message>
         <source>VDM</source>
@@ -3787,7 +4027,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+S</source>
-        <translation>Alt+Z</translation>
+        <translation type="obsolete">Alt+Z</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
@@ -3795,7 +4035,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+R</source>
-        <translation>Alt+O</translation>
+        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>&amp;Close</source>
@@ -3831,7 +4071,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>Alt+S</translation>
+        <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
         <source>Close</source>
@@ -3861,20 +4101,12 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
         <translation>&amp;Generuj</translation>
     </message>
     <message>
-        <source>Alt+G</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Generates a new random MAC address.</source>
         <translation>Generuje nowy, przypadkowy adres MAC.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
         <translation>Ka&amp;bel podłączony</translation>
-    </message>
-    <message>
-        <source>Alt+B</source>
-        <translation></translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
@@ -3934,7 +4166,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation>Pokazuje adres sieciowy MAC konfigurowanej karty. Adres składa się z 12 znaków z zakresu {0-9,A-F}.</translation>
+        <translation type="obsolete">Pokazuje adres sieciowy MAC konfigurowanej karty. Adres składa się z 12 znaków z zakresu {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
@@ -3972,6 +4204,10 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     <message>
         <source>Selects the terminate application.</source>
         <translation>Wybiera aplikację (skrypt) dekonfigurującą.</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4026,7 +4262,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+S</translation>
+        <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
@@ -4249,7 +4485,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+A</translation>
+        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -4257,7 +4493,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+P</source>
-        <translation>Alt+C</translation>
+        <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -4297,7 +4533,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+D</source>
-        <translation>Alt+N</translation>
+        <translation type="obsolete">Alt+N</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
@@ -4309,7 +4545,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+I</source>
-        <translation>Alt+P</translation>
+        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
@@ -4349,7 +4585,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Alt+U</source>
-        <translation>Alt+W</translation>
+        <translation type="obsolete">Alt+W</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -4454,10 +4690,6 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation></translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -4711,10 +4943,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Włącz &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation>Kiedy zaznaczone, maszyna wirtualna będzie korzystać z rozszerzeń sprzętowej wirtualizacji (np. Intel VT-x lub AMD-V), udostępnianych przez procesor Twojego komputera. Stan nieaktywny przełącznika oznacza, że opcja ta będzie zależna od ustawienia w Ustawieniach Globalnych.</translation>
     </message>
@@ -4728,7 +4956,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Alt+R</source>
-        <translation>Alt+A</translation>
+        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
@@ -4744,7 +4972,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Alt+E</source>
-        <translation>Alt+W</translation>
+        <translation type="obsolete">Alt+W</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>

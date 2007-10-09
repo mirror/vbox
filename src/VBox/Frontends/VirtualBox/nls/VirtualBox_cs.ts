@@ -126,6 +126,122 @@
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;klávesa_%1&gt;</translation>
     </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F5</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F7</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F8</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F10</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F11</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F12</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F13</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F14</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F15</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F16</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F17</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F18</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F19</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F20</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F21</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F22</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F23</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F24</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIMessageBox</name>
@@ -272,24 +388,12 @@
         <translation>&amp;Uložit stav počítače</translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Power off the machine</source>
         <translation>&amp;Vypnout počítač</translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Revert to the current snapshot</source>
         <translation>Nav&amp;rátit k aktuálnímu snímku</translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
-        <translation></translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
@@ -308,12 +412,33 @@
         <translation></translation>
     </message>
     <message>
-        <source>Alt+O</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Zrušit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
+&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
+&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
+&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
+&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
+&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -825,6 +950,26 @@
         <comment>Shared folders tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Žádné sdílené adresáře&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished">&amp;Obsah...</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation type="unfinished">Zobrazí obsah online nápovědy</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
@@ -874,10 +1019,6 @@
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation></translation>
     </message>
     <message>
@@ -1112,15 +1253,15 @@
     </message>
     <message>
         <source>Could not determine the file size.</source>
-        <translation>Nelze určit velikost souboru.</translation>
+        <translation type="obsolete">Nelze určit velikost souboru.</translation>
     </message>
     <message>
         <source>Could not connect to the server (%1).</source>
-        <translation>Nelze se připojit k serveru (%1).</translation>
+        <translation type="obsolete">Nelze se připojit k serveru (%1).</translation>
     </message>
     <message>
         <source>Could not download the file (%1).</source>
-        <translation>Nelze stáhnout soubor (%1).</translation>
+        <translation type="obsolete">Nelze stáhnout soubor (%1).</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -1718,6 +1859,11 @@
         <comment>serial port</comment>
         <translation>Definováno uživatelem</translation>
     </message>
+    <message>
+        <source>Custom Hard Disk</source>
+        <comment>DiskStorageType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -1821,10 +1967,6 @@
         <translation>&amp;Automaticky odchytávat klávesnici</translation>
     </message>
     <message>
-        <source>Alt+A</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;USB Device Filters</source>
         <translation>Filtry &amp;USB zařízení</translation>
     </message>
@@ -1898,10 +2040,6 @@
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation></translation>
     </message>
     <message>
@@ -2054,12 +2192,19 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation>Povolit &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Určuje, zda se virtuální počítač bude standardně snažit využít virtualizační rozšíření hostitelova CPU jako Intel VT-x a AMD-V nebo ne.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxLicenseViewer</name>
+    <message>
+        <source>I &amp;Agree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;Disagree</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2081,20 +2226,12 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation>&amp;Předchozí</translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Search for the previous occurrence of the string</source>
         <translation>Hledat předchozí výskyt řetězce</translation>
     </message>
     <message>
         <source>&amp;Next</source>
         <translation>&amp;Další</translation>
-    </message>
-    <message>
-        <source>Alt+N</source>
-        <translation></translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
@@ -2165,16 +2302,8 @@ stejné velikosti jako velikost virtuálního pevného disku.&lt;/p&gt;</transla
         <translation>&amp;Dynamicky se zvětšující obraz</translation>
     </message>
     <message>
-        <source>Alt+D</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Fixed-size image</source>
         <translation>&amp;Obraz o pevně dané velikosti</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation></translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -2800,6 +2929,81 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nepřipojili jste pevný disk k novému virtuálnímu počítači. Počítač nebude schopen bootovat, dokud nepřipojíte pevný disk s hostovaným operačním systémem nebo nějaké jiné bootovatelné médium pomocí dialogu nastavení počítače nebo Průvodce prvním spuštěním.&lt;/p&gt;&lt;p&gt;Chcete pokračovat?&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxRegistrationDlg</name>
+    <message>
+        <source>VirtualBox Registration Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="unfinished">&amp;Jméno</translation>
+    </message>
+    <message>
+        <source>Enter your full name using Latin characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;E-mail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter your valid e-mail address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Please do not use this information to contact me</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the VirtualBox Registration Form!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Confirm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="unfinished">Spojení vypršelo.</translation>
+    </message>
+    <message>
+        <source>Could not locate the registration form on the server (response: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
@@ -3047,6 +3251,14 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>Show the log files of the selected virtual machine</source>
         <translation>Zobrazí soubory se záznamy vybraného virtuálního počítače</translation>
     </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
@@ -3186,10 +3398,6 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation></translation>
     </message>
     <message>
@@ -3399,10 +3607,6 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation></translation>
     </message>
     <message>
@@ -3627,16 +3831,8 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>&amp;CD/DVD-ROM mechaniku</translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Floppy Device</source>
         <translation>&amp;Disketovou mechaniku</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation></translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
@@ -3651,16 +3847,8 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>&amp;Hostitelská jednotka</translation>
     </message>
     <message>
-        <source>Alt+H</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Image File</source>
         <translation>&amp;Souboru obrazu</translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
-        <translation></translation>
     </message>
     <message>
         <source>VDM</source>
@@ -3747,16 +3935,8 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>&amp;Uložit</translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation>&amp;Aktualizovat</translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
-        <translation></translation>
     </message>
     <message>
         <source>&amp;Close</source>
@@ -3787,10 +3967,6 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>&amp;Hledat</translation>
     </message>
     <message>
-        <source>Alt+F</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Close</source>
         <translation>Zavřít</translation>
     </message>
@@ -3818,20 +3994,12 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>&amp;Generovat</translation>
     </message>
     <message>
-        <source>Alt+G</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Generates a new random MAC address.</source>
         <translation>Vygeneruje novou náhodnou MAC adresu.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
         <translation>Ka&amp;bel připojen</translation>
-    </message>
-    <message>
-        <source>Alt+B</source>
-        <translation></translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
@@ -3875,7 +4043,7 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation>Ukazuje MAC adresu této karty. Skládá se přesně z 12 znaků vybraných z {0-9,A-F}.</translation>
+        <translation type="obsolete">Ukazuje MAC adresu této karty. Skládá se přesně z 12 znaků vybraných z {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
@@ -3904,6 +4072,10 @@ hodnotu.&lt;/qt&gt;</translation>
     <message>
         <source>Selects the terminate application.</source>
         <translation>Vybírá aplikaci pro ukončení.</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3955,10 +4127,6 @@ hodnotu.&lt;/qt&gt;</translation>
     <message>
         <source>&amp;Create Pipe</source>
         <translation>Vytvořit r&amp;ouru</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation></translation>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
@@ -4180,16 +4348,8 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>Povolit A&amp;CPI</translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Enable IO A&amp;PIC</source>
         <translation>Povolit IO A&amp;PIC</translation>
-    </message>
-    <message>
-        <source>Alt+P</source>
-        <translation></translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -4228,20 +4388,12 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>Hostitelská &amp;disketová mechanika</translation>
     </message>
     <message>
-        <source>Alt+D</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation>Připojí určenou hostitelskou disketovou mechaniku k virtuální disketové mechanice.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
         <translation>&amp;Souboru obrazu</translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
-        <translation></translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
@@ -4278,10 +4430,6 @@ hodnotu.&lt;/qt&gt;</translation>
     <message>
         <source>Enable &amp;USB Controller</source>
         <translation>Povolit &amp;USB ovladač</translation>
-    </message>
-    <message>
-        <source>Alt+U</source>
-        <translation></translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -4385,10 +4533,6 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
         <translation></translation>
     </message>
     <message>
@@ -4645,10 +4789,6 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation>Povolit &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation>Je-li zatrženo, pokusí se virtuální počítač využít virtualizačních rozšíření hostitelova CPU jako jsou Intel VT-x a AMD-V. Zašedlé políčko znamená, že je tato volba určena podle hodnoty v globálním nastavení.</translation>
     </message>
@@ -4661,10 +4801,6 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation>Pamatovat si &amp;média připojená za běhu</translation>
     </message>
     <message>
-        <source>Alt+R</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>Je-li zatrženo, bude jakákoliv změna připojených CD/DVD nebo disket provedená za běhu počítače uložena v souboru nastavení za účelem zachování konfigurace připojených médií mezi starty.</translation>
     </message>
@@ -4675,10 +4811,6 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     <message>
         <source>&amp;Enable Passthrough</source>
         <translation>Povolit př&amp;edávání</translation>
-    </message>
-    <message>
-        <source>Alt+E</source>
-        <translation></translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
