@@ -40,6 +40,7 @@
 
 class QAction;
 class QLabel;
+class QToolButton;
 
 // Auxiliary types
 ////////////////////////////////////////////////////////////////////////////////
@@ -430,6 +431,8 @@ public:
     static QIconSet iconSetEx (const char *aNormal, const char *aSmallNormal,
                                const char *aDisabled = 0, const char *aSmallDisabled = 0,
                                const char *aActive = 0, const char *aSmallActive = 0);
+
+    static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
 
     static QRect normalizeGeometry (const QRect &aRect, const QRect &aBoundRect,
                                     bool aCanResize = true);

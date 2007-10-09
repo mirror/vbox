@@ -36,6 +36,7 @@
 #include <qfiledialog.h>
 #include <qimage.h>
 #include <qlabel.h>
+#include <qtoolbutton.h>
 
 #ifdef Q_WS_X11
 #include <qtextbrowser.h>
@@ -2401,6 +2402,35 @@ iconSetEx (const char *aNormal, const char *aSmallNormal,
     }
 
     return iconSet;
+}
+
+/** 
+ *  Replacement for QToolButton::setTextLabel() that handles the shortcut
+ *  letter (if it is present in the argument string) as if it were a setText()
+ *  call: the shortcut letter is used to automatically assign an "Alt+<letter>"
+ *  accelerator key sequence to the given tool button.
+ *
+ *  @note This method preserves the icon set if it was assigned before. Only
+ *  the text label and the accelerator are changed.
+ * 
+ *  @param aToolButton  Tool button to set the text label on.
+ *  @param aTextLabel   Text label to set.
+ */
+/* static */
+void VBoxGlobal::setTextLabel (QToolButton *aToolButton,
+                               const QString &aTextLabel)
+{
+    AssertReturnVoid (aToolButton != NULL);
+
+    /* remember the icon set as setText() will kill it */
+    QIconSet iset = aToolButton->iconSet();
+    /* re-use the setText() method to detect and set the accelerator */
+    aToolButton->setText (aTextLabel);
+    QKeySequence accel = aToolButton->accel();
+    aToolButton->setTextLabel (aTextLabel);
+    aToolButton->setIconSet (iset);
+    /* set the accel last as setIconSet() would kill it */
+    aToolButton->setAccel (accel);
 }
 
 /**
