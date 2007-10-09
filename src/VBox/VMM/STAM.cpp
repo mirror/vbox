@@ -640,11 +640,15 @@ static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg)
     switch (pDesc->enmType)
     {
         case STAMTYPE_COUNTER:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && pDesc->u.pCounter->c == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<Counter c=\"%lld\"", pDesc->u.pCounter->c);
             break;
 
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && pDesc->u.pProfile->cPeriods == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<Profile cPeriods=\"%lld\" cTicks=\"%lld\" cTicksMin=\"%lld\" cTicksMax=\"%lld\"",
                                  pDesc->u.pProfile->cPeriods, pDesc->u.pProfile->cTicks, pDesc->u.pProfile->cTicksMin,
                                  pDesc->u.pProfile->cTicksMax);
@@ -652,6 +656,8 @@ static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg)
 
         case STAMTYPE_RATIO_U32:
         case STAMTYPE_RATIO_U32_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && !pDesc->u.pRatioU32->u32A && !pDesc->u.pRatioU32->u32B)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<Ratio32 u32A=\"%lld\" u32B=\"%lld\"",
                                  pDesc->u.pRatioU32->u32A, pDesc->u.pRatioU32->u32B);
             break;
@@ -666,41 +672,57 @@ static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg)
 
         case STAMTYPE_U8:
         case STAMTYPE_U8_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu8 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<U8 val=\"%u\"", *pDesc->u.pu8);
             break;
 
         case STAMTYPE_X8:
         case STAMTYPE_X8_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu8 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<X8 val=\"%#x\"", *pDesc->u.pu8);
             break;
 
         case STAMTYPE_U16:
         case STAMTYPE_U16_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu16 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<U16 val=\"%u\"", *pDesc->u.pu16);
             break;
 
         case STAMTYPE_X16:
         case STAMTYPE_X16_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu16 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<X16 val=\"%#x\"", *pDesc->u.pu16);
             break;
 
         case STAMTYPE_U32:
         case STAMTYPE_U32_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu32 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<U32 val=\"%u\"", *pDesc->u.pu32);
             break;
 
         case STAMTYPE_X32:
         case STAMTYPE_X32_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu32 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<X32 val=\"%#x\"", *pDesc->u.pu32);
             break;
 
         case STAMTYPE_U64:
         case STAMTYPE_U64_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu64 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<U64 val=\"%llu\"", *pDesc->u.pu64);
             break;
 
         case STAMTYPE_X64:
         case STAMTYPE_X64_RESET:
+            if (pDesc->enmVisibility == STAMVISIBILITY_USED && *pDesc->u.pu64 == 0)
+                return VINF_SUCCESS;
             stamR3SnapshotPrintf(pThis, "<X64 val=\"%#llx\"", *pDesc->u.pu64);
             break;
 
@@ -959,6 +981,7 @@ static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg)
 
             pArgs->pfnPrintf(pArgs, "%-32s %8llu %s\n", pDesc->pszName, pDesc->u.pCounter->c, STAMR3GetUnit(pDesc->enmUnit));
             break;
+
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
         {
