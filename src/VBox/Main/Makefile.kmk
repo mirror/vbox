@@ -143,6 +143,8 @@ endif
 VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
+VBoxSVC_LIBS.solaris = \
+        adm.so
 
 VBoxSVC_SOURCES = \
 	Logging.cpp \
@@ -189,7 +191,7 @@ VBoxSVC_SOURCES.win = \
 	win32/svchlp.cpp \
 	win32/VBoxSVC.rc
 
-VBoxSVC_SOURCES.linux = \
+vBoxSVC_SOURCES.linux = \
 	linux/vbox-libhal.cpp
 
 VBoxSVC_SOURCES.solaris = \
