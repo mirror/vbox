@@ -176,6 +176,10 @@ typedef struct CSAM
     uint32_t            cPossibleCodePages;
     RTGCPTR             pvPossibleCodePage[CSAM_MAX_CODE_PAGES_FLUSH];
 
+    /* call addresses reported by the recompiler */
+    RTGCPTR             pvCallInstruction[128];
+    RTUINT              iCallInstruction;
+
     /* Set when scanning has started. */
     bool                fScanningStarted;
 
