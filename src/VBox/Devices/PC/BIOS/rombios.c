@@ -8177,7 +8177,21 @@ ASM_END
   // bootchk = 1 : signature check disabled
   // bootchk = 0 : signature check enabled
   if (bootdrv != 0) bootchk = 0;
+#ifdef VBOX
+  // Don't check boot sectors on floppies and don't read CMOS - byte 
+  // 0x38 in CMOS always has the low bit clear.
+  // There is *no* requirement whatsoever for a valid boot sector to
+  // have a 55AAh signature. UNIX boot floppies typically have no such
+  // signature. In general, it is impossible to tell a valid bootsector
+  // from an invalid one; some heuristic would be needed - a JMP instruction
+  // in one of the first few bytes, absence of long sequences of identical
+  // bytes at the start or beginning or boot sector etc.
+  // The risk of attempting to boot an invalid floppy is low, certainly 
+  // lower than the risk of refusing to boot a valid floppy.
+  bootchk = 1;
+#else
   else bootchk = inb_cmos(0x38) & 0x01;
+#endif
 
 #if BX_ELTORITO_BOOT
   // if boot from cd, no signature check
