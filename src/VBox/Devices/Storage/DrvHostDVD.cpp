@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * Host DVD block driver
+ * DrvHostDVD - Host DVD block driver.
  */
 
 /*
@@ -131,7 +130,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
          }
 
 #elif defined(RT_OS_SOLARIS)
-        rc = ioctl(pThis->FileDevice, DKIOCEJECT, 0);
+        rc = ioctl(pThis->FileRawDevice, DKIOCEJECT, 0);
         if (rc < 0)
         {
             if (errno == EBUSY)
@@ -220,7 +219,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
     }
 
 #elif defined(RT_OS_SOLARIS)
-    int rc = ioctl(pThis->FileDevice, fLock ? DKIOCLOCK : DKIOCUNLOCK, 0);
+    int rc = ioctl(pThis->FileRawDevice, fLock ? DKIOCLOCK : DKIOCUNLOCK, 0);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -325,7 +324,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 
     /* Need to pass the previous state and DKIO_NONE for the first time. */
     static dkio_state DeviceState = DKIO_NONE;
-    int rc2 = ioctl(pThis->FileDevice, DKIOCSTATE, &DeviceState);
+    int rc2 = ioctl(pThis->FileRawDevice, DKIOCSTATE, &DeviceState);
     if (rc2 == 0)
     {
         fMediaPresent = DeviceState == DKIO_INSERTED;
@@ -508,7 +507,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     usc.uscsi_timeout = (cTimeoutMillies + 999) / 1000;
 
     /* We need root privileges for user-SCSI under Solaris. */
-    rc = ioctl(pThis->FileDevice, USCSICMD, &usc);
+    rc = ioctl(pThis->FileRawDevice, USCSICMD, &usc);
     if (rc < 0)
     {
         if (errno == EPERM)
@@ -624,6 +623,53 @@ static int solarisEnterRootMode(uid_t *pUserID, uid_t *pEffUserID)
     /* Increase privilege if required */
     if (*pEffUserID == 0)
         return VINF_SUCCESS;
+    else
+    {
+        if (seteuid(0) == 0)
+        {
+            *pEffUserID = 0;
+            return VINF_SUCCESS;
+        }
+        else
+            return VERR_PERMISSION_DENIED;
+    }
+}
+
+/**
+ * Setuid wrapper to relinquish root access.
+ *
+ * @returns VBox error code.
+ * @param   pUserID        Pointer to user ID.
+ * @param   pEffUserID     Pointer to effective user ID.
+ */
+static int solarisExitRootMode(uid_t *pUserID, uid_t *pEffUserID)
+{
+    /* Get back to user mode. */
+    if (*pEffUserID == 0)
+    {
+        if (seteuid(*pUserID) == 0)
+        {
+            *pEffUserID = *pUserID;
+            return VINF_SUCCESS;
+        }
+        else
+            return VERR_PERMISSION_DENIED;
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Setuid wrapper to gain root access.
+ *
+ * @returns VBox error code.
+ * @param   pUserID        Pointer to user ID.
+ * @param   pEffUserID     Pointer to effective user ID.
+ */
+static int solarisEnterRootMode(uid_t *pUserID, uid_t *pEffUserID)
+{
+    /* Increase privilege if required */
+    if (*pEffUserID == 0)
+        return VINF_SUCCESS;
     if (seteuid(0) == 0)
     {
         *pEffUserID = 0;
@@ -719,7 +765,6 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
          */
         rc = DRVHostBaseInitFinish(pThis);
     }
-
     if (VBOX_FAILURE(rc))
     {
         if (!pThis->fAttachFailError)

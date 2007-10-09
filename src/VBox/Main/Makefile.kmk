@@ -144,7 +144,7 @@ VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
 VBoxSVC_LIBS.solaris = \
-        adm.so
+	adm.so
 
 VBoxSVC_SOURCES = \
 	Logging.cpp \

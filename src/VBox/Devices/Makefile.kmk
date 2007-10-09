@@ -113,6 +113,9 @@ ifeq ($(BUILD_TARGET),l4)
  VBoxDD_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
+ifeq ($(BUILD_TARGET),solaris)
+ VBoxDD_LIBS           += adm
+endif
 ifdef VBOX_WTIH_USB
 VBoxDD_LIBS.darwin     += \
 	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
