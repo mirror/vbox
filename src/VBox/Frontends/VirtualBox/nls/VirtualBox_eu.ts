@@ -126,6 +126,122 @@
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;%1_tekla&gt;</translation>
     </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished">F1</translation>
+    </message>
+    <message>
+        <source>F2</source>
+        <translation type="unfinished">F2</translation>
+    </message>
+    <message>
+        <source>F3</source>
+        <translation type="unfinished">F3</translation>
+    </message>
+    <message>
+        <source>F4</source>
+        <translation type="unfinished">F4</translation>
+    </message>
+    <message>
+        <source>F5</source>
+        <translation type="unfinished">F5</translation>
+    </message>
+    <message>
+        <source>F6</source>
+        <translation type="unfinished">F6</translation>
+    </message>
+    <message>
+        <source>F7</source>
+        <translation type="unfinished">F7</translation>
+    </message>
+    <message>
+        <source>F8</source>
+        <translation type="unfinished">F8</translation>
+    </message>
+    <message>
+        <source>F9</source>
+        <translation type="unfinished">F9</translation>
+    </message>
+    <message>
+        <source>F10</source>
+        <translation type="unfinished">F10</translation>
+    </message>
+    <message>
+        <source>F11</source>
+        <translation type="unfinished">F11</translation>
+    </message>
+    <message>
+        <source>F12</source>
+        <translation type="unfinished">F12</translation>
+    </message>
+    <message>
+        <source>F13</source>
+        <translation type="unfinished">F13</translation>
+    </message>
+    <message>
+        <source>F14</source>
+        <translation type="unfinished">F14</translation>
+    </message>
+    <message>
+        <source>F15</source>
+        <translation type="unfinished">F15</translation>
+    </message>
+    <message>
+        <source>F16</source>
+        <translation type="unfinished">F16</translation>
+    </message>
+    <message>
+        <source>F17</source>
+        <translation type="unfinished">F17</translation>
+    </message>
+    <message>
+        <source>F18</source>
+        <translation type="unfinished">F18</translation>
+    </message>
+    <message>
+        <source>F19</source>
+        <translation type="unfinished">F19</translation>
+    </message>
+    <message>
+        <source>F20</source>
+        <translation type="unfinished">F20</translation>
+    </message>
+    <message>
+        <source>F21</source>
+        <translation type="unfinished">F21</translation>
+    </message>
+    <message>
+        <source>F22</source>
+        <translation type="unfinished">F22</translation>
+    </message>
+    <message>
+        <source>F23</source>
+        <translation type="unfinished">F23</translation>
+    </message>
+    <message>
+        <source>F24</source>
+        <translation type="unfinished">F24</translation>
+    </message>
+    <message>
+        <source>Num Lock</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIMessageBox</name>
@@ -273,7 +389,7 @@
     </message>
     <message>
         <source>Alt+S</source>
-        <translation>Alt+G</translation>
+        <translation type="obsolete">Alt+G</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
@@ -281,7 +397,7 @@
     </message>
     <message>
         <source>Alt+P</source>
-        <translation>Alt+I</translation>
+        <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
         <source>&amp;Revert to the current snapshot</source>
@@ -289,7 +405,7 @@
     </message>
     <message>
         <source>Alt+R</source>
-        <translation>Alt+R</translation>
+        <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
@@ -309,11 +425,36 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+O</translation>
+        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation>Utzi</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
+&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
+&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
+&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
+&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
+&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -614,7 +755,7 @@
     <message>
         <source>Switch to seamless desktop integration mode</source>
         <comment>Garden?? Ez dut argi esannahai</comment>
-        <translation>Idazmahai integrazio garden modura aldatu</translation>
+        <translation type="obsolete">Idazmahai integrazio garden modura aldatu</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
@@ -709,6 +850,50 @@
         <comment>Shared folders tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ez dago partekatutako karpetarik&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
+    <message>
+        <source>Switch to seamless desktop integration mode</source>
+        <translation type="unfinished">Idazmahai integrazio garden modura aldatu</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished">&amp;Edukiak...</translation>
+    </message>
+    <message>
+        <source>F1</source>
+        <translation type="unfinished">F1</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation type="unfinished">Sare bidezko laguntza edukia bistarazi</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
+        <comment>DVD-ROM tooltip</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ostalari Gailua&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
+        <comment>DVD-ROM tooltip</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Irudia&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>DVD-ROM tooltip</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ez dago medio muntaturik&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Mount the selected physical drive of the host PC</source>
+        <comment>CD/DVD tip</comment>
+        <translation type="unfinished">Ostalari PC-ko hautaturiko gailu fisikoa muntatu</translation>
+    </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
@@ -762,7 +947,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>ALt+A</translation>
+        <translation type="obsolete">ALt+A</translation>
     </message>
     <message>
         <source>Accept dialog</source>
@@ -956,6 +1141,25 @@
         <source>Floppy images (*.img);;All files (*)</source>
         <translation>Diskete irudiak (*.img);;Fitxategi guztiak (*)</translation>
     </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
+        <comment>CD/DVD/Floppy</comment>
+        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Eskuragarritasuna egiaztatzen...</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
+        <comment>CD/DVD/Floppy</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Non erantsia:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <comment>CD/DVD/Floppy</comment>
+        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Errorea medio eskuragarritasuna egiaztatzen</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
+        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
+    </message>
 </context>
 <context>
     <name>VBoxDownloaderWgt</name>
@@ -977,15 +1181,15 @@
     </message>
     <message>
         <source>Could not determine the file size.</source>
-        <translation>Ezin da fitxategi tamaina atzeman.</translation>
+        <translation type="obsolete">Ezin da fitxategi tamaina atzeman.</translation>
     </message>
     <message>
         <source>Could not connect to the server (%1).</source>
-        <translation>Ezin da zerbitzariarekin konektatu (%1).</translation>
+        <translation type="obsolete">Ezin da zerbitzariarekin konektatu (%1).</translation>
     </message>
     <message>
         <source>Could not download the file (%1).</source>
-        <translation>Ezin da fitxategia deskargatu (%1).</translation>
+        <translation type="obsolete">Ezin da fitxategia deskargatu (%1).</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -1493,6 +1697,96 @@
         <comment>serial port</comment>
         <translation>Erabiltzaileak-ezarria</translation>
     </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (IO APIC)</comment>
+        <translation type="unfinished">Gaiturik</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (IO APIC)</comment>
+        <translation type="unfinished">Ezgaiturik</translation>
+    </message>
+    <message>
+        <source>Not mounted</source>
+        <comment>details report (DVD)</comment>
+        <translation type="unfinished">Ez muntaturik</translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <comment>details report (DVD)</comment>
+        <translation type="unfinished">Irudia</translation>
+    </message>
+    <message>
+        <source>Host Drive</source>
+        <comment>details report (DVD)</comment>
+        <translation type="unfinished">Ostalari Gailua</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished">Ezgaiturik</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Ezgaiturik</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Ezgaiturik</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">Ezgaiturik</translation>
+    </message>
+    <message>
+        <source>%1</source>
+        <comment>details report (shadef folders)</comment>
+        <translation type="unfinished">%1</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Batez</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Partekatutako Karpetak</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDP)</comment>
+        <translation type="unfinished">Ezgaiturik</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">Disketea</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">CD/DVD-ROM</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>DeviceType</comment>
+        <translation type="unfinished">Sarea</translation>
+    </message>
+    <message>
+        <source>Custom Hard Disk</source>
+        <comment>DiskStorageType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>ClipboardType</comment>
+        <translation type="unfinished">Ezgaiturik</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -1597,7 +1891,7 @@
     </message>
     <message>
         <source>Alt+A</source>
-        <translation>Alt+A</translation>
+        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
@@ -1677,7 +1971,7 @@
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>ALt+O</translation>
+        <translation type="obsolete">ALt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -1827,11 +2121,26 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
     </message>
     <message>
         <source>Alt+V</source>
-        <translation>Alt+V</translation>
+        <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Makina birtualek ostalariaren Intel VT-x and AMD-V bezalako cpu-aren hardware birtualizazio hedapenak lehenespen bezala erabili behar dituzten ezartzen du.</translation>
+    </message>
+    <message>
+        <source> Language </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxLicenseViewer</name>
+    <message>
+        <source>I &amp;Agree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;Disagree</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1854,7 +2163,7 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
     </message>
     <message>
         <source>Alt+P</source>
-        <translation>Alt+A</translation>
+        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
@@ -1866,7 +2175,7 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
     </message>
     <message>
         <source>Alt+N</source>
-        <translation>Alt+H</translation>
+        <translation type="obsolete">Alt+H</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
@@ -1939,7 +2248,7 @@ gogor birtualaren antzeko tamaina batetako fitxategi batetan gordetzen dira.&lt;
     </message>
     <message>
         <source>Alt+D</source>
-        <translation>Alt+D</translation>
+        <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
         <source>&amp;Fixed-size image</source>
@@ -1947,7 +2256,7 @@ gogor birtualaren antzeko tamaina batetako fitxategi batetan gordetzen dira.&lt;
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>Alt+T</translation>
+        <translation type="obsolete">Alt+T</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -2563,6 +2872,81 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ez duzu disko gogor birtualik erantsi makina birtual honetara. Makina ez da abiarazteko gai izango sistema eragile duen disko gogor bat edo beste euskarri abiarazgarri baten bat erantsi arte, berau beranduago egiteko ezarpen leiho edo Lehen Abiarazte Morroiaren bidez egin dezakezu.&lt;/p&gt;&lt;p&gt;Aurrera jarraitu nahi al duzu?&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxRegistrationDlg</name>
+    <message>
+        <source>VirtualBox Registration Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter your full name using Latin characters.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;E-mail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter your valid e-mail address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Please do not use this information to contact me</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the VirtualBox Registration Form!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Confirm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="unfinished">Konexioa denboraz kanpo.</translation>
+    </message>
+    <message>
+        <source>Could not locate the registration form on the server (response: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
@@ -2810,6 +3194,14 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <source>Show the log files of the selected virtual machine</source>
         <translation>Hautatutako makina birtualaren erregistro fitxategiak ikusi</translation>
     </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
@@ -2929,7 +3321,7 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>ALt+O</translation>
+        <translation type="obsolete">ALt+O</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3134,7 +3526,7 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt+O</translation>
+        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3354,7 +3746,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
@@ -3362,7 +3754,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>Alt+D</translation>
+        <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
@@ -3378,7 +3770,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+H</source>
-        <translation>Alt+O</translation>
+        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -3386,7 +3778,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation>Alt+I</translation>
+        <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
         <source>VDM</source>
@@ -3474,7 +3866,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+S</source>
-        <translation>Alt+G</translation>
+        <translation type="obsolete">Alt+G</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
@@ -3482,7 +3874,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+R</source>
-        <translation>ALt+R</translation>
+        <translation type="obsolete">ALt+R</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
@@ -3510,7 +3902,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+F</source>
-        <translation>ALt+B</translation>
+        <translation type="obsolete">ALt+B</translation>
     </message>
     <message>
         <source>Close</source>
@@ -3541,7 +3933,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+G</source>
-        <translation>ALT+S</translation>
+        <translation type="obsolete">ALT+S</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
@@ -3553,7 +3945,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+B</source>
-        <translation>Alt+B</translation>
+        <translation type="obsolete">Alt+B</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
@@ -3597,7 +3989,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation>Moldagai honen MAC helbidea bistaratzen du. Zehazki 12 karaktere ditu {0-9,A-F} tartetik.</translation>
+        <translation type="obsolete">Moldagai honen MAC helbidea bistaratzen du. Zehazki 12 karaktere ditu {0-9,A-F} tartetik.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
@@ -3626,6 +4018,10 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     <message>
         <source>Selects the terminate application.</source>
         <translation>Hautatu amaiera aplikazioa.</translation>
+    </message>
+    <message>
+        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3680,7 +4076,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+S</translation>
+        <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
@@ -3903,7 +4299,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+C</source>
-        <translation>Alt+C</translation>
+        <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -3911,7 +4307,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+P</source>
-        <translation>Alt+P</translation>
+        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -3951,7 +4347,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+D</source>
-        <translation>Alt+D</translation>
+        <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
@@ -3963,7 +4359,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+I</source>
-        <translation>Alt+I</translation>
+        <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
@@ -4003,7 +4399,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+U</source>
-        <translation>Alt+U</translation>
+        <translation type="obsolete">Alt+U</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -4095,7 +4491,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Alt+O</source>
-        <translation>Alt O</translation>
+        <translation type="obsolete">Alt O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -4313,7 +4709,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
     </message>
     <message>
         <source>Alt+V</source>
-        <translation>Alt+V</translation>
+        <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
@@ -4329,7 +4725,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
     </message>
     <message>
         <source>Alt+R</source>
-        <translation>Alt+G</translation>
+        <translation type="obsolete">Alt+G</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
@@ -4345,7 +4741,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
     </message>
     <message>
         <source>Alt+E</source>
-        <translation>Alt+G</translation>
+        <translation type="obsolete">Alt+G</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
