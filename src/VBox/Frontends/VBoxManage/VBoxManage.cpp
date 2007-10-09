@@ -595,6 +595,13 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nobackup] [-skipinvalid]\n"
                  "\n");
     }
+
+    if (u64Cmd & USAGE_VM_STATISTICS)
+    {
+        RTPrintf("VBoxManage vmstatistics     <vmname>|<uuid>\n"
+                 "                            [-pattern <pattern>] [-descriptions]\n"
+                 "\n");
+    }
 }
 
 /**
@@ -604,7 +611,7 @@ int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
 {
     va_list args;
     showLogo(); // show logo even if suppressed
-    if (fInternalMode)
+    if (g_fInternalMode)
         printUsageInternal(u64Cmd);
     else
         printUsage(u64Cmd);
@@ -4793,16 +4800,13 @@ static int handleModifyVM(int argc, char *argv[],
 
                 u32LineSpeed = atoi(nicspeed[n]);
 
-                if (u32LineSpeed < 1000 || u32LineSpeed > 4000000) 
+                if (u32LineSpeed < 1000 || u32LineSpeed > 4000000)
                 {
                     errorArgument("Invalid -nicspeed%lu argument '%s'", n + 1, nicspeed[n]);
                     rc = E_FAIL;
                     break;
-                } 
-                else 
-                {
-                    CHECK_ERROR_RET(nic, COMSETTER(LineSpeed)(u32LineSpeed), 1);
                 }
+                CHECK_ERROR_RET(nic, COMSETTER(LineSpeed)(u32LineSpeed), 1);
             }
 
             /* the link status flag? */
@@ -7000,6 +7004,80 @@ static int handleSharedFolder (int argc, char *argv[],
     return 0;
 }
 
+static int handleVMStatistics(int argc, char *argv[],
+                              ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    HRESULT rc;
+
+    /* at least one option: the UUID or name of the VM */
+    if (argc < 1)
+        return errorSyntax(USAGE_VM_STATISTICS, "Incorrect number of parameters");
+
+    /* try to find the given machine */
+    ComPtr <IMachine> machine;
+    Guid uuid (argv[0]);
+    if (!uuid.isEmpty())
+        CHECK_ERROR(aVirtualBox, GetMachine(uuid, machine.asOutParam()));
+    else
+    {
+        CHECK_ERROR(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+        if (SUCCEEDED (rc))
+            machine->COMGETTER(Id)(uuid.asOutParam());
+    }
+    if (FAILED(rc))
+        return 1;
+
+    /*  */
+    bool fWithDescriptions = false;
+    const char *pszPattern = NULL; /* all */
+    for (int i = 1; i < argc; i++)
+    {
+        if (!strcmp(argv[i], "-pattern"))
+        {
+            if (pszPattern)
+                return errorSyntax(USAGE_VM_STATISTICS, "Multiple -patterns options is not permitted");
+            if (i + 1 >= argc)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            pszPattern = argv[++i];
+        }
+        else if (!strcmp(argv[i], "-descriptions"))
+            fWithDescriptions = true;
+        /* add: -file <filename> and -formatted */
+        else
+            return errorSyntax(USAGE_VM_STATISTICS, "Unknown option '%s'", argv[i]);
+    }
+
+    /* open an existing session for the VM. */
+    CHECK_ERROR(aVirtualBox, OpenExistingSession(aSession, uuid));
+    if (SUCCEEDED(rc))
+    {
+        /* get the session console. */
+        ComPtr <IConsole> console;
+        CHECK_ERROR(aSession, COMGETTER(Console)(console.asOutParam()));
+        if (SUCCEEDED(rc))
+        {
+            /* get the machine debugger. */
+            ComPtr <IMachineDebugger> debugger;
+            CHECK_ERROR(console, COMGETTER(Debugger)(debugger.asOutParam()));
+            if (SUCCEEDED(rc))
+            {
+                if (1/*fDumpStats*/)
+                {
+                    Bstr stats;
+                    CHECK_ERROR(debugger, GetStats(Bstr(pszPattern).raw(), fWithDescriptions, stats.asOutParam()));
+                    if (SUCCEEDED(rc))
+                    {
+                        RTPrintf("%ls\n", stats.raw());
+                    }
+                }
+            }
+            aSession->Close();
+        }
+    }
+
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
 enum HUSPD { HUSPD_DryRun, HUSPD_Apply, HUSPD_ApplyNoBackup };
 
 static int handleUpdateSettings_processFile (const char *filePath, HUSPD mode)
@@ -7387,6 +7465,7 @@ int main(int argc, char *argv[])
         { "setproperty",      handleSetProperty },
         { "usbfilter",        handleUSBFilter },
         { "sharedfolder",     handleSharedFolder },
+        { "vmstatistics",     handleVMStatistics },
         { NULL,               NULL }
     };
 

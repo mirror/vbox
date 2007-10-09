@@ -50,7 +50,7 @@ HRESULT CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 using namespace com;
 
 /** flag whether we're in internal mode */
-bool fInternalMode;
+bool g_fInternalMode;
 
 /**
  * Print the usage info.
@@ -399,7 +399,7 @@ static int handleSetVDIUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
-    fInternalMode = true;
+    g_fInternalMode = true;
 
     /* at least a command is required */
     if (argc < 1)
