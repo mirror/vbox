@@ -214,6 +214,7 @@ void helper_rsm(void);
 
 #ifdef VBOX
 void helper_external_event(void);
+void helper_record_call(void);
 
 /* in helper.c */
 void sync_seg(CPUX86State *env1, int seg_reg, int selector);

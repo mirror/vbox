@@ -820,6 +820,12 @@ void OPPROTO op_check_external_event(void)
         helper_external_event();
     }
 }
+
+void OPPROTO op_record_call(void)
+{
+    helper_record_call();
+}
+
 #endif /* VBOX */
 
 void OPPROTO op_exit_tb(void)

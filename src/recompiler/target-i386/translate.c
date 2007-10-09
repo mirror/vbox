@@ -122,6 +122,7 @@ typedef struct DisasContext {
     int vm86;   /* vm86 mode */
 #ifdef VBOX
     int vme;    /* CR4.VME */
+    int record_call;    /* record calls for CSAM or not? */
 #endif
     int cpl;
     int iopl;
@@ -3673,6 +3674,10 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             break;
         case 2: /* call Ev */
             /* XXX: optimize if memory (no 'and' is necessary) */
+#ifdef VBOX_WITH_CALL_RECORD
+            if (s->record_call)
+                gen_op_record_call();
+#endif
             if (s->dflag == 0)
                 gen_op_andl_T0_ffff();
             next_eip = s->pc - s->cs_base;
@@ -6595,8 +6600,15 @@ static inline int gen_intermediate_code_internal(CPUState *env,
     dc->addseg = (flags >> HF_ADDSEG_SHIFT) & 1;
     dc->f_st = 0;
     dc->vm86 = (flags >> VM_SHIFT) & 1;
-#ifdef VBOX
+#ifdef VBOX_WITH_CALL_RECORD
     dc->vme = !!(env->cr[4] & CR4_VME_MASK);
+    if (    !(env->state & CPU_RAW_RING0)
+        &&  (env->cr[0] & CR0_PG_MASK)
+        &&  !(env->eflags & X86_EFL_IF)
+        &&  dc->code32)
+        dc->record_call = 1;
+    else
+        dc->record_call = 0;
 #endif
     dc->cpl = (flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (flags >> IOPL_SHIFT) & 3;
