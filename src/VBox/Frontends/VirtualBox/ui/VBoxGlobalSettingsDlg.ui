@@ -476,9 +476,6 @@
                                 <property name="text">
                                     <string>Enable &amp;VT-x/AMD-V</string>
                                 </property>
-                                <property name="accel">
-                                    <string>Alt+V</string>
-                                </property>
                                 <property name="whatsThis" stdset="0">
                                     <string>Defines whether virtual machines should try to make use of the host CPU's hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</string>
                                 </property>
@@ -580,9 +577,6 @@
                                 </property>
                                 <property name="text">
                                     <string>&amp;Auto capture keyboard</string>
-                                </property>
-                                <property name="accel">
-                                    <string>Alt+A</string>
                                 </property>
                                 <property name="whatsThis" stdset="0">
                                     <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
@@ -1135,9 +1129,6 @@ to the system default language.&lt;/qt&gt;
                     </property>
                     <property name="text">
                         <string>&amp;OK</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+O</string>
                     </property>
                     <property name="autoDefault">
                         <bool>true</bool>

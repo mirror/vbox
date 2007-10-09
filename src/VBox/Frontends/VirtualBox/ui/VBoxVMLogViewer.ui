@@ -93,9 +93,6 @@
                     <property name="text">
                         <string>&amp;Find</string>
                     </property>
-                    <property name="accel">
-                        <string>Alt+F</string>
-                    </property>
                 </widget>
                 <widget class="QPushButton">
                     <property name="name">
@@ -103,9 +100,6 @@
                     </property>
                     <property name="text">
                         <string>&amp;Save</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+S</string>
                     </property>
                     <property name="autoDefault">
                         <bool>true</bool>
@@ -120,9 +114,6 @@
                     </property>
                     <property name="text">
                         <string>&amp;Refresh</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+R</string>
                     </property>
                 </widget>
                 <widget class="QPushButton">
