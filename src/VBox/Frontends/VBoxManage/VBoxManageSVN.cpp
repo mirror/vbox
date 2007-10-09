@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: VBoxManage (command-line interface):
  * SVN revision.
  */
@@ -25,7 +25,8 @@
  * function into VBoxSVC to save the overhead of starting the server if only
  * the version number is requested.
  */
-unsigned long VBoxSVNRev ()
+unsigned long VBoxSVNRev()
 {
     return VBOX_SVN_REV;
 }
+

@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox frontends: VBoxManage (command-line interface):
  * VBoxManage header.
  */
@@ -16,14 +15,15 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_VBOXMANAGE
-#define __H_VBOXMANAGE
+#ifndef ___H_VBOXMANAGE
+#define ___H_VBOXMANAGE
 
 #include <iprt/types.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
 
-/** Syntax diagram category. */
+/** @name Syntax diagram category.
+ * @{ */
 #define USAGE_DUMPOPTS              0
 #define USAGE_LIST                  BIT64(0)
 #define USAGE_SHOWVMINFO            BIT64(1)
@@ -60,27 +60,29 @@
 #define USAGE_SETVDIUUID            BIT64(31)
 #define USAGE_CONVERTDD             BIT64(32)
 #ifdef VBOX_OSE
-#define USAGE_LISTPARTITIONS        (0)
-#define USAGE_CREATERAWVMDK         (0)
+# define USAGE_LISTPARTITIONS       (0)
+# define USAGE_CREATERAWVMDK        (0)
 #else /* !VBOX_OSE */
-#define USAGE_LISTPARTITIONS        BIT64(33)
-#define USAGE_CREATERAWVMDK         BIT64(34)
+# define USAGE_LISTPARTITIONS       BIT64(33)
+# define USAGE_CREATERAWVMDK        BIT64(34)
 #endif /* !VBOX_OSE */
+#define USAGE_VM_STATISTICS         BIT64(35)
 #define USAGE_ALL                   (~(uint64_t)0)
+/** @} */
 
 typedef uint64_t USAGECATEGORY;
 
 /** flag whether we're in internal mode */
-extern bool fInternalMode;
+extern bool g_fInternalMode;
 
 /** showVMInfo details */
 typedef enum
 {
     VMINFO_NONE             = 0,
-    VMINFO_STANDARD         = 1,    /* standard details */
-    VMINFO_STATISTICS       = 2,    /* guest statistics */
-    VMINFO_FULL             = 3,    /* both */
-    VMINFO_MACHINEREADABLE  = 4,    /* both, and make it machine readable */
+    VMINFO_STANDARD         = 1,    /**< standard details */
+    VMINFO_STATISTICS       = 2,    /**< guest statistics */
+    VMINFO_FULL             = 3,    /**< both */
+    VMINFO_MACHINEREADABLE  = 4     /**< both, and make it machine readable */
 } VMINFO_DETAILS;
 
 /*
@@ -92,6 +94,6 @@ int errorArgument(const char *pszFormat, ...);
 void printUsageInternal(USAGECATEGORY u64Cmd);
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
-unsigned long VBoxSVNRev ();
+unsigned long VBoxSVNRev();
 
-#endif /* !__H_VBOXMANAGE */
+#endif /* !___H_VBOXMANAGE */
