@@ -1190,9 +1190,19 @@ static int csamAnalyseCodeStream(PVM pVM, GCPTRTYPE(uint8_t *) pInstrGC, GCPTRTY
             goto done;
 
         // For our first attempt, we'll handle only simple relative jumps and calls (immediate offset coded in instruction)
-        if ((cpu.pCurInstr->optype & OPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
+        if (    ((cpu.pCurInstr->optype & OPTYPE_CONTROLFLOW) && (OP_PARM_VTYPE(cpu.pCurInstr->param1) == OP_PARM_J))
+            ||  (cpu.pCurInstr->opcode == OP_CALL && cpu.param1.flags == USE_DISPLACEMENT32))  /* simple indirect call (call dword ptr [address]) */
         {
-            addr = CSAMResolveBranch(&cpu, pCurInstrGC);
+            /* We need to parse 'call dword ptr [address]' type of calls to catch cpuid instructions in some recent Linux distributions (e.g. OpenSuse 10.3) */
+            if (    cpu.pCurInstr->opcode == OP_CALL 
+                &&  cpu.param1.flags == USE_DISPLACEMENT32)
+            {
+                addr = 0;
+                PGMPhysReadGCPtr(pVM, &addr, cpu.param1.disp32, sizeof(addr));
+            }
+            else
+                addr = CSAMResolveBranch(&cpu, pCurInstrGC);
+
             if (addr == 0)
             {
                 Log(("We don't support far jumps here!! (%08X)\n", cpu.param1.flags));
