@@ -612,9 +612,18 @@ STAMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot,
      */
     stamR3SnapshotPrintf(&State, "<Statistics>\n");
     STAM_LOCK_RD(pVM);
-    stamR3Enum(pVM, pszPat, stamR3SnapshotOne, &State);
+    int rc = stamR3Enum(pVM, pszPat, stamR3SnapshotOne, &State);
     STAM_UNLOCK_RD(pVM);
     stamR3SnapshotPrintf(&State, "</Statistics>\n");
+
+    if (VBOX_SUCCESS(rc))
+        rc = State.rc;
+    else
+    {
+        RTMemFree(State.pszStart);
+        State.pszStart = State.pszEnd = State.psz = NULL;
+        State.cbAllocated = 0;
+    }
 
     /*
      * Done.
@@ -622,7 +631,7 @@ STAMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot,
     *ppszSnapshot = State.pszStart;
     if (pcchSnapshot)
         *pcchSnapshot = State.psz - State.pszStart;
-    return State.rc;
+    return rc;
 }
 
 
@@ -1133,11 +1142,8 @@ static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg)
  * @param   pszPat      Pattern.
  * @param   pszName     Name to match against the pattern.
  */
-static bool stamr3Match(const char *pszPat, const char *pszName)
+static bool stamR3Match(const char *pszPat, const char *pszName)
 {
-    if (!pszPat)
-        return true;
-
     /* ASSUMES ASCII */
     for (;;)
     {
@@ -1157,7 +1163,7 @@ static bool stamr3Match(const char *pszPat, const char *pszName)
                     char ch = *pszName++;
                     if (    ch == chPat
                         &&  (   !chPat
-                             || stamr3Match(pszPat + 1, pszName)))
+                             || stamR3Match(pszPat + 1, pszName)))
                         return true;
                     if (!ch)
                         return false;
@@ -1184,6 +1190,37 @@ static bool stamr3Match(const char *pszPat, const char *pszName)
 
 
 /**
+ * Match a name against an array of patterns.
+ *
+ * @returns true if it matches, false if it doesn't match.
+ * @param   papszExpressions    The array of pattern expressions.
+ * @param   cExpressions        The number of array entries.
+ * @param   piExpression        Where to read/store the current skip index.
+ *                              This is for future use.
+ * @param   pszName             The name to match.
+ */
+static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExpressions,
+                             unsigned *piExpression, const char *pszName)
+{
+    for (unsigned i = *piExpression; i < cExpressions; i++)
+    {
+        const char *pszPat = papszExpressions[i];
+        if (stamR3Match(pszPat, pszName))
+        {
+            /* later:
+            if (i > *piExpression)
+            {
+                check if we can skip some expressions
+            }*/
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+/**
  * Enumerates the nodes selected by a pattern or all nodes if no pattern
  * is specified.
  *
@@ -1199,22 +1236,92 @@ static bool stamr3Match(const char *pszPat, const char *pszName)
  */
 static int stamR3Enum(PVM pVM, const char *pszPat, int (*pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg)
 {
+    int rc = VINF_SUCCESS;
+
     /*
-     * Search for it.
+     * All
      */
-    int         rc = VINF_SUCCESS;
-    PSTAMDESC   pCur = pVM->stam.s.pHead;
-    while (pCur)
+    if (!pszPat || !*pszPat || !strcmp(pszPat, "*"))
     {
-        if (stamr3Match(pszPat, pCur->pszName))
+        PSTAMDESC   pCur = pVM->stam.s.pHead;
+        while (pCur)
         {
             rc = pfnCallback(pCur, pvArg);
             if (rc)
                 break;
+
+            /* next */
+            pCur = pCur->pNext;
+        }
+    }
+
+    /*
+     * Single expression pattern.
+     */
+    else if (!strchr(pszPat, '|'))
+    {
+        for (PSTAMDESC pCur = pVM->stam.s.pHead; pCur; pCur = pCur->pNext)
+            if (stamR3Match(pszPat, pCur->pszName))
+            {
+                rc = pfnCallback(pCur, pvArg);
+                if (rc)
+                    break;
+            }
+    }
+
+    /*
+     * Multi expression pattern.
+     */
+    else
+    {
+        /*
+         * Split up the pattern first.
+         */
+        char *pszCopy = RTStrDup(pszPat);
+        if (!pszCopy)
+            return VERR_NO_MEMORY;
+
+        /* count them & allocate array. */
+        char *psz = pszCopy;
+        unsigned cExpressions = 1;
+        while ((psz = strchr(psz, '|')) != NULL)
+            cExpressions++, psz++;
+
+        char **papszExpressions = (char **)RTMemTmpAlloc((cExpressions + 1) * sizeof(char *));
+        if (!papszExpressions)
+        {
+            RTStrFree(pszCopy);
+            return VERR_NO_TMP_MEMORY;
         }
 
-        /* next */
-        pCur = pCur->pNext;
+        /* split */
+        psz = pszCopy;
+        for (unsigned i = 0;;)
+        {
+            papszExpressions[i] = psz;
+            if (++i >= cExpressions)
+                break;
+            psz = strchr(psz, '|');
+            *psz++ = '\0';
+        }
+
+        /* sort the array, putting '*' last. */
+        /** @todo sort it... */
+
+        /*
+         * Perform the enumeration.
+         */
+        unsigned iExpression = 0;
+        for (PSTAMDESC pCur = pVM->stam.s.pHead; pCur; pCur = pCur->pNext)
+            if (stamR3MultiMatch(papszExpressions, cExpressions, &iExpression, pCur->pszName))
+            {
+                rc = pfnCallback(pCur, pvArg);
+                if (rc)
+                    break;
+            }
+
+        RTMemTmpFree(papszExpressions);
+        RTStrFree(pszCopy);
     }
 
     return rc;
