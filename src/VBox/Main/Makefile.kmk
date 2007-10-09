@@ -447,7 +447,7 @@ endif
 
 # brute force way to ensure the prereqs are generated before anything is compiled.
 define def_src_deps
-$(src)_DEPS += $(PREREQS)
+$(src)_ORDERDEPS += $(PREREQS)
 endef
 $(foreach src,\
 	$(VBoxC_SOURCES)   $(VBoxC_SOURCES.$(BUILD_TARGET)) \
