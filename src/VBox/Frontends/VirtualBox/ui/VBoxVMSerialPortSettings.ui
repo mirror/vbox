@@ -168,9 +168,6 @@
                             <property name="text">
                                 <string>&amp;Create Pipe</string>
                             </property>
-                            <property name="accel">
-                                <string>Alt+C</string>
-                            </property>
                             <property name="whatsThis" stdset="0">
                                 <string>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</string>
                             </property>

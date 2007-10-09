@@ -1196,7 +1196,6 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         {
             vmStartAction->setMenuText (tr ("S&how"));
             vmStartAction->setText (tr ("Show"));
-            vmStartAction->setAccel (QString::null);
             vmStartAction->setStatusTip (
                 tr ("Switch to the window of the selected virtual machine"));
 
@@ -1206,7 +1205,6 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         {
             vmStartAction->setMenuText (tr ("S&tart"));
             vmStartAction->setText (tr ("Start"));
-            vmStartAction->setAccel (QString::null);
             vmStartAction->setStatusTip (
                 tr ("Start the selected virtual machine"));
 
@@ -1272,7 +1270,6 @@ void VBoxSelectorWnd::vmListBoxCurrentChanged (bool aRefreshDetails,
         /* change the Start button text accordingly */
         vmStartAction->setMenuText (tr ("S&tart"));
         vmStartAction->setText (tr ("Start"));
-        vmStartAction->setAccel (QString::null);
         vmStartAction->setStatusTip (
             tr ("Start the selected virtual machine"));
         vmStartAction->setEnabled (false);

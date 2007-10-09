@@ -1054,9 +1054,6 @@
                                                     <property name="text">
                                                         <string>Enable A&amp;CPI</string>
                                                     </property>
-                                                    <property name="accel">
-                                                        <string>Alt+C</string>
-                                                    </property>
                                                     <property name="whatsThis" stdset="0">
                                                         <string>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable
@@ -1070,9 +1067,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                                     <property name="text">
                                                         <string>Enable IO A&amp;PIC</string>
                                                     </property>
-                                                    <property name="accel">
-                                                        <string>Alt+P</string>
-                                                    </property>
                                                     <property name="whatsThis" stdset="0">
                                                         <string>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don't disable
@@ -1085,9 +1079,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                                     </property>
                                                     <property name="text">
                                                         <string>Enable &amp;VT-x/AMD-V</string>
-                                                    </property>
-                                                    <property name="accel">
-                                                        <string>Alt+V</string>
                                                     </property>
                                                     <property name="tristate">
                                                         <bool>true</bool>
@@ -1293,9 +1284,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                             </property>
                                             <property name="text">
                                                 <string>&amp;Remember Media Mounted at Runtime</string>
-                                            </property>
-                                            <property name="accel">
-                                                <string>Alt+R</string>
                                             </property>
                                             <property name="checked">
                                                 <bool>true</bool>
@@ -1581,9 +1569,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                         <property name="text">
                                             <string>Host CD/DVD &amp;Drive</string>
                                         </property>
-                                        <property name="accel">
-                                            <string>Alt+D</string>
-                                        </property>
                                         <property name="whatsThis" stdset="0">
                                             <string>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</string>
                                         </property>
@@ -1658,9 +1643,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                         <property name="text">
                                             <string>&amp;Enable Passthrough</string>
                                         </property>
-                                        <property name="accel">
-                                            <string>Alt+E</string>
-                                        </property>
                                         <property name="whatsThis" stdset="0">
                                             <string>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</string>
                                         </property>
@@ -1681,9 +1663,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                         </property>
                                         <property name="text">
                                             <string>&amp;ISO Image File</string>
-                                        </property>
-                                        <property name="accel">
-                                            <string>Alt+I</string>
                                         </property>
                                         <property name="whatsThis" stdset="0">
                                             <string>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</string>
@@ -1838,9 +1817,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                         <property name="text">
                                             <string>Host Floppy &amp;Drive</string>
                                         </property>
-                                        <property name="accel">
-                                            <string>Alt+D</string>
-                                        </property>
                                         <property name="whatsThis" stdset="0">
                                             <string>Mounts the specified host Floppy drive to the virtual Floppy drive.</string>
                                         </property>
@@ -1886,9 +1862,6 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                         </property>
                                         <property name="text">
                                             <string>&amp;Image File</string>
-                                        </property>
-                                        <property name="accel">
-                                            <string>Alt+I</string>
                                         </property>
                                         <property name="whatsThis" stdset="0">
                                             <string>Mounts the specified Floppy image to the virtual Floppy drive.</string>
@@ -2264,9 +2237,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                         </property>
                         <property name="text">
                             <string>Enable &amp;USB Controller</string>
-                        </property>
-                        <property name="accel">
-                            <string>Alt+U</string>
                         </property>
                         <property name="whatsThis" stdset="0">
                             <string>When checked, enables the virtual USB controller of this machine.</string>
@@ -2855,9 +2825,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     </property>
                     <property name="text">
                         <string>&amp;OK</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+O</string>
                     </property>
                     <property name="autoDefault">
                         <bool>true</bool>

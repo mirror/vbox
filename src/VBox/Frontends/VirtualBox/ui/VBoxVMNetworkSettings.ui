@@ -144,9 +144,6 @@
                             <property name="text">
                                 <string>&amp;Generate</string>
                             </property>
-                            <property name="accel">
-                                <string>Alt+G</string>
-                            </property>
                             <property name="whatsThis" stdset="0">
                                 <string>Generates a new random MAC address.</string>
                             </property>
@@ -205,9 +202,6 @@
                     </property>
                     <property name="text">
                         <string>Ca&amp;ble Connected</string>
-                    </property>
-                    <property name="accel">
-                        <string>Alt+B</string>
                     </property>
                     <property name="whatsThis" stdset="0">
                         <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>

@@ -119,20 +119,25 @@ public:
 
     void languageChange()
     {
+        QKeySequence accel;
+
         QToolTip::add (mButtonClose, tr ("Close the search panel"));
+
         mSearchName->setText (tr ("Find "));
         QToolTip::add (mSearchString, tr ("Enter a search string here"));
-        mButtonPrev->setTextLabel (tr ("&Previous"));
-        mButtonPrev->setAccel (QKeySequence (tr ("Alt+P")));
+
+        VBoxGlobal::setTextLabel (mButtonPrev, tr ("&Previous"));
         QToolTip::add (mButtonPrev,
             tr ("Search for the previous occurrence of the string"));
-        mButtonNext->setTextLabel (tr ("&Next"));
-        mButtonNext->setAccel (QKeySequence (tr ("Alt+N")));
+
+        VBoxGlobal::setTextLabel (mButtonNext, tr ("&Next"));
         QToolTip::add (mButtonNext,
             tr ("Search for the next occurrence of the string"));
+
         mCaseSensitive->setText (tr ("C&ase Sensitive"));
         QToolTip::add (mCaseSensitive,
             tr ("Perform case sensitive search (when checked)"));
+
         mWarningString->setText (tr ("String not found"));
     }
 

@@ -266,9 +266,6 @@
                                 <property name="text">
                                     <string>&amp;CD/DVD-ROM Device</string>
                                 </property>
-                                <property name="accel">
-                                    <string>Alt+C</string>
-                                </property>
                                 <property name="checked">
                                     <bool>false</bool>
                                 </property>
@@ -282,9 +279,6 @@
                                 </property>
                                 <property name="text">
                                     <string>&amp;Floppy Device</string>
-                                </property>
-                                <property name="accel">
-                                    <string>Alt+F</string>
                                 </property>
                             </widget>
                         </vbox>
@@ -356,9 +350,6 @@
                                         <property name="text">
                                             <string>&amp;Host Drive</string>
                                         </property>
-                                        <property name="accel">
-                                            <string>Alt+H</string>
-                                        </property>
                                         <property name="checked">
                                             <bool>false</bool>
                                         </property>
@@ -412,9 +403,6 @@
                                         </property>
                                         <property name="text">
                                             <string>&amp;Image File</string>
-                                        </property>
-                                        <property name="accel">
-                                            <string>Alt+I</string>
                                         </property>
                                     </widget>
                                     <spacer>

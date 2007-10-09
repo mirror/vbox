@@ -231,9 +231,6 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</string>
                                 <property name="text">
                                     <string>&amp;Dynamically expanding image</string>
                                 </property>
-                                <property name="accel">
-                                    <string>Alt+D</string>
-                                </property>
                                 <property name="checked">
                                     <bool>true</bool>
                                 </property>
@@ -244,9 +241,6 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</string>
                                 </property>
                                 <property name="text">
                                     <string>&amp;Fixed-size image</string>
-                                </property>
-                                <property name="accel">
-                                    <string>Alt+F</string>
                                 </property>
                             </widget>
                         </vbox>
