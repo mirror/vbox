@@ -233,6 +233,9 @@ static int csamReinit(PVM pVM)
     pVM->csam.s.cDangerousInstr = 0;
     pVM->csam.s.iDangerousInstr  = 0;
 
+    memset(pVM->csam.s.pvCallInstruction, 0, sizeof(pVM->csam.s.pvCallInstruction));
+    pVM->csam.s.iCallInstruction = 0;
+
     /** @note never mess with the pgdir bitmap here! */
     return VINF_SUCCESS;
 }
@@ -2247,7 +2250,25 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
         return VERR_INVALID_PARAMETER;
 
     if (cGates != 1)
+    {
         pVM->csam.s.fGatesChecked = true;
+        for (unsigned i=0;i<RT_ELEMENTS(pVM->csam.s.pvCallInstruction);i++)
+        {
+            RTGCPTR pHandler = pVM->csam.s.pvCallInstruction[i];
+            CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
+            PCSAMPAGE pPage = NULL;
+
+            Log(("CSAMCheckGates: checking previous call instruction %VGv\n", pHandler));
+            STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
+            rc = csamAnalyseCodeStream(pVM, pHandler, pHandler, true, CSAMR3AnalyseCallback, pPage, &cacheRec);
+            STAM_PROFILE_STOP(&pVM->csam.s.StatTime, a);
+            if (rc != VINF_SUCCESS)
+            {
+                Log(("CSAMCheckGates: csamAnalyseCodeStream failed with %d\n", rc));
+                continue;
+            }
+        }
+    }
 
     /* Determine valid upper boundary. */
     maxGates   = (cbIDT+1) / sizeof(VBOXIDTE);
@@ -2409,6 +2430,31 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
     return VINF_SUCCESS;
 }
+
+/**
+ * Record previous call instruction addresses
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCPtrCall   Call address
+ */
+CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTGCPTR GCPtrCall)
+{
+    for (unsigned i=0;i<RT_ELEMENTS(pVM->csam.s.pvCallInstruction);i++)
+    {
+        if (pVM->csam.s.pvCallInstruction[i] == GCPtrCall)
+            return VINF_SUCCESS;
+    }
+
+    Log(("CSAMR3RecordCallAddress %VGv\n", GCPtrCall));
+
+    pVM->csam.s.pvCallInstruction[pVM->csam.s.iCallInstruction++] = GCPtrCall;
+    if (pVM->csam.s.iCallInstruction >= RT_ELEMENTS(pVM->csam.s.pvCallInstruction))
+        pVM->csam.s.iCallInstruction = 0;
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Query CSAM state (enabled/disabled)

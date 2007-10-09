@@ -270,6 +270,15 @@ CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTGCPTR pPageAddrGC, CSAMTAG enmTag);
  */
 CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates);
 
+/**
+ * Record previous call instruction addresses
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCPtrCall   Call address
+ */
+CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTGCPTR GCPtrCall);
+
 /** @} */
 #endif
 
