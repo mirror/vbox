@@ -209,7 +209,7 @@ typedef struct X86CPUIDFEATEDX
     unsigned    u1DE : 1;
     /** Bit 3 - PSE - Page Size Extension. */
     unsigned    u1PSE : 1;
-    /** Bit 4 - TSC - Tiem Stamp Counter. */
+    /** Bit 4 - TSC - Time Stamp Counter. */
     unsigned    u1TSC : 1;
     /** Bit 5 - MSR - Model Specific Registers RDMSR and WRMSR Instructions. */
     unsigned    u1MSR : 1;
