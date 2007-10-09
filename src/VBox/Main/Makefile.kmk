@@ -191,7 +191,7 @@ VBoxSVC_SOURCES.win = \
 	win32/svchlp.cpp \
 	win32/VBoxSVC.rc
 
-vBoxSVC_SOURCES.linux = \
+VBoxSVC_SOURCES.linux = \
 	linux/vbox-libhal.cpp
 
 VBoxSVC_SOURCES.solaris = \
