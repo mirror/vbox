@@ -57,6 +57,7 @@ FILES_VBOXADD_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/alloc-r0drv.h=>r0drv/alloc-r0drv.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semevent-r0drv-linux.c=>r0drv/linux/semevent-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semeventmulti-r0drv-linux.c=>r0drv/linux/semeventmulti-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semfastmutex-r0drv-linux.c=>r0drv/linux/semfastmutex-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \

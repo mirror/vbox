@@ -61,6 +61,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/memobj-r0drv-linux.c=>r0drv/linux/memobj-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/process-r0drv-linux.c=>r0drv/linux/process-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semevent-r0drv-linux.c=>r0drv/linux/semevent-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semeventmulti-r0drv-linux.c=>r0drv/linux/semeventmulti-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semfastmutex-r0drv-linux.c=>r0drv/linux/semfastmutex-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/spinlock-r0drv-linux.c=>r0drv/linux/spinlock-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
