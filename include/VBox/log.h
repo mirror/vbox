@@ -68,6 +68,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV,
     /** ACPI Device group. */
     LOG_GROUP_DEV_ACPI,
+    /** AHCI Device group. */
+    LOG_GROUP_DEV_AHCI,
     /** APIC Device group. */
     LOG_GROUP_DEV_APIC,
     /** Audio Device group. */
@@ -296,6 +298,7 @@ typedef enum LOGGROUP
     "DBGG",         \
     "DEV",          \
     "DEV_ACPI",     \
+    "DEV_AHCI",     \
     "DEV_APIC",     \
     "DEV_AUDIO",    \
     "DEV_DMA",      \
