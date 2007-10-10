@@ -4,7 +4,7 @@
 # (For 2.6.x this file must be 'Makefile'!)
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -12,6 +12,7 @@
 #  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 #
 MODULE = vboxadd
@@ -27,7 +28,8 @@ OBJS   = \
 	VMMDev.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
-	r0drv/linux/semaphore-r0drv-linux.o \
+	r0drv/linux/semevent-r0drv-linux.o \
+	r0drv/linux/semfastmutex-r0drv-linux.o \
 	RTErrConvertToErrno.o \
 	divdi3.o \
 	moddi3.o \
