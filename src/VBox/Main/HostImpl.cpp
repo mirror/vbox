@@ -1617,7 +1617,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                                     halDevices[i], "block.device", &dbusError);
 #ifdef RT_OS_SOLARIS
                             /* The CD/DVD ioctls work only for raw device nodes. */
-                            char *tmp = getfullrawname(deviceNode);
+                            char *tmp = getfullrawname(devNode);
                             gLibHalFreeString(devNode);
                             devNode = tmp;
 #endif
