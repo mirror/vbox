@@ -53,15 +53,21 @@ EXPORTS
     ; broken - RTSemMutexRequest
     ; broken - RTSemMutexRelease
     ; broken - RTSemMutexDestroy
-    RTSemFastMutexCreate
-    RTSemFastMutexDestroy
-    RTSemFastMutexRequest
-    RTSemFastMutexRelease
     RTSemEventCreate
     RTSemEventSignal
     RTSemEventWait
     RTSemEventWaitNoResume
     RTSemEventDestroy
+    RTSemEventMultiCreate
+    RTSemEventMultiSignal
+    RTSemEventMultiReset
+    RTSemEventMultiWait
+    RTSemEventMultiWaitNoResume
+    RTSemEventMultiDestroy
+    RTSemFastMutexCreate
+    RTSemFastMutexDestroy
+    RTSemFastMutexRequest
+    RTSemFastMutexRelease
     RTSpinlockCreate
     RTSpinlockDestroy
     RTSpinlockAcquire
