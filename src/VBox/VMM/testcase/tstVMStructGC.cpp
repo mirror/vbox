@@ -756,6 +756,8 @@ int main()
     GEN_CHECK_OFF(CSAM, pvDirtyFaultPage);
     GEN_CHECK_OFF(CSAM, pvDirtyFaultPage[1]);
     GEN_CHECK_OFF(CSAM, pvDirtyFaultPage[CSAM_MAX_DIRTY_PAGES - 1]);
+    GEN_CHECK_OFF(CSAM, pvCallInstruction);
+    GEN_CHECK_OFF(CSAM, iCallInstruction);
     GEN_CHECK_OFF(CSAM, fScanningStarted);
     GEN_CHECK_OFF(CSAM, fGatesChecked);
     GEN_CHECK_OFF(CSAM, StatNrTraps);

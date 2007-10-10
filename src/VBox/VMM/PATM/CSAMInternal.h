@@ -185,7 +185,7 @@ typedef struct CSAM
 
     /* Set when the IDT gates have been checked for the first time. */
     bool                fGatesChecked;
-    bool                Alignment1[HC_ARCH_BITS == 32 ? 4 : 6]; /**< Align the stats on an 8-byte boundrary. */
+    bool                Alignment1[HC_ARCH_BITS == 32 ? 4 : 2]; /**< Align the stats on an 8-byte boundrary. */
 
     STAMCOUNTER         StatNrTraps;
     STAMCOUNTER         StatNrPages;
