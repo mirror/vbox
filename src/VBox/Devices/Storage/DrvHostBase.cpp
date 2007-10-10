@@ -953,7 +953,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pBlockFileDevice, PRTFILE
     {
         rc = RTFileOpen(pFileRawDevice, pThis->pszRawDeviceOpen, fFlags);
         if (RT_FAILURE(rc))
-            RTFileClose(BlockFileDevice);
+            RTFileClose(*pBlockFileDevice);
     }
     return rc;
 }
