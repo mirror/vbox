@@ -781,7 +781,9 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/memobj-r0drv-nt.cpp \
 	r0drv/nt/process-r0drv-nt.cpp \
 	r0drv/nt/RTLogWriteDebugger-r0drv-nt.cpp \
-	r0drv/nt/semaphore-r0drv-nt.cpp \
+	r0drv/nt/semevent-r0drv-nt.cpp \
+	r0drv/nt/semmutex-r0drv-nt.cpp \
+	r0drv/nt/semfastmutex-r0drv-nt.cpp \
 	r0drv/nt/spinlock-r0drv-nt.cpp \
 	r0drv/nt/thread-r0drv-nt.cpp \
 	r0drv/nt/thread2-r0drv-nt.cpp \
