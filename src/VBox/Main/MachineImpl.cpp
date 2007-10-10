@@ -2615,6 +2615,158 @@ void Machine::getLogFolder (Utf8Str &aLogFolder)
 }
 
 /**
+ *  Returns @c true if the given DVD image is attached to this machine either
+ *  in the current state or in any of the snapshots.
+ * 
+ *  @param aId          Image ID to check.
+ *  @param aUsage       Type of the check.
+ *
+ *  @note Locks this object + DVD object for reading.
+ */
+bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc() || autoCaller.state() == Limited, false);
+
+    /* answer 'not attached' if the VM is limited */
+    if (autoCaller.state() == Limited)
+        return false;
+
+    AutoReaderLock alock (this);
+
+    Machine *m = this;
+
+    /* take the session machine when appropriate */
+    if (!mData->mSession.mMachine.isNull())
+        m = mData->mSession.mMachine;
+
+    /* first, check the current state */
+    {
+        const ComObjPtr <DVDDrive> &dvd = m->dvdDrive();
+        AssertReturn (!dvd.isNull(), false);
+
+        AutoReaderLock dvdLock (dvd);
+
+        /* loop over the backed up (permanent) and current (temporary) DVD data */
+        DVDDrive::Data *d [2];
+        if (dvd->data().isBackedUp())
+        {
+            d [0] = dvd->data().backedUpData();
+            d [1] = dvd->data().data();
+        }
+        else
+        {
+            d [0] = dvd->data().data();
+            d [1] = NULL;
+        }
+
+        if (!(aUsage & ResourceUsage_PermanentUsage))
+            d [0] = NULL;
+        if (!(aUsage & ResourceUsage_TemporaryUsage))
+            d [1] = NULL;
+
+        for (unsigned i = 0; i < ELEMENTS (d); ++ i)
+        {
+            if (d [i] &&
+                d [i]->mDriveState == DriveState_ImageMounted)
+            {
+                Guid id;
+                HRESULT rc = d [i]->mDVDImage->COMGETTER(Id) (id.asOutParam());
+                AssertComRC (rc);
+                if (id == aId)
+                    return true;
+            }
+        }
+    }
+
+    /* then, check snapshots if any */
+    if (aUsage & ResourceUsage_PermanentUsage)
+    {
+        if (!mData->mFirstSnapshot.isNull() &&
+            mData->mFirstSnapshot->isDVDImageUsed (aId))
+            return true;
+    }
+
+    return false;
+}
+
+/** 
+ *  Returns @c true if the given Floppy image is attached to this machine either
+ *  in the current state or in any of the snapshots.
+ * 
+ *  @param aId          Image ID to check.
+ *  @param aUsage       Type of the check.
+ *
+ *  @note Locks this object + Floppy object for reading.
+ */
+bool Machine::isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc() || autoCaller.state() == Limited, false);
+
+    /* answer 'not attached' if the VM is limited */
+    if (autoCaller.state() == Limited)
+        return false;
+
+    AutoReaderLock alock (this);
+
+    Machine *m = this;
+
+    /* take the session machine when appropriate */
+    if (!mData->mSession.mMachine.isNull())
+        m = mData->mSession.mMachine;
+
+    /* first, check the current state */
+    {
+        const ComObjPtr <FloppyDrive> &floppy = m->floppyDrive();
+        AssertReturn (!floppy.isNull(), false);
+
+        AutoReaderLock floppyLock (floppy);
+
+        /* loop over the backed up (permanent) and current (temporary) Floppy data */
+        FloppyDrive::Data *d [2];
+        if (floppy->data().isBackedUp())
+        {
+            d [0] = floppy->data().backedUpData();
+            d [1] = floppy->data().data();
+        }
+        else
+        {
+            d [0] = floppy->data().data();
+            d [1] = NULL;
+        }
+
+        if (!(aUsage & ResourceUsage_PermanentUsage))
+            d [0] = NULL;
+        if (!(aUsage & ResourceUsage_TemporaryUsage))
+            d [1] = NULL;
+
+        for (unsigned i = 0; i < ELEMENTS (d); ++ i)
+        {
+            if (d [i] &&
+                d [i]->mDriveState == DriveState_ImageMounted)
+            {
+                Guid id;
+                HRESULT rc = d [i]->mFloppyImage->COMGETTER(Id) (id.asOutParam());
+                AssertComRC (rc);
+                if (id == aId)
+                    return true;
+            }
+        }
+    }
+
+    /* then, check snapshots if any */
+    if (aUsage & ResourceUsage_PermanentUsage)
+    {
+        if (!mData->mFirstSnapshot.isNull() &&
+            mData->mFirstSnapshot->isFloppyImageUsed (aId))
+            return true;
+    }
+
+    return false;
+}
+
+/**
  *  @note Locks mParent and this object for writing,
  *        calls the client process (outside the lock).
  */

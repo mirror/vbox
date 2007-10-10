@@ -2728,8 +2728,16 @@ void VirtualBox::getOpenedMachines (SessionMachineVector &aVector)
 /**
  *  Helper to find machines that use the given DVD image.
  *
- *  @param machineIDs   string where to store the list (can be NULL)
- *  @return TRUE if at least one machine found and false otherwise
+ *  This method also checks whether an existing snapshot refers to the given
+ *  image. However, only the machine ID is returned in this case, not IDs of
+ *  individual snapshots.
+ *
+ *  @param aId          Image ID to get usage for.
+ *  @param aUsage       Type of the check.
+ *  @param aMachineIDs  Where to store the list of machine IDs (can be NULL)
+ *
+ *  @return @c true if at least one machine or its snapshot found and @c false
+ *  otherwise.
  *
  *  @note For now, we just scan all the machines. We can optimize this later
  *  if required by adding the corresponding field to DVDImage and requiring all
@@ -2737,9 +2745,9 @@ void VirtualBox::getOpenedMachines (SessionMachineVector &aVector)
  *
  *  @note Locks objects for reading.
  */
-BOOL VirtualBox::getDVDImageUsage (const Guid &id,
-                                   ResourceUsage_T usage,
-                                   Bstr *machineIDs)
+bool VirtualBox::getDVDImageUsage (const Guid &aId,
+                                   ResourceUsage_T aUsage,
+                                   Bstr *aMachineIDs)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), FALSE);
@@ -2754,53 +2762,19 @@ BOOL VirtualBox::getDVDImageUsage (const Guid &id,
              mit != mData.mMachines.end();
              ++ mit)
         {
-            /// @todo (dmik) move this part to Machine for better incapsulation
-
             ComObjPtr <Machine> m = *mit;
-            AutoReaderLock malock (m);
-
-            /* take the session machine when appropriate */
-            if (!m->data()->mSession.mMachine.isNull())
-                m = m->data()->mSession.mMachine;
-
-            const ComObjPtr <DVDDrive> &dvd = m->dvdDrive();
-            AutoReaderLock dalock (dvd);
-
-            /* loop over the backed up (permanent) and current (temporary) dvd data */
-            DVDDrive::Data *dvdData [2];
-            if (dvd->data().isBackedUp())
+            if (m->isDVDImageUsed (aId, aUsage))
             {
-                dvdData [0] = dvd->data().backedUpData();
-                dvdData [1] = dvd->data().data();
-            }
-            else
-            {
-                dvdData [0] = dvd->data().data();
-                dvdData [1] = NULL;
-            }
+                /* if not interested in the list, return shortly */
+                if (aMachineIDs == NULL)
+                    return true;
 
-            if (!(usage & ResourceUsage_PermanentUsage))
-                dvdData [0] = NULL;
-            if (!(usage & ResourceUsage_TemporaryUsage))
-                dvdData [1] = NULL;
-
-            for (unsigned i = 0; i < ELEMENTS (dvdData); i++)
-            {
-                if (dvdData [i])
-                {
-                    if (dvdData [i]->mDriveState == DriveState_ImageMounted)
-                    {
-                        Guid iid;
-                        dvdData [i]->mDVDImage->COMGETTER(Id) (iid.asOutParam());
-                        if (iid == id)
-                            idSet.insert (m->data()->mUuid);
-                    }
-                }
+                idSet.insert (m->data()->mUuid);
             }
         }
     }
 
-    if (machineIDs)
+    if (aMachineIDs)
     {
         if (!idSet.empty())
         {
@@ -2818,12 +2792,12 @@ BOOL VirtualBox::getDVDImageUsage (const Guid &id,
             /* remove the trailing space */
             *(-- idListPtr) = 0;
             /* copy the string */
-            *machineIDs = idList;
+            *aMachineIDs = idList;
             RTMemTmpFree (idList);
         }
         else
         {
-            (*machineIDs).setNull();
+            (*aMachineIDs).setNull();
         }
     }
 
@@ -2831,20 +2805,28 @@ BOOL VirtualBox::getDVDImageUsage (const Guid &id,
 }
 
 /**
- *  Helper to find machines that use the given floppy image.
+ *  Helper to find machines that use the given Floppy image.
  *
- *  @param machineIDs   string where to store the list (can be NULL)
- *  @return TRUE if at least one machine found and false otherwise
+ *  This method also checks whether an existing snapshot refers to the given
+ *  image. However, only the machine ID is returned in this case, not IDs of
+ *  individual snapshots.
+ *
+ *  @param aId          Image ID to get usage for.
+ *  @param aUsage       Type of the check.
+ *  @param aMachineIDs  Where to store the list of machine IDs (can be NULL)
+ *
+ *  @return @c true if at least one machine or its snapshot found and @c false
+ *  otherwise.
  *
  *  @note For now, we just scan all the machines. We can optimize this later
  *  if required by adding the corresponding field to FloppyImage and requiring all
- *  IFloppyImage instances to be FloppyImage objects.
+ *  FloppyImage instances to be FloppyImage objects.
  *
  *  @note Locks objects for reading.
  */
-BOOL VirtualBox::getFloppyImageUsage (const Guid &id,
-                                      ResourceUsage_T usage,
-                                      Bstr *machineIDs)
+bool VirtualBox::getFloppyImageUsage (const Guid &aId,
+                                      ResourceUsage_T aUsage,
+                                      Bstr *aMachineIDs)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), FALSE);
@@ -2859,53 +2841,19 @@ BOOL VirtualBox::getFloppyImageUsage (const Guid &id,
              mit != mData.mMachines.end();
              ++ mit)
         {
-            /// @todo (dmik) move this part to Machine for better incapsulation
-
             ComObjPtr <Machine> m = *mit;
-            AutoReaderLock malock (m);
-
-            /* take the session machine when appropriate */
-            if (!m->data()->mSession.mMachine.isNull())
-                m = m->data()->mSession.mMachine;
-
-            const ComObjPtr <FloppyDrive> &drv = m->floppyDrive();
-            AutoReaderLock dalock (drv);
-
-            /* loop over the backed up (permanent) and current (temporary) floppy data */
-            FloppyDrive::Data *data [2];
-            if (drv->data().isBackedUp())
+            if (m->isFloppyImageUsed (aId, aUsage))
             {
-                data [0] = drv->data().backedUpData();
-                data [1] = drv->data().data();
-            }
-            else
-            {
-                data [0] = drv->data().data();
-                data [1] = NULL;
-            }
+                /* if not interested in the list, return shortly */
+                if (aMachineIDs == NULL)
+                    return true;
 
-            if (!(usage & ResourceUsage_PermanentUsage))
-                data [0] = NULL;
-            if (!(usage & ResourceUsage_TemporaryUsage))
-                data [1] = NULL;
-
-            for (unsigned i = 0; i < ELEMENTS (data); i++)
-            {
-                if (data [i])
-                {
-                    if (data [i]->mDriveState == DriveState_ImageMounted)
-                    {
-                        Guid iid;
-                        data [i]->mFloppyImage->COMGETTER(Id) (iid.asOutParam());
-                        if (iid == id)
-                            idSet.insert (m->data()->mUuid);
-                    }
-                }
+                idSet.insert (m->data()->mUuid);
             }
         }
     }
 
-    if (machineIDs)
+    if (aMachineIDs)
     {
         if (!idSet.empty())
         {
@@ -2923,12 +2871,12 @@ BOOL VirtualBox::getFloppyImageUsage (const Guid &id,
             /* remove the trailing space */
             *(-- idListPtr) = 0;
             /* copy the string */
-            *machineIDs = idList;
+            *aMachineIDs = idList;
             RTMemTmpFree (idList);
         }
         else
         {
-            (*machineIDs).setNull();
+            (*aMachineIDs).setNull();
         }
     }
 

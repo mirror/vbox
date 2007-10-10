@@ -395,6 +395,84 @@ ComObjPtr <Snapshot> Snapshot::findChildOrSelf (INPTR BSTR aName)
 }
 
 /**
+ *  Returns @c true if the given DVD image is attached to this snapshot or any
+ *  of its children, recursively.
+ * 
+ *  @param aId          Image ID to check.
+ * 
+ *  @note Locks this object for reading.
+ */
+bool Snapshot::isDVDImageUsed (const Guid &aId)
+{
+    AutoReaderLock alock (this);
+    AssertReturn (isReady(), false);
+
+    AssertReturn (!mData.mMachine.isNull(), false);
+    AssertReturn (!mData.mMachine->dvdDrive().isNull(), false);
+
+    DVDDrive::Data *d = mData.mMachine->dvdDrive()->data().data();
+
+    if (d &&
+        d->mDriveState == DriveState_ImageMounted)
+    {
+        Guid id;
+        HRESULT rc = d->mDVDImage->COMGETTER(Id) (id.asOutParam());
+        AssertComRC (rc);
+        if (id == aId)
+            return true;
+    }
+
+    AutoReaderLock chLock (childrenLock());
+    for (SnapshotList::const_iterator it = children().begin();
+         it != children().end(); ++ it)
+    {
+        if ((*it)->isDVDImageUsed (aId))
+            return true;
+    }
+
+    return false;
+}
+
+/** 
+ *  Returns @c true if the given Floppy image is attached to this snapshot or any
+ *  of its children, recursively.
+ * 
+ *  @param aId          Image ID to check.
+ * 
+ *  @note Locks this object for reading.
+ */
+bool Snapshot::isFloppyImageUsed (const Guid &aId)
+{
+    AutoReaderLock alock (this);
+    AssertReturn (isReady(), false);
+
+    AssertReturn (!mData.mMachine.isNull(), false);
+    AssertReturn (!mData.mMachine->dvdDrive().isNull(), false);
+
+    FloppyDrive::Data *d = mData.mMachine->floppyDrive()->data().data();
+
+    if (d &&
+        d->mDriveState == DriveState_ImageMounted)
+    {
+        Guid id;
+        HRESULT rc = d->mFloppyImage->COMGETTER(Id) (id.asOutParam());
+        AssertComRC (rc);
+        if (id == aId)
+            return true;
+    }
+
+    AutoReaderLock chLock (childrenLock());
+    for (SnapshotList::const_iterator it = children().begin();
+         it != children().end(); ++ it)
+    {
+        if ((*it)->isFloppyImageUsed (aId))
+            return true;
+    }
+
+    return false;
+}
+
+/**
  *  Checks if the specified path change affects the saved state file path of
  *  this snapshot or any of its (grand-)children and updates it accordingly.
  *

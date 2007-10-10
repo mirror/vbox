@@ -106,6 +106,9 @@ public:
     ComObjPtr <Snapshot> findChildOrSelf (INPTR GUIDPARAM aId);
     ComObjPtr <Snapshot> findChildOrSelf (INPTR BSTR aName);
 
+    bool isDVDImageUsed (const Guid &aId);
+    bool isFloppyImageUsed (const Guid &aId);
+
     void updateSavedStatePaths (const char *aOldPath, const char *aNewPath);
 
     // for VirtualBoxSupportErrorInfoImpl

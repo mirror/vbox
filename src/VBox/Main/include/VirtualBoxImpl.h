@@ -230,10 +230,10 @@ public:
         return findHardDisk (&aId, NULL, true /* aDoSetError */, &aHardDisk);
     }
 
-    BOOL getDVDImageUsage (const Guid &id, ResourceUsage_T usage,
-                           Bstr *machineIDs = NULL);
-    BOOL getFloppyImageUsage (const Guid &id, ResourceUsage_T usage,
-                              Bstr *machineIDs = NULL);
+    bool getDVDImageUsage (const Guid &aId, ResourceUsage_T aUsage,
+                           Bstr *aMachineIDs = NULL);
+    bool getFloppyImageUsage (const Guid &aId, ResourceUsage_T aUsage,
+                              Bstr *aMachineIDs = NULL);
 
     const ComObjPtr <Host> &host() { return mData.mHost; }
     const ComObjPtr <SystemProperties> &systemProperties() { return mData.mSystemProperties; }
