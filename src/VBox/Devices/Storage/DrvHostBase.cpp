@@ -945,15 +945,15 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
  *
  * @returns VBox status code.
  */
-static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pBlockFileDevice, PRTFILE pFileRawDevice, bool fReadOnly)
+static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileBlockDevice, PRTFILE pFileRawDevice, bool fReadOnly)
 {
     unsigned fFlags = (pThis->fReadOnlyConfig ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_NON_BLOCK;
-    int rc = RTFileOpen(pBlockFileDevice, pThis->pszDeviceOpen, fFlags);
+    int rc = RTFileOpen(pFileBlockDevice, pThis->pszDeviceOpen, fFlags);
     if (RT_SUCCESS(rc))
     {
         rc = RTFileOpen(pFileRawDevice, pThis->pszRawDeviceOpen, fFlags);
         if (RT_FAILURE(rc))
-            RTFileClose(*pBlockFileDevice);
+            RTFileClose(*pFileBlockDevice);
     }
     return rc;
 }
