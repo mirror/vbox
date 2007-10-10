@@ -5,7 +5,7 @@
 
 #
 #
-#  Copyright (C) 2006 innotek GmbH
+#  Copyright (C) 2006-2007 innotek GmbH
 #
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,7 @@
 #  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 #
 # First, figure out which architecture we're targeting.
@@ -49,7 +50,9 @@ OBJS   = \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
 	r0drv/linux/process-r0drv-linux.o \
-	r0drv/linux/semaphore-r0drv-linux.o \
+	r0drv/linux/semevent-r0drv-linux.o \
+	r0drv/linux/semeventmulti-r0drv-linux.o \
+	r0drv/linux/semfastmutex-r0drv-linux.o \
 	r0drv/linux/spinlock-r0drv-linux.o \
 	r0drv/linux/thread-r0drv-linux.o
 ifeq ($(BUILD_TARGET_ARCH),amd64)
