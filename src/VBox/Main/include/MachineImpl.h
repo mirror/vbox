@@ -542,6 +542,9 @@ public:
 
     void getLogFolder (Utf8Str &aLogFolder);
 
+    bool isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage);
+    bool isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage);
+
     HRESULT openSession (IInternalSessionControl *aControl);
     HRESULT openRemoteSession (IInternalSessionControl *aControl,
                                INPTR BSTR aType, INPTR BSTR aEnvironment,
