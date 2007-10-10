@@ -1466,3 +1466,114 @@ GVMMR0DECL(int) GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq)
     return GVMMR0QueryStatistics(&pReq->Stats, pReq->pSession, pVM);
 }
 
+
+/**
+ * Resets the specified GVMM statistics.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pStats      Which statistics to reset, that is, non-zero fields indicates which to reset.
+ * @param   pSession    The current session.
+ * @param   pVM         The VM to reset statistics for. Optional.
+ */
+GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+{
+    LogFlow(("GVMMR0ResetStatistics: pStats=%p pSession=%p pVM=%p\n", pStats, pSession, pVM));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStats, VERR_INVALID_POINTER);
+
+    /*
+     * Take the lock and get the VM statistics.
+     */
+    PGVMM pGVMM;
+    if (pVM)
+    {
+        PGVM pGVM;
+        int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /*fTakeUsedLock*/);
+        if (RT_FAILURE(rc))
+            return rc;
+#       define MAYBE_RESET_FIELD(field) \
+            do { if (pStats->SchedVM. field ) { pGVM->gvmm.s.StatsSched. field = 0; } } while (0)
+        MAYBE_RESET_FIELD(cHaltCalls);
+        MAYBE_RESET_FIELD(cHaltBlocking);
+        MAYBE_RESET_FIELD(cHaltTimeouts);
+        MAYBE_RESET_FIELD(cHaltNotBlocking);
+        MAYBE_RESET_FIELD(cHaltWakeUps);
+        MAYBE_RESET_FIELD(cWakeUpCalls);
+        MAYBE_RESET_FIELD(cWakeUpNotHalted);
+        MAYBE_RESET_FIELD(cWakeUpWakeUps);
+        MAYBE_RESET_FIELD(cPollCalls);
+        MAYBE_RESET_FIELD(cPollHalts);
+        MAYBE_RESET_FIELD(cPollWakeUps);
+#       undef MAYBE_RESET_FIELD
+    }
+    else
+    {
+        GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+
+        int rc = RTSemFastMutexRequest(pGVMM->UsedLock);
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Enumerate the VMs and add the ones visibile to the statistics.
+     */
+    if (ASMMemIsAll8(&pStats->SchedSum, sizeof(pStats->SchedSum), 0))
+    {
+        for (unsigned i = pGVMM->iUsedHead;
+             i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
+             i = pGVMM->aHandles[i].iNext)
+        {
+            PGVM pGVM = pGVMM->aHandles[i].pGVM;
+            void *pvObj = pGVMM->aHandles[i].pvObj;
+            if (    VALID_PTR(pvObj)
+                &&  VALID_PTR(pGVM)
+                &&  pGVM->u32Magic == GVM_MAGIC
+                &&  RT_SUCCESS(SUPR0ObjVerifyAccess(pvObj, pSession, NULL)))
+            {
+#               define MAYBE_RESET_FIELD(field) \
+                    do { if (pStats->SchedSum. field ) { pGVM->gvmm.s.StatsSched. field = 0; } } while (0)
+                MAYBE_RESET_FIELD(cHaltCalls);
+                MAYBE_RESET_FIELD(cHaltBlocking);
+                MAYBE_RESET_FIELD(cHaltTimeouts);
+                MAYBE_RESET_FIELD(cHaltNotBlocking);
+                MAYBE_RESET_FIELD(cHaltWakeUps);
+                MAYBE_RESET_FIELD(cWakeUpCalls);
+                MAYBE_RESET_FIELD(cWakeUpNotHalted);
+                MAYBE_RESET_FIELD(cWakeUpWakeUps);
+                MAYBE_RESET_FIELD(cPollCalls);
+                MAYBE_RESET_FIELD(cPollHalts);
+                MAYBE_RESET_FIELD(cPollWakeUps);
+#               undef MAYBE_RESET_FIELD
+            }
+        }
+    }
+
+    RTSemFastMutexRelease(pGVMM->UsedLock);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * VMMR0 request wrapper for GVMMR0ResetStatistics.
+ *
+ * @returns see GVMMR0ResetStatistics.
+ * @param   pVM             Pointer to the shared VM structure. Optional.
+ * @param   pReq            The request packet.
+ */
+GVMMR0DECL(int) GVMMR0ResetStatisticsReq(PVM pVM, PGVMMRESETSTATISTICSSREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GVMMR0ResetStatistics(&pReq->Stats, pReq->pSession, pVM);
+}
+

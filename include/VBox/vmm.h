@@ -367,6 +367,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GVMM_SCHED_POLL,
     /** Call GVMMR0QueryStatistics(). */
     VMMR0_DO_GVMM_QUERY_STATISTICS,
+    /** Call GVMMR0ResetStatistics(). */
+    VMMR0_DO_GVMM_RESET_STATISTICS,
 
     /** Call VMMR0 Per VM Init. */
     VMMR0_DO_VMMR0_INIT,

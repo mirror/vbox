@@ -713,6 +713,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
                 return VERR_INVALID_PARAMETER;
             return GVMMR0QueryStatisticsReq(pVM, (PGVMMQUERYSTATISTICSSREQ)pReqHdr);
 
+        case VMMR0_DO_GVMM_RESET_STATISTICS:
+            if (u64Arg)
+                return VERR_INVALID_PARAMETER;
+            return GVMMR0QueryStatisticsReq(pVM, (PGVMMQUERYSTATISTICSSREQ)pReqHdr);
+
         /*
          * Initialize the R0 part of a VM instance.
          */

@@ -1503,12 +1503,12 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
 
 /**
  * Compiler memory barrier.
- * 
- * Ensure that the compiler does not use any cached (register/tmp stack) memory 
+ *
+ * Ensure that the compiler does not use any cached (register/tmp stack) memory
  * values or any outstanding writes when returning from this function.
- * 
- * This function must be used if non-volatile data is modified by a 
- * device or the VMM. Typical cases are port access, MMIO access, 
+ *
+ * This function must be used if non-volatile data is modified by a
+ * device or the VMM. Typical cases are port access, MMIO access,
  * trapping instruction, etc.
  */
 #if RT_INLINE_ASM_GNU_STYLE
@@ -1518,11 +1518,11 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
 #else /* 2003 should have _ReadWriteBarrier() but I guess we're at 2002 level then... */
 DECLINLINE(void) ASMCompilerBarrier(void)
 {
-    __asm 
+    __asm
     {
     }
 }
-#endif 
+#endif
 
 
 /**
@@ -1781,7 +1781,7 @@ DECLINLINE(bool) ASMAtomicXchgBool(volatile bool *pf, bool f)
     return !!ASMAtomicXchgU8((volatile uint8_t *)pf, (uint8_t)f);
 #else
     return (bool)ASMAtomicXchgU8((volatile uint8_t *)pf, (uint8_t)f);
-#endif 
+#endif
 }
 
 
@@ -2769,6 +2769,33 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
 #endif
 
 
+/**
+ * Checks if a memory block is filled with the specified byte.
+ *
+ * This is a sort of inverted memchr.
+ *
+ * @returns Pointer to the byte which doesn't equal u8.
+ * @returns NULL if all equal to u8.
+ *
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Number of bytes in the block. This MUST be aligned on 32-bit!
+ * @param   u8      The value it's supposed to be filled with.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8);
+#else
+DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
+{
+/** @todo rewrite this in inline assembly. */
+    uint8_t const *pb = (uint8_t const *)pv;
+    for (; cb; cb--, pb++)
+        if (RT_UNLIKELY(*pb != u8))
+            return (void *)pb;
+    return NULL;
+}
+#endif
+
+
 
 /**
  * Multiplies two unsigned 32-bit values returning an unsigned 64-bit result.
@@ -2911,7 +2938,7 @@ DECLINLINE(int32_t) ASMDivS64ByS32RetS32(int64_t i64, int32_t i32)
  * using a 96 bit intermediate result.
  * @note    Don't use 64-bit C arithmetic here since some gcc compilers generate references to
  *          __udivdi3 and __umoddi3 even if this inline function is not used.
- * 
+ *
  * @returns (u64A * u32B) / u32C.
  * @param   u64A    The 64-bit value.
  * @param   u32B    The 32-bit value to multiple by A.
@@ -2927,11 +2954,11 @@ DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint3
     uint64_t u64Result, u64Spill;
     __asm__ __volatile__("mulq %2\n\t"
                          "divq %3\n\t"
-                         : "=a" (u64Result), 
+                         : "=a" (u64Result),
                            "=d" (u64Spill)
                          : "r" ((uint64_t)u32B),
                            "r" ((uint64_t)u32C),
-                           "0" (u64A), 
+                           "0" (u64A),
                            "1" (0));
     return u64Result;
 #  else
@@ -2971,9 +2998,9 @@ DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint3
     u.s.Hi = (uint32_t)(u64Hi / u32C);
     u.s.Lo = (uint32_t)((((u64Hi % u32C) << 32) + (u64Lo & 0xffffffff)) / u32C);
     return u.u;
-# endif 
+# endif
 }
-#endif 
+#endif
 
 
 /**

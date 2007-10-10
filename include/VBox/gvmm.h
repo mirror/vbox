@@ -99,6 +99,8 @@ typedef struct GVMMSTATS
 } GVMMSTATS;
 /** Pointer to the GVMM statistics. */
 typedef GVMMSTATS *PGVMMSTATS;
+/** Const pointer to the GVMM statistics. */
+typedef const GVMMSTATS *PCGVMMSTATS;
 
 
 
@@ -119,6 +121,7 @@ GVMMR0DECL(int)     GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime);
 GVMMR0DECL(int)     GVMMR0SchedWakeUp(PVM pVM);
 GVMMR0DECL(int)     GVMMR0SchedPoll(PVM pVM, bool fYield);
 GVMMR0DECL(int)     GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
+GVMMR0DECL(int)     GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
 
 
 /**
@@ -154,11 +157,30 @@ typedef struct GVMMQUERYSTATISTICSSREQ
     /** The statistics. */
     GVMMSTATS       Stats;
 } GVMMQUERYSTATISTICSSREQ;
-/** Pointer to a GMMR0AllocatePagesReq / VMMR0_DO_GMM_ALLOCATE_PAGES request buffer. */
+/** Pointer to a GVMMR0QueryStatisticsReq / VMMR0_DO_GVMM_QUERY_STATISTICS request buffer. */
 typedef GVMMQUERYSTATISTICSSREQ *PGVMMQUERYSTATISTICSSREQ;
 
 GVMMR0DECL(int)     GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq);
 
+
+/**
+ * Request buffer for GVMMR0ResetStatisticsReq / VMMR0_DO_GVMM_RESET_STATISTICS.
+ * @see GVMMR0ResetStatistics.
+ */
+typedef struct GVMMRESETSTATISTICSSREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The support driver session. */
+    PSUPDRVSESSION  pSession;
+    /** The statistics to reset.
+     * Any non-zero entry will be reset (if permitted). */
+    GVMMSTATS       Stats;
+} GVMMRESETSTATISTICSSREQ;
+/** Pointer to a GVMMR0ResetStatisticsReq / VMMR0_DO_GVMM_RESET_STATISTICS request buffer. */
+typedef GVMMRESETSTATISTICSSREQ *PGVMMRESETSTATISTICSSREQ;
+
+GVMMR0DECL(int)     GVMMR0ResetStatisticsReq(PVM pVM, PGVMMRESETSTATISTICSSREQ pReq);
 
 
 /** @} */
