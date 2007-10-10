@@ -38,7 +38,7 @@
  */
 typedef struct RTSEMEVENTMULTIINTERNAL
 {
-    /** Magic value (RTSEMEVENT_MAGIC). */
+    /** Magic value (RTSEMEVENTMULTI_MAGIC). */
     uint32_t volatile   u32Magic;
     /** The object status - !0 when signaled and 0 when reset. */
     uint32_t volatile   fState;
@@ -53,7 +53,7 @@ RTDECL(int) RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
     {
-        pThis->u32Magic = RTSEMEVENT_MAGIC;
+        pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
         init_waitqueue_head(&pThis->Head);
         *pEventMultiSem = pThis;
         return VINF_SUCCESS;
@@ -71,7 +71,7 @@ RTDECL(int) RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     if (!pThis)
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
 
     /*
      * Invalidate it and signal the object just in case.
@@ -94,7 +94,7 @@ RTDECL(int) RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     if (!pThis)
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
 
     /*
      * Signal the event object.
@@ -114,7 +114,7 @@ RTDECL(int) RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     if (!pThis)
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
 
     /*
      * Reset it.
@@ -160,7 +160,7 @@ static int rtSemEventWait(PRTSEMEVENTMULTIINTERNAL pThis, unsigned cMillies, boo
         lTimeout = schedule_timeout(lTimeout);
 
         /* Check if someone destroyed the semaphore while we were waiting. */
-        if (pThis->u32Magic != RTSEMEVENT_MAGIC)
+        if (pThis->u32Magic != RTSEMEVENTMULTI_MAGIC)
         {
             rc = VERR_SEM_DESTROYED;
             break;
@@ -185,7 +185,7 @@ RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies
     if (!pThis)
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
 
     if (pThis->fState)
         return VINF_SUCCESS;
@@ -199,7 +199,7 @@ RTDECL(int) RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned 
     if (!pThis)
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
 
     if (pThis->fState)
         return VINF_SUCCESS;
