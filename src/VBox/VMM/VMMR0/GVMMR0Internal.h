@@ -39,7 +39,7 @@ typedef struct GVMMPERVM
      * 0 if the EMT thread is blocked here. */
     uint64_t volatile   u64HaltExpire;
     /** The event semaphore the EMT thread is blocking on. */
-    RTSEMEVENTMULTI     HaltEventMulti;
+    RTSEMEVENT          HaltEvent;
     /** The APIC ID of the CPU that EMT was scheduled on the last time we checked. */
     uint8_t             iCpuEmt;
 

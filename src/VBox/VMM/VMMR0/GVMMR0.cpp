@@ -475,7 +475,7 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
     pGVM->gvmm.s.VMMapObj = NIL_RTR0MEMOBJ;
     pGVM->gvmm.s.VMPagesMemObj = NIL_RTR0MEMOBJ;
     pGVM->gvmm.s.VMPagesMapObj = NIL_RTR0MEMOBJ;
-    pGVM->gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
+    pGVM->gvmm.s.HaltEvent = NIL_RTSEMEVENT;
 }
 
 
@@ -558,11 +558,11 @@ GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
     int rc = gvmmR0ByVMAndEMT(pVM, &pGVM, &pGVMM);
     if (RT_SUCCESS(rc))
     {
-        if (pGVM->gvmm.s.HaltEventMulti == NIL_RTSEMEVENTMULTI)
+        if (pGVM->gvmm.s.HaltEvent == NIL_RTSEMEVENT)
         {
-            rc = RTSemEventMultiCreate(&pGVM->gvmm.s.HaltEventMulti);
+            rc = RTSemEventCreate(&pGVM->gvmm.s.HaltEvent);
             if (RT_FAILURE(rc))
-                pGVM->gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
+                pGVM->gvmm.s.HaltEvent = NIL_RTSEMEVENT;
         }
         else
             rc = VERR_WRONG_ORDER;
@@ -1128,7 +1128,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
                 if (u64 <= u64Now)
                 {
                     ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0);
-                    int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
+                    int rc = RTSemEventSignal(pCurGVM->gvmm.s.HaltEvent);
                     AssertRC(rc);
                     cWoken++;
                 }
@@ -1157,7 +1157,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
                 &&  pCurGVM->gvmm.s.u64HaltExpire <= u64Now + 25000 /* 0.025 ms */)
             {
                 ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0);
-                int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
+                int rc = RTSemEventSignal(pCurGVM->gvmm.s.HaltEvent);
                 AssertRC(rc);
                 cWoken++;
             }
@@ -1176,7 +1176,7 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
                 &&  pCurGVM->gvmm.s.u64HaltExpire <= u64Now + 50000 /* 0.050 ms */)
             {
                 ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0);
-                int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
+                int rc = RTSemEventSignal(pCurGVM->gvmm.s.HaltEvent);
                 AssertRC(rc);
                 cWoken++;
             }
@@ -1238,7 +1238,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
         RTSemFastMutexRelease(pGVMM->UsedLock);
 
         uint32_t cMillies = (u64ExpireGipTime - u64Now) / 1000000;
-        rc = RTSemEventMultiWaitNoResume(pGVM->gvmm.s.HaltEventMulti, cMillies ? cMillies : 1);
+        rc = RTSemEventWaitNoResume(pGVM->gvmm.s.HaltEvent, cMillies ? cMillies : 1);
         ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, 0);
         if (rc == VERR_TIMEOUT)
         {
@@ -1251,9 +1251,6 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
         pGVM->gvmm.s.StatsSched.cHaltNotBlocking++;
         RTSemFastMutexRelease(pGVMM->UsedLock);
     }
-
-    /* Make sure false wake up calls (gvmmR0SchedDoWakeUps) cause us to spin. */
-    RTSemEventMultiReset(pGVM->gvmm.s.HaltEventMulti);
 
     return rc;
 }
@@ -1298,7 +1295,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM)
             pGVM->gvmm.s.StatsSched.cWakeUpNotHalted++;
         }
 
-        int rc2 = RTSemEventMultiSignal(pGVM->gvmm.s.HaltEventMulti);
+        int rc2 = RTSemEventSignal(pGVM->gvmm.s.HaltEvent);
         AssertRC(rc2);
 
         /*
