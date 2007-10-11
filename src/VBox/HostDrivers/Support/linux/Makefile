@@ -63,6 +63,7 @@ ifneq ($(MAKECMDGOALS),clean)
 
 # kernel base directory
 ifndef KERN_DIR
+ # build for the current kernel, version check
  KERN_DIR := /lib/modules/$(shell uname -r)/build
  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
   KERN_DIR := /usr/src/linux
@@ -71,7 +72,15 @@ ifndef KERN_DIR
   endif
   $(warning Warning: using /usr/src/linux as the source directory of your Linux kernel. If this is not correct, specify KERN_DIR=<directory> and run Make again.)
  endif
+ # check if versions match -- works only for later 2.6 kernels
+ VBOX_KERN_VER := $(shell $(MAKE) -sC $(KERN_DIR) kernelrelease 2> /dev/null || true)
+ ifneq ($(VBOX_KERN_VER),)
+  ifneq ($(VBOX_KERN_VER),$(shell uname -r))
+   $(error Error: /usr/src/linux (version $(VBOX_KERN_VER)) does not match the current kernel (version $(shell uname -r)))
+  endif
+ endif
 else
+ # build for a dedicated kernel, no version check
  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
   $(error Error: KERN_DIR does not point to a directory.)
  endif
@@ -85,7 +94,7 @@ ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
  $(error Error: unable to find the include directory for your current Linux kernel. Specify KERN_INCL=<directory> and run Make again.)
 endif
 
-# module install dir.
+# module install dir, only for current kernel
 ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
  ifndef MODULE_DIR
   MODULE_DIR_TST := /lib/modules/$(shell uname -r)
