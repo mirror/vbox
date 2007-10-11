@@ -106,6 +106,8 @@ typedef const GVMMSTATS *PCGVMMSTATS;
 
 GVMMR0DECL(int)     GVMMR0Init(void);
 GVMMR0DECL(void)    GVMMR0Term(void);
+GVMMR0DECL(int)     GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t u64Value);
+GVMMR0DECL(int)     GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t *pu64Value);
 
 GVMMR0DECL(int)     GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM);
 GVMMR0DECL(int)     GVMMR0DisassociateEMTFromVM(PVM pVM);

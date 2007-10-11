@@ -21,7 +21,7 @@ include	$(PATH_KBUILD)/subheader.kmk
 #
 # Target lists.
 #
-PROGRAMS   += tstVMStructSize tstVMStructGC tstAsmStructs tstAsmStructsGC tstVMM tstVMM-HwAccm
+PROGRAMS   += tstVMStructSize tstVMStructGC tstAsmStructs tstAsmStructsGC tstVMM tstVMM-HwAccm tstGlobalConfig
 ifneq ($(BUILD_TARGET),win)
 PROGRAMS   += tstVMMFork
 endif
@@ -102,6 +102,10 @@ tstAsmStructsGC_SOURCES = tstAsmStructs.cpp
 
 tstAsmStructs.cpp_DEPS  = $(PATH_TARGET)/tstAsmStructsHC.h $(PATH_TARGET)/tstAsmStructsGC.h
 
+
+tstGlobalConfig_TEMPLATE= VBOXR3TSTEXE
+tstGlobalConfig_SOURCES = tstGlobalConfig.cpp
+tstGlobalConfig_LIBS    = $(LIB_RUNTIME)
 
 tstMMHyperHeap_TEMPLATE = VBOXR3TSTEXE
 tstMMHyperHeap_SOURCES  = tstMMHyperHeap.cpp

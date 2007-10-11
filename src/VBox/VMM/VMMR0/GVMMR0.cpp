@@ -106,6 +106,19 @@ typedef struct GVMM
      * The size of this array defines the maximum number of currently running VMs.
      * The first entry is unused as it represents the NIL handle. */
     GVMHANDLE           aHandles[128];
+
+    /** The minimum sleep time, in nano seconds.
+     * @gcfgm   /GVMM/MinSleep      32-bit  0..100000000
+     */
+    uint32_t            nsMinSleep;
+    /** The limit for the first round of early wakeups, given in nano seconds.
+     * @gcfgm   /GVMM/EarlyWakeUp1  32-bit  0..100000000
+     */
+    uint32_t            nsEarlyWakeUp1;
+    /** The limit for the second round of early wakeups, given in nano seconds.
+     * @gcfgm   /GVMM/EarlyWakeUp2  32-bit  0..100000000
+     */
+    uint32_t            nsEarlyWakeUp2;
 } GVMM;
 /** Pointer to the GVMM instance data. */
 typedef GVMM *PGVMM;
@@ -201,6 +214,11 @@ GVMMR0DECL(int) GVMMR0Init(void)
                 pGVMM->aHandles[i].iNext = i + 1;
             }
 
+            /* The default configuration values. */
+            pGVMM->nsMinSleep     = 750000 /* ns (0.750 ms) */; /** @todo this should be adjusted to be 75% (or something) of the scheduler granularity... */
+            pGVMM->nsEarlyWakeUp1 =  25000 /* ns (0.025 ms) */;
+            pGVMM->nsEarlyWakeUp2 =  50000 /* ns (0.050 ms) */;
+
             g_pGVMM = pGVMM;
             LogFlow(("GVMMR0Init: pGVMM=%p\n", pGVMM));
             return VINF_SUCCESS;
@@ -248,6 +266,98 @@ GVMMR0DECL(void) GVMMR0Term(void)
     }
 
     RTMemFree(pGVMM);
+}
+
+
+/**
+ * A quick hack for setting global config values.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pSession    The session handle. Used for authentication.
+ * @param   pszName     The variable name.
+ * @param   u64Value    The new value.
+ */
+GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t u64Value)
+{
+    /*
+     * Validate input.
+     */
+    PGVMM pGVMM;
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(pSession, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
+    /*
+     * String switch time!
+     */
+    if (strncmp(pszName, "/GVMM/", sizeof("/GVMM/") - 1))
+        return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
+    int rc = VINF_SUCCESS;
+    pszName += sizeof("/GVMM/") - 1;
+    if (!strcmp(pszName, "MinSleep"))
+    {
+        if (u64Value <= 100000000)
+            pGVMM->nsMinSleep = u64Value;
+        else
+            rc = VERR_OUT_OF_RANGE;
+    }
+    else if (!strcmp(pszName, "EarlyWakeUp1"))
+    {
+        if (u64Value <= 100000000)
+            pGVMM->nsEarlyWakeUp1 = u64Value;
+        else
+            rc = VERR_OUT_OF_RANGE;
+    }
+    else if (!strcmp(pszName, "EarlyWakeUp2"))
+    {
+        if (u64Value <= 100000000)
+            pGVMM->nsEarlyWakeUp2 = u64Value;
+        else
+            rc = VERR_OUT_OF_RANGE;
+    }
+    else
+        rc = VERR_CFGM_VALUE_NOT_FOUND;
+    return rc;
+}
+
+
+/**
+ * A quick hack for getting global config values.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pSession    The session handle. Used for authentication.
+ * @param   pszName     The variable name.
+ * @param   u64Value    The new value.
+ */
+GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t *pu64Value)
+{
+    /*
+     * Validate input.
+     */
+    PGVMM pGVMM;
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(pSession, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pu64Value, VERR_INVALID_POINTER);
+
+    /*
+     * String switch time!
+     */
+    if (strncmp(pszName, "/GVMM/", sizeof("/GVMM/") - 1))
+        return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
+    int rc = VINF_SUCCESS;
+    pszName += sizeof("/GVMM/") - 1;
+    if (!strcmp(pszName, "MinSleep"))
+        *pu64Value = pGVMM->nsMinSleep;
+    else if (!strcmp(pszName, "EarlyWakeUp1"))
+        *pu64Value = pGVMM->nsEarlyWakeUp1;
+    else if (!strcmp(pszName, "EarlyWakeUp2"))
+        *pu64Value = pGVMM->nsEarlyWakeUp2;
+    else
+        rc = VERR_CFGM_VALUE_NOT_FOUND;
+    return rc;
 }
 
 
@@ -1127,18 +1237,19 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
             {
                 if (u64 <= u64Now)
                 {
-                    ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0);
-                    int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
-                    AssertRC(rc);
-                    cWoken++;
+                    if (ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0))
+                    {
+                        int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
+                        AssertRC(rc);
+                        cWoken++;
+                    }
                 }
                 else
                 {
                     cHalted++;
-                    /** @todo make these limits configurable! */
-                    if (u64 <= u64Now + 25000 /* 0.025 ms */)
+                    if (u64 <= u64Now + pGVMM->nsEarlyWakeUp1)
                         cTodo2nd++;
-                    else if (u64 <= u64Now + 50000 /* 0.050 ms */)
+                    else if (u64 <= u64Now + pGVMM->nsEarlyWakeUp2)
                         cTodo3rd++;
                 }
             }
@@ -1154,12 +1265,15 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
             PGVM pCurGVM = pGVMM->aHandles[i].pGVM;
             if (    VALID_PTR(pCurGVM)
                 &&  pCurGVM->u32Magic == GVM_MAGIC
-                &&  pCurGVM->gvmm.s.u64HaltExpire <= u64Now + 25000 /* 0.025 ms */)
+                &&  pCurGVM->gvmm.s.u64HaltExpire
+                &&  pCurGVM->gvmm.s.u64HaltExpire <= u64Now + pGVMM->nsEarlyWakeUp1)
             {
-                ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0);
-                int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
-                AssertRC(rc);
-                cWoken++;
+                if (ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0))
+                {
+                    int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
+                    AssertRC(rc);
+                    cWoken++;
+                }
             }
         }
     }
@@ -1173,12 +1287,15 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
             PGVM pCurGVM = pGVMM->aHandles[i].pGVM;
             if (    VALID_PTR(pCurGVM)
                 &&  pCurGVM->u32Magic == GVM_MAGIC
-                &&  pCurGVM->gvmm.s.u64HaltExpire <= u64Now + 50000 /* 0.050 ms */)
+                &&  pCurGVM->gvmm.s.u64HaltExpire
+                &&  pCurGVM->gvmm.s.u64HaltExpire <= u64Now + pGVMM->nsEarlyWakeUp2)
             {
-                ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0);
-                int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
-                AssertRC(rc);
-                cWoken++;
+                if (ASMAtomicXchgU64(&pCurGVM->gvmm.s.u64HaltExpire, 0))
+                {
+                    int rc = RTSemEventMultiSignal(pCurGVM->gvmm.s.HaltEventMulti);
+                    AssertRC(rc);
+                    cWoken++;
+                }
             }
         }
     }
@@ -1231,7 +1348,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
      */
     if (    u64Now < u64ExpireGipTime
         &&  (   pGVMM->cVMs > 1
-             || (u64ExpireGipTime - u64Now > 750000 /* 0.750 ms */))) /** @todo make this configurable */
+             || (u64ExpireGipTime - u64Now >= pGVMM->nsMinSleep)))
     {
         pGVM->gvmm.s.StatsSched.cHaltBlocking++;
         ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, u64ExpireGipTime);
