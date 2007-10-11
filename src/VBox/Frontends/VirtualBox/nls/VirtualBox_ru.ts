@@ -376,6 +376,10 @@
         <source>&amp;OK</source>
         <translation>&amp;ОК</translation>
     </message>
+    <message>
+        <source>&amp;Make Permanent</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxCloseVMDlg</name>
