@@ -374,7 +374,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Permanent erzeugen</translation>
     </message>
 </context>
 <context>
@@ -392,24 +392,12 @@
         <translation>den Zustand der virtuellen Maschine &amp;speichern</translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation type="obsolete">Alt+S</translation>
-    </message>
-    <message>
         <source>&amp;Power off the machine</source>
         <translation>die virtuelle Maschine &amp;ausschalten</translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation type="obsolete">Alt+A</translation>
-    </message>
-    <message>
         <source>&amp;Revert to the current snapshot</source>
         <translation>&amp;Zurückkehren zum letzten Sicherungspunkt</translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
-        <translation type="obsolete">Alt+Z</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
@@ -946,10 +934,6 @@
         <translation>&amp;OK</translation>
     </message>
     <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
         <source>Accept dialog</source>
         <translation>Änderungen übernehmen</translation>
     </message>
@@ -1178,18 +1162,6 @@
     <message>
         <source>Could not locate the file on the server (response: %1).</source>
         <translation>Die Datei ist auf dem Server nicht auffindbar (Antwort: %1).</translation>
-    </message>
-    <message>
-        <source>Could not determine the file size.</source>
-        <translation type="obsolete">Die Dateigröße konnte nicht ermittelt werden.</translation>
-    </message>
-    <message>
-        <source>Could not connect to the server (%1).</source>
-        <translation type="obsolete">Eine Verbindung zum Server konnte nicht hergestellt werden (%1).</translation>
-    </message>
-    <message>
-        <source>Could not download the file (%1).</source>
-        <translation type="obsolete">Die Datei konnte nicht heruntergeladen werden (%1).</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -1966,10 +1938,6 @@
         <translation>&amp;OK</translation>
     </message>
     <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation>Änderungen sichern und Dialog schließen.</translation>
     </message>
@@ -2115,10 +2083,6 @@ to the system default language.&lt;/qt&gt;
         <translation>Aktiviert &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation type="obsolete">Alt+V</translation>
-    </message>
-    <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Zeigt, ob virtuelle Maschinen einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) per Voreinstellung nutzen sollen oder nicht.</translation>
     </message>
@@ -2153,20 +2117,12 @@ to the system default language.&lt;/qt&gt;
         <translation>&amp;Rückwärts</translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation type="obsolete">Alt+R</translation>
-    </message>
-    <message>
         <source>Search for the previous occurrence of the string</source>
         <translation>Durchsucht den Text rückwärts</translation>
     </message>
     <message>
         <source>&amp;Next</source>
         <translation>&amp;Vorwärts</translation>
-    </message>
-    <message>
-        <source>Alt+N</source>
-        <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
@@ -3275,10 +3231,6 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>&amp;OK</translation>
     </message>
     <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
@@ -3478,10 +3430,6 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3685,10 +3633,6 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Diskettenlaufwerk</translation>
     </message>
     <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+D</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Wählen Sie das Medium mit dem Installationsprogramm des Betriebssystems, das Sie installieren wollen. Dieses Medium muss bootbar sein, anderenfalls kann das Installationsprogramm nicht starten.&lt;/p&gt;</translation>
     </message>
@@ -3701,16 +3645,8 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Host-Laufwerk</translation>
     </message>
     <message>
-        <source>Alt+H</source>
-        <translation type="obsolete">Alt+H</translation>
-    </message>
-    <message>
         <source>&amp;Image File</source>
         <translation>&amp;Abbild</translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
-        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>VDM</source>
@@ -3797,16 +3733,8 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Sichern</translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation type="obsolete">Alt+S</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation>&amp;Aktualisieren</translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
-        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
@@ -3833,10 +3761,6 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Suche</translation>
     </message>
     <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+S</translation>
-    </message>
-    <message>
         <source>Close</source>
         <translation>Schließen</translation>
     </message>
@@ -3860,16 +3784,8 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Generieren</translation>
     </message>
     <message>
-        <source>Alt+G</source>
-        <translation type="obsolete">Alt+G</translation>
-    </message>
-    <message>
         <source>Ca&amp;ble Connected</source>
         <translation>Netzwerk&amp;kabel angeschlossen</translation>
-    </message>
-    <message>
-        <source>Alt+B</source>
-        <translation type="obsolete">Alt+K</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
@@ -3918,10 +3834,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Legt fest, wie dieser virtuelle Netzwerk-Adapter an das physische Netzwerk des Host-BS angeschlossen ist.</translation>
-    </message>
-    <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="obsolete">Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus exakt 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
@@ -4005,10 +3917,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>&amp;Create Pipe</source>
         <translation>Erzeuge &amp;Pipe</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
@@ -4234,10 +4142,6 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;IO-APIC aktivieren</translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation type="obsolete">Alt+I</translation>
-    </message>
-    <message>
         <source>Boo&amp;t Order</source>
         <translation>Boo&amp;t-Reihenfolge</translation>
     </message>
@@ -4280,10 +4184,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>&amp;Image File</source>
         <translation>&amp;Abbild</translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
-        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
@@ -4408,10 +4308,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -4634,10 +4530,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Zur Laufzeit zugewiesene Medien &amp;merken</translation>
     </message>
     <message>
-        <source>Alt+R</source>
-        <translation type="obsolete">Alt+M</translation>
-    </message>
-    <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>Falls ausgewählt, werden zur Laufzeit zugewiesene CD/DVD- oder Diskettenmedien in den Einstellungen gespeichert um die Zuweisung über die Laufzeit der VM hinaus beizubehalten.</translation>
     </message>
@@ -4648,10 +4540,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>&amp;Enable Passthrough</source>
         <translation>&amp;Passthrough aktivieren</translation>
-    </message>
-    <message>
-        <source>Alt+E</source>
-        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
