@@ -643,7 +643,7 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 # RuntimeR0 - Ring0 library for VMMR0.
 #
 RuntimeR0_TEMPLATE      = VBOXR0
-RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
+RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0_SOURCES       = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
@@ -674,6 +674,7 @@ RuntimeR0_SOURCES       = \
 	string/strcpy.cpp \
 	string/strlen.cpp \
 	string/strncmp.cpp \
+	string/strcmp.asm \
 	string/strpbrk.cpp \
 	VBox/strformat-vbox.cpp \
 	timesup.cpp
