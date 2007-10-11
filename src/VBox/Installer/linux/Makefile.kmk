@@ -125,6 +125,11 @@ ifdef VBOX_WITH_DOCS
   LINUXNOSTRIP += \
 	VirtualBox.chm
  endif
+ ifneq ($(wildcard $(PATH_BIN)/VirtualBoxAPI.chm),)
+ # same applies to VirtualBoxAPI.chm
+ LINUXNOSTRIP += \
+	VirtualBoxAPI.chm
+ endif
 endif
 ifdef VBOX_WITH_VRDP
  LINUXSTRIPBIN += \
