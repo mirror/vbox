@@ -403,6 +403,10 @@
         <source>&amp;OK</source>
         <translation>确定(&amp;O)</translation>
     </message>
+    <message>
+        <source>&amp;Make Permanent</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxCloseVMDlg</name>
