@@ -598,6 +598,8 @@
     <function access="private" returnType="DiskImageItem*">searchItem( QListView*, VBoxMedia::Status )</function>
     <function specifier="static" access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; id )</function>
     <function specifier="static" access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; id )</function>
+    <function specifier="static" access="private">sourceSnapshotsCD( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
+    <function specifier="static" access="private">sourceSnapshotsFD( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
     <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
     <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
     <function returnType="QUuid">getSelectedUuid()</function>
