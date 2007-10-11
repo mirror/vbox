@@ -281,6 +281,7 @@ public:
     HRESULT mergeImageToChildren (Progress *aProgress);
 
     HRESULT wipeOutImage();
+    HRESULT deleteImage (bool aIgnoreErrors = false);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"VirtualDiskImage"; }
