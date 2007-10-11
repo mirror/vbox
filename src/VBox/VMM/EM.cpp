@@ -3443,7 +3443,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     TMCpuTickPause(pVM);
                     VMMR3FatalDump(pVM, rc);
                     int rc2 = emR3Debug(pVM, rc);
-                    if (rc2 == VERR_DBGF_NOT_ATTACHED)
+                    if (rc2 == VERR_DBGF_NOT_ATTACHED || rc2 == VINF_EM_OFF)
                     {
                         VMMR3Unlock(pVM);
                         STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
