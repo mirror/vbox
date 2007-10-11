@@ -224,7 +224,7 @@ public:
 
         if (aEnableSelector)
         {
-            mCbPermanent = new QCheckBox ("&Make Permanent", this);
+            mCbPermanent = new QCheckBox ( tr ("&Make Permanent"), this);
             mCbPermanent->setChecked (true);
             inputLayout->addMultiCellWidget (mCbPermanent, 2, 2, 0, 2);
             connect (mCbPermanent, SIGNAL (toggled (bool)),
