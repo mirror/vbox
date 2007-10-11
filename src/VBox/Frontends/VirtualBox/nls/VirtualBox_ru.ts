@@ -538,7 +538,7 @@
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>П&amp;ерезапустить</translation>
+        <translation>С&amp;брос</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
@@ -764,11 +764,11 @@
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Возо&amp;бновить</translation>
+        <translation>П&amp;родолжить</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Возобновить работу виртуальной машины</translation>
+        <translation>Возобновить работу приостановленной виртуальной машины</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
@@ -3271,11 +3271,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation>&amp;Запустить</translation>
+        <translation>С&amp;тарт</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation>Запустить</translation>
+        <translation>Старт</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
@@ -4475,7 +4475,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Description</source>
-        <translation>Оп&amp;исание</translation>
+        <translation>Описа&amp;ние</translation>
     </message>
     <message>
         <source>&amp;Primary Master</source>
