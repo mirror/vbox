@@ -802,6 +802,34 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
                 return VERR_INVALID_PARAMETER;
             return GMMR0SeedChunk(pVM, (RTR3PTR)u64Arg);
 
+        /*
+         * A quick GCFGM mock-up.
+         */
+        /** @todo GCFGM with proper access control, ring-3 management interface and all that. */
+        case VMMR0_DO_GCFGM_SET_VALUE:
+        case VMMR0_DO_GCFGM_QUERY_VALUE:
+        {
+            if (pVM || !pReqHdr || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            PGCFGMVALUEREQ pReq = (PGCFGMVALUEREQ)pReqHdr;
+            if (pReq->Hdr.cbReq != sizeof(*pReq))
+                return VERR_INVALID_PARAMETER;
+            int rc;
+            if (enmOperation == VMMR0_DO_GCFGM_SET_VALUE)
+            {
+                rc = GVMMR0SetConfig(pReq->pSession, &pReq->szName[0], pReq->u64Value);
+                //if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                //    rc = GMMR0SetConfig(pReq->pSession, &pReq->szName[0], pReq->u64Value);
+            }
+            else
+            {
+                rc = GVMMR0QueryConfig(pReq->pSession, &pReq->szName[0], &pReq->u64Value);
+                //if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                //    rc = GMMR0QueryConfig(pReq->pSession, &pReq->szName[0], &pReq->u64Value);
+            }
+            return rc;
+        }
+
 
 #if 0//def VBOX_WITH_INTERNAL_NETWORKING - currently busted
         /*

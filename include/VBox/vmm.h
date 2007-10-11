@@ -403,8 +403,10 @@ typedef enum VMMR0OPERATION
     /** Call GMMR0SeedChunk(). */
     VMMR0_DO_GMM_SEED_CHUNK,
 
-    /** Gets the GMM and GVMM stats. */
-    VMMR0_DO_GET_GXX_STATS,
+    /** Set a GVMM or GMM configuration value. */
+    VMMR0_DO_GCFGM_SET_VALUE,
+    /** Query a GVMM or GMM configuration value. */
+    VMMR0_DO_GCFGM_QUERY_VALUE,
 
     /** The start of the R0 service operations. */
     VMMR0_DO_SRV_START,
@@ -429,6 +431,30 @@ typedef enum VMMR0OPERATION
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff
 } VMMR0OPERATION;
+
+
+/**
+ * Request buffer for VMMR0_DO_GCFGM_SET_VALUE and VMMR0_DO_GCFGM_QUERY_VALUE.
+ * @todo Move got GCFGM.h when it's implemented.
+ */
+typedef struct GCFGMVALUEREQ
+{
+    /** The request header.*/
+    SUPVMMR0REQHDR      Hdr;
+    /** The support driver session handle. */
+    PSUPDRVSESSION      pSession;
+    /** The value.
+     * This is input for the set request and output for the query. */
+    uint64_t            u64Value;
+    /** The variable name.
+     * This is fixed sized just to make things simple for the mock-up. */
+    char                szName[48];
+} GCFGMVALUEREQ;
+/** Pointer to a VMMR0_DO_GCFGM_SET_VALUE and VMMR0_DO_GCFGM_QUERY_VALUE request buffer.
+ * @todo Move got GCFGM.h when it's implemented.
+ */
+typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
+
 
 /**
  * The Ring 0 entry point, called by the interrupt gate.
