@@ -569,7 +569,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         }
         else
         {
-            resize (QSize (700, 500).expandedTo (minimumSizeHint())
+            resize (QSize (770, 550).expandedTo (minimumSizeHint())
                 .boundedTo (ar.size()));
         }
     }
