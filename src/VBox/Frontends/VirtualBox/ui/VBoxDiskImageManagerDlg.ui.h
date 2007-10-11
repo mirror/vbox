@@ -873,7 +873,13 @@ QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId)
     {
         if (usage)
             usage += ", ";
-        usage += vbox.GetMachine (QUuid (*it)).GetName();
+        CMachine machine = vbox.GetMachine (QUuid (*it));
+        usage += machine.GetName();
+
+        QString snapshots;
+        sourceSnapshotsCD (aId, machine.GetSnapshot (QUuid()), snapshots);
+        if (!snapshots.isEmpty())
+            usage += QString (" (%1)").arg (snapshots);
     }
 
     for (QStringList::Iterator it = tempMachines.begin();
@@ -887,7 +893,13 @@ QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId)
                 usage += ", [";
             else
                 usage += "[";
-            usage += vbox.GetMachine (QUuid (*it)).GetName() + "]";
+            CMachine machine = vbox.GetMachine (QUuid (*it));
+            usage += machine.GetName() + "]";
+
+            QString snapshots;
+            sourceSnapshotsCD (aId, machine.GetSnapshot (QUuid()), snapshots);
+            if (!snapshots.isEmpty())
+                usage += QString (" (%1)").arg (snapshots);
         }
     }
 
@@ -911,7 +923,13 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId)
     {
         if (usage)
             usage += ", ";
-        usage += vbox.GetMachine (QUuid (*it)).GetName();
+        CMachine machine = vbox.GetMachine (QUuid (*it));
+        usage += machine.GetName();
+
+        QString snapshots;
+        sourceSnapshotsFD (aId, machine.GetSnapshot (QUuid()), snapshots);
+        if (!snapshots.isEmpty())
+            usage += QString (" (%1)").arg (snapshots);
     }
 
     for (QStringList::Iterator it = tempMachines.begin();
@@ -925,11 +943,58 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId)
                 usage += ", [";
             else
                 usage += "[";
-            usage += vbox.GetMachine (QUuid (*it)).GetName() + "]";
+            CMachine machine = vbox.GetMachine (QUuid (*it));
+            usage += machine.GetName() + "]";
+
+            QString snapshots;
+            sourceSnapshotsFD (aId, machine.GetSnapshot (QUuid()), snapshots);
+            if (!snapshots.isEmpty())
+                usage += QString (" (%1)").arg (snapshots);
         }
     }
 
     return usage;
+}
+
+
+void VBoxDiskImageManagerDlg::sourceSnapshotsCD (const QUuid &aImageId,
+                                                 const CSnapshot &aSnapshot,
+                                                 QString &aUsage)
+{
+    if (aSnapshot.isNull())
+        return;
+
+    if (!aSnapshot.GetMachine().GetDVDDrive().GetImage().isNull() &&
+        aSnapshot.GetMachine().GetDVDDrive().GetImage().GetId() == aImageId)
+    {
+        if (aUsage)
+            aUsage += ", ";
+        aUsage += aSnapshot.GetName();
+    }
+
+    CSnapshotEnumerator en = aSnapshot.GetChildren().Enumerate();
+    while (en.HasMore())
+        sourceSnapshotsCD (aImageId, en.GetNext(), aUsage);
+}
+
+void VBoxDiskImageManagerDlg::sourceSnapshotsFD (const QUuid &aImageId,
+                                                 const CSnapshot &aSnapshot,
+                                                 QString &aUsage)
+{
+    if (aSnapshot.isNull())
+        return;
+
+    if (!aSnapshot.GetMachine().GetFloppyDrive().GetImage().isNull() &&
+        aSnapshot.GetMachine().GetFloppyDrive().GetImage().GetId() == aImageId)
+    {
+        if (aUsage)
+            aUsage += ", ";
+        aUsage += aSnapshot.GetName();
+    }
+
+    CSnapshotEnumerator en = aSnapshot.GetChildren().Enumerate();
+    while (en.HasMore())
+        sourceSnapshotsFD (aImageId, en.GetNext(), aUsage);
 }
 
 
@@ -1744,9 +1809,10 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
                           item &&  item->getUsage().isNull() &&
                           !item->firstChild() && !item->getPath().isNull();
     bool releaseEnabled = item && !item->getUsage().isNull() &&
-                          checkImage (item) &&
-                          !item->parent() && !item->firstChild() &&
-                          item->getSnapshotName().isNull();
+        item->getUsage().find (QRegExp ("\\([\\s\\S]+\\)")) == -1 &&
+        checkImage (item) &&
+        !item->parent() && !item->firstChild() &&
+        item->getSnapshotName().isNull();
     bool newEnabled     = notInEnum &&
                           getCurrentListView() == hdsView ? true : false;
     bool addEnabled     = notInEnum;
