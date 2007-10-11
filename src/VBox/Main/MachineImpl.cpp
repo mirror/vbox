@@ -3650,7 +3650,11 @@ void Machine::uninitDataAndChildObjects()
     /* Deassociate hard disks (only when a real Machine or a SnapshotMachine
      * instance is uninitialized; SessionMachine instances refer to real
      * Machine hard disks). This is necessary for a clean re-initialization of
-     * the VM after successfully re-checking the accessibility state. */
+     * the VM after successfully re-checking the accessibility state. Note
+     * that in case of normal Machine or SnapshotMachine uninitialization (as
+     * a result of unregistering or discarding the snapshot), outdated hard
+     * disk attachments will already be uninitialized and deleted, so this
+     * code will not affect them. */
     if (mType == IsMachine || mType == IsSnapshotMachine)
     {
         for (HDData::HDAttachmentList::const_iterator it =
@@ -9970,6 +9974,17 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
         do
         {
             LogFlowThisFunc (("Discarding the snapshot (reparenting children)...\n"));
+
+            /* It is important to uninitialize and delete all snapshot's hard
+             * disk attachments as they are no longer valid -- otherwise the
+             * code in Machine::uninitDataAndChildObjects() will mistakenly
+             * perform hard disk deassociation. */
+            for (HDData::HDAttachmentList::iterator it = sm->mHDData->mHDAttachments.begin();
+                 it != sm->mHDData->mHDAttachments.end();)
+            {
+                (*it)->uninit();
+                it = sm->mHDData->mHDAttachments.erase (it);
+            }
 
             ComObjPtr <Snapshot> parentSnapshot = aTask.snapshot->parent();
 
