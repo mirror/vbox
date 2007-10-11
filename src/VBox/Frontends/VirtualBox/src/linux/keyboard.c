@@ -1815,11 +1815,22 @@ X11DRV_KEYBOARD_DetectLayout (Display *display)
   int misorder, last_match, least_misorder = 256;
 #endif
 
+#ifndef OUTOFWINE
   syms = keysyms_per_keycode;
   if (syms > 4) {
     WARN("%d keysyms per keycode not supported, set to 4\n", syms);
     syms = 4;
   }
+#else
+/* innotek FIX */
+  /* Not all setups really produce all four keysyms, and two are enough
+     for identification anyway. */
+  syms = keysyms_per_keycode;
+  if (syms > 2) {
+    WARN("%d keysyms per keycode not supported, set to 2\n", syms);
+    syms = 2;
+  }
+#endif
 
   memset( ckey, 0, sizeof(ckey) );
   for (keyc = min_keycode; keyc <= max_keycode; keyc++) {
@@ -2011,7 +2022,14 @@ void X11DRV_InitKeyboard(Display *display)
     X11DRV_KEYBOARD_DetectLayout(display);
 #endif
     lkey = main_key_tab[kbd_layout].key;
+#ifndef OUTOFWINE
     syms = (keysyms_per_keycode > 4) ? 4 : keysyms_per_keycode;
+#else
+/* innotek FIX */
+  /* Not all setups really produce all four keysyms, and two are enough
+     for identification anyway. */
+    syms = (keysyms_per_keycode > 2) ? 2 : keysyms_per_keycode;
+#endif
 
     /* Now build two conversion arrays :
      * keycode -> vkey + scancode + extended
