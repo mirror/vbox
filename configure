@@ -33,7 +33,9 @@ TARGET_CPU=""
 WITH_XPCOM=1
 WITH_LIBIDL=1
 WITH_QT=1
+WITH_SDL=1
 WITH_SDL_TTF=1
+WITH_X11=1
 CC="gcc"
 CC32=""
 CC64=""
@@ -273,6 +275,9 @@ check_environment()
     WITH_XPCOM=0
     WITH_LIBIDL=0
     WITH_QT=0
+    WITH_SDL=0
+    WITH_SDL_TTF=0
+    WITH_X11=0
     echo "Disabling checks for XPCOM related components."
   fi
 }
@@ -1313,6 +1318,10 @@ for option in $*; do
       ;;
     --build-headless)
       HEADLESS=1
+      WITH_SDL=0
+      WITH_SDL_TTF=0
+      WITH_X11=0
+      WITH_QT=0
       ;;
     --ose)
       OSE=2
@@ -1429,14 +1438,14 @@ check_gcc
 [ $WITH_XPCOM  -eq 1 ] && check_xalan
 [ $WITH_XPCOM  -eq 1 ] && check_xerces
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
-[ $OSE -eq 0 ]         && check_ssl
+[ $OSE -eq 0         ] && check_ssl
 [ "$OS" != "darwin"  ] && check_z
 [ $OSE -eq 0 ]         && check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
-[ "$OS" != "darwin"  ] && check_sdl
+[ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
-[ "$OS" != "darwin"  ] && check_x
-[ "$OS" != "darwin"  ] && check_xcursor
+[ $WITH_X11 -eq 1    ] && check_x
+[ $WITH_X11 -eq 1    ] && check_xcursor
 [ $WITH_QT -eq 1     ] && check_qt
 
 # Linux-specific
