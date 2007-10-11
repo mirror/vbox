@@ -1665,14 +1665,12 @@ STDMETHODIMP HVirtualDiskImage::DeleteImage()
         return setError (E_FAIL,
              tr ("Hard disk image has been already deleted or never created"));
 
-    int vrc = RTFileDelete (Utf8Str (mFilePathFull));
-    if (VBOX_FAILURE (vrc))
-        return setError (E_FAIL, tr ("Could not delete the image file '%ls' (%Vrc)"),
-                         mFilePathFull.raw(), vrc);
+    HRESULT rc = deleteImage();
+    CheckComRCReturnRC (rc);
 
     mState = NotCreated;
 
-    // reset the fields
+    /* reset the fields */
     mSize = 0;
     mActualSize = 0;
 
@@ -2336,6 +2334,23 @@ HRESULT HVirtualDiskImage::wipeOutImage()
         return setError (E_FAIL,
             tr ("Could not create a differencing hard disk '%s' (%Vrc)"),
             filePathFull.raw(), vrc);
+
+    return S_OK;
+}
+
+HRESULT HVirtualDiskImage::deleteImage (bool aIgnoreErrors /* = false */)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    AssertReturn (!mRegistered, E_FAIL);
+    AssertReturn (mState >= Created, E_FAIL);
+
+    int vrc = RTFileDelete (Utf8Str (mFilePathFull));
+    if (VBOX_FAILURE (vrc) && !aIgnoreErrors)
+        return setError (E_FAIL,
+            tr ("Could not delete the image file '%ls' (%Vrc)"),
+            mFilePathFull.raw(), vrc);
 
     return S_OK;
 }

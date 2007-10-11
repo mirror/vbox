@@ -3976,10 +3976,14 @@ HRESULT VirtualBox::unregisterHardDisk (HardDisk *aHardDisk)
     {
         Assert (aHardDisk->isDifferencing());
 
-        /* differencing hard disk: delete (only if the last access check
-         * succeeded) and uninitialize */
-        if (aHardDisk->asVDI()->lastAccessError().isNull())
-            rc = aHardDisk->asVDI()->DeleteImage();
+        /* differencing hard disk: delete and uninitialize
+         *
+         * Note that we ignore errors because this operation may be a result
+         * of unregistering a missing (inaccessible) differencing hard disk
+         * in which case a failure to implicitly delete the image will not
+         * prevent it from being unregistered and therefore should not pop up
+         * on the caller's side. */
+        rc = aHardDisk->asVDI()->deleteImage (true /* aIgnoreErrors*/);
         aHardDisk->uninit();
     }
 
