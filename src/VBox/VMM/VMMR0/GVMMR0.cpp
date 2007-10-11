@@ -107,16 +107,24 @@ typedef struct GVMM
      * The first entry is unused as it represents the NIL handle. */
     GVMHANDLE           aHandles[128];
 
-    /** The minimum sleep time, in nano seconds.
-     * @gcfgm   /GVMM/MinSleep      32-bit  0..100000000
+    /** The number of VMs that means we no longer considers ourselves along on a CPU/Core.
+     * @gcfgm   /GVMM/cVMsMeansCompany 32-bit  0..UINT32_MAX
      */
-    uint32_t            nsMinSleep;
+    uint32_t            cVMsMeansCompany;
+    /** The minimum sleep time for when we're alone, in nano seconds.
+     * @gcfgm   /GVMM/MinSleepAlone     32-bit  0..100000000
+     */
+    uint32_t            nsMinSleepAlone;
+    /** The minimum sleep time for when we've got company, in nano seconds.
+     * @gcfgm   /GVMM/MinSleepCompany   32-bit  0..100000000
+     */
+    uint32_t            nsMinSleepCompany;
     /** The limit for the first round of early wakeups, given in nano seconds.
-     * @gcfgm   /GVMM/EarlyWakeUp1  32-bit  0..100000000
+     * @gcfgm   /GVMM/EarlyWakeUp1      32-bit  0..100000000
      */
     uint32_t            nsEarlyWakeUp1;
     /** The limit for the second round of early wakeups, given in nano seconds.
-     * @gcfgm   /GVMM/EarlyWakeUp2  32-bit  0..100000000
+     * @gcfgm   /GVMM/EarlyWakeUp2      32-bit  0..100000000
      */
     uint32_t            nsEarlyWakeUp2;
 } GVMM;
@@ -215,9 +223,11 @@ GVMMR0DECL(int) GVMMR0Init(void)
             }
 
             /* The default configuration values. */
-            pGVMM->nsMinSleep     = 750000 /* ns (0.750 ms) */; /** @todo this should be adjusted to be 75% (or something) of the scheduler granularity... */
-            pGVMM->nsEarlyWakeUp1 =  25000 /* ns (0.025 ms) */;
-            pGVMM->nsEarlyWakeUp2 =  50000 /* ns (0.050 ms) */;
+            pGVMM->cVMsMeansCompany  = 1;                           /** @todo should be adjusted to relative to the cpu count or something... */
+            pGVMM->nsMinSleepAlone   = 750000 /* ns (0.750 ms) */;  /** @todo this should be adjusted to be 75% (or something) of the scheduler granularity... */
+            pGVMM->nsMinSleepCompany =  15000 /* ns (0.015 ms) */;
+            pGVMM->nsEarlyWakeUp1    =  25000 /* ns (0.025 ms) */;
+            pGVMM->nsEarlyWakeUp2    =  50000 /* ns (0.050 ms) */;
 
             g_pGVMM = pGVMM;
             LogFlow(("GVMMR0Init: pGVMM=%p\n", pGVMM));
@@ -295,10 +305,24 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
         return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
     int rc = VINF_SUCCESS;
     pszName += sizeof("/GVMM/") - 1;
-    if (!strcmp(pszName, "MinSleep"))
+    if (!strcmp(pszName, "cVMsMeansCompany"))
+    {
+        if (u64Value <= UINT32_MAX)
+            pGVMM->cVMsMeansCompany = u64Value;
+        else
+            rc = VERR_OUT_OF_RANGE;
+    }
+    else if (!strcmp(pszName, "MinSleepAlone"))
     {
         if (u64Value <= 100000000)
-            pGVMM->nsMinSleep = u64Value;
+            pGVMM->nsMinSleepAlone = u64Value;
+        else
+            rc = VERR_OUT_OF_RANGE;
+    }
+    else if (!strcmp(pszName, "MinSleepCompany"))
+    {
+        if (u64Value <= 100000000)
+            pGVMM->nsMinSleepCompany = u64Value;
         else
             rc = VERR_OUT_OF_RANGE;
     }
@@ -349,8 +373,12 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
         return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
     int rc = VINF_SUCCESS;
     pszName += sizeof("/GVMM/") - 1;
-    if (!strcmp(pszName, "MinSleep"))
-        *pu64Value = pGVMM->nsMinSleep;
+    if (!strcmp(pszName, "cVMsMeansCompany"))
+        *pu64Value = pGVMM->cVMsMeansCompany;
+    else if (!strcmp(pszName, "MinSleepAlone"))
+        *pu64Value = pGVMM->nsMinSleepAlone;
+    else if (!strcmp(pszName, "MinSleepCompany"))
+        *pu64Value = pGVMM->nsMinSleepCompany;
     else if (!strcmp(pszName, "EarlyWakeUp1"))
         *pu64Value = pGVMM->nsEarlyWakeUp1;
     else if (!strcmp(pszName, "EarlyWakeUp2"))
@@ -1347,8 +1375,9 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, uint64_t u64ExpireGipTime)
      * Go to sleep if we must...
      */
     if (    u64Now < u64ExpireGipTime
-        &&  (   pGVMM->cVMs > 1
-             || (u64ExpireGipTime - u64Now >= pGVMM->nsMinSleep)))
+        &&  u64ExpireGipTime - u64Now > (pGVMM->cVMs > pGVMM->cVMsMeansCompany
+                                         ? pGVMM->nsMinSleepCompany
+                                         : pGVMM->nsMinSleepAlone))
     {
         pGVM->gvmm.s.StatsSched.cHaltBlocking++;
         ASMAtomicXchgU64(&pGVM->gvmm.s.u64HaltExpire, u64ExpireGipTime);
