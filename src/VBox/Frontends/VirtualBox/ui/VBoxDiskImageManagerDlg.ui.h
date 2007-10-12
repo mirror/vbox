@@ -39,45 +39,50 @@ public:
         QListViewItem (parent), mStatus (VBoxMedia::Unknown) {}
 
     void setMedia (const VBoxMedia &aMedia) { mMedia = aMedia; }
-    VBoxMedia &getMedia() { return mMedia; }
-
-    QString getName() { return mName; }
+    const VBoxMedia &getMedia() const { return mMedia; }
 
     void setPath (QString aPath) { mPath = aPath; }
-    const QString &getPath() { return mPath; }
+    const QString &getPath() const { return mPath; }
 
     void setUsage (QString aUsage) { mUsage = aUsage; }
-    const QString &getUsage() { return mUsage; }
+    const QString &getUsage() const { return mUsage; }
+
+    void setSnapshotUsage (QString aSnapshotUsage) { mSnapshotUsage = aSnapshotUsage; }
+    const QString &getSnapshotUsage() const { return mSnapshotUsage; }
+
+    QString getTotalUsage() const
+    {
+        /* should correlate with VBoxDiskImageManagerDlg::compose[Cd/Fd]Tooltip */
+        return mSnapshotUsage.isNull() ? mUsage :
+            QString ("%1 (%2)").arg (mUsage, mSnapshotUsage); 
+    }
 
     void setSnapshotName (QString aSnapshotName) { mSnapshotName = aSnapshotName; }
-    const QString &getSnapshotName() { return mSnapshotName; }
+    const QString &getSnapshotName() const { return mSnapshotName; }
 
     void setDiskType (QString aDiskType) { mDiskType = aDiskType; }
-    const QString &getDiskType() { return mDiskType; }
+    const QString &getDiskType() const { return mDiskType; }
 
     void setStorageType (QString aStorageType) { mStorageType = aStorageType; }
-    const QString &getStorageType() { return mStorageType; }
+    const QString &getStorageType() const { return mStorageType; }
 
     void setVirtualSize (QString aVirtualSize) { mVirtualSize = aVirtualSize; }
-    const QString &getVirtualSize() { return mVirtualSize; }
+    const QString &getVirtualSize() const { return mVirtualSize; }
 
     void setActualSize (QString aActualSize) { mActualSize = aActualSize; }
-    const QString &getActualSize() { return mActualSize; }
-
+    const QString &getActualSize() const { return mActualSize; }
 
     void setUuid (QUuid aUuid) { mUuid = aUuid; }
-    const QString &getUuid() { return mUuid; }
+    const QString &getUuid() const { return mUuid; }
 
     void setMachineId (QString aMachineId) { mMachineId = aMachineId; }
-    const QString &getMachineId() { return mMachineId; }
-
+    const QString &getMachineId() const { return mMachineId; }
 
     void setStatus (VBoxMedia::Status aStatus) { mStatus = aStatus; }
-    VBoxMedia::Status getStatus() { return mStatus; }
-
+    VBoxMedia::Status getStatus() const { return mStatus; }
 
     void setToolTip (QString aToolTip) { mToolTip = aToolTip; }
-    const QString &getToolTip() { return mToolTip; }
+    const QString &getToolTip() const { return mToolTip; }
 
     QString getInformation (const QString &aInfo, bool aCompact = true,
                             const QString &aElipsis = "middle")
@@ -132,6 +137,7 @@ protected:
     QString mName;
     QString mPath;
     QString mUsage;
+    QString mSnapshotUsage;
     QString mSnapshotName;
     QString mDiskType;
     QString mStorageType;
@@ -856,7 +862,8 @@ void VBoxDiskImageManagerDlg::invokePopup (QListViewItem *aItem, const QPoint & 
 }
 
 
-QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId)
+QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId,
+                                                   QString &aSnapshotUsage)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
@@ -876,10 +883,8 @@ QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId)
         CMachine machine = vbox.GetMachine (QUuid (*it));
         usage += machine.GetName();
 
-        QString snapshots;
-        sourceSnapshotsCD (aId, machine.GetSnapshot (QUuid()), snapshots);
-        if (!snapshots.isEmpty())
-            usage += QString (" (%1)").arg (snapshots);
+        getDVDImageSnapshotUsage (aId, machine.GetSnapshot (QUuid()),
+                                  aSnapshotUsage);
     }
 
     for (QStringList::Iterator it = tempMachines.begin();
@@ -896,17 +901,16 @@ QString VBoxDiskImageManagerDlg::getDVDImageUsage (const QUuid &aId)
             CMachine machine = vbox.GetMachine (QUuid (*it));
             usage += machine.GetName() + "]";
 
-            QString snapshots;
-            sourceSnapshotsCD (aId, machine.GetSnapshot (QUuid()), snapshots);
-            if (!snapshots.isEmpty())
-                usage += QString (" (%1)").arg (snapshots);
+            getDVDImageSnapshotUsage (aId, machine.GetSnapshot (QUuid()),
+                                      aSnapshotUsage);
         }
     }
 
     return usage;
 }
 
-QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId)
+QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId,
+                                                      QString &aSnapshotUsage)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
@@ -926,10 +930,8 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId)
         CMachine machine = vbox.GetMachine (QUuid (*it));
         usage += machine.GetName();
 
-        QString snapshots;
-        sourceSnapshotsFD (aId, machine.GetSnapshot (QUuid()), snapshots);
-        if (!snapshots.isEmpty())
-            usage += QString (" (%1)").arg (snapshots);
+        getFloppyImageSnapshotUsage (aId, machine.GetSnapshot (QUuid()),
+                                     aSnapshotUsage);
     }
 
     for (QStringList::Iterator it = tempMachines.begin();
@@ -946,10 +948,8 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId)
             CMachine machine = vbox.GetMachine (QUuid (*it));
             usage += machine.GetName() + "]";
 
-            QString snapshots;
-            sourceSnapshotsFD (aId, machine.GetSnapshot (QUuid()), snapshots);
-            if (!snapshots.isEmpty())
-                usage += QString (" (%1)").arg (snapshots);
+            getFloppyImageSnapshotUsage (aId, machine.GetSnapshot (QUuid()),
+                                         aSnapshotUsage);
         }
     }
 
@@ -957,9 +957,9 @@ QString VBoxDiskImageManagerDlg::getFloppyImageUsage (const QUuid &aId)
 }
 
 
-void VBoxDiskImageManagerDlg::sourceSnapshotsCD (const QUuid &aImageId,
-                                                 const CSnapshot &aSnapshot,
-                                                 QString &aUsage)
+void VBoxDiskImageManagerDlg::getDVDImageSnapshotUsage (const QUuid &aImageId,
+                                                        const CSnapshot &aSnapshot,
+                                                        QString &aUsage)
 {
     if (aSnapshot.isNull())
         return;
@@ -974,12 +974,12 @@ void VBoxDiskImageManagerDlg::sourceSnapshotsCD (const QUuid &aImageId,
 
     CSnapshotEnumerator en = aSnapshot.GetChildren().Enumerate();
     while (en.HasMore())
-        sourceSnapshotsCD (aImageId, en.GetNext(), aUsage);
+        getDVDImageSnapshotUsage (aImageId, en.GetNext(), aUsage);
 }
 
-void VBoxDiskImageManagerDlg::sourceSnapshotsFD (const QUuid &aImageId,
-                                                 const CSnapshot &aSnapshot,
-                                                 QString &aUsage)
+void VBoxDiskImageManagerDlg::getFloppyImageSnapshotUsage (const QUuid &aImageId,
+                                                           const CSnapshot &aSnapshot,
+                                                           QString &aUsage)
 {
     if (aSnapshot.isNull())
         return;
@@ -994,30 +994,37 @@ void VBoxDiskImageManagerDlg::sourceSnapshotsFD (const QUuid &aImageId,
 
     CSnapshotEnumerator en = aSnapshot.GetChildren().Enumerate();
     while (en.HasMore())
-        sourceSnapshotsFD (aImageId, en.GetNext(), aUsage);
+        getFloppyImageSnapshotUsage (aImageId, en.GetNext(), aUsage);
 }
 
 
 QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
-                                                   VBoxMedia::Status aStatus)
+                                                   VBoxMedia::Status aStatus,
+                                                   DiskImageItem *aItem)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QUuid machineId = aHd.GetMachineId();
+    QUuid machineId = aItem ? aItem->getMachineId() : aHd.GetMachineId();
 
-    QString src = aHd.GetLocation();
-    QFileInfo fi (src);
-    QString location = aHd.GetStorageType() == CEnums::ISCSIHardDisk ? src :
-                       QDir::convertSeparators (fi.absFilePath());
+    QString src = aItem ? aItem->getPath() : aHd.GetLocation();
+    QString location = aItem || aHd.GetStorageType() == CEnums::ISCSIHardDisk ? src :
+        QDir::convertSeparators (QFileInfo (src).absFilePath());
 
-    QString storageType = vboxGlobal().toString (aHd.GetStorageType());
-    QString hardDiskType = vboxGlobal().hardDiskTypeString (aHd);
+    QString storageType = aItem ? aItem->getStorageType() :
+        vboxGlobal().toString (aHd.GetStorageType());
+    QString hardDiskType = aItem ? aItem->getDiskType() :
+        vboxGlobal().hardDiskTypeString (aHd);
 
     QString usage;
-    if (!machineId.isNull())
+    if (aItem)
+        usage = aItem->getUsage();
+    else if (!machineId.isNull())
         usage = vbox.GetMachine (machineId).GetName();
 
+    QUuid snapshotId = aItem ? aItem->getUuid() : aHd.GetSnapshotId();
     QString snapshotName;
-    if (!machineId.isNull() && !aHd.GetSnapshotId().isNull())
+    if (aItem)
+        snapshotName = aItem->getSnapshotName();
+    else if (!machineId.isNull() && !snapshotId.isNull())
     {
         CSnapshot snapshot = vbox.GetMachine (machineId).
                                   GetSnapshot (aHd.GetSnapshotId());
@@ -1077,13 +1084,23 @@ QString VBoxDiskImageManagerDlg::composeHdToolTip (CHardDisk &aHd,
 }
 
 QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd,
-                                                   VBoxMedia::Status aStatus)
+                                                   VBoxMedia::Status aStatus,
+                                                   DiskImageItem *aItem)
 {
-    QString src = aCd.GetFilePath();
-    QFileInfo fi (src);
-    QString location = QDir::convertSeparators (fi.absFilePath ());
-    QUuid uuid = aCd.GetId();
-    QString usage = getDVDImageUsage (uuid);
+    QString location = aItem ? aItem->getPath() :
+        QDir::convertSeparators (QFileInfo (aCd.GetFilePath()).absFilePath());
+    QUuid uuid = aItem ? aItem->getUuid() : aCd.GetId();
+    QString usage;
+    if (aItem)
+        usage = aItem->getTotalUsage();
+    else
+    {
+        QString snapshotUsage;
+        usage = getDVDImageUsage (uuid, snapshotUsage);
+        /* should correlate with DiskImageItem::getTotalUsage() */
+        if (!snapshotUsage.isNull())
+            usage = QString ("%1 (%2)").arg (usage, snapshotUsage);
+    }
 
     /* compose tool-tip information */
     QString tip;
@@ -1133,15 +1150,24 @@ QString VBoxDiskImageManagerDlg::composeCdToolTip (CDVDImage &aCd,
 }
 
 QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd,
-                                                   VBoxMedia::Status aStatus)
+                                                   VBoxMedia::Status aStatus,
+                                                   DiskImageItem *aItem)
 {
-    QString src = aFd.GetFilePath();
-    QFileInfo fi (src);
-    QString location = QDir::convertSeparators (fi.absFilePath ());
-    QUuid uuid = aFd.GetId();
-    QString usage = getFloppyImageUsage (uuid);
+    QString location = aItem ? aItem->getPath() :
+        QDir::convertSeparators (QFileInfo (aFd.GetFilePath()).absFilePath());
+    QUuid uuid = aItem ? aItem->getUuid() : aFd.GetId();
+    QString usage;
+    if (aItem)
+        usage = aItem->getTotalUsage();
+    else
+    {
+        QString snapshotUsage;
+        usage = getFloppyImageUsage (uuid, snapshotUsage);
+        /* should correlate with DiskImageItem::getTotalUsage() */
+        if (!snapshotUsage.isNull())
+            usage = QString ("%1 (%2)").arg (usage, snapshotUsage);
+    }
 
-    /* compose tool-tip information */
     /* compose tool-tip information */
     QString tip;
     switch (aStatus)
@@ -1193,7 +1219,9 @@ QString VBoxDiskImageManagerDlg::composeFdToolTip (CFloppyImage &aFd,
 void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
                                             const VBoxMedia &aMedia)
 {
-    if (!aItem) return;
+    if (!aItem)
+        return;
+
     CHardDisk hd = aMedia.disk;
     VBoxMedia::Status status = aMedia.status;
 
@@ -1223,7 +1251,7 @@ void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
     aItem->setText (1, virtualSize);
     aItem->setText (2, actualSize);
     aItem->setPath (hd.GetStorageType() == CEnums::ISCSIHardDisk ? src :
-                   QDir::convertSeparators (fi.absFilePath()));
+                    QDir::convertSeparators (fi.absFilePath()));
     aItem->setUsage (usage);
     aItem->setSnapshotName (snapshotName);
     aItem->setDiskType (hardDiskType);
@@ -1232,7 +1260,7 @@ void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
     aItem->setActualSize (actualSize);
     aItem->setUuid (uuid);
     aItem->setMachineId (machineId);
-    aItem->setToolTip (composeHdToolTip (hd, status));
+    aItem->setToolTip (composeHdToolTip (hd, status, aItem));
     aItem->setStatus (status);
 
     makeWarningMark (aItem, aMedia.status, VBoxDefs::HD);
@@ -1241,13 +1269,16 @@ void VBoxDiskImageManagerDlg::updateHdItem (DiskImageItem   *aItem,
 void VBoxDiskImageManagerDlg::updateCdItem (DiskImageItem   *aItem,
                                             const VBoxMedia &aMedia)
 {
-    if (!aItem) return;
+    if (!aItem)
+        return;
+
     CDVDImage cd = aMedia.disk;
     VBoxMedia::Status status = aMedia.status;
 
     QUuid uuid = cd.GetId();
     QString src = cd.GetFilePath();
-    QString usage = getDVDImageUsage (uuid);
+    QString snapshotUsage;
+    QString usage = getDVDImageUsage (uuid, snapshotUsage);
     QString size = status == VBoxMedia::Ok ?
         vboxGlobal().formatSize (cd.GetSize()) : QString ("--");
     QFileInfo fi (src);
@@ -1256,9 +1287,10 @@ void VBoxDiskImageManagerDlg::updateCdItem (DiskImageItem   *aItem,
     aItem->setText (1, size);
     aItem->setPath (QDir::convertSeparators (fi.absFilePath ()));
     aItem->setUsage (usage);
+    aItem->setSnapshotUsage (snapshotUsage);
     aItem->setActualSize (size);
     aItem->setUuid (uuid);
-    aItem->setToolTip (composeCdToolTip (cd, status));
+    aItem->setToolTip (composeCdToolTip (cd, status, aItem));
     aItem->setStatus (status);
 
     makeWarningMark (aItem, aMedia.status, VBoxDefs::CD);
@@ -1267,13 +1299,16 @@ void VBoxDiskImageManagerDlg::updateCdItem (DiskImageItem   *aItem,
 void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem   *aItem,
                                             const VBoxMedia &aMedia)
 {
-    if (!aItem) return;
+    if (!aItem)
+        return;
+
     CFloppyImage fd = aMedia.disk;
     VBoxMedia::Status status = aMedia.status;
 
     QUuid uuid = fd.GetId();
     QString src = fd.GetFilePath();
-    QString usage = getFloppyImageUsage (uuid);
+    QString snapshotUsage;
+    QString usage = getFloppyImageUsage (uuid, snapshotUsage);
     QString size = status == VBoxMedia::Ok ?
         vboxGlobal().formatSize (fd.GetSize()) : QString ("--");
     QFileInfo fi (src);
@@ -1282,9 +1317,10 @@ void VBoxDiskImageManagerDlg::updateFdItem (DiskImageItem   *aItem,
     aItem->setText (1, size);
     aItem->setPath (QDir::convertSeparators (fi.absFilePath ()));
     aItem->setUsage (usage);
+    aItem->setSnapshotUsage (snapshotUsage);
     aItem->setActualSize (size);
     aItem->setUuid (uuid);
-    aItem->setToolTip (composeFdToolTip (fd, status));
+    aItem->setToolTip (composeFdToolTip (fd, status, aItem));
     aItem->setStatus (status);
 
     makeWarningMark (aItem, aMedia.status, VBoxDefs::FD);
@@ -1717,7 +1753,6 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
     }
     else if (parentList == cdsView)
     {
-        QString usage = getDVDImageUsage (itemId);
         /* check if there is temporary usage: */
         QStringList tempMachines =
             QStringList::split (' ', vbox.GetDVDImageUsage (itemId,
@@ -1736,7 +1771,6 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
     }
     else if (parentList == fdsView)
     {
-        QString usage = getFloppyImageUsage(itemId);
         /* check if there is temporary usage: */
         QStringList tempMachines =
             QStringList::split (' ', vbox.GetFloppyImageUsage (itemId,
@@ -1809,10 +1843,10 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
                           item &&  item->getUsage().isNull() &&
                           !item->firstChild() && !item->getPath().isNull();
     bool releaseEnabled = item && !item->getUsage().isNull() &&
-        item->getUsage().find (QRegExp ("\\([\\s\\S]+\\)")) == -1 &&
-        checkImage (item) &&
-        !item->parent() && !item->firstChild() &&
-        item->getSnapshotName().isNull();
+                          item->getSnapshotUsage().isNull() &&
+                          checkImage (item) &&
+                          !item->parent() && !item->firstChild() &&
+                          item->getSnapshotName().isNull();
     bool newEnabled     = notInEnum &&
                           getCurrentListView() == hdsView ? true : false;
     bool addEnabled     = notInEnum;
@@ -1850,12 +1884,12 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QListViewItem *aItem)
         else if (item->listView() == cdsView)
         {
             cdsPane1->setText (item->getInformation (item->getPath(), true, "end"));
-            cdsPane2->setText (item->getInformation (item->getUsage()));
+            cdsPane2->setText (item->getInformation (item->getTotalUsage()));
         }
         else if (item->listView() == fdsView)
         {
             fdsPane1->setText (item->getInformation (item->getPath(), true, "end"));
-            fdsPane2->setText (item->getInformation (item->getUsage()));
+            fdsPane2->setText (item->getInformation (item->getTotalUsage()));
         }
     }
     else
@@ -2040,8 +2074,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
     /* if it is a cd/dvd sub-item: */
     else if (currentList == cdsView)
     {
-        QString usage = getDVDImageUsage (itemId);
-        /* only permamently mounted .iso could be released */
+        QString usage = item->getTotalUsage();
         if (vboxProblem().confirmReleaseImage (this, usage))
         {
             QStringList permMachines =
@@ -2058,8 +2091,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
     /* if it is a floppy sub-item: */
     else if (currentList == fdsView)
     {
-        QString usage = getFloppyImageUsage (itemId);
-        /* only permamently mounted .img could be released */
+        QString usage = item->getTotalUsage();
         if (vboxProblem().confirmReleaseImage (this, usage))
         {
             QStringList permMachines =
