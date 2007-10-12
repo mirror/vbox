@@ -133,12 +133,13 @@ STDMETHODIMP MachineDebugger::COMSETTER(Singlestep)(BOOL enable)
  * Resets VM statistics.
  *
  * @returns COM status code.
+ * @param   aPattern            The selection pattern. A bit similar to filename globbing.
  */
-STDMETHODIMP MachineDebugger::ResetStats()
+STDMETHODIMP MachineDebugger::ResetStats(INPTR BSTR aPattern)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
-        STAMR3Reset(pVM, NULL);
+        STAMR3Reset(pVM, Utf8Str(aPattern).raw());
     return S_OK;
 }
 
@@ -146,12 +147,13 @@ STDMETHODIMP MachineDebugger::ResetStats()
  * Dumps VM statistics to the log.
  *
  * @returns COM status code.
+ * @param   aPattern            The selection pattern. A bit similar to filename globbing.
  */
-STDMETHODIMP MachineDebugger::DumpStats()
+STDMETHODIMP MachineDebugger::DumpStats(INPTR BSTR aPattern)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
-        STAMR3Dump(pVM, NULL);
+        STAMR3Dump(pVM, Utf8Str(aPattern).raw());
     return S_OK;
 }
 

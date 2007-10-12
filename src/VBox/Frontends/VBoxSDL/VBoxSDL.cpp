@@ -3093,11 +3093,11 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
                 // pressing CTRL+ALT+F11 dumps the statistics counter
                 case SDLK_F12:
                     RTPrintf("ResetStats\n"); /* Visual feedback in console window */
-                    gMachineDebugger->ResetStats();
+                    gMachineDebugger->ResetStats(NULL);
                     break;
                 // pressing CTRL+ALT+F12 resets all statistics counter
                 case SDLK_F11:
-                    gMachineDebugger->DumpStats();
+                    gMachineDebugger->DumpStats(NULL);
                     RTPrintf("DumpStats\n");  /* Vistual feedback in console window */
                     break;
                 default:

@@ -67,8 +67,8 @@ public:
     STDMETHOD(COMGETTER(VM))(ULONG64 *vm);
 
     // IMachineDebugger methods
-    STDMETHOD(ResetStats());
-    STDMETHOD(DumpStats());
+    STDMETHOD(ResetStats(INPTR BSTR aPattern));
+    STDMETHOD(DumpStats(INPTR BSTR aPattern));
     STDMETHOD(GetStats(INPTR BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats));
 
 
