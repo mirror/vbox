@@ -25,8 +25,8 @@
  * @{
  */
 
-/* Undefine PAGE_SIZE and PAGE_SHIFT to avoid unnecessary noice when clashing 
-   with system headers. Include system headers before / after iprt depending 
+/* Undefine PAGE_SIZE and PAGE_SHIFT to avoid unnecessary noice when clashing
+   with system headers. Include system headers before / after iprt depending
    on which you wish to take precedence. */
 #undef PAGE_SIZE
 #undef PAGE_SHIFT
@@ -76,7 +76,9 @@
  * @returns Page aligned address (it's an uintptr_t).
  * @param   pv      The address to align.
  *
- * @remark  Physical addresses are always masked using X86_PTE_PAE_PG_MASK!
+ * @remarks Physical addresses are always masked using X86_PTE_PAE_PG_MASK!
+ * @remarks This only works with POINTERS in the current context.
+ *          Do NOT use on guest address or physical address!
  */
 #define PAGE_ADDRESS(pv)    ((uintptr_t)(pv) & ~(uintptr_t)0xfff)
 
