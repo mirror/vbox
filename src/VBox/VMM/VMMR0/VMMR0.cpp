@@ -831,76 +831,51 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         }
 
 
-#if 0//def VBOX_WITH_INTERNAL_NETWORKING - currently busted
+#ifdef VBOX_WITH_INTERNAL_NETWORKING
         /*
-         * Services.
+         * Requests to the internal networking service.
          */
         case VMMR0_DO_INTNET_OPEN:
-        case VMMR0_DO_INTNET_IF_CLOSE:
-        case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
-        case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
-        case VMMR0_DO_INTNET_IF_SEND:
-        case VMMR0_DO_INTNET_IF_WAIT:
-        {
-            /*
-             * Validate arguments a bit first.
-             */
-            if (!VALID_PTR(pvArg))
-                return VERR_INVALID_POINTER;
-            if (!VALID_PTR(pVM))
-                return VERR_INVALID_POINTER;
-            if (pVM->pVMR0 != pVM)
-                return VERR_INVALID_POINTER;
-            if (!VALID_PTR(pVM->pSession))
-                return VERR_INVALID_POINTER;
+            if (!pVM || u64Arg)
+                return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
-                return VERR_FILE_NOT_FOUND; ///@todo fix this status code!
+                return VERR_NOT_SUPPORTED;
+            return INTNETR0OpenReq(g_pIntNet, pVM->pSession, (PINTNETOPENREQ)pReqHdr);
 
-            /*
-             * Unpack the arguments and call the service.
-             */
-            switch (enmOperation)
-            {
-                case VMMR0_DO_INTNET_OPEN:
-                {
-                    PINTNETOPENARGS pArgs = (PINTNETOPENARGS)pvArg;
-                    return INTNETR0Open(g_pIntNet, pVM->pSession, &pArgs->szNetwork[0], pArgs->cbSend, pArgs->cbRecv, pArgs->fRestrictAccess, &pArgs->hIf);
-                }
+        case VMMR0_DO_INTNET_IF_CLOSE:
+            if (!pVM || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            if (!g_pIntNet)
+                return VERR_NOT_SUPPORTED;
+            return INTNETR0IfCloseReq(g_pIntNet, (PINTNETIFCLOSEREQ)pReqHdr);
 
-                case VMMR0_DO_INTNET_IF_CLOSE:
-                {
-                    PINTNETIFCLOSEARGS pArgs = (PINTNETIFCLOSEARGS)pvArg;
-                    return INTNETR0IfClose(g_pIntNet, pArgs->hIf);
-                }
+        case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
+            if (!pVM || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            if (!g_pIntNet)
+                return VERR_NOT_SUPPORTED;
+            return INTNETR0IfGetRing3BufferReq(g_pIntNet, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
 
-                case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
-                {
-                    PINTNETIFGETRING3BUFFERARGS pArgs = (PINTNETIFGETRING3BUFFERARGS)pvArg;
-                    return INTNETR0IfGetRing3Buffer(g_pIntNet, pArgs->hIf, &pArgs->pRing3Buf);
-                }
+        case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
+            if (!pVM || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            if (!g_pIntNet)
+                return VERR_NOT_SUPPORTED;
+            return INTNETR0IfSetPromiscuousModeReq(g_pIntNet, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
 
-                case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
-                {
-                    PINTNETIFSETPROMISCUOUSMODEARGS pArgs = (PINTNETIFSETPROMISCUOUSMODEARGS)pvArg;
-                    return INTNETR0IfSetPromiscuousMode(g_pIntNet, pArgs->hIf, pArgs->fPromiscuous);
-                }
+        case VMMR0_DO_INTNET_IF_SEND:
+            if (!pVM || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            if (!g_pIntNet)
+                return VERR_NOT_SUPPORTED;
+            return INTNETR0IfSendReq(g_pIntNet, (PINTNETIFSENDREQ)pReqHdr);
 
-                case VMMR0_DO_INTNET_IF_SEND:
-                {
-                    PINTNETIFSENDARGS pArgs = (PINTNETIFSENDARGS)pvArg;
-                    return INTNETR0IfSend(g_pIntNet, pArgs->hIf, pArgs->pvFrame, pArgs->cbFrame);
-                }
-
-                case VMMR0_DO_INTNET_IF_WAIT:
-                {
-                    PINTNETIFWAITARGS pArgs = (PINTNETIFWAITARGS)pvArg;
-                    return INTNETR0IfWait(g_pIntNet, pArgs->hIf, pArgs->cMillies);
-                }
-
-                default:
-                    return VERR_NOT_SUPPORTED;
-            }
-        }
+        case VMMR0_DO_INTNET_IF_WAIT:
+            if (!pVM || u64Arg)
+                return VERR_INVALID_PARAMETER;
+            if (!g_pIntNet)
+                return VERR_NOT_SUPPORTED;
+            return INTNETR0IfWaitReq(g_pIntNet, (PINTNETIFWAITREQ)pReqHdr);
 #endif /* VBOX_WITH_INTERNAL_NETWORKING */
 
         /*

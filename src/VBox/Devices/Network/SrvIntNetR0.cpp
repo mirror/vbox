@@ -59,11 +59,11 @@ typedef struct INTNETIF
     /** Pointer to the current exchange buffer (ring-0). */
     PINTNETBUF              pIntBuf;
     /** Pointer to ring-3 mapping of the current exchange buffer. */
-    PINTNETBUF              pIntBufR3;
+    R3PTRTYPE(PINTNETBUF)   pIntBufR3;
     /** Pointer to the default exchange buffer for the interface. */
     PINTNETBUF              pIntBufDefault;
     /** Pointer to ring-3 mapping of the default exchange buffer. */
-    PINTNETBUF              pIntBufDefaultR3;
+    R3PTRTYPE(PINTNETBUF)   pIntBufDefaultR3;
     /** Event semaphore which a receiver thread will sleep on while waiting for data to arrive. */
     RTSEMEVENT              Event;
     /** Number of threads sleeping on the Event semaphore. */
@@ -624,30 +624,38 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void
     /*
      * Process the send buffer.
      */
-    if (pIf->pIntBuf->Send.offRead != pIf->pIntBuf->Send.offWrite)
+    while (pIf->pIntBuf->Send.offRead != pIf->pIntBuf->Send.offWrite)
     {
-        for (;;)
+        /* Send the frame if the type is sane. */
+        PINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pIf->pIntBuf + pIf->pIntBuf->Send.offRead);
+        if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
         {
-            /*
-             * Anything we know what is, if so send it.
-             */
-            PINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pIf->pIntBuf + pIf->pIntBuf->Send.offRead);
-            if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
-            {
-                void *pvCurFrame = INTNETHdrGetFramePtr(pHdr, pIf->pIntBuf);
-                if (pvCurFrame)
-                    intnetNetworkSend(pIf->pNetwork, pIf, pvCurFrame, pHdr->cbFrame);
-            }
-            /* else: ignore the frame */
-
-            /*
-             * Skip to the next frame.
-             */
-            INTNETRingSkipFrame(pIf->pIntBuf, &pIf->pIntBuf->Send);
+            void *pvCurFrame = INTNETHdrGetFramePtr(pHdr, pIf->pIntBuf);
+            if (pvCurFrame)
+                intnetNetworkSend(pIf->pNetwork, pIf, pvCurFrame, pHdr->cbFrame);
         }
+        /* else: ignore the frame */
+
+        /* Skip to the next frame. */
+        INTNETRingSkipFrame(pIf->pIntBuf, &pIf->pIntBuf->Send);
     }
 
     return RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+}
+
+
+/**
+ * VMMR0 request wrapper for INTNETR0IfSend.
+ *
+ * @returns see INTNETR0IfSend.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0IfSendReq(PINTNET pIntNet, PINTNETIFSENDREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0IfSend(pIntNet, pReq->hIf, NULL, 0);
 }
 
 
@@ -659,7 +667,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void
  * @param   hIf         The interface handle.
  * @param   ppRing3Buf  Where to store the address of the ring-3 mapping.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PINTNETBUF *ppRing3Buf)
+INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, R3PTRTYPE(PINTNETBUF) *ppRing3Buf)
 {
     LogFlow(("INTNETR0IfGetRing3Buffer: pIntNet=%p hIf=%RX32 ppRing3Buf=%p\n", pIntNet, hIf, ppRing3Buf));
 
@@ -686,6 +694,21 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
     rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
     LogFlow(("INTNETR0IfGetRing3Buffer: returns %Vrc *ppRing3Buf=%p\n", rc, *ppRing3Buf));
     return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for INTNETR0IfGetRing3Buffer.
+ *
+ * @returns see INTNETR0IfGetRing3Buffer.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PINTNETIFGETRING3BUFFERREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0IfGetRing3Buffer(pIntNet, pReq->hIf, &pReq->pRing3Buf);
 }
 
 
@@ -798,6 +821,21 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
 
 
 /**
+ * VMMR0 request wrapper for INTNETR0IfSetPromiscuousMode.
+ *
+ * @returns see INTNETR0IfSetPromiscuousMode.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PINTNETIFSETPROMISCUOUSMODEREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0IfSetPromiscuousMode(pIntNet, pReq->hIf, pReq->fPromiscuous);
+}
+
+
+/**
  * Wait for the interface to get signaled.
  * The interface will be signaled when is put into the receive buffer.
  *
@@ -807,7 +845,7 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
  * @param   cMillies    Number of milliseconds to wait. RT_INDEFINITE_WAIT should be
  *                      used if indefinite wait is desired.
  */
-INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, unsigned cMillies)
+INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, uint32_t cMillies)
 {
     LogFlow(("INTNETR0IfWait: pIntNet=%p hIf=%RX32 cMillies=%u\n", pIntNet, hIf, cMillies));
 
@@ -843,7 +881,7 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, unsigned c
      * already destroyed or in the process of being destroyed.
      */
     ASMAtomicIncU32(&pIf->cSleepers);
-    int rc = RTSemEventWait(Event, cMillies);
+    int rc = RTSemEventWaitNoResume(Event, cMillies);
     if (pIf->Event == Event)
     {
         ASMAtomicDecU32(&pIf->cSleepers);
@@ -854,6 +892,21 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, unsigned c
         rc = VERR_SEM_DESTROYED;
     LogFlow(("INTNETR0IfWait: returns %Vrc\n", rc));
     return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for INTNETR0IfWait.
+ *
+ * @returns see INTNETR0IfWait.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PINTNETIFWAITREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0IfWait(pIntNet, pReq->hIf, pReq->cMillies);
 }
 
 
@@ -879,6 +932,21 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf)
     int rc = SUPR0ObjRelease(pIf->pvObj, pIf->pSession);
     LogFlow(("INTNETR0IfClose: returns %Vrc\n", rc));
     return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for INTNETR0IfCloseReq.
+ *
+ * @returns see INTNETR0IfClose.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PINTNETIFCLOSEREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0IfClose(pIntNet, pReq->hIf);
 }
 
 
@@ -977,9 +1045,9 @@ static DECLCALLBACK(void) INTNETIfDestruct(void *pvObj, void *pvUser1, void *pvU
     {
         SUPR0MemFree(pIf->pSession, (RTHCUINTPTR)pIf->pIntBufDefault);
         pIf->pIntBufDefault = NULL;
-        pIf->pIntBufDefaultR3 = NULL;
-        pIf->pIntBufR3 = NULL;
+        pIf->pIntBufDefaultR3 = 0;
         pIf->pIntBuf = NULL;
+        pIf->pIntBufR3 = 0;
     }
 
     /*
@@ -1414,6 +1482,22 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
 
     LogFlow(("INTNETR0Open: return %Vrc *phIf=%RX32\n", rc, *phIf));
     return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0MapUnmapChunk.
+ *
+ * @returns see GMMR0MapUnmapChunk.
+ * @param   pIntNet         The internal networking instance.
+ * @param   pSession        The session handle.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) INTNETR0OpenReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETOPENREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return INTNETR0Open(pIntNet, pSession, &pReq->szNetwork[0], pReq->cbSend, pReq->cbRecv, pReq->fRestrictAccess, &pReq->hIf);
 }
 
 

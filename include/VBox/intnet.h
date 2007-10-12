@@ -19,11 +19,15 @@
 
 #include <VBox/types.h>
 #include <VBox/stam.h>
+#include <VBox/sup.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
 __BEGIN_DECLS
 
+
+/** Pointer to an internal network ring-0 instance. */
+typedef struct INTNET *PINTNET;
 
 /**
  * Generic two-sided ring buffer.
@@ -163,7 +167,7 @@ DECLINLINE(void *) INTNETHdrGetFramePtr(PINTNETHDR pHdr, PINTNETBUF pBuf)
     const uintptr_t off = (uintptr_t)pu8 - (uintptr_t)pBuf;
     Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME);
     Assert(off < pBuf->cbBuf);
-    Assert(off + pHdr->cbFrame < pBuf->cbBuf);
+    Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
 #endif
     NOREF(pBuf);
     return pu8;
@@ -197,13 +201,14 @@ DECLINLINE(void) INTNETRingSkipFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf)
 #define INTNET_MAX_NETWORK_NAME 128
 
 
-
 /**
- * The packed down arguments of INTNETR0Open().
- * @see INTNETR0Open()
+ * Request buffer for INTNETR0OpenReq / VMMR0_DO_INTNET_OPEN.
+ * @see INTNETR0Open.
  */
-typedef struct INTNETOPENARGS
+typedef struct INTNETOPENREQ
 {
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
     /** The network name. (input) */
     char            szNetwork[INTNET_MAX_NETWORK_NAME];
     /** The size of the send buffer. (input) */
@@ -214,92 +219,108 @@ typedef struct INTNETOPENARGS
     bool            fRestrictAccess;
     /** The handle to the network interface. (output) */
     INTNETIFHANDLE  hIf;
-} INTNETOPENARGS;
-/** Pointer to an INTNETR0Open() argument package. */
-typedef INTNETOPENARGS *PINTNETOPENARGS;
+} INTNETOPENREQ;
+/** Pointer to an INTNETR0OpenReq / VMMR0_DO_INTNET_OPEN request buffer. */
+typedef INTNETOPENREQ *PINTNETOPENREQ;
+
+INTNETR0DECL(int) INTNETR0OpenReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETOPENREQ pReq);
 
 
 /**
- * The packed down arguments of INTNETR0IfClose().
- * @see INTNETR0IfClose()
+ * Request buffer for INTNETR0IfCloseReq / VMMR0_DO_INTNET_IF_CLOSE.
+ * @see INTNETR0IfClose.
  */
-typedef struct INTNETCLOSEARGS
+typedef struct INTNETIFCLOSEREQ
 {
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
     /** The handle to the network interface. */
     INTNETIFHANDLE  hIf;
-} INTNETIFCLOSEARGS;
-/** Pointer to an INTNETR0Open() argument package. */
-typedef INTNETIFCLOSEARGS *PINTNETIFCLOSEARGS;
+} INTNETIFCLOSEREQ;
+/** Pointer to an INTNETR0IfCloseReq / VMMR0_DO_INTNET_IF_CLOSE request buffer. */
+typedef INTNETIFCLOSEREQ *PINTNETIFCLOSEREQ;
+
+INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PINTNETIFCLOSEREQ pReq);
 
 
 /**
- * Argument buffer for calling INTNETR0IfGetRing3Buffer().
- * @see INTNETR0IfGetRing3Buffer()
+ * Request buffer for INTNETR0IfGetRing3BufferReq / VMMR0_DO_INTNET_IF_GET_RING3_BUFFER.
+ * @see INTNETR0IfGetRing3Buffer.
  */
-typedef struct INTNETIFGETRING3BUFFERARGS
+typedef struct INTNETIFGETRING3BUFFERREQ
 {
+    /** The request header. */
+    SUPVMMR0REQHDR          Hdr;
     /** Handle to the interface. */
-    INTNETIFHANDLE  hIf;
+    INTNETIFHANDLE          hIf;
     /** The pointer to the ring3 buffer. (output) */
-    PINTNETBUF      pRing3Buf;
-} INTNETIFGETRING3BUFFERARGS;
-/** Pointer to an INTNETR0IfGetRing3Buffer() argument package. */
-typedef INTNETIFGETRING3BUFFERARGS *PINTNETIFGETRING3BUFFERARGS;
+    R3PTRTYPE(PINTNETBUF)   pRing3Buf;
+} INTNETIFGETRING3BUFFERREQ;
+/** Pointer to an INTNETR0IfGetRing3BufferReq / VMMR0_DO_INTNET_IF_GET_RING3_BUFFER request buffer. */
+typedef INTNETIFGETRING3BUFFERREQ *PINTNETIFGETRING3BUFFERREQ;
+
+INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PINTNETIFGETRING3BUFFERREQ pReq);
+
 
 /**
- * Argument buffer for calling INTNETR0IfSetPromiscuousMode().
- * @see INTNETR0IfSetPromiscuousMode()
+ * Request buffer for INTNETR0IfSetPromiscuousModeReq / VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE.
+ * @see INTNETR0IfSetPromiscuousMode.
  */
-typedef struct INTNETIFSETPROMISCUOUSMODEARGS
+typedef struct INTNETIFSETPROMISCUOUSMODEREQ
 {
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
     /** The new promiscuous mode. */
     bool            fPromiscuous;
-} INTNETIFSETPROMISCUOUSMODEARGS;
-/** Pointer to an INTNETR0IfSetPromiscuousMode() argument package. */
-typedef INTNETIFSETPROMISCUOUSMODEARGS *PINTNETIFSETPROMISCUOUSMODEARGS;
+} INTNETIFSETPROMISCUOUSMODEREQ;
+/** Pointer to an INTNETR0IfSetPromiscuousModeReq / VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE request buffer. */
+typedef INTNETIFSETPROMISCUOUSMODEREQ *PINTNETIFSETPROMISCUOUSMODEREQ;
+
+INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PINTNETIFSETPROMISCUOUSMODEREQ pReq);
 
 
 /**
- * Argument buffer for calling INTNETR0IfSend().
- * @see INTNETR0IfSend()
+ * Request buffer for INTNETR0IfSendReq / VMMR0_DO_INTNET_IF_SEND.
+ * @see INTNETR0IfSend.
  */
-typedef struct INTNETIFSENDARGS
+typedef struct INTNETIFSENDREQ
 {
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
-    /** Pointer to the frame. (Optional) */
-    const void     *pvFrame;
-    /** The size of the frame. (Optional) */
-    uint32_t        cbFrame;
-} INTNETIFSENDARGS;
+} INTNETIFSENDREQ;
 /** Pointer to an INTNETR0IfSend() argument package. */
-typedef INTNETIFSENDARGS *PINTNETIFSENDARGS;
+typedef INTNETIFSENDREQ *PINTNETIFSENDREQ;
+
+INTNETR0DECL(int) INTNETR0IfSendReq(PINTNET pIntNet, PINTNETIFSENDREQ pReq);
 
 
 /**
- * Argument buffer for calling INTNETR0IfWait().
- * @see INTNETR0IfWait()
+ * Request buffer for INTNETR0IfWaitReq / VMMR0_DO_INTNET_IF_WAIT.
+ * @see INTNETR0IfWait.
  */
-typedef struct INTNETIFWAITARGS
+typedef struct INTNETIFWAITREQ
 {
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
     /** The number of milliseconds to wait. */
-    unsigned        cMillies;
-} INTNETSENDARGS;
-/** Pointer to an INTNETR0IfWait() argument package. */
-typedef INTNETIFWAITARGS *PINTNETIFWAITARGS;
+    uint32_t        cMillies;
+} INTNETIFWAITREQ;
+/** Pointer to an INTNETR0IfWaitReq / VMMR0_DO_INTNET_IF_WAIT request buffer. */
+typedef INTNETIFWAITREQ *PINTNETIFWAITREQ;
+
+INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PINTNETIFWAITREQ pReq);
 
 
 #if defined(IN_RING0) || defined(IN_INTNET_TESTCASE)
 /** @name
  * @{
  */
-
-/** Pointer to an internal network ring-0 instance. */
-typedef struct INTNET *PINTNET;
 
 /**
  * Create an instance of the Ring-0 internal networking service.
@@ -357,7 +378,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
  * @param   hIF         The interface handle.
  * @param   ppRing3Buf  Where to store the address of the ring-3 mapping.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PINTNETBUF *ppRing3Buf);
+INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, R3PTRTYPE(PINTNETBUF) *ppRing3Buf);
 
 /**
  * Sets the promiscuous mode property of an interface.
@@ -395,7 +416,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, const void
  * @param   cMillies    Number of milliseconds to wait. RT_INDEFINITE_WAIT should be
  *                      used if indefinite wait is desired.
  */
-INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, unsigned cMillies);
+INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, uint32_t cMillies);
 
 /** @} */
 #endif /* IN_RING0 */

@@ -201,7 +201,7 @@ typedef struct ARGS
 } ARGS, *PARGS;
 
 
-#define TEST_TRANSFER_SIZE (_1M*128)
+#define TEST_TRANSFER_SIZE (_1M*384)
 
 /**
  * Send thread.
@@ -228,11 +228,17 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     {
         const unsigned cb = iFrame % 1519 + 12 + sizeof(unsigned);
         *puFrame = iFrame;
+#if 0
         int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, abBuf, cb);
+#else
+        int rc = INTNETRingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, abBuf, cb);
+        if (RT_SUCCESS(rc))
+            rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, NULL, 0);
+#endif
         if (VBOX_FAILURE(rc))
         {
             g_cErrors++;
-            RTPrintf("tstIntNetR0: Failed sending %d bytes, rc=%Vrc\n", cb, rc);
+            RTPrintf("tstIntNetR0: Failed sending %d bytes, rc=%Vrc (%d)\n", cb, rc, INTNETRingGetWritable(&pArgs->pBuf->Send));
         }
         cbSent += cb;
     }
@@ -383,13 +389,13 @@ int main()
      * Create two interfaces.
      */
     INTNETIFHANDLE hIf0 = INTNET_HANDLE_INVALID;
-    rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536, 0x8000, true, &hIf0);
+    rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536*2 + 4, 0x8000, true, &hIf0);
     if (VBOX_SUCCESS(rc))
     {
         if (hIf0 != INTNET_HANDLE_INVALID)
         {
             INTNETIFHANDLE hIf1 = INTNET_HANDLE_INVALID;
-            rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536, 0x8000, true, &hIf1);
+            rc = INTNETR0Open(pIntNet, g_pSession, "test", 1536*2 + 4, 0x8000, true, &hIf1);
             if (VBOX_SUCCESS(rc))
             {
                 if (hIf1 != INTNET_HANDLE_INVALID)
