@@ -429,10 +429,15 @@ public:
         int i = 0
     /// @todo (dmik) this will change when we switch to RTSemRW*
     #define D() mM [i] = 0; /* end of array */ \
-                ___CritSectEnterMulti (strlen (mM), mS)
+                ___CritSectEnterMulti ((unsigned) strlen (mM), mS)
 
     AutoMultiLock (A(0), A(1))
-    { C(2); B(0); B(1);  D(); }
+    {
+        C(2);
+        B(0);
+        B(1);
+        D();
+    }
     AutoMultiLock (A(0), A(1), A(2))
     { C(3); B(0); B(1); B(2); D(); }
     AutoMultiLock (A(0), A(1), A(2), A(3))
@@ -463,7 +468,7 @@ public:
     {
         /// @todo (dmik) this will change when we switch to RTSemRW*
         if (mLocked)
-            RTCritSectLeaveMultiple (strlen (mM), mS);
+            RTCritSectLeaveMultiple ((unsigned) strlen (mM), mS);
     }
 
     /**
@@ -489,7 +494,7 @@ public:
     {
         AssertMsgReturn (mLocked, ("Already released all locks"), (void) 0);
         /// @todo (dmik) this will change when we switch to RTSemRW*
-        RTCritSectLeaveMultiple (strlen (mM), mS);
+        RTCritSectLeaveMultiple ((unsigned) strlen (mM), mS);
         mLocked = false;
     }
 
@@ -502,7 +507,7 @@ public:
     void enter()
     {
         AssertMsgReturn (!mLocked, ("Already entered all locks"), (void) 0);
-        ___CritSectEnterMulti (strlen (mM), mS);
+        ___CritSectEnterMulti ((unsigned) strlen (mM), mS);
         mLocked = true;
     }
 
