@@ -128,119 +128,119 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished">F2</translation>
+        <translation>F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished">F3</translation>
+        <translation>F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished">F4</translation>
+        <translation>F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished">F5</translation>
+        <translation>F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished">F6</translation>
+        <translation>F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished">F7</translation>
+        <translation>F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished">F8</translation>
+        <translation>F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished">F9</translation>
+        <translation>F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished">F10</translation>
+        <translation>F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished">F11</translation>
+        <translation>F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished">F12</translation>
+        <translation>F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished">F13</translation>
+        <translation>F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished">F14</translation>
+        <translation>F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished">F15</translation>
+        <translation>F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished">F16</translation>
+        <translation>F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished">F17</translation>
+        <translation>F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished">F18</translation>
+        <translation>F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished">F19</translation>
+        <translation>F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished">F20</translation>
+        <translation>F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished">F21</translation>
+        <translation>F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished">F22</translation>
+        <translation>F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished">F23</translation>
+        <translation>F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished">F24</translation>
+        <translation>F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Forward</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Back</translation>
     </message>
 </context>
 <context>
@@ -377,7 +377,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>永続化する(&amp;M)</translation>
     </message>
 </context>
 <context>
@@ -442,26 +442,32 @@
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>
+&lt;p&gt;現在実行中の仮想マシンの状態をホストPCの物理ハードディスクに保存します。&lt;/p&gt;
+&lt;p&gt;この仮想マシンの次回の起動時、すぐに作業を再開できるように仮想マシンは保存した状態を復元します。&lt;/p&gt;
+&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリ量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished"></translation>
+        <translation>シャットダウン シグナル送信(&amp;E)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンに電源ボタン オフのACPIイベントを送信します。&lt;/p&gt;
+&lt;p&gt;通常、仮想マシン内で動作するゲストOSは、このイベントを検出して正しい終了処理を実行します。ゲストOSで動作するすべてのアプリケーションがデータと状態を保存することができるので、仮想マシンの電源を切るお勧めの方法です。&lt;/p&gt;
+&lt;p&gt;仮想マシンがこの動作に反応しないならば、ゲストOSの構成に誤りがあるか、電源ボタン オフのACPIイベントに対応していません。この場合、仮想マシンの実行を停止するには[&lt;b&gt;仮想マシンの電源オフ&lt;/b&gt;]を選択します。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンの電源を切ります。&lt;/p&gt;
+&lt;p&gt;注：この動作は、ゲストOSを正しく終了することなく、直ちに仮想マシンの実行を停止します。仮想マシン内の&lt;i&gt;データの損失&lt;/i&gt;を招くかもしれません。この動作は、仮想マシンが[&lt;b&gt;シャットダウン シグナル送信&lt;/b&gt;]に反応しない場合のみ選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;チェックすると、仮想マシンをオフした後、現在のスナップショットに保存された状態に復元します。これは直前のセッションの状態を破棄し、差現在のスナップショットの状態に戻りたい場合に役立ちます。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -694,12 +700,12 @@
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>ゲストOSの画面の自動リサイズ機能が有効なとき(&lt;img src=auto_resize_on_16px.png/&gt;)を、無効なとき(&lt;img src=auto_resize_off_16px.png/&gt;)を表示します。注:本機能の利用にはゲストOSに Guest Additions のインストールが必要です。
+        <translation>ゲストOSの画面の自動リサイズ機能が有効なとき(&lt;img src=auto_resize_on_16px.png/&gt;)を、無効なとき(&lt;img src=auto_resize_off_16px.png/&gt;)を表示します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。
 </translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>ホスト マウスポインタのキャプチャ状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされていません&lt;/nobr&gt;&lt;br&gt; 注:マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。
+        <translation>ホスト マウスポインタのキャプチャ状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。
 </translation>
     </message>
     <message>
@@ -714,7 +720,7 @@
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">マウスの右クリックで共有フォルダ設定画面を開きます。&lt;br&gt;注:共有フォルダ機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
+        <translation type="obsolete">マウスの右クリックで共有フォルダ設定画面を開きます。&lt;br&gt;注：共有フォルダ機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
@@ -985,23 +991,23 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">ヘルプを表示(&amp;C)...</translation>
+        <translation>ヘルプを表示(&amp;C)...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished">オンラインヘルプを表示</translation>
+        <translation>オンラインヘルプを表示</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox を登録(&amp;E)...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 登録フォームを開く</translation>
     </message>
 </context>
 <context>
@@ -1907,7 +1913,7 @@
     <message>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>カスタム ハードディスク</translation>
     </message>
 </context>
 <context>
@@ -2113,7 +2119,7 @@
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注:英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
+        <translation>仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>
         <source>New Filter %1</source>
@@ -2254,11 +2260,11 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>同意します(&amp;A)</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>同意しません(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -2551,7 +2557,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                             &lt;/p&gt;
                             </source>
         <translation>&lt;p&gt;上記の設定が正しければ、[&lt;b&gt;完了&lt;/b&gt;]ボタンをクリックしてください。新規仮想マシンが作成されます。 &lt;/p&gt;
-&lt;p&gt;注:メインウィンドウのツールバーからアクセスできる[&lt;b&gt;設定&lt;/b&gt;]ダイアログを使用して作成した仮想マシンのすべてのすべての設定をいつでも変更することができます。&lt;/p&gt;</translation>
+&lt;p&gt;注：メインウィンドウのツールバーからアクセスできる[&lt;b&gt;設定&lt;/b&gt;]ダイアログを使用して作成した仮想マシンのすべてのすべての設定をいつでも変更することができます。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -2841,7 +2847,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシンのウィンドウを&lt;b&gt;フルスクリーン&lt;/b&gt;モードに切り替えます。ウィンドウ モードに戻るには &lt;b&gt;%1&lt;/b&gt;キーを押します。 注:&lt;i&gt;ホストキー&lt;/i&gt;は現在[&lt;b&gt;%1&lt;/b&gt;]に割り当てられています。&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;仮想マシンのウィンドウを&lt;b&gt;フルスクリーン&lt;/b&gt;モードに切り替えます。ウィンドウ モードに戻るには &lt;b&gt;%1&lt;/b&gt;キーを押します。 注：&lt;i&gt;ホストキー&lt;/i&gt;は現在[&lt;b&gt;%1&lt;/b&gt;]に割り当てられています。&lt;/p&gt;
 </translation>
     </message>
     <message>
@@ -2940,7 +2946,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダ&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダを使用しているゲストOSの全てのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダ&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダを使用しているゲストOSのすべてのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -2969,11 +2975,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシンウィンドウは&lt;b&gt;%1&amp;nbsp;ビット&lt;/b&gt;カラーモードに最適化されますが、現在仮想ディスプレイは&lt;b&gt;%2&amp;nbsp;ビット&lt;/b&gt;に設定されています。&lt;/p&gt;&lt;p&gt;最良の仮想ビデオサブシステム性能を得るため、利用可能であるならばゲストOSの画面設定ダイアログを開き、&lt;b&gt;%3&amp;nbsp;ビット&lt;/b&gt;カラーモードを選択してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;注:OS/2など、いくつかのオペレーティングシステムは32&amp;nbsp;ビットモードの動作を24&amp;nbsp;ビット(約1600万色)として報告します。 このメッセージが消えるか、またはゲストOSで必要な色深度(%4&amp;nbsp;ビット) が利用できないことが分かっているならば、単にメッセージを無効にできるか確認するために異なった色深度を選択することができます。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシンウィンドウは&lt;b&gt;%1&amp;nbsp;ビット&lt;/b&gt;カラーモードに最適化されますが、現在仮想ディスプレイは&lt;b&gt;%2&amp;nbsp;ビット&lt;/b&gt;に設定されています。&lt;/p&gt;&lt;p&gt;最良の仮想ビデオサブシステム性能を得るため、利用可能であるならばゲストOSの画面設定ダイアログを開き、&lt;b&gt;%3&amp;nbsp;ビット&lt;/b&gt;カラーモードを選択してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：OS/2など、いくつかのオペレーティングシステムは32&amp;nbsp;ビットモードの動作を24&amp;nbsp;ビット(約1600万色)として報告します。 このメッセージが消えるか、またはゲストOSで必要な色深度(%4&amp;nbsp;ビット) が利用できないことが分かっているならば、単にメッセージを無効にできるか確認するために異なった色深度を選択することができます。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシン実行中に重大なエラーが発生したため、仮想マシンは停止しました。&lt;/p&gt;&lt;p&gt;問題の解決のため、&lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;のCommunityセクションを参照するか、サポート契約を締結してください。あなたがエラー発生時に行った操作と共に、&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ディレクトリに格納されているログファイル(&lt;tt&gt;VBox.log&lt;/tt&gt;)とイメージファイル(&lt;tt&gt;VBox.png&lt;/tt&gt;)を提供してください。注:VirualBoxメインウィンドウの[&lt;b&gt;仮想マシン&lt;/b&gt;]メニューから&quot;ログを参照&quot;を選択して、上記ファイルにアクセスすることができます。&lt;/p&gt;&lt;p&gt;仮想マシンを電源オフするには[&lt;b&gt;OK&lt;/b&gt;]ボタンを押してください。このままデバッグを行うには[&lt;b&gt;無視&lt;/b&gt;]ボタンを押してください。デバッグには特別な知識とツールを必要とするため、[&lt;b&gt;OK&lt;/b&gt;]ボタンを押すことを推奨します。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシン実行中に重大なエラーが発生したため、仮想マシンは停止しました。&lt;/p&gt;&lt;p&gt;問題の解決のため、&lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;のCommunityセクションを参照するか、サポート契約を締結してください。あなたがエラー発生時に行った操作と共に、&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ディレクトリに格納されているログファイル(&lt;tt&gt;VBox.log&lt;/tt&gt;)とイメージファイル(&lt;tt&gt;VBox.png&lt;/tt&gt;)を提供してください。注：VirualBoxメインウィンドウの[&lt;b&gt;仮想マシン&lt;/b&gt;]メニューから&quot;ログを参照&quot;を選択して、上記ファイルにアクセスすることができます。&lt;/p&gt;&lt;p&gt;仮想マシンを電源オフするには[&lt;b&gt;OK&lt;/b&gt;]ボタンを押してください。このままデバッグを行うには[&lt;b&gt;無視&lt;/b&gt;]ボタンを押してください。デバッグには特別な知識とツールを必要とするため、[&lt;b&gt;OK&lt;/b&gt;]ボタンを押すことを推奨します。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
@@ -2981,78 +2987,78 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&quot;にライセンスファイルが見つかりません。</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>ライセンスファイル&quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&quot;が開けません。ファイルのパーミッションを確認してください。</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン&quot;&lt;b&gt;%1&lt;/b&gt;&quot;への電源ボタン オフのACPIイベント送信に失敗しました。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox オンライン登録サービスへの接続に失敗しました。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;おめでとうございます! VirtualBox のユーザー登録が完了しました。&lt;/p&gt;&lt;p&gt;登録フォームに書き込む時間を割いてくださり、ありがとうございました!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox 製品登録に失敗しました&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 登録ダイアログ</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;登録フォームに入力し、あなたが VirtualBox を使用していることを我々に知らせてください。VirtualBox のニュースと更新情報をお知らせします(任意)。&lt;/p&gt;&lt;p&gt;フルネーム(英字)とメールアドレスを下のフィールドに入力してください。注：innotek は、この情報を製品使用の統計を収集し、VirtualBox ニュースレターを送信するためだけに使用します。innotek が個人情報を第三者に渡すことはありません。個人情報の扱いに関する詳細情報は、VirtualBox マニュアルの&quot;&lt;b&gt;Privacy Policy&lt;/b&gt;&quot; セクションまたは VirtualBox webサイトの&quot;&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;&quot;ページを参照してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished">名前(&amp;N)</translation>
+        <translation>名前(&amp;N)</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation type="unfinished"></translation>
+        <translation>フルネームを英字で入力してください。</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>メールアドレス(&amp;E)</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>メールアドレスを入力してください。</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation type="unfinished"></translation>
+        <translation>情報メール不要(&amp;P)</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>innotek からの情報メールを受け取りたくない場合、チェックボックスをオンにしてください。</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished"></translation>
+        <translation>ようこそ VirtualBox 登録フォームへ!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>確認(&amp;C)</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation type="unfinished">接続がタイムアウトになりました。</translation>
+        <translation>接続がタイムアウトになりました。</translation>
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>サーバー上に登録フォームが見つかりませんでした(応答: %1)。</translation>
     </message>
 </context>
 <context>
@@ -3308,11 +3314,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox を登録(&amp;E)...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 登録フォームを開く</translation>
     </message>
 </context>
 <context>
@@ -3973,7 +3979,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;新たに作成された仮想マシンが初めて起動されました。この仮想マシンに選択したオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;注:ハードディスクが割り当てられていないため、現在オペレーティングシステムをこの仮想マシンにインストールすることができません。このウィザードの実行を中止し、VirtualBoxメインウィンドウの[&lt;b&gt;仮想マシン&lt;/b&gt;]メニューから[&lt;b&gt;設定&lt;/b&gt;]を選び、仮想マシンの設定ダイアログにアクセスしてハードディスク構成を変更することができます。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには[&lt;b&gt;次へ&lt;/b&gt;]ボタンを、前のページに戻るには[&lt;b&gt;戻る&lt;/b&gt;]ボタンを使用してください。ウィザードの実行を中止したい場合は[&lt;b&gt;キャンセル&lt;/b&gt;]ボタンをクリックしてください&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;新たに作成された仮想マシンが初めて起動されました。この仮想マシンに選択したオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;注：ハードディスクが割り当てられていないため、現在オペレーティングシステムをこの仮想マシンにインストールすることができません。このウィザードの実行を中止し、VirtualBoxメインウィンドウの[&lt;b&gt;仮想マシン&lt;/b&gt;]メニューから[&lt;b&gt;設定&lt;/b&gt;]を選び、仮想マシンの設定ダイアログにアクセスしてハードディスク構成を変更することができます。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには[&lt;b&gt;次へ&lt;/b&gt;]ボタンを、前のページに戻るには[&lt;b&gt;戻る&lt;/b&gt;]ボタンを使用してください。ウィザードの実行を中止したい場合は[&lt;b&gt;キャンセル&lt;/b&gt;]ボタンをクリックしてください&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -4164,7 +4170,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;選択したホスト インターフェース &quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&quot;を除去しますか?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注:&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選択したホスト インターフェース &quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&quot;を除去しますか?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -4216,7 +4222,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished"></translation>
+        <translation>このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
 </context>
 <context>
@@ -4735,7 +4741,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注:CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
+        <translation>指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
@@ -4831,21 +4837,21 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注:&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください!&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注:&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください!&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注:本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
+        <translation>ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation>この仮想マシンのスナップショットの保存先パスを表示します。注:スナップショットは多くのディスク容量を消費します。</translation>
+        <translation>この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
@@ -4935,7 +4941,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選択したホスト インターフェース &quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&quot;を除去しますか?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注:&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;選択したホスト インターフェース &quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&quot;を除去しますか?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>9</source>
@@ -4991,7 +4997,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注:仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
+        <translation>ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
         <source>&amp;Server Port </source>

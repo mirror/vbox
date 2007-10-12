@@ -136,119 +136,119 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Impression de l&apos;écran</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished">F2</translation>
+        <translation>F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished">F3</translation>
+        <translation>F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished">F4</translation>
+        <translation>F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished">F5</translation>
+        <translation>F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished">F6</translation>
+        <translation>F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished">F7</translation>
+        <translation>F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished">F8</translation>
+        <translation>F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished">F9</translation>
+        <translation>F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished">F10</translation>
+        <translation>F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished">F11</translation>
+        <translation>F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished">F12</translation>
+        <translation>F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished">F13</translation>
+        <translation>F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished">F14</translation>
+        <translation>F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished">F15</translation>
+        <translation>F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished">F16</translation>
+        <translation>F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished">F17</translation>
+        <translation>F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished">F18</translation>
+        <translation>F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished">F19</translation>
+        <translation>F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished">F20</translation>
+        <translation>F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished">F21</translation>
+        <translation>F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished">F22</translation>
+        <translation>F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished">F23</translation>
+        <translation>F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished">F24</translation>
+        <translation>F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Fixation numéros</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>suivant</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>précédent</translation>
     </message>
 </context>
 <context>
@@ -405,7 +405,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mise en place permanente</translation>
     </message>
 </context>
 <context>
@@ -470,26 +470,29 @@
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sauvegarde l&apos;état d&apos;exécution actuel de la machine virtuelle sur le disque dur réel de l&apos;ordinateur.&lt;/p&gt;&lt;p&gt;Au prochain lancement de cette machine. il sera lut et l&apos;exécution reprendra à l&apos;endroit exact de la sauvegarde, ce qui permet de continuer les travaux immédiatement.&lt;/p&gt;
+&lt;p&gt;Noter que la sauvegarde de l&apos;état de la machine peu prendre du temps et dépend du système d&apos;exploitation client et de la quantité de mémoire vive assignée a la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished"></translation>
+        <translation>Envoyer le &amp;signal d&apos;extinction</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Envoie le signal ACPI Touche d&apos;arrêt à la machine virtuelle.&lt;/p&gt;&lt;p&gt;Normalement, le système d&apos;exploitation client fonctionnant sous la machine virtuelle détecte ce signal et appelle une procédure d&apos;extinction contrôlée.  Ces la procédure recommandée car cela permet  aux logiciels de sauvegarder leurs données et état.&lt;/p&gt;&lt;p&gt;Si la machine virtuelle ne traite cette signalisation, il est possible que le système d&apos;exploitation client ne soit pas configuré correctement ou que le traitement de cette signalisation ne soit pas implémentée sur celui ci. Dans ce cas sélectionner &lt;b&gt;Eteindre la machine&lt;/b&gt; afin s_arrêter la machine virtuelle.&lt;/p&gt;
+ 
+</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eteindre la machine virtuelle&lt;/p&gt;&lt;p&gt;Noter que cette action arrêtera immédiatement la machine virtuelle et que de ce fait le système d&apos;exploitation client ne sera pas en mesure d&apos;effectuer la procédure d&apos;arrêt contrôlé. Ceci peu entrainer  la &lt;i&gt;perte de données&lt;/i&gt;. Choisissez cette action seulement si  la machine virtuelle ne répond pas à l&apos;action &lt;b&gt;Envoie du signal d&apos;extinction&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Si la case est cochée, l&apos;état enregistré dans l&apos;instantané sera utilisé. Ceci est utile si on désire revenir à &apos;état saisie par l&apos;instantané actuel précédent.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1011,23 +1014,23 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Contenu...</translation>
+        <translation>&amp;Contenu...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Afficher l&apos;aide en ligne</translation>
+        <translation>Afficher l&apos;aide en ligne</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>Insc&amp;ription VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le Formulaire d&apos;inscription VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -1953,7 +1956,7 @@
     <message>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disque dur personnalisé</translation>
     </message>
 </context>
 <context>
@@ -2362,11 +2365,11 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>J&apos;&amp;accepte</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>Je &amp;n&apos;accepte pas</translation>
     </message>
 </context>
 <context>
@@ -3099,78 +3102,78 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le fichier de license n&apos;a pas été trouvé sous &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Echec d&apos;ouverture dur fichier de license  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Contrôlez les permissions de ce fichier.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Echec de l&apos;envoi du signal touche &quot;Arrêt par ACPI&quot; sur la machine virtuelle &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Echec de la connexion au service d&apos;inscription en ligne de VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vous avez été inscrit comme utilisateur de VirtualBox.&lt;/p&gt;&lt;p&gt;Merci d&apos;avoir rempli le formulaire d&apos;inscription.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Echec de l&apos;inscription du produit VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Boite de dialogue d&apos;inscription VirtualBox</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Veuillez bien remplir le formulaire d&apos;inscription qui nois informeras que vous utilisez VirtualBox et qui nous permettra de vous informer occasionnellement des nouveautés et des mises à jour.&lt;/p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse couriel dans les champs ci dessous. Notez que Innotek n&apos;utilise ces données que pour effectuer des statistiques et pour l&apos;envoi de bulletins d&apos;information. Innotek be communiquera jamais ces informations à des tiers. Des informations détaillées sur l&apos;utilisation de vos données personelles se trouvent sous la section &lt;b&gt;Privacy Policy&lt;/b&gt; du manuel d&apos;utilisation ainsi que sur la page  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished">&amp;Nom</translation>
+        <translation>&amp;Nom</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entrez votre nom complet en utilisant les caractères latins.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;couri&amp;el</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entrez votre adresse couriel.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Prière de ne pas utiliser ces informations afin de me contacter</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cocher cette case si vous ne désirez pas recevoir de couriel, à l&apos;adresse spécifiée, de la part d&apos;Innotek.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished"></translation>
+        <translation>Bienvenue sur le formulaire d&apos;inscription VirtualBox !</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Confirmer</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation type="unfinished">Timeout pour la Connextion.</translation>
+        <translation>Timeout pour la Connextion.</translation>
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Le formulaire d&apos;inscription n&apos;a pas été trouvé sur le serveur (réponse: %1).</translation>
     </message>
 </context>
 <context>
@@ -3431,11 +3434,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>Fo&amp;rmulaire d&apos;inscription...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le Formulaire d&apos;inscription VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -4444,7 +4447,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche l&apos;adresse MAC de cet adaptateur. Il comprend exactement 12 caractères  choisis entre {0-9,A-F}. Noter que le second caractère doit être un nombre pair.</translation>
     </message>
 </context>
 <context>

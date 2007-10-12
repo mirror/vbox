@@ -136,119 +136,119 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Print screen</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished">F2</translation>
+        <translation>F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished">F3</translation>
+        <translation>F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished">F4</translation>
+        <translation>F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished">F5</translation>
+        <translation>F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished">F6</translation>
+        <translation>F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished">F7</translation>
+        <translation>F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished">F8</translation>
+        <translation>F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished">F9</translation>
+        <translation>F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished">F10</translation>
+        <translation>F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished">F11</translation>
+        <translation>F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished">F12</translation>
+        <translation>F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished">F13</translation>
+        <translation>F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished">F14</translation>
+        <translation>F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished">F15</translation>
+        <translation>F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished">F16</translation>
+        <translation>F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished">F17</translation>
+        <translation>F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished">F18</translation>
+        <translation>F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished">F19</translation>
+        <translation>F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished">F20</translation>
+        <translation>F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished">F21</translation>
+        <translation>F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished">F22</translation>
+        <translation>F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished">F23</translation>
+        <translation>F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished">F24</translation>
+        <translation>F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Înainte</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Înapoi</translation>
     </message>
 </context>
 <context>
@@ -405,7 +405,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>Fă per&amp;manent</translation>
     </message>
 </context>
 <context>
@@ -470,26 +470,31 @@
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Salvează starea curentă de execuţia a maşinii virtuale pe discul fizic de pe PC gazdă.&lt;/p&gt;
+&lt;p&gt;Data viitoare când maşina este pornită, va fi restaurată starea salvată şi se va continua execuţia din acelaşi loc în care aţi salvat-o, ceea ce vă va permite să vă continuaţi lucrul imediat.&lt;/p&gt;
+&lt;p&gt;Notaţi faptul că salvarea stării de execuţie poate dura mai mult timp, depinzând de tipul sistemului de operare de pe musafir şi de cantitatea de memorie pe care aţi atribuit-o maşinii virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished"></translation>
+        <translation>Trimit&amp;e semnalul de închidere</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Trimite evenimentul apăsare buton Pornire ACPI către maşina virtuală.&lt;/p&gt;
+&lt;p&gt;În mod normal, sistemul de operare musafir din interiorul maşinii virtuale va detecta acest eveniment şi va efectua p procedură curată de închidere. Aceasta este calea recomandată de a opri o maşină virtuală, pentru că toate aplicaţiile rulând în interior, vor avea posibilitatea de a-şi salva starea şi datele.&lt;/p&gt;
+&lt;p&gt;Dacă maşina nu răspunde la această acţiune atunci sistemul de operare musafir poate fi configurat greşit, sau nu înţelege de loc mesajele buton pornire ACPI. În acest caz trebuie să selectaţi acţiunea &lt;b&gt;Opriţi maşina&lt;/b&gt; pentru a opri execuţia maşinii virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Închide maşina virtuală&lt;/p&gt;
+&lt;p&gt;Notaţi faptul că această acţiune va opri execuţia maşinii virtuale imediat, astfel că sistemul de operare musafir nu va fi capabil să efectueze o procedură de închidere curată ceea ce va rezulta în &lt;i&gt;pierderi de date&lt;/i&gt; în interiorul maşinii virtuale. Selectarea acestei acţiuni este recomandată numai dacă maşina virtuală nu răspunde la acţiunea &lt;b&gt;Trimite semnal oprire&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Când este bifat, starea maşinii va fi restaurată din starea salvată în instantaneul curent imediat după ce este oprită. Acest lucru este util dacă sunteţi sigur că doriţi să ştergeţi rezultatele ultimelor sesiuni şi să vă întoarceţi la instantaneul curent.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -907,7 +912,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation type="unfinished">Mod contin&amp;uu</translation>
+        <translation>Mod contin&amp;uu</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -1023,23 +1028,23 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Conţinut...</translation>
+        <translation>&amp;Conţinut...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Arată conţinutul ajutorului online</translation>
+        <translation>Arată conţinutul ajutorului online</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>Înr&amp;egistrează VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide formularul de înregistrare VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -1984,7 +1989,7 @@
     <message>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disc dur personalizat</translation>
     </message>
 </context>
 <context>
@@ -2405,11 +2410,11 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Sunt de &amp;acord</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu sunt de acor&amp;d</translation>
     </message>
 </context>
 <context>
@@ -3113,118 +3118,119 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ştergerea dosarului partajat &lt;b&gt;%1&lt;/b&gt; eşuată  (ţintind la &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) din maşina virtuală &lt;/b&gt;%3&lt;/b&gt;.&lt;/p&gt;
+&lt;p&gt;Vă rugăm închideţi toate programele din SO musafir care poate utilizează acum acest dosar partajat şi încercaţi din nou.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nu am putut găsi fişierul de imagine al CD-ului cu VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Doriţi să descărcaţi această imagine de CD de pe Internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nu am putut descărca imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sunteţi sigur că doriţi să descărcaţi imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensiune %3 octeţi)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Imaginea de CD a VirtualBox Guest Additions a fost descărcată cu succes de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; şi salvată local ca &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Doriţi să înregistraţi această imagine de CD şi să o montaţi în unitatea de CD/DVD virtuală?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Fereastra maşinii virtuale va trece acum în modul &lt;b&gt;ecran complet&lt;/b&gt;. Vă puteţi întoarce în modul fereastră în orice moment apăsând &lt;b&gt;%1&lt;/b&gt;. Notaţi că tasta &lt;i&gt;Gazdă&lt;/i&gt; este definită acum ca &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notaţi că bara de meniu principală este ascunsă în modul ecran complet. O puteţi accesa prin combinaţia de taste &lt;b&gt;Gazdă+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Fereastra maşinii virtuale va trece acum în mod &lt;b&gt;Seamless&lt;/b&gt;. Vă puteţi întoarce în modul fereastră în orice moment apăsând &lt;b&gt;%1&lt;/b&gt;. Notaţi că tasta &lt;i&gt;Gazdă&lt;/i&gt; este definită acum ca &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notaţi că bara de meniu principală este ascunsă în modul ecran complet. O puteţi accesa prin combinaţia de taste &lt;b&gt;Gazdă+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Fereastra maşinii virtuale este optimizată pentru lucrul în modul de culori &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;, dar calitatea culorii al ecranului virtual este în prezent setată la &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vă rugăm deschideţi dialogul de proprietăţi ecran ale SO musafir şi selectaţi modul de culoare &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, dacă este disponibil, pentru cea mai bună performanţă posibilă a subsistemului video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Notaţi&lt;/b&gt; faptul că unele sisteme de operare ca OS/2, pot rula în mod de culoare 32bit dar reporta 24bit (16 milioane de culori). Trebuie să încercaţi calităţi diferite ale culorii pentru a vedea dacă acest mesaj de eroare dispare, sau puteţi pur şi simplu dezactiva acest mesaj acum dacă sunteţi sigur că modul necesar (%4&amp;nbsp;bit) nu este disponibil pe SO musafir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;O eroare critică s-a petrecut în timpul execuţiei maşinii virtuale şi execuţia a fost oprită.&lt;/p&gt;&lt;p&gt;Pentru ajutor, vă rugăm verificaţi secţiunea Community pe &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; sau contractul dvs de suport tehnic. Vă rugăm oferiţi conţinutul fişierului jurnal &lt;tt&gt;VBox.log&lt;/tt&gt; şi fişierul imagine &lt;tt&gt;VBox.png&lt;/tt&gt;, pe care le puteţi găsi în dosarul &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, alături de o descriere a ceea ce făceaţi în momentul producerii acestei erori. Notaţi că puteţi de asemenea accesa fişierele de mai sus selectând &lt;b&gt;Afişează jurnal&lt;/b&gt; din meniul &lt;b&gt;Maşină&lt;/b&gt; al ferestrei principale VirtualBox.&lt;/p&gt;&lt;p&gt;Apăsaţi &lt;b&gt;OK&lt;/b&gt; dacă doriţi să opriţi maşina sau apăsaţi &lt;b&gt;Ignoră&lt;/b&gt; dacă doriţi să o lăsaţi aşa cum este pentru depanare. Notaţi că depanarea necesită cunoştinţe şi unelte speciale, astfel că este recomandat să apăsaţi &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nu aţi conectat nici un disc dur la maşina virtuală nouă. Maşina nu va fi capabilă să booteze dacă nu conectaţi un disc dur cu un sistem de operare musafir sau un alt mediu bootabil, folosind dialogul setări maşină sau Vrăjitorul de primă rulare.&lt;/p&gt;&lt;p&gt;Doriţi să continuaţi?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am găsit fişiere licenţă în &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut deschide fişierul de licenţă &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Verificaţi permisiile de fişier.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut trimite eveniment de apăsare buton de putere ACPI către maşina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nu m-am putut conecta la serviciul de înregistrare online a VirtualBox. &lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Felicitări! V-aţi înregistrat cu succes ca utilizator al VirtualBox. &lt;/p&gt;&lt;p&gt;Vă mulţumim pentru că v-aţi făcut timp să completaţi formularul de înregistrare!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nu am putut înregistra produsul VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog înregistrare VirtualBox</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vă rugăm completaţi formularul de înregistrare pentru ca noi să ştim că folosiţi VirtualBox şi, opţional, să vă ţinem la curent cu noutăţile şi actualizările VirtualBox. &lt;/p&gt;&lt;p&gt;Introduceţi numele dvs complet folosind caractere Latine şi adresa dvs de e-mail în câmpurile de mai jos. Notaţi faptul că innotek va folosi aceste informaţii numai pentru a obţine statistici de utilizare a produsului şi a vă trimite newsletter. În particular, innotek nu va retransmite niciodată datele dvs către terţi. Informaţii detaliate despre cum folosim datele dvs personale pot fi găsite în secţiunea &lt;b&gt;Politică de intimiate&lt;/b&gt; din Manualul VirtualBox sau pe pagina &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; de site-ul web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished">&amp;Nume</translation>
+        <translation>&amp;Nume</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Introduceţi numele dvs complet utilizând caractere latine.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;E-mail</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Introduceţi adresa dvs de e-mail validă.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu folosiţi aceste informaţii &amp;pentru a mă contacta</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bifaţi această căsuţă dacă nu doriţi să recepţionaţi mail de la innotek la adresa de e-mail specificată mai sus.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished"></translation>
+        <translation>Bine aţi venit la Formularul de înregistrare al VirtualBox!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Confirmaţi</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation type="unfinished">Conexiunea a expirat.</translation>
+        <translation>Conexiunea a expirat.</translation>
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nu am putut localiza formularul de înregistrare pe server (răspuns: %1).</translation>
     </message>
 </context>
 <context>
@@ -3483,11 +3489,11 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>Înr&amp;egistrează VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Deschide formularul de înregistrare VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -3808,7 +3814,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions
     </message>
     <message>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaurează starea maşinii virtuale din starea salvată în instantaneul curent</translation>
     </message>
     <message>
         <source>Ctrl+Shift+B</source>
@@ -3816,7 +3822,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcţie necesită Guest Additions
     </message>
     <message>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimină instantaneul curent şi întoarce maşina în starea dinaintea luării instantaneului</translation>
     </message>
     <message>
         <source>Show details of the selected snapshot</source>
@@ -4224,23 +4230,23 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aţi pornit o maşină virtuală nouă pentru prima oară. Acest vrăjitor vă va ajuta să efectuaţi paşii necesari bootării unui sistem de operare ales de dvs pe maşina virtuală.&lt;/p&gt;&lt;p&gt;Notaţi faptul că nu veţi putea instala acum un sistem de operare musafir chiar acum, pentru că nu aţi conectat nici un disc dur la ea. Dacă nu asta doriţi, puteţi revoca execuţia acestui vrăjitor, apoi selectaţi &lt;b&gt;Setări&lt;/b&gt; din meniul &lt;b&gt;Maşină&lt;/b&gt; al ferestrei principale VirtualBox pentru a accesa dialogul de setări al acestei maşini şi schimba configuraţia discului dur.&lt;/p&gt;&lt;p&gt;Folosiţi butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare şi butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a reveni la pagina anterioară. Puteţi apăsa oricând butonul &lt;b&gt;Revocare&lt;/b&gt; pentru a opri execuţia acestui vrăjitor.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Selectaţi tipul mediului pe care doriţi să-l folosiţi pentru a boota un sistem de operare.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Selectaţi mediul care conţine sistemul de operare cu care doriţi să lucraţi. Acest mediu trebuie să fie bootabil, altfel sistemul de operare nu va putea porni. &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aţi selectat următorul mediu pentru a boota un sistem de operare de pe el.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dacă informaţia de mai jos este corectă, apăsaţi butonul &lt;b&gt;Terminare&lt;/b&gt;. O dată apăsat, mediul selectat va fi montat la maşina virtuală şi maşina va porni execuţia.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4540,7 +4546,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează adresa MAC a acestei plăci de reţea. Conţine exact 12 caractere alese din {0-9,A-F}. Notaţi faptul că al doile caracter trebuie să fie un număr par.</translation>
     </message>
 </context>
 <context>
@@ -4571,7 +4577,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează numărul IRQ al acestui port serial. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; şi &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această maşină virtuală.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -4579,7 +4585,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează adresa portului I/O de bază pentru acest port serial. Valori valid sunt întregi între &lt;tt&gt;0&lt;/tt&gt; şi &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Mode</source>
@@ -4587,7 +4593,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlează modul de lucru al acestui port serial. Dacă selectaţi &lt;b&gt;Deconectat&lt;/b&gt;, SO musafir va detecta portul serial, dar nu va putea să îl folosească.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -4599,7 +4605,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dacă este bifat, ţeava specificată în câmpul &lt;b&gt;Cale port&lt;/b&gt; va fi creată de maşina virtuală, când aceasta porneşte. Altfel, maşina virtuală va încerca să folosească ţeava existentă.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
@@ -4607,7 +4613,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Afişează calea către ţeava portului serial pe gazdă, când portul lucrează în mod &lt;b&gt;Ţeavă gazdă&lt;/b&gt;, sau numele dispozitivul serial de pe gazdă, când portul lucrează în mod &lt;b&gt;Dispozitiv gazdă&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -5405,7 +5411,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Când este activat, maşina virtuală încerca să folosească extensiile de virtualizare hardware ale CPU-urilor gazdei aşa cum sunt Intel VT-x şi AMD-V. Starea gri a căsuţei de bifare înseamnă că această setare este determinată de valoarea setării globale.</translation>
     </message>
     <message>
         <source>Other &amp;Settings</source>
@@ -5421,7 +5427,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dacă este bifat, orice schimbare la CD/DVD-ul montat sau mediul dischetă efectuată în timpul execuţiei maşinii va fi salvată în fişierul de setări pentru a păstra configuraţia mediilor monate de la o rulare la alta.</translation>
     </message>
     <message>
         <source>O&amp;ther</source>
@@ -5429,7 +5435,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&amp;Enable Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Activează trecerea peste</translation>
     </message>
     <message>
         <source>Alt+E</source>
@@ -5437,7 +5443,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Când este bifat, permite musafirului să trimită comenzi ATAPI direct din unitatea gazdei, ceea ce face posibil folosirea unităţilor CD/DVD writer conectate la gazdă, în interiorul MV. Notaţi că scriere unui CD audio în interiorul MV nu este încă suportată.</translation>
     </message>
     <message>
         <source>&amp;Server Port </source>
@@ -5453,7 +5459,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Afişează numărul de port al serverului VRDP. Puteţi specifica &lt;tt&gt;0&lt;/tt&gt; (zero) pentru a reseta portul la valoarea implicită.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected</source>
@@ -5465,39 +5471,39 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Discul dur primar slave este deja conectat la un slot diferit</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Discul dur secundar slave nu este selectat</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is already attached to a different slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Discul dur secundar slave este conectat deja la un slot diferit</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Fişierul imagine CD/DVD nu este selectat</translation>
     </message>
     <message>
         <source>Floppy image file is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Fişierul imagine dischetă nu este selectat</translation>
     </message>
     <message>
         <source>Incorrect host network interface is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Interfaţă de reţea incorectă de pe gazdă este selectată</translation>
     </message>
     <message>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished"></translation>
+        <translation>Număr port duplicat selectat </translation>
     </message>
     <message>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished"></translation>
+        <translation>Cale port duplicată a fost introdusă </translation>
     </message>
     <message>
         <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pe pagina &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Port %1</source>

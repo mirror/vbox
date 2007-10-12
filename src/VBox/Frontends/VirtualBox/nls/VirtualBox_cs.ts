@@ -128,119 +128,119 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Vpřed</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Zpět</translation>
     </message>
 </context>
 <context>
@@ -374,7 +374,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>Udělat &amp;trvale</translation>
     </message>
 </context>
 <context>
@@ -423,26 +423,31 @@
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Uloží aktuální stav virtuálního počítače na fyzický pevný disk hostitelského PC.&lt;/p&gt;
+&lt;p&gt;Při příštím spuštění počítače bude uložený stav obnoven a provádění bude pokračovat od místa kde jste skončili, takže budete moci ihned pokračovat v práci.&lt;/p&gt;
+&lt;p&gt;Upozorňujeme, že uložení stavu počítače může chvíli trvat v závislosti na hostovaném operačním systému a možství přiřazené paměti.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished"></translation>
+        <translation>Pos&amp;lat signál vypnutí</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Pošle ACPI událost stisku zapínacího tlačítka virtuálnímu počítači.&lt;/p&gt;
+&lt;p&gt;Za normálních okolností hostovaný operační systém běžící uvnitř virtuálního počítače detekuje tuto událost a provede čistou vypínací proceduru. Toto je doporučovaný způsob vypínání, protže všechny aplikace běžící uvnitř dostanou šanci uložit svá data a stav.&lt;/p&gt;
+&lt;p&gt;Pokud počítač neodpovídá na tuto akci, pak je buď špatně nakonfigurován, nebo vůbec nerozumí ACPI události stisku zapínacího tlačítka. V tomto případě byste měli zvolit akci &lt;b&gt;Vypnout počítač&lt;/b&gt; pro zastavání počítače.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vypne virtuální počítač.&lt;/p&gt;
+&lt;p&gt;Upozorňujeme že tato akce okamžitě zastaví virtuální počítač, takže uvnitř běžící operační systém nebude moct čistě skončit, což může způsobit &lt;i&gt;ztrátu dat&lt;/i&gt; z virtuálního pčítače. Použití této akce se doporučuje pouze v případě, kdy virtuální počítač neodpovídá na akci &lt;b&gt;Poslat signál vypnutí&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Je-li zatženo, bude stav počítače obnoven ze stavu uloženého v aktuálním snímku ihned po vypnutí. To se hodí pokud jste si jistí že chcete zahodit výsledky vašeho posledního sezení a navrátit se k aktuálnímu snímku.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -956,23 +961,23 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Obsah...</translation>
+        <translation>&amp;Obsah...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Zobrazí obsah online nápovědy</translation>
+        <translation>Zobrazí obsah online nápovědy</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;egistrovat VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Otevře registrační formulář VirtualBoxu</translation>
     </message>
 </context>
 <context>
@@ -1866,7 +1871,7 @@
     <message>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vlastní pevný disk</translation>
     </message>
 </context>
 <context>
@@ -2204,11 +2209,11 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Souhl&amp;asím</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>N&amp;esouhlasím</translation>
     </message>
 </context>
 <context>
@@ -2935,78 +2940,78 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodařilo se nalézt licenční soubor v &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodařilo se otevřít licenční soubor &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Zkontrolujte oprávnění souboru.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodařilo se poslat události stisku ACPI vypínacího tlačítka počítači &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nepodařilo se připojit k online registrační službě VirtualBoxu.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Gratulujeme! Úspěšně jste se zaregistrovali jako uživatel VirtualBoxu.&lt;/p&gt;&lt;p&gt;Děkujeme vám že jste si našli čas na vyplnění registračního formuláře!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nepodařilo se zaregistrovat produkt VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Registrační dialog VirtualBoxu</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;prosíme vyplňte registrační formulář a dejte nám vědět že používáte VirtualBox a, volitelně, budete informováni o novinkách a aktualizacích VirtualBoxu.&lt;/p&gt;&lt;p&gt;Vložte vaše celé jméno pomocí latisnké abecedy a váš e-mail do políčka níže. Vězte že innotek použije tyto informace pouze získávání statistik o používání produktu a pro odesílání novinek o Virtualboxu. Innotek nikdy nepředá vaše data třetím stranám. Detailní informace o tom, jak používáme vaše osobní data můlžete nalézt v sekci &lt;b&gt;Privacy Policy&lt;/b&gt; manuálu VirtualBoxu, nebo na webové stránce &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; VirtualBoxu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished">&amp;Jméno</translation>
+        <translation>&amp;Jméno</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vložet vaše celé jméno v latisnké abecedě.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vložte vaši platnou e-mailovou adresu.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Prosím nepoužívejte tyto informace pro mé kontaktování</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaškrtněte pokud si nepřejete přijímat maily od innoteku na výše uvedenou e-mailovou adresu.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished"></translation>
+        <translation>Vítejte ve formuláři registrace VirtualBoxu!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Potvrdit</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation type="unfinished">Spojení vypršelo.</translation>
+        <translation>Spojení vypršelo.</translation>
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nelze najít registrační dormulář na serveru (odpověd: %1).</translation>
     </message>
 </context>
 <context>
@@ -3257,11 +3262,11 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;egistrovat VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Otevřít registrační formulář VirtualBoxu</translation>
     </message>
 </context>
 <context>
@@ -4079,7 +4084,7 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukazuje MAC adresu karty. Obsahuj 12 znaků vybraných z {0-9,A-F}. Pozor, druhý znak musí být sudá číslice.</translation>
     </message>
 </context>
 <context>

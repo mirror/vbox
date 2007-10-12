@@ -313,7 +313,7 @@
     <name>QColorDialog</name>
     <message>
         <source>Hu&amp;e:</source>
-        <translation type="unfinished"></translation>
+        <translation>명도(&amp;E):</translation>
     </message>
     <message>
         <source>&amp;Sat:</source>
@@ -321,7 +321,7 @@
     </message>
     <message>
         <source>&amp;Val:</source>
-        <translation type="unfinished"></translation>
+        <translation>값(&amp;V):</translation>
     </message>
     <message>
         <source>&amp;Red:</source>
@@ -820,7 +820,7 @@ Check path and filename.</source>
     </message>
     <message>
         <source>Canadian Aboriginal</source>
-        <translation type="unfinished"></translation>
+        <translation>캐나다 원주민 문자</translation>
     </message>
     <message>
         <source>Mongolian</source>
