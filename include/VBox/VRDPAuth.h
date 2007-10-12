@@ -112,7 +112,7 @@ typedef VRDPAUTHENTRY *PVRDPAUTHENTRY;
  *                           the result of the guest
  *                           authentication.
  *
- * Note: When 'fLogon' is false, only pUuid and clientId are valid and the return
+ * Note: When 'fLogon' is 0, only pUuid and clientId are valid and the return
  *       code is ignored.
  */
 typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
@@ -120,7 +120,7 @@ typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
                                                    const char *szUser,
                                                    const char *szPassword,
                                                    const char *szDomain,
-                                                   bool fLogon,
+                                                   int fLogon,
                                                    unsigned clientId);
 
 
