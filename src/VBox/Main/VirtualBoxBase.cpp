@@ -101,7 +101,7 @@ AutoLock::Handle *VirtualBoxBaseNEXT_base::lockHandle() const
  *        to InInit or InUninit state (i.e. either from within the AutoInitSpan
  *        or AutoUninitSpan scope), it will succeed as well (but will not
  *        increase the number of callers).</li>
- *  </ol> 
+ *  </ol>
  *
  *  Normally, calling addCaller() never blocks. However, if this method is
  *  called by a thread created from within the AutoInitSpan scope and this
@@ -120,7 +120,7 @@ AutoLock::Handle *VirtualBoxBaseNEXT_base::lockHandle() const
  *
  *  @note It is preferrable to use the #addLimitedCaller() rather than calling
  *        this method with @a aLimited = |true|, for better
- *        self-descriptiveness. 
+ *        self-descriptiveness.
  *
  *  @sa #addLimitedCaller()
  *  @sa #releaseCaller()
@@ -293,7 +293,7 @@ VirtualBoxBaseNEXT_base::AutoInitSpan::~AutoInitSpan()
     if (mObj->mCallers > 0)
     {
         Assert (mObj->mInitDoneSemUsers > 0);
-        
+
         /* We have some pending addCaller() calls on other threads (created
          * during InInit), signal that InInit is finished. */
         RTSemEventMultiSignal (mObj->mInitDoneSem);
@@ -365,7 +365,7 @@ VirtualBoxBaseNEXT_base::AutoReadySpan::~AutoReadySpan()
 
     if (mObj->mCallers > 0 && mObj->mInitDoneSemUsers > 0)
     {
-        /* We have some pending addCaller() calls on other threads, 
+        /* We have some pending addCaller() calls on other threads,
          * signal that InInit is finished. */
         RTSemEventMultiSignal (mObj->mInitDoneSem);
     }
@@ -793,13 +793,13 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
 void VirtualBoxBaseWithChildren::uninitDependentChildren()
 {
     /// @todo (r=dmik) see todo in VirtualBoxBase.h, in
-    //  template <class C> void removeDependentChild (C *child) 
+    //  template <class C> void removeDependentChild (C *child)
 
     LogFlowThisFuncEnter();
 
     AutoLock alock (this);
     AutoLock mapLock (mMapLock);
-    
+
     LogFlowThisFunc (("count=%d...\n", mDependentChildren.size()));
 
     if (mDependentChildren.size())
@@ -813,7 +813,7 @@ void VirtualBoxBaseWithChildren::uninitDependentChildren()
         AssertRC (vrc);
 
         Assert (mChildrenLeft == 0);
-        mChildrenLeft = mDependentChildren.size();
+        mChildrenLeft = (unsigned)mDependentChildren.size();
 
         for (DependentChildren::iterator it = mDependentChildren.begin();
             it != mDependentChildren.end(); ++ it)
@@ -904,7 +904,7 @@ void VirtualBoxBaseWithChildren::addDependentChild (
 void VirtualBoxBaseWithChildren::removeDependentChild (const ComPtr <IUnknown> &unk)
 {
     /// @todo (r=dmik) see todo in VirtualBoxBase.h, in
-    //  template <class C> void removeDependentChild (C *child) 
+    //  template <class C> void removeDependentChild (C *child)
 
     AssertReturn (!!unk, (void) 0);
 
