@@ -87,7 +87,7 @@ typedef struct STAMR3SNAPSHOTONE
  */
 typedef struct STAMR0SAMPLE
 {
-    /** The VM structure offset of the variable. */
+    /** The GVMMSTATS structure offset of the variable. */
     unsigned        offVar;
     /** The type. */
     STAMTYPE        enmType;
@@ -153,31 +153,31 @@ static const DBGCCMD    g_aCmds[] =
  */
 static const STAMR0SAMPLE g_aGVMMStats[] =
 {
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltCalls),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltBlocking),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltTimeouts),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltNotBlocking),  STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltWakeUps),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpCalls),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpNotHalted),  STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpWakeUps),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollCalls),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollCalls", "The number of calls to GVMMR0SchedPoll." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollHalts),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollWakeUps),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cHaltCalls),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cHaltBlocking),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cHaltTimeouts),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cHaltNotBlocking),  STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cHaltWakeUps),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cWakeUpCalls),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cWakeUpNotHalted),  STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cWakeUpWakeUps),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cPollCalls),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollCalls", "The number of calls to GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cPollHalts),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedVM.cPollWakeUps),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
 
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltCalls),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltBlocking),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltTimeouts),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltNotBlocking), STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltWakeUps),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpCalls),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpNotHalted), STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpWakeUps),   STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollCalls),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollCalls", "The number of calls to GVMMR0SchedPoll." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollHalts),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollWakeUps),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cHaltCalls),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cHaltBlocking),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cHaltTimeouts),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cHaltNotBlocking), STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cHaltWakeUps),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cWakeUpCalls),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cWakeUpNotHalted), STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cWakeUpWakeUps),   STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cPollCalls),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollCalls", "The number of calls to GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cPollHalts),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
+    { RT_UOFFSETOF(GVMMSTATS, SchedSum.cPollWakeUps),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
 
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.cVMs),                      STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/VMs", "The number of VMs accessible to the caller." },
+    { RT_UOFFSETOF(GVMMSTATS, cVMs),                      STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/VMs", "The number of VMs accessible to the caller." },
 };
 
 
@@ -583,7 +583,7 @@ STAMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
         for (unsigned i = 0; i < RT_ELEMENTS(g_aGVMMStats); i++)
             if (stamR3MultiMatch(papszExpressions, cExpressions, NULL, g_aGVMMStats[i].pszName))
             {
-                *((uint8_t *)&GVMMReq.Stats + (g_aGVMMStats[i].offVar - RT_UOFFSETOF(VM, stam.s.GVMMStats))) = 0xff;
+                *((uint8_t *)&GVMMReq.Stats + g_aGVMMStats[i].offVar) = 0xff;
                 fGVMMMatched = true;
             }
 
@@ -592,7 +592,7 @@ STAMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
 //        for (unsigned i = 0; i < RT_ELEMENTS(g_aGMMStats); i++)
 //            if (stamR3MultiMatch(papszExpressions, cExpressions, NULL, g_aGMMStats[i].pszName))
 //            {
-//                 *((uint8_t *)&GMMReq.Stats + (g_aGMMStats[i].offVar - RT_UOFFSETOF(VM, stam.s.GMMStats))) = 0xff;
+//                 *((uint8_t *)&GMMReq.Stats + g_aGMMStats[i].offVar) = 0xff;
 //                 fGMMMatched = true;
 //            }
 
@@ -1486,7 +1486,7 @@ static void stamR3Ring0StatsRegister(PVM pVM)
 {
     /* GVMM */
     for (unsigned i = 0; i < RT_ELEMENTS(g_aGVMMStats); i++)
-        stamR3Register(pVM, (uint8_t *)pVM + g_aGVMMStats[i].offVar, NULL, NULL,
+        stamR3Register(pVM, (uint8_t *)&pVM->stam.s.GVMMStats + g_aGVMMStats[i].offVar, NULL, NULL,
                        g_aGVMMStats[i].enmType, STAMVISIBILITY_ALWAYS, g_aGVMMStats[i].pszName,
                        g_aGVMMStats[i].enmUnit, g_aGVMMStats[i].pszDesc);
 }
