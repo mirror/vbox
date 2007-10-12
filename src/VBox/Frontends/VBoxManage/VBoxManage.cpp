@@ -639,37 +639,49 @@ int errorArgument(const char *pszFormat, ...)
  */
 static void showProgress(ComPtr<IProgress> progress)
 {
-   BOOL fCompleted;
-   LONG currentPercent, lastPercent = 0;
+    BOOL fCompleted;
+    LONG currentPercent;
+    LONG lastPercent = 0;
 
-   RTPrintf("0%%...");
-   RTStrmFlush(g_pStdOut);
-   while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
-   {
-       progress->COMGETTER(Percent(&currentPercent));
-       /* did we cross a 10% mark? */
-       if (((currentPercent / 10) > (lastPercent / 10)))
-       {
-           /* make sure to also print out missed steps */
-           for (LONG curVal = (lastPercent / 10) * 10 + 10; curVal <= (currentPercent / 10) * 10; curVal += 10)
-           {
-               if (curVal < 100)
-               {
-                   RTPrintf("%ld%%...", curVal);
-                   RTStrmFlush(g_pStdOut);
-               }
-           }
-       }
-       lastPercent = currentPercent;
-       if (fCompleted)
-       {
-           RTPrintf("100%%\n");
-           RTStrmFlush(g_pStdOut);
-           break;
-       }
-       /* make sure the loop is not too tight */
-       RTThreadSleep(100);
-   }
+    RTPrintf("0%%...");
+    RTStrmFlush(g_pStdOut);
+    while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+    {
+        progress->COMGETTER(Percent(&currentPercent));
+
+        /* did we cross a 10% mark? */
+        if (((currentPercent / 10) > (lastPercent / 10)))
+        {
+            /* make sure to also print out missed steps */
+            for (LONG curVal = (lastPercent / 10) * 10 + 10; curVal <= (currentPercent / 10) * 10; curVal += 10)
+            {
+                if (curVal < 100)
+                {
+                    RTPrintf("%ld%%...", curVal);
+                    RTStrmFlush(g_pStdOut);
+                }
+            }
+            lastPercent = (currentPercent / 10) * 10;
+        }
+        if (fCompleted)
+            break;
+
+        /* make sure the loop is not too tight */
+        progress->WaitForCompletion(100);
+    }
+
+    /* complete the line. */
+    HRESULT rc;
+    if (SUCCEEDED(progress->COMGETTER(ResultCode)(&rc)))
+    {
+        if (SUCCEEDED(rc))
+            RTPrintf("100%%\n");
+        else
+            RTPrintf("FAILED\n");
+    }
+    else
+        RTPrintf("\n");
+    RTStrmFlush(g_pStdOut);
 }
 
 static void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const Bstr &prefix = "", int level = 0)
