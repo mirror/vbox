@@ -52,7 +52,7 @@ typedef struct DRVNAT
     /** NAT state for this instance. */
     PNATState               pNATState;
     /** Flag whether a NAT ping warning has been shown. */
-    bool                    fPingSuppressed
+    bool                    fPingSuppressed;
 } DRVNAT, *PDRVNAT;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
