@@ -7445,19 +7445,25 @@
 
   <interface
      name="IMachineDebugger" extends="$unknown"
-     uuid="aabb012b-36c7-4d31-89fd-313f7d056034"
+     uuid="b3a02721-556a-4481-9d47-052a3f8cff90"
      wsmap="suppress"
      >
     <method name="resetStats">
       <desc>
         Reset VM statistics.
       </desc>
+      <param name="pattern" type="wstring" dir="in">
+        <desc>The selection pattern. A bit similar to filename globbing.</desc>
+      </param>
     </method>
 
     <method name="dumpStats">
       <desc>
         Dumps VM statistics.
       </desc>
+      <param name="pattern" type="wstring" dir="in">
+        <desc>The selection pattern. A bit similar to filename globbing.</desc>
+      </param>
     </method>
 
     <method name="getStats">
