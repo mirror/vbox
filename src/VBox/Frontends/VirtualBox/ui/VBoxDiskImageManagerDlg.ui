@@ -596,10 +596,10 @@
     <function access="private">done( int )</function>
     <function access="private" returnType="DiskImageItem*">searchItem( QListView*, const QUuid &amp; )</function>
     <function access="private" returnType="DiskImageItem*">searchItem( QListView*, VBoxMedia::Status )</function>
-    <function specifier="static" access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; id )</function>
-    <function specifier="static" access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; id )</function>
-    <function specifier="static" access="private">sourceSnapshotsCD( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
-    <function specifier="static" access="private">sourceSnapshotsFD( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
+    <function specifier="static" access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; aId, QString &amp; aSnapshotUsage )</function>
+    <function specifier="static" access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; aId, QString &amp; aSnapshotUsage )</function>
+    <function specifier="static" access="private">getDVDImageSnapshotUsage( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
+    <function specifier="static" access="private">getFloppyImageSnapshotUsage( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
     <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
     <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
     <function returnType="QUuid">getSelectedUuid()</function>
@@ -626,9 +626,9 @@
     <function access="protected" returnType="QPushButton*">searchDefaultButton()</function>
     <function access="protected">setCurrentItem( QListView*, QListViewItem* )</function>
     <function specifier="static"> showModeless( bool aRefresh = true )</function>
-    <function specifier="static" returnType="QString">composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
-    <function specifier="static" returnType="QString">composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
-    <function specifier="static" returnType="QString">composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok )</function>
+    <function specifier="static" returnType="QString">composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
+    <function specifier="static" returnType="QString">composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
+    <function specifier="static" returnType="QString">composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
     <function access="protected">clearInfoPanes()</function>
     <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
     <function access="protected">makeWarningMark( DiskImageItem*, VBoxMedia::Status, VBoxDefs::DiskType )</function>
