@@ -361,7 +361,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             {
                 uint32_t len = strlen(pszFullPath);
                 char    *src = pszFullPath + len - 1;
-        
+
                 Log(("Handle case insenstive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
 
                 /* Find partial path that's valid */
@@ -414,7 +414,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                             rc = VINF_SUCCESS;  /* trailing delimiter */
                         else
                             rc = VERR_FILE_NOT_FOUND;
-            
+
                         if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
                         {
                             /* path component is invalid; try to correct the casing */
@@ -459,42 +459,24 @@ static void vbsfFreeFullPath (char *pszFullPath)
     RTMemFree (pszFullPath);
 }
 
-
-static int vbsfOpenFile (SHFLHANDLE *phHandle, const char *pszPath, SHFLCREATEPARMS *pParms, bool fCreate)
+/**
+ * Convert shared folder create flags (see include/iprt/shflsvc.h) into iprt create flags.
+ *
+ * @returns iprt status code
+ * @param  fShflFlags shared folder create flags
+ * @retval pfOpen     iprt create flags
+ */
+static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
 {
+    unsigned fOpen = 0;
     int rc = VINF_SUCCESS;
 
-    LogFlow(("vbsfOpenFile: pszPath = %s, pParms = %p, fCreate = %d\n",
-             pszPath, pParms, fCreate));
-
-    /** @todo r=bird: You should've requested a better RTFileOpen API! This code could certainly have
-     * benefitted from it. I've done the long overdue adjustment of RTFileOpen so it better reflect
-     * what a decent OS should be able to do. I've also added some OS specific flags (non-blocking,
-     * delete sharing), and I'm not picky about adding more if that required. (I'm only picky about
-     * how they are treated on platforms which doesn't support them.)
-     * Because of the restrictions in the old version of RTFileOpen this code contains dangerous race
-     * conditions. File creation is one example where you may easily kill a file just created by
-     * another user.
-     */
-
-    /* Open or create a file. */
-    unsigned fOpen;
-
-    Log(("SHFL create flags %08x\n", pParms->CreateFlags));
-
-    if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
-    {
-        fOpen = RTFILE_O_OPEN;
-    }
-    else
-        fOpen = fCreate? RTFILE_O_CREATE_REPLACE: RTFILE_O_OPEN;
-
-    switch (BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACCESS_MASK_RW))
+    switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_RW))
     {
         default:
         case SHFL_CF_ACCESS_NONE:
         {
-            /** @todo treat this as read access, but theoretically this could be a no access requested. */
+            /** @todo treat this as read access, but theoretically this could be a no access request. */
             fOpen |= RTFILE_O_READ;
             Log(("FLAG: SHFL_CF_ACCESS_NONE\n"));
             break;
@@ -523,7 +505,7 @@ static int vbsfOpenFile (SHFLHANDLE *phHandle, const char *pszPath, SHFLCREATEPA
     }
 
     /* Sharing mask */
-    switch (BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACCESS_MASK_DENY))
+    switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_DENY))
     {
     default:
     case SHFL_CF_ACCESS_DENYNONE:
@@ -547,208 +529,327 @@ static int vbsfOpenFile (SHFLHANDLE *phHandle, const char *pszPath, SHFLCREATEPA
         break;
     }
 
-    SHFLHANDLE      handle;
-    SHFLFILEHANDLE *pHandle;
-
-    if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
+    /* Open/Create action mask */
+    switch (BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
     {
-        handle  = vbsfAllocDirHandle();
-        pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_DIR);
-    }
-    else
-    {
-        handle  = vbsfAllocFileHandle();
-        pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_FILE);
-    }
-
-    if (pHandle == NULL)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-    else
-    {
-        /* Must obviously create the directory, before trying to open it. */
-        if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
+    case SHFL_CF_ACT_OPEN_IF_EXISTS:
+        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
         {
-            if (fCreate)
-            {
-                /** @todo render supplied attributes.
-                * bird: The guest should specify this. For windows guests RTFS_DOS_DIRECTORY should suffice. */
-                RTFMODE fMode = 0777;
-
-                rc = RTDirCreate(pszPath, fMode);
-                if (VBOX_FAILURE(rc))
-                {
-                    vbsfFreeHandle (handle);
-                    return rc;
-                }
-            }
-            /* Open the directory now */
-            if (VBOX_SUCCESS(rc))
-            {
-                rc = RTDirOpen (&pHandle->dir.Handle, pszPath);
-                if (VBOX_FAILURE (rc))
-                {
-                    vbsfFreeHandle (handle);
-                    *phHandle = SHFL_HANDLE_NIL;
-                    return rc;
-                }
-            }
+            fOpen |= RTFILE_O_OPEN_CREATE;
+            Log(("FLAGS: SHFL_CF_ACT_OPEN_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
+        }
+        else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+        {
+            fOpen |= RTFILE_O_OPEN;
+            Log(("FLAGS: SHFL_CF_ACT_OPEN_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
         }
         else
         {
-            rc = RTFileOpen(&pHandle->file.Handle, pszPath, fOpen);
+            Log(("FLAGS: invalid open/create action combination\n"));
+            rc = VERR_INVALID_PARAMETER;
         }
-
-        if (VBOX_SUCCESS (rc))
+        break;
+    case SHFL_CF_ACT_FAIL_IF_EXISTS:
+        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
         {
-            *phHandle = handle;
+            fOpen |= RTFILE_O_CREATE;
+            Log(("FLAGS: SHFL_CF_ACT_FAIL_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
         }
         else
         {
-             vbsfFreeHandle (handle);
+            Log(("FLAGS: invalid open/create action combination\n"));
+            rc = VERR_INVALID_PARAMETER;
         }
-    }
-
-    LogFlow(("vbsfOpenFile: rc = %Vrc\n", rc));
-
-
-    return rc;
-}
-
-static int vbsfOpenExisting (const char *pszFullPath, SHFLCREATEPARMS *pParms)
-{
-    int rc = VINF_SUCCESS;
-
-    LogFlow(("vbsfOpenExisting: pszFullPath = %s, pParms = %p\n",
-             pszFullPath, pParms));
-
-    /* Open file. */
-    SHFLHANDLE      handle;
-
-    rc = vbsfOpenFile (&handle, pszFullPath, pParms, false);
-    if (VBOX_SUCCESS (rc))
-    {
-        pParms->Handle = handle;
-    }
-
-    LogFlow(("vbsfOpenExisting: rc = %d\n", rc));
-
-    return rc;
-}
-
-
-static int vbsfOpenReplace (const char *pszPath, SHFLCREATEPARMS *pParms, bool bReplace, RTFSOBJINFO *pInfo)
-{
-    int rc = VINF_SUCCESS;
-
-    LogFlow(("vbsfOpenReplace: pszPath = %s, pParms = %p, bReplace = %d\n",
-             pszPath, pParms, bReplace));
-
-    if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
-    {
-        /* Replace operation is not applicable to a directory. */
+        break;
+    case SHFL_CF_ACT_REPLACE_IF_EXISTS:
+        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+        {
+            fOpen |= RTFILE_O_CREATE_REPLACE;
+            Log(("FLAGS: SHFL_CF_ACT_REPLACE_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
+        }
+        else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+        {
+            fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
+            Log(("FLAGS: SHFL_CF_ACT_REPLACE_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
+        }
+        else
+        {
+            Log(("FLAGS: invalid open/create action combination\n"));
+            rc = VERR_INVALID_PARAMETER;
+        }
+        break;
+    case SHFL_CF_ACT_OVERWRITE_IF_EXISTS:
+        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+        {
+            fOpen |= RTFILE_O_CREATE_REPLACE;
+            Log(("FLAGS: SHFL_CF_ACT_OVERWRITE_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
+        }
+        else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+        {
+            fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
+            Log(("FLAGS: SHFL_CF_ACT_OVERWRITE_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
+        }
+        else
+        {
+            Log(("FLAGS: invalid open/create action combination\n"));
+            rc = VERR_INVALID_PARAMETER;
+        }
+        break;
+    default:
         rc = VERR_INVALID_PARAMETER;
+        Log(("FLAG: SHFL_CF_ACT_MASK_IF_EXISTS - invalid parameter\n"));
     }
-    else
+
+    if (RT_SUCCESS(rc))
     {
-        SHFLHANDLE handle = SHFL_HANDLE_NIL;
-        SHFLFILEHANDLE *pHandle;
-
-        rc = vbsfOpenFile (&handle, pszPath, pParms, true);
-        // We are loosing an information regarding the cause of failure here
-        // -- malc
-        pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_FILE);
-        if (!pHandle)
-        {
-            AssertFailed();
-            rc = VERR_INVALID_HANDLE;
-        }
-
-        if (VBOX_SUCCESS (rc))
-        {
-
-            /* Set new file attributes */
-
-            rc = RTFileSetSize(pHandle->file.Handle, pParms->Info.cbObject);
-            if (rc != VINF_SUCCESS)
-            {
-                AssertMsg(rc == VINF_SUCCESS, ("RTFileSetSize failed with %d\n", rc));
-                return rc;
-            }
-
-            if (bReplace)
-            {
-#if 0
-                /* @todo */
-                /* Set new attributes. */
-                RTFileSetTimes(pHandle->file.Handle,
-                               &pParms->Info.AccessTime,
-                               &pParms->Info.ModificationTime,
-                               &pParms->Info.ChangeTime,
-                               &pParms->Info.BirthTime
-                              );
-
-                RTFileSetMode (pHandle->file.Handle, pParms->Info.Attr.fMode);
-#endif
-            }
-
-            pParms->Result = SHFL_FILE_REPLACED;
-            pParms->Handle = handle;
-        }
+        *pfOpen = fOpen;
     }
-
-    LogFlow(("vbsfOpenReplace: rc = %Vrc\n", rc));
-
     return rc;
 }
 
-static int vbsfOpenCreate (const char *pszPath, SHFLCREATEPARMS *pParms)
+/**
+ * Open a file or create and open a new one.
+ *
+ * @returns IPRT status code
+ * @param  pszPath               Path to the file or folder on the host.
+ * @param  pParms->CreateFlags   Creation or open parameters, see include/VBox/shflsvc.h
+ * @param  pParms->Info          When a new file is created this specifies the initial parameters.
+ *                               When a file is created or overwritten, it also specifies the
+ *                               initial size.
+ * @retval pParms->Result        Shared folder status code, see include/VBox/shflsvc.h
+ * @retval pParms->Handle        On success the (shared folder) handle of the file opened or
+ *                               created
+ * @retval pParms->Info          On success the parameters of the file opened or created
+ */
+static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
 {
-    int rc = VINF_SUCCESS;
-
-    LogFlow(("vbsfOpenCreate: pszPath = %s, pParms = %p\n",
-             pszPath, pParms));
+    LogFlow(("vbsfOpenFile: pszPath = %s, pParms = %p\n", pszPath, pParms));
+    Log(("SHFL create flags %08x\n", pParms->CreateFlags));
 
     SHFLHANDLE      handle = SHFL_HANDLE_NIL;
-    SHFLFILEHANDLE *pHandle;
-
-    rc = vbsfOpenFile (&handle, pszPath, pParms, true);
-    pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_FILE | SHFL_HF_TYPE_DIR);
-    if (!pHandle)
+    SHFLFILEHANDLE *pHandle = 0;
+    /* Open or create a file. */
+    unsigned fOpen = 0;
+    int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, &fOpen);
+    if (RT_SUCCESS(rc))
     {
-        AssertFailed();
-        rc = VERR_INVALID_HANDLE;
+        handle  = vbsfAllocFileHandle();
     }
-
-    if (VBOX_SUCCESS (rc))
+    if (SHFL_HANDLE_NIL != handle)
     {
-#if 0
-        if (!BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
+        rc = VERR_NO_MEMORY;  /* If this fails - rewritten immediately on success. */
+        pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_FILE);
+    }
+    if (0 != pHandle)
+    {
+        rc = RTFileOpen(&pHandle->file.Handle, pszPath, fOpen);
+    }
+    if (RT_FAILURE (rc))
+    {
+        switch (rc)
         {
-            /* @todo */
-            RTFileSetSize(pHandle->file.Handle, pParms->Info.cbObject);
+        case VERR_FILE_NOT_FOUND:
+            pParms->Result = SHFL_FILE_NOT_FOUND;
+            break;
+        case VERR_PATH_NOT_FOUND:
+            pParms->Result = SHFL_PATH_NOT_FOUND;
+            break;
+        case VERR_ALREADY_EXISTS:
+            RTFSOBJINFO info;
 
+            /** @todo Possible race left here. */
+            if (RT_SUCCESS(RTPathQueryInfo (pszPath, &info, RTFSOBJATTRADD_NOTHING)))
+            {
+                pParms->Info = info;
+            }
+            pParms->Result = SHFL_FILE_EXISTS;
+            break;
+        default:
+            pParms->Result = SHFL_NO_RESULT;
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /** @note The shared folder status code is very approximate, as the runtime
+          *       does not really provide this information. */
+        pParms->Result = SHFL_FILE_EXISTS;  /* We lost the information as to whether it was
+                                               created when we eliminated the race. */
+        if (   (   SHFL_CF_ACT_REPLACE_IF_EXISTS
+                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
+            || (   SHFL_CF_ACT_OVERWRITE_IF_EXISTS
+                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
+        {
+            /* For now, we do not treat a failure here as fatal. */
+            /* @todo Also set the size for SHFL_CF_ACT_CREATE_IF_NEW if 
+                     SHFL_CF_ACT_FAIL_IF_EXISTS is set. */
+            RTFileSetSize(pHandle->file.Handle, pParms->Info.cbObject);
+            pParms->Result = SHFL_FILE_REPLACED;
+        }
+        if (   (   SHFL_CF_ACT_FAIL_IF_EXISTS
+                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
+            || (   SHFL_CF_ACT_CREATE_IF_NEW
+                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_NEW)))
+        {
+            pParms->Result = SHFL_FILE_CREATED;
+        }
+#if 0
+        /* @todo */
+        /* Set new attributes. */
+        if (   (   SHFL_CF_ACT_REPLACE_IF_EXISTS
+                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
+            || (   SHFL_CF_ACT_CREATE_IF_NEW
+                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_NEW)))
+        {
             RTFileSetTimes(pHandle->file.Handle,
-                           &pParms->Info.AccessTime,
-                           &pParms->Info.ModificationTime,
-                           &pParms->Info.ChangeTime,
-                           &pParms->Info.BirthTime
+                          &pParms->Info.AccessTime,
+                          &pParms->Info.ModificationTime,
+                          &pParms->Info.ChangeTime,
+                          &pParms->Info.BirthTime
                           );
 
             RTFileSetMode (pHandle->file.Handle, pParms->Info.Attr.fMode);
         }
 #endif
+        RTFSOBJINFO info;
 
-        pParms->Result = SHFL_FILE_CREATED;
+        /* Get file information */
+        rc = RTFileQueryInfo (pHandle->file.Handle, &info, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            pParms->Info = info;
+        }
+    }
+    if (RT_FAILURE(rc))
+    {
+        if (   (0 != pHandle)
+            && (NIL_RTFILE != pHandle->file.Handle)
+            && (0 != pHandle->file.Handle))
+        {
+            RTFileClose(pHandle->file.Handle);
+            pHandle->file.Handle = NIL_RTFILE;
+        }
+        if (SHFL_HANDLE_NIL != handle)
+        {
+            vbsfFreeHandle (handle);
+        }
+    }
+    else
+    {
         pParms->Handle = handle;
     }
-
-    LogFlow(("vbsfOpenCreate: rc = %Vrc\n", rc));
-
+    LogFlow(("vbsfOpenFile: rc = %Vrc\n", rc));
     return rc;
 }
 
+/**
+ * Open a folder or create and open a new one.
+ *
+ * @returns IPRT status code
+ * @param  pszPath               Path to the file or folder on the host.
+ * @param  pParms->CreateFlags   Creation or open parameters, see include/VBox/shflsvc.h
+ * @retval pParms->Result        Shared folder status code, see include/VBox/shflsvc.h
+ * @retval pParms->Handle        On success the (shared folder) handle of the folder opened or
+ *                               created
+ * @retval pParms->Info          On success the parameters of the folder opened or created
+ *
+ * @note folders are created with fMode = 0777
+ */
+static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
+{
+    LogFlow(("vbsfOpenDir: pszPath = %s, pParms = %p\n", pszPath, pParms));
+    Log(("SHFL create flags %08x\n", pParms->CreateFlags));
+
+    int rc = VERR_NO_MEMORY;
+    SHFLHANDLE      handle = vbsfAllocDirHandle();
+    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_DIR);
+    if (0 != pHandle)
+    {
+        rc = VINF_SUCCESS;
+        pParms->Result = SHFL_FILE_EXISTS;  /* May be overwritten with SHFL_FILE_CREATED. */
+        /** @todo Can anyone think of a sensible, race-less way to do this?  Although
+                  I suspect that the race is inherent, due to the API available... */
+        /* Try to create the folder first if "create if new" is specified.  If this
+           fails, and "open if exists" is specified, then we ignore the failure and try
+           to open the folder anyway. */
+        if (   SHFL_CF_ACT_CREATE_IF_NEW
+            == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_NEW))
+        {
+            /** @todo render supplied attributes.
+            * bird: The guest should specify this. For windows guests RTFS_DOS_DIRECTORY should suffice. */
+            RTFMODE fMode = 0777;
+
+            pParms->Result = SHFL_FILE_CREATED;
+            rc = RTDirCreate(pszPath, fMode);
+            if (RT_FAILURE (rc))
+            {
+                switch (rc)
+                {
+                case VERR_ALREADY_EXISTS:
+                    pParms->Result = SHFL_FILE_EXISTS;
+                    break;
+                case VERR_PATH_NOT_FOUND:
+                    pParms->Result = SHFL_PATH_NOT_FOUND;
+                    break;
+                default:
+                    pParms->Result = SHFL_NO_RESULT;
+                }
+            }
+        }
+        if (   RT_SUCCESS(rc)
+            || (   SHFL_CF_ACT_OPEN_IF_EXISTS
+                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
+        {
+            /* Open the directory now */
+            rc = RTDirOpen (&pHandle->dir.Handle, pszPath);
+            if (RT_SUCCESS(rc))
+            {
+                RTFSOBJINFO info;
+
+                rc = RTDirQueryInfo (pHandle->dir.Handle, &info, RTFSOBJATTRADD_NOTHING);
+                if (RT_SUCCESS(rc))
+                {
+                    pParms->Info = info;
+                }
+            }
+            else
+            {
+                switch (rc)
+                {
+                case VERR_FILE_NOT_FOUND:  /* Does this make sense? */
+                    pParms->Result = SHFL_FILE_NOT_FOUND;
+                    break;
+                case VERR_PATH_NOT_FOUND:
+                    pParms->Result = SHFL_PATH_NOT_FOUND;
+                    break;
+                case VERR_ACCESS_DENIED:
+                    pParms->Result = SHFL_FILE_EXISTS;
+                    break;
+                default:
+                    pParms->Result = SHFL_NO_RESULT;
+                }
+            }
+        }
+    }
+    if (RT_FAILURE(rc))
+    {
+        if (   (0 != pHandle)
+            && (0 != pHandle->dir.Handle))
+        {
+            RTDirClose(pHandle->dir.Handle);
+            pHandle->dir.Handle = 0;
+        }
+        if (SHFL_HANDLE_NIL != handle)
+        {
+            vbsfFreeHandle (handle);
+        }
+    }
+    else
+    {
+        pParms->Handle = handle;
+    }
+    LogFlow(("vbsfOpenDir: rc = %Vrc\n", rc));
+    return rc;
+}
 
 static int vbsfCloseDir (SHFLFILEHANDLE *pHandle)
 {
@@ -788,7 +889,71 @@ static int vbsfCloseFile (SHFLFILEHANDLE *pHandle)
     return rc;
 }
 
+/**
+ * Look up file or folder information by host path.
+ *
+ * @returns iprt status code (currently VINF_SUCCESS)
+ * @param   pszFullPath    The path of the file to be looked up
+ * @retval  pParms->Result Status of the operation (success or error)
+ * @retval  pParms->Info   On success, information returned about the file
+ */
+static int vbsfLookupFile(char *pszPath, SHFLCREATEPARMS *pParms)
+{
+    RTFSOBJINFO info;
+    int rc;
 
+    rc = RTPathQueryInfo (pszPath, &info, RTFSOBJATTRADD_NOTHING);
+    LogFlow(("SHFL_CF_LOOKUP\n"));
+    /* Client just wants to know if the object exists. */
+    switch (rc)
+    {
+        case VINF_SUCCESS:
+        {
+            pParms->Info = info;
+            pParms->Result = SHFL_FILE_EXISTS;
+            break;
+        }
+
+        case VERR_FILE_NOT_FOUND:
+        {
+            pParms->Result = SHFL_FILE_NOT_FOUND;
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        case VERR_PATH_NOT_FOUND:
+        {
+            pParms->Result = SHFL_PATH_NOT_FOUND;
+            rc = VINF_SUCCESS;
+            break;
+        }
+    }
+    return rc;
+}
+
+/**
+ * Create or open a file or folder.  Perform character set and case
+ * conversion on the file name if necessary.
+ *
+ * @returns IPRT status code, but see note below
+ * @param   pClient        Data structure describing the client accessing the shared
+ *                         folder
+ * @param   root           The index of the shared folder in the table of mappings.
+ *                         The host path of the shared folder is found using this.
+ * @param   pPath          The path of the file or folder relative to the host path
+ *                         indexed by root.
+ * @param   cbPath         Presumably the length of the path in pPath.  Actually
+ *                         ignored, as pPath contains a length parameter.
+ * @param   pParms->Info   If a new file is created or an old one overwritten, set
+ *                         these attributes
+ * @retval  pParms->Result Shared folder result code, see include/VBox/shflsvc.h
+ * @retval  pParms->Handle Shared folder handle to the newly opened file
+ * @retval  pParms->Info   Attributes of the file or folder opened
+ *
+ * @note This function returns success if a "non-exceptional" error occurred,
+ *       such as "no such file".  In this case, the caller should check the
+ *       pParms->Result return value and whether pParms->Handle is valid.
+ */
 int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32_t cbPath, SHFLCREATEPARMS *pParms)
 {
     int rc = VINF_SUCCESS;
@@ -799,15 +964,14 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
     /* Check the client access rights to the root. */
     /** @todo */
 
-    /* Build a host full path for the given path
-     * and convert ucs2 to utf8 if necessary.
+    /* Build a host full path for the given path, handle file name case issues (if the guest
+     * expects case-insensitive paths but the host is case-sensitive) and convert ucs2 to utf8 if
+     * necessary.
      */
     char *pszFullPath = NULL;
     uint32_t cbFullPathRoot = 0;
 
     rc = vbsfBuildFullPath (pClient, root, pPath, cbPath, &pszFullPath, &cbFullPathRoot);
-
-    /* @todo This mess needs to change. RTFileOpen supports all the open/creation methods */
 
     if (VBOX_SUCCESS (rc))
     {
@@ -815,181 +979,52 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         pParms->Result = SHFL_NO_RESULT;
         pParms->Handle = SHFL_HANDLE_NIL;
 
-        /* Query path information. */
-        RTFSOBJINFO info;
-
-        /** r=bird: This is likely to create race conditions.
-         * What is a file now can be a directory when you open it. */
-        rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
-        LogFlow(("RTPathQueryInfo returned %Vrc\n", rc));
-
         if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_LOOKUP))
         {
-            LogFlow(("SHFL_CF_LOOKUP\n"));
-            /* Client just wants to know if the object exists. */
-            switch (rc)
-            {
-                case VINF_SUCCESS:
-                {
-                    pParms->Info = info;
-                    pParms->Result = SHFL_FILE_EXISTS;
-                    break;
-                }
-
-                case VERR_FILE_NOT_FOUND:
-                {
-                    pParms->Result = SHFL_FILE_NOT_FOUND;
-                    rc = VINF_SUCCESS;
-                    break;
-                }
-
-                case VERR_PATH_NOT_FOUND:
-                {
-                    pParms->Result = SHFL_PATH_NOT_FOUND;
-                    rc = VINF_SUCCESS;
-                    break;
-                }
-            }
-        }
-        else if (rc == VINF_SUCCESS)
-        {
-            /* File object exists. */
-            pParms->Result = SHFL_FILE_EXISTS;
-
-            /* Mark it as a directory in case the caller didn't. */
-            if (BIT_FLAG(info.Attr.fMode, RTFS_DOS_DIRECTORY))
-            {
-                pParms->CreateFlags |= SHFL_CF_DIRECTORY;
-            }
-
-            if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_OPEN_TARGET_DIRECTORY))
-            {
-                pParms->Info = info;
-                vbsfStripLastComponent (pszFullPath, cbFullPathRoot);
-                rc = vbsfOpenExisting (pszFullPath, pParms);
-            }
-            else
-            {
-                if (    BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY)
-                    && !BIT_FLAG(info.Attr.fMode, RTFS_DOS_DIRECTORY))
-                {
-                    /* Caller wanted a directory but the existing object is not a directory.
-                     * Do not open the object then.
-                     */
-                    ; /* do nothing */
-                }
-                else
-                {
-                    switch (BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
-                    {
-                        case SHFL_CF_ACT_OPEN_IF_EXISTS:
-                        {
-                            pParms->Info = info;
-                            rc = vbsfOpenExisting (pszFullPath, pParms);
-                            break;
-                        }
-
-                        case SHFL_CF_ACT_FAIL_IF_EXISTS:
-                        {
-                            /* NIL handle value will tell client that object was not opened.
-                             * Just copy information about the object.
-                             */
-                            pParms->Info = info;
-                            break;
-                        }
-
-                        case SHFL_CF_ACT_REPLACE_IF_EXISTS:
-                        {
-                            rc = vbsfOpenReplace (pszFullPath, pParms, true, &info);
-                            break;
-                        }
-
-                        case SHFL_CF_ACT_OVERWRITE_IF_EXISTS:
-                        {
-                            rc = vbsfOpenReplace (pszFullPath, pParms, false, &info);
-                            pParms->Info = info;
-                            break;
-                        }
-
-                        default:
-                        {
-                            rc = VERR_INVALID_PARAMETER;
-                        }
-                    }
-                }
-            }
-        }
-        else 
-        if (rc == VERR_FILE_NOT_FOUND)
-        {
-            LogFlow(("pParms->CreateFlags = %x\n", pParms->CreateFlags));
-
-            rc = VINF_SUCCESS;
-
-            /* File object does not exist. */
-            pParms->Result = SHFL_FILE_NOT_FOUND;
-
-            if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_OPEN_TARGET_DIRECTORY))
-            {
-                switch (BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_NEW))
-                {
-                    case SHFL_CF_ACT_CREATE_IF_NEW:
-                    {
-                        rc = vbsfOpenCreate (pszFullPath, pParms);
-                        break;
-                    }
-
-                    case SHFL_CF_ACT_FAIL_IF_NEW:
-                    {
-                        /* NIL handle value will tell client that object was not created. */
-                        pParms->Result = SHFL_PATH_NOT_FOUND;
-                        break;
-                    }
-
-                    default:
-                    {
-                        rc = VERR_INVALID_PARAMETER;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                switch (BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_NEW))
-                {
-                    case SHFL_CF_ACT_CREATE_IF_NEW:
-                    {
-                        rc = vbsfOpenCreate (pszFullPath, pParms);
-                        break;
-                    }
-
-                    case SHFL_CF_ACT_FAIL_IF_NEW:
-                    {
-                        /* NIL handle value will tell client that object was not created. */
-                        break;
-                    }
-
-                    default:
-                    {
-                        rc = VERR_INVALID_PARAMETER;
-                    }
-                }
-            }
+            rc = vbsfLookupFile(pszFullPath, pParms);
         }
         else
-        if (rc == VERR_PATH_NOT_FOUND)
         {
-            rc = VINF_SUCCESS;
- 
-            pParms->Result = SHFL_PATH_NOT_FOUND;
-        }
+            /* Query path information. */
+            RTFSOBJINFO info;
 
-        if (rc == VINF_SUCCESS && pParms->Handle != SHFL_HANDLE_NIL)
-        {
-            uint32_t bufsize = sizeof(pParms->Info);
+            rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
+            LogFlow(("RTPathQueryInfo returned %Vrc\n", rc));
 
-            rc = vbsfQueryFileInfo(pClient, root, pParms->Handle, SHFL_INFO_GET|SHFL_INFO_FILE, &bufsize, (uint8_t *)&pParms->Info);
-            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                /* Mark it as a directory in case the caller didn't. */
+                /**
+                  * @todo I left this in in order not to change the behaviour of the
+                  *       function too much.  Is it really needed, and should it really be
+                  *       here?
+                  */
+                if (BIT_FLAG(info.Attr.fMode, RTFS_DOS_DIRECTORY))
+                {
+                    pParms->CreateFlags |= SHFL_CF_DIRECTORY;
+                }
+                /**
+                  * @todo This should be in the Windows Guest Additions, as no-one else
+                  *       needs it.
+                  */
+                if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_OPEN_TARGET_DIRECTORY))
+                {
+                    vbsfStripLastComponent (pszFullPath, cbFullPathRoot);
+                    pParms->CreateFlags &= ~SHFL_CF_ACT_MASK_IF_EXISTS;
+                    pParms->CreateFlags &= ~SHFL_CF_ACT_MASK_IF_NEW;
+                    pParms->CreateFlags |= SHFL_CF_DIRECTORY;
+                    pParms->CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
+                    pParms->CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
+                }
+            }
+            if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
+            {
+                rc = vbsfOpenDir (pszFullPath, pParms);
+            }
+            else
+            {
+                rc = vbsfOpenFile (pszFullPath, pParms);
+            }
         }
 
         /* free the path string */
@@ -1643,7 +1678,8 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
             rc = RTDirRemove(pszFullPath);
 
 #ifndef DEBUG_dmik
-        Assert(rc == VINF_SUCCESS || rc == VERR_DIR_NOT_EMPTY);
+        // VERR_ACCESS_DENIED for example?
+        // Assert(rc == VINF_SUCCESS || rc == VERR_DIR_NOT_EMPTY);
 #endif
         /* free the path string */
         vbsfFreeFullPath(pszFullPath);
