@@ -1486,7 +1486,7 @@ void remR3TimersRun(CPUState *env)
  */
 int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t pvNextEIP)
 {
-    PVM pVM = (PVM)env->pVM;
+    PVM pVM = env->pVM;
 #ifdef VBOX_WITH_STATISTICS
     static STAMCOUNTER aStatTrap[255];
     static bool        aRegisters[ELEMENTS(aStatTrap)];
@@ -1555,7 +1555,7 @@ void remR3TrapClear(PVM pVM)
  */
 void remR3RecordCall(CPUState *env)
 {
-    CSAMR3RecordCallAddress((PVM)env->pVM, env->eip);
+    CSAMR3RecordCallAddress(env->pVM, env->eip);
 }
 
 /**
