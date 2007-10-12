@@ -52,7 +52,7 @@ typedef struct DRVNAT
     /** NAT state for this instance. */
     PNATState               pNATState;
     /** Flag whether a NAT ping warning has been shown. */
-    bool                    fSuppressPingWarning;
+    bool                    fPingSuppressed
 } DRVNAT, *PDRVNAT;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
@@ -257,7 +257,7 @@ void slirp_cannot_ping(void *pvUser)
     if (!pData->fSuppressPingWarning)
     {
         pData->fSuppressPingWarning = true;
-        PDMDRV_SET_RUNTIME_ERROR(pData->pDrvIns, false, "NAT_PING", "The guest OS sent out a ping request which cannot be handled by NAT");
+        PDMDRV_SET_RUNTIME_ERROR(pData->pDrvIns, false, "NAT_PING", N_("The guest OS sent out a ping request which cannot be handled by NAT"));
     }
 }
 
