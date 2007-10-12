@@ -85,7 +85,7 @@ typedef struct STAMR3SNAPSHOTONE
 /**
  * Init record for a ring-0 statistic sample.
  */
-typedef struct STAMINITR0SAMPLE
+typedef struct STAMR0SAMPLE
 {
     /** The VM structure offset of the variable. */
     unsigned        offVar;
@@ -97,7 +97,7 @@ typedef struct STAMINITR0SAMPLE
     const char     *pszName;
     /** The description. */
     const char     *pszDesc;
-} STAMINITR0SAMPLE;
+} STAMR0SAMPLE;
 
 
 /*******************************************************************************
@@ -113,6 +113,8 @@ static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg);
 static int stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat, ...);
 static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg);
 static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg);
+static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExpressions, unsigned *piExpression, const char *pszName);
+static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, char **ppszCopy);
 static int stamR3Enum(PVM pVM, const char *pszPat, bool fUpdateRing0, int (pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg);
 static void stamR3Ring0StatsRegister(PVM pVM);
 static void stamR3Ring0StatsUpdate(PVM pVM, const char *pszPat);
@@ -147,35 +149,35 @@ static const DBGCCMD    g_aCmds[] =
 
 
 /**
- * The GVMM init records.
+ * The GVMM mapping records.
  */
-static const STAMINITR0SAMPLE g_aGVMMStats[] =
+static const STAMR0SAMPLE g_aGVMMStats[] =
 {
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltCalls),        STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltBlocking),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltTimeouts),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltNotBlocking),  STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltWakeUps),      STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpCalls),      STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpNotHalted),  STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpWakeUps),    STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollCalls),        STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/PollCalls", "The number of calls to GVMMR0SchedPoll." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollHalts),        STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollWakeUps),      STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/VM/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltCalls),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltBlocking),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltTimeouts),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltNotBlocking),  STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cHaltWakeUps),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpCalls),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpNotHalted),  STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cWakeUpWakeUps),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollCalls),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollCalls", "The number of calls to GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollHalts),        STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedVM.cPollWakeUps),      STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/VM/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
 
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltCalls),       STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltBlocking),    STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltTimeouts),    STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltNotBlocking), STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltWakeUps),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpCalls),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpNotHalted), STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpWakeUps),   STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollCalls),       STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/PollCalls", "The number of calls to GVMMR0SchedPoll." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollHalts),       STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollWakeUps),     STAMTYPE_U64, STAMUNIT_CALLS, "/GVMM/Sum/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltCalls),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltCalls", "The number of calls to GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltBlocking),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltBlocking", "The number of times we did go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltTimeouts),    STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltTimeouts", "The number of times we timed out in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltNotBlocking), STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltNotBlocking", "The number of times we didn't go to sleep in GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cHaltWakeUps),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/HaltWakeUps", "The number of wake ups done during GVMMR0SchedHalt." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpCalls),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpCalls", "The number of calls to GVMMR0WakeUp." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpNotHalted), STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpNotHalted", "The number of times the EMT thread wasn't actually halted when GVMMR0WakeUp was called." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cWakeUpWakeUps),   STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/WakeUpWakeUps", "The number of wake ups done during GVMMR0WakeUp (not counting the explicit one)." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollCalls),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollCalls", "The number of calls to GVMMR0SchedPoll." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollHalts),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.SchedSum.cPollWakeUps),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
 
-    { RT_UOFFSETOF(VM, stam.s.GVMMStats.cVMs),                      STAMTYPE_U32, STAMUNIT_CALLS, "/GVMM/VMs", "The number of VMs accessible to the caller." },
+    { RT_UOFFSETOF(VM, stam.s.GVMMStats.cVMs),                      STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/VMs", "The number of VMs accessible to the caller." },
 };
 
 
@@ -463,8 +465,8 @@ static int stamR3Register(PVM pVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfnRes
      * Create a new node and insert it at the current location.
      */
     int rc;
-    int cchName = strlen(pszName) + 1;
-    int cchDesc = pszDesc ? strlen(pszDesc) + 1 : 0;
+    size_t cchName = strlen(pszName) + 1;
+    size_t cchDesc = pszDesc ? strlen(pszDesc) + 1 : 0;
     PSTAMDESC pNew = (PSTAMDESC)RTMemAlloc(sizeof(*pNew) + cchName + cchDesc);
     if (pNew)
     {
@@ -555,13 +557,71 @@ STAMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
  * @param   pVM         The VM handle.
  * @param   pszPat      The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                      If NULL all samples are reset.
+ * @remarks Don't confuse this with the other 'XYZR3Reset' methods, it's not called at VM reset.
  */
 STAMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
 {
+    int rc = VINF_SUCCESS;
+
+    /* ring-0 */
+    GVMMRESETSTATISTICSSREQ GVMMReq;
+    //GMMRESETSTATISTICSSREQ GMMReq;
+    bool fGVMMMatched = !pszPat || !*pszPat;
+    //bool fGMMMatched = fGVMMMatched;
+    if (fGVMMMatched)
+        memset(&GVMMReq.Stats, 0xff, sizeof(GVMMReq.Stats));
+    else
+    {
+        char *pszCopy;
+        unsigned cExpressions;
+        char **papszExpressions = stamR3SplitPattern(pszPat, &cExpressions, &pszCopy);
+        if (!papszExpressions)
+            return VERR_NO_MEMORY;
+
+        /* GVMM */
+        memset(&GVMMReq.Stats, 0, sizeof(GVMMReq.Stats));
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aGVMMStats); i++)
+            if (stamR3MultiMatch(papszExpressions, cExpressions, NULL, g_aGVMMStats[i].pszName))
+            {
+                *((uint8_t *)&GVMMReq.Stats + (g_aGVMMStats[i].offVar - RT_UOFFSETOF(VM, stam.s.GVMMStats))) = 0xff;
+                fGVMMMatched = true;
+            }
+
+        /* GMM */
+//        memset(&GMMReq.Stats, 0, sizeof(GMMReq.Stats));
+//        for (unsigned i = 0; i < RT_ELEMENTS(g_aGMMStats); i++)
+//            if (stamR3MultiMatch(papszExpressions, cExpressions, NULL, g_aGMMStats[i].pszName))
+//            {
+//                 *((uint8_t *)&GMMReq.Stats + (g_aGMMStats[i].offVar - RT_UOFFSETOF(VM, stam.s.GMMStats))) = 0xff;
+//                 fGMMMatched = true;
+//            }
+
+        RTMemTmpFree(papszExpressions);
+        RTStrFree(pszCopy);
+    }
+
     STAM_LOCK_WR(pVM);
+    if (fGVMMMatched)
+    {
+        GVMMReq.Hdr.cbReq = sizeof(GVMMReq);
+        GVMMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        GVMMReq.pSession = pVM->pSession;
+        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GVMM_RESET_STATISTICS, 0, &GVMMReq.Hdr);
+    }
+
+//    if (fGMMMatched)
+//    {
+//        GMMReq.Hdr.cbReq = sizeof(Req);
+//        GMMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+//        GMMReq.pSession = pVM->pSession;
+//        rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_RESET_STATISTICS, 0, &Req.Hdr);
+//    }
+
+    /* and the reset */
     stamR3Enum(pVM, pszPat, false /* fUpdateRing0 */, stamR3ResetOne, pVM);
+
     STAM_UNLOCK_WR(pVM);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -1275,6 +1335,54 @@ static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExp
 }
 
 
+/**
+ * Splits a multi pattern into single ones.
+ *
+ * @returns Pointer to an array of single patterns. Free it with RTMemTmpFree.
+ * @param   pszPat          The pattern to split.
+ * @param   pcExpressions   The number of array elements.
+ * @param   pszCopy         The pattern copy to free using RTStrFree.
+ */
+static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, char **ppszCopy)
+{
+    Assert(pszPat && *pszPat);
+
+    char *pszCopy = RTStrDup(pszPat);
+    if (!pszCopy)
+        return NULL;
+
+    /* count them & allocate array. */
+    char *psz = pszCopy;
+    unsigned cExpressions = 1;
+    while ((psz = strchr(psz, '|')) != NULL)
+        cExpressions++, psz++;
+
+    char **papszExpressions = (char **)RTMemTmpAllocZ((cExpressions + 1) * sizeof(char *));
+    if (!papszExpressions)
+    {
+        RTStrFree(pszCopy);
+        return NULL;
+    }
+
+    /* split */
+    psz = pszCopy;
+    for (unsigned i = 0;;)
+    {
+        papszExpressions[i] = psz;
+        if (++i >= cExpressions)
+            break;
+        psz = strchr(psz, '|');
+        *psz++ = '\0';
+    }
+
+    /* sort the array, putting '*' last. */
+    /** @todo sort it... */
+
+    *pcExpressions = cExpressions;
+    *ppszCopy = pszCopy;
+    return papszExpressions;
+}
+
 
 /**
  * Enumerates the nodes selected by a pattern or all nodes if no pattern
@@ -1340,36 +1448,11 @@ static int stamR3Enum(PVM pVM, const char *pszPat, bool fUpdateRing0, int (*pfnC
         /*
          * Split up the pattern first.
          */
-        char *pszCopy = RTStrDup(pszPat);
-        if (!pszCopy)
-            return VERR_NO_MEMORY;
-
-        /* count them & allocate array. */
-        char *psz = pszCopy;
-        unsigned cExpressions = 1;
-        while ((psz = strchr(psz, '|')) != NULL)
-            cExpressions++, psz++;
-
-        char **papszExpressions = (char **)RTMemTmpAlloc((cExpressions + 1) * sizeof(char *));
+        char *pszCopy;
+        unsigned cExpressions;
+        char **papszExpressions = stamR3SplitPattern(pszPat, &cExpressions, &pszCopy);
         if (!papszExpressions)
-        {
-            RTStrFree(pszCopy);
-            return VERR_NO_TMP_MEMORY;
-        }
-
-        /* split */
-        psz = pszCopy;
-        for (unsigned i = 0;;)
-        {
-            papszExpressions[i] = psz;
-            if (++i >= cExpressions)
-                break;
-            psz = strchr(psz, '|');
-            *psz++ = '\0';
-        }
-
-        /* sort the array, putting '*' last. */
-        /** @todo sort it... */
+            return VERR_NO_MEMORY;
 
         /*
          * Perform the enumeration.
