@@ -928,6 +928,8 @@ void VBoxConsoleWnd::finalizeOpenView()
         vmSeamless (true);
     mIsOpenViewFinished = true;
     LogFlowFuncLeave();
+
+    vboxGlobal().showRegistrationDialog (false /* aForce */);
 }
 
 /**
