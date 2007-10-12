@@ -554,10 +554,10 @@ typedef struct PDMDRVHLP
 
     /**
      * Creates a PDM thread.
-     * 
-     * This differs from the RTThreadCreate() API in that PDM takes care of suspending, 
+     *
+     * This differs from the RTThreadCreate() API in that PDM takes care of suspending,
      * resuming, and destroying the thread as the VM state changes.
-     * 
+     *
      * @returns VBox status code.
      * @param   pDrvIns     The driver instance.
      * @param   ppThread    Where to store the thread 'handle'.
@@ -667,7 +667,7 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, bool fFatal, cons
  * Set the VM runtime error. See PDMDrvHlpVMSetRuntimeError() for printf like message formatting.
  */
 #define PDMDRV_SET_RUNTIME_ERROR(pDrvIns, fFatal, pszErrorID, pszError)  \
-    PDMDrvHlpVMSetError(pDrvIns, fFatal, pszErrorID, "%s", pszError)
+    PDMDrvHlpVMSetRuntimeError(pDrvIns, fFatal, pszErrorID, "%s", pszError)
 
 #endif /* IN_RING3 */
 

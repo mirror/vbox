@@ -51,6 +51,8 @@ typedef struct DRVNAT
     PDMNETWORKLINKSTATE     enmLinkState;
     /** NAT state for this instance. */
     PNATState               pNATState;
+    /** Flag whether a NAT ping warning has been shown. */
+    bool                    fSuppressPingWarning;
 } DRVNAT, *PDRVNAT;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
@@ -237,6 +239,28 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
     AssertRC(rc);
     LogFlow(("slirp_output END %x %d\n", pu8Buf, cb));
 }
+
+
+/**
+ * Function called by slirp to signal that a ping had to be dropped.
+ */
+void slirp_cannot_ping(void *pvUser)
+{
+    PDRVNAT pData = (PDRVNAT)pvUser;
+
+    Assert(pData);
+
+    /** Happens during termination */
+    if (!RTCritSectIsOwner(&pData->CritSect))
+        return;
+
+    if (!pData->fSuppressPingWarning)
+    {
+        pData->fSuppressPingWarning = true;
+        PDMDRV_SET_RUNTIME_ERROR(pData->pDrvIns, false, "NAT_PING", "The guest OS sent out a ping request which cannot be handled by NAT");
+    }
+}
+
 
 /**
  * Queries an interface to the driver.
