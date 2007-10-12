@@ -11,8 +11,8 @@ Package: virtualbox-ose
 Architecture: i386 amd64
 Pre-Depends: debconf (>= 1.1) | debconf-2.0
 Depends: ${shlibs:Depends}, debconf (>= 0.5) | debconf-2.0, psmisc
-Recommends: linux-headers, gcc, make, binutils, bridge-utils, uml-utilities,
-  libhal1 (>= 0.5)
+Recommends: ${alsa}, ${sdlttf}, linux-headers, gcc, make, binutils, bridge-utils,
+  uml-utilities, libhal1 (>= 0.5)
 Description: innotek VirtualBox
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
