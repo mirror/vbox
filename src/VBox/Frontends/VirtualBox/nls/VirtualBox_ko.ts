@@ -128,119 +128,119 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished">F2</translation>
+        <translation>F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished">F3</translation>
+        <translation>F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished">F4</translation>
+        <translation>F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished">F5</translation>
+        <translation>F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished">F6</translation>
+        <translation>F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished">F7</translation>
+        <translation>F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished">F8</translation>
+        <translation>F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished">F9</translation>
+        <translation>F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished">F10</translation>
+        <translation>F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished">F11</translation>
+        <translation>F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished">F12</translation>
+        <translation>F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished">F13</translation>
+        <translation>F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished">F14</translation>
+        <translation>F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished">F15</translation>
+        <translation>F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished">F16</translation>
+        <translation>F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished">F17</translation>
+        <translation>F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished">F18</translation>
+        <translation>F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished">F19</translation>
+        <translation>F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished">F20</translation>
+        <translation>F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished">F21</translation>
+        <translation>F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished">F22</translation>
+        <translation>F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished">F23</translation>
+        <translation>F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished">F24</translation>
+        <translation>F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>앞으로</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>뒤로</translation>
     </message>
 </context>
 <context>
@@ -263,7 +263,7 @@
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished">무시</translation>
+        <translation>무시</translation>
     </message>
 </context>
 <context>
@@ -378,7 +378,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>항상 사용하기(&amp;M)</translation>
     </message>
 </context>
 <context>
@@ -443,26 +443,31 @@
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;현재 가상 머신의 실행 상태를 호스트 PC의 물리적인 하드 디스크에 저장합니다.&lt;/p&gt;
+&lt;p&gt;다음 번에 가상 머신이 시작되었을 때, 저장된 상태를 복원해서 그 지점부터 실행합니다. 현재 진행 중인 작업을 즉시 시작할 수 있습니다.&lt;/p&gt;
+&lt;p&gt;가상 머신에 할당한 메모리 크기와 게스트 운영 체제 종류에 따라서 가상 머신의 실행 상태를 저장하는 데 시간이 걸릴 수도 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished"></translation>
+        <translation>컴퓨터 끄기 신호 보내기(&amp;E)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;현재 가상 머신에 ACPI 전원 단추 눌림 이벤트를 보냅니다.&lt;/p&gt;
+&lt;p&gt;일반적으로 가상 머신 안쪽의 게스트 운영체제에서는 이 이벤트를 감지해서 깨끗한 시스템 종료 절차를 거칠 것입니다. 가상 머신 안에서 실행되는 모든 프로그램이 데이터와 상태를 저장할 수 있기 때문에 이 방법으로 가상 머신을 끄는 것을 추천합니다.&lt;/p&gt;
+&lt;p&gt;만약 가상 머신이 이 동작에 반응하지 않는다면, 가상 머신이 ACPI 전원 단추 이벤트를 받아들이지 않거나 잘못 설정되었을 수 있습니다. 이 경우에는 &lt;b&gt;가상 머신의 전원 끄기&lt;/b&gt; 동작을 사용해서 가상 머신의 실행을 중지해야 합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신의 전원을 끕니다.&lt;/p&gt;
+&lt;p&gt;이 동작을 사용하면 가상 머신의 실행을 즉시 중단시킵니다. 게스트 운영체제에서는 정상적인 시스템 종료 절차를 밟을 수 없기 때문에 가상 머신의 &lt;i&gt;데이터 손실&lt;/i&gt;이 생길 수 있습니다. &lt;b&gt;컴퓨터 끄기 신호 보내기&lt;/b&gt; 동작에 가상 머신이 응답하지 않을 때만 사용하는 것을 추천합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;선택하면 가상 머신을 끈 다음 현재 스냅샷으로 가상 머신의 상태를 되돌립니다. 마지막 세션의 작업 결과를 삭제하고 현재 스냅샷으로 되돌아가려고 할 때 유용합니다.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -976,23 +981,23 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">내용(&amp;C)...</translation>
+        <translation>내용(&amp;C)...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished">온라인 도움말의 내용을 표시합니다</translation>
+        <translation>온라인 도움말의 내용을 표시합니다</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 등록(&amp;E)...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 등록 대화 상자를 엽니다</translation>
     </message>
 </context>
 <context>
@@ -1498,7 +1503,7 @@
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation>비활성화됨</translation>
+        <translation>사용 안함</translation>
     </message>
     <message>
         <source>USB Controller</source>
@@ -1816,7 +1821,7 @@
     </message>
     <message>
         <source>Select a directory</source>
-        <translation>디렉토리를 선택하십시오</translation>
+        <translation>디렉터리를 선택하십시오</translation>
     </message>
     <message>
         <source>Select a file</source>
@@ -1890,7 +1895,7 @@
     <message>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>사용자 정의 하드 디스크</translation>
     </message>
 </context>
 <context>
@@ -2240,11 +2245,11 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>동의합니다(&amp;A)</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>동의하지 않습니다(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -2903,7 +2908,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;디렉토리 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 &lt;b&gt;%1&lt;/b&gt; 언어를 위한 파일을 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;언어를 시스템 기본값으로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;디렉터리 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 &lt;b&gt;%1&lt;/b&gt;을(를) 위한 파일을 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;언어를 시스템 기본값으로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -2963,7 +2968,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디렉토리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;와 이미지 파일 &lt;tt&gt;Vbox.png&lt;/tt&gt;의 내용도 같이 알려 주십시오. 이 파일의 내용은 오류가 발생했을 때 무엇을 하고 있었는지 알려 줍니다. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르거나, 디버깅 목적으로 계속 실행되게 하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르십시오. 지금 당장 디버그하지 않으시려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르시기를 권장합니다.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디렉터리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;와 이미지 파일 &lt;tt&gt;Vbox.png&lt;/tt&gt;의 내용도 같이 알려 주십시오. 이 파일의 내용은 오류가 발생했을 때 무엇을 하고 있었는지 알려 줍니다. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르거나, 디버깅 목적으로 계속 실행되게 하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르십시오. 지금 당장 디버그하지 않으시려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르시기를 권장합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
@@ -2971,78 +2976,78 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 라이선스 파일을 찾을 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>라이선스 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 열 수 없습니다. 파일 권한을 확인하십시오.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 ACPI 전원 단추 눌림 이벤트를 보낼 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox 온라인 등록 서비스에 연결할 수 없습니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;축하합니다! VirtualBox 사용자로 등록되었습니다.&lt;/p&gt;&lt;p&gt;등록 양식을 채워 넣어 주셔서 감사합니다!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;다음 VirtualBox 제품을 등록할 수 없었습니다&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 등록 대화상자</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 등록 양식을 사용하셔서 여러분이 어떻게 VirtualBox를 사용하는지 알려 주십시오. 선택적으로 VirtualBox 새 소식이나 업데이트 알림을 받을 수도 있습니다.&lt;/p&gt;&lt;p&gt;영문자로 된 전체 이름과 전자 우편 주소를 아래 항목에 입력해 주십시오. innotek에서는 이 정보를 제품 사용 통계와 VirtualBox 새 소식 알림을 보내는 데만 사용할 것입니다. 이 정보는 제 3자와 공유되지 않습니다. 개인 정보를 사용하는 곳에 대한 자세한 정보는 VirtualBox 사용자 설명서의 &lt;b&gt;개인 정보 정책&lt;/b&gt; 섹션이나 VirtualBox 웹 사이트의 &lt;a href=&quot;http://www.virtualbox.org/wiki/PrivacyPolicy&quot;&gt;개인 정보 정책&lt;/a&gt; 항목에서 찾아 보실 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished">이름(&amp;N)</translation>
+        <translation>이름(&amp;N)</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation type="unfinished"></translation>
+        <translation>영문자를 사용하셔서 전체 이름을 입력하십시오.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>전자 우편 주소(&amp;E)</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>올바른 전자 우편 주소를 입력해 주십시오.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation type="unfinished"></translation>
+        <translation>이 정보를 사용해서 연락하지 마십시오(&amp;P)</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>innotek에서 위에 지정한 전자 우편 주소로 전자 우편을 보내지 않게 하고 싶으면 선택하십시오.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 등록 양식에 오신 것을 환영합니다!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>확인(&amp;C)</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation type="unfinished">연결 시간이 초과되었습니다.</translation>
+        <translation>연결 시간이 초과되었습니다.</translation>
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>서버에서 등록 양식을 찾을 수 없습니다. (응답: %1).</translation>
     </message>
 </context>
 <context>
@@ -3297,11 +3302,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 등록(&amp;E)...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 등록 양식을 엽니다</translation>
     </message>
 </context>
 <context>
@@ -4179,7 +4184,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 어댑터의 MAC 주소를 표시합니다. {0-9,A-F} 사이의 글자만 사용해서 총 12글자입니다. 두 번째 숫자는 짝수여야 합니다.</translation>
     </message>
 </context>
 <context>

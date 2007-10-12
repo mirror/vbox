@@ -128,119 +128,119 @@
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Paus</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished">F2</translation>
+        <translation>F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished">F3</translation>
+        <translation>F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished">F4</translation>
+        <translation>F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished">F5</translation>
+        <translation>F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished">F6</translation>
+        <translation>F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished">F7</translation>
+        <translation>F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished">F8</translation>
+        <translation>F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished">F9</translation>
+        <translation>F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished">F10</translation>
+        <translation>F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished">F11</translation>
+        <translation>F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished">F12</translation>
+        <translation>F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished">F13</translation>
+        <translation>F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished">F14</translation>
+        <translation>F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished">F15</translation>
+        <translation>F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished">F16</translation>
+        <translation>F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished">F17</translation>
+        <translation>F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished">F18</translation>
+        <translation>F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished">F19</translation>
+        <translation>F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished">F20</translation>
+        <translation>F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished">F21</translation>
+        <translation>F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished">F22</translation>
+        <translation>F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished">F23</translation>
+        <translation>F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished">F24</translation>
+        <translation>F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>Framåt</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Bakåt</translation>
     </message>
 </context>
 <context>
@@ -374,7 +374,7 @@
     </message>
     <message>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gör permanent</translation>
     </message>
 </context>
 <context>
@@ -392,24 +392,12 @@
         <translation>&amp;Spara maskintillståndet</translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation type="obsolete">Alt+S</translation>
-    </message>
-    <message>
         <source>&amp;Power off the machine</source>
         <translation>Stänga &amp;av maskinen</translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation type="obsolete">Alt+A</translation>
-    </message>
-    <message>
         <source>&amp;Revert to the current snapshot</source>
         <translation>Åte&amp;rställ till aktuell ögonblicksbild</translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
-        <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
         <source>Revert the machine state to the state stored in the current snapshot</source>
@@ -428,10 +416,6 @@
         <translation>&amp;OK</translation>
     </message>
     <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Avbryt</translation>
     </message>
@@ -439,26 +423,31 @@
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sparar det aktuella körtillståndet för den virtuella maskinen till den fysiska hårddisken på värddatorn.&lt;/p&gt;
+&lt;p&gt;Nästa gång denna maskin startas kommer den att återställas från det sparade tillståndet och fortsätta körningen från samma plats som du sparade den på, vilket omedelbart låter dig fortsätta ditt arbete.&lt;/p&gt;
+&lt;p&gt;Observera att sparandet av maskintillståndet kan ta lång tid beroende på typen av gästoperativsystem och mängden minne du har tilldelat den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished"></translation>
+        <translation>S&amp;kicka avstängningssignal</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Skickar ACPI Power Button-knapphändelse till den virtuella maskinen.&lt;/p&gt;
+&lt;p&gt;Gästoperativsystemet som kör i den virtuella maskinen kommer vanligtvis att upptäcka denna händelse och genomföra en vanlig avstängningsprocedur. Det är det rekommenderade sättet att stänga av den virtuella maskinen på eftersom alla program som kör i den får en chans att spara sitt data och tillstånd.&lt;/p&gt;
+&lt;p&gt;Om maskinen inte svarar på den här åtgärden kan gästoperativsystemet vara felkonfigurerat eller inte förstå ACPI Power Button-händelser alls. I det fallet bör du välja åtgärden &lt;b&gt;Stänga av maskinen&lt;/b&gt; för att stoppa körningen av den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Stänger av den virtuella maskinen.&lt;/p&gt;
+&lt;p&gt;Observera att denna åtgärd kommer att stoppa körningen av maskinen omedelbart så att gästoperativsystemet som kör i den inte kommer att kunna genomföra en vanlig avständningsprocedur, vilket kan leda till att &lt;i&gt;data förloras&lt;/i&gt; inne i den virtuella maskinen. Välj endast denna åtgärd om den virtuella maskinen inte svarar på åtgärden &lt;b&gt;Skicka avstängningssignal&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Om kryssad kommer maskinens tillstånd att återställas från det lagrade tillståndet i den aktuella ögonblicksbilden direkt efter att den stängs av. Det här är användbart om du är säker på att du vill förkasta resultatet för din senaste session och gå tillbaka till den aktuella ögonblicksbilden.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -875,23 +864,23 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Innehåll...</translation>
+        <translation>&amp;Innehåll...</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Visa hjälpinnehållet</translation>
+        <translation>Visa innehållet för onlinehjälp</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;egistrera VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna VirtualBox registreringsformulär</translation>
     </message>
 </context>
 <context>
@@ -943,10 +932,6 @@
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Accept dialog</source>
@@ -1177,18 +1162,6 @@
     <message>
         <source>Could not locate the file on the server (response: %1).</source>
         <translation>Kunde inte hitta filen på servern (svar: %1).</translation>
-    </message>
-    <message>
-        <source>Could not determine the file size.</source>
-        <translation type="obsolete">Kunde inte fastställa filstorleken.</translation>
-    </message>
-    <message>
-        <source>Could not connect to the server (%1).</source>
-        <translation type="obsolete">Kunde inte ansluta till servern (%1).</translation>
-    </message>
-    <message>
-        <source>Could not download the file (%1).</source>
-        <translation type="obsolete">Kunde inte hämta ner filen (%1).</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -1784,7 +1757,7 @@
     <message>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Anpassad hårddisk</translation>
     </message>
 </context>
 <context>
@@ -1889,10 +1862,6 @@
         <translation>Fånga tangentbordet &amp;automatiskt</translation>
     </message>
     <message>
-        <source>Alt+A</source>
-        <translation type="obsolete">Alt+A</translation>
-    </message>
-    <message>
         <source>&amp;USB Device Filters</source>
         <translation>&amp;USB-enhetsfilter</translation>
     </message>
@@ -1967,10 +1936,6 @@
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -2122,10 +2087,6 @@ till systemets standardspråk.&lt;/qt&gt;
         <translation>Aktivera &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation type="obsolete">Alt+V</translation>
-    </message>
-    <message>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation>Definierar huruvida virtuella maskiner ska försöka att använda värdens processorutökningar för virtualisering såsom Intel VT-x och AMD-V som standard eller inte.</translation>
     </message>
@@ -2134,11 +2095,11 @@ till systemets standardspråk.&lt;/qt&gt;
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Jag &amp;godkänner</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>Jag godkänner &amp;inte</translation>
     </message>
 </context>
 <context>
@@ -2160,20 +2121,12 @@ till systemets standardspråk.&lt;/qt&gt;
         <translation>&amp;Föregående</translation>
     </message>
     <message>
-        <source>Alt+P</source>
-        <translation type="obsolete">Alt+F</translation>
-    </message>
-    <message>
         <source>Search for the previous occurrence of the string</source>
         <translation>Sök efter föregående förekomst av strängen</translation>
     </message>
     <message>
         <source>&amp;Next</source>
         <translation>&amp;Nästa</translation>
-    </message>
-    <message>
-        <source>Alt+N</source>
-        <translation type="obsolete">Alt+N</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
@@ -2244,16 +2197,8 @@ ungefär samma storlek som storleken för den virtuella hårddisken.&lt;/p&gt;</
         <translation>&amp;Dynamiskt växande avbild</translation>
     </message>
     <message>
-        <source>Alt+D</source>
-        <translation type="obsolete">Alt+D</translation>
-    </message>
-    <message>
         <source>&amp;Fixed-size image</source>
         <translation>A&amp;vbild med fast storlek</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
         <source>Virtual Disk Image Type</source>
@@ -2873,78 +2818,78 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att hitta licensfiler i &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att öppna licensfilen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Kontrollera filrättigheterna.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att skicka ACPI Power Button-knapphändelse till virtuella maskinen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Misslyckades med att ansluta till VirtualBox onlineregistreringstjänst.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Gratulerar! Du har nu registrerats som en användare av VirtualBox.&lt;/p&gt;&lt;p&gt;Tack för att du tog dig tid att fylla ut registreringsformuläret!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Misslyckades med att registrera VirtualBox-produkten&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Registreringsdialog för VirtualBox</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Fyll ut detta registreringsformulär för att informera oss att du använder VirtualBox och, valfritt, för att hålla dig informerad om nyheter och uppdateringar i VirtualBox.&lt;/p&gt;&lt;p&gt;Ange ditt fullständiga namn med latinska bokstäver och din e-postadress i nedanstående fält. Observera att innotek endast kommer att använda denna information för att samla in statistik om produktanvändning och för att skicka nyhetsbrev angående VirtualBox. Specifikt, innotek kommer aldrig att skicka din information vidare till en tredjepart. Detaljerad information om hur vi använder din personliga information kan hittas i avsnittet &lt;b&gt;Privacy Policy&lt;/b&gt; i handboken för VirtualBox eller på sidan &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; på VirtualBox webbplats.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation type="unfinished">&amp;Namn</translation>
+        <translation>&amp;Namn</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange ditt fullständiga namn med latinska bokstäver.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;E-post</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange din giltiga e-postadress.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation type="unfinished"></translation>
+        <translation>An&amp;vänd inte denna information för att kontakta mig</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kryssa för denna ruta om du inte vill få e-post från innotek på den ovan angivna e-postadressen.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished"></translation>
+        <translation>Välkommen till registreringsformuläret för VirtualBox!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bekräfta</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation type="unfinished">Tidsgräns för anslutningen överstegs.</translation>
+        <translation>Tidsgräns för anslutningen överstegs.</translation>
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta registreringsformuläret på servern (svar: %1).</translation>
     </message>
 </context>
 <context>
@@ -3195,11 +3140,11 @@ hoppa över det här steget och ansluta hårddiskar senare i inställningarna.&l
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;egistrera VirtualBox...</translation>
     </message>
     <message>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna registreringsformuläret för VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -3318,10 +3263,6 @@ Guest Additions.&lt;/qt&gt;</translation>
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3523,10 +3464,6 @@ Guest Additions.&lt;/qt&gt;</translation>
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3750,16 +3687,8 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>&amp;CD/DVD-ROM-enhet</translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation type="obsolete">Alt+C</translation>
-    </message>
-    <message>
         <source>&amp;Floppy Device</source>
         <translation>&amp;Diskettenhet</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
@@ -3774,16 +3703,8 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>&amp;Värdenhet</translation>
     </message>
     <message>
-        <source>Alt+H</source>
-        <translation type="obsolete">Alt+V</translation>
-    </message>
-    <message>
         <source>&amp;Image File</source>
         <translation>Av&amp;bildsfil</translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
-        <translation type="obsolete">Alt+B</translation>
     </message>
     <message>
         <source>VDM</source>
@@ -3870,16 +3791,8 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>S&amp;para</translation>
     </message>
     <message>
-        <source>Alt+S</source>
-        <translation type="obsolete">Alt+P</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation>&amp;Uppdatera</translation>
-    </message>
-    <message>
-        <source>Alt+R</source>
-        <translation type="obsolete">Alt+U</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
@@ -3904,10 +3817,6 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     <message>
         <source>&amp;Find</source>
         <translation>&amp;Sök</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
         <source>Close</source>
@@ -3937,20 +3846,12 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>&amp;Generera</translation>
     </message>
     <message>
-        <source>Alt+G</source>
-        <translation type="obsolete">Alt+G</translation>
-    </message>
-    <message>
         <source>Generates a new random MAC address.</source>
         <translation>Genererar en ny slumpmässig maskinvaruadress.</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
         <translation>Ka&amp;beln är ansluten</translation>
-    </message>
-    <message>
-        <source>Alt+B</source>
-        <translation type="obsolete">Alt+B</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
@@ -3993,10 +3894,6 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>Kontrollerar sättet på hur den här virtuella adaptern ansluts till det riktiga nätverket för värdoperativsystemet.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
-        <translation type="obsolete">Visar maskinvaruadressen för den här adaptern. Den innehåller exakt 12 tecken valda från {0-9,A-F}.</translation>
-    </message>
-    <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Indikerar huruvida den virtuella nätverkskabeln är ansluten när maskinen startar upp eller inte.</translation>
     </message>
@@ -4026,7 +3923,7 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar MAC-adressen för denna adapter. Den kan innehålla exakt 12 tecken valda från {0-9,A-F}. Observera att det andra tecknet måste vara en jämn siffra.</translation>
     </message>
 </context>
 <context>
@@ -4078,10 +3975,6 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     <message>
         <source>&amp;Create Pipe</source>
         <translation>Skapa &amp;rör</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
@@ -4303,16 +4196,8 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>Aktivera A&amp;CPI</translation>
     </message>
     <message>
-        <source>Alt+C</source>
-        <translation type="obsolete">Alt+C</translation>
-    </message>
-    <message>
         <source>Enable IO A&amp;PIC</source>
         <translation>Aktivera IO A&amp;PIC</translation>
-    </message>
-    <message>
-        <source>Alt+P</source>
-        <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -4351,20 +4236,12 @@ att matcha alla värden.&lt;/qt&gt;</translation>
         <translation>Värd&amp;diskettenhet</translation>
     </message>
     <message>
-        <source>Alt+D</source>
-        <translation type="obsolete">Alt+D</translation>
-    </message>
-    <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation>Monterar den angivna värddiskettenheten till den virtuella diskettenheten.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
         <translation>&amp;Avbildsfil</translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
-        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
@@ -4401,10 +4278,6 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     <message>
         <source>Enable &amp;USB Controller</source>
         <translation>Aktivera &amp;USB-styrkort</translation>
-    </message>
-    <message>
-        <source>Alt+U</source>
-        <translation type="obsolete">Alt+U</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -4493,10 +4366,6 @@ att matcha alla värden.&lt;/qt&gt;</translation>
     <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
-    </message>
-    <message>
-        <source>Alt+O</source>
-        <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
         <source>Accepts (saves) changes and closes the dialog.</source>
@@ -4713,10 +4582,6 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
         <translation>Aktivera &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <source>Alt+V</source>
-        <translation type="obsolete">Alt+V</translation>
-    </message>
-    <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation>Om kryssad kommer den virtuella maskinen att försöka använda värdens processorutökningar för virtualisering såsom Intel VT-x och AMD-V. Den gråade kryssrutan betyder att den här inställningen fastställs av värdet för den allmänna inställningen.</translation>
     </message>
@@ -4729,10 +4594,6 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
         <translation>Kom &amp;ihåg monterat media vid körning</translation>
     </message>
     <message>
-        <source>Alt+R</source>
-        <translation type="obsolete">Alt+I</translation>
-    </message>
-    <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>Om kryssad så kommer byte till monterat CD/DVD- eller diskettmedia som genomförs under maskinkörning att sparas i inställningsfilen för att behålla konfigurationen av monterade media mellan körningar.</translation>
     </message>
@@ -4743,10 +4604,6 @@ gör att gästen ser ett ljudkort men åtkomsten till det kommer att ignoreras.&
     <message>
         <source>&amp;Enable Passthrough</source>
         <translation>&amp;Aktivera genomsläppning</translation>
-    </message>
-    <message>
-        <source>Alt+E</source>
-        <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
