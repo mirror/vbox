@@ -2358,7 +2358,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
         /** @todo maybe prefetch the supervisor stack page as well */
     }
 
-    /* 
+    /*
      * Allocate handy pages (just in case the above actions have consumed some pages).
      */
     if (VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
@@ -3067,7 +3067,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
             }
         }
 
-        /* 
+        /*
          * Allocate handy pages.
          */
         if (VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
@@ -3438,23 +3438,13 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                  */
                 case EMSTATE_GURU_MEDITATION:
                 {
-                    /** @todo this ain't entirely safe. make a better return code check and specify this in DBGF/emR3Debug. */
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3FatalDump(pVM, rc);
-                    int rc2 = emR3Debug(pVM, rc);
-                    if (rc2 == VERR_DBGF_NOT_ATTACHED || rc2 == VINF_EM_OFF)
-                    {
-                        VMMR3Unlock(pVM);
-                        STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
-                        return rc;
-                    }
-                    TMVirtualResume(pVM);
-                    TMCpuTickResume(pVM);
-                    rc = rc2;
-                    /** @todo we're not doing the right thing in emR3Debug and will cause code to be executed on disconnect and stuff.. */
-                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Vrc (state %d)\n", rc, pVM->em.s.enmState));
-                    break;
+                    emR3Debug(pVM, rc);
+                    VMMR3Unlock(pVM);
+                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    return rc;
                 }
 
                 /*
