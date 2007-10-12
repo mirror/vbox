@@ -127,7 +127,7 @@ int rtFileRecalcAndValidateFlags(unsigned *pfOpen)
      */
     if (    (fOpen & (~RTFILE_O_VALID_MASK | RTFILE_O_NON_BLOCK))
         ||  !(fOpen & RTFILE_O_ACCESS_MASK)
-        ||  (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_DENY_WRITE)) == RTFILE_O_TRUNCATE
+        ||  (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_WRITE)) == RTFILE_O_TRUNCATE
        )
     {
         AssertMsgFailed(("Invalid parameters! fOpen=%#x\n", fOpen));
