@@ -4001,7 +4001,7 @@ ASM_END
 
 #ifdef VBOX
   case 0x89:
-    // Switch to Protected Mode. 
+    // Switch to Protected Mode.
     // ES:DI points to user-supplied GDT
     // BH/BL contains starting interrupt numbers for PIC0/PIC1
     // This subfunction does not return!
@@ -7976,7 +7976,9 @@ Bit8u bseqnr;
 #ifdef VBOX
   Bit8u  bootlan;
 #endif /* VBOX */
+#ifndef VBOX
   Bit8u  bootchk;
+#endif /* !VBOX */
   Bit16u bootseg;
   Bit16u status;
   Bit8u  lastdrive=0;
@@ -8173,12 +8175,8 @@ ASM_END
       }
     }
 
-  // check signature if instructed by cmos reg 0x38, only for floppy
-  // bootchk = 1 : signature check disabled
-  // bootchk = 0 : signature check enabled
-  if (bootdrv != 0) bootchk = 0;
 #ifdef VBOX
-  // Don't check boot sectors on floppies and don't read CMOS - byte 
+  // Don't check boot sectors on floppies and don't read CMOS - byte
   // 0x38 in CMOS always has the low bit clear.
   // There is *no* requirement whatsoever for a valid boot sector to
   // have a 55AAh signature. UNIX boot floppies typically have no such
@@ -8186,12 +8184,14 @@ ASM_END
   // from an invalid one; some heuristic would be needed - a JMP instruction
   // in one of the first few bytes, absence of long sequences of identical
   // bytes at the start or beginning or boot sector etc.
-  // The risk of attempting to boot an invalid floppy is low, certainly 
+  // The risk of attempting to boot an invalid floppy is low, certainly
   // lower than the risk of refusing to boot a valid floppy.
-  bootchk = 1;
-#else
+#else /* !VBOX */
+  // check signature if instructed by cmos reg 0x38, only for floppy
+  // bootchk = 1 : signature check disabled
+  // bootchk = 0 : signature check enabled
+  if (bootdrv != 0) bootchk = 0;
   else bootchk = inb_cmos(0x38) & 0x01;
-#endif
 
 #if BX_ELTORITO_BOOT
   // if boot from cd, no signature check
@@ -8209,6 +8209,7 @@ ASM_END
       return 0x00000000;
       }
     }
+#endif /* !VBOX */
 
 #if BX_ELTORITO_BOOT
   // Print out the boot string
