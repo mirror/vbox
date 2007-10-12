@@ -183,10 +183,9 @@
 
 
 /** @def ONE_MSEC_IN_JIFFIES
- * The number of jiffies that make up 1 millisecond. This is only actually used
- * when HZ is > 1000. */
+ * The number of jiffies that make up 1 millisecond. Must be at least 1! */
 #if HZ <= 1000
-# define ONE_MSEC_IN_JIFFIES       0
+# define ONE_MSEC_IN_JIFFIES       1
 #elif !(HZ % 1000)
 # define ONE_MSEC_IN_JIFFIES       (HZ / 1000)
 #else
@@ -1076,7 +1075,7 @@ static void VBoxDrvLinuxGipTimer(unsigned long ulUser)
     if (RT_LIKELY(pGip))
         supdrvGipUpdate(pDevExt->pGip, u64Monotime);
     if (RT_LIKELY(!pDevExt->fGIPSuspended))
-        mod_timer(&g_GipTimer, ulNow + (HZ <= 1000 ? 1 : ONE_MSEC_IN_JIFFIES));
+        mod_timer(&g_GipTimer, ulNow + ONE_MSEC_IN_JIFFIES);
 
     local_irq_restore(SavedFlags);
 }
@@ -1115,7 +1114,7 @@ static void VBoxDrvLinuxGipTimerPerCpu(unsigned long iTimerCPU)
             if (RT_LIKELY(pGip))
                 supdrvGipUpdatePerCpu(pGip, u64Monotime, iCPU);
             if (RT_LIKELY(!pDevExt->fGIPSuspended))
-                mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + (HZ <= 1000 ? 1 : ONE_MSEC_IN_JIFFIES));
+                mod_timer(&pDevExt->aCPUs[iCPU].Timer, ulNow + ONE_MSEC_IN_JIFFIES);
         }
         else
             printk("vboxdrv: error: GIP CPU update timer executing on the wrong CPU: apicid=%d != timer-apicid=%ld (cpuid=%d !=? timer-cpuid=%d)\n",
@@ -1238,9 +1237,11 @@ void  VBOXCALL  supdrvOSGipResume(PSUPDRVDEVEXT pDevExt)
     ASMAtomicXchgU8(&pDevExt->fGIPSuspended, false);
 #ifdef CONFIG_SMP
     if (pDevExt->pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+    {
 #endif
         mod_timer(&g_GipTimer, jiffies);
 #ifdef CONFIG_SMP
+    }
     else
     {
         mod_timer(&g_GipTimer, jiffies);
