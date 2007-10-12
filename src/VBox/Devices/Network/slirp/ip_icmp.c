@@ -114,6 +114,9 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     if (ip->ip_dst.s_addr == alias_addr.s_addr) {
       icmp_reflect(pData, m);
     } else {
+#if 1
+      slirp_cannot_ping(pData->pvUser);
+#else
       struct socket *so;
       struct sockaddr_in addr;
       if ((so = socreate()) == NULL) goto freeit;
@@ -157,6 +160,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 	icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
 	udp_detach(pData, so);
       }
+#endif
     } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
     break;
   case ICMP_UNREACH:
