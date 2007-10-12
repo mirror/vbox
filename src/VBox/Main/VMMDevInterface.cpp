@@ -90,9 +90,6 @@ VMMDev::VMMDev(Console *console) : mpDrv(NULL)
 
 VMMDev::~VMMDev()
 {
-#ifdef VBOX_HGCM
-    HGCMHostShutdown ();
-#endif /* VBOX_HGCM */
     RTSemEventDestroy (mCredentialsEvent);
     if (mpDrv)
         mpDrv->pVMMDev = NULL;
@@ -567,6 +564,12 @@ int VMMDev::hgcmHostCall (const char *pszServiceName, uint32_t u32Function,
 {
     return HGCMHostCall (pszServiceName, u32Function, cParms, paParms);
 }
+
+void VMMDev::hgcmShutdown (void)
+{
+    HGCMHostShutdown ();
+}
+
 #endif /* HGCM */
 
 
