@@ -220,7 +220,8 @@ sf_reg_open (struct inode *inode, struct file *file)
                    beforehand itself, so O_EXCL should always fail. */
                 if (file->f_flags & O_TRUNC) {
                         LogFunc(("O_TRUNC set\n"));
-                        params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+                        params.CreateFlags |= (  SHFL_CF_ACT_OVERWRITE_IF_EXISTS
+                                               | SHFL_CF_ACCESS_WRITE);
                 }
                 else {
                         params.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
@@ -230,7 +231,8 @@ sf_reg_open (struct inode *inode, struct file *file)
                 params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
                 if (file->f_flags & O_TRUNC) {
                         LogFunc(("O_TRUNC set\n"));
-                        params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+                        params.CreateFlags |= (  SHFL_CF_ACT_OVERWRITE_IF_EXISTS
+                                               | SHFL_CF_ACCESS_WRITE);
                 }
         }
 

@@ -49,6 +49,7 @@ sf_dir_open (struct inode *inode, struct file *file)
         params.CreateFlags = 0
                 | SHFL_CF_DIRECTORY
                 | SHFL_CF_ACT_OPEN_IF_EXISTS
+                | SHFL_CF_ACT_FAIL_IF_NEW
                 | SHFL_CF_ACCESS_READ
                 ;
 
@@ -386,7 +387,7 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
 
         params.CreateFlags = 0
                 | SHFL_CF_ACT_CREATE_IF_NEW
-                | SHFL_CF_ACT_OVERWRITE_IF_EXISTS
+                | SHFL_CF_ACT_FAIL_IF_EXISTS
                 | SHFL_CF_ACCESS_READWRITE
                 | (dirop ? SHFL_CF_DIRECTORY : 0)
                 ;
