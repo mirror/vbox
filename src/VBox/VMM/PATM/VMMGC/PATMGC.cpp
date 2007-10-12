@@ -82,8 +82,8 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
     PPATMPATCHPAGE       pPatchPage;
 
     /* Quick boundary check */
-    if (    GCPtr < pVM->patm.s.pPatchedInstrGCLowest
-        ||  GCPtr > pVM->patm.s.pPatchedInstrGCHighest
+    if (    PAGE_ADDRESS(GCPtr) < PAGE_ADDRESS(pVM->patm.s.pPatchedInstrGCLowest)
+        ||  PAGE_ADDRESS(GCPtr) > PAGE_ADDRESS(pVM->patm.s.pPatchedInstrGCHighest)
        )
        return VERR_PATCH_NOT_FOUND;
 
