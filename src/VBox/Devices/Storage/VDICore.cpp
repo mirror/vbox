@@ -2514,7 +2514,6 @@ VBOXDDU_DECL(int) VDISetImageUUIDs(const char *pszFilename,
     }
     if (!pImage->fReadOnly)
     {
-        /* we only support new images */
         if (GET_MAJOR_HEADER_VERSION(&pImage->Header) == 1)
         {
             if (pUuid)
@@ -2528,6 +2527,22 @@ VBOXDDU_DECL(int) VDISetImageUUIDs(const char *pszFilename,
 
             if (pParentModificationUuid)
                 pImage->Header.u.v1.uuidParentModify = *pParentModificationUuid;
+
+            /* write out new header */
+            rc = vdiUpdateHeader(pImage);
+            AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Vrc\n",
+                             pImage->szFilename, rc));
+        }
+        /* Make it possible to clone old VDIs. */
+        else if (   GET_MAJOR_HEADER_VERSION(&pImage->Header) == 0
+                 && !pParentUuid
+                 && !pParentModificationUuid)
+        {
+            if (pUuid)
+                pImage->Header.u.v0.uuidCreate = *pUuid;
+
+            if (pModificationUuid)
+                pImage->Header.u.v0.uuidModify = *pModificationUuid;
 
             /* write out new header */
             rc = vdiUpdateHeader(pImage);
