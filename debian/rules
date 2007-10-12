@@ -30,6 +30,7 @@ NOMODS   ?= $(ose)
 ifneq ($(wildcard $(verfile)),)
 include $(verfile)
 ver      := $(VBOX_VERSION_STRING)
+archdir   := $(prefix)/opt/VirtualBox-$(ver)
 endif
 
 ifneq ($(STAGEDISO),)
@@ -94,7 +95,7 @@ debian/build-stamp $(verfile):
 
 # Build modules for every kernel we find in /lib/modules/*
 modules: debian/build-stamp debian/modules-stamp
-debian/modules-stamp:
+debian/modules-stamp: debian/build-stamp
 	rm -rf $(moddir)
 	mkdir $(moddir)
 	make -C $(builddir)/bin/src clean
@@ -109,7 +110,7 @@ debian/modules-stamp:
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f debian/$(package).init debian/vboxdrv.init
+	rm -f debian/$(package).init debian/vboxdrv.init debian/vboxnet.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -rf $(builddir) $(moddir)
@@ -132,45 +133,45 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)
 	install -d -g 0 -o 0 $(prefix)/usr/share/$(package)
 	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(package)
-	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/VirtualBox.desktop \
+	$(if $(HEADLESS),,mv $(archdir)/VirtualBox.desktop \
 	   $(prefix)/usr/share/applications/VirtualBox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
 	install -D -g 0 -o 0 -m 644 debian/lintian-override \
 	   $(prefix)/usr/share/lintian/overrides/$(package)
-	mv $(prefix)/opt/VirtualBox-$(ver)/VBox.png \
+	mv $(archdir)/VBox.png \
 	   $(prefix)/usr/share/pixmaps/VBox.png
-	mv $(prefix)/opt/VirtualBox-$(ver)/*.gc $(prefix)/usr/lib/$(package)
-	mv $(prefix)/opt/VirtualBox-$(ver)/*.r0 $(prefix)/usr/lib/$(package)
+	mv $(archdir)/*.gc $(prefix)/usr/lib/$(package)
+	mv $(archdir)/*.r0 $(prefix)/usr/lib/$(package)
 	$(if $(filter amd64,$(arch)),\
-	    mv $(prefix)/opt/VirtualBox-$(ver)/VBoxREM2.rel $(prefix)/usr/lib/$(package),)
-	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxXPCOMIPCD $(prefix)/usr/lib/$(package)
-	mv $(prefix)/opt/VirtualBox-$(ver)/components $(prefix)/usr/lib/$(package)/components
-	mv $(prefix)/opt/VirtualBox-$(ver)/*.so $(prefix)/usr/lib
-	mv $(prefix)/opt/VirtualBox-$(ver)/sdk  $(prefix)/usr/share/$(package)
-	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/nls $(prefix)/usr/share/$(package))
-	mv $(prefix)/opt/VirtualBox-$(ver)/src  $(prefix)/usr/share/$(package)
-	rm $(prefix)/opt/VirtualBox-$(ver)/VBox.sh
+	    mv $(archdir)/VBoxREM2.rel $(prefix)/usr/lib/$(package),)
+	mv $(archdir)/VBoxXPCOMIPCD $(prefix)/usr/lib/$(package)
+	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
+	mv $(archdir)/*.so $(prefix)/usr/lib
+	mv $(archdir)/sdk  $(prefix)/usr/share/$(package)
+	$(if $(HEADLESS),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
+	mv $(archdir)/src  $(prefix)/usr/share/$(package)
+	rm $(archdir)/VBox.sh
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
-	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
+	mv $(archdir)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
 	for i in VBoxManage VBoxSVC tstVMM $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP); do \
-	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/lib/$(package); done
-	mv $(prefix)/opt/VirtualBox-$(ver)/VBoxTunctl $(prefix)/usr/bin
+	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
+	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
 	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done)
 ifeq ($(ose),)
-	$(if $(HEADLESS),,mv $(prefix)/opt/VirtualBox-$(ver)/kchmviewer $(prefix)/usr/lib/$(package))
-	dh_installdocs $(addprefix $(prefix)/opt/VirtualBox-$(ver)/,\
+	$(if $(HEADLESS),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
+	dh_installdocs $(addprefix $(archdir)/,\
 	    UserManual.pdf VirtualBox.chm LICENSE)
-	rm $(addprefix $(prefix)/opt/VirtualBox-$(ver)/,UserManual.pdf VirtualBox.chm LICENSE)
+	rm $(addprefix $(archdir)/,UserManual.pdf VirtualBox.chm LICENSE)
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
-	    mv $(prefix)/opt/VirtualBox-$(ver)/$$i $(prefix)/usr/share/$(package); done
-	rmdir $(prefix)/opt/VirtualBox-$(ver)/additions
+	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
+	rmdir $(archdir)/additions
 else
 	dh_installdocs
 endif
-	rmdir $(prefix)/opt/VirtualBox-$(ver)
+	rmdir $(archdir)
 	rmdir $(prefix)/opt
 	dh_link \
 	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VirtualBox) \
@@ -211,7 +212,9 @@ endif
 	dh_installdeb
 	dh_perl
 	dh_shlibdeps
-	dh_gencontrol
+	dh_gencontrol -- \
+	  -Valsa=$(if $(HEADLESS),,libasound2) \
+	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0)
 	dh_md5sums
 	dh_builddeb
 endif
