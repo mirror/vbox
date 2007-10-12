@@ -112,6 +112,99 @@ typedef struct DRVINTNET
 
 
 /**
+ * Writes a frame packet to the buffer.
+ *
+ * @returns VBox status code.
+ * @param   pBuf        The buffer.
+ * @param   pRingBuf    The ring buffer to read from.
+ * @param   pvFrame     The frame to write.
+ * @param   cbFrame     The size of the frame.
+ * @remark  This is the same as INTNETRingWriteFrame
+ */
+static int drvIntNetRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const void *pvFrame, uint32_t cbFrame)
+{
+    /*
+     * Validate input.
+     */
+    Assert(pBuf);
+    Assert(pRingBuf);
+    Assert(pvFrame);
+    Assert(cbFrame >= sizeof(PDMMAC) * 2);
+    uint32_t offWrite = pRingBuf->offWrite;
+    Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
+    uint32_t offRead = pRingBuf->offRead;
+    Assert(offRead == RT_ALIGN_32(offRead, sizeof(INTNETHDR)));
+
+    const uint32_t cb = RT_ALIGN_32(cbFrame, sizeof(INTNETHDR));
+    if (offRead <= offWrite)
+    {
+        /*
+         * Try fit it all before the end of the buffer.
+         */
+        if (pRingBuf->offEnd - offWrite >= cb + sizeof(INTNETHDR))
+        {
+            PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
+            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+            pHdr->cbFrame  = cbFrame;
+            pHdr->offFrame = sizeof(INTNETHDR);
+
+            memcpy(pHdr + 1, pvFrame, cbFrame);
+
+            offWrite += cb + sizeof(INTNETHDR);
+            Assert(offWrite <= pRingBuf->offEnd && offWrite >= pRingBuf->offStart);
+            if (offWrite >= pRingBuf->offEnd)
+                offWrite = pRingBuf->offStart;
+            Log2(("WriteFrame: offWrite: %#x -> %#x (1)\n", pRingBuf->offWrite, offWrite));
+            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Try fit the frame at the start of the buffer.
+         * (The header fits before the end of the buffer because of alignment.)
+         */
+        AssertMsg(pRingBuf->offEnd - offWrite >= sizeof(INTNETHDR), ("offEnd=%x offWrite=%x\n", pRingBuf->offEnd, offWrite));
+        if (offRead - pRingBuf->offStart > cb) /* not >= ! */
+        {
+            PINTNETHDR  pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
+            void       *pvFrameOut = (PINTNETHDR)((uint8_t *)pBuf + pRingBuf->offStart);
+            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+            pHdr->cbFrame  = cbFrame;
+            pHdr->offFrame = (intptr_t)pvFrameOut - (intptr_t)pHdr;
+
+            memcpy(pvFrameOut, pvFrame, cbFrame);
+
+            offWrite = pRingBuf->offStart + cb;
+            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
+            Log2(("WriteFrame: offWrite: %#x -> %#x (2)\n", pRingBuf->offWrite, offWrite));
+            return VINF_SUCCESS;
+        }
+    }
+    /*
+     * The reader is ahead of the writer, try fit it into that space.
+     */
+    else if (offRead - offWrite > cb + sizeof(INTNETHDR)) /* not >= ! */
+    {
+        PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
+        pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+        pHdr->cbFrame  = cbFrame;
+        pHdr->offFrame = sizeof(INTNETHDR);
+
+        memcpy(pHdr + 1, pvFrame, cbFrame);
+
+        offWrite += cb + sizeof(INTNETHDR);
+        ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
+        Log2(("WriteFrame: offWrite: %#x -> %#x (3)\n", pRingBuf->offWrite, offWrite));
+        return VINF_SUCCESS;
+    }
+
+    /* (it didn't fit) */
+    /** @todo stats */
+    return VERR_BUFFER_OVERFLOW;
+}
+
+
+/**
  * Send data to the network.
  *
  * @returns VBox status code.
@@ -135,12 +228,30 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
           pvBuf, cb, cb, pvBuf));
 #endif
 
-    /** @todo copy to send buffer, this is not safe. */
-    INTNETIFSENDARGS SendArgs;
-    SendArgs.hIf = pThis->hIf;
-    SendArgs.pvFrame = pvBuf;
-    SendArgs.cbFrame = cb;
-    int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendArgs, sizeof(SendArgs));
+    /*
+     * Add the frame to the send buffer and push it onto the network.
+     */
+    int rc = drvIntNetRingWriteFrame(pThis->pBuf, &pThis->pBuf->Send, pvBuf, cb);
+    if (    rc == VERR_BUFFER_OVERFLOW
+        &&  pThis->pBuf->cbSend < cb)
+    {
+        INTNETIFSENDREQ SendReq;
+        SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        SendReq.Hdr.cbReq = sizeof(SendReq);
+        SendReq.hIf = pThis->hIf;
+        pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+
+        rc = drvIntNetRingWriteFrame(pThis->pBuf, &pThis->pBuf->Send, pvBuf, cb);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        INTNETIFSENDREQ SendReq;
+        SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        SendReq.Hdr.cbReq = sizeof(SendReq);
+        SendReq.hIf = pThis->hIf;
+        rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+    }
 
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
     AssertRC(rc);
@@ -161,11 +272,13 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
 static DECLCALLBACK(void) drvIntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
 {
     PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
-    INTNETIFSETPROMISCUOUSMODEARGS SetArgs = {0};
-    SetArgs.hIf          = pThis->hIf;
-    SetArgs.fPromiscuous = fPromiscuous;
-    int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &SetArgs, sizeof(SetArgs));
-    LogFlow(("drvIntNetSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
+    INTNETIFSETPROMISCUOUSMODEREQ Req;
+    Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
+    Req.Hdr.cbReq       = sizeof(Req);
+    Req.hIf             = pThis->hIf;
+    Req.fPromiscuous    = fPromiscuous;
+    int rc = pThis->pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
+    LogFlow(("drvIntNetSetPromiscuousMode: fPromiscuous=%RTbool\n", fPromiscuous));
     AssertRC(rc);
 }
 
@@ -367,11 +480,13 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
             LogFlow(("drvIntNetAsyncIoRun: returns VINF_SUCCESS (state changed - #1)\n"));
             return VERR_STATE_CHANGED;
         }
-        INTNETIFWAITARGS WaitArgs;
-        WaitArgs.hIf      = pThis->hIf;
-        WaitArgs.cMillies = 30000;      /* don't wait forever, timeout now and then. */
+        INTNETIFWAITREQ WaitReq;
+        WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        WaitReq.Hdr.cbReq    = sizeof(WaitReq);
+        WaitReq.hIf          = pThis->hIf;
+        WaitReq.cMillies     = 30000; /* 30s - don't wait forever, timeout now and then. */
         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-        int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_WAIT, &WaitArgs, sizeof(WaitArgs));
+        int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_WAIT, &WaitReq, sizeof(WaitReq));
         if (    VBOX_FAILURE(rc)
             &&  rc != VERR_TIMEOUT
             &&  rc != VERR_INTERRUPTED)
@@ -546,10 +661,12 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
      */
     if (pThis->hIf != INTNET_HANDLE_INVALID)
     {
-        INTNETIFCLOSEARGS CloseArgs = {0};
-        CloseArgs.hIf = pThis->hIf;
+        INTNETIFCLOSEREQ CloseReq;
+        CloseReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        CloseReq.Hdr.cbReq = sizeof(CloseReq);
+        CloseReq.hIf = pThis->hIf;
         pThis->hIf = INTNET_HANDLE_INVALID;
-        int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_CLOSE, &CloseArgs, sizeof(CloseArgs));
+        int rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_CLOSE, &CloseReq, sizeof(CloseReq));
         AssertRC(rc);
     }
 
@@ -637,31 +754,39 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Read the configuration.
      */
-    INTNETOPENARGS OpenArgs;
-    memset(&OpenArgs, 0, sizeof(OpenArgs));
-    rc = CFGMR3QueryString(pCfgHandle, "Network", OpenArgs.szNetwork, sizeof(OpenArgs.szNetwork));
+    INTNETOPENREQ OpenReq;
+    memset(&OpenReq, 0, sizeof(OpenReq));
+    OpenReq.Hdr.cbReq = sizeof(OpenReq);
+    OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+
+    rc = CFGMR3QueryString(pCfgHandle, "Network", OpenReq.szNetwork, sizeof(OpenReq.szNetwork));
     if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"Network\" value"));
-    strcpy(pThis->szNetwork, OpenArgs.szNetwork);
+    strcpy(pThis->szNetwork, OpenReq.szNetwork);
 
-    rc = CFGMR3QueryU32(pCfgHandle, "ReceiveBufferSize", &OpenArgs.cbRecv);
+    rc = CFGMR3QueryU32(pCfgHandle, "ReceiveBufferSize", &OpenReq.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenArgs.cbRecv = _256K;
+        OpenReq.cbRecv = _256K;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"ReceiveBufferSize\" value"));
 
-    rc = CFGMR3QueryU32(pCfgHandle, "SendBufferSize", &OpenArgs.cbSend);
+    rc = CFGMR3QueryU32(pCfgHandle, "SendBufferSize", &OpenReq.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenArgs.cbSend = _4K;
+        OpenReq.cbSend = _4K;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"SendBufferSize\" value"));
+    if (OpenReq.cbSend < 16)
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: The \"SendBufferSize\" value is too small."));
+    if (OpenReq.cbSend < 1536*2 + 4)
+        LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 1536*2 + 4));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "RestrictAccess", &OpenArgs.fRestrictAccess);
+    rc = CFGMR3QueryBool(pCfgHandle, "RestrictAccess", &OpenReq.fRestrictAccess);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenArgs.fRestrictAccess = true;
+        OpenReq.fRestrictAccess = true;
     else if (VBOX_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
@@ -679,27 +804,29 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Create the interface.
      */
-    OpenArgs.hIf = INTNET_HANDLE_INVALID;
-    rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenArgs, sizeof(OpenArgs));
+    OpenReq.hIf = INTNET_HANDLE_INVALID;
+    rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenReq, sizeof(OpenReq));
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to open/create the internal network '%s'"), pThis->szNetwork);
-    AssertRelease(OpenArgs.hIf != INTNET_HANDLE_INVALID);
-    pThis->hIf = OpenArgs.hIf;
+    AssertRelease(OpenReq.hIf != INTNET_HANDLE_INVALID);
+    pThis->hIf = OpenReq.hIf;
     Log(("IntNet%d: hIf=%RX32 '%s'\n", pDrvIns->iInstance, pThis->hIf, pThis->szNetwork));
 
     /*
      * Get default buffer.
      */
-    INTNETIFGETRING3BUFFERARGS GetRing3BufferArgs = {0};
-    GetRing3BufferArgs.hIf = pThis->hIf;
-    GetRing3BufferArgs.pRing3Buf = NULL;
-    rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferArgs, sizeof(GetRing3BufferArgs));
+    INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
+    GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
+    GetRing3BufferReq.hIf = pThis->hIf;
+    GetRing3BufferReq.pRing3Buf = NULL;
+    rc = pDrvIns->pDrvHlp->pfnSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferReq, sizeof(GetRing3BufferReq));
     if (VBOX_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
-    AssertRelease(VALID_PTR(GetRing3BufferArgs.pRing3Buf));
-    pThis->pBuf = GetRing3BufferArgs.pRing3Buf;
+    AssertRelease(VALID_PTR(GetRing3BufferReq.pRing3Buf));
+    pThis->pBuf = GetRing3BufferReq.pRing3Buf;
 
     /*
      * Create the async I/O thread.
@@ -736,7 +863,7 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatTransmit,            STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
 #endif
 
-    LogRel(("IntNet#%u: cbRecv=%u cbSend=%u fRestrictAccess=%d\n", pDrvIns->iInstance, OpenArgs.cbRecv, OpenArgs.cbSend, OpenArgs.fRestrictAccess));
+    LogRel(("IntNet#%u: cbRecv=%u cbSend=%u fRestrictAccess=%d\n", pDrvIns->iInstance, OpenReq.cbRecv, OpenReq.cbSend, OpenReq.fRestrictAccess));
 
     return rc;
 }
