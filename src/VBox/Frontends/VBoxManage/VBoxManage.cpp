@@ -598,7 +598,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_VM_STATISTICS)
     {
-        RTPrintf("VBoxManage vmstatistics     <vmname>|<uuid>\n"
+        RTPrintf("VBoxManage vmstatistics     <vmname>|<uuid> [-reset]\n"
                  "                            [-pattern <pattern>] [-descriptions]\n"
                  "\n");
     }
@@ -7027,7 +7027,8 @@ static int handleVMStatistics(int argc, char *argv[],
     if (FAILED(rc))
         return 1;
 
-    /*  */
+    /* parse arguments. */
+    bool fReset = false;
     bool fWithDescriptions = false;
     const char *pszPattern = NULL; /* all */
     for (int i = 1; i < argc; i++)
@@ -7043,9 +7044,14 @@ static int handleVMStatistics(int argc, char *argv[],
         else if (!strcmp(argv[i], "-descriptions"))
             fWithDescriptions = true;
         /* add: -file <filename> and -formatted */
+        else if (!strcmp(argv[i], "-reset"))
+            fReset = true;
         else
             return errorSyntax(USAGE_VM_STATISTICS, "Unknown option '%s'", argv[i]);
     }
+    if (fReset && fWithDescriptions)
+        return errorSyntax(USAGE_VM_STATISTICS, "The -reset and -descriptions options does not mix");
+
 
     /* open an existing session for the VM. */
     CHECK_ERROR(aVirtualBox, OpenExistingSession(aSession, uuid));
@@ -7061,12 +7067,18 @@ static int handleVMStatistics(int argc, char *argv[],
             CHECK_ERROR(console, COMGETTER(Debugger)(debugger.asOutParam()));
             if (SUCCEEDED(rc))
             {
-                if (1/*fDumpStats*/)
+                if (fReset)
+                    CHECK_ERROR(debugger, ResetStats(Bstr(pszPattern).raw()));
+                else
                 {
                     Bstr stats;
                     CHECK_ERROR(debugger, GetStats(Bstr(pszPattern).raw(), fWithDescriptions, stats.asOutParam()));
                     if (SUCCEEDED(rc))
                     {
+                        /* if (fFormatted)
+                         { big mess }
+                         else
+                         */
                         RTPrintf("%ls\n", stats.raw());
                     }
                 }
