@@ -76,7 +76,7 @@ public:
 
     void installGuestAdditionsFrom (const QString &aSource);
 
-#ifdef Q_WS_WIN32
+#ifdef Q_WS_WIN
     void setMask (const QRegion &aRegion);
 #endif
 
