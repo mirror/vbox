@@ -1731,6 +1731,8 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     //  - make warning messages modeless
     //  - add common buttons like Retry/Save/PowerOff/whatever
 
+    QCString autoConfimId = "showRuntimeError.";
+
     CConsole console = aConsole;
     CEnums::MachineState state = console.GetState();
     Type type;
@@ -1744,17 +1746,22 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
             console.Pause();
         type = Critical;
         severity = tr ("<nobr>Fatal Error</nobr>", "runtime error info");
+        autoConfimId += "fatal.";
     }
     else if (state == CEnums::Paused)
     {
         type = Error;
         severity = tr ("<nobr>Non-Fatal Error</nobr>", "runtime error info");
+        autoConfimId += "error.";
     }
     else
     {
         type = Warning;
         severity = tr ("<nobr>Warning</nobr>", "runtime error info");
+        autoConfimId += "warning.";
     }
+
+    autoConfimId += errorID.utf8();
 
     QString formatted;
 
@@ -1788,7 +1795,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                 "The virtual machine will be powered off. It is suggested to "
                 "use the clipboard to copy the following error message for "
                 "further examination:</p>"),
-            formatted);
+            formatted, autoConfimId.data());
 
         /* always power down after a fatal error */
         console.PowerDown();
@@ -1800,7 +1807,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                 "The error details are shown below. You can try to correct "
                 "the described error and resume the virtual machine "
                 "execution.</p>"),
-            formatted);
+            formatted, autoConfimId.data());
     }
     else
     {
@@ -1810,10 +1817,10 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
                 "You may ignore this message, but it is suggested to perform "
                 "an appropriate action to make sure the described error will "
                 "not happen.</p>"),
-            formatted);
+            formatted, autoConfimId.data());
     }
 
-    NOREF(rc);
+    NOREF (rc);
 }
 
 /* static */
