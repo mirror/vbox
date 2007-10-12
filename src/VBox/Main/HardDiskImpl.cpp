@@ -80,9 +80,10 @@ static DECLCALLBACK(int) progressCallback (PVM /* pVM */, unsigned uPercent, voi
 {
     Progress *progress = static_cast <Progress *> (pvUser);
 
-    /* update the progress object */
+    /* update the progress object, capping it at 99% as the final percent
+     * is used for additional operations like setting the UUIDs and similar. */
     if (progress)
-        progress->notifyProgress (uPercent);
+        progress->notifyProgress (RT_MIN(uPercent, 99));
 
     return VINF_SUCCESS;
 }
