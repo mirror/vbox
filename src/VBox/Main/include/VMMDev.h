@@ -50,6 +50,7 @@ public:
 
     int hgcmLoadService (const char *pszServiceName, const char *pszServiceLibrary);
     int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
+    void hgcmShutdown (void);
 
 private:
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);

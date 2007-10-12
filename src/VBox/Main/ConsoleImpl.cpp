@@ -353,15 +353,6 @@ void Console::uninit()
      */
     uninitDependentChildren();
 
-    /* This should be the first, since this may cause detaching remote USB devices. */
-    if (mConsoleVRDPServer)
-    {
-        mConsoleVRDPServer->Stop ();
-        /* Do not delete the mConsoleVRDPServer yet, it could be called
-         * since the VM may be not powered done at the moment.
-         */
-    }
-
     /* power down the VM if necessary */
     if (mpVM)
     {
@@ -3899,7 +3890,6 @@ HRESULT Console::powerDown()
 
     /*
      *  Stop the VRDP server to prevent new clients connection while VM is being powered off.
-     *  (When called from uninit mConsoleVRDPServer is already destroyed.)
      */
     if (mConsoleVRDPServer)
     {
@@ -3912,6 +3902,24 @@ HRESULT Console::powerDown()
 
         alock.enter();
     }
+    
+    
+#ifdef VBOX_HGCM
+    /*
+     *  Shutdown HGCM services before stopping the guest, because they might need a cleanup.
+     */
+    if (mVMMDev)
+    {
+        LogFlowThisFunc (("Shutdown HGCM...\n"));
+
+        /* Leave the lock. */
+        alock.leave();
+
+        mVMMDev->hgcmShutdown ();
+
+        alock.enter();
+    }
+#endif /* VBOX_HGCM */
 
     /* First, wait for all mpVM callers to finish their work if necessary */
     if (mVMCallers > 0)
