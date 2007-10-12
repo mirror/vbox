@@ -41,13 +41,13 @@ public:
     void setMedia (const VBoxMedia &aMedia) { mMedia = aMedia; }
     const VBoxMedia &getMedia() const { return mMedia; }
 
-    void setPath (QString aPath) { mPath = aPath; }
+    void setPath (const QString &aPath) { mPath = aPath; }
     const QString &getPath() const { return mPath; }
 
-    void setUsage (QString aUsage) { mUsage = aUsage; }
+    void setUsage (const QString &aUsage) { mUsage = aUsage; }
     const QString &getUsage() const { return mUsage; }
 
-    void setSnapshotUsage (QString aSnapshotUsage) { mSnapshotUsage = aSnapshotUsage; }
+    void setSnapshotUsage (const QString &aSnapshotUsage) { mSnapshotUsage = aSnapshotUsage; }
     const QString &getSnapshotUsage() const { return mSnapshotUsage; }
 
     QString getTotalUsage() const
@@ -57,26 +57,26 @@ public:
             QString ("%1 (%2)").arg (mUsage, mSnapshotUsage); 
     }
 
-    void setSnapshotName (QString aSnapshotName) { mSnapshotName = aSnapshotName; }
+    void setSnapshotName (const QString &aSnapshotName) { mSnapshotName = aSnapshotName; }
     const QString &getSnapshotName() const { return mSnapshotName; }
 
-    void setDiskType (QString aDiskType) { mDiskType = aDiskType; }
+    void setDiskType (const QString &aDiskType) { mDiskType = aDiskType; }
     const QString &getDiskType() const { return mDiskType; }
 
-    void setStorageType (QString aStorageType) { mStorageType = aStorageType; }
+    void setStorageType (const QString &aStorageType) { mStorageType = aStorageType; }
     const QString &getStorageType() const { return mStorageType; }
 
-    void setVirtualSize (QString aVirtualSize) { mVirtualSize = aVirtualSize; }
+    void setVirtualSize (const QString &aVirtualSize) { mVirtualSize = aVirtualSize; }
     const QString &getVirtualSize() const { return mVirtualSize; }
 
-    void setActualSize (QString aActualSize) { mActualSize = aActualSize; }
+    void setActualSize (const QString &aActualSize) { mActualSize = aActualSize; }
     const QString &getActualSize() const { return mActualSize; }
 
-    void setUuid (QUuid aUuid) { mUuid = aUuid; }
-    const QString &getUuid() const { return mUuid; }
+    void setUuid (const QUuid &aUuid) { mUuid = aUuid; }
+    const QUuid &getUuid() const { return mUuid; }
 
-    void setMachineId (QString aMachineId) { mMachineId = aMachineId; }
-    const QString &getMachineId() const { return mMachineId; }
+    void setMachineId (const QUuid &aMachineId) { mMachineId = aMachineId; }
+    const QUuid &getMachineId() const { return mMachineId; }
 
     void setStatus (VBoxMedia::Status aStatus) { mStatus = aStatus; }
     VBoxMedia::Status getStatus() const { return mStatus; }
@@ -144,8 +144,8 @@ protected:
     QString mVirtualSize;
     QString mActualSize;
 
-    QString mUuid;
-    QString mMachineId;
+    QUuid mUuid;
+    QUuid mMachineId;
 
     QString mToolTip;
 
@@ -1419,7 +1419,7 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
 
     doSelect = aDoSelect;
     if (aTargetVMId)
-        targetVMId = aTargetVMId->toString();
+        targetVMId = *aTargetVMId;
 
     if (doSelect)
         buttonOk->setText (tr ("&Select"));
@@ -1710,17 +1710,17 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
     item = hdsView->currentItem();
     di = (item && item->rtti() == DiskImageItem::TypeId) ?
         static_cast <DiskImageItem *> (item) : 0;
-    hdSelectedId = di ? di->getUuid() : QString::null;
+    hdSelectedId = di ? di->getUuid() : QUuid();
 
     item = cdsView->currentItem();
     di = (item && item->rtti() == DiskImageItem::TypeId) ?
         static_cast <DiskImageItem *> (item) : 0;
-    cdSelectedId = di ? di->getUuid() : QString::null;
+    cdSelectedId = di ? di->getUuid() : QUuid();
 
     item = fdsView->currentItem();
     di = (item && item->rtti() == DiskImageItem::TypeId) ?
         static_cast <DiskImageItem *> (item) : 0;
-    fdSelectedId = di ? di->getUuid() : QString::null;
+    fdSelectedId = di ? di->getUuid() : QUuid();
 
     /* finally, clear all lists */
     hdsView->clear();
@@ -1738,7 +1738,7 @@ void VBoxDiskImageManagerDlg::refreshAll()
 
 bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem* aItem)
 {
-    QUuid itemId = aItem ? QUuid (aItem->getUuid()) : QUuid();
+    QUuid itemId = aItem ? aItem->getUuid() : QUuid();
     if (itemId.isNull()) return false;
 
     QListView* parentList = aItem->listView();
@@ -1995,7 +1995,7 @@ void VBoxDiskImageManagerDlg::removeImage()
         static_cast<DiskImageItem*> (currentList->currentItem()) : 0;
     AssertMsg (item, ("Current item must not be null"));
 
-    QUuid uuid = QUuid (item->getUuid());
+    QUuid uuid = item->getUuid();
     AssertMsg (!uuid.isNull(), ("Current item must have uuid"));
 
     QString src = item->getPath().stripWhiteSpace();
@@ -2056,7 +2056,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
         static_cast<DiskImageItem*> (currentList->currentItem()) : 0;
     AssertMsg (item, ("Current item must not be null"));
 
-    QUuid itemId = QUuid (item->getUuid());
+    QUuid itemId = item->getUuid();
     AssertMsg (!itemId.isNull(), ("Current item must have uuid"));
 
     /* if it is a hard disk sub-item: */
@@ -2181,8 +2181,8 @@ QUuid VBoxDiskImageManagerDlg::getSelectedUuid()
 
     if (currentList->selectedItem() &&
         currentList->selectedItem()->rtti() == DiskImageItem::TypeId)
-        uuid = QUuid (static_cast<DiskImageItem *>(currentList->selectedItem())
-                      ->getUuid());
+        uuid = static_cast <DiskImageItem *> (
+            currentList->selectedItem())->getUuid();
 
     return uuid;
 }
