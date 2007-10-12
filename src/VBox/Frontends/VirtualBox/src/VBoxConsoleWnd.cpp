@@ -2561,7 +2561,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     AssertWrapperOk (drv);
 }
 
-#ifdef Q_WS_WIN32
+#ifdef Q_WS_WIN
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 {
     QRegion difference = mPrevRegion.subtract (aRegion);
