@@ -5,7 +5,7 @@
 
 ;
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
@@ -47,6 +47,7 @@
 %define PATM_TEMP_RESTORE_FLAGS                 0xF1ABCD17      ;/** Which registers to restore */
 %define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
 %define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
+%define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1A
 
 ;/* Anything larger doesn't require a fixup */
 %define PATM_NO_FIXUP        0xF1ABCE00
@@ -61,6 +62,7 @@
 %define PATM_RETURN_FUNCTION                    0xF1ABCE08   ; /** Relative address of global PATM return function. */
 %define PATM_LOOKUP_AND_JUMP_FUNCTION           0xF1ABCE09   ; /** Relative address of global PATM lookup and jump function. */
 %define PATM_IRET_FUNCTION                      0xF1ABCE0A   ; /** Relative address of global PATM iret function. */
+%define PATM_CPUID_CENTAUR_MAX                  0xF1ABCE0B
 
 
 ; everything except IOPL, NT, IF, VM, VIF, VIP and RF

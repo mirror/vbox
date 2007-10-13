@@ -800,8 +800,10 @@ CPUMDECL(void) CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32
     PCCPUMCPUID pCpuId;
     if (iLeaf < ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         pCpuId = &pVM->cpum.s.aGuestCpuIdStd[iLeaf];
-    else if (iLeaf - UINT32_C(0x80000000) < ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
+    else if (iLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
         pCpuId = &pVM->cpum.s.aGuestCpuIdExt[iLeaf - UINT32_C(0x80000000)];
+    else if (iLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
+        pCpuId = &pVM->cpum.s.aGuestCpuIdCentaur[iLeaf - UINT32_C(0xc0000000)];
     else
         pCpuId = &pVM->cpum.s.GuestCpuIdDef;
 
@@ -841,6 +843,20 @@ CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM)
 }
 
 /**
+ * Gets a pointer to the array of centaur CPUID leafs.
+ *
+ * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
+ *
+ * @returns Pointer to the centaur CPUID leafs (read-only).
+ * @param   pVM         The VM handle.
+ * @remark  Intended for PATM.
+ */
+CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM)
+{
+    return GCPTRTYPE(PCCPUMCPUID)VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
+}
+
+/**
  * Gets a pointer to the default CPUID leaf.
  *
  * @returns Pointer to the default CPUID leaf (read-only).
@@ -859,9 +875,9 @@ CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM)
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
-CPUMDECL(uint32_t)  CPUMGetGuestCpuIdStdMax(PVM pVM)
+CPUMDECL(uint32_t) CPUMGetGuestCpuIdStdMax(PVM pVM)
 {
-    return ELEMENTS(pVM->cpum.s.aGuestCpuIdStd);
+    return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd);
 }
 
 /**
@@ -871,9 +887,21 @@ CPUMDECL(uint32_t)  CPUMGetGuestCpuIdStdMax(PVM pVM)
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
-CPUMDECL(uint32_t)  CPUMGetGuestCpuIdExtMax(PVM pVM)
+CPUMDECL(uint32_t) CPUMGetGuestCpuIdExtMax(PVM pVM)
 {
-    return ELEMENTS(pVM->cpum.s.aGuestCpuIdStd);
+    return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt);
+}
+
+/**
+ * Gets a number of centaur CPUID leafs.
+ *
+ * @returns Number of leafs.
+ * @param   pVM         The VM handle.
+ * @remark  Intended for PATM.
+ */
+CPUMDECL(uint32_t) CPUMGetGuestCpuIdCentaurMax(PVM pVM)
+{
+    return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur);
 }
 
 /**
