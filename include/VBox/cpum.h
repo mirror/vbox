@@ -290,9 +290,11 @@ CPUMDECL(int)       CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint32_t *pValue);
 CPUMDECL(void)      CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM);
 CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM);
+CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM);
 CPUMDECL(GCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdStdMax(PVM pVM);
 CPUMDECL(uint32_t)  CPUMGetGuestCpuIdExtMax(PVM pVM);
+CPUMDECL(uint32_t)  CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 CPUMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
 /** @} */
 

@@ -49,6 +49,7 @@
 #define PATM_TEMP_RESTORE_FLAGS                 0xF1ABCD17      /** Which registers to restore */
 #define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
 #define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
+#define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a
 
 /* Anything larger doesn't require a fixup */
 #define PATM_NO_FIXUP                           0xF1ABCE00
@@ -63,6 +64,7 @@
 #define PATM_RETURN_FUNCTION                    0xF1ABCE08    /** Relative address of global PATM return function. */
 #define PATM_LOOKUP_AND_JUMP_FUNCTION           0xF1ABCE09    /** Relative address of global PATM lookup and jump function. */
 #define PATM_IRET_FUNCTION                      0xF1ABCE0A    /** Relative address of global PATM iret function. */
+#define PATM_CPUID_CENTAUR_MAX                  0xF1ABCE0B
 
 // everything except IOPL, NT, IF, VM, VIF, VIP and RF
 #define PATM_FLAGS_MASK                         (X86_EFL_CF|X86_EFL_PF|X86_EFL_AF|X86_EFL_ZF|X86_EFL_SF|X86_EFL_TF|X86_EFL_DF|X86_EFL_OF|X86_EFL_AC|X86_EFL_ID)

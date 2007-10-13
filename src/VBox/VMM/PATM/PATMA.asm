@@ -4,7 +4,7 @@
 ;
 
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
@@ -1532,6 +1532,10 @@ PATMCpuidStart:
     jb      cpuid_def
     cmp     eax, PATM_CPUID_EXT_MAX
     jb      cpuid_ext
+    cmp     eax, 0xc0000000
+    jb      cpuid_def
+    cmp     eax, PATM_CPUID_CENTAUR_MAX
+    jb      cpuid_centaur
 
 cpuid_def:
     mov     eax, PATM_CPUID_DEF_PTR
@@ -1540,9 +1544,16 @@ cpuid_def:
 cpuid_std:
     mov     edx, PATM_CPUID_STD_PTR
     jmp     cpuid_calc
+
 cpuid_ext:
     and     eax, 0ffh                   ; strictly speaking not necessary.
     mov     edx, PATM_CPUID_EXT_PTR
+    jmp     cpuid_calc
+
+cpuid_centaur:
+    and     eax, 0ffh                   ; strictly speaking not necessary.
+    mov     edx, PATM_CPUID_CENTAUR_PTR
+
 cpuid_calc:
     lea     eax, [ss:eax * 4]              ; 4 entries...
     lea     eax, [ss:eax * 4]              ; 4 bytes each

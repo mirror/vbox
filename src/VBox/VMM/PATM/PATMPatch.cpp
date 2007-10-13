@@ -233,6 +233,10 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
                     dest = CPUMGetGuestCpuIdExtGCPtr(pVM);
                     break;
 
+                case PATM_CPUID_CENTAUR_PTR:
+                    dest = CPUMGetGuestCpuIdCentaurGCPtr(pVM);
+                    break;
+
                 case PATM_CPUID_DEF_PTR:
                     dest = CPUMGetGuestCpuIdDefGCPtr(pVM);
                     break;
@@ -243,6 +247,10 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_CPUID_EXT_MAX:
                     dest = CPUMGetGuestCpuIdExtMax(pVM);
+                    break;
+
+                case PATM_CPUID_CENTAUR_MAX:
+                    dest = CPUMGetGuestCpuIdCentaurMax(pVM);
                     break;
 
                 case PATM_INTERRUPTFLAG:
@@ -1281,7 +1289,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTGCPTR
     uint32_t size, offset;
 
     Log(("patmPatchGenMovFromSS %VGv\n", pCurInstrGC));
-    
+
     Assert(pPatch->flags & PATMFL_CODE32);
 
     PATCHGEN_PROLOG(pVM, pPatch);

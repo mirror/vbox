@@ -45,7 +45,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION    3
+#define CPUM_SAVED_STATE_VERSION    4
 
 
 /*******************************************************************************
@@ -193,14 +193,19 @@ static int cpumR3CpuIdInit(PVM pVM)
     /*
      * Get the host CPUIDs.
      */
-    for (i = 0; i < ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
+    for (i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
         ASMCpuId(i,
                  &pCPUM->aGuestCpuIdStd[i].eax, &pCPUM->aGuestCpuIdStd[i].ebx,
                  &pCPUM->aGuestCpuIdStd[i].ecx, &pCPUM->aGuestCpuIdStd[i].edx);
-    for (i = 0; i < ELEMENTS(pCPUM->aGuestCpuIdExt); i++)
+    for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdExt); i++)
         ASMCpuId(0x80000000 + i,
                  &pCPUM->aGuestCpuIdExt[i].eax, &pCPUM->aGuestCpuIdExt[i].ebx,
                  &pCPUM->aGuestCpuIdExt[i].ecx, &pCPUM->aGuestCpuIdExt[i].edx);
+    for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur); i++)
+        ASMCpuId(0xc0000000 + i,
+                 &pCPUM->aGuestCpuIdCentaur[i].eax, &pCPUM->aGuestCpuIdCentaur[i].ebx,
+                 &pCPUM->aGuestCpuIdCentaur[i].ecx, &pCPUM->aGuestCpuIdCentaur[i].edx);
+
 
     /*
      * Only report features we can support.
@@ -245,7 +250,6 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_FEATURE_ECX_CNTXID - no L1 context id (MSR++).
                                        | 0;
 
-#if 1 /* we didn't used to do this, but I guess we should */
     /* ASSUMES that this is ALWAYS the AMD define feature set if present. */
     pCPUM->aGuestCpuIdExt[1].edx      &= X86_CPUID_AMD_FEATURE_EDX_FPU
                                        | X86_CPUID_AMD_FEATURE_EDX_VME
@@ -269,27 +273,13 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_AMD_FEATURE_EDX_MMX
                                        | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                        | X86_CPUID_AMD_FEATURE_EDX_FFXSR
-                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - definitely not.
+                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - not yet.
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW
                                        | 0;
     pCPUM->aGuestCpuIdExt[1].ecx      &= 0//X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
                                        | 0;
-#endif
 
-#if 0 /* this is what we used to do. */
-    /*
-     * Set BrandIndex=0, CLFLUSH-line-size=0, Num-Logical-Cpus=0 and APIC-ID=0.
-     */
-    pCPUM->aGuestCpuIdStd[1].ebx = 0;
-
-    /*
-     * Set the max standard index to 2.
-     */
-    pCPUM->aGuestCpuIdStd[0].eax = 2;
-    pCPUM->GuestCpuIdDef = pCPUM->aGuestCpuIdStd[2]; /** @todo this default is *NOT* right for AMD, only Intel CPUs. (see tstInlineAsm) */
-
-#else /* this is what we probably should do */
     /*
      * Hide HTT, multicode, SMP, whatever.
      * (APIC-ID := 0 and #LogCpus := 0)
@@ -297,28 +287,55 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 
     /*
-     * Determin the default value and limit it the number of entries.
-     * Intel returns values of the highest standard function, while AMD returns zeros.
+     * Determin the default.
+     *
+     * Intel returns values of the highest standard function, while AMD
+     * returns zeros. VIA on the other hand seems to returning nothing or
+     * perhaps some random garbage, we don't try duplicate this behavior.
      */
     ASMCpuId(pCPUM->aGuestCpuIdStd[0].eax + 10,
              &pCPUM->GuestCpuIdDef.eax, &pCPUM->GuestCpuIdDef.ebx,
              &pCPUM->GuestCpuIdDef.ecx, &pCPUM->GuestCpuIdDef.edx);
 
+    /*
+     * Limit it the number of entries and fill the remaining with the defaults.
+     *
+     * The limits are masking off stuff about power saving and similar, this
+     * is perhaps a bit crudely done as there is probably some relatively harmless
+     * info too in these leaves (like words about having a constant TSC).
+     */
     if (pCPUM->aGuestCpuIdStd[0].eax > 2)
         pCPUM->aGuestCpuIdStd[0].eax = 2;
+    for (i = pCPUM->aGuestCpuIdStd[0].eax + 1; i < RT_ELEMENTS(pCPUM->aGuestCpuIdStd); i++)
+        pCPUM->aGuestCpuIdStd[i] = pCPUM->GuestCpuIdDef;
 
-    if (pCPUM->aGuestCpuIdExt[0].eax > 0x80000004)
-        pCPUM->aGuestCpuIdExt[0].eax = 0x80000004;
-
-#endif
+    if (pCPUM->aGuestCpuIdExt[0].eax > UINT32_C(0x80000004))
+        pCPUM->aGuestCpuIdExt[0].eax = UINT32_C(0x80000004);
+    for (i = pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000000)
+           ? pCPUM->aGuestCpuIdExt[0].eax - UINT32_C(0x80000000) + 1
+           : 0;
+         i < RT_ELEMENTS(pCPUM->aGuestCpuIdExt); i++)
+        pCPUM->aGuestCpuIdExt[i] = pCPUM->GuestCpuIdDef;
 
     /*
-     * Assign defaults to the entries we chopped off.
+     * Centaur stuff (VIA).
+     *
+     * The important part here (we think) is to make sure the 0xc0000000
+     * function returns 0xc0000001. As for the features, we don't currently
+     * let on about any of those...
      */
-    for (i = pCPUM->aGuestCpuIdStd[0].eax + 1; i < ELEMENTS(pCPUM->aGuestCpuIdStd); i++)
-        pCPUM->aGuestCpuIdStd[i] = pCPUM->GuestCpuIdDef;
-    for (i = pCPUM->aGuestCpuIdExt[0].eax - 0x80000000 + 1; i < ELEMENTS(pCPUM->aGuestCpuIdExt); i++)
-        pCPUM->aGuestCpuIdExt[i] = pCPUM->GuestCpuIdDef;
+    if (    pCPUM->aGuestCpuIdCentaur[0].eax >= UINT32_C(0xc0000000)
+        &&  pCPUM->aGuestCpuIdCentaur[0].eax <= UINT32_C(0xc0000004))
+    {
+        pCPUM->aGuestCpuIdCentaur[0].eax = UINT32_C(0xc0000001);
+        pCPUM->aGuestCpuIdCentaur[1].edx = 0; /* all features hidden */
+        for (i = 2; i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur); i++)
+            pCPUM->aGuestCpuIdCentaur[i] = pCPUM->GuestCpuIdDef;
+    }
+    else
+        for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur); i++)
+            pCPUM->aGuestCpuIdCentaur[i] = pCPUM->GuestCpuIdDef;
+
 
     /*
      * Load CPUID overrides from configuration.
@@ -360,11 +377,20 @@ static int cpumR3CpuIdInit(PVM pVM)
         }
 
         /* next */
-        if (i & 0x80000000)
+        if ((i & UINT32_C(0xc0000000)) == 0)
+        {
+            pCpuId = &pCPUM->aGuestCpuIdExt[0];
+            cElements = RT_ELEMENTS(pCPUM->aGuestCpuIdExt);
+            i = UINT32_C(0x80000000);
+        }
+        else if ((i & UINT32_C(0xc0000000)) == UINT32_C(0x80000000))
+        {
+            pCpuId = &pCPUM->aGuestCpuIdCentaur[0];
+            cElements = RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur);
+            i = UINT32_C(0xc0000000);
+        }
+        else
             break;
-        pCpuId = &pCPUM->aGuestCpuIdExt[0];
-        cElements = ELEMENTS(pCPUM->aGuestCpuIdExt);
-        i = 0x80000000;
     }
 
     /*
@@ -535,6 +561,9 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, ELEMENTS(pVM->cpum.s.aGuestCpuIdExt));
     SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
 
+    SSMR3PutU32(pSSM, ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdCentaur));
+
     SSMR3PutMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
 
     /* Add the cpuid for checking that the cpu is unchanged. */
@@ -586,6 +615,11 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     if (cElements != ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
+
+    rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
+    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdCentaur));
 
     SSMR3GetMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
 
@@ -1489,6 +1523,94 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         pHlp->pfnPrintf(pHlp,
                         "Physical Core Count:             %d\n",
                         (uECX >> 0) & 0xff);
+    }
+
+
+    /*
+     * Centaur.
+     */
+    unsigned cCentaurMax = pVM->cpum.s.aGuestCpuIdCentaur[0].eax & 0xffff;
+
+    pHlp->pfnPrintf(pHlp,
+                    "\n"
+                    "         RAW Centaur CPUIDs\n"
+                    "     Function  eax      ebx      ecx      edx\n");
+    for (unsigned i = 0; i <= RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur); i++)
+    {
+        Guest = pVM->cpum.s.aGuestCpuIdCentaur[i];
+        ASMCpuId(0xc0000000 | i, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+
+        pHlp->pfnPrintf(pHlp,
+                        "Gst: %08x  %08x %08x %08x %08x%s\n"
+                        "Hst:           %08x %08x %08x %08x\n",
+                        0xc0000000 | i, Guest.eax, Guest.ebx, Guest.ecx, Guest.edx,
+                        i <= cCentaurMax ? "" : "*",
+                        Host.eax, Host.ebx, Host.ecx, Host.edx);
+    }
+
+    /*
+     * Understandable output
+     */
+    if (iVerbosity && cCentaurMax >= 0)
+    {
+        Guest = pVM->cpum.s.aGuestCpuIdCentaur[0];
+        pHlp->pfnPrintf(pHlp,
+                        "Centaur Supports:                0xc0000000-%#010x\n",
+                        Guest.eax);
+    }
+
+    if (iVerbosity && cCentaurMax >= 1)
+    {
+        ASMCpuId(0xc0000001, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+        uint32_t uEdxGst = pVM->cpum.s.aGuestCpuIdExt[1].edx;
+        uint32_t uEdxHst = Host.edx;
+
+        if (iVerbosity == 1)
+        {
+            pHlp->pfnPrintf(pHlp, "Centaur Features EDX:           ");
+            if (uEdxGst & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " AIS");
+            if (uEdxGst & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " AIS-E");
+            if (uEdxGst & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " RNG");
+            if (uEdxGst & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " RNG-E");
+            if (uEdxGst & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " LH");
+            if (uEdxGst & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " FEMMS");
+            if (uEdxGst & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " ACE");
+            if (uEdxGst & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " ACE-E");
+            /* possibly indicating MM/HE and MM/HE-E on older chips... */
+            if (uEdxGst & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " ACE2");
+            if (uEdxGst & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " ACE2-E");
+            if (uEdxGst & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " PHE");
+            if (uEdxGst & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " PHE-E");
+            if (uEdxGst & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " PMM");
+            if (uEdxGst & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " PMM-E");
+            for (unsigned iBit = 14; iBit < 32; iBit++)
+                if (uEdxGst & RT_BIT(iBit))
+                    pHlp->pfnPrintf(pHlp, " %d", iBit);
+            pHlp->pfnPrintf(pHlp, "\n");
+        }
+        else
+        {
+            pHlp->pfnPrintf(pHlp, "Mnemonic - Description                 = guest (host)\n");
+            pHlp->pfnPrintf(pHlp, "AIS - Alternate Instruction Set        = %d (%d)\n",  !!(uEdxGst & RT_BIT( 0)),  !!(uEdxHst & RT_BIT( 0)));
+            pHlp->pfnPrintf(pHlp, "AIS-E - AIS enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 1)),  !!(uEdxHst & RT_BIT( 1)));
+            pHlp->pfnPrintf(pHlp, "RNG - Random Number Generator          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 2)),  !!(uEdxHst & RT_BIT( 2)));
+            pHlp->pfnPrintf(pHlp, "RNG-E - RNG enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 3)),  !!(uEdxHst & RT_BIT( 3)));
+            pHlp->pfnPrintf(pHlp, "LH - LongHaul MSR 0000_110Ah           = %d (%d)\n",  !!(uEdxGst & RT_BIT( 4)),  !!(uEdxHst & RT_BIT( 4)));
+            pHlp->pfnPrintf(pHlp, "FEMMS - FEMMS                          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 5)),  !!(uEdxHst & RT_BIT( 5)));
+            pHlp->pfnPrintf(pHlp, "ACE - Advanced Cryptography Engine     = %d (%d)\n",  !!(uEdxGst & RT_BIT( 6)),  !!(uEdxHst & RT_BIT( 6)));
+            pHlp->pfnPrintf(pHlp, "ACE-E - ACE enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 7)),  !!(uEdxHst & RT_BIT( 7)));
+            /* possibly indicating MM/HE and MM/HE-E on older chips... */
+            pHlp->pfnPrintf(pHlp, "ACE2 - Advanced Cryptography Engine 2  = %d (%d)\n",  !!(uEdxGst & RT_BIT( 8)),  !!(uEdxHst & RT_BIT( 8)));
+            pHlp->pfnPrintf(pHlp, "ACE2-E - ACE enabled                   = %d (%d)\n",  !!(uEdxGst & RT_BIT( 9)),  !!(uEdxHst & RT_BIT( 9)));
+            pHlp->pfnPrintf(pHlp, "PHE - Hash Engine                      = %d (%d)\n",  !!(uEdxGst & RT_BIT(10)),  !!(uEdxHst & RT_BIT(10)));
+            pHlp->pfnPrintf(pHlp, "PHE-E - PHE enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(11)),  !!(uEdxHst & RT_BIT(11)));
+            pHlp->pfnPrintf(pHlp, "PMM - Montgomery Multiplier            = %d (%d)\n",  !!(uEdxGst & RT_BIT(12)),  !!(uEdxHst & RT_BIT(12)));
+            pHlp->pfnPrintf(pHlp, "PMM-E - PMM enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(13)),  !!(uEdxHst & RT_BIT(13)));
+            for (unsigned iBit = 14; iBit < 32; iBit++)
+                if ((uEdxGst | uEdxHst) & RT_BIT(iBit))
+                    pHlp->pfnPrintf(pHlp, "Bit %d                                 = %d (%d)\n",  !!(uEdxGst & RT_BIT(iBit)),  !!(uEdxHst & RT_BIT(iBit)));
+            pHlp->pfnPrintf(pHlp, "\n");
+        }
     }
 }
 
