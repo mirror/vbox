@@ -45,7 +45,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION    4
+#define CPUM_SAVED_STATE_VERSION    5
 
 
 /*******************************************************************************
@@ -322,14 +322,17 @@ static int cpumR3CpuIdInit(PVM pVM)
      *
      * The important part here (we think) is to make sure the 0xc0000000
      * function returns 0xc0000001. As for the features, we don't currently
-     * let on about any of those...
+     * let on about any of those... 0xc0000002 seems to be some
+     * temperature/hz/++ stuff, include it as well (static).
      */
     if (    pCPUM->aGuestCpuIdCentaur[0].eax >= UINT32_C(0xc0000000)
         &&  pCPUM->aGuestCpuIdCentaur[0].eax <= UINT32_C(0xc0000004))
     {
-        pCPUM->aGuestCpuIdCentaur[0].eax = UINT32_C(0xc0000001);
+        pCPUM->aGuestCpuIdCentaur[0].eax = RT_MIN(pCPUM->aGuestCpuIdCentaur[0].eax, UINT32_C(0xc0000002));
         pCPUM->aGuestCpuIdCentaur[1].edx = 0; /* all features hidden */
-        for (i = 2; i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur); i++)
+        for (i = pCPUM->aGuestCpuIdCentaur[0].eax - UINT32_C(0xc0000000);
+             i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur);
+             i++)
             pCPUM->aGuestCpuIdCentaur[i] = pCPUM->GuestCpuIdDef;
     }
     else

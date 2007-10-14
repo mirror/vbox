@@ -332,7 +332,7 @@ typedef struct CPUM
     /** The extended set of CpuId leafs. */
     CPUMCPUID               aGuestCpuIdExt[10];
     /** The centaur set of CpuId leafs. */
-    CPUMCPUID               aGuestCpuIdCentaur[2];
+    CPUMCPUID               aGuestCpuIdCentaur[4];
     /** The default set of CpuId leafs. */
     CPUMCPUID               GuestCpuIdDef;
 

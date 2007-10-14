@@ -78,11 +78,11 @@ struc VM
 
     alignb 32
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-    .cpum                 resb 3106
+    .cpum                 resb 3138
 %elif HC_ARCH_BITS == 32
-    .cpum                 resb 3456
+    .cpum                 resb 3488
 %else
-    .cpum                 resb 3584
+    .cpum                 resb 3616
 %endif
     .vmm                  resb 1024
 
