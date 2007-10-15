@@ -469,7 +469,7 @@
     </message>
     <message>
         <source>Look &amp;in:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">S&amp;ijainti:</translation>
     </message>
     <message>
         <source>File &amp;name:</source>
@@ -1193,7 +1193,7 @@ to
     <name>QMenuBar</name>
     <message>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation>Tietoja</translation>
     </message>
     <message>
         <source>Config</source>
@@ -1217,11 +1217,11 @@ to
     </message>
     <message>
         <source>Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>Lopeta</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Lopeta</translation>
     </message>
 </context>
 <context>
