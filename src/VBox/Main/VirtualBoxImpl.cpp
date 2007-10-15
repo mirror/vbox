@@ -625,6 +625,7 @@ VirtualBox::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 /** @note Locks mSystemProperties object for reading. */
 STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aBaseFolder,
                                         INPTR BSTR aName,
+                                        INPTR GUIDPARAM aId,
                                         IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
@@ -668,8 +669,13 @@ STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aBaseFolder,
     rc = machine.createObject();
     if (SUCCEEDED (rc))
     {
+        /* Create UUID if an empty one was specified. */
+        Guid id = aId;
+        if (id.isEmpty())
+            id.create();
+
         /* initialize the machine object */
-        rc = machine->init (this, settingsFile, Machine::Init_New, aName);
+        rc = machine->init (this, settingsFile, Machine::Init_New, aName, TRUE, &id);
         if (SUCCEEDED (rc))
         {
             /* set the return value */
@@ -686,6 +692,7 @@ STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aBaseFolder,
 
 STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aSettingsFile,
                                               INPTR BSTR aName,
+                                              INPTR GUIDPARAM aId,
                                               IMachine **aMachine)
 {
     /* null and empty strings are not allowed as path names */
@@ -716,9 +723,14 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aSettingsFile,
     rc = machine.createObject();
     if (SUCCEEDED (rc))
     {
+        /* Create UUID if an empty one was specified. */
+        Guid id = aId;
+        if (id.isEmpty())
+            id.create();
+
         /* initialize the machine object */
         rc = machine->init (this, Bstr (settingsFile), Machine::Init_New,
-                            aName, FALSE /* aNameSync */);
+                            aName, FALSE /* aNameSync */, &id);
         if (SUCCEEDED (rc))
         {
             /* set the return value */

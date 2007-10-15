@@ -301,6 +301,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage createvm         -name <name>\n"
                  "                            [-register]\n"
                  "                            [-basefolder <path> | -settingsfile <path>]\n"
+                 "                            [-uuid <uuid>]\n"
                  "                            \n"
                  "\n");
     }
@@ -3433,6 +3434,7 @@ static int handleCreateVM(int argc, char *argv[],
     Bstr baseFolder;
     Bstr settingsFile;
     Bstr name;
+    RTUUID id;
     bool fRegister = false;
 
     for (int i = 0; i < argc; i++)
@@ -3464,6 +3466,18 @@ static int handleCreateVM(int argc, char *argv[],
             i++;
             name = argv[i];
         }
+        else if (strcmp(argv[i], "-uuid") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            if (VBOX_FAILURE(RTUuidFromStr(&id, argv[i])))
+            {
+                return errorArgument("Invalid UUID format %s\n", argv[i]);
+            }
+        }
         else if (strcmp(argv[i], "-register") == 0)
         {
             fRegister = true;
@@ -3488,10 +3502,10 @@ static int handleCreateVM(int argc, char *argv[],
 
         if (!settingsFile)
             CHECK_ERROR_BREAK(virtualBox,
-                CreateMachine(baseFolder, name, machine.asOutParam()));
+                CreateMachine(baseFolder, name, Guid(id), machine.asOutParam()));
         else
             CHECK_ERROR_BREAK(virtualBox,
-                CreateLegacyMachine(settingsFile, name, machine.asOutParam()));
+                CreateLegacyMachine(settingsFile, name, Guid(id), machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
         if (fRegister)

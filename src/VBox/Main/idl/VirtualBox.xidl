@@ -807,7 +807,7 @@
 
   <interface
      name="IVirtualBox" extends="$dispatched"
-     uuid="76b25f3c-15d4-4785-a9d3-adc6a462beec"
+     uuid="e1606565-8954-4703-b22a-620941b85a1c"
      wsmap="global"
      >
     <desc> The main interface exposed by the product that provides virtual
@@ -914,6 +914,10 @@
         <pre>
           &lt;base_folder&gt;/&lt;machine_name&gt;/&lt;machine_name&gt;.xml</pre>
 
+        Optionally the UUID of the machine can be predefined. If this is
+        not desired (i.e. a new UUID should be generated), pass just an
+        empty or null UUID.
+
         Note that the configuration of the newly created machine is not
         saved to disk (and therefore no settings subfolder and file are
         created) until <link to="IMachine::saveSettings()"/> is called.
@@ -939,6 +943,12 @@
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
       </param>
+      <param name="id" type="uuid" dir="in">
+        <desc>
+          UUID of the newly created VM, when non-null or non-empty.
+          Otherwise a UUID is automatically generated.
+        </desc>
+      </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>
       </param>
@@ -960,6 +970,10 @@
           VirtualBox home directory</link>. If the file name doesn't
         contain an extension, the default extension (.xml) will be
         appended.
+
+        Optionally the UUID of the machine can be predefined. If this is
+        not desired (i.e. a new UUID should be generated), pass just an
+        empty or null UUID.
 
         Note that the configuration of the newly created machine is not
         saved to disk (and therefore no settings file is created)
@@ -989,6 +1003,12 @@
       </param>
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
+      </param>
+      <param name="id" type="uuid" dir="in">
+        <desc>
+          UUID of the newly created VM, when non-null or non-empty.
+          Otherwise a UUID is automatically generated.
+        </desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>

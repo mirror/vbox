@@ -139,9 +139,10 @@ void createVM(IVirtualBox *virtualBox)
      * First create a unnamed new VM. It will be unconfigured and not be saved
      * in the configuration until we explicitely choose to do so.
      */
+    nsID VMuuid = {0};
     nsCOMPtr <IMachine> machine;
     rc = virtualBox->CreateMachine(nsnull, NS_LITERAL_STRING("A brand new name").get(),
-                                   getter_AddRefs(machine));
+                                   VMuuid, getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {
         printf("Error: could not create machine! rc=%08X\n", rc);

@@ -336,9 +336,11 @@ void Machine::FinalRelease()
  *                      machines where the file name is specified by the
  *                      user and should never change. Used only in Init_New
  *                      mode (ignored otherwise).
- *  @param aId          UUID of the machine (used only for consistency
+ *  @param aId          UUID of the machine. Required for aMode==Init_Registered
+ *                      and optional for aMode==Init_New. Used for consistency
  *                      check when aMode is Init_Registered; must match UUID
- *                      stored in the settings file).
+ *                      stored in the settings file. Used for predefining the
+ *                      UUID of a VM when aMode is Init_New.
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
@@ -453,7 +455,10 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
             else
             {
                 /* create the machine UUID */
-                unconst (mData->mUuid).create();
+                if (aId)
+                    unconst (mData->mUuid) = *aId;
+                else
+                    unconst (mData->mUuid).create();
 
                 /* memorize the provided new machine's name */
                 mUserData->mName = aName;
@@ -2617,7 +2622,7 @@ void Machine::getLogFolder (Utf8Str &aLogFolder)
 /**
  *  Returns @c true if the given DVD image is attached to this machine either
  *  in the current state or in any of the snapshots.
- * 
+ *
  *  @param aId          Image ID to check.
  *  @param aUsage       Type of the check.
  *
@@ -2690,10 +2695,10 @@ bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
     return false;
 }
 
-/** 
+/**
  *  Returns @c true if the given Floppy image is attached to this machine either
  *  in the current state or in any of the snapshots.
- * 
+ *
  *  @param aId          Image ID to check.
  *  @param aUsage       Type of the check.
  *
@@ -3422,7 +3427,7 @@ void Machine::releaseStateDependency()
 // protected methods
 /////////////////////////////////////////////////////////////////////////////
 
-/** 
+/**
  *  Performs machine state checks based on the @a aDepType value. If a check
  *  fails, this method will set extended error info, otherwise it will return
  *  S_OK. It is supposed, that on failure, the caller will immedieately return
@@ -3435,7 +3440,7 @@ void Machine::releaseStateDependency()
  *  machine (i.e. the machine is not registered, or registered but not running
  *  and not saved). It is useful to call this method from Machine setters
  *  before performing any change.
- * 
+ *
  *  When @a aDepType is MutableOrSavedStateDep, this method behaves the same
  *  as for MutableStateDep except that if the machine is saved, S_OK is also
  *  returned. This is useful in setters which allow changing machine
@@ -6469,7 +6474,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
             CFGLDRSetBool (networkAdapterNode, "cable",
                            !!mNetworkAdapters [slot]->data()->mCableConnected);
 
-            CFGLDRSetUInt32 (networkAdapterNode, "speed", 
+            CFGLDRSetUInt32 (networkAdapterNode, "speed",
                              mNetworkAdapters [slot]->data()->mLineSpeed);
 
             if (mNetworkAdapters [slot]->data()->mTraceEnabled)
@@ -6717,7 +6722,7 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
         CFGLDRSetUInt32 (guestNode, "MemoryBalloonSize",
                          mHWData->mMemoryBalloonSize);
         CFGLDRSetUInt32 (guestNode, "StatisticsUpdateInterval",
-                         mHWData->mStatisticsUpdateInterval);                
+                         mHWData->mStatisticsUpdateInterval);
 
         CFGLDRReleaseNode (guestNode);
     }
