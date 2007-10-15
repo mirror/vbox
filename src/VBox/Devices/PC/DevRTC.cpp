@@ -102,16 +102,24 @@ __END_DECLS
 #define REG_B_AIE 0x20
 #define REG_B_UIE 0x10
 
+struct my_tm 
+{
+    int32_t tm_sec;
+    int32_t tm_min;
+    int32_t tm_hour;
+    int32_t tm_mday;
+    int32_t tm_mon;
+    int32_t tm_year;
+    int32_t tm_wday;
+    int32_t tm_yday;
+};
+
+
 struct RTCState {
     uint8_t cmos_data[128];
     uint8_t cmos_index;
     uint8_t Alignment0[7];
-    struct tm current_tm;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32 && IN_GC
-# if !defined(RT_OS_WINDOWS)
-    uint32_t Alignment1[3];
-# endif
-#endif
+    struct my_tm current_tm;
     int32_t irq;
     /* periodic timer */
     GCPTRTYPE(PTMTIMER)   pPeriodicTimerGC;
@@ -266,7 +274,7 @@ static inline int from_bcd(RTCState *s, int a)
 
 static void rtc_set_time(RTCState *s)
 {
-    struct tm *tm = &s->current_tm;
+    struct my_tm *tm = &s->current_tm;
 
     tm->tm_sec = from_bcd(s, s->cmos_data[RTC_SECONDS]);
     tm->tm_min = from_bcd(s, s->cmos_data[RTC_MINUTES]);
@@ -283,7 +291,7 @@ static void rtc_set_time(RTCState *s)
 
 static void rtc_copy_date(RTCState *s)
 {
-    const struct tm *tm = &s->current_tm;
+    const struct my_tm *tm = &s->current_tm;
 
     s->cmos_data[RTC_SECONDS] = to_bcd(s, tm->tm_sec);
     s->cmos_data[RTC_MINUTES] = to_bcd(s, tm->tm_min);
@@ -320,7 +328,7 @@ static int get_days_in_month(int month, int year)
 }
 
 /* update 'tm' to the next second */
-static void rtc_next_second(struct tm *tm)
+static void rtc_next_second(struct my_tm *tm)
 {
     int days_in_month;
 
@@ -457,7 +465,7 @@ static void rtc_set_memory(RTCState *s, int addr, int val)
         s->cmos_data[addr] = val;
 }
 
-static void rtc_set_date(RTCState *s, const struct tm *tm)
+static void rtc_set_date(RTCState *s, const struct my_tm *tm)
 {
     s->current_tm = *tm;
     rtc_copy_date(s);
@@ -716,8 +724,6 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
 {
     /** @todo this should be (re)done at power on if we didn't load a state... */
     RTCState   *pData = PDMINS2DATA(pDevIns, RTCState *);
-    struct tm   Tm;
-    struct tm  *pTm;
 
     /*
      * Set the CMOS date/time.
@@ -730,6 +736,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
     else
         RTTimeLocalExplode(&Time, &Now);
 
+    struct my_tm Tm;
     memset(&Tm, 0, sizeof(Tm));
     Tm.tm_year = Time.i32Year - 1900;
     Tm.tm_mon  = Time.u8Month - 1;
@@ -739,10 +746,8 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
     Tm.tm_hour = Time.u8Hour;
     Tm.tm_min  = Time.u8Minute;
     Tm.tm_sec  = Time.u8Second;
-    Tm.tm_isdst = -1;
-    pTm = &Tm;
 
-    rtc_set_date(pData, pTm);
+    rtc_set_date(pData, &Tm);
 
     int iYear = to_bcd(pData, (Tm.tm_year / 100) + 19); /* tm_year is 1900 based */
     rtc_set_memory(pData, 0x32, iYear);                                     /* 32h - Century Byte (BCD value for the century */
