@@ -520,6 +520,7 @@ ifndef VBOX_GCC_TOOL
   VBOX_GCC_TOOL := GXX4MACHO
  else ifeq ($(BUILD_TARGET),solaris)
   VBOX_GCC_TOOL := GXX3PLAIN
+  VBOX_GCC32_TOOL := GXX3PLAIN
  else
   VBOX_GCC_TOOL := GXX3
   ifeq ($(BUILD_TARGET_ARCH).$(BUILD_PLATFORM_ARCH),x86.amd64)
@@ -1480,21 +1481,26 @@ TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GC
 endif
 
 ifeq ($(BUILD_TARGET),solaris)
-# x86 Solaris:
 ## The Solaris /usr/include.
 VBOX_SOLARIS_SYS_INCS ?= /usr/include
+
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
-#TEMPLATE_VBOXR0DRV_INCS                = \
-#	$(VBOX_SOLARIS_SYS_INCS)
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .o
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r
-# exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress!!
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -64
+# Exclude -Wall because of solaris headers' pragma ident warnings that gcc refuses to supress.
 TEMPLATE_VBOXR0DRV_CFLAGS              = -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
 	-O2 -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
-## *************************** SOLARISTODO  ******************
-endif	# solaris
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-red-zone -mcmodel=kernel \
+	-fno-reorder-blocks -fno-asynchronous-unwind-tables -funit-at-a-time
+TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wno-trigraphs -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
+	-O2 -nodefaultlibs -fno-strict-aliasing -fno-common
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
+endif # Solaris
 
 ifeq ($(BUILD_TARGET),freebsd)
 # x86 FreeBSD:
@@ -1616,18 +1622,24 @@ ifeq ($(BUILD_TARGET),win)
 else # the gcc guys
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXR3EXE_CXXFLAGS.x86        = -m32
+TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64      = -m64
 # L4 currently can't handle exception handling.
 TEMPLATE_VBOXR3EXE_CXXFLAGS.l4         = -fno-exceptions -nostdinc \
 	$(addprefix -I,$(VBOX_PATH_GCC_INCS) $(L4_INCDIR) $(FILE_TOOL_GPP3_INCDIR)) \
 	$(DEBUG_L4)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = -finstrument-functions
+TEMPLATE_VBOXR3EXE_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXR3EXE_CFLAGS.x86          = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.x86)
+TEMPLATE_VBOXR3EXE_CFLAGS.amd64        = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64)
 TEMPLATE_VBOXR3EXE_CFLAGS.debug        = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.debug)
 TEMPLATE_VBOXR3EXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXR3EXE_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXR3EXE_CFLAGS.darwin       = -fno-common
 TEMPLATE_VBOXR3EXE_CFLAGS.l4           = -nostdinc \
 	$(addprefix -I,$(VBOX_PATH_GCC_INCS) $(L4_INCDIR)) $(DEBUG_L4)
 TEMPLATE_VBOXR3EXE_DEFS.l4             = L4_THREAD_SAFE
+TEMPLATE_VBOXR3EXE_LDFLAGS.x86         = -m32
+TEMPLATE_VBOXR3EXE_LDFLAGS.amd64       = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	$(L4_LIBDIR)/../crt0.o \
 	-T$(L4_LIBDIR)/../main_dyn.ld -nostdlib \
@@ -1741,14 +1753,16 @@ endif
 TEMPLATE_VBOXNOCRTGCC = VBox no-crt GCC libraries and modules, yasm/nasm.
 TEMPLATE_VBOXNOCRTGCC_DEFS              = IN_RING3 IPRT_NO_CRT $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXNOCRTGCC_ASDEFS            = ASM_CALL64_GCC
-## @todo C++
 TEMPLATE_VBOXNOCRTGCC_CFLAGS            = -nostdinc -fno-strict-aliasing -fno-math-errno -Wall
-TEMPLATE_VBOXNOCRTGCC_CFLAGS.amd64      = -mcmodel=medium -fno-common
-#TEMPLATE_VBOXNOCRTGCC_CFLAGS.release    = -O0 -fno-math-errno -fno-peephole2 -fno-strict-aliasing - for win64.
+TEMPLATE_VBOXNOCRTGCC_CFLAGS.x86        = -m32
+TEMPLATE_VBOXNOCRTGCC_CFLAGS.amd64      = -m64 -mcmodel=medium -fno-common
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.release    = -O2 -fno-strict-aliasing
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.profile    = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS.release)
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.kprofile   = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS.release)
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.darwin     = -mdynamic-no-pic
+TEMPLATE_VBOXNOCRTGCC_CXXFLAGS          = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS)
+TEMPLATE_VBOXNOCRTGCC_CXXFLAGS.$(BUILD_TARGET) = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS.$(BUILD_TARGET))
+TEMPLATE_VBOXNOCRTGCC_CXXFLAGS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_VBOXNOCRTGCC_CFLAGS.$(BUILD_TARGET_ARCH))
 TEMPLATE_VBOXNOCRTGCC_INCS              = $(PATH_ROOT)/include/iprt/nocrt
 
 ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.amd64)
@@ -1778,13 +1792,20 @@ else
  TEMPLATE_VBOXNOCRTGCC_ASFLAGS          = $(VBOX_ASFLAGS)
  TEMPLATE_VBOXNOCRTGCC_CFLAGS          += $(VBOX_GCC_fno-stack-protector)
  TEMPLATE_VBOXNOCRTGCC_CXXFLAGS        += $(VBOX_GCC_fno-stack-protector)
- TEMPLATE_VBOXNOCRTGCC_LDFLAGS          = -nostdlib
- ifneq ($(filter-out os2 darwin solaris,$(BUILD_TARGET)),)
-  ifneq ($(BUILD_TARGET_ARCH),amd64)
-   TEMPLATE_VBOXNOCRTGCC_LDFLAGS        += -Wl,--no-undefined
+ ifeq ($(BUILD_TARGET_ARCH),amd64)
+  # in 64-bit mode we'll build a sys-module (VBoxREM2).
+  if1of ($(BUILD_TARGET),darwin solaris)
+   TEMPLATE_VBOXNOCRTGCC_LDFLAGS.solaris= -64 -r
+  else
+   TEMPLATE_VBOXNOCRTGCC_LDFLAGS        = -nostdlib
   endif
- endif
-  TEMPLATE_VBOXNOCRTGCC_LIBS            = # FIXME - has unwind mess.
+ else # x86:
+  TEMPLATE_VBOXNOCRTGCC_LDFLAGS         = -nostdlib
+  ifneq ($(filter-out os2 darwin solaris,$(BUILD_TARGET)),)
+   TEMPLATE_VBOXNOCRTGCC_LDFLAGS       += -Wl,--no-undefined
+  endif
+ endif # x86
+ TEMPLATE_VBOXNOCRTGCC_LIBS             = # FIXME - has unwind mess.
 endif
 
 
@@ -1799,6 +1820,8 @@ ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.x86)
 else
  TEMPLATE_VBOXNOCRTGAS_ASFLAGS = -g
 endif
+TEMPLATE_VBOXNOCRTGAS_ASFLAGS.x86 = -m32
+TEMPLATE_VBOXNOCRTGAS_ASFLAGS.amd64 = -m64
 
 
 #
@@ -1853,11 +1876,17 @@ else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wno-non-virtual-dtor -fshort-wchar -fpermissive $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
+TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -Wall -Wno-long-long -Wno-trigraphs -pipe  -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
+TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
 TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = -fno-inline
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
+TEMPLATE_VBOXMAINEXE_LDFLAGS.x86         = -m32
+TEMPLATE_VBOXMAINEXE_LDFLAGS.amd64       = -m64
  ifeq ($(BUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME)
  else ifeq ($(BUILD_TARGET),l4)
@@ -2034,7 +2063,11 @@ else # the gcc guys:
 	-pipe -Wall -W -frtti -fno-exceptions -Wno-non-virtual-dtor \
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
+ TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
+ TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
+ TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
+ TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
  ## @todo no $(LIB_QTMAIN) here?
  TEMPLATE_VBOXQTGUIEXE_LIBS = \
 	$(LIB_QT) \
@@ -2163,15 +2196,21 @@ else
 # (gcc of some kind )
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
 TEMPLATE_VBOXBLDPROG_CFLAGS              = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs $(VBOX_GCC_Wno-variadic-macros) -pipe  -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations
+TEMPLATE_VBOXBLDPROG_CFLAGS.x86          = -m32
+TEMPLATE_VBOXBLDPROG_CFLAGS.amd64        = -m64
 TEMPLATE_VBOXBLDPROG_CFLAGS.debug        = -fno-inline
 TEMPLATE_VBOXBLDPROG_CFLAGS.release      = -O2 -fno-omit-frame-pointer -fno-strict-aliasing
 TEMPLATE_VBOXBLDPROG_CFLAGS.profile      = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile)
 TEMPLATE_VBOXBLDPROG_CFLAGS.kprofile     = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile)
 TEMPLATE_VBOXBLDPROG_CXXFLAGS            = -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -pipe
+TEMPLATE_VBOXBLDPROG_CXXFLAGS.x86        = -m32
+TEMPLATE_VBOXBLDPROG_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.release    = -O2 -fno-omit-frame-pointer -fno-strict-aliasing
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.release)
+TEMPLATE_VBOXBLDPROG_LDFLAGS.x86         = -m32
+TEMPLATE_VBOXBLDPROG_LDFLAGS.amd64       = -m64
  ifeq ($(BUILD_PLATFORM),linux)
 TEMPLATE_VBOXBLDPROG_LIBS                = pthread m rt dl
  else ifeq ($(BUILD_PLATFORM),os2)
