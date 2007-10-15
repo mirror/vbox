@@ -26,10 +26,14 @@ TEMPLATE_XPCOM                     = XPCOM libraries (shared)
 TEMPLATE_XPCOM_EXTENDS             = VBOXR3NP
 TEMPLATE_XPCOM_ASTOOL              = $(TEMPLATE_VBOXR3NP_TOOL)
 TEMPLATE_XPCOM_ASFLAGS             = $(NO_SUCH_VARIABLE)
+TEMPLATE_XPCOM_ASFLAGS.x86         = -m32
+TEMPLATE_XPCOM_ASFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_ASDEFS              = $(NO_SUCH_VARIABLE)
 TEMPLATE_XPCOM_CXXFLAGS            = -pipe -ansi -Wall -Wno-unused -Wno-non-virtual-dtor \
                                      $(VBOX_GCC_Wno-invalid-offsetof) -Wno-sign-compare -Wno-unused -Wno-ctor-dtor-privacy \
                                      $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_XPCOM_CXXFLAGS.x86        = -m32
+TEMPLATE_XPCOM_CXXFLAGS.amd64      = -m64
 TEMPLATE_XPCOM_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_XPCOM_CXXFLAGS.release    = -O
 TEMPLATE_XPCOM_CXXFLAGS.profile    = -O
@@ -39,6 +43,8 @@ TEMPLATE_XPCOM_CXXFLAGS.l4         = -fno-exceptions -nostdinc
 TEMPLATE_XPCOM_CXXFLAGS.linux      = -pthread
 TEMPLATE_XPCOM_CXXFLAGS.solaris    = -fno-omit-frame-pointer # for now anyway.
 TEMPLATE_XPCOM_CFLAGS              = -pipe -Wall -Wno-unused -Wno-parentheses -Wno-uninitialized $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_XPCOM_CFLAGS.x86          = -m32
+TEMPLATE_XPCOM_CFLAGS.amd64        = -m64
 TEMPLATE_XPCOM_CFLAGS.debug        = -fno-inline
 TEMPLATE_XPCOM_CFLAGS.release      = -O
 TEMPLATE_XPCOM_CFLAGS.profile      = -O
@@ -57,6 +63,8 @@ TEMPLATE_XPCOM_DEFS.linux          = OSTYPE=\"Linux2.6\"    OSARCH=\"Linux\"  XP
 TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     XP_UNIX=1 L4ENV HAVE_VISIBILITY_ATTRIBUTE=1
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC BSD_SELECT OS2=4
 TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" XP_UNIX=1 XP_SOLARIS=1 HAVE_LIBDL=1 HAVE_SENDFILEV=1 SOLARIS=1 _REENTRANT
+TEMPLATE_XPCOM_LDFLAGS.x86         = -m32
+TEMPLATE_XPCOM_LDFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
                                      -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
@@ -153,11 +161,13 @@ TEMPLATE_XPCOMBLDPROG_DEFS                      = $(TEMPLATE_BLDPROG_DEFS)      
 TEMPLATE_XPCOMBLDPROG_DEFS.$(BUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(BUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(BUILD_TARGET))
 TEMPLATE_XPCOMBLDPROG_DEFS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_BLDPROG_DEFS.$(BUILD_TARGET_ARCH)) $(TEMPLATE_XPCOMEXE_DEFS.$(BUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CXXFLAGS.$(BUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.release  = -O
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.profile  = -O
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.freebsd  = -pthread
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS.linux    = -pthread
 TEMPLATE_XPCOMBLDPROG_CFLAGS            = -pipe -ansi -Wall -Wno-unused
+TEMPLATE_XPCOMBLDPROG_CFLAGS.$(BUILD_TARGET_ARCH) = $(TEMPLATE_XPCOMEXE_CFLAGS.$(BUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.freebsd    = -pthread
@@ -797,7 +807,7 @@ VBox-xpcom-nspr_SOURCES.os2 += \
 
 VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
 VBox-xpcom-nspr_SOURCES.solaris.x86 = nsprpub/pr/src/md/unix/os_SunOS_x86.s
-VBox-xpcom-nspr_SOURCES.solaris.amd64 = nsprpub/pr/src/md/unix/os_SunOS_amd64.s
+VBox-xpcom-nspr_SOURCES.solaris.amd64 = nsprpub/pr/src/md/unix/os_SunOS_x86_64.s
 
 
 nsprpub/pr/src/prvrsion.c_DEPS = $(PATH_VBox-xpcom-nspr)/_pr_bld.h
@@ -966,6 +976,8 @@ VBox-xpcom-xptcall_NOINST = 1
 VBox-xpcom-xptcall_DEFS                = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTC_API
 VBox-xpcom-xptcall_DEFS.darwin         = KEEP_STACK_16_BYTE_ALIGNED
 VBox-xpcom-xptcall_DEFS.l4             = L4
+VBox-xpcom-xptcall_DEFS.os2            = MOZ_NEED_LEADING_UNDERSCORE
+VBox-xpcom-xptcall_INCS.os2            = xpcom/reflect/xptcall/src/md/unix
 VBox-xpcom-xptcall_SOURCES             = xpcom/reflect/xptcall/src/xptcall.cpp
 VBox-xpcom-xptcall_SOURCES.darwin.x86  = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_unixish_x86.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_unixish_x86.cpp
@@ -977,18 +989,13 @@ VBox-xpcom-xptcall_SOURCES.linux.x86   = xpcom/reflect/xptcall/src/md/unix/xptci
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
 VBox-xpcom-xptcall_SOURCES.linux.amd64 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp
-# gcc/emx sources
 VBox-xpcom-xptcall_SOURCES.os2         = xpcom/reflect/xptcall/src/md/os2/xptcinvoke_gcc_x86_os2.cpp \
                                          xpcom/reflect/xptcall/src/md/os2/xptcstubs_gcc_x86_os2.cpp
-VBox-xpcom-xptcall_INCS.os2            = xpcom/reflect/xptcall/src/md/unix
-VBox-xpcom-xptcall_DEFS.os2            = MOZ_NEED_LEADING_UNDERSCORE
-# IBM/VAC sources (not used)
-#VBox-xpcom-xptcall_SOURCES.os2         = xpcom/reflect/xptcall/src/md/unix/xptcstubs_os2.cpp \
-#                                         xpcom/reflect/xptcall/src/md/unix/xptcinvoke_vacpp.asm \
-#                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_vacpp.asm
-
 VBox-xpcom-xptcall_SOURCES.solaris.x86 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_solaris.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_solaris.cpp
+VBox-xpcom-xptcall_SOURCES.solaris.amd64 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
+                                         xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_linux.cpp
+
 xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_solaris.cpp_CXXFLAGS = -O0
 # -O0 works fine, while -O1 doesn't. The gcc man page can't be listing all the -f*
 # stuff that -O1 enables, because when using the options without -O1, it's -fomit-frame-pointer
