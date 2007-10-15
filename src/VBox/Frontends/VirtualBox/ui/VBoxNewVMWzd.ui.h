@@ -310,7 +310,7 @@ bool VBoxNewVMWzd::constructMachine()
     /* create a machine with the default settings file location */
     if (cmachine.isNull())
     {
-        cmachine = vbox.CreateMachine (QString(), leName->text());
+        cmachine = vbox.CreateMachine (QString(), leName->text(), QUuid());
         if (!vbox.isOk())
         {
             vboxProblem().cannotCreateMachine (vbox, this);
