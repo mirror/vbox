@@ -116,6 +116,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     } else {
 #if 1
       slirp_cannot_ping(pData->pvUser);
+      m_freem(pData, m);
 #else
       struct socket *so;
       struct sockaddr_in addr;
