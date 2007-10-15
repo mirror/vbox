@@ -32,7 +32,6 @@ DEPTH = ../..
 include $(PATH_KBUILD)/header.kmk
 
 
-# todo this is a BUILD_PLATFORM binary, to a target binary!
 BLDPROGS              = dyngen
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  SYSMODS              = VBoxREM2
@@ -62,18 +61,6 @@ ifeq ($(filter-out l4 darwin freebsd,$(BUILD_TARGET)),)
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  REM_USE_NOCRT := 1
-endif
-
-#
-# We need to figure out the solaris version.
-#
-ifeq ($(BUILD_TARGET),solaris)
- ifndef HOST_SOLARIS
-  HOST_SOLARIS = $(shell uname -r | cut -f2 -d.)
-  ifneq ($(HOST_SOLARIS),11)
-    $(error Solaris $(HOST_SOLARIS) not compatible. Check src/recompiler/fpu/softfloat-native.h for details)
-  endif
- endif
 endif
 
 
@@ -205,7 +192,7 @@ else # !REM_USE_NOCRT
  $(REM_MOD)_LDFLAGS.os2     = -Zomf
  $(REM_MOD)_LDFLAGS.debug   = -g
  $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
- $(REM_MOD)_DEFS.solaris    += HOST_SOLARIS=$(HOST_SOLARIS)
+ $(REM_MOD)_DEFS.solaris    += HOST_SOLARIS=11
  ifeq ($(BUILD_TARGET_ARCH),amd64)
   $(REM_MOD)_LIBS           = $(FILE_TOOL_GCC3_LIBGCC)
  else # x86
@@ -236,6 +223,7 @@ target-i386/op.c_CFLAGS.x86     = -fno-gcse -fno-instrument-functions -mpreferre
 target-i386/op.c_CFLAGS.darwin.x86 = -m128bit-long-double -mpreferred-stack-boundary=4
 target-i386/helper.c_CFLAGS.x86 = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
 cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
+cpu-exec.c_CFLAGS.solaris.amd64 = -O2 -fomit-frame-pointer -fno-strict-aliasing
 
 
 #
@@ -468,5 +456,4 @@ target-i386/translate.c \
 do_dyngen: $(PATH_$(REM_MOD))/gen-op.h $(PATH_$(REM_MOD))/opc.h $(PATH_$(REM_MOD))/op.h
 importlib: $(LIB_REM)
 op.S: $(PATH_$(REM_MOD))/op.S
-
 
