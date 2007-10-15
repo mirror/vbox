@@ -21,7 +21,12 @@ fi
 
 DIR=$script_dir/out/$BUILD_TARGET.$BUILD_TARGET_ARCH/$BUILD_TYPE/bin/
 
-sudo cp $DIR/vboxdrv.o /usr/kernel/drv/vboxdrv
+if test "$BUILD_TARGET_ARCH" = "amd64"; then
+    VBOXDRV_INS=/usr/kernel/drv/amd64/vboxdrv
+else
+    VBOXDRV_INS=/usr/kernel/drv/vboxdrv
+fi
+sudo cp $DIR/vboxdrv.o $VBOXDRV_INS
 sudo cp $script_dir/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf /usr/kernel/drv/vboxdrv.conf
 old_id=`/usr/sbin/modinfo | grep vbox | cut -f 1 -d ' ' `
 if test -n "$old_id"; then
@@ -35,7 +40,7 @@ fi
 echo "* loading vboxdrv..."
 sync
 sync
-sudo /usr/sbin/modload /usr/kernel/drv/vboxdrv
+sudo /usr/sbin/modload $VBOXDRV_INS
 /usr/sbin/modinfo | grep vboxdrv
 echo "* dmesg:"
 dmesg | tail -20
