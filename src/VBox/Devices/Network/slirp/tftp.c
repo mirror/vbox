@@ -313,7 +313,7 @@ static void tftp_handle_rrq(PNATState pData, struct tftp_t *tp, int pktlen)
 
   /* do sanity checks on the filename */
 
-  if ((spt->filename[0] != '/')
+  if (   !strncmp(spt->filename, "../", 3)
       || (spt->filename[strlen((const char *)spt->filename) - 1] == '/')
       ||  strstr((char *)spt->filename, "/../")) {
       tftp_send_error(pData, spt, 2, "Access violation", tp);
