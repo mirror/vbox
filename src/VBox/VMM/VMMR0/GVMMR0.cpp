@@ -1151,7 +1151,7 @@ static int gvmmR0ByVMAndEMT(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM)
      */
     PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
     RTNATIVETHREAD hAllegedEMT = RTThreadNativeSelf();
-    AssertReturn(pHandle->hEMT == hAllegedEMT, VERR_NOT_OWNER);
+    AssertMsgReturn(pHandle->hEMT == hAllegedEMT, ("hEMT %x hAllegedEMT %x\n", pHandle->hEMT, hAllegedEMT), VERR_NOT_OWNER);
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
     AssertPtrReturn(pHandle->pvObj, VERR_INTERNAL_ERROR);
 
