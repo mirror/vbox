@@ -38,6 +38,9 @@ BEGINPROC   TestProc
 ;      mov al, cs:[1234h]
 ;      mov ax, cs:[1234h]
 ;      mov eax, cs:[1234h]
+      lock cmpxchg [ecx], eax
+      lock cmpxchg [ecx], ax
+      lock cmpxchg [ecx], dl
       movzx ESI,word  [EAX]
       in al, dx
       in ax, dx
