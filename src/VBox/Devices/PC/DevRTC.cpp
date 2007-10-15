@@ -51,9 +51,6 @@
 
 #include "vl_vbox.h"
 
-/** @todo Replace struct tm with RTTIME. */
-#include <time.h>
-
 struct RTCState;
 typedef struct RTCState RTCState;
 
@@ -102,6 +99,7 @@ __END_DECLS
 #define REG_B_AIE 0x20
 #define REG_B_UIE 0x10
 
+/** @todo Replace struct my_tm with RTTIME. */
 struct my_tm 
 {
     int32_t tm_sec;
