@@ -481,7 +481,6 @@ int main()
     GEN_CHECK_OFF(RTCState, current_tm.tm_year);
     GEN_CHECK_OFF(RTCState, current_tm.tm_wday);
     GEN_CHECK_OFF(RTCState, current_tm.tm_yday);
-    GEN_CHECK_OFF(RTCState, current_tm.tm_isdst);
     GEN_CHECK_OFF(RTCState, irq);
     GEN_CHECK_OFF(RTCState, pPeriodicTimerHC);
     GEN_CHECK_OFF(RTCState, pPeriodicTimerGC);
