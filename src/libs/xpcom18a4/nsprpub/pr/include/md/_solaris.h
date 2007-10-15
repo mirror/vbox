@@ -48,6 +48,8 @@
 #define _PR_SI_ARCHITECTURE	"sparc"
 #elif defined(i386)
 #define _PR_SI_ARCHITECTURE	"x86"
+#elif defined(__x86_64)
+#define _PR_SI_ARCHITECTURE     "x86-64"
 #else
 #error unknown processor
 #endif
@@ -104,7 +106,7 @@
  * 32-bit sparc assembly language implementation of atomic
  * stacks, so we do not use it now. (Bugzilla bug 113740)
  */
-#if !defined(sparc)
+#if !defined(sparc) && !defined(__x86_64)
 #define _PR_HAVE_ATOMIC_CAS
 #endif
 #endif
