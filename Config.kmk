@@ -485,13 +485,7 @@ endif
 
 ifndef DONT_USE_YASM
  VBOX_ASTOOL    = YASM
- ifeq ($(BUILD_PLATFORM),solaris)
-   # solaris yasm bug: crashes with dwarf2 debug info.
-   # yasm 0.6.0, 0.6.99.HEAD, compiled with both suncc as well as gcc
-   VBOX_LDR_FMT_2_YASM_DBGINFO.elf   =
- else
-   VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
- endif
+ VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
  VBOX_LDR_FMT_2_YASM_DBGINFO.lx    = -g stabs
  VBOX_LDR_FMT_2_YASM_DBGINFO.macho =
  VBOX_LDR_FMT_2_YASM_DBGINFO.pe    =
