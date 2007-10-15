@@ -38,9 +38,9 @@ include $(PATH_KBUILD)/header.kmk
 #
 # exclude inappropriate UI content
 #
-ifndef VBOX_OSE
+#ifndef VBOX_OSE
 VBOX_WITH_REGISTRATION := 1
-endif
+#endif
 
 ifndef VBOX_WITH_REGISTRATION
 VirtualBox_QT_UISRCS := $(filter-out ui/VBoxRegistrationDlg.ui,$(VirtualBox_QT_UISRCS))
