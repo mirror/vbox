@@ -961,47 +961,56 @@ Check path and filename.</source>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation>連線到主機時失敗：%1</translation>
+        <translation>連線到主機時失敗：
+%1</translation>
     </message>
     <message>
         <source>Login failed:
 %1</source>
-        <translation>登入失敗：%1</translation>
+        <translation>登入失敗：
+%1</translation>
     </message>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>表列目錄時失敗：%1</translation>
+        <translation>表列目錄時失敗：
+%1</translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>變更目錄時失敗：%1</translation>
+        <translation>變更目錄時失敗：
+%1</translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation>下載檔案時失敗：%1</translation>
+        <translation>下載檔案時失敗：
+%1</translation>
     </message>
     <message>
         <source>Uploading file failed:
 %1</source>
-        <translation>上傳檔案時失敗：%1</translation>
+        <translation>上傳檔案時失敗：
+%1</translation>
     </message>
     <message>
         <source>Removing file failed:
 %1</source>
-        <translation>移除檔案時失敗：%1</translation>
+        <translation>移除檔案時失敗：
+%1</translation>
     </message>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>建立目錄時失敗：%1</translation>
+        <translation>建立目錄時失敗：
+%1</translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>移除目錄時失敗：%1</translation>
+        <translation>移除目錄時失敗：
+%1</translation>
     </message>
     <message>
         <source>Not connected</source>
@@ -1135,32 +1144,40 @@ Check path and filename.</source>
 %1
 to
 %2</source>
-        <translation>無法重新命名 %1 為 %2</translation>
+        <translation>無法重新命名
+%1
+為
+%2</translation>
     </message>
     <message>
         <source>Could not open
 %1</source>
-        <translation>無法開啟 %1</translation>
+        <translation>無法開啟
+%1</translation>
     </message>
     <message>
         <source>Could not write
 %1</source>
-        <translation>無法寫入 %1</translation>
+        <translation>無法寫入
+%1</translation>
     </message>
     <message>
         <source>Could not read directory
 %1</source>
-        <translation>無法讀取目錄 %1</translation>
+        <translation>無法讀取目錄
+%1</translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation>無法建立目錄 %1</translation>
+        <translation>無法建立目錄
+%1</translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation>無法移除檔案或目錄 %1</translation>
+        <translation>無法移除檔案或目錄
+%1</translation>
     </message>
 </context>
 <context>
