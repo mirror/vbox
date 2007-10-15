@@ -20,6 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/dis.h>
+#include <VBox/err.h>
 #include <stdio.h>
 
 DECLASM(int) TestProc();
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
             char         szOutput[256];
 
             cpu.mode = CPUMODE_32BIT;
-            if (DISInstr(&cpu, pInstr, 0, &cb, szOutput))
+            if (VBOX_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
                 printf(szOutput);
             else
             {
