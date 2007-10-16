@@ -200,7 +200,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         switch (rc)
         {
             case 0:
-                if (pEventMultiInt->u32Magic == RTSEMEVENT_MAGIC)
+                if (pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC)
                 {
                     ASMAtomicDecU32(&pEventMultiInt->cWaking);
                     rc = VINF_SUCCESS;
