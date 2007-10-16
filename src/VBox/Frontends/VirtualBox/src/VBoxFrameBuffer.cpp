@@ -300,18 +300,18 @@ STDMETHODIMP VBoxQImageFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
                                                   ULONG aW, ULONG aH,
                                                   BOOL *aFinished)
 {
-#ifdef Q_WS_MAC
-    /* we're not on the GUI thread and update() isn't thread safe on Qt 3.3.x
-       on the Mac (4.2.x is), so post the event instead.  */
+#if !defined (Q_WS_WIN) && !defined (Q_WS_PM)
+    /* we're not on the GUI thread and update() isn't thread safe in Qt 3.3.x
+       on the Mac (4.2.x is), on Linux (didn't check Qt 4.x there) and
+       probably on other non-DOS platforms, so post the event instead. */
     QApplication::postEvent (mView,
                              new VBoxRepaintEvent (aX, aY, aW, aH));
-
-#else /* !Q_WS_MAC */
+#else
     /* we're not on the GUI thread, so update() instead of repaint()! */
     mView->viewport()->update (aX - mView->contentsX(),
                                aY - mView->contentsY(),
                                aW, aH);
-#endif /* !Q_WS_MAC */
+#endif
     /* the update has been finished, return TRUE */
     *aFinished = TRUE;
     return S_OK;
@@ -480,10 +480,18 @@ STDMETHODIMP VBoxSDLFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
                                                ULONG aW, ULONG aH,
                                                BOOL *aFinished)
 {
+#if !defined (Q_WS_WIN) && !defined (Q_WS_PM)
+    /* we're not on the GUI thread and update() isn't thread safe in Qt 3.3.x
+       on the Mac (4.2.x is), on Linux (didn't check Qt 4.x there) and
+       probably on other non-DOS platforms, so post the event instead. */
+    QApplication::postEvent (mView,
+                             new VBoxRepaintEvent (aX, aY, aW, aH));
+#else
     /* we're not on the GUI thread, so update() instead of repaint()! */
     mView->viewport()->update (aX - mView->contentsX(),
                                aY - mView->contentsY(),
                                aW, aH);
+#endif
     /* the update has been finished, return TRUE */
     *aFinished = TRUE;
     return S_OK;

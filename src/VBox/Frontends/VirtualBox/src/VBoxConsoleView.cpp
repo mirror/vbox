@@ -1050,15 +1050,18 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 
-#ifdef Q_WS_MAC /* see VBoxQImageFrameBuffer::NotifyUpdate. */
+#if !defined (Q_WS_WIN) && !defined (Q_WS_PM)
+            /* see VBox[QImage|SDL]FrameBuffer::NotifyUpdate(). */
             case VBoxDefs::RepaintEventType:
             {
                 VBoxRepaintEvent *re = (VBoxRepaintEvent *) e;
-                viewport()->repaint (re->x(), re->y(), re->width(), re->height(), false);
+                viewport()->repaint (re->x() - contentsX(),
+                                     re->y() - contentsY(),
+                                     re->width(), re->height(), false);
                 /*cconsole.GetDisplay().UpdateCompleted(); - the event was acked already */
                 return true;
             }
-#endif /* Q_WS_MAC */
+#endif
 
             case VBoxDefs::SetRegionEventType:
             {
