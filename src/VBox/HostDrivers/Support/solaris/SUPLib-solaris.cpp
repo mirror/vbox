@@ -41,6 +41,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/mman.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -153,16 +154,17 @@ int suplibOsIOCtlFast(uintptr_t uFunction)
 
 int suplibOsPageAlloc(size_t cPages, void **ppvPages)
 {
-    *ppvPages = RTMemPageAllocZ(cPages << PAGE_SHIFT);
-    if (*ppvPages)
+    *ppvPages = mmap(NULL, cPages * PAGE_SIZE, PROT_EXEC | PROT_READ | PROT_WRITE, 
+                     MAP_PRIVATE | MAP_ANON, -1, 0);
+    if (*ppvPages != (void *)-1)
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
 }
 
 
-int suplibOsPageFree(void *pvPages, size_t /* cPages */)
+int suplibOsPageFree(void *pvPages, size_t cPages)
 {
-    RTMemPageFree(pvPages);
+    munmap(pvPages, cPages * PAGE_SIZE);
     return VINF_SUCCESS;
 }
 
