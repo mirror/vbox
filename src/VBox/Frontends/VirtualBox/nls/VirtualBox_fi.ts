@@ -932,7 +932,7 @@
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Sisältö...</translation>
     </message>
     <message>
         <source>F1</source>
@@ -1769,7 +1769,7 @@
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Portti %1</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -3407,7 +3407,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Space</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Välilyönti</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
@@ -3925,7 +3925,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+G</source>
-        <translation>Alt+L</translation>
+        <translation type="obsolete">Alt+L</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
@@ -3937,7 +3937,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+B</source>
-        <translation>Alt+K</translation>
+        <translation type="obsolete">Alt+K</translation>
     </message>
     <message>
         <source>Host Interface Settings</source>
