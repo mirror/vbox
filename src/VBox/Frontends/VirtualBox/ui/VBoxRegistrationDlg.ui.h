@@ -217,9 +217,7 @@ void VBoxRegistrationDlg::init()
     /* Setup validations and maximum text-edit text length */
     QRegExp nameExp ("[a-zA-Z0-9\\(\\)_\\-\\.\\s]+");
     /* E-mail address is validated according to RFC2821, RFC2822,
-     * see http://en.wikipedia.org/wiki/E-mail_address. Note that
-     * we intentionally not currently support the "bla bla"@domain
-     * form as it is not recommended in RFC. */
+     * see http://en.wikipedia.org/wiki/E-mail_address. */
     QRegExp emailExp ("(([a-zA-Z0-9_\\-\\.!#$%\\*/?|^{}`~&'\\+=]*"
                         "[a-zA-Z0-9_\\-!#$%\\*/?|^{}`~&'\\+=])|"
                       "(\"([\\x0001-\\x0008,\\x000B,\\x000C,\\x000E-\\x0019,\\x007F,"
