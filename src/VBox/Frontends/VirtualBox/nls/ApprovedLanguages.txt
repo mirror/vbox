@@ -15,4 +15,5 @@ sv
 hu
 fi
 cs
+sk
 eu
