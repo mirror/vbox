@@ -168,7 +168,9 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
 
 #endif
 
-int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain, void *pvUser)
+int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain,
+               const char *pszTFTPPrefix, const char *pszBootFile,
+               void *pvUser)
 {
     int fNATfailed = 0;
     PNATState pData = malloc(sizeof(NATState));
@@ -181,6 +183,8 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain, void
 #if ARCH_BITS == 64
     pData->cpvHashUsed = 1;
 #endif
+    tftp_prefix = pszTFTPPrefix;
+    bootp_filename = pszBootFile;
 
 #ifdef _WIN32
     {
