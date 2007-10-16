@@ -894,7 +894,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint32_t cr3, un
         rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAGE_MASK, &pPD);
         if (VBOX_SUCCESS(rc))
         {
-            VBOXPDE Pde = pPD->a[(RTGCUINTPTR)GCPtr >> X86_PD_SHIFT];
+            X86PDE Pde = pPD->a[(RTGCUINTPTR)GCPtr >> X86_PD_SHIFT];
             if (Pde.n.u1Present)
             {
                 if ((fFlags & X86_CR4_PSE) && Pde.b.u1Size)
