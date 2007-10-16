@@ -1180,6 +1180,10 @@
 #  if defined(RT_OS_DARWIN) /* first 4GB is reserved for legacy kernel. */
 #   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) >= _4G \
                              && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
+#  elif defined(RT_OS_SOLARIS) /* The kernel only used the top 2TB, but keep it simple. */
+#   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                             && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
+                                 || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
 #  else
 #   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
                              && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
