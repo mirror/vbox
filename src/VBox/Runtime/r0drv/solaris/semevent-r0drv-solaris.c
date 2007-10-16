@@ -90,7 +90,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     {
         /* abort waiting thread, last man cleans up. */
         ASMAtomicXchgU32(&pEventInt->cWaking, pEventInt->cWaking + pEventInt->cWaiters);
-        cv_signal(&pEventInt->Cnd);
+        cv_broadcast(&pEventInt->Cnd);
         mutex_exit(&pEventInt->Mtx);
     }
     else if (pEventInt->cWaking)
