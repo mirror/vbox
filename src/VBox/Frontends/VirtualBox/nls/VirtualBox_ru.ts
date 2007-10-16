@@ -24,7 +24,7 @@
     <message>
         <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Igor Gorbounov, Egor Morozov, innotek</translation>
+        <translation>innotek, Igor Gorbounov, Egor Morozov</translation>
     </message>
 </context>
 <context>
