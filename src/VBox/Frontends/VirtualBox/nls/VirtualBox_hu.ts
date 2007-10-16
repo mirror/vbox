@@ -136,99 +136,99 @@
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
@@ -425,7 +425,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F1</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -966,7 +966,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F1</translation>
     </message>
     <message>
         <source>Show the online help contents</source>
@@ -1021,7 +1021,7 @@
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">F1</translation>
     </message>
     <message>
         <source>Invoke dialog&apos;s help</source>
@@ -1102,7 +1102,7 @@
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+D</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
