@@ -186,7 +186,7 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         }
     }
 
-    if (bootp_filename)
+    if (tftp_prefix && RTDirExists(tftp_prefix) && bootp_filename)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
     {

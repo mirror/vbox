@@ -927,6 +927,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pLunL0, "Driver", "NAT");                   RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                     RC_CHECK();
                 /* (Port forwarding goes here.) */
+
+                /* Configure TFTP prefix and boot filename. */
+                hrc = virtualBox->COMGETTER(HomeFolder)(&str);                      H();
+                STR_CONV();
+                if (psz && *psz)
+                {
+                    char *pszTFTPPrefix = NULL;
+                    RTStrAPrintf(&pszTFTPPrefix, "%s%c%s", psz, RTPATH_DELIMITER, "TFTP");
+                    rc = CFGMR3InsertString(pCfg, "TFTPPrefix", pszTFTPPrefix);     RC_CHECK();
+                    RTStrFree(pszTFTPPrefix);
+                }
+                STR_FREE();
+                hrc = pMachine->COMGETTER(Name)(&str);                              H();
+                STR_CONV();
+                char *pszBootFile = NULL;
+                RTStrAPrintf(&pszBootFile, "%s.pxe", psz);
+                STR_FREE();
+                rc = CFGMR3InsertString(pCfg, "BootFile", pszBootFile);             RC_CHECK();
+                RTStrFree(pszBootFile);
                 break;
             }
 
@@ -964,13 +983,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         networkAdapter->COMGETTER(TAPSetupApplication)(tapSetupApp.asOutParam());
                         if (!tapSetupApp.isEmpty())
                             rc = CFGMR3InsertString(pCfg, "TAPSetupApplication", Utf8Str(tapSetupApp)); RC_CHECK();
-                        
+
                         /* TAP terminate application/script */
                         Bstr tapTerminateApp;
                         networkAdapter->COMGETTER(TAPTerminateApplication)(tapTerminateApp.asOutParam());
                         if (!tapTerminateApp.isEmpty())
                             rc = CFGMR3InsertString(pCfg, "TAPTerminateApplication", Utf8Str(tapTerminateApp)); RC_CHECK();
-                        
+
                         /* "FileHandle" must NOT be inserted here, it is done in DrvTAP.cpp */
 
 # else

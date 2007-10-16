@@ -51,6 +51,10 @@ typedef struct DRVNAT
     PDMNETWORKLINKSTATE     enmLinkState;
     /** NAT state for this instance. */
     PNATState               pNATState;
+    /** TFTP directory prefix. */
+    char                    *pszTFTPPrefix;
+    /** Boot file name to provide in the DHCP server response. */
+    char                    *pszBootFile;
     /** Flag whether a NAT ping warning has been shown. */
     bool                    fSuppressPingWarning;
 } DRVNAT, *PDRVNAT;
@@ -408,8 +412,23 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0"))
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "Unknown NAT configuration option, only supports PassDomain");
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0"))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, N_("Unknown NAT configuration option, only supports PassDomain, TFTPPrefix and BootFile"));
+
+    /*
+     * Init the static parts.
+     */
+    pData->pDrvIns                      = pDrvIns;
+    pData->pNATState                    = NULL;
+    pData->pszTFTPPrefix                = NULL;
+    pData->pszBootFile                  = NULL;
+    /* IBase */
+    pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
+    /* INetwork */
+    pData->INetworkConnector.pfnSend               = drvNATSend;
+    pData->INetworkConnector.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
+    pData->INetworkConnector.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
+    pData->INetworkConnector.pfnNotifyCanReceive   = drvNATNotifyCanReceive;
 
     /*
      * Get the configuration settings.
@@ -419,20 +438,14 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPassDomain = true;
     else if (VBOX_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pData->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"PassDomain\" boolean returned %Vrc"), pDrvIns->iInstance, rc);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"PassDomain\" boolean returned %Vrc"), pDrvIns->iInstance, rc);
 
-    /*
-     * Init the static parts.
-     */
-    pData->pDrvIns                      = pDrvIns;
-    pData->pNATState                    = NULL;
-    /* IBase */
-    pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
-    /* INetwork */
-    pData->INetworkConnector.pfnSend               = drvNATSend;
-    pData->INetworkConnector.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
-    pData->INetworkConnector.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
-    pData->INetworkConnector.pfnNotifyCanReceive   = drvNATNotifyCanReceive;
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TFTPPrefix", &pData->pszTFTPPrefix);
+    if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"TFTPPrefix\" string returned %Vrc"), pDrvIns->iInstance, rc);
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "BootFile", &pData->pszBootFile);
+    if (VBOX_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"BootFile\" string returned %Vrc"), pDrvIns->iInstance, rc);
 
     /*
      * Query the network port interface.
@@ -466,7 +479,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             /*
              * Initialize slirp.
              */
-            rc = slirp_init(&pData->pNATState, &szNetAddr[0], fPassDomain, pData);
+            rc = slirp_init(&pData->pNATState, &szNetAddr[0], fPassDomain, pData->pszTFTPPrefix, pData->pszBootFile, pData);
             if (VBOX_SUCCESS(rc))
             {
                 int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pData, pCfgHandle);

@@ -31,6 +31,7 @@ typedef int socklen_t;
 #endif
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/dir.h>
 #include <VBox/types.h>
 
 # define malloc(a)       RTMemAllocZ(a)
