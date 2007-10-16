@@ -216,7 +216,7 @@ void VBoxRegistrationDlg::init()
 
     /* Setup validations and maximum text-edit text length */
     QRegExp nameExp ("[a-zA-Z0-9\\(\\)_\\-\\.\\s]+");
-    QRegExp emailExp ("[a-zA-Z][a-zA-Z0-9_\\-]*[a-zA-Z0-9]@[a-zA-Z][a-zA-Z0-9_\\-\\.]*[a-zA-Z]");
+    QRegExp emailExp ("[a-zA-Z][a-zA-Z0-9_\\-\\.]*[a-zA-Z0-9]@[a-zA-Z][a-zA-Z0-9_\\-\\.]*[a-zA-Z]");
     mNameEdit->setValidator (new QRegExpValidator (nameExp, this));
     mEmailEdit->setValidator (new QRegExpValidator (emailExp, this));
     mNameEdit->setMaxLength (50);
