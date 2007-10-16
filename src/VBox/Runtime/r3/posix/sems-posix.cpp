@@ -724,7 +724,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
             {
                 pthread_mutexattr_destroy(&MutexAttr);
 
-                pIntMutexSem->Owner    = (pthread_t)~0;
+                pIntMutexSem->Owner    = ~(pthread_t)0;
                 pIntMutexSem->cNesting = 0;
 
                 *pMutexSem = pIntMutexSem;
@@ -766,7 +766,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     /*
      * Free the memory and be gone.
      */
-    pIntMutexSem->Owner    = (pthread_t)~0;
+    pIntMutexSem->Owner    = ~(pthread_t)0;
     pIntMutexSem->cNesting = ~0;
     RTMemTmpFree(pIntMutexSem);
 
@@ -788,7 +788,7 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     /*
      * Check if nested request.
      */
-    pthread_t                       Self = pthread_self();
+    pthread_t                     Self = pthread_self();
     struct RTSEMMUTEXINTERNAL    *pIntMutexSem = MutexSem;
     if (    pIntMutexSem->Owner == Self
         &&  pIntMutexSem->cNesting > 0)
@@ -873,7 +873,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Check if nested.
      */
-    pthread_t                       Self = pthread_self();
+    pthread_t                     Self = pthread_self();
     struct RTSEMMUTEXINTERNAL    *pIntMutexSem = MutexSem;
     if (    pIntMutexSem->Owner != Self
         ||  pIntMutexSem->cNesting == (uint32_t)~0)
@@ -895,7 +895,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Clear the state. (cNesting == 1)
      */
-    pIntMutexSem->Owner    = (pthread_t)~0;
+    pIntMutexSem->Owner    = ~(pthread_t)0;
     ASMAtomicXchgU32(&pIntMutexSem->cNesting, 0);
 
     /*
@@ -955,7 +955,7 @@ RTDECL(int)   RTSemRWCreate(PRTSEMRW pRWSem)
             if (!rc)
             {
                 pIntRWSem->uCheck = ~0;
-                pIntRWSem->WROwner = (pthread_t)~0;
+                pIntRWSem->WROwner = ~(pthread_t)0;
                 *pRWSem = pIntRWSem;
                 return VINF_SUCCESS;
             }
@@ -1159,7 +1159,7 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 #endif /* !RT_OS_DARWIN */
     }
 
-    ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)pthread_self());
+    ASMAtomicXchgSize(&pIntRWSem->WROwner, pthread_self());
 
     return VINF_SUCCESS;
 }
@@ -1186,7 +1186,7 @@ RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
     /*
      * Try unlock it.
      */
-    pthread_t                   Self = pthread_self();
+    pthread_t                 Self = pthread_self();
     struct RTSEMRWINTERNAL   *pIntRWSem = RWSem;
     if (pIntRWSem->WROwner != Self)
     {
@@ -1197,8 +1197,7 @@ RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
     /*
      * Try unlock it.
      */
-    AssertMsg(sizeof(pthread_t) == sizeof(void *), ("pthread_t is not the size of a pointer but %d bytes\n", sizeof(pthread_t)));
-    ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)(uintptr_t)~0);
+    ASMAtomicXchgSize(&pIntRWSem->WROwner, ~(pthread_t)0);
     int rc = pthread_rwlock_unlock(&pIntRWSem->RWLock);
     if (rc)
     {
