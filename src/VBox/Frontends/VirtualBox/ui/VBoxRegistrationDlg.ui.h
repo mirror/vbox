@@ -216,7 +216,19 @@ void VBoxRegistrationDlg::init()
 
     /* Setup validations and maximum text-edit text length */
     QRegExp nameExp ("[a-zA-Z0-9\\(\\)_\\-\\.\\s]+");
-    QRegExp emailExp ("[a-zA-Z][a-zA-Z0-9_\\-\\.!#$%\\*/?|^{}`~&'\\+=]*[a-zA-Z0-9]@[a-zA-Z][a-zA-Z0-9_\\-\\.]*[a-zA-Z]");
+    /* E-mail address is validated according to RFC2821, RFC2822,
+     * see http://en.wikipedia.org/wiki/E-mail_address. Note that
+     * we intentionally not currently support the "bla bla"@domain
+     * form as it is not recommended in RFC. */
+    QRegExp emailExp ("(([a-zA-Z0-9_\\-\\.!#$%\\*/?|^{}`~&'\\+=]*"
+                        "[a-zA-Z0-9_\\-!#$%\\*/?|^{}`~&'\\+=])|"
+                      "(\"([\\x0001-\\x0008,\\x000B,\\x000C,\\x000E-\\x0019,\\x007F,"
+                            "\\x0021,\\x0023-\\x005B,\\x005D-\\x007E,"
+                            "\\x0009,\\x0020]|"
+                          "(\\\\[\\x0001-\\x0009,\\x000B,\\x000C,"
+                                "\\x000E-\\x007F]))*\"))"
+                      "@"
+                      "[a-zA-Z0-9\\-]+(\\.[a-zA-Z0-9\\-]+)*");
     mNameEdit->setValidator (new QRegExpValidator (nameExp, this));
     mEmailEdit->setValidator (new QRegExpValidator (emailExp, this));
     mNameEdit->setMaxLength (50);
