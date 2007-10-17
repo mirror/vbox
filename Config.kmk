@@ -801,7 +801,9 @@ ifeq ($(VBOX_XCURSOR_LIBS),)
    VBOX_XCURSOR_LIBS += X11 Xrender Xfixes
   endif
  endif
- VBOX_XCURSOR_LIBS ?= Xcursor
+ ifeq ($(VBOX_XCURSOR_LIBS),)
+  VBOX_XCURSOR_LIBS := Xcursor
+ endif
 endif
 
 
