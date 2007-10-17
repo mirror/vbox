@@ -1112,12 +1112,6 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
                 AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv pParam1=%VGv pvFault=%VGv\n", pRegFrame->eip, pParam1, pvFault), VERR_EM_INTERPRETER);
-
-#ifdef VBOX_STRICT
-                rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
-                if (VBOX_FAILURE(rc))
-                    return VERR_EM_INTERPRETER;
-#endif
                 break;
 
             default:
@@ -1134,18 +1128,23 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-#ifdef VBOX_STRICT
             LogFlow(("CmpXchg %VGv=%08x eax=%08x %08x\n", pParam1, valpar1, pRegFrame->eax, valpar));
-#endif
-            if (pCpu->prefix & PREFIX_LOCK)
-                eflags = EMGCEmulateLockCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size);
-            else
-                eflags = EMGCEmulateCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size);
 
-#ifdef VBOX_STRICT
-            rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
+            MMGCRamRegisterTrapHandler(pVM);
+            if (pCpu->prefix & PREFIX_LOCK)
+                rc = EMGCEmulateLockCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size, &eflags);
+            else
+                rc = EMGCEmulateCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size, &eflags);
+            MMGCRamDeregisterTrapHandler(pVM);
+
+            if (VBOX_FAILURE(rc))
+            {
+                Log(("CmpXchg %VGv=%08x eax=%08x %08x -> emulation failed due to page fault!\n", pParam1, valpar1, pRegFrame->eax, valpar));
+                return VERR_EM_INTERPRETER;
+            }
+
             LogFlow(("CmpXchg %VGv=%08x eax=%08x %08x ZF=%d\n", pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
-#endif
+
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
                                   | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
