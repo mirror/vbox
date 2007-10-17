@@ -2041,6 +2041,15 @@
     <const name="MessageAndMenu" value="2"/>
   </enum>
 
+  <enum
+     name="IDEControllerType"
+     uuid="445330e3-202a-4dab-854f-ce22e6cb9715"
+     >
+    <const name="InvalidIDEControllerType"       value="0"/>
+    <const name="IDEControllerPIIX3"             value="1"/>
+    <const name="IDEControllerPIIX4"             value="2"/>
+  </enum>
+
   <interface
      name="IBIOSSettings" extends="$unknown"
      uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
@@ -2091,6 +2100,14 @@
       <desc>
         PXE debug logging flag. If set, VirtualBox will write extensive
         PXE trace information to the release log.
+      </desc>
+    </attribute>
+
+    <attribute name="IDEControllerType" type="IDEControllerType">
+      <desc>
+        Type of the virtual IDE controller. Depending on this value,
+        VirtualBox will provide different virtual IDE hardware
+        devices to the guest.
       </desc>
     </attribute>
 

@@ -771,8 +771,9 @@ static void pci_bios_init_device(PCIDevice *d)
     switch(devclass)
     {
     case 0x0101:
-        if (vendor_id == 0x8086 && device_id == 0x7010) {
-            /* PIIX3 IDE */
+        if (vendor_id == 0x8086 && 
+            (device_id == 0x7010 || device_id == 0x7111)) {
+            /* PIIX3 or PIIX4 IDE */
             pci_config_writew(d, 0x40, 0x8000); /* enable IDE0 */
             pci_config_writew(d, 0x42, 0x8000); /* enable IDE1 */
             goto default_map;

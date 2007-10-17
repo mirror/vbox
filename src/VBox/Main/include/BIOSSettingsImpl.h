@@ -42,6 +42,7 @@ public:
             mIOAPICEnabled = false;
             mPXEDebugEnabled = false;
             mTimeOffset = 0;
+            mIDEControllerType = IDEControllerType_IDEControllerPIIX4;
         }
 
         bool operator== (const Data &that) const
@@ -58,15 +59,16 @@ public:
                     mTimeOffset      == that.mTimeOffset);
         }
 
-        BOOL               mLogoFadeIn;
-        BOOL               mLogoFadeOut;
-        ULONG              mLogoDisplayTime;
-        Bstr               mLogoImagePath;
-        BIOSBootMenuMode_T mBootMenuMode;
-        BOOL               mACPIEnabled;
-        BOOL               mIOAPICEnabled;
-        BOOL               mPXEDebugEnabled;
-        LONG64             mTimeOffset;
+        BOOL                mLogoFadeIn;
+        BOOL                mLogoFadeOut;
+        ULONG               mLogoDisplayTime;
+        Bstr                mLogoImagePath;
+        BIOSBootMenuMode_T  mBootMenuMode;
+        BOOL                mACPIEnabled;
+        BOOL                mIOAPICEnabled;
+        BOOL                mPXEDebugEnabled;
+        LONG64              mTimeOffset;
+        IDEControllerType_T mIDEControllerType;
     };
 
     DECLARE_NOT_AGGREGATABLE(BIOSSettings)
@@ -105,6 +107,8 @@ public:
     STDMETHOD(COMSETTER(IOAPICEnabled))(BOOL enable);
     STDMETHOD(COMGETTER(PXEDebugEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(PXEDebugEnabled))(BOOL enable);
+    STDMETHOD(COMGETTER(IDEControllerType))(IDEControllerType_T *controllerType);
+    STDMETHOD(COMSETTER(IDEControllerType))(IDEControllerType_T controllerType);
     STDMETHOD(COMGETTER)(TimeOffset)(LONG64 *offset);
     STDMETHOD(COMSETTER)(TimeOffset)(LONG64 offset);
 

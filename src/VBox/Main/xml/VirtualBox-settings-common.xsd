@@ -190,6 +190,13 @@
     </xsd:restriction>
 </xsd:simpleType>
 
+<xsd:simpleType name="TIDEControllerType">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="PIIX3"/>
+    <xsd:enumeration value="PIIX4"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
 <xsd:simpleType name="TClipboardMode">
     <xsd:restriction base="xsd:string">
       <xsd:enumeration value="Disabled"/>
@@ -467,6 +474,11 @@
     <xsd:element name="PXEDebug" minOccurs="0">
       <xsd:complexType>
           <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+      </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="IDEController" minOccurs="0">
+      <xsd:complexType>
+          <xsd:attribute name="type" use="required" type="TIDEControllerType"/>
       </xsd:complexType>
     </xsd:element>
   </xsd:all>

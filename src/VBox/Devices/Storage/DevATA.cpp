@@ -68,7 +68,7 @@
 /**
  * The SSM saved state version.
  */
-#define ATA_SAVED_STATE_VERSION 15
+#define ATA_SAVED_STATE_VERSION 16
 
 /** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS  1024
@@ -377,6 +377,8 @@ typedef struct PCIATAState {
     bool                fGCEnabled;
     /** Flag whether R0 is enabled. */
     bool                fR0Enabled;
+    /** Flag indicating whether PIIX4 or PIIX3 is being emulated. */
+    bool                fPIIX4;
     bool                Alignment0[HC_ARCH_BITS == 64 ? 6 : 2]; /**< Align the struct size. */
 } PCIATAState;
 
@@ -5760,6 +5762,7 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
                 Assert(pData->aCts[i].aIfs[j].CTXSUFF(pbIOBuffer) == NULL);
         }
     }
+    SSMR3PutBool(pSSMHandle, pData->fPIIX4);
 
     return SSMR3PutU32(pSSMHandle, ~0); /* sanity/terminator */
 }
@@ -5879,6 +5882,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
                 Assert(pData->aCts[i].aIfs[j].CTXSUFF(pbIOBuffer) == NULL);
         }
     }
+    SSMR3GetBool(pSSMHandle, &pData->fPIIX4);
 
     rc = SSMR3GetU32(pSSMHandle, &u32);
     if (VBOX_FAILURE(rc))
@@ -5921,7 +5925,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0IRQDelay\0R0Enabled\0PIIX4\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("PIIX3 configuration error: unknown option specified."));
 
@@ -5950,6 +5954,14 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Log(("%s: DelayIRQMillies=%d\n", __FUNCTION__, DelayIRQMillies));
     Assert(DelayIRQMillies < 50);
 
+    rc = CFGMR3QueryBool(pCfgHandle, "PIIX4", &pData->fPIIX4);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pData->fPIIX4 = false;
+    else if (VBOX_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("PIIX3 configuration error: failed to read PIIX4 as boolean."));
+    Log(("%s: fPIIX4=%d\n", __FUNCTION__, pData->fPIIX4));
+
     /*
      * Initialize data (most of it anyway).
      */
@@ -5960,8 +5972,20 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* pci */
     pData->dev.config[0x00] = 0x86; /* Vendor: Intel */
     pData->dev.config[0x01] = 0x80;
-    pData->dev.config[0x02] = 0x10; /* Device: PIIX3 IDE */
-    pData->dev.config[0x03] = 0x70;
+    if (pData->fPIIX4) 
+    {
+        pData->dev.config[0x02] = 0x11; /* Device: PIIX4 IDE */
+        pData->dev.config[0x03] = 0x71;
+        pData->dev.config[0x08] = 0x01; /* Revision: PIIX4E */
+        pData->dev.config[0x48] = 0x00; /* UDMACTL */
+        pData->dev.config[0x4A] = 0x00; /* UDMATIM */
+        pData->dev.config[0x4B] = 0x00;
+    }
+    else
+    {
+        pData->dev.config[0x02] = 0x10; /* Device: PIIX3 IDE */
+        pData->dev.config[0x03] = 0x70;
+    }
     pData->dev.config[0x04] = PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER;
     pData->dev.config[0x09] = 0x8a; /* programming interface = PCI_IDE bus master is supported */
     pData->dev.config[0x0a] = 0x01; /* class_sub = PCI_IDE */
