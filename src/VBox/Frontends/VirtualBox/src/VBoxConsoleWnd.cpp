@@ -1225,8 +1225,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                     dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbShutdown));
                 else if (lastAction [0] == kSave)
                     dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbSave));
-                else
-                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbPowerOff));
+                else /* the default is ACPI Shutdown */
+                    dlg.buttonGroup->setButton (dlg.buttonGroup->id (dlg.rbShutdown));
                 dlg.cbDiscardCurState->setChecked (
                     lastAction.count() > 1 && lastAction [1] == kDiscardCurState);
             }
