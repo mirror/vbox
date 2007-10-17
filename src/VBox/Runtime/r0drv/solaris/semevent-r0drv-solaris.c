@@ -152,23 +152,31 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
     }
     else
     {
+        ASMAtomicIncU32(&pEventInt->cWaiters);
+        
         /*
          * Translate milliseconds into ticks and go to sleep.
          */
-        int cTicks;
-        unsigned long timeout;
         if (cMillies != RT_INDEFINITE_WAIT)
-            cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
+        {
+            int cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
+            clock_t timeout = ddi_get_lbolt();
+            timeout += cTicks;
+            if (fInterruptible)
+                rc = cv_timedwait_sig(&pEventInt->Cnd, &pEventInt->Mtx, timeout);
+            else
+                rc = cv_timedwait(&pEventInt->Cnd, &pEventInt->Mtx, timeout);
+        }
         else
-            cTicks = 0;
-        timeout += cTicks;
-
-        ASMAtomicIncU32(&pEventInt->cWaiters);
-
-        if (fInterruptible)
-            rc = cv_timedwait_sig(&pEventInt->Cnd, &pEventInt->Mtx, timeout);
-        else
-            rc = cv_timedwait(&pEventInt->Cnd, &pEventInt->Mtx, timeout);
+        {
+            if (fInterruptible)
+                rc = cv_wait_sig(&pEventInt->Cnd, &pEventInt->Mtx);
+            else
+            {
+                cv_wait(&pEventInt->Cnd, &pEventInt->Mtx);
+                rc = 1;
+            }
+        }
 
         if (rc > 0)
         {
