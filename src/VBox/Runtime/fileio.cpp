@@ -125,8 +125,12 @@ int rtFileRecalcAndValidateFlags(unsigned *pfOpen)
     /*
      * Validate                                                                                                                                       .
      */
-    if (    (fOpen & (~RTFILE_O_VALID_MASK | RTFILE_O_NON_BLOCK))
-        ||  !(fOpen & RTFILE_O_ACCESS_MASK)
+    if (    !(fOpen & RTFILE_O_ACCESS_MASK)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        ||  (fOpen & (~RTFILE_O_VALID_MASK | RTFILE_O_NON_BLOCK))
+#else
+        ||  (fOpen & ~RTFILE_O_VALID_MASK)
+#endif
         ||  (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_WRITE)) == RTFILE_O_TRUNCATE
        )
     {
