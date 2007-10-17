@@ -6904,6 +6904,13 @@ void floppy_prepare_controller(drive)
   // reset the disk motor timeout value of INT 08
   write_byte(0x40,0x40, BX_FLOPPY_ON_CNT);
 
+#ifdef VBOX
+  // program data rate
+  val8 = read_byte(0x0040, 0x008b);
+  val8 >>= 6;
+  outb(0x03f7, val8);
+#endif
+
   // wait for drive readiness
   do {
     val8 = inb(0x3f4);
@@ -7976,9 +7983,7 @@ Bit8u bseqnr;
 #ifdef VBOX
   Bit8u  bootlan;
 #endif /* VBOX */
-#ifndef VBOX
   Bit8u  bootchk;
-#endif /* !VBOX */
   Bit16u bootseg;
   Bit16u status;
   Bit8u  lastdrive=0;
@@ -8181,17 +8186,22 @@ ASM_END
   // There is *no* requirement whatsoever for a valid boot sector to
   // have a 55AAh signature. UNIX boot floppies typically have no such
   // signature. In general, it is impossible to tell a valid bootsector
-  // from an invalid one; some heuristic would be needed - a JMP instruction
-  // in one of the first few bytes, absence of long sequences of identical
-  // bytes at the start or beginning or boot sector etc.
-  // The risk of attempting to boot an invalid floppy is low, certainly
-  // lower than the risk of refusing to boot a valid floppy.
-#else /* !VBOX */
+  // from an invalid one.
+  // NB: It is somewhat common for failed OS installs to have the 
+  // 0x55AA signature and a valid partition table but zeros in the 
+  // rest of the boot sector. We do a quick check by comparing the first
+  // two words of boot sector; if identical, the boot sector is
+  // extremely unlikely to be valid.
+#endif
   // check signature if instructed by cmos reg 0x38, only for floppy
   // bootchk = 1 : signature check disabled
   // bootchk = 0 : signature check enabled
   if (bootdrv != 0) bootchk = 0;
+#ifdef VBOX
+  else bootchk = 1; /* disable 0x55AA signature check on drive A: */
+#else
   else bootchk = inb_cmos(0x38) & 0x01;
+#endif
 
 #if BX_ELTORITO_BOOT
   // if boot from cd, no signature check
@@ -8200,7 +8210,8 @@ ASM_END
 #endif // BX_ELTORITO_BOOT
 
   if (bootchk == 0) {
-    if (read_word(bootseg,0x1fe) != 0xaa55) {
+    if (read_word(bootseg,0x1fe) != 0xaa55 ||
+        read_word(bootseg,0) == read_word(bootseg,2)) {
 #ifdef VBOX
       print_boot_failure(bootcd, bootlan, bootdrv, 0, lastdrive);
 #else /* !VBOX */
@@ -8209,7 +8220,6 @@ ASM_END
       return 0x00000000;
       }
     }
-#endif /* !VBOX */
 
 #if BX_ELTORITO_BOOT
   // Print out the boot string
