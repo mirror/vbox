@@ -74,11 +74,9 @@ ifneq ($(VBOX_WITH_QTGUI),)
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
   endif
- else ifeq ($(BUILD_TARGET),darwin)
-  ifdef LIB_QT
+ else ifeq ($(VBOX_MUST_INSTALL_LIB_QT),1)
    bin_SOURCES += \
 	$(LIB_QT)
-  endif
  endif
 endif
 
