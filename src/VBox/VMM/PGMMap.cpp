@@ -96,7 +96,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, size_t cb, PFNPGMRELOCATE pfnR
         {
             AssertMsgFailed(("Address is already in use by %s. req %#x-%#x take %#x-%#x\n",
                              pCur->pszDesc, GCPtr, GCPtrLast, pCur->GCPtr, pCur->GCPtrLast));
-            LogRel(("VERR_PGM_MAPPING_CONFLICT: Address is already in use by %s. req %#x-%#x take %#x-%#x\n", 
+            LogRel(("VERR_PGM_MAPPING_CONFLICT: Address is already in use by %s. req %#x-%#x take %#x-%#x\n",
                     pCur->pszDesc, GCPtr, GCPtrLast, pCur->GCPtr, pCur->GCPtrLast));
             return VERR_PGM_MAPPING_CONFLICT;
         }
@@ -746,7 +746,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
          * 32-bit.
          */
         if (pPGM->pHC32BitPD->a[iNewPDE].n.u1Present)
-            pgmPoolFree(pVM, pPGM->pHC32BitPD->a[iNewPDE].n.u1Present & X86_PDE_PG_MASK, PGMPOOL_IDX_PD, iNewPDE);
+            pgmPoolFree(pVM, pPGM->pHC32BitPD->a[iNewPDE].u & X86_PDE_PG_MASK, PGMPOOL_IDX_PD, iNewPDE);
         X86PDE Pde;
         /* Default mapping page directory flags are read/write and supervisor; individual page attributes determine the final flags */
         Pde.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT;
@@ -759,7 +759,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
         const int iPD = iNewPDE / 256;
         int iPDE = iNewPDE * 2 % 512;
         if (pPGM->apHCPaePDs[iPD]->a[iPDE].n.u1Present)
-            pgmPoolFree(pVM, pPGM->apHCPaePDs[iPD]->a[iPDE].n.u1Present & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
+            pgmPoolFree(pVM, pPGM->apHCPaePDs[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
         X86PDEPAE PdePae0;
         PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae0;
@@ -767,7 +767,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, int iNewPDE)
 
         iPDE++;
         if (pPGM->apHCPaePDs[iPD]->a[iPDE].n.u1Present)
-            pgmPoolFree(pVM, pPGM->apHCPaePDs[iPD]->a[iPDE].n.u1Present & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2 + 1);
+            pgmPoolFree(pVM, pPGM->apHCPaePDs[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2 + 1);
         X86PDEPAE PdePae1;
         PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae1;
