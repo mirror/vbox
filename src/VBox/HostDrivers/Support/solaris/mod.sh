@@ -1,6 +1,9 @@
 #!/bin/sh
 
-
+# Sudo isn't native solaris, but it's very convenient...
+if test -z "$SUDO" && test "`whoami`" != "root"; then
+    SUDO=sudo
+fi
 
 script_dir=`dirname "$0"`
 # src/VBox/HostDrivers/solaris/ residence:
@@ -26,23 +29,23 @@ if test "$BUILD_TARGET_ARCH" = "amd64"; then
 else
     VBOXDRV_INS=/usr/kernel/drv/vboxdrv
 fi
-sudo cp $DIR/vboxdrv.o $VBOXDRV_INS
-sudo cp $script_dir/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf /usr/kernel/drv/vboxdrv.conf
+$(SUDO) cp $DIR/vboxdrv.o $VBOXDRV_INS
+$(SUDO) cp $script_dir/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf /usr/kernel/drv/vboxdrv.conf
 old_id=`/usr/sbin/modinfo | grep vbox | cut -f 1 -d ' ' `
 if test -n "$old_id"; then
     echo "* unloading $old_id..."
     sync
     sync
-    sudo /usr/sbin/modunload -i $old_id
+    $(SUDO) /usr/sbin/modunload -i $old_id
 else
-    echo "* If it fails below, run: sudo add_drv vboxdrv"
+    echo "* If it fails below, run: $(SUDO) add_drv vboxdrv"
 fi
 echo "* loading vboxdrv..."
 sync
 sync
-sudo /usr/sbin/modload $VBOXDRV_INS
+$(SUDO) /usr/sbin/modload $VBOXDRV_INS
 /usr/sbin/modinfo | grep vboxdrv
 echo "* dmesg:"
 dmesg | tail -20
-sudo chmod a+rw /devices/pseudo/vboxdrv*
+$(SUDO) chmod a+rw /devices/pseudo/vboxdrv*
 
