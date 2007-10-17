@@ -25,13 +25,14 @@ BEGINCODE
 
 ;;
 ; Emulate lock CMPXCHG instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateLockCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
+; EMGCDECL(uint32_t) EMGCEmulateLockCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns eax=0 if data written, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
 ; @param    [esp + 08h]    Param 2 - Second parameter - pointer to second parameter (eax)
 ; @param    [esp + 0ch]    Param 3 - Third parameter - third parameter
 ; @param    [esp + 10h]    Param 4 - Size of parameters, only 1/2/4 is valid.
+; @param    [esp + 14h]    Param 4 - Pointer to eflags (out)
 ; @uses     eax, ecx, edx
 ;
 align 16
@@ -78,19 +79,31 @@ BEGINPROC   EMGCEmulateLockCmpXchg
     pushf
     pop     eax
 
+    mov     edx, [esp + 14h + 4]            ; eflags pointer
+    mov     dword [edx], eax
+
     pop     ebx
+    mov     eax, VINF_SUCCESS
     retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMGCEmulateLockCmpXchg_Error
+    pop     ebx
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+
 ENDPROC     EMGCEmulateLockCmpXchg
 
 ;;
 ; Emulate CMPXCHG instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
+; EMGCDECL(uint32_t) EMGCEmulateCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns eax=0 if data written, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
 ; @param    [esp + 08h]    Param 2 - Second parameter - pointer to second parameter (eax)
 ; @param    [esp + 0ch]    Param 3 - Third parameter - third parameter
 ; @param    [esp + 10h]    Param 4 - Size of parameters, only 1/2/4 is valid.
+; @param    [esp + 14h]    Param 4 - Pointer to eflags (out)
 ; @uses     eax, ecx, edx
 ;
 align 16
@@ -137,6 +150,16 @@ BEGINPROC   EMGCEmulateCmpXchg
     pushf
     pop     eax
 
+    mov     edx, [esp + 14h + 4]        ; eflags pointer
+    mov     dword [edx], eax
+
     pop     ebx
+    mov     eax, VINF_SUCCESS
     retn
+
+; Read error - we will be here after our page fault handler.
+GLOBALNAME EMGCEmulateCmpXchg_Error
+    pop     ebx
+    mov     eax, VERR_ACCESS_DENIED
+    ret
 ENDPROC     EMGCEmulateCmpXchg
