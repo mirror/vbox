@@ -1518,7 +1518,6 @@ void VBoxConsoleWnd::languageChange()
     /* Help actions */
 
     helpContentsAction->setMenuText (tr ("&Contents..."));
-    helpContentsAction->setAccel (tr ("F1"));
     helpContentsAction->setStatusTip (tr ("Show the online help contents"));
 
     helpWebAction->setMenuText (tr ("&VirtualBox Web Site..."));
