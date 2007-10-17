@@ -47,7 +47,6 @@ endif
 VBoxSDL_DEFS.freebsd = VBOXSDL_WITH_X11
 VBoxSDL_DEFS.linux = _GNU_SOURCE VBOXSDL_WITH_X11
 VBoxSDL_DEFS.solaris = VBOXSDL_WITH_X11
-VBoxSDL_DEFS.solaris += VBOX_WITHOUT_XCURSOR ## @todo build xcursor or something.
 ifdef VBOX_OPENGL
  #VBoxSDL_DEFS.linux += VBOX_OPENGL
 endif
