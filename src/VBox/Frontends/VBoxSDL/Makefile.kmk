@@ -36,6 +36,7 @@ ifndef VBOX_OSE
 	win32/TitlebarButtons.cpp \
 	win32/VBoxSDL.rc
 endif
+
 VBoxSDL_DEFS       =
 ifdef VBOX_WITH_SECURELABEL
  VBoxSDL_DEFS     += VBOX_SECURELABEL
@@ -55,30 +56,35 @@ ifndef VBOX_OSE
 endif
 VBoxSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
 VBoxSDL_DEFS.win.amd64 = _WIN32_WINNT=0x0510
+
 VBoxSDL_INCS = \
 	$(PATH_BIN)/sdk/include \
 	$(PATH_VBoxSDL)
-ifneq ($(filter-out win solaris,$(BUILD_TARGET)),)
-VBoxSDL_LIBS = \
-	$(LIB_SDK_LIBSDL_SDLMAIN)
-endif
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
-ifneq ($(BUILD_TARGET),solaris) ## @todo Xcursor on solaris.
-VBoxSDL_LIBS += \
-	$(LIB_XCURSOR)
+VBoxSDL_INCS += \
+	$(VBOX_XCURSOR_INCS)
 endif
-VBoxSDL_LIBPATH = \
-	$(VBOX_LIBPATH_X11)
 VBoxSDL_INCS.freebsd = \
 	/usr/include \
 	/usr/local/include \
 	/usr/X11R6/include ## @todo figure this out.
+ifneq ($(filter-out win solaris,$(BUILD_TARGET)),)
+
+VBoxSDL_LIBS = \
+	$(LIB_SDK_LIBSDL_SDLMAIN)
+endif
+ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
+VBoxSDL_LIBS += \
+	$(VBOX_XCURSOR_LIBS)
+VBoxSDL_LIBPATH = \
+	$(VBOX_LIBPATH_X11)
 endif
 VBoxSDL_LIBS.solaris = \
 	$(LIB_X11)
 ifdef VBOX_OPENGL
  #VBoxSDL_LIBS.linux += GL
 endif
+
 VBoxSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
 

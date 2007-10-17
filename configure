@@ -920,7 +920,7 @@ EOF
   [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
   if test_compile "$LIBX11 $LIBXCURSOR $I_INCX11" Xcursor Xcursor; then
     log_success "found"
-    cnf_append "LIB_XCURSOR" "`strip_l "$LIBXCURSOR"`"
+    cnf_append "VBOX_XCURSOR_LIBS" "`strip_l "$LIBXCURSOR"`"
   fi
 }
 
