@@ -4411,6 +4411,31 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                     CFGLDRReleaseNode (timeOffsetNode);
                 }
             }
+
+            /* IDE controller type (optional, defaults to PIIX3) */
+            {
+                CFGNODE ideControllerNode = 0;
+                IDEControllerType_T controllerType = IDEControllerType_IDEControllerPIIX3;
+                CFGLDRGetChildNode (biosNode, "IDEController", 0, &ideControllerNode);
+                if (ideControllerNode)
+                {
+                    Bstr IDEControllerType;
+
+                    CFGLDRQueryBSTR (ideControllerNode, "type", IDEControllerType.asOutParam());
+                    ComAssertBreak (IDEControllerType, rc = E_FAIL);
+
+                    if (IDEControllerType.compare(Bstr("PIIX3")) == 0)
+                        controllerType = IDEControllerType_IDEControllerPIIX3;
+                    else if (IDEControllerType.compare(Bstr("PIIX4")) == 0)
+                        controllerType = IDEControllerType_IDEControllerPIIX4;
+                    else
+                        ComAssertBreak (0, rc = E_FAIL);
+
+                    CFGLDRReleaseNode (ideControllerNode);
+                }
+                mBIOSSettings->COMSETTER(IDEControllerType)(controllerType);
+            }
+
         }
         while (0);
 
@@ -6333,6 +6358,25 @@ HRESULT Machine::saveHardware (CFGNODE aNode)
             mBIOSSettings->COMGETTER(PXEDebugEnabled)(&fSet);
             CFGLDRSetBool (pxedebugNode, "enabled", !!fSet);
             CFGLDRReleaseNode (pxedebugNode);
+
+            /* IDE controller type */
+            CFGNODE ideControllerNode = 0;
+            IDEControllerType_T controllerType;
+            CFGLDRCreateChildNode (biosNode, "IDEController", &ideControllerNode);
+            mBIOSSettings->COMGETTER(IDEControllerType)(&controllerType);
+            switch (controllerType)
+            {
+                case IDEControllerType_IDEControllerPIIX3:
+                    CFGLDRSetString (ideControllerNode, "type", "PIIX3");
+                    break;
+                case IDEControllerType_IDEControllerPIIX4:
+                    CFGLDRSetString (ideControllerNode, "type", "PIIX4");
+                    break;
+                default:
+                    ComAssertMsgFailedBreak (("Invalid IDE Controller type: %d\n",
+                                              controllerType), rc = E_FAIL);
+            }
+            CFGLDRReleaseNode (ideControllerNode);
 
         }
         CFGLDRReleaseNode(biosNode);

@@ -404,6 +404,51 @@ STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
     return S_OK;
 }
 
+STDMETHODIMP BIOSSettings::COMGETTER(IDEControllerType)(IDEControllerType_T *aControllerType)
+{
+    if (!aControllerType)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aControllerType = mData->mIDEControllerType;
+
+    return S_OK;
+}
+
+STDMETHODIMP BIOSSettings::COMSETTER(IDEControllerType)(IDEControllerType_T aControllerType)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    /* make sure the value is allowed */
+    switch (aControllerType)
+    {
+        case IDEControllerType_IDEControllerPIIX3:
+        case IDEControllerType_IDEControllerPIIX4:
+            break;
+        default:
+            return setError (E_FAIL,
+                tr("Invalid IDE controller type '%d'"),
+                aControllerType);
+    }    
+
+    mData.backup();
+
+    mData->mIDEControllerType = aControllerType;
+
+    return S_OK;
+}
+
 STDMETHODIMP BIOSSettings::COMGETTER(TimeOffset)(LONG64 *offset)
 {
     if (!offset)
