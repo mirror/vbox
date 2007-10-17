@@ -784,7 +784,23 @@ endif
 
 # Overridable libraries (unix).
 LIB_PTHREAD      ?= pthread
-LIB_XCURSOR      ?= Xcursor
+
+# Xcursor (consider an SDK for this).
+# (LIB_XCURSOR is legacy, remove in a month or two.)
+ifndef VBOX_XCURSOR_LIBS
+ VBOX_XCURSOR_LIBS := $(LIB_XCURSOR)
+endif
+ifeq ($(VBOX_XCURSOR_LIBS),)
+ ifeq ($(BUILD_TARGET),solaris)
+  VBOX_XCURSOR_LIBS := $(lastword $(wildcard $(PATH_DEVTOOLS_TRG)/libXcursor/*/lib/libXcursor.a))
+  ifneq ($(VBOX_XCURSOR_LIBS),)
+   VBOX_XCURSOR_INCS := $(patsubst %/lib/libXcursor.a,%/include, $(VBOX_XCURSOR_LIBS))
+  endif
+ endif
+ VBOX_XCURSOR_LIBS ?= Xcursor
+else
+ VBOX_XCURSOR_LIBS ?= $(LIB_XCURSOR)
+endif
 
 ## Enable C++ electric fence heap.
 #LIB_RUNTIME += $(LIB_RUNTIME_EF) $(LIB_RUNTIME)
@@ -1153,7 +1169,14 @@ else ifeq ($(BUILD_TARGET),darwin)
 else
  ifndef QTDIR
   ifdef VBOX_WITH_QTGUI
-   QTDIR := $(wildcard /usr/share/qt3)
+   ifeq ($(BUILD_TARGET),solaris)
+    QTDIR := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v3.*)))
+   endif
+   ifeq ($(QTDIR),)
+    QTDIR := $(wildcard /usr/share/qt3)
+   else
+    export LD_LIBRARY_PATH := $(QTDIR)/lib:$(LD_LIBRARY_PATH)
+   endif
    ifeq ($(QTDIR),)
     QTDIR := $(patsubst %/bin/moc,%,$(firstword $(wildcard /usr/bin/moc /usr/local/bin/moc /usr/X11R6/bin/moc)))
    endif
@@ -2087,7 +2110,10 @@ else # the gcc guys:
   TEMPLATE_VBOXQTGUIEXE_LIBS +=
   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
  else
+  TEMPLATE_VBOXQTGUIEXE_INCS += \
+	$(VBOX_XCURSOR_INCS)
   TEMPLATE_VBOXQTGUIEXE_LIBS += \
+    $(VBOX_XCURSOR_LIBS) \
 	Xext \
 	X11 \
 	m \
@@ -2102,7 +2128,7 @@ else # the gcc guys:
   endif
   ifeq ($(BUILD_TARGET),solaris)
    TEMPLATE_VBOXQTGUIEXE_LIBS += \
-     	rt socket nsl
+	rt socket nsl
   endif
  endif
 
