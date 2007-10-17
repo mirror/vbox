@@ -379,7 +379,7 @@ typedef struct PCIATAState {
     bool                fR0Enabled;
     /** Flag indicating whether PIIX4 or PIIX3 is being emulated. */
     bool                fPIIX4;
-    bool                Alignment0[HC_ARCH_BITS == 64 ? 6 : 2]; /**< Align the struct size. */
+    bool                Alignment0[HC_ARCH_BITS == 64 ? 5 : 1]; /**< Align the struct size. */
 } PCIATAState;
 
 #define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTXSUFF(pController) )
