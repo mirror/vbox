@@ -795,6 +795,7 @@ ifeq ($(VBOX_XCURSOR_LIBS),)
   VBOX_XCURSOR_LIBS := $(lastword $(wildcard $(PATH_DEVTOOLS_TRG)/libXcursor/*/lib/libXcursor.a))
   ifneq ($(VBOX_XCURSOR_LIBS),)
    VBOX_XCURSOR_INCS := $(patsubst %/lib/libXcursor.a,%/include, $(VBOX_XCURSOR_LIBS))
+   VBOX_XCURSOR_LIBS += X11 Xrender Xfixes
   endif
  endif
  VBOX_XCURSOR_LIBS ?= Xcursor
