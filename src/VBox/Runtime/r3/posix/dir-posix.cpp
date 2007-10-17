@@ -74,7 +74,14 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
         if (RT_SUCCESS(rc))
         {
             if (mkdir(pszNativePath, fMode & RTFS_UNIX_MASK))
-                rc = RTErrConvertFromErrno(errno);
+            {
+#ifdef RT_OS_SOLARIS
+                if (errno == ENOSYS) /* ENOSYS has a slight different meaning (mkdir on nfs mount point). */
+                    rc = VERR_ALREADY_EXISTS;
+                else
+#endif
+                    rc = RTErrConvertFromErrno(errno);
+            }
         }
 
         rtPathFreeNative(pszNativePath);
