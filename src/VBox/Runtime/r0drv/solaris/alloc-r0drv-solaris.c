@@ -37,7 +37,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
     PRTMEMHDR pHdr;
 #ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)
-        pHdr = (PRTMEMHDR)segkmem_alloc(heaptext_arena, cb + sizeof(*pHdr), KM_SLEEP);
+        pHdr = (PRTMEMHDR)segkmem_alloc(heaptext_arena, RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE), KM_SLEEP);
     else
 #endif
     if (fFlags & RTMEMHDR_FLAG_ZEROED)
@@ -65,7 +65,7 @@ void rtMemFree(PRTMEMHDR pHdr)
     pHdr->u32Magic += 1;
 #ifdef RT_ARCH_AMD64
     if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
-        segkmem_free(heaptext_arena, pHdr, pHdr->cb + sizeof(*pHdr));
+        segkmem_free(heaptext_arena, pHdr, RT_ALIGN_Z(pHdr->cb + sizeof(*pHdr), PAGE_SIZE));
     else
 #endif
         kmem_free(pHdr, pHdr->cb + sizeof(*pHdr));
