@@ -161,7 +161,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         rc = VINF_SUCCESS;
     else
     {
-        ASMAtomicIncU32(&pEventMultiInt->cWaiters);
+        ASMAtomicIncU32(&pThis->cWaiters);
 
         /*
          * Translate milliseconds into ticks and go to sleep.
@@ -172,17 +172,17 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             clock_t timeout = ddi_get_lbolt();
             timeout += cTicks;
             if (fInterruptible)
-                rc = cv_timedwait_sig(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx, timeout);
+                rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, timeout);
             else
-                rc = cv_timedwait(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx, timeout);
+                rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, timeout);
         }
         else
         {
             if (fInterruptible)
-                rc = cv_wait_sig(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx);
+                rc = cv_wait_sig(&pThis->Cnd, &pThis->Mtx);
             else
             {
-                cv_wait(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx);
+                cv_wait(&pThis->Cnd, &pThis->Mtx);
                 rc = 1;
             }
         }
