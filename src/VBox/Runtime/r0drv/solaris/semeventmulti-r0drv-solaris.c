@@ -161,25 +161,31 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         rc = VINF_SUCCESS;
     else
     {
+        ASMAtomicIncU32(&pEventMultiInt->cWaiters);
+
         /*
          * Translate milliseconds into ticks and go to sleep.
          */
-        int cTicks;
-        clock_t timeout;
         if (cMillies != RT_INDEFINITE_WAIT)
-            cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
+        {
+            int cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
+            clock_t timeout = ddi_get_lbolt();
+            timeout += cTicks;
+            if (fInterruptible)
+                rc = cv_timedwait_sig(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx, timeout);
+            else
+                rc = cv_timedwait(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx, timeout);
+        }
         else
-            cTicks = 0;
-
-        timeout = ddi_get_lbolt();
-        timeout += cTicks;
-        
-        ASMAtomicIncU32(&pThis->cWaiters);
-
-        if (fInterruptible)
-            rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, timeout);
-        else
-            rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, timeout);
+        {
+            if (fInterruptible)
+                rc = cv_wait_sig(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx);
+            else
+            {
+                cv_wait(&pEventMultiInt->Cnd, &pEventMultiInt->Mtx);
+                rc = 1;
+            }
+        }
         if (rc > 0)
         {
             /* Retured due to call to cv_signal() or cv_broadcast() */
