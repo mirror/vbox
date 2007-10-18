@@ -4418,8 +4418,13 @@ l_failure:
 
 int emulate_single_instr(CPUX86State *env1)
 {
+    /* This has to be static because it needs to be addressible 
+       using 32-bit immediate addresses on 64-bit machines. This
+       is dictated by the gcc code model used when building this
+       module / op.o. Using a static here pushes the problem 
+       onto the module loader. */
+    static TranslationBlock tb_temp; 
     TranslationBlock *current;
-    TranslationBlock tb_temp;
     int csize;
     void (*gen_func)(void);
     uint8_t *tc_ptr;
