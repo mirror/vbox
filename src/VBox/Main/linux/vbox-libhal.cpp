@@ -46,7 +46,8 @@ void (*gDBusConnectionUnref)(DBusConnection *);
 LibHalContext *(*gLibHalCtxNew)(void);
 dbus_bool_t (*gLibHalCtxSetDBusConnection)(LibHalContext *, DBusConnection *);
 dbus_bool_t (*gLibHalCtxInit)(LibHalContext *, DBusError *);
-char **(*gLibHalFindDeviceByCapability)(LibHalContext *, const char *, int *, DBusError *);
+char **(*gLibHalFindDeviceStringMatch)(LibHalContext *, const char *, const char *, int *,
+        DBusError *);
 char *(*gLibHalDeviceGetPropertyString)(LibHalContext *, const char *, const char *, DBusError *);
 void (*gLibHalFreeString)(char *);
 void (*gLibHalFreeStringArray)(char **);
@@ -78,8 +79,8 @@ bool gLibHalCheckPresence(void)
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_set_dbus_connection",
                                      (void **) &gLibHalCtxSetDBusConnection))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_init", (void **) &gLibHalCtxInit))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_find_device_by_capability",
-                                     (void **) &gLibHalFindDeviceByCapability))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_manager_find_device_string_match",
+                                     (void **) &gLibHalFindDeviceStringMatch))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_device_get_property_string",
                                      (void **) &gLibHalDeviceGetPropertyString))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_free_string", (void **) &gLibHalFreeString))

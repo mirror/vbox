@@ -52,7 +52,8 @@ extern void (*gDBusConnectionUnref)(DBusConnection *);
 extern LibHalContext *(*gLibHalCtxNew)(void);
 extern dbus_bool_t (*gLibHalCtxSetDBusConnection)(LibHalContext *, DBusConnection *);
 extern dbus_bool_t (*gLibHalCtxInit)(LibHalContext *, DBusError *);
-extern char **(*gLibHalFindDeviceByCapability)(LibHalContext *, const char *, int *, DBusError *);
+extern char **(*gLibHalFindDeviceStringMatch)(LibHalContext *, const char *, const char *, int *,
+               DBusError *);
 extern char *(*gLibHalDeviceGetPropertyString)(LibHalContext *, const char *, const char *,
                                               DBusError *);
 extern void (*gLibHalFreeString)(char *);
