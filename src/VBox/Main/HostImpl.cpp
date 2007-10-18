@@ -1604,8 +1604,9 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                 if (gLibHalCtxInit(halContext, &dbusError))
                 {
                     int numDevices;
-                    char **halDevices = gLibHalFindDeviceByCapability(halContext,
-                                                "storage.cdrom", &numDevices, &dbusError);
+                    char **halDevices = gLibHalFindDeviceStringMatch(halContext,
+                                                "storage.drive_type", "cdrom",
+                                                &numDevices, &dbusError);
                     if (halDevices != 0)
                     {
                         /* Hal is installed and working, so if no devices are reported, assume
@@ -1623,8 +1624,8 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
 #endif
                             if (devNode != 0)
                             {
-                                if (validateDevice(devNode, true))
-                                {
+//                                if (validateDevice(devNode, true))
+//                                {
                                     Utf8Str description;
                                     char *vendor, *product;
                                     /* We do not check the error here, as this field may
@@ -1673,11 +1674,11 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                                     {
                                         gLibHalFreeString(product);
                                     }
-                                }
-                                else
-                                {
-                                    LogRel(("Host::COMGETTER(DVDDrives): failed to validate the block device %s as a DVD drive\n"));
-                                }
+//                                }
+//                                else
+//                                {
+//                                    LogRel(("Host::COMGETTER(DVDDrives): failed to validate the block device %s as a DVD drive\n"));
+//                                }
 #ifndef RT_OS_SOLARIS
                                 gLibHalFreeString(devNode);
 #else
@@ -1756,8 +1757,9 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                 if (gLibHalCtxInit(halContext, &dbusError))
                 {
                     int numDevices;
-                    char **halDevices = gLibHalFindDeviceByCapability(halContext,
-                                                "storage", &numDevices, &dbusError);
+                    char **halDevices = gLibHalFindDeviceStringMatch(halContext,
+                                                "storage.drive_type", "floppy",
+                                                &numDevices, &dbusError);
                     if (halDevices != 0)
                     {
                         /* Hal is installed and working, so if no devices are reported, assume
@@ -1786,8 +1788,8 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                                                     halDevices[i], "block.device", &dbusError);
                             if (devNode != 0)
                             {
-                                if (validateDevice(devNode, false))
-                                {
+//                                if (validateDevice(devNode, false))
+//                                {
                                     Utf8Str description;
                                     char *vendor, *product;
                                     /* We do not check the error here, as this field may
@@ -1836,11 +1838,11 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
                                     {
                                         gLibHalFreeString(product);
                                     }
-                                }
-                                else
-                                {
-                                    LogRel(("Host::COMGETTER(FloppyDrives): failed to validate the block device %s as a floppy drive\n"));
-                                }
+//                                }
+//                                else
+//                                {
+//                                    LogRel(("Host::COMGETTER(FloppyDrives): failed to validate the block device %s as a floppy drive\n"));
+//                                }
                                 gLibHalFreeString(devNode);
                             }
                             else
