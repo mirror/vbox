@@ -103,10 +103,20 @@ typedef void * host_reg_t;
 #define AREG3 "edi"
 #endif
 #ifdef __x86_64__
+#ifdef VBOX 
+/* gcc 3.4.3 on 64-bit Solaris screws up when using rbp, it 
+   seems so at least. (Setting AREG4 to "r15" causes compiler 
+   error btw, so don't try it.)  */
+# define AREG0 "rbx" 
+# define AREG1 "r12"
+# define AREG2 "r13"
+# define AREG3 "r14"
+#else
 #define AREG0 "rbp"
 #define AREG1 "rbx"
 #define AREG2 "r12"
 #define AREG3 "r13"
+#endif 
 //#define AREG4 "r14"
 //#define AREG5 "r15"
 #endif
