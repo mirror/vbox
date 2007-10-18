@@ -321,8 +321,8 @@ check_gcc()
         [ -z "$CXX32" ] && CXX32="$CXX"
       fi
       if [ "$BUILD_MACHINE" = "x86" -a "$TARGET_MACHINE" = "amd64" ]; then
-	[ -z "$CC64"  ] && CC64="$CC -m64"
-	[ -z "$CXX64" ] && CXX64="$CXX -m64"
+        [ -z "$CC64"  ] && CC64="$CC -m64"
+        [ -z "$CXX64" ] && CXX64="$CXX -m64"
       fi
       if [ "$CC" != "gcc" ]; then
         cnf_append "TOOL_GCC3_CC"   "$CC"
@@ -1019,6 +1019,27 @@ EOF
 }
 
 #
+# Check whether static libstdc++ is installed
+#
+check_staticlibstdcxx()
+{
+  test_header "static stc++ library"
+  libstdcxx=`$CXX -print-file-name=libstdc++.a`
+  cat > .tmp_src.cc << EOF
+#include <string>
+
+extern "C" int main(void)
+{
+  std::string s = "test";
+  return 0;
+}
+EOF
+  if test_compile "$libstdcxx" libstdc++ libstdc++; then
+    log_success "found"
+  fi
+}
+
+#
 # Check for Linux sources
 #
 check_linux()
@@ -1450,6 +1471,7 @@ check_gcc
 
 # Linux-specific
 if [ "$OS" = "linux" ]; then
+  check_staticlibstdcxx
   check_linux
   check_alsa
   check_compiler_h
