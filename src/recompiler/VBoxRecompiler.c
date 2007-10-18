@@ -3440,7 +3440,11 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
         DISCPUSTATE     Cpu;
 
         memset(&Cpu, 0, sizeof(Cpu));
+#ifdef RT_ARCH_X86
         Cpu.mode = CPUMODE_32BIT;
+#else
+        Cpu.mode = CPUMODE_64BIT;
+#endif 
 
         RTLogPrintf("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
         while (off < cb)
@@ -3452,6 +3456,9 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
             {
                 RTLogPrintf("disas error\n");
                 cbInstr = 1;
+#ifdef RT_ARCH_AMD64 /** @todo remove when DISInstr starts supporing 64-bit code. */
+                break;
+#endif 
             }
             off += cbInstr;
         }
