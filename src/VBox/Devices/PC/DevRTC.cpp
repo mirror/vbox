@@ -825,7 +825,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fGCEnabled = false/*true*/; /** @todo later when we've got more than 15-30 switches to save. */
+        fGCEnabled = true;
     else if (VBOX_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read GCEnabled as boolean"));
