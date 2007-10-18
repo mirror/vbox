@@ -876,6 +876,10 @@ static const REMPARMDESC g_aArgsRTLogFlags[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
 };
+static const REMPARMDESC g_aArgsRTLogFlush[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER), NULL }
+};
 static const REMPARMDESC g_aArgsRTLogLoggerEx[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER), NULL },
@@ -1087,6 +1091,7 @@ static REMFNDESC g_aRTImports[] =
     { "RTLogDefaultInstance",                   (void *)(uintptr_t)&RTLogDefaultInstance,           NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
     { "RTLogRelDefaultInstance",                (void *)(uintptr_t)&RTLogRelDefaultInstance,        NULL,                                       0,                                                  REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
     { "RTLogFlags",                             (void *)(uintptr_t)&RTLogFlags,                     &g_aArgsRTLogFlags[0],                      ELEMENTS(g_aArgsRTLogFlags),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "RTLogFlush",                             (void *)(uintptr_t)&RTLogFlush,                     &g_aArgsRTLogFlush[0],                      ELEMENTS(g_aArgsRTLogFlush),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "RTLogLoggerEx",                          (void *)(uintptr_t)&RTLogLoggerEx,                  &g_aArgsRTLogLoggerEx[0],                   ELEMENTS(g_aArgsRTLogLoggerEx),                     REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
     { "RTLogLoggerExV",                         (void *)(uintptr_t)&RTLogLoggerExV,                 &g_aArgsRTLogLoggerExV[0],                  ELEMENTS(g_aArgsRTLogLoggerExV),                    REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_VALIST, 0, NULL },
     { "RTLogPrintf",                            (void *)(uintptr_t)&RTLogPrintf,                    &g_aArgsRTLogPrintf[0],                     ELEMENTS(g_aArgsRTLogPrintf),                       REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
