@@ -712,6 +712,7 @@ VBoxGlobal::VBoxGlobal()
     , audioDriverTypes (CEnums::AudioDriverType_COUNT)
     , networkAttachmentTypes (CEnums::NetworkAttachmentType_COUNT)
     , clipboardTypes (CEnums::ClipboardMode_COUNT)
+    , ideControllerTypes (CEnums::IDEControllerType_COUNT)
     , USBDeviceStates (CEnums::USBDeviceState_COUNT)
     , detailReportTemplatesReady (false)
 {
@@ -2101,6 +2102,11 @@ void VBoxGlobal::languageChange()
     clipboardTypes [CEnums::ClipBidirectional] =
         tr ("Bidirectional", "ClipboardType");
 
+    ideControllerTypes [CEnums::IDEControllerPIIX3] =
+        tr ("PIIX3", "IDEControllerType");
+    ideControllerTypes [CEnums::IDEControllerPIIX4] =
+        tr ("PIIX4", "IDEControllerType");
+
     USBDeviceStates [CEnums::USBDeviceNotSupported] =
         tr ("Not supported", "USBDeviceState");
     USBDeviceStates [CEnums::USBDeviceUnavailable] =
@@ -2404,7 +2410,7 @@ iconSetEx (const char *aNormal, const char *aSmallNormal,
     return iconSet;
 }
 
-/** 
+/**
  *  Replacement for QToolButton::setTextLabel() that handles the shortcut
  *  letter (if it is present in the argument string) as if it were a setText()
  *  call: the shortcut letter is used to automatically assign an "Alt+<letter>"
@@ -2412,7 +2418,7 @@ iconSetEx (const char *aNormal, const char *aSmallNormal,
  *
  *  @note This method preserves the icon set if it was assigned before. Only
  *  the text label and the accelerator are changed.
- * 
+ *
  *  @param aToolButton  Tool button to set the text label on.
  *  @param aTextLabel   Text label to set.
  */

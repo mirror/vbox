@@ -5,7 +5,7 @@
 :folding=explicit:collapseFolds=1:
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -1091,50 +1091,106 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
                                         </widget>
                                     </hbox>
                                 </widget>
-                                <widget class="QGroupBox">
+                                <widget class="QLayoutWidget">
                                     <property name="name">
-                                        <cstring>groupBox61</cstring>
-                                    </property>
-                                    <property name="title">
-                                        <string>&amp;Shared Clipboard</string>
+                                        <cstring>layout102</cstring>
                                     </property>
                                     <hbox>
                                         <property name="name">
                                             <cstring>unnamed</cstring>
                                         </property>
-                                        <widget class="QComboBox">
+                                        <widget class="QGroupBox">
                                             <property name="name">
-                                                <cstring>cbSharedClipboard</cstring>
+                                                <cstring>groupBox61</cstring>
                                             </property>
-                                            <property name="whatsThis" stdset="0">
-                                                <string>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</string>
+                                            <property name="title">
+                                                <string>&amp;Shared Clipboard</string>
                                             </property>
-                                            <property name="sizePolicy">
-                                                <sizepolicy>
-                                                    <hsizetype>5</hsizetype>
-                                                    <vsizetype>0</vsizetype>
-                                                    <horstretch>0</horstretch>
-                                                    <verstretch>0</verstretch>
-                                                </sizepolicy>
-                                            </property>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QComboBox">
+                                                    <property name="name">
+                                                        <cstring>cbSharedClipboard</cstring>
+                                                    </property>
+                                                    <property name="sizePolicy">
+                                                        <sizepolicy>
+                                                            <hsizetype>5</hsizetype>
+                                                            <vsizetype>0</vsizetype>
+                                                            <horstretch>0</horstretch>
+                                                            <verstretch>0</verstretch>
+                                                        </sizepolicy>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</string>
+                                                    </property>
+                                                </widget>
+                                                <spacer>
+                                                    <property name="name">
+                                                        <cstring>spacer130</cstring>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Horizontal</enum>
+                                                    </property>
+                                                    <property name="sizeType">
+                                                        <enum>Expanding</enum>
+                                                    </property>
+                                                    <property name="sizeHint">
+                                                        <size>
+                                                            <width>0</width>
+                                                            <height>20</height>
+                                                        </size>
+                                                    </property>
+                                                </spacer>
+                                            </hbox>
                                         </widget>
-                                        <spacer>
+                                        <widget class="QGroupBox">
                                             <property name="name">
-                                                <cstring>spacer130</cstring>
+                                                <cstring>groupBox62</cstring>
                                             </property>
-                                            <property name="orientation">
-                                                <enum>Horizontal</enum>
+                                            <property name="title">
+                                                <string>&amp;IDE Controller Type</string>
                                             </property>
-                                            <property name="sizeType">
-                                                <enum>Expanding</enum>
-                                            </property>
-                                            <property name="sizeHint">
-                                                <size>
-                                                    <width>0</width>
-                                                    <height>20</height>
-                                                </size>
-                                            </property>
-                                        </spacer>
+                                            <hbox>
+                                                <property name="name">
+                                                    <cstring>unnamed</cstring>
+                                                </property>
+                                                <widget class="QComboBox">
+                                                    <property name="name">
+                                                        <cstring>cbIdeController</cstring>
+                                                    </property>
+                                                    <property name="sizePolicy">
+                                                        <sizepolicy>
+                                                            <hsizetype>5</hsizetype>
+                                                            <vsizetype>0</vsizetype>
+                                                            <horstretch>0</horstretch>
+                                                            <verstretch>0</verstretch>
+                                                        </sizepolicy>
+                                                    </property>
+                                                    <property name="whatsThis" stdset="0">
+                                                        <string>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</string>
+                                                    </property>
+                                                </widget>
+                                                <spacer>
+                                                    <property name="name">
+                                                        <cstring>spacer131</cstring>
+                                                    </property>
+                                                    <property name="orientation">
+                                                        <enum>Horizontal</enum>
+                                                    </property>
+                                                    <property name="sizeType">
+                                                        <enum>Expanding</enum>
+                                                    </property>
+                                                    <property name="sizeHint">
+                                                        <size>
+                                                            <width>0</width>
+                                                            <height>20</height>
+                                                        </size>
+                                                    </property>
+                                                </spacer>
+                                            </hbox>
+                                        </widget>
                                     </hbox>
                                 </widget>
                                 <widget class="QGroupBox">
@@ -2983,6 +3039,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <tabstop>chbEnableIOAPIC</tabstop>
     <tabstop>chbVTX</tabstop>
     <tabstop>cbSharedClipboard</tabstop>
+    <tabstop>cbIdeController</tabstop>
     <tabstop>leSnapshotFolder</tabstop>
     <tabstop>tbSelectSavedStateFolder</tabstop>
     <tabstop>tbResetSavedStateFolder</tabstop>
