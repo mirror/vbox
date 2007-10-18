@@ -264,6 +264,20 @@ public:
         return CEnums::ClipboardMode (it - clipboardTypes.begin());
     }
 
+    QString toString (CEnums::IDEControllerType t) const
+    {
+        AssertMsg (!ideControllerTypes [t].isNull(), ("No text for %d", t));
+        return ideControllerTypes [t];
+    }
+
+    CEnums::IDEControllerType toIDEControllerType (const QString &s) const
+    {
+        QStringVector::const_iterator it =
+            qFind (ideControllerTypes.begin(), ideControllerTypes.end(), s);
+        AssertMsg (it != ideControllerTypes.end(), ("No value for {%s}", s.latin1()));
+        return CEnums::IDEControllerType (it - ideControllerTypes.begin());
+    }
+
     CEnums::VRDPAuthType toVRDPAuthType (const QString &s) const
     {
         QStringVector::const_iterator it =
@@ -587,6 +601,7 @@ private:
     QStringVector audioDriverTypes;
     QStringVector networkAttachmentTypes;
     QStringVector clipboardTypes;
+    QStringVector ideControllerTypes;
     QStringVector USBDeviceStates;
 
     QString mUserDefinedCOMPortName;

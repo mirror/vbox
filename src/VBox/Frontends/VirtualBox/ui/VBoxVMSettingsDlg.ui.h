@@ -834,6 +834,9 @@ void VBoxVMSettingsDlg::init()
     cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipHostToGuest));
     cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipGuestToHost));
     cbSharedClipboard->insertItem (vboxGlobal().toString (CEnums::ClipBidirectional));
+    /* IDE Controller Type */
+    cbIdeController->insertItem (vboxGlobal().toString (CEnums::IDEControllerPIIX3));
+    cbIdeController->insertItem (vboxGlobal().toString (CEnums::IDEControllerPIIX4));
 
     /* HDD Images page */
 
@@ -876,7 +879,7 @@ void VBoxVMSettingsDlg::init()
     cbVRDPAuthType->insertItem (vboxGlobal().toString (CEnums::VRDPAuthGuest));
 }
 
-/** 
+/**
  *  Returns a path to the given page of this settings dialog. See ::path() for
  *  details.
  */
@@ -1584,6 +1587,9 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     /* Shared clipboard mode */
     cbSharedClipboard->setCurrentItem (machine.GetClipboardMode());
 
+    /* IDE controller type */
+    cbIdeController->setCurrentText (vboxGlobal().toString (biosSettings.GetIDEControllerType()));
+
     /* other features */
     QString saveRtimeImages = cmachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
     chbRememberMedia->setChecked (saveRtimeImages != "no");
@@ -1942,6 +1948,9 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
 
     /* Shared clipboard mode */
     cmachine.SetClipboardMode ((CEnums::ClipboardMode)cbSharedClipboard->currentItem());
+
+    /* IDE controller type */
+    biosSettings.SetIDEControllerType (vboxGlobal().toIDEControllerType (cbIdeController->currentText()));
 
     /* other features */
     cmachine.SetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime,
