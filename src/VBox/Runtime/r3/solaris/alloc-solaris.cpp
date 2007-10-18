@@ -49,6 +49,12 @@ RTDECL(void *) RTMemExecAlloc(size_t cb)
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     void *pv = valloc(cb);
     AssertMsg(pv, ("posix_memalign(%d) failed!!! errno=%d\n", cb, errno));
+    if (RT_UNLIKELY((uintptr_t)pv + cb > _2G))
+    {
+        AssertMsgFailed(("%p %#zx\n", pv, cb));
+        free(pv);
+        return NULL;
+    }
     if (pv)
     {
         /*
