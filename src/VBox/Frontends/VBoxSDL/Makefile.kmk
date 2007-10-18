@@ -74,12 +74,11 @@ VBoxSDL_LIBS = \
 endif
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VBoxSDL_LIBS += \
-	$(VBOX_XCURSOR_LIBS)
+	$(VBOX_XCURSOR_LIBS) \
+	$(LIB_X11)
 VBoxSDL_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
 endif
-VBoxSDL_LIBS.solaris = \
-	$(LIB_X11)
 ifdef VBOX_OPENGL
  #VBoxSDL_LIBS.linux += GL
 endif
