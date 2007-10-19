@@ -27,9 +27,10 @@
  *    (pseudo-IDL for Doxygen to generate the official Main API
  *     documentation)
  *
- * 4. src/VBox/Main/idl/webservice/*.xsl =>
+ * 4. src/VBox/Main/webservice/*.xsl =>
  *    a bunch of WSDL and C++ files
- *    (VirtualBox web service sources and SOAP mappers)
+ *    (VirtualBox web service sources and SOAP mappers;
+ *    see src/VBox/Main/webservice/Makefile.kmk for details)
  *
  * 5. src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl =>
  *    out/<platform>/obj/src/VBox/Frontends/VirtualBox/VirtualBox/include/COMWrappers.h
@@ -808,7 +809,7 @@
   <interface
      name="IVirtualBox" extends="$dispatched"
      uuid="e1606565-8954-4703-b22a-620941b85a1c"
-     wsmap="global"
+     wsmap="managed"
      >
     <desc> The main interface exposed by the product that provides virtual
       machine management.
@@ -8627,13 +8628,15 @@
      name="IManagedObjectRef" extends="$unknown"
      uuid="9474d09d-2313-46de-b568-a42b8718e8ed"
      internal="yes"
-     wsmap="explicit"
+     wsmap="managed"
+     wscpp="hardcoded"
      >
     <method name="getInterfaceName">
       <desc>
         Returns the name of the interface that this managed object represents,
         for example, "IMachine", as a string.
       </desc>
+      <param name="return" type="wstring" dir="return"/>
     </method>
 
     <method name="release">
@@ -8644,6 +8647,31 @@
       </desc>
     </method>
 
+  </interface>
+
+  <!--
+  // IManagedObjectRef
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+     name="ISessionManager" extends="$unknown"
+     uuid="dea1b4c7-2de3-418a-850d-7868617f7733"
+     internal="yes"
+     wsmap="global"
+     wscpp="hardcoded"
+     >
+    <method name="logon">
+      <desc>
+        Logs a new client onto the webservice and returns a managed object reference to
+        the IVirtualBox instance, which the client can then use as a basis to further
+        queries, since all calls to the VirtualBox API are based on the IVirtualBox
+        interface, in one way or the other.
+      </desc>
+      <param name="username" type="wstring" dir="in"/>
+      <param name="password" type="wstring" dir="in"/>
+      <param name="return" type="wstring" dir="return"/>
+    </method>
   </interface>
 
 </if>
