@@ -464,6 +464,12 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PPGMPOOLPAGE pPage, PDISCPUSTATE pCpu, R
         case OP_FXSAVE:
             Log4(("pgmPoolMonitorIsReused: FXSAVE\n"));
             return true;
+        case OP_MOVNTI:     /* solaris - block_zero_no_xmm */
+            Log4(("pgmPoolMonitorIsReused: MOVNTI\n"));
+            return true;
+        case OP_MOVNTDQ:    /* solaris - hwblkclr & hwblkpagecopy */
+            Log4(("pgmPoolMonitorIsReused: MOVNTDQ\n"));
+            return true;
     }
     if (    (pCpu->param1.flags & USE_REG_GEN32)
         &&  (pCpu->param1.base.reg_gen32 == USE_REG_ESP))
@@ -702,7 +708,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
      */
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
              || pPage->fCR3Mix)
-        &&  !pgmPoolMonitorIsReused(pPage, &Cpu,pvFault)
+        &&  !pgmPoolMonitorIsReused(pPage, &Cpu, pvFault)
         &&  !pgmPoolMonitorIsForking(pPool, &Cpu, GCPhysFault & PAGE_OFFSET_MASK))
     {
         /*
