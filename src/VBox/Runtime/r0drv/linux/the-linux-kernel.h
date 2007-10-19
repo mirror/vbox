@@ -108,7 +108,7 @@ DECLINLINE(unsigned int) jiffies_to_msecs(unsigned long cJiffies)
 #  elif HZ > 1000 && !(HZ % 1000)
     return (cJiffies + (HZ / 1000) - 1) / (HZ / 1000);
 #  else
-    return (j * 1000) / HZ;
+    return (cJiffies * 1000) / HZ;
 #  endif
 }
 
