@@ -341,8 +341,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
                 if (((c < '0') || (c > '9')) &&
                     ((c < 'A') || (c > 'F')))
                     rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
-                /* the second digit must be even for unicast addresses */
-                if ((i == 1) && (c & 1))
+                /* the second digit must have even value for unicast addresses */
+                if ((i == 1) && (!!(c & 1) == (c >= '0' && c <= '9')))
                     rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
 
                 macAddressStr++;
