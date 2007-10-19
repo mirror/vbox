@@ -34,8 +34,11 @@
 // MSGINA control IDs
 //
 #define IDC_WLXLOGGEDOUTSAS_USERNAME      1453
+#define IDC_WLXLOGGEDOUTSAS_USERNAME2     1502
 #define IDC_WLXLOGGEDOUTSAS_PASSWORD      1454
+#define IDC_WLXLOGGEDOUTSAS_PASSWORD2     1503
 #define IDC_WLXLOGGEDOUTSAS_DOMAIN        1455
+#define IDC_WLXLOGGEDOUTSAS_DOMAIN2       1504
 #define IDC_WLXWKSTALOCKEDSAS_DOMAIN      1856
 
 static DLGPROC pfWlxLoggedOutSASDlgProc   = NULL;
@@ -127,9 +130,15 @@ BOOL CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog box
             Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: got WM_INITDIALOG\n"));
 
             /* get the entry fields */
-            hwndUserId   = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_USERNAME);
+            hwndUserId = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_USERNAME);
+            if (!hwndUserId)
+                hwndUserId = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_USERNAME2);
             hwndPassword = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_PASSWORD);
-            hwndDomain   = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_DOMAIN);
+            if (!hwndPassword)
+                hwndPassword = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_PASSWORD2);
+            hwndDomain = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_DOMAIN);
+            if (!hwndDomain)
+                hwndDomain = GetDlgItem(hwndDlg, IDC_WLXLOGGEDOUTSAS_DOMAIN2);
 
             Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: hwndUserId: %x, hwndPassword: %d, hwndDomain: %d\n",
                  hwndUserId, hwndPassword, hwndDomain));
