@@ -757,6 +757,7 @@ public:
     STDMETHOD(OnSessionEnd)(ISession *aSession, IProgress **aProgress);
     STDMETHOD(BeginSavingState) (IProgress *aProgress, BSTR *aStateFilePath);
     STDMETHOD(EndSavingState) (BOOL aSuccess);
+    STDMETHOD(AdoptSavedState) (INPTR BSTR aSavedStateFile);
     STDMETHOD(BeginTakingSnapshot) (IConsole *aInitiator,
                                     INPTR BSTR aName, INPTR BSTR aDescription,
                                     IProgress *aProgress, BSTR *aStateFilePath,

@@ -172,8 +172,12 @@ public:
                                   INPTR BSTR aType, INPTR BSTR aEnvironment,
                                   IProgress **aProgress);
     STDMETHOD(OpenExistingSession) (ISession *aSession, INPTR GUIDPARAM aMachineId);
-    STDMETHOD(RegisterCallback) (IVirtualBoxCallback *callback);
-    STDMETHOD(UnregisterCallback) (IVirtualBoxCallback *callback);
+
+    STDMETHOD(RegisterCallback) (IVirtualBoxCallback *aCallback);
+    STDMETHOD(UnregisterCallback) (IVirtualBoxCallback *aCallback);
+
+    STDMETHOD(WaitForPropertyChange) (INPTR BSTR aWhat, ULONG aTimeout,
+                                      BSTR *aChanged, BSTR *aValues);
 
     /* public methods only for internal purposes */
 

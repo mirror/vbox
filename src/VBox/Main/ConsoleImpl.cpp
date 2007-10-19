@@ -1785,6 +1785,26 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
     return rc;
 }
 
+STDMETHODIMP Console::AdoptSavedState (INPTR BSTR aSavedStateFile)
+{
+    if (!aSavedStateFile)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoLock alock (this);
+
+    if (mMachineState != MachineState_PoweredOff &&
+        mMachineState != MachineState_Aborted)
+        return setError (E_FAIL,
+            tr ("Cannot adopt the saved machine state as the machine is "
+                "not in Powered Off or Aborted state (machine state: %d)"),
+            mMachineState);
+
+    return mControl->AdoptSavedState (aSavedStateFile);
+}
+
 STDMETHODIMP Console::DiscardSavedState()
 {
     AutoCaller autoCaller (this);
