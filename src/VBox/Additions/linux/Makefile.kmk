@@ -32,6 +32,8 @@ endif
 ifndef VBOX_OSE
 PACKING      = $(PATH_BIN)/additions/VBoxLinuxAdditions.run
 OTHER_CLEAN  = $(PACKING)
+# OSE only contains the source code for this
+SELINUX_CMPLD = selinux-fedora/vbox_x11.pp
 endif
 
 
@@ -66,6 +68,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_14.so \
 		installer/vboxvfs.sh $(PATH_BIN)/additions/mountvboxsf \
+		$(SELINUX_CMPLD) \
 		$(wildcard $(PATH_BIN)/additions/src/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*/*) \
@@ -99,8 +102,11 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_71.so $(PATH_TARGET)/install/vboxvideo_drv_71.so
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_13.so $(PATH_TARGET)/install/vboxvideo_drv_13.so
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/vboxvideo_drv_14.so $(PATH_TARGET)/install/vboxvideo_drv_14.so
-	$(QUIET)$(INSTALL) -m 0755 installer/vboxvfs.sh $(PATH_TARGET)/install
 	$(QUIET)objcopy -S -R .comment $(PATH_BIN)/additions/mountvboxsf $(PATH_TARGET)/install/mount.vboxsf
+	$(QUIET)$(INSTALL) -m 0755 installer/vboxvfs.sh $(PATH_TARGET)/install
+#ifndef VBOX_OSE
+	$(QUIET)$(INSTALL) -m 0755 selinux-fedora/vbox_x11.pp $(PATH_TARGET)/install
+#endif
 	$(QUIET)$(VBOX_MAKESELF) $(PATH_TARGET)/install $@ \
 	"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
 
