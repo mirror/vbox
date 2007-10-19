@@ -706,9 +706,10 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     /*
      * Check if it's worth dealing with.
      */
+    bool fReused = false;
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
              || pPage->fCR3Mix)
-        &&  !pgmPoolMonitorIsReused(pPage, &Cpu, pvFault)
+        &&  !(fReused = pgmPoolMonitorIsReused(pPage, &Cpu, pvFault))
         &&  !pgmPoolMonitorIsForking(pPool, &Cpu, GCPhysFault & PAGE_OFFSET_MASK))
     {
         /*
@@ -751,8 +752,15 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
     /*
      * Not worth it, so flush it.
+     *
+     * If we considered it to be reused, don't to back to ring-3 
+     * to emulate failed instructions since we usually cannot 
+     * interpret then. This may be a bit risky, in which case
+     * the reuse detection must be fixed.
      */
     rc = pgmPoolAccessHandlerFlush(pVM, pPool, pPage, &Cpu, pRegFrame, GCPhysFault, pvFault);
+    if (rc == VINF_EM_RAW_EMULATE_INSTR && fReused)
+        rc = VINF_SUCCESS;
     STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTXSUFF(pPool)->CTXSUFF(StatMonitor), &pPool->CTXMID(StatMonitor,FlushPage), a);
     return rc;
 }
