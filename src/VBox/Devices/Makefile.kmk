@@ -90,6 +90,9 @@ VBoxDD_DEFS             = VBOX_ACPI
 ifdef VBOX_WITH_USB
  VBoxDD_DEFS           += VBOX_WITH_USB IN_USB_R3
 endif
+ifdef VBOX_WITH_AHCI
+ VBoxDD_DEFS           += VBOX_WITH_AHCI
+endif
 ifdef VBOX_WITH_ISCSI
  VBoxDD_DEFS           += VBOX_WITH_ISCSI
 endif
@@ -194,7 +197,7 @@ DevicesR3_SOURCES       = \
 ifdef VBOX_WITH_AHCI
 DevicesR3_DEFS	       += VBOX_WITH_AHCI
 DevicesR3_SOURCES      += \
-    Storage/DevAHCI.cpp
+	Storage/DevAHCI.cpp
 endif
 
 ifdef VBOX_WITH_USB
