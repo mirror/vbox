@@ -191,6 +191,12 @@ DevicesR3_SOURCES       = \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
 
+ifdef VBOX_WITH_AHCI
+DevicesR3_DEFS	       += VBOX_WITH_AHCI
+DevicesR3_SOURCES      += \
+    Storage/DevAHCI.cpp
+endif
+
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 DevicesR3_SOURCES      += \

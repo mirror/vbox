@@ -48,6 +48,9 @@ extern const PDMDEVREG g_DeviceDMA;
 extern const PDMDEVREG g_DeviceFloppyController;
 extern const PDMDEVREG g_DeviceSerialPort;
 extern const PDMDEVREG g_DeviceParallelPort;
+#ifdef VBOX_WITH_AHCI
+extern const PDMDEVREG g_DeviceAHCI;
+#endif
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
