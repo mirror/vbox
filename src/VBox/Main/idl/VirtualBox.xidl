@@ -8650,7 +8650,7 @@
   </interface>
 
   <!--
-  // IManagedObjectRef
+  // ISessionManager
   /////////////////////////////////////////////////////////////////////////
   -->
 
@@ -8672,6 +8672,16 @@
       <param name="password" type="wstring" dir="in"/>
       <param name="return" type="wstring" dir="return"/>
     </method>
+
+    <method name="logoff">
+      <desc>
+        Logs off the client who has previously logged on with ISessionManager::logoff
+        and destroys all resources associated with the session (most importantly, all
+        managed objects created in the server while the session was active).
+      </desc>
+      <param name="refIVirtualBox" type="wstring" dir="in"/>
+    </method>
+
   </interface>
 
 </if>
