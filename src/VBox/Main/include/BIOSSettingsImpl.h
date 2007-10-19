@@ -48,15 +48,16 @@ public:
         bool operator== (const Data &that) const
         {
             return this == &that ||
-                   (mLogoFadeIn      == that.mLogoFadeIn &&
-                    mLogoFadeOut     == that.mLogoFadeOut &&
-                    mLogoDisplayTime == that.mLogoDisplayTime &&
-                    mLogoImagePath   == that.mLogoImagePath &&
-                    mBootMenuMode    == that.mBootMenuMode &&
-                    mACPIEnabled     == that.mACPIEnabled &&
-                    mIOAPICEnabled   == that.mIOAPICEnabled &&
-                    mPXEDebugEnabled == that.mPXEDebugEnabled &&
-                    mTimeOffset      == that.mTimeOffset);
+                   (mLogoFadeIn         == that.mLogoFadeIn &&
+                    mLogoFadeOut        == that.mLogoFadeOut &&
+                    mLogoDisplayTime    == that.mLogoDisplayTime &&
+                    mLogoImagePath      == that.mLogoImagePath &&
+                    mBootMenuMode       == that.mBootMenuMode &&
+                    mACPIEnabled        == that.mACPIEnabled &&
+                    mIOAPICEnabled      == that.mIOAPICEnabled &&
+                    mPXEDebugEnabled    == that.mPXEDebugEnabled &&
+                    mIDEControllerType  == that.mIDEControllerType &&
+                    mTimeOffset         == that.mTimeOffset);
         }
 
         BOOL                mLogoFadeIn;
