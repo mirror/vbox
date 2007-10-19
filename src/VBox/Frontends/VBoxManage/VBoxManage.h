@@ -67,6 +67,7 @@
 # define USAGE_CREATERAWVMDK        BIT64(34)
 #endif /* !VBOX_OSE */
 #define USAGE_VM_STATISTICS         BIT64(35)
+#define USAGE_ADOPTSTATE            BIT64(36)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 

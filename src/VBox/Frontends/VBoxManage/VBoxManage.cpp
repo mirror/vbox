@@ -418,6 +418,12 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
+    if (u64Cmd & USAGE_ADOPTSTATE)
+    {
+        RTPrintf("VBoxManage adoptstate       <uuid>|<name> <state_file>\n"
+                 "\n");
+    }
+
     if (u64Cmd & USAGE_SNAPSHOT)
     {
         RTPrintf("VBoxManage snapshot         <uuid>|<name>\n"
@@ -3586,11 +3592,10 @@ static int handleModifyVM(int argc, char *argv[],
     ULONG guestMemBalloonSize = (ULONG)-1;
     ULONG guestStatInterval = (ULONG)-1;
 
-    /* VM ID + at least one parameter + value */
-    if (argc < 3)
-    {
+    /* VM ID + at least one parameter. Parameter arguments are checked
+     * individually. */
+    if (argc < 2)
         return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
-    }
 
     /* Get the number of network adapters */
     ULONG NetworkAdapterCount = 0;
@@ -4150,27 +4155,27 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-guestmemoryballoon", 19) == 0)
         {
-                if (argc <= i + 1)
-                    return errorArgument("Missing argument to '%s'", argv[i-1]);
-                i++;
-                uint32_t uVal;
-                int vrc;
-                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
-                if (vrc != VINF_SUCCESS)
-                    return errorArgument("Error parsing guest memory balloon size '%s'", argv[i]);
-                guestMemBalloonSize = uVal;
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            uint32_t uVal;
+            int vrc;
+            vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+            if (vrc != VINF_SUCCESS)
+                return errorArgument("Error parsing guest memory balloon size '%s'", argv[i]);
+            guestMemBalloonSize = uVal;
         }
         else if (strncmp(argv[i], "-gueststatisticsinterval", 24) == 0)
         {
-                if (argc <= i + 1)
-                    return errorArgument("Missing argument to '%s'", argv[i-1]);
-                i++;
-                uint32_t uVal;
-                int vrc;
-                vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
-                if (vrc != VINF_SUCCESS)
-                    return errorArgument("Error parsing guest statistics interval '%s'", argv[i]);
-                guestStatInterval = uVal;
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            uint32_t uVal;
+            int vrc;
+            vrc = RTStrToUInt32Ex(argv[i], NULL, 0, &uVal);
+            if (vrc != VINF_SUCCESS)
+                return errorArgument("Error parsing guest statistics interval '%s'", argv[i]);
+            guestStatInterval = uVal;
         }
         else
         {
@@ -5099,7 +5104,8 @@ static int handleModifyVM(int argc, char *argv[],
 
         /* commit changes */
         CHECK_ERROR(machine, SaveSettings());
-    } while (0);
+    }
+    while (0);
 
     /* it's important to always close sessions */
     session->Close();
@@ -5626,11 +5632,57 @@ static int handleDiscardState(int argc, char *argv[],
             Guid guid;
             machine->COMGETTER(Id)(guid.asOutParam());
             CHECK_ERROR_BREAK(virtualBox, OpenSession(session, guid));
-            ComPtr<IConsole> console;
-            CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
-            CHECK_ERROR_BREAK(console, DiscardSavedState());
+            do
+            {
+                ComPtr<IConsole> console;
+                CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
+                CHECK_ERROR_BREAK(console, DiscardSavedState());
+            }
+            while (0);
             CHECK_ERROR_BREAK(session, Close());
-        } while (0);
+        }
+        while (0);
+    }
+
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
+static int handleAdoptdState(int argc, char *argv[],
+                             ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+{
+    HRESULT rc;
+
+    if (argc != 2)
+    {
+        return errorSyntax(USAGE_ADOPTSTATE, "Incorrect number of parameters");
+    }
+
+    ComPtr<IMachine> machine;
+    /* assume it's a UUID */
+    rc = virtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    if (FAILED(rc) || !machine)
+    {
+        /* must be a name */
+        CHECK_ERROR(virtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()));
+    }
+    if (machine)
+    {
+        do
+        {
+            /* we have to open a session for this task */
+            Guid guid;
+            machine->COMGETTER(Id)(guid.asOutParam());
+            CHECK_ERROR_BREAK(virtualBox, OpenSession(session, guid));
+            do
+            {
+                ComPtr<IConsole> console;
+                CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
+                CHECK_ERROR_BREAK(console, AdoptSavedState (Bstr (argv[1])));
+            }
+            while (0);
+            CHECK_ERROR_BREAK(session, Close());
+        }
+        while (0);
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
@@ -7490,6 +7542,7 @@ int main(int argc, char *argv[])
         { "startvm",          handleStartVM },
         { "controlvm",        handleControlVM },
         { "discardstate",     handleDiscardState },
+        { "adoptstate",       handleAdoptdState },
         { "snapshot",         handleSnapshot },
         { "registerimage",    handleRegisterImage },
         { "unregisterimage",  handleUnregisterImage },
@@ -7521,6 +7574,12 @@ int main(int argc, char *argv[])
         rc = errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[iCmd]).raw());
     }
 
+    /* Although all handlers should always close the session if they open it,
+     * we do it here just in case if some of the handlers contains a bug --
+     * leaving the direct session not closed will turn the machine state to
+     * Aborted which may have unwanted side effects like killing the saved
+     * state file (if the machine was in the Saved state before). */
+    session->Close();
 
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
