@@ -440,12 +440,79 @@ CPUMDECL(int) CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr)
 }
 
 
+/**
+ * Set the guest CR0. 
+ *  
+ * When called in GC, the hyper CR0 may be updated if that is 
+ * required. The caller only has to take special action if AM, 
+ * WP, PG or PE changes. 
+ *  
+ * @returns VINF_SUCCESS (consider it void).
+ * @param   pVM     Pointer to the shared VM structure.
+ * @param   cr0     The new CR0 value.
+ */
 CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint32_t cr0)
 {
+#ifdef IN_GC
+    /*
+     * Check if we need to change hypervisor CR0 because 
+     * of math stuff.
+     */
+    if (    (cr0                   & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
+        !=  (pVM->cpum.s.Guest.cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)))
+    {
+        if (!(pVM->cpum.s.fUseFlags & CPUM_USED_FPU))
+        {
+            /* 
+             * We haven't saved the host FPU state yet, so TS and MT are both set 
+             * and EM should be reflecting the guest EM (it always does this).
+             */
+            if ((cr0 & X86_CR0_EM) != (pVM->cpum.s.Guest.cr0 & X86_CR0_EM))
+            {
+                uint32_t HyperCR0 = ASMGetCR0();
+                AssertMsg((HyperCR0 & (X86_CR0_TS | X86_CR0_MP)) == (X86_CR0_TS | X86_CR0_MP), ("%#x\n", HyperCR0));
+                AssertMsg((HyperCR0 & X86_CR0_EM) == (pVM->cpum.s.Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
+                HyperCR0 &= ~X86_CR0_EM;
+                HyperCR0 |= cr0 & X86_CR0_EM;
+                Log(("CPUM New HyperCR0=%#x\n", HyperCR0));
+                ASMSetCR0(HyperCR0);
+            }
+#ifdef VBOX_STRICT
+            else
+            {
+                uint32_t HyperCR0 = ASMGetCR0();
+                AssertMsg((HyperCR0 & (X86_CR0_TS | X86_CR0_MP)) == (X86_CR0_TS | X86_CR0_MP), ("%#x\n", HyperCR0));
+                AssertMsg((HyperCR0 & X86_CR0_EM) == (pVM->cpum.s.Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
+            }
+#endif
+        }
+        else
+        {
+            /*
+             * Already saved the state, so we're just mirroring 
+             * the guest flags.
+             */
+            uint32_t HyperCR0 = ASMGetCR0();
+            AssertMsg(     (HyperCR0               & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)) 
+                      ==   (pVM->cpum.s.Guest.cr0  & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)), 
+                      ("%#x %#x\n", HyperCR0, pVM->cpum.s.Guest.cr0));
+            HyperCR0 &= ~(X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
+            HyperCR0 |= cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
+            Log(("CPUM New HyperCR0=%#x\n", HyperCR0));
+            ASMSetCR0(HyperCR0);
+        }
+    }
+#endif 
+
+    /* 
+     * Check for changes causing TLB flushes (for REM). 
+     * The caller is responsible for calling PGM when appropriate.  
+     */
     if (    (cr0                   & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
         !=  (pVM->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
         pVM->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
     pVM->cpum.s.fChanged |= CPUM_CHANGED_CR0;
+
     pVM->cpum.s.Guest.cr0 = cr0 | X86_CR0_ET;
     return VINF_SUCCESS;
 }

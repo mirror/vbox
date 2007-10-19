@@ -1525,8 +1525,8 @@ EMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
 
 #ifdef IN_GC
     /* Need to change the hyper CR0? Doing it the lazy way then. */
-    if (    (OldCr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP | X86_CR0_AM | X86_CR0_WP))
-        !=  (NewCr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP | X86_CR0_AM | X86_CR0_WP)))
+    if (    (OldCr0 & (X86_CR0_AM | X86_CR0_WP))
+        !=  (NewCr0 & (X86_CR0_AM | X86_CR0_WP)))
     {
         Log(("EMInterpretLMSW: CR0: %#x->%#x => R3\n", OldCr0, NewCr0));
         VM_FF_SET(pVM, VM_FF_TO_R3);
@@ -1546,16 +1546,10 @@ EMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
  */
 EMDECL(int) EMInterpretCLTS(PVM pVM)
 {
-    uint32_t Cr0 = CPUMGetGuestCR0(pVM);
-    if (!(Cr0 & X86_CR0_TS))
+    uint32_t cr0 = CPUMGetGuestCR0(pVM);
+    if (!(cr0 & X86_CR0_TS))
         return VINF_SUCCESS;
-
-#ifdef IN_GC
-    /* Need to change the hyper CR0? Doing it the lazy way then. */
-    Log(("EMInterpretCLTS: CR0: %#x->%#x => R3\n", Cr0, Cr0 & ~X86_CR0_TS));
-    VM_FF_SET(pVM, VM_FF_TO_R3);
-#endif
-    return CPUMSetGuestCR0(pVM, Cr0 & ~X86_CR0_TS);
+    return CPUMSetGuestCR0(pVM, cr0 & ~X86_CR0_TS);
 }
 
 static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
@@ -1587,28 +1581,20 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
         case USE_REG_CR0:
             oldval = CPUMGetGuestCR0(pVM);
 #ifndef IN_RING3
-            /* CR0.WP changes require a reschedule run in ring 3. */
-            if ((val32 & X86_CR0_WP) != (oldval & X86_CR0_WP))
+            /* CR0.WP and CR0.AM changes require a reschedule run in ring 3. */
+            if (    (val32 & (X86_CR0_WP | X86_CR0_AM)) 
+                !=  (oldval & (X86_CR0_WP | X86_CR0_AM)))
                 return VERR_EM_INTERPRETER;
 #endif
-            rc = CPUMSetGuestCR0(pVM, val32); AssertRC(rc); /** @todo CPUSetGuestCR0 stuff should be void, this is silly. */
+            CPUMSetGuestCR0(pVM, val32);
             val32 = CPUMGetGuestCR0(pVM);
-            if (    (oldval & (X86_CR0_PG|X86_CR0_WP|X86_CR0_PE))
-                !=  (val32  & (X86_CR0_PG|X86_CR0_WP|X86_CR0_PE)))
+            if (    (oldval & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
+                !=  (val32  & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
             {
                 /* global flush */
                 rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
                 AssertRCReturn(rc, rc);
             }
-# ifdef IN_GC
-            /* Feeling extremely lazy. */
-            if (    (oldval & (X86_CR0_TS|X86_CR0_EM|X86_CR0_MP|X86_CR0_AM))
-                !=  (val32  & (X86_CR0_TS|X86_CR0_EM|X86_CR0_MP|X86_CR0_AM)))
-            {
-                Log(("emInterpretMovCRx: CR0: %#x->%#x => R3\n", oldval, val32));
-                VM_FF_SET(pVM, VM_FF_TO_R3);
-            }
-# endif
             return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), 0);
 
         case USE_REG_CR2:
