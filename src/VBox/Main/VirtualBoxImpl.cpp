@@ -2019,36 +2019,30 @@ STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
 }
 
 /**
- *  Registers a new client callback on this instance. The methods of the
- *  callback interface will be called by this instance when the appropriate
- *  event occurs.
- *
  *  @note Locks this object for writing.
  */
-STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *callback)
+STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
 {
-    LogFlowMember (("VirtualBox::RegisterCallback(): callback=%p\n", callback));
+    LogFlowThisFunc (("aCallback=%p\n", aCallback));
 
-    if (!callback)
+    if (!aCallback)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoLock alock (this);
-    mData.mCallbacks.push_back (CallbackList::value_type (callback));
+    mData.mCallbacks.push_back (CallbackList::value_type (aCallback));
 
     return S_OK;
 }
 
 /**
- *  Unregisters the previously registered client callback.
- *
  *  @note Locks this object for writing.
  */
-STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *callback)
+STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
 {
-    if (!callback)
+    if (!aCallback)
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -2061,15 +2055,20 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *callback)
     CallbackList::iterator it;
     it = std::find (mData.mCallbacks.begin(),
                     mData.mCallbacks.end(),
-                    CallbackList::value_type (callback));
+                    CallbackList::value_type (aCallback));
     if (it == mData.mCallbacks.end())
         rc = E_INVALIDARG;
     else
         mData.mCallbacks.erase (it);
 
-    LogFlowMember (("VirtualBox::UnregisterCallback(): callback=%p, rc=%08X\n",
-                    callback, rc));
+    LogFlowThisFunc (("aCallback=%p, rc=%08X\n", aCallback, rc));
     return rc;
+}
+
+STDMETHODIMP VirtualBox::WaitForPropertyChange (INPTR BSTR aWhat, ULONG aTimeout,
+                                                BSTR *aChanged, BSTR *aValues)
+{
+    return E_NOTIMPL;
 }
 
 // public methods only for internal purposes

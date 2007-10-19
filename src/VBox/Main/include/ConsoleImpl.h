@@ -126,6 +126,7 @@ public:
     STDMETHOD(Resume)();
     STDMETHOD(PowerButton)();
     STDMETHOD(SaveState) (IProgress **aProgress);
+    STDMETHOD(AdoptSavedState) (INPTR BSTR aSavedStateFile);
     STDMETHOD(DiscardSavedState)();
     STDMETHOD(GetDeviceActivity) (DeviceType_T aDeviceType,
                                  DeviceActivity_T *aDeviceActivity);

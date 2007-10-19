@@ -808,7 +808,7 @@
 
   <interface
      name="IVirtualBox" extends="$dispatched"
-     uuid="e1606565-8954-4703-b22a-620941b85a1c"
+     uuid="64f652cb-7fdf-482d-ae19-4dbb289a5ca0"
      wsmap="managed"
      >
     <desc> The main interface exposed by the product that provides virtual
@@ -1773,11 +1773,112 @@
     </method>
 
     <method name="registerCallback">
-      <param name="callback" type="IVirtualBoxCallback" dir="in"/>
+      <desc>
+        Registers a new global VirtualBox callback. The methods of the given
+        callback object will be called by VirtualBox when an appropriate
+        event occurs.
+      </desc>
+      <param name="callback" type="IVirtualBoxCallback" dir="in">
+        <desc>Callback object to register.</desc>
+      </param>
     </method>
 
     <method name="unregisterCallback">
-      <param name="callback" type="IVirtualBoxCallback" dir="in"/>
+      <desc>
+        Unregisters the previously registered global VirtualBox callback.
+      </desc>
+      <param name="callback" type="IVirtualBoxCallback" dir="in">
+        <desc>Callback object to unregister.</desc>
+      </param>
+    </method>
+
+    <method name="waitForPropertyChange">
+      <desc>
+        Blocks the caller until any of the properties represented by the @a
+        what argument changes the value or until the given timeout interval
+        expires.
+
+        The @a what argument is a comma separated list of propertiy masks that
+        describe properties the caller is interested in. The property mask is
+        a string in the following format:
+
+        @code
+        [[group.]subgroup.]name
+        @endcode
+
+        where @c name is the property name and @c group, @c subgroup are zero
+        or or more property group specifiers. Each element (group or name) in
+        the property mask may be either a latin string or an asterisk symbol
+        (@c "*") which is used to match any string for the given element. A
+        property mask that doesn't contain asterisk symbols represents a
+        single fully qualified property name.
+
+        Groups in the fully qualified property name go from more generic (the
+        left-most part) to more specific (the right-most part). The first
+        element is usually a name of the object the property belongs to.  The
+        second element may be either a property name, or a child object name,
+        or an index if the preceeding element names an object which is one of
+        many objects of the same type. This way, property names form a
+        hierarchy of properties.  Here are some examples of property names:
+
+        <table>
+          <tr>
+            <td><tt>VirtualBox.version</tt></td>
+            <td><link to="IVirtualBox::version"/> property</td>
+          </tr>
+          <tr>
+            <td><tt>Machine.&lt;UUID&gt;.name</tt></td>
+            <td><link to="IMachine::name"/> property of the machine with the
+            given UUID</td>
+            </tr>
+        </table>
+
+        Most property names directly correspond to the properties of objects
+        (components) provided by the VirtualBox library and may be used to
+        track changes to these properties. However, there may be
+        pseudo-property names that don't correspond to any existing object's
+        property directly, as well as there may be object properties that
+        don't have a corresponding property name that is understood by this
+        method, and therefore changes to such properties cannot be
+        tracked. See individual object's property descrcriptions to get a
+        fully qualified property name that can be used with this method (if
+        any).
+
+        There is a special property mask @c "*" (i.e. a string consisting of a
+        single asterisk symbol) that can be used to match all properties.
+        Below are more examples of property masks:
+
+        <table>
+          <tr>
+            <td><tt>VirtualBox.*</tt></td>
+            <td>Track all properties of the VirtualBox object</td>
+          </tr>
+          <tr>
+            <td><tt>Machine.*.name</tt></td>
+            <td>Track changes to the <link to="IMachine::name"/> property of
+            all registered virtual machines</td>
+          </tr>
+        </table>
+
+      </desc>
+      <param name="what" type="wstring" dir="in">
+        <desc>Comma separated list of property masks.</desc>
+      </param>
+      <param name="timeout" type="unsigned long" dir="in">
+        <desc>
+          Wait timeout in milliseconds.
+          Specify -1 for an indefinite wait.
+        </desc>
+      </param>
+      <param name="changed" type="wstring" dir="out">
+        <desc>
+          Comma separated list of properties that have been changed and caused
+          this method to return to the caller.
+        </desc>
+      </param>
+      <param name="values" type="wstring" dir="out">
+        <desc>Reserved, not currently used.</desc>
+      </param>
     </method>
 
   </interface>
@@ -1800,7 +1901,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="83c4e00c-be0b-4c10-a48e-7bf832615f7b"
+     uuid="f33740bf-53b2-4519-b950-104260c6a189"
      internal="yes"
      wsmap="suppress"
      >
@@ -1931,6 +2032,15 @@
 
       <param name="success" type="boolean" dir="in">
         <desc><tt>true</tt> to indicate success and <tt>false</tt> otherwise</desc>
+      </param>
+    </method>
+
+    <method name="adoptSavedState">
+      <desc>
+        Gets called by IConsole::adoptSavedState.
+      </desc>
+      <param name="savedStateFile" type="wstring" dir="in">
+        <desc>Path to the saved state file to adopt.</desc>
       </param>
     </method>
 
@@ -3379,7 +3489,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="1DEA5C4B-0753-4193-B909-22330F64EC45"
+     uuid="d5a1cbda-f5d7-4824-9afe-d640c94c7dcf"
      wsmap="managed"
      >
     <attribute name="machine" type="IMachine" readonly="yes">
@@ -3563,6 +3673,32 @@
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="adoptSavedState">
+      <desc>
+        Associates the given saved state file to the virtual machine.
+
+        On success, the machine will go to the Saved state. Next time it is
+        powered up, it will be restored from the adopted saved state and
+        continue execution from the place where the saved state file was
+        created.
+
+        The specified saved state file path may be full or relative to the
+        folder the VM normally saves the state to (usually,
+        <link to="IMachine::snapshotFolder"/>).
+
+        <note>
+          It's a caller's responsibility to make sure the given saved state
+          file is compatible with the settings of this virtual machine that
+          represent its virtual hardware (memory size, hard disk configuration
+          etc.). If there is a mismatch, the behavior of the virtual machine
+          is undefined.
+        </note>
+      </desc>
+      <param name="savedStateFile" type="wstring" dir="in">
+        <desc>Path to the saved state file to adopt.</desc>
       </param>
     </method>
 
@@ -3784,27 +3920,29 @@
     <method name="discardCurrentState">
       <desc>
         This operation is similar to <link to="#discardSnapshot()"/> but
-        affects the current machine state. This means that the state stored
-        in the current snapshot will become a new current state, and
-        all current settings of the machine and changes stored in
-        differencing hard disks will be lost.
+        affects the current machine state. This means that the state stored in
+        the current snapshot will become a new current state, and all current
+        settings of the machine and changes stored in differencing hard disks
+        will be lost.
 
-        After this operation is successfully completed, new empty
-        differencing hard disks are created for all normal hard disks
-        of the machine.
+        After this operation is successfully completed, new empty differencing
+        hard disks are created for all normal hard disks of the machine.
 
-        If the current snapshot of the machine is an online snapshot,
-        the machine will go to the <link to="MachineState::Saved">
-          saved state</link>, so that the next time it is powered on,
-        the execution state will be restored from the current snapshot.
+        If the current snapshot of the machine is an online snapshot, the
+        machine will go to the <link to="MachineState::Saved"> saved
+        state</link>, so that the next time it is powered on, the execution
+        state will be restored from the current snapshot.
 
-        <note>The machine must not be running, otherwise the operation
-          will fail.</note>
+        <note>
+          The machine must not be running, otherwise the operation will fail.
+        </note>
 
-        <note>If the machine state is <link
-                                         to="MachineState::Saved">Saved</link> prior to this operation,
-          the saved state file will be implicitly discarded (as if <link
-                                                                      to="IConsole::discardSavedState()"/> were called).</note>
+        <note>
+          If the machine state is <link to="MachineState::Saved">Saved</link>
+          prior to this operation, the saved state file will be implicitly
+          discarded (as if <link to="IConsole::discardSavedState()"/> were
+          called).
+        </note>
 
       </desc>
       <param name="progress" type="IProgress" dir="return">

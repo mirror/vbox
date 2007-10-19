@@ -6873,7 +6873,12 @@ HRESULT Machine::saveStateSettings (int aFlags)
         if (aFlags & SaveSTS_StateFilePath)
         {
             if (mSSData->mStateFilePath)
-                CFGLDRSetBSTR (machineNode, "stateFile", mSSData->mStateFilePath);
+            {
+                /* try to make the file name relative to the settings file dir */
+                Utf8Str stateFilePath = mSSData->mStateFilePath;
+                calculateRelativePath (stateFilePath, stateFilePath);
+                CFGLDRSetString (machineNode, "stateFile", stateFilePath);
+            }
             else
                 CFGLDRDeleteAttribute (machineNode, "stateFile");
         }
@@ -8727,6 +8732,39 @@ STDMETHODIMP SessionMachine::EndSavingState (BOOL aSuccess)
 }
 
 /**
+ *  @note Locks this objects for writing.
+ */
+STDMETHODIMP SessionMachine::AdoptSavedState (INPTR BSTR aSavedStateFile)
+{
+    LogFlowThisFunc (("\n"));
+
+    AssertReturn (aSavedStateFile, E_INVALIDARG);
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoLock alock (this);
+
+    AssertReturn (mData->mMachineState == MachineState_PoweredOff ||
+                  mData->mMachineState == MachineState_Aborted,
+                  E_FAIL);
+
+    Utf8Str stateFilePathFull = aSavedStateFile;
+    int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
+    if (VBOX_FAILURE (vrc))
+        return setError (E_FAIL,
+            tr ("Invalid saved state file path: '%ls' (%Vrc)"),
+                aSavedStateFile, vrc);
+
+    mSSData->mStateFilePath = stateFilePathFull;
+
+    /* The below setMachineState() will detect the state transition and will
+     * update the settings file */
+
+    return setMachineState (MachineState_Saved);
+}
+
+/**
  *  @note Locks mParent + this objects for writing.
  */
 STDMETHODIMP SessionMachine::BeginTakingSnapshot (
@@ -10542,7 +10580,18 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         aMachineState == MachineState_Aborted ||
         aMachineState == MachineState_Saved)
     {
+        /* the machine has stopped execution
+         * (or the saved state file was adopted) */
         stsFlags |= SaveSTS_StateTimeStamp;
+    }
+
+    if ((oldMachineState == MachineState_PoweredOff ||
+         oldMachineState == MachineState_Aborted) &&
+        aMachineState == MachineState_Saved)
+    {
+        /* the saved state file was adopted */
+        Assert (!mSSData->mStateFilePath.isNull());
+        stsFlags |= SaveSTS_StateFilePath;
     }
 
     rc = saveStateSettings (stsFlags);
