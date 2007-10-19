@@ -234,6 +234,89 @@ BEGINPROC   EMEmulateOr
 ENDPROC     EMEmulateOr
 
 ;;
+; Emulate LOCK OR instruction.
+; EMDECL(int) EMEmulateLockOr(RTGCPTR GCPtrParam1, RTGCUINTREG Param2, size_t cbSize, RTGCUINTREG *pf);
+;
+; @returns VINF_SUCCESS on success, VERR_ACCESS_DENIED on \#PF (GC only).
+; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to data item (the real stuff).
+; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - Second parameter- the immediate / register value.
+; @param    [esp + 0ch]  gcc:rdx  msc:r8    Param 3 - Size of the operation - 1, 2, 4 or 8 bytes.
+; @param    [esp + 10h]  gcc:rcx  msc:r9    Param 4 - Where to store the eflags on success.
+;                                                     only arithmetic flags are valid.
+align 16
+BEGINPROC   EMEmulateLockOr
+%ifdef RT_ARCH_AMD64
+%ifdef RT_OS_WINDOWS
+    mov     rax, r8                     ; eax = size of parameters
+%else   ; !RT_OS_WINDOWS
+    mov     rax, rdx                    ; rax = size of parameters
+    mov     rcx, rdi                    ; rcx = first parameter
+    mov     rdx, rsi                    ; rdx = second parameter
+%endif  ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 0ch]            ; eax = size of parameters
+    mov     ecx, [esp + 04h]            ; ecx = first parameter (MY_PTR_REG)
+    mov     edx, [esp + 08h]            ; edx = second parameter
+%endif
+
+    ; switch on size
+%ifdef RT_ARCH_AMD64
+    cmp     al, 8
+    je short .do_qword                  ; 8 bytes variant
+%endif
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+    ; workers
+%ifdef RT_ARCH_AMD64
+.do_qword:
+    lock or [MY_PTR_REG], rdx           ; do 8 bytes OR
+    jmp short .done
+%endif
+
+.do_dword:
+    lock or [MY_PTR_REG], edx           ; do 4 bytes OR
+    jmp short .done
+
+.do_word:
+    lock or [MY_PTR_REG], dx            ; do 2 bytes OR
+    jmp short .done
+
+.do_byte:
+    lock or [MY_PTR_REG], dl            ; do 1 byte OR
+
+    ; collect flags and return.
+.done:
+    pushf
+%ifdef RT_ARCH_AMD64
+    pop    rax
+ %ifdef RT_OS_WINDOWS
+    mov    [r9], eax
+ %else  ; !RT_OS_WINDOWS
+    mov    [rcx], eax
+ %endif ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 10h + 4]
+    pop     dword [eax]
+%endif
+    mov     eax, VINF_SUCCESS     
+    retn
+
+%ifdef IN_GC
+; #PF resume point. 
+GLOBALNAME EMEmulateLockOr_Error
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+%endif
+
+ENDPROC     EMEmulateLockOr
+
+;;
 ; Emulate XOR instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateXor(uint32_t *pu32Param1, uint32_t u32Param2, size_t cb);
 ;
@@ -648,6 +731,49 @@ BEGINPROC   EMEmulateBtr
     pop     MY_RET_REG
     retn
 ENDPROC     EMEmulateBtr
+
+;;
+; Emulate LOCK BTR instruction.
+; EMDECL(int) EMEmulateLockBtr(RTGCPTR GCPtrParam1, RTGCUINTREG Param2, uint32_t *pf);
+;
+; @returns VINF_SUCCESS on success, VERR_ACCESS_DENIED on \#PF (GC only).
+; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to data item (the real stuff).
+; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - Second parameter- the immediate / register value. (really an 8 byte value)
+; @param    [esp + 0ch]  gcc:rdx  msc:r8    Param 3 - Where to store the eflags on success.
+;
+align 16
+BEGINPROC   EMEmulateLockBtr
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     rax, r8                     ; rax = third parameter
+ %else  ; !RT_OS_WINDOWS
+    mov     rcx, rdi                    ; rcx = first parameter
+    mov     rax, rdx                    ; rax = third parameter
+    mov     rdx, rsi                    ; rdx = second parameter
+ %endif ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     ecx, [esp + 04h]            ; ecx = first parameter
+    mov     edx, [esp + 08h]            ; edx = second parameter
+    mov     eax, [esp + 0ch]            ; eax = third parameter
+%endif
+
+    lock btr [MY_PTR_REG], edx
+
+    ; collect flags and return.
+    pushf
+    pop     xDX
+    mov     [xAX], edx
+    mov     eax, VINF_SUCCESS
+    retn
+
+%ifdef IN_GC
+; #PF resume point. 
+GLOBALNAME EMEmulateLockBtr_Error
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+%endif
+
+ENDPROC     EMEmulateLockBtr
 
 ;;
 ; Emulate BTC instruction, CDECL calling conv.

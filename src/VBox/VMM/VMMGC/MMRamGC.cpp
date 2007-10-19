@@ -36,14 +36,18 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) mmgcramTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame);
+static DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 DECLASM(void) MMGCRamReadNoTrapHandler_EndProc(void);
 DECLASM(void) MMGCRamWriteNoTrapHandler_EndProc(void);
-DECLASM(void) EMGCEmulateCmpXchg_EndProc(void);
 DECLASM(void) EMGCEmulateLockCmpXchg_EndProc(void);
-DECLASM(void) EMGCEmulateCmpXchg_Error(void);
 DECLASM(void) EMGCEmulateLockCmpXchg_Error(void);
+DECLASM(void) EMGCEmulateCmpXchg_EndProc(void);
+DECLASM(void) EMGCEmulateCmpXchg_Error(void);
+DECLASM(void) EMEmulateLockOr_EndProc(void);
+DECLASM(void) EMEmulateLockOr_Error(void);
+DECLASM(void) EMEmulateLockBtr_EndProc(void);
+DECLASM(void) EMEmulateLockBtr_Error(void);
 DECLASM(void) MMGCRamRead_Error(void);
 DECLASM(void) MMGCRamWrite_Error(void);
 
@@ -58,7 +62,7 @@ DECLASM(void) MMGCRamWrite_Error(void);
  */
 MMGCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
 {
-    TRPMGCSetTempHandler(pVM, 0xe, mmgcramTrap0eHandler);
+    TRPMGCSetTempHandler(pVM, 0xe, mmGCRamTrap0eHandler);
 }
 
 /**
@@ -132,67 +136,75 @@ MMGCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
  *
  * @internal
  */
-DECLCALLBACK(int) mmgcramTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
+DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     /*
-     * Check where the trap was occurred.
+     * Page fault inside MMGCRamRead()? Resume at *_Error.
      */
     if (    (uintptr_t)&MMGCRamReadNoTrapHandler < (uintptr_t)pRegFrame->eip
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamReadNoTrapHandler_EndProc)
     {
-        /*
-         * Page fault inside MMGCRamRead() func.
-         */
-        RTGCUINT uErrorCode = TRPMGetErrorCode(pVM);
-
-        /* Must be read violation. */
-        if (uErrorCode & X86_TRAP_PF_RW)
-            return VERR_INTERNAL_ERROR;
-
-        /* Return execution to func at error label. */
+        /* Must be a read violation. */
+        AssertReturn(!(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW), VERR_INTERNAL_ERROR); 
         pRegFrame->eip = (uintptr_t)&MMGCRamRead_Error;
         return VINF_SUCCESS;
     }
-    else if (    (uintptr_t)&MMGCRamWriteNoTrapHandler < (uintptr_t)pRegFrame->eip
-             &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamWriteNoTrapHandler_EndProc)
+
+    /*
+     * Page fault inside MMGCRamWrite()? Resume at _Error.
+     */
+    if (    (uintptr_t)&MMGCRamWriteNoTrapHandler < (uintptr_t)pRegFrame->eip
+        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamWriteNoTrapHandler_EndProc)
     {
-        /*
-         * Page fault inside MMGCRamWrite() func.
-         */
-        RTGCUINT uErrorCode = TRPMGetErrorCode(pVM);
-
-        /* Must be write violation. */
-        if (!(uErrorCode & X86_TRAP_PF_RW))
-            return VERR_INTERNAL_ERROR;
-
-        /* Return execution to func at error label. */
+        /* Must be a write violation. */
+        AssertReturn(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW, VERR_INTERNAL_ERROR); 
         pRegFrame->eip = (uintptr_t)&MMGCRamWrite_Error;
         return VINF_SUCCESS;
     }
-    else if (    (uintptr_t)&EMGCEmulateLockCmpXchg < (uintptr_t)pRegFrame->eip
-             &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateLockCmpXchg_EndProc)
-    {
-        /*
-         * Page fault inside EMGCEmulateLockCmpXchg() func.
-         */
 
-        /* Return execution to func at error label. */
+    /*
+     * Page fault inside EMGCEmulateLockCmpXchg()? Resume at _Error.
+     */
+    if (    (uintptr_t)&EMGCEmulateLockCmpXchg < (uintptr_t)pRegFrame->eip
+        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateLockCmpXchg_EndProc)
+    {
         pRegFrame->eip = (uintptr_t)&EMGCEmulateLockCmpXchg_Error;
         return VINF_SUCCESS;
     }
-    else if (    (uintptr_t)&EMGCEmulateCmpXchg < (uintptr_t)pRegFrame->eip
-             &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateCmpXchg_EndProc)
-    {
-        /*
-         * Page fault inside EMGCEmulateCmpXchg() func.
-         */
 
-        /* Return execution to func at error label. */
+    /*
+     * Page fault inside EMGCEmulateCmpXchg()? Resume at _Error.
+     */
+    if (    (uintptr_t)&EMGCEmulateCmpXchg < (uintptr_t)pRegFrame->eip
+        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateCmpXchg_EndProc)
+    {
         pRegFrame->eip = (uintptr_t)&EMGCEmulateCmpXchg_Error;
         return VINF_SUCCESS;
     }
 
-    /* #PF is not handled - kill the Hypervisor. */
+    /*
+     * Page fault inside EMEmulateLockOr()? Resume at *_Error.
+     */
+    if (    (uintptr_t)&EMEmulateLockOr < (uintptr_t)pRegFrame->eip
+        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMEmulateLockOr_EndProc)
+    {
+        pRegFrame->eip = (uintptr_t)&EMEmulateLockOr_Error;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Page fault inside EMEmulateLockBtr()? Resume at *_Error.
+     */
+    if (    (uintptr_t)&EMEmulateLockBtr < (uintptr_t)pRegFrame->eip
+        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMEmulateLockBtr_EndProc)
+    {
+        pRegFrame->eip = (uintptr_t)&EMEmulateLockBtr_Error;
+        return VINF_SUCCESS;
+    }
+
+    /* 
+     * #PF is not handled - cause guru meditation. 
+     */
     return VERR_INTERNAL_ERROR;
 }
 
