@@ -8107,9 +8107,6 @@ ASM_START
     push es
     pusha
     sti     ; Why are interrupts disabled now? Because we were called through an INT!
-    calli 0x0003,VBOX_LANBOOT_SEG
-;    cmp bx,#0x20
-;    jne no_rom
     push #VBOX_LANBOOT_SEG
     pop ds
     mov bx,#0x1a    ; PnP header offset
@@ -10415,7 +10412,7 @@ rom_scan_increment:
   shl  ax, #5   ;; convert 512-bytes blocks to 16-byte increments
                 ;; because the segment selector is shifted left 4 bits.
   add  cx, ax
-  cmp  cx, #0xe000
+  cmp  cx, #0xe800  ;; Must encompass VBOX_LANBOOT_SEG!
   jbe  rom_scan_loop
 
   xor  ax, ax   ;; Restore DS back to 0000:
