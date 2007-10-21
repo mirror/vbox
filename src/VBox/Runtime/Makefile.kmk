@@ -138,7 +138,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/sanity-c.c \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
-	assert.cpp \
+	common/misc/assert.cpp \
 	table/avlhcphys.cpp \
 	table/avlgcptr.cpp \
 	table/avlogcphys.cpp \
@@ -180,7 +180,7 @@ RuntimeR3_SOURCES       = \
 	common/log/logformat.cpp \
 	common/checksum/md5.cpp \
 	r3/path.cpp \
-	req.cpp \
+	common/misc/req.cpp \
 	r3/alloc-ef.cpp \
 	r3/alloc.cpp \
 	r3/init.cpp \
@@ -188,7 +188,7 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/tcp.cpp \
 	RTErrConvertFromErrno.cpp \
-	semspingpong.cpp \
+	common/misc/semspingpong.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
@@ -197,14 +197,14 @@ RuntimeR3_SOURCES       = \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
 	common/string/strtonum.cpp \
-	thread.cpp \
+	common/misc/thread.cpp \
 	common/time/time.cpp \
 	common/time/timeprog.cpp \
 	common/string/uni.cpp \
 	common/string/unidata.cpp \
 	common/string/utf-16.cpp \
 	common/string/utf-8.cpp \
-	zip.cpp \
+	common/misc/zip.cpp \
 	common/misc/rand.cpp \
 
 ifdef IPRT_WITH_KLDR
@@ -647,7 +647,7 @@ RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0_SOURCES       = \
 	common/misc/sanity-cpp.cpp \
 	common/misc/sanity-c.c \
-	assert.cpp \
+	common/misc/assert.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	table/avlhcphys.cpp \
 	table/avlgcptr.cpp \
@@ -738,7 +738,7 @@ RuntimeR0Drv_INCS.linux = \
 RuntimeR0Drv_SOURCES    = \
 	common/misc/sanity-cpp.cpp \
 	common/misc/sanity-c.c \
-	assert.cpp \
+	common/misc/assert.cpp \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
@@ -792,7 +792,7 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/thread-r0drv-nt.cpp \
 	r0drv/nt/thread2-r0drv-nt.cpp \
 	r0drv/nt/time-r0drv-nt.cpp \
-	thread.cpp \
+	common/misc/thread.cpp \
 	common/string/strncmp.cpp
 ## @todo timer-r0drv-nt.cpp and assert-r0drv-nt.cpp
 
@@ -818,7 +818,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
 	r0drv/darwin/thread2-r0drv-darwin.cpp \
 	r0drv/darwin/time-r0drv-darwin.cpp \
-	thread.cpp \
+	common/misc/thread.cpp \
 	generic/timer-generic.cpp
 
 RuntimeR0Drv_DEFS.os2 += RT_WITHOUT_NOCRT_WRAPPERS
@@ -837,7 +837,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	\
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
-	thread.cpp \
+	common/misc/thread.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/os2/alloc-r0drv-os2.cpp \
 	r0drv/os2/assert-r0drv-os2.cpp \
@@ -867,7 +867,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	RTErrConvertToErrno.cpp \
 	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
-	thread.cpp \
+	common/misc/thread.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
 	r0drv/freebsd/initterm-r0drv-freebsd.c \
@@ -890,7 +890,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	RTErrConvertFromErrno.cpp \
 	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
-	thread.cpp \
+	common/misc/thread.cpp \
 	r0drv/solaris/alloc-r0drv-solaris.c \
 	r0drv/solaris/assert-r0drv-solaris.c \
 	r0drv/solaris/initterm-r0drv-solaris.c \
@@ -959,7 +959,7 @@ RuntimeOS2GuestR0_TEMPLATE      = VBOXOS2GUESTR0LIB
 RuntimeOS2GuestR0_INCS         := $(PATH_SUB_CURRENT)
 RuntimeOS2GuestR0_DEFS          = RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeOS2GuestR0_SOURCES       = \
-	$(filter-out assert.cpp generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
+	$(filter-out common/misc/assert.cpp generic/RTLogWriteUser-generic.cpp,$(RuntimeR0Drv_SOURCES)) \
 	$(RuntimeR0Drv_SOURCES.os2) \
 	VBox/logbackdoor.cpp
 
@@ -983,7 +983,7 @@ RuntimeGC_SOURCES       = \
 	table/avlroioport.cpp \
 	table/avlu32.cpp \
 	table/avllu32.cpp \
-	assert.cpp \
+	common/misc/assert.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
