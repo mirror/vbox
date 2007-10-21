@@ -245,7 +245,7 @@ TMR3DECL(int) TMR3Init(PVM pVM)
                           N_("Configuration error: Failed to querying bool value \"UseRealTSC\". (%Vrc)"), rc);
 
     /* source */
-    rc = CFGMR3QueryBool(pCfgHandle, "UseRealTSC", &pVM->tm.s.fTSCTicking);
+    rc = CFGMR3QueryBool(pCfgHandle, "UseRealTSC", &pVM->tm.s.fTSCUseRealTSC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.fTSCUseRealTSC = false; /* use virtual time */
     else if (VBOX_FAILURE(rc))
