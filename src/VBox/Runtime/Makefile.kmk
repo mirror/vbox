@@ -160,7 +160,7 @@ RuntimeR3_SOURCES       = \
 	r3/dir.cpp \
 	errmsg.cpp \
 	r3/fileio.cpp \
-	f3/fs.cpp \
+	r3/fs.cpp \
 	generic/critsect-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
 	generic/RTLogWriteStdErr-generic.cpp \
