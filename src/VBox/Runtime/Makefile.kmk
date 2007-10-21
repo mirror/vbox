@@ -139,22 +139,22 @@ RuntimeR3_SOURCES       = \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
 	common/misc/assert.cpp \
-	table/avlhcphys.cpp \
-	table/avlgcptr.cpp \
-	table/avlogcphys.cpp \
-	table/avlogcptr.cpp \
-	table/avlohcphys.cpp \
-	table/avloioport.cpp \
-	table/avlpv.cpp \
-	table/avlrgcptr.cpp \
-	table/avlrogcphys.cpp \
-	table/avlrogcptr.cpp \
-	table/avlroogcptr.cpp \
-	table/avlroioport.cpp \
-	table/avlu32.cpp \
-	table/avllu32.cpp \
-	table/avlul.cpp \
-	table/table.cpp \
+	common/table/avlhcphys.cpp \
+	common/table/avlgcptr.cpp \
+	common/table/avlogcphys.cpp \
+	common/table/avlogcptr.cpp \
+	common/table/avlohcphys.cpp \
+	common/table/avloioport.cpp \
+	common/table/avlpv.cpp \
+	common/table/avlrgcptr.cpp \
+	common/table/avlrogcphys.cpp \
+	common/table/avlrogcptr.cpp \
+	common/table/avlroogcptr.cpp \
+	common/table/avlroioport.cpp \
+	common/table/avlu32.cpp \
+	common/table/avllu32.cpp \
+	common/table/avlul.cpp \
+	common/table/table.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
 	r3/dir.cpp \
@@ -649,19 +649,19 @@ RuntimeR0_SOURCES       = \
 	common/misc/sanity-c.c \
 	common/misc/assert.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
-	table/avlhcphys.cpp \
-	table/avlgcptr.cpp \
-	table/avlogcphys.cpp \
-	table/avlohcphys.cpp \
-	table/avlpv.cpp \
-	table/avlrogcphys.cpp \
-	table/avlogcptr.cpp \
-	table/avlrogcptr.cpp \
-	table/avlroogcptr.cpp \
-	table/avloioport.cpp \
-	table/avlroioport.cpp \
-	table/avlu32.cpp \
-	table/avllu32.cpp \
+	common/table/avlhcphys.cpp \
+	common/table/avlgcptr.cpp \
+	common/table/avlogcphys.cpp \
+	common/table/avlohcphys.cpp \
+	common/table/avlpv.cpp \
+	common/table/avlrogcphys.cpp \
+	common/table/avlogcptr.cpp \
+	common/table/avlrogcptr.cpp \
+	common/table/avlroogcptr.cpp \
+	common/table/avloioport.cpp \
+	common/table/avlroioport.cpp \
+	common/table/avlu32.cpp \
+	common/table/avllu32.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/string/strformat.cpp \
@@ -754,7 +754,7 @@ RuntimeR0Drv_SOURCES    = \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	VBox/log-vbox.cpp \
-	table/avlpv.cpp \
+	common/table/avlpv.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp
 
@@ -973,16 +973,16 @@ RuntimeGC_SOURCES       = \
 	gc/initterm-gc.cpp \
 	common/misc/sanity-cpp.cpp \
 	common/misc/sanity-c.c \
-	table/avlogcphys.cpp \
-	table/avlrogcphys.cpp \
-	table/avlogcptr.cpp \
-	table/avlohcphys.cpp \
-	table/avlrogcptr.cpp \
-	table/avlroogcptr.cpp \
-	table/avloioport.cpp \
-	table/avlroioport.cpp \
-	table/avlu32.cpp \
-	table/avllu32.cpp \
+	common/table/avlogcphys.cpp \
+	common/table/avlrogcphys.cpp \
+	common/table/avlogcptr.cpp \
+	common/table/avlohcphys.cpp \
+	common/table/avlrogcptr.cpp \
+	common/table/avlroogcptr.cpp \
+	common/table/avloioport.cpp \
+	common/table/avlroioport.cpp \
+	common/table/avlu32.cpp \
+	common/table/avllu32.cpp \
 	common/misc/assert.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	common/log/log.cpp \
@@ -1101,8 +1101,15 @@ DOXYGEN_INPUT_DIRS = \
 	$(PATH_ROOT)/include/iprt/nocrt/x86 \
 	$(PATH_ROOT)/include/iprt/nocrt/amd64 \
 	include/internal \
-	string \
-	table \
+	common/alloc \
+	common/checksum \
+	common/err \
+	common/ldr \
+	common/log \
+	common/misc \
+	common/string \
+	common/table \
+	common/time \
 	$(foreach dir, . r3 r0drv,\
 		$(dir) \
 		$(dir)/darwin \
@@ -1147,7 +1154,7 @@ $(PATH_TARGET)/Doxyfile: Doxyfile \
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(DOXYGEN_OUTPUT)"
 	$(APPEND) $@.tmp "WARN_LOGFILE = $(DOXYGEN_OUTPUT)/errors"
-	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . table"
+	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include include . common/table"
 	$(APPEND) $@.tmp "INCLUDE_FILE_PATTERNS = *.cpp.h"
 	$(APPEND) $@.tmp
 	$(APPEND) $@.tmp "INPUT = $(DOXYGEN_INPUT)"
