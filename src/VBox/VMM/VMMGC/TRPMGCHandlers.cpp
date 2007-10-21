@@ -707,7 +707,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
  * @param   pRegFrame   Pointer to the registre frame for the trap.
  *                      This will be updated on successful return.
  */
-DECLINLINE(int) trpmGCTrap0dHandlerRDTSC(PVM pVM, PCPUMCTXCORE pRegFrame)
+DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     STAM_COUNTER_INC(&pVM->trpm.s.StatTrap0dRdTsc);
 
@@ -763,7 +763,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         && ((uint8_t *)PC)[1] == 0x31)
     {
         STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
-        return trpmGCTrap0dHandlerRDTSC(pVM, pRegFrame);
+        return trpmGCTrap0dHandlerRdTsc(pVM, pRegFrame);
     }
 
     /*
