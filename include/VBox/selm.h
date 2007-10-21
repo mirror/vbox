@@ -142,7 +142,7 @@ SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTs
  * @param   pHiddenSel  Hidden selector register
  * @param   Addr        Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel, RTGCPTR Addr);
+SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHID pHiddenSel, RTGCPTR Addr);
 
 /** Flags for SELMToFlatEx().
  * @{ */
@@ -181,12 +181,12 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID
  * @param   pcb         Where to store the bytes from *ppvGC which can be accessed according to
  *                      the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
+SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, PCPUMSELREGHID pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
 
 /**
  * Validates and converts a GC selector based code address to a flat address.
  *
- * @returns Flat address.
+ * @returns VBox status code.
  * @param   pVM          VM Handle.
  * @param   eflags       Current eflags
  * @param   SelCPL       Current privilege level. Get this from SS - CS might be conforming!
@@ -196,7 +196,26 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
  * @param   Addr         Address part.
  * @param   ppvFlat      Where to store the flat address.
  */
-SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat);
+SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat);
+
+/**
+ * Validates and converts a GC selector based code address to a flat address.
+ *
+ * This is like SELMValidateAndConvertCSAddr + SELMIsSelector32Bit but with
+ * invalid hidden CS data. It's customized for dealing efficiently with CS
+ * at GC trap time.
+ *
+ * @returns VBox status code.
+ * @param   pVM          VM Handle.
+ * @param   eflags       Current eflags
+ * @param   SelCPL       Current privilege level. Get this from SS - CS might be conforming!
+ *                       A full selector can be passed, we'll only use the RPL part.
+ * @param   SelCS        Selector part.
+ * @param   Addr         Address part.
+ * @param   ppvFlat      Where to store the flat address.
+ * @param   pcBits       Where to store the 64-bit/32-bit/16-bit indicator.
+ */
+SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits);
 
 /**
  * Checks if a selector is 32-bit or 16-bit.
@@ -208,7 +227,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel);
+SELMDECL(bool) SELMIsSelector32Bit(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHID pHiddenSel);
 
 /**
  * Returns flat address and limit of LDT by LDT selector.
