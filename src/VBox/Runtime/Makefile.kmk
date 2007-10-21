@@ -70,7 +70,7 @@ endif
 # Unicode Specification reader used to regenerate unidata.cpp.
 #
 uniread_TEMPLATE = VBOXBLDPROG
-uniread_SOURCES  = uniread.cpp
+uniread_SOURCES  = common/string/uniread.cpp
 
 #
 # Win64 assembly sources.
@@ -189,21 +189,21 @@ RuntimeR3_SOURCES       = \
 	r3/tcp.cpp \
 	RTErrConvertFromErrno.cpp \
 	semspingpong.cpp \
-	straprintf.cpp \
-	strformat.cpp \
-	strformatrt.cpp \
-	string.cpp \
-	strprintf.cpp \
-	strspace.cpp \
-	strstrip.cpp \
-	strtonum.cpp \
+	common/string/straprintf.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
+	common/string/string.cpp \
+	common/string/strprintf.cpp \
+	common/string/strspace.cpp \
+	common/string/strstrip.cpp \
+	common/string/strtonum.cpp \
 	thread.cpp \
 	common/time/time.cpp \
 	common/time/timeprog.cpp \
-	uni.cpp \
-	unidata.cpp \
-	utf-16.cpp \
-	utf-8.cpp \
+	common/string/uni.cpp \
+	common/string/unidata.cpp \
+	common/string/utf-16.cpp \
+	common/string/utf-8.cpp \
 	zip.cpp \
 	misc/rand.cpp \
 
@@ -664,9 +664,9 @@ RuntimeR0_SOURCES       = \
 	table/avllu32.cpp \
 	logcom.cpp \
 	logformat.cpp \
-	strformat.cpp \
-	strformatrt.cpp \
-	strprintf.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
+	common/string/strprintf.cpp \
 	common/string/memchr.cpp \
 	common/string/memcmp.cpp \
 	common/string/memcpy.cpp \
@@ -743,10 +743,10 @@ RuntimeR0Drv_SOURCES    = \
 	logcom.cpp \
 	logformat.cpp \
 	common/string/strpbrk.cpp \
-	strformat.cpp \
-	strformatrt.cpp \
-	strtonum.cpp \
-	strprintf.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
+	common/string/strtonum.cpp \
+	common/string/strprintf.cpp \
 	VBox/strformat-vbox.cpp \
 	r0drv/alloc-r0drv.cpp \
 	r0drv/initterm-r0drv.cpp \
@@ -990,9 +990,9 @@ RuntimeGC_SOURCES       = \
 	logformat.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strncmp.cpp \
-	strformat.cpp \
-	strformatrt.cpp \
-	strprintf.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
+	common/string/strprintf.cpp \
 	VBox/strformat-vbox.cpp \
 	common/time/timesup.cpp \
 	common/time/timeprog.cpp \
