@@ -136,8 +136,8 @@ RuntimeR3_INCS.freebsd  = \
 RuntimeR3_SOURCES       = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
-	alloc.cpp \
-	alloc/heapsimple.cpp \
+	common/alloc/alloc.cpp \
+	common/alloc/heapsimple.cpp \
 	assert.cpp \
 	table/avlhcphys.cpp \
 	table/avlgcptr.cpp \
@@ -760,7 +760,7 @@ RuntimeR0Drv_SOURCES    = \
 
 RuntimeR0Drv_SOURCES.linux = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
-	alloc/heapsimple.cpp \
+	common/alloc/heapsimple.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
