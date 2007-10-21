@@ -134,8 +134,8 @@ RuntimeR3_INCS.freebsd  = \
 #    /usr/include
 
 RuntimeR3_SOURCES       = \
-	misc/sanity-cpp.cpp \
-	misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
+	common/misc/sanity-c.c \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
 	assert.cpp \
@@ -205,7 +205,7 @@ RuntimeR3_SOURCES       = \
 	common/string/utf-16.cpp \
 	common/string/utf-8.cpp \
 	zip.cpp \
-	misc/rand.cpp \
+	common/misc/rand.cpp \
 
 ifdef IPRT_WITH_KLDR
  RuntimeR3_SOURCES += \
@@ -570,8 +570,8 @@ VBoxRT_LIBS.l4                 = \
 RuntimeR3NoCRTGCC_TEMPLATE = VBOXNOCRTGCC
 RuntimeR3NoCRTGCC_LIBSUFF = $(VBOX_SUFF_LIB)
 RuntimeR3NoCRTGCC_SOURCES  = \
-	misc/sanity-cpp.cpp \
-	misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
+	common/misc/sanity-c.c \
 	\
 	math/ceill.asm \
 	math/cosl.asm \
@@ -598,7 +598,7 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	math/truncf.asm \
 	math/truncl.asm \
 	\
-	misc/setjmp.asm \
+	common/misc/setjmp.asm \
 	\
 	common/string/memchr.asm \
 	common/string/memchr_alias.c \
@@ -645,8 +645,8 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 RuntimeR0_TEMPLATE      = VBOXR0
 RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0_SOURCES       = \
-	misc/sanity-cpp.cpp \
-	misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
+	common/misc/sanity-c.c \
 	assert.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	table/avlhcphys.cpp \
@@ -736,8 +736,8 @@ RuntimeR0Drv_INCS.linux = \
 	r0drv/linux
 
 RuntimeR0Drv_SOURCES    = \
-	misc/sanity-cpp.cpp \
-	misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
+	common/misc/sanity-c.c \
 	assert.cpp \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
@@ -971,8 +971,8 @@ RuntimeGC_TEMPLATE      = VBOXGC
 RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
 RuntimeGC_SOURCES       = \
 	gc/initterm-gc.cpp \
-	misc/sanity-cpp.cpp \
-	misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
+	common/misc/sanity-c.c \
 	table/avlogcphys.cpp \
 	table/avlrogcphys.cpp \
 	table/avlogcptr.cpp \
