@@ -524,6 +524,20 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
      */
     switch (pCpu->pCurInstr->opcode)
     {
+        /*
+         * Since we're usually trapping RDTSC there may be a high volume
+         * of these instructions. So, put it first and go straight to
+         * the emulation function to save time.
+         */
+        case OP_RDTSC:
+            STAM_COUNTER_INC(&pVM->trpm.s.StatTrap0dRing0RdTsc);
+            rc = EMInterpretRdtsc(pVM, pRegFrame);
+            if (RT_SUCCESS(rc))
+                pRegFrame->eip += pCpu->opsize;
+            else if (rc == VERR_EM_INTERPRETER)
+                rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
+            return trpmGCExitTrap(pVM, rc, pRegFrame);
+
         case OP_INT3:
             /*
              * Little hack to make the code below not fail
@@ -584,7 +598,6 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_INVLPG:
         case OP_LLDT:
         case OP_STI:
-        case OP_RDTSC:
         case OP_CLTS:
         {
             uint32_t cbIgnored;
@@ -621,22 +634,6 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
 
     switch (pCpu->pCurInstr->opcode)
     {
-        /*
-         * STI and CLI are I/O privileged, i.e. if IOPL
-         */
-        case OP_STI:
-        case OP_CLI:
-        {
-            uint32_t efl = CPUMRawGetEFlags(pVM, pRegFrame);
-            if (X86_EFL_GET_IOPL(efl) >= (unsigned)(pRegFrame->ss & X86_SEL_RPL))
-            {
-                LogFlow(("trpmGCTrap0dHandlerRing3: CLI/STI -> REM\n"));
-                return trpmGCExitTrap(pVM, VINF_EM_RESCHEDULE_REM, pRegFrame);
-            }
-            LogFlow(("trpmGCTrap0dHandlerRing3: CLI/STI -> #GP(0)\n"));
-            break;
-        }
-
         /*
          * INT3 and INT xx are ring-switching.
          * (The shadow IDT will have set the entries to DPL=0, that's why we're here.)
@@ -678,16 +675,31 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
 
         /*
          * Handle virtualized TSC reads.
+         * Call the emulation function directly to skip unnecessary overhead.
          */
         case OP_RDTSC:
-        {
-            uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, PC, &cbIgnored);
-            if (VBOX_SUCCESS(rc))
+            STAM_COUNTER_INC(&pVM->trpm.s.StatTrap0dRing3RdTsc);
+            rc = EMInterpretRdtsc(pVM, pRegFrame);
+            if (RT_SUCCESS(rc))
                 pRegFrame->eip += pCpu->opsize;
             else if (rc == VERR_EM_INTERPRETER)
                 rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
             return trpmGCExitTrap(pVM, rc, pRegFrame);
+
+        /*
+         * STI and CLI are I/O privileged, i.e. if IOPL
+         */
+        case OP_STI:
+        case OP_CLI:
+        {
+            uint32_t efl = CPUMRawGetEFlags(pVM, pRegFrame);
+            if (X86_EFL_GET_IOPL(efl) >= (unsigned)(pRegFrame->ss & X86_SEL_RPL))
+            {
+                LogFlow(("trpmGCTrap0dHandlerRing3: CLI/STI -> REM\n"));
+                return trpmGCExitTrap(pVM, VINF_EM_RESCHEDULE_REM, pRegFrame);
+            }
+            LogFlow(("trpmGCTrap0dHandlerRing3: CLI/STI -> #GP(0)\n"));
+            break;
         }
     }
 
