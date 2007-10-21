@@ -54,10 +54,10 @@
 #define SSToDS(ptr) ptr
 #define KMAX RT_MAX
 #define kASSERT Assert
-#include "../../table/avl_Base.cpp.h"
-#include "../../table/avl_Get.cpp.h"
-#include "../../table/avl_DoWithAll.cpp.h"
-#include "../../table/avl_Destroy.cpp.h"
+#include "../table/avl_Base.cpp.h"
+#include "../table/avl_Get.cpp.h"
+#include "../table/avl_DoWithAll.cpp.h"
+#include "../table/avl_Destroy.cpp.h"
 
 
 
