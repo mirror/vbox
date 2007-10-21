@@ -155,8 +155,8 @@ RuntimeR3_SOURCES       = \
 	table/avllu32.cpp \
 	table/avlul.cpp \
 	table/table.cpp \
-	crc32.cpp \
-	crc64.cpp \
+	common/checksum/crc32.cpp \
+	common/checksum/crc64.cpp \
 	r3/dir.cpp \
 	errmsg.cpp \
 	r3/fileio.cpp \
@@ -178,7 +178,7 @@ RuntimeR3_SOURCES       = \
 	log.cpp \
 	logcom.cpp \
 	logformat.cpp \
-	md5.cpp \
+	common/checksum/md5.cpp \
 	r3/path.cpp \
 	req.cpp \
 	r3/alloc-ef.cpp \
@@ -755,8 +755,8 @@ RuntimeR0Drv_SOURCES    = \
 	generic/RTLogWriteUser-generic.cpp \
 	VBox/log-vbox.cpp \
 	table/avlpv.cpp \
-	crc32.cpp \
-	crc64.cpp
+	common/checksum/crc32.cpp \
+	common/checksum/crc64.cpp
 
 RuntimeR0Drv_SOURCES.linux = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
