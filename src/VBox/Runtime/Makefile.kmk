@@ -242,23 +242,23 @@ RuntimeR3_SOURCES.win = \
 	generic/semsrw-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r3/posix/env-posix.cpp \
-	r3/win/alloc-win32.cpp \
-	r3/win/dir-win32.cpp \
-	r3/win/fileio-win32.cpp \
-	r3/win/fs-win32.cpp \
-	r3/win/ldrNative-win32.cpp \
-	r3/win/path-win32.cpp \
-	r3/win/process-win32.cpp \
-	r3/win/RTLogWriteDebugger-win32.cpp \
-	r3/win/sched-win32.cpp \
-	r3/win/sems-win32.cpp \
-	r3/win/system-win32.cpp \
-	r3/win/thread-win32.cpp \
-	r3/win/time-win32.cpp \
-	r3/win/timer-win32.cpp \
-	r3/win/utf16locale-win32.cpp \
-	r3/win/utf8-win32.cpp \
-	r3/win/uuid-win32.cpp \
+	r3/win/alloc-win.cpp \
+	r3/win/dir-win.cpp \
+	r3/win/fileio-win.cpp \
+	r3/win/fs-win.cpp \
+	r3/win/ldrNative-win.cpp \
+	r3/win/path-win.cpp \
+	r3/win/process-win.cpp \
+	r3/win/RTLogWriteDebugger-win.cpp \
+	r3/win/sched-win.cpp \
+	r3/win/sems-win.cpp \
+	r3/win/system-win.cpp \
+	r3/win/thread-win.cpp \
+	r3/win/time-win.cpp \
+	r3/win/timer-win.cpp \
+	r3/win/utf16locale-win.cpp \
+	r3/win/utf8-win.cpp \
+	r3/win/uuid-win.cpp \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
 
@@ -532,7 +532,7 @@ VBoxRT_SOURCES                 = \
 	$(RuntimeR3_SOURCES)
 VBoxRT_SOURCES.$(BUILD_TARGET) = $(RuntimeR3_SOURCES.$(BUILD_TARGET))
 VBoxRT_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
-VBoxRT_SOURCES.win            += r3/win/dllmain-win32.cpp
+VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp
 VBoxRT_SOURCES.win.amd64      += r3/win/VBoxRT-win64.def
 VBoxRT_INCS                    = $(RuntimeR3_INCS)
 VBoxRT_INCS.$(BUILD_TARGET)    = $(RuntimeR3_INCS.$(BUILD_TARGET))
