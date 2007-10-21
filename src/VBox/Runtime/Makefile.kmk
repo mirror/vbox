@@ -76,33 +76,33 @@ uniread_SOURCES  = common/string/uniread.cpp
 # Win64 assembly sources.
 #
 RuntimeWin64ASM_SOURCES = \
-	win64/ASMAtomicBitClear.asm \
-	win64/ASMAtomicBitTestAndToggle.asm \
-	win64/ASMAtomicBitToggle.asm \
-	win64/ASMAtomicReadU64.asm \
-	win64/ASMAtomicXchgU16.asm \
-	win64/ASMAtomicXchgU8.asm \
-	win64/ASMBitFirstClear.asm \
-	win64/ASMBitFirstSet.asm \
-	win64/ASMGetCS.asm \
-	win64/ASMGetDS.asm \
-	win64/ASMGetES.asm \
-	win64/ASMGetFlags.asm \
-	win64/ASMGetFS.asm \
-	win64/ASMGetGS.asm \
-	win64/ASMGetIDTR.asm \
-	win64/ASMGetGDTR.asm \
-	win64/ASMGetTR.asm \
-	win64/ASMGetSS.asm \
-	win64/ASMProbeReadByte.asm \
-	win64/ASMSetFlags.asm \
-	win64/ASMGetDR0.asm \
-	win64/ASMGetDR1.asm \
-	win64/ASMGetDR2.asm \
-	win64/ASMGetDR3.asm \
-	win64/ASMGetDR6.asm \
-	win64/ASMGetDR7.asm \
-	win64/ASMMultU64ByU32DivByU32.asm \
+	win/amd64/ASMAtomicBitClear.asm \
+	win/amd64/ASMAtomicBitTestAndToggle.asm \
+	win/amd64/ASMAtomicBitToggle.asm \
+	win/amd64/ASMAtomicReadU64.asm \
+	win/amd64/ASMAtomicXchgU16.asm \
+	win/amd64/ASMAtomicXchgU8.asm \
+	win/amd64/ASMBitFirstClear.asm \
+	win/amd64/ASMBitFirstSet.asm \
+	win/amd64/ASMGetCS.asm \
+	win/amd64/ASMGetDS.asm \
+	win/amd64/ASMGetES.asm \
+	win/amd64/ASMGetFlags.asm \
+	win/amd64/ASMGetFS.asm \
+	win/amd64/ASMGetGS.asm \
+	win/amd64/ASMGetIDTR.asm \
+	win/amd64/ASMGetGDTR.asm \
+	win/amd64/ASMGetTR.asm \
+	win/amd64/ASMGetSS.asm \
+	win/amd64/ASMProbeReadByte.asm \
+	win/amd64/ASMSetFlags.asm \
+	win/amd64/ASMGetDR0.asm \
+	win/amd64/ASMGetDR1.asm \
+	win/amd64/ASMGetDR2.asm \
+	win/amd64/ASMGetDR3.asm \
+	win/amd64/ASMGetDR6.asm \
+	win/amd64/ASMGetDR7.asm \
+	win/amd64/ASMMultU64ByU32DivByU32.asm \
 
 #
 # RuntimeR3 - Static Runtime for Ring-3 executables.
@@ -240,7 +240,7 @@ RuntimeR3_SOURCES.win = \
 	generic/semnoint-generic.cpp \
 	generic/rand-stubs-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
-	win32/errmsgwin.cpp \
+	win/errmsgwin.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win32/alloc-win32.cpp \
 	r3/win32/dir-win32.cpp \
@@ -260,7 +260,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win32/utf8-win32.cpp \
 	r3/win32/uuid-win32.cpp \
 	common/time/timesup.cpp \
-	win32/RTErrConvertFromWin32.cpp
+	win/RTErrConvertFromWin32.cpp
 
 RuntimeR3_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
@@ -1051,8 +1051,8 @@ RuntimeEFCPP_SOURCES    = r3/alloc-ef-cpp.cpp
 common/err/errmsg.cpp_DEPS = $(PATH_TARGET)/errmsgdata.h
 common/err/errmsg.cpp_INCS = $(PATH_TARGET)
 
-win32/errmsgwin.cpp_DEPS = $(PATH_TARGET)/errmsgcomdata.h
-win32/errmsgwin.cpp_INCS = $(PATH_TARGET)
+win/errmsgwin.cpp_DEPS = $(PATH_TARGET)/errmsgcomdata.h
+win/errmsgwin.cpp_INCS = $(PATH_TARGET)
 
 
 # Generate the rules
