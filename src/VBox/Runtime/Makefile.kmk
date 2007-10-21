@@ -157,10 +157,10 @@ RuntimeR3_SOURCES       = \
 	table/table.cpp \
 	crc32.cpp \
 	crc64.cpp \
-	dir.cpp \
+	r3/dir.cpp \
 	errmsg.cpp \
-	fileio.cpp \
-	fs.cpp \
+	r3/fileio.cpp \
+	f3/fs.cpp \
 	generic/critsect-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
 	generic/RTLogWriteStdErr-generic.cpp \
@@ -179,7 +179,7 @@ RuntimeR3_SOURCES       = \
 	logcom.cpp \
 	logformat.cpp \
 	md5.cpp \
-	path.cpp \
+	r3/path.cpp \
 	req.cpp \
 	r3/alloc-ef.cpp \
 	r3/alloc.cpp \
