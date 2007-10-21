@@ -320,17 +320,42 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, C
 
 
 /**
- * Validates and converts a GC selector based code address to a flat address.
+ * Validates and converts a GC selector based code address to a flat
+ * address when in real or v8086 mode.
  *
- * @returns Flat address.
+ * @returns VINF_SUCCESS.
+ * @param   pVM     VM Handle.
+ * @param   SelCS   Selector part.
+ * @param   pHidCS  The hidden CS register part. Optional.
+ * @param   Addr    Address part.
+ * @param   ppvFlat Where to store the flat address.
+ */
+DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVM pVM, RTSEL SelCS, PCPUMSELREGHID pHidCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
+{
+    RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
+    if (!pHidCS || !CPUMAreHiddenSelRegsValid(pVM))
+        uFlat += ((RTGCUINTPTR)SelCS << 4);
+    else
+        uFlat += pHidCS->u32Base;
+    *ppvFlat = (RTGCPTR)uFlat;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Validates and converts a GC selector based code address to a flat
+ * address when in protected/long mode using the standard algorithm.
+ *
+ * @returns VBox status code.
  * @param   pVM     VM Handle.
  * @param   SelCPL  Current privilege level. Get this from SS - CS might be conforming!
  *                  A full selector can be passed, we'll only use the RPL part.
  * @param   SelCS   Selector part.
  * @param   Addr    Address part.
  * @param   ppvFlat Where to store the flat address.
+ * @param   pcBits  Where to store the segment bitness (16/32/64). Optional.
  */
-static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
+DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits)
 {
     Assert(!CPUMAreHiddenSelRegsValid(pVM));
 
@@ -377,12 +402,70 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
                     u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
-                    if (ppvFlat)
-                        *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
-                                               + (   (Desc.Gen.u8BaseHigh2 << 24)
-                                                  |  (Desc.Gen.u8BaseHigh1 << 16)
-                                                  |   Desc.Gen.u16BaseLow)
-                                                 );
+                    *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr
+                                           + (   (Desc.Gen.u8BaseHigh2 << 24)
+                                              |  (Desc.Gen.u8BaseHigh1 << 16)
+                                              |   Desc.Gen.u16BaseLow)
+                                             );
+                    if (pcBits)
+                        *pcBits = Desc.Gen.u1DefBig ? 32 : 16; /** @todo GUEST64 */
+                    return VINF_SUCCESS;
+                }
+                return VERR_OUT_OF_SELECTOR_BOUNDS;
+            }
+            return VERR_INVALID_RPL;
+        }
+        return VERR_NOT_CODE_SELECTOR;
+    }
+    return VERR_SELECTOR_NOT_PRESENT;
+}
+
+
+/**
+ * Validates and converts a GC selector based code address to a flat
+ * address when in protected/long mode using the standard algorithm.
+ *
+ * @returns VBox status code.
+ * @param   pVM     VM Handle.
+ * @param   SelCPL  Current privilege level. Get this from SS - CS might be conforming!
+ *                  A full selector can be passed, we'll only use the RPL part.
+ * @param   SelCS   Selector part.
+ * @param   Addr    Address part.
+ * @param   ppvFlat Where to store the flat address.
+ * @param   pcBits  Where to store the segment bitness (16/32/64). Optional.
+ */
+DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHidCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
+{
+    /*
+     * Check if present.
+     */
+    if (pHidCS->Attr.n.u1Present)
+    {
+        /*
+         * Type check.
+         */
+        if (     pHidCS->Attr.n.u1DescType == 1
+            &&  (pHidCS->Attr.n.u4Type & X86_SEL_TYPE_CODE))
+        {
+            /*
+             * Check level.
+             */
+            unsigned uLevel = RT_MAX(SelCPL & X86_SEL_RPL, SelCS & X86_SEL_RPL);
+            if (    !(pHidCS->Attr.n.u4Type & X86_SEL_TYPE_CONF)
+                ?   uLevel <= pHidCS->Attr.n.u2Dpl
+                :   uLevel >= pHidCS->Attr.n.u2Dpl /* hope I got this right now... */
+                    )
+            {
+                /*
+                 * Limit check.
+                 */
+                uint32_t    u32Limit = pHidCS->u32Limit;
+                /** @todo correct with hidden limit value?? */
+                if (pHidCS->Attr.n.u1Granularity)
+                    u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+                if ((RTGCUINTPTR)Addr <= u32Limit)
+                {
+                    *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr + pHidCS->u32Base );
                     return VINF_SUCCESS;
                 }
                 return VERR_OUT_OF_SELECTOR_BOUNDS;
@@ -398,7 +481,36 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
 /**
  * Validates and converts a GC selector based code address to a flat address.
  *
- * @returns Flat address.
+ * This is like SELMValidateAndConvertCSAddr + SELMIsSelector32Bit but with
+ * invalid hidden CS data. It's customized for dealing efficiently with CS
+ * at GC trap time.
+ *
+ * @returns VBox status code.
+ * @param   pVM          VM Handle.
+ * @param   eflags       Current eflags
+ * @param   SelCPL       Current privilege level. Get this from SS - CS might be conforming!
+ *                       A full selector can be passed, we'll only use the RPL part.
+ * @param   SelCS        Selector part.
+ * @param   Addr         Address part.
+ * @param   ppvFlat      Where to store the flat address.
+ * @param   pcBits       Where to store the 64-bit/32-bit/16-bit indicator.
+ */
+SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits)
+{
+    if (    CPUMIsGuestInRealMode(pVM)
+        ||  eflags.Bits.u1VM)
+    {
+        *pcBits = 16;
+        return selmValidateAndConvertCSAddrRealMode(pVM, SelCS, NULL, Addr, ppvFlat);
+    }
+    return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, pcBits);
+}
+
+
+/**
+ * Validates and converts a GC selector based code address to a flat address.
+ *
+ * @returns VBox status code.
  * @param   pVM          VM Handle.
  * @param   eflags       Current eflags
  * @param   SelCPL       Current privilege level. Get this from SS - CS might be conforming!
@@ -410,72 +522,14 @@ static int selmValidateAndConvertCSAddr(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGC
  */
 SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
-    /*
-     * Deal with real & v86 mode first.
-     */
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
-    {
-        if (ppvFlat)
-        {
-            RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
+        return selmValidateAndConvertCSAddrRealMode(pVM, SelCS, pHiddenCSSel, Addr, ppvFlat);
 
-            if (!CPUMAreHiddenSelRegsValid(pVM))
-                uFlat += ((RTGCUINTPTR)SelCS << 4);
-            else
-                uFlat += pHiddenCSSel->u32Base;
-
-            *ppvFlat = (RTGCPTR)uFlat;
-        }
-        return VINF_SUCCESS;
-    }
-
-    /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
-
+    /** @todo when we're in 16 bits mode, we should cut off the address as well? (like in selmValidateAndConvertCSAddrRealMode) */
     if (!CPUMAreHiddenSelRegsValid(pVM))
-        return selmValidateAndConvertCSAddr(pVM, SelCPL, SelCS, Addr, ppvFlat);
-
-    /*
-     * Check if present.
-     */
-    if (pHiddenCSSel->Attr.n.u1Present)
-    {
-        /*
-         * Type check.
-         */
-        if (     pHiddenCSSel->Attr.n.u1DescType == 1
-            &&  (pHiddenCSSel->Attr.n.u4Type & X86_SEL_TYPE_CODE))
-        {
-            /*
-             * Check level.
-             */
-            unsigned uLevel = RT_MAX(SelCPL & X86_SEL_RPL, SelCS & X86_SEL_RPL);
-            if (    !(pHiddenCSSel->Attr.n.u4Type & X86_SEL_TYPE_CONF)
-                ?   uLevel <= pHiddenCSSel->Attr.n.u2Dpl
-                :   uLevel >= pHiddenCSSel->Attr.n.u2Dpl /* hope I got this right now... */
-                    )
-            {
-                /*
-                 * Limit check.
-                 */
-                uint32_t    u32Limit = pHiddenCSSel->u32Limit;
-                /** @todo correct with hidden limit value?? */
-                if (pHiddenCSSel->Attr.n.u1Granularity)
-                    u32Limit = (u32Limit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-                if ((RTGCUINTPTR)Addr <= u32Limit)
-                {
-                    if (ppvFlat)
-                        *ppvFlat = (RTGCPTR)(  (RTGCUINTPTR)Addr + pHiddenCSSel->u32Base );
-
-                    return VINF_SUCCESS;
-                }
-                return VERR_OUT_OF_SELECTOR_BOUNDS;
-            }
-            return VERR_INVALID_RPL;
-        }
-        return VERR_NOT_CODE_SELECTOR;
-    }
-    return VERR_SELECTOR_NOT_PRESENT;
+        return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, NULL);
+    return selmValidateAndConvertCSAddrHidden(pVM, SelCPL, SelCS, pHiddenCSSel, Addr, ppvFlat);
 }
 
 

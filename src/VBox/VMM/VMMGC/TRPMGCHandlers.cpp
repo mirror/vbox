@@ -524,20 +524,6 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
      */
     switch (pCpu->pCurInstr->opcode)
     {
-        /*
-         * Since we're usually trapping RDTSC there may be a high volume
-         * of these instructions. So, put it first and go straight to
-         * the emulation function to save time.
-         */
-        case OP_RDTSC:
-            STAM_COUNTER_INC(&pVM->trpm.s.StatTrap0dRing0RdTsc);
-            rc = EMInterpretRdtsc(pVM, pRegFrame);
-            if (RT_SUCCESS(rc))
-                pRegFrame->eip += pCpu->opsize;
-            else if (rc == VERR_EM_INTERPRETER)
-                rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
-            return trpmGCExitTrap(pVM, rc, pRegFrame);
-
         case OP_INT3:
             /*
              * Little hack to make the code below not fail
@@ -598,6 +584,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_INVLPG:
         case OP_LLDT:
         case OP_STI:
+        case OP_RDTSC:  /* just in case */
         case OP_CLTS:
         {
             uint32_t cbIgnored;
@@ -674,17 +661,18 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
             return trpmGCExitTrap(pVM, VINF_EM_RAW_RING_SWITCH, pRegFrame);
 
         /*
-         * Handle virtualized TSC reads.
-         * Call the emulation function directly to skip unnecessary overhead.
+         * Handle virtualized TSC reads, just in case.
          */
         case OP_RDTSC:
-            STAM_COUNTER_INC(&pVM->trpm.s.StatTrap0dRing3RdTsc);
-            rc = EMInterpretRdtsc(pVM, pRegFrame);
-            if (RT_SUCCESS(rc))
+        {
+            uint32_t cbIgnored;
+            rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, PC, &cbIgnored);
+            if (VBOX_SUCCESS(rc))
                 pRegFrame->eip += pCpu->opsize;
             else if (rc == VERR_EM_INTERPRETER)
                 rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
             return trpmGCExitTrap(pVM, rc, pRegFrame);
+        }
 
         /*
          * STI and CLI are I/O privileged, i.e. if IOPL
@@ -711,6 +699,30 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
 
 
 /**
+ * Emulates RDTSC for the \#GP handler.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_RAW_EMULATE_INSTR.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pRegFrame   Pointer to the registre frame for the trap.
+ *                      This will be updated on successful return.
+ */
+DECLINLINE(int) trpmGCTrap0dHandlerRDTSC(PVM pVM, PCPUMCTXCORE pRegFrame)
+{
+    STAM_COUNTER_INC(&pVM->trpm.s.StatTrap0dRdTsc);
+
+    if (CPUMGetGuestCR4(pVM) & X86_CR4_TSD)
+        return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame); /* will trap (optimize later). */
+
+    uint64_t uTicks = TMCpuTickGet(pVM);
+    pRegFrame->eax = uTicks;
+    pRegFrame->edx = uTicks >> 32;
+    pRegFrame->eip += 2;
+    return trpmGCExitTrap(pVM, VINF_SUCCESS, pRegFrame);
+}
+
+
+/**
  * \#GP (General Protection Fault) handler.
  *
  * @returns VBox status code.
@@ -725,43 +737,49 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("trpmGCTrap0dHandler: cs:eip=%RTsel:%VGv uErr=%RX32\n", pRegFrame->ss, pRegFrame->eip, pTrpm->uActiveErrorCode));
 
-#if 0 /* not right for iret. Shouldn't really be needed as SELMValidateAndConvertCSAddr deals with invalid cs. */
     /*
-     * Filter out selector problems first as these may mean that the
-     * instruction isn't safe to read. If we're here because CS is NIL
-     * the flattening of cs:eip will deal with that.
+     * Convert and validate CS.
      */
-    if (    !(pTrpm->uActiveErrorCode & (X86_TRAP_ERR_IDT | X86_TRAP_ERR_EXTERNAL))
-        &&  (pTrpm->uActiveErrorCode & X86_TRAP_ERR_SEL_MASK))
-    {
-        /* It's a guest trap. */
-        return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
-    }
-#endif
-
-    STAM_PROFILE_ADV_START(&pVM->trpm.s.StatTrap0dDisasm, a);
-    /*
-     * Decode the instruction.
-     */
+    STAM_PROFILE_START(&pVM->trpm.s.StatTrap0dDisasm, a);
     RTGCPTR PC;
-    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
-    if (VBOX_FAILURE(rc))
+    uint32_t cBits;
+    int rc = SELMValidateAndConvertCSAddrGCTrap(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
+                                                (RTGCPTR)pRegFrame->eip, &PC, &cBits);
+    if (RT_FAILURE(rc))
     {
-        Log(("trpmGCTrap0dHandler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n",
+        Log(("trpmGCTrap0dHandler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Rrc !!\n",
              pRegFrame->cs, pRegFrame->eip, pRegFrame->ss & X86_SEL_RPL, rc));
-        STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
+        STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
     }
 
+    /*
+     * Optimize RDTSC traps.
+     * Some guests (like Solaris) is using RDTSC all over the place and
+     * will end up trapping a *lot* because of that.
+     */
+    if (   !pRegFrame->eflags.Bits.u1VM
+        && ((uint8_t *)PC)[0] == 0x0f
+        && ((uint8_t *)PC)[1] == 0x31)
+    {
+        STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
+        return trpmGCTrap0dHandlerRDTSC(pVM, pRegFrame);
+    }
+
+    /*
+     * Disassemble the instruction.
+     */
     DISCPUSTATE Cpu;
     uint32_t    cbOp;
-    rc = EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
-    if (VBOX_FAILURE(rc))
+    rc = DISCoreOneEx((RTGCUINTPTR)PC, cBits == 32 ? CPUMODE_32BIT : cBits == 16 ? CPUMODE_16BIT : CPUMODE_64BIT,
+                      NULL, NULL, &Cpu, &cbOp);
+    if (RT_FAILURE(rc))
     {
-        STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
+        AssertMsgFailed(("DISCoreOneEx failed to PC=%VGv rc=%Vrc\n", PC, rc));
+        STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
     }
-    STAM_PROFILE_ADV_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
+    STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
 
     /*
      * Deal with I/O port access.
@@ -772,7 +790,6 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         rc = EMInterpretPortIO(pVM, pRegFrame, &Cpu, cbOp);
         return trpmGCExitTrap(pVM, rc, pRegFrame);
     }
-
 
     /*
      * Deal with Ring-0 (privileged instructions)
@@ -789,15 +806,14 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 
     /*
      * Deal with v86 code.
+     *
+     * We always set IOPL to zero which makes e.g. pushf fault in V86
+     * mode. The guest might use IOPL=3 and therefore not expect a #GP.
+     * Simply fall back to the recompiler to emulate this instruction if
+     * that's the case. To get the correct we must use CPUMRawGetEFlags.
      */
-
-    /* We always set IOPL to zero which makes e.g. pushf fault in V86 mode. The guest might use IOPL=3 and therefor not expect a #GP.
-     * Simply fall back to the recompiler to emulate this instruction.
-     */
-    /* Retrieve the eflags including the virtualized bits. */
-    /** @note hackish as the cpumctxcore structure doesn't contain the right value */
     X86EFLAGS eflags;
-    eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame);
+    eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame); /* Get the correct value. */
     if (eflags.Bits.u2IOPL != 3)
     {
         Assert(eflags.Bits.u2IOPL == 0);

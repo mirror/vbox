@@ -517,9 +517,8 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->trpm.s.StatForwardProfGC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/GC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
     STAM_REG(pVM, &pVM->trpm.s.StatForwardProfHC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/HC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
 
-    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dDisasm,        STAMTYPE_PROFILE_ADV, "/TRPM/Trap0d/Prof/Disasm",         STAMUNIT_TICKS_PER_CALL, "Profiling trpmGCTrap0dHandler.");
-    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dRing0RdTsc,    STAMTYPE_COUNTER, "/TRPM/Trap0d/RdTsc-R0",                    STAMUNIT_OCCURENCES, "Number of RDTSC #GPs from guest ring-0.");
-    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dRing3RdTsc,    STAMTYPE_COUNTER, "/TRPM/Trap0d/RdTsc-R3",                    STAMUNIT_OCCURENCES, "Number of RDTSC #GPs from guest ring-3.");
+    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dDisasm,        STAMTYPE_PROFILE, "/TRPM/GC/Traps/0d/Disasm",              STAMUNIT_TICKS_PER_CALL, "Profiling disassembly part of trpmGCTrap0dHandler.");
+    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dRdTsc,         STAMTYPE_COUNTER, "/TRPM/GC/Traps/0d/RdTsc",                   STAMUNIT_OCCURENCES, "Number of RDTSC #GPs.");
 
     /*
      * Default action when entering raw mode for the first time
