@@ -573,30 +573,30 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/misc/sanity-cpp.cpp \
 	common/misc/sanity-c.c \
 	\
-	math/ceill.asm \
-	math/cosl.asm \
-	math/fabs.asm \
-	math/fabsf.asm \
-	math/fabsl.asm \
-	math/floor.asm \
-	math/floorf.asm \
-	math/floorl.asm \
-	math/ldexpl.asm \
-	math/llrint.asm \
-	math/llrintf.asm \
-	math/llrintl.asm \
-	math/logl.asm \
-	math/lrint.asm \
-	math/lrintf.asm \
-	math/lrintl.asm \
-	math/remainder.asm \
-	math/remainderf.asm \
-	math/remainderl.asm \
-	math/sinl.asm \
-	math/tanl.asm \
-	math/trunc.asm \
-	math/truncf.asm \
-	math/truncl.asm \
+	common/math/ceill.asm \
+	common/math/cosl.asm \
+	common/math/fabs.asm \
+	common/math/fabsf.asm \
+	common/math/fabsl.asm \
+	common/math/floor.asm \
+	common/math/floorf.asm \
+	common/math/floorl.asm \
+	common/math/ldexpl.asm \
+	common/math/llrint.asm \
+	common/math/llrintf.asm \
+	common/math/llrintl.asm \
+	common/math/logl.asm \
+	common/math/lrint.asm \
+	common/math/lrintf.asm \
+	common/math/lrintl.asm \
+	common/math/remainder.asm \
+	common/math/remainderf.asm \
+	common/math/remainderl.asm \
+	common/math/sinl.asm \
+	common/math/tanl.asm \
+	common/math/trunc.asm \
+	common/math/truncf.asm \
+	common/math/truncl.asm \
 	\
 	common/misc/setjmp.asm \
 	\
@@ -615,26 +615,26 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/string/strcmp_alias.c
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
-	math/x86/fenv-x86.c \
-	math/gcc/adddi3.c \
-	math/gcc/anddi3.c \
-	math/gcc/ashldi3.c \
-	math/gcc/ashrdi3.c \
-	math/gcc/cmpdi2.c \
-	math/gcc/divdi3.c \
-	math/gcc/iordi3.c \
-	math/gcc/lshldi3.c \
-	math/gcc/lshrdi3.c \
-	math/gcc/moddi3.c \
-	math/gcc/muldi3.c \
-	math/gcc/negdi2.c \
-	math/gcc/notdi2.c \
-	math/gcc/qdivrem.c \
-	math/gcc/subdi3.c \
-	math/gcc/ucmpdi2.c \
-	math/gcc/udivdi3.c \
-	math/gcc/umoddi3.c \
-	math/gcc/xordi3.c
+	common/math/x86/fenv-x86.c \
+	common/math/gcc/adddi3.c \
+	common/math/gcc/anddi3.c \
+	common/math/gcc/ashldi3.c \
+	common/math/gcc/ashrdi3.c \
+	common/math/gcc/cmpdi2.c \
+	common/math/gcc/divdi3.c \
+	common/math/gcc/iordi3.c \
+	common/math/gcc/lshldi3.c \
+	common/math/gcc/lshrdi3.c \
+	common/math/gcc/moddi3.c \
+	common/math/gcc/muldi3.c \
+	common/math/gcc/negdi2.c \
+	common/math/gcc/notdi2.c \
+	common/math/gcc/qdivrem.c \
+	common/math/gcc/subdi3.c \
+	common/math/gcc/ucmpdi2.c \
+	common/math/gcc/udivdi3.c \
+	common/math/gcc/umoddi3.c \
+	common/math/gcc/xordi3.c
 
 
 ## @todo stop using the old memcpy.c and memset.c code.
@@ -687,25 +687,25 @@ RuntimeR0_SOURCES.os2 = \
 
 ifeq ($(filter-out darwin solaris freebsd,$(BUILD_TARGET)),)
 RuntimeR0_SOURCES += \
-	math/gcc/adddi3.c \
-	math/gcc/anddi3.c \
-	math/gcc/ashldi3.c \
-	math/gcc/ashrdi3.c \
-	math/gcc/cmpdi2.c \
-	math/gcc/divdi3.c \
-	math/gcc/iordi3.c \
-	math/gcc/lshldi3.c \
-	math/gcc/lshrdi3.c \
-	math/gcc/moddi3.c \
-	math/gcc/muldi3.c \
-	math/gcc/negdi2.c \
-	math/gcc/notdi2.c \
-	math/gcc/qdivrem.c \
-	math/gcc/subdi3.c \
-	math/gcc/ucmpdi2.c \
-	math/gcc/udivdi3.c \
-	math/gcc/umoddi3.c \
-	math/gcc/xordi3.c
+	common/math/gcc/adddi3.c \
+	common/math/gcc/anddi3.c \
+	common/math/gcc/ashldi3.c \
+	common/math/gcc/ashrdi3.c \
+	common/math/gcc/cmpdi2.c \
+	common/math/gcc/divdi3.c \
+	common/math/gcc/iordi3.c \
+	common/math/gcc/lshldi3.c \
+	common/math/gcc/lshrdi3.c \
+	common/math/gcc/moddi3.c \
+	common/math/gcc/muldi3.c \
+	common/math/gcc/negdi2.c \
+	common/math/gcc/notdi2.c \
+	common/math/gcc/qdivrem.c \
+	common/math/gcc/subdi3.c \
+	common/math/gcc/ucmpdi2.c \
+	common/math/gcc/udivdi3.c \
+	common/math/gcc/umoddi3.c \
+	common/math/gcc/xordi3.c
 endif
 
 
@@ -1009,25 +1009,25 @@ endif
 
 ifeq ($(filter-out darwin solaris freebsd,$(BUILD_TARGET)),)
 RuntimeGC_SOURCES += \
-	math/gcc/adddi3.c \
-	math/gcc/anddi3.c \
-	math/gcc/ashldi3.c \
-	math/gcc/ashrdi3.c \
-	math/gcc/cmpdi2.c \
-	math/gcc/divdi3.c \
-	math/gcc/iordi3.c \
-	math/gcc/lshldi3.c \
-	math/gcc/lshrdi3.c \
-	math/gcc/moddi3.c \
-	math/gcc/muldi3.c \
-	math/gcc/negdi2.c \
-	math/gcc/notdi2.c \
-	math/gcc/qdivrem.c \
-	math/gcc/subdi3.c \
-	math/gcc/ucmpdi2.c \
-	math/gcc/udivdi3.c \
-	math/gcc/umoddi3.c \
-	math/gcc/xordi3.c
+	common/math/gcc/adddi3.c \
+	common/math/gcc/anddi3.c \
+	common/math/gcc/ashldi3.c \
+	common/math/gcc/ashrdi3.c \
+	common/math/gcc/cmpdi2.c \
+	common/math/gcc/divdi3.c \
+	common/math/gcc/iordi3.c \
+	common/math/gcc/lshldi3.c \
+	common/math/gcc/lshrdi3.c \
+	common/math/gcc/moddi3.c \
+	common/math/gcc/muldi3.c \
+	common/math/gcc/negdi2.c \
+	common/math/gcc/notdi2.c \
+	common/math/gcc/qdivrem.c \
+	common/math/gcc/subdi3.c \
+	common/math/gcc/ucmpdi2.c \
+	common/math/gcc/udivdi3.c \
+	common/math/gcc/umoddi3.c \
+	common/math/gcc/xordi3.c
 endif
 
 
