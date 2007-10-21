@@ -600,19 +600,19 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	\
 	misc/setjmp.asm \
 	\
-	string/memchr.asm \
-	string/memchr_alias.c \
-	string/memcmp.asm \
-	string/memcmp_alias.c \
-	string/memcpy.asm \
-	string/memcpy_alias.c \
-	string/mempcpy.asm \
-	string/memset.asm \
-	string/memset_alias.c \
-	string/strchr.asm \
-	string/strchr_alias.c \
-	string/strcmp.asm \
-	string/strcmp_alias.c
+	common/string/memchr.asm \
+	common/string/memchr_alias.c \
+	common/string/memcmp.asm \
+	common/string/memcmp_alias.c \
+	common/string/memcpy.asm \
+	common/string/memcpy_alias.c \
+	common/string/mempcpy.asm \
+	common/string/memset.asm \
+	common/string/memset_alias.c \
+	common/string/strchr.asm \
+	common/string/strchr_alias.c \
+	common/string/strcmp.asm \
+	common/string/strcmp_alias.c
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
 	math/x86/fenv-x86.c \
@@ -667,15 +667,15 @@ RuntimeR0_SOURCES       = \
 	strformat.cpp \
 	strformatrt.cpp \
 	strprintf.cpp \
-	string/memchr.cpp \
-	string/memcmp.cpp \
-	string/memcpy.cpp \
-	string/memset.cpp \
-	string/strcpy.cpp \
-	string/strlen.cpp \
-	string/strncmp.cpp \
-	string/strcmp.asm \
-	string/strpbrk.cpp \
+	common/string/memchr.cpp \
+	common/string/memcmp.cpp \
+	common/string/memcpy.cpp \
+	common/string/memset.cpp \
+	common/string/strcpy.cpp \
+	common/string/strlen.cpp \
+	common/string/strncmp.cpp \
+	common/string/strcmp.asm \
+	common/string/strpbrk.cpp \
 	VBox/strformat-vbox.cpp \
 	common/time/timesup.cpp
 
@@ -709,12 +709,12 @@ RuntimeR0_SOURCES += \
 endif
 
 
-string/memchr.cpp_CXXFLAGS.win = -Oi-
-string/memcmp.cpp_CXXFLAGS.win = -Oi-
-string/memcpy.cpp_CXXFLAGS.win = -Oi-
-string/memset.cpp_CXXFLAGS.win = -Oi-
-string/strcpy.cpp_CXXFLAGS.win = -Oi-
-string/strlen.cpp_CXXFLAGS.win = -Oi-
+common/string/memchr.cpp_CXXFLAGS.win = -Oi-
+common/string/memcmp.cpp_CXXFLAGS.win = -Oi-
+common/string/memcpy.cpp_CXXFLAGS.win = -Oi-
+common/string/memset.cpp_CXXFLAGS.win = -Oi-
+common/string/strcpy.cpp_CXXFLAGS.win = -Oi-
+common/string/strlen.cpp_CXXFLAGS.win = -Oi-
 
 ifeq ($(BUILD_TARGET),l4)
 RuntimeR0Drv_BLD_TRG      = linux
@@ -742,7 +742,7 @@ RuntimeR0Drv_SOURCES    = \
 	log.cpp \
 	logcom.cpp \
 	logformat.cpp \
-	string/strpbrk.cpp \
+	common/string/strpbrk.cpp \
 	strformat.cpp \
 	strformatrt.cpp \
 	strtonum.cpp \
@@ -793,7 +793,7 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/thread2-r0drv-nt.cpp \
 	r0drv/nt/time-r0drv-nt.cpp \
 	thread.cpp \
-	string/strncmp.cpp
+	common/string/strncmp.cpp
 ## @todo timer-r0drv-nt.cpp and assert-r0drv-nt.cpp
 
 RuntimeR0Drv_SOURCES.win.amd64 = \
@@ -805,7 +805,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	RTErrConvertFromErrno.cpp \
-	string/memchr.asm \
+	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
@@ -823,17 +823,17 @@ RuntimeR0Drv_SOURCES.darwin = \
 
 RuntimeR0Drv_DEFS.os2 += RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0Drv_SOURCES.os2 = \
-	string/memchr.asm \
-	string/memcmp.asm \
-	string/memcpy.asm \
-	string/mempcpy.asm \
-	string/memset.asm \
-	string/strchr.asm \
-	string/strcmp.asm \
+	common/string/memchr.asm \
+	common/string/memcmp.asm \
+	common/string/memcpy.asm \
+	common/string/mempcpy.asm \
+	common/string/memset.asm \
+	common/string/strchr.asm \
+	common/string/strcmp.asm \
 	\
-	string/strcpy.cpp \
-	string/strlen.cpp \
-	string/strncmp.cpp \
+	common/string/strcpy.cpp \
+	common/string/strlen.cpp \
+	common/string/strncmp.cpp \
 	\
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
@@ -865,7 +865,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	RTErrConvertFromErrno.cpp \
 	RTErrConvertToErrno.cpp \
-	string/memchr.asm \
+	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	thread.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
@@ -888,7 +888,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	RTErrConvertFromErrno.cpp \
-	string/memchr.asm \
+	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	thread.cpp \
 	r0drv/solaris/alloc-r0drv-solaris.c \
@@ -921,11 +921,11 @@ RuntimeW32GuestR0_SOURCES       = \
 	VBox/logbackdoor.cpp
 ifdef VBOX_USE_VCC80
 RuntimeW32GuestR0_SOURCES += \
-	string/memchr.cpp \
-	string/memcmp.cpp \
-	string/memcpy.cpp \
-	string/memset.cpp \
-	string/strlen.cpp
+	common/string/memchr.cpp \
+	common/string/memcmp.cpp \
+	common/string/memcpy.cpp \
+	common/string/memset.cpp \
+	common/string/strlen.cpp
 endif
 
 
@@ -988,20 +988,20 @@ RuntimeGC_SOURCES       = \
 	log.cpp \
 	logcom.cpp \
 	logformat.cpp \
-	string/strpbrk.cpp \
-	string/strncmp.cpp \
+	common/string/strpbrk.cpp \
+	common/string/strncmp.cpp \
 	strformat.cpp \
 	strformatrt.cpp \
 	strprintf.cpp \
 	VBox/strformat-vbox.cpp \
 	common/time/timesup.cpp \
 	common/time/timeprog.cpp \
-	string/memchr.cpp \
-	string/memcmp.cpp \
-	string/memcpy.cpp \
-	string/memset.cpp \
-	string/strcpy.cpp \
-	string/strlen.cpp
+	common/string/memchr.cpp \
+	common/string/memcmp.cpp \
+	common/string/memcpy.cpp \
+	common/string/memset.cpp \
+	common/string/strcpy.cpp \
+	common/string/strlen.cpp
 
 ifeq ($(VBOX_LDR_FMT32),lx)
 RuntimeGC_SOURCES += os2/sys0.asm
