@@ -169,12 +169,12 @@ RuntimeR3_SOURCES       = \
 	generic/semfastmutex-generic.cpp \
 	generic/spinlock-generic.cpp \
 	generic/env-generic.cpp \
-	ldr.cpp \
-	ldrFile.cpp \
-	ldrNative.cpp \
-	ldrELF.cpp \
-	ldrEx.cpp \
-	ldrPE.cpp \
+	common/ldr/ldr.cpp \
+	common/ldr/ldrFile.cpp \
+	common/ldr/ldrNative.cpp \
+	common/ldr/ldrELF.cpp \
+	common/ldr/ldrEx.cpp \
+	common/ldr/ldrPE.cpp \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
@@ -209,7 +209,7 @@ RuntimeR3_SOURCES       = \
 
 ifdef IPRT_WITH_KLDR
  RuntimeR3_SOURCES += \
-	ldrkLdr.cpp \
+	common/ldr/ldrkLdr.cpp \
 	$(IPRT_PATH_KLDR)/kLdrMod.c \
 	$(IPRT_PATH_KLDR)/kLdrModLX.c \
 	$(IPRT_PATH_KLDR)/kLdrModPE.c \
