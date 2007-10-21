@@ -158,7 +158,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
 	r3/dir.cpp \
-	errmsg.cpp \
+	common/err/errmsg.cpp \
 	r3/fileio.cpp \
 	r3/fs.cpp \
 	generic/critsect-generic.cpp \
@@ -187,7 +187,7 @@ RuntimeR3_SOURCES       = \
 	r3/process.cpp \
 	r3/stream.cpp \
 	r3/tcp.cpp \
-	RTErrConvertFromErrno.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
 	common/misc/semspingpong.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
@@ -772,7 +772,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/semfastmutex-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c \
-	RTErrConvertToErrno.cpp
+	common/err/RTErrConvertToErrno.cpp
 ## @todo thread2-r0drv-linux.c, timer-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
@@ -804,7 +804,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	RTErrConvertFromErrno.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
 	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
@@ -863,8 +863,8 @@ RuntimeR0Drv_SOURCES.os2 = \
 RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	RTErrConvertFromErrno.cpp \
-	RTErrConvertToErrno.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
+	common/err/RTErrConvertToErrno.cpp \
 	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	common/misc/thread.cpp \
@@ -887,7 +887,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	RTErrConvertFromErrno.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
 	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
 	common/misc/thread.cpp \
@@ -1048,14 +1048,11 @@ RuntimeEFCPP_SOURCES    = r3/alloc-ef-cpp.cpp
 #
 # errmsg.cpp depends on a generated header.
 #
-errmsg.cpp_DEPS = $(PATH_TARGET)/errmsgdata.h
-errmsg.cpp_INCS = $(PATH_TARGET)
+common/err/errmsg.cpp_DEPS = $(PATH_TARGET)/errmsgdata.h
+common/err/errmsg.cpp_INCS = $(PATH_TARGET)
 
 win32/errmsgwin.cpp_DEPS = $(PATH_TARGET)/errmsgcomdata.h
 win32/errmsgwin.cpp_INCS = $(PATH_TARGET)
-
-linux/errmsglinux.cpp_DEPS = $(PATH_TARGET)/errmsgxpcomdata.h
-linux/errmsglinux.cpp_INCS = $(PATH_TARGET)
 
 
 # Generate the rules
@@ -1073,16 +1070,16 @@ endif
 #
 # Generate the status code data.
 #
-$(PATH_TARGET)/errmsgdata.h: errmsg.sed $(DEPTH)/include/iprt/err.h $(DEPTH)/include/VBox/err.h
+$(PATH_TARGET)/errmsgdata.h: common/err/errmsg.sed $(DEPTH)/include/iprt/err.h $(DEPTH)/include/VBox/err.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(SED) -f $< $(filter %.h,$^) > $@
 ## @todo r=bird: rename this to indicate that it's not only COM errors, but all win32/64 errors.
-$(PATH_TARGET)/errmsgcomdata.h: errmsgcom.sed $(PATH_SDK_WINPSDK_INC)/WinError.h
+$(PATH_TARGET)/errmsgcomdata.h: common/err/errmsgcom.sed $(PATH_SDK_WINPSDK_INC)/WinError.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(SED) -f $< $(filter %.h,$^) > $@
-$(PATH_TARGET)/errmsgxpcomdata.h: errmsgxpcom.sed $(DEPTH)/src/libs/xpcom18a4/xpcom/base/nsError.h
+$(PATH_TARGET)/errmsgxpcomdata.h: common/err/errmsgxpcom.sed $(DEPTH)/src/libs/xpcom18a4/xpcom/base/nsError.h
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(MKDIR) -p $(PATH_TARGET)
 	$(QUIET)$(SED) -f $< $(filter %.h,$^) > $@
