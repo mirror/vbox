@@ -116,11 +116,25 @@ typedef struct TRPM
     /** Previous trap vector # - for debugging. */
     RTGCUINT        uPrevVector;
 
-    /** IDT monitoring and sync flag */
-    RTUINT          fDisableMonitoring; /** @todo r=bird: bool and 7 byte achPadding1. */
+    /** IDT monitoring and sync flag (HWACC). */
+    bool            fDisableMonitoring; /** @todo r=bird: bool and 7 byte achPadding1. */
+
+    /** Whether monitoring of the guest IDT is enabled or not.
+     *
+     * This configuration option is provided for speeding up guest like Solaris
+     * that put the IDT on the same page as a whole lot of other data that is
+     * freqently updated. The updates will cause #PFs and have to be interpreted
+     * by PGMInterpretInstruction which is slow compared to raw execution.
+     *
+     * If the guest is well behaved and doesn't change the IDT after loading it,
+     * there is no problem with dropping the IDT monitoring.
+     *
+     * @cfgm    /TRPM/SafeToDropGuestIDTMonitoring   boolean     defaults to false.
+     */
+    bool            fSafeToDropGuestIDTMonitoring;
 
     /** Padding to get the IDTs at a 16 byte alignement. */
-    char            achPadding1[4];
+    uint8_t         abPadding1[6];
 
     /** IDTs. Aligned at 16 byte offset for speed. */
     VBOXIDTE        aIdt[256];

@@ -393,19 +393,11 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 };
 
 
-/**
- * Enable or disable tracking of Guest's IDT.
- * @{
- */
+/** Enable or disable tracking of Guest's IDT. */
 #define TRPM_TRACK_GUEST_IDT_CHANGES
-/** @} */
 
-/**
- * Enable or disable tracking of Shadow IDT.
- * @{
- */
+/** Enable or disable tracking of Shadow IDT. */
 #define TRPM_TRACK_SHADOW_IDT_CHANGES
-/** @} */
 
 /** TRPM saved state version. */
 #define TRPM_SAVED_STATE_VERSION    8
@@ -444,6 +436,23 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
     pVM->trpm.s.GuestIdtr.pIdt     = ~0;
     pVM->trpm.s.GCPtrIdt           = ~0;
     pVM->trpm.s.fDisableMonitoring = false;
+    pVM->trpm.s.fSafeToDropGuestIDTMonitoring = false;
+
+    /*
+     * Read the configuration (if any).
+     */
+    PCFGMNODE pTRPMNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "TRPM");
+    if (pTRPMNode)
+    {
+        bool f;
+        int rc = CFGMR3QueryBool(pTRPMNode, "SafeToDropGuestIDTMonitoring", &f);
+        if (RT_SUCCESS(rc))
+            pVM->trpm.s.fSafeToDropGuestIDTMonitoring = f;
+    }
+
+    /* write config summary to log */
+    if (pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
+        LogRel(("TRPM: Dropping Guest IDT Monitoring.\n"));
 
     /*
      * Initialize the IDT.
@@ -556,8 +565,8 @@ TRPMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Iterate the idt and set the addresses.
      */
-    PVBOXIDTE   pIdte         = &pVM->trpm.s.aIdt[0];
-    PVBOXIDTE_GENERIC   pIdteTemplate = &g_aIdt[0];
+    PVBOXIDTE pIdte = &pVM->trpm.s.aIdt[0];
+    PVBOXIDTE_GENERIC pIdteTemplate = &g_aIdt[0];
     for (unsigned i = 0; i < ELEMENTS(pVM->trpm.s.aIdt); i++, pIdte++, pIdteTemplate++)
     {
         if (    pIdte->Gen.u1Present
@@ -672,8 +681,11 @@ TRPMR3DECL(void) TRPMR3Reset(PVM pVM)
 #ifdef TRPM_TRACK_GUEST_IDT_CHANGES
     if (pVM->trpm.s.GuestIdtr.pIdt != ~0U)
     {
-        int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
-        AssertRC(rc);
+        if (!pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
+        {
+            int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
+            AssertRC(rc);
+        }
         pVM->trpm.s.GuestIdtr.pIdt = ~0U;
     }
     pVM->trpm.s.GuestIdtr.cbIdt = 0;
@@ -718,7 +730,11 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutGCUInt(pSSM,    pTrpm->uSavedErrorCode);
     SSMR3PutGCUIntPtr(pSSM, pTrpm->uSavedCR2);
     SSMR3PutGCUInt(pSSM,    pTrpm->uPrevVector);
+#if 0  /** @todo Enable this (+ load change) on the next version change. */
+    SSMR3PutBool(pSSM,      pTrpm->fDisableMonitoring);
+#else
     SSMR3PutGCUInt(pSSM,    pTrpm->fDisableMonitoring);
+#endif
     SSMR3PutUInt(pSSM,      VM_FF_ISSET(pVM, VM_FF_TRPM_SYNC_IDT));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
     SSMR3PutU32(pSSM, ~0);              /* separator. */
@@ -779,7 +795,13 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     SSMR3GetGCUInt(pSSM,    &pTrpm->uSavedErrorCode);
     SSMR3GetGCUIntPtr(pSSM, &pTrpm->uSavedCR2);
     SSMR3GetGCUInt(pSSM,    &pTrpm->uPrevVector);
-    SSMR3GetGCUInt(pSSM,    &pTrpm->fDisableMonitoring);
+#if 0 /** @todo Enable this + the corresponding save code on the next version change. */
+    SSMR3GetBool(pSSM,      &pTrpm->fDisableMonitoring);
+#else
+    RTGCUINT fDisableMonitoring;
+    SSMR3GetGCUInt(pSSM,    &fDisableMonitoring);
+    pTrpm->fDisableMonitoring = !!fDisableMonitoring;
+#endif
 
     RTUINT fSyncIDT;
     int rc = SSMR3GetUInt(pSSM, &fSyncIDT);
@@ -891,31 +913,33 @@ TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
         ||  IDTR.cbIdt != pVM->trpm.s.GuestIdtr.cbIdt)
     {
         Log(("TRPMR3UpdateFromCPUM: Guest's IDT is changed to pIdt=%08X cbIdt=%08X\n", IDTR.pIdt, IDTR.cbIdt));
-
-        /*
-         * [Re]Register write virtual handler for guest's IDT.
-         */
-        if (pVM->trpm.s.GuestIdtr.pIdt != ~0U)
+        if (!pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
         {
-            rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
-            AssertRCReturn(rc, rc);
-        }
-        /* limit is including */
-        rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
-                                         0, trpmGuestIDTWriteHandler, "trpmgcGuestIDTWriteHandler", 0, "Guest IDT write access handler");
-
-        if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
-        {
-            /* Could be a conflict with CSAM */
-            CSAMR3RemovePage(pVM, IDTR.pIdt);
-            if (PAGE_ADDRESS(IDTR.pIdt) != PAGE_ADDRESS(IDTR.pIdt + IDTR.cbIdt))
-                CSAMR3RemovePage(pVM, IDTR.pIdt + IDTR.cbIdt);
-
+            /*
+             * [Re]Register write virtual handler for guest's IDT.
+             */
+            if (pVM->trpm.s.GuestIdtr.pIdt != ~0U)
+            {
+                rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
+                AssertRCReturn(rc, rc);
+            }
+            /* limit is including */
             rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
                                              0, trpmGuestIDTWriteHandler, "trpmgcGuestIDTWriteHandler", 0, "Guest IDT write access handler");
-        }
 
-        AssertRCReturn(rc, rc);
+            if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
+            {
+                /* Could be a conflict with CSAM */
+                CSAMR3RemovePage(pVM, IDTR.pIdt);
+                if (PAGE_ADDRESS(IDTR.pIdt) != PAGE_ADDRESS(IDTR.pIdt + IDTR.cbIdt))
+                    CSAMR3RemovePage(pVM, IDTR.pIdt + IDTR.cbIdt);
+
+                rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
+                                                 0, trpmGuestIDTWriteHandler, "trpmgcGuestIDTWriteHandler", 0, "Guest IDT write access handler");
+            }
+
+            AssertRCReturn(rc, rc);
+        }
 
         /* Update saved Guest IDTR. */
         pVM->trpm.s.GuestIdtr = IDTR;
@@ -961,8 +985,11 @@ TRPMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
 #ifdef TRPM_TRACK_GUEST_IDT_CHANGES
     if (pVM->trpm.s.GuestIdtr.pIdt != ~0U)
     {
-        int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
-        AssertRC(rc);
+        if (!pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
+        {
+            int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
+            AssertRC(rc);
+        }
         pVM->trpm.s.GuestIdtr.pIdt = ~0U;
     }
     pVM->trpm.s.GuestIdtr.cbIdt = 0;
