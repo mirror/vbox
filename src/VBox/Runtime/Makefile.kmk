@@ -134,61 +134,30 @@ RuntimeR3_INCS.freebsd  = \
 #    /usr/include
 
 RuntimeR3_SOURCES       = \
-	common/misc/sanity-cpp.cpp \
-	common/misc/sanity-c.c \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
-	common/misc/assert.cpp \
-	common/table/avlhcphys.cpp \
-	common/table/avlgcptr.cpp \
-	common/table/avlogcphys.cpp \
-	common/table/avlogcptr.cpp \
-	common/table/avlohcphys.cpp \
-	common/table/avloioport.cpp \
-	common/table/avlpv.cpp \
-	common/table/avlrgcptr.cpp \
-	common/table/avlrogcphys.cpp \
-	common/table/avlrogcptr.cpp \
-	common/table/avlroogcptr.cpp \
-	common/table/avlroioport.cpp \
-	common/table/avlu32.cpp \
-	common/table/avllu32.cpp \
-	common/table/avlul.cpp \
-	common/table/table.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
-	r3/dir.cpp \
+	common/checksum/md5.cpp \
 	common/err/errmsg.cpp \
-	r3/fileio.cpp \
-	r3/fs.cpp \
-	generic/critsect-generic.cpp \
-	generic/RTFileCopy-generic.cpp \
-	generic/RTLogWriteStdErr-generic.cpp \
-	generic/RTLogWriteStdOut-generic.cpp \
-	generic/RTLogWriteUser-generic.cpp \
-	generic/semfastmutex-generic.cpp \
-	generic/spinlock-generic.cpp \
-	generic/env-generic.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
 	common/ldr/ldr.cpp \
-	common/ldr/ldrFile.cpp \
-	common/ldr/ldrNative.cpp \
 	common/ldr/ldrELF.cpp \
 	common/ldr/ldrEx.cpp \
+	common/ldr/ldrFile.cpp \
+	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
-	common/checksum/md5.cpp \
-	r3/path.cpp \
+	common/misc/assert.cpp \
+	common/misc/rand.cpp \
 	common/misc/req.cpp \
-	r3/alloc-ef.cpp \
-	r3/alloc.cpp \
-	r3/init.cpp \
-	r3/process.cpp \
-	r3/stream.cpp \
-	r3/tcp.cpp \
-	common/err/RTErrConvertFromErrno.cpp \
+	common/misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
 	common/misc/semspingpong.cpp \
+	common/misc/thread.cpp \
+	common/misc/zip.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
@@ -197,15 +166,46 @@ RuntimeR3_SOURCES       = \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
 	common/string/strtonum.cpp \
-	common/misc/thread.cpp \
-	common/time/time.cpp \
-	common/time/timeprog.cpp \
 	common/string/uni.cpp \
 	common/string/unidata.cpp \
 	common/string/utf-16.cpp \
 	common/string/utf-8.cpp \
-	common/misc/zip.cpp \
-	common/misc/rand.cpp \
+	common/table/avlgcptr.cpp \
+	common/table/avlhcphys.cpp \
+	common/table/avllu32.cpp \
+	common/table/avlogcphys.cpp \
+	common/table/avlogcptr.cpp \
+	common/table/avlohcphys.cpp \
+	common/table/avloioport.cpp \
+	common/table/avlpv.cpp \
+	common/table/avlrgcptr.cpp \
+	common/table/avlrogcphys.cpp \
+	common/table/avlrogcptr.cpp \
+	common/table/avlroioport.cpp \
+	common/table/avlroogcptr.cpp \
+	common/table/avlu32.cpp \
+	common/table/avlul.cpp \
+	common/table/table.cpp \
+	common/time/time.cpp \
+	common/time/timeprog.cpp \
+	generic/critsect-generic.cpp \
+	generic/env-generic.cpp \
+	generic/RTFileCopy-generic.cpp \
+	generic/RTLogWriteStdErr-generic.cpp \
+	generic/RTLogWriteStdOut-generic.cpp \
+	generic/RTLogWriteUser-generic.cpp \
+	generic/semfastmutex-generic.cpp \
+	generic/spinlock-generic.cpp \
+	r3/alloc-ef.cpp \
+	r3/alloc.cpp \
+	r3/dir.cpp \
+	r3/fileio.cpp \
+	r3/fs.cpp \
+	r3/init.cpp \
+	r3/path.cpp \
+	r3/process.cpp \
+	r3/stream.cpp \
+	r3/tcp.cpp \
 
 ifdef IPRT_WITH_KLDR
  RuntimeR3_SOURCES += \
@@ -234,13 +234,13 @@ RuntimeR3_SOURCES += \
 	VBox/log-vbox.cpp
 
 RuntimeR3_SOURCES.win = \
+	common/time/timesup.cpp \
+	generic/rand-stubs-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/semsrw-generic.cpp \
 	generic/semnoint-generic.cpp \
-	generic/rand-stubs-generic.cpp \
+	generic/semsrw-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
-	win/errmsgwin.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win32/alloc-win32.cpp \
 	r3/win32/dir-win32.cpp \
@@ -259,20 +259,25 @@ RuntimeR3_SOURCES.win = \
 	r3/win32/utf16locale-win32.cpp \
 	r3/win32/utf8-win32.cpp \
 	r3/win32/uuid-win32.cpp \
-	common/time/timesup.cpp \
+	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
 
 RuntimeR3_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
 
 RuntimeR3_SOURCES.linux = \
+	common/time/timesup.cpp \
+	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	r3/posix/RTTimeNow-posix.cpp \
+	generic/utf16locale-generic.cpp \
+	generic/uuid-generic.cpp \
+	r3/linux/sched-linux.cpp \
+	r3/linux/time-linux.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -281,19 +286,14 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
-	generic/pathhost-generic.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/system-posix.cpp \
-	r3/linux/sched-linux.cpp \
 	r3/posix/thread-posix.cpp \
-	r3/linux/time-linux.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
-	generic/utf16locale-generic.cpp \
-	r3/posix/utf8-posix.cpp \
-	generic/uuid-generic.cpp \
-	common/time/timesup.cpp
+	r3/posix/utf8-posix.cpp
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  RuntimeR3_SOURCES.linux += r3/linux/sems-linux.cpp
 else
@@ -301,16 +301,26 @@ else
 endif
 
 RuntimeR3_SOURCES.os2   = \
+	common/time/timesup.cpp \
+	generic/pathhost-generic.cpp \
+	generic/rand-stubs-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/sched-generic.cpp \
+	generic/semnoint-generic.cpp \
+	generic/semsrw-generic.cpp \
+	generic/timer-generic.cpp \
+	generic/utf16locale-generic.cpp \
+	generic/uuid-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/os2/sems-os2.cpp \
 	r3/os2/system-os2.cpp \
 	r3/os2/thread-os2.cpp \
+	r3/os2/time-os2.cpp \
 	r3/posix/alloc-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -319,41 +329,33 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
-	generic/pathhost-generic.cpp \
 	r3/posix/process-posix.cpp \
-	generic/rand-stubs-generic.cpp \
-	generic/semsrw-generic.cpp \
-	generic/semnoint-generic.cpp \
-	generic/sched-generic.cpp \
-	r3/os2/time-os2.cpp \
-	r3/posix/timelocal-posix.cpp \
-	generic/timer-generic.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
-	generic/utf16locale-generic.cpp \
-	r3/posix/utf8-posix.cpp \
-	generic/uuid-generic.cpp \
-	common/time/timesup.cpp
+	r3/posix/timelocal-posix.cpp \
+	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.darwin = \
+	common/time/timesup.cpp \
 	darwin/RTErrConvertFromDarwinCOM.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
+	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp\
 	r3/darwin/alloc-darwin.cpp \
+	r3/darwin/filelock-darwin.cpp \
+	r3/darwin/time-darwin.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
-	r3/darwin/filelock-darwin.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
@@ -362,21 +364,21 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/sems-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
-	r3/darwin/time-darwin.cpp \
 	r3/posix/timelocal-posix.cpp \
-	r3/posix/utf8-posix.cpp \
-	common/time/timesup.cpp
+	r3/posix/utf8-posix.cpp
 
 ## @todo Make BSD sched.
 RuntimeR3_SOURCES.freebsd = \
+	common/time/timesup.cpp \
+	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
+	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	r3/freebsd/alloc-freebsd.cpp \
 	r3/posix/dir-posix.cpp \
@@ -388,28 +390,27 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/sems-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
-	r3/posix/RTTimeNow-posix.cpp \
-	generic/utf16locale-generic.cpp \
-	r3/posix/utf8-posix.cpp \
-	common/time/timesup.cpp
+	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.solaris = \
+	common/time/timesup.cpp \
+	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
+	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
-	r3/solaris/alloc-solaris.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -419,16 +420,15 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/sems-posix.cpp \
 	r3/posix/system-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
-	r3/posix/RTTimeNow-posix.cpp \
-	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
-	common/time/timesup.cpp
+	r3/solaris/alloc-solaris.cpp
 
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
@@ -445,16 +445,18 @@ endif
 RuntimeR3L4_INCS          = $(L4_INCDIR)
 
 RuntimeR3L4_SOURCES = \
+	common/time/timesup.cpp \
+	generic/fs-stubs-generic.cpp \
+	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
-	generic/fs-stubs-generic.cpp \
-	generic/pathhost-generic.cpp \
 	generic/sched-generic.cpp \
-	generic/semsrw-generic.cpp \
 	generic/semnoint-generic.cpp \
+	generic/semsrw-generic.cpp \
+	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	l4/l4-errno.cpp \
 	l4/process-l4env.cpp \
@@ -462,20 +464,18 @@ RuntimeR3L4_SOURCES = \
 	l4/system-l4env.cpp \
 	l4/thread-l4env.cpp \
 	l4/timer-l4env.cpp \
-	generic/utf16locale-generic.cpp \
 	l4/utf8-l4env.cpp \
 	r3/posix/alloc-posix.cpp \
-	r3/posix/env-posix.cpp \
 	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/rand-posix.cpp \
-	r3/posix/time-posix.cpp \
-	r3/posix/timelocal-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
-	common/time/timesup.cpp
+	r3/posix/time-posix.cpp \
+	r3/posix/timelocal-posix.cpp
 
 #
 # RuntimeW32GuestR3 - Win32 guest program runtime.
@@ -645,39 +645,39 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 RuntimeR0_TEMPLATE      = VBOXR0
 RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0_SOURCES       = \
-	common/misc/sanity-cpp.cpp \
-	common/misc/sanity-c.c \
-	common/misc/assert.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
-	common/table/avlhcphys.cpp \
-	common/table/avlgcptr.cpp \
-	common/table/avlogcphys.cpp \
-	common/table/avlohcphys.cpp \
-	common/table/avlpv.cpp \
-	common/table/avlrogcphys.cpp \
-	common/table/avlogcptr.cpp \
-	common/table/avlrogcptr.cpp \
-	common/table/avlroogcptr.cpp \
-	common/table/avloioport.cpp \
-	common/table/avlroioport.cpp \
-	common/table/avlu32.cpp \
-	common/table/avllu32.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
-	common/string/strformat.cpp \
-	common/string/strformatrt.cpp \
-	common/string/strprintf.cpp \
+	common/misc/assert.cpp \
+	common/misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
 	common/string/memchr.cpp \
 	common/string/memcmp.cpp \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
+	common/string/strcmp.asm \
 	common/string/strcpy.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
 	common/string/strlen.cpp \
 	common/string/strncmp.cpp \
-	common/string/strcmp.asm \
 	common/string/strpbrk.cpp \
-	VBox/strformat-vbox.cpp \
-	common/time/timesup.cpp
+	common/string/strprintf.cpp \
+	common/table/avlgcptr.cpp \
+	common/table/avlhcphys.cpp \
+	common/table/avllu32.cpp \
+	common/table/avlogcphys.cpp \
+	common/table/avlogcptr.cpp \
+	common/table/avlohcphys.cpp \
+	common/table/avloioport.cpp \
+	common/table/avlpv.cpp \
+	common/table/avlrogcphys.cpp \
+	common/table/avlrogcptr.cpp \
+	common/table/avlroioport.cpp \
+	common/table/avlroogcptr.cpp \
+	common/table/avlu32.cpp \
+	common/time/timesup.cpp \
+	generic/RTAssertDoBreakpoint-generic.cpp \
+	VBox/strformat-vbox.cpp
 
 RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 
@@ -736,32 +736,32 @@ RuntimeR0Drv_INCS.linux = \
 	r0drv/linux
 
 RuntimeR0Drv_SOURCES    = \
-	common/misc/sanity-cpp.cpp \
-	common/misc/sanity-c.c \
-	common/misc/assert.cpp \
+	common/checksum/crc32.cpp \
+	common/checksum/crc64.cpp \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
-	common/string/strpbrk.cpp \
+	common/misc/assert.cpp \
+	common/misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
-	common/string/strtonum.cpp \
+	common/string/strpbrk.cpp \
 	common/string/strprintf.cpp \
-	VBox/strformat-vbox.cpp \
-	r0drv/alloc-r0drv.cpp \
-	r0drv/initterm-r0drv.cpp \
+	common/string/strtonum.cpp \
+	common/table/avlpv.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
+	r0drv/alloc-r0drv.cpp \
+	r0drv/initterm-r0drv.cpp \
 	VBox/log-vbox.cpp \
-	common/table/avlpv.cpp \
-	common/checksum/crc32.cpp \
-	common/checksum/crc64.cpp
+	VBox/strformat-vbox.cpp
 
 RuntimeR0Drv_SOURCES.linux = \
-	generic/RTAssertDoBreakpoint-generic.cpp \
 	common/alloc/heapsimple.cpp \
-	r0drv/memobj-r0drv.cpp \
+	common/err/RTErrConvertToErrno.cpp \
+	generic/RTAssertDoBreakpoint-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/memobj-r0drv-linux.c \
@@ -772,10 +772,12 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/semfastmutex-r0drv-linux.c \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c \
-	common/err/RTErrConvertToErrno.cpp
+	r0drv/memobj-r0drv.cpp
 ## @todo thread2-r0drv-linux.c, timer-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
+	common/misc/thread.cpp \
+	common/string/strncmp.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/memobj-r0drv.cpp \
@@ -791,26 +793,25 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/spinlock-r0drv-nt.cpp \
 	r0drv/nt/thread-r0drv-nt.cpp \
 	r0drv/nt/thread2-r0drv-nt.cpp \
-	r0drv/nt/time-r0drv-nt.cpp \
-	common/misc/thread.cpp \
-	common/string/strncmp.cpp
+	r0drv/nt/time-r0drv-nt.cpp
 ## @todo timer-r0drv-nt.cpp and assert-r0drv-nt.cpp
 
 RuntimeR0Drv_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
 
 RuntimeR0Drv_SOURCES.darwin = \
-	darwin/RTErrConvertFromDarwinKern.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
+	common/misc/thread.cpp \
+	common/string/memchr.asm \
 	darwin/RTErrConvertFromDarwinIO.cpp \
+	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	common/err/RTErrConvertFromErrno.cpp \
-	common/string/memchr.asm \
-	r0drv/memobj-r0drv.cpp \
+	generic/timer-generic.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
-	r0drv/darwin/memobj-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
+	r0drv/darwin/memobj-r0drv-darwin.cpp \
 	r0drv/darwin/process-r0drv-darwin.cpp \
 	r0drv/darwin/RTLogWriteDebugger-r0drv-darwin.cpp \
 	r0drv/darwin/semaphore-r0drv-darwin.cpp \
@@ -818,8 +819,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
 	r0drv/darwin/thread2-r0drv-darwin.cpp \
 	r0drv/darwin/time-r0drv-darwin.cpp \
-	common/misc/thread.cpp \
-	generic/timer-generic.cpp
+	r0drv/memobj-r0drv.cpp
 
 RuntimeR0Drv_DEFS.os2 += RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeR0Drv_SOURCES.os2 = \
@@ -835,9 +835,10 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/string/strlen.cpp \
 	common/string/strncmp.cpp \
 	\
+	common/misc/thread.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
-	common/misc/thread.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/os2/alloc-r0drv-os2.cpp \
 	r0drv/os2/assert-r0drv-os2.cpp \
@@ -846,6 +847,9 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/os2/memobj-r0drv-os2.cpp \
 	r0drv/os2/os2imports.imp \
 	r0drv/os2/process-r0drv-os2.cpp \
+	r0drv/os2/RTAssertDoBreakpoint-r0drv-os2.asm \
+	r0drv/os2/RTR0Os2DHQueryDOSVar.asm \
+	r0drv/os2/RTR0Os2DHVMGlobalToProcess.asm \
 	r0drv/os2/semevent-r0drv-os2.cpp \
 	r0drv/os2/semeventmulti-r0drv-os2.cpp \
 	r0drv/os2/semfastmutex-r0drv-os2.cpp \
@@ -854,20 +858,16 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/os2/thread2-r0drv-os2.cpp \
 	r0drv/os2/time-r0drv-os2.cpp \
 	r0drv/os2/timer-r0drv-os2.cpp \
-	r0drv/os2/timerA-r0drv-os2.asm \
-	r0drv/os2/RTAssertDoBreakpoint-r0drv-os2.asm \
-	r0drv/os2/RTR0Os2DHQueryDOSVar.asm \
-	r0drv/os2/RTR0Os2DHVMGlobalToProcess.asm \
-	generic/RTLogWriteDebugger-generic.cpp
+	r0drv/os2/timerA-r0drv-os2.asm
 
 RuntimeR0Drv_SOURCES.freebsd = \
-	generic/RTAssertDoBreakpoint-generic.cpp \
-	generic/RTLogWriteDebugger-generic.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
-	common/string/memchr.asm \
-	r0drv/memobj-r0drv.cpp \
 	common/misc/thread.cpp \
+	common/string/memchr.asm \
+	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
 	r0drv/freebsd/initterm-r0drv-freebsd.c \
@@ -881,16 +881,16 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/freebsd/thread2-r0drv-freebsd.c \
 	r0drv/freebsd/time-r0drv-freebsd.c \
 	r0drv/freebsd/timer-r0drv-freebsd.c \
-	generic/RTTimerCreate-generic.cpp
+	r0drv/memobj-r0drv.cpp
 
 RuntimeR0Drv_SOURCES.solaris = \
+	common/err/RTErrConvertFromErrno.cpp \
+	common/misc/thread.cpp \
+	common/string/memchr.asm \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	common/err/RTErrConvertFromErrno.cpp \
-	common/string/memchr.asm \
 	r0drv/memobj-r0drv.cpp \
-	common/misc/thread.cpp \
 	r0drv/solaris/alloc-r0drv-solaris.c \
 	r0drv/solaris/assert-r0drv-solaris.c \
 	r0drv/solaris/initterm-r0drv-solaris.c \
@@ -970,38 +970,38 @@ RuntimeOS2GuestR0_SOURCES       = \
 RuntimeGC_TEMPLATE      = VBOXGC
 RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
 RuntimeGC_SOURCES       = \
-	gc/initterm-gc.cpp \
-	common/misc/sanity-cpp.cpp \
-	common/misc/sanity-c.c \
-	common/table/avlogcphys.cpp \
-	common/table/avlrogcphys.cpp \
-	common/table/avlogcptr.cpp \
-	common/table/avlohcphys.cpp \
-	common/table/avlrogcptr.cpp \
-	common/table/avlroogcptr.cpp \
-	common/table/avloioport.cpp \
-	common/table/avlroioport.cpp \
-	common/table/avlu32.cpp \
-	common/table/avllu32.cpp \
-	common/misc/assert.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
 	common/log/log.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
-	common/string/strpbrk.cpp \
-	common/string/strncmp.cpp \
-	common/string/strformat.cpp \
-	common/string/strformatrt.cpp \
-	common/string/strprintf.cpp \
-	VBox/strformat-vbox.cpp \
-	common/time/timesup.cpp \
-	common/time/timeprog.cpp \
+	common/misc/assert.cpp \
+	common/misc/sanity-c.c \
+	common/misc/sanity-cpp.cpp \
 	common/string/memchr.cpp \
 	common/string/memcmp.cpp \
 	common/string/memcpy.cpp \
 	common/string/memset.cpp \
 	common/string/strcpy.cpp \
-	common/string/strlen.cpp
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
+	common/string/strlen.cpp \
+	common/string/strncmp.cpp \
+	common/string/strpbrk.cpp \
+	common/string/strprintf.cpp \
+	common/table/avllu32.cpp \
+	common/table/avlogcphys.cpp \
+	common/table/avlogcptr.cpp \
+	common/table/avlohcphys.cpp \
+	common/table/avloioport.cpp \
+	common/table/avlrogcphys.cpp \
+	common/table/avlrogcptr.cpp \
+	common/table/avlroioport.cpp \
+	common/table/avlroogcptr.cpp \
+	common/table/avlu32.cpp \
+	common/time/timeprog.cpp \
+	common/time/timesup.cpp \
+	gc/initterm-gc.cpp \
+	generic/RTAssertDoBreakpoint-generic.cpp \
+	VBox/strformat-vbox.cpp \
 
 ifeq ($(VBOX_LDR_FMT32),lx)
 RuntimeGC_SOURCES += os2/sys0.asm
