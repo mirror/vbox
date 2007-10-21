@@ -175,9 +175,9 @@ RuntimeR3_SOURCES       = \
 	ldrELF.cpp \
 	ldrEx.cpp \
 	ldrPE.cpp \
-	log.cpp \
-	logcom.cpp \
-	logformat.cpp \
+	common/log/log.cpp \
+	common/log/logcom.cpp \
+	common/log/logformat.cpp \
 	common/checksum/md5.cpp \
 	r3/path.cpp \
 	req.cpp \
@@ -662,8 +662,8 @@ RuntimeR0_SOURCES       = \
 	table/avlroioport.cpp \
 	table/avlu32.cpp \
 	table/avllu32.cpp \
-	logcom.cpp \
-	logformat.cpp \
+	common/log/logcom.cpp \
+	common/log/logformat.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strprintf.cpp \
@@ -739,9 +739,9 @@ RuntimeR0Drv_SOURCES    = \
 	misc/sanity-cpp.cpp \
 	misc/sanity-c.c \
 	assert.cpp \
-	log.cpp \
-	logcom.cpp \
-	logformat.cpp \
+	common/log/log.cpp \
+	common/log/logcom.cpp \
+	common/log/logformat.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
@@ -985,9 +985,9 @@ RuntimeGC_SOURCES       = \
 	table/avllu32.cpp \
 	assert.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
-	log.cpp \
-	logcom.cpp \
-	logformat.cpp \
+	common/log/log.cpp \
+	common/log/logcom.cpp \
+	common/log/logformat.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strncmp.cpp \
 	common/string/strformat.cpp \
