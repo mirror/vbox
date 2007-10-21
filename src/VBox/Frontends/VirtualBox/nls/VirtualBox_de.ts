@@ -992,23 +992,23 @@
     </message>
     <message>
         <source>Ctrl+N</source>
-        <translation>Strg+N</translation>
+        <translation>Ctrl+N</translation>
     </message>
     <message>
         <source>Ctrl+A</source>
-        <translation>Strg+H</translation>
+        <translation>Ctrl+H</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation>Strg+M</translation>
+        <translation>Ctrl+M</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
-        <translation>Strg+F</translation>
+        <translation>Ctrl+F</translation>
     </message>
     <message>
         <source>Ctrl+R</source>
-        <translation>Strg+R</translation>
+        <translation>Ctrl+R</translation>
     </message>
     <message>
         <source>&amp;Actions</source>
@@ -1867,7 +1867,7 @@
     </message>
     <message>
         <source>Ins</source>
-        <translation>Einf</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
@@ -1875,7 +1875,7 @@
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation>Alt+Einf</translation>
+        <translation>Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
@@ -1883,7 +1883,7 @@
     </message>
     <message>
         <source>Del</source>
-        <translation>Entf</translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
@@ -1895,7 +1895,7 @@
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation>Strg+Auf</translation>
+        <translation>Ctrl+Up</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
@@ -1907,7 +1907,7 @@
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation>Strg+Ab</translation>
+        <translation>Ctrl+Down</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
@@ -2899,7 +2899,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+D</source>
-        <translation>Strg+M</translation>
+        <translation>Ctrl+M</translation>
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
@@ -2912,7 +2912,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+G</source>
-        <translation>Strg+G</translation>
+        <translation>Ctrl+G</translation>
     </message>
     <message>
         <source>Display the global settings dialog</source>
@@ -2924,7 +2924,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation>Strg+Q</translation>
+        <translation>Ctrl+Q</translation>
     </message>
     <message>
         <source>Close application</source>
@@ -2940,7 +2940,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+N</source>
-        <translation>Strg+N</translation>
+        <translation>Ctrl+N</translation>
     </message>
     <message>
         <source>Create a new virtual machine</source>
@@ -2956,7 +2956,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation>Strg+E</translation>
+        <translation>Ctrl+E</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
@@ -2996,7 +2996,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+R</source>
-        <translation>Strg+A</translation>
+        <translation>Ctrl+A</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
@@ -3100,7 +3100,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Ctrl+L</source>
-        <translation>Strg+L</translation>
+        <translation>Ctrl+L</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
@@ -3173,7 +3173,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Ins</source>
-        <translation>Einf</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add a new shared folder (Ins)</source>
@@ -3181,7 +3181,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Space</source>
-        <translation>Leertaste</translation>
+        <translation>Space</translation>
     </message>
     <message>
         <source>Edit the selected shared folder (Space)</source>
@@ -3189,7 +3189,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Del</source>
-        <translation>Entf</translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Remove the selected shared folder (Del)</source>
@@ -3263,7 +3263,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
-        <translation>Strg+Shift+V</translation>
+        <translation>Ctrl+Shift+V</translation>
     </message>
     <message>
         <source>curStateActionGroup</source>
@@ -3295,7 +3295,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Space</source>
-        <translation>Leerzeichen</translation>
+        <translation>Space</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
@@ -3355,7 +3355,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
-        <translation>Strg+Umsch+S</translation>
+        <translation>Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -3371,7 +3371,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Ctrl+Shift+R</source>
-        <translation>Strg+Umsch+R</translation>
+        <translation>Ctrl+Shift+R</translation>
     </message>
     <message>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
@@ -3379,7 +3379,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     </message>
     <message>
         <source>Ctrl+Shift+B</source>
-        <translation>Strg+Umsch+B</translation>
+        <translation>Ctrl+Shift+B</translation>
     </message>
     <message>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
@@ -3592,7 +3592,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ctrl+E</source>
-        <translation>Strg+E</translation>
+        <translation>Ctrl+E</translation>
     </message>
 </context>
 <context>
@@ -4227,7 +4227,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ins</source>
-        <translation>Einf</translation>
+        <translation>Ins</translation>
     </message>
     <message>
         <source>Add Empty (Ins)</source>
@@ -4235,7 +4235,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Alt+Ins</source>
-        <translation>Alt+Einf</translation>
+        <translation>Alt+Ins</translation>
     </message>
     <message>
         <source>Add From (Alt+Ins)</source>
@@ -4243,7 +4243,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Del</source>
-        <translation>Entf</translation>
+        <translation>Del</translation>
     </message>
     <message>
         <source>Remove (Del)</source>
@@ -4255,7 +4255,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ctrl+Up</source>
-        <translation>Strg+Auf</translation>
+        <translation>Ctrl+Up</translation>
     </message>
     <message>
         <source>Move Up (Ctrl+Up)</source>
@@ -4267,7 +4267,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Ctrl+Down</source>
-        <translation>Strg+Ab</translation>
+        <translation>Ctrl+Down</translation>
     </message>
     <message>
         <source>Move Down (Ctrl+Down)</source>
