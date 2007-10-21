@@ -198,8 +198,8 @@ RuntimeR3_SOURCES       = \
 	strstrip.cpp \
 	strtonum.cpp \
 	thread.cpp \
-	time.cpp \
-	timeprog.cpp \
+	time/time.cpp \
+	time/timeprog.cpp \
 	uni.cpp \
 	unidata.cpp \
 	utf-16.cpp \
@@ -259,7 +259,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win32/utf16locale-win32.cpp \
 	r3/win32/utf8-win32.cpp \
 	r3/win32/uuid-win32.cpp \
-	timesup.cpp \
+	time/timesup.cpp \
 	win32/RTErrConvertFromWin32.cpp
 
 RuntimeR3_SOURCES.win.amd64 = \
@@ -293,7 +293,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
 	generic/uuid-generic.cpp \
-	timesup.cpp
+	time/timesup.cpp
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  RuntimeR3_SOURCES.linux += r3/linux/sems-linux.cpp
 else
@@ -332,7 +332,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
 	generic/uuid-generic.cpp \
-	timesup.cpp \
+	time/timesup.cpp
 
 RuntimeR3_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinCOM.cpp \
@@ -365,7 +365,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/time-darwin.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/utf8-posix.cpp \
-	timesup.cpp \
+	time/timesup.cpp
 
 ## @todo Make BSD sched.
 RuntimeR3_SOURCES.freebsd = \
@@ -397,7 +397,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
-	timesup.cpp \
+	time/timesup.cpp
 
 RuntimeR3_SOURCES.solaris = \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -428,7 +428,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/RTTimeNow-posix.cpp \
 	generic/utf16locale-generic.cpp \
 	r3/posix/utf8-posix.cpp \
-	timesup.cpp \
+	time/timesup.cpp
 
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
@@ -475,7 +475,7 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
-	timesup.cpp
+	time/timesup.cpp
 
 #
 # RuntimeW32GuestR3 - Win32 guest program runtime.
@@ -677,7 +677,7 @@ RuntimeR0_SOURCES       = \
 	string/strcmp.asm \
 	string/strpbrk.cpp \
 	VBox/strformat-vbox.cpp \
-	timesup.cpp
+	time/timesup.cpp
 
 RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 
@@ -994,8 +994,8 @@ RuntimeGC_SOURCES       = \
 	strformatrt.cpp \
 	strprintf.cpp \
 	VBox/strformat-vbox.cpp \
-	timesup.cpp \
-	timeprog.cpp \
+	time/timesup.cpp \
+	time/timeprog.cpp \
 	string/memchr.cpp \
 	string/memcmp.cpp \
 	string/memcpy.cpp \
