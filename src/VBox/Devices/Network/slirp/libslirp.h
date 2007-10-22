@@ -41,7 +41,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len);
 /* you must provide the following functions: */
 int slirp_can_output(void * pvUser);
 void slirp_output(void * pvUser, const uint8_t *pkt, int pkt_len);
-void slirp_cannot_ping(void * pvUser);
 
 int slirp_redir(PNATState pData, int is_udp, int host_port,
                 struct in_addr guest_addr, int guest_port);
