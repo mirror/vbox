@@ -839,6 +839,7 @@ EOF
     fi
   else
     log_failure "not found"
+    fail
   fi
 }
 
