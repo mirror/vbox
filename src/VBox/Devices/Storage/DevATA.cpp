@@ -893,17 +893,17 @@ static void ataPIOTransferLimitATAPI(ATADevState *s)
 {
     uint32_t cbLimit, cbTransfer;
 
-    if (s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
+    cbLimit = s->uATARegLCyl | (s->uATARegHCyl << 8);
+    /* Use maximum transfer size if the guest requested 0. Avoids a hang. */
+    if (cbLimit == 0)
         cbLimit = 0xfffe;
-    else
-        cbLimit = s->uATARegLCyl | (s->uATARegHCyl << 8);
     Log2(("%s: byte count limit=%d\n", __FUNCTION__, cbLimit));
     if (cbLimit == 0xffff)
         cbLimit--;
     cbTransfer = RT_MIN(s->cbTotalTransfer, s->iIOBufferEnd - s->iIOBufferCur);
     if (cbTransfer > cbLimit)
     {
-        /* byte count limit must be even if this case */
+        /* Byte count limit for clipping mubyte count limit must be even in this case */
         if (cbLimit & 1)
             cbLimit--;
         cbTransfer = cbLimit;
@@ -5972,7 +5972,7 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* pci */
     pData->dev.config[0x00] = 0x86; /* Vendor: Intel */
     pData->dev.config[0x01] = 0x80;
-    if (pData->fPIIX4) 
+    if (pData->fPIIX4)
     {
         pData->dev.config[0x02] = 0x11; /* Device: PIIX4 IDE */
         pData->dev.config[0x03] = 0x71;
