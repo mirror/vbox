@@ -722,7 +722,8 @@ static void vbox_load_cursor_argb (ScrnInfoPtr pScrn, CursorPtr pCurs)
     scrnIndex = pScrn->scrnIndex;
 
     /* Mask must be generated for alpha cursors, that is required by VBox. */
-    mask_size  = (w + 7) / 8 * h;
+    /* @note: (michael) the next struct must be 32bit aligned. */
+    mask_size  = ((w + 7) / 8 * h + 3) & ~3;
 
     if (!w || !h || w > VBOX_MAX_CURSOR_WIDTH || h > VBOX_MAX_CURSOR_HEIGHT)
         RETERROR(scrnIndex, ,
