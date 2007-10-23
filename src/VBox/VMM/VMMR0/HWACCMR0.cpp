@@ -151,6 +151,8 @@ HWACCMR0DECL(int) HWACCMR0Init(PVM pVM)
                         VMXDisable();
 #endif
                     }
+                    /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set if it wasn't so before (some software could incorrectly think it's in VMX mode) */
+                    ASMSetCR4(pVM->hwaccm.s.vmx.hostCR4);
                 }
                 else
                     pVM->hwaccm.s.lLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
