@@ -176,6 +176,14 @@ start_network() {
       fail_msg
       return 1
     fi
+    # Fail if we don't have the kernel tun device
+    # Make sure that the tun module is loaded (Ubuntu 7.10 needs this)
+    modprobe tun 2>&1 > /dev/null
+    if ! cat /proc/misc 2>/dev/null | grep tun > /dev/null
+    then
+      fail_msg
+      return 1
+    fi
     succ_msg
     # Read the configuration file entries line by line and create the
     # interfaces
@@ -236,7 +244,7 @@ start_network() {
     done < "$CONFIG"
     # Set /dev/net/tun to belong to the group vboxusers if it exists and does
     # yet belong to a group.
-    if ls -g "$TAPDEV" 2>/dev/null | grep root
+    if ls -g "$TAPDEV" 2>/dev/null | grep root 2>&1 > /dev/null
     then
       chgrp vboxusers "$TAPDEV"
       chmod 0660 "$TAPDEV"
