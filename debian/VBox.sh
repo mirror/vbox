@@ -33,7 +33,7 @@ elif [ ! -c /dev/vboxdrv ]; then
     cat << EOF
 WARNING: The character device /dev/vboxdrv does not exist. Try
 
-           sudo /etc/init.d/virtualbox restart
+           sudo /etc/init.d/vboxdrv restart
 
          and if that is not successful, try to re-install the package.
 
@@ -89,16 +89,16 @@ APP=`which $0`
 APP=${APP##/*/}
 case "$APP" in
   VirtualBox)
-    exec "/usr/lib/virtualbox/VirtualBox" "$@"
+    exec "/usr/lib/virtualbox-ose/VirtualBox" "$@"
   ;;
   VBoxManage)
-    exec "/usr/lib/virtualbox/VBoxManage" "$@"
+    exec "/usr/lib/virtualbox-ose/VBoxManage" "$@"
   ;;
   VBoxSDL)
-    exec "/usr/lib/virtualbox/VBoxSDL" "$@"
+    exec "/usr/lib/virtualbox-ose/VBoxSDL" "$@"
   ;;
   VBoxVRDP)
-    exec "/usr/lib/virtualbox/VBoxVRDP" "$@"
+    exec "/usr/lib/virtualbox-ose/VBoxVRDP" "$@"
   ;;
   *)
     echo "Unknown application - $APP"
