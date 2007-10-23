@@ -1,10 +1,10 @@
-Template: virtualbox/group-vboxusers
+Template: virtualbox-ose/group-vboxusers
 Type: note
 Description: Creating group 'vboxusers'
  Users of VirtualBox must be member of that group in order to have write
  permissions to /dev/vboxdrv. Otherwise starting of VMs will not be possible.
 
-Template: virtualbox/module-compilation-failed
+Template: virtualbox-ose/module-compilation-failed
 Type: note
 Description: Compilation of the kernel module FAILED!
  VirtualBox will not start until this problem is fixed. Please consult
@@ -15,7 +15,7 @@ Description: Compilation of the kernel module FAILED!
    
  as root.
 
-Template: virtualbox/module-compilation-allowed
+Template: virtualbox-ose/module-compilation-allowed
 Type: boolean
 Default: true
 Description: Should the vboxdrv kernel module be compiled now?
@@ -26,13 +26,13 @@ Description: Should the vboxdrv kernel module be compiled now?
  the tools to build kernel modules (gcc, make, binutils, ...) are required.
  However, in case a suitable kernel module already exists at another place you
  might want to override the default position by setting KDIR=<full_path_to_vboxdrv_module>
- in /etc/default/virtualbox. The compilation can also be done later by executing
+ in /etc/default/virtualbox-ose. The compilation can also be done later by executing
    
    /etc/init.d/vboxdrv setup
    
  as root.
 
-Template: virtualbox/delete-old-modules
+Template: virtualbox-ose/delete-old-modules
 Type: boolean
 Default: true
 Description: Delete old modules?

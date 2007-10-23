@@ -33,8 +33,8 @@ GROUPNAME=vboxusers
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
 
-if [ -r /etc/default/virtualbox ]; then
-  . /etc/default/virtualbox
+if [ -r /etc/default/virtualbox-ose ]; then
+  . /etc/default/virtualbox-ose
 fi
 
 if [ -z "$NOLSB" -a -f /lib/lsb/init-functions ]; then
@@ -152,7 +152,7 @@ case "$1" in
   setup)
     stop
     log_daemon_msg "Recompiling VirtualBox kernel module" "$MODNAME"
-    if ! /usr/share/virtualbox/src/build_in_tmp install > $LOG 2>&1; then
+    if ! /usr/share/virtualbox-ose/src/build_in_tmp install > $LOG 2>&1; then
       failure "Look at $LOG to find out what went wrong"
     fi
     log_end_msg 0
