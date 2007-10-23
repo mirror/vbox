@@ -1162,7 +1162,7 @@ RTDECL(int)   RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
 #ifdef RT_OS_SOLARIS
     ASMAtomicXchgSize(&pIntRWSem->WROwner, pthread_self());
 #else
-    ASMAtomicXchgPtr(&pIntRWSem->WROwner, pthread_self());
+    ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)pthread_self());
 #endif
 
     return VINF_SUCCESS;
@@ -1204,7 +1204,8 @@ RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
 #ifdef RT_OS_SOLARIS
     ASMAtomicXchgSize(&pIntRWSem->WROwner, (pthread_t)-1);
 #else
-    ASMAtomicXchgPtr(&pIntRWSem->WROwner, (pthread_t)-1);
+    AssertMsg(sizeof(pthread_t) == sizeof(void *), ("pthread_t is not the size of a pointer but %d bytes\n", sizeof(pthread_t)));
+    ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)(pthread_t)-1);
 #endif
     int rc = pthread_rwlock_unlock(&pIntRWSem->RWLock);
     if (rc)
