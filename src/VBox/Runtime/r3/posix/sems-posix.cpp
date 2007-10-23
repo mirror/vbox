@@ -724,7 +724,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
             {
                 pthread_mutexattr_destroy(&MutexAttr);
 
-                pIntMutexSem->Owner    = ~(pthread_t)0;
+                pIntMutexSem->Owner    = (pthread_t)-1;
                 pIntMutexSem->cNesting = 0;
 
                 *pMutexSem = pIntMutexSem;
@@ -766,7 +766,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     /*
      * Free the memory and be gone.
      */
-    pIntMutexSem->Owner    = ~(pthread_t)0;
+    pIntMutexSem->Owner    = (pthread_t)-1;
     pIntMutexSem->cNesting = ~0;
     RTMemTmpFree(pIntMutexSem);
 
@@ -895,7 +895,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
     /*
      * Clear the state. (cNesting == 1)
      */
-    pIntMutexSem->Owner    = ~(pthread_t)0;
+    pIntMutexSem->Owner    = (pthread_t)-1;
     ASMAtomicXchgU32(&pIntMutexSem->cNesting, 0);
 
     /*
@@ -955,7 +955,7 @@ RTDECL(int)   RTSemRWCreate(PRTSEMRW pRWSem)
             if (!rc)
             {
                 pIntRWSem->uCheck = ~0;
-                pIntRWSem->WROwner = ~(pthread_t)0;
+                pIntRWSem->WROwner = (pthread_t)-1;
                 *pRWSem = pIntRWSem;
                 return VINF_SUCCESS;
             }
@@ -1197,7 +1197,7 @@ RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
     /*
      * Try unlock it.
      */
-    ASMAtomicXchgSize(&pIntRWSem->WROwner, ~(pthread_t)0);
+    ASMAtomicXchgSize(&pIntRWSem->WROwner, (pthread_t)-1);
     int rc = pthread_rwlock_unlock(&pIntRWSem->RWLock);
     if (rc)
     {
