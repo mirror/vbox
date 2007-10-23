@@ -3810,7 +3810,7 @@ void unknown()
 void printf(s)
   Bit8u *s;
 {
-#if 0//def VBE
+#ifdef VBE
   Bit8u c, format_char;
   Boolean  in_format;
   unsigned format_width, i;
