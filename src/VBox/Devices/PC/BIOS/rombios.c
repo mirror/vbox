@@ -1888,6 +1888,12 @@ print_bios_banner()
 #ifndef DEBUG
   /* show graphical logo */
   show_logo();
+#else
+  /* set text mode */
+  ASM_START
+  mov  ax, #0x0003
+  int  #0x10
+  ASM_END
 #endif /* !DEBUG */
 #else /* !VBOX */
   printf(BX_APPNAME" BIOS - build: %s\n%s\nOptions: ",
