@@ -351,6 +351,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
         pTimer->pfnTimer    = pfnTimer;
         pTimer->pvUser      = pvUser;
         pTimer->u64NanoInterval = u64NanoInterval;
+        pTimer->u64NanoFirst = 0;
         pTimer->iError      = 0;
         rc = RTSemEventCreate(&pTimer->Event);
         AssertRC(rc);
