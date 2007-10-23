@@ -40,6 +40,8 @@ API History
                   additional features:
                   VBE_DISPI_INDEX_ENABLE supports new flags VBE_DISPI_GETCAPS and VBE_DISPI_8BIT_DAC
 
+0xb0c4            VBE video memory increased to 8 MB
+
 
 History
 -------
@@ -82,7 +84,10 @@ Abbreviations
 
 #defines
 --------
-  #define VBE_DISPI_TOTAL_VIDEO_MEMORY_MB 4
+vbetables-gen.c
+  #define VBE_DISPI_TOTAL_VIDEO_MEMORY_MB 8
+
+vbe.h
   #define VBE_DISPI_BANK_ADDRESS          0xA0000
   #define VBE_DISPI_BANK_SIZE_KB          64
   
@@ -106,6 +111,8 @@ Abbreviations
   #define VBE_DISPI_ID0                   0xB0C0
   #define VBE_DISPI_ID1                   0xB0C1
   #define VBE_DISPI_ID2                   0xB0C2
+  #define VBE_DISPI_ID3                   0xB0C3
+  #define VBE_DISPI_ID4                   0xB0C4
   
   #define VBE_DISPI_DISABLED              0x00
   #define VBE_DISPI_ENABLED               0x01
@@ -201,6 +208,9 @@ API
     If the new flag VBE_DISPI_GETCAPS is enabled, the xres, yres and bpp registers
     return the gui capabilities.
     The new flag VBE_DISPI_8BIT_DAC switches the DAC to 8 bit mode.
+
+[0xb0c4]
+  * VBE_DISPI_TOTAL_VIDEO_MEMORY_MB set to 8 (moved to auto-generated vbetables.h)
 
 Displaying GFX (banked mode)
 --------------

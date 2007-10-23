@@ -106,8 +106,9 @@ static void biosfn_enable_video_refresh_control();
 static void biosfn_write_string();
 static void biosfn_read_state_info();
 static void biosfn_read_video_state_size();
-static void biosfn_save_video_state();
-static void biosfn_restore_video_state();
+static Bit16u biosfn_save_video_state();
+static Bit16u biosfn_restore_video_state();
+extern Bit8u video_save_pointer_table[];
 
 // This is for compiling with gcc2 and gcc3
 #define ASM_START #asm
@@ -227,6 +228,7 @@ vgabios_init_func:
   call cirrus_init
 #endif
 
+#ifndef VBOX
 ;; display splash screen
   call _display_splash_screen
 
@@ -235,7 +237,6 @@ vgabios_init_func:
   mov ax,#0x0003
   int #0x10
 
-#ifndef VBOX
 
 ;; show info
   call _display_info
@@ -371,8 +372,13 @@ int10_test_vbe_08:
   jmp   int10_end
 int10_test_vbe_09:
   cmp   al, #0x09
-  jne   int10_normal
+  jne   int10_test_vbe_0A
   call  vbe_biosfn_set_get_palette_data
+  jmp   int10_end
+int10_test_vbe_0A:
+  cmp   al, #0x0A
+  jne   int10_normal
+  call  vbe_biosfn_return_protected_mode_interface
   jmp   int10_end
 #endif
 
@@ -476,6 +482,28 @@ init_bios_area:
 
   pop ds
   ret
+
+_video_save_pointer_table:
+  .word _video_param_table
+  .word 0xc000
+
+  .word 0 /* XXX: fill it */
+  .word 0
+
+  .word 0 /* XXX: fill it */
+  .word 0
+
+  .word 0 /* XXX: fill it */
+  .word 0
+
+  .word 0 /* XXX: fill it */
+  .word 0
+
+  .word 0 /* XXX: fill it */
+  .word 0
+
+  .word 0 /* XXX: fill it */
+  .word 0
 ASM_END
 
 // --------------------------------------------------------------------------------------------
@@ -486,6 +514,7 @@ static void display_splash_screen()
 {
 }
 
+#ifndef VBOX
 // --------------------------------------------------------------------------------------------
 /*
  *  Tell who we are
@@ -493,7 +522,6 @@ static void display_splash_screen()
 
 static void display_info()
 {
-#ifndef VBOX
 ASM_START
  mov ax,#0xc000
  mov ds,ax
@@ -513,7 +541,6 @@ ASM_START
  mov si,#vgabios_website
  call _display_string
 ASM_END
-#endif
 }
 
 static void display_string()
@@ -544,6 +571,7 @@ ASM_START
  int #0x10
 ASM_END
 }
+#endif
 
 // --------------------------------------------------------------------------------------------
 #ifdef DEBUG
@@ -744,12 +772,7 @@ static void int10_func(DI, SI, BP, SP, BX, DX, CX, AX, DS, ES, FLAGS)
           vbe_biosfn_set_mode(&AX,BX,ES,DI);
           break;
          case 0x04:
-          //FIXME
-#ifdef DEBUG
-          unimplemented();
-#endif
-          // function failed
-          AX=0x100;
+          vbe_biosfn_save_restore_state(&AX, CX, DX, ES, &BX);
           break;
          case 0x09:
           //FIXME
@@ -800,8 +823,8 @@ static void biosfn_set_video_mode(mode) Bit8u mode;
 
  // Should we clear the screen ?
  Bit8u noclearmem=mode&0x80;
- Bit8u line,mmask,*palette;
- Bit16u i,twidth,theight,cheight;
+ Bit8u line,mmask,*palette,vpti;
+ Bit16u i,twidth,theightm1,cheight;
  Bit8u modeset_ctl,video_ctl,vga_switches;
  Bit16u crtc_addr;
 
@@ -824,9 +847,10 @@ static void biosfn_set_video_mode(mode) Bit8u mode;
  if(line==0xFF)
   return;
 
- twidth=vga_modes[line].twidth;
- theight=vga_modes[line].theight;
- cheight=vga_modes[line].cheight;
+ vpti=line_to_vpti[line];
+ twidth=video_param_table[vpti].twidth;
+ theightm1=video_param_table[vpti].theightm1;
+ cheight=video_param_table[vpti].cheight;
 
  // Read the bios vga control
  video_ctl=read_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL);
@@ -886,21 +910,25 @@ static void biosfn_set_video_mode(mode) Bit8u mode;
  inb(VGAREG_ACTL_RESET);
 
  // Set Attribute Ctl
- for(i=0;i<=ACTL_MAX_REG;i++)
+ for(i=0;i<=0x13;i++)
   {outb(VGAREG_ACTL_ADDRESS,i);
-   outb(VGAREG_ACTL_WRITE_DATA,actl_regs[vga_modes[line].actlmodel][i]);
+   outb(VGAREG_ACTL_WRITE_DATA,video_param_table[vpti].actl_regs[i]);
   }
+ outb(VGAREG_ACTL_ADDRESS,0x14);
+ outb(VGAREG_ACTL_WRITE_DATA,0x00);
 
  // Set Sequencer Ctl
- for(i=0;i<=SEQU_MAX_REG;i++)
+ outb(VGAREG_SEQU_ADDRESS,0);
+ outb(VGAREG_SEQU_DATA,0x03);
+ for(i=1;i<=4;i++)
   {outb(VGAREG_SEQU_ADDRESS,i);
-   outb(VGAREG_SEQU_DATA,sequ_regs[vga_modes[line].sequmodel][i]);
+   outb(VGAREG_SEQU_DATA,video_param_table[vpti].sequ_regs[i - 1]);
   }
 
  // Set Grafx Ctl
- for(i=0;i<=GRDC_MAX_REG;i++)
+ for(i=0;i<=8;i++)
   {outb(VGAREG_GRDC_ADDRESS,i);
-   outb(VGAREG_GRDC_DATA,grdc_regs[vga_modes[line].grdcmodel][i]);
+   outb(VGAREG_GRDC_DATA,video_param_table[vpti].grdc_regs[i]);
   }
 
  // Set CRTC address VGA or MDA
@@ -909,13 +937,13 @@ static void biosfn_set_video_mode(mode) Bit8u mode;
  // Disable CRTC write protection
  outw(crtc_addr,0x0011);
  // Set CRTC regs
- for(i=0;i<=CRTC_MAX_REG;i++)
+ for(i=0;i<=0x18;i++)
   {outb(crtc_addr,i);
-   outb(crtc_addr+1,crtc_regs[vga_modes[line].crtcmodel][i]);
+   outb(crtc_addr+1,video_param_table[vpti].crtc_regs[i]);
   }
 
  // Set the misc register
- outb(VGAREG_WRITE_MISC_OUTPUT,vga_modes[line].miscreg);
+ outb(VGAREG_WRITE_MISC_OUTPUT,video_param_table[vpti].miscreg);
 
  // Enable video
  outb(VGAREG_ACTL_ADDRESS,0x20);
@@ -947,9 +975,9 @@ static void biosfn_set_video_mode(mode) Bit8u mode;
  // Set the BIOS mem
  write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,mode);
  write_word(BIOSMEM_SEG,BIOSMEM_NB_COLS,twidth);
- write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,vga_modes[line].slength);
+ write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,*(Bit16u *)&video_param_table[vpti].slength_l);
  write_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,crtc_addr);
- write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,theight-1);
+ write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,theightm1);
  write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,cheight);
  write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|noclearmem));
  write_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
@@ -957,8 +985,8 @@ static void biosfn_set_video_mode(mode) Bit8u mode;
 
  // FIXME We nearly have the good tables. to be reworked
  write_byte(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,0x08);    // 8 is VGA should be ok for now
- write_word(BIOSMEM_SEG,BIOSMEM_VS_POINTER,0x00);
- write_word(BIOSMEM_SEG,BIOSMEM_VS_POINTER+2,0x00);
+ write_word(BIOSMEM_SEG,BIOSMEM_VS_POINTER, video_save_pointer_table);
+ write_word(BIOSMEM_SEG,BIOSMEM_VS_POINTER+2, 0xc000);
 
  // FIXME
  write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x00); // Unavailable on vanilla vga, but...
@@ -1134,7 +1162,7 @@ Bit8u page;
   }
  else
   {
-   address = page*vga_modes[line].slength;
+   address = page * (*(Bit16u *)&video_param_table[line_to_vpti[line]].slength_l);
   }
 
  // CRTC regs 0x0c and 0x0d
@@ -1284,6 +1312,7 @@ Bit8u nblines;Bit8u attr;Bit8u rul;Bit8u cul;Bit8u rlr;Bit8u clr;Bit8u page;Bit8
           memsetw(vga_modes[line].sstart,address+(i*nbcols+cul)*2,(Bit16u)attr*0x100+' ',cols);
          else
           memcpyw(vga_modes[line].sstart,address+(i*nbcols+cul)*2,vga_modes[line].sstart,((i-nblines)*nbcols+cul)*2,cols);
+         if (i>rlr) break;
         }
       }
     }
@@ -1291,7 +1320,7 @@ Bit8u nblines;Bit8u attr;Bit8u rul;Bit8u cul;Bit8u rlr;Bit8u clr;Bit8u page;Bit8
  else
   {
    // FIXME gfx mode not complete
-   cheight=vga_modes[line].cheight;
+   cheight=video_param_table[line_to_vpti[line]].cheight;
    switch(vga_modes[line].memmodel)
     {
      case PLANAR4:
@@ -1320,6 +1349,7 @@ Bit8u nblines;Bit8u attr;Bit8u rul;Bit8u cul;Bit8u rlr;Bit8u clr;Bit8u page;Bit8
               vgamem_fill_pl4(cul,i,cols,nbcols,cheight,attr);
              else
               vgamem_copy_pl4(cul,i,i-nblines,cols,nbcols,cheight);
+             if (i>rlr) break;
             }
           }
         }
@@ -1355,6 +1385,7 @@ Bit8u nblines;Bit8u attr;Bit8u rul;Bit8u cul;Bit8u rlr;Bit8u clr;Bit8u page;Bit8
               vgamem_fill_cga(cul,i,cols,nbcols,cheight,attr);
              else
               vgamem_copy_cga(cul,i,i-nblines,cols,nbcols,cheight);
+             if (i>rlr) break;
             }
           }
         }
@@ -1601,7 +1632,7 @@ Bit8u car;Bit8u page;Bit8u attr;Bit16u count;
  else
   {
    // FIXME gfx mode not complete
-   cheight=vga_modes[line].cheight;
+   cheight=video_param_table[line_to_vpti[line]].cheight;
    bpp=vga_modes[line].pixbits;
    while((count-->0) && (xcurs<nbcols))
     {
@@ -1661,7 +1692,7 @@ Bit8u car;Bit8u page;Bit8u attr;Bit16u count;
  else
   {
    // FIXME gfx mode not complete
-   cheight=vga_modes[line].cheight;
+   cheight=video_param_table[line_to_vpti[line]].cheight;
    bpp=vga_modes[line].pixbits;
    while((count-->0) && (xcurs<nbcols))
     {
@@ -1977,7 +2008,7 @@ Bit8u car;Bit8u page;Bit8u attr;Bit8u flag;
     else
      {
       // FIXME gfx mode not complete
-      cheight=vga_modes[line].cheight;
+      cheight=video_param_table[line_to_vpti[line]].cheight;
       bpp=vga_modes[line].pixbits;
       switch(vga_modes[line].memmodel)
        {
@@ -3168,23 +3199,212 @@ Bit16u BX;Bit16u ES;Bit16u DI;
 }
 
 // --------------------------------------------------------------------------------------------
-static void biosfn_read_video_state_size (CX,ES,BX) Bit16u CX;Bit16u ES;Bit16u BX;
+static Bit16u biosfn_read_video_state_size2 (CX) 
+     Bit16u CX;
 {
-#ifdef DEBUG
- unimplemented();
-#endif
+    Bit16u size;
+    size = 0;
+    if (CX & 1) {
+        size += 0x46;
+    }
+    if (CX & 2) {
+        size += (5 + 8 + 5) * 2 + 6;
+    }
+    if (CX & 4) {
+        size += 3 + 256 * 3 + 1;
+    }
+    return size;
 }
-static void biosfn_save_video_state (CX,ES,BX) Bit16u CX;Bit16u ES;Bit16u BX;
+static void biosfn_read_video_state_size (CX, BX) 
+     Bit16u CX; Bit16u *BX;
 {
-#ifdef DEBUG
- unimplemented();
-#endif
+    Bit16u ss=get_SS();
+    write_word(ss, BX, biosfn_read_video_state_size2(CX));
 }
-static void biosfn_restore_video_state (CX,ES,BX) Bit16u CX;Bit16u ES;Bit16u BX;
+static Bit16u biosfn_save_video_state (CX,ES,BX) 
+     Bit16u CX;Bit16u ES;Bit16u BX;
 {
-#ifdef DEBUG
- unimplemented();
-#endif
+    Bit16u i, v, crtc_addr, ar_index;
+
+    crtc_addr = read_word(BIOSMEM_SEG, BIOSMEM_CRTC_ADDRESS);
+    if (CX & 1) {
+        write_byte(ES, BX, inb(VGAREG_SEQU_ADDRESS)); BX++;
+        write_byte(ES, BX, inb(crtc_addr)); BX++;
+        write_byte(ES, BX, inb(VGAREG_GRDC_ADDRESS)); BX++;
+        inb(VGAREG_ACTL_RESET);
+        ar_index = inb(VGAREG_ACTL_ADDRESS);
+        write_byte(ES, BX, ar_index); BX++;
+        write_byte(ES, BX, inb(VGAREG_READ_FEATURE_CTL)); BX++;
+
+        for(i=1;i<=4;i++){
+            outb(VGAREG_SEQU_ADDRESS, i);
+            write_byte(ES, BX, inb(VGAREG_SEQU_DATA)); BX++;
+        }
+        outb(VGAREG_SEQU_ADDRESS, 0);
+        write_byte(ES, BX, inb(VGAREG_SEQU_DATA)); BX++;
+
+        for(i=0;i<=0x18;i++) {
+            outb(crtc_addr,i);
+            write_byte(ES, BX, inb(crtc_addr+1)); BX++;
+        }
+
+        for(i=0;i<=0x13;i++) {
+            inb(VGAREG_ACTL_RESET);
+            outb(VGAREG_ACTL_ADDRESS, i | (ar_index & 0x20));
+            write_byte(ES, BX, inb(VGAREG_ACTL_READ_DATA)); BX++;
+        }
+        inb(VGAREG_ACTL_RESET);
+
+        for(i=0;i<=8;i++) {
+            outb(VGAREG_GRDC_ADDRESS,i);
+            write_byte(ES, BX, inb(VGAREG_GRDC_DATA)); BX++;
+        }
+
+        write_word(ES, BX, crtc_addr); BX+= 2;
+
+        /* XXX: read plane latches */
+        write_byte(ES, BX, 0); BX++;
+        write_byte(ES, BX, 0); BX++;
+        write_byte(ES, BX, 0); BX++;
+        write_byte(ES, BX, 0); BX++;
+    }
+    if (CX & 2) {
+        write_byte(ES, BX, read_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE)); BX++;
+        write_word(ES, BX, read_word(BIOSMEM_SEG,BIOSMEM_NB_COLS)); BX += 2;
+        write_word(ES, BX, read_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE)); BX += 2;
+        write_word(ES, BX, read_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS)); BX += 2;
+        write_byte(ES, BX, read_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS)); BX++;
+        write_word(ES, BX, read_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT)); BX += 2;
+        write_byte(ES, BX, read_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL)); BX++;
+        write_byte(ES, BX, read_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES)); BX++;
+        write_byte(ES, BX, read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)); BX++;
+        write_word(ES, BX, read_word(BIOSMEM_SEG,BIOSMEM_CURSOR_TYPE)); BX += 2;
+        for(i=0;i<8;i++) {
+            write_word(ES, BX, read_word(BIOSMEM_SEG, BIOSMEM_CURSOR_POS+2*i));
+            BX += 2;
+        }
+        write_word(ES, BX, read_word(BIOSMEM_SEG,BIOSMEM_CURRENT_START)); BX += 2;
+        write_byte(ES, BX, read_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE)); BX++;
+        /* current font */
+        write_word(ES, BX, read_word(0, 0x1f * 4)); BX += 2;
+        write_word(ES, BX, read_word(0, 0x1f * 4 + 2)); BX += 2;
+        write_word(ES, BX, read_word(0, 0x43 * 4)); BX += 2;
+        write_word(ES, BX, read_word(0, 0x43 * 4 + 2)); BX += 2;
+    }
+    if (CX & 4) {
+        /* XXX: check this */
+        write_byte(ES, BX, inb(VGAREG_DAC_STATE)); BX++; /* read/write mode dac */
+        write_byte(ES, BX, inb(VGAREG_DAC_WRITE_ADDRESS)); BX++; /* pix address */
+        write_byte(ES, BX, inb(VGAREG_PEL_MASK)); BX++;
+        // Set the whole dac always, from 0
+        outb(VGAREG_DAC_WRITE_ADDRESS,0x00);
+        for(i=0;i<256*3;i++) {
+            write_byte(ES, BX, inb(VGAREG_DAC_DATA)); BX++;
+        }
+        write_byte(ES, BX, 0); BX++; /* color select register */
+    }
+    return BX;
+}
+
+static Bit16u biosfn_restore_video_state (CX,ES,BX) 
+     Bit16u CX;Bit16u ES;Bit16u BX;
+{
+    Bit16u i, crtc_addr, v, addr1, ar_index;
+
+    if (CX & 1) {
+        // Reset Attribute Ctl flip-flop
+        inb(VGAREG_ACTL_RESET);
+
+        crtc_addr = read_word(ES, BX + 0x40);
+        addr1 = BX;
+        BX += 5;
+
+        for(i=1;i<=4;i++){
+            outb(VGAREG_SEQU_ADDRESS, i);
+            outb(VGAREG_SEQU_DATA, read_byte(ES, BX)); BX++;
+        }
+        outb(VGAREG_SEQU_ADDRESS, 0);
+        outb(VGAREG_SEQU_DATA, read_byte(ES, BX)); BX++;
+
+        // Disable CRTC write protection
+        outw(crtc_addr,0x0011);
+        // Set CRTC regs
+        for(i=0;i<=0x18;i++) {
+            if (i != 0x11) {
+                outb(crtc_addr,i);
+                outb(crtc_addr+1, read_byte(ES, BX));
+            }
+            BX++;
+        }
+        // select crtc base address
+        v = inb(VGAREG_READ_MISC_OUTPUT) & ~0x01;
+        if (crtc_addr = 0x3d4)
+            v |= 0x01;
+        outb(VGAREG_WRITE_MISC_OUTPUT, v);
+
+        // enable write protection if needed
+        outb(crtc_addr, 0x11);
+        outb(crtc_addr+1, read_byte(ES, BX - 0x18 + 0x11));
+
+        // Set Attribute Ctl
+        ar_index = read_byte(ES, addr1 + 0x03);
+        inb(VGAREG_ACTL_RESET);
+        for(i=0;i<=0x13;i++) {
+            outb(VGAREG_ACTL_ADDRESS, i | (ar_index & 0x20));
+            outb(VGAREG_ACTL_WRITE_DATA, read_byte(ES, BX)); BX++;
+        }
+        outb(VGAREG_ACTL_ADDRESS, ar_index);
+        inb(VGAREG_ACTL_RESET);
+
+        for(i=0;i<=8;i++) {
+            outb(VGAREG_GRDC_ADDRESS,i);
+            outb(VGAREG_GRDC_DATA, read_byte(ES, BX)); BX++;
+        }
+        BX += 2; /* crtc_addr */
+        BX += 4; /* plane latches */
+
+        outb(VGAREG_SEQU_ADDRESS, read_byte(ES, addr1)); addr1++;
+        outb(crtc_addr, read_byte(ES, addr1)); addr1++;
+        outb(VGAREG_GRDC_ADDRESS, read_byte(ES, addr1)); addr1++;
+        addr1++;
+        outb(crtc_addr - 0x4 + 0xa, read_byte(ES, addr1)); addr1++;
+    }
+    if (CX & 2) {
+        write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE, read_byte(ES, BX)); BX++;
+        write_word(BIOSMEM_SEG,BIOSMEM_NB_COLS, read_word(ES, BX)); BX += 2;
+        write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE, read_word(ES, BX)); BX += 2;
+        write_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS, read_word(ES, BX)); BX += 2;
+        write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS, read_byte(ES, BX)); BX++;
+        write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT, read_word(ES, BX)); BX += 2;
+        write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL, read_byte(ES, BX)); BX++;
+        write_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES, read_byte(ES, BX)); BX++;
+        write_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL, read_byte(ES, BX)); BX++;
+        write_word(BIOSMEM_SEG,BIOSMEM_CURSOR_TYPE, read_word(ES, BX)); BX += 2;
+        for(i=0;i<8;i++) {
+            write_word(BIOSMEM_SEG, BIOSMEM_CURSOR_POS+2*i, read_word(ES, BX));
+            BX += 2;
+        }
+        write_word(BIOSMEM_SEG,BIOSMEM_CURRENT_START, read_word(ES, BX)); BX += 2;
+        write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_PAGE, read_byte(ES, BX)); BX++;
+        /* current font */
+        write_word(0, 0x1f * 4, read_word(ES, BX)); BX += 2;
+        write_word(0, 0x1f * 4 + 2, read_word(ES, BX)); BX += 2;
+        write_word(0, 0x43 * 4, read_word(ES, BX)); BX += 2;
+        write_word(0, 0x43 * 4 + 2, read_word(ES, BX)); BX += 2;
+    }
+    if (CX & 4) {
+        BX++;
+        v = read_byte(ES, BX); BX++;
+        outb(VGAREG_PEL_MASK, read_byte(ES, BX)); BX++;
+        // Set the whole dac always, from 0
+        outb(VGAREG_DAC_WRITE_ADDRESS,0x00);
+        for(i=0;i<256*3;i++) {
+            outb(VGAREG_DAC_DATA, read_byte(ES, BX)); BX++;
+        }
+        BX++;
+        outb(VGAREG_DAC_WRITE_ADDRESS, v);
+    }
+    return BX;
 }
 
 // ============================================================================================
@@ -3590,6 +3810,7 @@ void unknown()
 void printf(s)
   Bit8u *s;
 {
+#if 0//def VBE
   Bit8u c, format_char;
   Boolean  in_format;
   unsigned format_width, i;
@@ -3637,6 +3858,7 @@ void printf(s)
       }
     s ++;
     }
+#endif
 }
 
 #ifdef VBE

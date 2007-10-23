@@ -23,9 +23,11 @@ VBOX_PATH_DEVICES_SRC = $(PATH_SUB_ROOT)
 #
 # Build program for calculating the VGA BIOS checksums.
 #
-BLDPROGS += vgabiossums
+BLDPROGS += vgabiossums vbetables-gen
 vgabiossums_TEMPLATE   = VBOXBLDPROG
 vgabiossums_SOURCES    = biossums.c
+vbetables-gen_TEMPLATE = VBOXBLDPROG
+vbetables-gen_SOURCES  = vbetables-gen.c
 
 #
 # The library containing the VGA BIOS image.
@@ -62,28 +64,32 @@ $(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
 # vgabios
 #
 
-# 1. precompile
-$(PATH_TARGET)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c)
+# 1. create vbetables.h
+$(PATH_SUB_CURRENT)/vbetables.h: $(MAKEFILE_CURRENT)
+	$(QUIET)$(TARGET_vbetables-gen) > $@
+
+# 2. precompile
+$(PATH_TARGET)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c) $(PATH_SUB_CURRENT)/vbetables.h
 	$(call MSG_TOOL,cpp,VgaBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -DVBOX -DVBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" -E -P $< -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) > $@
 
-# 2. compile - tempfile clashes, so make sure it's built in solitude.
+# 3. compile - tempfile clashes, so make sure it's built in solitude.
 .NOTPARALLEL: $(PATH_TARGET)/vgabios0.s
 $(PATH_TARGET)/vgabios0.s: $(PATH_TARGET)/_vgabios_.c
 	$(call MSG_COMPILE,VgaBiosBin,$<,$@,C)
 	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $^
 
-# 3. preprocess intermediate assembly.
+# 4. preprocess intermediate assembly.
 $(PATH_TARGET)/vgabios1.s: $(PATH_TARGET)/vgabios0.s
 	$(call MSG_TOOL,Adjusting BCC Assembly,VgaBiosBin,$<,$@)
 	$(QUIET)$(SED) -e 's/^\.text//' -e 's/^\.data//' $^ > $@
 
-# 4. assemble
+# 5. assemble
 $(PATH_TARGET)/vgabios.tmp $(PATH_TARGET)/vgabios.lst: $(PATH_TARGET)/vgabios1.s
 	$(call MSG_COMPILE,VgaBiosBin,$<,$@,AS)
 	$(QUIET)$(VBOX_AS86) -b $(PATH_TARGET)/vgabios.tmp -u- -w- -g -0 -j -O -l $(PATH_TARGET)/vgabios.lst < $^
 
-# 5. checksums
+# 6. checksums
 $(PATH_TARGET)/vgabios.bin: $(PATH_TARGET)/vgabios.tmp $$(TARGET_vgabiossums)
 	$(call MSG_TOOL,vgabiossums,VgaBiosBin,$<,$@)
 	$(QUIET)$(CP) -f $(PATH_TARGET)/vgabios.tmp $@

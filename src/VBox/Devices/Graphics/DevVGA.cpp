@@ -330,6 +330,7 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
     if ((addr >= 0x3b0 && addr <= 0x3bf && (s->msr & MSR_COLOR_EMULATION)) ||
         (addr >= 0x3d0 && addr <= 0x3df && !(s->msr & MSR_COLOR_EMULATION))) {
         val = 0xff;
+        Log(("VGA: following read ignored\n"));
     } else {
         switch(addr) {
         case 0x3c0:
@@ -420,14 +421,16 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     VGAState *s = (VGAState*)opaque;
     int index;
 
-    /* check port range access depending on color/monochrome mode */
-    if ((addr >= 0x3b0 && addr <= 0x3bf && (s->msr & MSR_COLOR_EMULATION)) ||
-        (addr >= 0x3d0 && addr <= 0x3df && !(s->msr & MSR_COLOR_EMULATION)))
-        return;
-
 #ifdef DEBUG_VGA
     Log(("VGA: write addr=0x%04x data=0x%02x\n", addr, val));
 #endif
+
+    /* check port range access depending on color/monochrome mode */
+    if ((addr >= 0x3b0 && addr <= 0x3bf && (s->msr & MSR_COLOR_EMULATION)) ||
+        (addr >= 0x3d0 && addr <= 0x3df && !(s->msr & MSR_COLOR_EMULATION))) {
+        Log(("VGA: previous write ignored\n"));
+        return;
+    }
 
     switch(addr) {
     case 0x3c0:
@@ -607,7 +610,9 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
         case VBE_DISPI_INDEX_ID:
             if (val == VBE_DISPI_ID0 ||
                 val == VBE_DISPI_ID1 ||
-                val == VBE_DISPI_ID2) {
+                val == VBE_DISPI_ID2 ||
+                val == VBE_DISPI_ID3 ||
+                val == VBE_DISPI_ID4) {
                 s->vbe_regs[s->vbe_index] = val;
             }
 #ifdef VBOX
@@ -676,7 +681,8 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 #ifndef IN_RING3
             return VINF_IOM_HC_IOPORT_WRITE;
 #else
-            if (val & VBE_DISPI_ENABLED) {
+            if ((val & VBE_DISPI_ENABLED) &&
+                !(s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)) {
                 int h, shift_control;
 #ifdef VBOX
                 /* Check the values before we screw up with a resolution which is too big or small. */
@@ -866,6 +872,9 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
     int memory_map_mode, plane;
     uint32_t ret;
 
+#ifdef DEBUG_VGA_MEM
+    Log(("vga: read [0x%x] -> ", addr));
+#endif
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
     addr &= 0x1ffff;
@@ -902,7 +911,7 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
 #else /* VBOX */
         ret = s->CTXSUFF(vram_ptr)[addr];
 #endif /* VBOX */
-    } else if (s->gr[5] & 0x10) {
+    } else if (!(s->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
         /* odd/even mode (aka text mode mapping) */
         plane = (s->gr[4] & 2) | (addr & 1);
 #ifndef VBOX
@@ -931,6 +940,9 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
             ret = (~ret) & 0xff;
         }
     }
+#ifdef DEBUG_VGA_MEM
+    Log((" 0x%02x\n", ret));
+#endif
     return ret;
 }
 
@@ -1034,7 +1046,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
             vga_set_dirty(s, addr);
 #endif /* VBOX */
         }
-    } else if (s->gr[5] & 0x10) {
+    } else if (!(s->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
         /* odd/even mode (aka text mode mapping) */
         plane = (s->gr[4] & 2) | (addr & 1);
         mask = (1 << plane);
