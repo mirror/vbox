@@ -1805,7 +1805,7 @@ ResumeExecution:
         break;
 
     case VMX_EXIT_TASK_SWITCH:          /* 9 Task switch. */
-        rc = VINF_EM_RAW_RING_SWITCH_INT;
+        rc = VERR_EM_INTERPRETER;
         break;
 
     case VMX_EXIT_HLT:                  /* 12 Guest software attempted to execute HLT. */
