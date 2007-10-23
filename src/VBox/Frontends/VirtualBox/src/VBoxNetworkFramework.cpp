@@ -137,18 +137,18 @@ void VBoxNetworkFramework::postRequest (const QString &aHost,
 
         virtual void run()
         {
-            HConnect conn (mHost, 80);
-            conn.setcallbacks (onBegin, onData, onFinish, mProc);
-            const char *headers[] =
-            {
-                "Connection", "close",
-                "Content-type", "application/x-www-form-urlencoded",
-                "Accept", "text/plain",
-                0
-            };
-
             try
             {
+                HConnect conn (mHost, 80);
+                conn.setcallbacks (onBegin, onData, onFinish, mProc);
+                const char *headers[] =
+                {
+                    "Connection", "close",
+                    "Content-type", "application/x-www-form-urlencoded",
+                    "Accept", "text/plain",
+                    0
+                };
+
                 conn.request ("POST", mUrl.ascii(), headers, 0, 0);
                 while (conn.outstanding())
                     conn.pump();
