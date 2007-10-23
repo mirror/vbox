@@ -1018,7 +1018,7 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
         }
     }
     else
-        AssertMsgFailed(("Failed to load VBoxDD!\n"));
+        AssertMsgFailed(("Failed to load %s %s!\n", pszFilename, pszName));
     return rc;
 }
 
