@@ -184,7 +184,7 @@ typedef struct ModeInfoListItem
     ModeInfoBlockCompact    info;
 } ModeInfoListItem;
 
-#include "BIOS/vbetables.h"
+#include "vbetables.h"
 
 #define MODE_INFO_SIZE ( sizeof(mode_info_list) / sizeof(ModeInfoListItem) )
 
