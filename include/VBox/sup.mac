@@ -1,0 +1,50 @@
+; $Id$
+;; @file
+; SUP - Support Library, assembly definitions.
+;
+
+;
+; Copyright (C) 2006-2007 InnoTek Systemberatung GmbH
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License as published by the Free Software Foundation,
+; in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+; distribution. VirtualBox OSE is distributed in the hope that it will
+; be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+;
+
+%ifndef ___VBox_sup_mac
+%define ___VBox_sup_mac
+
+
+struc SUPGIPCPU
+    .u32TransactionId       resd 1
+    .u32UpdateIntervalTSC   resd 1
+    .u64NanoTS              resq 1
+    .u64TSC                 resq 1
+    .u64CpuHz               resq 1
+    .cErrors                resd 1
+    .iTSCHistoryHead        resd 1
+    .au32TSCHistory         resd 8
+    .au32Reserved           resd 6
+endstruc
+
+%define SUPGLOBALINFOPAGE_MAGIC 0x19590106
+struc SUPGLOBALINFOPAGE
+    .u32Magic               resd 1
+    .u32Version             resd 1
+    .u32Mode                resd 1
+    .u32Padding0            resd 1
+    .u32UpdateHz            resd 1
+    .u32UpdateIntervalNS    resd 1
+    .u64NanoTSLastUpdateHz  resq 1
+    .au32Padding1           resd 56
+    .aCPUs                  resb (SUPGIPCPU_size*32)
+endstruc
+
+
+%endif
+
