@@ -218,6 +218,7 @@ $(PATH_TARGET)/tstAsmStructsAsm.mac: \
 		$(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm-lst.sed \
 		$(DEPTH)/include/iprt/asmdefs.mac \
 		$(DEPTH)/include/VBox/cpum.mac \
+		$(DEPTH)/include/VBox/sup.mac \
 		$(DEPTH)/include/VBox/vm.mac \
 		$(VBOX_PATH_VMM_SRC)/CPUMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/TRPMInternal.mac \
