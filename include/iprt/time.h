@@ -725,15 +725,7 @@ typedef struct RTTIMENANOTSDATA
 {
     /** Where the previous timestamp is stored.
      * This is maintained to ensure that time doesn't go backwards or anything. */
-    uint64_t volatile   u64Prev;
-    /** Number of 1ns steps because of overshooting the period. */
-    uint32_t            c1nsSteps;
-    /** The number of times the interval expired (overflow). */
-    uint32_t            cExpired;
-    /** Number of "bad" previous values. */
-    uint32_t            cBadPrev;
-    /** The number of update races. */
-    uint32_t            cUpdateRaces;
+    uint64_t volatile  *pu64Prev;
 
     /**
      * Helper function that's used by the assembly routines when something goes bust.
@@ -752,7 +744,58 @@ typedef struct RTTIMENANOTSDATA
      * @param   pData           Pointer to this structure.
      */
     DECLCALLBACKMEMBER(uint64_t, pfnRediscover)(PRTTIMENANOTSDATA pData);
+
+    /** Number of 1ns steps because of overshooting the period. */
+    uint32_t            c1nsSteps;
+    /** The number of times the interval expired (overflow). */
+    uint32_t            cExpired;
+    /** Number of "bad" previous values. */
+    uint32_t            cBadPrev;
+    /** The number of update races. */
+    uint32_t            cUpdateRaces;
 } RTTIMENANOTSDATA;
+
+/**
+ * The Ring-3 layout of the RTTIMENANOTSDATA structure.
+ */
+typedef struct RTTIMENANOTSDATAR3
+{
+    R3PTRTYPE(uint64_t volatile  *) pu64Prev;
+    DECLR3CALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
+    uint32_t            c1nsSteps;
+    uint32_t            cExpired;
+    uint32_t            cBadPrev;
+    uint32_t            cUpdateRaces;
+} RTTIMENANOTSDATAR3;
+
+/**
+ * The Ring-3 layout of the RTTIMENANOTSDATA structure.
+ */
+typedef struct RTTIMENANOTSDATAR0
+{
+    R0PTRTYPE(uint64_t volatile  *) pu64Prev;
+    DECLR0CALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
+    DECLR0CALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
+    uint32_t            c1nsSteps;
+    uint32_t            cExpired;
+    uint32_t            cBadPrev;
+    uint32_t            cUpdateRaces;
+} RTTIMENANOTSDATAR0;
+
+/**
+ * The GC layout of the RTTIMENANOTSDATA structure.
+ */
+typedef struct RTTIMENANOTSDATAGC
+{
+    GCPTRTYPE(uint64_t volatile  *) pu64Prev;
+    DECLGCCALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
+    DECLGCCALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
+    uint32_t            c1nsSteps;
+    uint32_t            cExpired;
+    uint32_t            cBadPrev;
+    uint32_t            cUpdateRaces;
+} RTTIMENANOTSDATAGC;
 
 /** Internal RTTimeNanoTS worker (assembly). */
 typedef DECLCALLBACK(uint64_t) FNTIMENANOTSINTERNAL(PRTTIMENANOTSDATA pData);
