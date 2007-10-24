@@ -604,7 +604,7 @@
     <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
     <function returnType="QUuid">getSelectedUuid()</function>
     <function returnType="QString">getSelectedPath()</function>
-    <function>setup( int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, bool aRefresh = true, CMachine machine = NULL )</function>
+    <function>setup( int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, bool aRefresh = true, CMachine machine = NULL, const QUuid &amp; aHdId = QUuid(), const QUuid &amp; aCdId = QUuid(), const QUuid &amp; aFdId = QUuid() )</function>
     <function access="private" returnType="QListView*">getCurrentListView()</function>
     <function access="private" returnType="QListView*">getListView( VBoxDefs::DiskType )</function>
     <function returnType="bool">eventFilter( QObject *, QEvent * )</function>
