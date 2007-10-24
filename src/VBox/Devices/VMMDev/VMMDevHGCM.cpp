@@ -491,7 +491,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                  case VMMDevHGCMParmType_PhysAddr:
                  {
                      uint32_t size = pGuestParm->u.Pointer.size;
-                     RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr;
+                     /* RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr; */
 
                      pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
                      pHostParm->u.pointer.size = size;
@@ -853,7 +853,7 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
             if (requestHeader == NULL)
                 return VERR_NO_MEMORY;
 
-            PDMDevHlpPhysRead(pVMMDevState->pDevIns, (RTGCPHYS)pIter->GCPhys, requestHeader, pIter->cbSize);
+            PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)pIter->GCPhys, requestHeader, pIter->cbSize);
 
             /* the structure size must be greater or equal to the header size */
             if (requestHeader->size < sizeof(VMMDevRequestHeader))
@@ -949,7 +949,7 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
             }
 
             /* Write back the request */
-            PDMDevHlpPhysWrite(pVMMDevState->pDevIns, pIter->GCPhys, requestHeader, pIter->cbSize);
+            PDMDevHlpPhysWrite(pDevIns, pIter->GCPhys, requestHeader, pIter->cbSize);
             RTMemFree(requestHeader);
 
             vmmdevHGCMRemoveCommand (pVMMDevState, pIter);
