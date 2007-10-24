@@ -1408,9 +1408,15 @@ DiskImageItem* VBoxDiskImageManagerDlg::searchItem (QListView *aList,
 void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
                                      const QUuid *aTargetVMId /* = NULL */,
                                      bool aRefresh /* = true */,
-                                     CMachine machine /* = NULL */)
+                                     CMachine machine /* = NULL */,
+                                     const QUuid &aHdId,
+                                     const QUuid &aCdId,
+                                     const QUuid &aFdId)
 {
     cmachine = machine;
+    hdSelectedId = aHdId;
+    cdSelectedId = aCdId;
+    fdSelectedId = aFdId;
 
     type = aType;
     twImages->setTabEnabled (twImages->page(0), type & VBoxDefs::HD);
@@ -1470,9 +1476,12 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
     }
 
     /* for a newly opened dialog, select the first item */
-    setCurrentItem (hdsView, hdsView->firstChild());
-    setCurrentItem (cdsView, cdsView->firstChild());
-    setCurrentItem (fdsView, fdsView->firstChild());
+    if (!hdsView->selectedItem())
+        setCurrentItem (hdsView, hdsView->firstChild());
+    if (!cdsView->selectedItem())
+        setCurrentItem (cdsView, cdsView->firstChild());
+    if (!fdsView->selectedItem())
+        setCurrentItem (fdsView, fdsView->firstChild());
 }
 
 
@@ -1710,17 +1719,20 @@ void VBoxDiskImageManagerDlg::prepareToRefresh (int aTotal)
     item = hdsView->currentItem();
     di = (item && item->rtti() == DiskImageItem::TypeId) ?
         static_cast <DiskImageItem *> (item) : 0;
-    hdSelectedId = di ? di->getUuid() : QUuid();
+    if (hdSelectedId.isNull())
+        hdSelectedId = di ? di->getUuid() : QUuid();
 
     item = cdsView->currentItem();
     di = (item && item->rtti() == DiskImageItem::TypeId) ?
         static_cast <DiskImageItem *> (item) : 0;
-    cdSelectedId = di ? di->getUuid() : QUuid();
+    if (cdSelectedId.isNull())
+        cdSelectedId = di ? di->getUuid() : QUuid();
 
     item = fdsView->currentItem();
     di = (item && item->rtti() == DiskImageItem::TypeId) ?
         static_cast <DiskImageItem *> (item) : 0;
-    fdSelectedId = di ? di->getUuid() : QUuid();
+    if (fdSelectedId.isNull())
+        fdSelectedId = di ? di->getUuid() : QUuid();
 
     /* finally, clear all lists */
     hdsView->clear();
