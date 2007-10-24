@@ -34,7 +34,6 @@ TEMPLATE_XPCOM_CXXFLAGS            = -pipe -ansi -Wall -Wno-unused -Wno-non-virt
                                      $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_XPCOM_CXXFLAGS.x86        = -m32
 TEMPLATE_XPCOM_CXXFLAGS.amd64      = -m64
-TEMPLATE_XPCOM_CXXFLAGS.debug      = -fno-inline
 TEMPLATE_XPCOM_CXXFLAGS.release    = -O
 TEMPLATE_XPCOM_CXXFLAGS.profile    = -O
 TEMPLATE_XPCOM_CXXFLAGS.darwin     = -fpascal-strings -fshort-wchar -fno-common -fno-rtti
@@ -45,7 +44,6 @@ TEMPLATE_XPCOM_CXXFLAGS.solaris    = -fno-omit-frame-pointer # for now anyway.
 TEMPLATE_XPCOM_CFLAGS              = -pipe -Wall -Wno-unused -Wno-parentheses -Wno-uninitialized $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_XPCOM_CFLAGS.x86          = -m32
 TEMPLATE_XPCOM_CFLAGS.amd64        = -m64
-TEMPLATE_XPCOM_CFLAGS.debug        = -fno-inline
 TEMPLATE_XPCOM_CFLAGS.release      = -O
 TEMPLATE_XPCOM_CFLAGS.profile      = -O
 TEMPLATE_XPCOM_CFLAGS.freebsd      = -pthread
