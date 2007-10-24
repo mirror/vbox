@@ -55,6 +55,7 @@ static RTTIMENANOTSDATA g_TimeNanoTSData =
     /* .pu64Prev      = */ &g_TimeNanoTSPrev,
     /* .pfnBad        = */ rtTimeNanoTSInternalBitch,
     /* .pfnRediscover = */ rtTimeNanoTSInternalRediscover,
+    /* .pvDummy       = */ NULL,
     /* .c1nsSteps     = */ 0,
     /* .cExpired      = */ 0,
     /* .cBadPrev      = */ 0,
@@ -114,7 +115,11 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pDa
              || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
         return rtTimeNanoTSInternalRediscover(pData);
     NOREF(pData);
+#if defined(IN_RING3) /** @todo Add ring-0 RTTimeSystemNanoTS to all hosts. */
     return RTTimeSystemNanoTS();
+#else
+    return 0;
+#endif
 }
 
 
