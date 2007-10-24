@@ -103,9 +103,10 @@ BEGINPROC rtTimeNanoTSInternalAsm
     ;   This serializes load/save. And with the dependency on the
     ;   RDTSC result, we try to make sure it has completed as well.
     mov     esi, pData
+    mov     esi, [esi + RTTIMENANOTSDATA.pu64Prev]
     mov     ebx, eax
     mov     ecx, edx
-    lock cmpxchg8b [esi + RTTIMENANOTSDATA.u64Prev]
+    lock cmpxchg8b [esi]
     mov     u64PrevNanoTS, eax
     mov     u64PrevNanoTS_Hi, edx
 
@@ -190,9 +191,10 @@ BEGINPROC rtTimeNanoTSInternalAsm
     mov     ebx, eax
     mov     ecx, edx
     mov     esi, pData
+    mov     esi, [esi + RTTIMENANOTSDATA.pu64Prev]
     mov     eax, u64PrevNanoTS
     mov     edx, u64PrevNanoTS_Hi
-    lock cmpxchg8b [esi + RTTIMENANOTSDATA.u64Prev]
+    lock cmpxchg8b [esi]
     jnz     .UpdateFailed
 
 .Updated:
@@ -497,7 +499,8 @@ BEGINPROC rtTimeNanoTSInternalAsm
     mov     u32UpdateIntervalNS,  [pGip + SUPGLOBALINFOPAGE.u32UpdateIntervalNS] ; before u64TSC
     mov     u32UpdateIntervalTSC, [pGipCPU + SUPGIPCPU.u32UpdateIntervalTSC]
     rdtsc
-    mov     u64PrevNanoTS,        [pData + RTTIMENANOTSDATA.u64Prev]
+    mov     u64PrevNanoTS,        [pData + RTTIMENANOTSDATA.pu64Prev]
+    mov     u64PrevNanoTS,        [u64PrevNanoTS]
     shl     rdx, 32
  %ifdef u64SavedRetNanoTS               ; doing this here saves a tick or so.
     mov     u64SavedRetNanoTS, rax
@@ -573,9 +576,10 @@ BEGINPROC rtTimeNanoTSInternalAsm
     ;;
 .Update:
     ; if (RT_LIKELY(ASMAtomicCmpXchgU64(&pData->u64Prev, u64RetNanoTS, u64PrevNanoTS)))
+    mov     rbx, [pData + RTTIMENANOTSDATA.pu64Prev]
     mov     rcx, rax
     mov     rax, u64PrevNanoTS
-    lock cmpxchg [pData + RTTIMENANOTSDATA.u64Prev], rcx
+    lock cmpxchg [rbx], rcx
     jnz     .UpdateFailed
 
 .Updated:
@@ -690,7 +694,7 @@ ALIGNCODE(16)
 .UpdateFailed:
     lock inc dword [pData + RTTIMENANOTSDATA.cUpdateRaces]
     ; for (i = 0; i < 10; i++)
-    mov     ebx, 10
+    mov     edx, 10
 .UpdateLoop:
     ; if (u64PrevNanoTS >= u64RetNanoTS)
     ;     break;
@@ -698,9 +702,9 @@ ALIGNCODE(16)
     jge     .Updated
 .UpdateLoopLess:
     ; retry
-    lock cmpxchg [pData + RTTIMENANOTSDATA.u64Prev], rcx
+    lock cmpxchg [rbx], rcx
     jz      .Updated
-    dec     ebx
+    dec     edx
     jnz     .UpdateLoop
     jmp     .Updated
 

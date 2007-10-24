@@ -71,7 +71,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
         u64TSC = pGipCpu->u64TSC;
         u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
         u64Delta = ASMReadTSC();
-        u64PrevNanoTS = ASMAtomicReadU64(&pData->u64Prev);
+        u64PrevNanoTS = ASMAtomicReadU64(pData->pu64Prev);
 
 #ifdef NEED_TRANSACTION_ID
 # ifdef ASYNC_GIP
@@ -141,7 +141,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
         pData->pfnBad(pData, u64NanoTS, u64DeltaPrev, u64PrevNanoTS);
     }
 
-    if (RT_LIKELY(ASMAtomicCmpXchgU64(&pData->u64Prev, u64NanoTS, u64PrevNanoTS)))
+    if (RT_LIKELY(ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS)))
     {
         /*
          * Attempt updating the previous value, provided we're still ahead of it.
@@ -153,10 +153,10 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
         pData->cUpdateRaces++;
         for (int cTries = 25;;)
         {
-            u64PrevNanoTS = ASMAtomicReadU64(&pData->u64Prev);
+            u64PrevNanoTS = ASMAtomicReadU64(pData->pu64Prev);
             if (u64PrevNanoTS >= u64NanoTS)
                 break;
-            if (ASMAtomicCmpXchgU64(&pData->u64Prev, u64NanoTS, u64PrevNanoTS))
+            if (ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS))
                 break;
             AssertBreak(--cTries <= 0, );
         }
