@@ -96,8 +96,8 @@ private:
 
         /* Decoding data */
         QString result;
-        for (ulong i = 0; i < data.length(); i += 2)
-            result += QChar (data.mid (i, 2).toUShort (0, 16));
+        for (ulong i = 0; i < data.length(); i += 4)
+            result += QChar (data.mid (i, 4).toUShort (0, 16));
         ulong crcNow = crc32 ((uchar*)result.ascii(), result.length());
 
         /* Check the CRC32 */
@@ -124,8 +124,8 @@ private:
         for (ulong i = 0; i < data.length(); ++ i)
         {
             QString curPair = QString::number (data.at (i).unicode(), 16);
-            if (curPair.length() == 1)
-                curPair.prepend ("0");
+            while (curPair.length() < 4)
+                curPair.prepend ('0');
             mData += curPair;
         }
 
