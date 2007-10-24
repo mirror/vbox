@@ -3396,7 +3396,7 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         case 6: /* drive/head */
             pCtl->aIfs[0].uATARegSelect = (val & ~0x10) | 0xa0;
             pCtl->aIfs[1].uATARegSelect = (val | 0x10) | 0xa0;
-            if ((((val >> 4)) & 1) != pCtl->iSelectedIf)
+            if (((val >> 4) & 1) != pCtl->iSelectedIf)
             {
                 PPDMDEVINS pDevIns = CONTROLLER_2_DEVINS(pCtl);
 
