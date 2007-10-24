@@ -491,7 +491,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                  case VMMDevHGCMParmType_PhysAddr:
                  {
                      uint32_t size = pGuestParm->u.Pointer.size;
-                     /* RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr; */
+                     RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr;
 
                      pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
                      pHostParm->u.pointer.size = size;
