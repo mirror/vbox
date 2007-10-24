@@ -903,7 +903,7 @@ static void ataPIOTransferLimitATAPI(ATADevState *s)
     cbTransfer = RT_MIN(s->cbTotalTransfer, s->iIOBufferEnd - s->iIOBufferCur);
     if (cbTransfer > cbLimit)
     {
-        /* Byte count limit for clipping mubyte count limit must be even in this case */
+        /* Byte count limit for clipping must be even in this case */
         if (cbLimit & 1)
             cbLimit--;
         cbTransfer = cbLimit;
