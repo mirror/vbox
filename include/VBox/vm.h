@@ -356,7 +356,7 @@ typedef struct VM
         struct CPUM s;
 #endif
 #ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-        char        padding[3638];                                  /* multiple of 32 */
+        char        padding[3648];                                  /* multiple of 32 */
 #else
         char        padding[HC_ARCH_BITS == 32 ? 3488 : 3616];      /* multiple of 32 */
 #endif
