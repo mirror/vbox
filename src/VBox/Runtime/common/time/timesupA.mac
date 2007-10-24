@@ -456,12 +456,22 @@ BEGINPROC rtTimeNanoTSInternalAsm
     shr     ebx, 24
     mov     eax, SUPGIPCPU_size
     mul     ebx
+ %ifdef RT_OS_WINDOWS
     mov     pGip, [NAME(g_pSUPGlobalInfoPage) wrt rip]
+ %else
+    mov     pGip, [rel NAME(g_pSUPGlobalInfoPage) wrt ..gotpcrel]
+    mov     pGip, [pGip]
+ %endif
     lea     pGipCPU, [pGip + rax + SUPGLOBALINFOPAGE.aCPUs]
 ;    lea     pGipCPU, [pGip + SUPGLOBALINFOPAGE.aCPUs]
 ;    lea     pGipCPU, [pGipCPU + rax]
 %else
+ %ifdef RT_OS_WINDOWS
     mov     pGip, [NAME(g_pSUPGlobalInfoPage) wrt rip]
+ %else
+    mov     pGip, [rel NAME(g_pSUPGlobalInfoPage) wrt ..gotpcrel]
+    mov	    pGip, [pGip]
+ %endif
     lea     pGipCPU, [pGip + SUPGLOBALINFOPAGE.aCPUs]
 %endif
     or      pGip, pGip
