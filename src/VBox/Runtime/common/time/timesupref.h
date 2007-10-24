@@ -141,7 +141,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
         pData->pfnBad(pData, u64NanoTS, u64DeltaPrev, u64PrevNanoTS);
     }
 
-    if (RT_LIKELY(ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS)))
+    if (RT_UNLIKELY(!ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS)))
     {
         /*
          * Attempt updating the previous value, provided we're still ahead of it.
