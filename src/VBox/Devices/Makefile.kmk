@@ -503,7 +503,7 @@ ifdef VBOX_WITH_USB
  endif
 
  Drivers_DEFS.darwin  += VUSB_HAVE_USBPROXY_DEVICE
- Drivers_DEFS.darwin  += VBOX_WITH_USBFILTER
+ #Drivers_DEFS.darwin  += VBOX_WITH_USBFILTER
  Drivers_SOURCES.darwin += \
 	USB/USBProxyDevice.cpp \
 	USB/darwin/USBProxyDevice-darwin.cpp
