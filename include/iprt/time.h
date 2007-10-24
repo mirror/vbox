@@ -683,9 +683,88 @@ RTDECL(uint64_t) RTTimeMilliTS(void);
 /**
  * Debugging the time api.
  *
- * @returns the number of 1ns steps which has been applied by rtTimeNanoTSInternal().
+ * @returns the number of 1ns steps which has been applied by RTTimeNanoTS().
  */
-RTDECL(uint32_t) RTTime1nsSteps(void);
+RTDECL(uint32_t) RTTimeDbgSteps(void);
+
+/**
+ * Debugging the time api.
+ *
+ * @returns the number of times the TSC interval expired RTTimeNanoTS().
+ */
+RTDECL(uint32_t) RTTimeDbgExpired(void);
+
+/**
+ * Debugging the time api.
+ *
+ * @returns the number of bad previous values encountered by RTTimeNanoTS().
+ */
+RTDECL(uint32_t) RTTimeDbgBad(void);
+
+/**
+ * Debugging the time api.
+ *
+ * @returns the number of update races in RTTimeNanoTS().
+ */
+RTDECL(uint32_t) RTTimeDbgRaces(void);
+
+/** @name RTTimeNanoTS GIP worker functions, for TM.
+ * @{ */
+/** Pointer to a RTTIMENANOTSDATA structure. */
+typedef struct RTTIMENANOTSDATA *PRTTIMENANOTSDATA;
+
+/**
+ * Nanosecond timestamp data.
+ *
+ * This is used to keep track of statistics and callback so IPRT
+ * and TM (VirtualBox) can share code.
+ *
+ * @remark Keep this in sync with the assembly version in timesupA.asm.
+ */
+typedef struct RTTIMENANOTSDATA
+{
+    /** Where the previous timestamp is stored.
+     * This is maintained to ensure that time doesn't go backwards or anything. */
+    uint64_t volatile   u64Prev;
+    /** Number of 1ns steps because of overshooting the period. */
+    uint32_t            c1nsSteps;
+    /** The number of times the interval expired (overflow). */
+    uint32_t            cExpired;
+    /** Number of "bad" previous values. */
+    uint32_t            cBadPrev;
+    /** The number of update races. */
+    uint32_t            cUpdateRaces;
+
+    /**
+     * Helper function that's used by the assembly routines when something goes bust.
+     *
+     * @param   pData           Pointer to this structure.
+     * @param   u64NanoTS       The calculated nano ts.
+     * @param   u64DeltaPrev    The delta relative to the previously returned timestamp.
+     * @param   u64PrevNanoTS   The previously returned timestamp (as it was read it).
+     */
+    DECLCALLBACKMEMBER(void, pfnBad)(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
+
+    /**
+     * Callback for when rediscovery is required.
+     *
+     * @returns Nanosecond timestamp.
+     * @param   pData           Pointer to this structure.
+     */
+    DECLCALLBACKMEMBER(uint64_t, pfnRediscover)(PRTTIMENANOTSDATA pData);
+} RTTIMENANOTSDATA;
+
+/** Internal RTTimeNanoTS worker (assembly). */
+typedef DECLCALLBACK(uint64_t) FNTIMENANOTSINTERNAL(PRTTIMENANOTSDATA pData);
+/** Pointer to an internal RTTimeNanoTS worker (assembly). */
+typedef FNTIMENANOTSINTERNAL *PFNTIMENANOTSINTERNAL;
+
+RTDECL(uint64_t) RTTimeNanoTSLegacySync(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacyAsync(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSync(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLFenceAsync(PRTTIMENANOTSDATA pData);
+/** @} */
+
 
 /**
  * Gets the current nanosecond timestamp.
