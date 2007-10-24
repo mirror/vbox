@@ -215,7 +215,7 @@ void VBoxRegistrationDlg::init()
     mTextLabel->setMinimumWidth (widthSpacer->minimumSize().width());
 
     /* Setup validations and maximum text-edit text length */
-    QRegExp nameExp ("[a-zA-Z0-9\\(\\)_\\-\\.\\s]+");
+    QRegExp nameExp ("[\\S\\s]+");
     /* E-mail address is validated according to RFC2821, RFC2822,
      * see http://en.wikipedia.org/wiki/E-mail_address. */
     QRegExp emailExp ("(([a-zA-Z0-9_\\-\\.!#$%\\*/?|^{}`~&'\\+=]*"
