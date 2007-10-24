@@ -24,182 +24,139 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include <VBox/sup.h>
+#include <iprt/log.h>
+#ifndef IN_GUEST
+# include <VBox/sup.h>
+# include <VBox/x86.h>
+#endif
 #include "internal/time.h"
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifndef IN_GUEST
+static DECLCALLBACK(void)     rtTimeNanoTSInternalBitch(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pData);
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA pData);
+#endif
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifndef IN_GUEST
-/** The previously returned nano TS.
- * This handles TSC drift on SMP systems and expired interval.
- * This is a valid range u64NanoTS to u64NanoTS + 1000000000 (ie. 1sec).
+/** The RTTimeNanoTS data structure that's passed down to the worker functions.  */
+static RTTIMENANOTSDATA g_TimeNanoTSData =
+{
+    /* .u64Prev       = */ 0,
+    /* .c1nsSteps     = */ 0,
+    /* .cExpired      = */ 0,
+    /* .cBadPrev      = */ 0,
+    /* .cUpdateRaces  = */ 0,
+    /* .pfnBad        = */ rtTimeNanoTSInternalBitch,
+    /* .pfnRediscover = */ rtTimeNanoTSInternalRediscover
+};
+
+/** The index into g_apfnWorkers for the function to use.
+ * This cannot be a pointer because that'll break down in GC due to code relocation. */
+static uint32_t             g_iWorker = 0;
+/** Array of rtTimeNanoTSInternal worker functions.
+ * This array is indexed by g_iWorker. */
+static const PFNTIMENANOTSINTERNAL g_apfnWorkers[] =
+{
+#define RTTIMENANO_WORKER_DETECT        0
+    rtTimeNanoTSInternalRediscover,
+#define RTTIMENANO_WORKER_SYNC_CPUID    1
+    RTTimeNanoTSLegacySync,
+#define RTTIMENANO_WORKER_ASYNC_CPUID   2
+    RTTimeNanoTSLegacyAsync,
+#define RTTIMENANO_WORKER_SYNC_LFENCE   3
+    RTTimeNanoTSLFenceSync,
+#define RTTIMENANO_WORKER_ASYNC_LFENCE  4
+    RTTimeNanoTSLFenceAsync,
+#define RTTIMENANO_WORKER_FALLBACK      5
+    rtTimeNanoTSInternalFallback,
+};
+
+
+/**
+ * Helper function that's used by the assembly routines when something goes bust.
+ *
+ * @param   pData           Pointer to the data structure.
+ * @param   u64NanoTS       The calculated nano ts.
+ * @param   u64DeltaPrev    The delta relative to the previously returned timestamp.
+ * @param   u64PrevNanoTS   The previously returned timestamp (as it was read it).
  */
-static uint64_t volatile    s_u64PrevNanoTS = 0;
+static DECLCALLBACK(void) rtTimeNanoTSInternalBitch(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS)
+{
+    pData->cBadPrev++;
+    if ((int64_t)u64DeltaPrev < 0)
+        LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64\n",
+                u64DeltaPrev, u64PrevNanoTS, u64NanoTS));
+    else
+        Log(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 (debugging?)\n",
+             u64DeltaPrev, u64PrevNanoTS, u64NanoTS));
+}
+
 /**
- * Number of times we've had to resort to 1ns walking. */
-static uint32_t volatile    g_c1nsSteps = 0;
-#endif
+ * Fallback function.
+ */
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pData)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (    pGip
+        &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+        &&  (   pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+             || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
+        return rtTimeNanoTSInternalRediscover(pData);
+    NOREF(pData);
+    return RTTimeSystemNanoTS();
+}
 
 
 /**
- * Calculate NanoTS using the information in the global information page (GIP)
- * which the support library (SUPLib) exports.
- *
- * This function guarantees that the returned timestamp is later (in time) than
- * any previous calls in the same thread.
- *
- * @returns Nanosecond timestamp.
- *
- * @remark  The way the ever increasing time guarantee is currently implemented means
- *          that if you call this function at a freqency higher than 1GHz you're in for
- *          trouble. We currently assume that no idiot will do that for real life purposes.
+ * Called the first time somebody asks for the time or when the GIP
+ * is mapped/unmapped.
+ */
+static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA pData)
+{
+    uint32_t iWorker;
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (    pGip
+        &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+        &&  (   pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+             || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
+    {
+        if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
+            iWorker = pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+                    ? RTTIMENANO_WORKER_SYNC_LFENCE
+                    : RTTIMENANO_WORKER_ASYNC_LFENCE;
+        else
+            iWorker = pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+                    ? RTTIMENANO_WORKER_SYNC_CPUID
+                    : RTTIMENANO_WORKER_ASYNC_CPUID;
+    }
+    else
+        iWorker = RTTIMENANO_WORKER_FALLBACK;
+
+    ASMAtomicXchgU32((uint32_t volatile *)&g_iWorker, iWorker);
+    return g_apfnWorkers[iWorker](pData);
+}
+
+#endif /* !IN_GUEST */
+
+
+/**
+ * Internal worker for getting the current nanosecond timestamp.
  */
 DECLINLINE(uint64_t) rtTimeNanoTSInternal(void)
 {
 #ifndef IN_GUEST
-    uint64_t    u64Delta;
-    uint32_t    u32NanoTSFactor0;
-    uint64_t    u64TSC;
-    uint64_t    u64NanoTS;
-    uint32_t    u32UpdateIntervalTSC;
-    uint32_t    u32TransactionId;
-    PSUPGLOBALINFOPAGE pGip;
-
-    /*
-     * Read the data.
-     */
-    for (;;)
-    {
-        pGip = g_pSUPGlobalInfoPage;
-#ifdef IN_RING3
-        if (!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC)
-            return RTTimeSystemNanoTS();
-#endif
-
-        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-        {
-            u32TransactionId = pGip->aCPUs[0].u32TransactionId;
-#ifdef RT_OS_L4
-            Assert((u32TransactionId & 1) == 0);
-#endif
-            u32UpdateIntervalTSC = pGip->aCPUs[0].u32UpdateIntervalTSC;
-            u64NanoTS = pGip->aCPUs[0].u64NanoTS;
-            u64TSC = pGip->aCPUs[0].u64TSC;
-            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
-            u64Delta = ASMReadTSC();
-            if (RT_UNLIKELY(    pGip->aCPUs[0].u32TransactionId != u32TransactionId
-                            ||  (u32TransactionId & 1)))
-                continue;
-        }
-        else
-        {
-            /* SUPGIPMODE_ASYNC_TSC */
-            PSUPGIPCPU pGipCpu;
-
-            uint8_t u8ApicId = ASMGetApicId();
-            if (RT_LIKELY(u8ApicId < RT_ELEMENTS(pGip->aCPUs)))
-                pGipCpu = &pGip->aCPUs[u8ApicId];
-            else
-            {
-                AssertMsgFailed(("%x\n", u8ApicId));
-                pGipCpu = &pGip->aCPUs[0];
-            }
-
-            u32TransactionId = pGipCpu->u32TransactionId;
-#ifdef RT_OS_L4
-            Assert((u32TransactionId & 1) == 0);
-#endif
-            u32UpdateIntervalTSC = pGipCpu->u32UpdateIntervalTSC;
-            u64NanoTS = pGipCpu->u64NanoTS;
-            u64TSC = pGipCpu->u64TSC;
-            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
-            u64Delta = ASMReadTSC();
-            if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))
-                continue;
-            if (RT_UNLIKELY(    pGipCpu->u32TransactionId != u32TransactionId
-                            ||  (u32TransactionId & 1)))
-                continue;
-        }
-        break;
-    }
-
-    /*
-     * Calc NanoTS delta.
-     */
-    u64Delta -= u64TSC;
-    if (u64Delta > u32UpdateIntervalTSC)
-    {
-        /*
-         * We've expired the interval. Do 1ns per call until we've
-         * got valid TSC deltas again (s_u64PrevNanoTS takes care of this).
-         */
-        u64Delta = u32UpdateIntervalTSC;
-    }
-#if !defined(_MSC_VER) || defined(RT_ARCH_AMD64) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
-    u64Delta = ASMMult2xU32RetU64((uint32_t)u64Delta, u32NanoTSFactor0);
-    u64Delta = ASMDivU64ByU32RetU32(u64Delta, u32UpdateIntervalTSC);
+    return g_apfnWorkers[g_iWorker](&g_TimeNanoTSData);
 #else
-    __asm
-    {
-        mov     eax, dword ptr [u64Delta]
-        mul     dword ptr [u32NanoTSFactor0]
-        div     dword ptr [u32UpdateIntervalTSC]
-        mov     dword ptr [u64Delta], eax
-        xor     edx, edx
-        mov     dword ptr [u64Delta + 4], edx
-    }
-#endif
-
-    /*
-     * The most frequent case is that the delta is either too old
-     * or that our timestamp is higher (relative to u64NanoTS) than it.
-     */
-    uint64_t u64;
-    uint64_t u64PrevNanoTS = ASMAtomicReadU64(&s_u64PrevNanoTS);
-    uint64_t u64DeltaPrev = u64PrevNanoTS - u64NanoTS;
-    if (    u64DeltaPrev > 1000000000                       /* (invalid prev) */
-        ||  (uint32_t)u64DeltaPrev < (uint32_t)u64Delta)    /* (we're later) */
-    {
-        u64 = u64Delta + u64NanoTS;
-        if (ASMAtomicCmpXchgU64(&s_u64PrevNanoTS, u64, u64PrevNanoTS))
-            return u64;
-    }
-    else
-    {
-        /*
-         * Our timestamp is lower than the last returned timestamp;
-         * advance 1ns beyond that.
-         */
-        u64Delta = u64DeltaPrev + 1;
-        u64 = u64Delta + u64NanoTS;
-        ASMAtomicIncU32(&g_c1nsSteps);
-    }
-
-    /*
-     * Attempt updating the previous value.
-     *      u64 == timestamp, u64Delta == delta relative to u64NanoTS.
-     */
-    for (int cTries = 100;;)
-    {
-        u64PrevNanoTS = ASMAtomicReadU64(&s_u64PrevNanoTS);
-        u64DeltaPrev = u64PrevNanoTS - u64NanoTS;
-        if (u64DeltaPrev > u64Delta)
-            break;
-        if (ASMAtomicCmpXchgU64(&s_u64PrevNanoTS, u64, u64PrevNanoTS))
-            break;
-        if (--cTries <= 0)
-        {
-            AssertBreakpoint(); /* (recursion) */
-            break;
-        }
-    }
-
-    return u64;
-#else /* IN_GUEST */
     return RTTimeSystemNanoTS();
-#endif /* IN_GUEST */
+#endif
 }
 
 
@@ -229,10 +186,43 @@ RTDECL(uint64_t) RTTimeMilliTS(void)
 /**
  * Debugging the time api.
  *
- * @returns the number of 1ns steps which has been applied by rtTimeNanoTSInternal().
+ * @returns the number of 1ns steps which has been applied by RTTimeNanoTS().
  */
-RTDECL(uint32_t) RTTime1nsSteps(void)
+RTDECL(uint32_t) RTTimeDbgSteps(void)
 {
-    return g_c1nsSteps;
+    return g_TimeNanoTSData.c1nsSteps;
+}
+
+
+/**
+ * Debugging the time api.
+ *
+ * @returns the number of times the TSC interval expired RTTimeNanoTS().
+ */
+RTDECL(uint32_t) RTTimeDbgExpired(void)
+{
+    return g_TimeNanoTSData.cExpired;
+}
+
+
+/**
+ * Debugging the time api.
+ *
+ * @returns the number of bad previous values encountered by RTTimeNanoTS().
+ */
+RTDECL(uint32_t) RTTimeDbgBad(void)
+{
+    return g_TimeNanoTSData.cBadPrev;
+}
+
+
+/**
+ * Debugging the time api.
+ *
+ * @returns the number of update races in RTTimeNanoTS().
+ */
+RTDECL(uint32_t) RTTimeDbgRaces(void)
+{
+    return g_TimeNanoTSData.cUpdateRaces;
 }
 #endif

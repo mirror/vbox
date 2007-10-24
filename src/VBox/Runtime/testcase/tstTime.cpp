@@ -18,41 +18,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef RT_OS_WINDOWS
-# include <Windows.h>
-
-#elif defined RT_OS_L4
-
-#else /* posix */
-# include <sys/time.h>
-#endif
-
 #include <iprt/time.h>
 #include <iprt/stream.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/thread.h>
 #include <VBox/sup.h>
-
-DECLINLINE(uint64_t) OSNanoTS(void)
-{
-#ifdef RT_OS_WINDOWS
-    uint64_t u64; /* manual say larger integer, should be safe to assume it's the same. */
-    GetSystemTimeAsFileTime((LPFILETIME)&u64);
-    return u64 * 100;
-
-#elif defined RT_OS_L4
-    /** @todo fix a different timesource on l4. */
-    return RTTimeNanoTS();
-
-#else /* posix */
-
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (uint64_t)tv.tv_sec  * (uint64_t)(1000 * 1000 * 1000)
-         + (uint64_t)(tv.tv_usec * 1000);
-#endif
-}
-
 
 
 int main()
@@ -60,7 +30,6 @@ int main()
     unsigned cErrors = 0;
     int i;
     RTR3Init();
-SUPInit();
     RTPrintf("tstTime: TESTING...\n");
 
     /*
@@ -68,9 +37,9 @@ SUPInit();
      * is less or equal to the return of the previous call.
      */
 
-    OSNanoTS(); RTTimeNanoTS(); RTThreadYield();
+    RTTimeSystemNanoTS(); RTTimeNanoTS(); RTThreadYield();
     uint64_t u64RTStartTS = RTTimeNanoTS();
-    uint64_t u64OSStartTS = OSNanoTS();
+    uint64_t u64OSStartTS = RTTimeSystemNanoTS();
 
     uint64_t u64Prev = RTTimeNanoTS();
     for (i = 0; i < 100*_1M; i++)
@@ -100,9 +69,9 @@ SUPInit();
         u64Prev = u64;
     }
 
-    OSNanoTS(); RTTimeNanoTS(); RTThreadYield();
+    RTTimeSystemNanoTS(); RTTimeNanoTS(); RTThreadYield();
     uint64_t u64RTElapsedTS = RTTimeNanoTS();
-    uint64_t u64OSElapsedTS = OSNanoTS();
+    uint64_t u64OSElapsedTS = RTTimeSystemNanoTS();
     u64RTElapsedTS -= u64RTStartTS;
     u64OSElapsedTS -= u64OSStartTS;
     int64_t i64Diff = u64OSElapsedTS >= u64RTElapsedTS ? u64OSElapsedTS - u64RTElapsedTS : u64RTElapsedTS - u64OSElapsedTS;
@@ -116,7 +85,10 @@ SUPInit();
         RTPrintf("tstTime: total time difference: u64OSElapsedTS=%#llx u64RTElapsedTS=%#llx delta=%lld\n",
                  u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
 
-    RTPrintf("RTTime1nsSteps -> %u (%d ppt)\n", RTTime1nsSteps(), (RTTime1nsSteps() * 1000) / i);
+    RTPrintf("RTTimeDbgSteps   -> %u (%d ppt)\n", RTTimeDbgSteps(),   ((uint64_t)RTTimeDbgSteps() * 1000) / i);
+    RTPrintf("RTTimeDbgExpired -> %u (%d ppt)\n", RTTimeDbgExpired(), ((uint64_t)RTTimeDbgExpired() * 1000) / i);
+    RTPrintf("RTTimeDbgBad     -> %u (%d ppt)\n", RTTimeDbgBad(),     ((uint64_t)RTTimeDbgBad() * 1000) / i);
+    RTPrintf("RTTimeDbgRaces   -> %u (%d ppt)\n", RTTimeDbgRaces(),   ((uint64_t)RTTimeDbgRaces() * 1000) / i);
     if (!cErrors)
         RTPrintf("tstTime: SUCCESS\n");
     else

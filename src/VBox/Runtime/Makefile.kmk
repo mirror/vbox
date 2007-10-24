@@ -188,6 +188,7 @@ RuntimeR3_SOURCES       = \
 	common/table/table.cpp \
 	common/time/time.cpp \
 	common/time/timeprog.cpp \
+	common/time/timesup.cpp \
 	generic/critsect-generic.cpp \
 	generic/env-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
@@ -205,7 +206,13 @@ RuntimeR3_SOURCES       = \
 	r3/path.cpp \
 	r3/process.cpp \
 	r3/stream.cpp \
-	r3/tcp.cpp \
+	r3/tcp.cpp
+
+#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+# RuntimeR3_SOURCES += common/time/timesupA.asm
+#else
+ RuntimeR3_SOURCES += common/time/timesupref.cpp
+#endif
 
 ifdef IPRT_WITH_KLDR
  RuntimeR3_SOURCES += \
@@ -234,7 +241,6 @@ RuntimeR3_SOURCES += \
 	VBox/log-vbox.cpp
 
 RuntimeR3_SOURCES.win = \
-	common/time/timesup.cpp \
 	generic/rand-stubs-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
@@ -266,7 +272,6 @@ RuntimeR3_SOURCES.win.amd64 = \
 	$(RuntimeWin64ASM_SOURCES)
 
 RuntimeR3_SOURCES.linux = \
-	common/time/timesup.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
@@ -301,7 +306,6 @@ else
 endif
 
 RuntimeR3_SOURCES.os2   = \
-	common/time/timesup.cpp \
 	generic/pathhost-generic.cpp \
 	generic/rand-stubs-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -335,7 +339,6 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.darwin = \
-	common/time/timesup.cpp \
 	darwin/RTErrConvertFromDarwinCOM.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
@@ -369,7 +372,6 @@ RuntimeR3_SOURCES.darwin = \
 
 ## @todo Make BSD sched.
 RuntimeR3_SOURCES.freebsd = \
-	common/time/timesup.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
@@ -400,7 +402,6 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.solaris = \
-	common/time/timesup.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
@@ -445,7 +446,6 @@ endif
 RuntimeR3L4_INCS          = $(L4_INCDIR)
 
 RuntimeR3L4_SOURCES = \
-	common/time/timesup.cpp \
 	generic/fs-stubs-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -678,6 +678,12 @@ RuntimeR0_SOURCES       = \
 	common/time/timesup.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp
+
+if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+ RuntimeR0_SOURCES += common/time/timesupA.asm
+else
+ RuntimeR0_SOURCES += common/time/timesupref.cpp
+endif
 
 RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 
@@ -1003,8 +1009,14 @@ RuntimeGC_SOURCES       = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp \
 
+if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+ RuntimeGC_SOURCES += common/time/timesupA.asm
+else
+ RuntimeGC_SOURCES += common/time/timesupref.cpp
+endif
+
 ifeq ($(VBOX_LDR_FMT32),lx)
-RuntimeGC_SOURCES += os2/sys0.asm
+ RuntimeGC_SOURCES += os2/sys0.asm
 endif
 
 ifeq ($(filter-out darwin solaris freebsd,$(BUILD_TARGET)),)
