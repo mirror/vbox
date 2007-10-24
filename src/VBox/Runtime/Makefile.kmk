@@ -679,11 +679,11 @@ RuntimeR0_SOURCES       = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp
 
-if1of ($(BUILD_TARGET_ARCH),amd64 x86)
- RuntimeR0_SOURCES += common/time/timesupA.asm
-else
+#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+# RuntimeR0_SOURCES += common/time/timesupA.asm
+#else
  RuntimeR0_SOURCES += common/time/timesupref.cpp
-endif
+#endif
 
 RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 
@@ -1009,11 +1009,11 @@ RuntimeGC_SOURCES       = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp \
 
-if1of ($(BUILD_TARGET_ARCH),amd64 x86)
- RuntimeGC_SOURCES += common/time/timesupA.asm
-else
+#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+# RuntimeGC_SOURCES += common/time/timesupA.asm
+#else
  RuntimeGC_SOURCES += common/time/timesupref.cpp
-endif
+#endif
 
 ifeq ($(VBOX_LDR_FMT32),lx)
  RuntimeGC_SOURCES += os2/sys0.asm
