@@ -537,9 +537,10 @@
 /** @def DECLINLINE
  * How to declare a function as inline.
  * @param   type    The return type of the function declaration.
+ * @remarks Don't use this macro on C++ methods.
  */
 #ifdef __GNUC__
-# define DECLINLINE(type) static inline type
+# define DECLINLINE(type) static __inline__ type
 #elif defined(__cplusplus)
 # define DECLINLINE(type) inline type
 #elif defined(_MSC_VER)
