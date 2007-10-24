@@ -208,11 +208,11 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/tcp.cpp
 
-if1of ($(BUILD_TARGET_ARCH),amd64 x86)
- RuntimeR3_SOURCES += common/time/timesupA.asm
-else
+#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+# RuntimeR3_SOURCES += common/time/timesupA.asm
+#else
  RuntimeR3_SOURCES += common/time/timesupref.cpp
-endif
+#endif
 
 ifdef IPRT_WITH_KLDR
  RuntimeR3_SOURCES += \
