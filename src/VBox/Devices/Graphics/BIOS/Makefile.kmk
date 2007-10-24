@@ -65,11 +65,11 @@ $(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
 #
 
 # 1. create vbetables.h
-$(PATH_TARGET)/vbetables.h: $(MAKEFILE_CURRENT)
+$(PATH_SUB_CURRENT)/vbetables.h: $(MAKEFILE_CURRENT)
 	$(QUIET)$(TARGET_vbetables-gen) > $@
 
 # 2. precompile
-$(PATH_TARGET)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c) $(PATH_TARGET)/vbetables.h
+$(PATH_TARGET)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c) $(PATH_SUB_CURRENT)/vbetables.h
 	$(call MSG_TOOL,cpp,VgaBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -DVBOX -DVBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" -E -P $< -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(BUILD_TYPE))) > $@
 
