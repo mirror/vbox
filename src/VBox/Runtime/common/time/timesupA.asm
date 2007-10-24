@@ -27,6 +27,7 @@ struc RTTIMENANOTSDATA
     .pu64Prev           RTCCPTR_RES 1
     .pfnBad             RTCCPTR_RES 1
     .pfnRediscover      RTCCPTR_RES 1
+    .pvDummy            RTCCPTR_RES 1
     .c1nsSteps          resd 1
     .cExpired           resd 1
     .cBadPrev           resd 1
