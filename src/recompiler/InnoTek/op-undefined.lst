@@ -96,6 +96,7 @@ helper_monitor
 helper_movl_crN_T0
 helper_movl_drN_T0
 helper_mwait
+helper_record_call
 helper_rdmsr
 helper_rdtsc
 helper_rsm
