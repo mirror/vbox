@@ -22,7 +22,16 @@
 
 #include <stdlib.h>
 
+/* XPCOM_GLUE is defined when the client uses the standalone glue
+ * (i.e. dynamically picks up the existing XPCOM shared library installation).
+ * This is not the case for VirtualBox XPCOM clients (they are always
+ * distrubuted with the self-built XPCOM library, and therefore have a binary
+ * dependency on it) but left here for clarity.
+ */
+#if defined (XPCOM_GLUE)
 #include <nsXPCOMGlue.h>
+#endif
+
 #include <nsIComponentRegistrar.h>
 #include <nsIServiceManager.h>
 #include <nsCOMPtr.h>
@@ -39,6 +48,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/env.h>
+#include <iprt/asm.h>
 
 #include <VBox/err.h>
 
@@ -163,7 +173,19 @@ DirectoryServiceProvider::GetFile (const char *aProp,
                                       (void **) aRetval);
 }
 
+/**
+ *  Global XPCOM initialization flag (we maintain it ourselves since XPCOM
+ *  doesn't provide such functionality)
+ */
+static bool gIsXPCOMInitialized = false;
+
+/**
+ *  Number of Initialize() calls on the main thread.
+ */
+static unsigned int gXPCOMInitCount = 0;
+
 #endif /* defined (VBOX_WITH_XPCOM) */
+
 
 HRESULT Initialize()
 {
@@ -252,6 +274,32 @@ HRESULT Initialize()
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
+    if (ASMAtomicXchgBool (&gIsXPCOMInitialized, true) == true)
+    {
+        /* XPCOM is already initialized on the main thread, no special
+         * initialization is necessary on additional threads. Just increase
+         * the init counter if it's a main thread again (to correctly support
+         * nested calls to Initialize()/Shutdown() for compatibility with
+         * Win32). */
+
+        nsCOMPtr <nsIEventQueue> eventQ;
+        rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
+
+        if (NS_SUCCEEDED (rc))
+        {
+            PRBool isOnMainThread = PR_FALSE;
+            rc = eventQ->IsOnCurrentThread (&isOnMainThread);
+            if (NS_SUCCEEDED (rc) && isOnMainThread)
+                ++ gXPCOMInitCount;
+        }
+
+        AssertComRC (rc);
+        return rc;
+    }
+
+    /* this is the first initialization */
+    gXPCOMInitCount = 1;
+
     /* Set VBOX_XPCOM_HOME if not present */
     if (!RTEnvExist ("VBOX_XPCOM_HOME"))
     {
@@ -271,42 +319,46 @@ HRESULT Initialize()
         AssertRC (vrc);
     }
 
-    nsCOMPtr <nsIEventQueue> eventQ;
-    rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
-    if (rc == NS_ERROR_NOT_INITIALIZED)
+#if defined (XPCOM_GLUE)
+    XPCOMGlueStartup (nsnull);
+#endif
+
+    nsCOMPtr <DirectoryServiceProvider> dsProv;
+
+    /* prepare paths for registry files */
+    char homeDir [RTPATH_MAX];
+    char privateArchDir [RTPATH_MAX];
+    int vrc = GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
+    if (RT_SUCCESS (vrc))
+        vrc = RTPathAppPrivateArch (privateArchDir, sizeof (privateArchDir));
+    if (RT_SUCCESS (vrc))
     {
-        XPCOMGlueStartup (nsnull);
+        char compReg [RTPATH_MAX];
+        char xptiDat [RTPATH_MAX];
+        char compDir [RTPATH_MAX];
 
-        nsCOMPtr <DirectoryServiceProvider> dsProv;
+        RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
+                     homeDir, RTPATH_DELIMITER, "compreg.dat");
+        RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
+                     homeDir, RTPATH_DELIMITER, "xpti.dat");
+        RTStrPrintf (compDir, sizeof (compDir), "%s%c/components",
+                     privateArchDir, RTPATH_DELIMITER);
 
-        /* prepare paths for registry files */
-        char homeDir [RTPATH_MAX];
-        char privateArchDir [RTPATH_MAX];
-        int vrc = GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
-        if (RT_SUCCESS (vrc))
-            vrc = RTPathAppPrivateArch (privateArchDir, sizeof (privateArchDir));
-        if (RT_SUCCESS (vrc))
-        {
-            char compReg [RTPATH_MAX];
-            char xptiDat [RTPATH_MAX];
-            char compDir [RTPATH_MAX];
+        LogFlowFunc (("component registry  : \"%s\"\n", compReg));
+        LogFlowFunc (("XPTI data file      : \"%s\"\n", xptiDat));
+        LogFlowFunc (("component directory : \"%s\"\n", compDir));
 
-            RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
-                         homeDir, RTPATH_DELIMITER, "compreg.dat");
-            RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
-                         homeDir, RTPATH_DELIMITER, "xpti.dat");
-            RTStrPrintf (compDir, sizeof (compDir), "%s%c/components",
-                         privateArchDir, RTPATH_DELIMITER);
-
-            dsProv = new DirectoryServiceProvider();
-            if (dsProv)
-                rc = dsProv->init (compReg, xptiDat, compDir, privateArchDir);
-            else
-                rc = NS_ERROR_OUT_OF_MEMORY;
-        }
+        dsProv = new DirectoryServiceProvider();
+        if (dsProv)
+            rc = dsProv->init (compReg, xptiDat, compDir, privateArchDir);
         else
-            rc = NS_ERROR_FAILURE;
+            rc = NS_ERROR_OUT_OF_MEMORY;
+    }
+    else
+        rc = NS_ERROR_FAILURE;
 
+    if (NS_SUCCEEDED (rc))
+    {
         /* get the path to the executable */
         nsCOMPtr <nsIFile> appDir;
         {
@@ -394,23 +446,36 @@ HRESULT Shutdown()
          * (it's a kind of unexpected behavior if a non-main thread ever calls
          * StopAcceptingEvents() on the main event queue). */
 
-        BOOL isOnMainThread = FALSE;
+        PRBool isOnMainThread = PR_FALSE;
         if (NS_SUCCEEDED (rc))
         {
             rc = eventQ->IsOnCurrentThread (&isOnMainThread);
-            eventQ = nsnull; /* early release */
+            eventQ = nsnull; /* early release before shutdown */
         }
         else
         {
-            isOnMainThread = TRUE;
+            isOnMainThread = PR_TRUE;
             rc = NS_OK;
         }
 
         if (NS_SUCCEEDED (rc) && isOnMainThread)
         {
-            /* only the main thread needs to uninitialize XPCOM */
-            rc = NS_ShutdownXPCOM (nsnull);
-            XPCOMGlueShutdown();
+            /* only the main thread needs to uninitialize XPCOM and only if
+             * init counter drops to zero */
+            if (-- gXPCOMInitCount == 0)
+            {
+                rc = NS_ShutdownXPCOM (nsnull);
+
+                /* This is a thread initialized XPCOM and set gIsXPCOMInitialized to
+                 * true. Reset it back to false. */
+                bool wasInited = ASMAtomicXchgBool (&gIsXPCOMInitialized, false);
+                Assert (wasInited == true);
+                NOREF (wasInited);
+
+#if defined (XPCOM_GLUE)
+                XPCOMGlueShutdown();
+#endif
+            }
         }
     }
 

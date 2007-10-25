@@ -220,6 +220,7 @@ LIBRARIES = \
 	VBox-xpcom-xptinfo \
 	VBox-xpcom-xptcall \
 	VBox-xpcom-proxy \
+	VBoxXPCOMGlue_s \
 	VBoxXPCOMGlue \
 	VBox-xpcom-ipcutils \
 	VBox-xpcom-ipcshared \
@@ -427,7 +428,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/base/nsAutoPtr.h \
 	xpcom/ds/nsBaseHashtable.h \
 	xpcom/ds/nsCOMArray.h \
-	xpcom/glue/nsCOMPtr.h \
 	xpcom/ds/nsCRT.h \
 	xpcom/components/nsCategoryManagerUtils.h \
 	xpcom/ds/nsCheapSets.h \
@@ -437,7 +437,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/components/nsComponentManagerUtils.h \
 	xpcom/ds/nsCppSharedAllocator.h \
 	xpcom/ds/nsDataHashtable.h \
-	xpcom/glue/nsDebug.h \
 	xpcom/base/nsDebugImpl.h \
 	xpcom/ds/nsDeque.h \
 	xpcom/io/nsDirectoryService.h \
@@ -451,25 +450,19 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/io/nsFastLoadPtr.h \
 	xpcom/io/nsFastLoadService.h \
 	xpcom/ds/nsFixedSizeAllocator.h \
-	xpcom/glue/nsGenericFactory.h \
 	xpcom/ds/nsHashKeys.h \
 	xpcom/ds/nsHashSets.h \
 	xpcom/ds/nsHashtable.h \
 	xpcom/base/nsIAllocator.h \
 	xpcom/ds/nsIByteBuffer.h \
 	xpcom/base/nsID.h \
-	xpcom/glue/nsIGenericFactory.h \
 	xpcom/base/nsIID.h \
-	xpcom/glue/nsIInterfaceRequestorUtils.h \
 	xpcom/components/nsIServiceManagerObsolete.h \
 	xpcom/components/nsIServiceManagerUtils.h \
 	xpcom/base/nsISupportsBase.h \
-	xpcom/glue/nsISupportsImpl.h \
 	xpcom/base/nsISupportsObsolete.h \
-	xpcom/glue/nsISupportsUtils.h \
 	xpcom/ds/nsIUnicharBuffer.h \
 	xpcom/io/nsIUnicharInputStream.h \
-	xpcom/glue/nsIWeakReferenceUtils.h \
 	xpcom/ds/nsInt64.h \
 	xpcom/ds/nsInterfaceHashtable.h \
 	xpcom/io/nsLinebreakConverter.h \
@@ -477,7 +470,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/io/nsLocalFileUnix.h \
 	xpcom/io/nsLocalFileOS2.h \
 	xpcom/io/nsLocalFileOSX.h \
-	xpcom/glue/nsMemory.h \
 	xpcom/components/nsModule.h \
 	xpcom/io/nsMultiplexInputStream.h \
 	xpcom/io/nsNativeCharsetUtils.h \
@@ -505,17 +497,14 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsTHashtable.h \
 	xpcom/ds/nsTextFormatter.h \
 	xpcom/ds/nsTime.h \
-	xpcom/glue/nsTraceRefcnt.h \
 	xpcom/base/nsTraceRefcntImpl.h \
 	xpcom/ds/nsUnitConversion.h \
 	xpcom/ds/nsValueArray.h \
 	xpcom/ds/nsVariant.h \
 	xpcom/ds/nsVoidArray.h \
 	xpcom/base/nsWeakPtr.h \
-	xpcom/glue/nsWeakReference.h \
 	xpcom/build/nsXPCOM.h \
 	xpcom/build/nsXPCOMCID.h \
-	xpcom/glue/standalone/nsXPCOMGlue.h \
 	xpcom/base/nscore.h \
 	xpcom/ds/pldhash.h \
 	xpcom/threads/plevent.h \
@@ -527,6 +516,22 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/reflect/xptcall/public/xptcstubsdecl.inc \
 	xpcom/reflect/xptcall/public/xptcstubsdef.inc \
 	xpcom/reflect/xptinfo/public/xptinfo.h \
+	\
+	xpcom/glue/nsIInterfaceRequestorUtils.h \
+	xpcom/glue/nsISupportsImpl.h \
+	xpcom/glue/nsISupportsUtils.h \
+	xpcom/glue/nsIWeakReferenceUtils.h \
+	\
+	xpcom/glue/nsCOMPtr.h \
+	xpcom/glue/nsDebug.h \
+	xpcom/glue/nsGenericFactory.h \
+	xpcom/glue/nsIGenericFactory.h \
+	xpcom/glue/nsMemory.h \
+	xpcom/glue/nsTraceRefcnt.h \
+	xpcom/glue/nsWeakReference.h \
+	\
+	xpcom/glue/standalone/nsXPCOMGlue.h \
+	\
 	xpcom-config.h
 
 IPCD-HEADERS_INST = $(INST_SDK)/include/xpcom/ipcd
@@ -1010,29 +1015,25 @@ VBox-xpcom-proxy_SOURCES  = xpcom/proxy/src/nsProxyEvent.cpp \
                             xpcom/proxy/src/nsProxyObjectManager.cpp \
                             xpcom/proxy/src/nsProxyRelease.cpp
 
-# glue library which all client apps will link with
-VBoxXPCOMGlue_TEMPLATE = XPCOM
-VBoxXPCOMGlue_DEFS     = _IMPL_NS_COM XPCOM_GLUE
-VBoxXPCOMGlue_SOURCES  = xpcom/glue/nsCOMPtr.cpp \
-                         xpcom/glue/nsComponentManagerUtils.cpp \
-                         xpcom/glue/nsDebug.cpp \
-                         xpcom/glue/nsGenericFactory.cpp \
-                         xpcom/glue/nsIInterfaceRequestorUtils.cpp \
-                         xpcom/glue/nsMemory.cpp \
-                         xpcom/glue/nsTraceRefcnt.cpp \
-                         xpcom/glue/nsWeakReference.cpp \
-                         xpcom/glue/standalone/nsXPCOMGlue.cpp \
-                         xpcom/glue/standalone/nsGREDirServiceProvider.cpp
-VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)/lib/
-
 
 #
-# The VBoxXPCOM Shared Object, assembling all lib files.
+# The VBoxXPCOM Glue static libraries.
 #
-VBoxXPCOM_TEMPLATE = XPCOM
-VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
-VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
-VBoxXPCOM_SOURCES = \
+# See http://developer.mozilla.org/en/docs/XPCOM_Glue for details about the
+# original XPCOM glue library purpose and usage.
+#
+# We don't really use the glue library in the described way because we don't
+# provide frozen APIs (yet), so all VBox XPCOM client applications are
+# dependent on the given version of both the VBox XPCOM runtime (binary
+# dependency) and VirtualBox component library (COM interface dependency). For
+# this reason, VBox client applications link to the VBox XPCOM shared library
+# directly (instead of linking to the standalone XPCOM glue library that would
+# dynamically search for and load the installed XPCOM runtime). For the same
+# reason, we link all parts of XPCOM into a single shared XPCOM library below
+# (as opposed to the original XPCOM where e.g. NSPR lives in a separate DLL).
+#
+
+VBoxXPCOMGlue_COMMON_SOURCES = \
 	xpcom/glue/nsCOMPtr.cpp \
 	xpcom/glue/nsComponentManagerUtils.cpp \
 	xpcom/glue/nsDebug.cpp \
@@ -1040,7 +1041,35 @@ VBoxXPCOM_SOURCES = \
 	xpcom/glue/nsIInterfaceRequestorUtils.cpp \
 	xpcom/glue/nsMemory.cpp \
 	xpcom/glue/nsTraceRefcnt.cpp \
-	xpcom/glue/nsWeakReference.cpp \
+	xpcom/glue/nsWeakReference.cpp
+
+# dependent glue library which goes in to the VBoxXPCOM shared library
+VBoxXPCOMGlue_s_TEMPLATE = XPCOM
+VBoxXPCOMGlue_s_NOINST   = 1
+VBoxXPCOMGlue_s_DEFS     = _IMPL_NS_COM
+VBoxXPCOMGlue_s_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES)
+
+# standalone glue library which all third-party client apps (if any) will link with
+# (currently not used anywhere (see above) but still built to make sure
+# the code inside #ifdef XPCOM_GLUE compiles)
+VBoxXPCOMGlue_TEMPLATE = XPCOM
+VBoxXPCOMGlue_DEFS     = XPCOM_GLUE
+VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES) \
+                         xpcom/glue/standalone/nsXPCOMGlue.cpp \
+                         xpcom/glue/standalone/nsGREDirServiceProvider.cpp
+VBoxXPCOMGlue_SOURCES += \
+	$(TARGET_VBox-xpcom-string)
+#VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)/lib/
+
+
+#
+# The VBoxXPCOM Shared Object, assembling all lib files.
+#
+
+VBoxXPCOM_TEMPLATE = XPCOM
+VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
+VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
+VBoxXPCOM_SOURCES = \
 	xpcom/build/nsXPComInit.cpp \
 	xpcom/build/nsStringAPI.cpp
 VBoxXPCOM_SOURCES.darwin = \
@@ -1060,7 +1089,8 @@ VBoxXPCOM_LIBS = \
 	$(TARGET_VBox-xpcom-xptinfo) \
 	$(TARGET_VBox-xpcom-xptcall) \
 	$(TARGET_VBox-xpcom-proxy) \
-	$(TARGET_VBox-xpcom-nspr)
+	$(TARGET_VBox-xpcom-nspr) \
+	$(TARGET_VBoxXPCOMGlue_s)
 
 ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(BUILD_TARGET)),) # gnu ld.
 VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
@@ -1075,6 +1105,7 @@ VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
 	$(TARGET_VBox-xpcom-xptcall) \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
+	$(TARGET_VBoxXPCOMGlue_s) \
 	-Wl,--no-whole-archive
 endif
 
@@ -1090,6 +1121,7 @@ VBoxXPCOM_LDFLAGS.solaris = -Wl,-z,allextract \
 	$(TARGET_VBox-xpcom-xptcall) \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
+	$(TARGET_VBoxXPCOMGlue_s) \
 	-Wl,-z,defaultextract
 
 #VBoxXPCOM_LIBS.l4 = $(L4_LIBDIR)/libxpcomstubs.a $(L4_LIBDIR)/../libuc_c++.a \

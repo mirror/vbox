@@ -4,7 +4,6 @@
  *                   XPCOM API for machine management on Linux.
  *                   It only uses standard C/C++ and XPCOM semantics,
  *                   no additional VBox classes/macros/helpers.
- *
  */
 
 /*
@@ -19,16 +18,60 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*
+ * PURPOSE OF THIS SAMPLE PROGRAM
+ * ------------------------------
+ *
+ * This sample program is intended to demonstrate the minimal code necessary
+ * to use VirtualBox XPCOM API for learning puroses only. The program uses
+ * pure XPCOM and doesn't have any extra dependencies to let you better
+ * understand what is going on when a client talks to the VirtualBox core
+ * using the XPCOM framework.
+ *
+ * However, if you want to write a real application, it is highly recommended
+ * to use our MS COM XPCOM Glue library and helper C++ classes. This way, you
+ * will get at least the following benefits:
+ *
+ * a) better portability: both the MS COM (used on Windows) and XPCOM (used
+ *    everywhere else) VirtualBox client application from the same source code
+ *    (including common smart C++ templates for automatic interface pointer
+ *    reference counter and string data management);
+ * b) simpler XPCOM initialization and shutdown (only a signle method call
+ *    that does everything right).
+ *
+ * Currently, there is no separate sample program that uses the VirtualBox MS
+ * COM XPCOM Glue library. Please refer to the sources of stock VirtualBox
+ * applications such as the VirtualBox GUI frontend or the VBoxManage command
+ * line frontend.
+ *
+ *
+ * RUNNING THIS SAMPLE PROGRAM
+ * ---------------------------
+ *
+ * This sample program needs to know where the VirtualBox core files reside
+ * and where to search for VirtualBox shared libraries. Therefore, you need to
+ * use the following (or similar) command to execute it:
+ *
+ *   $ env VBOX_XPCOM_HOME=../../.. LD_LIBRARY_PATH=../../.. ./tstVBoxAPILinux
+ *
+ * The above command assumes that VBoxRT.so, VBoxXPCOM.so and others reside in
+ * the directory ../../..
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <iconv.h>
 #include <errno.h>
 
-
 /*
  * Include the XPCOM headers
  */
+
+#if defined(XPCOM_GLUE)
 #include <nsXPCOMGlue.h>
+#endif
+
 #include <nsMemory.h>
 #include <nsString.h>
 #include <nsIServiceManager.h>
@@ -45,6 +88,7 @@
 /*
  * Prototypes
  */
+
 char *nsIDToString(nsID *guid);
 void printErrorInfo();
 
@@ -81,11 +125,21 @@ void listVMs(IVirtualBox *virtualBox)
             rc = enumerator->GetNext(&machine);
             if ((NS_SUCCEEDED(rc)) && machine)
             {
-                nsXPIDLString machineName;
-                machine->GetName(getter_Copies(machineName));
-                char *machineNameAscii = ToNewCString(machineName);
-                printf("\tName:        %s\n", machineNameAscii);
-                free(machineNameAscii);
+                PRBool isAccessible = PR_FALSE;
+                machine->GetAccessible (&isAccessible);
+
+                if (isAccessible)
+                {
+                    nsXPIDLString machineName;
+                    machine->GetName(getter_Copies(machineName));
+                    char *machineNameAscii = ToNewCString(machineName);
+                    printf("\tName:        %s\n", machineNameAscii);
+                    free(machineNameAscii);
+                }
+                else
+                {
+                    printf("\tName:        <inaccessible>\n");
+                }
 
                 nsID *iid = nsnull;
                 machine->GetId(&iid);
@@ -94,26 +148,29 @@ void listVMs(IVirtualBox *virtualBox)
                 free((void*)uuidString);
                 nsMemory::Free(iid);
 
-                nsXPIDLString configFile;
-                machine->GetSettingsFilePath(getter_Copies(configFile));
-                char *configFileAscii = ToNewCString(configFile);
-                printf("\tConfig file: %s\n", configFileAscii);
-                free(configFileAscii);
+                if (isAccessible)
+                {
+                    nsXPIDLString configFile;
+                    machine->GetSettingsFilePath(getter_Copies(configFile));
+                    char *configFileAscii = ToNewCString(configFile);
+                    printf("\tConfig file: %s\n", configFileAscii);
+                    free(configFileAscii);
 
-                PRUint32 memorySize;
-                machine->GetMemorySize(&memorySize);
-                printf("\tMemory size: %uMB\n", memorySize);
+                    PRUint32 memorySize;
+                    machine->GetMemorySize(&memorySize);
+                    printf("\tMemory size: %uMB\n", memorySize);
 
-                nsXPIDLString typeId;
-                machine->GetOSTypeId(getter_Copies(typeId));
-                IGuestOSType *osType = nsnull;
-                virtualBox->GetGuestOSType (typeId.get(), &osType);
-                nsXPIDLString osName;
-                osType->GetDescription(getter_Copies(osName));
-                char *osNameAscii = ToNewCString(osName);
-                printf("\tGuest OS:    %s\n\n", osNameAscii);
-                free(osNameAscii);
-                osType->Release();
+                    nsXPIDLString typeId;
+                    machine->GetOSTypeId(getter_Copies(typeId));
+                    IGuestOSType *osType = nsnull;
+                    virtualBox->GetGuestOSType (typeId.get(), &osType);
+                    nsXPIDLString osName;
+                    osType->GetDescription(getter_Copies(osName));
+                    char *osNameAscii = ToNewCString(osName);
+                    printf("\tGuest OS:    %s\n\n", osNameAscii);
+                    free(osNameAscii);
+                    osType->Release();
+                }
 
                 machine->Release();
             }
@@ -418,7 +475,9 @@ int main(int argc, char *argv[])
      * What we do is just follow the required steps to get an instance
      * of our main interface, which is IVirtualBox.
      */
+#if defined(XPCOM_GLUE)
     XPCOMGlueStartup(nsnull);
+#endif
 
     /*
      * Note that we scope all nsCOMPtr variables in order to have all XPCOM
@@ -521,7 +580,9 @@ int main(int argc, char *argv[])
      * Perform the standard XPCOM shutdown procedure.
      */
     NS_ShutdownXPCOM(nsnull);
+#if defined(XPCOM_GLUE)
     XPCOMGlueShutdown();
+#endif
     printf("Done!\n");
     return 0;
 }

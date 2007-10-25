@@ -1949,7 +1949,6 @@ ifdef VBOX_WITH_XPCOM
  TEMPLATE_VBOXMAINEXE_INCS              += \
 	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXMAINEXE_LIBS              += \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
 	$(LIB_XPCOM)
 endif
 
@@ -1971,13 +1970,6 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(BUILD_TARGET).$(BUILD_TARGET_ARCH)),)
  endif
 endif
 TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin))
-
-ifdef VBOX_WITH_XPCOM
- # XPCOM component modules don't need the XPCOM glue library
- TEMPLATE_VBOXMAINDLL_LIBS = $(filter-out \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB),\
-	$(TEMPLATE_VBOXMAINEXE_LIBS))
-endif
 
 #
 # Template for building the Main static libraries.
@@ -2152,7 +2144,6 @@ ifdef VBOX_WITH_XPCOM
  TEMPLATE_VBOXQTGUIEXE_INCS            += \
 	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXQTGUIEXE_LIBS            += \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB) \
 	$(LIB_XPCOM)
 endif
 

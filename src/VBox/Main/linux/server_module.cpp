@@ -129,7 +129,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                     nsCAutoString path;
                     componentDir->GetNativePath (path);
 
-                    LogFlowFunc (("components path = \"%s\"\n", path.get()));
+                    LogFlowFunc (("component directory = \"%s\"\n", path.get()));
                     AssertBreak (path.Length() + strlen (VBoxSVC_exe) < RTPATH_MAX,
                                  rc = NS_ERROR_FAILURE);
 

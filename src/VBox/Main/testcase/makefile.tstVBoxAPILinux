@@ -27,12 +27,12 @@ INCS_XPCOM     = $(PATH_XPCOM)/include \
 #
 tstVBoxAPILinux: tstVBoxAPILinux.o
 	g++ -g -o $@ $^ \
-		$(PATH_XPCOM)/lib/VBoxXPCOMGlue.a \
 		$(PATH_BIN)/VBoxXPCOM.so \
+		-Wl,-rpath $(PATH_BIN)/ \
 		-ldl -lpthread
 
 tstVBoxAPILinux.o: tstVBoxAPILinux.cpp
-	g++ -c -DRT_OS_LINUX -D__LINUX__ -g $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
+	g++ -c -DRT_OS_LINUX -D__LINUX__ -g -fshort-wchar $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
 
 clean:
 	rm -f tstVBoxAPILinux tstVBoxAPILinux.o
