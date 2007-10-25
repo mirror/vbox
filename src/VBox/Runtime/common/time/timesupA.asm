@@ -36,7 +36,35 @@ endstruc
 
 
 BEGINDATA
-extern NAME(g_pSUPGlobalInfoPage)
+%undef IN_SUPLIB
+%undef IMPORTED_SUPLIB
+%ifdef IN_SUP_R0
+ %define IN_SUPLIB
+%endif
+%ifdef IN_SUP_R3
+ %define IN_SUPLIB
+%endif
+%ifdef IN_SUP_GC
+ %define IN_SUPLIB
+%endif
+%ifdef IN_SUPLIB
+ extern NAME(g_pSUPGlobalInfoPage)
+%elifdef IN_RING0
+ %ifdef RT_OS_WINDOWS
+  %define IMPORTED_SUPLIB
+  extern IMPNAME(g_SUPGlobalInfoPage)
+ %else
+  extern NAME(g_SUPGlobalInfoPage)
+ %endif
+%else
+ %ifdef RT_OS_WINDOWS
+  %define IMPORTED_SUPLIB
+  extern IMPNAME(g_pSUPGlobalInfoPage)
+ %else
+  extern NAME(g_pSUPGlobalInfoPage)
+ %endif
+%endif
+
 
 BEGINCODE
 

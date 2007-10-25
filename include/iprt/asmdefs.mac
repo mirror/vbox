@@ -4,7 +4,7 @@
 
 ;
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
@@ -69,9 +69,13 @@
 ;;
 ; Gets the pointer to an imported object.
 %ifdef ASM_FORMAT_PE
-%define IMP(name)       dword [IMPNAME(name)]
+ %ifdef RT_ARCH_AMD64
+  %define IMP(name)       qword [IMPNAME(name) wrt rip]
+ %else
+  %define IMP(name)       dword [IMPNAME(name)]
+ %endif
 %else
-%define IMP(name)       IMPNAME(name)
+ %define IMP(name)       IMPNAME(name)
 %endif
 
 
