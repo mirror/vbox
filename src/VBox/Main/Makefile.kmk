@@ -213,11 +213,11 @@ ifeq ($(BUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
 endif
 
-# Alternative USB filtering.
-ifeq ($(filter-out darwin,$(BUILD_TARGET)),)
-VBoxSVC_DEFS += VBOX_WITH_USBFILTER
-VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
-endif
+## Alternative USB filtering.
+#ifeq ($(filter-out darwin,$(BUILD_TARGET)),)
+#VBoxSVC_DEFS += VBOX_WITH_USBFILTER
+#VBoxSVC_LIBS += $(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
+#endif
 
 win32/VBoxSVC.rc_DEPS = $(PATH_TARGET)/VBoxSVC.rgs
 
