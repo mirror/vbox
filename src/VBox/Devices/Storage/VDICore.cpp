@@ -470,6 +470,9 @@ static int vdiCreateImage(const char *pszFilename, VDIIMAGETYPE enmType, unsigne
         {
             /* Fill image with zeroes. */
 
+            /** @todo Starting with Linux 2.6.23, there is an fallocate() system call.
+             *        Currently supported file systems are ext4 and ocfs2. */
+
             rc = RTFileSeek(pImage->File, pImage->offStartData, RTFILE_SEEK_BEGIN, NULL);
             if (VBOX_FAILURE(rc))
                 goto l_create_failed;
