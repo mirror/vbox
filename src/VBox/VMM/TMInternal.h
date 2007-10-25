@@ -20,6 +20,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <iprt/time.h>
 #include <iprt/timer.h>
 #include <VBox/stam.h>
 
@@ -330,11 +331,20 @@ typedef struct TM
      * This handles TSC drift on SMP systems and expired interval.
      * This is a valid range u64NanoTS to u64NanoTS + 1000000000 (ie. 1sec). */
     uint64_t volatile           u64VirtualRawPrev;
-    /** The number of times we've had to resort to 1ns walking. */
-    uint32_t volatile           c1nsVirtualRawSteps;
-    /** Number of times u64VirtualRawPrev has been considered bad. */
-    uint32_t volatile           cVirtualRawBadRawPrev;
-
+    /** The ring-3 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
+    RTTIMENANOTSDATAR3          VirtualGetRawDataR3;
+    /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
+    RTTIMENANOTSDATAR0          VirtualGetRawDataR0;
+    /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
+    RTTIMENANOTSDATAGC          VirtualGetRawDataGC;
+    /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
+    R3PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR3;
+    /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
+    R0PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR0;
+    /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
+    GCPTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawGC;
+    /** Alignment. */
+    RTGCPTR                     AlignmentGCPtr;
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
     uint64_t volatile           u64VirtualSync;
     /** The offset of the timer synchronous virtual clock (TMCLOCK_VIRTUAL_SYNC) relative
@@ -476,6 +486,9 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
 #ifdef VBOX_STRICT
 void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
 #endif
+
+DECLEXPORT(void) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
+DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
 
 /** @} */
 

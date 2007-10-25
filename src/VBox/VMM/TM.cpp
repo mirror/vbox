@@ -101,6 +101,7 @@
 #include <VBox/ssm.h>
 #include <VBox/dbgf.h>
 #include <VBox/rem.h>
+#include <VBox/pdm.h>
 #include "TMInternal.h"
 #include <VBox/vm.h>
 
@@ -222,6 +223,59 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                           N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)\n"),
                           g_pSUPGlobalInfoPage->u32UpdateIntervalNS, g_pSUPGlobalInfoPage->u32UpdateHz);
+
+    /*
+     * Setup the VirtualGetRaw backend.
+     */
+    pVM->tm.s.VirtualGetRawDataR3.pu64Prev = &pVM->tm.s.u64VirtualRawPrev;
+    pVM->tm.s.VirtualGetRawDataR3.pfnBad = tmVirtualNanoTSBad;
+    pVM->tm.s.VirtualGetRawDataR3.pfnRediscover = tmVirtualNanoTSRediscover;
+
+    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToGC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+#if 0 /* too early */
+    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
+    AssertRCReturn(rc, rc);
+    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
+    AssertRCReturn(rc, rc);
+#endif
+
+    pVM->tm.s.VirtualGetRawDataR0.pu64Prev = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    AssertReturn(pVM->tm.s.VirtualGetRawDataR0.pu64Prev, VERR_INTERNAL_ERROR);
+    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
+    AssertRCReturn(rc, rc);
+    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
+    AssertRCReturn(rc, rc);
+
+    if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
+    {
+        if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC)
+        {
+            pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLFenceSync;
+            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceSync", &pVM->tm.s.pfnVirtualGetRawR0);
+            AssertRCReturn(rc, rc);
+        }
+        else
+        {
+            pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLFenceAsync;
+            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawR0);
+            AssertRCReturn(rc, rc);
+        }
+    }
+    else
+    {
+        if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC)
+        {
+            pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLegacySync;
+            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacySync", &pVM->tm.s.pfnVirtualGetRawR0);
+            AssertRCReturn(rc, rc);
+        }
+        else
+        {
+            pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLegacyAsync;
+            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawR0);
+            AssertRCReturn(rc, rc);
+        }
+    }
 
     /*
      * Get our CFGM node, create it if necessary.
@@ -418,12 +472,23 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Register statistics.
      */
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.c1nsVirtualRawSteps,   STAMTYPE_U32, "/TM/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations)");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.cVirtualRawBadRawPrev, STAMTYPE_U32, "/TM/BadPrevTime",               STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
-    STAM_REL_REG(     pVM, (void *)&pVM->tm.s.offVirtualSync,        STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset", STAMUNIT_NS,         "The current offset. (subtract GivenUp to get the lag)");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.offVirtualSyncGivenUp, STAMTYPE_U64, "/TM/VirtualSync/GivenUp",       STAMUNIT_NS,         "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.c1nsSteps,   STAMTYPE_U32, "/TM/R3/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.cBadPrev,    STAMTYPE_U32, "/TM/R3/cBadPrev",                  STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.c1nsSteps,   STAMTYPE_U32, "/TM/R0/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.cBadPrev,    STAMTYPE_U32, "/TM/R0/cBadPrev",                  STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.c1nsSteps,   STAMTYPE_U32, "/TM/GC/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.cBadPrev,    STAMTYPE_U32, "/TM/GC/cBadPrev",                  STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG(     pVM, (void *)&pVM->tm.s.offVirtualSync,                  STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",   STAMUNIT_NS,          "The current offset. (subtract GivenUp to get the lag)");
+    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.offVirtualSyncGivenUp,           STAMTYPE_U64, "/TM/VirtualSync/GivenUp",         STAMUNIT_NS,          "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
 
 #ifdef VBOX_WITH_STATISTICS
+    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.cExpired,    STAMTYPE_U32, "/TM/R3/cExpired",                  STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.cUpdateRaces,STAMTYPE_U32, "/TM/R3/cUpdateRaces",              STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.cExpired,    STAMTYPE_U32, "/TM/R0/cExpired",                  STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.cUpdateRaces,STAMTYPE_U32, "/TM/R0/cUpdateRaces",              STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.cExpired,    STAMTYPE_U32, "/TM/GC/cExpired",                  STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.cUpdateRaces,STAMTYPE_U32, "/TM/GC/cUpdateRaces",              STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,          STAMTYPE_PROFILE,       "/TM/DoQueues",         STAMUNIT_TICKS_PER_CALL,    "Profiling timer TMR3TimerQueuesDo.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueuesSchedule,  STAMTYPE_PROFILE_ADV,   "/TM/DoQueues/Schedule",STAMUNIT_TICKS_PER_CALL,    "The scheduling part.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueuesRun,       STAMTYPE_PROFILE_ADV,   "/TM/DoQueues/Run",     STAMUNIT_TICKS_PER_CALL,    "The run part.");
@@ -660,10 +725,30 @@ static uint64_t tmR3CalibrateTSC(void)
  */
 TMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
+    int rc;
     LogFlow(("TMR3Relocate\n"));
+
     pVM->tm.s.pvGIPGC = MMHyperR3ToGC(pVM, pVM->tm.s.pvGIPR3);
     pVM->tm.s.paTimerQueuesGC = MMHyperR3ToGC(pVM, pVM->tm.s.paTimerQueuesR3);
     pVM->tm.s.paTimerQueuesR0 = MMHyperR3ToR0(pVM, pVM->tm.s.paTimerQueuesR3);
+
+    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToGC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    AssertFatal(pVM->tm.s.VirtualGetRawDataGC.pu64Prev);
+    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
+    AssertFatalRC(rc);
+    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
+    AssertFatalRC(rc);
+
+    if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+    else
+        AssertFatalFailed();
 
     /*
      * Iterate the timers updating the pVMGC pointers.
