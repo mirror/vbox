@@ -62,9 +62,7 @@ tstVBoxAPILinux_INCS     = \
 	$(VBOX_XPCOM_INCS) \
 	$(PATH_BIN)/sdk/include
 tstVBoxAPILinux_LIBPATH  = $(LIBPATH_XPCOM)
-tstVBoxAPILinux_LIBS     = \
-	$(PATH_BIN)/VBoxXPCOM.so \
-	$(PATH_LIB)/VBoxXPCOMGlue$(VBOX_SUFF_LIB)
+tstVBoxAPILinux_LIBS     = $(LIB_XPCOM)
 
 #
 # tstVBoxAPIWin

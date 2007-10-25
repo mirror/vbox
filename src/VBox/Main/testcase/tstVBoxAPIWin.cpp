@@ -22,6 +22,34 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*
+ * PURPOSE OF THIS SAMPLE PROGRAM
+ * ------------------------------
+ *
+ * This sample program is intended to demonstrate the minimal code necessary
+ * to use VirtualBox COM API for learning puroses only. The program uses pure
+ * Win32 API and doesn't have any extra dependencies to let you better
+ * understand what is going on when a client talks to the VirtualBox core
+ * using the COM framework.
+ *
+ * However, if you want to write a real application, it is highly recommended
+ * to use our MS COM XPCOM Glue library and helper C++ classes. This way, you
+ * will get at least the following benefits:
+ *
+ * a) better portability: both the MS COM (used on Windows) and XPCOM (used
+ *    everywhere else) VirtualBox client application from the same source code
+ *    (including common smart C++ templates for automatic interface pointer
+ *    reference counter and string data management);
+ * b) simpler XPCOM initialization and shutdown (only a signle method call
+ *    that does everything right).
+ *
+ * Currently, there is no separate sample program that uses the VirtualBox MS
+ * COM XPCOM Glue library. Please refer to the sources of stock VirtualBox
+ * applications such as the VirtualBox GUI frontend or the VBoxManage command
+ * line frontend.
+ */
+
+
 #include <stdio.h>
 #include "VirtualBox.h"
 
