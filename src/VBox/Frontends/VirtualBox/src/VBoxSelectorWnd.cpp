@@ -574,6 +574,16 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
         }
     }
 
+    /* restore the position of vm selector */
+    {
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        QString prevVMId = vbox.GetExtraData (VBoxDefs::GUI_LastVMSelected);
+
+        VBoxVMListBoxItem *item = vmListBox->item (QUuid (prevVMId));
+        if (item)
+            vmListBox->setSelected (item, true);
+    }
+
     clearWState (WState_Polished);
 
     /* signals and slots connections */
@@ -633,9 +643,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
 {
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+
     /* save the position of the window */
     {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
         QString winPos = QString ("%1,%2,%3,%4")
                                  .arg (normal_pos.x()).arg (normal_pos.y())
                                  .arg (normal_size.width())
@@ -644,6 +655,14 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
             winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
 
         vbox.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
+    }
+    /* save vm selector position */
+    {
+        QListBoxItem *item = vmListBox->selectedItem();
+        QString curVMId = item ?
+            QString (static_cast<VBoxVMListBoxItem*> (item)->id()) :
+		    QString::null;
+        vbox.SetExtraData (VBoxDefs::GUI_LastVMSelected, curVMId);
     }
 }
 

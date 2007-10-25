@@ -165,6 +165,7 @@ struct VBoxDefs
 #endif
     static const char* GUI_RegistrationDlgWinID;
     static const char* GUI_RegistrationData;
+    static const char* GUI_LastVMSelected;
 };
 
 #endif // __VBoxDefs_h__
