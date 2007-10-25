@@ -65,7 +65,12 @@ BEGINPROC rtTimeNanoTSInternalAsm
     ;
     ; Load pGip and calc pGipCPU, setting u32ApicIdPlus if necessary.
     ;
+%ifdef IMPORTED_SUPLIB
+    mov     esi, IMP(g_pSUPGlobalInfoPage)
+    mov     esi, [esi]
+%else
     mov     esi, [NAME(g_pSUPGlobalInfoPage)]
+%endif
     or      esi, esi
     jz      .Rediscover
     cmp     dword [esi + SUPGLOBALINFOPAGE.u32Magic], SUPGLOBALINFOPAGE_MAGIC
@@ -463,7 +468,34 @@ BEGINPROC rtTimeNanoTSInternalAsm
 
     ;
     ; Load pGip and calc pGipCPU, setting u32ApicIdPlus if necessary.
+    ; Finding the GIP is fun...
     ;
+%ifdef RT_OS_WINDOWS
+ %ifdef IMPORTED_SUPLIB
+  %ifdef IN_RING0
+    mov     rax, qword IMP(g_SUPGlobalInfoPage)
+    mov     pGip, rax
+  %else
+    mov     pGip, [IMP(g_pSUPGlobalInfoPage) wrt rip]
+    mov     pGip, [pGip]
+  %endif
+ %else
+    mov     pGip, [NAME(g_pSUPGlobalInfoPage) wrt rip]
+ %endif
+%else
+ %ifdef IN_RING0
+    mov     rax, qword NAME(g_SUPGlobalInfoPage)
+    mov     pGip, rax
+ %else
+    mov     pGip, [rel NAME(g_pSUPGlobalInfoPage) wrt ..gotpcrel]
+    mov     pGip, [pGip]
+ %endif
+%endif
+    or      pGip, pGip
+    jz      .Rediscover
+    cmp     dword [pGip + SUPGLOBALINFOPAGE.u32Magic], SUPGLOBALINFOPAGE_MAGIC
+    jne     .Rediscover
+
 %ifdef ASYNC_GIP
     ; u8ApicId = ASMGetApicId();
     mov     eax, 1
@@ -475,28 +507,10 @@ BEGINPROC rtTimeNanoTSInternalAsm
     shr     ebx, 24
     mov     eax, SUPGIPCPU_size
     mul     ebx
- %ifdef RT_OS_WINDOWS
-    mov     pGip, [NAME(g_pSUPGlobalInfoPage) wrt rip]
- %else
-    mov     pGip, [rel NAME(g_pSUPGlobalInfoPage) wrt ..gotpcrel]
-    mov     pGip, [pGip]
- %endif
     lea     pGipCPU, [pGip + rax + SUPGLOBALINFOPAGE.aCPUs]
-;    lea     pGipCPU, [pGip + SUPGLOBALINFOPAGE.aCPUs]
-;    lea     pGipCPU, [pGipCPU + rax]
 %else
- %ifdef RT_OS_WINDOWS
-    mov     pGip, [NAME(g_pSUPGlobalInfoPage) wrt rip]
- %else
-    mov     pGip, [rel NAME(g_pSUPGlobalInfoPage) wrt ..gotpcrel]
-    mov	    pGip, [pGip]
- %endif
     lea     pGipCPU, [pGip + SUPGLOBALINFOPAGE.aCPUs]
 %endif
-    or      pGip, pGip
-    jz      .Rediscover
-    cmp     dword [pGip + SUPGLOBALINFOPAGE.u32Magic], SUPGLOBALINFOPAGE_MAGIC
-    jne     .Rediscover
 
 %ifdef NEED_TRANSACTION_ID
     ;
