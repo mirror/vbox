@@ -102,7 +102,13 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMGetDR3.asm \
 	win/amd64/ASMGetDR6.asm \
 	win/amd64/ASMGetDR7.asm \
-	win/amd64/ASMMultU64ByU32DivByU32.asm \
+	common/asm/ASMMultU64ByU32DivByU32.asm
+
+#
+# Win32 assembly sources.
+#
+RuntimeWin32ASM_SOURCES = \
+	common/asm/ASMMultU64ByU32DivByU32.asm
 
 #
 # RuntimeR3 - Static Runtime for Ring-3 executables.
@@ -268,8 +274,8 @@ RuntimeR3_SOURCES.win = \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
 
-RuntimeR3_SOURCES.win.amd64 = \
-	$(RuntimeWin64ASM_SOURCES)
+RuntimeR3_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
+RuntimeR3_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR3_SOURCES.linux = \
 	generic/pathhost-generic.cpp \
@@ -533,6 +539,7 @@ VBoxRT_SOURCES                 = \
 VBoxRT_SOURCES.$(BUILD_TARGET) = $(RuntimeR3_SOURCES.$(BUILD_TARGET))
 VBoxRT_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(BUILD_TARGET).$(BUILD_TARGET_ARCH))
 VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp
+VBoxRT_SOURCES.win.x86        += r3/win/VBoxRT-win32.def
 VBoxRT_SOURCES.win.amd64      += r3/win/VBoxRT-win64.def
 VBoxRT_INCS                    = $(RuntimeR3_INCS)
 VBoxRT_INCS.$(BUILD_TARGET)    = $(RuntimeR3_INCS.$(BUILD_TARGET))
@@ -686,6 +693,7 @@ RuntimeR0_SOURCES       = \
 #endif
 
 RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
+RuntimeR0_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR0_SOURCES.os2 = \
 	os2/RTErrConvertFromOS2.cpp \
@@ -802,8 +810,8 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/time-r0drv-nt.cpp
 ## @todo timer-r0drv-nt.cpp and assert-r0drv-nt.cpp
 
-RuntimeR0Drv_SOURCES.win.amd64 = \
-	$(RuntimeWin64ASM_SOURCES)
+RuntimeR0Drv_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
+RuntimeR0Drv_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR0Drv_SOURCES.darwin = \
 	common/err/RTErrConvertFromErrno.cpp \
@@ -1014,6 +1022,8 @@ RuntimeGC_SOURCES       = \
 #else
  RuntimeGC_SOURCES += common/time/timesupref.cpp
 #endif
+
+RuntimeGC_SOURCES.win.x86 = $(RuntimeWin32ASM_SOURCES)
 
 ifeq ($(VBOX_LDR_FMT32),lx)
  RuntimeGC_SOURCES += os2/sys0.asm
