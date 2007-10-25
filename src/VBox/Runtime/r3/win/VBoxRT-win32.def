@@ -1,6 +1,6 @@
 ; $Id: $
 ;; @file
-; innotek Portable Runtime - Win64 ASM exports.
+; innotek Portable Runtime - Win32 ASM exports.
 ;
 
 ;
@@ -16,17 +16,6 @@
 ;
 
 EXPORTS
-    ASMAtomicBitClear
-    ASMAtomicBitToggle
-    ASMAtomicBitTestAndToggle
-    ASMBitFirstClear
-    ASMBitFirstSet
-    ASMAtomicReadU64
-    ASMAtomicXchgU8
-    ASMAtomicXchgU16
-    ASMGetFlags
-    ASMProbeReadByte
-    ASMSetFlags
     ASMMultU64ByU32DivByU32
 
     RTTimeNanoTSLegacySync
