@@ -36,6 +36,6 @@ $(PATH_TARGET)/vboxadd-xclient/vboxadd-xclient: $(PATH_TARGET)/vboxadd-xclient/l
 
 $(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
-	$(QUIET)ln -s `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ || cp `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
+	$(QUIET)ln -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ || cp `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
 
 include	$(PATH_KBUILD)/footer.kmk
