@@ -50,6 +50,9 @@ VBoxBFE_SOURCES = \
 	StatusImpl.cpp \
 	MachineDebuggerImpl.cpp
 
+VBoxBFE_SOURCES.darwin = \
+	VBoxBFEMain-darwin.m
+
 VBoxBFE_SOURCES.l4 = \
 	L4Console.cpp \
 	L4Framebuffer.cpp \
