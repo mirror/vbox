@@ -33,3 +33,4 @@ const char* VBoxDefs::GUI_LicenseKey = "GUI/LicenseAgreed";
 #endif
 const char* VBoxDefs::GUI_RegistrationDlgWinID = "GUI/RegistrationDlgWinID";
 const char* VBoxDefs::GUI_RegistrationData = "GUI/RegistrationData";
+const char* VBoxDefs::GUI_LastVMSelected = "GUI/LastVMSelected";
