@@ -156,7 +156,7 @@ start() {
             fail "Cannot locate the VirtualBox device"
         }
 
-        mknod -m 0664 $dev c $maj $min || {
+        mknod -m 0660 $dev c $maj $min || {
             rmmod $modname
             fail "Cannot create device $dev with major $maj and minor $min"
         }
