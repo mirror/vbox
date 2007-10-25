@@ -49,11 +49,6 @@
  * 04/10/2000   IBM Corp.       Added DebugBreak() definitions for OS/2
  */
 
-/* @todo cannot currently build with VBOX defined on linux platforms... */
-#if defined(VBOX) && !defined(XP_OS2)
-#undef VBOX
-#endif
-
 #if defined(VBOX) && defined(DEBUG)
 #define IN_RING3
 #include <iprt/initterm.h> /* for RTR3Init */
@@ -412,11 +407,11 @@ PR_IMPLEMENT(PRLogModuleInfo*) PR_NewLogModule(const char *name)
 PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 {
 #ifdef _PR_USE_STDIO_FOR_LOGGING
+
     FILE *newLogFile;
 
 #if defined(VBOX) && defined(DEBUG)
-    if ( strcmp( file, "IPRT") == 0)
-    {
+    if (strcmp(file, "IPRT") == 0) {
         /* initialize VBox Runtime */
 		RTR3Init(false, 0);
         newLogFile = IPRT_DEBUG_FILE;
@@ -424,8 +419,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
     else
 #endif
 #ifdef XP_PC
-    if ( strcmp( file, "WinDebug") == 0)
-    {
+    if (strcmp(file, "WinDebug") == 0) {
         newLogFile = WIN32_DEBUG_FILE;
     }
     else
@@ -452,8 +446,19 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
     }
     logFile = newLogFile;
     return PR_TRUE;
-#else
+
+#else /* _PR_USE_STDIO_FOR_LOGGING */
+
     PRFileDesc *newLogFile;
+
+#if defined(VBOX) && defined(DEBUG)
+    if (strcmp(file, "IPRT") == 0) {
+        /* initialize VBox Runtime */
+		RTR3Init(false, 0);
+        logFile = IPRT_DEBUG_FILE;
+        return PR_TRUE;
+    }
+#endif
 
     newLogFile = PR_Open(file, PR_WRONLY|PR_CREATE_FILE|PR_TRUNCATE, 0666);
     if (newLogFile) {
@@ -466,6 +471,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #endif
     }
     return (PRBool) (newLogFile != 0);
+
 #endif /* _PR_USE_STDIO_FOR_LOGGING */
 }
 
