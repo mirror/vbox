@@ -3227,7 +3227,7 @@ static int handleConvertDDImage(int argc, char *argv[])
         rc = RTFileGetSize(File, &cbFile);
     if (VBOX_SUCCESS(rc))
     {
-        RTPrintf("Creating fixed image with size %RU64Bytes (%RU64MB)...\n", cbFile, (cbFile + _1M - 1) / _1M);
+        RTPrintf("Creating fixed image with size %RU64 bytes (%RU64MB)...\n", cbFile, (cbFile + _1M - 1) / _1M);
         char pszComment[256];
         RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", argv[0]);
         rc = VDICreateBaseImage(argv[1],
@@ -3241,20 +3241,22 @@ static int handleConvertDDImage(int argc, char *argv[])
             if (VBOX_SUCCESS(rc))
             {
                 /* alloc work buffer. */
-                void *pvBuf = RTMemAlloc(VDIDiskGetBufferSize(pVdi));
+                size_t cbBuffer = VDIDiskGetBufferSize(pVdi);
+                void   *pvBuf = RTMemAlloc(cbBuffer);
                 if (pvBuf)
                 {
-                    uint64_t off = 0;
-                    while (off < cbFile)
+                    uint64_t offFile = 0;
+                    while (offFile < cbFile)
                     {
                         size_t cbRead = 0;
-                        rc = RTFileRead(File, pvBuf, VDIDiskGetBufferSize(pVdi), &cbRead);
+                        size_t cbToRead = cbFile - offFile >= cbBuffer ? cbBuffer : cbFile - offFile;
+                        rc = RTFileRead(File, pvBuf, cbToRead, &cbRead);
                         if (VBOX_FAILURE(rc) || !cbRead)
                             break;
-                        rc = VDIDiskWrite(pVdi, off, pvBuf, cbRead);
+                        rc = VDIDiskWrite(pVdi, offFile, pvBuf, cbRead);
                         if (VBOX_FAILURE(rc))
                             break;
-                        off += cbRead;
+                        offFile += cbRead;
                     }
 
                     RTMemFree(pvBuf);
