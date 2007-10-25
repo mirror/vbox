@@ -41,7 +41,7 @@ elif [ ! -c /dev/vboxdrv ]; then
     cat << EOF
 WARNING: The character device /dev/vboxdrv does not exist. Try
 
-           sudo /etc/init.d/virtualbox restart
+           sudo /etc/init.d/vboxdrv restart
 
          and if that is not successful, try to re-install the package.
 
