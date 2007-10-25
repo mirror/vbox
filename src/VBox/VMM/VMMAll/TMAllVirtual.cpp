@@ -43,6 +43,53 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
 
 
 /**
+ * Helper function that's used by the assembly routines when something goes bust.
+ *
+ * @param   pData           Pointer to the data structure.
+ * @param   u64NanoTS       The calculated nano ts.
+ * @param   u64DeltaPrev    The delta relative to the previously returned timestamp.
+ * @param   u64PrevNanoTS   The previously returned timestamp (as it was read it).
+ */
+DECLEXPORT(void) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS)
+{
+    //PVM pVM = (PVM)((uint8_t *)pData - RT_OFFSETOF(VM, CTXALLSUFF(s.tm.VirtualGetRawData)));
+    pData->cBadPrev++;
+    if ((int64_t)u64DeltaPrev < 0)
+        LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64\n",
+                u64DeltaPrev, u64PrevNanoTS, u64NanoTS));
+    else
+        Log(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 (debugging?)\n",
+             u64DeltaPrev, u64PrevNanoTS, u64NanoTS));
+}
+
+
+/**
+ * Called the first time somebody asks for the time or when the GIP
+ * is mapped/unmapped.
+ *
+ * This should never ever happen.
+ */
+DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData)
+{
+    //PVM pVM = (PVM)((uint8_t *)pData - RT_OFFSETOF(VM, CTXALLSUFF(s.tm.VirtualGetRawData)));
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    AssertFatalMsgFailed(("pGip=%p u32Magic=%#x\n", pGip, VALID_PTR(pGip) ? pGip->u32Magic : 0));
+}
+
+
+#if 1
+
+/**
+ * Wrapper around the IPRT GIP time methods.
+ */
+DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
+{
+    return CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData));
+}
+
+#else
+
+/**
  * This is (mostly) the same as rtTimeNanoTSInternal() except
  * for the two globals which live in TM.
  *
@@ -166,13 +213,13 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
              && (int64_t)u64DeltaPrev + u32NanoTSFactor0 * 2 > 0)
     {
         /* occasional - u64NanoTS is in the 'past' relative to previous returns. */
-        ASMAtomicIncU32(&pVM->tm.s.c1nsVirtualRawSteps);
+        ASMAtomicIncU32(&pVM->tm.s.CTXALLSUFF(VirtualGetRawData).c1nsSteps);
         u64NanoTS = u64PrevNanoTS + 1;
     }
     else if (u64PrevNanoTS)
     {
         /* Something has gone bust, if negative offset it's real bad. */
-        ASMAtomicIncU32(&pVM->tm.s.cVirtualRawBadRawPrev);
+        ASMAtomicIncU32(&pVM->tm.s.CTXALLSUFF(VirtualGetRawData).cBadPrev);
         if ((int64_t)u64DeltaPrev < 0)
             LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
                     u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
@@ -211,6 +258,8 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
 
     return u64NanoTS;
 }
+
+#endif
 
 
 /**

@@ -121,7 +121,7 @@ int main()
     GEN_CHECK_OFF(EM, pCliStatTree);
 
     GEN_CHECK_SIZE(IOM);
-              
+
     GEN_CHECK_SIZE(IOMMMIORANGER0);
     GEN_CHECK_OFF(IOMMMIORANGER0, GCPhys);
     GEN_CHECK_OFF(IOMMMIORANGER0, cbSize);
@@ -676,8 +676,33 @@ int main()
     GEN_CHECK_OFF(TM, u64VirtualOffset);
     GEN_CHECK_OFF(TM, u64Virtual);
     GEN_CHECK_OFF(TM, u64VirtualRawPrev);
-    GEN_CHECK_OFF(TM, c1nsVirtualRawSteps);
-    GEN_CHECK_OFF(TM, cVirtualRawBadRawPrev);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3.pu64Prev);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3.pfnBad);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3.pfnRediscover);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3.c1nsSteps);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3.cBadPrev);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3.cExpired);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR3.cUpdateRaces);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0.pu64Prev);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0.pfnBad);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0.pfnRediscover);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0.c1nsSteps);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0.cBadPrev);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0.cExpired);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataR0.cUpdateRaces);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC.pu64Prev);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC.pfnBad);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC.pfnRediscover);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC.c1nsSteps);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC.cBadPrev);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC.cExpired);
+    GEN_CHECK_OFF(TM, VirtualGetRawDataGC.cUpdateRaces);
+    GEN_CHECK_OFF(TM, pfnVirtualGetRawR3);
+    GEN_CHECK_OFF(TM, pfnVirtualGetRawR0);
+    GEN_CHECK_OFF(TM, pfnVirtualGetRawGC);
     GEN_CHECK_OFF(TM, u64VirtualWarpDriveStart);
     GEN_CHECK_OFF(TM, u64VirtualSync);
     GEN_CHECK_OFF(TM, offVirtualSync);
