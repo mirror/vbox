@@ -20,12 +20,12 @@
 
 #include <nsIComponentRegistrar.h>
 
+#if defined(XPCOM_GLUE)
 #include <nsXPCOMGlue.h>
-#include <nsEventQueueUtils.h>
+#endif
 
-// for nsMyFactory
-#include <nsIGenericFactory.h>
-#include <nsIClassInfo.h>
+#include <nsEventQueueUtils.h>
+#include <nsGenericFactory.h>
 
 #include "linux/server.h"
 
@@ -569,16 +569,17 @@ typedef NSFactoryDestructorProcPtr NSFactoryConsructorProcPtr;
 
 /**
  *  Enhanced module component information structure.
- *  nsModuleComponentInfo lacks the factory construction callback,
- *  here we add it. This callback is called by NS_NewMyFactory() after
- *  a nsMyFactory instance is successfully created.
+ *
+ *  nsModuleComponentInfo lacks the factory construction callback, here we add
+ *  it. This callback is called by NS_NewGenericFactoryEx() after a
+ *  nsGenericFactory instance is successfully created.
  */
-struct nsMyModuleComponentInfo : nsModuleComponentInfo
+struct nsModuleComponentInfoEx : nsModuleComponentInfo
 {
-    nsMyModuleComponentInfo () {}
-    nsMyModuleComponentInfo (int) {}
+    nsModuleComponentInfoEx () {}
+    nsModuleComponentInfoEx (int) {}
 
-    nsMyModuleComponentInfo (
+    nsModuleComponentInfoEx (
         const char*                                 aDescription,
         const nsCID&                                aCID,
         const char*                                 aContractID,
@@ -612,9 +613,9 @@ struct nsMyModuleComponentInfo : nsModuleComponentInfo
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static const nsMyModuleComponentInfo components[] =
+static const nsModuleComponentInfoEx components[] =
 {
-    nsMyModuleComponentInfo (
+    nsModuleComponentInfoEx (
         "VirtualBox component",
         (nsCID) NS_VIRTUALBOX_CID,
         NS_VIRTUALBOX_CONTRACTID,
@@ -633,210 +634,24 @@ static const nsMyModuleComponentInfo components[] =
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Generic component factory.
- *
- *  The code below is stolen from nsGenericFactory.h / nsGenericFactory.cpp,
- *  because we get a segmentation fault for some unknown reason when VBoxSVC
- *  starts up (somewhere during the initialization of the libipcdc.so module)
- *  when we just reference XPCOM's NS_NewGenericFactory() from here (i.e. even
- *  before actually calling it) and run VBoxSVC using the debug XPCOM
- *  libraries.
- *
- *  Actually, I know why, but I find it too stupid even to discuss.
- */
-class nsMyFactory : public nsIGenericFactory, public nsIClassInfo {
-public:
-    NS_DEFINE_STATIC_CID_ACCESSOR(NS_GENERICFACTORY_CID);
-
-    nsMyFactory(const nsModuleComponentInfo *info = NULL);
-
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSICLASSINFO
-
-    /* nsIGenericFactory methods */
-    NS_IMETHOD SetComponentInfo(const nsModuleComponentInfo *info);
-    NS_IMETHOD GetComponentInfo(const nsModuleComponentInfo **infop);
-
-    NS_IMETHOD CreateInstance(nsISupports *aOuter, REFNSIID aIID, void **aResult);
-
-    NS_IMETHOD LockFactory(PRBool aLock);
-
-    static NS_METHOD Create(nsISupports* outer, const nsIID& aIID, void* *aInstancePtr);
-private:
-    ~nsMyFactory();
-
-    const nsModuleComponentInfo *mInfo;
-};
-
-nsMyFactory::nsMyFactory(const nsModuleComponentInfo *info)
-    : mInfo(info)
-{
-    if (mInfo && mInfo->mClassInfoGlobal)
-        *mInfo->mClassInfoGlobal = NS_STATIC_CAST(nsIClassInfo *, this);
-}
-
-nsMyFactory::~nsMyFactory()
-{
-    if (mInfo) {
-        if (mInfo->mFactoryDestructor)
-            mInfo->mFactoryDestructor();
-        if (mInfo->mClassInfoGlobal)
-            *mInfo->mClassInfoGlobal = 0;
-    }
-}
-
-NS_IMPL_THREADSAFE_ISUPPORTS3(nsMyFactory,
-                              nsIGenericFactory,
-                              nsIFactory,
-                              nsIClassInfo)
-
-NS_IMETHODIMP nsMyFactory::CreateInstance(nsISupports *aOuter,
-                                               REFNSIID aIID, void **aResult)
-{
-    if (mInfo->mConstructor)
-        return mInfo->mConstructor(aOuter, aIID, aResult);
-
-    return NS_ERROR_FACTORY_NOT_REGISTERED;
-}
-
-NS_IMETHODIMP nsMyFactory::LockFactory(PRBool aLock)
-{
-    // XXX do we care if (mInfo->mFlags & THREADSAFE)?
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetInterfaces(PRUint32 *countp,
-                                              nsIID* **array)
-{
-    if (!mInfo->mGetInterfacesProc) {
-        *countp = 0;
-        *array = nsnull;
-        return NS_OK;
-    }
-    return mInfo->mGetInterfacesProc(countp, array);
-}
-
-NS_IMETHODIMP nsMyFactory::GetHelperForLanguage(PRUint32 language,
-                                                     nsISupports **helper)
-{
-    if (mInfo->mGetLanguageHelperProc)
-        return mInfo->mGetLanguageHelperProc(language, helper);
-    *helper = nsnull;
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetContractID(char **aContractID)
-{
-    if (mInfo->mContractID) {
-        *aContractID = (char *)nsMemory::Alloc(strlen(mInfo->mContractID) + 1);
-        if (!*aContractID)
-            return NS_ERROR_OUT_OF_MEMORY;
-        strcpy(*aContractID, mInfo->mContractID);
-    } else {
-        *aContractID = nsnull;
-    }
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetClassDescription(char * *aClassDescription)
-{
-    if (mInfo->mDescription) {
-        *aClassDescription = (char *)
-            nsMemory::Alloc(strlen(mInfo->mDescription) + 1);
-        if (!*aClassDescription)
-            return NS_ERROR_OUT_OF_MEMORY;
-        strcpy(*aClassDescription, mInfo->mDescription);
-    } else {
-        *aClassDescription = nsnull;
-    }
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetClassID(nsCID * *aClassID)
-{
-    *aClassID =
-        NS_REINTERPRET_CAST(nsCID*,
-                            nsMemory::Clone(&mInfo->mCID, sizeof mInfo->mCID));
-    if (! *aClassID)
-        return NS_ERROR_OUT_OF_MEMORY;
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetClassIDNoAlloc(nsCID *aClassID)
-{
-    *aClassID = mInfo->mCID;
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetImplementationLanguage(PRUint32 *langp)
-{
-    *langp = nsIProgrammingLanguage::CPLUSPLUS;
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetFlags(PRUint32 *flagsp)
-{
-    *flagsp = mInfo->mFlags;
-    return NS_OK;
-}
-
-// nsIGenericFactory: component-info accessors
-NS_IMETHODIMP nsMyFactory::SetComponentInfo(const nsModuleComponentInfo *info)
-{
-    if (mInfo && mInfo->mClassInfoGlobal)
-        *mInfo->mClassInfoGlobal = 0;
-    mInfo = info;
-    if (mInfo && mInfo->mClassInfoGlobal)
-        *mInfo->mClassInfoGlobal = NS_STATIC_CAST(nsIClassInfo *, this);
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsMyFactory::GetComponentInfo(const nsModuleComponentInfo **infop)
-{
-    *infop = mInfo;
-    return NS_OK;
-}
-
-NS_METHOD nsMyFactory::Create(nsISupports* outer, const nsIID& aIID, void* *aInstancePtr)
-{
-    // sorry, aggregation not spoken here.
-    nsresult res = NS_ERROR_NO_AGGREGATION;
-    if (outer == NULL) {
-        nsMyFactory* factory = new nsMyFactory;
-        if (factory != NULL) {
-            res = factory->QueryInterface(aIID, aInstancePtr);
-            if (res != NS_OK)
-                delete factory;
-        } else {
-            res = NS_ERROR_OUT_OF_MEMORY;
-        }
-    }
-    return res;
-}
-
-/**
- *  Instantiates a new factory and calls
- *  nsMyModuleComponentInfo::mFactoryConstructor.
+ *  Extends NS_NewGenericFactory() by immediately calling
+ *  nsModuleComponentInfoEx::mFactoryConstructor before returning to the
+ *  caller.
  */
 nsresult
-NS_NewMyFactory(nsIGenericFactory* *result,
-                const nsMyModuleComponentInfo *info)
+NS_NewGenericFactoryEx (nsIGenericFactory **result,
+                        const nsModuleComponentInfoEx *info)
 {
-    nsresult rv;
-    nsMyFactory* fact;
-    rv = nsMyFactory::Create(NULL, NS_GET_IID(nsIGenericFactory), (void**)&fact);
-    if (NS_FAILED(rv)) return rv;
-    rv = fact->SetComponentInfo(info);
-    if (NS_FAILED(rv)) goto error;
-    if (info && info->mFactoryConstructor) {
-        rv = info->mFactoryConstructor();
-        if (NS_FAILED(rv)) goto error;
-    }
-    *result = fact;
-    return rv;
+    AssertReturn (result, NS_ERROR_INVALID_POINTER);
 
-  error:
-    NS_RELEASE(fact);
+    nsresult rv = NS_NewGenericFactory (result, info);
+    if (NS_SUCCEEDED (rv) && info && info->mFactoryConstructor)
+    {
+        rv = info->mFactoryConstructor();
+        if (NS_FAILED (rv))
+            NS_RELEASE (*result);
+    }
+
     return rv;
 }
 
@@ -848,19 +663,18 @@ NS_NewMyFactory(nsIGenericFactory* *result,
  */
 static nsresult
 RegisterSelfComponents (nsIComponentRegistrar *registrar,
-                        const nsMyModuleComponentInfo *components,
+                        const nsModuleComponentInfoEx *components,
                         PRUint32 count)
 {
     nsresult rc = NS_OK;
-    const nsMyModuleComponentInfo *info = components;
+    const nsModuleComponentInfoEx *info = components;
     for (PRUint32 i = 0; i < count && NS_SUCCEEDED (rc); i++, info++)
     {
         /* skip components w/o a constructor */
         if (!info->mConstructor) continue;
         /* create a new generic factory for a component and register it */
         nsIGenericFactory *factory;
-        rc = NS_NewGenericFactory (&factory, info);
-        rc = NS_NewMyFactory (&factory, info);
+        rc = NS_NewGenericFactoryEx (&factory, info);
         if (NS_SUCCEEDED (rc))
         {
             rc = registrar->RegisterFactory (info->mCID,
