@@ -598,6 +598,14 @@ TMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta);
 TMR3DECL(int) TMR3Init(PVM pVM);
 
 /**
+ * Finalizes the TM initialization.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+TMR3DECL(int) TMR3InitFinalize(PVM pVM);
+
+/**
  * Applies relocations to data and code managed by this
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
