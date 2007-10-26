@@ -276,6 +276,37 @@ STDMETHODIMP HostUSBDevice::COMGETTER(Port)(USHORT *aPort)
     return S_OK;
 }
 
+STDMETHODIMP HostUSBDevice::COMGETTER(Version)(USHORT *aVersion)
+{
+    if (!aVersion)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aVersion = mUsb->bcdUSB >> 8;
+
+    return S_OK;
+}
+
+STDMETHODIMP HostUSBDevice::COMGETTER(PortVersion)(USHORT *aPortVersion)
+{
+    if (!aPortVersion)
+        return E_INVALIDARG;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    /** @todo implement this correctly or things just won't work right, see the vista defect. */
+    *aPortVersion = mUsb->bcdUSB >> 8;
+
+    return S_OK;
+}
+
 STDMETHODIMP HostUSBDevice::COMGETTER(Remote)(BOOL *aRemote)
 {
     if (!aRemote)

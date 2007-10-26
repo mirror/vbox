@@ -61,6 +61,8 @@ public:
     STDMETHOD(COMGETTER(SerialNumber))(BSTR *aSerialNumber);
     STDMETHOD(COMGETTER(Address))(BSTR *aAddress);
     STDMETHOD(COMGETTER(Port))(USHORT *aPort);
+    STDMETHOD(COMGETTER(Version))(USHORT *aVersion);
+    STDMETHOD(COMGETTER(PortVersion))(USHORT *aPortVersion);
     STDMETHOD(COMGETTER(Remote))(BOOL *aRemote);
 
     // public methods only for internal purposes
@@ -88,8 +90,13 @@ private:
     Bstr mSerialNumber;
     /** The host specific address of the device. */
     Bstr mAddress;
-
+    /** The host port number. */
     USHORT mPort;
+    /** The major USB version number of the device. */
+    USHORT mVersion;
+    /** The major USB version number of the port the device is attached to. */
+    USHORT mPortVersion;
+    /** Remote (VRDP) or local device. */
     BOOL mRemote;
 };
 

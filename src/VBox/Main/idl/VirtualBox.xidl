@@ -7885,7 +7885,7 @@
 
   <interface
      name="IUSBDevice" extends="$unknown"
-     uuid="c5ab8d05-1999-4e48-ae34-cdeb235aacf0"
+     uuid="850af07b-9ee8-48c2-b6b0-f6d0acbf63c3"
      wsmap="managed"
      >
     <desc>
@@ -7937,6 +7937,20 @@
       <desc>
         Host USB port number the device is physically
         coonected to.
+      </desc>
+    </attribute>
+
+    <attribute name="version" type="unsigned short" readonly="yes">
+      <desc>
+        The major USB version of the device - 1 or 2.
+      </desc>
+    </attribute>
+
+    <attribute name="portVersion" type="unsigned short" readonly="yes">
+      <desc>
+        The major USB version of the host USB port the device is
+        physically coonected to - 1 or 2. For devices not connected to
+        anything this will have the same value as the version attribute.
       </desc>
     </attribute>
 
