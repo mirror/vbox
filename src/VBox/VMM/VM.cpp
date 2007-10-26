@@ -586,6 +586,8 @@ static int vmR3InitRing3(PVM pVM)
                                                                 if (VBOX_SUCCESS(rc))
                                                                     rc = SELMR3InitFinalize(pVM);
                                                                 if (VBOX_SUCCESS(rc))
+                                                                    rc = TMR3InitFinalize(pVM);
+                                                                if (VBOX_SUCCESS(rc))
                                                                     rc = VMMR3InitFinalize(pVM);
                                                                 if (VBOX_SUCCESS(rc))
                                                                     rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);

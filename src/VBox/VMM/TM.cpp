@@ -230,52 +230,26 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.VirtualGetRawDataR3.pu64Prev = &pVM->tm.s.u64VirtualRawPrev;
     pVM->tm.s.VirtualGetRawDataR3.pfnBad = tmVirtualNanoTSBad;
     pVM->tm.s.VirtualGetRawDataR3.pfnRediscover = tmVirtualNanoTSRediscover;
-
-    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToGC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
-#if 0 /* too early */
-    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
-    AssertRCReturn(rc, rc);
-    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
-    AssertRCReturn(rc, rc);
-#endif
-
-    pVM->tm.s.VirtualGetRawDataR0.pu64Prev = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
-    AssertReturn(pVM->tm.s.VirtualGetRawDataR0.pu64Prev, VERR_INTERNAL_ERROR);
-    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
-    AssertRCReturn(rc, rc);
-    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
-    AssertRCReturn(rc, rc);
-
     if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
     {
         if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC)
-        {
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLFenceSync;
-            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceSync", &pVM->tm.s.pfnVirtualGetRawR0);
-            AssertRCReturn(rc, rc);
-        }
         else
-        {
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLFenceAsync;
-            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawR0);
-            AssertRCReturn(rc, rc);
-        }
     }
     else
     {
         if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC)
-        {
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLegacySync;
-            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacySync", &pVM->tm.s.pfnVirtualGetRawR0);
-            AssertRCReturn(rc, rc);
-        }
         else
-        {
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLegacyAsync;
-            rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawR0);
-            AssertRCReturn(rc, rc);
-        }
     }
+
+    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToGC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    pVM->tm.s.VirtualGetRawDataR0.pu64Prev = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    AssertReturn(pVM->tm.s.VirtualGetRawDataR0.pu64Prev, VERR_INTERNAL_ERROR);
+    /* The rest is done in TMR3InitFinalize since it's too early to call PDM. */
+
 
     /*
      * Get our CFGM node, create it if necessary.
@@ -716,6 +690,52 @@ static uint64_t tmR3CalibrateTSC(void)
 
 
 /**
+ * Finalizes the TM initialization.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+TMR3DECL(int) TMR3InitFinalize(PVM pVM)
+{
+    int rc;
+
+    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
+    AssertRCReturn(rc, rc);
+    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
+    AssertRCReturn(rc, rc);
+    if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
+        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+    else
+        AssertFatalFailed();
+    AssertRCReturn(rc, rc);
+
+    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
+    AssertRCReturn(rc, rc);
+    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
+    AssertRCReturn(rc, rc);
+    if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
+        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawR0);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
+        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawR0);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
+        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawR0);
+    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
+        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawR0);
+    else
+        AssertFatalFailed();
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Applies relocations to data and code managed by this
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
@@ -749,6 +769,7 @@ TMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
     else
         AssertFatalFailed();
+    AssertFatalRC(rc);
 
     /*
      * Iterate the timers updating the pVMGC pointers.
