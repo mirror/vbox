@@ -1167,6 +1167,13 @@
 #define VERR_DIS_GEN_FAILURE                        (-5001)
 /** @} */
 
+/** @name VBox Webservice Status Codes
+ * @{
+ */
+/** Authentication failed (ISessionManager::logon()) */
+#define VERR_WEB_NOT_AUTHENTICATED                  (-6000)
+/** @} */
+
 /* SED-END */
 
 
