@@ -43,6 +43,10 @@
 
 static nsIDebug* gDebugObject = nsnull;
 
+// Note: Although the machinery here is similar to nsMemory.cpp, we cannot use
+// NS_ASSERTION macros below because they end up in nsDebug::Assertion and
+// therefore may produce endless recursion.
+
 static NS_METHOD FreeDebugObject(void)
 {
     NS_IF_RELEASE(gDebugObject);
@@ -54,18 +58,24 @@ static NS_METHOD FreeDebugObject(void)
 
 static nsIDebug* SetupDebugObject()
 {
-  NS_GetDebug(&gDebugObject);
-  if (gDebugObject)
-    NS_RegisterXPCOMExitRoutine(FreeDebugObject, 0);
+  if (!gDebugObject)
+  {
+    NS_GetDebug(&gDebugObject);
+    if (gDebugObject)
+      NS_RegisterXPCOMExitRoutine(FreeDebugObject, 0);
+  }
   return gDebugObject;
 }
 
 #ifdef XPCOM_GLUE
 nsresult GlueStartupDebug() 
 {
-  NS_GetDebug(&gDebugObject);
-  if (!gDebugObject) 
-    return NS_ERROR_FAILURE;
+  if (!gDebugObject)
+  {
+    NS_GetDebug(&gDebugObject);
+    if (!gDebugObject) 
+      return NS_ERROR_FAILURE;
+  }
   return NS_OK;
 }
 

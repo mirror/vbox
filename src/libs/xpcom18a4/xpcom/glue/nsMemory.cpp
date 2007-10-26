@@ -43,6 +43,7 @@ static nsIMemory* gMemory = nsnull;
 
 static NS_METHOD FreeGlobalMemory(void)
 {
+    NS_ASSERTION(gMemory, "must be not null after SetupGlobalMemory");
     NS_IF_RELEASE(gMemory);
     return NS_OK;
 }
@@ -53,19 +54,28 @@ static NS_METHOD FreeGlobalMemory(void)
 static nsIMemory*
 SetupGlobalMemory()
 {
-    NS_ASSERTION(!gMemory, "bad call");
-    NS_GetMemoryManager(&gMemory);
-    NS_ASSERTION(gMemory, "can't get memory manager!");
-    NS_RegisterXPCOMExitRoutine(FreeGlobalMemory, 0);
+    NS_ASSERTION(!gMemory, "must be called once");
+    if (!gMemory)
+    {
+        NS_GetMemoryManager(&gMemory);
+        NS_ASSERTION(gMemory, "can't get memory manager!");
+        if (gMemory)
+            NS_RegisterXPCOMExitRoutine(FreeGlobalMemory, 0);
+    }
     return gMemory;
 }
 
 #ifdef XPCOM_GLUE
 nsresult GlueStartupMemory() 
 {
-    NS_ASSERTION(!gMemory, "bad call");
-    NS_GetMemoryManager(&gMemory);
-    NS_ASSERTION(gMemory, "can't get memory manager!");
+    NS_ASSERTION(!gMemory, "must be called once");
+    if (!gMemory)
+    {
+        NS_GetMemoryManager(&gMemory);
+        NS_ASSERTION(gMemory, "can't get memory manager!");
+        if (!gMemory)
+            return NS_ERROR_FAILURE;
+    }
     return NS_OK;
 }
 

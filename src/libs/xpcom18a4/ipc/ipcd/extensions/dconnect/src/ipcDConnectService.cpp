@@ -121,6 +121,8 @@ typedef unsigned long PtrBits;
 // dconnect minor opcodes for RELEASE
 // dconnect minor opcodes for INVOKE
 
+#pragma pack(1)
+
 struct DConnectOp
 {
   PRUint8  opcode_major;
@@ -185,6 +187,8 @@ struct DConnectInvokeReply : DConnectOp
   // specially serialized nsIException instance if NS_FAILED(result)
   // (see ipcDConnectService::SerializeException)
 };
+
+#pragma pack()
 
 //-----------------------------------------------------------------------------
 
@@ -470,7 +474,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
 
     case nsXPTType::T_IID:
       {
-        nsID *buf = (nsID *) malloc(sizeof(nsID));
+        nsID *buf = (nsID *) nsMemory::Alloc(sizeof(nsID));
         reader.GetBytes(buf, sizeof(nsID));
         v.val.p = v.ptr = buf;
         v.flags = nsXPTCVariant::PTR_IS_DATA | nsXPTCVariant::VAL_IS_ALLOCD;
@@ -488,7 +492,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         }
         else
         {
-          char *buf = (char *) malloc(len + 1);
+          char *buf = (char *) nsMemory::Alloc(len + 1);
           reader.GetBytes(buf, len);
           buf[len] = char(0);
 
@@ -509,7 +513,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
         }
         else
         {
-          PRUnichar *buf = (PRUnichar *) malloc(len + 2);
+          PRUnichar *buf = (PRUnichar *) nsMemory::Alloc(len + 2);
           reader.GetBytes(buf, len);
           buf[len / 2] = PRUnichar(0);
 
@@ -620,6 +624,21 @@ SetupParam(const nsXPTParamInfo &p, nsXPTCVariant &v)
     v.ptr = &v.val;
     v.type = t;
     v.flags = nsXPTCVariant::PTR_IS_DATA;
+
+    // nsID, string and wstring types are not understood as dippers (see
+    // DIPPER_TYPE in xpidl.h) but they behave like dippers too. Therefore we
+    // need to treat them so manually.
+    switch (t.TagPart())
+    {
+      case nsXPTType::T_IID:
+      case nsXPTType::T_CHAR_STR:
+      case nsXPTType::T_WCHAR_STR:
+        // add VAL_IS_ALLOCD to cause FinishParam() to do cleanup
+        v.flags |= nsXPTCVariant::VAL_IS_ALLOCD;
+        break;
+      default:
+        break;
+    }
   }
 
   return NS_OK;
@@ -632,7 +651,7 @@ FinishParam(nsXPTCVariant &v)
     return;
 
   if (v.IsValAllocated())
-    free(v.val.p);
+      nsMemory::Free(v.val.p);
   else if (v.IsValInterface())
     ((nsISupports *) v.val.p)->Release();
   else if (v.IsValDOMString())
@@ -1785,21 +1804,27 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
     }
 
     // check if this object is nsISupports itself
-    nsIID *iid = 0;
-    rv = mIInfo->GetInterfaceIID(&iid);
-    NS_ASSERTION(NS_SUCCEEDED(rv) && iid,
-		 "nsIInterfaceInfo::GetInterfaceIID failed");
-    if (NS_SUCCEEDED(rv) && iid &&
-        iid->Equals(NS_GET_IID(nsISupports)))
     {
-      // nsISupports is queried on nsISupports, return ourselves
-      *aInstancePtr = this;
-      NS_ADDREF_THIS();
-      // cache ourselves weakly
-      mCachedISupports = this;
+      nsIID *iid = 0;
+      rv = mIInfo->GetInterfaceIID(&iid);
+      NS_ASSERTION(NS_SUCCEEDED(rv) && iid,
+                   "nsIInterfaceInfo::GetInterfaceIID failed");
+      if (NS_SUCCEEDED(rv) && iid &&
+          iid->Equals(NS_GET_IID(nsISupports)))
+      {
+        nsMemory::Free((void*)iid);
 
-      PR_Unlock(dConnect->StubQILock());
-      return NS_OK;
+        // nsISupports is queried on nsISupports, return ourselves
+        *aInstancePtr = this;
+        NS_ADDREF_THIS();
+        // cache ourselves weakly
+        mCachedISupports = this;
+
+        PR_Unlock(dConnect->StubQILock());
+        return NS_OK;
+      }
+      if (iid)
+        nsMemory::Free((void*)iid);
     }
 
     // stub lock remains held until we've queried the peer
