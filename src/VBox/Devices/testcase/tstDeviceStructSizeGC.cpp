@@ -59,6 +59,7 @@
 #ifdef VBOX_WITH_USB
 # undef LOG_GROUP
 # include "USB/DevOHCI.cpp"
+# include "USB/DevEHCI.cpp"
 #endif
 #undef LOG_GROUP
 #include "VMMDev/VBoxDev.cpp"
@@ -755,6 +756,51 @@ int main()
     GEN_CHECK_OFF(OHCI, StatCanceledGenUrbs);
     GEN_CHECK_OFF(OHCI, StatDroppedUrbs);
     GEN_CHECK_OFF(OHCI, StatTimer);
+# endif
+    /* USB/DevEHCI.cpp */
+    GEN_CHECK_SIZE(EHCIHUBPORT);
+    GEN_CHECK_OFF(EHCIHUBPORT, fReg);
+    GEN_CHECK_OFF(EHCIHUBPORT, pDev);
+
+    GEN_CHECK_SIZE(EHCIROOTHUB);
+    GEN_CHECK_OFF(EHCIROOTHUB, pIBase);
+    GEN_CHECK_OFF(EHCIROOTHUB, pIRhConn);
+    GEN_CHECK_OFF(EHCIROOTHUB, pIDev);
+    GEN_CHECK_OFF(EHCIROOTHUB, IBase);
+    GEN_CHECK_OFF(EHCIROOTHUB, IRhPort);
+    GEN_CHECK_OFF(EHCIROOTHUB, status);
+    GEN_CHECK_OFF(EHCIROOTHUB, desc_a);
+    GEN_CHECK_OFF(EHCIROOTHUB, desc_b);
+    GEN_CHECK_OFF(EHCIROOTHUB, aPorts);
+    GEN_CHECK_OFF(EHCIROOTHUB, aPorts[1]);
+    GEN_CHECK_OFF(EHCIROOTHUB, aPorts[EHCI_NDP - 1]);
+    GEN_CHECK_OFF(EHCIROOTHUB, pEhci);
+
+    GEN_CHECK_SIZE(EHCI);
+    GEN_CHECK_OFF(EHCI, PciDev);
+    GEN_CHECK_OFF(EHCI, MMIOBase);
+    GEN_CHECK_OFF(EHCI, pEndOfFrameTimerHC);
+    GEN_CHECK_OFF(EHCI, pEndOfFrameTimerGC);
+    GEN_CHECK_OFF(EHCI, SofTime);
+    GEN_CHECK_OFF(EHCI, RootHub);
+    GEN_CHECK_OFF(EHCI, intr_status);
+    GEN_CHECK_OFF(EHCI, intr);
+    GEN_CHECK_OFF(EHCI, HcFmNumber);
+    GEN_CHECK_OFF(EHCI, cTicksPerFrame);
+    GEN_CHECK_OFF(EHCI, cTicksPerUsbTick);
+    GEN_CHECK_OFF(EHCI, cInFlight);
+    GEN_CHECK_OFF(EHCI, aInFlight);
+    GEN_CHECK_OFF(EHCI, aInFlight[0].GCPhysTD);
+    GEN_CHECK_OFF(EHCI, aInFlight[0].pUrb);
+    GEN_CHECK_OFF(EHCI, aInFlight[1]);
+    GEN_CHECK_OFF(EHCI, pDevInsHC);
+    GEN_CHECK_OFF(EHCI, pDevInsGC);
+    GEN_CHECK_OFF(EHCI, pLoad);
+# ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(EHCI, StatCanceledIsocUrbs);
+    GEN_CHECK_OFF(EHCI, StatCanceledGenUrbs);
+    GEN_CHECK_OFF(EHCI, StatDroppedUrbs);
+    GEN_CHECK_OFF(EHCI, StatTimer);
 # endif
 #endif /* VBOX_WITH_USB */
 
