@@ -62,7 +62,7 @@ INSTALLS = VirtualBox.nls
 #
 VBoxKeyboard_TEMPLATE = VBOXR3
 VBoxKeyboard_SOURCES  = \
-	src/linux/keyboard.c
+	src/linux/keyboard-new.c
 
 
 #
@@ -182,7 +182,7 @@ VirtualBox_SOURCES = \
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VirtualBox_SOURCES += \
-	src/linux/XKeyboard.cpp
+	src/linux/XKeyboard-new.cpp
 endif
 
 VirtualBox_SOURCES.win += \
