@@ -438,7 +438,7 @@ typedef struct PDMUSBINS
      * @todo Integrate VUSBDEV into this structure. */
     R3PTRTYPE(void *)           pvVUsbDev;
     /** Padding to make achInstanceData aligned at 32 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 3 : 4];
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 2 : 4];
     /** Device instance data. The size of this area is defined
      * in the PDMUSBREG::cbInstanceData field. */
     char                        achInstanceData[8];
