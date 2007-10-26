@@ -1017,8 +1017,7 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar)
             /*
              * Specific group(s).
              */
-            bool    fFound;
-            for (i = 0, fFound = false; i < pLogger->cGroups && !fFound; i++)
+            for (i = 0; i < pLogger->cGroups; i++)
             {
                 const char *psz2 = (const char*)pszStart;
                 if (rtlogIsGroupMatching(pLogger->papszGroups[i], &psz2, cch))
