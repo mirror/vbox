@@ -384,7 +384,7 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 
 
 /**
- * PCI Bus registaration structure.
+ * PCI Bus registration structure.
  * All the callbacks, except the PCIBIOS hack, are working on PCI devices.
  */
 typedef struct PDMPCIBUSREG
@@ -1790,13 +1790,13 @@ typedef struct PDMDEVHLP
      *                              Must be page aligned!
      * @param   pvBinary            Pointer to the binary data backing the ROM image.
      *                              This must be cbRange bytes big.
-     *                              It will be copied and doesn't have to stick around if fShadow is clear. 
+     *                              It will be copied and doesn't have to stick around if fShadow is clear.
      * @param   fShadow             Whether to emulate ROM shadowing. This involves leaving
      *                              the ROM writable for a while during the POST and refreshing
      *                              it at reset. When this flag is set, the memory pointed to by
      *                              pvBinary has to stick around for the lifespan of the VM.
      * @param   pszDesc             Pointer to description string. This must not be freed.
-     * 
+     *
      * @remark  There is no way to remove the rom, automatically on device cleanup or
      *          manually from the device yet. At present I doubt we need such features...
      */
@@ -2177,10 +2177,10 @@ typedef struct PDMDEVHLP
 
     /**
      * Creates a PDM thread.
-     * 
-     * This differs from the RTThreadCreate() API in that PDM takes care of suspending, 
+     *
+     * This differs from the RTThreadCreate() API in that PDM takes care of suspending,
      * resuming, and destroying the thread as the VM state changes.
-     * 
+     *
      * @returns VBox status code.
      * @param   pDevIns     The device instance.
      * @param   ppThread    Where to store the thread 'handle'.
@@ -2548,11 +2548,11 @@ typedef struct PDMDEVHLP
 
     /**
      * Write protects a shadow ROM mapping.
-     * 
-     * This is intented for use by the system BIOS or by the device that 
+     *
+     * This is intented for use by the system BIOS or by the device that
      * employs a shadow ROM BIOS, so that the shadow ROM mapping can be
      * write protected once the POST is over.
-     * 
+     *
      * @param   pDevIns     Device instance.
      * @param   GCPhysStart Where the shadow ROM mapping starts.
      * @param   cbRange     The size of the shadow ROM mapping.

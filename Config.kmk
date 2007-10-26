@@ -198,6 +198,8 @@ VBOX_WITH_DOCS = 1
 VBOX_WITH_HGCM = 1
 # Enable the USB feature.
 VBOX_WITH_USB = 1
+# Enable the new PDM USB management code (work in progress).
+VBOX_WITH_PDMUSB = 1
 # Enable the ISCSI feature.
 VBOX_WITH_ISCSI = 1
 # Enable ALSA support for Linux

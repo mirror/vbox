@@ -23,6 +23,7 @@
 #include <VBox/param.h>
 #include <VBox/cfgm.h>
 #include <VBox/stam.h>
+#include <VBox/vusb.h>
 #include <iprt/critsect.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>
@@ -114,6 +115,8 @@ typedef struct PDMDEVINSINT
  */
 typedef struct PDMUSBINSINT
 {
+    /** The UUID of this instance. */
+    RTUUID                          Uuid;
     /** Pointer to the next instance.
      * (Head is pointed to by PDM::pUsbInstances.) */
     R3PTRTYPE(PPDMUSBINS)           pNext;
@@ -122,7 +125,7 @@ typedef struct PDMUSBINSINT
     R3PTRTYPE(PPDMUSBINS)           pPerDeviceNext;
 
     /** Pointer to device structure. */
-    R3PTRTYPE(PPDMUSB)              pUsb;
+    R3PTRTYPE(PPDMUSB)              pUsbDev;
 
     /** Pointer to the VM this instance was created for. */
     PVMR3                           pVM;
@@ -130,10 +133,13 @@ typedef struct PDMUSBINSINT
     R3PTRTYPE(PPDMLUN)              pLuns;
     /** The per instance device configuration. */
     R3PTRTYPE(PCFGMNODE)            pCfg;
+    /** Same as pCfg if the configuration should be deleted when detaching the device. */
+    R3PTRTYPE(PCFGMNODE)            pCfgDelete;
     /** The global device configuration. */
     R3PTRTYPE(PCFGMNODE)            pCfgGlobal;
 
-    /** Pointer to the USB hub this device is connected to. */
+    /** Pointer to the USB hub this device is attached to.
+     * This is NULL if the device isn't connected to any HUB. */
     R3PTRTYPE(PPDMUSBHUB)           pHub;
     /** The port number that we're connected to. */
     uint32_t                        iPort;
@@ -725,13 +731,17 @@ typedef struct PDMUSBHUB
     /** The USB versions this hub support.
      * Note that 1.1 hubs can take on 2.0 devices. */
     uint32_t            fVersions;
-    /** The number of occupied ports. */
+    /** The number of ports on the hub. */
+    uint32_t            cPorts;
+    /** The number of available ports (0..cPorts). */
     uint32_t            cAvailablePorts;
+    /** The driver instance of the hub. */
+    PPDMDRVINS          pDrvIns;
+    /** Copy of the to the registration structure. */
+    PDMUSBHUBREG        Reg;
+
     /** Pointer to the next hub in the list. */
     struct PDMUSBHUB   *pNext;
-    /** The driver instance of the hub.. */
-    PPDMDRVINS          pDrvIns;
-
 } PDMUSBHUB;
 
 /** Pointer to a const USB HUB registration record. */
@@ -871,6 +881,7 @@ int         pdmR3UsbInstantiateDevices(PVM pVM);
 int         pdmR3UsbInitComplete(PVM pVM);
 PPDMUSB     pdmR3UsbLookup(PVM pVM, const char *pszName);
 int         pdmR3UsbFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
+int         pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp);
 
 int         pdmR3DrvInit(PVM pVM);
 int         pdmR3DrvDetach(PPDMDRVINS pDrvIns);
@@ -895,6 +906,7 @@ int         pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 void        pdmR3ThreadDestroyAll(PVM pVM);
 int         pdmR3ThreadResumeAll(PVM pVM);
 int         pdmR3ThreadSuspendAll(PVM pVM);
+
 
 #endif /* IN_RING3 */
 
