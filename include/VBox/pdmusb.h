@@ -420,7 +420,7 @@ typedef struct PDMUSBINS
 #ifdef PDMUSBINSINT_DECLARED
         PDMUSBINSINT            s;
 #endif
-        uint8_t                 padding[HC_ARCH_BITS == 32 ? 48 : 96];
+        uint8_t                 padding[HC_ARCH_BITS == 32 ? 64 : 96];
     } Internal;
 
     /** Pointer the PDM USB Device API. */
