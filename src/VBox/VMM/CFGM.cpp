@@ -770,7 +770,7 @@ static int cfgmR3CreateDefault(PVM pVM)
     UPDATERC();
     RTUUID Uuid;
     RTUuidClear(&Uuid);
-    rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));                   
+    rc = CFGMR3InsertBytes(pCfg,    "UUID", &Uuid, sizeof(Uuid));
     UPDATERC();
     /* Bios logo. */
     rc = CFGMR3InsertInteger(pCfg,  "FadeIn",               1);
@@ -1077,9 +1077,9 @@ CFGMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMN
     int rc = CFGMR3InsertNode(pNode, pszName, &pNewChild);
     if (RT_SUCCESS(rc))
     {
-        Assert(pNewChild->pFirstChild);
+        Assert(!pNewChild->pFirstChild);
         pNewChild->pFirstChild = pSubTree->pFirstChild;
-        Assert(pNewChild->pFirstLeaf);
+        Assert(!pNewChild->pFirstLeaf);
         pNewChild->pFirstLeaf = pSubTree->pFirstLeaf;
         if (ppChild)
             *ppChild = pNewChild;
@@ -1385,7 +1385,7 @@ CFGMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
         {
             if (pNode->pParent)
                 pNode->pParent->pFirstChild = pNode->pNext;
-            else if (pNode == pNode->pVM->cfgm.s.pRoot)
+            else if (pNode == pNode->pVM->cfgm.s.pRoot) /* might be a different tree */
                 pNode->pVM->cfgm.s.pRoot = NULL;
         }
         if (pNode->pNext)
@@ -1399,7 +1399,6 @@ CFGMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
         pNode->pPrev = NULL;
         pNode->pParent = NULL;
         MMR3HeapFree(pNode);
-
     }
 }
 
