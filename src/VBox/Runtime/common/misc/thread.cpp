@@ -241,6 +241,7 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszN
         {
             rtThreadInsert(pThread, NativeThread);
             pThread->enmState = RTTHREADSTATE_RUNNING;
+            rtThreadRelease(pThread);
         }
     }
     return rc;
@@ -685,7 +686,11 @@ RTDECL(RTNATIVETHREAD) RTThreadGetNative(RTTHREAD Thread)
 {
     PRTTHREADINT pThread = rtThreadGet(Thread);
     if (pThread)
-        return (RTNATIVETHREAD)pThread->Core.Key;
+    {
+        RTNATIVETHREAD NativeThread = (RTNATIVETHREAD)pThread->Core.Key;
+        rtThreadRelease(pThread);
+        return NativeThread;
+    }
     return NIL_RTNATIVETHREAD;
 }
 
@@ -701,10 +706,7 @@ RTDECL(RTTHREAD) RTThreadFromNative(RTNATIVETHREAD NativeThread)
 {
     PRTTHREADINT pThread = rtThreadGetByNative(NativeThread);
     if (pThread)
-    {
-        rtThreadRelease(pThread);
         return pThread;
-    }
     return NIL_RTTHREAD;
 }
 
@@ -722,7 +724,11 @@ RTDECL(const char *) RTThreadSelfName(void)
     {
         PRTTHREADINT pThread = rtThreadGet(Thread);
         if (pThread)
-            return pThread->szName;
+        {
+            const char *szName = pThread->szName;
+            rtThreadRelease(pThread);
+            return szName;
+        }
     }
     return NULL;
 }
@@ -740,7 +746,13 @@ RTDECL(const char *) RTThreadGetName(RTTHREAD Thread)
     if (Thread == NIL_RTTHREAD)
         return NULL;
     PRTTHREADINT pThread = rtThreadGet(Thread);
-    return pThread ?  pThread->szName : NULL;
+    if (pThread)
+    {
+        const char *szName = pThread->szName;
+        rtThreadRelease(pThread);
+        return szName;
+    }
+    return NULL;
 }
 
 
@@ -771,6 +783,7 @@ RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName)
      */
     pThread->szName[cchName] = '\0';    /* paranoia */
     memcpy(pThread->szName, pszName, cchName);
+    rtThreadRelease(pThread);
     return VINF_SUCCESS;
 }
 
