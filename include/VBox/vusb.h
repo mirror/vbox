@@ -29,6 +29,14 @@ __BEGIN_DECLS
 /** Frequency of USB bus (from spec). */
 #define VUSB_BUS_HZ                 12000000
 
+/** @name USB Standard version flags. 
+ * @{ */
+/** Indicates USB 1.1 support. */ 
+#define VUSB_STDVER_11              BIT(1) 
+/** Indicates USB 2.0 support. */ 
+#define VUSB_STDVER_20              BIT(2) 
+/** @} */
+
 /** @name USB Standard version
  * @{ */
  typedef enum VUSBREVISION
