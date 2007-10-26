@@ -34,5 +34,8 @@ bool initXKeyboard(Display *dpy);
 void handleXKeyEvent(Display *dpy, XEvent *event, WINEKEYBOARDINFO *wineKbdInfo);
 // returns the number of keysyms per keycode (only valid after initXKeyboard())
 int getKeysymsPerKeycode();
+// Called after release logging is started, in case initXKeyboard wishes to log
+// anything
+void doXKeyboardLogging(Display *dpy);
 
 #endif // __XKeyboard_h__

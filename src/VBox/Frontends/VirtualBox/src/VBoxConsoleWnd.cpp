@@ -44,6 +44,7 @@
 
 #if defined(Q_WS_X11)
 #include <X11/Xlib.h>
+#include <XKeyboard.h>
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2992,6 +2993,15 @@ void VBoxConsoleWnd::updateMachineState (CEnums::MachineState state)
                         vmPauseAction->setOn (false);
                     break;
                 }
+#ifdef Q_WS_X11
+                case CEnums::Starting:
+                {
+                    /* The keyboard handler may wish to do some release logging
+                       on startup.  Tell it that the logger is now active. */
+                    doXKeyboardLogging(this->x11Display());
+                    break;
+                }
+#endif
                 default:
                     break;
             }

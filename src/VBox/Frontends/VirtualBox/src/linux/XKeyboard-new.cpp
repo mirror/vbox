@@ -23,6 +23,8 @@
 #include <VBox/log.h>
 #include "keyboard.h"
 
+static bool gInitStatus = false;
+
 /**
  * DEBUG function
  * Print a key to the release log in the format needed for the Wine
@@ -75,7 +77,7 @@ static void printKey(Display *display, int keyc)
  */
 static void dumpLayout(Display *display)
 {
-    LogRel(("\nYour keyboard layout does not appear to fully supported by VirtualBox.  "
+    LogRel(("Your keyboard layout does not appear to fully supported by VirtualBox.  "
             "If you would like to help us improve the product, please submit a "
             "bug report and attach this logfile.  Please note that the following "
             "table will only be valid if you are using an X.org or XFree86 server "
@@ -133,12 +135,23 @@ static void dumpLayout(Display *display)
  */
 bool initXKeyboard(Display *dpy)
 {
-    int rc = X11DRV_InitKeyboard(dpy);
-//    if (0 == rc)
+    if (0 != X11DRV_InitKeyboard(dpy))
+    {
+        /* The layout found was optimal. */
+        gInitStatus = true;
+    }
+    return true;
+}
+
+/**
+ * Do deferred logging after initialisation
+ */
+void doXKeyboardLogging(Display *dpy)
+{
+    if (!gInitStatus)
     {
         dumpLayout(dpy);
     }
-    return true;
 }
 
 /*
