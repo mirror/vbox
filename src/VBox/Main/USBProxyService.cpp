@@ -383,27 +383,38 @@ void USBProxyService::processChanges (void)
 }
 
 
+/*static*/ void USBProxyService::freeInterfaceMembers (PUSBINTERFACE pIf, unsigned cIfs)
+{
+    while (cIfs-- > 0)
+    {
+        RTMemFree (pIf->paEndpoints);
+        pIf->paEndpoints = NULL;
+        RTStrFree ((char *)pIf->pszDriver);
+        pIf->pszDriver = NULL;
+        RTStrFree ((char *)pIf->pszInterface);
+        pIf->pszInterface = NULL;
+
+        freeInterfaceMembers(pIf->paAlts, pIf->cAlts);
+        RTMemFree(pIf->paAlts);
+        pIf->paAlts = NULL;
+        pIf->cAlts = 0;
+
+        /* next */
+        pIf++;
+    }
+}
+
 /*static*/ void USBProxyService::freeDeviceMembers (PUSBDEVICE pDevice)
 {
     PUSBCONFIG pCfg = pDevice->paConfigurations;
     unsigned cCfgs = pDevice->bNumConfigurations;
     while (cCfgs-- > 0)
     {
-        PUSBINTERFACE pIf = pCfg->paInterfaces;
-        unsigned cIfs = pCfg->bNumInterfaces;
-        while (cIfs-- > 0)
-        {
-            RTMemFree (pIf->paEndpoints);
-            pIf->paEndpoints = NULL;
-            RTStrFree ((char *)pIf->pszDriver);
-            pIf->pszDriver = NULL;
-            RTStrFree ((char *)pIf->pszInterface);
-            pIf->pszInterface = NULL;
-            /* next */
-            pIf++;
-        }
+        freeInterfaceMembers (pCfg->paInterfaces, pCfg->bNumInterfaces);
         RTMemFree (pCfg->paInterfaces);
         pCfg->paInterfaces = NULL;
+        pCfg->bNumInterfaces = 0;
+
         RTStrFree ((char *)pCfg->pszConfiguration);
         pCfg->pszConfiguration = NULL;
 

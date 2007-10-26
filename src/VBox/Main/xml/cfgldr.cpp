@@ -508,6 +508,8 @@ CfgLdrInputSource::CfgLdrInputSource (PCFGLDRENTITY pcEntity,
 
     rc = RTStrToUtf16 (pszBaseURI, &m_pwszBaseURI);
     AssertRC (rc);
+
+    RTStrFree(pszBaseURI);
 }
 
 void CfgLdrInputSource::release()
