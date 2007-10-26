@@ -77,9 +77,9 @@ typedef enum RTLOGGROUP
     "RT_LDR",       \
     "RT_PATH",      \
     "RT_PROCESS",   \
+    "RT_THREAD",    \
     "RT_TIME",      \
     "RT_TIMER",     \
-    "RT_THREAD",    \
     "RT_10", \
     "RT_11", \
     "RT_12", \

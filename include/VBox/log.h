@@ -236,10 +236,6 @@ typedef enum LOGGROUP
     LOG_GROUP_REM_PRINTF,
     /** REM running group. */
     LOG_GROUP_REM_RUN,
-    /** RT group. */
-    LOG_GROUP_RT,
-    /** RT group. */
-    LOG_GROUP_RT_THREAD,
     /** SELM group. */
     LOG_GROUP_SELM,
     /** Shared folders host service group. */
@@ -382,8 +378,6 @@ typedef enum LOGGROUP
     "REM_MMIO",     \
     "REM_PRINTF",   \
     "REM_RUN",      \
-    "RT",           \
-    "RT_THREAD",    \
     "SELM",         \
     "SHARED_FOLDERS",\
     "SHARED_OPENGL",\
