@@ -28,6 +28,7 @@ OUSBDevice::OUSBDevice()
     mRevision = 0;
 
     mPort = 0;
+    mVersion = mPortVersion = 1;
     mRemote = FALSE;
 }
 
@@ -74,6 +75,12 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
     ComAssertComRCRet (hrc, hrc);
 
     hrc = aUSBDevice->COMGETTER(Port)(&mPort);
+    ComAssertComRCRet (hrc, hrc);
+
+    hrc = aUSBDevice->COMGETTER(Port)(&mVersion);
+    ComAssertComRCRet (hrc, hrc);
+
+    hrc = aUSBDevice->COMGETTER(Port)(&mPortVersion);
     ComAssertComRCRet (hrc, hrc);
 
     hrc = aUSBDevice->COMGETTER(Remote)(&mRemote);
@@ -249,6 +256,30 @@ STDMETHODIMP OUSBDevice::COMGETTER(Port)(USHORT *aPort)
     CHECK_READY();
 
     *aPort = mPort;
+    return S_OK;
+}
+
+STDMETHODIMP OUSBDevice::COMGETTER(Version)(USHORT *aVersion)
+{
+    if (!aVersion)
+        return E_POINTER;
+
+    AutoLock lock(this);
+    CHECK_READY();
+
+    *aVersion = mVersion;
+    return S_OK;
+}
+
+STDMETHODIMP OUSBDevice::COMGETTER(PortVersion)(USHORT *aPortVersion)
+{
+    if (!aPortVersion)
+        return E_POINTER;
+
+    AutoLock lock(this);
+    CHECK_READY();
+
+    *aPortVersion = mPortVersion;
     return S_OK;
 }
 

@@ -69,6 +69,8 @@ HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevDesc
     mAddress      = id;
 
     mPort         = pDevDesc->idPort;
+    mVersion      = pDevDesc->bcdUSB >> 8;
+    mPortVersion  = mVersion; /** @todo fix this */
 
     mState        = USBDeviceState_USBDeviceAvailable;
 
@@ -204,6 +206,30 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Port) (USHORT *aPort)
     CHECK_READY();
 
     *aPort = mPort;
+    return S_OK;
+}
+
+STDMETHODIMP RemoteUSBDevice::COMGETTER(Version) (USHORT *aVersion)
+{
+    if (!aVersion)
+        return E_INVALIDARG;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    *aVersion = mVersion;
+    return S_OK;
+}
+
+STDMETHODIMP RemoteUSBDevice::COMGETTER(PortVersion) (USHORT *aPortVersion)
+{
+    if (!aPortVersion)
+        return E_INVALIDARG;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    *aPortVersion = mPortVersion;
     return S_OK;
 }
 

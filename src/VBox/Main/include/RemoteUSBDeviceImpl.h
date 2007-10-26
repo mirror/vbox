@@ -62,6 +62,8 @@ public:
     STDMETHOD(COMGETTER(SerialNumber)) (BSTR *aSerialNumber);
     STDMETHOD(COMGETTER(Address)) (BSTR *aAddress);
     STDMETHOD(COMGETTER(Port)) (USHORT *aPort);
+    STDMETHOD(COMGETTER(Version)) (USHORT *aVersion);
+    STDMETHOD(COMGETTER(PortVersion)) (USHORT *aPortVersion);
     STDMETHOD(COMGETTER(Remote)) (BOOL *aRemote);
 
     // IHostUSBDevice properties
@@ -107,6 +109,8 @@ private:
     Bstr mAddress;
 
     uint16_t mPort;
+    uint16_t mVersion;
+    uint16_t mPortVersion;
 
     USBDeviceState_T mState;
 
