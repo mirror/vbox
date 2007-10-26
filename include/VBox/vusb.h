@@ -29,12 +29,15 @@ __BEGIN_DECLS
 /** Frequency of USB bus (from spec). */
 #define VUSB_BUS_HZ                 12000000
 
-/** @name USB Standard version flags.
+/** @name USB Standard version
  * @{ */
-/** Indicates USB 1.1 support. */
-#define VUSB_STDVER_11              BIT(1)
-/** Indicates USB 2.0 support. */
-#define VUSB_STDVER_20              BIT(2)
+ typedef enum VUSBREVISION
+{
+    /** Indicates USB 1.1 support. */
+    VUSBREVISION_11 = 0x10,
+    /** Indicates USB 2.0 support. */
+    VUSBREVISION_20 = 0x20
+} VUSBREVISION;
 /** @} */
 
 
@@ -80,6 +83,14 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pAvailable      Bitmap indicating the available ports. Set bit == available port.
      */
     DECLR3CALLBACKMEMBER(unsigned, pfnGetAvailablePorts,(PVUSBIROOTHUBPORT pInterface, PVUSBPORTBITMAP pAvailable));
+
+    /**
+     * Get the supported USB revision
+     *
+     * @returns The supported revision
+     * @param   pInterface      Pointer to this structure.
+     */
+    DECLR3CALLBACKMEMBER(VUSBREVISION, pfnGetRevision, (PVUSBIROOTHUBPORT pInterface));
 
     /**
      * A device is being attached to a port in the roothub.
