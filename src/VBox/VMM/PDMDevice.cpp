@@ -612,7 +612,7 @@ int pdmR3DevInit(PVM pVM)
     if (fLoadBuiltin)
     {
         /* make filename */
-        char *pszFilename = pdmR3FileR3("VBoxDD", /*fShared=*/true);
+        char *pszFilename = pdmR3FileR3("VBoxDD", /* fShared = */ true);
         if (!pszFilename)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD");
@@ -621,7 +621,7 @@ int pdmR3DevInit(PVM pVM)
             return rc;
 
         /* make filename */
-        pszFilename = pdmR3FileR3("VBoxDD2", /*fShared=*/true);
+        pszFilename = pdmR3FileR3("VBoxDD2", /* fShared = */ true);
         if (!pszFilename)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD2");
@@ -2421,7 +2421,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTH
 
     int rc = pdmR3ThreadCreateDevice(pDevIns->Internal.s.pVMHC, pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 
-    LogFlow(("pdmR3DevHlp_PDMThreadCreate: caller='%s'/%d: returns %Vrc *ppThread=%RTthrd\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, 
+    LogFlow(("pdmR3DevHlp_PDMThreadCreate: caller='%s'/%d: returns %Vrc *ppThread=%RTthrd\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
             rc, *ppThread));
     return rc;
 }

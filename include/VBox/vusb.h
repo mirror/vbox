@@ -29,23 +29,12 @@ __BEGIN_DECLS
 /** Frequency of USB bus (from spec). */
 #define VUSB_BUS_HZ                 12000000
 
-/** @name USB Standard version flags. 
+/** @name USB Standard version flags.
  * @{ */
-/** Indicates USB 1.1 support. */ 
-#define VUSB_STDVER_11              BIT(1) 
-/** Indicates USB 2.0 support. */ 
-#define VUSB_STDVER_20              BIT(2) 
-/** @} */
-
-/** @name USB Standard version
- * @{ */
- typedef enum VUSBREVISION
-{
-    /** Indicates USB 1.1 support. */
-    VUSBREVISION_11 = 0x10,
-    /** Indicates USB 2.0 support. */
-    VUSBREVISION_20 = 0x20
-} VUSBREVISION;
+/** Indicates USB 1.1 support. */
+#define VUSB_STDVER_11              BIT(1)
+/** Indicates USB 2.0 support. */
+#define VUSB_STDVER_20              BIT(2)
 /** @} */
 
 
@@ -57,7 +46,7 @@ typedef struct VUSBIDEVICE      *PVUSBIDEVICE;
 typedef struct VUSBIROOTHUBPORT *PVUSBIROOTHUBPORT;
 
 /** Pointer to an USB request descriptor. */
-typedef struct vusb_urb *PVUSBURB;
+typedef struct VUSBURB          *PVUSBURB;
 
 
 
@@ -93,12 +82,12 @@ typedef struct VUSBIROOTHUBPORT
     DECLR3CALLBACKMEMBER(unsigned, pfnGetAvailablePorts,(PVUSBIROOTHUBPORT pInterface, PVUSBPORTBITMAP pAvailable));
 
     /**
-     * Get the supported USB revision
+     * Gets the supported USB versions.
      *
-     * @returns The supported revision
+     * @returns The mask of supported USB versions.
      * @param   pInterface      Pointer to this structure.
      */
-    DECLR3CALLBACKMEMBER(VUSBREVISION, pfnGetRevision, (PVUSBIROOTHUBPORT pInterface));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetUSBVersions,(PVUSBIROOTHUBPORT pInterface));
 
     /**
      * A device is being attached to a port in the roothub.
@@ -150,6 +139,9 @@ typedef struct VUSBIROOTHUBPORT
      */
     DECLR3CALLBACKMEMBER(bool, pfnXferError,(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb));
 
+    /** Alignment dummy. */
+    RTR3PTR Alignment;
+
 } VUSBIROOTHUBPORT;
 
 
@@ -187,7 +179,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *                      The URB will be freed in case of failure.
      * @param   pLed        Pointer to USB Status LED
      */
-    DECLR3CALLBACKMEMBER(int, pfnSubmitUrb,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb, PPDMLED pLed));
+    DECLR3CALLBACKMEMBER(int, pfnSubmitUrb,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb, struct PDMLED *pLed));
 
     /**
      * Call to service asynchronous URB completions in a polling fashion.
@@ -244,7 +236,7 @@ DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t D
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnSubmitUrb */
-DECLINLINE(int) VUSBIRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb, PPDMLED pLed)
+DECLINLINE(int) VUSBIRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb, struct PDMLED *pLed)
 {
     return pInterface->pfnSubmitUrb(pInterface, pUrb, pLed);
 }
@@ -619,7 +611,7 @@ typedef const VUSBURBISOCPKT *PCVUSBURBISOCPKT;
 /**
  * Asynchronous USB request descriptor
  */
-typedef struct vusb_urb
+typedef struct VUSBURB
 {
     /** URB magic value. */
     uint32_t        u32Magic;
@@ -687,7 +679,7 @@ typedef struct vusb_urb
 
     /** The device - NULL until a submit has been is attempted.
      * This is set when allocating the URB. */
-    struct vusb_dev *pDev;
+    struct VUSBDEV *pDev;
     /** The device address.
      * This is set at allocation time. */
     uint8_t         DstAddress;

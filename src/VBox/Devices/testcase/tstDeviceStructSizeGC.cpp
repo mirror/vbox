@@ -796,6 +796,7 @@ int main()
     GEN_CHECK_OFF(EHCI, pDevInsHC);
     GEN_CHECK_OFF(EHCI, pDevInsGC);
     GEN_CHECK_OFF(EHCI, pLoad);
+    GEN_CHECK_OFF(EHCI, fAsyncTraversalTimerActive);
 # ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(EHCI, StatCanceledIsocUrbs);
     GEN_CHECK_OFF(EHCI, StatCanceledGenUrbs);

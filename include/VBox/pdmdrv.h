@@ -254,6 +254,74 @@ typedef PDMDRVREG const *PCPDMDRVREG;
 
 
 /**
+ * USB hub registration structure.
+ */
+typedef struct PDMUSBHUBREG
+{
+    /** Structure version number. PDM_USBHUBREG_VERSION defines the current version. */
+    uint32_t            u32Version;
+
+    /**
+     * Request the hub to attach of the specified device.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns     The hub instance.
+     * @param   pUsbIns     The device to attach.
+     * @param   piPort      Where to store the port number the device was attached to.
+     * @thread EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAttachDevice,(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, uint32_t *piPort));
+
+    /**
+     * Request the hub to detach of the specified device.
+     *
+     * The device has previously been attached to the hub with the
+     * pfnAttachDevice call. This call is not currently expected to
+     * fail.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns     The hub instance.
+     * @param   pUsbIns     The device to detach.
+     * @param   iPort       The port number returned by the attach call.
+     * @thread EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDetachDevice,(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, uint32_t iPort));
+
+    /** Counterpart to u32Version, same value. */
+    uint32_t            u32TheEnd;
+} PDMUSBHUBREG;
+/** Pointer to a const USB hub registration structure. */
+typedef const PDMUSBHUBREG *PCPDMUSBHUBREG;
+
+/** Current PDMUSBHUBREG version number. */
+#define PDM_USBHUBREG_VERSION       0xeb010000
+
+
+/**
+ * USB hub helpers.
+ * This is currently just a place holder.
+ */
+typedef struct PDMUSBHUBHLP
+{
+    /** Structure version. PDM_USBHUBHLP_VERSION defines the current version. */
+    uint32_t                    u32Version;
+
+    /** Just a safety precaution. */
+    uint32_t                    u32TheEnd;
+} PDMUSBHUBHLP;
+/** Pointer to PCI helpers. */
+typedef PDMUSBHUBHLP *PPDMUSBHUBHLP;
+/** Pointer to const PCI helpers. */
+typedef const PDMUSBHUBHLP *PCPDMUSBHUBHLP;
+/** Pointer to const PCI helpers pointer. */
+typedef PCPDMUSBHUBHLP *PPCPDMUSBHUBHLP;
+
+/** Current PDMUSBHUBHLP version number. */
+#define PDM_USBHUBHLP_VERSION       0xea010000
+
+
+
+/**
  * Poller callback.
  *
  * @param   pDrvIns     The driver instance.
@@ -545,12 +613,14 @@ typedef struct PDMDRVHLP
      *
      * @returns VBox status code.
      * @param   pDrvIns         The driver instance.
-     * @param   pvReserved      Reserved for future inteface callback structure.
-     * @param   ppvReservedHlp  Reserved for future helper callback structure.
+     * @param   fVersions       Indicates the kinds of USB devices that can be attached to this HUB.
+     * @param   cPorts          The number of ports.
+     * @param   pUsbHubReg      The hub callback structure that PDMUsb uses to interact with it.
+     * @param   ppUsbHubHlp     The helper callback structure that the hub uses to talk to PDMUsb.
      *
      * @thread  EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnUSBRegisterHub,(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp));
+    DECLR3CALLBACKMEMBER(int, pfnUSBRegisterHub,(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp));
 
     /**
      * Creates a PDM thread.
@@ -715,9 +785,9 @@ DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAM
 /**
  * @copydoc PDMDRVHLP::pfnUSBRegisterHub
  */
-DECLINLINE(int) PDMDrvHlpUSBRegisterHub(PPDMDRVINS pDrvIns, void *pvReservedIn, void **ppvReservedHlp)
+DECLINLINE(int) PDMDrvHlpUSBRegisterHub(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp)
 {
-    return pDrvIns->pDrvHlp->pfnUSBRegisterHub(pDrvIns, pvReservedIn, ppvReservedHlp);
+    return pDrvIns->pDrvHlp->pfnUSBRegisterHub(pDrvIns, fVersions, cPorts, pUsbHubReg, ppUsbHubHlp);
 }
 
 /**

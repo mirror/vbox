@@ -42,16 +42,16 @@ __BEGIN_DECLS
  * If this bit is cleared the memory is assumed to be some kind of RAM.
  * Normal MMIO may set it but that depends on whether the RAM range was
  * created specially for the MMIO or not.
- * 
- * @remarks The current implementation will always reserve backing 
+ *
+ * @remarks The current implementation will always reserve backing
  *          memory for reserved  ranges to simplify things.
  */
 #define MM_RAM_FLAGS_RESERVED           BIT(0)
 /** ROM - Read Only Memory.
  * The page have a HC physical address which contains the BIOS code. All write
  * access is trapped and ignored.
- * 
- * HACK: Writable shadow ROM is indicated by both ROM and MMIO2 being 
+ *
+ * HACK: Writable shadow ROM is indicated by both ROM and MMIO2 being
  *       set. (We're out of bits.)
  */
 #define MM_RAM_FLAGS_ROM                BIT(1)
@@ -107,7 +107,7 @@ __BEGIN_DECLS
 /** @name MMR3PhysRegisterEx registration type
  * @{
  */
-typedef enum 
+typedef enum
 {
     /** Normal physical region (flags specify exact page type) */
     MM_PHYS_TYPE_NORMAL               = 0,
@@ -165,6 +165,8 @@ typedef enum MMTAG
     MM_TAG_PDM_DEVICE_USER,
     MM_TAG_PDM_DRIVER,
     MM_TAG_PDM_DRIVER_USER,
+    MM_TAG_PDM_USB,
+    MM_TAG_PDM_USB_USER,
     MM_TAG_PDM_LUN,
     MM_TAG_PDM_QUEUE,
     MM_TAG_PDM_THREAD,
@@ -653,10 +655,10 @@ MMR3DECL(int) MMR3Term(PVM pVM);
 
 /**
  * Reset notification.
- * 
- * MM will reload shadow ROMs into RAM at this point and make 
+ *
+ * MM will reload shadow ROMs into RAM at this point and make
  * the ROM writable.
- * 
+ *
  * @param   pVM             The VM handle.
  */
 MMR3DECL(void) MMR3Reset(PVM pVM);
@@ -923,7 +925,7 @@ MMR3DECL(int) MMR3PhysRelocate(PVM pVM, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, 
  * @param   pvBinary            Pointer to the binary data backing the ROM image.
  *                              This must be cbRange bytes big.
  *                              It will be copied and doesn't have to stick around.
- *                              It will be copied and doesn't have to stick around if fShadow is clear. 
+ *                              It will be copied and doesn't have to stick around if fShadow is clear.
  * @param   fShadow             Whether to emulate ROM shadowing. This involves leaving
  *                              the ROM writable for a while during the POST and refreshing
  *                              it at reset. When this flag is set, the memory pointed to by
@@ -937,12 +939,12 @@ MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, 
 
 /**
  * Write-protects a shadow ROM range.
- * 
+ *
  * This is called late in the POST for shadow ROM ranges.
- * 
+ *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
- * @param   GCPhys      Start of the registered shadow ROM range 
+ * @param   GCPhys      Start of the registered shadow ROM range
  * @param   cbRange     The length of the registered shadow ROM range.
  *                      This can be NULL (not sure about the BIOS interface yet).
  */

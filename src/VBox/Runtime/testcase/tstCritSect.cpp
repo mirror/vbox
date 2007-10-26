@@ -23,6 +23,7 @@
 # include <Windows.h>
 #endif
 #include <iprt/critsect.h>
+#include <iprt/lock.h>
 #include <iprt/thread.h>
 #include <iprt/log.h>
 #include <iprt/semaphore.h>

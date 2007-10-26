@@ -98,11 +98,10 @@ typedef struct PDMUSBREG
      * This method will be called regardless of the pfnConstruc result to avoid
      * complicated failure paths.
      *
-     * @returns VBox status.
      * @param   pUsbIns     The USB device instance data.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDestruct,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnDestruct,(PPDMUSBINS pUsbIns));
 
     /**
      * Power On notification.
@@ -434,8 +433,12 @@ typedef struct PDMUSBINS
     R3PTRTYPE(PCFGMNODE)        pCfgGlobal;
     /** Pointer to device instance data. */
     R3PTRTYPE(void *)           pvInstanceDataR3;
-    /* padding to make achInstanceData aligned at 32 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 4 : 6];
+    /** Pointer to the VUSB Device structure.
+     * The constructor sets this.
+     * @todo Integrate VUSBDEV into this structure. */
+    R3PTRTYPE(void *)           pvVUsbDev;
+    /** Padding to make achInstanceData aligned at 32 byte boundrary. */
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 3 : 4];
     /** Device instance data. The size of this area is defined
      * in the PDMUSBREG::cbInstanceData field. */
     char                        achInstanceData[8];
@@ -559,6 +562,42 @@ typedef struct PDMUSBREGCB
  * @param   u32Version      VBox version number.
  */
 typedef DECLCALLBACK(int) FNPDMVBOXUSBREGISTER(PCPDMUSBREGCB pCallbacks, uint32_t u32Version);
+
+
+/**
+ * Creates a USB proxy device instance.
+ *
+ * This will find an appropriate HUB for the USB device, create the necessary CFGM stuff
+ * and try instantiate the proxy device.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   pUuid           The UUID thats to be associated with the device.
+ * @param   fRemote         Whether it's a remove or local device.
+ * @param   pszAddress      The address string.
+ * @param   pvBackend       Pointer to the backend.
+ * @param   iUsbVersion     The preferred USB version.
+ */
+PDMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend, uint32_t iUsbVersion);
+
+/**
+ * Detaches and destroys a USB device.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   pUuid           The UUID associated with the device to detach.
+ * @thread  EMT
+ */
+PDMR3DECL(int) PDMR3USBDetachDevice(PVM pVM, PCRTUUID pUuid);
+
+/**
+ * Checks if there are any USB hubs attached.
+ *
+ * @returns true / false accordingly.
+ * @param   pVM     Pointer to the shared VM structure.
+ */
+PDMR3DECL(bool) PDMR3USBHasHub(PVM pVM);
+
 
 /** @} */
 

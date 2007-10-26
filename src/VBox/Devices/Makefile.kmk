@@ -89,6 +89,9 @@ VBoxDD_SOURCES          = \
 VBoxDD_DEFS             = VBOX_ACPI
 ifdef VBOX_WITH_USB
  VBoxDD_DEFS           += VBOX_WITH_USB IN_USB_R3
+ ifdef VBOX_WITH_PDMUSB
+  VBoxDD_DEFS          += VBOX_WITH_PDMUSB
+ endif
 endif
 ifdef VBOX_WITH_AHCI
  VBoxDD_DEFS           += VBOX_WITH_AHCI
@@ -202,6 +205,9 @@ endif
 
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
+ ifdef VBOX_WITH_PDMUSB
+  DevicesR3_DEFS       += VBOX_WITH_PDMUSB
+ endif
 DevicesR3_SOURCES      += \
 	USB/DevOHCI.cpp \
 	USB/DevEHCI.cpp
@@ -498,6 +504,9 @@ endif
 
 ifdef VBOX_WITH_USB
  Drivers_DEFS         += VBOX_WITH_USB IN_USB_R3
+ ifdef VBOX_WITH_PDMUSB
+  Drivers_DEFS        += VBOX_WITH_PDMUSB
+ endif
  Drivers_SOURCES      += \
 	USB/DrvVUSBRootHub.cpp \
 	USB/VUSBDevice.cpp \
