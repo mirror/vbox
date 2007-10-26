@@ -839,6 +839,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                 case 'I':
                 {
                     USBINTERFACE If = {0};
+                    bool fIfAdopted = false;
                     while (*psz && VBOX_SUCCESS (rc))
                     {
                         if (PREFIX ("If#="))
@@ -882,6 +883,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                                 {
                                     Assert (!If.bInterfaceNumber); Assert (!If.bAlternateSetting);
                                     *pIf = If;
+                                    fIfAdopted = true;
                                 }
                                 else
                                     rc = VERR_NO_MEMORY;
@@ -894,15 +896,22 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                                  */
                                 pIf = &pCfg->paInterfaces[If.bInterfaceNumber];
                                 if (!If.bAlternateSetting)
+                                {
+                                    freeInterfaceMembers (pIf, 1);
                                     *pIf = If;
+                                    fIfAdopted = true;
+                                }
                                 else
                                 {
                                     PUSBINTERFACE paAlts = (PUSBINTERFACE) RTMemRealloc (pIf->paAlts, (pIf->cAlts + 1) * sizeof(*pIf));
                                     if (paAlts)
                                     {
                                         pIf->paAlts = paAlts;
-                                        pIf = &paAlts[pIf->cAlts++];
+                                        // don't do pIf = &paAlts[pIf->cAlts++]; as it will increment after the assignment
+                                        unsigned cAlts = pIf->cAlts++;
+                                        pIf = &paAlts[cAlts];
                                         *pIf = If;
+                                        fIfAdopted = true;
                                     }
                                     else
                                         rc = VERR_NO_MEMORY;
@@ -915,6 +924,9 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                             rc = VERR_INTERNAL_ERROR;
                         }
                     }
+
+                    if (!fIfAdopted)
+                        freeInterfaceMembers (&If, 1);
 
                     /* start anew with endpoints. */
                     iEp = 0;

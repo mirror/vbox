@@ -198,6 +198,14 @@ protected:
 
 public:
     /**
+     * Free all the members of a USB interface returned by getDevice().
+     *
+     * @param   pIf         Pointer to the interface.
+     * @param   cIfs        Number of consecutive interfaces pIf points to
+     */
+    static void freeInterfaceMembers (PUSBINTERFACE pIf, unsigned cIfs);
+
+    /**
      * Free all the members of a USB device returned by getDevice().
      *
      * @param   pDevice     Pointer to the device.

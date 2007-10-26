@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
         break;
     }
 
-#if 0
+#if 1
     // IUnknown identity test
     ////////////////////////////////////////////////////////////////////////////
     {
@@ -325,10 +325,20 @@ int main(int argc, char *argv[])
     // after the session is closed)
     EventQueue eventQ;
 
+#if 0
+    // the simplest COM API test
+    ////////////////////////////////////////////////////////////////////////////
+    {
+        Bstr version;
+        CHECK_ERROR_BREAK (virtualBox, COMGETTER(Version) (version.asOutParam()));
+        printf ("VirtualBox version = %ls\n", version.raw());
+    }
+#endif
+
+#if 0
     // some outdated stuff
     ////////////////////////////////////////////////////////////////////////////
 
-#if 0
     printf("Getting IHost interface...\n");
     IHost *host;
     rc = virtualBox->GetHost(&host);
@@ -442,7 +452,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#if 1
+#if 0
     // register the existing hard disk image
     ///////////////////////////////////////////////////////////////////////////
     do
