@@ -1197,7 +1197,13 @@ PlaceOnPendingQ(const nsID &target, ipcTargetData *td, ipcMessage *msg)
   // put this message on our pending queue
   td->pendingQ.Append(msg);
 
-  LOG(("placed message on pending queue for target %s and notifying all...\n", target.ToString()));
+#ifdef IPC_LOGGING
+  {
+    char *targetStr = target.ToString();
+    LOG(("placed message on pending queue for target %s and notifying all...\n", targetStr));
+    nsMemory::Free(targetStr);
+  }
+#endif
 
   // wake up anyone waiting on this queue
   mon.NotifyAll();
@@ -1276,6 +1282,8 @@ IPC_OnMessageAvailable(ipcMessage *msg)
         // the peer client death, when appropriate.
         nsAutoMonitor mon(gClientState->monitor);
         gClientState->targetMap.EnumerateRead(EnumerateTargetMapAndPlaceMsg, msg);
+
+        delete msg;
         
         return;
       }

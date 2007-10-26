@@ -83,11 +83,14 @@ public:
 
 #ifdef NS_DEBUG
   inline nsrefcnt ReleaseQuiet() {
-      nsAutoOwningThread old = _mOwningThread;
-      _mOwningThread = nsAutoOwningThread();
-      nsrefcnt ref = Release();
+    // shut up NS_ASSERT_OWNINGTHREAD (see explaination below)
+    nsAutoOwningThread old = _mOwningThread;
+    _mOwningThread = nsAutoOwningThread();
+    nsrefcnt ref = Release();
+    NS_ASSERTION(ref == 0, "the object is still referenced by other threads while it shouldn't");
+    if (ref != 0)
       _mOwningThread = old;
-      return ref;
+    return ref;
   }
 #else  
   inline nsrefcnt ReleaseQuiet(void) { return Release(); }
@@ -102,14 +105,17 @@ private:
 PRInt32 nsExceptionManager::totalInstances = 0;
 #endif
 
-// Note this object is single threaded - the service itself ensures
-// one per thread.
-// Exceptions are DropAllThreads (called on the thread shutting down xpcom)
-// and ThreadDestruct (called after xpcom destroyed the internal thread struct,
-// so that PR_GetCurrentThread() will create a new one from scratch which will
-// obviously not match the old one stored in the instance on creation). Since
-// these NS_CheckThreadSafe() assertions are quite annoying in the debug build,
-// we use a special ReleaseQuiet() mehtod in DoDropThread() to shut them up.
+// Note: the nsExceptionManager object is single threaded - the exception
+// service itself ensures one per thread. However, there are two methods that
+// may be called on foreign threads: DropAllThreads (called on the thread
+// shutting down xpcom) and ThreadDestruct (called after xpcom destroyed the
+// internal thread struct, so that PR_GetCurrentThread() will create a new one
+// from scratch which will obviously not match the old one stored in the
+// instance on creation). In both cases, there should be no other threads
+// holding objects (i.e. it's thread-safe to call them), but
+// NS_CheckThreadSafe() assertions will still happen and yell in the debug
+// build. Since it is quite annoying, we use a special ReleaseQuiet() mehtod
+// in DoDropThread() to shut them up.
 NS_IMPL_ISUPPORTS1(nsExceptionManager, nsIExceptionManager)
 
 nsExceptionManager::nsExceptionManager(nsExceptionService *svc) :
