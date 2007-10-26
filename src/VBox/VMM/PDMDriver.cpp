@@ -1010,7 +1010,11 @@ static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, uint32_t
     LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: fVersions=%#x cPorts=%#x pUsbHubReg=%p ppUsbHubHlp=%p\n",
              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, fVersions, cPorts, pUsbHubReg, ppUsbHubHlp));
 
+#ifdef VBOX_WITH_USB
     int rc = pdmR3UsbRegisterHub(pDrvIns->Internal.s.pVM, pDrvIns, fVersions, cPorts, pUsbHubReg, ppUsbHubHlp);
+#else
+    int rc = VERR_NOT_SUPPORTED;
+#endif
 
     LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
