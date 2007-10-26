@@ -158,7 +158,6 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
                 break;
             if (ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS))
                 break;
-            AssertBreak(--cTries <= 0, );
         }
     }
     return u64NanoTS;
