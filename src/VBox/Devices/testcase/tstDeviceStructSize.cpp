@@ -49,6 +49,7 @@
 #ifdef VBOX_WITH_USB
 # undef LOG_GROUP
 # include "USB/DevOHCI.cpp"
+# include "USB/DevEHCI.cpp"
 #endif
 #undef LOG_GROUP
 #include "VMMDev/VBoxDev.cpp"
@@ -218,6 +219,10 @@ int main()
     CHECK_MEMBER_ALIGNMENT(OHCI, RootHub, 8);
 # ifdef VBOX_WITH_STATISTICS
     CHECK_MEMBER_ALIGNMENT(OHCI, StatCanceledIsocUrbs, 8);
+# endif
+    CHECK_MEMBER_ALIGNMENT(EHCI, RootHub, 8);
+# ifdef VBOX_WITH_STATISTICS
+    CHECK_MEMBER_ALIGNMENT(EHCI, StatCanceledIsocUrbs, 8);
 # endif
 #endif
 
