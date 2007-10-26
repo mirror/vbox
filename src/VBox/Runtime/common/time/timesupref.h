@@ -151,7 +151,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
          * that might occure at any point in the return path as well.
          */
         pData->cUpdateRaces++;
-        for (int cTries = 25;;)
+        for (;;)
         {
             u64PrevNanoTS = ASMAtomicReadU64(pData->pu64Prev);
             if (u64PrevNanoTS >= u64NanoTS)
