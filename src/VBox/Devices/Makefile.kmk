@@ -203,7 +203,8 @@ endif
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 DevicesR3_SOURCES      += \
-	USB/DevOHCI.cpp
+	USB/DevOHCI.cpp \
+	USB/DevEHCI.cpp
 endif
 
 DevicesR3_DEFS         += VBOX_HGCM
@@ -251,7 +252,8 @@ VBoxDDGC_SOURCES        = \
 ifdef VBOX_WITH_USB
 VBoxDDGC_DEFS          += VBOX_WITH_USB IN_USB_GC
 VBoxDDGC_SOURCES       += \
-	USB/DevOHCI.cpp
+	USB/DevOHCI.cpp \
+	USB/DevEHCI.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)
@@ -288,7 +290,8 @@ VBoxDDR0_SOURCES        = \
 ifdef VBOX_WITH_USB
 VBoxDDR0_DEFS          += VBOX_WITH_USB IN_USB_R0
 VBoxDDR0_SOURCES       += \
-	USB/DevOHCI.cpp
+	USB/DevOHCI.cpp \
+	USB/DevEHCI.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)
