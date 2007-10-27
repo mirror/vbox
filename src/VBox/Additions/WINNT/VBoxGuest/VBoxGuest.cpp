@@ -342,7 +342,7 @@ DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData,
 
     dprintf(("VBoxHGCMCallback\n"));
         
-    /* Possible problem with requestion completion right between the fu32Flags check and KeWaitForSingleObject 
+    /* Possible problem with request completion right between the fu32Flags check and KeWaitForSingleObject 
      * call; introduce a timeout to make sure we don't wait indefinitely.
      */
     timeout.QuadPart  = 250;
@@ -768,11 +768,15 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             eventInfo->u32EventFlagsOut = 0;
             int iBitOffset = GetMsb32 (eventInfo->u32EventMaskIn);
+            bool fTimeout = (eventInfo->u32TimeoutIn != ~0L);
 
             dprintf (("mask = %d, iBitOffset = %d\n", iBitOffset, eventInfo->u32EventMaskIn));
 
+            /* Possible problem with request completion right between the pending event check and KeWaitForSingleObject 
+             * call; introduce a timeout (if none was specified) to make sure we don't wait indefinitely.
+             */
             LARGE_INTEGER timeout;
-            timeout.QuadPart = eventInfo->u32TimeoutIn;
+            timeout.QuadPart = (fTimeout) ? eventInfo->u32TimeoutIn : 250;
             timeout.QuadPart *= -10000;
 
             NTSTATUS rc = STATUS_SUCCESS;
@@ -789,9 +793,11 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 }
 
                 rc = KeWaitForSingleObject (&pDevExt->keventNotification, Executive /** @todo UserRequest? */,
-                                            KernelMode, TRUE,
-                                            eventInfo->u32TimeoutIn == ~0L ? NULL : &timeout);
+                                            KernelMode, TRUE, &timeout);
                 dprintf(("IOCTL_VBOXGUEST_WAITEVENT: Wait returned %d -> event %x\n", rc, eventInfo->u32EventFlagsOut));
+
+                if (!fTimeout && rc == STATUS_TIMEOUT)
+                    continue;
 
                 if (rc != STATUS_SUCCESS)
                 {
