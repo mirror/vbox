@@ -958,7 +958,7 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
 
     AutoReaderLock alock (that);
 
-    int vrc = SSMR3PutU32 (pSSM, that->mSharedFolders.size());
+    int vrc = SSMR3PutU32 (pSSM, (uint32_t)that->mSharedFolders.size());
     AssertRC (vrc);
 
     for (SharedFolderMap::const_iterator it = that->mSharedFolders.begin();
@@ -969,13 +969,13 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
         // don't lock the folder because methods we access are const
 
         Utf8Str name = folder->name();
-        vrc = SSMR3PutU32 (pSSM, name.length() + 1 /* term. 0 */);
+        vrc = SSMR3PutU32 (pSSM, (uint32_t)name.length() + 1 /* term. 0 */);
         AssertRC (vrc);
         vrc = SSMR3PutStrZ (pSSM, name);
         AssertRC (vrc);
 
         Utf8Str hostPath = folder->hostPath();
-        vrc = SSMR3PutU32 (pSSM, hostPath.length() + 1 /* term. 0 */);
+        vrc = SSMR3PutU32 (pSSM, (uint32_t)hostPath.length() + 1 /* term. 0 */);
         AssertRC (vrc);
         vrc = SSMR3PutStrZ (pSSM, hostPath);
         AssertRC (vrc);
@@ -4368,33 +4368,40 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath)
 
     VBOXHGCMSVCPARM  parms[2];
     SHFLSTRING      *pFolderName, *pMapName;
-    int              cbString;
+    size_t           cbString;
 
     Log (("Adding shared folder '%ls' -> '%ls'\n", aName, aHostPath));
 
     cbString = (RTStrUcs2Len (aHostPath) + 1) * sizeof (RTUCS2);
+    if (cbString >= UINT16_MAX)
+        return setError (E_INVALIDARG, tr ("The name is too long"));
     pFolderName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
     Assert (pFolderName);
     memcpy (pFolderName->String.ucs2, aHostPath, cbString);
 
-    pFolderName->u16Size   = cbString;
-    pFolderName->u16Length = cbString - sizeof(RTUCS2);
+    pFolderName->u16Size   = (uint16_t)cbString;
+    pFolderName->u16Length = (uint16_t)cbString - sizeof(RTUCS2);
 
     parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[0].u.pointer.addr = pFolderName;
-    parms[0].u.pointer.size = sizeof (SHFLSTRING) + cbString;
+    parms[0].u.pointer.size = sizeof (SHFLSTRING) + (uint16_t)cbString;
 
     cbString = (RTStrUcs2Len (aName) + 1) * sizeof (RTUCS2);
+    if (cbString >= UINT16_MAX)
+    {
+        RTMemFree (pFolderName);
+        return setError (E_INVALIDARG, tr ("The host path is too long"));
+    }
     pMapName = (SHFLSTRING *) RTMemAllocZ (sizeof(SHFLSTRING) + cbString);
     Assert (pMapName);
     memcpy (pMapName->String.ucs2, aName, cbString);
 
-    pMapName->u16Size   = cbString;
-    pMapName->u16Length = cbString - sizeof (RTUCS2);
+    pMapName->u16Size   = (uint16_t)cbString;
+    pMapName->u16Length = (uint16_t)cbString - sizeof (RTUCS2);
 
     parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[1].u.pointer.addr = pMapName;
-    parms[1].u.pointer.size = sizeof (SHFLSTRING) + cbString;
+    parms[1].u.pointer.size = sizeof (SHFLSTRING) + (uint16_t)cbString;
 
     int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
                                      SHFL_FN_ADD_MAPPING,
@@ -4429,21 +4436,23 @@ HRESULT Console::removeSharedFolder (INPTR BSTR aName)
 
     VBOXHGCMSVCPARM  parms;
     SHFLSTRING      *pMapName;
-    int              cbString;
+    size_t           cbString;
 
     Log (("Removing shared folder '%ls'\n", aName));
 
     cbString = (RTStrUcs2Len (aName) + 1) * sizeof (RTUCS2);
+    if (cbString >= UINT16_MAX)
+        return setError (E_INVALIDARG, tr ("The name is too long"));
     pMapName = (SHFLSTRING *) RTMemAllocZ (sizeof (SHFLSTRING) + cbString);
     Assert (pMapName);
     memcpy (pMapName->String.ucs2, aName, cbString);
 
-    pMapName->u16Size   = cbString;
-    pMapName->u16Length = cbString - sizeof (RTUCS2);
+    pMapName->u16Size   = (uint16_t)cbString;
+    pMapName->u16Length = (uint16_t)cbString - sizeof (RTUCS2);
 
     parms.type = VBOX_HGCM_SVC_PARM_PTR;
     parms.u.pointer.addr = pMapName;
-    parms.u.pointer.size = sizeof (SHFLSTRING) + cbString;
+    parms.u.pointer.size = sizeof (SHFLSTRING) + (uint16_t)cbString;
 
     int vrc = mVMMDev->hgcmHostCall ("VBoxSharedFolders",
                                      SHFL_FN_REMOVE_MAPPING,
@@ -4868,15 +4877,16 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUu
         if (!pvRemoteBackend)
             return VERR_INVALID_PARAMETER;  /* The clientId is invalid then. */
     }
-    ULONG ulUSBVersion = 0x00010001; /* 1.1 */
-#if 0
-    HRESULT hrc = aHostDevice->GetUSBVersion(&ulUSBVersion);
+
+    USHORT portVersion = 1;
+#if 0 /* can't test this now */
+    HRESULT hrc = aHostDevice->COMGETTER(PortVersion)(&portVersion);
     AssertComRCReturn(hrc, VERR_GENERAL_FAILURE);
+    Assert(portVersion == 1 || portVersion == 2);
 #endif
-    Assert(ulUSBVersion == 0x00010001 || ulUSBVersion == 0x00020000);
 
     int vrc = PDMR3USBCreateProxyDevice (that->mpVM, aUuid, aRemote, aAddress, pvRemoteBackend,
-                                         ulUSBVersion == 0x00010001 ? VUSB_STDVER_11 : VUSB_STDVER_20);
+                                         portVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20);
     if (VBOX_SUCCESS (vrc))
     {
         /* Create a OUSBDevice and add it to the device list */
