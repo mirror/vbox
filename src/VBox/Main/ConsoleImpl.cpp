@@ -15,6 +15,8 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/types.h> /* for stdint.h constants */
+
 #if defined(RT_OS_WINDOWS)
 #elif defined(RT_OS_LINUX)
 #   include <errno.h>
