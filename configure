@@ -229,7 +229,24 @@ test_execute()
 check_environment()
 {
   test_header environment
+  OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr [:upper:] [:lower:]`
+  case "$OS" in
+    linux)
+      ;;
+    darwin)
+      ;;
+    freebsd)
+      ;;
+    sunos)
+      OS='solaris'
+      ;;
+    *)
+      log_failure "Cannot determine OS"
+      exit 1
+      ;;
+  esac
   BUILD_CPU=`uname -m`
+  [ "$OS" = "solaris" ] && BUILD_CPU=`isainfo | cut -f 1 -d ' '`
   case "$BUILD_CPU" in
     i[3456789]86|x86|i86pc)
       BUILD_MACHINE='x86'
@@ -249,22 +266,6 @@ check_environment()
   esac
   [ -z "$TARGET_MACHINE" ] && TARGET_MACHINE=$BUILD_MACHINE
   [ -z "$TARGET_CPU"     ] && TARGET_CPU=$BUILD_CPU
-  OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr [:upper:] [:lower:]`
-  case "$OS" in
-    linux)
-      ;;
-    darwin)
-      ;;
-    freebsd)
-      ;;
-    sunos)
-      OS='solaris'
-      ;;
-    *)
-      log_failure "Cannot determine OS"
-      exit 1
-      ;;
-  esac
   DEVDIR_BIN="$DEVDIR/$OS.$BUILD_MACHINE/bin"
   KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$BUILD_MACHINE"
   KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
@@ -348,6 +349,7 @@ check_gcc()
         cnf_append "TOOL_GXX32_CXX" "$CXX32"
         cnf_append "TOOL_GXX32_LD"  "$CXX32"
       fi
+      # this isn't not necessary, there is not such tool.
       if [ -n "$CC64" ]; then
         cnf_append "TOOL_GCC64_CC"  "$CC64"
         cnf_append "TOOL_GCC64_AS"  "$CC64"
@@ -360,6 +362,11 @@ check_gcc()
         cnf_append "TOOL_GXX64_CXX" "$CXX64"
         cnf_append "TOOL_GXX64_LD"  "$CXX64"
       fi
+      # Solaris sports a 32-bit gcc/g++.
+      if [ "$OS" = "solaris" -a "$BUILD_MACHINE" = "amd64" ]; then
+        [ "$CC" = "gcc" ] && CC="gcc -m64"
+        [ "$CXX" = "g++" ] && CXX="g++ -m64"
+      fi 
     fi
   fi
 }
