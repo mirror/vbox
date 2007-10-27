@@ -21,6 +21,7 @@ export LC_ALL
 PATH="$PATH:/opt/gnome/bin"
 # Solaris (order of paths important for tr, echo, grep, sed to work)
 PATH="/usr/xpg4/bin:/usr/ucb:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
+ORGPATH=$PATH
 
 #
 # Defaults
@@ -1143,7 +1144,7 @@ check_kbuild()
     if [ "$OS" = "solaris" ]; then
       # Because of sh being non-default shell in Solaris we need to export PATH again when
       # sourcing env.sh. Simply exporting from ./configure does not export PATH correctly.
-      echo "PATH=\"$PATH\"" >> $ENV
+      echo "PATH=\"$ORGPATH\"" >> $ENV
       echo "echo \"\$PATH\" | /usr/sfw/bin/ggrep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
       echo "echo \"\$PATH\" | /usr/sfw/bin/ggrep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
     else
