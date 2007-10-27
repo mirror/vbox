@@ -66,8 +66,12 @@ BEGINPROC rtTimeNanoTSInternalAsm
     ; Load pGip and calc pGipCPU, setting u32ApicIdPlus if necessary.
     ;
 %ifdef IMPORTED_SUPLIB
+ %ifdef IN_RING0
+    mov     esi, IMP(g_SUPGlobalInfoPage)
+ %else
     mov     esi, IMP(g_pSUPGlobalInfoPage)
     mov     esi, [esi]
+ %endif
 %else
     mov     esi, [NAME(g_pSUPGlobalInfoPage)]
 %endif
