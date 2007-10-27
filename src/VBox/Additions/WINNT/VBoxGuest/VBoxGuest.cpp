@@ -350,9 +350,8 @@ DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData,
 
     while ((pHeader->fu32Flags & VBOX_HGCM_REQ_DONE) == 0)
     {
-        /* Specifying UserMode so killing the user process will abort the wait. */
         NTSTATUS rc = KeWaitForSingleObject (&pDevExt->keventNotification, Executive,
-                                             UserMode, TRUE, &timeout
+                                             KernelMode, TRUE, &timeout
                                             );
         dprintf(("VBoxHGCMCallback: Wait returned %d fu32Flags=%x\n", rc, pHeader->fu32Flags));
 
