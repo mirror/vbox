@@ -1403,7 +1403,7 @@ TRPMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
             Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
             if (VBOX_SUCCESS(rc))
             {
-                rc = TRPMAssertTrap(pVM, u8Interrupt, false);
+                rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
                 AssertRC(rc);
                 STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
                 return VINF_EM_RESCHEDULE_HWACC;
