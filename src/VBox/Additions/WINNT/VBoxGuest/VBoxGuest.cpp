@@ -338,18 +338,26 @@ NTSTATUS VBoxGuestClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
+    LARGE_INTEGER timeout;
 
     dprintf(("VBoxHGCMCallback\n"));
         
-    // this code is subject to "lost wakeup" bug
-    // -- malc
+    /* Possible problem with requestion completion right between the fu32Flags check and KeWaitForSingleObject 
+     * call; introduce a timeout to make sure we don't wait indefinitely.
+     */
+    timeout.QuadPart  = 250;
+    timeout.QuadPart *= -10000;     /* relative in 100ns units */
+
     while ((pHeader->fu32Flags & VBOX_HGCM_REQ_DONE) == 0)
     {
         /* Specifying UserMode so killing the user process will abort the wait. */
         NTSTATUS rc = KeWaitForSingleObject (&pDevExt->keventNotification, Executive,
-                                             UserMode, TRUE, NULL /** @todo &timeout? */
+                                             UserMode, TRUE, &timeout
                                             );
-        dprintf(("VBoxHGCMCallback: Wait returned %d\n", rc));
+        dprintf(("VBoxHGCMCallback: Wait returned %d fu32Flags=%x\n", rc, pHeader->fu32Flags));
+
+        if (rc == STATUS_TIMEOUT)
+            continue;
 
         if (rc != STATUS_WAIT_0)
         {
