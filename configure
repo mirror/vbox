@@ -255,9 +255,25 @@ check_environment()
     x86_64|amd64)
       BUILD_MACHINE='amd64'
       BUILD_CPU='k8'
-      # on AMD64 systems, 64bit libs are usually located in /usr/lib64
-      # see http://www.pathname.com/fhs/pub/fhs-2.3.html#LIB64
-      LIB='lib64'
+      if [ "$OS" != "solaris" ]; then
+        # on AMD64 systems, 64bit libs are usually located in /usr/lib64
+        # see http://www.pathname.com/fhs/pub/fhs-2.3.html#LIB64
+        LIB='lib64'
+      else
+        # Solaris doesn't seem to subscribe to fhs, libs are usually in 
+        # a '64' subdirectory of the standard 'lib' dirs while some 64-bit 
+        # alternative binaries can be found in 'amd64' subdirs of the 'bin'
+        # ones. So, in order to find the right stuff (esp. sdl-config) we'll
+        # have to make sure the */bin/amd64 dirs are searched before the */bin
+        # ones. (The sed has some sideeffects, but they shouldn't harm us...)
+        echo "64-bit Solaris detected, hacking the PATH" >> $LOG
+        echo "old PATH: $PATH" >> $LOG
+        PATH=`echo ":$PATH:" | sed -e 's,\(:[^:]*/bin\):,\1/amd64:\1:,g' \
+                                   -e 's/^:*//' -e 's/:*$//g' -e 's/::*/:/g' `
+        export PATH
+        echo "new PATH: $PATH" >> $LOG
+        LIB='lib/64'
+      fi
       ;;
     *)
       log_failure "Cannot determine system"
