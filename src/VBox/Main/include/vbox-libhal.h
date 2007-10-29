@@ -21,8 +21,7 @@
 
 #include <stdint.h>
 
-#define LIB_DBUS "libdbus-1"
-#define LIB_HAL "libhal"
+#define LIB_HAL "libhal.so.1"
 
 /** Types from the dbus and hal header files which we need.  These are taken more or less
     verbatim from the DBus and Hal public interface header files. */
