@@ -845,7 +845,7 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
 {
     /* Make no normalizeGeometry in case we are in manual resize
      * mode or main window is maximized */
-    if (mainwnd->isManualResize() || mainwnd->isMaximized())
+    if (mainwnd->isMaximized())
         return;
 
     QWidget *tlw = topLevelWidget();
@@ -1650,7 +1650,7 @@ bool VBoxConsoleView::pmEvent (QMSG *aMsg)
     if ((ch & 0xFF) == 0xE0)
     {
         flags |= KeyExtended;
-        scan = ch >> 8; 
+        scan = ch >> 8;
     }
     else if (scan == 0x5C && (ch & 0xFF) == '/')
     {
@@ -2053,10 +2053,20 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 /**
  *  Called on enter/exit seamless/fullscreen mode.
  */
-void VBoxConsoleView::toggleFSMode (const QSize &aResizeTo)
+void VBoxConsoleView::toggleFSMode()
 {
     if (mIsAdditionsActive && mAutoresizeGuest)
-        doResizeHint (aResizeTo);
+    {
+        QSize newSize = QSize();
+        if (mainwnd->isTrueFullscreen() || mainwnd->isTrueSeamless())
+        {
+            mNormalSize = frameSize();
+            newSize = maximumSize();
+        }
+        else
+            newSize = mNormalSize;
+        doResizeHint (newSize);
+    }
     mToggleFSModeTimer->start (400, true);
 }
 
@@ -3266,7 +3276,8 @@ void VBoxConsoleView::doResizeHint (const QSize &aToSize)
          * We assume here that the centralWidget() contains this view only
          * and gives it all available space. */
         QSize sz (aToSize.isValid() ? aToSize : mainwnd->centralWidget()->size());
-        sz -= QSize (frameWidth() * 2, frameWidth() * 2);
+        if (!aToSize.isValid())
+            sz -= QSize (frameWidth() * 2, frameWidth() * 2);
         LogFlowFunc (("Will suggest %d x %d\n", sz.width(), sz.height()));
 
         cconsole.GetDisplay().SetVideoModeHint (sz.width(), sz.height(), 0, 0);

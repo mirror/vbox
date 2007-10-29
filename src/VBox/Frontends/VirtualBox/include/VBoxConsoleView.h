@@ -90,7 +90,7 @@ public:
 
     void fixModifierState (LONG *codes, uint *count);
 
-    void toggleFSMode (const QSize &aFeatSize);
+    void toggleFSMode();
 
     void setIgnoreMainwndResize (bool aYes) { mIgnoreMainwndResize = aYes; }
 
@@ -231,6 +231,7 @@ private:
     VBoxDefs::RenderMode mode;
 
     QRegion mLastVisibleRegion;
+    QSize mNormalSize;
 
 #if defined(Q_WS_WIN)
     HCURSOR mAlphaCursor;

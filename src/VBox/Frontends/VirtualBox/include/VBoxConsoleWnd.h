@@ -41,6 +41,7 @@ class QAction;
 class QActionGroup;
 class QHBox;
 class QLabel;
+class QSpacerItem;
 
 class VBoxConsoleView;
 class QIStateIndicator;
@@ -68,17 +69,13 @@ public:
 
     bool isTrueSeamless() const { return mIsSeamless; }
 
-    bool isManualResize() const { return mManualResize; }
-
     void setMouseIntegrationLocked (bool aDisabled);
 
     void popupMainMenu (bool aCenter);
 
     void installGuestAdditionsFrom (const QString &aSource);
 
-#ifdef Q_WS_WIN
     void setMask (const QRegion &aRegion);
-#endif
 
 public slots:
 
@@ -86,7 +83,6 @@ protected:
 
     // events
     bool event (QEvent *e);
-    void resizeEvent (QResizeEvent *e);
     void closeEvent (QCloseEvent *e);
 #if defined(Q_WS_X11)
     bool x11Event (XEvent *event);
@@ -251,6 +247,8 @@ private:
     bool waitForStatusBarChange;
     bool statusBarChangedInside;
 
+    QSpacerItem *mShiftingSpacer;
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
     QPopupMenu *dbgMenu;
@@ -293,17 +291,13 @@ private:
     QPoint normal_pos;
     QSize normal_size;
     QSize prev_min_size;
-    QSize mPrevSize;
-    QSize mAwaitingSize;
 
 #ifdef Q_WS_WIN32
     QRegion mPrevRegion;
 #endif
 
     // variables for dealing with true fullscreen
-    bool mDoMaximize : 1;
-    bool mManualResize : 1;
-    bool mAllowOneResize : 1;
+    QRegion mStrictedRegion;
     bool mIsFullscreen : 1;
     bool mIsSeamless : 1;
     bool mIsSeamlessSupported : 1;
