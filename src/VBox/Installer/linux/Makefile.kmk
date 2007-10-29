@@ -28,6 +28,7 @@ OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
 	         install.sh deffiles routines.sh \
 	         VBoxAddIF.sh vboxdrv.sh vboxnet.sh \
 	         VirtualBox.tar.bz2 LICENSE) \
+	         $(if $(VBOX_OSE),,VBoxSysInfo.sh) \
 	         $(wildcard $(PATH_TARGET)/VirtualBox-*)
 INSTALLS       = linux-bin linux-doc
 
@@ -154,6 +155,7 @@ $(PATH_BIN)/VirtualBox.run: \
 		deffiles \
 		vboxnet.sh \
 		vboxdrv.sh \
+		$(if $(VBOX_OSE),,VBoxSysInfo.sh) \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt)
 	$(call MSG_TOOL,makeself,,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
@@ -166,6 +168,7 @@ $(PATH_BIN)/VirtualBox.run: \
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_ROOT)/doc/License.txt $(PATH_TARGET)/install/LICENSE)
 	$(QUIET)$(INSTALL) -m 0755 vboxnet.sh $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 vboxdrv.sh $(PATH_TARGET)/install
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0755 VBoxSysInfo.sh $(PATH_TARGET)/install)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_MAKESELF) --follow $(PATH_TARGET)/install $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
