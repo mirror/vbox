@@ -28,11 +28,6 @@
  */
 static bool gCheckedForLibHal = false;
 /**
- * Pointer to the libdbus shared object.  This should only be set once all needed libraries
- * and symbols have been successfully loaded.
- */
-static RTLDRMOD ghLibDBus = 0;
-/**
  * Pointer to the libhal shared object.  This should only be set once all needed libraries
  * and symbols have been successfully loaded.
  */
@@ -56,24 +51,20 @@ dbus_bool_t (*gLibHalCtxFree)(LibHalContext *);
 
 bool gLibHalCheckPresence(void)
 {
-    RTLDRMOD hLibDBus;
     RTLDRMOD hLibHal;
 
-    if (ghLibDBus != 0 && ghLibHal != 0 && gCheckedForLibHal == true)
+    if (ghLibHal != 0 && gCheckedForLibHal == true)
         return true;
     if (gCheckedForLibHal == true)
         return false;
-    if (!RT_SUCCESS(RTLdrLoad(LIB_DBUS, &hLibDBus)))
-        return false;
     if (!RT_SUCCESS(RTLdrLoad(LIB_HAL, &hLibHal)))
     {
-        RTLdrClose(hLibDBus);
         return false;
     }
-    if (   RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_error_init", (void **) &gDBusErrorInit))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_bus_get", (void **) &gDBusBusGet))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_error_free", (void **) &gDBusErrorFree))
-        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_unref",
+    if (   RT_SUCCESS(RTLdrGetSymbol(hLibHal, "dbus_error_init", (void **) &gDBusErrorInit))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "dbus_bus_get", (void **) &gDBusBusGet))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "dbus_error_free", (void **) &gDBusErrorFree))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "dbus_connection_unref",
                                      (void **) &gDBusConnectionUnref))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_new", (void **) &gLibHalCtxNew))
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_set_dbus_connection",
@@ -90,14 +81,12 @@ bool gLibHalCheckPresence(void)
         && RT_SUCCESS(RTLdrGetSymbol(hLibHal, "libhal_ctx_free", (void **) &gLibHalCtxFree))
        )
     {
-        ghLibDBus = hLibDBus;
         ghLibHal = hLibHal;
         gCheckedForLibHal = true;
         return true;
     }
     else
     {
-        RTLdrClose(hLibDBus);
         RTLdrClose(hLibHal);
         gCheckedForLibHal = true;
         return false;
