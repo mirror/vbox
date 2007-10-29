@@ -279,15 +279,15 @@ static DECLCALLBACK(int) drvTAPOs2ReceiveThread(PPDMDRVINS pDrvIns, PPDMTHREAD p
             AssertMsg(cbRead <= 1536, ("cbRead=%d\n", cbRead));
 
             /*
-             * Wait for the device to have room for this frame.
+             * Wait for the device to have some room.
              */
             ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
             size_t cbMax = pThis->pPort->pfnCanReceive(pThis->pPort);
-            if (cbMax < cbRead)
+            if (cbMax == 0)
             {
                 STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
                 STAM_PROFILE_START(&pThis->StatRecvOverflows, b);
-                while (   cbMax < cbRead
+                while (   cbMax == 0
                        && pThread->enmState == PDMTHREADSTATE_RUNNING)
                 {
                     LogFlow(("%s: ReceiveThread: cbMax=%d cbRead=%d waiting...\n", pThis->szName, cbMax, cbRead));

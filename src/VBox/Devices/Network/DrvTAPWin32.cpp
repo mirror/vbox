@@ -326,10 +326,10 @@ static DECLCALLBACK(int) drvTAPW32AsyncIo(RTTHREAD ThreadSelf, void *pvUser)
 
         /* Not very nice, but what else can we do? */
         size_t cbMax = pData->pPort->pfnCanReceive(pData->pPort);
-        if (cbMax < dwNumberOfBytesTransferred)
+        if (cbMax == 0)
         {
             STAM_PROFILE_START(&pData->StatRecvOverflows, b);
-            while (cbMax < dwNumberOfBytesTransferred)
+            while (cbMax == 0)
             {
 #if 1
                 ASMAtomicXchgU32(&pData->fOutOfSpace, true);
