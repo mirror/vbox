@@ -116,6 +116,9 @@ RuntimeWin32ASM_SOURCES = \
 RuntimeR3_TEMPLATE      = VBOXR3EXE
 RuntimeR3_SDKS.win      = WINPSDK W2K3DDK
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
+ifdef IPRT_WITH_KSTUFF
+ RuntimeR3_DEFS        += LDR_WITH_KLDR
+endif
 ifdef IPRT_WITH_KLDR
  RuntimeR3_DEFS        += LDR_WITH_KLDR KLDR_USE_CRT
  RuntimeR3_DEFS.debug  += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
@@ -125,6 +128,10 @@ ifdef VBOX_MAIN_RELEASE_LOG ## @todo (dmik): temporary, until RTThreadSelf/RTThr
 endif
 RuntimeR3_INCS          = \
 	$(PATH_ROOT)/src/libs/liblzf-1.51
+ifdef IPRT_WITH_KSTUFF
+ RuntimeR3_INCS        += \
+	$(PATH_ROOT)/src/libs/kStuff/kStuff/include
+endif
 ifdef IPRT_WITH_KLDR
  RuntimeR3_INCS        += \
 	$(IPRT_PATH_KLDR)
@@ -219,6 +226,11 @@ RuntimeR3_SOURCES       = \
 #else
  RuntimeR3_SOURCES += common/time/timesupref.cpp
 #endif
+
+ifdef IPRT_WITH_KSTUFF
+ RuntimeR3_SOURCES += \
+	common/ldr/ldrkStuff.cpp
+endif
 
 ifdef IPRT_WITH_KLDR
  RuntimeR3_SOURCES += \
@@ -547,6 +559,10 @@ VBoxRT_INCS.$(BUILD_TARGET).$(BUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(BUILD_TARG
 VBoxRT_LIBS                    = \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
+ifdef IPRT_WITH_KSTUFF
+ VBoxRT_LIBS                  += \
+   	$(PATH_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
+endif
 VBoxRT_LIBS.darwin             = \
 	iconv
 VBoxRT_LIBS.freebsd            = \
