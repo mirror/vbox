@@ -113,7 +113,7 @@ static DECLCALLBACK(int) rtkldrEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFla
 static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol,
                                     const char *pchSymbol, KSIZE cchSymbol, const char *pszVersion,
                                     KLDRADDR uValue, uint32_t fKind, void *pvUser);
-static DECLCALLBACK(KSIZE) rtkldrGetImageSize(PRTLDRMODINTERNAL pMod);
+static DECLCALLBACK(size_t) rtkldrGetImageSize(PRTLDRMODINTERNAL pMod);
 static DECLCALLBACK(int) rtkldrGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress,
                                        PFNRTLDRIMPORT pfnGetImport, void *pvUser);
 static DECLCALLBACK(int) rtkldrRelocate(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
@@ -478,7 +478,7 @@ static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol,
 
 
 /** @copydoc RTLDROPS::pfnGetImageSize */
-static DECLCALLBACK(KSIZE) rtkldrGetImageSize(PRTLDRMODINTERNAL pMod)
+static DECLCALLBACK(size_t) rtkldrGetImageSize(PRTLDRMODINTERNAL pMod)
 {
     PKLDRMOD pModkLdr = ((PRTLDRMODKLDR)pMod)->pMod;
     return kLdrModSize(pModkLdr);

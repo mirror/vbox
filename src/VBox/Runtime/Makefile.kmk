@@ -59,10 +59,12 @@ endif
 # global (for now at least)
 INCS += include
 
-ifneq ($(wildcard ./kLdr/kLdrModMachO.c),)
- ifeq ($(filter-out darwin win os2,$(BUILD_TARGET)),)
+ifndef IPRT_WITH_KSTUFF
+ ifneq ($(wildcard ./kLdr/kLdrModMachO.c),)
+  ifeq ($(filter-out darwin win os2,$(BUILD_TARGET)),)
    IPRT_WITH_KLDR=1
    IPRT_PATH_KLDR=./kLdr
+  endif
  endif
 endif
 
