@@ -114,9 +114,6 @@ VBoxBFE_LIBS.win = \
 endif
 VBoxBFE_LIBS.l4 = \
 	$(L4_LIBDIR)/libl4con-idl.a \
-	$(L4_LIBDIR)/libdm_generic.a \
-	$(L4_LIBDIR)/libdm_mem.a \
-	$(L4_LIBDIR)/libnames.a \
 	$(L4_LIBDIR)/libconstream-server.a \
 	$(L4_LIBDIR)/libl4sys.a
 VBoxBFE_LIBS.darwin = \
