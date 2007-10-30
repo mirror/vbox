@@ -57,19 +57,26 @@ SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 VBoxDDU_TEMPLATE         = VBOXR3
 VBoxDDU_DEFS             = IN_VBOXDDU
 ifdef VBOX_WITH_USB
- VBoxDDU_DEFS.win        = VBOX_WITH_USB
+ VBoxDDU_DEFS           += VBOX_WITH_USB IN_USBLIB
  VBoxDDU_SDKS.win        = WINPSDK W2K3DDK
- VBoxDDU_SOURCES.win     = \
-	USB/win32/USBLib-win32.cpp
 else
  VBoxDDU_SDKS.win         = WINPSDK
 endif
 VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD-new.cpp \
 	Storage/VDICore.cpp \
-	Storage/VmdkHDDCore.cpp
+	Storage/VmdkHDDCore.cpp \
+	VBoxDDUDeps.cpp
+ifdef VBOX_WITH_USB
+ VBoxDDU_SOURCES.win     = \
+	USB/win32/USBLib-win32.cpp
+endif
 VBoxDDU_LIBS             = \
 	$(LIB_RUNTIME)
+ifdef VBOX_WITH_USB
+ VBoxDDU_LIBS           += \
+	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
+endif
 ifeq ($(BUILD_TARGET),l4)
  VBoxDDU_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
@@ -121,10 +128,6 @@ ifeq ($(BUILD_TARGET),l4)
 endif
 ifeq ($(BUILD_TARGET),solaris)
  VBoxDD_LIBS           += adm
-endif
-ifdef VBOX_WTIH_USB
-VBoxDD_LIBS.darwin     += \
-	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
 endif
 VBoxDD_LIBS.darwin     += \
 	$(LIB_REM)
