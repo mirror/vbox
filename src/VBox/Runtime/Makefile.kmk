@@ -59,15 +59,6 @@ endif
 # global (for now at least)
 INCS += include
 
-ifndef IPRT_WITH_KSTUFF
- ifneq ($(wildcard ./kLdr/kLdrModMachO.c),)
-  ifeq ($(filter-out darwin win os2,$(BUILD_TARGET)),)
-   IPRT_WITH_KLDR=1
-   IPRT_PATH_KLDR=./kLdr
-  endif
- endif
-endif
-
 #
 # Unicode Specification reader used to regenerate unidata.cpp.
 #
@@ -121,10 +112,6 @@ RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_DEFS        += LDR_WITH_KLDR
 endif
-ifdef IPRT_WITH_KLDR
- RuntimeR3_DEFS        += LDR_WITH_KLDR KLDR_USE_CRT
- RuntimeR3_DEFS.debug  += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
-endif
 ifdef VBOX_MAIN_RELEASE_LOG ## @todo (dmik): temporary, until RTThreadSelf/RTThreadAdopt are properly updated
  RuntimeR3_DEFS         += RTCRITSECT_STRICT
 endif
@@ -133,10 +120,6 @@ RuntimeR3_INCS          = \
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_INCS        += \
 	$(PATH_ROOT)/src/libs/kStuff/kStuff/include
-endif
-ifdef IPRT_WITH_KLDR
- RuntimeR3_INCS        += \
-	$(IPRT_PATH_KLDR)
 endif
 RuntimeR3_INCS.l4       = \
 	$(L4_INCDIR)
@@ -232,26 +215,6 @@ RuntimeR3_SOURCES       = \
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_SOURCES += \
 	common/ldr/ldrkStuff.cpp
-endif
-
-ifdef IPRT_WITH_KLDR
- RuntimeR3_SOURCES += \
-	common/ldr/ldrkLdr.cpp \
-	$(IPRT_PATH_KLDR)/kLdrMod.c \
-	$(IPRT_PATH_KLDR)/kLdrModLX.c \
-	$(IPRT_PATH_KLDR)/kLdrModPE.c \
-	$(IPRT_PATH_KLDR)/kLdrModMachO.c \
-	$(IPRT_PATH_KLDR)/kLdrModNative.c \
-	$(IPRT_PATH_KLDR)/kLdrMisc.c \
-	$(IPRT_PATH_KLDR)/kLdrRdr.c \
-	$(IPRT_PATH_KLDR)/kLdrHlpStr.c
-# We Implement these using IPRT facilities.
-#   $(IPRT_PATH_KLDR)/kLdrHlp.c \
-#	$(IPRT_PATH_KLDR)/kLdrHlpHeap.c \
-#	$(IPRT_PATH_KLDR)/kLdrHlpSem.c \
-#	$(IPRT_PATH_KLDR)/kLdrHlpMem.c \
-#	$(IPRT_PATH_KLDR)/kLdrHlpPath.c
-
 endif
 
 # VBox specific stuff.
@@ -503,9 +466,8 @@ RuntimeR3L4_SOURCES = \
 RuntimeW32GuestR3_TEMPLATE     = VBOXW32GUESTR3LIB
 RuntimeW32GuestR3_SDKS         = WINPSDK W2K3DDK
 RuntimeW32GuestR3_DEFS         = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
-ifdef IPRT_WITH_KLDR
- RuntimeW32GuestR3_DEFS       += LDR_WITH_KLDR KLDR_USE_CRT
- RuntimeW32GuestR3_DEFS.debug += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
+ifdef IPRT_WITH_KSTUFF
+ RuntimeW32GuestR3_DEFS       += LDR_WITH_KLDR
 endif
 RuntimeW32GuestR3_SOURCES      = $(RuntimeR3_SOURCES.win) $(RuntimeR3_SOURCES)
 RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
@@ -516,9 +478,8 @@ RuntimeW32GuestR3_INCS         = $(RuntimeR3_INCS.win)    $(RuntimeR3_INCS)
 #
 RuntimeLnx32GuestR3_TEMPLATE   = VBOXLNX32GUESTR3LIB
 RuntimeLnx32GuestR3_DEFS       = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
-ifdef IPRT_WITH_KLDR
- RuntimeLnx32GuestR3_DEFS     += LDR_WITH_KLDR KLDR_USE_CRT
- RuntimeLnx32GuestR3_DEFS.debug += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
+ifdef IPRT_WITH_KSTUFF
+ RuntimeLnx32GuestR3_DEFS     += LDR_WITH_KLDR
 endif
 RuntimeLnx32GuestR3_SOURCES    = $(RuntimeR3_SOURCES.linux) $(RuntimeR3_SOURCES)
 RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
@@ -529,9 +490,8 @@ RuntimeLnx32GuestR3_INCS       = $(RuntimeR3_INCS.linux)    $(RuntimeR3_INCS)
 #
 RuntimeOS2GuestR3_TEMPLATE     = VBOXOS2GUESTR3LIB
 RuntimeOS2GuestR3_DEFS         = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX
-ifdef IPRT_WITH_KLDR
- RuntimeOS2GuestR3_DEFS       += LDR_WITH_KLDR KLDR_USE_CRT
- RuntimeOS2GuestR3_DEFS.debug += KLDRMOD_STRICT KLDRMODLX_STRICT KLDRMODPE_STRICT KLDRMODNATIVE_STRICT KLDRRDR_STRICT
+ifdef IPRT_WITH_KSTUFF
+ RuntimeOS2GuestR3_DEFS       += LDR_WITH_KLDR
 endif
 RuntimeOS2GuestR3_SOURCES      = $(RuntimeR3_SOURCES.os2) $(RuntimeR3_SOURCES)
 RuntimeOS2GuestR3_INCS         = $(RuntimeR3_INCS.os2)    $(RuntimeR3_INCS)
