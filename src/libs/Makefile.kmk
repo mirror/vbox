@@ -5,7 +5,7 @@
 
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -19,6 +19,9 @@ include $(PATH_KBUILD)/header.kmk
 
 
 subdirs := liblzf-1.51 $(subdirs.$(BUILD_TARGET))
+ifdef IPRT_WITH_KSTUFF
+ subdirs += kStuff
+endif
 ifndef VBOX_OSE
  ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
   subdirs += zlib-1.2.1 libpng-1.2.8
