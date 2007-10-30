@@ -389,6 +389,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
                 aConfigFile, vrc);
     mData->mConfigFileFull = configFileFull;
 
+    /* start with accessible */
     mData->mAccessible = TRUE;
 
     if (aMode != Init_New)
@@ -429,6 +430,12 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
                     tr ("Invalid settings file name: '%ls' (%Vrc)"),
                         mData->mConfigFileFull.raw(), vrc);
         }
+
+        /* reset mAccessible to make sure uninit() called by the AutoInitSpan
+         * destructor will not call uninitDataAndChildObjects() (we haven't
+         * initialized anything yet) */
+        if (FAILED (rc))
+            mData->mAccessible = FALSE;
     }
 
     CheckComRCReturnRC (rc);
@@ -3660,7 +3667,7 @@ void Machine::uninitDataAndChildObjects()
      * a result of unregistering or discarding the snapshot), outdated hard
      * disk attachments will already be uninitialized and deleted, so this
      * code will not affect them. */
-    if (mType == IsMachine || mType == IsSnapshotMachine)
+    if (!!mHDData && (mType == IsMachine || mType == IsSnapshotMachine))
     {
         for (HDData::HDAttachmentList::const_iterator it =
                  mHDData->mHDAttachments.begin();
@@ -3679,7 +3686,7 @@ void Machine::uninitDataAndChildObjects()
     }
 
     /* free data structures (the essential mData structure is not freed here
-     * since it still may be in use) */
+     * since it may be still in use) */
     mHDData.free();
     mHWData.free();
     mUserData.free();
