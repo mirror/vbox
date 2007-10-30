@@ -108,6 +108,7 @@
 #define IN_USB_GC
 #define IN_USB_R0
 #define IN_USB_R3
+#define IN_USBLIB
 #define IN_VGADEVICE_GC
 #define IN_VGADEVICE_R3
 #define IN_VHHD_R3
@@ -909,6 +910,23 @@
 # define USBDECL(type)       DECLEXPORT(type) VBOXCALL
 #else
 # define USBDECL(type)       DECLIMPORT(type) VBOXCALL
+#endif
+
+
+
+/** @def IN_USBLIB
+ * Used to indicate whether we're inside the same link module as the USBLib.
+ */
+/** @def USBLIB_DECL
+ * USBLIB export or import declaration.
+ * @param   type    The return type of the function declaration.
+ */
+#ifdef IN_RING0
+# define USBLIB_DECL(type)   type VBOXCALL
+#elif defined(IN_USBLIB)
+# define USBLIB_DECL(type)   DECLEXPORT(type) VBOXCALL
+#else
+# define USBLIB_DECL(type)   DECLIMPORT(type) VBOXCALL
 #endif
 
 
