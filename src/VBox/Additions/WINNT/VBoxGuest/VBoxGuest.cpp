@@ -782,8 +782,6 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             for (;;)
             {
-                // following code is subject to "lost wakeup" bug
-                // -- malc
                 bool fEventPending = TestAndClearEvent (pDevExt, iBitOffset);
                 if (fEventPending)
                 {
