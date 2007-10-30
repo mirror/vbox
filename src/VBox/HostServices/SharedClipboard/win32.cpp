@@ -42,8 +42,6 @@ struct _VBOXCLIPBOARDCONTEXT
     HANDLE hRenderEvent;
     
     VBOXCLIPBOARDCLIENTDATA *pClient;
-    
-    volatile uint32_t u32Announcing;
 };
 
 /* Only one client is supported. There seems to be no need for more clients. */
@@ -224,9 +222,9 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         {
             Log(("WM_DRAWCLIPBOARD next %p\n", pCtx->hwndNextInChain));
 
-            if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 0, 1) == false)
+            if (GetClipboardOwner () != hwnd)
             {
-                /* Could not do 1->0 transition. That means u32Announcing is 0. */
+                /* Clipboard was updated by another application. */
                 vboxClipboardChanged (pCtx);
             }
 
@@ -394,22 +392,14 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 {
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT\n"));
                     
-                    /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
-                    if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
-                    {
-                        hClip = SetClipboardData (CF_UNICODETEXT, NULL);
-                    }
+                    hClip = SetClipboardData (CF_UNICODETEXT, NULL);
                 }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
                 {
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
                     
-                    /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
-                    if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
-                    {
-                        hClip = SetClipboardData (CF_DIB, NULL);
-                    }
+                    hClip = SetClipboardData (CF_DIB, NULL);
                 }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
@@ -418,11 +408,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     dprintf(("window proc WM_USER: VBOX_SHARED_CLIPBOARD_FMT_HTML 0x%04X\n", format));
                     if (format != 0)
                     {
-                        /* Prevent the WM_DRAWCLIPBOARD processing. Will be reset in WM_DRAWCLIPBOARD. */
-                        if (ASMAtomicCmpXchgU32 (&pCtx->u32Announcing, 1, 0) == true)
-                        {
-                            hClip = SetClipboardData (format, NULL);
-                        }
+                        hClip = SetClipboardData (format, NULL);
                     }
                 }
 
@@ -534,8 +520,6 @@ int vboxClipboardInit (void)
     int rc = VINF_SUCCESS;
 
     g_ctx.hRenderEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    
-    g_ctx.u32Announcing = 0;
     
     rc = RTThreadCreate (&g_ctx.thread, VBoxClipboardThread, NULL, 65536, 
                          RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
