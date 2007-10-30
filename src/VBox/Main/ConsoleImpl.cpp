@@ -4881,11 +4881,9 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUu
     }
 
     USHORT portVersion = 1;
-#if 0 /* can't test this now */
     HRESULT hrc = aHostDevice->COMGETTER(PortVersion)(&portVersion);
     AssertComRCReturn(hrc, VERR_GENERAL_FAILURE);
     Assert(portVersion == 1 || portVersion == 2);
-#endif
 
     int vrc = PDMR3USBCreateProxyDevice (that->mpVM, aUuid, aRemote, aAddress, pvRemoteBackend,
                                          portVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20);
