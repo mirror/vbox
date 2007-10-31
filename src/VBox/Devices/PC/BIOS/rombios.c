@@ -9939,6 +9939,71 @@ pci_routing_table_structure_start:
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 9 ;; physical slot (0 = embedded)
   db 0 ;; reserved
+  ;; 11th slot entry: 10th PCI slot
+  db 0 ;; pci bus number
+  db 0x58 ;; pci device number (bit 7-3)
+  db 0x61 ;; link value INTA#
+  dw 0xdef8 ;; IRQ bitmap INTA#
+  db 0x62 ;; link value INTB#
+  dw 0xdef8 ;; IRQ bitmap INTB#
+  db 0x63 ;; link value INTC#
+  dw 0xdef8 ;; IRQ bitmap INTC#
+  db 0x60 ;; link value INTD#
+  dw 0xdef8 ;; IRQ bitmap INTD#
+  db 10 ;; physical slot (0 = embedded)
+  db 0 ;; reserved
+  ;; 12th slot entry: 11th PCI slot
+  db 0 ;; pci bus number
+  db 0x60 ;; pci device number (bit 7-3)
+  db 0x61 ;; link value INTA#
+  dw 0xdef8 ;; IRQ bitmap INTA#
+  db 0x62 ;; link value INTB#
+  dw 0xdef8 ;; IRQ bitmap INTB#
+  db 0x63 ;; link value INTC#
+  dw 0xdef8 ;; IRQ bitmap INTC#
+  db 0x60 ;; link value INTD#
+  dw 0xdef8 ;; IRQ bitmap INTD#
+  db 11 ;; physical slot (0 = embedded)
+  db 0 ;; reserved
+  ;; 13th slot entry: 12th PCI slot
+  db 0 ;; pci bus number
+  db 0x68 ;; pci device number (bit 7-3)
+  db 0x61 ;; link value INTA#
+  dw 0xdef8 ;; IRQ bitmap INTA#
+  db 0x62 ;; link value INTB#
+  dw 0xdef8 ;; IRQ bitmap INTB#
+  db 0x63 ;; link value INTC#
+  dw 0xdef8 ;; IRQ bitmap INTC#
+  db 0x60 ;; link value INTD#
+  dw 0xdef8 ;; IRQ bitmap INTD#
+  db 12 ;; physical slot (0 = embedded)
+  db 0 ;; reserved
+  ;; 14th slot entry: 13th PCI slot
+  db 0 ;; pci bus number
+  db 0x70 ;; pci device number (bit 7-3)
+  db 0x61 ;; link value INTA#
+  dw 0xdef8 ;; IRQ bitmap INTA#
+  db 0x62 ;; link value INTB#
+  dw 0xdef8 ;; IRQ bitmap INTB#
+  db 0x63 ;; link value INTC#
+  dw 0xdef8 ;; IRQ bitmap INTC#
+  db 0x60 ;; link value INTD#
+  dw 0xdef8 ;; IRQ bitmap INTD#
+  db 13 ;; physical slot (0 = embedded)
+  db 0 ;; reserved
+  ;; 15th slot entry: 14th PCI slot
+  db 0 ;; pci bus number
+  db 0x78 ;; pci device number (bit 7-3)
+  db 0x61 ;; link value INTA#
+  dw 0xdef8 ;; IRQ bitmap INTA#
+  db 0x62 ;; link value INTB#
+  dw 0xdef8 ;; IRQ bitmap INTB#
+  db 0x63 ;; link value INTC#
+  dw 0xdef8 ;; IRQ bitmap INTC#
+  db 0x60 ;; link value INTD#
+  dw 0xdef8 ;; IRQ bitmap INTD#
+  db 14 ;; physical slot (0 = embedded)
+  db 0 ;; reserved
 #endif /* VBOX */
 pci_routing_table_structure_end:
 
