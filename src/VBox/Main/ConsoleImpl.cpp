@@ -5395,7 +5395,7 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
         rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
         if (FAILED(rc) || tapDeviceName.isEmpty())
         {
-            /* If the name is not empty, this is a dynamic TAP device, so close it now,
+            /* If the name is empty, this is a dynamic TAP device, so close it now,
                so that the termination script can remove the interface.  Otherwise we still
                need the FD to pass to the termination script. */
             isStatic = false;
