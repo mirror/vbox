@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- * VBox host drivers - Ring-0 support drivers - Solaris host:
- * Solaris driver C code
+ * VirtualBox Support Driver - Solaris Driver Code.
  */
 
 /*
@@ -263,7 +263,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                         /*
                          * Register ourselves as a character device, pseudo-driver
                          */
-                        if (ddi_create_minor_node(pDip, "0", S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
+                        if (ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
                         {
 #ifdef USE_SESSION_HASH
                             pState->pDip = pDip;
