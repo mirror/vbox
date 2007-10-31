@@ -43,6 +43,9 @@
 #include "nsGREDirServiceProvider.h"
 #include "nsXPCOMPrivate.h"
 #include <stdlib.h>
+#ifdef VBOX
+# include <limits.h>
+#endif
 
 #if XP_WIN32
 #include <windows.h>
