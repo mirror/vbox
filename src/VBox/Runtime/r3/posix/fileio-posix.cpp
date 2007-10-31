@@ -121,9 +121,9 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
     if (!(fOpen & RTFILE_O_INHERIT))
         fOpenMode |= O_NOINHERIT;
 #endif
-#ifndef O_NONBLOCK
+#ifdef O_NONBLOCK
     if (fOpen & RTFILE_O_NON_BLOCK)
-        fOpenMode |= O_NONBLOCK
+        fOpenMode |= O_NONBLOCK;
 #endif
 #ifdef O_SYNC
     if (fOpen & RTFILE_O_WRITE_THROUGH)
