@@ -28,6 +28,9 @@
 ** destructor.
 *****************************************************************************/
 
+#include <iprt/param.h>
+#include <iprt/path.h>
+
 /**
  *  This class is used to encode/decode the registration data.
  */
@@ -513,8 +516,13 @@ QString VBoxRegistrationDlg::getPlatform()
 #elif defined (Q_OS_OS2)
     // TODO: add sys info for os2 if any...
 #elif defined (Q_OS_LINUX) || defined (Q_OS_MACX) || defined (Q_OS_FREEBSD) || defined (Q_OS_SOLARIS)
+    char szAppPrivPath [RTPATH_MAX];
+    int rc;
+
+    rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
+    Assert (RT_SUCCESS (rc));
     QProcess infoScript (QString ("./VBoxSysInfo.sh"), this, "infoScript");
-    infoScript.setWorkingDirectory (qApp->applicationDirPath());
+    infoScript.setWorkingDirectory (QString (szAppPrivPath));
     if (infoScript.start())
     {
         while (infoScript.isRunning()) {}
