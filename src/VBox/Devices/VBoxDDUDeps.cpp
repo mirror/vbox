@@ -27,7 +27,7 @@
 /** Just a dummy global structure containing a bunch of
  * function pointers to code which is wanted in the link.
  */
-PFNRT g_apfnDeps[] =
+PFNRT g_apfnVBoxDDUDeps[] =
 {
 #ifdef VBOX_WITH_USB
     (PFNRT)USBFilterInit,
