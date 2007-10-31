@@ -135,7 +135,7 @@ start() {
             fail "Cannot remove $dev"
         }
 
-        modprobe $modname || {
+        modprobe $modname > /dev/null 2>&1 || {
             fail "modprobe $modname failed"
         }
 
