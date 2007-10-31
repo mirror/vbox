@@ -178,7 +178,7 @@ start_network() {
     fi
     # Fail if we don't have the kernel tun device
     # Make sure that the tun module is loaded (Ubuntu 7.10 needs this)
-    modprobe tun 2>&1 > /dev/null
+    modprobe tun > /dev/null 2>&1
     if ! cat /proc/misc 2>/dev/null | grep tun > /dev/null
     then
       fail_msg
