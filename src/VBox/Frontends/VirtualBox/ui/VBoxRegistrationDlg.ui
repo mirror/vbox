@@ -217,6 +217,7 @@
     <include location="global" impldecl="in implementation">qpushbutton.h</include>
     <include location="global" impldecl="in implementation">qtimer.h</include>
     <include location="global" impldecl="in implementation">qvalidator.h</include>
+    <include location="global" impldecl="in implementation">qprocess.h</include>
 </includes>
 <forwards>
 	<forward>class VBoxNetworkFramework</forward>
