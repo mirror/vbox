@@ -66,6 +66,8 @@
 DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 {
     LogFlowFuncEnter();
+    /** Note: hardcoded assumption about number of slots; see rom bios */
+    bool faPciDeviceNo[15] = {false};
 
 #if defined(RT_OS_WINDOWS)
     {
@@ -344,6 +346,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cRamMBs * _1M);         RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
+        Assert(!faPciDeviceNo[7]);
+        faPciDeviceNo[7] = true;
         rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
 
         rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
@@ -520,6 +524,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          2);                     RC_CHECK();
+    Assert(!faPciDeviceNo[2]);
+    faPciDeviceNo[2] = true;
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
     hrc = pMachine->COMGETTER(VRAMSize)(&cRamMBs);                                  H();
@@ -569,6 +575,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          1);                     RC_CHECK();
+    Assert(!faPciDeviceNo[1]);
+    faPciDeviceNo[1] = true;
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        1);                     RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "PIIX4", fPIIX4);               /* boolean */   RC_CHECK();
@@ -839,6 +847,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
         /* the first network card gets the PCI ID 3, the followings starting from 8 */
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo", !ulInstance ? 3 : ulInstance - 1 + 8); RC_CHECK();
+        Assert(!faPciDeviceNo[!ulInstance ? 3 : ulInstance - 1 + 8]);
+        faPciDeviceNo[!ulInstance ? 3 : ulInstance - 1 + 8] = true;
         rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
@@ -1197,6 +1207,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          4);                     RC_CHECK();
+    Assert(!faPciDeviceNo[4]);
+    faPciDeviceNo[4] = true;
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
 
     /* the VMM device's Main driver */
@@ -1246,6 +1258,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);
         rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          5);                     RC_CHECK();
+        Assert(!faPciDeviceNo[5]);
+        faPciDeviceNo[5] = true;
         rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
 
@@ -1316,6 +1330,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
             rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
             rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          6);                 RC_CHECK();
+            Assert(!faPciDeviceNo[6]);
+            faPciDeviceNo[6] = true;
             rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
 
             rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
@@ -1331,6 +1347,31 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed);RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
+
+#ifdef VBOX_WITH_EHCI
+            rc = CFGMR3InsertNode(pDevices, "usb-ehci", &pDev);                         RC_CHECK();
+            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
+            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+            rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
+            rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          11);                RC_CHECK();
+            Assert(!faPciDeviceNo[11]);
+            faPciDeviceNo[11] = true;
+            rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
+
+            rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver",               "VUSBRootHub");     RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+
+            /*
+             * Attach the status driver.
+             */
+            rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed);RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
+#endif
         }
     }
 
