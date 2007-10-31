@@ -18,7 +18,7 @@ print_linux_info () {
 # others as unknown.  It can be extended later if other distributions are
 # found to be "of interest".
 get_linux_info () {
-    if [ -r /etc/lsb-release ] && grep Ubuntu /etc/lsb-release 2>&1 >/dev/null
+    if [ -r /etc/lsb-release ] && grep Ubuntu /etc/lsb-release >/dev/null 2>&1
     then
         # Ubuntu-based system
         . /etc/lsb-release
