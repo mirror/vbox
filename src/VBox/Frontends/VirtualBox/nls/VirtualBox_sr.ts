@@ -24,7 +24,7 @@
     <message>
         <source>innotek</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Ozzii (ozzii.translate@gmail.com)</translation>
+        <translation>Александар Милићевић</translation>
     </message>
 </context>
 <context>
@@ -548,15 +548,15 @@
     </message>
     <message>
         <source>Mount a floppy image file</source>
-        <translation>Подигни флопи слику</translation>
+        <translation>Монтирај флопи слику</translation>
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>Сп&amp;усти флопи</translation>
+        <translation>&amp;Демонтирај флопи</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
-        <translation>Спусти актуелну флопи слику</translation>
+        <translation>Демонтирај актуелну флопи слику</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Image...</source>
@@ -564,15 +564,15 @@
     </message>
     <message>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>Подигни CD/DVD-ROM слику</translation>
+        <translation>Монтирај CD/DVD-ROM слику</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>Сп&amp;усти CD/DVD-ROM</translation>
+        <translation>Д&amp;емонтирај CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Спусти актуелну CD/DVD-ROM слику</translation>
+        <translation>Демонтирај актуелну CD/DVD-ROM слику</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -601,7 +601,7 @@
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Подигни слику &apos;додатака госта&apos;</translation>
+        <translation>Монтирај слику &apos;додатака госта&apos;</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -637,11 +637,11 @@
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
-        <translation>Подигни &amp;флопи</translation>
+        <translation>Монтирај &amp;флопи</translation>
     </message>
     <message>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>Поди&amp;гни CD/DVD-ROM</translation>
+        <translation>Мо&amp;нтирај CD/DVD-ROM</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -713,7 +713,7 @@
     </message>
     <message>
         <source>Host Drive </source>
-        <translation>Драјв хоста</translation>
+        <translation>Драјв хоста </translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -821,17 +821,17 @@
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>преивезано</translation>
+        <translation>привезан</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>прекинута веза</translation>
+        <translation>прекинут</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Сва мрежна адаптера су угашени&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Сви мрежни адаптери су угашени&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1439,7 +1439,7 @@
     <message>
         <source>Restoring</source>
         <comment>MachineState</comment>
-        <translation>рестаурирање</translation>
+        <translation>Рестаурирање</translation>
     </message>
     <message>
         <source>Discarding</source>
@@ -2748,7 +2748,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не може да се нађе датотека за језик &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Језик ће бити врачен на Енгленски. Ићи на дијалог &lt;b&gt;Параметри&lt;/b&gt; који се отвара са менија &lt;b&gt;Датотека&lt;/b&gt; са главног прозора VirtualBox-а, и одабрати постојећи језик са језичка &lt;b&gt;Језик&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не може да се нађе датотека за језик &lt;b&gt;%1&lt;/b&gt; у фасцикли &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Језик ће бити врачен на Енгленски. Ићи на дијалог &lt;b&gt;Параметри&lt;/b&gt; који се отвара са менија &lt;b&gt;Датотека&lt;/b&gt; са главног прозора VirtualBox-а, и одабрати постојећи језик са језичка &lt;b&gt;Језик&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>

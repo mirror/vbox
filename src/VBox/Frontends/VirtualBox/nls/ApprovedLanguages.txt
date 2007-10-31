@@ -13,6 +13,7 @@ pt_BR
 pt_PT
 sv
 hu
+sr
 fi
 cs
 sk
