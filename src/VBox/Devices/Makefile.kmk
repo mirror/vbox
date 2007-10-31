@@ -128,6 +128,9 @@ ifeq ($(BUILD_TARGET),l4)
 endif
 ifeq ($(BUILD_TARGET),solaris)
  VBoxDD_LIBS           += adm
+ ifdef VBOX_WITH_CROSSBOW
+  VBoxDD_LIBS          += dladm # or maybe try libdladm.so.1 ?
+ endif
 endif
 VBoxDD_LIBS.darwin     += \
 	$(LIB_REM)
@@ -480,6 +483,12 @@ Drivers_SOURCES.solaris = \
 	Network/DrvTAP.cpp \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp
+ ifdef VBOX_WITH_CROSSBOW
+  Drivers_DEFS += VBOX_WITH_CROSSBOW
+  Drivers_INCS += \
+	Network/solaris \
+	Network/solaris/sys #why sys?
+ endif
 endif
 
 Drivers_SOURCES.win   = \
