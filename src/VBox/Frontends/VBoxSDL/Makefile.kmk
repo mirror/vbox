@@ -77,7 +77,7 @@ endif
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(BUILD_TARGET)),) # X11
 VBoxSDL_LIBS += \
 	$(VBOX_XCURSOR_LIBS) \
-	$(LIB_X11)
+	X11
 VBoxSDL_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
 endif
