@@ -201,7 +201,7 @@
 /*
  * These platforms don't have pthread_kill()
  */
-#if defined(DARWIN)
+#if defined(DARWIN) && !defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)
 #define pthread_kill(thread, sig) ENOSYS
 #endif
 
