@@ -101,7 +101,7 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
             size_t      cbOutLeft = cbOutput2;
             const void *pvInputLeft = pvInput;
             void       *pvOutputLeft = pvOutput;
-#if defined(RT_OS_LINUX) || defined(_LIBICONV_VERSION) /* there are different opinions about the constness of the input buffer. */
+#if defined(RT_OS_LINUX) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
             if (iconv(icHandle, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
 #else
             if (iconv(icHandle, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
