@@ -2450,7 +2450,7 @@ et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précéde
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant de création de disques virtuels!</translation>
+        <translation>Bienvenue sur l&apos;assistant de création de disques virtuels !</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -2562,7 +2562,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     </message>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant Nouvelle machine virtuelle!</translation>
+        <translation>Bienvenue sur l&apos;assistant Nouvelle machine virtuelle !</translation>
     </message>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
@@ -2995,11 +2995,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle. La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle&amp;nbsp;! La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur s&apos;est produite pendant l&apos;exécution de la machine virtuelle! Les détails pour cette erreur se trouvent plus bas. Vous pouvez essayer de corrigé l&apos;erreur et de reprendre l&apos;exécution de la machine virtuelle.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur s&apos;est produite pendant l&apos;exécution de la machine virtuelle&amp;nbsp;! Les détails pour cette erreur se trouvent plus bas. Vous pouvez essayer de corrigé l&apos;erreur et de reprendre l&apos;exécution de la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
@@ -3090,7 +3090,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;écran de l&apos;ordinateur est optimiser pour le traitement en mode couleur &lt;b&gt;%1&amp;nbsp;bits&lt;/b&gt;  Le mode couleur de l&apos;écran de la machine virtuelle est de &lt;b&gt;%2&amp;nbsp;bits&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Configurer le mode couleur de l&apos;écran a l&apos;aide de la boîte de dialogue correspondante sur votre ordinateur afin d&apos;obtenir les meilleurs performances.&lt;/P&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Certain système d&apos;exploitation, telle que OS/2, peuvent fonctionner en mode couleur 32 bits mais annonce 24 bits (16 millions de couleurs). Pous pouvez choisir un autre mode de couleur pour voir si ce message n&apos;est plus affiché ou simplement désactiver ce message si vous êtent sur que votre systéme n&apos;offre pas le mode couleur (%4&amp;nnsp;).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;écran de l&apos;ordinateur est optimisé pour le traitement en mode couleur &lt;b&gt;%1&amp;nbsp;bits&lt;/b&gt;  Le mode couleur de l&apos;écran de la machine virtuelle est de &lt;b&gt;%2&amp;nbsp;bits&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Configurez le mode couleur de l&apos;écran à l&apos;aide de la boîte de dialogue correspondante sur votre ordinateur afin d&apos;obtenir des meilleures performances.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; Certain systèmes d&apos;exploitation, tel que OS/2, peuvent fonctionner en mode couleur 32 bits mais annonce 24 bits (16 millions de couleurs). Vous pouvez choisir un autre mode de couleur pour voir si ce message n&apos;est plus affiché ou simplement désactiver ce message si vous êtes sur que votre systéme n&apos;offre pas le mode couleur (%4&amp;nbsp;).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -3408,7 +3408,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Bienvenue sur VirtualBox!&lt;/h3&gt;&lt;p&gt;La partie gauche de cette boîte de dialogue affiche la liste des machines virtuelles de votre ordinateur. Cette liste est vide car vous n&apos;avez pas encore créé des machines virtuelles.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;
+        <translation>&lt;h3&gt;Bienvenue sur VirtualBox&amp;nbsp;!&lt;/h3&gt;&lt;p&gt;La partie gauche de cette boîte de dialogue affiche la liste des machines virtuelles de votre ordinateur. Cette liste est vide car vous n&apos;avez pas encore créé des machines virtuelles.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;
 &lt;p&gt;Pour créer une nouvelle machine virtuelle, activer le bouton &lt;b&gt;Nouveau&lt;/b&gt; situé dans le haut de cette boîte de dialogue.&lt;/p&gt;
 &lt;p&gt;Vous pouvez actionner la touche &lt;b&gt;F1&lt;/b&gt; afin d&apos;avoir une aide immédiate ou bien visiter &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pour obtenir les informations les plus récentes.&lt;/p&gt;</translation>
     </message>
@@ -4053,7 +4053,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant du premier lancement!</translation>
+        <translation>Bienvenue sur l&apos;assistant du premier lancement !</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
@@ -4746,7 +4746,7 @@ The actual default path will be displayed after accepting the changes and openin
         <source>When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows !</translation>
+        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -4760,7 +4760,7 @@ this feature after having installed a Windows guest operating system!</source>
         <source>When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performace de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivert pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows !</translation>
+        <translation type="obsolete">Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performace de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivert pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -5150,13 +5150,13 @@ that this feature requires Guest Additions to be installed in the guest OS.
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows !&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;interface avancé de gestion de configuration et de d&apos;alimentation (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performace de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows !&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle soutiendra l&apos;entrée-sortie APIC (O/S APIC), qui peut légèrement diminuer la performace de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas  ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
@@ -5287,7 +5287,7 @@ grisée, cela signifie que le paramètrage à été effectué d&apos;après la v
     </message>
     <message>
         <source>&amp;Remember Media Mounted at Runtime</source>
-        <translation>Meno&amp;isé le média attaché lors du fonctionnement</translation>
+        <translation>Mémor&amp;isé le média attaché lors du fonctionnement</translation>
     </message>
     <message>
         <source>Alt+R</source>
