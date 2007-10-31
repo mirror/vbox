@@ -40,7 +40,7 @@ VBoxTunctl_SOURCES  = tunctl.c
 linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
-        $(if $(VBOX_OSE),,VBoxSysInfo.sh) \
+        VBoxSysInfo.sh \
 	VBox.sh=>VBox.sh
 
 linux-doc_INST = bin/
@@ -90,7 +90,7 @@ LINUXNOSTRIP = \
 	$(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html) \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
-        $(if $(VBOX_OSE),,VBoxSysInfo.sh) \
+        VBoxSysInfo.sh \
 	VBox.sh \
 	VBox.png \
 	VBoxAddIF.sh \
