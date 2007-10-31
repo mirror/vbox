@@ -1676,6 +1676,12 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
 #elif defined(RT_OS_SOLARIS)
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName); UPDATE_RC();
+# ifdef VBOX_WITH_CROSSBOW
+                    /** @todo r=bird: Just pass the g_aNetDevs[ulInstance].Mac structure as a byte blob
+                     * using CFGMR3InsertBytes() with any mess. */
+                    // rc = CFGMR3InsertBytes(pCfg, "MAC", &g_aNetDevs[ulInstance].Mac, sizeof(g_aNetDevs[ulInstance].Mac));
+                    // UPDATE_RC();
+# endif
 
 #elif defined(RT_OS_OS2)
                     /*

@@ -1022,6 +1022,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                         /* "FileHandle" must NOT be inserted here, it is done in DrvTAP.cpp */
 
+#  ifdef VBOX_WITH_CROSSBOW
+                        /* Crossbow: needs the MAC address for setting up TAP. */
+                        /** @todo r=bird: pass it as bytes like we do above for the NIC and drop the messy double conversion. */
+                        //rc = CFGMR3InsertBytes(pCfg, "MAC", &Mac, sizeof(Mac)); RC_CHECK();
+#  endif
 # else
                         rc = CFGMR3InsertInteger(pCfg, "FileHandle", pConsole->maTapFD[ulInstance]); RC_CHECK();
 # endif

@@ -51,6 +51,11 @@
 # include <fcntl.h>
 # include <ctype.h>
 # include <stdlib.h>
+# ifdef VBOX_WITH_CROSSBOW
+#  include <limits.h>
+#  include <libdlpi.h>
+#  include <libdlvnic.h>
+# endif
 #else
 # include <sys/fcntl.h>
 #endif
@@ -92,10 +97,17 @@ typedef struct DRVTAP
     /** The configured TAP device name. */
     char                   *pszDeviceName;
 #ifdef RT_OS_SOLARIS
-    /** The actual TAP device name. */
+    /** The actual TAP/VNIC device name. */
     char                   *pszDeviceNameActual;
+# ifdef VBOX_WITH_CROSSBOW
+    /** Crossbow: MAC address of the device. */
+    char                   *pszMACAddress;
+    /** Crossbow: Handle of the NIC. */
+    dlpi_handle_t           pDeviceHandle;
+# else
     /** IP device file handle (/dev/udp). */
     RTFILE                  IPFileDevice;
+# endif
 #endif
     /** TAP setup application. */
     char                   *pszSetupApplication;
@@ -151,7 +163,14 @@ typedef struct DRVTAP
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef RT_OS_SOLARIS
-static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns);
+# ifdef VBOX_WITH_CROSSBOW
+static int              SolarisCreateVNIC(PDRVTAP pData);
+static int              SolarisGetNIC(char *pszNICName, size_t cbSize);
+static int              SolarisOpenNIC(PDRVTAP pData, const char *pszNICName, struct ether_addr *pEtherAddr);
+static dladm_status_t   SolarisCompareVNIC(void* pArg, dladm_vnic_attr_sys_t *pVNICAttr);
+# else
+static int              SolarisTAPAttach(PPDMDRVINS pDrvIns);
+# endif
 #endif
 
 
@@ -295,7 +314,14 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
              */
             char achBuf[4096];
             size_t cbRead = 0;
+#ifdef VBOX_WITH_CROSSBOW
+            rc = VINF_SUCCESS;
+            cbRead = sizeof(achBuf);
+            if (dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL) != DLPI_SUCCESS)
+                rc = VERR_GENERAL_FAILURE;  /** @todo find a better return code.  */ /** r=bird: just make a conversion function. */
+#else
             rc = RTFileRead(pData->FileDevice, achBuf, sizeof(achBuf), &cbRead);
+#endif
             if (VBOX_SUCCESS(rc))
             {
                 AssertMsg(cbRead <= 1536, ("cbRead=%d\n", cbRead));
@@ -427,7 +453,14 @@ static DECLCALLBACK(void) drvTAPPoller(PPDMDRVINS pDrvIns)
                 /* data waiting, read it. */
                 char        achBuf[4096];
                 size_t      cbRead = 0;
+#ifdef VBOX_WITH_CROSSBOW
+                int rc = VINF_SUCCESS;
+                cbRead = sizeof(achBuf);
+                if (dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL) != DLPI_SUCCESS)
+                    rc = VERR_GENERAL_FAILURE; /** @todo find a better return code. */
+#else
                 int rc = RTFileRead(pData->FileDevice, achBuf, RT_MIN(sizeof(achBuf), cbMax), &cbRead);
+#endif
                 if (VBOX_SUCCESS(rc))
                 {
                     STAM_COUNTER_INC(&pData->StatPktRecv);
@@ -553,6 +586,302 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
 
 
 #ifdef RT_OS_SOLARIS
+# ifdef VBOX_WITH_CROSSBOW
+/**
+ * Crossbow: create a virtual NIC.
+ *
+ * @returns VBox error code.
+ * @param   pData           The instance data.
+ */
+static int SolarisCreateVNIC(PDRVTAP pData)
+{
+    /*
+     * Get a physical NIC.
+     */
+    /** @todo r=bird: I'm I right in thinking that this just gets the name of the
+     * last ethernet NIC and binds us to that? If so, this really needs to be
+     * a user option. On OS/2 this is passed in as 'ConnectTo', using the same name
+     * is possibly a good idea even if the type is different (we need string not integer). */
+    char szNICName[_LIFNAMSIZ];
+    int ret = SolarisGetNIC(szNICName, sizeof(szNICName));
+    if (VBOX_FAILURE(ret))
+         return VERR_HOSTIF_INIT_FAILED;
+
+    /*
+     * Get the MAC address with ':' seperators as ether_aton() needs those
+     */
+    /** @todo r=bird: ether_addr is just a byte array, just pass the PDMMAC
+     * structure around and memcpy it, this is too much work. */
+    struct ether_addr *pEtherAddr = NULL;
+    if (pData->pszMACAddress && strlen(pData->pszMACAddress) == 12)
+    {
+        char szMACAddress[12 + 6 + 1];
+        RTStrPrintf(szMACAddress, sizeof(szMACAddress), "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",
+                    pData->pszMACAddress[0], pData->pszMACAddress[1], pData->pszMACAddress[2], pData->pszMACAddress[3],
+                    pData->pszMACAddress[4], pData->pszMACAddress[5], pData->pszMACAddress[6], pData->pszMACAddress[7],
+                    pData->pszMACAddress[8], pData->pszMACAddress[9], pData->pszMACAddress[10], pData->pszMACAddress[11]);
+
+        pEtherAddr = ether_aton(szMACAddress);
+    }
+    if (!pEtherAddr)
+        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                               N_("Invalid MAC address %s"), pData->pszMACAddress);
+
+    /*
+     * Setup VNIC parameters.
+     */
+    dladm_vnic_attr_sys_t VNICAttr;
+    strncpy(VNICAttr.va_dev_name, szNICName, sizeof(VNICAttr.va_dev_name) - 1); /** @todo r=bird: don't ever use strncpy! Esp. not with an uninitialized structure. */
+    memcpy(VNICAttr.va_mac_addr, (uchar_t *)pEtherAddr->ether_addr_octet, ETHERADDRL);
+    VNICAttr.va_mac_len = ETHERADDRL;
+
+    uint_t VnicID;
+    bool fAutoID = true;
+#if 0
+    /* Disabled for now, since Crossbow does not entirely respect our own VNIC ID.*/
+    if (pData->pszDeviceName)
+    {
+        size_t cch = strlen(pData->pszDeviceName);
+        if (cch > 1 && isdigit(pData->pszDeviceName[cch - 1]) != 0)
+        {
+            VnicID = pData->pszDeviceName[cch - 1] - '0';
+            fAutoID = false;
+        }
+    }
+#endif
+
+    /*
+     * Create a VNIC if it doesn't already exist.
+     * XXX: Perhaps VMs should not use existing VNICs???
+     */
+/** r=bird: The users should be able to create the vnic himself and pass it down. This would be the
+ * same as the tapN interface name.  */
+    dladm_status_t rc = dladm_vnic_walk_sys(SolarisCompareVNIC, &VNICAttr);
+    if (rc == DLADM_STATUS_OK)
+    {
+        uint32_t flags = DLADM_VNIC_OPT_TEMP;
+        if (fAutoID)
+            flags |= DLADM_VNIC_OPT_AUTOID;
+
+        rc = dladm_vnic_create(fAutoID ? 0 : VnicID, szNICName, VNIC_MAC_ADDR_TYPE_FIXED,
+                               (uchar_t *)pEtherAddr->ether_addr_octet, ETHERADDRL, &VnicID, flags);
+        if (rc != DLADM_STATUS_OK)
+            return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                               N_("dladm_vnic_create() failed. NIC %s probably incorrect."), szNICName);
+    }
+    else
+/** r=bird: This can't possibly fail in any way, or what? */
+        VnicID = VNICAttr.va_vnic_id;
+
+
+    pData->pszDeviceNameActual = NULL;
+    RTStrAPrintf(&pData->pszDeviceNameActual, "vnic%u", VnicID);
+
+    ret = SolarisOpenNIC(pData, szNICName, pEtherAddr);
+    if (VBOX_FAILURE(ret))
+        return ret;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Crossbow: Obtain a physical NIC for binding the virtual NIC.
+ *
+ * @returns VBox error code.
+ * @param   pszNICName      Where to store the NIC name.
+ * @param   cchNICName      The size of the buffer buffer pszNICName points to.
+ */
+static int SolarisGetNIC(char *pszNICName, size_t cchNICName)
+{
+    /*
+     * Try and obtain the a physical NIC to bind the VNIC to.
+     */
+    int InetSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (RT_UNLIKELY(inetSocket == -1))
+    {
+        LogRel(("SolarisGetNIC: Socket creation for AF_INET family failed.\n"));
+        return VERR_HOSTIF_INIT_FAILED;
+    }
+
+    int rc;
+    struct lifnum IfNum;
+    IfNum.lifn_family = AF_UNSPEC;
+    if (ioctl(InetSocket, SIOCGLIFNUM, (char *)&IfNum) >= 0)
+    {
+        caddr_t pBuf = (caddr_t)RTMemAlloc(IfNum.lifn_count * sizeof(struct lifreq));
+        if (pszBuffer)
+        {
+            struct lifconf IfCfg;
+            memset(&IfCfg, 0, sizeof(IfCfg));
+            IfCfg.lifc_family = AF_UNSPEC;
+            IfCfg.lifc_buf = pBuf
+            if (ioctl(InetSocket, SIOCGLIFCONF, (char *)&IfCfg) >= 0)
+            {
+                /*
+                 * Loop through all NICs on the machine. We'll use the first ethernet NIC
+                 * that is not a loopback interface for binding the VNIC.
+                 */
+                rc = VERR_GENERAL_FAILURE;    /** @todo find a better return code. */
+                struct lifreq *paIf = IfCfg.lifc_req;
+                int iIf = IfCfg.lifc_len / sizeof(struct lifreq);
+                while (iIf-- > 0)
+                    if (strncmp(paIf[iIf].lifr_name, "lo", 2) != 0)
+                    {
+                        dlpi_handle_t hNIC = NULL;
+                        if (dlpi_open(paIf[iIf].lifr_name, &hNIC, 0) == DLPI_SUCCESS)
+                        {
+                            dlpi_info_t NICInfo;
+                            int rc2 = dlpi_info(hNIC, &NICInfo, 0);
+                            dlpi_close(hNIC);
+                            if (    rc2 == DLPI_SUCCESS
+                                &&  NICInfo.di_mactype == DL_ETHER)
+                            {
+                                size_t cch = strlen(paIf[iIf].lifr_name);
+                                if (cch < cchNICName)
+                                {
+                                    memcpy(pszNICName, paIf[iIf].lifr_name, cch + 1);
+                                    rc = VINF_SUCCESS;
+                                }
+                                else
+                                    rc = VERR_BUFFER_OVERFLOW;
+                                break;
+                            }
+                        }
+                    }
+            }
+            else
+            {
+                LogRel(("SolarisGetNIC: SIOCGLIFCONF failed\n"));
+                rc = VERR_HOSTIF_INIT_FAILED;
+            }
+            free(pszBuffer);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        LogRel(("SolarisGetNIC: SIOCGLIFNUM failed\n"));
+        rc = VERR_HOSTIF_INIT_FAILED;
+    }
+    close(InetSocket);
+    return rc;
+}
+
+
+/**
+ * Crossbow: Open & configure the physical NIC.
+ *
+ * @returns VBox error code.
+ * @param   pData           The instance data.
+ * @param   pszNICName      Name of the physical NIC.
+ * @param   pEtherAddr      Ethernet address to use for the VNIC.
+ */
+static int SolarisOpenNIC(PDRVTAP pData, const char *pszNICName, struct ether_addr *pEtherAddr)
+{
+    /*
+     * Open & bind the NIC using the datalink provider routine.
+     */
+    int rc = dlpi_open(pszNICName, &pData->pDeviceHandle, DLPI_RAW);
+    if (rc != DLPI_SUCCESS)
+        return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                           N_("Failed to open VNIC in raw mode."));
+
+    /*
+     * If we decide to get NIC name directly from user/env var., we will
+     * need to checks here to make sure the NIC has a ethernet address.
+     */
+    rc = dlpi_bind(pData->pDeviceHandle, DLPI_ANY_SAP, NULL);
+    if (rc == DLPI_SUCCESS)
+    {
+        rc = dlpi_set_physaddr(pData->pDeviceHandle, DL_CURR_PHYS_ADDR, pEtherAddr->ether_addr_octet, ETHERADDRL);
+        if (rc == DLPI_SUCCESS)
+        {
+            rc = dlpi_promiscon(pData->pDeviceHandle, DL_PROMISC_SAP);
+            if (rc == DLPI_SUCCESS)
+            {
+                /* Need to use DL_PROMIS_PHYS (not multicast) as we cannot be sure what the guest needs. */
+                rc = dlpi_promiscon(pData->pDeviceHandle, DL_PROMISC_PHYS);
+                if (rc == DLPI_SUCCESS)
+                {
+                    pData->FileDevice = dlpi_fd(pData->pDeviceHandle);
+                    if (pData->FileDevice >= 0)
+                    {
+                        Log(("SolarisOpenNIC: %s -> %d\n", pszNICName, pData->FileDevice));
+                        return VINF_SUCCESS;
+                    }
+
+                    rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                             N_("Failed to obtain file descriptor for VNIC."));
+                }
+                else
+                    rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                             N_("Failed to set appropriate promiscous mode."));
+            }
+            else
+                rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                         N_("Failed to activate promiscous mode for VNIC."));
+        }
+        else
+            rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                     N_("Failed to set physical address for VNIC."));
+    }
+    else
+        rc = PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                 N_("Failed to bind VNIC."));
+    dlpi_close(pData->pDeviceHandle);
+    return rc;
+}
+
+
+/**
+ * Crossbow: delete a virtual NIC.
+ *
+ * @returns VBox error code.
+ * @param   pData           The instance data.
+ */
+static int SolarisDeleteVNIC(PDRVTAP pData)
+{
+    /*
+     * Extract the VNIC ID from the name. e.g.: "vnic900" we need "900".
+     */
+    const char *pszVNICName = pData->pszDeviceNameActual;
+    while (*pszVNICName && !isdigit(*pszVNICName))
+        pszVNICName++;
+
+    if (pszVNICName)
+    {
+        /** @todo r=bird: what about just remembering the VNIC ID? (assuming it's the same as during creation.) */
+        uint_t VnicID = atoi(pszVNICName);
+        dladm_status_t rc = dladm_vnic_delete(VnicID, DLADM_VNIC_OPT_TEMP);
+        if (rc == DLADM_STATUS_OK)
+            return VINF_SUCCESS;
+    }
+    return VERR_HOSTIF_TERM_FAILED;
+}
+
+
+/**
+ * Crossbow: VNIC comparison hook function.
+ *
+ * @returns VBox error code.
+ * @param   pvArg          Opaque pointer to a VNIC.
+ * @param   pVNICAttr      Pointer to another VNIC to compare with the first.
+ */
+static dladm_status_t SolarisCompareVNIC(void *pvArg, dladm_vnic_attr_sys_t *pVNICAttr)
+{
+    dladm_vnic_attr_sys_t *pVNICAttr2 = (dladm_vnic_attr_sys_t *)pvArg;
+    if (    strcmp(pVNICAttr2->va_dev_name, pVNICAttr->va_dev_name) != 0
+         || memcmp(pVNICAttr2->va_mac_addr, pVNICAttr->va_mac_addr, pVNICAttr2->va_mac_len) != 0
+         || pVNICAttr2->va_mac_len != pVNICAttr->va_mac_len)
+         return DLADM_STATUS_OK;
+
+    pVNICAttr->va_vnic_id = pVNICAttr2->va_vnic_id;
+    return DLADM_STATUS_EXIST;
+}
+
+# else  /* VBOX_WITH_CROSSBOW */
+
 /** From net/if_tun.h, installed by Universal TUN/TAP driver */
 # define TUNNEWPPA                   (('T'<<16) | 0x0001)
 /** Whether to enable ARP for TAP. */
@@ -717,6 +1046,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PPDMDRVINS pDrvIns)
     return VINF_SUCCESS;
 }
 
+# endif /* VBOX_WITH_CROSSBOW */
 #endif  /* RT_OS_SOLARIS */
 
 
@@ -794,18 +1124,40 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 #endif
 
 #ifdef RT_OS_SOLARIS
-    if (pData->pszTerminateApplication)
-        drvTAPTerminateApplication(pData);
+/** @todo r=bird: exactly where and when this is closed depends on how it was created, see ConsoleImpl.cpp. It's a bit complicated, I know :-/ */
+    if (pData->FileDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pData->FileDevice);
+        AssertRC(rc);
+        pData->FileDevice = NIL_RTFILE;
+    }
 
+# ifndef VBOX_WITH_CROSSBOW
     if (pData->IPFileDevice != NIL_RTFILE)
     {
         int rc = RTFileClose(pData->IPFileDevice);
         AssertRC(rc);
         pData->IPFileDevice = NIL_RTFILE;
     }
+# endif
+
+    /*
+     * Call TerminateApplication after closing the device otherwise
+     * TerminateApplication would not be able to unplumb it.
+     */
+    if (pData->pszTerminateApplication)
+        drvTAPTerminateApplication(pData);
+
+# ifdef VBOX_WITH_CROSSBOW
+    /* Finally unregister the VNIC */
+    dlpi_close(pData->pDeviceHandle);
+    SolarisDeleteVNIC(pData);
+    MMR3HeapFree(pData->pszMACAddress);
+# endif
 
     RTStrFree(pData->pszDeviceNameActual);
-#endif
+#endif  /* RT_OS_SOLARIS */
+
     MMR3HeapFree(pData->pszDeviceName);
     MMR3HeapFree(pData->pszSetupApplication);
     MMR3HeapFree(pData->pszTerminateApplication);
@@ -834,7 +1186,12 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     pData->pszDeviceName                = NULL;
 #ifdef RT_OS_SOLARIS
     pData->pszDeviceNameActual          = NULL;
+# ifdef VBOX_WITH_CROSSBOW
+    pData->pszMACAddress                = NULL;
+    pData->pDeviceHandle                = NULL;
+# else
     pData->IPFileDevice                 = NIL_RTFILE;
+# endif
 #endif
     pData->pszSetupApplication          = NULL;
     pData->pszTerminateApplication      = NULL;
@@ -853,7 +1210,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0InitProg\0TermProg\0FileHandle\0TAPSetupApplication\0TAPTerminateApplication"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Device\0InitProg\0TermProg\0FileHandle\0TAPSetupApplication\0TAPTerminateApplication\0MACAddress"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "");
 
     /*
@@ -896,6 +1253,12 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
+# ifdef VBOX_WITH_CROSSBOW
+    rc = CFGMR3QueryStringAlloc(pCfgHandle, "MACAddress", &pData->pszMACAddress); /** @todo r=bird: MACAddress -> MAC; pass bytes like for pcnet. See VBoxBFE and ConsoleImpl.cpp comments. */
+    if (VBOX_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                       N_("Failed to query \"MACAddress\""));
+# endif
 
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Device", &pData->pszDeviceName);
     if (VBOX_FAILURE(rc))
@@ -905,7 +1268,11 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Do the setup.
      */
+# ifdef VBOX_WITH_CROSSBOW
+    rc = SolarisCreateVNIC(pData);
+# else
     rc = SolarisTAPAttach(pDrvIns);
+# endif
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -917,7 +1284,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                                        N_("Error running TAP setup application. rc=%d"), rc);
     }
 
-#else /* !SOLARIS */
+#else /* !RT_OS_SOLARIS */
 
     int32_t iFile;
     rc = CFGMR3QueryS32(pCfgHandle, "FileHandle", &iFile);
@@ -928,7 +1295,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (!RTFileIsValid(pData->FileDevice))
         return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_HANDLE, RT_SRC_POS,
                                    N_("The TAP file handle %RTfile is not valid!"), pData->FileDevice);
-#endif /* !SOLARIS */
+#endif /* !RT_OS_SOLARIS */
 
     /*
      * Make sure the descriptor is non-blocking and valid.
