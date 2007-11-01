@@ -1029,12 +1029,6 @@
  * Define RT_NO_DEPRECATED_MACROS to not define deprecated macros.
  */
 #ifndef RT_NO_DEPRECATED_MACROS
-/** @copydoc RT_ALIGN_P
- * @deprecated use RT_ALIGN_P. */
-# define ALIGNP(pv, uAlignment)         RT_ALIGN_P(pv, uAlignment)
-/** @copydoc RT_SIZEOFMEMB
- * @deprecated Use RT_SIZEOFMEMB. */
-# define SIZEOFMEMB(type, member)       RT_SIZEOFMEMB(type, member)
 /** @copydoc RT_ELEMENTS
  * @deprecated use RT_ELEMENTS. */
 # define ELEMENTS(aArray)               RT_ELEMENTS(aArray)

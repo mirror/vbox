@@ -567,7 +567,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
          */
         pFree->cb -= cb;
         pvRet = (char *)(&pFree->core + 1) + pFree->cb;
-        AssertMsg(ALIGNP(pvRet, PAGE_SIZE) == pvRet, ("pvRet=%p cb=%#x pFree=%p pFree->cb=%#x\n", pvRet, cb, pFree, pFree->cb));
+        AssertMsg(RT_ALIGN_P(pvRet, PAGE_SIZE) == pvRet, ("pvRet=%p cb=%#x pFree=%p pFree->cb=%#x\n", pvRet, cb, pFree, pFree->cb));
         Log3(("mmHyperAllocPages: cbFree %d -> %d (%d)\n", pHeap->cbFree, pHeap->cbFree - cb, -(int)cb));
         pHeap->cbFree -= cb;
         ASSERT_CHUNK_FREE(pHeap, pFree);
@@ -711,7 +711,7 @@ MMDECL(int) MMHyperFree(PVM pVM, void *pv)
     Log2(("MMHyperFree: pv=%p\n", pv));
     if (!pv)
         return VINF_SUCCESS;
-    AssertMsgReturn(ALIGNP(pv, MMHYPER_HEAP_ALIGN_MIN) == pv,
+    AssertMsgReturn(RT_ALIGN_P(pv, MMHYPER_HEAP_ALIGN_MIN) == pv,
                     ("Invalid pointer %p!\n", pv),
                     VERR_INVALID_POINTER);
 
@@ -739,7 +739,7 @@ MMDECL(int) MMHyperFree(PVM pVM, void *pv)
     /* statistics */
 #ifdef VBOX_WITH_STATISTICS
     PMMHYPERSTAT    pStat = (PMMHYPERSTAT)((uintptr_t)pChunk + pChunk->offStat);
-    AssertMsgReturn(    ALIGNP(pStat, MMHYPER_HEAP_ALIGN_MIN) == (void *)pStat
+    AssertMsgReturn(    RT_ALIGN_P(pStat, MMHYPER_HEAP_ALIGN_MIN) == (void *)pStat
                     &&  pChunk->offStat,
                     ("%p: offStat=%#RX32!\n", pv, pChunk->offStat),
                     VERR_INVALID_POINTER);

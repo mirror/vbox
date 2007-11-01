@@ -72,7 +72,7 @@ int main(int argc, char **argv)
         {
             aPinnings[i].pv = NULL;
             SUPPageAlloc(0x10000 >> PAGE_SHIFT, &aPinnings[i].pv);
-            aPinnings[i].pvAligned = ALIGNP(aPinnings[i].pv, PAGE_SIZE);
+            aPinnings[i].pvAligned = RT_ALIGN_P(aPinnings[i].pv, PAGE_SIZE);
             rc = SUPPageLock(aPinnings[i].pvAligned, 0xf000 >> PAGE_SHIFT, &aPinnings[i].aPages[0]);
             if (!rc)
             {

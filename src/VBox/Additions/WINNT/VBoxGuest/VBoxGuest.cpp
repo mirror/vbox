@@ -1466,10 +1466,10 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
 
             dprintf(("VBoxGuest::reserveHypervisorMemory: MmMapIoSpace returned %p\n", pDevExt->hypervisorMapping));
             dprintf(("VBoxGuest::reserveHypervisorMemory: communicating %p to host\n",
-                    ALIGNP(pDevExt->hypervisorMapping, 0x400000)));
+                    RT_ALIGN_P(pDevExt->hypervisorMapping, 0x400000)));
 
             /* align at 4MB */
-            req->hypervisorStart = (RTGCPTR)ALIGNP(pDevExt->hypervisorMapping, 0x400000);
+            req->hypervisorStart = (RTGCPTR)RT_ALIGN_P(pDevExt->hypervisorMapping, 0x400000);
 
             req->header.requestType = VMMDevReq_SetHypervisorInfo;
             req->header.rc          = VERR_GENERAL_FAILURE;

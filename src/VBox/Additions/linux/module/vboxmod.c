@@ -524,7 +524,7 @@ static int vboxadd_reserve_hypervisor(void)
             if (hypervisorArea)
             {
                 /* communicate result to VMM, align at 4MB */
-                req->hypervisorStart    = (vmmDevHypPtr)ALIGNP(hypervisorArea, 0x400000);
+                req->hypervisorStart    = (vmmDevHypPtr)RT_ALIGN_P(hypervisorArea, 0x400000);
                 req->header.requestType = VMMDevReq_SetHypervisorInfo;
                 req->header.rc          = VERR_GENERAL_FAILURE;
                 rcVBox = VbglGRPerform(&req->header);
