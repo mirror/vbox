@@ -173,7 +173,7 @@ endif
 ifeq ($(VBOX_LDR_FMT32),lx)
 VMMGCBuiltin_SOURCES = $(PATH_TARGET)/VMMGCBuiltin.def
 $(PATH_TARGET)/VMMGCBuiltin.def: VMMGC/VMMGCBuiltin.def | $(call DIRDEP,$(PATH_TARGET))
-	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
+	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(MV) -f $@.tmp $@
 endif
 
@@ -189,7 +189,7 @@ endif
 ifeq ($(VBOX_LDR_FMT32),lx)
 VMMGCImp_SOURCES = $(PATH_TARGET)/VMMGC.def
 $(PATH_TARGET)/VMMGC.def: VMMGC/VMMGC.def | $(call DIRDEP,$(PATH_TARGET))
-	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
+	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(APPEND) "$@.tmp" ""
 	$(APPEND) "$@.tmp" "    ___ehInit"
 	$(MV) -f $@.tmp $@
@@ -210,7 +210,7 @@ VMMR0Imp_SOURCES = VMMR0/VMMR0.def
  ifeq ($(VBOX_LDR_FMT),lx)
 VMMR0Imp_SOURCES = $(PATH_TARGET)/VMMR0.def
 $(PATH_TARGET)/VMMR0.def: VMMR0/VMMR0.def | $(call DIRDEP,$(PATH_TARGET))
-	$(SED) -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
+	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(APPEND) "$@.tmp" ""
 	$(APPEND) "$@.tmp" "    ___ehInit"
 	$(MV) -f $@.tmp $@
