@@ -1164,7 +1164,7 @@ ifeq ($(BUILD_TARGET),win)
 else ifeq ($(BUILD_TARGET),os2)
  QTDIR ?= $(PATH_DEVTOOLS_TRG)/qt/v3.3.1
  VBOX_PATH_QT ?= $(QTDIR)
- LIB_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/lib/qt331*.lib)))
+ LIB_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/lib/*qt*.lib)))
  QTDIR := $(VBOX_PATH_QT)
 else ifeq ($(BUILD_TARGET),darwin)
  ifndef VBOX_PATH_QT
