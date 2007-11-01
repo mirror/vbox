@@ -2980,7 +2980,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      * Setup and link in the LDR stuff.
      */
     pImage = (PSUPDRVLDRIMAGE)pv;
-    pImage->pvImage         = ALIGNP(pImage + 1, 32);
+    pImage->pvImage         = RT_ALIGN_P(pImage + 1, 32);
     pImage->cbImage         = pReq->u.In.cbImage;
     pImage->pfnModuleInit   = NULL;
     pImage->pfnModuleTerm   = NULL;

@@ -82,7 +82,7 @@ MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned
      */
     AssertMsg(pVM, ("Invalid VM pointer\n"));
     if (pvRam)
-        AssertReturn(ALIGNP(pvRam, PAGE_SIZE) == pvRam, VERR_INVALID_PARAMETER);
+        AssertReturn(RT_ALIGN_P(pvRam, PAGE_SIZE) == pvRam, VERR_INVALID_PARAMETER);
     else
         AssertReturn(fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC, VERR_INVALID_PARAMETER);
     AssertReturn(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys, VERR_INVALID_PARAMETER);

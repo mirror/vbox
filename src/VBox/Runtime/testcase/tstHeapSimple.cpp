@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         memset(aOps[i].pvAlloc, szFill[i], aOps[i].cb);
-        if (ALIGNP(aOps[i].pvAlloc, (aOps[i].uAlignment ? aOps[i].uAlignment : 8)) != aOps[i].pvAlloc)
+        if (RT_ALIGN_P(aOps[i].pvAlloc, (aOps[i].uAlignment ? aOps[i].uAlignment : 8)) != aOps[i].pvAlloc)
         {
             RTPrintf("Failure: RTHeapSimpleAlloc(%p, %#x, %#x,) -> %p\n", (void *)Heap, aOps[i].cb, aOps[i].uAlignment, i);
             return 1;

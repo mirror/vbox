@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         memset(aOps[i].pvAlloc, szFill[i], aOps[i].cb);
-        if (ALIGNP(aOps[i].pvAlloc, (aOps[i].uAlignment ? aOps[i].uAlignment : 8)) != aOps[i].pvAlloc)
+        if (RT_ALIGN_P(aOps[i].pvAlloc, (aOps[i].uAlignment ? aOps[i].uAlignment : 8)) != aOps[i].pvAlloc)
         {
             RTPrintf("Failure: MMHyperAlloc(, %#x, %#x,) -> %p, invalid alignment!\n", aOps[i].cb, aOps[i].uAlignment, aOps[i].pvAlloc);
             return 1;
