@@ -233,7 +233,7 @@ VBOX_DO_STRIP = $(if $(filter release profile,$(BUILD_TYPE)),1,)
 # Strip R0/GC modules (current requirement for our loader)
 VBOX_DO_STRIP_MODULES = 1
 # Use kStuff for MACH-O and LX binary loading.
-if1of ($(BUILD_TYPE),darwin os2)
+if1of ($(BUILD_TARGET),darwin os2)
 IPRT_WITH_KSTUFF = 1
 endif
 # Enable Crossbow support for Solaris.
