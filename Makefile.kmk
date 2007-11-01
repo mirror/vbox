@@ -61,15 +61,13 @@ ifneq ($(VBOX_WITH_QTGUI),)
    VBOX_DLL_QT ?= $(VBOX_PATH_QT)/bin/qt-mt333.dll
   else ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),win.amd64)
    VBOX_DLL_QT ?= $(PATH_DEVTOOLS)/win.amd64/Qt/v3.3.8/lib/qt-mt338.dll=>qt-mt338.dll
-  #else ifeq ($(BUILD_TARGET).$(BUILD_TARGET_ARCH),os2.x86)
-  # VBOX_DLL_QT ?= $(PATH_DEVTOOLS)/os2.x86/Qt/v3.3.6/bin/qt-mt336.dll=>qt-mt336.dll
   endif
   ifdef VBOX_DLL_QT
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
   endif
  else ifeq ($(BUILD_TARGET),os2)
-  VBOX_DLL_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/bin/qt*.dll)))
+  VBOX_DLL_QT ?= $(lastword $(sort $(wildcard $(VBOX_PATH_QT)/bin/*qt*.dll)))
   ifneq ($(strip $(VBOX_DLL_QT)),)
    bin_SOURCES += \
 	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
