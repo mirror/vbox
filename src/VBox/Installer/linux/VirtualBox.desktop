@@ -11,4 +11,5 @@ Path=
 Icon=VBox.png
 Categories=Application;Emulator;System;X-MandrivaLinux-System;
 Comment=Run several virtual systems on a single host computer
+Comment[de]=Professionelle Ausführungsumgebung für virtuelle Maschinen
 Comment[sv]=KÃ¶r flera virtuella system pÃ¥ en enda vÃ¤rddator
