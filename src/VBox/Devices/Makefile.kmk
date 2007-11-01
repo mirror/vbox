@@ -204,7 +204,7 @@ DevicesR3_SOURCES       = \
 	Parallel/DevParallel.cpp
 
 ifdef VBOX_WITH_AHCI
-DevicesR3_DEFS	       += VBOX_WITH_AHCI
+DevicesR3_DEFS	       += VBOX_WITH_AHCI IN_AHCI_R3
 DevicesR3_SOURCES      += \
 	Storage/DevAHCI.cpp
 endif
@@ -268,6 +268,12 @@ VBoxDDGC_SOURCES       += \
 	USB/DevEHCI.cpp
 endif
 
+ifdef VBOX_WITH_AHCI
+VBoxDDGC_DEFS          += VBOX_WITH_AHCI IN_AHCI_GC
+VBoxDDGC_SOURCES       += \
+	Storage/DevAHCI.cpp
+endif
+
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDDGC_LDFLAGS        = -Entry:vgaMMIOWrite
 endif
@@ -304,6 +310,12 @@ VBoxDDR0_DEFS          += VBOX_WITH_USB IN_USB_R0
 VBoxDDR0_SOURCES       += \
 	USB/DevOHCI.cpp \
 	USB/DevEHCI.cpp
+endif
+
+ifdef VBOX_WITH_AHCI
+VBoxDDR0_DEFS          += VBOX_WITH_AHCI IN_AHCI_R0
+VBoxDDR0_SOURCES       += \
+	Storage/DevAHCI.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)
