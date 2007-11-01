@@ -788,10 +788,10 @@ static uint32_t fdctrl_read_dor (fdctrl_t *fdctrl)
 #else
     /* bit4: 0 = drive 0 motor off/1 = on */
     if (drv0(fdctrl)->drflags & FDRIVE_MOTOR_ON)
-        retval |= BIT(4);
+        retval |= RT_BIT(4);
     /* bit5: 0 = drive 1 motor off/1 = on */
     if (drv1(fdctrl)->drflags & FDRIVE_MOTOR_ON)
-        retval |= BIT(5);
+        retval |= RT_BIT(5);
 #endif
     /* DMA enable */
     retval |= fdctrl->dma_en << 3;

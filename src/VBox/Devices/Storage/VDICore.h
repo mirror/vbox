@@ -421,9 +421,9 @@ DECLINLINE(PRTUUID) getImageParentModificationUUID(PVDIHEADER ph)
 /**
  * fModified bit flags.
  */
-#define VDI_IMAGE_MODIFIED_FLAG                 BIT(0)
-#define VDI_IMAGE_MODIFIED_FIRST                BIT(1)
-#define VDI_IMAGE_MODIFIED_DISABLE_UUID_UPDATE  BIT(2)
+#define VDI_IMAGE_MODIFIED_FLAG                 RT_BIT(0)
+#define VDI_IMAGE_MODIFIED_FIRST                RT_BIT(1)
+#define VDI_IMAGE_MODIFIED_DISABLE_UUID_UPDATE  RT_BIT(2)
 
 /**
  * Image structure

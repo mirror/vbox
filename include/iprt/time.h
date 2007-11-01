@@ -568,15 +568,15 @@ typedef const RTTIME *PCRTTIME;
 
 /** Set if the time is local and daylight saving time is in effect.
  * Not bit is not valid if RTTIME_FLAGS_NO_DST_DATA is set. */
-#define RTTIME_FLAGS_DST            BIT(4)
+#define RTTIME_FLAGS_DST            RT_BIT(4)
 /** Set if the time is local and there is no data available on daylight saving time. */
-#define RTTIME_FLAGS_NO_DST_DATA    BIT(5)
+#define RTTIME_FLAGS_NO_DST_DATA    RT_BIT(5)
 /** Set if the year is a leap year.
  * This is mutual exclusiv with RTTIME_FLAGS_COMMON_YEAR. */
-#define RTTIME_FLAGS_LEAP_YEAR      BIT(6)
+#define RTTIME_FLAGS_LEAP_YEAR      RT_BIT(6)
 /** Set if the year is a common year.
  * This is mutual exclusiv with RTTIME_FLAGS_LEAP_YEAR. */
-#define RTTIME_FLAGS_COMMON_YEAR    BIT(7)
+#define RTTIME_FLAGS_COMMON_YEAR    RT_BIT(7)
 /** @} */
 
 

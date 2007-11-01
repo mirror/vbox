@@ -91,13 +91,13 @@ typedef const RTUNICASERANGE *PCRTUNICASERANGE;
 /** @name Unicode Code Point Flags.
  * @internal
  * @{ */
-#define RTUNI_UPPER  BIT(0)
-#define RTUNI_LOWER  BIT(1)
-#define RTUNI_ALPHA  BIT(2)
-#define RTUNI_XDIGIT BIT(3)
-#define RTUNI_DDIGIT BIT(4)
-#define RTUNI_WSPACE BIT(5)
-/*#define RTUNI_BSPACE BIT(6) - later */
+#define RTUNI_UPPER  RT_BIT(0)
+#define RTUNI_LOWER  RT_BIT(1)
+#define RTUNI_ALPHA  RT_BIT(2)
+#define RTUNI_XDIGIT RT_BIT(3)
+#define RTUNI_DDIGIT RT_BIT(4)
+#define RTUNI_WSPACE RT_BIT(5)
+/*#define RTUNI_BSPACE RT_BIT(6) - later */
 /** @} */
 
 

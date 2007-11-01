@@ -60,9 +60,9 @@ typedef struct VDIMAGE
 /**
  * uModified bit flags.
  */
-#define VD_IMAGE_MODIFIED_FLAG                  BIT(0)
-#define VD_IMAGE_MODIFIED_FIRST                 BIT(1)
-#define VD_IMAGE_MODIFIED_DISABLE_UUID_UPDATE   BIT(2)
+#define VD_IMAGE_MODIFIED_FLAG                  RT_BIT(0)
+#define VD_IMAGE_MODIFIED_FIRST                 RT_BIT(1)
+#define VD_IMAGE_MODIFIED_DISABLE_UUID_UPDATE   RT_BIT(2)
 
 
 /**

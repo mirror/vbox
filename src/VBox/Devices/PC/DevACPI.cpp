@@ -64,44 +64,44 @@
 #define ACPI_RESET_BLK  0x00004050
 
 /* PM1x status register bits */
-#define TMR_STS         BIT(0)
-#define RSR1_STS        (BIT(1) | BIT(2) | BIT(3))
-#define BM_STS          BIT(4)
-#define GBL_STS         BIT(5)
-#define RSR2_STS        (BIT(6) | BIT(7))
-#define PWRBTN_STS      BIT(8)
-#define SLPBTN_STS      BIT(9)
-#define RTC_STS         BIT(10)
-#define IGN_STS         BIT(11)
-#define RSR3_STS        (BIT(12) | BIT(13) | BIT(14))
-#define WAK_STS         BIT(15)
+#define TMR_STS         RT_BIT(0)
+#define RSR1_STS        (RT_BIT(1) | RT_BIT(2) | RT_BIT(3))
+#define BM_STS          RT_BIT(4)
+#define GBL_STS         RT_BIT(5)
+#define RSR2_STS        (RT_BIT(6) | RT_BIT(7))
+#define PWRBTN_STS      RT_BIT(8)
+#define SLPBTN_STS      RT_BIT(9)
+#define RTC_STS         RT_BIT(10)
+#define IGN_STS         RT_BIT(11)
+#define RSR3_STS        (RT_BIT(12) | RT_BIT(13) | RT_BIT(14))
+#define WAK_STS         RT_BIT(15)
 #define RSR_STS         (RSR1_STS | RSR2_STS | RSR3_STS)
 
 /* PM1x enable register bits */
-#define TMR_EN          BIT(0)
-#define RSR1_EN         (BIT(1) | BIT(2) | BIT(3) | BIT(4))
-#define GBL_EN          BIT(5)
-#define RSR2_EN         (BIT(6) | BIT(7))
-#define PWRBTN_EN       BIT(8)
-#define SLPBTN_EN       BIT(9)
-#define RTC_EN          BIT(10)
-#define RSR3_EN         (BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15))
+#define TMR_EN          RT_BIT(0)
+#define RSR1_EN         (RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4))
+#define GBL_EN          RT_BIT(5)
+#define RSR2_EN         (RT_BIT(6) | RT_BIT(7))
+#define PWRBTN_EN       RT_BIT(8)
+#define SLPBTN_EN       RT_BIT(9)
+#define RTC_EN          RT_BIT(10)
+#define RSR3_EN         (RT_BIT(11) | RT_BIT(12) | RT_BIT(13) | RT_BIT(14) | RT_BIT(15))
 #define RSR_EN          (RSR1_EN | RSR2_EN | RSR3_EN)
 #define IGN_EN          0
 
 /* PM1x control register bits */
-#define SCI_EN          BIT(0)
-#define BM_RLD          BIT(1)
-#define GBL_RLS         BIT(2)
-#define RSR1_CNT        (BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7) | BIT(8))
-#define IGN_CNT         BIT(9)
+#define SCI_EN          RT_BIT(0)
+#define BM_RLD          RT_BIT(1)
+#define GBL_RLS         RT_BIT(2)
+#define RSR1_CNT        (RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7) | RT_BIT(8))
+#define IGN_CNT         RT_BIT(9)
 #define SLP_TYPx_SHIFT  10
 #define SLP_TYPx_MASK    7
-#define SLP_EN          BIT(13)
-#define RSR2_CNT        (BIT(14) | BIT(15))
+#define SLP_EN          RT_BIT(13)
+#define RSR2_CNT        (RT_BIT(14) | RT_BIT(15))
 #define RSR_CNT         (RSR1_CNT | RSR2_CNT)
 
-#define GPE0_BATTERY_INFO_CHANGED BIT (0)
+#define GPE0_BATTERY_INFO_CHANGED RT_BIT(0)
 
 enum
 {
@@ -138,15 +138,15 @@ enum
 #define BAT_TECH_PRIMARY                        1
 #define BAT_TECH_SECONDARY                      2
 
-#define BAT_STATUS_DISCHARGING_MASK             BIT (0)
-#define BAT_STATUS_CHARGING_MASK                BIT (1)
-#define BAT_STATUS_CRITICAL_MASK                BIT (2)
+#define BAT_STATUS_DISCHARGING_MASK             RT_BIT(0)
+#define BAT_STATUS_CHARGING_MASK                RT_BIT(1)
+#define BAT_STATUS_CRITICAL_MASK                RT_BIT(2)
 
-#define STA_DEVICE_PRESENT_MASK                 BIT (0)
-#define STA_DEVICE_ENABLED_MASK                 BIT (1)
-#define STA_DEVICE_SHOW_IN_UI_MASK              BIT (2)
-#define STA_DEVICE_FUNCTIONING_PROPERLY_MASK    BIT (3)
-#define STA_BATTERY_PRESENT_MASK                BIT (4)
+#define STA_DEVICE_PRESENT_MASK                 RT_BIT(0)
+#define STA_DEVICE_ENABLED_MASK                 RT_BIT(1)
+#define STA_DEVICE_SHOW_IN_UI_MASK              RT_BIT(2)
+#define STA_DEVICE_FUNCTIONING_PROPERLY_MASK    RT_BIT(3)
+#define STA_BATTERY_PRESENT_MASK                RT_BIT(4)
 
 struct ACPIState
 {
@@ -308,32 +308,32 @@ struct ACPITBLFADT
     uint8_t             u8MonAlarm;             /**< RTC CMOS RAM index of month-of-year alarm */
     uint8_t             u8Century;              /**< RTC CMOS RAM index of century */
     uint16_t            u16IAPCBOOTARCH;        /**< IA-PC boot architecture flags */
-#define IAPC_BOOT_ARCH_LEGACY_DEV       BIT(0)  /**< legacy devices present such as LPT
+#define IAPC_BOOT_ARCH_LEGACY_DEV       RT_BIT(0)  /**< legacy devices present such as LPT
                                                      (COM too?) */
-#define IAPC_BOOT_ARCH_8042             BIT(1)  /**< legacy keyboard device present */
-#define IAPC_BOOT_ARCH_NO_VGA           BIT(2)  /**< VGA not present */
+#define IAPC_BOOT_ARCH_8042             RT_BIT(1)  /**< legacy keyboard device present */
+#define IAPC_BOOT_ARCH_NO_VGA           RT_BIT(2)  /**< VGA not present */
     uint8_t             u8Must0_0;              /**< must be 0 */
     uint32_t            u32Flags;               /**< fixed feature flags */
-#define FADT_FL_WBINVD                  BIT(0)  /**< emulation of WBINVD available */
-#define FADT_FL_WBINVD_FLUSH            BIT(1)
-#define FADT_FL_PROC_C1                 BIT(2)  /**< 1=C1 supported on all processors */
-#define FADT_FL_P_LVL2_UP               BIT(3)  /**< 1=C2 works on SMP and UNI systems */
-#define FADT_FL_PWR_BUTTON              BIT(4)  /**< 1=power button handled as ctrl method dev */
-#define FADT_FL_SLP_BUTTON              BIT(5)  /**< 1=sleep button handled as ctrl method dev */
-#define FADT_FL_FIX_RTC                 BIT(6)  /**< 0=RTC wake status in fixed register */
-#define FADT_FL_RTC_S4                  BIT(7)  /**< 1=RTC can wake system from S4 */
-#define FADT_FL_TMR_VAL_EXT             BIT(8)  /**< 1=TMR_VAL implemented as 32 bit */
-#define FADT_FL_DCK_CAP                 BIT(9)  /**< 0=system cannot support docking */
-#define FADT_FL_RESET_REG_SUP           BIT(10) /**< 1=system supports system resets */
-#define FADT_FL_SEALED_CASE             BIT(11) /**< 1=case is sealed */
-#define FADT_FL_HEADLESS                BIT(12) /**< 1=system cannot detect moni/keyb/mouse */
-#define FADT_FL_CPU_SW_SLP              BIT(13)
-#define FADT_FL_PCI_EXT_WAK             BIT(14) /**< 1=system supports PCIEXP_WAKE_STS */
-#define FADT_FL_USE_PLATFORM_CLOCK      BIT(15) /**< 1=system has ACPI PM timer */
-#define FADT_FL_S4_RTC_STS_VALID        BIT(16) /**< 1=RTC_STS flag is valid when waking from S4 */
-#define FADT_FL_REMOVE_POWER_ON_CAPABLE BIT(17) /**< 1=platform can remote power on */
-#define FADT_FL_FORCE_APIC_CLUSTER_MODEL  BIT(18)
-#define FADT_FL_FORCE_APIC_PHYS_DEST_MODE BIT(19)
+#define FADT_FL_WBINVD                  RT_BIT(0)  /**< emulation of WBINVD available */
+#define FADT_FL_WBINVD_FLUSH            RT_BIT(1)
+#define FADT_FL_PROC_C1                 RT_BIT(2)  /**< 1=C1 supported on all processors */
+#define FADT_FL_P_LVL2_UP               RT_BIT(3)  /**< 1=C2 works on SMP and UNI systems */
+#define FADT_FL_PWR_BUTTON              RT_BIT(4)  /**< 1=power button handled as ctrl method dev */
+#define FADT_FL_SLP_BUTTON              RT_BIT(5)  /**< 1=sleep button handled as ctrl method dev */
+#define FADT_FL_FIX_RTC                 RT_BIT(6)  /**< 0=RTC wake status in fixed register */
+#define FADT_FL_RTC_S4                  RT_BIT(7)  /**< 1=RTC can wake system from S4 */
+#define FADT_FL_TMR_VAL_EXT             RT_BIT(8)  /**< 1=TMR_VAL implemented as 32 bit */
+#define FADT_FL_DCK_CAP                 RT_BIT(9)  /**< 0=system cannot support docking */
+#define FADT_FL_RESET_REG_SUP           RT_BIT(10) /**< 1=system supports system resets */
+#define FADT_FL_SEALED_CASE             RT_BIT(11) /**< 1=case is sealed */
+#define FADT_FL_HEADLESS                RT_BIT(12) /**< 1=system cannot detect moni/keyb/mouse */
+#define FADT_FL_CPU_SW_SLP              RT_BIT(13)
+#define FADT_FL_PCI_EXT_WAK             RT_BIT(14) /**< 1=system supports PCIEXP_WAKE_STS */
+#define FADT_FL_USE_PLATFORM_CLOCK      RT_BIT(15) /**< 1=system has ACPI PM timer */
+#define FADT_FL_S4_RTC_STS_VALID        RT_BIT(16) /**< 1=RTC_STS flag is valid when waking from S4 */
+#define FADT_FL_REMOVE_POWER_ON_CAPABLE RT_BIT(17) /**< 1=platform can remote power on */
+#define FADT_FL_FORCE_APIC_CLUSTER_MODEL  RT_BIT(18)
+#define FADT_FL_FORCE_APIC_PHYS_DEST_MODE RT_BIT(19)
     ACPIGENADDR         ResetReg;               /**< ext addr of reset register */
     uint8_t             u8ResetVal;             /**< ResetReg value to reset the system */
 #define ACPI_RESET_REG_VAL  0x10

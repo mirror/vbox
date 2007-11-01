@@ -172,12 +172,12 @@ typedef enum RTTHREADFLAGS
      * This flag is used to keep the thread structure around so it can
      * be waited on after termination.
      */
-    RTTHREADFLAGS_WAITABLE = BIT(0),
+    RTTHREADFLAGS_WAITABLE = RT_BIT(0),
     /** The bit number corresponding to the RTTHREADFLAGS_WAITABLE mask. */
     RTTHREADFLAGS_WAITABLE_BIT = 0,
 
     /** Mask of valid flags, use for validation. */
-    RTTHREADFLAGS_MASK = BIT(0)
+    RTTHREADFLAGS_MASK = RT_BIT(0)
 } RTTHREADFLAGS;
 
 

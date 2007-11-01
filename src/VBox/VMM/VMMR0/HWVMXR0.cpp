@@ -683,7 +683,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
                 if (!pVM->hwaccm.s.fFPUOldStyleOverride)
                 {
-                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, HWACCM_VMX_TRAP_MASK | BIT(16));
+                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, HWACCM_VMX_TRAP_MASK | RT_BIT(16));
                     AssertRC(rc);
                     pVM->hwaccm.s.fFPUOldStyleOverride = true;
                 }
@@ -774,7 +774,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     {
         /** @todo DR0-6 */
         val  = pCtx->dr7;
-        val &= ~(BIT(11) | BIT(12) | BIT(14) | BIT(15));    /* must be zero */
+        val &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
         val |= 0x400;                                       /* must be one */
 #ifdef VBOX_STRICT
         val = 0x400;
@@ -1037,7 +1037,7 @@ ResumeExecution:
      * - LDTR (reset to 0)
      * - DRx (presumably not changed at all)
      * - DR7 (reset to 0x400)
-     * - EFLAGS (reset to BIT(1); not relevant)
+     * - EFLAGS (reset to RT_BIT(1); not relevant)
      *
      */
 

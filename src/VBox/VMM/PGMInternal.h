@@ -168,7 +168,7 @@
  * @{ */
 /** The entry is a permanent one and it's must always be present.
  * Never free such an entry. */
-#define PGM_PLXFLAGS_PERMANENT      BIT64(10)
+#define PGM_PLXFLAGS_PERMANENT      RT_BIT_64(10)
 /** @} */
 
 /** @name Page directory flags.
@@ -176,9 +176,9 @@
  * the page directory entries.
  * @{ */
 /** Mapping (hypervisor allocated pagetable). */
-#define PGM_PDFLAGS_MAPPING         BIT64(10)
+#define PGM_PDFLAGS_MAPPING         RT_BIT_64(10)
 /** Made read-only to facilitate dirty bit tracking. */
-#define PGM_PDFLAGS_TRACK_DIRTY     BIT64(11)
+#define PGM_PDFLAGS_TRACK_DIRTY     RT_BIT_64(11)
 /** @} */
 
 /** @name Page flags.
@@ -186,13 +186,13 @@
  * the page entries.
  * @{ */
 /** Made read-only to facilitate dirty bit tracking. */
-#define PGM_PTFLAGS_TRACK_DIRTY     BIT64(9)
+#define PGM_PTFLAGS_TRACK_DIRTY     RT_BIT_64(9)
 
 #ifndef PGM_PTFLAGS_CSAM_VALIDATED
 /** Scanned and approved by CSAM (tm).
  * NOTE: Must be identical to the one defined in CSAMInternal.h!!
  * @todo Move PGM_PTFLAGS_* and PGM_PDFLAGS_* to VBox/pgm.h. */
-#define PGM_PTFLAGS_CSAM_VALIDATED  BIT64(11)
+#define PGM_PTFLAGS_CSAM_VALIDATED  RT_BIT_64(11)
 #endif
 /** @} */
 
@@ -416,11 +416,11 @@ typedef PGMPHYS2VIRTHANDLER *PPGMPHYS2VIRTHANDLER;
 
 /** The bit in PGMPHYS2VIRTHANDLER::offNextAlias used to indicate that the
  * node is in the tree. */
-#define PGMPHYS2VIRTHANDLER_IN_TREE     BIT(0)
+#define PGMPHYS2VIRTHANDLER_IN_TREE     RT_BIT(0)
 /** The bit in PGMPHYS2VIRTHANDLER::offNextAlias used to indicate that the
  * node is in the head of an alias chain.
  * The PGMPHYS2VIRTHANDLER_IN_TREE is always set if this bit is set. */
-#define PGMPHYS2VIRTHANDLER_IS_HEAD     BIT(1)
+#define PGMPHYS2VIRTHANDLER_IS_HEAD     RT_BIT(1)
 /** The mask to apply to PGMPHYS2VIRTHANDLER::offNextAlias to get the offset. */
 #define PGMPHYS2VIRTHANDLER_OFF_MASK    (~(int32_t)3)
 
@@ -2145,13 +2145,13 @@ typedef struct PGM
  * @{
  */
 /** Updates the MM_RAM_FLAGS_VIRTUAL_HANDLER page bit. */
-#define PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL        BIT(0)
+#define PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL        RT_BIT(0)
 /** Always sync CR3. */
-#define PGM_SYNC_ALWAYS                         BIT(1)
+#define PGM_SYNC_ALWAYS                         RT_BIT(1)
 /** Check monitoring on next CR3 (re)load and invalidate page. */
-#define PGM_SYNC_MONITOR_CR3                    BIT(2)
+#define PGM_SYNC_MONITOR_CR3                    RT_BIT(2)
 /** Clear the page pool (a light weight flush). */
-#define PGM_SYNC_CLEAR_PGM_POOL                 BIT(8)
+#define PGM_SYNC_CLEAR_PGM_POOL                 RT_BIT(8)
 /** @} */
 
 

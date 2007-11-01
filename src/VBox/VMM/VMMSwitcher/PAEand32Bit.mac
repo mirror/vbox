@@ -326,7 +326,7 @@ htg_debug_regs_guest_no:
     mov     ecx, MSR_K7_PERFCTR3
     wrmsr
 
-    mov     eax, BIT(20) | BIT(17) | BIT(16) | 076h
+    mov     eax, RT_BIT(20) | RT_BIT(17) | RT_BIT(16) | 076h
     mov     ecx, MSR_K7_EVNTSEL0
     wrmsr
     mov     eax, 02329B000h
@@ -340,7 +340,7 @@ htg_debug_regs_guest_no:
     mov     dword [eax], 0400h          ; APIC_DM_NMI
 
     xor     edx, edx
-    mov     eax, BIT(20) | BIT(17) | BIT(16) | 076h | BIT(22) ;+EN
+    mov     eax, RT_BIT(20) | RT_BIT(17) | RT_BIT(16) | 076h | RT_BIT(22) ;+EN
     mov     ecx, MSR_K7_EVNTSEL0
     wrmsr
 

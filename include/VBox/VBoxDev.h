@@ -24,33 +24,33 @@ __BEGIN_DECLS
 /** Mouse capability bits
  * @{ */
 /** the guest requests absolute mouse coordinates (guest additions installed) */
-#define VMMDEV_MOUSEGUESTWANTSABS                           BIT(0)
+#define VMMDEV_MOUSEGUESTWANTSABS                           RT_BIT(0)
 /** the host wants to send absolute mouse coordinates (input not captured) */
-#define VMMDEV_MOUSEHOSTWANTSABS                            BIT(1)
+#define VMMDEV_MOUSEHOSTWANTSABS                            RT_BIT(1)
 /** the guest needs a hardware cursor on host. When guest additions are installed
  *  and the host has promised to display the cursor itself, the guest installs a
  *  hardware mouse driver. Don't ask the guest to switch to a software cursor then. */
-#define VMMDEV_MOUSEGUESTNEEDSHOSTCUR                       BIT(2)
+#define VMMDEV_MOUSEGUESTNEEDSHOSTCUR                       RT_BIT(2)
 /** the host is NOT able to draw the cursor itself (e.g. L4 console) */
-#define VMMDEV_MOUSEHOSTCANNOTHWPOINTER                     BIT(3)
+#define VMMDEV_MOUSEHOSTCANNOTHWPOINTER                     RT_BIT(3)
 /** @} */
 
 /** Flags for pfnSetCredentials
  * @{ */
 /** the guest should perform a logon with the credentials */
-#define VMMDEV_SETCREDENTIALS_GUESTLOGON                    BIT(0)
+#define VMMDEV_SETCREDENTIALS_GUESTLOGON                    RT_BIT(0)
 /** the guest should prevent local logons */
-#define VMMDEV_SETCREDENTIALS_NOLOCALLOGON                  BIT(1)
+#define VMMDEV_SETCREDENTIALS_NOLOCALLOGON                  RT_BIT(1)
 /** the guest should verify the credentials */
-#define VMMDEV_SETCREDENTIALS_JUDGE                         BIT(15)
+#define VMMDEV_SETCREDENTIALS_JUDGE                         RT_BIT(15)
 /** @} */
 
 /** Guest capability bits
  * @{ */
 /** the guest supports seamless display rendering */
-#define VMMDEV_GUEST_SUPPORTS_SEAMLESS                      BIT(0)
+#define VMMDEV_GUEST_SUPPORTS_SEAMLESS                      RT_BIT(0)
 /** the guest supports mapping guest to host windows */
-#define VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING     BIT(1)
+#define VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING     RT_BIT(1)
 /** @} */
 
 /** Size of VMMDev RAM region accessible by guest.

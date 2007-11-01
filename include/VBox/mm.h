@@ -46,7 +46,7 @@ __BEGIN_DECLS
  * @remarks The current implementation will always reserve backing
  *          memory for reserved  ranges to simplify things.
  */
-#define MM_RAM_FLAGS_RESERVED           BIT(0)
+#define MM_RAM_FLAGS_RESERVED           RT_BIT(0)
 /** ROM - Read Only Memory.
  * The page have a HC physical address which contains the BIOS code. All write
  * access is trapped and ignored.
@@ -54,36 +54,36 @@ __BEGIN_DECLS
  * HACK: Writable shadow ROM is indicated by both ROM and MMIO2 being
  *       set. (We're out of bits.)
  */
-#define MM_RAM_FLAGS_ROM                BIT(1)
+#define MM_RAM_FLAGS_ROM                RT_BIT(1)
 /** MMIO - Memory Mapped I/O.
  * All access is trapped and emulated. No physical backing is required, but
  * might for various reasons be present.
  */
-#define MM_RAM_FLAGS_MMIO               BIT(2)
+#define MM_RAM_FLAGS_MMIO               RT_BIT(2)
 /** MMIO2 - Memory Mapped I/O, variation 2.
  * The virtualization is performed using real memory and only catching
  * a few accesses for like keeping track for dirty pages.
  * @remark Involved in the shadow ROM hack.
  */
-#define MM_RAM_FLAGS_MMIO2              BIT(3)
+#define MM_RAM_FLAGS_MMIO2              RT_BIT(3)
 
 /** PGM has virtual page access handler(s) defined for pages with this flag. */
-#define MM_RAM_FLAGS_VIRTUAL_HANDLER    BIT(4)
+#define MM_RAM_FLAGS_VIRTUAL_HANDLER    RT_BIT(4)
 /** PGM has virtual page access handler(s) for write access. */
-#define MM_RAM_FLAGS_VIRTUAL_WRITE      BIT(5)
+#define MM_RAM_FLAGS_VIRTUAL_WRITE      RT_BIT(5)
 /** PGM has virtual page access handler(s) for all access. */
-#define MM_RAM_FLAGS_VIRTUAL_ALL        BIT(6)
+#define MM_RAM_FLAGS_VIRTUAL_ALL        RT_BIT(6)
 /** PGM has physical page access handler(s) defined for pages with this flag. */
-#define MM_RAM_FLAGS_PHYSICAL_HANDLER   BIT(7)
+#define MM_RAM_FLAGS_PHYSICAL_HANDLER   RT_BIT(7)
 /** PGM has physical page access handler(s) for write access. */
-#define MM_RAM_FLAGS_PHYSICAL_WRITE     BIT(8)
+#define MM_RAM_FLAGS_PHYSICAL_WRITE     RT_BIT(8)
 /** PGM has physical page access handler(s) for all access. */
-#define MM_RAM_FLAGS_PHYSICAL_ALL       BIT(9)
+#define MM_RAM_FLAGS_PHYSICAL_ALL       RT_BIT(9)
 /** PGM has physical page access handler(s) for this page and has temporarily disabled it. */
-#define MM_RAM_FLAGS_PHYSICAL_TEMP_OFF  BIT(10)
+#define MM_RAM_FLAGS_PHYSICAL_TEMP_OFF  RT_BIT(10)
 #ifndef NEW_PHYS_CODE
 /** Physical backing memory is allocated dynamically. Not set implies a one time static allocation. */
-#define MM_RAM_FLAGS_DYNAMIC_ALLOC      BIT(11)
+#define MM_RAM_FLAGS_DYNAMIC_ALLOC      RT_BIT(11)
 #endif /* !NEW_PHYS_CODE */
 
 /** The shift used to get the reference count. */

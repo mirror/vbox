@@ -40,32 +40,32 @@
 #define MAX_PATCH_SIZE                     (1024*4)
 
 /*
- * Internal patch type flags (starts at BIT(11))
+ * Internal patch type flags (starts at RT_BIT(11))
  */
 
-#define PATMFL_CHECK_SIZE                   BIT64(11)
-#define PATMFL_FOUND_PATCHEND               BIT64(12)
-#define PATMFL_SINGLE_INSTRUCTION           BIT64(13)
-#define PATMFL_SYSENTER_XP                  BIT64(14)
-#define PATMFL_JUMP_CONFLICT                BIT64(15)
-#define PATMFL_READ_ORIGINAL_BYTES          BIT64(16) /** opcode might have already been patched */
-#define PATMFL_INT3_REPLACEMENT             BIT64(17)
-#define PATMFL_SUPPORT_CALLS                BIT64(18)
-#define PATMFL_SUPPORT_INDIRECT_CALLS       BIT64(19)
-#define PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT BIT64(20) /** internal flag to avoid duplicate entrypoints */
-#define PATMFL_INHIBIT_IRQS                 BIT64(21) /** temporary internal flag */
-#define PATMFL_GENERATE_JUMPTOGUEST         BIT64(22) /** temporary internal flag */
-#define PATMFL_RECOMPILE_NEXT               BIT64(23) /** for recompilation of the next instruction */
-#define PATMFL_CODE_MONITORED               BIT64(24) /** code pages of guest monitored for self-modifying code. */
-#define PATMFL_CALLABLE_AS_FUNCTION         BIT64(25) /** cli and pushf blocks can be used as callable functions. */
-#define PATMFL_GLOBAL_FUNCTIONS             BIT64(26) /** fake patch for global patm functions. */
-#define PATMFL_TRAMPOLINE                   BIT64(27) /** trampoline patch that clears PATM_INTERRUPTFLAG and jumps to patch destination */
-#define PATMFL_GENERATE_SETPIF              BIT64(28) /** generate set PIF for the next instruction */
-#define PATMFL_INSTR_HINT                   BIT64(29) /** Generate patch, but don't activate it. */
-#define PATMFL_PATCHED_GUEST_CODE           BIT64(30) /** Patched guest code. */
-#define PATMFL_MUST_INSTALL_PATCHJMP        BIT64(31) /** Need to patch guest code in order to activate patch. */
-#define PATMFL_INT3_REPLACEMENT_BLOCK       BIT64(32) /** int 3 replacement block */
-#define PATMFL_EXTERNAL_JUMP_INSIDE         BIT64(33) /** A trampoline patch was created that jumps to an instruction in the patch block */
+#define PATMFL_CHECK_SIZE                   RT_BIT_64(11)
+#define PATMFL_FOUND_PATCHEND               RT_BIT_64(12)
+#define PATMFL_SINGLE_INSTRUCTION           RT_BIT_64(13)
+#define PATMFL_SYSENTER_XP                  RT_BIT_64(14)
+#define PATMFL_JUMP_CONFLICT                RT_BIT_64(15)
+#define PATMFL_READ_ORIGINAL_BYTES          RT_BIT_64(16) /** opcode might have already been patched */
+#define PATMFL_INT3_REPLACEMENT             RT_BIT_64(17)
+#define PATMFL_SUPPORT_CALLS                RT_BIT_64(18)
+#define PATMFL_SUPPORT_INDIRECT_CALLS       RT_BIT_64(19)
+#define PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT RT_BIT_64(20) /** internal flag to avoid duplicate entrypoints */
+#define PATMFL_INHIBIT_IRQS                 RT_BIT_64(21) /** temporary internal flag */
+#define PATMFL_GENERATE_JUMPTOGUEST         RT_BIT_64(22) /** temporary internal flag */
+#define PATMFL_RECOMPILE_NEXT               RT_BIT_64(23) /** for recompilation of the next instruction */
+#define PATMFL_CODE_MONITORED               RT_BIT_64(24) /** code pages of guest monitored for self-modifying code. */
+#define PATMFL_CALLABLE_AS_FUNCTION         RT_BIT_64(25) /** cli and pushf blocks can be used as callable functions. */
+#define PATMFL_GLOBAL_FUNCTIONS             RT_BIT_64(26) /** fake patch for global patm functions. */
+#define PATMFL_TRAMPOLINE                   RT_BIT_64(27) /** trampoline patch that clears PATM_INTERRUPTFLAG and jumps to patch destination */
+#define PATMFL_GENERATE_SETPIF              RT_BIT_64(28) /** generate set PIF for the next instruction */
+#define PATMFL_INSTR_HINT                   RT_BIT_64(29) /** Generate patch, but don't activate it. */
+#define PATMFL_PATCHED_GUEST_CODE           RT_BIT_64(30) /** Patched guest code. */
+#define PATMFL_MUST_INSTALL_PATCHJMP        RT_BIT_64(31) /** Need to patch guest code in order to activate patch. */
+#define PATMFL_INT3_REPLACEMENT_BLOCK       RT_BIT_64(32) /** int 3 replacement block */
+#define PATMFL_EXTERNAL_JUMP_INSIDE         RT_BIT_64(33) /** A trampoline patch was created that jumps to an instruction in the patch block */
 
 #define SIZEOF_NEARJUMP8                   2 //opcode byte + 1 byte relative offset
 #define SIZEOF_NEARJUMP16                  3 //opcode byte + 2 byte relative offset

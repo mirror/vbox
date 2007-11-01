@@ -1999,7 +1999,7 @@ DECLASM(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u128);
 # else
 DECLINLINE(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u128)
 {
-   if (true)/*ASMCpuId_ECX(1) & BIT(13))*/
+   if (true)/*ASMCpuId_ECX(1) & RT_BIT(13))*/
    {
        /** @todo this is clumsy code */
        RTUINT128U u128Ret;

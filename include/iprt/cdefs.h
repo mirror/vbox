@@ -1029,12 +1029,6 @@
  * Define RT_NO_DEPRECATED_MACROS to not define deprecated macros.
  */
 #ifndef RT_NO_DEPRECATED_MACROS
-/** @copydoc BIT
- * @deprecated Use RT_BIT.
- */
-# define BIT(bit)                       RT_BIT(bit)
-/** @deprecated Use RT_BIT64. */
-# define BIT64(bit)                     (1ULL << (bit))
 /** @copydoc RT_ALIGN_P
  * @deprecated use RT_ALIGN_P. */
 # define ALIGNP(pv, uAlignment)         RT_ALIGN_P(pv, uAlignment)

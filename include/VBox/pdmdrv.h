@@ -221,35 +221,35 @@ typedef PDMDRVREG const *PCPDMDRVREG;
 /** PDM Driver Classes.
  * @{ */
 /** Mouse input driver. */
-#define PDM_DRVREG_CLASS_MOUSE          BIT(0)
+#define PDM_DRVREG_CLASS_MOUSE          RT_BIT(0)
 /** Keyboard input driver. */
-#define PDM_DRVREG_CLASS_KEYBOARD       BIT(1)
+#define PDM_DRVREG_CLASS_KEYBOARD       RT_BIT(1)
 /** Display driver. */
-#define PDM_DRVREG_CLASS_DISPLAY        BIT(2)
+#define PDM_DRVREG_CLASS_DISPLAY        RT_BIT(2)
 /** Network transport driver. */
-#define PDM_DRVREG_CLASS_NETWORK        BIT(3)
+#define PDM_DRVREG_CLASS_NETWORK        RT_BIT(3)
 /** Block driver. */
-#define PDM_DRVREG_CLASS_BLOCK          BIT(4)
+#define PDM_DRVREG_CLASS_BLOCK          RT_BIT(4)
 /** Media driver. */
-#define PDM_DRVREG_CLASS_MEDIA          BIT(5)
+#define PDM_DRVREG_CLASS_MEDIA          RT_BIT(5)
 /** Mountable driver. */
-#define PDM_DRVREG_CLASS_MOUNTABLE      BIT(6)
+#define PDM_DRVREG_CLASS_MOUNTABLE      RT_BIT(6)
 /** Audio driver. */
-#define PDM_DRVREG_CLASS_AUDIO          BIT(7)
+#define PDM_DRVREG_CLASS_AUDIO          RT_BIT(7)
 /** VMMDev driver. */
-#define PDM_DRVREG_CLASS_VMMDEV         BIT(8)
+#define PDM_DRVREG_CLASS_VMMDEV         RT_BIT(8)
 /** Status driver. */
-#define PDM_DRVREG_CLASS_STATUS         BIT(9)
+#define PDM_DRVREG_CLASS_STATUS         RT_BIT(9)
 /** ACPI driver. */
-#define PDM_DRVREG_CLASS_ACPI           BIT(10)
+#define PDM_DRVREG_CLASS_ACPI           RT_BIT(10)
 /** USB related driver. */
-#define PDM_DRVREG_CLASS_USB            BIT(11)
+#define PDM_DRVREG_CLASS_USB            RT_BIT(11)
 /** ISCSI Transport related driver. */
-#define PDM_DRVREG_CLASS_ISCSITRANSPORT BIT(12)
+#define PDM_DRVREG_CLASS_ISCSITRANSPORT RT_BIT(12)
 /** Char driver. */
-#define PDM_DRVREG_CLASS_CHAR           BIT(13)
+#define PDM_DRVREG_CLASS_CHAR           RT_BIT(13)
 /** Stream driver. */
-#define PDM_DRVREG_CLASS_STREAM         BIT(14)
+#define PDM_DRVREG_CLASS_STREAM         RT_BIT(14)
 /** @} */
 
 

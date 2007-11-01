@@ -18,7 +18,7 @@
 
 ;;
 ; Make the mask for the given bit.
-%define BIT(bit)        (1 << bit)
+%define RT_BIT(bit)        (1 << bit)
 
 ;;
 ; Align code, pad with INT3.

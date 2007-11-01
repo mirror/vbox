@@ -152,7 +152,7 @@ typedef const DBGCVARDESC *PCDBGCVARDESC;
 /** Variable descriptor flags.
  * @{ */
 /** Indicates that the variable depends on the previous being present. */
-#define DBGCVD_FLAGS_DEP_PREV       BIT(1)
+#define DBGCVD_FLAGS_DEP_PREV       RT_BIT(1)
 /** @} */
 
 

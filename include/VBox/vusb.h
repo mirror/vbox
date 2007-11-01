@@ -32,9 +32,9 @@ __BEGIN_DECLS
 /** @name USB Standard version flags.
  * @{ */
 /** Indicates USB 1.1 support. */
-#define VUSB_STDVER_11              BIT(1)
+#define VUSB_STDVER_11              RT_BIT(1)
 /** Indicates USB 2.0 support. */
-#define VUSB_STDVER_20              BIT(2)
+#define VUSB_STDVER_20              RT_BIT(2)
 /** @} */
 
 

@@ -130,7 +130,7 @@ void SetWriteDirtyAccessedClearAVL(PX86PTE pPte)
     pPte->n.u1Write = 1;
     pPte->n.u1Dirty = 1;
     pPte->n.u1Accessed = 1;
-    pPte->u &= ~BIT(10);
+    pPte->u &= ~RT_BIT(10);
 }
 
 
@@ -139,31 +139,31 @@ void SetWriteDirtyAccessedClearAVL64(PX86PTEPAE64 pPte)
     pPte->n.u1Write = 1;
     pPte->n.u1Dirty = 1;
     pPte->n.u1Accessed = 1;
-    pPte->u &= ~BIT(10);                /* bad, but serves as demonstration. */
+    pPte->u &= ~RT_BIT(10);                /* bad, but serves as demonstration. */
 }
 
 
 bool Test3232(X86PTEPAE Pte)
 {
-    return !!(Pte.u & BIT(10));
+    return !!(Pte.u & RT_BIT(10));
 }
 
 
 bool Test3264(X86PTEPAE Pte)
 {
-    return !!(Pte.u & BIT64(10));
+    return !!(Pte.u & RT_BIT_64(10));
 }
 
 
 bool Test6432(X86PTEPAE64 Pte)
 {
-    return !!(Pte.u & BIT(10));
+    return !!(Pte.u & RT_BIT(10));
 }
 
 
 bool Test6464(X86PTEPAE64 Pte)
 {
-    return !!(Pte.u & BIT64(10));
+    return !!(Pte.u & RT_BIT_64(10));
 }
 
 

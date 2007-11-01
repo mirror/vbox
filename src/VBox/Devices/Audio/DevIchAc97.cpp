@@ -79,45 +79,45 @@ enum {
 #else
 #undef  SOFT_VOLUME
 #endif
-#define SR_FIFOE BIT(4)          /* rwc, fifo error */
-#define SR_BCIS  BIT(3)          /* rwc, buffer completion interrupt status */
-#define SR_LVBCI BIT(2)          /* rwc, last valid buffer completion interrupt */
-#define SR_CELV  BIT(1)          /* ro, current equals last valid */
-#define SR_DCH   BIT(0)          /* ro, controller halted */
-#define SR_VALID_MASK (BIT(5) - 1)
+#define SR_FIFOE RT_BIT(4)          /* rwc, fifo error */
+#define SR_BCIS  RT_BIT(3)          /* rwc, buffer completion interrupt status */
+#define SR_LVBCI RT_BIT(2)          /* rwc, last valid buffer completion interrupt */
+#define SR_CELV  RT_BIT(1)          /* ro, current equals last valid */
+#define SR_DCH   RT_BIT(0)          /* ro, controller halted */
+#define SR_VALID_MASK (RT_BIT(5) - 1)
 #define SR_WCLEAR_MASK (SR_FIFOE | SR_BCIS | SR_LVBCI)
 #define SR_RO_MASK (SR_DCH | SR_CELV)
 #define SR_INT_MASK (SR_FIFOE | SR_BCIS | SR_LVBCI)
 
-#define CR_IOCE  BIT(4)         /* rw */
-#define CR_FEIE  BIT(3)         /* rw */
-#define CR_LVBIE BIT(2)         /* rw */
-#define CR_RR    BIT(1)         /* rw */
-#define CR_RPBM  BIT(0)         /* rw */
-#define CR_VALID_MASK (BIT(5) - 1)
+#define CR_IOCE  RT_BIT(4)         /* rw */
+#define CR_FEIE  RT_BIT(3)         /* rw */
+#define CR_LVBIE RT_BIT(2)         /* rw */
+#define CR_RR    RT_BIT(1)         /* rw */
+#define CR_RPBM  RT_BIT(0)         /* rw */
+#define CR_VALID_MASK (RT_BIT(5) - 1)
 #define CR_DONT_CLEAR_MASK (CR_IOCE | CR_FEIE | CR_LVBIE)
 
 #define GC_WR    4              /* rw */
 #define GC_CR    2              /* rw */
-#define GC_VALID_MASK (BIT(6) - 1)
+#define GC_VALID_MASK (RT_BIT(6) - 1)
 
-#define GS_MD3   BIT(17)        /* rw */
-#define GS_AD3   BIT(16)        /* rw */
-#define GS_RCS   BIT(15)        /* rwc */
-#define GS_B3S12 BIT(14)        /* ro */
-#define GS_B2S12 BIT(13)        /* ro */
-#define GS_B1S12 BIT(12)        /* ro */
-#define GS_S1R1  BIT(11)        /* rwc */
-#define GS_S0R1  BIT(10)        /* rwc */
-#define GS_S1CR  BIT(9)         /* ro */
-#define GS_S0CR  BIT(8)         /* ro */
-#define GS_MINT  BIT(7)         /* ro */
-#define GS_POINT BIT(6)         /* ro */
-#define GS_PIINT BIT(5)         /* ro */
-#define GS_RSRVD (BIT(4)|BIT(3))
-#define GS_MOINT BIT(2)         /* ro */
-#define GS_MIINT BIT(1)         /* ro */
-#define GS_GSCI  BIT(0)         /* rwc */
+#define GS_MD3   RT_BIT(17)        /* rw */
+#define GS_AD3   RT_BIT(16)        /* rw */
+#define GS_RCS   RT_BIT(15)        /* rwc */
+#define GS_B3S12 RT_BIT(14)        /* ro */
+#define GS_B2S12 RT_BIT(13)        /* ro */
+#define GS_B1S12 RT_BIT(12)        /* ro */
+#define GS_S1R1  RT_BIT(11)        /* rwc */
+#define GS_S0R1  RT_BIT(10)        /* rwc */
+#define GS_S1CR  RT_BIT(9)         /* ro */
+#define GS_S0CR  RT_BIT(8)         /* ro */
+#define GS_MINT  RT_BIT(7)         /* ro */
+#define GS_POINT RT_BIT(6)         /* ro */
+#define GS_PIINT RT_BIT(5)         /* ro */
+#define GS_RSRVD (RT_BIT(4)|RT_BIT(3))
+#define GS_MOINT RT_BIT(2)         /* ro */
+#define GS_MIINT RT_BIT(1)         /* ro */
+#define GS_GSCI  RT_BIT(0)         /* rwc */
 #define GS_RO_MASK (GS_B3S12|                   \
                     GS_B2S12|                   \
                     GS_B1S12|                   \
@@ -129,12 +129,12 @@ enum {
                     GS_RSRVD|                   \
                     GS_MOINT|                   \
                     GS_MIINT)
-#define GS_VALID_MASK (BIT(18) - 1)
+#define GS_VALID_MASK (RT_BIT(18) - 1)
 #define GS_WCLEAR_MASK (GS_RCS|GS_S1R1|GS_S0R1|GS_GSCI)
 
 /** Buffer Descriptor */
-#define BD_IOC BIT(31)          /* Interrupt on Completion */
-#define BD_BUP BIT(30)          /* Buffer Underrun Policy */
+#define BD_IOC RT_BIT(31)          /* Interrupt on Completion */
+#define BD_BUP RT_BIT(30)          /* Buffer Underrun Policy */
 
 #define EACS_VRA 1
 #define EACS_VRM 8
@@ -212,8 +212,8 @@ typedef struct AC97LinkState
 
 enum
 {
-    BUP_SET  = BIT(0),
-    BUP_LAST = BIT(1)
+    BUP_SET  = RT_BIT(0),
+    BUP_LAST = RT_BIT(1)
 };
 
 typedef struct PCIAC97LinkState
@@ -512,10 +512,10 @@ static void set_volume (AC97LinkState *s, int index,
      *
      *  Linux ALSA depends on this behavior.
      */
-    if (val & BIT(5))
-        val |= BIT(4) | BIT(3) | BIT(2) | BIT(1) | BIT(0);
-    if (val & BIT(13))
-        val |= BIT(12) | BIT(11) | BIT(10) | BIT(9) | BIT(8);
+    if (val & RT_BIT(5))
+        val |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
+    if (val & RT_BIT(13))
+        val |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
 #endif
 
     mixer_store (s, index, val);

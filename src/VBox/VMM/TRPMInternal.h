@@ -59,9 +59,9 @@ __BEGIN_DECLS
 /** Traps on IRET. */
 #define TRPM_TRAP_IN_IRET       5
 /** Set if this is a V86 resume. */
-#define TRPM_TRAP_IN_V86        BIT(30)
+#define TRPM_TRAP_IN_V86        RT_BIT(30)
 /** If set this is a hypervisor register set. If cleared it's a guest set. */
-#define TRPM_TRAP_IN_HYPER      BIT(31)
+#define TRPM_TRAP_IN_HYPER      RT_BIT(31)
 /** @} */
 
 

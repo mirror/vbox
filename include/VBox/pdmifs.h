@@ -189,9 +189,9 @@ typedef struct PDMIMOUSEPORT
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
  * @{ */
-#define PDMIMOUSEPORT_BUTTON_LEFT   BIT(0)
-#define PDMIMOUSEPORT_BUTTON_RIGHT  BIT(1)
-#define PDMIMOUSEPORT_BUTTON_MIDDLE BIT(2)
+#define PDMIMOUSEPORT_BUTTON_LEFT   RT_BIT(0)
+#define PDMIMOUSEPORT_BUTTON_RIGHT  RT_BIT(1)
+#define PDMIMOUSEPORT_BUTTON_MIDDLE RT_BIT(2)
 /** @} */
 
 
@@ -1874,13 +1874,13 @@ typedef union PDMLEDCORE
 /** LED bit masks for the u32 view.
  * @{ */
 /** Reading/Receiving indicator. */
-#define PDMLED_READING  BIT(0)
+#define PDMLED_READING  RT_BIT(0)
 /** Writing/Sending indicator. */
-#define PDMLED_WRITING  BIT(1)
+#define PDMLED_WRITING  RT_BIT(1)
 /** Busy indicator. */
-#define PDMLED_BUSY     BIT(2)
+#define PDMLED_BUSY     RT_BIT(2)
 /** Error indicator. */
-#define PDMLED_ERROR    BIT(3)
+#define PDMLED_ERROR    RT_BIT(3)
 /** @} */
 
 

@@ -42,11 +42,11 @@ typedef struct RTMEMHDR
 
 /** @name RTMEMHDR::fFlags.
  * @{ */
-#define RTMEMHDR_FLAG_ZEROED    BIT(0)
-#define RTMEMHDR_FLAG_EXEC      BIT(1)
+#define RTMEMHDR_FLAG_ZEROED    RT_BIT(0)
+#define RTMEMHDR_FLAG_EXEC      RT_BIT(1)
 #ifdef RT_OS_LINUX
-#define RTMEMHDR_FLAG_EXEC_HEAP BIT(30)
-#define RTMEMHDR_FLAG_KMALLOC   BIT(31)
+#define RTMEMHDR_FLAG_EXEC_HEAP RT_BIT(30)
+#define RTMEMHDR_FLAG_KMALLOC   RT_BIT(31)
 #endif
 /** @} */
 

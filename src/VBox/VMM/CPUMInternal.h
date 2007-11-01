@@ -49,7 +49,7 @@
 /** Type mask. */
 #define CPUM_HANDLER_TYPEMASK           0xff
 /** If set EBP points to the CPUMCTXCORE that's being used. */
-#define CPUM_HANDLER_CTXCORE_IN_EBP     BIT(31)
+#define CPUM_HANDLER_CTXCORE_IN_EBP     RT_BIT(31)
 /** @} */
 
 
@@ -57,18 +57,18 @@
  * (Don't forget to sync this with CPUMInternal.mac!)
  * @{ */
 /** Used the FPU, SSE or such stuff. */
-#define CPUM_USED_FPU                   BIT(0)
+#define CPUM_USED_FPU                   RT_BIT(0)
 /** Used the FPU, SSE or such stuff since last we were in REM.
  * REM syncing is clearing this, lazy FPU is setting it. */
-#define CPUM_USED_FPU_SINCE_REM         BIT(1)
+#define CPUM_USED_FPU_SINCE_REM         RT_BIT(1)
 /** Host OS is using SYSENTER and we must NULL the CS. */
-#define CPUM_USE_SYSENTER               BIT(2)
+#define CPUM_USE_SYSENTER               RT_BIT(2)
 /** Host OS is using SYSENTER and we must NULL the CS. */
-#define CPUM_USE_SYSCALL                BIT(3)
+#define CPUM_USE_SYSCALL                RT_BIT(3)
 /** Debug registers are used by host and must be disabled. */
-#define CPUM_USE_DEBUG_REGS_HOST        BIT(4)
+#define CPUM_USE_DEBUG_REGS_HOST        RT_BIT(4)
 /** Enabled use of debug registers in guest context. */
-#define CPUM_USE_DEBUG_REGS             BIT(5)
+#define CPUM_USE_DEBUG_REGS             RT_BIT(5)
 /** @} */
 
 /* Sanity check. */

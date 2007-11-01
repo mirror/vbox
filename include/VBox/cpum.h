@@ -594,17 +594,17 @@ CPUMDECL(int) CPUMRestoreHostFPUState(PVM pVM);
  * to clear them is REM!
  * @{
  */
-#define CPUM_CHANGED_FPU_REM            BIT(0)
-#define CPUM_CHANGED_CR0                BIT(1)
-#define CPUM_CHANGED_CR4                BIT(2)
-#define CPUM_CHANGED_GLOBAL_TLB_FLUSH   BIT(3)
-#define CPUM_CHANGED_CR3                BIT(4)
-#define CPUM_CHANGED_GDTR               BIT(5)
-#define CPUM_CHANGED_IDTR               BIT(6)
-#define CPUM_CHANGED_LDTR               BIT(7)
-#define CPUM_CHANGED_TR                 BIT(8)
-#define CPUM_CHANGED_SYSENTER_MSR       BIT(9)
-#define CPUM_CHANGED_HIDDEN_SEL_REGS    BIT(10)
+#define CPUM_CHANGED_FPU_REM            RT_BIT(0)
+#define CPUM_CHANGED_CR0                RT_BIT(1)
+#define CPUM_CHANGED_CR4                RT_BIT(2)
+#define CPUM_CHANGED_GLOBAL_TLB_FLUSH   RT_BIT(3)
+#define CPUM_CHANGED_CR3                RT_BIT(4)
+#define CPUM_CHANGED_GDTR               RT_BIT(5)
+#define CPUM_CHANGED_IDTR               RT_BIT(6)
+#define CPUM_CHANGED_LDTR               RT_BIT(7)
+#define CPUM_CHANGED_TR                 RT_BIT(8)
+#define CPUM_CHANGED_SYSENTER_MSR       RT_BIT(9)
+#define CPUM_CHANGED_HIDDEN_SEL_REGS    RT_BIT(10)
 /** @} */
 
 /**

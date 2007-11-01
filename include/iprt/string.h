@@ -325,7 +325,7 @@ RTDECL(char *) RTStrPutCpInternal(char *psz, RTUNICP CodePoint);
 DECLINLINE(RTUNICP) RTStrGetCp(const char *psz)
 {
     const unsigned char uch = *(const unsigned char *)psz;
-    if (!(uch & BIT(7)))
+    if (!(uch & RT_BIT(7)))
         return uch;
     return RTStrGetCpInternal(psz);
 }
@@ -346,7 +346,7 @@ DECLINLINE(RTUNICP) RTStrGetCp(const char *psz)
 DECLINLINE(int) RTStrGetCpEx(const char **ppsz, PRTUNICP pCp)
 {
     const unsigned char uch = **(const unsigned char **)ppsz;
-    if (!(uch & BIT(7)))
+    if (!(uch & RT_BIT(7)))
     {
         (*ppsz)++;
         *pCp = uch;
