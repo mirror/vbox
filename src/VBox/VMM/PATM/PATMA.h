@@ -97,9 +97,9 @@
 #define PATM_ACTION_MAGIC                       0xABCD4321
 
 /** PATM_TEMP_RESTORE_FLAGS */
-#define PATM_RESTORE_EAX                        BIT(0)
-#define PATM_RESTORE_ECX                        BIT(1)
-#define PATM_RESTORE_EDI                        BIT(2)
+#define PATM_RESTORE_EAX                        RT_BIT(0)
+#define PATM_RESTORE_ECX                        RT_BIT(1)
+#define PATM_RESTORE_EDI                        RT_BIT(2)
 
 typedef struct
 {

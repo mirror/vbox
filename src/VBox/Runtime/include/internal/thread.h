@@ -132,14 +132,14 @@ typedef struct RTTHREADINT
  * @{ */
 /** Set if the thread is an alien thread.
  * Clear if the thread was created by IPRT. */
-#define RTTHREADINT_FLAGS_ALIEN      BIT(0)
+#define RTTHREADINT_FLAGS_ALIEN      RT_BIT(0)
 /** Set if the thread has terminated.
  * Clear if the thread is running. */
-#define RTTHREADINT_FLAGS_TERMINATED BIT(1)
+#define RTTHREADINT_FLAGS_TERMINATED RT_BIT(1)
 /** This bit is set if the thread is in the AVL tree. */
 #define RTTHREADINT_FLAG_IN_TREE_BIT 2
 /** @copydoc RTTHREADINT_FLAG_IN_TREE_BIT */
-#define RTTHREADINT_FLAG_IN_TREE     BIT(RTTHREADINT_FLAG_IN_TREE_BIT)
+#define RTTHREADINT_FLAG_IN_TREE     RT_BIT(RTTHREADINT_FLAG_IN_TREE_BIT)
 /** @} */
 
 

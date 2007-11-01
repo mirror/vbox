@@ -105,7 +105,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 /** Any CPU is fine. (Must be 0.) */
 #define RTTIMER_FLAGS_CPU_ANY        0
 /** One specific CPU */
-#define RTTIMER_FLAGS_CPU_SPECIFIC   BIT(8)
+#define RTTIMER_FLAGS_CPU_SPECIFIC   RT_BIT(8)
 /** All online CPUs. */
 #define RTTIMER_FLAGS_CPU_ALL        ( RTTIMER_FLAGS_CPU_MASK | RTTIMER_FLAGS_CPU_SPECIFIC )
 /** CPU mask. */

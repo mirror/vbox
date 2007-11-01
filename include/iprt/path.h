@@ -482,7 +482,7 @@ RTR3DECL(int) RTPathGetOwner(const char *pszPath, uint32_t *pUid, uint32_t *pGid
 /** @name RTPathRename, RTDirRename & RTFileRename flags.
  * @{ */
 /** This will replace attempt any target which isn't a directory. */
-#define RTPATHRENAME_FLAGS_REPLACE      BIT(0)
+#define RTPATHRENAME_FLAGS_REPLACE      RT_BIT(0)
 /** @} */
 
 /**

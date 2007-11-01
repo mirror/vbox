@@ -134,11 +134,11 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_FLAGS_TYPE_MASK     3
 
 /** Set if the address is valid. */
-#define DBGFADDRESS_FLAGS_VALID         BIT(2)
+#define DBGFADDRESS_FLAGS_VALID         RT_BIT(2)
 
 /** The address is within the hypervisor memoary area (HMA).
  * If not set, the address can be assumed to be a guest address. */
-#define DBGFADDRESS_FLAGS_HMA           BIT(3)
+#define DBGFADDRESS_FLAGS_HMA           RT_BIT(3)
 
 /** Checks if the mixed address is flat or not. */
 #define DBGFADDRESS_IS_FLAT(pAddress)    ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FLAT )
@@ -832,7 +832,7 @@ typedef FNDBGFHANDLEREXT  *PFNDBGFHANDLEREXT;
 /** @name Flags for the info registration functions.
  * @{ */
 /** The handler must run on the EMT. */
-#define DBGFINFO_FLAGS_RUN_ON_EMT       BIT(0)
+#define DBGFINFO_FLAGS_RUN_ON_EMT       RT_BIT(0)
 /** @} */
 
 
@@ -1320,14 +1320,14 @@ typedef struct DBGFSTACKFRAME
  * @{ */
 /** Set if the content of the frame is filled in by DBGFR3StackWalk() and can be used
  * to construct the next frame. */
-#define DBGFSTACKFRAME_FLAGS_ALL_VALID  BIT(0)
+#define DBGFSTACKFRAME_FLAGS_ALL_VALID  RT_BIT(0)
 /** This is the last stack frame we can read.
  * This flag is not set if the walk stop because of max dept or recursion. */
-#define DBGFSTACKFRAME_FLAGS_LAST       BIT(1)
+#define DBGFSTACKFRAME_FLAGS_LAST       RT_BIT(1)
 /** This is the last record because we detected a loop. */
-#define DBGFSTACKFRAME_FLAGS_LOOP       BIT(2)
+#define DBGFSTACKFRAME_FLAGS_LOOP       RT_BIT(2)
 /** This is the last record because we reached the maximum depth. */
-#define DBGFSTACKFRAME_FLAGS_MAX_DEPTH  BIT(3)
+#define DBGFSTACKFRAME_FLAGS_MAX_DEPTH  RT_BIT(3)
 /** @} */
 
 /**
@@ -1391,17 +1391,17 @@ DBGFR3DECL(void) DBGFR3StackWalkEnd(PVM pVM, PDBGFSTACKFRAME pFrame);
 /** Flags to pass to DBGFR3DisasInstrEx().
  * @{ */
 /** Disassemble the current guest instruction, with annotations. */
-#define DBGF_DISAS_FLAGS_CURRENT_GUEST      BIT(0)
+#define DBGF_DISAS_FLAGS_CURRENT_GUEST      RT_BIT(0)
 /** Disassemble the current hypervisor instruction, with annotations. */
-#define DBGF_DISAS_FLAGS_CURRENT_HYPER      BIT(1)
+#define DBGF_DISAS_FLAGS_CURRENT_HYPER      RT_BIT(1)
 /** No annotations for current context. */
-#define DBGF_DISAS_FLAGS_NO_ANNOTATION      BIT(2)
+#define DBGF_DISAS_FLAGS_NO_ANNOTATION      RT_BIT(2)
 /** No symbol lookup. */
-#define DBGF_DISAS_FLAGS_NO_SYMBOLS         BIT(3)
+#define DBGF_DISAS_FLAGS_NO_SYMBOLS         RT_BIT(3)
 /** No instruction bytes. */
-#define DBGF_DISAS_FLAGS_NO_BYTES           BIT(4)
+#define DBGF_DISAS_FLAGS_NO_BYTES           RT_BIT(4)
 /** No address in the output. */
-#define DBGF_DISAS_FLAGS_NO_ADDRESS         BIT(5)
+#define DBGF_DISAS_FLAGS_NO_ADDRESS         RT_BIT(5)
 /** @} */
 
 /** Special flat selector. */

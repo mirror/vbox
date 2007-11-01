@@ -36,23 +36,23 @@
 *******************************************************************************/
 /* from x86.h - clashes with linux thus this duplication */
 #undef X86_CR0_PG
-#define X86_CR0_PG                          BIT(31)
+#define X86_CR0_PG                          RT_BIT(31)
 #undef X86_CR0_PE
-#define X86_CR0_PE                          BIT(0)
+#define X86_CR0_PE                          RT_BIT(0)
 #undef X86_CPUID_AMD_FEATURE_EDX_NX
-#define X86_CPUID_AMD_FEATURE_EDX_NX        BIT(20)
+#define X86_CPUID_AMD_FEATURE_EDX_NX        RT_BIT(20)
 #undef MSR_K6_EFER
 #define MSR_K6_EFER                         0xc0000080
 #undef MSR_K6_EFER_NXE
-#define MSR_K6_EFER_NXE                     BIT(11)
+#define MSR_K6_EFER_NXE                     RT_BIT(11)
 #undef MSR_K6_EFER_LMA
-#define  MSR_K6_EFER_LMA                    BIT(10)
+#define  MSR_K6_EFER_LMA                    RT_BIT(10)
 #undef X86_CR4_PGE
-#define X86_CR4_PGE                         BIT(7)
+#define X86_CR4_PGE                         RT_BIT(7)
 #undef X86_CR4_PAE
-#define X86_CR4_PAE                         BIT(5)
+#define X86_CR4_PAE                         RT_BIT(5)
 #undef X86_CPUID_AMD_FEATURE_EDX_LONG_MODE
-#define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE BIT(29)
+#define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE RT_BIT(29)
 
 
 /** The frequency by which we recalculate the u32UpdateHz and
@@ -3538,9 +3538,9 @@ static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
             {
                 uint64_t efer = ASMRdMsr(MSR_K6_EFER);
                 if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)        && (efer & MSR_K6_EFER_NXE))
-                    fNXEPlusLMA |= BIT(0);
+                    fNXEPlusLMA |= RT_BIT(0);
                 if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE) && (efer & MSR_K6_EFER_LMA))
-                    fNXEPlusLMA |= BIT(1);
+                    fNXEPlusLMA |= RT_BIT(1);
             }
         }
 
@@ -3558,7 +3558,7 @@ static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
                 enmMode = SUPPAGINGMODE_PAE;
                 break;
 
-            case X86_CR4_PAE | BIT(0):
+            case X86_CR4_PAE | RT_BIT(0):
                 enmMode = SUPPAGINGMODE_PAE_NX;
                 break;
 
@@ -3566,23 +3566,23 @@ static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
                 enmMode = SUPPAGINGMODE_PAE_GLOBAL;
                 break;
 
-            case X86_CR4_PAE | X86_CR4_PGE | BIT(0):
+            case X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
                 enmMode = SUPPAGINGMODE_PAE_GLOBAL;
                 break;
 
-            case BIT(1) | X86_CR4_PAE:
+            case RT_BIT(1) | X86_CR4_PAE:
                 enmMode = SUPPAGINGMODE_AMD64;
                 break;
 
-            case BIT(1) | X86_CR4_PAE | BIT(0):
+            case RT_BIT(1) | X86_CR4_PAE | RT_BIT(0):
                 enmMode = SUPPAGINGMODE_AMD64_NX;
                 break;
 
-            case BIT(1) | X86_CR4_PAE | X86_CR4_PGE:
+            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE:
                 enmMode = SUPPAGINGMODE_AMD64_GLOBAL;
                 break;
 
-            case BIT(1) | X86_CR4_PAE | X86_CR4_PGE | BIT(0):
+            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
                 enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
                 break;
 
@@ -3834,7 +3834,7 @@ static SUPGIPMODE supdrvGipDeterminTscMode(void)
             if (uEAX >= 0x80000007)
             {
                 ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
-                if (    !(uEDX & BIT(8))/* TscInvariant */
+                if (    !(uEDX & RT_BIT(8))/* TscInvariant */
                     &&  (uEDX & 0x3e))  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
                     return SUPGIPMODE_ASYNC_TSC;
             }

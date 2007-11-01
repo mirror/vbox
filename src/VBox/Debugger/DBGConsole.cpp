@@ -886,10 +886,10 @@ static uint32_t g_bmOperatorChars[256 / (4*8)];
  * @{
  */
 /** If set the register set is the hypervisor and not the guest one. */
-#define SYMREG_FLAGS_HYPER      BIT(20)
+#define SYMREG_FLAGS_HYPER      RT_BIT(20)
 /** If set a far conversion of the value will use the high 16 bit for the selector.
  * If clear the low 16 bit will be used. */
-#define SYMREG_FLAGS_HIGH_SEL   BIT(21)
+#define SYMREG_FLAGS_HIGH_SEL   RT_BIT(21)
 /** The shift value to calc the size of a register symbol from the uUser value. */
 #define SYMREG_SIZE_SHIFT       (24)
 /** Get the offset */
@@ -2576,7 +2576,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
             "ConfER", /* E Conforming, Execute/Readable */
             "ConfER"  /* F Conforming, Execute/Readable - Accessed */
         };
-        const char *pszAccessed = pDesc->Gen.u4Type & BIT(0) ? "A " : "NA";
+        const char *pszAccessed = pDesc->Gen.u4Type & RT_BIT(0) ? "A " : "NA";
         const char *pszGranularity = pDesc->Gen.u1Granularity ? "G" : " ";
         const char *pszBig = pDesc->Gen.u1DefBig ? "BIG" : "   ";
         uint32_t u32Base = pDesc->Gen.u16BaseLow
@@ -2631,7 +2631,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
             case X86_SEL_TYPE_SYS_LDT:
             {
                 const char *pszGranularity = pDesc->Gen.u1Granularity ? "G" : " ";
-                const char *pszBusy = pDesc->Gen.u4Type & BIT(1) ? "B " : "NB";
+                const char *pszBusy = pDesc->Gen.u4Type & RT_BIT(1) ? "B " : "NB";
                 const char *pszBig = pDesc->Gen.u1DefBig ? "BIG" : "   ";
                 uint32_t u32Base = pDesc->Gen.u16BaseLow
                                  | ((uint32_t)pDesc->Gen.u8BaseHigh1 << 16)
@@ -2660,7 +2660,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
             case X86_SEL_TYPE_SYS_386_CALL_GATE:
             {
                 unsigned cParams = pDesc->au8[0] & 0x1f;
-                const char *pszCountOf = pDesc->Gen.u4Type & BIT(3) ? "DC" : "WC";
+                const char *pszCountOf = pDesc->Gen.u4Type & RT_BIT(3) ? "DC" : "WC";
                 RTSEL sel = pDesc->au16[1];
                 uint32_t off = pDesc->au16[0] | ((uint32_t)pDesc->au16[3] << 16);
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s %s=%d%s\n",
@@ -3429,12 +3429,12 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                              Pde.n.u1Write          ? "w"   : "r",
                              Pde.n.u1User           ? "u"   : "s",
                              Pde.n.u1Accessed       ? "a "  : "na",
-                             Pde.u & BIT(6)         ? "6 "  : "  ",
+                             Pde.u & RT_BIT(6)      ? "6 "  : "  ",
                              Pde.n.u3Available,
-                             Pde.u & BIT(8)         ? "8"   : " ",
+                             Pde.u & RT_BIT(8)      ? "8"   : " ",
                              Pde.n.u1WriteThru      ? "pwt" : "   ",
                              Pde.n.u1CacheDisable   ? "pcd" : "   ",
-                             Pde.u & BIT(7)         ? "7"   : "",
+                             Pde.u & RT_BIT(7)      ? "7"   : "",
                              Pde.n.u1NoExecute      ? (fNXE ? "nx" : "NX") : "  ");
         if (Pde.u & UINT64_C(0x7fff000000000000))
             DBGCCmdHlpPrintf(pCmdHlp, " weird=%RX64", (Pde.u & UINT64_C(0x7fff000000000000)));

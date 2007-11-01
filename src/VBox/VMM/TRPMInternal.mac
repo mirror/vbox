@@ -22,8 +22,8 @@
 %define TRPM_TRAP_IN_MOV_ES     3
 %define TRPM_TRAP_IN_MOV_DS     4
 %define TRPM_TRAP_IN_IRET       5
-%define TRPM_TRAP_IN_V86        BIT(30)
-%define TRPM_TRAP_IN_HYPER      BIT(31)
+%define TRPM_TRAP_IN_V86        RT_BIT(30)
+%define TRPM_TRAP_IN_HYPER      RT_BIT(31)
 
 
 struc TRPM

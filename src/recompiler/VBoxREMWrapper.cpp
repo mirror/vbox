@@ -246,7 +246,7 @@ typedef const REMPARMDESC *PCREMPARMDESC;
 /** The parameter type mask. */
 #define REMPARMDESC_FLAGS_TYPE_MASK     15
 /** The parameter size field is valid. */
-#define REMPARMDESC_FLAGS_SIZE          BIT(7)
+#define REMPARMDESC_FLAGS_SIZE          RT_BIT(7)
 /** @} */
 
 /**
@@ -286,9 +286,9 @@ typedef const REMFNDESC *PCREMFNDESC;
 /** The return type mask. */
 #define REMFNDESC_FLAGS_RET_TYPE_MASK   7
 /** The argument list contains one or more va_list arguments (i.e. problems). */
-#define REMFNDESC_FLAGS_VALIST          BIT(6)
+#define REMFNDESC_FLAGS_VALIST          RT_BIT(6)
 /** The function has an ellipsis (i.e. a problem). */
-#define REMFNDESC_FLAGS_ELLIPSIS        BIT(7)
+#define REMFNDESC_FLAGS_ELLIPSIS        RT_BIT(7)
 /** @} */
 
 /**

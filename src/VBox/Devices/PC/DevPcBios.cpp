@@ -453,9 +453,9 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         case 2: u32 = 0x41; break;      /* floppy installed, 2 drives. */
         default:u32 = 0;    break;      /* floppy not installed. */
     }
-    u32 |= BIT(1);                      /* math coprocessor installed  */
-    u32 |= BIT(2);                      /* keyboard enabled (or mouse?) */
-    u32 |= BIT(3);                      /* display enabled (monitory type is 0, i.e. vga) */
+    u32 |= RT_BIT(1);                      /* math coprocessor installed  */
+    u32 |= RT_BIT(2);                      /* keyboard enabled (or mouse?) */
+    u32 |= RT_BIT(3);                      /* display enabled (monitory type is 0, i.e. vga) */
     pcbiosCmosWrite(pDevIns, 0x14, u32);                                        /* 14h - Equipment Byte */
 
     /*
@@ -760,15 +760,15 @@ static void pcbiosPlantDMITable(uint8_t *pTable, PRTUUID puuid)
     pBIOSInf->u8Release          = iStrNr++;
     STRCPY(pszStr, "12/01/2006");
     pBIOSInf->u8ROMSize          = 1; /* 128K */
-    pBIOSInf->u64Characteristics = BIT(4)   /* ISA is supported */
-                                 | BIT(7)   /* PCI is supported */
-                                 | BIT(15)  /* Boot from CD is supported */
-                                 | BIT(16)  /* Selectable Boot is supported */
-                                 | BIT(27)  /* Int 9h, 8042 Keyboard services supported */
-                                 | BIT(30)  /* Int 10h, CGA/Mono Video Services supported */
+    pBIOSInf->u64Characteristics = RT_BIT(4)   /* ISA is supported */
+                                 | RT_BIT(7)   /* PCI is supported */
+                                 | RT_BIT(15)  /* Boot from CD is supported */
+                                 | RT_BIT(16)  /* Selectable Boot is supported */
+                                 | RT_BIT(27)  /* Int 9h, 8042 Keyboard services supported */
+                                 | RT_BIT(30)  /* Int 10h, CGA/Mono Video Services supported */
                                  /* any more?? */
                                  ;
-    pBIOSInf->u8CharacteristicsByte1 = BIT(0)   /* ACPI is supported */
+    pBIOSInf->u8CharacteristicsByte1 = RT_BIT(0)   /* ACPI is supported */
                                      /* any more?? */
                                      ;
     pBIOSInf->u8CharacteristicsByte2 = 0

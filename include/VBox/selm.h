@@ -147,9 +147,9 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHI
 /** Flags for SELMToFlatEx().
  * @{ */
 /** Don't check the RPL,DPL or CPL. */
-#define SELMTOFLAT_FLAGS_NO_PL      BIT(8)
+#define SELMTOFLAT_FLAGS_NO_PL      RT_BIT(8)
 /** Flags contains CPL information. */
-#define SELMTOFLAT_FLAGS_HAVE_CPL   BIT(9)
+#define SELMTOFLAT_FLAGS_HAVE_CPL   RT_BIT(9)
 /** CPL is 3. */
 #define SELMTOFLAT_FLAGS_CPL3       3
 /** CPL is 2. */
@@ -161,7 +161,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCPUMSELREGHI
 /** Get the CPL from the flags. */
 #define SELMTOFLAT_FLAGS_CPL(fFlags)    ((fFlags) & X86_SEL_RPL)
 /** Allow converting using Hypervisor GDT entries. */
-#define SELMTOFLAT_FLAGS_HYPER      BIT(10)
+#define SELMTOFLAT_FLAGS_HYPER      RT_BIT(10)
 /** @} */
 
 /**

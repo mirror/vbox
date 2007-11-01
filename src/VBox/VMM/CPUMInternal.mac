@@ -16,12 +16,12 @@
 
 %include "VBox/asmdefs.mac"
 
-%define CPUM_USED_FPU                   BIT(0)
-%define CPUM_USED_FPU_SINCE_REM         BIT(1)
-%define CPUM_USE_SYSENTER               BIT(2)
-%define CPUM_USE_SYSCALL                BIT(3)
-%define CPUM_USE_DEBUG_REGS_HOST        BIT(4)
-%define CPUM_USE_DEBUG_REGS             BIT(5)
+%define CPUM_USED_FPU                   RT_BIT(0)
+%define CPUM_USED_FPU_SINCE_REM         RT_BIT(1)
+%define CPUM_USE_SYSENTER               RT_BIT(2)
+%define CPUM_USE_SYSCALL                RT_BIT(3)
+%define CPUM_USE_DEBUG_REGS_HOST        RT_BIT(4)
+%define CPUM_USE_DEBUG_REGS             RT_BIT(5)
 
 %define CPUM_HANDLER_DS                 1
 %define CPUM_HANDLER_ES                 2
@@ -29,7 +29,7 @@
 %define CPUM_HANDLER_GS                 4
 %define CPUM_HANDLER_IRET               5
 %define CPUM_HANDLER_TYPEMASK           0ffh
-%define CPUM_HANDLER_CTXCORE_IN_EBP     BIT(31)
+%define CPUM_HANDLER_CTXCORE_IN_EBP     RT_BIT(31)
 
 %define VMMGCRET_USED_FPU       040000000h
 

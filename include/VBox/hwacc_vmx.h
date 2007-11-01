@@ -321,9 +321,9 @@
  * @{
  */
 /* External interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT            BIT(0)
+#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT            RT_BIT(0)
 /* Non-maskable interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT                BIT(3)
+#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT                RT_BIT(3)
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
 
@@ -332,37 +332,37 @@
  * @{
  */
 /* VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT        BIT(2)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT        RT_BIT(2)
 /* Use timestamp counter offset. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET             BIT(3)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET             RT_BIT(3)
 /* VM Exit when executing the HLT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT               BIT(7)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT               RT_BIT(7)
 /* VM Exit when executing the INVLPG instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT            BIT(9)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT            RT_BIT(9)
 /* VM Exit when executing the MWAIT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT             BIT(10)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT             RT_BIT(10)
 /* VM Exit when executing the RDPMC instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT             BIT(11)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT             RT_BIT(11)
 /* VM Exit when executing the RDTSC instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT             BIT(12)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT             RT_BIT(12)
 /* VM Exit on CR8 loads. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT          BIT(19)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT          RT_BIT(19)
 /* VM Exit on CR8 stores. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT         BIT(20)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT         RT_BIT(20)
 /* Use TPR shadow. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW         BIT(21)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW         RT_BIT(21)
 /* VM Exit when executing a MOV DRx instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT            BIT(23)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT            RT_BIT(23)
 /* VM Exit when executing IO instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT         BIT(24)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT         RT_BIT(24)
 /* Use IO bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS         BIT(25)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS         RT_BIT(25)
 /* Use MSR bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS        BIT(28)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS        RT_BIT(28)
 /* VM Exit when executing the MONITOR instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT           BIT(29)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT           RT_BIT(29)
 /* VM Exit when executing the PAUSE instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT             BIT(30)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT             RT_BIT(30)
 /** @} */
 
 
@@ -370,11 +370,11 @@
  * @{
  */
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE                  BIT(9)
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE                  RT_BIT(9)
 /** In SMM mode after VM-entry. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM                  BIT(10)
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM                  RT_BIT(10)
 /** Disable dual treatment of SMI and SMM; must be zero for VM-entry outside of SMM. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON         BIT(11)
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON         RT_BIT(11)
 /** @} */
 
 
@@ -382,9 +382,9 @@
  * @{
  */
 /** Return to long mode after a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64                  BIT(9)
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64                  RT_BIT(9)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ            BIT(15)
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ            RT_BIT(15)
 /** @} */
 
 /** 32 Bits read-only fields
@@ -406,13 +406,13 @@
 #define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)            (a & 0xff)
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT           8
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)              ((a >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID       BIT(11)
+#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID       RT_BIT(11)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a) (a & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
-#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)       (a & BIT(12))
+#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)       (a & RT_BIT(12))
 #define VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT          31
-#define VMX_EXIT_INTERRUPTION_INFO_VALID(a)             (a & BIT(31))
+#define VMX_EXIT_INTERRUPTION_INFO_VALID(a)             (a & RT_BIT(31))
 /* Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
-#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      (a & ~BIT(12))
+#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      (a & ~RT_BIT(12))
 /** @} */
 
 /** VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
@@ -470,10 +470,10 @@
 /** VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE
  * @{
  */
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI         BIT(0)
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS       BIT(1)
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI         BIT(2)
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI         BIT(3)
+#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI         RT_BIT(0)
+#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS       RT_BIT(1)
+#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI         RT_BIT(2)
+#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI         RT_BIT(3)
 /** @} */
 
 
@@ -635,17 +635,17 @@
  * @{
  */
 /* Hardware breakpoint 0 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B0                      BIT(0)
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B0                      RT_BIT(0)
 /* Hardware breakpoint 1 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B1                      BIT(1)
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B1                      RT_BIT(1)
 /* Hardware breakpoint 2 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B2                      BIT(2)
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B2                      RT_BIT(2)
 /* Hardware breakpoint 3 was met. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B3                      BIT(3)
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B3                      RT_BIT(3)
 /* At least one data or IO breakpoint was hit. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BREAKPOINT_ENABLED      BIT(12)
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BREAKPOINT_ENABLED      RT_BIT(12)
 /* A debug exception would have been triggered by single-step execution mode. */
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS                      BIT(14)
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS                      RT_BIT(14)
 /* Bits 4-11, 13 and 15-63 are reserved. */
 
 

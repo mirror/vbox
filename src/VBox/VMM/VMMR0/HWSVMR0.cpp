@@ -64,16 +64,16 @@ HWACCMR0DECL(int) SVMR0Setup(PVM pVM)
     /* Program the control fields. Most of them never have to be changed again. */
     /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
     /** @note CR0 & CR4 can be safely read when guest and shadow copies are identical. */
-    pVMCB->ctrl.u16InterceptRdCRx = BIT(0) | BIT(3) | BIT(4) | BIT(8);
+    pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
 
     /*
      * CR0/3/4 writes must be intercepted for obvious reasons.
      */
-    pVMCB->ctrl.u16InterceptWrCRx = BIT(0) | BIT(3) | BIT(4) | BIT(8);
+    pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4) | RT_BIT(8);
 
     /* Intercept all DRx reads and writes. */
-    pVMCB->ctrl.u16InterceptRdDRx = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7);
-    pVMCB->ctrl.u16InterceptWrDRx = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7);
+    pVMCB->ctrl.u16InterceptRdDRx = RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7);
+    pVMCB->ctrl.u16InterceptWrDRx = RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7);
 
     /* Currently we don't care about DRx reads or writes. DRx registers are trashed.
      * All breakpoints are automatically cleared when the VM exits.
@@ -379,7 +379,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
                 if (!pVM->hwaccm.s.fFPUOldStyleOverride)
                 {
-                    pVMCB->ctrl.u32InterceptException |= BIT(16);
+                    pVMCB->ctrl.u32InterceptException |= RT_BIT(16);
                     pVM->hwaccm.s.fFPUOldStyleOverride = true;
                 }
             }
@@ -436,7 +436,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     {
         /** @todo DR0-6 */
         val  = pCtx->dr7;
-        val &= ~(BIT(11) | BIT(12) | BIT(14) | BIT(15));    /* must be zero */
+        val &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
         val |= 0x400;                                       /* must be one */
 #ifdef VBOX_STRICT
         val = 0x400;
@@ -480,9 +480,9 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #ifdef DEBUG
     /* Intercept X86_XCPT_DB if stepping is enabled */
     if (DBGFIsStepping(pVM))
-        pVMCB->ctrl.u32InterceptException |=  BIT(1);
+        pVMCB->ctrl.u32InterceptException |=  RT_BIT(1);
     else
-        pVMCB->ctrl.u32InterceptException &= ~BIT(1);
+        pVMCB->ctrl.u32InterceptException &= ~RT_BIT(1);
 #endif
 
     /* Done. */

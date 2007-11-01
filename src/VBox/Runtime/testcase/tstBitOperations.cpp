@@ -263,7 +263,7 @@ int main()
     CHECK(ASMBitLastSetU32(1) == 1);
     CHECK(ASMBitLastSetU32(0x80000000) == 32);
     CHECK(ASMBitLastSetU32(0xffffffff) == 32);
-    CHECK(ASMBitLastSetU32(BIT(23) | BIT(11)) == 24);
+    CHECK(ASMBitLastSetU32(RT_BIT(23) | RT_BIT(11)) == 24);
     for (i = 0; i < 32; i++)
         CHECK(ASMBitLastSetU32(1 << i) == (unsigned)i + 1);
 
@@ -271,7 +271,7 @@ int main()
     CHECK(ASMBitFirstSetU32(1) == 1);
     CHECK(ASMBitFirstSetU32(0x80000000) == 32);
     CHECK(ASMBitFirstSetU32(0xffffffff) == 1);
-    CHECK(ASMBitFirstSetU32(BIT(23) | BIT(11)) == 12);
+    CHECK(ASMBitFirstSetU32(RT_BIT(23) | RT_BIT(11)) == 12);
     for (i = 0; i < 32; i++)
         CHECK(ASMBitFirstSetU32(1 << i) == (unsigned)i + 1);
 

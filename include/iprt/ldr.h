@@ -231,7 +231,7 @@ RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBi
 /** @name RTLdrEnumSymbols flags.
  * @{ */
 /** Returns ALL kinds of symbols. The default is to only return public/exported symbols. */
-#define RTLDR_ENUM_SYMBOL_FLAGS_ALL    BIT(1)
+#define RTLDR_ENUM_SYMBOL_FLAGS_ALL    RT_BIT(1)
 /** @} */
 
 __END_DECLS

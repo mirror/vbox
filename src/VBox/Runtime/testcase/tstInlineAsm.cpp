@@ -184,49 +184,49 @@ void tstASMCpuId(void)
                  (s.uEBX >>  0) & 0xff);
 
         RTPrintf("Features EDX:                   ");
-        if (s.uEDX & BIT(0))   RTPrintf(" FPU");
-        if (s.uEDX & BIT(1))   RTPrintf(" VME");
-        if (s.uEDX & BIT(2))   RTPrintf(" DE");
-        if (s.uEDX & BIT(3))   RTPrintf(" PSE");
-        if (s.uEDX & BIT(4))   RTPrintf(" TSC");
-        if (s.uEDX & BIT(5))   RTPrintf(" MSR");
-        if (s.uEDX & BIT(6))   RTPrintf(" PAE");
-        if (s.uEDX & BIT(7))   RTPrintf(" MCE");
-        if (s.uEDX & BIT(8))   RTPrintf(" CX8");
-        if (s.uEDX & BIT(9))   RTPrintf(" APIC");
-        if (s.uEDX & BIT(10))  RTPrintf(" 10");
-        if (s.uEDX & BIT(11))  RTPrintf(" SEP");
-        if (s.uEDX & BIT(12))  RTPrintf(" MTRR");
-        if (s.uEDX & BIT(13))  RTPrintf(" PGE");
-        if (s.uEDX & BIT(14))  RTPrintf(" MCA");
-        if (s.uEDX & BIT(15))  RTPrintf(" CMOV");
-        if (s.uEDX & BIT(16))  RTPrintf(" PAT");
-        if (s.uEDX & BIT(17))  RTPrintf(" PSE36");
-        if (s.uEDX & BIT(18))  RTPrintf(" PSN");
-        if (s.uEDX & BIT(19))  RTPrintf(" CLFSH");
-        if (s.uEDX & BIT(20))  RTPrintf(" 20");
-        if (s.uEDX & BIT(21))  RTPrintf(" DS");
-        if (s.uEDX & BIT(22))  RTPrintf(" ACPI");
-        if (s.uEDX & BIT(23))  RTPrintf(" MMX");
-        if (s.uEDX & BIT(24))  RTPrintf(" FXSR");
-        if (s.uEDX & BIT(25))  RTPrintf(" SSE");
-        if (s.uEDX & BIT(26))  RTPrintf(" SSE2");
-        if (s.uEDX & BIT(27))  RTPrintf(" SS");
-        if (s.uEDX & BIT(28))  RTPrintf(" HTT");
-        if (s.uEDX & BIT(29))  RTPrintf(" 29");
-        if (s.uEDX & BIT(30))  RTPrintf(" 30");
-        if (s.uEDX & BIT(31))  RTPrintf(" 31");
+        if (s.uEDX & RT_BIT(0))   RTPrintf(" FPU");
+        if (s.uEDX & RT_BIT(1))   RTPrintf(" VME");
+        if (s.uEDX & RT_BIT(2))   RTPrintf(" DE");
+        if (s.uEDX & RT_BIT(3))   RTPrintf(" PSE");
+        if (s.uEDX & RT_BIT(4))   RTPrintf(" TSC");
+        if (s.uEDX & RT_BIT(5))   RTPrintf(" MSR");
+        if (s.uEDX & RT_BIT(6))   RTPrintf(" PAE");
+        if (s.uEDX & RT_BIT(7))   RTPrintf(" MCE");
+        if (s.uEDX & RT_BIT(8))   RTPrintf(" CX8");
+        if (s.uEDX & RT_BIT(9))   RTPrintf(" APIC");
+        if (s.uEDX & RT_BIT(10))  RTPrintf(" 10");
+        if (s.uEDX & RT_BIT(11))  RTPrintf(" SEP");
+        if (s.uEDX & RT_BIT(12))  RTPrintf(" MTRR");
+        if (s.uEDX & RT_BIT(13))  RTPrintf(" PGE");
+        if (s.uEDX & RT_BIT(14))  RTPrintf(" MCA");
+        if (s.uEDX & RT_BIT(15))  RTPrintf(" CMOV");
+        if (s.uEDX & RT_BIT(16))  RTPrintf(" PAT");
+        if (s.uEDX & RT_BIT(17))  RTPrintf(" PSE36");
+        if (s.uEDX & RT_BIT(18))  RTPrintf(" PSN");
+        if (s.uEDX & RT_BIT(19))  RTPrintf(" CLFSH");
+        if (s.uEDX & RT_BIT(20))  RTPrintf(" 20");
+        if (s.uEDX & RT_BIT(21))  RTPrintf(" DS");
+        if (s.uEDX & RT_BIT(22))  RTPrintf(" ACPI");
+        if (s.uEDX & RT_BIT(23))  RTPrintf(" MMX");
+        if (s.uEDX & RT_BIT(24))  RTPrintf(" FXSR");
+        if (s.uEDX & RT_BIT(25))  RTPrintf(" SSE");
+        if (s.uEDX & RT_BIT(26))  RTPrintf(" SSE2");
+        if (s.uEDX & RT_BIT(27))  RTPrintf(" SS");
+        if (s.uEDX & RT_BIT(28))  RTPrintf(" HTT");
+        if (s.uEDX & RT_BIT(29))  RTPrintf(" 29");
+        if (s.uEDX & RT_BIT(30))  RTPrintf(" 30");
+        if (s.uEDX & RT_BIT(31))  RTPrintf(" 31");
         RTPrintf("\n");
 
         /** @todo check intel docs. */
         RTPrintf("Features ECX:                   ");
-        if (s.uECX & BIT(0))   RTPrintf(" SSE3");
+        if (s.uECX & RT_BIT(0))   RTPrintf(" SSE3");
         for (iBit = 1; iBit < 13; iBit++)
-            if (s.uECX & BIT(iBit))
+            if (s.uECX & RT_BIT(iBit))
                 RTPrintf(" %d", iBit);
-        if (s.uECX & BIT(13))  RTPrintf(" CX16");
+        if (s.uECX & RT_BIT(13))  RTPrintf(" CX16");
         for (iBit = 14; iBit < 32; iBit++)
-            if (s.uECX & BIT(iBit))
+            if (s.uECX & RT_BIT(iBit))
                 RTPrintf(" %d", iBit);
         RTPrintf("\n");
     }
@@ -276,48 +276,48 @@ void tstASMCpuId(void)
                  s.uEBX & 0xfff);
 
         RTPrintf("Features EDX:                   ");
-        if (s.uEDX & BIT(0))   RTPrintf(" FPU");
-        if (s.uEDX & BIT(1))   RTPrintf(" VME");
-        if (s.uEDX & BIT(2))   RTPrintf(" DE");
-        if (s.uEDX & BIT(3))   RTPrintf(" PSE");
-        if (s.uEDX & BIT(4))   RTPrintf(" TSC");
-        if (s.uEDX & BIT(5))   RTPrintf(" MSR");
-        if (s.uEDX & BIT(6))   RTPrintf(" PAE");
-        if (s.uEDX & BIT(7))   RTPrintf(" MCE");
-        if (s.uEDX & BIT(8))   RTPrintf(" CMPXCHG8B");
-        if (s.uEDX & BIT(9))   RTPrintf(" APIC");
-        if (s.uEDX & BIT(10))  RTPrintf(" 10");
-        if (s.uEDX & BIT(11))  RTPrintf(" SysCallSysRet");
-        if (s.uEDX & BIT(12))  RTPrintf(" MTRR");
-        if (s.uEDX & BIT(13))  RTPrintf(" PGE");
-        if (s.uEDX & BIT(14))  RTPrintf(" MCA");
-        if (s.uEDX & BIT(15))  RTPrintf(" CMOV");
-        if (s.uEDX & BIT(16))  RTPrintf(" PAT");
-        if (s.uEDX & BIT(17))  RTPrintf(" PSE36");
-        if (s.uEDX & BIT(18))  RTPrintf(" 18");
-        if (s.uEDX & BIT(19))  RTPrintf(" 19");
-        if (s.uEDX & BIT(20))  RTPrintf(" NX");
-        if (s.uEDX & BIT(21))  RTPrintf(" 21");
-        if (s.uEDX & BIT(22))  RTPrintf(" MmxExt");
-        if (s.uEDX & BIT(23))  RTPrintf(" MMX");
-        if (s.uEDX & BIT(24))  RTPrintf(" FXSR");
-        if (s.uEDX & BIT(25))  RTPrintf(" FastFXSR");
-        if (s.uEDX & BIT(26))  RTPrintf(" 26");
-        if (s.uEDX & BIT(27))  RTPrintf(" RDTSCP");
-        if (s.uEDX & BIT(28))  RTPrintf(" 28");
-        if (s.uEDX & BIT(29))  RTPrintf(" LongMode");
-        if (s.uEDX & BIT(30))  RTPrintf(" 3DNowExt");
-        if (s.uEDX & BIT(31))  RTPrintf(" 3DNow");
+        if (s.uEDX & RT_BIT(0))   RTPrintf(" FPU");
+        if (s.uEDX & RT_BIT(1))   RTPrintf(" VME");
+        if (s.uEDX & RT_BIT(2))   RTPrintf(" DE");
+        if (s.uEDX & RT_BIT(3))   RTPrintf(" PSE");
+        if (s.uEDX & RT_BIT(4))   RTPrintf(" TSC");
+        if (s.uEDX & RT_BIT(5))   RTPrintf(" MSR");
+        if (s.uEDX & RT_BIT(6))   RTPrintf(" PAE");
+        if (s.uEDX & RT_BIT(7))   RTPrintf(" MCE");
+        if (s.uEDX & RT_BIT(8))   RTPrintf(" CMPXCHG8B");
+        if (s.uEDX & RT_BIT(9))   RTPrintf(" APIC");
+        if (s.uEDX & RT_BIT(10))  RTPrintf(" 10");
+        if (s.uEDX & RT_BIT(11))  RTPrintf(" SysCallSysRet");
+        if (s.uEDX & RT_BIT(12))  RTPrintf(" MTRR");
+        if (s.uEDX & RT_BIT(13))  RTPrintf(" PGE");
+        if (s.uEDX & RT_BIT(14))  RTPrintf(" MCA");
+        if (s.uEDX & RT_BIT(15))  RTPrintf(" CMOV");
+        if (s.uEDX & RT_BIT(16))  RTPrintf(" PAT");
+        if (s.uEDX & RT_BIT(17))  RTPrintf(" PSE36");
+        if (s.uEDX & RT_BIT(18))  RTPrintf(" 18");
+        if (s.uEDX & RT_BIT(19))  RTPrintf(" 19");
+        if (s.uEDX & RT_BIT(20))  RTPrintf(" NX");
+        if (s.uEDX & RT_BIT(21))  RTPrintf(" 21");
+        if (s.uEDX & RT_BIT(22))  RTPrintf(" MmxExt");
+        if (s.uEDX & RT_BIT(23))  RTPrintf(" MMX");
+        if (s.uEDX & RT_BIT(24))  RTPrintf(" FXSR");
+        if (s.uEDX & RT_BIT(25))  RTPrintf(" FastFXSR");
+        if (s.uEDX & RT_BIT(26))  RTPrintf(" 26");
+        if (s.uEDX & RT_BIT(27))  RTPrintf(" RDTSCP");
+        if (s.uEDX & RT_BIT(28))  RTPrintf(" 28");
+        if (s.uEDX & RT_BIT(29))  RTPrintf(" LongMode");
+        if (s.uEDX & RT_BIT(30))  RTPrintf(" 3DNowExt");
+        if (s.uEDX & RT_BIT(31))  RTPrintf(" 3DNow");
         RTPrintf("\n");
 
         RTPrintf("Features ECX:                   ");
-        if (s.uECX & BIT(0))   RTPrintf(" LahfSahf");
-        if (s.uECX & BIT(1))   RTPrintf(" CmpLegacy");
-        if (s.uECX & BIT(2))   RTPrintf(" SVM");
-        if (s.uECX & BIT(3))   RTPrintf(" 3");
-        if (s.uECX & BIT(4))   RTPrintf(" AltMovCr8");
+        if (s.uECX & RT_BIT(0))   RTPrintf(" LahfSahf");
+        if (s.uECX & RT_BIT(1))   RTPrintf(" CmpLegacy");
+        if (s.uECX & RT_BIT(2))   RTPrintf(" SVM");
+        if (s.uECX & RT_BIT(3))   RTPrintf(" 3");
+        if (s.uECX & RT_BIT(4))   RTPrintf(" AltMovCr8");
         for (iBit = 5; iBit < 32; iBit++)
-            if (s.uECX & BIT(iBit))
+            if (s.uECX & RT_BIT(iBit))
                 RTPrintf(" %d", iBit);
         RTPrintf("\n");
     }
@@ -386,17 +386,17 @@ void tstASMCpuId(void)
      {
          ASMCpuId(0x80000007, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
          RTPrintf("APM Features:                   ");
-         if (s.uEDX & BIT(0))   RTPrintf(" TS");
-         if (s.uEDX & BIT(1))   RTPrintf(" FID");
-         if (s.uEDX & BIT(2))   RTPrintf(" VID");
-         if (s.uEDX & BIT(3))   RTPrintf(" TTP");
-         if (s.uEDX & BIT(4))   RTPrintf(" TM");
-         if (s.uEDX & BIT(5))   RTPrintf(" STC");
-         if (s.uEDX & BIT(6))   RTPrintf(" 6");
-         if (s.uEDX & BIT(7))   RTPrintf(" 7");
-         if (s.uEDX & BIT(8))   RTPrintf(" TscInvariant");
+         if (s.uEDX & RT_BIT(0))   RTPrintf(" TS");
+         if (s.uEDX & RT_BIT(1))   RTPrintf(" FID");
+         if (s.uEDX & RT_BIT(2))   RTPrintf(" VID");
+         if (s.uEDX & RT_BIT(3))   RTPrintf(" TTP");
+         if (s.uEDX & RT_BIT(4))   RTPrintf(" TM");
+         if (s.uEDX & RT_BIT(5))   RTPrintf(" STC");
+         if (s.uEDX & RT_BIT(6))   RTPrintf(" 6");
+         if (s.uEDX & RT_BIT(7))   RTPrintf(" 7");
+         if (s.uEDX & RT_BIT(8))   RTPrintf(" TscInvariant");
          for (iBit = 9; iBit < 32; iBit++)
-             if (s.uEDX & BIT(iBit))
+             if (s.uEDX & RT_BIT(iBit))
                  RTPrintf(" %d", iBit);
          RTPrintf("\n");
      }

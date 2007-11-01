@@ -647,7 +647,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     RTST_TIMESPEC
                 } RTST;
 /** Set if it's a pointer */
-#define RTST_FLAGS_POINTER  BIT(0)
+#define RTST_FLAGS_POINTER  RT_BIT(0)
                 static const struct
                 {
                     uint8_t     cch;        /**< the length of the string. */

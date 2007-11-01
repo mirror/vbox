@@ -561,7 +561,7 @@ static bool tmR3HasFixedTSC(void)
             if (uEAX >= 0x80000007)
             {
                 ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
-                if (uEDX & BIT(8) /* TscInvariant */)
+                if (uEDX & RT_BIT(8) /* TscInvariant */)
                     return true;
             }
         }

@@ -17,7 +17,7 @@
 #ifndef ___VBox_VBoxGuest16_h
 #define ___VBox_VBoxGuest16_h
 
-#define BIT(bit)                                (1UL << (bit))
+#define RT_BIT(bit)                                (1UL << (bit))
 
 
 #define VMMDEV_VERSION                          0x00010004UL
@@ -41,11 +41,11 @@ typedef VBGOS2IDC *PVBGOS2IDC;
 #define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT      48
 
 
-#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED BIT(0)
-#define VMMDEV_EVENT_HGCM                       BIT(1)
-#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST     BIT(2)
-#define VMMDEV_EVENT_JUDGE_CREDENTIALS          BIT(3)
-#define VMMDEV_EVENT_RESTORED                   BIT(4)
+#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED RT_BIT(0)
+#define VMMDEV_EVENT_HGCM                       RT_BIT(1)
+#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST     RT_BIT(2)
+#define VMMDEV_EVENT_JUDGE_CREDENTIALS          RT_BIT(3)
+#define VMMDEV_EVENT_RESTORED                   RT_BIT(4)
 
 
 #define VBOXGUEST_WAITEVENT_OK                  0
@@ -77,10 +77,10 @@ typedef struct
 #define VMMDevReq_SetMouseStatus                2
 #define VMMDevReq_CtlGuestFilterMask            42
 
-#define VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE      BIT(0)
-#define VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE       BIT(1)
-#define VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR BIT(2)
-#define VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER   BIT(3)
+#define VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE      RT_BIT(0)
+#define VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE       RT_BIT(1)
+#define VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR RT_BIT(2)
+#define VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER   RT_BIT(3)
 
 typedef struct
 {

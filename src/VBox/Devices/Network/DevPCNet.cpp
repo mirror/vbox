@@ -1891,7 +1891,7 @@ static void pcnetXmitFailTMDLinkDown(PCNetState *pData, TMD *pTmd)
     /* make carrier error - hope this is correct. */
     pData->cLinkDownReported++;
     pTmd->tmd2.lcar = pTmd->tmd1.err = 1;
-    pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR */
+    pData->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR */
     pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
     Log(("#%d pcnetTransmit: Signaling send error. swstyle=%#x\n",
          PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
@@ -1904,7 +1904,7 @@ static void pcnetXmitFailTMDGeneric(PCNetState *pData, TMD *pTmd)
 {
     /* make carrier error - hope this is correct. */
     pTmd->tmd2.lcar = pTmd->tmd1.err = 1;
-    pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR */
+    pData->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR */
     pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
     Log(("#%d pcnetTransmit: Signaling send error. swstyle=%#x\n",
          PCNETSTATE_2_DEVINS(pData)->iInstance, pData->aBCR[BCR_SWS]));
@@ -3472,7 +3472,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
                     pDevIns->iInstance));
             Log(("#%d pcnetTimerRestore: Clearing ERR and CERR after load. cLinkDownReported=%d\n",
                  pDevIns->iInstance, pData->cLinkDownReported));
-            pData->aCSR[0] &= ~(BIT(15) | BIT(13)); /* ERR | CERR - probably not 100% correct either... */
+            pData->aCSR[0] &= ~(RT_BIT(15) | RT_BIT(13)); /* ERR | CERR - probably not 100% correct either... */
             pData->Led.Actual.s.fError = 0;
         }
     }
@@ -3623,18 +3623,18 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     pHlp->pfnPrintf(pHlp,
                     "CSR3=%#06x: BSWP=%d EMBA=%d DXMT2PD=%d LAPPEN=%d DXSUFLO=%d IDONM=%d TINTM=%d RINTM=%d MERRM=%d MISSM=%d BABLM=%d\n",
                     pData->aCSR[3],
-                    !!(pData->aCSR[3] & BIT(2)), !!(pData->aCSR[3] & BIT(3)), !!(pData->aCSR[3] & BIT(4)), CSR_LAPPEN(pData),
-                    CSR_DXSUFLO(pData), !!(pData->aCSR[3] & BIT(8)), !!(pData->aCSR[3] & BIT(9)), !!(pData->aCSR[3] & BIT(10)),
-                    !!(pData->aCSR[3] & BIT(11)), !!(pData->aCSR[3] & BIT(12)), !!(pData->aCSR[3] & BIT(14)));
+                    !!(pData->aCSR[3] & RT_BIT(2)), !!(pData->aCSR[3] & RT_BIT(3)), !!(pData->aCSR[3] & RT_BIT(4)), CSR_LAPPEN(pData),
+                    CSR_DXSUFLO(pData), !!(pData->aCSR[3] & RT_BIT(8)), !!(pData->aCSR[3] & RT_BIT(9)), !!(pData->aCSR[3] & RT_BIT(10)),
+                    !!(pData->aCSR[3] & RT_BIT(11)), !!(pData->aCSR[3] & RT_BIT(12)), !!(pData->aCSR[3] & RT_BIT(14)));
 
     pHlp->pfnPrintf(pHlp,
                     "CSR4=%#06x: JABM=%d JAB=%d TXSTRM=%d TXSTRT=%d RCVCOOM=%d RCVCCO=%d UINT=%d UINTCMD=%d\n"
                     "              MFCOM=%d MFCO=%d ASTRP_RCV=%d APAD_XMT=%d DPOLL=%d TIMER=%d EMAPLUS=%d EN124=%d\n",
                     pData->aCSR[4],
-                    !!(pData->aCSR[4] & BIT( 0)), !!(pData->aCSR[4] & BIT( 1)), !!(pData->aCSR[4] & BIT( 2)), !!(pData->aCSR[4] & BIT( 3)),
-                    !!(pData->aCSR[4] & BIT( 4)), !!(pData->aCSR[4] & BIT( 5)), !!(pData->aCSR[4] & BIT( 6)), !!(pData->aCSR[4] & BIT( 7)),
-                    !!(pData->aCSR[4] & BIT( 8)), !!(pData->aCSR[4] & BIT( 9)), !!(pData->aCSR[4] & BIT(10)), !!(pData->aCSR[4] & BIT(11)),
-                    !!(pData->aCSR[4] & BIT(12)), !!(pData->aCSR[4] & BIT(13)), !!(pData->aCSR[4] & BIT(14)), !!(pData->aCSR[4] & BIT(15)));
+                    !!(pData->aCSR[4] & RT_BIT( 0)), !!(pData->aCSR[4] & RT_BIT( 1)), !!(pData->aCSR[4] & RT_BIT( 2)), !!(pData->aCSR[4] & RT_BIT( 3)),
+                    !!(pData->aCSR[4] & RT_BIT( 4)), !!(pData->aCSR[4] & RT_BIT( 5)), !!(pData->aCSR[4] & RT_BIT( 6)), !!(pData->aCSR[4] & RT_BIT( 7)),
+                    !!(pData->aCSR[4] & RT_BIT( 8)), !!(pData->aCSR[4] & RT_BIT( 9)), !!(pData->aCSR[4] & RT_BIT(10)), !!(pData->aCSR[4] & RT_BIT(11)),
+                    !!(pData->aCSR[4] & RT_BIT(12)), !!(pData->aCSR[4] & RT_BIT(13)), !!(pData->aCSR[4] & RT_BIT(14)), !!(pData->aCSR[4] & RT_BIT(15)));
 
     pHlp->pfnPrintf(pHlp,
                     "CSR5=%#06x:\n",
@@ -3667,10 +3667,10 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     "CSR15=%#06x: DXR=%d DTX=%d LOOP=%d DXMTFCS=%d FCOLL=%d DRTY=%d INTL=%d PORTSEL=%d LTR=%d\n"
                     "              MENDECL=%d DAPC=%d DLNKTST=%d DRCVPV=%d DRCVBC=%d PROM=%d\n",
                     pData->aCSR[15],
-                    !!(pData->aCSR[15] & BIT( 0)), !!(pData->aCSR[15] & BIT( 1)), !!(pData->aCSR[15] & BIT( 2)), !!(pData->aCSR[15] & BIT( 3)),
-                    !!(pData->aCSR[15] & BIT( 4)), !!(pData->aCSR[15] & BIT( 5)), !!(pData->aCSR[15] & BIT( 6)),   (pData->aCSR[15] >> 7) & 3,
-                                                   !!(pData->aCSR[15] & BIT( 9)), !!(pData->aCSR[15] & BIT(10)), !!(pData->aCSR[15] & BIT(11)),
-                    !!(pData->aCSR[15] & BIT(12)), !!(pData->aCSR[15] & BIT(13)), !!(pData->aCSR[15] & BIT(14)), !!(pData->aCSR[15] & BIT(15)));
+                    !!(pData->aCSR[15] & RT_BIT( 0)), !!(pData->aCSR[15] & RT_BIT( 1)), !!(pData->aCSR[15] & RT_BIT( 2)), !!(pData->aCSR[15] & RT_BIT( 3)),
+                    !!(pData->aCSR[15] & RT_BIT( 4)), !!(pData->aCSR[15] & RT_BIT( 5)), !!(pData->aCSR[15] & RT_BIT( 6)),   (pData->aCSR[15] >> 7) & 3,
+                                                   !!(pData->aCSR[15] & RT_BIT( 9)), !!(pData->aCSR[15] & RT_BIT(10)), !!(pData->aCSR[15] & RT_BIT(11)),
+                    !!(pData->aCSR[15] & RT_BIT(12)), !!(pData->aCSR[15] & RT_BIT(13)), !!(pData->aCSR[15] & RT_BIT(14)), !!(pData->aCSR[15] & RT_BIT(15)));
 
     pHlp->pfnPrintf(pHlp,
                     "CSR46=%#06x: POLL=%#06x (Poll Time Counter)\n",
@@ -3689,7 +3689,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     : (pData->aCSR[58] & 0x7f) == 2 ? "PCNet-PCI II"
                     : (pData->aCSR[58] & 0x7f) == 3 ? "PCNet-PCI II controller"
                     : "!!reserved!!",
-                    !!(pData->aCSR[58] & BIT(8)), !!(pData->aCSR[58] & BIT(9)), !!(pData->aCSR[58] & BIT(10)));
+                    !!(pData->aCSR[58] & RT_BIT(8)), !!(pData->aCSR[58] & RT_BIT(9)), !!(pData->aCSR[58] & RT_BIT(10)));
 
     pHlp->pfnPrintf(pHlp,
                     "CSR112=%04RX32: MFC=%04x (Missed receive Frame Count)\n",
@@ -3697,11 +3697,11 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
     pHlp->pfnPrintf(pHlp,
                     "CSR122=%04RX32: RCVALGN=%04x (Receive Frame Align)\n",
-                    pData->aCSR[122], !!(pData->aCSR[122] & BIT(0)));
+                    pData->aCSR[122], !!(pData->aCSR[122] & RT_BIT(0)));
 
     pHlp->pfnPrintf(pHlp,
                     "CSR124=%04RX32: RPA=%04x (Runt Packet Accept)\n",
-                    pData->aCSR[122], !!(pData->aCSR[122] & BIT(3)));
+                    pData->aCSR[122], !!(pData->aCSR[122] & RT_BIT(3)));
 
 
     /*
@@ -3934,7 +3934,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     {
         pData->fLinkTempDown = true;
         pData->cLinkDownReported = 0;
-        pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR (this is probably wrong) */
+        pData->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
         pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
         return TMTimerSetMillies(pData->pTimerRestore, 5000);
     }
@@ -4099,14 +4099,14 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
         if (fLinkUp)
         {
             /* connect */
-            pData->aCSR[0] &= ~(BIT(15) | BIT(13)); /* ERR | CERR - probably not 100% correct either... */
+            pData->aCSR[0] &= ~(RT_BIT(15) | RT_BIT(13)); /* ERR | CERR - probably not 100% correct either... */
             pData->Led.Actual.s.fError = 0;
         }
         else
         {
             /* disconnect */
             pData->cLinkDownReported = 0;
-            pData->aCSR[0] |= BIT(15) | BIT(13); /* ERR | CERR (this is probably wrong) */
+            pData->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
             pData->Led.Asserted.s.fError = pData->Led.Actual.s.fError = 1;
         }
         Assert(!PDMCritSectIsOwner(&pData->CritSect));

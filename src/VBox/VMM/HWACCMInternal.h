@@ -52,18 +52,18 @@ __BEGIN_DECLS
  * have been changed since last they were reset.
  * @{
  */
-#define HWACCM_CHANGED_GUEST_FPU                BIT(0)
-#define HWACCM_CHANGED_GUEST_CR0                BIT(1)
-#define HWACCM_CHANGED_GUEST_CR3                BIT(2)
-#define HWACCM_CHANGED_GUEST_CR4                BIT(3)
-#define HWACCM_CHANGED_GUEST_GDTR               BIT(4)
-#define HWACCM_CHANGED_GUEST_IDTR               BIT(5)
-#define HWACCM_CHANGED_GUEST_LDTR               BIT(6)
-#define HWACCM_CHANGED_GUEST_TR                 BIT(7)
-#define HWACCM_CHANGED_GUEST_SYSENTER_MSR       BIT(8)
-#define HWACCM_CHANGED_GUEST_SEGMENT_REGS       BIT(9)
-#define HWACCM_CHANGED_GUEST_DEBUG              BIT(10)
-#define HWACCM_CHANGED_HOST_CONTEXT             BIT(11)
+#define HWACCM_CHANGED_GUEST_FPU                RT_BIT(0)
+#define HWACCM_CHANGED_GUEST_CR0                RT_BIT(1)
+#define HWACCM_CHANGED_GUEST_CR3                RT_BIT(2)
+#define HWACCM_CHANGED_GUEST_CR4                RT_BIT(3)
+#define HWACCM_CHANGED_GUEST_GDTR               RT_BIT(4)
+#define HWACCM_CHANGED_GUEST_IDTR               RT_BIT(5)
+#define HWACCM_CHANGED_GUEST_LDTR               RT_BIT(6)
+#define HWACCM_CHANGED_GUEST_TR                 RT_BIT(7)
+#define HWACCM_CHANGED_GUEST_SYSENTER_MSR       RT_BIT(8)
+#define HWACCM_CHANGED_GUEST_SEGMENT_REGS       RT_BIT(9)
+#define HWACCM_CHANGED_GUEST_DEBUG              RT_BIT(10)
+#define HWACCM_CHANGED_HOST_CONTEXT             RT_BIT(11)
 
 #define HWACCM_CHANGED_ALL                  (   HWACCM_CHANGED_GUEST_SEGMENT_REGS \
                                             |   HWACCM_CHANGED_GUEST_CR0          \
@@ -97,10 +97,10 @@ __BEGIN_DECLS
  *  Currently #NM and #PF only
  */
 #ifdef VBOX_STRICT
-#define HWACCM_VMX_TRAP_MASK                BIT(0) | BIT(7) | BIT(14) | BIT(6) | BIT(11) | BIT(12) | BIT(13) | BIT(16)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(0) | RT_BIT(7) | RT_BIT(14) | RT_BIT(6) | RT_BIT(11) | RT_BIT(12) | RT_BIT(13) | RT_BIT(16)
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #else
-#define HWACCM_VMX_TRAP_MASK                BIT(7) | BIT(14)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(7) | RT_BIT(14)
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #endif
 /** @} */

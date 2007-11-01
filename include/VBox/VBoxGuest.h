@@ -77,13 +77,13 @@ typedef uint32_t vmmDevHypPhys;
  */
 
 /** guest can (== wants to) handle absolute coordinates */
-#define VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE      BIT(0)
+#define VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE      RT_BIT(0)
 /** host can (== wants to) send absolute coordinates */
-#define VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE       BIT(1)
+#define VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE       RT_BIT(1)
 /** guest can *NOT* switch to software cursor and therefore depends on the host cursor */
-#define VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR BIT(2)
+#define VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR RT_BIT(2)
 /** host does NOT provide support for drawing the cursor itself (e.g. L4 console) */
-#define VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER   BIT(3)
+#define VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER   RT_BIT(3)
 
 /** fictive start address of the hypervisor physical memory for MmMapIoSpace */
 #define HYPERVISOR_PHYSICAL_START  0xf8000000
@@ -359,22 +359,22 @@ typedef struct
 } VMMDevReportGuestInfo;
 
 /** guest statistics values */
-#define VBOX_GUEST_STAT_CPU_LOAD_IDLE       BIT(0)
-#define VBOX_GUEST_STAT_CPU_LOAD_KERNEL     BIT(1)
-#define VBOX_GUEST_STAT_CPU_LOAD_USER       BIT(2)
-#define VBOX_GUEST_STAT_THREADS             BIT(3)
-#define VBOX_GUEST_STAT_PROCESSES           BIT(4)
-#define VBOX_GUEST_STAT_HANDLES             BIT(5)
-#define VBOX_GUEST_STAT_MEMORY_LOAD         BIT(6)
-#define VBOX_GUEST_STAT_PHYS_MEM_TOTAL      BIT(7)
-#define VBOX_GUEST_STAT_PHYS_MEM_AVAIL      BIT(8)
-#define VBOX_GUEST_STAT_PHYS_MEM_BALLOON    BIT(9)
-#define VBOX_GUEST_STAT_MEM_COMMIT_TOTAL    BIT(10)
-#define VBOX_GUEST_STAT_MEM_KERNEL_TOTAL    BIT(11)
-#define VBOX_GUEST_STAT_MEM_KERNEL_PAGED    BIT(12)
-#define VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED BIT(13)
-#define VBOX_GUEST_STAT_MEM_SYSTEM_CACHE    BIT(14)
-#define VBOX_GUEST_STAT_PAGE_FILE_SIZE      BIT(15)
+#define VBOX_GUEST_STAT_CPU_LOAD_IDLE       RT_BIT(0)
+#define VBOX_GUEST_STAT_CPU_LOAD_KERNEL     RT_BIT(1)
+#define VBOX_GUEST_STAT_CPU_LOAD_USER       RT_BIT(2)
+#define VBOX_GUEST_STAT_THREADS             RT_BIT(3)
+#define VBOX_GUEST_STAT_PROCESSES           RT_BIT(4)
+#define VBOX_GUEST_STAT_HANDLES             RT_BIT(5)
+#define VBOX_GUEST_STAT_MEMORY_LOAD         RT_BIT(6)
+#define VBOX_GUEST_STAT_PHYS_MEM_TOTAL      RT_BIT(7)
+#define VBOX_GUEST_STAT_PHYS_MEM_AVAIL      RT_BIT(8)
+#define VBOX_GUEST_STAT_PHYS_MEM_BALLOON    RT_BIT(9)
+#define VBOX_GUEST_STAT_MEM_COMMIT_TOTAL    RT_BIT(10)
+#define VBOX_GUEST_STAT_MEM_KERNEL_TOTAL    RT_BIT(11)
+#define VBOX_GUEST_STAT_MEM_KERNEL_PAGED    RT_BIT(12)
+#define VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED RT_BIT(13)
+#define VBOX_GUEST_STAT_MEM_SYSTEM_CACHE    RT_BIT(14)
+#define VBOX_GUEST_STAT_PAGE_FILE_SIZE      RT_BIT(15)
 
 
 /** guest statistics structure */
@@ -1046,23 +1046,23 @@ typedef struct
  */
 
 /** Host mouse capabilities has been changed. */
-#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED             BIT(0)
+#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED             RT_BIT(0)
 /** HGCM event. */
-#define VMMDEV_EVENT_HGCM                                   BIT(1)
+#define VMMDEV_EVENT_HGCM                                   RT_BIT(1)
 /** A display change request has been issued. */
-#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST                 BIT(2)
+#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST                 RT_BIT(2)
 /** Credentials are available for judgement. */
-#define VMMDEV_EVENT_JUDGE_CREDENTIALS                      BIT(3)
+#define VMMDEV_EVENT_JUDGE_CREDENTIALS                      RT_BIT(3)
 /** The guest has been restored. */
-#define VMMDEV_EVENT_RESTORED                               BIT(4)
+#define VMMDEV_EVENT_RESTORED                               RT_BIT(4)
 /** Seamless mode state changed */
-#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST           BIT(5)
+#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST           RT_BIT(5)
 /** Memory balloon size changed */
-#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST                 BIT(6)
+#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST                 RT_BIT(6)
 /** Statistics interval changed */
-#define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     BIT(7)
+#define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     RT_BIT(7)
 /** VRDP status changed. */
-#define VMMDEV_EVENT_VRDP                                   BIT(8)
+#define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
 
 
 /** @} */
@@ -1289,26 +1289,26 @@ typedef struct _VBoxGuestHGCMCallInfo
 #define VMMDEV_CREDENTIALS_STRLEN           128
 
 /** query from host whether credentials are present */
-#define VMMDEV_CREDENTIALS_QUERYPRESENCE     BIT(1)
+#define VMMDEV_CREDENTIALS_QUERYPRESENCE     RT_BIT(1)
 /** read credentials from host (can be combined with clear) */
-#define VMMDEV_CREDENTIALS_READ              BIT(2)
+#define VMMDEV_CREDENTIALS_READ              RT_BIT(2)
 /** clear credentials on host (can be combined with read) */
-#define VMMDEV_CREDENTIALS_CLEAR             BIT(3)
+#define VMMDEV_CREDENTIALS_CLEAR             RT_BIT(3)
 /** read credentials for judgement in the guest */
-#define VMMDEV_CREDENTIALS_READJUDGE         BIT(8)
+#define VMMDEV_CREDENTIALS_READJUDGE         RT_BIT(8)
 /** clear credentials for judegement on the host */
-#define VMMDEV_CREDENTIALS_CLEARJUDGE        BIT(9)
+#define VMMDEV_CREDENTIALS_CLEARJUDGE        RT_BIT(9)
 /** report credentials acceptance by guest */
-#define VMMDEV_CREDENTIALS_JUDGE_OK          BIT(10)
+#define VMMDEV_CREDENTIALS_JUDGE_OK          RT_BIT(10)
 /** report credentials denial by guest */
-#define VMMDEV_CREDENTIALS_JUDGE_DENY        BIT(11)
+#define VMMDEV_CREDENTIALS_JUDGE_DENY        RT_BIT(11)
 /** report that no judgement could be made by guest */
-#define VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT BIT(12)
+#define VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT RT_BIT(12)
 
 /** flag telling the guest that credentials are present */
-#define VMMDEV_CREDENTIALS_PRESENT           BIT(16)
+#define VMMDEV_CREDENTIALS_PRESENT           RT_BIT(16)
 /** flag telling guest that local logons should be prohibited */
-#define VMMDEV_CREDENTIALS_NOLOCALLOGON      BIT(17)
+#define VMMDEV_CREDENTIALS_NOLOCALLOGON      RT_BIT(17)
 
 /** credentials request structure */
 #pragma pack(4)

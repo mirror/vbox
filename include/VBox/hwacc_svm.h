@@ -229,69 +229,69 @@
  * @{
  */
 /* 0 Intercept INTR (physical maskable interrupt) */
-#define SVM_CTRL1_INTERCEPT_INTR              BIT(0)
+#define SVM_CTRL1_INTERCEPT_INTR              RT_BIT(0)
 /* 1 Intercept NMI */
-#define SVM_CTRL1_INTERCEPT_NMI               BIT(1)
+#define SVM_CTRL1_INTERCEPT_NMI               RT_BIT(1)
 /* 2 Intercept SMI */
-#define SVM_CTRL1_INTERCEPT_SMI               BIT(2)
+#define SVM_CTRL1_INTERCEPT_SMI               RT_BIT(2)
 /* 3 Intercept INIT */
-#define SVM_CTRL1_INTERCEPT_INIT              BIT(3)
+#define SVM_CTRL1_INTERCEPT_INIT              RT_BIT(3)
 /* 4 Intercept VINTR (virtual maskable interrupt) */
-#define SVM_CTRL1_INTERCEPT_VINTR             BIT(4)
+#define SVM_CTRL1_INTERCEPT_VINTR             RT_BIT(4)
 /* 5 Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
-#define SVM_CTRL1_INTERCEPT_CR0               BIT(5)
+#define SVM_CTRL1_INTERCEPT_CR0               RT_BIT(5)
 /* 6 Intercept reads of IDTR */
-#define SVM_CTRL1_INTERCEPT_IDTR_READS        BIT(6)
+#define SVM_CTRL1_INTERCEPT_IDTR_READS        RT_BIT(6)
 /* 7 Intercept reads of GDTR */
-#define SVM_CTRL1_INTERCEPT_GDTR_READS        BIT(7)
+#define SVM_CTRL1_INTERCEPT_GDTR_READS        RT_BIT(7)
 /* 8 Intercept reads of LDTR */
-#define SVM_CTRL1_INTERCEPT_LDTR_READS        BIT(8)
+#define SVM_CTRL1_INTERCEPT_LDTR_READS        RT_BIT(8)
 /* 9 Intercept reads of TR */
-#define SVM_CTRL1_INTERCEPT_TR_READS          BIT(9)
+#define SVM_CTRL1_INTERCEPT_TR_READS          RT_BIT(9)
 /* 10 Intercept writes of IDTR */
-#define SVM_CTRL1_INTERCEPT_IDTR_WRITES       BIT(10)
+#define SVM_CTRL1_INTERCEPT_IDTR_WRITES       RT_BIT(10)
 /* 11 Intercept writes of GDTR */
-#define SVM_CTRL1_INTERCEPT_GDTR_WRITES       BIT(11)
+#define SVM_CTRL1_INTERCEPT_GDTR_WRITES       RT_BIT(11)
 /* 12 Intercept writes of LDTR */
-#define SVM_CTRL1_INTERCEPT_LDTR_WRITES       BIT(12)
+#define SVM_CTRL1_INTERCEPT_LDTR_WRITES       RT_BIT(12)
 /* 13 Intercept writes of TR */
-#define SVM_CTRL1_INTERCEPT_TR_WRITES         BIT(13)
+#define SVM_CTRL1_INTERCEPT_TR_WRITES         RT_BIT(13)
 /* 14 Intercept RDTSC instruction */
-#define SVM_CTRL1_INTERCEPT_RDTSC             BIT(14)
+#define SVM_CTRL1_INTERCEPT_RDTSC             RT_BIT(14)
 /* 15 Intercept RDPMC instruction */
-#define SVM_CTRL1_INTERCEPT_RDPMC             BIT(15)
+#define SVM_CTRL1_INTERCEPT_RDPMC             RT_BIT(15)
 /* 16 Intercept PUSHF instruction */
-#define SVM_CTRL1_INTERCEPT_PUSHF             BIT(16)
+#define SVM_CTRL1_INTERCEPT_PUSHF             RT_BIT(16)
 /* 17 Intercept POPF instruction */
-#define SVM_CTRL1_INTERCEPT_POPF              BIT(17)
+#define SVM_CTRL1_INTERCEPT_POPF              RT_BIT(17)
 /* 18 Intercept CPUID instruction */
-#define SVM_CTRL1_INTERCEPT_CPUID             BIT(18)
+#define SVM_CTRL1_INTERCEPT_CPUID             RT_BIT(18)
 /* 19 Intercept RSM instruction */
-#define SVM_CTRL1_INTERCEPT_RSM               BIT(19)
+#define SVM_CTRL1_INTERCEPT_RSM               RT_BIT(19)
 /* 20 Intercept IRET instruction */
-#define SVM_CTRL1_INTERCEPT_IRET              BIT(20)
+#define SVM_CTRL1_INTERCEPT_IRET              RT_BIT(20)
 /* 21 Intercept INTn instruction */
-#define SVM_CTRL1_INTERCEPT_INTN              BIT(21)
+#define SVM_CTRL1_INTERCEPT_INTN              RT_BIT(21)
 /* 22 Intercept INVD instruction */
-#define SVM_CTRL1_INTERCEPT_INVD              BIT(22)
+#define SVM_CTRL1_INTERCEPT_INVD              RT_BIT(22)
 /* 23 Intercept PAUSE instruction */
-#define SVM_CTRL1_INTERCEPT_PAUSE             BIT(23)
+#define SVM_CTRL1_INTERCEPT_PAUSE             RT_BIT(23)
 /* 24 Intercept HLT instruction */
-#define SVM_CTRL1_INTERCEPT_HLT               BIT(24)
+#define SVM_CTRL1_INTERCEPT_HLT               RT_BIT(24)
 /* 25 Intercept INVLPG instruction */
-#define SVM_CTRL1_INTERCEPT_INVLPG            BIT(25)
+#define SVM_CTRL1_INTERCEPT_INVLPG            RT_BIT(25)
 /* 26 Intercept INVLPGA instruction */
-#define SVM_CTRL1_INTERCEPT_INVLPGA           BIT(26)
+#define SVM_CTRL1_INTERCEPT_INVLPGA           RT_BIT(26)
 /* 27 IOIO_PROT Intercept IN/OUT accesses to selected ports. */
-#define SVM_CTRL1_INTERCEPT_INOUT_BITMAP      BIT(27)
+#define SVM_CTRL1_INTERCEPT_INOUT_BITMAP      RT_BIT(27)
 /* 28 MSR_PROT Intercept RDMSR or WRMSR accesses to selected MSRs. */
-#define SVM_CTRL1_INTERCEPT_MSR_SHADOW        BIT(28)
+#define SVM_CTRL1_INTERCEPT_MSR_SHADOW        RT_BIT(28)
 /* 29 Intercept task switches. */
-#define SVM_CTRL1_INTERCEPT_TASK_SWITCH       BIT(29)
+#define SVM_CTRL1_INTERCEPT_TASK_SWITCH       RT_BIT(29)
 /* 30 FERR_FREEZE: intercept processor "freezing" during legacy FERR handling. */
-#define SVM_CTRL1_INTERCEPT_FERR_FREEZE       BIT(30)
+#define SVM_CTRL1_INTERCEPT_FERR_FREEZE       RT_BIT(30)
 /* 31 Intercept shutdown events. */
-#define SVM_CTRL1_INTERCEPT_SHUTDOWN          BIT(31)
+#define SVM_CTRL1_INTERCEPT_SHUTDOWN          RT_BIT(31)
 /** @} */
 
 
@@ -299,37 +299,37 @@
  * @{
  */
 /* 0 Intercept VMRUN instruction */
-#define SVM_CTRL2_INTERCEPT_VMRUN             BIT(0)
+#define SVM_CTRL2_INTERCEPT_VMRUN             RT_BIT(0)
 /* 1 Intercept VMMCALL instruction */
-#define SVM_CTRL2_INTERCEPT_VMMCALL           BIT(1)
+#define SVM_CTRL2_INTERCEPT_VMMCALL           RT_BIT(1)
 /* 2 Intercept VMLOAD instruction */
-#define SVM_CTRL2_INTERCEPT_VMLOAD            BIT(2)
+#define SVM_CTRL2_INTERCEPT_VMLOAD            RT_BIT(2)
 /* 3 Intercept VMSAVE instruction */
-#define SVM_CTRL2_INTERCEPT_VMSAVE            BIT(3)
+#define SVM_CTRL2_INTERCEPT_VMSAVE            RT_BIT(3)
 /* 4 Intercept STGI instruction */
-#define SVM_CTRL2_INTERCEPT_STGI              BIT(4)
+#define SVM_CTRL2_INTERCEPT_STGI              RT_BIT(4)
 /* 5 Intercept CLGI instruction */
-#define SVM_CTRL2_INTERCEPT_CLGI              BIT(5)
+#define SVM_CTRL2_INTERCEPT_CLGI              RT_BIT(5)
 /* 6 Intercept SKINIT instruction */
-#define SVM_CTRL2_INTERCEPT_SKINIT            BIT(6)
+#define SVM_CTRL2_INTERCEPT_SKINIT            RT_BIT(6)
 /* 7 Intercept RDTSCP instruction */
-#define SVM_CTRL2_INTERCEPT_RDTSCP            BIT(7)
+#define SVM_CTRL2_INTERCEPT_RDTSCP            RT_BIT(7)
 /* 8 Intercept ICEBP instruction */
-#define SVM_CTRL2_INTERCEPT_ICEBP             BIT(8)
+#define SVM_CTRL2_INTERCEPT_ICEBP             RT_BIT(8)
 /* 9 Intercept WBINVD instruction */
-#define SVM_CTRL2_INTERCEPT_WBINVD            BIT(9)
+#define SVM_CTRL2_INTERCEPT_WBINVD            RT_BIT(9)
 /** @} */
 
 /** @name SVM_VMCB.ctrl.u64NestedPaging
  * @{
  */
-#define SVM_NESTED_PAGING_ENABLE                BIT(0)
+#define SVM_NESTED_PAGING_ENABLE                RT_BIT(0)
 /** @} */
 
 /** @name SVM_VMCB.ctrl.u64IntShadow
  * @{
  */
-#define SVM_INTERRUPT_SHADOW_ACTIVE             BIT(0)
+#define SVM_INTERRUPT_SHADOW_ACTIVE             RT_BIT(0)
 /** @} */
 
 

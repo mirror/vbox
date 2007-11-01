@@ -34,18 +34,18 @@ __BEGIN_DECLS
  * Flags for specifying the type of patch to install with PATMR3InstallPatch
  * @{
  */
-#define PATMFL_CODE32                BIT64(0)
-#define PATMFL_INTHANDLER            BIT64(1)
-#define PATMFL_SYSENTER              BIT64(2)
-#define PATMFL_GUEST_SPECIFIC        BIT64(3)
-#define PATMFL_USER_MODE             BIT64(4)
-#define PATMFL_IDTHANDLER            BIT64(5)
-#define PATMFL_TRAPHANDLER           BIT64(6)
-#define PATMFL_DUPLICATE_FUNCTION    BIT64(7)
-#define PATMFL_REPLACE_FUNCTION_CALL BIT64(8)
-#define PATMFL_TRAPHANDLER_WITH_ERRORCODE   BIT64(9)
+#define PATMFL_CODE32                RT_BIT_64(0)
+#define PATMFL_INTHANDLER            RT_BIT_64(1)
+#define PATMFL_SYSENTER              RT_BIT_64(2)
+#define PATMFL_GUEST_SPECIFIC        RT_BIT_64(3)
+#define PATMFL_USER_MODE             RT_BIT_64(4)
+#define PATMFL_IDTHANDLER            RT_BIT_64(5)
+#define PATMFL_TRAPHANDLER           RT_BIT_64(6)
+#define PATMFL_DUPLICATE_FUNCTION    RT_BIT_64(7)
+#define PATMFL_REPLACE_FUNCTION_CALL RT_BIT_64(8)
+#define PATMFL_TRAPHANDLER_WITH_ERRORCODE   RT_BIT_64(9)
 #define PATMFL_INTHANDLER_WITH_ERRORCODE    (PATMFL_TRAPHANDLER_WITH_ERRORCODE)
-#define PATMFL_MMIO_ACCESS           BIT64(10)
+#define PATMFL_MMIO_ACCESS           RT_BIT_64(10)
 /* no more room -> change PATMInternal.h if more is needed!! */
 
 /*
