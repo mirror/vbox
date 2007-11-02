@@ -523,6 +523,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 #ifdef IN_RING3
 RTGCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t *) pPatchGC);
 RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t*) pInstrGC);
+RTGCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t*) pInstrGC);
 #endif
 
 /* Add a patch to guest lookup record
