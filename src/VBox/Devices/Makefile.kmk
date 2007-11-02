@@ -59,6 +59,9 @@ VBoxDDU_DEFS             = IN_VBOXDDU
 ifdef VBOX_WITH_USB
  VBoxDDU_DEFS           += VBOX_WITH_USB IN_USBLIB
  VBoxDDU_SDKS.win        = WINPSDK W2K3DDK
+ifdef VBOX_WITH_EHCI
+ VBoxDDU_DEFS           += VBOX_WITH_EHCI
+endif
 else
  VBoxDDU_SDKS.win         = WINPSDK
 endif
@@ -214,9 +217,16 @@ DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
  ifdef VBOX_WITH_PDMUSB
   DevicesR3_DEFS       += VBOX_WITH_PDMUSB
  endif
+
 DevicesR3_SOURCES      += \
-	USB/DevOHCI.cpp \
+	USB/DevOHCI.cpp
+
+ ifdef VBOX_WITH_EHCI
+  DevicesR3_DEFS       += VBOX_WITH_EHCI
+  DevicesR3_SOURCES    += \
 	USB/DevEHCI.cpp
+ endif
+
 endif
 
 DevicesR3_DEFS         += VBOX_HGCM
@@ -264,8 +274,14 @@ VBoxDDGC_SOURCES        = \
 ifdef VBOX_WITH_USB
 VBoxDDGC_DEFS          += VBOX_WITH_USB IN_USB_GC
 VBoxDDGC_SOURCES       += \
-	USB/DevOHCI.cpp \
+	USB/DevOHCI.cpp
+
+ ifdef VBOX_WITH_EHCI
+  VBoxDDGC_DEFS        += VBOX_WITH_EHCI
+  VBoxDDGC_SOURCES     += \
 	USB/DevEHCI.cpp
+ endif
+
 endif
 
 ifdef VBOX_WITH_AHCI
@@ -308,8 +324,13 @@ VBoxDDR0_SOURCES        = \
 ifdef VBOX_WITH_USB
 VBoxDDR0_DEFS          += VBOX_WITH_USB IN_USB_R0
 VBoxDDR0_SOURCES       += \
-	USB/DevOHCI.cpp \
+	USB/DevOHCI.cpp
+
+ ifdef VBOX_WITH_EHCI
+  VBoxDDR0_DEFS        += VBOX_WITH_EHCI
+  VBoxDDR0_SOURCES     += \
 	USB/DevEHCI.cpp
+ endif
 endif
 
 ifdef VBOX_WITH_AHCI
