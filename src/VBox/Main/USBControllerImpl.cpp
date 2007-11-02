@@ -503,6 +503,10 @@ HRESULT USBController::loadSettings (CFGNODE aMachine)
     CFGLDRQueryBool (controller, "enabled", &enabled);
     mData->mEnabled = enabled;
 
+    /* enabledEhci */
+    CFGLDRQueryBool (controller, "enabledEhci", &enabled);
+    mData->mEnabledEhci = enabled;
+
     HRESULT rc = S_OK;
 
     unsigned filterCount = 0;
@@ -584,6 +588,9 @@ HRESULT USBController::saveSettings (CFGNODE aMachine)
 
     /* enabled */
     CFGLDRSetBool (controller, "enabled", !!mData->mEnabled);
+
+    /* enabledEhci */
+    CFGLDRSetBool (controller, "enabledEhci", !!mData->mEnabledEhci);
 
     DeviceFilterList::const_iterator it = mDeviceFilters->begin();
     while (it != mDeviceFilters->end())
