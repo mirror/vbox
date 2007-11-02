@@ -107,8 +107,8 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
 
     if (pPatchPage)
     {
-        if (    pPatchPage->pLowestAddrGC  <= (RTGCPTR)((RTGCUINTPTR)GCPtr + cbWrite)
-            ||  pPatchPage->pHighestAddrGC > GCPtr)
+        if (    pPatchPage->pLowestAddrGC  > (RTGCPTR)((RTGCUINTPTR)GCPtr + cbWrite - 1)
+            ||  pPatchPage->pHighestAddrGC < GCPtr)
         {
             /* This part of the page was not patched; try to emulate the instruction. */
             uint32_t cb;

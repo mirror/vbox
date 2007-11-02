@@ -4691,6 +4691,13 @@ loop_start:
             uint32_t i;
             bool fValidPatchWrite = false;
 
+            /* Quick check to see if the write is in the patched part of the page */
+            if (    pPatchPage->pLowestAddrGC  > (RTGCPTR)((RTGCUINTPTR)GCPtr + cbWrite - 1)
+                ||  pPatchPage->pHighestAddrGC < GCPtr)
+            {
+                break;
+            }
+
             for (i=0;i<pPatchPage->cCount;i++)
             {
                 if (pPatchPage->aPatch[i])
@@ -4718,7 +4725,9 @@ loop_start:
                             goto loop_start;
                         }
 
-                        pPatchInstrGC = patmGuestGCPtrToPatchGCPtr(pVM, pPatch, pGuestPtrGC);
+                        /* Find the closest instruction from below; the above quick check ensured that we are indeed in patched code */
+                        pPatchInstrGC = patmGuestGCPtrToClosestPatchGCPtr(pVM, pPatch, pGuestPtrGC);
+                        Assert(pPatchInstrGC);
                         if (pPatchInstrGC)
                         {
                             uint32_t PatchOffset = pPatchInstrGC - pVM->patm.s.pPatchMemGC;  /* Offset in memory reserved for PATM. */
@@ -5619,6 +5628,23 @@ RTGCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t
         if (pGuestToPatchRec)
             return pVM->patm.s.pPatchMemGC + pGuestToPatchRec->PatchOffset;
     }
+
+    return 0;
+}
+
+/* Converts Guest code GC ptr to Patch code GC ptr (or nearest from below if no identical match)
+ *
+ * @returns corresponding GC pointer in patch block
+ * @param   pVM         The VM to operate on.
+ * @param   pPatch      Current patch block pointer
+ * @param   pInstrGC    Guest context pointer to privileged instruction
+ *
+ */
+RTGCPTR patmGuestGCPtrToClosestPatchGCPtr(PVM pVM, PPATCHINFO pPatch, GCPTRTYPE(uint8_t*) pInstrGC)
+{
+        PRECGUESTTOPATCH pGuestToPatchRec = (PRECGUESTTOPATCH)RTAvlGCPtrGetBestFit(&pPatch->Guest2PatchAddrTree, pInstrGC, false);
+        if (pGuestToPatchRec)
+            return pVM->patm.s.pPatchMemGC + pGuestToPatchRec->PatchOffset;
 
     return 0;
 }
