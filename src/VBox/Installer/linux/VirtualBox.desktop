@@ -11,5 +11,6 @@ Path=
 Icon=VBox.png
 Categories=Application;Emulator;System;X-MandrivaLinux-System;
 Comment=Run several virtual systems on a single host computer
-Comment[de]=Windows und andere Betriebssysteme unter Linux ausf�hren
+Comment[de]=Windows und andere Betriebssysteme unter Linux ausführen
 Comment[sv]=Kör flera virtuella system på en enda värddator
+Comment[ko]=가상 머신
