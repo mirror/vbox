@@ -385,6 +385,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                      "                            [-vrdpmulticon on|off]\n");
         }
         RTPrintf("                            [-usb on|off]\n"
+                 "                            [-usbehci on|off]\n"
                  "                            [-snapshotfolder default|<path>]\n"
                  "\n");
     }
@@ -3590,6 +3591,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *vrdpmulticon = NULL;
 #endif
     int   fUsbEnabled = -1;
+    int   fUsbEhciEnabled = -1;
     char *snapshotFolder = NULL;
     ULONG guestMemBalloonSize = (ULONG)-1;
     ULONG guestStatInterval = (ULONG)-1;
@@ -4080,6 +4082,20 @@ static int handleModifyVM(int argc, char *argv[],
                 fUsbEnabled = 0;
             else
                 return errorArgument("Invalid -usb argument '%s'", argv[i]);
+        }
+        else if (strcmp(argv[i], "-usbehci") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            if (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "enable") == 0)
+                fUsbEhciEnabled = 1;
+            else if (strcmp(argv[i], "off") == 0 || strcmp(argv[i], "disable") == 0)
+                fUsbEhciEnabled = 0;
+            else
+                return errorArgument("Invalid -usbehci argument '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-snapshotfolder") == 0)
         {
@@ -5083,6 +5099,18 @@ static int handleModifyVM(int argc, char *argv[],
             if (SUCCEEDED(rc))
             {
                 CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(!!fUsbEnabled));
+            }
+        }
+        /*
+         * USB EHCI enable/disable
+         */
+        if (fUsbEhciEnabled != -1)
+        {
+            ComPtr<IUSBController> UsbCtl;
+            CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
+            if (SUCCEEDED(rc))
+            {
+                CHECK_ERROR(UsbCtl, COMSETTER(EnabledEhci)(!!fUsbEhciEnabled));
             }
         }
 
