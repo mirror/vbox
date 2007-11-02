@@ -643,19 +643,36 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
 
         case VRDP_QP_NETWORK_ADDRESS:
         {
-            com::Bstr address;
-            server->mConsole->getVRDPServer ()->COMGETTER(NetAddress) (address.asOutParam());
+            com::Bstr bstr;
+            server->mConsole->getVRDPServer ()->COMGETTER(NetAddress) (bstr.asOutParam());
+            
+            /* The server expects UTF8. */
+            com::Utf8Str address = bstr;
 
-            if (cbBuffer >= address.length ())
+            size_t cbAddress = address.length () + 1;
+            
+            if (cbAddress >= 0x10000)
             {
-                if (address.length () > 0)
+                /* More than 64K seems to be an  invalid address. */
+                rc = VERR_TOO_MUCH_DATA;
+                break;
+            }
+            
+            if ((size_t)cbBuffer >= cbAddress)
+            {
+                if (cbAddress > 0)
                 {
-                   memcpy (pvBuffer, address.raw(), address.length ());
+                    memcpy (pvBuffer, address.raw(), cbAddress);
                 }
+
                 rc = VINF_SUCCESS;
             }
+            else
+            {
+                rc = VINF_BUFFER_OVERFLOW;
+            }
 
-            *pcbOut = address.length ();
+            *pcbOut = (uint32_t)cbAddress;
         } break;
 
         case VRDP_QP_NUMBER_MONITORS:
