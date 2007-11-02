@@ -4474,6 +4474,7 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
+        LogFlow(("patmAddPatchToPage: lowest patch page address %VGv current lowest %VGv\n", pGuestToPatchRec->Core.Key, pPatchPage->pLowestAddrGC));
         if (    pPatchPage->pLowestAddrGC == 0
             ||  pPatchPage->pLowestAddrGC > (RTGCPTR)pGuestToPatchRec->Core.Key)
         {
@@ -4492,7 +4493,10 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
                 {
                     uint32_t size = patmGetInstrSize(pVM, pPatch, (RTGCPTR)pGuestToPatchRec->Core.Key);
                     if ((RTGCUINTPTR)pGuestToPatchRec->Core.Key + size  > pPage)
+                    {
                         pPatchPage->pLowestAddrGC = pPage;
+                        LogFlow(("patmAddPatchToPage: new lowest %VGv\n", pPatchPage->pLowestAddrGC));
+                    }
                 }
             }
         }
@@ -4503,14 +4507,16 @@ int patmAddPatchToPage(PVM pVM, RTGCUINTPTR pPage, PPATCHINFO pPatch)
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
+        LogFlow(("patmAddPatchToPage: highest patch page address %VGv current lowest %VGv\n", pGuestToPatchRec->Core.Key, pPatchPage->pHighestAddrGC));
         if (    pPatchPage->pHighestAddrGC == 0
-            ||  pPatchPage->pHighestAddrGC < (RTGCPTR)pGuestToPatchRec->Core.Key)
+            ||  pPatchPage->pHighestAddrGC <= (RTGCPTR)pGuestToPatchRec->Core.Key)
         {
             pPatchPage->pHighestAddrGC = (RTGCPTR)pGuestToPatchRec->Core.Key;
             /* Increase by instruction size. */
             uint32_t size = patmGetInstrSize(pVM, pPatch, pPatchPage->pHighestAddrGC);
 ////            Assert(size);
             pPatchPage->pHighestAddrGC += size;
+            LogFlow(("patmAddPatchToPage: new highest %VGv\n", pPatchPage->pHighestAddrGC));
         }
     }
 
