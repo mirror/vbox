@@ -1354,28 +1354,32 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
 
 #ifdef VBOX_WITH_EHCI
-            rc = CFGMR3InsertNode(pDevices, "usb-ehci", &pDev);                         RC_CHECK();
-            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
-            rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
-            rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          11);                RC_CHECK();
-            Assert(!faPciDeviceNo[11]);
-            faPciDeviceNo[11] = true;
-            rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
+            hrc = USBCtlPtr->COMGETTER(EnabledEhci)(&fEnabled);                         H();
+            if (fEnabled)
+            {
+                rc = CFGMR3InsertNode(pDevices, "usb-ehci", &pDev);                         RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          11);                RC_CHECK();
+                Assert(!faPciDeviceNo[11]);
+                faPciDeviceNo[11] = true;
+                rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
 
-            rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver",               "VUSBRootHub");     RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "VUSBRootHub");     RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
 
-            /*
-             * Attach the status driver.
-             */
-            rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed);RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
+                /*
+                 * Attach the status driver.
+                 */
+                rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed);RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
+            }
 #endif
         }
     }

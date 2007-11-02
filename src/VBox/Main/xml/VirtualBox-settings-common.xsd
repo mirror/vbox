@@ -533,6 +533,7 @@
                  minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="enabledEhci" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TAdapter">

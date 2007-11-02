@@ -7725,6 +7725,15 @@
       </desc>
     </attribute>
 
+    <attribute name="enabledEhci" type="boolean">
+      <desc>
+        Flag whether the USB EHCI controller is present in the
+        guest system. If disabled, the virtual guest hardware will
+        not contain a USB EHCI controller. Can only be changed when
+        the VM is powered off. 
+      </desc>
+    </attribute>
+
     <attribute name="USBStandard" type="unsigned short" readonly="yes">
       <desc>
         USB standard version which the controller implements.
