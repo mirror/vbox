@@ -662,7 +662,15 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
             {
                 if (cbAddress > 0)
                 {
-                    memcpy (pvBuffer, address.raw(), cbAddress);
+                    if (address.raw())
+                    {
+                        memcpy (pvBuffer, address.raw(), cbAddress);
+                    }
+                    else
+                    {
+                        /* The value is an empty string. */
+                        *(uint8_t *)pvBuffer = 0;
+                    }
                 }
 
                 rc = VINF_SUCCESS;
