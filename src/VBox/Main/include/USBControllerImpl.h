@@ -46,15 +46,18 @@ private:
     struct Data
     {
         /* Constructor. */
-        Data() : mEnabled (FALSE) { }
+        Data() : mEnabled (FALSE), mEnabledEhci (FALSE) { }
 
         bool operator== (const Data &that) const
         {
-            return this == &that || mEnabled == that.mEnabled;
+            return this == &that || (mEnabled == that.mEnabled && mEnabledEhci == that.mEnabledEhci);
         }
 
         /** Enabled indicator. */
         BOOL mEnabled;
+
+        /** Enabled indicator for EHCI. */
+        BOOL mEnabledEhci;
     };
 
 public:
@@ -86,6 +89,8 @@ public:
     // IUSBController properties
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(EnabledEhci)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(EnabledEhci)) (BOOL aEnabled);
     STDMETHOD(COMGETTER(USBStandard)) (USHORT *aUSBStandard);
     STDMETHOD(COMGETTER(DeviceFilters)) (IUSBDeviceFilterCollection **aDevicesFilters);
 

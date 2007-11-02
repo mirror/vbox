@@ -240,6 +240,48 @@ STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
     return S_OK;
 }
 
+STDMETHODIMP USBController::COMGETTER(EnabledEhci) (BOOL *aEnabled)
+{
+    if (!aEnabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aEnabled = mData->mEnabledEhci;
+
+    return S_OK;
+}
+
+STDMETHODIMP USBController::COMSETTER(EnabledEhci) (BOOL aEnabled)
+{
+    LogFlowThisFunc (("aEnabled=%RTbool\n", aEnabled));
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent);
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    if (mData->mEnabledEhci != aEnabled)
+    {
+        mData.backup();
+        mData->mEnabledEhci = aEnabled;
+
+        /* leave the lock for safety */
+        alock.leave();
+
+        mParent->onUSBControllerChange();
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
 {
     if (!aUSBStandard)
@@ -250,6 +292,7 @@ STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
 
     /* not accessing data -- no need to lock */
 
+    /** Note: This is no longer correct */
     *aUSBStandard = 0x0101;
 
     return S_OK;
