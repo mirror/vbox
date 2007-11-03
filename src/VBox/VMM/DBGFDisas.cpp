@@ -124,7 +124,6 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
  */
 static int dbgfR3DisasInstrNext(PDBGFDISASSTATE pState)
 {
-    pState->rc              = VINF_SUCCESS;
     uint32_t cbInstr;
     int rc = DISInstr(&pState->Cpu, (void *)pState->GCPtrNext, 0, &cbInstr, NULL);
     if (VBOX_SUCCESS(rc))
