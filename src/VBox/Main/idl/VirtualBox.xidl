@@ -7713,7 +7713,7 @@
 
   <interface
      name="IUSBController" extends="$unknown"
-     uuid="bf21872c-265c-41a9-99d4-ce0dcdc34a91"
+     uuid="f4c2d3dc-f109-4da7-93b1-ec28973ac89f"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
