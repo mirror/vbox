@@ -1205,12 +1205,12 @@ DECLCALLBACK(int) iomReadBytes(RTHCUINTPTR pSrc, uint8_t *pDest, unsigned size, 
     return rc;
 }
 
-inline int iomDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
+inline bool iomDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
     return VBOX_SUCCESS(DISCoreOneEx(InstrGC, pCpu->mode, iomReadBytes, pVM, pCpu, pOpsize));
 }
 #else
-inline int iomDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
+inline bool iomDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
     return VBOX_SUCCESS(DISCoreOne(pCpu, InstrGC, pOpsize));
 }
