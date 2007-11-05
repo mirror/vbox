@@ -59,6 +59,7 @@ class MachineDebugger;
 class USBController;
 class Snapshot;
 class SharedFolder;
+class HostUSBDevice;
 
 class SessionMachine;
 
@@ -509,25 +510,34 @@ public:
 
     ComObjPtr <SessionMachine> sessionMachine();
 
-    // Note: the below methods are intended to be called only after adding
-    // a caller to the Machine instance and, when necessary, from under
-    // the Machine lock in appropriate mode
+    /** 
+     *  Returns the VirtualBox object this machine belongs to.
+     *
+     *  @note This method doesn't check this object's readiness as it is
+     *  intended to be used only by Machine children where it is guaranteed
+     *  that this object still exists in memory.
+     */
+    const ComObjPtr <VirtualBox, ComWeakRef> &virtualBox() const { return mParent; }
 
-    /// @todo (dmik) revise code using these methods: improving incapsulation
-    //  should make them not necessary
+    /** 
+     *  Returns this machine's name.
+     *
+     *  @note This method doesn't check this object's readiness as it is
+     *  intended to be used only after adding a caller to this object (that
+     *  guarantees that the object is ready or at least limited).
+     */
+    const Guid &uuid() const { return mData->mUuid; }
 
-    const ComObjPtr <VirtualBox, ComWeakRef> &virtualBox() { return mParent; }
+    /** 
+     *  Returns this machine's name.
+     *
+     *  @note This method doesn't lock this object or check its readiness as
+     *  it is intended to be used only after adding a caller to this object
+     *  (that guarantees that the object is ready) and locking it for reading.
+     */
+    const Bstr &name() const { return mUserData->mName; }
 
-    const Shareable <Data> &data() const { return mData; }
-    const Backupable <UserData> &userData() const { return mUserData; }
-    const Backupable <HDData> &hdData() const { return mHDData; }
-
-    const Shareable <SSData> &ssData() const { return mSSData; }
-
-    const ComObjPtr <DVDDrive> &dvdDrive() { return mDVDDrive; }
-    const ComObjPtr <FloppyDrive> &floppyDrive() { return mFloppyDrive; }
-    const ComObjPtr <USBController> &usbController() { return mUSBController; }
-
+    // callback handlers
     virtual HRESULT onDVDDriveChange() { return S_OK; }
     virtual HRESULT onFloppyDriveChange() { return S_OK; }
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter) { return S_OK; }
@@ -536,6 +546,8 @@ public:
     virtual HRESULT onVRDPServerChange() { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
+
+    HRESULT saveRegistryEntry (CFGNODE aEntryNode);
 
     int calculateFullPath (const char *aPath, Utf8Str &aResult);
     void calculateRelativePath (const char *aPath, Utf8Str &aResult);
@@ -793,6 +805,8 @@ public:
                                IVirtualBoxErrorInfo *aError);
     HRESULT onSharedFolderChange();
 
+    bool hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDevice);
+
 private:
 
     struct SnapshotData
@@ -908,6 +922,8 @@ public:
 private:
 
     Guid mSnapshotId;
+
+    friend class Snapshot;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

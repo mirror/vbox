@@ -315,7 +315,7 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ISnapshotCollection **aChildren)
  */
 const Bstr &Snapshot::stateFilePath() const
 {
-    return mData.mMachine->ssData()->mStateFilePath;
+    return mData.mMachine->mSSData->mStateFilePath;
 }
 
 /**
@@ -408,9 +408,9 @@ bool Snapshot::isDVDImageUsed (const Guid &aId)
     AssertReturn (isReady(), false);
 
     AssertReturn (!mData.mMachine.isNull(), false);
-    AssertReturn (!mData.mMachine->dvdDrive().isNull(), false);
+    AssertReturn (!mData.mMachine->mDVDDrive.isNull(), false);
 
-    DVDDrive::Data *d = mData.mMachine->dvdDrive()->data().data();
+    DVDDrive::Data *d = mData.mMachine->mDVDDrive->data().data();
 
     if (d &&
         d->mDriveState == DriveState_ImageMounted)
@@ -447,9 +447,9 @@ bool Snapshot::isFloppyImageUsed (const Guid &aId)
     AssertReturn (isReady(), false);
 
     AssertReturn (!mData.mMachine.isNull(), false);
-    AssertReturn (!mData.mMachine->dvdDrive().isNull(), false);
+    AssertReturn (!mData.mMachine->mFloppyDrive.isNull(), false);
 
-    FloppyDrive::Data *d = mData.mMachine->floppyDrive()->data().data();
+    FloppyDrive::Data *d = mData.mMachine->mFloppyDrive->data().data();
 
     if (d &&
         d->mDriveState == DriveState_ImageMounted)
@@ -493,14 +493,14 @@ void Snapshot::updateSavedStatePaths (const char *aOldPath, const char *aNewPath
     AutoLock alock (this);
     AssertReturnVoid (isReady());
 
-    Utf8Str path = mData.mMachine->ssData()->mStateFilePath;
+    Utf8Str path = mData.mMachine->mSSData->mStateFilePath;
     LogFlowThisFunc (("Snap[%ls].statePath={%s}\n", mData.mName.raw(), path.raw()));
 
     /* state file may be NULL (for offline snapshots) */
     if (path && RTPathStartsWith (path, aOldPath))
     {
         path = Utf8StrFmt ("%s%s", aNewPath, path.raw() + strlen (aOldPath));
-        mData.mMachine->ssData()->mStateFilePath = path;
+        mData.mMachine->mSSData->mStateFilePath = path;
 
         LogFlowThisFunc (("-> updated: {%s}\n", path.raw()));
     }

@@ -1379,11 +1379,16 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
             device->name().raw(), id.raw());
 
     if (device->state() == USBDeviceState_USBDeviceCaptured)
+    {
+        /* Machine::name() requires a read lock */
+        AutoReaderLock machLock (device->machine());
+
         return setError (E_INVALIDARG,
             tr ("USB device '%s' with UUID {%Vuuid} is already captured by the virtual "
                 "machine '%ls'"),
             device->name().raw(), id.raw(),
-            aMachine->userData()->mName.raw());
+            device->machine()->name());
+    }
 
     /* try to capture the device */
     device->requestCapture (aMachine);
@@ -2185,22 +2190,7 @@ bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
 
     AssertReturn (aDevice->isStatePending() == false, false);
 
-    bool hasMatch = false;
-
-    {
-        /* We're going to use aMachine which is not our child/parent, add a
-         * caller */
-        AutoCaller autoCaller (aMachine);
-        if (!autoCaller.isOk())
-        {
-            /* silently return, the machine might be not running any more */
-            return false;
-        }
-
-        /* enter the machine's lock because we want to access its USB controller */
-        AutoReaderLock machineLock (aMachine);
-        hasMatch = aMachine->usbController()->hasMatchingFilter (aDevice);
-    }
+    bool hasMatch = aMachine->hasMatchingUSBFilter (aDevice);
 
     if (hasMatch)
     {
