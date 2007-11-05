@@ -1422,11 +1422,11 @@ PGMR3DECL(int) PGMR3InitDynMap(PVM pVM)
     /** @todo r=bird: Need to verify that the checks for crossing PTs are correct here. They seems to be assuming 4MB PTs.. */
     rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping", &pVM->pgm.s.pbDynPageMapBaseGC);
     if (    VBOX_SUCCESS(rc)
-        &&  (pVM->pgm.s.pbDynPageMapBaseGC >> PGDIR_SHIFT) != ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> PGDIR_SHIFT))
+        &&  (pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_SHIFT) != ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_SHIFT))
         rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping not crossing", &pVM->pgm.s.pbDynPageMapBaseGC);
     if (VBOX_SUCCESS(rc))
     {
-        AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> PGDIR_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> PGDIR_SHIFT));
+        AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_SHIFT));
         MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
     }
     return rc;
@@ -1943,11 +1943,11 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /* relocate it. */
         if (pMapping->GCPtr != GCPtr)
         {
-            AssertMsg((GCPtr >> PGDIR_SHIFT << PGDIR_SHIFT) == GCPtr, ("GCPtr=%VGv\n", GCPtr));
+            AssertMsg((GCPtr >> X86_PD_SHIFT << X86_PD_SHIFT) == GCPtr, ("GCPtr=%VGv\n", GCPtr));
 #if HC_ARCH_BITS == 64
 LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc));
 #endif
-            pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr >> PGDIR_SHIFT, GCPtr >> PGDIR_SHIFT);
+            pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr >> X86_PD_SHIFT, GCPtr >> X86_PD_SHIFT);
         }
         else
             Log(("pgmR3Load: '%s' needed no relocation (%VGv)\n", szDesc, GCPtr));

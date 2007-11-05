@@ -82,36 +82,6 @@
  */
 #define PAGE_ADDRESS(pv)    ((uintptr_t)(pv) & ~(uintptr_t)0xfff)
 
-#if 1 /** @todo remove this! Use X86_PAGE_* defines. */
-/**
- * i386 Page directory shift.
- * This is used to convert between PDR index and virtual address.
- * @deprecated Use X86_*.
- */
-#define PGDIR_SHIFT         22
-
-/**
- * i386 Page table mask.
- * This is used together with PAGE_SHIFT to get the page table
- * index from a virtual address.
- * @deprecated Use X86_*.
- */
-#define PTE_MASK            0x3ff
-
-/**
- * i386 Page table and page directory entry count for the default
- * paging mode.
- * @deprecated Use X86_*.
- */
-#define PAGE_ENTRIES        1024
-
-/**
- * i386 4MB Page offset mask.
- * @deprecated Use X86_*.
- */
-#define PAGE_OFFSET_MASK_BIG    0x3fffff
-#endif /* obsolete */
-
 /**
  * Host max path (the reasonable value).
  */

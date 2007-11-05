@@ -82,8 +82,8 @@ PGMDECL(int) PGMMap(PVM pVM, RTGCUINTPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPage
             for (;;)
             {
                 RTGCUINTPTR     off = GCPtr - pCur->GCPtr;
-                const unsigned  iPT = off >> PGDIR_SHIFT;
-                const unsigned  iPageNo = (off >> PAGE_SHIFT) & PTE_MASK;
+                const unsigned  iPT = off >> X86_PD_SHIFT;
+                const unsigned  iPageNo = (off >> PAGE_SHIFT) & X86_PT_MASK;
 
                 /* 32-bit */
                 CTXALLSUFF(pCur->aPTs[iPT].pPT)->a[iPageNo].u = (uint32_t)Pte.u;      /* ASSUMES HCPhys < 4GB and/or that we're never gonna do 32-bit on a PAE host! */
@@ -182,8 +182,8 @@ PGMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
              */
             while (cb > 0)
             {
-                unsigned iPT  = off >> PGDIR_SHIFT;
-                unsigned iPTE = (off >> PAGE_SHIFT) & PTE_MASK;
+                unsigned iPT  = off >> X86_PD_SHIFT;
+                unsigned iPTE = (off >> PAGE_SHIFT) & X86_PT_MASK;
                 while (cb > 0 && iPTE < ELEMENTS(CTXALLSUFF(pCur->aPTs[iPT].pPT)->a))
                 {
                     /* 32-Bit */
