@@ -1376,7 +1376,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatTrackDeref,                    STAMTYPE_PROFILE, "/PGM/Track/Deref",                   STAMUNIT_OCCURENCES,     "Profiling of SyncPageWorkerTrackDeref (expensive).");
 #endif
 
-    for (unsigned i = 0; i < PAGE_ENTRIES; i++)
+    for (unsigned i = 0; i < X86_PG_ENTRIES; i++)
     {
         /** @todo r=bird: We need a STAMR3RegisterF()! */
         char szName[32];
