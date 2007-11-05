@@ -272,7 +272,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         if (    PdeSrc.b.u1Size
             &&  (cr4 & X86_CR4_PSE))
             GCPhys = (PdeSrc.u & X86_PDE4M_PG_MASK)
-                    | ((RTGCPHYS)pvFault & (PAGE_OFFSET_MASK_BIG ^ PAGE_OFFSET_MASK));
+                    | ((RTGCPHYS)pvFault & (X86_PAGE_4M_OFFSET_MASK ^ PAGE_OFFSET_MASK));
         else
         {
             PVBOXPT pPTSrc;
@@ -285,7 +285,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  endif
             if (VBOX_SUCCESS(rc))
             {
-                unsigned iPTESrc = ((RTGCUINTPTR)pvFault >> PAGE_SHIFT) & PTE_MASK;
+                unsigned iPTESrc = ((RTGCUINTPTR)pvFault >> PAGE_SHIFT) & X86_PT_MASK;
                 if (pPTSrc->a[iPTESrc].n.u1Present)
                     GCPhys = pPTSrc->a[iPTESrc].u & X86_PTE_PG_MASK;
             }
@@ -1454,7 +1454,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, VBOXPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsi
                  * (There are many causes of getting here, it's no longer only CSAM.)
                  */
                 /* Calculate the GC physical address of this 4KB shadow page. */
-                RTGCPHYS GCPhys = (PdeSrc.u & X86_PDE4M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtrPage & PAGE_OFFSET_MASK_BIG);
+                RTGCPHYS GCPhys = (PdeSrc.u & X86_PDE4M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtrPage & X86_PAGE_4M_OFFSET_MASK);
                 /* Find ram range. */
                 PPGMPAGE pPage;
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
@@ -1695,7 +1695,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PVBOX
                 int rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & X86_PDE_PG_MASK, &pPTSrc);
                 if (VBOX_SUCCESS(rc))
                 {
-                    PVBOXPTE        pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & PTE_MASK];
+                    PVBOXPTE        pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & X86_PT_MASK];
                     const VBOXPTE   PteSrc = *pPteSrc;
                     if (pPteSrc->n.u1Present)
                         TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
@@ -1752,7 +1752,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PVBOX
         /*
          * Real page fault?
          */
-        PVBOXPTE        pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & PTE_MASK];
+        PVBOXPTE        pPteSrc = &pPTSrc->a[(GCPtrPage >> PAGE_SHIFT) & X86_PT_MASK];
         const VBOXPTE   PteSrc = *pPteSrc;
         if (    !PteSrc.n.u1Present
             ||  ((uErr & X86_TRAP_PF_RW) && !PteSrc.n.u1Write)
@@ -2613,7 +2613,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
         pMapping      = pVM->pgm.s.CTXALLSUFF(pMappings);
-        iPdNoMapping  = (pMapping) ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
+        iPdNoMapping  = (pMapping) ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
     }
     else
     {
@@ -2644,7 +2644,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                     iPD += cPTs - 1;
                     pPDEDst += cPTs + (PGM_SHW_TYPE != PGM_TYPE_32BIT) * cPTs;
                     pMapping = pMapping->CTXALLSUFF(pNext);
-                    iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
+                    iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
                     continue;
                 }
 
@@ -2657,9 +2657,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                  * Update iPdNoMapping and pMapping.
                  */
                 pMapping = pVM->pgm.s.pMappingsR3;
-                while (pMapping && pMapping->GCPtr < (iPD << PGDIR_SHIFT))
+                while (pMapping && pMapping->GCPtr < (iPD << X86_PD_SHIFT))
                     pMapping = pMapping->pNextR3;
-                iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
+                iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
 #else
                 LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
                 return VINF_PGM_SYNC_CR3;
@@ -2777,7 +2777,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
             {
                 /* It's fixed, just skip the mapping. */
                 pMapping = pMapping->CTXALLSUFF(pNext);
-                iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
+                iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
             }
             else
             {
@@ -2801,9 +2801,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                          * Update iPdNoMapping and pMapping.
                          */
                         pMapping = pVM->pgm.s.CTXALLSUFF(pMappings);
-                        while (pMapping && pMapping->GCPtr < (iPD << PGDIR_SHIFT))
+                        while (pMapping && pMapping->GCPtr < (iPD << X86_PD_SHIFT))
                             pMapping = pMapping->CTXALLSUFF(pNext);
-                        iPdNoMapping = pMapping ? pMapping->GCPtr >> PGDIR_SHIFT : ~0U;
+                        iPdNoMapping = pMapping ? pMapping->GCPtr >> X86_PD_SHIFT : ~0U;
                         break;
 #  else
                         LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
@@ -2815,7 +2815,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint32_t cr0, uint32_t cr3, uint32_t cr4, bo
                 {
                     pMapping = pMapping->CTXALLSUFF(pNext);
                     if (pMapping)
-                        iPdNoMapping = pMapping->GCPtr >> PGDIR_SHIFT;
+                        iPdNoMapping = pMapping->GCPtr >> X86_PD_SHIFT;
                 }
             }
             /* advance. */
