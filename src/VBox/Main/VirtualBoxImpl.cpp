@@ -805,15 +805,14 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
                 "VirtualBox instance"), name.raw());
     }
 
-    /*
-     *  Machine::trySetRegistered() will commit and save machine settings, and
-     *  will also call #registerMachine() on success.
-     */
+    AutoCaller machCaller (machine);
+    ComAssertComRCRetRC (machCaller.rc());
+
     rc = registerMachine (machine);
 
     /* fire an event */
     if (SUCCEEDED (rc))
-        onMachineRegistered (machine->data()->mUuid, TRUE);
+        onMachineRegistered (machine->uuid(), TRUE);
 
     return rc;
 }
@@ -863,9 +862,16 @@ STDMETHODIMP VirtualBox::FindMachine (INPTR BSTR aName, IMachine **aMachine)
          !machine && it != machines.end();
          ++ it)
     {
-        AutoReaderLock machineLock (*it);
-        if ((*it)->userData()->mName == aName)
-            machine = *it;
+        AutoLimitedCaller machCaller (*it);
+        AssertComRC (machCaller.rc());
+
+        /* skip inaccessible machines */
+        if (machCaller.state() == Machine::Ready)
+        {
+            AutoReaderLock machLock (*it);
+            if ((*it)->name() == aName)
+                machine = *it;
+        }
     }
 
     /* this will set (*machine) to NULL if machineObj is null */
@@ -2774,13 +2780,21 @@ bool VirtualBox::getDVDImageUsage (const Guid &aId,
              ++ mit)
         {
             ComObjPtr <Machine> m = *mit;
-            if (m->isDVDImageUsed (aId, aUsage))
-            {
-                /* if not interested in the list, return shortly */
-                if (aMachineIDs == NULL)
-                    return true;
 
-                idSet.insert (m->data()->mUuid);
+            AutoLimitedCaller machCaller (m);
+            AssertComRC (machCaller.rc());
+
+            /* ignore inaccessible machines */
+            if (machCaller.state() == Machine::Ready)
+            {
+                if (m->isDVDImageUsed (aId, aUsage))
+                {
+                    /* if not interested in the list, return shortly */
+                    if (aMachineIDs == NULL)
+                        return true;
+
+                    idSet.insert (m->uuid());
+                }
             }
         }
     }
@@ -2853,13 +2867,21 @@ bool VirtualBox::getFloppyImageUsage (const Guid &aId,
              ++ mit)
         {
             ComObjPtr <Machine> m = *mit;
-            if (m->isFloppyImageUsed (aId, aUsage))
-            {
-                /* if not interested in the list, return shortly */
-                if (aMachineIDs == NULL)
-                    return true;
 
-                idSet.insert (m->data()->mUuid);
+            AutoLimitedCaller machCaller (m);
+            AssertComRC (machCaller.rc());
+
+            /* ignore inaccessible machines */
+            if (machCaller.state() == Machine::Ready)
+            {
+                if (m->isFloppyImageUsed (aId, aUsage))
+                {
+                    /* if not interested in the list, return shortly */
+                    if (aMachineIDs == NULL)
+                        return true;
+
+                    idSet.insert (m->uuid());
+                }
             }
         }
     }
@@ -2960,8 +2982,10 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
              !found && it != mData.mMachines.end();
              ++ it)
         {
-            /* mUuid is constant, no need to lock */
-            found = (*it)->data()->mUuid == aId;
+            AutoLimitedCaller machCaller (*it);
+            AssertComRC (machCaller.rc());
+
+            found = (*it)->uuid() == aId;
             if (found && aMachine)
                 *aMachine = *it;
         }
@@ -3652,25 +3676,17 @@ HRESULT VirtualBox::saveConfig()
             {
                 /// @todo (dmik) move this part to Machine for better incapsulation
 
-                ComObjPtr <Machine> m = *it;
-                AutoReaderLock machineLock (m);
-
-                AssertMsg (m->data(), ("Machine data must not be NULL"));
-                CFGNODE entryNode;
+                CFGNODE entryNode = NULL;
                 CFGLDRAppendChildNode (registryNode, Entry, &entryNode);
-                /* UUID + curly brackets */
-                CFGLDRSetUUID (entryNode, "uuid", unconst (m->data()->mUuid).ptr());
-                /* source */
-                CFGLDRSetBSTR (entryNode, "src", m->data()->mConfigFile);
-                /* done */
+                rc = (*it)->saveRegistryEntry (entryNode);
                 CFGLDRReleaseNode (entryNode);
+                CheckComRCBreakRC (rc);
             }
 
             CFGLDRReleaseNode (registryNode);
         }
         while (0);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
 
         /* disk images */
         do
@@ -3690,8 +3706,7 @@ HRESULT VirtualBox::saveConfig()
                 CFGLDRCreateChildNode (registryNode, "HardDisks", &imagesNode);
                 rc = saveHardDisks (imagesNode);
                 CFGLDRReleaseNode (imagesNode);
-                if (FAILED (rc))
-                    break;
+                CheckComRCBreakRC (rc);
             }
 
             /* write out the CD/DVD images */
@@ -3739,19 +3754,16 @@ HRESULT VirtualBox::saveConfig()
             CFGLDRReleaseNode (registryNode);
         }
         while (0);
-        if (FAILED (rc))
-            break;
+        CheckComRCBreakRC (rc);
 
         do
         {
             /* host data (USB filters) */
             rc = mData.mHost->saveSettings (global);
-            if (FAILED (rc))
-                break;
+            CheckComRCBreakRC (rc);
 
             rc = mData.mSystemProperties->saveSettings (global);
-            if (FAILED (rc))
-                break;
+            CheckComRCBreakRC (rc);
         }
         while (0);
     }
@@ -3865,6 +3877,9 @@ HRESULT VirtualBox::saveHardDisks (CFGNODE aNode)
  *  as registered, and, if succeeded, adds it to the collection and
  *  saves global settings.
  *
+ *  @note The caller must have added itself as a caller of the @a aMachine
+ *  object if calls this method not on VirtualBox startup.
+ *
  *  @param aMachine     machine to register
  *
  *  @note Locks objects!
@@ -3878,7 +3893,7 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
 
     AutoLock alock (this);
 
-    ComAssertRet (findMachine (aMachine->data()->mUuid,
+    ComAssertRet (findMachine (aMachine->uuid(),
                   false /* aDoSetError  */, NULL) == E_INVALIDARG,
                   E_FAIL);
 

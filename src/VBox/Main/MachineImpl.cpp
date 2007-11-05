@@ -2514,15 +2514,17 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
  *  Returns the session machine object associated with the this machine.
  *  The returned session machine is null if no direct session is currently open.
  *
- *  @Note locks this object for reading.
+ *  @note locks this object for reading.
  */
 ComObjPtr <SessionMachine> Machine::sessionMachine()
 {
     ComObjPtr <SessionMachine> sm;
 
-    AutoCaller autoCaller (this);
-    /* the machine may be inaccessible, so don't assert below */
-    if (FAILED (autoCaller.rc()))
+    AutoLimitedCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), sm);
+
+    /* return null for inaccessible machines */
+    if (autoCaller.state() != Ready)
         return sm;
 
     AutoReaderLock alock (this);
@@ -2532,6 +2534,30 @@ ComObjPtr <SessionMachine> Machine::sessionMachine()
             mData->mSession.mState != SessionState_SessionOpen);
 
     return  sm;
+}
+
+/** 
+ *  Saves the registry entry of this machine to the given configuration node.
+ * 
+ *  @param aEntryNode Node to save the registry entry to.
+ *
+ *  @note locks this object for reading.
+ */
+HRESULT Machine::saveRegistryEntry (CFGNODE aEntryNode)
+{
+    AssertReturn (aEntryNode, E_FAIL);
+
+    AutoLimitedCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    /* UUID */
+    CFGLDRSetUUID (aEntryNode, "uuid", mData->mUuid.raw());
+    /* settings file name (possibly, relative) */
+    CFGLDRSetBSTR (aEntryNode, "src", mData->mConfigFile);
+
+    return S_OK;
 }
 
 /**
@@ -2637,8 +2663,8 @@ void Machine::getLogFolder (Utf8Str &aLogFolder)
  */
 bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
 {
-    AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc() || autoCaller.state() == Limited, false);
+    AutoLimitedCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
 
     /* answer 'not attached' if the VM is limited */
     if (autoCaller.state() == Limited)
@@ -2654,7 +2680,7 @@ bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
 
     /* first, check the current state */
     {
-        const ComObjPtr <DVDDrive> &dvd = m->dvdDrive();
+        const ComObjPtr <DVDDrive> &dvd = m->mDVDDrive;
         AssertReturn (!dvd.isNull(), false);
 
         AutoReaderLock dvdLock (dvd);
@@ -2714,7 +2740,7 @@ bool Machine::isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage)
 bool Machine::isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage)
 {
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc() || autoCaller.state() == Limited, false);
+    AssertComRCReturn (autoCaller.rc(), false);
 
     /* answer 'not attached' if the VM is limited */
     if (autoCaller.state() == Limited)
@@ -2730,7 +2756,7 @@ bool Machine::isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage)
 
     /* first, check the current state */
     {
-        const ComObjPtr <FloppyDrive> &floppy = m->floppyDrive();
+        const ComObjPtr <FloppyDrive> &floppy = m->mFloppyDrive;
         AssertReturn (!floppy.isNull(), false);
 
         AutoReaderLock floppyLock (floppy);
@@ -7166,7 +7192,7 @@ HRESULT Machine::fixupHardDisks (bool aCommit)
                         AutoLock snapLock (snap);
 
                         const HDData::HDAttachmentList &snapAtts =
-                            snap->data().mMachine->hdData()->mHDAttachments;
+                            snap->data().mMachine->mHDData->mHDAttachments;
 
                         HDData::HDAttachmentList::const_iterator foundIt = snapAtts.end();
 
@@ -8016,7 +8042,7 @@ struct SessionMachine::Task
 {
     Task (SessionMachine *m, Progress *p)
         : machine (m), progress (p)
-        , state (m->data()->mMachineState) // save the current machine state
+        , state (m->mData->mMachineState) // save the current machine state
         , subTask (false), settingsChanged (false)
     {}
 
@@ -9474,7 +9500,7 @@ HRESULT SessionMachine::onSharedFolderChange()
     LogFlowThisFunc (("\n"));
 
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC (autoCaller.rc());
 
     ComPtr <IInternalSessionControl> directControl;
     {
@@ -9487,6 +9513,25 @@ HRESULT SessionMachine::onSharedFolderChange()
         return S_OK;
 
     return directControl->OnSharedFolderChange (FALSE /* aGlobal */);
+}
+
+/** 
+ *  Returns @c true if this machine's USB controller reports it has a matching
+ *  filter for the given USB device and @c false otherwise.
+ *
+ *  @note Locks this object for reading.
+ */
+bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDevice)
+{
+    AutoCaller autoCaller (this);
+    /* silently return if not ready -- this method may be called after the
+     * direct machine session has been called */
+    if (!autoCaller.isOk())
+        return false;
+
+    AutoReaderLock alock (this);
+
+    return mUSBController->hasMatchingFilter (aDevice);
 }
 
 /**
