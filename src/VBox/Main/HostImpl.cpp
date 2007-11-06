@@ -1387,7 +1387,7 @@ HRESULT Host::captureUSBDevice (SessionMachine *aMachine, INPTR GUIDPARAM aId)
             tr ("USB device '%s' with UUID {%Vuuid} is already captured by the virtual "
                 "machine '%ls'"),
             device->name().raw(), id.raw(),
-            device->machine()->name());
+            device->machine()->name().raw());
     }
 
     /* try to capture the device */
