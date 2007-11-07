@@ -1053,15 +1053,19 @@ int vbsfClose (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
         case SHFL_HF_TYPE_DIR:
         {
             rc = vbsfCloseDir (pHandle);
+            vbsfFreeDirHandle(Handle);
             break;
         }
         case SHFL_HF_TYPE_FILE:
         {
             rc = vbsfCloseFile (pHandle);
+            vbsfFreeFileHandle(Handle);
             break;
         }
+        default:
+            AssertFailed();
+            break;
     }
-    vbsfFreeFileHandle(Handle);
 
     Log(("vbsfClose: rc = %Rrc\n", rc));
 
