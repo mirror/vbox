@@ -730,7 +730,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
         }
         if (SHFL_HANDLE_NIL != handle)
         {
-            vbsfFreeHandle (handle);
+            vbsfFreeFileHandle (handle);
         }
     }
     else
@@ -840,7 +840,7 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
         }
         if (SHFL_HANDLE_NIL != handle)
         {
-            vbsfFreeHandle (handle);
+            vbsfFreeFileHandle (handle);
         }
     }
     else
@@ -1061,7 +1061,7 @@ int vbsfClose (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
             break;
         }
     }
-    vbsfFreeHandle(Handle);
+    vbsfFreeFileHandle(Handle);
 
     Log(("vbsfClose: rc = %Rrc\n", rc));
 
