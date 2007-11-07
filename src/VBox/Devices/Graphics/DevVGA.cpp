@@ -3712,7 +3712,14 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
 #endif /* DEBUG_sunlover */
 
     pData->graphic_mode = -1; /* force full update */
-    return vga_update_display(pData);
+
+    int rc = vga_update_display(pData);
+
+    /* The dirty bits array has been just cleared, reset handlers as well. */
+    PPDMDEVINS pDevIns = pData->pDevInsHC;
+    PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pData->GCPhysVRAM);
+
+    return rc;
 }
 
 
