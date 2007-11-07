@@ -840,7 +840,7 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
         }
         if (SHFL_HANDLE_NIL != handle)
         {
-            vbsfFreeFileHandle (handle);
+            vbsfFreeDirHandle (handle);
         }
     }
     else
