@@ -1051,8 +1051,11 @@ DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint(void)
             return RT_FAILURE_NP(rc);
         }
     }
-    /* Never ever trigger breakpoints in ring 0 */
+#ifdef RT_OS_LINUX
+    return true;
+#else
     return false;
+#endif
 }
 
 
