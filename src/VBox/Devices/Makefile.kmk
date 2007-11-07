@@ -59,11 +59,11 @@ VBoxDDU_DEFS             = IN_VBOXDDU
 ifdef VBOX_WITH_USB
  VBoxDDU_DEFS           += VBOX_WITH_USB IN_USBLIB
  VBoxDDU_SDKS.win        = WINPSDK W2K3DDK
-ifdef VBOX_WITH_EHCI
- VBoxDDU_DEFS           += VBOX_WITH_EHCI
-endif
+ ifdef VBOX_WITH_EHCI
+  VBoxDDU_DEFS          += VBOX_WITH_EHCI
+ endif
 else
- VBoxDDU_SDKS.win         = WINPSDK
+ VBoxDDU_SDKS.win        = WINPSDK
 endif
 VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD-new.cpp \
