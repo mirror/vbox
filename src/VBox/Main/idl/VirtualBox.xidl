@@ -7730,7 +7730,7 @@
         Flag whether the USB EHCI controller is present in the
         guest system. If disabled, the virtual guest hardware will
         not contain a USB EHCI controller. Can only be changed when
-        the VM is powered off. 
+        the VM is powered off.
       </desc>
     </attribute>
 
@@ -8831,6 +8831,18 @@
       </desc>
       <param name="username" type="wstring" dir="in"/>
       <param name="password" type="wstring" dir="in"/>
+      <param name="return" type="wstring" dir="return"/>
+    </method>
+
+    <method name="getSessionObject">
+      <desc>
+        Returns a managed object reference to the internal ISession object that was created
+        for this web service session. On each successful logon, the web service server
+        creates such an ISession object, which serves multiple purposes within VirtualBox.
+        For example, it serves as an exclusive lock to disallow several processes from
+        manipulating a VM at the same time.
+      </desc>
+      <param name="refIVirtualBox" type="wstring" dir="in"/>
       <param name="return" type="wstring" dir="return"/>
     </method>
 
