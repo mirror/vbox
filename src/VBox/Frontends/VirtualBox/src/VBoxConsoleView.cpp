@@ -845,7 +845,7 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
 {
     /* Make no normalizeGeometry in case we are in manual resize
      * mode or main window is maximized */
-    if (mainwnd->isMaximized())
+    if (mainwnd->isMaximized() || mainwnd->isFullScreen())
         return;
 
     QWidget *tlw = topLevelWidget();

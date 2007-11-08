@@ -1008,6 +1008,8 @@ void VBoxConsoleWnd::onEnterFullscreen()
 
     vmSeamlessAction->setEnabled (mIsSeamless);
     vmFullscreenAction->setEnabled (mIsFullscreen);
+
+    console->updateGeometry();
 }
 
 /**
@@ -1989,7 +1991,10 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                  this, SLOT (onEnterFullscreen()));
 
         /* Memorize the maximized state. */
-        was_max = isMaximized();
+        QDesktopWidget *dtw = QApplication::desktop();
+        was_max = isMaximized() &&
+                  dtw->availableGeometry().width()  == frameSize().width() &&
+                  dtw->availableGeometry().height() == frameSize().height();
 
         /* Save the previous scroll-view minimum size before entering
          * fullscreen/seamless state to restore this minimum size before
@@ -2000,13 +2005,12 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* let the widget take the whole available desktop space */
         QRect scrGeo = aSeamless ?
-            QApplication::desktop()->availableGeometry (this) :
-            QApplication::desktop()->screenGeometry (this);
+            dtw->availableGeometry (this) : dtw->screenGeometry (this);
 
         /* Calculate the difference region between current mode
          * (fullscreen or seamless) and the screen geometry. */
         mStrictedRegion =
-            QRegion (QApplication::desktop()->screenGeometry (this)) - scrGeo;
+            QRegion (dtw->screenGeometry (this)) - scrGeo;
 
         /* Setup the shifting spacer to make the console to be aligned on top
          * in the seamless mode. */
@@ -2042,14 +2046,8 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console->setVScrollBarMode (QScrollView::AlwaysOff);
         console->setHScrollBarMode (QScrollView::AlwaysOff);
 
-        /* Going fullscreen:
-         * "normal -> fullscreen" for normal window,
-         * "maximized -> normal -> fullscreen" for maximized window.
-         * Going "maximized -> fullscreen" wrong on KDE in both directions.
-         * Here it does not resize the child window correctly. */
-        if (was_max)
-            showNormal();
-        showFullScreen();
+        /* Going fullscreen */
+        setWindowState (windowState() ^ WindowFullScreen);
 
 #ifdef Q_WS_MAC
         if (!aSeamless)
@@ -2104,14 +2102,8 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             ((QWidget *) obj)->show();
         hidden_children.clear();
 
-        /* Going normal || maximized:
-         * "fullscreen -> normal" if was normal window,
-         * "fullscreen -> normal -> maximized" if was maximized window.
-         * Going "fullscreen -> maximized" wrong on KDE in both directions.
-         * Here it looses the window frame totally. */
-        showNormal();
-        if (was_max)
-            showMaximized();
+        /* Going normal || maximized */
+        setWindowState (windowState() ^ WindowFullScreen);
 
         qApp->processEvents();
         console->toggleFSMode();
