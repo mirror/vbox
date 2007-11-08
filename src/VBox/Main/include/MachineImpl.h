@@ -529,6 +529,15 @@ public:
     const Guid &uuid() const { return mData->mUuid; }
 
     /** 
+     *  Returns this machine's full settings file path.
+     *
+     *  @note This method doesn't lock this object or check its readiness as
+     *  it is intended to be used only after adding a caller to this object
+     *  (that guarantees that the object is ready) and locking it for reading.
+     */
+    const Bstr &settingsFileFull() const { return mData->mConfigFileFull; }
+
+    /** 
      *  Returns this machine's name.
      *
      *  @note This method doesn't lock this object or check its readiness as

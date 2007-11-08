@@ -2982,6 +2982,7 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
              !found && it != mData.mMachines.end();
              ++ it)
         {
+            /* sanity */
             AutoLimitedCaller machCaller (*it);
             AssertComRC (machCaller.rc());
 
@@ -3893,11 +3894,25 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
 
     AutoLock alock (this);
 
-    ComAssertRet (findMachine (aMachine->uuid(),
-                  false /* aDoSetError  */, NULL) == E_INVALIDARG,
-                  E_FAIL);
-
     HRESULT rc = S_OK;
+
+    {
+        ComObjPtr <Machine> m;
+        rc = findMachine (aMachine->uuid(), false /* aDoSetError */, &m);
+        if (SUCCEEDED (rc))
+        {
+            /* sanity */
+            AutoLimitedCaller machCaller (m);
+            AssertComRC (machCaller.rc());
+
+            return setError (E_INVALIDARG,
+                tr ("Registered machine with UUID {%Vuuid} ('%ls') already exists"),
+                aMachine->uuid().raw(), m->settingsFileFull().raw());
+        }
+
+        ComAssertRet (rc == E_INVALIDARG, rc);
+        rc = S_OK;
+    }
 
     if (autoCaller.state() != InInit)
     {
