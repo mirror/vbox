@@ -473,7 +473,7 @@ void VBoxProblemReporter::cannotOpenLicenseFile (QWidget *aParent,
 bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
 {
     return messageYesNo (aParent, Question,
-        tr ("<p>Do you really want to reset VM?</p>"), QString::null,
+        tr ("<p>Do you really want to reset the VM?</p>"), QString::null,
         "confirmVMReset" /* autoConfirmId */);
 }
 
