@@ -2189,7 +2189,8 @@ void VBoxConsoleWnd::vmReset()
 {
     if (console)
     {
-        console->console().Reset();
+        if (vboxProblem().confirmVMReset (this))
+            console->console().Reset();
     }
 }
 
