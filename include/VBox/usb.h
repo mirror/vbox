@@ -195,6 +195,117 @@ typedef USBDEVICE *PUSBDEVICE;
 /** Pointer to a const USB device. */
 typedef USBDEVICE *PCUSBDEVICE;
 
+
+#ifdef VBOX_USB_H_INCL_DESCRIPTORS /* for the time being, since this may easily conflict with system headers */
+
+/**
+ * USB device descriptor.
+ */
+#pragma pack(1)
+typedef struct USBDESCHDR
+{
+    /** The descriptor length. */
+    uint8_t         bLength;
+    /** The descriptor type. */
+    uint8_t         bDescriptorType;
+} USBDESCHDR;
+#pragma pack()
+/** Pointer to an USB descriptor header. */
+typedef USBDESCHDR *PUSBDESCHDR;
+
+/** @name Descriptor Type values (bDescriptorType)
+ * {@ */
+#if !defined(USB_DT_DEVICE) && !defined(USB_DT_ENDPOINT)
+# define USB_DT_DEVICE              0x01
+# define USB_DT_CONFIG              0x02
+# define USB_DT_STRING              0x03
+# define USB_DT_INTERFACE           0x04
+# define USB_DT_ENDPOINT            0x05
+
+# define USB_DT_HID                 0x21
+# define USB_DT_REPORT              0x22
+# define USB_DT_PHYSICAL            0x23
+# define USB_DT_HUB                 0x29
+#endif 
+/** @} */
+
+
+/**
+ * USB device descriptor.
+ */
+#pragma pack(1)
+typedef struct USBDEVICEDESC
+{
+    /** The descriptor length. (Usually sizeof(USBDEVICEDESC).) */
+    uint8_t         bLength;
+    /** The descriptor type. (USB_DT_DEVICE) */
+    uint8_t         bDescriptorType;
+    /** USB version number. */
+    uint16_t        bcdUSB;
+    /** Device class. */
+    uint8_t         bDeviceClass;
+    /** Device subclass. */
+    uint8_t         bDeviceSubClass;
+    /** Device protocol */
+    uint8_t         bDeviceProtocol;
+    /** The max packet size of the default control pipe. */
+    uint8_t         bMaxPacketSize0;
+    /** Vendor ID. */
+    uint16_t        idVendor;
+    /** Product ID. */
+    uint16_t        idProduct;
+    /** Revision, integer part. */
+    uint16_t        bcdDevice;
+    /** Manufacturer string index. */
+    uint8_t         iManufacturer;
+    /** Product string index. */
+    uint8_t         iProduct;
+    /** Serial number string index. */
+    uint8_t         iSerialNumber;
+    /** Number of configurations. */
+    uint8_t         bNumConfigurations;
+} USBDEVICEDESC;
+#pragma pack()
+/** Pointer to an USB device descriptor. */
+typedef USBDEVICEDESC *PUSBDEVICEDESC;
+
+/** @name Class codes (bDeviceClass)
+ * @{ */
+#ifndef USB_HUB_CLASSCODE
+# define USB_HUB_CLASSCODE  0x09
+#endif
+/** @} */
+
+/**
+ * USB configuration descriptor.
+ */
+#pragma pack(1)
+typedef struct USBCONFIGDESC
+{
+    /** The descriptor length. (Usually sizeof(USBCONFIGDESC).) */
+    uint8_t         bLength;
+    /** The descriptor type. (USB_DT_CONFIG) */
+    uint8_t         bDescriptorType;
+    /** The length of the configuration descriptor plus all associated descriptors. */
+    uint16_t        wTotalLength;
+    /** Number of interfaces. */
+    uint8_t         bNumInterfaces;
+    /** Configuration number. (For SetConfiguration().) */
+    uint8_t         bConfigurationValue;
+    /** Configuration description string. */
+    uint8_t         iConfiguration;
+    /** Configuration characteristics. */
+    uint8_t         bmAttributes;
+    /** Maximum power consumption of the USB device in this config. */
+    uint8_t         MaxPower;
+} USBCONFIGDESC;
+#pragma pack()
+/** Pointer to an USB configuration descriptor. */
+typedef USBCONFIGDESC *PUSBCONFIGDESC;
+
+#endif /* VBOX_USB_H_INCL_DESCRIPTORS */
+
 __END_DECLS
 
 #endif
+
