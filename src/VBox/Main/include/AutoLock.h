@@ -535,7 +535,7 @@ class AutoMultiLock <0> { private : AutoMultiLock(); };
 template<>
 class AutoMultiLock <1> { private : AutoMultiLock(); };
 
-} // namespace util
+} /* namespace util */
 
 #endif // ____H_AUTOLOCK
 

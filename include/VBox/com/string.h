@@ -556,6 +556,6 @@ public:
     Utf8StrFmtVA (const char *format, va_list args) { init (format, args); }
 };
 
-} // namespace com
+} /* namespace com */
 
 #endif

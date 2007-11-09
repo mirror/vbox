@@ -84,5 +84,5 @@ DECLCALLBACK(size_t) Utf8StrFmt::strOutput (void *pvArg, const char *pachChars,
     return cbChars;
 }
 
-}; // namespace com
+} /* namespace com */
 

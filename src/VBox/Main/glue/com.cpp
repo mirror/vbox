@@ -181,4 +181,4 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
     return vrc;
 }
 
-}; // namespace com
+} /* namespace com */
