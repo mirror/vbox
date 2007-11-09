@@ -73,6 +73,8 @@ VBoxDDU_SOURCES          = \
 ifdef VBOX_WITH_USB
  VBoxDDU_SOURCES.win     = \
 	USB/win32/USBLib-win32.cpp
+ VBoxDDU_INCS.os2       += \
+	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
 endif
 VBoxDDU_LIBS             = \
 	$(LIB_RUNTIME)
@@ -584,6 +586,12 @@ ifdef VBOX_WITH_USB
 	USB/USBProxyDevice.cpp \
 	USB/linux/USBProxyDevice-linux.cpp
 
+ Drivers_DEFS.os2 += VUSB_HAVE_USBPROXY_DEVICE
+ Drivers_INCS.os2 += $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
+ Drivers_SOURCES.os2 += \
+	USB/USBProxyDevice.cpp \
+	USB/os2/USBProxyDevice-os2.cpp
+								   
  Drivers_DEFS.win     += VUSB_HAVE_USBPROXY_DEVICE
  Drivers_SOURCES.win  += \
 	USB/USBProxyDevice.cpp \
