@@ -841,7 +841,7 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
 #define AssertMsgRC(rc, msg) \
-    do { AssertMsg(RT_SUCCESS(rc), msg); NOREF(rc); } while (0)
+    do { AssertMsg(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCReturn
  * Asserts a iprt status code successful and if it's not return the specified status code.
@@ -854,7 +854,7 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
 #define AssertMsgRCReturn(rc, msg, rcRet) \
-    do { AssertMsgReturn(RT_SUCCESS(rc), msg, rcRet); NOREF(rc); } while (0)
+    do { AssertMsgReturn(RT_SUCCESS_NP(rc), msg, rcRet); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCReturnVoid
  * Asserts a iprt status code successful and if it's not return.
@@ -866,7 +866,7 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
 #define AssertMsgRCReturnVoid(rc, msg) \
-    do { AssertMsgReturnVoid(RT_SUCCESS(rc), msg); NOREF(rc); } while (0)
+    do { AssertMsgReturnVoid(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
 
 /** @def AssertMsgRCBreak
  * Asserts a iprt status code successful and break if it's not.
@@ -879,7 +879,7 @@ __END_DECLS
  * @remark  rc is references multiple times. In release mode is NOREF()'ed.
  */
 #define AssertMsgRCBreak(rc, msg, stmt) \
-    do { AssertMsgBreak(RT_SUCCESS(rc), msg, stmt); NOREF(rc); } while (0)
+    do { AssertMsgBreak(RT_SUCCESS_NP(rc), msg, stmt); NOREF(rc); } while (0)
 
 /** @def AssertRCSuccess
  * Asserts an iprt status code equals VINF_SUCCESS.
@@ -972,7 +972,7 @@ __END_DECLS
  * @param   msg     printf argument list (in parenthesis).
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseMsgRC(rc, msg)    AssertReleaseMsg(RT_SUCCESS(rc), msg)
+#define AssertReleaseMsgRC(rc, msg)    AssertReleaseMsg(RT_SUCCESS_NP(rc), msg)
 
 /** @def AssertReleaseMsgRCReturn
  * Asserts a iprt status code successful.
@@ -985,7 +985,7 @@ __END_DECLS
  * @param   rcRet   What is to be presented to return.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseMsgRCReturn(rc, msg, rcRet)    AssertReleaseMsgReturn(RT_SUCCESS(rc), msg, rcRet)
+#define AssertReleaseMsgRCReturn(rc, msg, rcRet)    AssertReleaseMsgReturn(RT_SUCCESS_NP(rc), msg, rcRet)
 
 /** @def AssertReleaseMsgRCReturnVoid
  * Asserts a iprt status code successful.
@@ -997,7 +997,7 @@ __END_DECLS
  * @param   msg     printf argument list (in parenthesis).
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseMsgRCReturnVoid(rc, msg)    AssertReleaseMsgReturnVoid(RT_SUCCESS(rc), msg)
+#define AssertReleaseMsgRCReturnVoid(rc, msg)    AssertReleaseMsgReturnVoid(RT_SUCCESS_NP(rc), msg)
 
 /** @def AssertReleaseMsgRCBreak
  * Asserts a iprt status code successful.
@@ -1010,7 +1010,7 @@ __END_DECLS
  * @param   stmt    Statement to execute before break in case of a failed assertion.
  * @remark  rc is references multiple times.
  */
-#define AssertReleaseMsgRCBreak(rc, msg, stmt)    AssertReleaseMsgBreak(RT_SUCCESS(rc), msg, stmt)
+#define AssertReleaseMsgRCBreak(rc, msg, stmt)    AssertReleaseMsgBreak(RT_SUCCESS_NP(rc), msg, stmt)
 
 /** @def AssertReleaseRCSuccess
  * Asserts that an iprt status code equals VINF_SUCCESS.
@@ -1077,7 +1077,7 @@ __END_DECLS
  * @param   msg     printf argument list (in parenthesis).
  * @remark  rc is references multiple times.
  */
-#define AssertFatalMsgRC(rc, msg)   AssertFatalMsg(RT_SUCCESS(rc), msg)
+#define AssertFatalMsgRC(rc, msg)   AssertFatalMsg(RT_SUCCESS_NP(rc), msg)
 
 /** @def AssertFatalRCSuccess
  * Asserts that an iprt status code equals VINF_SUCCESS.
