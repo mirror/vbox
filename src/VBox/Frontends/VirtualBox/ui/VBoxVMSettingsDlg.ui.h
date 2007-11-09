@@ -717,6 +717,9 @@ void VBoxVMSettingsDlg::init()
 
     /* USB Page */
 
+    connect (cbEnableUSBController, SIGNAL (toggled (bool)),
+             this, SLOT (usbAdapterToggled (bool)));
+
     lvUSBFilters->header()->hide();
     /* disable sorting */
     lvUSBFilters->setSorting (-1);
@@ -1840,6 +1843,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         else
         {
             cbEnableUSBController->setChecked (ctl.GetEnabled());
+            cbEnableUSBEhci->setChecked (ctl.GetEnabledEhci());
+            usbAdapterToggled (cbEnableUSBController->isChecked());
 
             CUSBDeviceFilterEnumerator en = ctl.GetDeviceFilters().Enumerate();
             while (en.HasMore())
@@ -2107,6 +2112,7 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
             /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
 
             ctl.SetEnabled (cbEnableUSBController->isChecked());
+            ctl.SetEnabledEhci (cbEnableUSBEhci->isChecked());
 
             /*
              *  first, remove all old filters (only if the list is changed,
@@ -2350,6 +2356,13 @@ void VBoxVMSettingsDlg::tbSelectSavedStateFolder_clicked()
 
 // USB Filter stuff
 ////////////////////////////////////////////////////////////////////////////////
+
+void VBoxVMSettingsDlg::usbAdapterToggled (bool aOn)
+{
+    if (!aOn)
+        cbEnableUSBEhci->setChecked (aOn);
+    cbEnableUSBEhci->setEnabled (aOn);
+}
 
 void VBoxVMSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNew)
 {

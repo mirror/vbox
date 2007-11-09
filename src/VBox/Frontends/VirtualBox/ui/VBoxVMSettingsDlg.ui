@@ -2298,6 +2298,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                             <string>When checked, enables the virtual USB controller of this machine.</string>
                         </property>
                     </widget>
+                    <widget class="QCheckBox">
+                        <property name="name">
+                            <cstring>cbEnableUSBEhci</cstring>
+                        </property>
+                        <property name="text">
+                            <string>Enable USB &amp;EHCI Controller</string>
+                        </property>
+                        <property name="whatsThis" stdset="0">
+                            <string>When checked, enables the virtual USB EHCI controller of this machine providing USB2.0 support.</string>
+                        </property>
+                    </widget>
                     <widget class="QGroupBox">
                         <property name="name">
                             <cstring>grbUSBFilters</cstring>
@@ -3165,6 +3176,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>cbOS_activated( int item )</slot>
     <slot>tbResetSavedStateFolder_clicked()</slot>
     <slot>tbSelectSavedStateFolder_clicked()</slot>
+    <slot>usbAdapterToggled( bool aOn )</slot>
     <slot>addUSBFilter( const CUSBDeviceFilter &amp; aFilter, bool isNew )</slot>
     <slot>lvUSBFilters_currentChanged( QListViewItem * item )</slot>
     <slot>lvUSBFilters_setCurrentText( const QString &amp; aText )</slot>
