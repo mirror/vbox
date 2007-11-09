@@ -345,6 +345,47 @@ private:
 # endif /* RT_OS_LINUX */
 
 
+# ifdef RT_OS_OS2
+#  include <usbcalls.h>
+
+/**
+ * The Linux hosted USB Proxy Service.
+ */
+class USBProxyServiceOs2 : public USBProxyService
+{
+public:
+    USBProxyServiceOs2 (Host *aHost);
+    ~USBProxyServiceOs2();
+
+    virtual int captureDevice (HostUSBDevice *aDevice);
+    virtual int releaseDevice (HostUSBDevice *aDevice);
+    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice);
+
+protected:
+    virtual int wait (unsigned aMillies);
+    virtual int interruptWait (void);
+    virtual PUSBDEVICE getDevices (void);
+    int addDeviceToChain (PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
+
+private:
+    /** The notification event semaphore */
+    HEV mhev;
+    /** The notification id. */
+    USBNOTIFY mNotifyId;
+    /** The usbcalls.dll handle. */
+    HMODULE mhmod;
+    /** UsbRegisterChangeNotification */
+    APIRET (APIENTRY *mpfnUsbRegisterChangeNotification)(PUSBNOTIFY, HEV, HEV);
+    /** UsbDeregisterNotification */
+    APIRET (APIENTRY *mpfnUsbDeregisterNotification)(USBNOTIFY);
+    /** UsbQueryNumberDevices */
+    APIRET (APIENTRY *mpfnUsbQueryNumberDevices)(PULONG);
+    /** UsbQueryDeviceReport */
+    APIRET (APIENTRY *mpfnUsbQueryDeviceReport)(ULONG, PULONG, PVOID);
+};
+# endif /* RT_OS_LINUX */
+
+
 # ifdef RT_OS_WINDOWS
 /**
  * The Win32 hosted USB Proxy Service.

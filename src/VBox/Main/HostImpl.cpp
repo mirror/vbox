@@ -141,6 +141,8 @@ HRESULT Host::init (VirtualBox *parent)
     mUSBProxyService = new USBProxyServiceDarwin (this);
 #elif defined (RT_OS_LINUX) && defined (VBOX_WITH_USB)
     mUSBProxyService = new USBProxyServiceLinux (this);
+#elif defined (RT_OS_OS2) && defined (VBOX_WITH_USB)
+    mUSBProxyService = new USBProxyServiceOs2 (this);
 #elif defined (RT_OS_WINDOWS) && defined (VBOX_WITH_USB)
     mUSBProxyService = new USBProxyServiceWin32 (this);
 #else

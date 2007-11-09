@@ -137,6 +137,11 @@ VBoxSVC_INCS = \
 	$(PATH_VBoxSVC) \
 	$(PATH_VBoxCOM) \
 	$(PATH_CURRENT)
+ifdef VBOX_WITH_USB
+ VBoxSVC_INCS.os2 = \
+	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
+endif
+
 ifeq ($(BUILD_TARGET),win)
  VBoxSVC_LIBS += \
 	$(PATH_LIB)/VBoxDDU$(VBOX_SUFF_LIB) \
@@ -211,6 +216,7 @@ endif
 ifdef VBOX_WITH_USB
 VBoxSVC_SOURCES.darwin += darwin/USBProxyServiceDarwin.cpp
 VBoxSVC_SOURCES.linux += linux/USBProxyServiceLinux.cpp
+VBoxSVC_SOURCES.os2 += os2/USBProxyServiceOs2.cpp
 VBoxSVC_SOURCES.win   += win32/USBProxyServiceWin32.cpp
 endif
 
