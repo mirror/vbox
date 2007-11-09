@@ -171,6 +171,8 @@ if1of ($(BUILD_TARGET).$(BUILD_TARGET_ARCH), win.x86 l4.x86 l4.amd64)
 # build the support driver & library with IDT patching.
 VBOX_WITH_IDT_PATCHING = 1
 endif
+# Activate this to force the VM to pre-allocate the guest RAM before startup
+VBOX_WITH_PREALLOC_RAM_BY_DEFAULT =
 # The kernel driver/module and related runtime libraries.
 VBOX_WITH_VBOXDRV = 1
 # build with secure label support
