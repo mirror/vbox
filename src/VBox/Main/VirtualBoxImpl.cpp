@@ -4589,7 +4589,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                     APIRET arc = ::DosCreateMuxWaitSem (NULL, &muxSem, cnt, handles,
                                                         DCMW_WAIT_ANY);
                     AssertMsg (arc == NO_ERROR,
-                               ("DosCreateMuxWaitSem returned %d\n", arc));
+                               ("DosCreateMuxWaitSem returned %d\n", arc)); NOREF(arc);
                 }
             }
         }
