@@ -197,5 +197,5 @@ bool ParsedRegexpFilter_base::isMatch (const Bstr &aValue) const
         (!mIgnoreCase && mSimple.compare (aValue) == 0);
 }
 
-}
+} /* namespace matching */
 

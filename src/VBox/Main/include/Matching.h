@@ -516,6 +516,6 @@ private:
     Bstr mString;
 };
 
-}
+} /* namespace matching */
 
 #endif // ____H_MATCHING

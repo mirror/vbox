@@ -406,7 +406,7 @@ private:
     bool mForgot : 1;
 };
 
-}; // namespace com
+} /* namespace com */
 
 #endif
 

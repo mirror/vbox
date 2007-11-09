@@ -239,5 +239,5 @@ BOOL EventQueue::handleEvent (Event *event)
     return TRUE;
 }
 
-}; // namespace com
+} /* namespace com */
 

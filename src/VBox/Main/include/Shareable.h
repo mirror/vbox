@@ -63,7 +63,7 @@ protected:
     };
 };
 
-} // namespace internal
+} /* namespace internal */
 
 /**
  *  Template class to manage allocation/deallocation of data structures on the
@@ -402,7 +402,7 @@ private:
     Data *mBackupData;
 };
 
-} // namespace util
+} /* namespace util */
 
 #endif // ____H_SHAREABLE
 

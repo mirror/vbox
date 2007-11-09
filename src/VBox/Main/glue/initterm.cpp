@@ -486,4 +486,4 @@ HRESULT Shutdown()
     return rc;
 }
 
-}; // namespace com
+} /* namespace com */

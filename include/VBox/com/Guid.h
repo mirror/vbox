@@ -152,7 +152,7 @@ inline bool operator|| (bool b, const Guid& guid) { return b || bool (guid); }
 
 #endif
 
-}; // namespace com
+} /* namespace com */
 
 #endif
 

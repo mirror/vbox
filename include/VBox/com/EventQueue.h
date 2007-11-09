@@ -115,7 +115,7 @@ private:
 #endif
 };
 
-}; // namespace com
+} /* namespace com */
 
 #endif
 

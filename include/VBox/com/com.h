@@ -68,7 +68,7 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName);
  */
 int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen);
 
-}; // namespace com
+} /* namespace com */
 
 #endif
 

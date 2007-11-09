@@ -311,5 +311,5 @@ HRESULT ErrorInfoKeeper::restore()
     return rc;
 }
 
-}; // namespace com
+} /* namespace com */
 
