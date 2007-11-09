@@ -481,8 +481,12 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
 
 STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
 {
-    if (!aPath || *aPath == 0)
-        return E_INVALIDARG;
+    if (!aPath)
+        return E_POINTER;
+
+    if (!*aPath)
+        return setError (E_INVALIDARG,
+            tr ("Parallel port path cannot be empty"));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
