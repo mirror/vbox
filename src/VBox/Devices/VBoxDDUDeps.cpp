@@ -22,6 +22,10 @@
 #include <VBox/types.h>
 #ifdef VBOX_WITH_USB
 # include <VBox/usbfilter.h>
+# ifdef RT_OS_OS2
+#  include <os2.h>
+#  include <usbcalls.h>
+# endif
 #endif
 
 /** Just a dummy global structure containing a bunch of
@@ -31,6 +35,9 @@ PFNRT g_apfnVBoxDDUDeps[] =
 {
 #ifdef VBOX_WITH_USB
     (PFNRT)USBFilterInit,
+# ifdef RT_OS_OS2
+    (PFNRT)UsbOpen,
+# endif 
 #endif
     NULL
 };
