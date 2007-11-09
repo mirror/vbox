@@ -567,7 +567,12 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
 STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 {
     if (!aPath)
-        return E_INVALIDARG;
+        return E_POINTER;
+
+    if (!*aPath)
+        return setError (E_INVALIDARG,
+            tr ("Serial port path cannot be empty"));
+
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
