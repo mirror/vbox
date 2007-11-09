@@ -2361,7 +2361,7 @@ void VBoxVMSettingsDlg::usbAdapterToggled (bool aOn)
 {
     if (!aOn)
         cbEnableUSBEhci->setChecked (aOn);
-    cbEnableUSBEhci->setEnabled (aOn);
+    grbUSBFilters->setEnabled (aOn);
 }
 
 void VBoxVMSettingsDlg::addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNew)
