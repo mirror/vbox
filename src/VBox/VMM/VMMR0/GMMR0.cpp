@@ -1765,7 +1765,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_
                         if (RT_LIKELY(pPage->Private.hGVM == pGVM->hSelf))
                         {
                             AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_END && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_END);
-                            if (RT_LIKELY(paPages[iPage].HCPhysGCPhys) < GMM_GCPHYS_END)
+                            if (RT_LIKELY(paPages[iPage].HCPhysGCPhys < GMM_GCPHYS_END))
                                 pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
                             else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
                                 pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
