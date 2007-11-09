@@ -1387,7 +1387,7 @@ static void ataWarningFileTooBig(PPDMDEVINS pDevIns)
     LogRel(("PIIX3 ATA: File too big\n"));
     rc = VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
                            false, "DevATA_FILETOOBIG",
-                           N_("Host system reported that the file size limit has been exceeded. VM execution is suspended. You need to move the file to a filesystem which allows bigger files"));
+                           N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
     AssertRC(rc);
 }
 
