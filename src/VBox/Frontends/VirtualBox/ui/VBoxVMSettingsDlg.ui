@@ -2287,27 +2287,38 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <property name="spacing">
                         <number>10</number>
                     </property>
-                    <widget class="QCheckBox">
+                    <widget class="QGroupBox">
                         <property name="name">
                             <cstring>cbEnableUSBController</cstring>
                         </property>
-                        <property name="text">
+                        <property name="title">
                             <string>Enable &amp;USB Controller</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
+                        </property>
+                        <property name="checked">
+                            <bool>true</bool>
                         </property>
                         <property name="whatsThis" stdset="0">
                             <string>When checked, enables the virtual USB controller of this machine.</string>
                         </property>
-                    </widget>
-                    <widget class="QCheckBox">
-                        <property name="name">
-                            <cstring>cbEnableUSBEhci</cstring>
-                        </property>
-                        <property name="text">
-                            <string>Enable USB E&amp;HCI Controller</string>
-                        </property>
-                        <property name="whatsThis" stdset="0">
-                            <string>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</string>
-                        </property>
+                        <vbox>
+                            <property name="name">
+                                <cstring>unnamed</cstring>
+                            </property>
+		                    <widget class="QCheckBox">
+        		                <property name="name">
+                	                <cstring>cbEnableUSBEhci</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>Enable USB E&amp;HCI Controller</string>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</string>
+                       	        </property>
+                            </widget>
+                        </vbox>
                     </widget>
                     <widget class="QGroupBox">
                         <property name="name">
@@ -3073,6 +3084,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <tabstop>tbISOFloppy</tabstop>
     <tabstop>cbAudioDriver</tabstop>
     <tabstop>cbEnableUSBController</tabstop>
+    <tabstop>cbEnableUSBEhci</tabstop>
     <tabstop>lvUSBFilters</tabstop>
     <tabstop>tbAddUSBFilter</tabstop>
     <tabstop>tbAddUSBFilterFrom</tabstop>
