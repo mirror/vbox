@@ -2303,10 +2303,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                             <cstring>cbEnableUSBEhci</cstring>
                         </property>
                         <property name="text">
-                            <string>Enable USB &amp;EHCI Controller</string>
+                            <string>Enable USB E&amp;HCI Controller</string>
                         </property>
                         <property name="whatsThis" stdset="0">
-                            <string>When checked, enables the virtual USB EHCI controller of this machine providing USB2.0 support.</string>
+                            <string>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</string>
                         </property>
                     </widget>
                     <widget class="QGroupBox">

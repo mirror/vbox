@@ -470,13 +470,6 @@ void VBoxProblemReporter::cannotOpenLicenseFile (QWidget *aParent,
 }
 #endif
 
-bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
-{
-    return messageYesNo (aParent, Question,
-        tr ("<p>Do you really want to reset the VM?</p>"), QString::null,
-        "confirmVMReset" /* autoConfirmId */);
-}
-
 void VBoxProblemReporter::cannotOpenURL (const QString &aURL)
 {
     message
@@ -1702,6 +1695,18 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
         QIMessageBox::Ignore | QIMessageBox::Escape);
 
     return rc == QIMessageBox::Ok;
+}
+
+/**
+ *  Returns @c true if the user has selected to reset the machine.
+ */
+bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
+{
+    return messageYesNo (aParent, Question,
+        tr ("<p>Do you really want to reset the virtual machine?</p>"
+            "<p>When the machine is reset, unsaved data of all applications "
+            "running inside it will be lost.</p>"),
+        "confirmVMReset" /* autoConfirmId */);
 }
 
 int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)

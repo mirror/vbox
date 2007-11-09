@@ -89,8 +89,6 @@ public:
     void cannotOpenLicenseFile (QWidget *aParent, const QString &aPath);
 #endif
 
-    bool confirmVMReset (QWidget *aParent);
-
     void cannotOpenURL (const QString &aURL);
 
     void cannotFindLanguage (const QString &aLangID, const QString &aNlsPath);
@@ -233,6 +231,8 @@ public:
 
     bool remindAboutGuruMeditation (const CConsole &aConsole,
                                     const QString &aLogFolder);
+
+    bool confirmVMReset (QWidget *aParent);
 
     int remindAboutUnsetHD (QWidget *aParent);
 
