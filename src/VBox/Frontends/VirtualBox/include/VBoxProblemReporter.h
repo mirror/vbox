@@ -89,6 +89,8 @@ public:
     void cannotOpenLicenseFile (QWidget *aParent, const QString &aPath);
 #endif
 
+    bool confirmVMReset (QWidget *aParent);
+
     void cannotOpenURL (const QString &aURL);
 
     void cannotFindLanguage (const QString &aLangID, const QString &aNlsPath);
