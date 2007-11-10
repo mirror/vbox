@@ -112,8 +112,9 @@ typedef FNPDMASYNCCOMPLETEINT *PFNPDMASYNCCOMPLETEINT;
  * @param   pDevIns         The device instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
+ * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted);
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for a driver instance.
@@ -125,8 +126,9 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDev
  * @param   pDrvIns         The driver instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
+ * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted);
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for a USB device instance.
@@ -138,8 +140,9 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrv
  * @param   pUsbIns         The USB device instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
+ * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted);
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for internally by the VMM.
@@ -151,8 +154,9 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
  * @param   pvUser2         The 2nd user argument for the callback.
+ * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateInternal(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEINT pfnCompleted, void *pvUser2);
+PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateInternal(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEINT pfnCompleted, void *pvUser2, const char *pszDesc);
 
 /**
  * Destroys the specified async completion template.
