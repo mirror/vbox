@@ -2828,6 +2828,42 @@ DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCUINTPTR GCPtr)
 
 
 /**
+ * Gets the page directory for the specified address and returns the index into the page directory
+ *
+ * @returns Pointer to the page directory in question.
+ * @returns NULL if the page directory is not present or on an invalid page.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ * @param   piPD        Receives the index into the returned page directory
+ */
+DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *piPD)
+{
+    const unsigned iPdPtr = GCPtr >> X86_PDPTR_SHIFT;
+    if (CTXSUFF(pPGM->pGstPaePDPTR)->a[iPdPtr].n.u1Present)
+    {
+        const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+        if ((CTXSUFF(pPGM->pGstPaePDPTR)->a[iPdPtr].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPtr])
+        {
+            *piPD = iPD;
+            return CTXSUFF(pPGM->apGstPaePDs)[iPdPtr];
+        }
+
+        /* cache is out-of-sync. */
+        PX86PDPAE pPD;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPTR)->a[iPdPtr].u & X86_PDPE_PG_MASK, &pPD);
+        if (VBOX_SUCCESS(rc))
+        {
+            *piPD = iPD;
+            return pPD;
+        }
+        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPTR)->a[iPdPtr].u));
+        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emualted as all 0s. */
+    }
+    return NULL;
+}
+
+
+/**
  * Checks if any of the specified page flags are set for the given page.
  *
  * @returns true if any of the flags are set.
