@@ -1683,7 +1683,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     if (    (uErr & X86_TRAP_PF_RSVD)
         ||  !pPdeSrc->n.u1Present
 #if PGM_GST_TYPE == PGM_TYPE_PAE
-        ||  ((uErr & X86_TRAP_PF_ID) && !pPdeSrc->n.u1NoExecute)
+        ||  ((uErr & X86_TRAP_PF_ID) &&  pPdeSrc->n.u1NoExecute)
 #endif
         ||  ((uErr & X86_TRAP_PF_RW) && !pPdeSrc->n.u1Write)
         ||  ((uErr & X86_TRAP_PF_US) && !pPdeSrc->n.u1User) )
