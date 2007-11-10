@@ -127,12 +127,15 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     pModeData->pfnR3GstUnmonitorCR3    = PGM_GST_NAME(UnmonitorCR3);
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
-    pModeData->pfnHCGstWriteHandlerCR3 = PGM_GST_NAME(WriteHandlerCR3);
-    pModeData->pszHCGstWriteHandlerCR3 = "Guest CR3 Write access handler";
+    pModeData->pfnR3GstWriteHandlerCR3    = PGM_GST_NAME(WriteHandlerCR3);
+    pModeData->pszR3GstWriteHandlerCR3    = "Guest CR3 Write access handler";
+    pModeData->pfnR3GstPAEWriteHandlerCR3 = PGM_GST_NAME(WriteHandlerCR3);
+    pModeData->pszR3GstPAEWriteHandlerCR3 = "Guest CR3 Write access handler (PAE)";
 #else
-    pModeData->pfnHCGstWriteHandlerCR3 = NULL;
-    pModeData->pszHCGstWriteHandlerCR3 = NULL;
-    pModeData->pfnGCGstWriteHandlerCR3 = 0;
+    pModeData->pfnR3GstWriteHandlerCR3    = NULL;
+    pModeData->pszR3GstWriteHandlerCR3    = NULL;
+    pModeData->pfnR3GstPAEWriteHandlerCR3 = NULL;
+    pModeData->pszR3GstPAEWriteHandlerCR3 = NULL;
 #endif
 
     if (fResolveGCAndR0)
@@ -157,6 +160,8 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 #if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
         rc = PDMR3GetSymbolGC(pVM, NULL, PGM_GST_NAME_GC_STR(WriteHandlerCR3),  &pModeData->pfnGCGstWriteHandlerCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(WriteHandlerCR3), rc), rc);
+        rc = PDMR3GetSymbolGC(pVM, NULL, PGM_GST_NAME_GC_STR(WriteHandlerCR3),  &pModeData->pfnGCGstPAEWriteHandlerCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(PAEWriteHandlerCR3), rc), rc);
 #endif
 
         /* Ring-0 */

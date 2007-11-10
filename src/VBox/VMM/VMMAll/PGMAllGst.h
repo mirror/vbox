@@ -426,6 +426,8 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
     pVM->pgm.s.pGstPaePDPTRHC = 0;
     pVM->pgm.s.pGstPaePDPTRGC = 0;
+    /** PAE todo: pVM->pgm.s.apGstPaePDsHC? -> unmap?? */
+    AssertFailed();
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
 //#error not implemented
@@ -494,28 +496,45 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     }
 
 #if PGM_GST_TYPE == PGM_TYPE_PAE
-    AssertFatalFailed();
-# if 0 /* later */
     /*
      * Do the 4 PDs.
      */
     for (unsigned i = 0; i < 4; i++)
     {
-        if (pVM->pgm.s.pGstPaePDPTRHC->a[i].n.u1Present)
+        if (CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].n.u1Present)
         {
-            RTGCPHYS GCPhys = pVM->pgm.s.pGstPaePDPTRHC->a[i].u & X86_PDPE_PG_MASK;
+            RTGCPHYS GCPhys = CTXSUFF(pVM->pgm.s.pGstPaePDPTR)->a[i].u & X86_PDPE_PG_MASK;
+# ifndef PGMPOOL_WITH_MIXED_PT_CR3
             if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != GCPhys)
             {
                 if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
                     rc = PGMHandlerPhysicalModify(pVM, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i], GCPhys, GCPhys + PAGE_SIZE - 1);
                 else
-                    rc = PGMR3HandlerPhysicalRegister(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + PAGE_SIZE - 1,
-                                                      pgmR3GstPaePDWriteHandler, NULL,
-                                                      NULL, "pgmGCGstPaePDWriteHandler", 0,
-                                                      "Guest PD write access handler");
+                    rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhys, GCPhys + PAGE_SIZE - 1,
+                                                      pVM->pgm.s.pfnR3GstPAEWriteHandlerCR3, 0,
+                                                      0, 0,
+                                                      pVM->pgm.s.pfnGCGstPAEWriteHandlerCR3, 0,
+                                                      pVM->pgm.s.pszR3GstPAEWriteHandlerCR3);
                 if (VBOX_SUCCESS(rc))
                     pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = GCPhys;
             }
+# else  /* PGMPOOL_WITH_MIXED_PT_CR3 */
+            /** PAE todo */
+            AssertFailed();
+            rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool),
+                                             pVM->pgm.s.enmShadowMode == PGMMODE_PAE
+                                          || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX
+                                          ? PGMPOOL_IDX_PAE_PD
+                                          : PGMPOOL_IDX_PD,
+                                          GCPhys);
+# endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
+            if (VBOX_FAILURE(rc))
+            {
+                AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
+                                 rc, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i], GCPhys));
+                return rc;
+            }
+            pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = GCPhys;
         }
         else if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
         {
@@ -524,7 +543,6 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
     }
-# endif
 #endif /* PGM_GST_TYPE == PGM_TYPE_PAE */
 
 #else
@@ -575,7 +593,17 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
     for (unsigned i = 0; i < 4; i++)
         if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
         {
+# ifndef PGMPOOL_WITH_MIXED_PT_CR3
             int rc2 = PGMHandlerPhysicalDeregister(pVM, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]);
+# else /* PGMPOOL_WITH_MIXED_PT_CR3 */
+            /** PAE todo */
+            AssertFailed();
+            int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool),
+                                                    pVM->pgm.s.enmShadowMode == PGMMODE_PAE
+                                                 || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX
+                                                 ? PGMPOOL_IDX_PAE_PD
+                                                 : PGMPOOL_IDX_PD);
+# endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
             AssertRC(rc2);
             if (VBOX_FAILURE(rc2))
                 rc = rc2;
