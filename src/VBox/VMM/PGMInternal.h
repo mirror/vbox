@@ -1642,6 +1642,9 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
+#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64 
+    RTGCPTR                         alignment3; /**< structure size alignment. */ 
+#endif     
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1679,6 +1682,9 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLGCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLGCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint32_t cr3, uint32_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+#if GC_ARCH_BITS == 32 && HC_ARCH_BITS == 64 
+    RTGCPTR                         alignment2; /**< structure size alignment. */ 
+#endif     
     /** @} */
 
     /** Pointer to SHW+GST mode data (function pointers).
