@@ -1404,8 +1404,10 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,  pfnR3GstUnmonitorCR3,(PVM pVM));
     DECLR3CALLBACKMEMBER(int,  pfnR3GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR3CALLBACKMEMBER(int,  pfnR3GstUnmapCR3,(PVM pVM));
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnHCGstWriteHandlerCR3;
-    R3PTRTYPE(const char *)         pszHCGstWriteHandlerCR3;
+    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
+    R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
+    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstPAEWriteHandlerCR3;
+    R3PTRTYPE(const char *)         pszR3GstPAEWriteHandlerCR3;
 
     DECLGCCALLBACKMEMBER(int,  pfnGCGstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1415,6 +1417,7 @@ typedef struct PGMMODEDATA
     DECLGCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
+    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1423,7 +1426,6 @@ typedef struct PGMMODEDATA
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmonitorCR3,(PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmapCR3,(PVM pVM));
-    R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnR0GstWriteHandlerCR3;
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
@@ -1626,8 +1628,10 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,  pfnR3GstUnmonitorCR3,(PVM pVM));
     DECLR3CALLBACKMEMBER(int,  pfnR3GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR3CALLBACKMEMBER(int,  pfnR3GstUnmapCR3,(PVM pVM));
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnHCGstWriteHandlerCR3;
-    R3PTRTYPE(const char *)         pszHCGstWriteHandlerCR3;
+    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstWriteHandlerCR3;
+    R3PTRTYPE(const char *)         pszR3GstWriteHandlerCR3;
+    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstPAEWriteHandlerCR3;
+    R3PTRTYPE(const char *)         pszR3GstPAEWriteHandlerCR3;
 
     DECLGCCALLBACKMEMBER(int,  pfnGCGstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1637,6 +1641,7 @@ typedef struct PGM
     DECLGCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLGCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
     GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
+    GCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1645,7 +1650,6 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmonitorCR3,(PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmapCR3,(PVM pVM));
-    R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnR0GstWriteHandlerCR3;
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
@@ -2764,7 +2768,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCUINTPTR GCPtr)
         if (VBOX_SUCCESS(rc))
             return pPD;
         AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPTR)->a[iPdPtr].u));
-        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emualted as all 0s. */
+        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emulated as all 0s. */
     }
     return NULL;
 }
@@ -2857,7 +2861,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *
             return pPD;
         }
         AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPTR)->a[iPdPtr].u));
-        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emualted as all 0s. */
+        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emulated as all 0s. */
     }
     return NULL;
 }

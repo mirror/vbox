@@ -2440,8 +2440,10 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnR3GstUnmonitorCR3         = pModeData->pfnR3GstUnmonitorCR3;
     pVM->pgm.s.pfnR3GstMapCR3               = pModeData->pfnR3GstMapCR3;
     pVM->pgm.s.pfnR3GstUnmapCR3             = pModeData->pfnR3GstUnmapCR3;
-    pVM->pgm.s.pfnHCGstWriteHandlerCR3      = pModeData->pfnHCGstWriteHandlerCR3;
-    pVM->pgm.s.pszHCGstWriteHandlerCR3      = pModeData->pszHCGstWriteHandlerCR3;
+    pVM->pgm.s.pfnR3GstWriteHandlerCR3      = pModeData->pfnR3GstWriteHandlerCR3;
+    pVM->pgm.s.pszR3GstWriteHandlerCR3      = pModeData->pszR3GstWriteHandlerCR3;
+    pVM->pgm.s.pfnR3GstPAEWriteHandlerCR3   = pModeData->pfnR3GstPAEWriteHandlerCR3;
+    pVM->pgm.s.pszR3GstPAEWriteHandlerCR3   = pModeData->pszR3GstPAEWriteHandlerCR3;
 
     pVM->pgm.s.pfnGCGstGetPage              = pModeData->pfnGCGstGetPage;
     pVM->pgm.s.pfnGCGstModifyPage           = pModeData->pfnGCGstModifyPage;
@@ -2451,6 +2453,7 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnGCGstMapCR3               = pModeData->pfnGCGstMapCR3;
     pVM->pgm.s.pfnGCGstUnmapCR3             = pModeData->pfnGCGstUnmapCR3;
     pVM->pgm.s.pfnGCGstWriteHandlerCR3      = pModeData->pfnGCGstWriteHandlerCR3;
+    pVM->pgm.s.pfnGCGstPAEWriteHandlerCR3   = pModeData->pfnGCGstPAEWriteHandlerCR3;
 
     pVM->pgm.s.pfnR0GstGetPage              = pModeData->pfnR0GstGetPage;
     pVM->pgm.s.pfnR0GstModifyPage           = pModeData->pfnR0GstModifyPage;
@@ -2459,7 +2462,6 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
     pVM->pgm.s.pfnR0GstUnmonitorCR3         = pModeData->pfnR0GstUnmonitorCR3;
     pVM->pgm.s.pfnR0GstMapCR3               = pModeData->pfnR0GstMapCR3;
     pVM->pgm.s.pfnR0GstUnmapCR3             = pModeData->pfnR0GstUnmapCR3;
-    pVM->pgm.s.pfnR0GstWriteHandlerCR3      = pModeData->pfnR0GstWriteHandlerCR3;
 
 
     /* both */
