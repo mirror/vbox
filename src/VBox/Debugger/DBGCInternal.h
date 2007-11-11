@@ -336,35 +336,27 @@ typedef struct DBGCSYM
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#if 0
-static void dbgcVarSetGCFlat(PDBGCVAR pVar, RTGCPTR GCFlat);
-static void dbgcVarSetGCFlatByteRange(PDBGCVAR pVar, RTGCPTR GCFlat, uint64_t cb);
-static void dbgcVarSetVar(PDBGCVAR pVar, PCDBGCVAR pVar2);
-static void dbgcVarSetNoRange(PDBGCVAR pVar);
-static void dbgcVarSetByteRange(PDBGCVAR pVar, uint64_t cb);
-static int dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
+int     dbgcBpAdd(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
+int     dbgcBpUpdate(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
+int     dbgcBpDelete(PDBGC pDbgc, RTUINT iBp);
+PDBGCBP dbgcBpGet(PDBGC pDbgc, RTUINT iBp);
+int     dbgcBpExec(PDBGC pDbgc, RTUINT iBp);
 
-static int dbgcBpAdd(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
-static int dbgcBpUpdate(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
-static int dbgcBpDelete(PDBGC pDbgc, RTUINT iBp);
-static PDBGCBP dbgcBpGet(PDBGC pDbgc, RTUINT iBp);
-static int dbgcBpExec(PDBGC pDbgc, RTUINT iBp);
+void    dbgcVarSetGCFlat(PDBGCVAR pVar, RTGCPTR GCFlat);
+void    dbgcVarSetGCFlatByteRange(PDBGCVAR pVar, RTGCPTR GCFlat, uint64_t cb);
+void    dbgcVarSetVar(PDBGCVAR pVar, PCDBGCVAR pVar2);
+void    dbgcVarSetNoRange(PDBGCVAR pVar);
+void    dbgcVarSetByteRange(PDBGCVAR pVar, uint64_t cb);
+int     dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
 
-static PCDBGCSYM dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol);
-static int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult);
-static int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult);
-static int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd);
-#endif
+PCDBGCSYM dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol);
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Command descriptors for the basic commands. */
 extern const DBGCCMD    g_aCmds[];
-/** Command descriptors for the CodeView / WinDbg emulation.
- * The emulation isn't attempting to be identical, only somewhat similar.
- */
 extern const DBGCCMD    g_aCmdsCodeView[];
+extern const unsigned   g_cCmdsCodeView;
 
 #endif
