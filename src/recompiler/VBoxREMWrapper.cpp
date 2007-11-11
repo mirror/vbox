@@ -495,7 +495,7 @@ static const REMPARMDESC g_aArgsCSAMR3RecordCallAddress[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR), NULL }
 };
 
-#if !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
 static const REMPARMDESC g_aArgsDBGCRegisterCommands[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGCCMD), NULL },
@@ -1001,7 +1001,7 @@ static REMFNDESC g_aVMMImports[] =
     { "CPUMQueryGuestCtxPtr",                   (void *)(uintptr_t)&CPUMQueryGuestCtxPtr,           &g_aArgsCPUMQueryGuestCtxPtr[0],            ELEMENTS(g_aArgsCPUMQueryGuestCtxPtr),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "CSAMR3MonitorPage",                      (void *)(uintptr_t)&CSAMR3MonitorPage,              &g_aArgsCSAMR3MonitorPage[0],               ELEMENTS(g_aArgsCSAMR3MonitorPage),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "CSAMR3RecordCallAddress",                (void *)(uintptr_t)&CSAMR3RecordCallAddress,        &g_aArgsCSAMR3RecordCallAddress[0],         ELEMENTS(g_aArgsCSAMR3RecordCallAddress),           REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-#if !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
     { "DBGCRegisterCommands",                   (void *)(uintptr_t)&DBGCRegisterCommands,           &g_aArgsDBGCRegisterCommands[0],            ELEMENTS(g_aArgsDBGCRegisterCommands),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #endif
     { "DBGFR3DisasInstrEx",                     (void *)(uintptr_t)&DBGFR3DisasInstrEx,             &g_aArgsDBGFR3DisasInstrEx[0],              ELEMENTS(g_aArgsDBGFR3DisasInstrEx),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
