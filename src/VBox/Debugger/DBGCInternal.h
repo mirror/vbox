@@ -53,6 +53,8 @@
 #define VERR_PARSE_BAD_RESULT_TYPE              (VERR_PARSE_FIRST - 19)
 #define VERR_PARSE_WRITEONLY_SYMBOL             (VERR_PARSE_FIRST - 20)
 #define VERR_PARSE_NO_ARGUMENT_MATCH            (VERR_PARSE_FIRST - 21)
+#define VINF_PARSE_COMMAND_NOT_FOUND            (VERR_PARSE_FIRST - 22)
+#define VINF_PARSE_INVALD_COMMAND_NAME          (VERR_PARSE_FIRST - 23)
 #define VERR_PARSE_LAST                         (VERR_PARSE_FIRST - 30)
 
 #define VWRN_DBGC_CMD_PENDING                   12000
@@ -185,9 +187,10 @@ typedef struct DBGC
     /** Array of argument variables. */
     DBGCVAR             aArgs[100];
 
-    /** rc from last dbgcHlpPrintfV(). */
+    /** rc from the last dbgcHlpPrintfV(). */
     int                 rcOutput;
-
+    /** rc from the last command. */
+    int                 rcCmd;
     /** @} */
 } DBGC;
 /** Pointer to debugger console instance data. */
@@ -327,10 +330,6 @@ typedef struct DBGCSYM
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-int     dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags);
-int     dbgcRun(PDBGC pDbgc);
-void    dbgcDestroy(PDBGC pDbgc);
-
 int     dbgcBpAdd(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
 int     dbgcBpUpdate(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
 int     dbgcBpDelete(PDBGC pDbgc, RTUINT iBp);
@@ -345,7 +344,7 @@ void    dbgcVarSetByteRange(PDBGCVAR pVar, uint64_t cb);
 int     dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
 
 int     dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult);
-int     dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd);
+int     dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute);
 
 int     dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult);
 PCDBGCSYM   dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol);
@@ -358,6 +357,12 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 
 void    dbgcInitCmdHlp(PDBGC pDbgc);
+
+/* For tstDBGCParser: */
+int     dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags);
+int     dbgcRun(PDBGC pDbgc);
+int     dbgcProcessInput(PDBGC pDbgc, bool fNoExecute);
+void    dbgcDestroy(PDBGC pDbgc);
 
 
 /*******************************************************************************
