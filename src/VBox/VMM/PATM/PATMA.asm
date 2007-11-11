@@ -13,7 +13,7 @@
 ;  distribution. VirtualBox OSE is distributed in the hope that it will
 ;  be useful, but WITHOUT ANY WARRANTY of any kind.
 
-;
+;;
 ; @note This method has problems in theory. If we fault for any reason, then we won't be able to restore
 ;       the guest's context properly!!
 ;       E.g if one of the push instructions causes a fault or SS isn't wide open and our patch GC state accesses aren't valid.
@@ -39,7 +39,7 @@
 ;;%define PATM_LOG_PATCHIRET
 %endif
 
-BEGINCODE
+BEGINCONST
 
 %ifdef RT_ARCH_AMD64
  BITS 32 ; switch to 32-bit mode (x86).
