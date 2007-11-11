@@ -340,7 +340,10 @@ void    dbgcVarSetNoRange(PDBGCVAR pVar);
 void    dbgcVarSetByteRange(PDBGCVAR pVar, uint64_t cb);
 int     dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
 
-int         dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult);
+int     dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult);
+int     dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd);
+
+int     dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGCVAR pResult);
 PCDBGCSYM   dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol);
 PCDBGCOP    dbgcOperatorLookup(PDBGC pDbgc, const char *pszExpr, bool fPreferBinary, char chPrev);
 PCDBGCCMD   dbgcRoutineLookup(PDBGC pDbgc, const char *pachName, size_t cchName, bool fExternal);
@@ -349,6 +352,8 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
+
+void    dbgcInitCmdHlp(PDBGC pDbgc);
 
 
 /*******************************************************************************
