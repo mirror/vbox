@@ -226,17 +226,44 @@ typedef struct DBGC
     DBGCCMDHLP          CmdHlp;
     /** Pointer to backend callback structure. */
     PDBGCBACK           pBack;
-    /** Log indicator. (If set we're writing the log to the console.) */
-    bool                fLog;
+
     /** Pointer to the current VM. */
     PVM                 pVM;
-    /** Indicates whether or we're ready for input. */
-    bool                fReady;
+    /** The current debugger emulation. */
+    const char         *pszEmulation;
+    /** Pointer to the command and functions for the current debugger emulation. */
+    PCDBGCCMD           paEmulationCmds;
+    /** The number of commands paEmulationCmds points to. */
+    unsigned            cEmulationCmds;
+    /** Log indicator. (If set we're writing the log to the console.) */
+    bool                fLog;
 
     /** Indicates whether we're in guest (true) or hypervisor (false) register context. */
     bool                fRegCtxGuest;
     /** Indicates whether the register are terse or sparse. */
     bool                fRegTerse;
+
+    /** Current dissassembler position. */
+    DBGCVAR             DisasmPos;
+    /** Current source position. (flat GC) */
+    DBGCVAR             SourcePos;
+    /** Current memory dump position. */
+    DBGCVAR             DumpPos;
+    /** Size of the previous dump element. */
+    unsigned            cbDumpElement;
+
+    /** Number of variables in papVars. */
+    unsigned            cVars;
+    /** Array of global variables.
+     * Global variables can be referenced using the $ operator and set
+     * and unset using command with those names. */
+    PDBGCNAMEDVAR      *papVars;
+
+    /** The list of breakpoints. (singly linked) */
+    PDBGCBP             pFirstBp;
+
+    /** @name Parsing and Execution
+     * @{ */
 
     /** Input buffer. */
     char                achInput[2048];
@@ -251,6 +278,8 @@ typedef struct DBGC
     /** Indicates that we have a buffer overflow condition.
      * This means that input is ignored up to the next newline. */
     bool                fInputOverflow;
+    /** Indicates whether or we're ready for input. */
+    bool                fReady;
 
     /** Scratch buffer position. */
     char               *pszScratch;
@@ -264,24 +293,7 @@ typedef struct DBGC
     /** rc from last dbgcHlpPrintfV(). */
     int                 rcOutput;
 
-    /** Number of variables in papVars. */
-    unsigned            cVars;
-    /** Array of global variables.
-     * Global variables can be referenced using the $ operator and set
-     * and unset using command with those names. */
-    PDBGCNAMEDVAR      *papVars;
-
-    /** Current dissassembler position. */
-    DBGCVAR             DisasmPos;
-    /** Current source position. (flat GC) */
-    DBGCVAR             SourcePos;
-    /** Current memory dump position. */
-    DBGCVAR             DumpPos;
-    /** Size of the previous dump element. */
-    unsigned            cbDumpElement;
-
-    /** The list of breakpoints. (singly linked) */
-    PDBGCBP             pFirstBp;
+    /** @} */
 } DBGC;
 /** Pointer to debugger console instance data. */
 typedef DBGC *PDBGC;
@@ -420,28 +432,13 @@ typedef struct DBGCSYM
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdQuit(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdStop(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdDisasm(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
@@ -453,7 +450,6 @@ static DECLCALLBACK(int) dbgcCmdLogDest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
 static DECLCALLBACK(int) dbgcCmdLogFlags(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdFormat(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdLoadSyms(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdUnset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
@@ -462,6 +458,24 @@ static DECLCALLBACK(int) dbgcCmdShowVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
 static DECLCALLBACK(int) dbgcCmdHarakiri(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+
+static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 
 static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult);
@@ -551,39 +565,6 @@ static const DBGCVARDESC    g_aArgFilename[] =
 };
 
 
-/** 'ba' arguments. */
-static const DBGCVARDESC    g_aArgBrkAcc[] =
-{
-    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "access",       "The access type: x=execute, rw=read/write (alias r), w=write, i=not implemented." },
-    {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "size",         "The access size: 1, 2, 4, or 8. 'x' access requires 1, and 8 requires amd64 long mode." },
-    {  1,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "address",      "The address." },
-    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "passes",       "The number of passes before we trigger the breakpoint. (0 is default)" },
-    {  0,           1,          DBGCVAR_CAT_NUMBER,     DBGCVD_FLAGS_DEP_PREV,          "max passes",   "The number of passes after which we stop triggering the breakpoint. (~0 is default)" },
-    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "cmds",         "String of commands to be executed when the breakpoint is hit. Quote it!" },
-};
-
-
-/** 'bc', 'bd', 'be' arguments. */
-static const DBGCVARDESC    g_aArgBrks[] =
-{
-    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "#bp",          "Breakpoint number." },
-    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "all",          "All breakpoints." },
-};
-
-
-/** 'bp' arguments. */
-static const DBGCVARDESC    g_aArgBrkSet[] =
-{
-    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "address",      "The address." },
-    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "passes",       "The number of passes before we trigger the breakpoint. (0 is default)" },
-    {  0,           1,          DBGCVAR_CAT_NUMBER,     DBGCVD_FLAGS_DEP_PREV,          "max passes",   "The number of passes after which we stop triggering the breakpoint. (~0 is default)" },
-    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "cmds",         "String of commands to be executed when the breakpoint is hit. Quote it!" },
-};
-
-
 /** 'br' arguments. */
 static const DBGCVARDESC    g_aArgBrkREM[] =
 {
@@ -592,14 +573,6 @@ static const DBGCVARDESC    g_aArgBrkREM[] =
     {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "passes",       "The number of passes before we trigger the breakpoint. (0 is default)" },
     {  0,           1,          DBGCVAR_CAT_NUMBER,     DBGCVD_FLAGS_DEP_PREV,          "max passes",   "The number of passes after which we stop triggering the breakpoint. (~0 is default)" },
     {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "cmds",         "String of commands to be executed when the breakpoint is hit. Quote it!" },
-};
-
-
-/** 'd?' arguments. */
-static const DBGCVARDESC    g_aArgDumpMem[] =
-{
-    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start dumping memory." },
 };
 
 
@@ -679,22 +652,6 @@ static const DBGCVARDESC    g_aArgInfo[] =
 };
 
 
-
-/** 'ln' arguments. */
-static const DBGCVARDESC    g_aArgListNear[] =
-{
-    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_POINTER,    0,                              "address",      "Address of the symbol to look up." },
-    {  0,           ~0,         DBGCVAR_CAT_SYMBOL,     0,                              "symbol",       "Symbol to lookup." },
-};
-
-/** 'ln' return. */
-static const DBGCVARDESC    g_RetListNear =
-{
-       1,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "The last resolved symbol/address with adjusted range."
-};
-
-
 /** loadsyms arguments. */
 static const DBGCVARDESC    g_aArgLoadSyms[] =
 {
@@ -731,6 +688,126 @@ static const DBGCVARDESC    g_aArgLogFlags[] =
 };
 
 
+/** 'set' arguments */
+static const DBGCVARDESC    g_aArgSet[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "var",          "Variable name." },
+    {  1,           1,          DBGCVAR_CAT_ANY,        0,                              "value",        "Value to assign to the variable." },
+};
+
+
+
+
+
+/** Command descriptors for the basic commands. */
+static const DBGCCMD    g_aCmds[] =
+{
+    /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,         cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
+    { "br",         1,        4,        &g_aArgBrkREM[0],   ELEMENTS(g_aArgBrkREM),     NULL,               0,          dbgcCmdBrkREM,      "<address> [passes [max passes]] [cmds]",
+                                                                                                                                                                    "Sets a recompiler specific breakpoint." },
+    { "bye",        0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
+    { "dg",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT)." },
+    { "dga",        0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT) including not-present entries." },
+    { "di",         0,       ~0,        &g_aArgDumpIDT[0],  ELEMENTS(g_aArgDumpIDT),    NULL,               0,          dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT)." },
+    { "dia",        0,       ~0,        &g_aArgDumpIDT[0],  ELEMENTS(g_aArgDumpIDT),    NULL,               0,          dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT) including not-present entries." },
+    { "dl",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT)." },
+    { "dla",        0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT) including not-present entries." },
+    { "dpd",        0,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the default context." },
+    { "dpda",       0,        1,        &g_aArgDumpPDAddr[0],ELEMENTS(g_aArgDumpPDAddr),NULL,               0,          dbgcCmdDumpPageDir, "[addr]",               "Dumps specified page directory." },
+    { "dpdb",       1,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDirBoth, "[addr] [index]",   "Dumps page directory entries of the guest and the hypervisor. " },
+    { "dpdg",       0,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the guest." },
+    { "dpdh",       0,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the hypervisor. " },
+    { "dpt",        1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the default context." },
+    { "dpta",       1,        1,        &g_aArgDumpPTAddr[0],ELEMENTS(g_aArgDumpPTAddr), NULL,              0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps specified page table." },
+    { "dptb",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTableBoth,"<addr>",          "Dumps page table entries of the guest and the hypervisor." },
+    { "dptg",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the guest." },
+    { "dpth",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the hypervisor." },
+    { "dt",         0,        1,        &g_aArgDumpTSS[0],  ELEMENTS(g_aArgDumpTSS),    NULL,               0,          dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the task state segment (TSS)." },
+    { "echo",       1,        ~0,       &g_aArgMultiStr[0], ELEMENTS(g_aArgMultiStr),   NULL,               0,          dbgcCmdEcho,        "<str1> [str2..[strN]]", "Displays the strings separated by one blank space and the last one followed by a newline." },
+    { "exit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
+    { "format",     1,        1,        &g_aArgAny[0],      ELEMENTS(g_aArgAny),        NULL,               0,          dbgcCmdFormat,      "",                     "Evaluates an expression and formats it." },
+    { "harakiri",   0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdHarakiri,    "",                     "Kills debugger process." },
+    { "help",       0,        ~0,       &g_aArgHelp[0],     ELEMENTS(g_aArgHelp),       NULL,               0,          dbgcCmdHelp,        "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
+    { "info",       1,        2,        &g_aArgInfo[0],     ELEMENTS(g_aArgInfo),       NULL,               0,          dbgcCmdInfo,        "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },
+    { "loadsyms",   1,        5,        &g_aArgLoadSyms[0], ELEMENTS(g_aArgLoadSyms),   NULL,               0,          dbgcCmdLoadSyms,    "<filename> [delta] [module] [module address]", "Loads symbols from a text file. Optionally giving a delta and a module." },
+    { "loadvars",   1,        1,        &g_aArgFilename[0], ELEMENTS(g_aArgFilename),   NULL,               0,          dbgcCmdLoadVars,    "<filename>",           "Load variables from file. One per line, same as the args to the set command." },
+    { "log",        1,        1,        &g_aArgLog[0],      ELEMENTS(g_aArgLog),        NULL,               0,          dbgcCmdLog,         "<group string>",       "Modifies the logging group settings (VBOX_LOG)" },
+    { "logdest",    1,        1,        &g_aArgLogDest[0],  ELEMENTS(g_aArgLogDest),    NULL,               0,          dbgcCmdLogDest,     "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
+    { "logflags",   1,        1,        &g_aArgLogFlags[0], ELEMENTS(g_aArgLogFlags),   NULL,               0,          dbgcCmdLogFlags,    "<flags string>",       "Modifies the logging flags (VBOX_LOG_FLAGS)." },
+    { "quit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
+    { "runscript",  1,        1,        &g_aArgFilename[0], ELEMENTS(g_aArgFilename),   NULL,               0,          dbgcCmdRunScript,   "<filename>",           "Runs the command listed in the script. Lines starting with '#' (after removing blanks) are comment. blank lines are ignored. Stops on failure." },
+    { "set",        2,        2,        &g_aArgSet[0],      ELEMENTS(g_aArgSet),        NULL,               0,          dbgcCmdSet,         "<var> <value>",        "Sets a global variable." },
+    { "showvars",   0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdShowVars,    "",                     "List all the defined variables." },
+    { "stop",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdStop,        "",                     "Stop execution." },
+    { "unset",      1,        ~0,       &g_aArgMultiStr[0], ELEMENTS(g_aArgMultiStr),   NULL,               0,          dbgcCmdUnset,       "<var1> [var1..[varN]]", "Unsets (delete) one or more global variables." },
+};
+
+
+/** 'ba' arguments. */
+static const DBGCVARDESC    g_aArgBrkAcc[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "access",       "The access type: x=execute, rw=read/write (alias r), w=write, i=not implemented." },
+    {  1,           1,          DBGCVAR_CAT_NUMBER,     0,                              "size",         "The access size: 1, 2, 4, or 8. 'x' access requires 1, and 8 requires amd64 long mode." },
+    {  1,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "address",      "The address." },
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "passes",       "The number of passes before we trigger the breakpoint. (0 is default)" },
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     DBGCVD_FLAGS_DEP_PREV,          "max passes",   "The number of passes after which we stop triggering the breakpoint. (~0 is default)" },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "cmds",         "String of commands to be executed when the breakpoint is hit. Quote it!" },
+};
+
+
+/** 'bc', 'bd', 'be' arguments. */
+static const DBGCVARDESC    g_aArgBrks[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "#bp",          "Breakpoint number." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "all",          "All breakpoints." },
+};
+
+
+/** 'bp' arguments. */
+static const DBGCVARDESC    g_aArgBrkSet[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "address",      "The address." },
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "passes",       "The number of passes before we trigger the breakpoint. (0 is default)" },
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     DBGCVD_FLAGS_DEP_PREV,          "max passes",   "The number of passes after which we stop triggering the breakpoint. (~0 is default)" },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "cmds",         "String of commands to be executed when the breakpoint is hit. Quote it!" },
+};
+
+
+/** 'd?' arguments. */
+static const DBGCVARDESC    g_aArgDumpMem[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start dumping memory." },
+};
+
+
+/** 'ln' arguments. */
+static const DBGCVARDESC    g_aArgListNear[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           ~0,         DBGCVAR_CAT_POINTER,    0,                              "address",      "Address of the symbol to look up." },
+    {  0,           ~0,         DBGCVAR_CAT_SYMBOL,     0,                              "symbol",       "Symbol to lookup." },
+};
+
+/** 'ln' return. */
+static const DBGCVARDESC    g_RetListNear =
+{
+       1,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "The last resolved symbol/address with adjusted range."
+};
+
+
+/** 'ls' arguments. */
+static const DBGCVARDESC    g_aArgListSource[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start looking for source lines." },
+};
+
+
 /** 'm' argument. */
 static const DBGCVARDESC    g_aArgMemoryInfo[] =
 {
@@ -749,101 +826,62 @@ static const DBGCVARDESC    g_aArgReg[] =
 
 
 /** 's' arguments. */
-static const DBGCVARDESC    g_aArgSource[] =
+static const DBGCVARDESC    g_aArgSearchMem[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start looking for source lines." },
-};
-
-
-/** 'set' arguments */
-static const DBGCVARDESC    g_aArgSet[] =
-{
-    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "var",          "Variable name." },
-    {  1,           1,          DBGCVAR_CAT_ANY,        0,                              "value",        "Value to assign to the variable." },
+    {  1,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "range",        "Register to show or set." },
+    {  1,           ~0,         DBGCVAR_CAT_ANY,        0,                              "pattern",      "Pattern to search for." },
 };
 
 
 /** 'u' arguments. */
-static const DBGCVARDESC    g_aArgDisasm[] =
+static const DBGCVARDESC    g_aArgUnassemble[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start disassembling." },
 };
 
 
-
-
-
-/** Command descriptors. */
-static const DBGCCMD    g_aCmds[] =
+/** Command descriptors for the CodeView / WinDbg emulation.
+ * The emulation isn't attempting to be identical, only somewhat similar.
+ */
+static const DBGCCMD    g_aCmdsCodeView[] =
 {
-    /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,         cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "ba",         3,        6,        &g_aArgBrkAcc[0],   ELEMENTS(g_aArgBrkAcc),     NULL,               0,          dbgcCmdBrkAccess,   "<access> <size> <address> [passes [max passes]] [cmds]",
+    /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,         cArgDescs,                     pResultDesc,        fFlags,  pfnHandler          pszSyntax,          ....pszDescription */
+    { "ba",         3,        6,        &g_aArgBrkAcc[0],   RT_ELEMENTS(g_aArgBrkAcc),     NULL,               0,       dbgcCmdBrkAccess,   "<access> <size> <address> [passes [max passes]] [cmds]",
                                                                                                                                                                     "Sets a data access breakpoint." },
-    { "bc",         1,       ~0,        &g_aArgBrks[0],     ELEMENTS(g_aArgBrks),       NULL,               0,          dbgcCmdBrkClear,    "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
-    { "bd",         1,       ~0,        &g_aArgBrks[0],     ELEMENTS(g_aArgBrks),       NULL,               0,          dbgcCmdBrkDisable,  "all | <bp#> [bp# []]", "Disables a set of breakpoints." },
-    { "be",         1,       ~0,        &g_aArgBrks[0],     ELEMENTS(g_aArgBrks),       NULL,               0,          dbgcCmdBrkEnable,   "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
-    { "bl",         0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdBrkList,     "",                     "Lists all the breakpoints." },
-    { "bp",         1,        4,        &g_aArgBrkSet[0],   ELEMENTS(g_aArgBrkSet),     NULL,               0,          dbgcCmdBrkSet,      "<address> [passes [max passes]] [cmds]",
-                                                                                                                                                                    "Sets a breakpoint (int 3)." },
-    { "br",         1,        4,        &g_aArgBrkREM[0],   ELEMENTS(g_aArgBrkREM),     NULL,               0,          dbgcCmdBrkREM,      "<address> [passes [max passes]] [cmds]",
-                                                                                                                                                                    "Sets a recompiler specific breakpoint." },
-    { "bye",        0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
-    { "d",          0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory using last element size." },
-    { "da",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory as ascii string." },
-    { "db",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in bytes." },
-    { "dd",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in double words." },
-    { "dg",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT)." },
-    { "dga",        0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT) including not-present entries." },
-    { "di",         0,       ~0,        &g_aArgDumpIDT[0],  ELEMENTS(g_aArgDumpIDT),    NULL,               0,          dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT)." },
-    { "dia",        0,       ~0,        &g_aArgDumpIDT[0],  ELEMENTS(g_aArgDumpIDT),    NULL,               0,          dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT) including not-present entries." },
-    { "dl",         0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT)." },
-    { "dla",        0,       ~0,        &g_aArgDumpDT[0],   ELEMENTS(g_aArgDumpDT),     NULL,               0,          dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT) including not-present entries." },
-    { "dpd",        0,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the default context." },
-    { "dpda",       0,        1,        &g_aArgDumpPDAddr[0],ELEMENTS(g_aArgDumpPDAddr),NULL,               0,          dbgcCmdDumpPageDir, "[addr]",               "Dumps specified page directory." },
-    { "dpdb",       1,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDirBoth, "[addr] [index]",   "Dumps page directory entries of the guest and the hypervisor. " },
-    { "dpdg",       0,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the guest." },
-    { "dpdh",       0,        1,        &g_aArgDumpPD[0],   ELEMENTS(g_aArgDumpPD),     NULL,               0,          dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the hypervisor. " },
-    { "dpt",        1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the default context." },
-    { "dpta",       1,        1,        &g_aArgDumpPTAddr[0],ELEMENTS(g_aArgDumpPTAddr), NULL,              0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps specified page table." },
-    { "dptb",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTableBoth,"<addr>",          "Dumps page table entries of the guest and the hypervisor." },
-    { "dptg",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the guest." },
-    { "dpth",       1,        1,        &g_aArgDumpPT[0],   ELEMENTS(g_aArgDumpPT),     NULL,               0,          dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the hypervisor." },
-    { "dq",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in quad words." },
-    { "dt",         0,        1,        &g_aArgDumpTSS[0],  ELEMENTS(g_aArgDumpTSS),    NULL,               0,          dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the task state segment (TSS)." },
-    { "dw",         0,        1,        &g_aArgDumpMem[0],  ELEMENTS(g_aArgDumpMem),    NULL,               0,          dbgcCmdDumpMem,     "[addr]",               "Dump memory in words." },
-    { "echo",       1,        ~0,       &g_aArgMultiStr[0], ELEMENTS(g_aArgMultiStr),   NULL,               0,          dbgcCmdEcho,        "<str1> [str2..[strN]]", "Displays the strings separated by one blank space and the last one followed by a newline." },
-    { "exit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
-    { "format",     1,        1,        &g_aArgAny[0],      ELEMENTS(g_aArgAny),        NULL,               0,          dbgcCmdFormat,      "",                     "Evaluates an expression and formats it." },
-    { "g",          0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdGo,          "",                     "Continue execution." },
-    { "harakiri",   0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdHarakiri,    "",                     "Kills debugger process." },
-    { "help",       0,        ~0,       &g_aArgHelp[0],     ELEMENTS(g_aArgHelp),       NULL,               0,          dbgcCmdHelp,        "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
-    { "info",       1,        2,        &g_aArgInfo[0],     ELEMENTS(g_aArgInfo),       NULL,               0,          dbgcCmdInfo,        "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },
-    { "k",          0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdStack,       "",                     "Callstack." },
-    { "kg",         0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdStack,       "",                     "Callstack - guest." },
-    { "kh",         0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdStack,       "",                     "Callstack - hypervisor." },
-    { "ln",         0,        ~0,       &g_aArgListNear[0], ELEMENTS(g_aArgListNear),   &g_RetListNear,     0,          dbgcCmdListNear,    "[addr/sym [..]]",      "List symbols near to the address. Default address is CS:EIP." },
-    { "loadsyms",   1,        5,        &g_aArgLoadSyms[0], ELEMENTS(g_aArgLoadSyms),   NULL,               0,          dbgcCmdLoadSyms,    "<filename> [delta] [module] [module address]", "Loads symbols from a text file. Optionally giving a delta and a module." },
-    { "loadvars",   1,        1,        &g_aArgFilename[0], ELEMENTS(g_aArgFilename),   NULL,               0,          dbgcCmdLoadVars,    "<filename>",           "Load variables from file. One per line, same as the args to the set command." },
-    { "log",        1,        1,        &g_aArgLog[0],      ELEMENTS(g_aArgLog),        NULL,               0,          dbgcCmdLog,         "<group string>",       "Modifies the logging group settings (VBOX_LOG)" },
-    { "logdest",    1,        1,        &g_aArgLogDest[0],  ELEMENTS(g_aArgLogDest),    NULL,               0,          dbgcCmdLogDest,     "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
-    { "logflags",   1,        1,        &g_aArgLogFlags[0], ELEMENTS(g_aArgLogFlags),   NULL,               0,          dbgcCmdLogFlags,    "<flags string>",       "Modifies the logging flags (VBOX_LOG_FLAGS)." },
-    { "m",          1,        1,        &g_aArgMemoryInfo[0],ELEMENTS(g_aArgMemoryInfo),NULL,               0,          dbgcCmdMemoryInfo,  "<addr>",               "Display information about that piece of memory." },
-    { "quit",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdQuit,        "",                     "Exits the debugger." },
-    { "r",          0,        2,        &g_aArgReg[0],      ELEMENTS(g_aArgReg),        NULL,               0,          dbgcCmdReg,         "[reg [newval]]",       "Show or set register(s) - active reg set." },
-    { "rg",         0,        2,        &g_aArgReg[0],      ELEMENTS(g_aArgReg),        NULL,               0,          dbgcCmdRegGuest,    "[reg [newval]]",       "Show or set register(s) - guest reg set." },
-    { "rh",         0,        2,        &g_aArgReg[0],      ELEMENTS(g_aArgReg),        NULL,               0,          dbgcCmdRegHyper,    "[reg [newval]]",       "Show or set register(s) - hypervisor reg set." },
-    { "rt",         0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
-    { "runscript",  1,        1,        &g_aArgFilename[0], ELEMENTS(g_aArgFilename),   NULL,               0,          dbgcCmdRunScript,   "<filename>",           "Runs the command listed in the script. Lines starting with '#' (after removing blanks) are comment. blank lines are ignored. Stops on failure." },
-    { "s",          0,        1,        &g_aArgSource[0],   ELEMENTS(g_aArgSource),     NULL,               0,          dbgcCmdSource,      "[addr]",               "Source." },
-    { "set",        2,        2,        &g_aArgSet[0],      ELEMENTS(g_aArgSet),        NULL,               0,          dbgcCmdSet,         "<var> <value>",        "Sets a global variable." },
-    { "showvars",   0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdShowVars,    "",                     "List all the defined variables." },
-    { "stop",       0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdStop,        "",                     "Stop execution." },
-    { "t",          0,        0,        NULL,               0,                          NULL,               0,          dbgcCmdTrace,       "",                     "Instruction trace (step into)." },
-    { "u",          0,        1,        &g_aArgDisasm[0],   ELEMENTS(g_aArgDisasm),     NULL,               0,          dbgcCmdDisasm,      "[addr]",               "Disassemble." },
-    { "unset",      1,        ~0,       &g_aArgMultiStr[0], ELEMENTS(g_aArgMultiStr),   NULL,               0,          dbgcCmdUnset,       "<var1> [var1..[varN]]", "Unsets (delete) one or more global variables." },
+    { "bc",         1,       ~0,        &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),       NULL,               0,       dbgcCmdBrkClear,    "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
+    { "bd",         1,       ~0,        &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),       NULL,               0,       dbgcCmdBrkDisable,  "all | <bp#> [bp# []]", "Disables a set of breakpoints." },
+    { "be",         1,       ~0,        &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),       NULL,               0,       dbgcCmdBrkEnable,   "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
+    { "bl",         0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdBrkList,     "",                     "Lists all the breakpoints." },
+    { "bp",         1,        4,        &g_aArgBrkSet[0],   RT_ELEMENTS(g_aArgBrkSet),     NULL,               0,       dbgcCmdBrkSet,      "<address> [passes [max passes]] [cmds]",
+                                                                                                                                                                 "Sets a breakpoint (int 3)." },
+    { "d",          0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),    NULL,               0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory using last element size." },
+    { "da",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),    NULL,               0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as ascii string." },
+    { "db",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),    NULL,               0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in bytes." },
+    { "dd",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),    NULL,               0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in double words." },
+    { "dq",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),    NULL,               0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in quad words." },
+    { "dw",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),    NULL,               0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in words." },
+    { "g",          0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdGo,          "",                     "Continue execution." },
+    { "k",          0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdStack,       "",                     "Callstack." },
+    { "kg",         0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdStack,       "",                     "Callstack - guest." },
+    { "kh",         0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdStack,       "",                     "Callstack - hypervisor." },
+    { "ln",         0,        ~0,       &g_aArgListNear[0], RT_ELEMENTS(g_aArgListNear),   &g_RetListNear,     0,       dbgcCmdListNear,    "[addr/sym [..]]",      "List symbols near to the address. Default address is CS:EIP." },
+    { "ls",         0,        1,        &g_aArgListSource[0],RT_ELEMENTS(g_aArgListSource),NULL,               0,       dbgcCmdListSource,  "[addr]",               "Source." },
+    { "m",          1,        1,        &g_aArgMemoryInfo[0],RT_ELEMENTS(g_aArgMemoryInfo),NULL,               0,       dbgcCmdMemoryInfo,  "<addr>",               "Display information about that piece of memory." },
+    { "r",          0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdReg,         "[reg [newval]]",       "Show or set register(s) - active reg set." },
+    { "rg",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdRegGuest,    "[reg [newval]]",       "Show or set register(s) - guest reg set." },
+    { "rh",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdRegHyper,    "[reg [newval]]",       "Show or set register(s) - hypervisor reg set." },
+    { "rt",         0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
+    //{ "s",          2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Continue last search." },
+    { "sa",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for an ascii string." },
+    { "sb",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more bytes." },
+    { "sd",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more double words." },
+    { "sq",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more quad words." },
+    { "su",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for an unicode string." },
+    { "sw",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more words." },
+    { "t",          0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdTrace,       "",                     "Instruction trace (step into)." },
+    { "u",          0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble),NULL,               0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble." },
 };
 
 
@@ -1097,6 +1135,7 @@ static int dbgcPrintHelp(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, bool fExternal)
     return rc;
 }
 
+
 /**
  * The 'help' command.
  *
@@ -1109,8 +1148,10 @@ static int dbgcPrintHelp(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, bool fExternal)
  */
 static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
+    PDBGC       pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     int         rc = VINF_SUCCESS;
     unsigned    i;
+
     if (!cArgs)
     {
         /*
@@ -1127,6 +1168,16 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
                                     g_aCmds[i].pszCmd,
                                     g_aCmds[i].pszSyntax,
                                     g_aCmds[i].pszDescription);
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                                "\n"
+                                "Emulation: %s\n", pDbgc->pszEmulation);
+        PCDBGCCMD pCmd = pDbgc->paEmulationCmds;
+        for (i = 0; i < pDbgc->cEmulationCmds; i++, pCmd++)
+            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
+                                    "%-11s %-30s %s\n",
+                                    pCmd->pszCmd,
+                                    pCmd->pszSyntax,
+                                    pCmd->pszDescription);
 
         if (g_pExtCmdsHead)
         {
@@ -1172,9 +1223,18 @@ static DECLCALLBACK(int) dbgcCmdHelp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
         for (unsigned iArg = 0; iArg < cArgs; iArg++)
         {
             Assert(paArgs[iArg].enmType == DBGCVAR_TYPE_STRING);
-
-            /* lookup in the command list */
             bool fFound = false;
+
+            /* lookup in the emulation command list first */
+            for (i = 0; i < pDbgc->cEmulationCmds; i++)
+                if (!strcmp(pDbgc->paEmulationCmds[i].pszCmd, paArgs[iArg].u.pszString))
+                {
+                    rc = dbgcPrintHelp(pCmdHlp, &pDbgc->paEmulationCmds[i], false);
+                    fFound = true;
+                    break;
+                }
+
+            /* lookup in the command list (even when found in the emulation) */
             for (i = 0; i < ELEMENTS(g_aCmds); i++)
                 if (!strcmp(g_aCmds[i].pszCmd, paArgs[iArg].u.pszString))
                 {
@@ -1838,7 +1898,7 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD /*pCmd*/, PDBGCCMDHLP pCmdHlp, 
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) dbgcCmdDisasm(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
@@ -1989,7 +2049,7 @@ static DECLCALLBACK(int) dbgcCmdDisasm(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
 
 
 /**
- * The 's' command.
+ * The 'ls' command.
  *
  * @returns VBox status.
  * @param   pCmd        Pointer to the command descriptor (as registered).
@@ -1998,7 +2058,7 @@ static DECLCALLBACK(int) dbgcCmdDisasm(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) dbgcCmdSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
@@ -2742,7 +2802,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
         if (    paArgs[i].enmType != DBGCVAR_TYPE_NUMBER
             &&  !DBGCVAR_ISPOINTER(paArgs[i].enmType))
             return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number or pointer type but %d.\n", i, paArgs[i].enmType);
-        unsigned u64;
+        uint64_t u64;
         unsigned cSels = 1;
         switch (paArgs[i].enmType)
         {
@@ -2837,7 +2897,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     uint16_t cbLimit;
     RTGCUINTPTR GCPtrBase = CPUMGetGuestIDTR(pVM, &cbLimit);
     CPUMMODE enmMode = CPUMGetGuestMode(pVM);
-    size_t cbEntry;
+    unsigned cbEntry;
     switch (enmMode)
     {
         case CPUMMODE_REAL:         cbEntry = sizeof(RTFAR16); break;
@@ -2869,7 +2929,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
             return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number type but %d.\n", i, paArgs[i].enmType);
         if (paArgs[i].u.u64Number < 256)
         {
-            RTGCUINTPTR iInt = paArgs[i].u.u64Number;
+            RTGCUINTPTR iInt = (RTGCUINTPTR)paArgs[i].u.u64Number;
             unsigned cInts = paArgs[i].enmRangeType != DBGCVAR_RANGE_NONE
                            ? paArgs[i].u64Range
                            : 1;
@@ -2961,8 +3021,8 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     /*
      * Figure out the element size.
      */
-    size_t  cbElement;
-    bool    fAscii = false;
+    unsigned    cbElement;
+    bool        fAscii = false;
     switch (pCmd->pszCmd[1])
     {
         default:
@@ -3102,7 +3162,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
                     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\\x%x", u8);
             }
             if (u8 == '\0')
-                cbLeft = cb = i + 1;
+                cb = cbLeft = i + 1;
             if (cbLeft - cb <= 0 && u8Prev != '\n')
                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
         }
@@ -3110,7 +3170,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
         /*
          * Advance
          */
-        cbLeft -= cb;
+        cbLeft -= (int)cb;
         rc = pCmdHlp->pfnEval(pCmdHlp, &pDbgc->DumpPos, "(%Dv) + %x", &pDbgc->DumpPos, cb);
         if (VBOX_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Expression: (%Dv) + %x\n", &pDbgc->DumpPos, cb);
@@ -3813,7 +3873,7 @@ static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
 
 
 /**
- * The 'echo' command.
+ * The 'runscript' command.
  *
  * @returns VBox status.
  * @param   pCmd        Pointer to the command descriptor (as registered).
@@ -3894,6 +3954,26 @@ static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
     NOREF(pCmd); NOREF(pResult); NOREF(pVM);
     return rc;
+}
+
+
+/**
+ * The 's' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /* check that the parser did what it's supposed to do. */
+    if (    cArgs != 1
+        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
+    return -1;
 }
 
 
@@ -4550,7 +4630,7 @@ static DECLCALLBACK(int) dbgcCmdLoadVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
             char *psz = szLine;
             while (isblank(*psz))
                 psz++;
-            int i = strlen(psz) - 1;
+            int i = (int)strlen(psz) - 1;
             while (i >= 0 && isspace(psz[i]))
                 psz[i--] ='\0';
             /* Execute it if not comment or empty line. */
@@ -6417,8 +6497,9 @@ static DECLCALLBACK(int) dbgcHlpPrintf(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten, 
  * @param   fFlags          Flags (RTSTR_NTFS_*).
  * @param   chArgSize       The argument size specifier, 'l' or 'L'.
  */
-static DECLCALLBACK(int) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-    const char **ppszFormat, va_list *pArgs, int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize)
+static DECLCALLBACK(size_t) dbgcStringFormatter(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                                const char **ppszFormat, va_list *pArgs, int cchWidth,
+                                                int cchPrecision, unsigned fFlags, char chArgSize)
 {
     NOREF(cchWidth); NOREF(cchPrecision); NOREF(fFlags); NOREF(chArgSize); NOREF(pvArg);
     if (**ppszFormat != 'D')
@@ -7323,7 +7404,7 @@ static int dbgcInputOverflow(PDBGC pDbgc)
         {
             pDbgc->fInputOverflow = false;
             pDbgc->iRead = psz - &pDbgc->achInput[0] + 1;
-            pDbgc->iWrite = cbRead;
+            pDbgc->iWrite = (unsigned)cbRead;
             pDbgc->cInputLines = 0;
             break;
         }
@@ -7556,6 +7637,17 @@ static PCDBGCCMD dbgcRoutineLookup(PDBGC pDbgc, const char *pachName, size_t cch
 {
     if (!fExternal)
     {
+        /* emulation first, so commands can be overloaded (info ++). */
+        PCDBGCCMD pCmd = pDbgc->paEmulationCmds;
+        unsigned cLeft = pDbgc->cEmulationCmds;
+        while (cLeft-- > 0)
+        {
+            if (    !strncmp(pachName, pCmd->pszCmd, cchName)
+                &&  !pCmd->pszCmd[cchName])
+                return pCmd;
+            pCmd++;
+        }
+
         for (unsigned iCmd = 0; iCmd < ELEMENTS(g_aCmds); iCmd++)
         {
             if (    !strncmp(pachName, g_aCmds[iCmd].pszCmd, cchName)
@@ -9081,15 +9173,29 @@ DBGDECL(int)    DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
     pDbgc->CmdHlp.pfnVarToDbgfAddr = dbgcHlpVarToDbgfAddr;
     pDbgc->CmdHlp.pfnVarToBool = dbgcHlpVarToBool;
     pDbgc->pBack            = pBack;
-    pDbgc->pszScratch       = &pDbgc->achScratch[0];
-    pDbgc->fRegTerse        = true;
+    pDbgc->pVM              = NULL;
+    pDbgc->pszEmulation     = "CodeView/WinDbg";
+    pDbgc->paEmulationCmds  = &g_aCmdsCodeView[0];
+    pDbgc->cEmulationCmds   = RT_ELEMENTS(g_aCmdsCodeView);
+    //pDbgc->fLog             = false;
     pDbgc->fRegCtxGuest     = true;
-    pDbgc->fLog             = false;
-    pDbgc->iRead            = 0;
-    pDbgc->iWrite           = 0;
+    pDbgc->fRegTerse        = true;
+    //pDbgc->DisasmPos        = {0};
+    //pDbgc->SourcePos        = {0};
+    //pDbgc->DumpPos          = {0};
+    //pDbgc->cbDumpElement    = 0;
+    //pDbgc->cVars            = 0;
+    //pDbgc->paVars           = NULL;
+    //pDbgc->pFirstBp         = NULL;
+    //pDbgc->uInputZero       = 0;
+    //pDbgc->iRead            = 0;
+    //pDbgc->iWrite           = 0;
+    //pDbgc->cInputLines      = 0;
+    //pDbgc->fInputOverflow   = false;
     pDbgc->fReady           = true;
-    pDbgc->fInputOverflow   = false;
-    pDbgc->cInputLines      = 0;
+    pDbgc->pszScratch       = &pDbgc->achScratch[0];
+    //pDbgc->iArg             = 0;
+    //pDbgc->rcOutput         = 0;
 
     dbgcInitOpCharBitMap();
 
