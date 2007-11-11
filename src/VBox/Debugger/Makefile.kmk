@@ -35,6 +35,7 @@ Debugger_TEMPLATE  = VBOXR3
 Debugger_DEFS      = IN_VMM_R3 IN_PDM_R3 IN_CFGM_R3 IN_IOM_R3 IN_SUP_R3 IN_VM_R3 IN_RT_R3 IN_CPUM_R3 IN_SELM_R3 IN_PGM_R3 IN_TRPM_R3 IN_MM_R3 IN_DBG_R3 IN_DBGF_R3 IN_DIS_R3
 Debugger_SOURCES   = \
 	DBGConsole.cpp \
+	DBGCOps.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCTcp.cpp
 
@@ -97,6 +98,7 @@ VBoxDbg_SOURCES    = \
 	VBoxDbgConsole.cpp \
 	VBoxDbgStats.cpp \
 	DBGConsole.cpp \
+	DBGCOps.cpp \
 	DBGCEmulateCodeView.cpp
 
 VBoxDbg_LIBS = $(LIB_VMM)
