@@ -293,6 +293,13 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             break;
         }
 
+        case DDI_RESUME:
+        {
+            int rc = RTTimerStart(g_DevExt.pGipTimer, 0);
+            AssertRC(rc);
+            return DDI_SUCCESS;
+        }
+
         default:
             return DDI_FAILURE;
     }
@@ -341,6 +348,13 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             return DDI_SUCCESS;
         }
 
+        case DDI_SUSPEND:
+        {
+            int rc = RTTimerStop(g_DevExt.pGipTimer);
+            AssertRC(rc);
+            return DDI_SUCCESS;
+        }
+        
         default:
             return DDI_FAILURE;
     }
