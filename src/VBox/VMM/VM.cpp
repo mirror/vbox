@@ -441,6 +441,7 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
                         /* Relocate again, because some switcher fixups depends on R0 init results. */
                         VMR3Relocate(pVM, 0);
 
+#ifdef VBOX_WITH_DEBUGGER
                         /*
                          * Init the tcp debugger console if we're building
                          * with debugger support.
@@ -451,7 +452,7 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
                             ||  rc == VERR_NET_ADDRESS_IN_USE)
                         {
                             pVM->vm.s.pvDBGC = pvUser;
-
+#endif
                             /*
                              * Init the Guest Context components.
                              */
@@ -466,9 +467,11 @@ static int vmR3Create(PVM pVM, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFG
                                 g_pVMsHead = pVM;
                                 return VINF_SUCCESS;
                             }
+#ifdef VBOX_WITH_DEBUGGER
                             DBGCTcpTerminate(pVM, pVM->vm.s.pvDBGC);
                             pVM->vm.s.pvDBGC = NULL;
                         }
+#endif
                         //..
                     }
                     vmR3Destroy(pVM);
@@ -1451,8 +1454,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
      */
     int rc = TMR3Term(pVM);
     AssertRC(rc);
+#ifdef VBOX_WITH_DEBUGGER
     rc = DBGCTcpTerminate(pVM, pVM->vm.s.pvDBGC);
     pVM->vm.s.pvDBGC = NULL;
+#endif
     AssertRC(rc);
     rc = DBGFR3Term(pVM);
     AssertRC(rc);
