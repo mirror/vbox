@@ -55,6 +55,10 @@
 #include "VMMDev/VBoxDev.cpp"
 #undef LOG_GROUP
 #include "Serial/DevSerial.cpp"
+#ifdef VBOX_WITH_AHCI
+#undef LOG_GROUP
+#include "Storage/DevAHCI.cpp"
+#endif
 
 #include <stdio.h>
 

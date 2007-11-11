@@ -65,7 +65,10 @@
 #include "VMMDev/VBoxDev.cpp"
 #undef LOG_GROUP
 #include "Serial/DevSerial.cpp"
-
+#ifdef VBOX_WITH_AHCI
+#undef LOG_GROUP
+#include "Storage/DevAHCI.cpp"
+#endif
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -832,6 +835,97 @@ int main()
     GEN_CHECK_OFF(SerialState, ReceiveSem);
     GEN_CHECK_OFF(SerialState, last_break_enable);
     GEN_CHECK_OFF(SerialState, base);
+
+#ifdef VBOX_WITH_AHCI
+    /* Storage/DevAHCI.cpp */
+    GEN_CHECK_SIZE(AHCIPort);
+    GEN_CHECK_OFF(AHCIPort, pDevInsHC);
+    GEN_CHECK_OFF(AHCIPort, pDevInsGC);
+    GEN_CHECK_OFF(AHCIPort, pAhciHC);
+    GEN_CHECK_OFF(AHCIPort, pAhciGC);
+    GEN_CHECK_OFF(AHCIPort, regCLB);
+    GEN_CHECK_OFF(AHCIPort, regCLBU);
+    GEN_CHECK_OFF(AHCIPort, regFB);
+    GEN_CHECK_OFF(AHCIPort, regFBU);
+    GEN_CHECK_OFF(AHCIPort, regIS);
+    GEN_CHECK_OFF(AHCIPort, regIE);
+    GEN_CHECK_OFF(AHCIPort, regCMD);
+    GEN_CHECK_OFF(AHCIPort, regTFD);
+    GEN_CHECK_OFF(AHCIPort, regSIG);
+    GEN_CHECK_OFF(AHCIPort, regSSTS);
+    GEN_CHECK_OFF(AHCIPort, regSCTL);
+    GEN_CHECK_OFF(AHCIPort, regSERR);
+    GEN_CHECK_OFF(AHCIPort, regSACT);
+    GEN_CHECK_OFF(AHCIPort, regCI);
+    GEN_CHECK_OFF(AHCIPort, hbaIssueTag);
+    GEN_CHECK_OFF(AHCIPort, hbaDataTag);
+    GEN_CHECK_OFF(AHCIPort, hbaPMP);
+    GEN_CHECK_OFF(AHCIPort, hbaXferAtapi);
+    GEN_CHECK_OFF(AHCIPort, hbaPioXfer);
+    GEN_CHECK_OFF(AHCIPort, hbaPioESts);
+    GEN_CHECK_OFF(AHCIPort, hbaPioErr);
+    GEN_CHECK_OFF(AHCIPort, hbaPioIbit);
+    GEN_CHECK_OFF(AHCIPort, hbaDmaXferCnt);
+    GEN_CHECK_OFF(AHCIPort, hbaFatal);
+    GEN_CHECK_OFF(AHCIPort, hbaCmdToIssue);
+    GEN_CHECK_OFF(AHCIPort, hbaPrdIntr);
+    GEN_CHECK_OFF(AHCIPort, hbaUpdateSig);
+    GEN_CHECK_OFF(AHCIPort, hbaSActive);
+    GEN_CHECK_OFF(AHCIPort, AsyncIOThread);
+    GEN_CHECK_OFF(AHCIPort, fShutdown);
+    GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
+    GEN_CHECK_OFF(AHCIPort, pDrvBase);
+    GEN_CHECK_OFF(AHCIPort, pDrvBlock);
+    GEN_CHECK_OFF(AHCIPort, pDrvBlockBios);
+    GEN_CHECK_OFF(AHCIPort, IBase);
+    GEN_CHECK_OFF(AHCIPort, IPort);
+    GEN_CHECK_OFF(AHCIPort, cCHSCylinders);
+    GEN_CHECK_OFF(AHCIPort, cCHSHeads);
+    GEN_CHECK_OFF(AHCIPort, cCHSSectors);
+    GEN_CHECK_OFF(AHCIPort, cTotalSectors);
+    GEN_CHECK_OFF(AHCIPort, cMultSectors);
+    GEN_CHECK_OFF(AHCIPort, uATATransferMode);
+    GEN_CHECK_OFF(AHCIPort, uATARegFeature);
+    GEN_CHECK_OFF(AHCIPort, uATARegFeatureHOB);
+    GEN_CHECK_OFF(AHCIPort, uATARegError);
+    GEN_CHECK_OFF(AHCIPort, uATARegNSector);
+    GEN_CHECK_OFF(AHCIPort, uATARegNSectorHOB);
+    GEN_CHECK_OFF(AHCIPort, uATARegSector);
+    GEN_CHECK_OFF(AHCIPort, uATARegSectorHOB);
+    GEN_CHECK_OFF(AHCIPort, uATARegLCyl);
+    GEN_CHECK_OFF(AHCIPort, uATARegLCylHOB);
+    GEN_CHECK_OFF(AHCIPort, uATARegHCyl);
+    GEN_CHECK_OFF(AHCIPort, uATARegHCylHOB);
+    GEN_CHECK_OFF(AHCIPort, uATARegSelect);
+    GEN_CHECK_OFF(AHCIPort, uATARegStatus);
+    GEN_CHECK_OFF(AHCIPort, uATARegCommand);
+    GEN_CHECK_OFF(AHCIPort, iLUN);
+    GEN_CHECK_OFF(AHCIPort, fResetDevice);
+    GEN_CHECK_OFF(AHCIPort, fResetPort);
+    GEN_CHECK_OFF(AHCIPort, fLBA48);
+    GEN_CHECK_OFF(AHCIPort, cbIOBuffer);
+    GEN_CHECK_OFF(AHCIPort, pIOBufferHC);
+    GEN_CHECK_OFF(AHCIPort, pNotifierQueueHC);
+    GEN_CHECK_OFF(AHCIPort, pNotifierQueueGC);
+
+    GEN_CHECK_SIZE(AHCI);
+    GEN_CHECK_OFF(AHCI, dev);
+    GEN_CHECK_OFF(AHCI, pDevInsHC);
+    GEN_CHECK_OFF(AHCI, pDevInsGC);
+    GEN_CHECK_OFF(AHCI, MMIOBase);
+    GEN_CHECK_OFF(AHCI, regHbaCap);
+    GEN_CHECK_OFF(AHCI, regHbaCtrl);
+    GEN_CHECK_OFF(AHCI, regHbaIs);
+    GEN_CHECK_OFF(AHCI, regHbaPi);
+    GEN_CHECK_OFF(AHCI, regHbaVs);
+    GEN_CHECK_OFF(AHCI, ahciPort);
+    GEN_CHECK_OFF(AHCI, ahciPort[AHCI_NR_PORTS_IMPL-1]);
+    GEN_CHECK_OFF(AHCI, fInterrupts);
+    GEN_CHECK_OFF(AHCI, f64BitAddr);
+    GEN_CHECK_OFF(AHCI, fGCEnabled);
+    GEN_CHECK_OFF(AHCI, fR0Enabled);
+    GEN_CHECK_OFF(AHCI, lock);
+#endif /* VBOX_WITH_AHCI */
 
     return (0);
 }
