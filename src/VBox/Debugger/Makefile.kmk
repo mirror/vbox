@@ -36,6 +36,7 @@ Debugger_DEFS      = IN_VMM_R3 IN_PDM_R3 IN_CFGM_R3 IN_IOM_R3 IN_SUP_R3 IN_VM_R3
 Debugger_SOURCES   = \
 	DBGConsole.cpp \
 	DBGCBuiltInSymbols.cpp \
+	DBGCCommands.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
 	DBGCTcp.cpp
@@ -100,6 +101,7 @@ VBoxDbg_SOURCES    = \
 	VBoxDbgStats.cpp \
 	DBGConsole.cpp \
 	DBGCBuiltInSymbols.cpp \
+	DBGCCommands.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp
 
