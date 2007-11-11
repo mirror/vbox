@@ -558,7 +558,7 @@ static DECLCALLBACK(int) dbgcHlpExec(PDBGCCMDHLP pCmdHlp, const char *pszExpr, .
      * We save and restore the arg index and scratch buffer pointer.
      */
     pDbgc->pszScratch = pDbgc->pszScratch + cb + 1;
-    int rc = dbgcProcessCommand(pDbgc, pszScratch, cb);
+    int rc = dbgcProcessCommand(pDbgc, pszScratch, cb, false /* fNoExecute */);
 
     /* Restore the scratch state. */
     pDbgc->iArg         = iArg;

@@ -1202,11 +1202,12 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
  * Process one command.
  *
  * @returns VBox status code. Any error indicates the termination of the console session.
- * @param   pDbgc   Debugger console instance data.
- * @param   pszCmd  Pointer to the command.
- * @param   cchCmd  Length of the command.
+ * @param   pDbgc       Debugger console instance data.
+ * @param   pszCmd      Pointer to the command.
+ * @param   cchCmd      Length of the command.
+ * @param   fNoExecute  Indicates that no commands should actually be executed.
  */
-int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd)
+int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
 {
     char *pszCmdInput = pszCmd;
 
@@ -1229,6 +1230,7 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd)
         pszArgs++;
     if (*pszArgs && (!isblank(*pszArgs) || pszArgs == pszCmd))
     {
+        pDbgc->rcCmd = VINF_PARSE_INVALD_COMMAND_NAME;
         pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Syntax error in command '%s'!\n", pszCmdInput);
         return 0;
     }
@@ -1238,12 +1240,15 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd)
      */
     PCDBGCCMD pCmd = dbgcRoutineLookup(pDbgc, pszCmd, pszArgs - pszCmd, fExternal);
     if (!pCmd || (pCmd->fFlags & DBGCCMD_FLAGS_FUNCTION))
+    {
+        pDbgc->rcCmd = VINF_PARSE_COMMAND_NOT_FOUND;
         return pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Unknown command '%s'!\n", pszCmdInput);
+    }
 
     /*
      * Parse arguments (if any).
      */
-    unsigned    cArgs;
+    unsigned cArgs;
     int rc = dbgcProcessArguments(pDbgc, pCmd, pszArgs, &pDbgc->aArgs[pDbgc->iArg], ELEMENTS(pDbgc->aArgs) - pDbgc->iArg, &cArgs);
 
     /*
@@ -1251,10 +1256,14 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd)
      */
     if (!rc)
     {
-        rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[0], cArgs, NULL);
+        if (!fNoExecute)
+            rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[0], cArgs, NULL);
+        pDbgc->rcCmd = rc;
     }
     else
     {
+        pDbgc->rcCmd = rc;
+
         /* report parse / eval error. */
         switch (rc)
         {
@@ -1356,9 +1365,10 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd)
  * Process all commands currently in the buffer.
  *
  * @returns VBox status code. Any error indicates the termination of the console session.
- * @param   pDbgc   Debugger console instance data.
+ * @param   pDbgc       Debugger console instance data.
+ * @param   fNoExecute  Indicates that no commands should actually be executed.
  */
-static int dbgcProcessCommands(PDBGC pDbgc)
+static int dbgcProcessCommands(PDBGC pDbgc, bool fNoExecute)
 {
     int rc = 0;
     while (pDbgc->cInputLines)
@@ -1414,7 +1424,7 @@ static int dbgcProcessCommands(PDBGC pDbgc)
          */
         pDbgc->pszScratch = psz;
         pDbgc->iArg       = 0;
-        rc = dbgcProcessCommand(pDbgc, &pDbgc->achScratch[0], psz - &pDbgc->achScratch[0] - 1);
+        rc = dbgcProcessCommand(pDbgc, &pDbgc->achScratch[0], psz - &pDbgc->achScratch[0] - 1, fNoExecute);
         if (rc)
             break;
     }
@@ -1574,9 +1584,10 @@ static int dbgcInputRead(PDBGC pDbgc)
  * Reads input, parses it and executes commands on '\n'.
  *
  * @returns VBox status.
- * @param   pDbgc   Debugger console instance data.
+ * @param   pDbgc       Debugger console instance data.
+ * @param   fNoExecute  Indicates that no commands should actually be executed.
  */
-static int dbgcProcessInput(PDBGC pDbgc)
+int dbgcProcessInput(PDBGC pDbgc, bool fNoExecute)
 {
     /*
      * We know there's input ready, so let's read it first.
@@ -1592,7 +1603,7 @@ static int dbgcProcessInput(PDBGC pDbgc)
     {
         /** @todo this fReady stuff is broken. */
         pDbgc->fReady = false;
-        rc = dbgcProcessCommands(pDbgc);
+        rc = dbgcProcessCommands(pDbgc, fNoExecute);
         if (VBOX_SUCCESS(rc) && rc != VWRN_DBGC_CMD_PENDING)
             pDbgc->fReady = true;
         if (    VBOX_SUCCESS(rc)
@@ -1857,7 +1868,7 @@ int dbgcRun(PDBGC pDbgc)
              */
             if (pDbgc->pBack->pfnInput(pDbgc->pBack, 0))
             {
-                rc = dbgcProcessInput(pDbgc);
+                rc = dbgcProcessInput(pDbgc, false /* fNoExecute */);
                 if (VBOX_FAILURE(rc))
                     break;
             }
@@ -1869,7 +1880,7 @@ int dbgcRun(PDBGC pDbgc)
              */
             if (pDbgc->pBack->pfnInput(pDbgc->pBack, pDbgc->fLog ? 1 : 1000))
             {
-                rc = dbgcProcessInput(pDbgc);
+                rc = dbgcProcessInput(pDbgc, false /* fNoExecute */);
                 if (VBOX_FAILURE(rc))
                     break;
             }
@@ -1938,6 +1949,7 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     pDbgc->pszScratch       = &pDbgc->achScratch[0];
     //pDbgc->iArg             = 0;
     //pDbgc->rcOutput         = 0;
+    //pDbgc->rcCmd            = 0;
 
     dbgcInitOpCharBitMap();
 

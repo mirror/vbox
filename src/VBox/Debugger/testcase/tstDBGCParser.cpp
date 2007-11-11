@@ -49,7 +49,8 @@ static DBGCBACK g_tstBack =
 };
 /** For keeping track of output prefixing. */
 static bool g_fPendingPrefix = true;
-
+/** Pointer to the the current input position. */
+const char *g_pszInput = NULL;
 
 /**
  * Checks if there is input.
@@ -63,9 +64,8 @@ static bool g_fPendingPrefix = true;
  */
 static DECLCALLBACK(bool) tstDBGCBackInput(PDBGCBACK pBack, uint32_t cMillies)
 {
-    RTPrintf("tstDBGCParser: tstDBGCBackInput was called!\n");
-    g_cErrors++;
-    return false;
+    return g_pszInput != NULL
+       && *g_pszInput != '\0';
 }
 
 
@@ -84,9 +84,18 @@ static DECLCALLBACK(bool) tstDBGCBackInput(PDBGCBACK pBack, uint32_t cMillies)
  */
 static DECLCALLBACK(int) tstDBGCBackRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
-    RTPrintf("tstDBGCParser: tstDBGCBackRead was called!\n");
-    g_cErrors++;
-    return VERR_INTERNAL_ERROR;
+    if (g_pszInput && *g_pszInput)
+    {
+        size_t cb = strlen(g_pszInput);
+        if (cb > cbBuf)
+            cb = cbBuf;
+        *pcbRead = cb;
+        memcpy(pvBuf, g_pszInput, cb);
+        g_pszInput += cb;
+    }
+    else
+        *pcbRead = 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -105,12 +114,13 @@ static DECLCALLBACK(int) tstDBGCBackRead(PDBGCBACK pBack, void *pvBuf, size_t cb
 static DECLCALLBACK(int) tstDBGCBackWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
     const char *pch = (const char *)pvBuf;
-    *pcbWritten = cbBuf;
+    if (pcbWritten)
+        *pcbWritten = cbBuf;
     while (cbBuf-- > 0)
     {
         if (g_fPendingPrefix)
         {
-            RTPrintf("tstDBGCParser: OUTPUT: ");
+            RTPrintf("tstDBGCParser:  OUTPUT: ");
             g_fPendingPrefix = false;
         }
         if (*pch == '\n')
@@ -134,6 +144,30 @@ static void tstCompleteOutput(void)
 }
 
 
+/**
+ * Tries one command string.
+ * @param   pDbgc           Pointer to the debugger instance.
+ * @param   pszCmds         The command to test.
+ * @param   rcCmd           The expected result.
+ */
+static void tstTry(PDBGC pDbgc, const char *pszCmds, int rcCmd)
+{
+    g_pszInput = pszCmds;
+    if (strchr(pszCmds, '\0')[-1] == '\n')
+        RTPrintf("tstDBGCParser: RUNNING: %s", pszCmds);
+    else
+        RTPrintf("tstDBGCParser: RUNNING: %s\n", pszCmds);
+
+    pDbgc->rcCmd = VERR_INTERNAL_ERROR;
+    dbgcProcessInput(pDbgc, true /* fNoExecute */);
+    tstCompleteOutput();
+
+    if (pDbgc->rcCmd != rcCmd)
+    {
+        RTPrintf("tstDBGCParser: rcCmd=%Rrc expected =%Rrc\n", pDbgc->rcCmd, rcCmd);
+        g_cErrors++;
+    }
+}
 
 
 int main()
@@ -151,10 +185,18 @@ int main()
     int rc = dbgcCreate(&pDbgc, &g_tstBack, 0);
     if (RT_SUCCESS(rc))
     {
+        rc = dbgcProcessInput(pDbgc, true /* fNoExecute */);
+        tstCompleteOutput();
+        if (RT_SUCCESS(rc))
+        {
+            tstTry(pDbgc, "stop\n", VINF_SUCCESS);
+            tstTry(pDbgc, "format \n", VERR_PARSE_TOO_FEW_ARGUMENTS);
+            tstTry(pDbgc, "format 0 1 23 4\n", VERR_PARSE_TOO_MANY_ARGUMENTS);
+            tstTry(pDbgc, "sa 3 23 4 'q' \"21123123\" 'b' \n", VINF_SUCCESS);
+        }
 
         dbgcDestroy(pDbgc);
     }
-
 
     /*
      * Summary
