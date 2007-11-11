@@ -137,15 +137,15 @@ GLOBALNAME %1_EndProc
 
   ;;
   ; Begins 16-bit data
-   %macro BEGINDATA16 0
-    segment DATA16
-   %endmacro
+  %macro BEGINDATA16 0
+   segment DATA16
+  %endmacro
 
   ;;
   ; Begins 16-bit init data
-   %macro BEGINDATA16INIT 0
-    segment DATA16_INIT
-   %endmacro
+  %macro BEGINDATA16INIT 0
+   segment DATA16_INIT
+  %endmacro
 
   segment CODE16 public CLASS=FAR_CODE align=16 use16
   segment CODE16_INIT public CLASS=FAR_CODE align=16 use16
@@ -153,15 +153,15 @@ GLOBALNAME %1_EndProc
 
   ;;
   ; Begins 16-bit code
-   %macro BEGINCODE16 0
-    segment CODE16
-   %endmacro
+  %macro BEGINCODE16 0
+   segment CODE16
+  %endmacro
 
   ;;
   ; Begins 16-bit init code
-   %macro BEGINCODE16INIT 0
-    segment CODE16_INIT
-   %endmacro
+  %macro BEGINCODE16INIT 0
+   segment CODE16_INIT
+  %endmacro
 
  %endif
 
@@ -194,6 +194,25 @@ GLOBALNAME %1_EndProc
 %endmacro
 %endif
 
+;;
+; Begins constant (read-only) data
+;
+; @remarks  This is mapped to the CODE section/segment when there isn't
+;           any dedicated const section/segment. (There is code that
+;           assumes this, so don't try change it.)
+%ifdef ASM_FORMAT_OMF
+ %macro BEGINCONST 0
+  segment TEXT32
+ %endmacro
+%else
+ %macro BEGINCONST 0
+  %ifdef ASM_FORMAT_MACHO ;; @todo check the other guys too.
+   [section .rodata]
+  %else
+   [section .text]
+  %endif
+ %endmacro
+%endif
 
 ;;
 ; Begins initialized data
