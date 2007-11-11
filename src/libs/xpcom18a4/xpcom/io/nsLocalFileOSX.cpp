@@ -1184,7 +1184,7 @@ nsLocalFile::EqualsInternal(nsISupports* inFile, PRBool aUpdateCache,
     return NS_OK;
 
   nsLocalFile* inLF =
-      NS_STATIC_CAST(nsLocalFile*, (nsILocalFileMac*) inMacFile);
+      static_cast<nsLocalFile*>((nsILocalFileMac*) inMacFile);
 
   // If both exist, compare FSRefs
   FSRef thisFSRef, inFSRef;
@@ -1255,6 +1255,13 @@ NS_IMETHODIMP nsLocalFile::GetParent(nsIFile * *aParent)
   nsresult rv = NS_OK;
   CFURLRef parentURLRef = ::CFURLCreateCopyDeletingLastPathComponent(kCFAllocatorDefault, mBaseRef);
   if (parentURLRef) {
+    // If the parent path is longer than file's path then
+    // CFURLCreateCopyDeletingLastPathComponent must have simply added
+    // two dots at the end - in this case indicate that there is no parent.
+    // See bug 332389.
+    CFStringRef path = ::CFURLGetString(mBaseRef);
+    CFStringRef newPath = ::CFURLGetString(parentURLRef);
+    if (::CFStringGetLength(newPath) < ::CFStringGetLength(path)) {
     rv = NS_ERROR_FAILURE;
     newFile = new nsLocalFile;
     if (newFile) {
@@ -1263,6 +1270,7 @@ NS_IMETHODIMP nsLocalFile::GetParent(nsIFile * *aParent)
         NS_ADDREF(*aParent = newFile);
         rv = NS_OK;
       }
+    }
     }
     ::CFRelease(parentURLRef);
   }
@@ -1593,14 +1601,14 @@ NS_IMETHODIMP nsLocalFile::SetPersistentDescriptor(const nsACString& aPersistent
   // Cast to an alias record and resolve.
   AliasRecord aliasHeader = *(AliasPtr)decodedData;
   PRInt32 aliasSize = GetAliasSizeFromRecord(aliasHeader);
-  if (aliasSize > (dataSize * 3) / 4) { // be paranoid about having too few data
+  if (aliasSize > ((PRInt32)dataSize * 3) / 4) { // be paranoid about having too few data
     PR_Free(decodedData);
     return NS_ERROR_FAILURE;
   }
 
   // Move the now-decoded data into the Handle.
   // The size of the decoded data is 3/4 the size of the encoded data. See plbase64.h
-  Handle	newHandle = nsnull;
+  Handle  newHandle = nsnull;
   if (::PtrToHand(decodedData, &newHandle, aliasSize) != noErr)
     rv = NS_ERROR_OUT_OF_MEMORY;
   PR_Free(decodedData);
@@ -2275,7 +2283,7 @@ nsresult nsLocalFile::CFStringReftoUTF8(CFStringRef aInStrRef, nsACString& aOutS
   if (charsConverted == inStrLen) {
 #if 0 /* bird: too new? */
     aOutStr.SetLength(usedBufLen);
-    if (aOutStr.Length() != usedBufLen)
+    if (aOutStr.Length() != (unsigned int)usedBufLen)
       return NS_ERROR_OUT_OF_MEMORY;
     UInt8 *buffer = (UInt8*) aOutStr.BeginWriting();
 
@@ -2310,6 +2318,7 @@ nsLocalFile::GetHashCode(PRUint32 *aResult)
     CFStringRef pathStrRef = ::CFURLCopyFileSystemPath(mBaseRef, kCFURLPOSIXPathStyle);
     nsCAutoString path;
     CFStringReftoUTF8(pathStrRef, path);
+    ::CFRelease(pathStrRef);
     *aResult = HashString(path);
     return NS_OK;
 }
@@ -2404,19 +2413,32 @@ static nsresult MacErrorMapper(OSErr inErr)
             break;
 
         case fnfErr:
+        case afpObjectNotFound:
+        case afpDirNotFound:
             outErr = NS_ERROR_FILE_NOT_FOUND;
             break;
 
         case dupFNErr:
+        case afpObjectExists:
             outErr = NS_ERROR_FILE_ALREADY_EXISTS;
             break;
 
         case dskFulErr:
+        case afpDiskFull:
             outErr = NS_ERROR_FILE_DISK_FULL;
             break;
 
         case fLckdErr:
+        case afpVolLocked:
             outErr = NS_ERROR_FILE_IS_LOCKED;
+            break;
+
+        case afpAccessDenied:
+            outErr = NS_ERROR_FILE_ACCESS_DENIED;
+            break;
+
+        case afpDirNotEmpty:
+            outErr = NS_ERROR_FILE_DIR_NOT_EMPTY;
             break;
 
         // Can't find good map for some
