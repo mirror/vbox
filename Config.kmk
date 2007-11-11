@@ -190,9 +190,11 @@ VBOX_WITH_VBOXBFE = 1
 VBOX_WITH_QTGUI = 1
 ## the Direct Framebuffer GUI
 #VBOX_WITH_VBOXFB = 1
-# the gui debugger
+# Enable the debugger.
 ifneq ($(BUILD_TYPE),release)
-VBOX_WITH_DEBUGGER_GUI = 1
+ VBOX_WITH_DEBUGGER = 1
+ # Enable the debugger GUI.
+ VBOX_WITH_DEBUGGER_GUI = 1
 endif
 # the documentation
 VBOX_WITH_DOCS = 1
@@ -461,6 +463,7 @@ VBOX_ASFLAGS_FMT = -f win32 -DASM_FORMAT_PE
  else
 VBOX_ASFLAGS_FMT = -f win64 -DASM_FORMAT_PE
  endif
+VBOX_ASFLAGS_DBFINFO = -g cv8
 endif
 ifndef VBOX_ASFLAGS_FMT
  $(error VBOX_ASFLAGS_FMT is not defined. VBOX_LDR_FMT=$(VBOX_LDR_FMT))
@@ -480,6 +483,7 @@ ifeq ($(VBOX_LDR_FMT32),macho)
 endif
 ifeq ($(VBOX_LDR_FMT32),pe)
  VBOX_ASFLAGS_FMT32 = -f win32 -DASM_FORMAT_PE
+ VBOX_ASFLAGS_DBFINFO32 = -g cv8
 endif
 ifndef VBOX_ASFLAGS_FMT32
  $(error VBOX_ASFLAGS_FMT32 is not defined. VBOX_LDR_FMT32=$(VBOX_LDR_FMT32))
@@ -495,6 +499,7 @@ ifeq ($(VBOX_LDR_FMT64),macho)
 endif
 ifeq ($(VBOX_LDR_FMT64),pe)
  VBOX_ASFLAGS_FMT64 = -f win64 -DASM_FORMAT_PE
+ VBOX_ASFLAGS_DBFINFO64 = -g cv8
 endif
 ifndef VBOX_ASFLAGS_FMT64
  $(error VBOX_ASFLAGS_FMT64 is not defined. VBOX_LDR_FMT64=$(VBOX_LDR_FMT64))
@@ -505,7 +510,7 @@ ifndef DONT_USE_YASM
  VBOX_LDR_FMT_2_YASM_DBGINFO.elf   = -g dwarf2
  VBOX_LDR_FMT_2_YASM_DBGINFO.lx    = -g stabs
  VBOX_LDR_FMT_2_YASM_DBGINFO.macho =
- VBOX_LDR_FMT_2_YASM_DBGINFO.pe    =
+ VBOX_LDR_FMT_2_YASM_DBGINFO.pe    = -g cv8
  VBOX_ASFLAGS   = $(VBOX_ASFLAGS_FMT)   -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT))
  VBOX_ASFLAGS32 = $(VBOX_ASFLAGS_FMT32) -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT32))
  VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT64))

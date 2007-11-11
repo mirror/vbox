@@ -25,6 +25,7 @@
 #include <VBox/em.h>
 #include <VBox/iom.h>
 #include <VBox/dbgf.h>
+#include <VBox/dbg.h>
 
 VMMR3DECL(int) VMMDoTest(PVM pVM);
 
@@ -45,5 +46,8 @@ PFNRT g_apfnDeps[] =
     (PFNRT)PGMR3DbgHCPtr2GCPhys,
     (PFNRT)VMR3Create,
     (PFNRT)VMMDoTest,
+#ifdef VBOX_WITH_DEBUGGER
+    (PFNRT)DBGCCreate,
+#endif
     NULL
 };

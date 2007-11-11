@@ -13,23 +13,33 @@
 #  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 DEPTH = ../../..
 include $(PATH_KBUILD)/header.kmk
 
-LIBRARIES = Debugger
-ifdef VBOX_WITH_DEBUGGER_GUI
-DLLS      = VBoxDbg
-PROGRAMS  = tstVBoxDbg
-endif
-
+#
+# The targets.
+#
+ifdef VBOX_WITH_DEBUGGER
+ LIBRARIES += Debugger
+ ifdef VBOX_WITH_TESTCASES
+  PROGRAMS += tstDBGCParser
+ endif
+ ifdef VBOX_WITH_DEBUGGER_GUI
+  DLLS += VBoxDbg
+  ifdef VBOX_WITH_TESTCASES
+   PROGRAMS += tstVBoxDbg
+  endif
+ endif
+endif # VBOX_WITH_DEBUGGER
 ifndef VBOX_OSE
-INSTALLS.win.x86 = dbghelp
+ INSTALLS.win.x86 += dbghelp
 endif
 
 
 #
-# Debugger library
+# Debugger library - linked into VBoxVMM.
 #
 Debugger_TEMPLATE  = VBOXR3
 Debugger_DEFS      = IN_VMM_R3 IN_PDM_R3 IN_CFGM_R3 IN_IOM_R3 IN_SUP_R3 IN_VM_R3 IN_RT_R3 IN_CPUM_R3 IN_SELM_R3 IN_PGM_R3 IN_TRPM_R3 IN_MM_R3 IN_DBG_R3 IN_DBGF_R3 IN_DIS_R3
@@ -43,21 +53,17 @@ Debugger_SOURCES   = \
 	DBGCOps.cpp \
 	DBGCTcp.cpp
 
+
 #
-# The testcase.
+# The DBGC parser testcase.
+# This stubs all the VBoxVMM APIs.
 #
-tstVBoxDbg_TEMPLATE     = VBOXQTGUIEXE
-tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
-tstVBoxDbg_LIBS         = \
-	$(LIB_VMM) \
+tstDBGCParser_TEMPLATE = VBOXR3EXE
+tstDBGCParser_SOURCES = \
+	testcase/tstDBGCParser.cpp
+tstDBGCParser_LIBS = \
+	$(TARGET_Debugger) \
 	$(LIB_RUNTIME)
-ifeq ($(BUILD_TARGET),win)
-tstVBoxDbg_LIBS        += \
-	$(PATH_LIB)/VBoxDbg.lib
-else
-tstVBoxDbg_LIBS        += \
-	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
-endif
 
 
 #
@@ -100,21 +106,32 @@ VBoxDbg_SOURCES    = \
 	VBoxDbgGui.cpp \
 	VBoxDbgBase.cpp \
 	VBoxDbgConsole.cpp \
-	VBoxDbgStats.cpp \
-	DBGConsole.cpp \
-	DBGCBuiltInSymbols.cpp \
-	DBGCCmdHlp.cpp \
-	DBGCCmdWorkers.cpp \
-	DBGCCommands.cpp \
-	DBGCEmulateCodeView.cpp \
-	DBGCOps.cpp
+	VBoxDbgStats.cpp
 
-VBoxDbg_LIBS = $(LIB_VMM)
+VBoxDbg_LIBS = \
+	$(LIB_VMM)
 
 # generated files we need to clean manually
 VBoxDbg_CLEAN += \
 	$(VBoxDbg_GENSRCS) \
 	$(VBoxDbg_GENHDRS)
+
+
+#
+# The VBoxDBG testcase.
+#
+tstVBoxDbg_TEMPLATE     = VBOXQTGUIEXE
+tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
+tstVBoxDbg_LIBS         = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME)
+ifeq ($(BUILD_TARGET),win)
+tstVBoxDbg_LIBS        += \
+	$(PATH_LIB)/VBoxDbg.lib
+else
+tstVBoxDbg_LIBS        += \
+	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
+endif
 
 
 #
