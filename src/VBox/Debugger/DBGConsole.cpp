@@ -18,16 +18,15 @@
 
 /** @page pg_dbgc                       DBGC - The Debug Console
  *
- * The debugger console is a first attempt to make some interactive
- * debugging facilities for the VirtualBox backend (i.e. the VM). At a later
- * stage we'll make a fancy gui around this, but for the present a telnet (or
- * serial terminal) will have to suffice.
+ * The debugger console is an early attempt to make some interactive
+ * debugging facilities for the VirtualBox VMM. It was initially only
+ * accessible thru a telnet session on debug builds. Later it was hastily
+ * built into the VBoxDbg module with a very simple Qt wrapper around it.
  *
- * The debugger is only built into the VM with debug builds or when
- * VBOX_WITH_DEBUGGER is defined. There might be need for \#ifdef'ing on this
- * define to enable special debugger hooks, but the general approach is to
- * make generic interfaces. The individual components also can register
- * external commands, and such code must be within \#ifdef.
+ * The debugger is optional and presently not built into release builds
+ * of VirtualBox. It is therefore necessary to enclose code related to it
+ * in \#ifdef VBOX_WITH_DEBUGGER blocks. This is mandatory for components
+ * that register extenral commands.
  *
  *
  * @section sec_dbgc_op                 Operation (intentions)
@@ -46,6 +45,11 @@
  *      - '0t' - octal.
  *      - '0y' - binary.
  *
+ * Some of the prefixes are a bit uncommon, the reason for this that
+ * the typical binary prefix '0b' can also be a hexadecimal value since
+ * no prefix or suffix is required for such values. Ditto for '0d' and
+ * '0' for decimal and octal.
+ *
  *
  * @subsection sec_dbg_op_address       Addressing modes
  *
@@ -54,19 +58,24 @@
  *      - Physical addresses are specified using '%%'.
  *      - The default target for the addressing is the guest context, the '#'
  *        will override this and set it to the host.
+ *        Note that several operations won't work on host addresses.
+ *
+ * The '%', '%%' and '#' prefixes is implemented as unary operators, while ':'
+ * is a binary operator. Operator precedence takes care of evaluation order.
  *
  *
  * @subsection sec_dbg_op_evalution     Evaluation
  *
- * As time permits support will be implemented support for a subset of the C
- * binary operators, starting with '+', '-', '*' and '/'. Support for variables
- * are provided thru commands 'set' and 'unset' and the unary operator '$'. The
- * unary '@' operator will indicate function calls. The debugger needs a set of
- * memory read functions, but we might later extend this to allow registration of
- * external functions too.
+ * Most unary and binary C operators are supported, check the help text for
+ * details. However, some of these are not yet implemented because this is
+ * tiresome and annoying work. So, if something is missing and you need it
+ * you implement it or complain to bird. (Ditto for missing functions.)
  *
- * A special command '?' will then be added which evalutates a given expression
- * and prints it in all the different formats.
+ * Simple variable support is provided thru the 'set' and 'unset' commands and
+ * the unary '$' operator.
+ *
+ * The unary '@' operator will indicate function calls. Commands and functions
+ * are the same thing, except that functions has a return type.
  *
  *
  * @subsection sec_dbg_op_registers     Registers
@@ -76,27 +85,46 @@
  * register set is the guest one. To access the hypervisor register one have to
  * prefix the register names with '.'.
  *
- *
- * @subsection sec_dbg_op_commands      Commands
- *
- * The commands are all lowercase, case sensitive, and starting with a letter. We will
- * later add some special commands ('?' for evaulation) and perhaps command classes ('.', '!')
+ * The registers are implemented as built-in symbols. For making gdb guys more at
+ * home it is possible to access them with the '$' operator, i.e. as a variable.
  *
  *
- * @section sec_dbg_tasks               Tasks
+ * @subsection sec_dbg_op_commands      Commands and Functions
  *
- * To implement DBGT and instrument VMM for basic state inspection and log
- * viewing, the follwing task must be executed:
+ * Commands and functions are the same thing, except that functions may return a
+ * value. So, functions may be used as commands. The command/function handlers
+ * can detect whether they are invoked as a command or function by checking whether
+ * there is a return variable or not.
  *
- *      -# Basic threading layer in RT.
- *      -# Basic tcpip server abstration in RT.
- *      -# Write DBGC.
- *      -# Write DBCTCP.
- *      -# Integrate with VMM and the rest.
- *      -# Start writing DBGF (VMM).
+ * The command/function names are all lowercase, case sensitive, and starting
+ * with a letter. Operator characters are not permitted in the names of course.
+ * Space is allowed, but must be flagged so the parser can check for multiple
+ * spaces and tabs. (This feature is for 'dump xyz' and for emulating the
+ * gdb 'info abc'.)
+ *
+ * The '.' prefix indicates the set of external commands. External commands are
+ * command registered by VMM components.
+ *
+ *
+ * @section sec_dbgc_logging            Logging
+ *
+ * The idea is to be able to pass thru debug and release logs to the console
+ * if the user so wishes. This feature requires some kind of hook into the
+ * logger instance and while this was sketched it hasn't yet been implemented
+ * (dbgcProcessLog and DBGC::fLog).
+ *
+ *
+ *
+ * @section sec_dbgc_linking            Linking and API
+ *
+ * The DBGC code is linked into the VBoxVMM module. (At present it is also
+ * linked into VBoxDbg, but this is obviously very wrong.)
+ *
+ * A COM object will be created for the DBGC so it can be operated remotely
+ * without using TCP. VBoxDbg is the intended audience for this usage. Some
+ * questions about callbacks (for output) and security (you may wish to
+ * restrict users from debugging a VM) needs to be answered first though.
  */
-
-
 
 
 /*******************************************************************************
@@ -134,6 +162,12 @@
 static uint32_t g_bmOperatorChars[256 / (4*8)];
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int dbgcProcessLog(PDBGC pDbgc);
+
+
 
 /**
  * Initalizes g_bmOperatorChars.
@@ -156,172 +190,6 @@ DECLINLINE(bool) dbgcIsOpChar(char ch)
 {
     return ASMBitTest(&g_bmOperatorChars[0], (uint8_t)ch);
 }
-
-
-/**
- * Prints any log lines from the log buffer.
- *
- * The caller must not call function this unless pDbgc->fLog is set.
- *
- * @returns VBox status. (output related)
- * @param   pDbgc   Debugger console instance data.
- */
-static int dbgcProcessLog(PDBGC pDbgc)
-{
-    /** @todo */
-    NOREF(pDbgc);
-    return 0;
-}
-
-
-
-/**
- * Handle input buffer overflow.
- *
- * Will read any available input looking for a '\n' to reset the buffer on.
- *
- * @returns VBox status.
- * @param   pDbgc   Debugger console instance data.
- */
-static int dbgcInputOverflow(PDBGC pDbgc)
-{
-    /*
-     * Assert overflow status and reset the input buffer.
-     */
-    if (!pDbgc->fInputOverflow)
-    {
-        pDbgc->fInputOverflow = true;
-        pDbgc->iRead = pDbgc->iWrite = 0;
-        pDbgc->cInputLines = 0;
-        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Input overflow!!\n");
-    }
-
-    /*
-     * Eat input till no more or there is a '\n'.
-     * When finding a '\n' we'll continue normal processing.
-     */
-    while (pDbgc->pBack->pfnInput(pDbgc->pBack, 0))
-    {
-        size_t cbRead;
-        int rc = pDbgc->pBack->pfnRead(pDbgc->pBack, &pDbgc->achInput[0], sizeof(pDbgc->achInput) - 1, &cbRead);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        char *psz = (char *)memchr(&pDbgc->achInput[0], '\n', cbRead);
-        if (psz)
-        {
-            pDbgc->fInputOverflow = false;
-            pDbgc->iRead = psz - &pDbgc->achInput[0] + 1;
-            pDbgc->iWrite = (unsigned)cbRead;
-            pDbgc->cInputLines = 0;
-            break;
-        }
-    }
-
-    return 0;
-}
-
-
-
-/**
- * Read input and do some preprocessing.
- *
- * @returns VBox status.
- *          In addition to the iWrite and achInput, cInputLines is maintained.
- *          In case of an input overflow the fInputOverflow flag will be set.
- * @param   pDbgc   Debugger console instance data.
- */
-static int dbgcInputRead(PDBGC pDbgc)
-{
-    /*
-     * We have ready input.
-     * Read it till we don't have any or we have a full input buffer.
-     */
-    int     rc = 0;
-    do
-    {
-        /*
-         * More available buffer space?
-         */
-        size_t cbLeft;
-        if (pDbgc->iWrite > pDbgc->iRead)
-            cbLeft = sizeof(pDbgc->achInput) - pDbgc->iWrite - (pDbgc->iRead == 0);
-        else
-            cbLeft = pDbgc->iRead - pDbgc->iWrite - 1;
-        if (!cbLeft)
-        {
-            /* overflow? */
-            if (!pDbgc->cInputLines)
-                rc = dbgcInputOverflow(pDbgc);
-            break;
-        }
-
-        /*
-         * Read one char and interpret it.
-         */
-        char    achRead[128];
-        size_t  cbRead;
-        rc = pDbgc->pBack->pfnRead(pDbgc->pBack, &achRead[0], RT_MIN(cbLeft, sizeof(achRead)), &cbRead);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        char *psz = &achRead[0];
-        while (cbRead-- > 0)
-        {
-            char ch = *psz++;
-            switch (ch)
-            {
-                /*
-                 * Ignore.
-                 */
-                case '\0':
-                case '\r':
-                case '\a':
-                    break;
-
-                /*
-                 * Backspace.
-                 */
-                case '\b':
-                    Log2(("DBGC: backspace\n"));
-                    if (pDbgc->iRead != pDbgc->iWrite)
-                    {
-                        unsigned iWriteUndo = pDbgc->iWrite;
-                        if (pDbgc->iWrite)
-                            pDbgc->iWrite--;
-                        else
-                            pDbgc->iWrite = sizeof(pDbgc->achInput) - 1;
-
-                        if (pDbgc->achInput[pDbgc->iWrite] == '\n')
-                            pDbgc->iWrite = iWriteUndo;
-                    }
-                    break;
-
-                /*
-                 * Add char to buffer.
-                 */
-                case '\t':
-                case '\n':
-                case ';':
-                    switch (ch)
-                    {
-                        case '\t': ch = ' '; break;
-                        case '\n': pDbgc->cInputLines++; break;
-                    }
-                default:
-                    Log2(("DBGC: ch=%02x\n", (unsigned char)ch));
-                    pDbgc->achInput[pDbgc->iWrite] = ch;
-                    if (++pDbgc->iWrite >= sizeof(pDbgc->achInput))
-                        pDbgc->iWrite = 0;
-                    break;
-            }
-        }
-
-        /* Terminate it to make it easier to read in the debugger. */
-        pDbgc->achInput[pDbgc->iWrite] = '\0';
-    } while (pDbgc->pBack->pfnInput(pDbgc->pBack, 0));
-
-    return rc;
-}
-
 
 
 /**
@@ -1485,7 +1353,7 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd)
 
 
 /**
- * Process all commands current in the buffer.
+ * Process all commands currently in the buffer.
  *
  * @returns VBox status code. Any error indicates the termination of the console session.
  * @param   pDbgc   Debugger console instance data.
@@ -1550,6 +1418,153 @@ static int dbgcProcessCommands(PDBGC pDbgc)
         if (rc)
             break;
     }
+
+    return rc;
+}
+
+
+/**
+ * Handle input buffer overflow.
+ *
+ * Will read any available input looking for a '\n' to reset the buffer on.
+ *
+ * @returns VBox status.
+ * @param   pDbgc   Debugger console instance data.
+ */
+static int dbgcInputOverflow(PDBGC pDbgc)
+{
+    /*
+     * Assert overflow status and reset the input buffer.
+     */
+    if (!pDbgc->fInputOverflow)
+    {
+        pDbgc->fInputOverflow = true;
+        pDbgc->iRead = pDbgc->iWrite = 0;
+        pDbgc->cInputLines = 0;
+        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "Input overflow!!\n");
+    }
+
+    /*
+     * Eat input till no more or there is a '\n'.
+     * When finding a '\n' we'll continue normal processing.
+     */
+    while (pDbgc->pBack->pfnInput(pDbgc->pBack, 0))
+    {
+        size_t cbRead;
+        int rc = pDbgc->pBack->pfnRead(pDbgc->pBack, &pDbgc->achInput[0], sizeof(pDbgc->achInput) - 1, &cbRead);
+        if (VBOX_FAILURE(rc))
+            return rc;
+        char *psz = (char *)memchr(&pDbgc->achInput[0], '\n', cbRead);
+        if (psz)
+        {
+            pDbgc->fInputOverflow = false;
+            pDbgc->iRead = psz - &pDbgc->achInput[0] + 1;
+            pDbgc->iWrite = (unsigned)cbRead;
+            pDbgc->cInputLines = 0;
+            break;
+        }
+    }
+
+    return 0;
+}
+
+
+/**
+ * Read input and do some preprocessing.
+ *
+ * @returns VBox status.
+ *          In addition to the iWrite and achInput, cInputLines is maintained.
+ *          In case of an input overflow the fInputOverflow flag will be set.
+ * @param   pDbgc   Debugger console instance data.
+ */
+static int dbgcInputRead(PDBGC pDbgc)
+{
+    /*
+     * We have ready input.
+     * Read it till we don't have any or we have a full input buffer.
+     */
+    int     rc = 0;
+    do
+    {
+        /*
+         * More available buffer space?
+         */
+        size_t cbLeft;
+        if (pDbgc->iWrite > pDbgc->iRead)
+            cbLeft = sizeof(pDbgc->achInput) - pDbgc->iWrite - (pDbgc->iRead == 0);
+        else
+            cbLeft = pDbgc->iRead - pDbgc->iWrite - 1;
+        if (!cbLeft)
+        {
+            /* overflow? */
+            if (!pDbgc->cInputLines)
+                rc = dbgcInputOverflow(pDbgc);
+            break;
+        }
+
+        /*
+         * Read one char and interpret it.
+         */
+        char    achRead[128];
+        size_t  cbRead;
+        rc = pDbgc->pBack->pfnRead(pDbgc->pBack, &achRead[0], RT_MIN(cbLeft, sizeof(achRead)), &cbRead);
+        if (VBOX_FAILURE(rc))
+            return rc;
+        char *psz = &achRead[0];
+        while (cbRead-- > 0)
+        {
+            char ch = *psz++;
+            switch (ch)
+            {
+                /*
+                 * Ignore.
+                 */
+                case '\0':
+                case '\r':
+                case '\a':
+                    break;
+
+                /*
+                 * Backspace.
+                 */
+                case '\b':
+                    Log2(("DBGC: backspace\n"));
+                    if (pDbgc->iRead != pDbgc->iWrite)
+                    {
+                        unsigned iWriteUndo = pDbgc->iWrite;
+                        if (pDbgc->iWrite)
+                            pDbgc->iWrite--;
+                        else
+                            pDbgc->iWrite = sizeof(pDbgc->achInput) - 1;
+
+                        if (pDbgc->achInput[pDbgc->iWrite] == '\n')
+                            pDbgc->iWrite = iWriteUndo;
+                    }
+                    break;
+
+                /*
+                 * Add char to buffer.
+                 */
+                case '\t':
+                case '\n':
+                case ';':
+                    switch (ch)
+                    {
+                        case '\t': ch = ' '; break;
+                        case '\n': pDbgc->cInputLines++; break;
+                    }
+                default:
+                    Log2(("DBGC: ch=%02x\n", (unsigned char)ch));
+                    pDbgc->achInput[pDbgc->iWrite] = ch;
+                    if (++pDbgc->iWrite >= sizeof(pDbgc->achInput))
+                        pDbgc->iWrite = 0;
+                    break;
+            }
+        }
+
+        /* Terminate it to make it easier to read in the debugger. */
+        pDbgc->achInput[pDbgc->iWrite] = '\0';
+    } while (pDbgc->pBack->pfnInput(pDbgc->pBack, 0));
 
     return rc;
 }
@@ -1744,7 +1759,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                                          pEvent->u.Src.pszFunction);
             if (VBOX_SUCCESS(rc) && pEvent->u.Src.pszMessage && *pEvent->u.Src.pszMessage)
                 rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
-                                         "Message:  %s\n",
+                                             "Message:  %s\n",
                                              pEvent->u.Src.pszMessage);
             if (VBOX_SUCCESS(rc))
                 rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
@@ -1787,7 +1802,20 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
 }
 
 
-
+/**
+ * Prints any log lines from the log buffer.
+ *
+ * The caller must not call function this unless pDbgc->fLog is set.
+ *
+ * @returns VBox status. (output related)
+ * @param   pDbgc   Debugger console instance data.
+ */
+static int dbgcProcessLog(PDBGC pDbgc)
+{
+    /** @todo */
+    NOREF(pDbgc);
+    return 0;
+}
 
 
 /**
@@ -1806,7 +1834,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
  * @remark  A forced termination of the console is easiest done by forcing the
  *          callbacks to return fatal failures.
  */
-DBGDECL(int)    DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
+DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
 {
     /*
      * Validate input.
