@@ -18,7 +18,7 @@
 
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -26,6 +26,7 @@
 #  in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
 #  distribution. VirtualBox OSE is distributed in the hope that it will
 #  be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 
 DEPTH = ../..
@@ -33,7 +34,7 @@ include $(PATH_KBUILD)/header.kmk
 
 
 BLDPROGS              = dyngen
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifneq ($(or $(eq $(BUILD_TARGET_ARCH),amd64) , $(VBOX_TARGET_MAC_OS_X_VERSION_10_5)),)
  SYSMODS              = VBoxREM2
  REM_MOD              = VBoxREM2
 else
@@ -59,7 +60,7 @@ DEFS += REM_PHYS_ADDR_IN_TLB
 ifeq ($(filter-out l4 darwin freebsd,$(BUILD_TARGET)),)
  REM_USE_NOCRT := 1
 endif
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(REM_MOD),VBoxREM2)
  REM_USE_NOCRT := 1
 endif
 
@@ -124,7 +125,6 @@ else # The remaining targets can be using gcc-4 and needs checking.
  FILE_OP_OBJ                = $(PATH_$(REM_MOD)_$(PATH_$(REM_MOD))/op.S)/op.o
  $(REM_MOD)_CLEAN           = $(FILE_OP_OBJ) $(PATH_$(REM_MOD))/op.S.dep
 endif
-#$(REM_MOD)_SOURCES.os2      = $(PATH_TARGET)/$(REM_MOD).def
 $(REM_MOD)_SOURCES.win.x86  = $(REM_MOD).def
 ifneq ($(REM_MOD),VBoxREM2)
  $(REM_MOD)_POST_CMDS       = $(VBOX_SIGN_IMAGE_CMDS)
@@ -136,7 +136,6 @@ ifdef REM_USE_NOCRT
  $(REM_MOD)_DEFS           += LOG_USE_C99
  $(REM_MOD)_CFLAGS.amd64    = -O2
  $(REM_MOD)_CFLAGS.debug    = -O0
- $(REM_MOD)_CFLAGS.darwin   = -fno-common -mdynamic-no-pic
  ifdef ($(BUILD_TARGET_ARCH),x86)
   $(REM_MOD)_CFLAGS.release+= -fomit-frame-pointer -fno-gcse
  endif
@@ -152,16 +151,18 @@ ifdef REM_USE_NOCRT
  	$(LIB_RUNTIME)
   ifeq ($(BUILD_TARGET),l4)
    $(REM_MOD)_LIBS          += \
-        $(L4_LIBDIR)/libuc.0.s.so
+	$(L4_LIBDIR)/libuc.0.s.so
   endif
   $(REM_MOD)_LIBS.darwin    = \
   	$(TARGET_VBoxREMImp)
-#  	$(PATH_BIN)/VBoxREMImp.dylib
   $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -multiply_defined warning  #-install_name @executable_path/$(REM_MOD).dylib#
+  $(REM_MOD)_CFLAGS.darwin   = -fno-common -mdynamic-no-pic
  else
   $(REM_MOD)_LIBS           = \
 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
   $(REM_MOD)_SYSSUFF        = .rel
+  $(REM_MOD)_LDFLAGS.darwin = -nostdlib -static
+  $(REM_MOD)_CFLAGS.darwin  = -fno-common -static -mno-dynamic-no-pic
  endif
 
 else # !REM_USE_NOCRT
@@ -255,7 +256,7 @@ testmath_SOURCES        = InnoTek/testmath.c
 #testmath_SOURCES        += $(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
 
 
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(REM_MOD),VBoxREM2)
 #
 # The VBoxREM2 wrapper.
 #
@@ -374,7 +375,7 @@ endif
 # Drop incompatible options when using the cross-compiler on darwin.
 ifeq ($(BUILD_TARGET),darwin)
  ifeq ($(filter-out i386-elf-gcc%, $(VBOX_RECOMPILER_OP_GCC)),)
-  COMPILE_OP_CMDS := $(filter-out -mdynamic-no-pic, $(COMPILE_OP_CMDS))
+  COMPILE_OP_CMDS := $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector, $(COMPILE_OP_CMDS))
  endif
 endif
 
