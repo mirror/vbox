@@ -5,7 +5,7 @@
 
 ;
 ;  Copyright (C) 2006-2007 innotek GmbH
-; 
+;
 ;  This file is part of VirtualBox Open Source Edition (OSE), as
 ;  available from http://www.virtualbox.org. This file is free software;
 ;  you can redistribute it and/or modify it under the terms of the GNU
@@ -25,6 +25,9 @@
 %include "VBox/x86.mac"
 %include "VBox/cpum.mac"
 
+%ifdef IN_RING3
+ %error "The jump table doesn't link on leopard."
+%endif
 
 ;
 ; Enables write protection of Hypervisor memory pages.

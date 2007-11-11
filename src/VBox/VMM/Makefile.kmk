@@ -91,7 +91,6 @@ VMMR3_SOURCES   = \
 	VMMTests.cpp \
 	HWACCM.cpp \
 	VMMAll/CPUMAllRegs.cpp \
-	VMMAll/CPUMAllA.asm \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \

@@ -441,12 +441,12 @@ CPUMDECL(int) CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr)
 
 
 /**
- * Set the guest CR0. 
- *  
- * When called in GC, the hyper CR0 may be updated if that is 
- * required. The caller only has to take special action if AM, 
- * WP, PG or PE changes. 
- *  
+ * Set the guest CR0.
+ *
+ * When called in GC, the hyper CR0 may be updated if that is
+ * required. The caller only has to take special action if AM,
+ * WP, PG or PE changes.
+ *
  * @returns VINF_SUCCESS (consider it void).
  * @param   pVM     Pointer to the shared VM structure.
  * @param   cr0     The new CR0 value.
@@ -455,7 +455,7 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint32_t cr0)
 {
 #ifdef IN_GC
     /*
-     * Check if we need to change hypervisor CR0 because 
+     * Check if we need to change hypervisor CR0 because
      * of math stuff.
      */
     if (    (cr0                   & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
@@ -463,8 +463,8 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint32_t cr0)
     {
         if (!(pVM->cpum.s.fUseFlags & CPUM_USED_FPU))
         {
-            /* 
-             * We haven't saved the host FPU state yet, so TS and MT are both set 
+            /*
+             * We haven't saved the host FPU state yet, so TS and MT are both set
              * and EM should be reflecting the guest EM (it always does this).
              */
             if ((cr0 & X86_CR0_EM) != (pVM->cpum.s.Guest.cr0 & X86_CR0_EM))
@@ -489,12 +489,12 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint32_t cr0)
         else
         {
             /*
-             * Already saved the state, so we're just mirroring 
+             * Already saved the state, so we're just mirroring
              * the guest flags.
              */
             uint32_t HyperCR0 = ASMGetCR0();
-            AssertMsg(     (HyperCR0               & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)) 
-                      ==   (pVM->cpum.s.Guest.cr0  & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)), 
+            AssertMsg(     (HyperCR0               & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
+                      ==   (pVM->cpum.s.Guest.cr0  & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)),
                       ("%#x %#x\n", HyperCR0, pVM->cpum.s.Guest.cr0));
             HyperCR0 &= ~(X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
             HyperCR0 |= cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
@@ -502,11 +502,11 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint32_t cr0)
             ASMSetCR0(HyperCR0);
         }
     }
-#endif 
+#endif
 
-    /* 
-     * Check for changes causing TLB flushes (for REM). 
-     * The caller is responsible for calling PGM when appropriate.  
+    /*
+     * Check for changes causing TLB flushes (for REM).
+     * The caller is responsible for calling PGM when appropriate.
      */
     if (    (cr0                   & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
         !=  (pVM->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
@@ -1499,6 +1499,8 @@ CPUMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
     return (pVM->cpum.s.fUseFlags & CPUM_USE_SYSCALL) != 0;
 }
 
+
+#ifndef IN_RING3
 /**
  * Lazily sync in the FPU/XMM state
  *
@@ -1509,6 +1511,7 @@ CPUMDECL(int) CPUMHandleLazyFPU(PVM pVM)
 {
     return CPUMHandleLazyFPUAsm(&pVM->cpum.s);
 }
+
 
 /**
  * Restore host FPU/XMM state
@@ -1521,6 +1524,8 @@ CPUMDECL(int) CPUMRestoreHostFPUState(PVM pVM)
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     return CPUMRestoreHostFPUStateAsm(&pVM->cpum.s);
 }
+#endif /* !IN_RING3 */
+
 
 /**
  * Checks if we activated the FPU/XMM state of the guest OS
@@ -1533,6 +1538,7 @@ CPUMDECL(bool) CPUMIsGuestFPUStateActive(PVM pVM)
     return (pVM->cpum.s.fUseFlags & CPUM_USED_FPU) != 0;
 }
 
+
 /**
  * Deactivate the FPU/XMM state of the guest OS
  * @param   pVM     The VM handle.
@@ -1541,6 +1547,7 @@ CPUMDECL(void) CPUMDeactivateGuestFPUState(PVM pVM)
 {
     pVM->cpum.s.fUseFlags &= ~CPUM_USED_FPU;
 }
+
 
 /**
  * Checks if the hidden selector registers are valid
@@ -1553,6 +1560,7 @@ CPUMDECL(bool) CPUMAreHiddenSelRegsValid(PVM pVM)
     return !!pVM->cpum.s.fValidHiddenSelRegs; /** @todo change fValidHiddenSelRegs to bool! */
 }
 
+
 /**
  * Checks if the hidden selector registers are valid
  * @param   pVM     The VM handle.
@@ -1562,6 +1570,7 @@ CPUMDECL(void) CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid)
 {
     pVM->cpum.s.fValidHiddenSelRegs = fValid;
 }
+
 
 /**
  * Get the current privilege level of the guest.
