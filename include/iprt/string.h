@@ -473,8 +473,9 @@ typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
  * @param   fFlags          Flags (RTSTR_NTFS_*).
  * @param   chArgSize       The argument size specifier, 'l' or 'L'.
  */
-typedef DECLCALLBACK(int) FNSTRFORMAT(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-    const char **ppszFormat, va_list *pArgs, int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize);
+typedef DECLCALLBACK(size_t) FNSTRFORMAT(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                         const char **ppszFormat, va_list *pArgs, int cchWidth,
+                                         int cchPrecision, unsigned fFlags, char chArgSize);
 /** Pointer to a FNSTRFORMAT() function. */
 typedef FNSTRFORMAT *PFNSTRFORMAT;
 

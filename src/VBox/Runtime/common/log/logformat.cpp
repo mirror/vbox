@@ -34,10 +34,10 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) rtlogFormatStr(void *pvArg, PFNRTSTROUTPUT pfnOutput,
-                                        void *pvArgOutput, const char **ppszFormat,
-                                        va_list *pArgs, int cchWidth, int cchPrecision,
-                                        unsigned fFlags, char chArgSize);
+static DECLCALLBACK(size_t) rtlogFormatStr(void *pvArg, PFNRTSTROUTPUT pfnOutput,
+                                           void *pvArgOutput, const char **ppszFormat,
+                                           va_list *pArgs, int cchWidth, int cchPrecision,
+                                           unsigned fFlags, char chArgSize);
 
 
 /**
@@ -73,8 +73,9 @@ RTDECL(size_t) RTLogFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArg, const char *p
  * @param   fFlags          Flags (RTSTR_NTFS_*).
  * @param   chArgSize       The argument size specifier, 'l' or 'L'.
  */
-static DECLCALLBACK(int) rtlogFormatStr(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-    const char **ppszFormat, va_list *pArgs, int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize)
+static DECLCALLBACK(size_t) rtlogFormatStr(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                           const char **ppszFormat, va_list *pArgs, int cchWidth,
+                                           int cchPrecision, unsigned fFlags, char chArgSize)
 {
     char ch = *(*ppszFormat)++;
 
