@@ -37,6 +37,7 @@ Debugger_SOURCES   = \
 	DBGConsole.cpp \
 	DBGCBuiltInSymbols.cpp \
 	DBGCCmdHlp.cpp \
+	DBGCCmdWorkers.cpp \
 	DBGCCommands.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
@@ -103,6 +104,7 @@ VBoxDbg_SOURCES    = \
 	DBGConsole.cpp \
 	DBGCBuiltInSymbols.cpp \
 	DBGCCmdHlp.cpp \
+	DBGCCmdWorkers.cpp \
 	DBGCCommands.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp
