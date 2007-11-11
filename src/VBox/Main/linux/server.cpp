@@ -758,11 +758,17 @@ int main (int argc, char **argv)
         { "automate",  no_argument,       NULL, 'a' },
         { "daemonize", no_argument,       NULL, 'd' },
         { "pidfile",   required_argument, NULL, 'p' },
+#ifdef RT_OS_DARWIN
+        { "pipe",      required_argument, NULL, 'P' },
+#endif
         { NULL,        0,                 NULL,  0  }
     };
     int c;
 
     bool fDaemonize = false;
+#ifndef RT_OS_OS2
+    static int daemon_pipe_fds[2] = {-1, -1};
+#endif
 
     for (;;)
     {
@@ -793,6 +799,16 @@ int main (int argc, char **argv)
                 break;
             }
 
+#ifdef RT_OS_DARWIN
+            /* we need to exec on darwin, this is just an internal
+             * hack for passing the pipe fd along to the final child. */
+            case 'P':
+            {
+                daemon_pipe_fds[1] = atoi(optarg);
+                break;
+            }
+#endif
+
             default:
             {
                 /* exit on invalid options */
@@ -810,8 +826,6 @@ int main (int argc, char **argv)
     NOREF(fDaemonize);
 
 #else // ifdef RT_OS_OS2
-
-    static int daemon_pipe_fds[2];
 
     if (fDaemonize)
     {
@@ -881,12 +895,39 @@ int main (int argc, char **argv)
         }
 
         /* Redirect standard i/o streams to /dev/null */
-        freopen ("/dev/null", "r", stdin);
-        freopen ("/dev/null", "w", stdout);
-        freopen ("/dev/null", "w", stderr);
+        if (daemon_pipe_fds[0] > 2)
+        {
+            freopen ("/dev/null", "r", stdin);
+            freopen ("/dev/null", "w", stdout);
+            freopen ("/dev/null", "w", stderr);
+        }
 
         /* close the reading end of the pipe */
         close(daemon_pipe_fds[0]);
+
+# ifdef RT_OS_DARWIN
+        /*
+         * On leopard we're no longer allowed to use some of the core API's
+         * after forking - this will cause us to hit an int3.
+         * So, we'll have to execv VBoxSVC once again and hand it the pipe.
+         */
+        const char *apszArgs[6];
+        apszArgs[0] = argv[0];
+        apszArgs[1] = "--pipe";
+        char szPipeArg[32];
+        RTStrPrintf(szPipeArg, sizeof(szPipeArg), "%d", daemon_pipe_fds[1]);
+        apszArgs[2] = szPipeArg;
+        if (pszPidFile)
+        {
+            apszArgs[3] = "--pidfile";
+            apszArgs[4] = pszPidFile;
+            apszArgs[5] = NULL;
+        }
+        else
+            apszArgs[3] = NULL;
+        execv(apszArgs[0], (char * const *)apszArgs);
+        exit(0);
+# endif
     }
 
 #endif // ifdef RT_OS_OS2
@@ -1002,7 +1043,7 @@ int main (int argc, char **argv)
 #endif
         }
 
-        if (fDaemonize)
+        if (daemon_pipe_fds[1] >= 0)
         {
             printf ("\nStarting event loop....\n[send TERM signal to quit]\n");
 #ifndef RT_OS_OS2
@@ -1064,13 +1105,13 @@ int main (int argc, char **argv)
         RTFileDelete(pszPidFile);
     }
 
-    if (fDaemonize)
-    {
 #ifndef RT_OS_OS2
+    if (daemon_pipe_fds[1] >= 0)
+    {
         /* close writing end of the pipe as well */
         close(daemon_pipe_fds[1]);
-#endif
     }
+#endif
 
     return 0;
 }
