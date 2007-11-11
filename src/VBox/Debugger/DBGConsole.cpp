@@ -3911,7 +3911,7 @@ void dbgcVarSetNoRange(PDBGCVAR pVar)
  * @param   pVar        The variable.
  * @param   pAddress    Where to store the address.
  */
-static int dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress)
+int dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress)
 {
     AssertReturn(pVar, VERR_INVALID_PARAMETER);
     switch (pVar->enmType)
