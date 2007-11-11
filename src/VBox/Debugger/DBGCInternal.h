@@ -355,7 +355,6 @@ PCDBGCSYM dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-extern const DBGCCMD    g_aCmds[];
 extern const DBGCCMD    g_aCmdsCodeView[];
 extern const unsigned   g_cCmdsCodeView;
 
