@@ -43,6 +43,9 @@ tstDeviceStructSizeGC_DEFS      =
 ifdef VBOX_WITH_USB
 tstDeviceStructSizeGC_DEFS     += VBOX_WITH_USB IN_USB_GC
 endif
+ifdef VBOX_WITH_AHCI
+tstDeviceStructSizeGC_DEFS     += VBOX_WITH_AHCI
+endif
 tstDeviceStructSizeGC_SOURCES   = tstDeviceStructSizeGC.cpp
 tstDeviceStructSizeGC_INCS      = \
 	$(VBOX_PATH_DEVICES_SRC) \
@@ -57,6 +60,9 @@ tstDeviceStructSize_TEMPLATE = VBOXR3EXE
 tstDeviceStructSize_DEFS     =
 ifdef VBOX_WITH_USB
 tstDeviceStructSize_DEFS    += VBOX_WITH_USB IN_USB_GC
+endif
+ifdef VBOX_WITH_AHCI
+tstDeviceStructSize_DEFS     += VBOX_WITH_AHCI
 endif
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \
