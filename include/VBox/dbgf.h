@@ -130,18 +130,22 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_FLAGS_FAR64         2
 /** A flat address. */
 #define DBGFADDRESS_FLAGS_FLAT          3
+/** A physical address. */
+#define DBGFADDRESS_FLAGS_PHYS          4
 /** The address type mask. */
-#define DBGFADDRESS_FLAGS_TYPE_MASK     3
+#define DBGFADDRESS_FLAGS_TYPE_MASK     7
 
 /** Set if the address is valid. */
-#define DBGFADDRESS_FLAGS_VALID         RT_BIT(2)
+#define DBGFADDRESS_FLAGS_VALID         RT_BIT(3)
 
 /** The address is within the hypervisor memoary area (HMA).
  * If not set, the address can be assumed to be a guest address. */
-#define DBGFADDRESS_FLAGS_HMA           RT_BIT(3)
+#define DBGFADDRESS_FLAGS_HMA           RT_BIT(4)
 
 /** Checks if the mixed address is flat or not. */
 #define DBGFADDRESS_IS_FLAT(pAddress)    ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FLAT )
+/** Checks if the mixed address is flat or not. */
+#define DBGFADDRESS_IS_PHYS(pAddress)    ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_PHYS )
 /** Checks if the mixed address is far 16:16 or not. */
 #define DBGFADDRESS_IS_FAR16(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FAR16 )
 /** Checks if the mixed address is far 16:32 or not. */
@@ -149,7 +153,9 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 /** Checks if the mixed address is far 16:64 or not. */
 #define DBGFADDRESS_IS_FAR64(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FAR64 )
 /** Checks if the mixed address is valid. */
-#define DBGFADDRESS_IS_VALID(pAddress)   ( (pAddress)->fFlags & DBGFADDRESS_FLAGS_VALID )
+#define DBGFADDRESS_IS_VALID(pAddress)   ( !!((pAddress)->fFlags & DBGFADDRESS_FLAGS_VALID) )
+/** Checks if the address is flagged as within the HMA. */
+#define DBGFADDRESS_IS_HMA(pAddress)     ( !!((pAddress)->fFlags & DBGFADDRESS_FLAGS_HMA) )
 /** @} */
 
 /**
@@ -171,6 +177,15 @@ DBGFR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, PDBGFADDRESS pAddress, RTSEL Sel, 
  * @param   FlatPtr     The flat pointer.
  */
 DBGFR3DECL(void) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr);
+
+/**
+ * Creates a mixed address from a guest physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pAddress    Where to store the mixed address.
+ * @param   PhysAddr    The guest physical address.
+ */
+DBGFR3DECL(void) DBGFR3AddrFromPhys(PVM pVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr);
 
 /**
  * Checks if the specified address is valid (checks the structure pointer too).

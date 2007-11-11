@@ -61,7 +61,7 @@ typedef struct
     /** The guest paging mode. */
     PGMMODE         enmMode;
     /** Pointer to the current page - HC Ptr. */
-    void           *pvPageHC;
+    void const     *pvPageHC;
     /** Pointer to the current page - GC Ptr. */
     RTGCPTR         pvPageGC;
     /** Pointer to the next instruction (relative to GCPtrSegBase). */
@@ -162,7 +162,7 @@ static void dbgfR3DisasInstrDone(PDBGFDISASSTATE pState)
  * @param   uDisCpu     Pointer to the disassembler cpu state. (Why this is a VBOXHUINTPTR is beyond me...)
  *                      In this context it's always pointer to the Core of a DBGFDISASSTATE.
  */
-static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Dst, unsigned cbRead, void *pvDisCpu)
+static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTHCUINTPTR PtrSrc, uint8_t *pu8Dst, uint32_t cbRead, void *pvDisCpu)
 {
     PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pvDisCpu;
     Assert(cbRead > 0);
@@ -568,7 +568,7 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
     }
     else
     {
-        size_t  cbBits = State.Cpu.opsize;
+        uint32_t cbBits = State.Cpu.opsize;
         uint8_t *pau8Bits = (uint8_t *)alloca(cbBits);
         rc = dbgfR3DisasInstrRead(GCPtr, pau8Bits, cbBits, &State);
         AssertRC(rc);

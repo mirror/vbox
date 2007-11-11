@@ -809,29 +809,29 @@ PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys);
 
 /**
  * Invalidates the GC page mapping TLB.
- * 
+ *
  * @param   pVM     The VM handle.
  */
 PDMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM);
 
 /**
  * Invalidates the ring-0 page mapping TLB.
- * 
+ *
  * @param   pVM     The VM handle.
  */
 PDMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM);
 
 /**
  * Invalidates the ring-3 page mapping TLB.
- * 
+ *
  * @param   pVM     The VM handle.
  */
 PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM);
 
-/** 
+/**
  * Page mapping lock.
- * 
- * @remarks This doesn't work in structures shared between 
+ *
+ * @remarks This doesn't work in structures shared between
  *          ring-3, ring-0 and/or GC.
  */
 typedef struct PGMPAGEMAPLOCK
@@ -856,9 +856,9 @@ typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
  * This API should only be used for very short term, as it will consume
  * scarse resources (R0 and GC) in the mapping cache. When you're done
  * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
- * 
- * This API will assume your intention is to write to the page, and will 
- * therefore replace shared and zero pages. If you do not intend to modify 
+ *
+ * This API will assume your intention is to write to the page, and will
+ * therefore replace shared and zero pages. If you do not intend to modify
  * the page, use the PGMPhysGCPhys2CCPtrReadOnly() API.
  *
  * @returns VBox status code.
@@ -898,7 +898,7 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  *          the PGM one) because of the deadlock risk.
  * @thread  Any thread.
  */
-PGMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void * const *ppv, PPGMPAGEMAPLOCK pLock);
+PGMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock);
 
 /**
  * Requests the mapping of a guest page given by virtual address into the current context.
@@ -907,8 +907,8 @@ PGMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void * const 
  * scarse resources (R0 and GC) in the mapping cache. When you're done
  * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
  *
- * This API will assume your intention is to write to the page, and will 
- * therefore replace shared and zero pages. If you do not intend to modify 
+ * This API will assume your intention is to write to the page, and will
+ * therefore replace shared and zero pages. If you do not intend to modify
  * the page, use the PGMPhysGCPtr2CCPtrReadOnly() API.
  *
  * @returns VBox status code.
@@ -952,11 +952,11 @@ PGMDECL(int) PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPL
  *          the PGM one) because of the deadlock risk.
  * @thread  EMT
  */
-PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void * const *ppv, PPGMPAGEMAPLOCK pLock);
+PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv, PPGMPAGEMAPLOCK pLock);
 
 /**
  * Release the mapping of a guest page.
- * 
+ *
  * This is the counter part of PGMPhysGCPhys2CCPtr, PGMPhysGCPhys2CCPtrReadOnly
  * PGMPhysGCPtr2CCPtr and PGMPhysGCPtr2CCPtrReadOnly.
  *
@@ -968,7 +968,7 @@ PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
 
 /**
  * Checks if the lock structure is valid
- * 
+ *
  * @param   pVM         The VM handle.
  * @param   pLock       The lock structure initialized by the mapping function.
  */
@@ -1310,21 +1310,21 @@ PGMGCDECL(int) PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
  * @ingroup grp_pgm
  * @{
  */
-/** 
+/**
  * Worker function for PGMR3PhysAllocateHandyPages and pgmPhysEnsureHandyPage.
- * 
+ *
  * @returns The following VBox status codes.
  * @retval  VINF_SUCCESS on success. FF cleared.
  * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is set in this case.
- * 
+ *
  * @param   pVM         The VM handle.
- * 
+ *
  * @remarks Must be called from within the PGM critical section.
  */
 PGMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM);
 
 /** @} */
-#endif 
+#endif
 
 
 
@@ -1783,7 +1783,7 @@ PGMR3DECL(void) PGMR3PhysWriteDword(PVM pVM, RTGCPHYS GCPhys, uint32_t val);
 
 /**
  * For VMMCALLHOST_PGM_MAP_CHUNK, considered internal.
- * 
+ *
  * @returns see pgmR3PhysChunkMap.
  * @param   pVM         The VM handle.
  * @param   idChunk     The chunk to map.
@@ -1792,18 +1792,18 @@ PDMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
 
 /**
  * Invalidates the TLB for the ring-3 mapping cache.
- * 
+ *
  * @param   pVM         The VM handle.
  */
 PGMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM);
 
 /**
  * Response to VM_FF_PGM_NEED_HANDY_PAGES and VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES.
- * 
+ *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success. FF cleared.
  * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is not cleared in this case.
- * 
+ *
  * @param   pVM         The VM handle.
  */
 PDMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM);
@@ -1818,14 +1818,14 @@ PDMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM);
 PDMR3DECL(int) PGMR3CheckIntegrity(PVM pVM);
 
 /**
- * Converts a HC pointer to a GC physical address. 
- * 
+ * Converts a HC pointer to a GC physical address.
+ *
  * Only for the debugger.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success, *pGCPhys is set.
  * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   HCPtr   The HC pointer to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
@@ -1839,7 +1839,7 @@ PGMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys);
  * @retval  VINF_SUCCESS on success, *pHCPhys is set.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical page but has no physical backing.
  * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   HCPtr   The HC pointer to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
@@ -1848,18 +1848,58 @@ PGMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys);
 
 /**
  * Converts a HC physical address to a GC physical address.
- * 
+ *
  * Only for the debugger.
  *
  * @returns VBox status code
  * @retval  VINF_SUCCESS on success, *pGCPhys is set.
  * @retval  VERR_INVALID_POINTER if the HC physical address is not within the GC physical memory.
- * 
+ *
  * @param   pVM     The VM handle.
  * @param   HCPhys  The HC physical address to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
  */
 PGMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys);
+
+/**
+ * Scans guest physical memory for a byte string.
+ *
+ * Only for the debugger.
+ *
+ * @returns VBox status codes:
+ * @retval  VINF_SUCCESS and *pGCPtrHit on success.
+ * @retval  VERR_DBGF_MEM_NOT_FOUND if not found.
+ * @retval  VERR_INVALID_POINTER if any of the pointer arguments are invalid.
+ * @retval  VERR_INVALID_ARGUMENT if any other arguments are invalid.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   GCPhys          Where to start searching.
+ * @param   cbRange         The number of bytes to search. Max 256 bytes.
+ * @param   pabNeedle       The byte string to search for.
+ * @param   cbNeedle        The length of the byte string.
+ * @param   pGCPhysHit      Where to store the address of the first occurence on success.
+ */
+PDMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit);
+
+/**
+ * Scans virtual memory for a byte string.
+ *
+ * Only for the debugger.
+ *
+ * @returns VBox status codes:
+ * @retval  VINF_SUCCESS and *pGCPtrHit on success.
+ * @retval  VERR_DBGF_MEM_NOT_FOUND if not found.
+ * @retval  VERR_INVALID_POINTER if any of the pointer arguments are invalid.
+ * @retval  VERR_INVALID_ARGUMENT if any other arguments are invalid.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   GCPtr           Where to start searching.
+ * @param   cbRange         The number of bytes to search. Max 256 bytes.
+ * @param   pabNeedle       The byte string to search for.
+ * @param   cbNeedle        The length of the byte string.
+ * @param   pGCPtrHit       Where to store the address of the first occurence on success.
+ */
+PDMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPhysHit);
 
 /** @} */
 

@@ -223,6 +223,8 @@
 #define VINF_DBGF_BP_ALREADY_DISABLED       1206
 /** The breakpoint already exists. */
 #define VINF_DBGF_BP_ALREADY_EXIST          1207
+/** The byte string was not found. */
+#define VERR_DBGF_MEM_NOT_FOUND             (-1208)
 /** @} */
 
 
