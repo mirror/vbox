@@ -58,9 +58,11 @@ Debugger_SOURCES   = \
 # The DBGC parser testcase.
 # This stubs all the VBoxVMM APIs.
 #
-tstDBGCParser_TEMPLATE = VBOXR3EXE
+tstDBGCParser_TEMPLATE = VBOXR3TSTEXE
+tstDBGCParser_DEFS = IN_DBGF_R3 IN_CPUM_R3 IN_MM_R3 IN_PGM_R3 IN_SELM_R3
 tstDBGCParser_SOURCES = \
-	testcase/tstDBGCParser.cpp
+	testcase/tstDBGCParser.cpp \
+	testcase/tstDBGCStubs.cpp
 tstDBGCParser_LIBS = \
 	$(TARGET_Debugger) \
 	$(LIB_RUNTIME)
@@ -72,7 +74,6 @@ tstDBGCParser_LIBS = \
 VBoxDbg_TEMPLATE = VBOXQTGUI
 VBoxDbg_DEFS = IN_DBG_R3
 VBoxDbg_CXXFLAGS.linux = $(TEMPLATE_VBOXQTGUI_CXXFLAGS.linux) -O2
-VBoxDbg_CXXFLAGS.win = -wd4244
 VBoxDbg_INCS = \
 	. \
 	$(PATH_VBoxDbg)/ui \

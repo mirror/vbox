@@ -1819,34 +1819,97 @@ static int dbgcProcessLog(PDBGC pDbgc)
 
 
 /**
- * Make a console instance.
+ * Run the debugger console.
  *
- * This will not return until either an 'exit' command is issued or a error code
- * indicating connection loss is encountered.
- *
- * @returns VINF_SUCCESS if console termination caused by the 'exit' command.
- * @returns The VBox status code causing the console termination.
- *
- * @param   pVM         VM Handle.
- * @param   pBack       Pointer to the backend structure. This must contain
- *                      a full set of function pointers to service the console.
- * @param   fFlags      Reserved, must be zero.
- * @remark  A forced termination of the console is easiest done by forcing the
- *          callbacks to return fatal failures.
+ * @returns VBox status.
+ * @param   pDbgc   Pointer to the debugger console instance data.
  */
-DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
+int dbgcRun(PDBGC pDbgc)
+{
+    /*
+     * Main Debugger Loop.
+     *
+     * This loop will either block on waiting for input or on waiting on
+     * debug events. If we're forwarding the log we cannot wait for long
+     * before we must flush the log.
+     */
+    int rc = VINF_SUCCESS;
+    for (;;)
+    {
+        if (pDbgc->pVM && DBGFR3CanWait(pDbgc->pVM))
+        {
+            /*
+             * Wait for a debug event.
+             */
+            PCDBGFEVENT pEvent;
+            rc = DBGFR3EventWait(pDbgc->pVM, pDbgc->fLog ? 1 : 32, &pEvent);
+            if (VBOX_SUCCESS(rc))
+            {
+                rc = dbgcProcessEvent(pDbgc, pEvent);
+                if (VBOX_FAILURE(rc))
+                    break;
+            }
+            else if (rc != VERR_TIMEOUT)
+                break;
+
+            /*
+             * Check for input.
+             */
+            if (pDbgc->pBack->pfnInput(pDbgc->pBack, 0))
+            {
+                rc = dbgcProcessInput(pDbgc);
+                if (VBOX_FAILURE(rc))
+                    break;
+            }
+        }
+        else
+        {
+            /*
+             * Wait for input. If Logging is enabled we'll only wait very briefly.
+             */
+            if (pDbgc->pBack->pfnInput(pDbgc->pBack, pDbgc->fLog ? 1 : 1000))
+            {
+                rc = dbgcProcessInput(pDbgc);
+                if (VBOX_FAILURE(rc))
+                    break;
+            }
+        }
+
+        /*
+         * Forward log output.
+         */
+        if (pDbgc->fLog)
+        {
+            rc = dbgcProcessLog(pDbgc);
+            if (VBOX_FAILURE(rc))
+                break;
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Creates a a new instance.
+ *
+ * @returns VBox status code.
+ * @param   ppDbgc      Where to store the pointer to the instance data.
+ * @param   pBack       Pointer to the backend.
+ * @param   fFlags      The flags.
+ */
+int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
 {
     /*
      * Validate input.
      */
-    AssertReturn(VALID_PTR(pVM), VERR_INVALID_PARAMETER);
-    AssertReturn(VALID_PTR(pBack), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pBack, VERR_INVALID_POINTER);
     AssertMsgReturn(!fFlags, ("%#x", fFlags), VERR_INVALID_PARAMETER);
 
     /*
-     * Allocate and initialize instance data
+     * Allocate and initialize.
      */
-    PDBGC   pDbgc = (PDBGC)RTMemAllocZ(sizeof(*pDbgc));
+    PDBGC pDbgc = (PDBGC)RTMemAllocZ(sizeof(*pDbgc));
     if (!pDbgc)
         return VERR_NO_MEMORY;
 
@@ -1878,99 +1941,19 @@ DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
 
     dbgcInitOpCharBitMap();
 
-    /*
-     * Print welcome message.
-     */
-    int rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
-        "Welcome to the VirtualBox Debugger!\n");
-    if (VBOX_FAILURE(rc))
-        goto l_failure;
+    *ppDbgc = pDbgc;
+    return VINF_SUCCESS;
+}
 
-    /*
-     * Attach to the VM.
-     */
-    rc = DBGFR3Attach(pVM);
-    if (VBOX_FAILURE(rc))
-    {
-        rc = pDbgc->CmdHlp.pfnVBoxError(&pDbgc->CmdHlp, rc, "When trying to attach to VM %p\n", pDbgc->pVM);
-        goto l_failure;
-    }
-    pDbgc->pVM = pVM;
+/**
+ * Destroys a DBGC instance created by dbgcCreate.
+ *
+ * @param   pDbgc   Pointer to the debugger console instance data.
+ */
+void dbgcDestroy(PDBGC pDbgc)
+{
+    AssertPtr(pDbgc);
 
-    /*
-     * Print commandline and auto select result.
-     */
-    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
-        "Current VM is %08x\n" /** @todo get and print the VM name! */
-        "VBoxDbg> ",
-        pDbgc->pVM);
-    if (VBOX_FAILURE(rc))
-        goto l_failure;
-
-    /*
-     * Main Debugger Loop.
-     *
-     * This loop will either block on waiting for input or on waiting on
-     * debug events. If we're forwarding the log we cannot wait for long
-     * before we must flush the log.
-     */
-    for (rc = 0;;)
-    {
-        if (pDbgc->pVM && DBGFR3CanWait(pDbgc->pVM))
-        {
-            /*
-             * Wait for a debug event.
-             */
-            PCDBGFEVENT pEvent;
-            rc = DBGFR3EventWait(pDbgc->pVM, pDbgc->fLog ? 1 : 32, &pEvent);
-            if (VBOX_SUCCESS(rc))
-            {
-                rc = dbgcProcessEvent(pDbgc, pEvent);
-                if (VBOX_FAILURE(rc))
-                    break;
-            }
-            else if (rc != VERR_TIMEOUT)
-                break;
-
-            /*
-             * Check for input.
-             */
-            if (pBack->pfnInput(pDbgc->pBack, 0))
-            {
-                rc = dbgcProcessInput(pDbgc);
-                if (VBOX_FAILURE(rc))
-                    break;
-            }
-        }
-        else
-        {
-            /*
-             * Wait for input. If Logging is enabled we'll only wait very briefly.
-             */
-            if (pBack->pfnInput(pDbgc->pBack, pDbgc->fLog ? 1 : 1000))
-            {
-                rc = dbgcProcessInput(pDbgc);
-                if (VBOX_FAILURE(rc))
-                    break;
-            }
-        }
-
-        /*
-         * Forward log output.
-         */
-        if (pDbgc->fLog)
-        {
-            rc = dbgcProcessLog(pDbgc);
-            if (VBOX_FAILURE(rc))
-                break;
-        }
-    }
-
-
-l_failure:
-    /*
-     * Cleanup console debugger session.
-     */
     /* Disable log hook. */
     if (pDbgc->fLog)
     {
@@ -1983,7 +1966,77 @@ l_failure:
 
     /* finally, free the instance memory. */
     RTMemFree(pDbgc);
+}
 
+
+/**
+ * Make a console instance.
+ *
+ * This will not return until either an 'exit' command is issued or a error code
+ * indicating connection loss is encountered.
+ *
+ * @returns VINF_SUCCESS if console termination caused by the 'exit' command.
+ * @returns The VBox status code causing the console termination.
+ *
+ * @param   pVM         VM Handle.
+ * @param   pBack       Pointer to the backend structure. This must contain
+ *                      a full set of function pointers to service the console.
+ * @param   fFlags      Reserved, must be zero.
+ * @remark  A forced termination of the console is easiest done by forcing the
+ *          callbacks to return fatal failures.
+ */
+DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrNullReturn(pVM, VERR_INVALID_POINTER);
+
+    /*
+     * Allocate and initialize instance data
+     */
+    PDBGC pDbgc;
+    int rc = dbgcCreate(&pDbgc, pBack, fFlags);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Print welcome message.
+     */
+    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                                 "Welcome to the VirtualBox Debugger!\n");
+
+    /*
+     * Attach to the specified VM.
+     */
+    if (RT_SUCCESS(rc) && pVM)
+    {
+        rc = DBGFR3Attach(pVM);
+        if (RT_SUCCESS(rc))
+        {
+            pDbgc->pVM = pVM;
+            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                                         "Current VM is %08x\n" /** @todo get and print the VM name! */
+                                         "VBoxDbg> ",
+                                         pDbgc->pVM);
+        }
+        else
+            rc = pDbgc->CmdHlp.pfnVBoxError(&pDbgc->CmdHlp, rc, "When trying to attach to VM %p\n", pDbgc->pVM);
+    }
+    else
+        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
+                                     "VBoxDbg> ");
+
+    /*
+     * Run the main loop.
+     */
+    if (RT_SUCCESS(rc))
+        rc = dbgcRun(pDbgc);
+
+    /*
+     * Cleanup console debugger session.
+     */
+    dbgcDestroy(pDbgc);
     return rc;
 }
 

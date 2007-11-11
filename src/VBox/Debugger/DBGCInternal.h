@@ -327,6 +327,10 @@ typedef struct DBGCSYM
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+int     dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags);
+int     dbgcRun(PDBGC pDbgc);
+void    dbgcDestroy(PDBGC pDbgc);
+
 int     dbgcBpAdd(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
 int     dbgcBpUpdate(PDBGC pDbgc, RTUINT iBp, const char *pszCmd);
 int     dbgcBpDelete(PDBGC pDbgc, RTUINT iBp);
