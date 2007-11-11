@@ -1635,7 +1635,7 @@ typedef struct CPUMDISASSTATE
     /** The size of the segment minus 1. */
     RTGCUINTPTR     cbSegLimit;
     /** Pointer to the current page - HC Ptr. */
-    void           *pvPageHC;
+    void const     *pvPageHC;
     /** Pointer to the current page - GC Ptr. */
     RTGCPTR         pvPageGC;
     /** The lock information that PGMPhysReleasePageMappingLock needs. */

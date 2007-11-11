@@ -120,6 +120,22 @@ DBGFR3DECL(void) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR 
 
 
 /**
+ * Creates a mixed address from a guest physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pAddress    Where to store the mixed address.
+ * @param   PhysAddr    The guest physical address.
+ */
+DBGFR3DECL(void) DBGFR3AddrFromPhys(PVM pVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr)
+{
+    pAddress->Sel     = DBGF_SEL_FLAT;
+    pAddress->off     = PhysAddr;
+    pAddress->FlatPtr = PhysAddr;
+    pAddress->fFlags  = DBGFADDRESS_FLAGS_PHYS | DBGFADDRESS_FLAGS_VALID;
+}
+
+
+/**
  * Checks if the specified address is valid (checks the structure pointer too).
  *
  * @returns true if valid.
