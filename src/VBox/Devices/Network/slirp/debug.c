@@ -20,9 +20,7 @@ extern int slirp_tty_restore;
  */
 #ifdef DEBUG
 void
-dump_packet(dat, n)
-	void *dat;
-	int n;
+dump_packet(void *dat, int n)
 {
         Log(("nat: PACKET DUMPED:\n%.*Vhxd\n", n, dat));
 }
