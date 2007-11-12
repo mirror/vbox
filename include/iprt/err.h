@@ -408,6 +408,12 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 #define VERR_ADDRESS_TOO_BIG                (-74)
 /** Failed to map a memory object. */
 #define VERR_MAP_FAILED                     (-75)
+/** Trailing characters. */
+#define VERR_TRAILING_CHARS                 (-76)
+/** Trailing spaces. */
+#define VERR_TRAILING_SPACES                (-77)
+/** Trailing spaces. */
+#define VINF_TRAILING_SPACES                77
 /** @} */
 
 
@@ -826,7 +832,7 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 #define VERR_RT_REQUEST_STATUS_FREED            (-704)
 /** @} */
 
-/** @name Environment Status Code 
+/** @name Environment Status Code
  * @{
  */
 /** The specified environment variable was not found. (RTEnvGetEx) */
