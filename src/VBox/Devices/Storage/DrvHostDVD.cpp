@@ -57,7 +57,10 @@
 # include <errno.h>
 # include <pwd.h>
 # include <unistd.h>
-# include <auth_attr.h>
+# include <syslog.h>
+# ifdef VBOX_WITH_SUID_WRAPPER
+#  include <auth_attr.h>
+# endif
 # include <sys/dkio.h>
 # include <sys/sockio.h>
 # include <sys/scsi/scsi.h>
@@ -88,6 +91,11 @@
 /* Forward declarations. */
 
 static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock);
+#ifdef VBOX_WITH_SUID_WRAPPER
+static int solarisCheckUserAuth();
+static int solarisEnterRootMode(uid_t *pEffUserID);
+static int solarisExitRootMode(uid_t *pEffUserID);
+#endif
 
 
 /** @copydoc PDMIMOUNT::pfnUnmount */
@@ -507,7 +515,14 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     usc.uscsi_timeout = (cTimeoutMillies + 999) / 1000;
 
     /* We need root privileges for user-SCSI under Solaris. */
+#ifdef VBOX_WITH_SUID_WRAPPER
+    uid_t effUserID = geteuid();
+    solarisEnterRootMode(&effUserID); /** @todo check return code when this really works. */
+#endif
     rc = ioctl(pThis->FileRawDevice, USCSICMD, &usc);
+#ifdef VBOX_WITH_SUID_WRAPPER
+    solarisExitRootMode(&effUserID);
+#endif
     if (rc < 0)
     {
         if (errno == EPERM)
@@ -588,7 +603,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLO
     return rc;
 }
 
-#if 0
+#ifdef VBOX_WITH_SUID_WRAPPER
 /* These functions would have to go into a seperate solaris binary with
  * the setuid permission set, which would run the user-SCSI ioctl and
  * return the value. BUT... this might be prohibitively slow.
@@ -615,84 +630,38 @@ static int solarisCheckUserAuth()
  * Setuid wrapper to gain root access.
  *
  * @returns VBox error code.
- * @param   pUserID        Pointer to user ID.
  * @param   pEffUserID     Pointer to effective user ID.
  */
-static int solarisEnterRootMode(uid_t *pUserID, uid_t *pEffUserID)
+static int solarisEnterRootMode(uid_t *pEffUserID)
 {
     /* Increase privilege if required */
-    if (*pEffUserID == 0)
-        return VINF_SUCCESS;
-    else
+    if (*pEffUserID != 0)
     {
         if (seteuid(0) == 0)
         {
             *pEffUserID = 0;
             return VINF_SUCCESS;
         }
-        else
-            return VERR_PERMISSION_DENIED;
-    }
-}
-
-/**
- * Setuid wrapper to relinquish root access.
- *
- * @returns VBox error code.
- * @param   pUserID        Pointer to user ID.
- * @param   pEffUserID     Pointer to effective user ID.
- */
-static int solarisExitRootMode(uid_t *pUserID, uid_t *pEffUserID)
-{
-    /* Get back to user mode. */
-    if (*pEffUserID == 0)
-    {
-        if (seteuid(*pUserID) == 0)
-        {
-            *pEffUserID = *pUserID;
-            return VINF_SUCCESS;
-        }
-        else
-            return VERR_PERMISSION_DENIED;
+        return VERR_PERMISSION_DENIED;
     }
     return VINF_SUCCESS;
 }
 
 /**
- * Setuid wrapper to gain root access.
- *
- * @returns VBox error code.
- * @param   pUserID        Pointer to user ID.
- * @param   pEffUserID     Pointer to effective user ID.
- */
-static int solarisEnterRootMode(uid_t *pUserID, uid_t *pEffUserID)
-{
-    /* Increase privilege if required */
-    if (*pEffUserID == 0)
-        return VINF_SUCCESS;
-    if (seteuid(0) == 0)
-    {
-        *pEffUserID = 0;
-        return VINF_SUCCESS;
-    }
-    return VERR_PERMISSION_DENIED;
-}
-
-/**
  * Setuid wrapper to relinquish root access.
  *
  * @returns VBox error code.
- * @param   pUserID        Pointer to user ID.
  * @param   pEffUserID     Pointer to effective user ID.
  */
-static int solarisExitRootMode(uid_t *pUserID, uid_t *pEffUserID)
+static int solarisExitRootMode(uid_t *pEffUserID)
 {
     /* Get back to user mode. */
     if (*pEffUserID == 0)
     {
-        if (seteuid(*pUserID) == 0)
+        uid_t realID = getuid();
+        if (seteuid(realID) == 0)
         {
-            *pEffUserID = *pUserID;
+            *pEffUserID = realID;
             return VINF_SUCCESS;
         }
         return VERR_PERMISSION_DENIED;
@@ -745,6 +714,14 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
             pThis->IBlock.pfnSendCmd = drvHostDvdSendCmd;
             /* Passthrough requires opening the device in R/W mode. */
             pThis->fReadOnlyConfig = false;
+# ifdef VBOX_WITH_SUID_WRAPPER  /* Solaris setuid for Passthrough mode. */
+            rc = solarisCheckUserAuth();
+            if (VBOX_FAILURE(rc))
+            {
+                Log(("DVD: solarisCheckUserAuth failed. Permission denied!\n"));
+                return rc;
+            }
+# endif /* VBOX_WITH_SUID_WRAPPER */
         }
 #endif /* !RT_OS_L4 */
 
