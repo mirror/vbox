@@ -207,6 +207,7 @@ DevicesR3_SOURCES       = \
 	PC/DevPcArch.c \
 	VMMDev/VBoxDev.cpp \
 	VMMDev/VMMDevHGCM.cpp \
+	Network/DevEEPROM.cpp \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
 	PC/DevDMA.cpp \
@@ -275,6 +276,7 @@ VBoxDDGC_SOURCES        = \
 	PC/DevPIC.cpp \
 	PC/DevRTC.cpp \
 	Storage/DevATA.cpp \
+	Network/DevEEPROM.cpp \
 	Network/DevPCNet.cpp \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
@@ -325,6 +327,7 @@ VBoxDDR0_SOURCES        = \
 	PC/DevPIC.cpp \
 	PC/DevRTC.cpp \
 	Storage/DevATA.cpp \
+	Network/DevEEPROM.cpp \
 	Network/DevPCNet.cpp \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
@@ -626,5 +629,16 @@ ifdef VBOX_WITH_TESTCASES
 	$(LIB_RUNTIME)
 endif
 
+#
+# EEPROM device unit test requires cppunit
+#
+ifdef VBOX_WITH_CPPUNIT_TESTCASES
+ PROGRAMS += tstDevEEPROM
+ tstDevEEPROM_TEMPLATE    = VBOXR3TSTEXE
+ tstDevEEPROM_SOURCES     = \
+	Network/testcase/tstDevEEPROM.cpp
+ tstDevEEPROM_LIBS        = \
+	$(PATH_LIB)/DevicesR3.a cppunit
+endif
 
 include $(PATH_KBUILD)/subfooter.kmk
