@@ -7,7 +7,7 @@
  *  Common definitions
 
      Copyright (C) 2004-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -301,6 +301,7 @@
   <xsd:attribute name="serialnumber" type="xsd:token"/>
   <xsd:attribute name="port" type="xsd:token"/>
   <xsd:attribute name="remote" type="xsd:token"/>
+  <xsd:attribute name="maskedInterfaces" type="xsd:unsignedInt"/>
 </xsd:complexType>
 
 <xsd:complexType name="THostUSBDeviceFilter">

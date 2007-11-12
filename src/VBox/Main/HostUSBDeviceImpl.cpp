@@ -378,16 +378,17 @@ Utf8Str HostUSBDevice::name()
  *  If the state change may be performed immediately (for example, Hold ->
  *  Captured), then the machine is informed before this method returns.
  *
- *  @param aMachine     Machine that will capture this device on success.
- *  @return             @c false if the device could be immediately captured
- *                      but the VM process refused to grab it;
- *                      @c true otherwise.
+ *  @param aMachine         Machine that will capture this device on success.
+ *  @param aMaskedIfs       The interfaces to hide from the guest.
+ *  @return                 @c false if the device could be immediately captured
+ *                          but the VM process refused to grab it;
+ *                          @c true otherwise.
  *
  *  @note Must be called from under the object write lock.
  *
  *  @note May lock the given machine object for reading.
  */
-bool HostUSBDevice::requestCapture (SessionMachine *aMachine)
+bool HostUSBDevice::requestCapture (SessionMachine *aMachine, ULONG aMaskedIfs /* = 0*/)
 {
     LogFlowThisFunc (("\n"));
 
@@ -418,7 +419,7 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine)
 
         LogFlowThisFunc (("Calling machine->onUSBDeviceAttach()...\n"));
 
-        HRESULT rc = aMachine->onUSBDeviceAttach (d, NULL);
+        HRESULT rc = aMachine->onUSBDeviceAttach (d, NULL, aMaskedIfs);
 
         /* The VM process has a legal reason to fail (for example, incorrect
          * usbfs permissions or out of virtual USB ports). More over, the VM
@@ -448,6 +449,7 @@ bool HostUSBDevice::requestCapture (SessionMachine *aMachine)
     mPendingStateEx = kNothingPending;
     mPendingSince = RTTimeNanoTS();
     mMachine = aMachine;
+    mMaskedIfs = aMaskedIfs;
 
     mUSBProxyService->captureDevice (this);
 
@@ -737,7 +739,7 @@ void HostUSBDevice::handlePendingStateChange()
 
         LogFlowThisFunc (("Calling machine->onUSBDeviceAttach()...\n"));
 
-        HRESULT rc = mMachine->onUSBDeviceAttach (d, error);
+        HRESULT rc = mMachine->onUSBDeviceAttach (d, error, mMaskedIfs);
 
         /* The VM process has a legal reason to fail (for example, incorrect
          * usbfs permissions or out of virtual USB ports). More over, the VM

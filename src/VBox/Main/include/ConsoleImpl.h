@@ -173,7 +173,7 @@ public:
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);
-    HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError);
+    HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
 
     VMMDev *getVMMDev() { return mVMMDev; }
@@ -415,12 +415,12 @@ private:
     usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
                        PVUSBIRHCONFIG aConfig, PCRTUUID aUuid);
 #else /* PDMUsb coding. */
-    HRESULT attachUSBDevice (IUSBDevice *aHostDevice);
+    HRESULT attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs);
     HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
 
     static DECLCALLBACK(int)
     usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid,
-                       bool aRemote, const char *aAddress);
+                       bool aRemote, const char *aAddress, ULONG aMaskedIfs);
     static DECLCALLBACK(int)
     usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
 #endif /* PDMUsb coding. */

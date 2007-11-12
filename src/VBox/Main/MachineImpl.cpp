@@ -2536,9 +2536,9 @@ ComObjPtr <SessionMachine> Machine::sessionMachine()
     return  sm;
 }
 
-/** 
+/**
  *  Saves the registry entry of this machine to the given configuration node.
- * 
+ *
  *  @param aEntryNode Node to save the registry entry to.
  *
  *  @note locks this object for reading.
@@ -8513,7 +8513,8 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
  *  @note Locks the same as USBController::hasMatchingFilter() does.
  */
 STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
-                                                  BOOL *aMatched)
+                                                  BOOL *aMatched,
+                                                  ULONG *aMaskedIfs)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8525,7 +8526,7 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    *aMatched = mUSBController->hasMatchingFilter (aUSBDevice);
+    *aMatched = mUSBController->hasMatchingFilter (aUSBDevice, aMaskedIfs);
 
     return S_OK;
 }
@@ -9515,13 +9516,13 @@ HRESULT SessionMachine::onSharedFolderChange()
     return directControl->OnSharedFolderChange (FALSE /* aGlobal */);
 }
 
-/** 
+/**
  *  Returns @c true if this machine's USB controller reports it has a matching
  *  filter for the given USB device and @c false otherwise.
  *
  *  @note Locks this object for reading.
  */
-bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDevice)
+bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
 {
     AutoCaller autoCaller (this);
     /* silently return if not ready -- this method may be called after the
@@ -9531,14 +9532,15 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDev
 
     AutoReaderLock alock (this);
 
-    return mUSBController->hasMatchingFilter (aDevice);
+    return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
 }
 
 /**
  *  @note Locks this object for reading.
  */
 HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
-                                           IVirtualBoxErrorInfo *aError)
+                                           IVirtualBoxErrorInfo *aError,
+                                           ULONG aMaskedIfs)
 {
     LogFlowThisFunc (("\n"));
 
@@ -9559,7 +9561,7 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
     if (!directControl)
         return E_FAIL;
 
-    return directControl->OnUSBDeviceAttach (aDevice, aError);
+    return directControl->OnUSBDeviceAttach (aDevice, aError, aMaskedIfs);
 }
 
 /**

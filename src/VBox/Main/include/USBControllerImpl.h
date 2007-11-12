@@ -115,8 +115,8 @@ public:
     HRESULT onDeviceFilterChange (USBDeviceFilter *aFilter,
                                   BOOL aActiveChanged = FALSE);
 
-    bool hasMatchingFilter (ComObjPtr <HostUSBDevice> &aDevice);
-    bool hasMatchingFilter (IUSBDevice *aUSBDevice);
+    bool hasMatchingFilter (const ComObjPtr <HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
+    bool hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs);
 
     HRESULT notifyProxy (bool aInsertFilters);
 

@@ -605,7 +605,8 @@ STDMETHODIMP Session::OnSharedFolderChange (BOOL aGlobal)
 }
 
 STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
-                                         IVirtualBoxErrorInfo *aError)
+                                         IVirtualBoxErrorInfo *aError,
+                                         ULONG aMaskedIfs)
 {
     LogFlowThisFunc (("\n"));
 
@@ -616,7 +617,7 @@ STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
     AssertReturn (mState == SessionState_SessionOpen &&
                   mType == SessionType_DirectSession, E_FAIL);
 
-    return mConsole->onUSBDeviceAttach (aDevice, aError);
+    return mConsole->onUSBDeviceAttach (aDevice, aError, aMaskedIfs);
 }
 
 STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId,
@@ -993,7 +994,7 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
 }
 #endif
 
-#if defined(RT_OS_OS2) 
+#if defined(RT_OS_OS2)
 /** VM IPC mutex holder thread */
 DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
 {
