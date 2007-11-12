@@ -169,7 +169,7 @@ typedef struct DRVTAP
 
 
 /*******************************************************************************
-*   Internal Functions & Globals                                               *
+*   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef RT_OS_SOLARIS
 # ifdef VBOX_WITH_CROSSBOW
@@ -324,11 +324,9 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
             char achBuf[4096];
             size_t cbRead = 0;
 #ifdef VBOX_WITH_CROSSBOW
-            rc = VINF_SUCCESS;
             cbRead = sizeof(achBuf);
-            int rc2 = dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
-            if (rc2 != DLPI_SUCCESS)
-                rc = SolarisDLPIErr2VBoxErr(rc2);
+            rc = dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
+            rc = RT_LIKELY(rc == DLPI_SUCCESS) ? VINF_SUCCESS : SolarisDLPIErr2VBoxErr(rc);
 #else
             rc = RTFileRead(pData->FileDevice, achBuf, sizeof(achBuf), &cbRead);
 #endif
@@ -464,11 +462,9 @@ static DECLCALLBACK(void) drvTAPPoller(PPDMDRVINS pDrvIns)
                 char        achBuf[4096];
                 size_t      cbRead = 0;
 #ifdef VBOX_WITH_CROSSBOW
-                int rc = VINF_SUCCESS;
                 cbRead = sizeof(achBuf);
-                int rc2 = dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
-                if (rc2 != DLPI_SUCCESS)
-                    rc = SolarisDLPIErr2VBoxErr(rc2);
+                int rc = dlpi_recv(pData->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
+                rc = RT_LIKELY(rc == DLPI_SUCCESS) ? VINF_SUCCESS : SolarisDLPIErr2VBoxErr(rc);
 #else
                 int rc = RTFileRead(pData->FileDevice, achBuf, RT_MIN(sizeof(achBuf), cbMax), &cbRead);
 #endif
@@ -526,17 +522,14 @@ static int drvTAPSetupApplication(PDRVTAP pData)
         rc = RTProcWait(pid, 0, &Status);
         if (RT_SUCCESS(rc))
         {
-            if (Status.iStatus == 0 && Status.enmReason == RTPROCEXITREASON_NORMAL)
+            if (    Status.iStatus == 0
+                &&  Status.enmReason == RTPROCEXITREASON_NORMAL)
                 return VINF_SUCCESS;
-            
+
             LogRel(("TAP#%d: Error running TAP setup application: %s\n", pData->pDrvIns->iInstance, pData->pszSetupApplication));
-            return VERR_HOSTIF_INIT_FAILED;
         }
         else
-        {
             LogRel(("TAP#%d: RTProcWait failed for: %s\n", pData->pDrvIns->iInstance, pData->pszSetupApplication));
-            return VERR_HOSTIF_INIT_FAILED;
-        }
     }
     else
     {
@@ -544,8 +537,8 @@ static int drvTAPSetupApplication(PDRVTAP pData)
         LogRel(("TAP#%d: Failed to fork() process for running TAP setup application: %s\n", pData->pDrvIns->iInstance,
               pData->pszSetupApplication, strerror(errno)));
     }
-    
-    return VERR_HOSTIF_INIT_FAILED;    
+
+    return VERR_HOSTIF_INIT_FAILED;
 }
 
 
@@ -571,17 +564,14 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
         rc = RTProcWait(pid, 0, &Status);
         if (RT_SUCCESS(rc))
         {
-            if (Status.iStatus == 0 && Status.enmReason == RTPROCEXITREASON_NORMAL)
+            if (    Status.iStatus == 0
+                &&  Status.enmReason == RTPROCEXITREASON_NORMAL)
                 return VINF_SUCCESS;
-            
+
             LogRel(("TAP#%d: Error running TAP terminate application: %s\n", pData->pDrvIns->iInstance, pData->pszTerminateApplication));
-            return VERR_HOSTIF_TERM_FAILED;
         }
         else
-        {
             LogRel(("TAP#%d: RTProcWait failed for: %s\n", pData->pDrvIns->iInstance, pData->pszTerminateApplication));
-            return VERR_HOSTIF_INIT_FAILED;
-        }
     }
     else
     {
@@ -589,7 +579,7 @@ static int drvTAPTerminateApplication(PDRVTAP pData)
         LogRel(("TAP#%d: Failed to fork() process for running TAP terminate application: %s\n", pData->pDrvIns->iInstance,
               pData->pszTerminateApplication, strerror(errno)));
     }
-    return VERR_HOSTIF_TERM_FAILED;    
+    return VERR_HOSTIF_TERM_FAILED;
 }
 
 #endif /* RT_OS_SOLARIS */
@@ -658,7 +648,7 @@ static int SolarisCreateVNIC(PDRVTAP pData)
     if (rc != DLADM_STATUS_OK)
         return PDMDrvHlpVMSetError(pData->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                            N_("dladm_vnic_create() failed. NIC %s probably incorrect."), szNICName);
-    
+
     pData->pszDeviceNameActual = NULL;
     RTStrAPrintf(&pData->pszDeviceNameActual, "vnic%u", VnicID);
     pData->uDeviceID = VnicID;
@@ -741,7 +731,7 @@ static int SolarisGetNIC(char *pszNICName, size_t cchNICName)
                 LogRel(("SolarisGetNIC: SIOCGLIFCONF failed\n"));
                 rc = VERR_HOSTIF_INIT_FAILED;
             }
-            free(pBuf);
+            RTMemFree(pBuf);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -854,7 +844,7 @@ static int SolarisDLPIErr2VBoxErr(int rc)
         case DLPI_ELINKNAMEINVAL:   return VERR_INVALID_NAME;
         case DLPI_EINHANDLE:        return VERR_INVALID_HANDLE;
         case DLPI_ETIMEDOUT:        return VERR_TIMEOUT;
-        case DLPI_FAILURE:          return VERR_GENERAL_FAILURE;        
+        case DLPI_FAILURE:          return VERR_GENERAL_FAILURE;
 
         case DLPI_EVERNOTSUP:
         case DLPI_EMODENOTSUP:
@@ -870,7 +860,7 @@ static int SolarisDLPIErr2VBoxErr(int rc)
         case DLPI_ENOTSTYLE2:       return VERR_GENERAL_FAILURE;
     }
 
-    AssertMsgFailed(("SolarisDLPIErr2VBoxErr: Unhandled error %d\n", rc));    
+    AssertMsgFailed(("SolarisDLPIErr2VBoxErr: Unhandled error %d\n", rc));
     return VERR_UNRESOLVED_ERROR;
 }
 
@@ -1118,6 +1108,7 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 #endif
 
 #ifdef RT_OS_SOLARIS
+    /** @todo r=bird: This *does* need checking against ConsoleImpl2.cpp if used on non-solaris systems. */
     if (pData->FileDevice != NIL_RTFILE)
     {
         int rc = RTFileClose(pData->FileDevice);
