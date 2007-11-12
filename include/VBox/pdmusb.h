@@ -580,8 +580,10 @@ typedef DECLCALLBACK(int) FNPDMVBOXUSBREGISTER(PCPDMUSBREGCB pCallbacks, uint32_
  * @param   pszAddress      The address string.
  * @param   pvBackend       Pointer to the backend.
  * @param   iUsbVersion     The preferred USB version.
+ * @param   fMaskedIfs      The interfaces to hide from the guest.
  */
-PDMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend, uint32_t iUsbVersion);
+PDMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend,
+                                         uint32_t iUsbVersion, uint32_t fMaskedIfs);
 
 /**
  * Detaches and destroys a USB device.

@@ -128,7 +128,7 @@ public:
 
     Utf8Str name();
 
-    bool requestCapture (SessionMachine *aMachine);
+    bool requestCapture (SessionMachine *aMachine, ULONG aMaskedIfs = 0);
     void requestRelease();
     void requestHold();
 
@@ -172,6 +172,9 @@ private:
     /** Pointer to the USB Device structure owned by this device.
      * Only used for host devices. */
     PUSBDEVICE mUsb;
+
+    /** The interface mask to be use in the pending capture. */
+    ULONG mMaskedIfs;
 
     friend class USBProxyService;
 #ifdef RT_OS_LINUX

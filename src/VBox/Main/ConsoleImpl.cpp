@@ -3364,10 +3364,12 @@ HRESULT Console::onSharedFolderChange (BOOL aGlobal)
  *
  *  @param aDevice
  *      The device in question.
+ *  @param aMaskedIfs
+ *      The interfaces to hide from the guest.
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError)
+HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs)
 {
     LogFlowThisFunc (("aDevice=%p aError=%p\n", aDevice, aError));
 
@@ -3418,7 +3420,7 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
         return E_FAIL;
     }
 
-    HRESULT rc = attachUSBDevice (aDevice);
+    HRESULT rc = attachUSBDevice (aDevice, aMaskedIfs);
 #endif /* PDMUsb */
 
     if (FAILED (rc))
@@ -4708,7 +4710,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfi
 {
     AssertReturn (aHostDevice && aConfig, E_FAIL);
 #else /* PDMUsb */
-HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice)
+HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 {
     AssertReturn (aHostDevice, E_FAIL);
 #endif
@@ -4762,7 +4764,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice)
 /**@todo just do everything here */
     PVMREQ pReq = NULL;
     int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
-                           (PFNRT) usbAttachCallback, 5, this, aHostDevice, Uuid.ptr(), fRemote, Address.raw());
+                           (PFNRT) usbAttachCallback, 6, this, aHostDevice, Uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
 #endif /* PDMUsb */
     if (VBOX_SUCCESS (vrc))
         vrc = pReq->iStatus;
@@ -4862,7 +4864,7 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
 #else /* PDMUsb */
 //static
 DECLCALLBACK(int)
-Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid, bool aRemote, const char *aAddress)
+Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid, bool aRemote, const char *aAddress, ULONG aMaskedIfs)
 {
     LogFlowFuncEnter();
     LogFlowFunc (("that={%p}\n", that));
@@ -4886,7 +4888,7 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUu
     Assert(portVersion == 1 || portVersion == 2);
 
     int vrc = PDMR3USBCreateProxyDevice (that->mpVM, aUuid, aRemote, aAddress, pvRemoteBackend,
-                                         portVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20);
+                                         portVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20, aMaskedIfs);
     if (VBOX_SUCCESS (vrc))
     {
         /* Create a OUSBDevice and add it to the device list */
@@ -5721,16 +5723,17 @@ void Console::processRemoteUSBDevices (uint32_t u32ClientId, VRDPUSBDEVICEDESC *
 
             /* Check if the device is ok for current USB filters. */
             BOOL fMatched = FALSE;
+            ULONG fMaskedIfs = 0;
 
-            HRESULT hrc = mControl->RunUSBDeviceFilters(device, &fMatched);
+            HRESULT hrc = mControl->RunUSBDeviceFilters(device, &fMatched, &fMaskedIfs);
 
             AssertComRC (hrc);
 
-            LogFlowThisFunc (("USB filters return %d\n", fMatched));
+            LogFlowThisFunc (("USB filters return %d %#x\n", fMatched, fMaskedIfs));
 
             if (fMatched)
             {
-                hrc = onUSBDeviceAttach (device, NULL);
+                hrc = onUSBDeviceAttach (device, NULL, fMaskedIfs);
 
                 /// @todo (r=dmik) warning reporting subsystem
 

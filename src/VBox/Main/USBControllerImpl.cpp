@@ -538,13 +538,16 @@ HRESULT USBController::loadSettings (CFGNODE aMachine)
         CFGLDRQueryBSTR (filter, "port", port.asOutParam());
         Bstr remote;
         CFGLDRQueryBSTR (filter, "remote", remote.asOutParam());
+        uint32_t maskedIfs;
+        if (RT_FAILURE(CFGLDRQueryUInt32 (filter, "maskedInterfaces", &maskedIfs)))
+            maskedIfs = 0;
 
         ComObjPtr <USBDeviceFilter> filterObj;
         filterObj.createObject();
         rc = filterObj->init (this,
                               name, active, vendorId, productId, revision,
                               manufacturer, product, serialNumber,
-                              port, remote);
+                              port, remote, maskedIfs);
         /* error info is set by init() when appropriate */
         if (SUCCEEDED (rc))
         {
@@ -656,6 +659,9 @@ HRESULT USBController::saveSettings (CFGNODE aMachine)
         if (data.mRemote.string())
             CFGLDRSetBSTR (filter, "remote", data.mRemote.string());
 #endif /* VBOX_WITH_USBFILTER */
+
+        if (data.mMaskedIfs)
+            CFGLDRSetUInt32 (filter, "maskedInterfaces", data.mMaskedIfs);
 
         CFGLDRReleaseNode (filter);
 
@@ -1101,7 +1107,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
  *
  *  @note Locks this object for reading.
  */
-bool USBController::hasMatchingFilter (ComObjPtr <HostUSBDevice> &aDevice)
+bool USBController::hasMatchingFilter (const ComObjPtr <HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), false);
@@ -1112,18 +1118,20 @@ bool USBController::hasMatchingFilter (ComObjPtr <HostUSBDevice> &aDevice)
     if (!mData->mEnabled)
         return false;
 
-    bool match = false;
-
     /* apply self filters */
     for (DeviceFilterList::const_iterator it = mDeviceFilters->begin();
-         !match && it != mDeviceFilters->end();
+         it != mDeviceFilters->end();
          ++ it)
     {
         AutoLock filterLock (*it);
-        match = aDevice->isMatch ((*it)->data());
+        if (aDevice->isMatch ((*it)->data()))
+        {
+            *aMaskedIfs = (*it)->data().mMaskedIfs;
+            return true;
+        }
     }
 
-    return match;
+    return false;
 }
 
 /**
@@ -1138,7 +1146,7 @@ bool USBController::hasMatchingFilter (ComObjPtr <HostUSBDevice> &aDevice)
  *
  *  @note Locks this object for reading.
  */
-bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
+bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs)
 {
     LogFlowThisFuncEnter();
 
@@ -1264,6 +1272,7 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice)
 #endif /* VBOX_WITH_USBFILTER */
 
         match = true;
+        *aMaskedIfs = aData.mMaskedIfs;
         break;
     }
 

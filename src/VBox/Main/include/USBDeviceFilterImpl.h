@@ -68,10 +68,10 @@ public:
 
         typedef matching::Matchable <matching::ParsedBoolFilter> BOOLFilter;
 
-        Data() : mActive (FALSE), mId (NULL) {}
+        Data() : mActive (FALSE), mMaskedIfs (0), mId (NULL) {}
 #ifdef VBOX_WITH_USBFILTER
         Data (const Data &aThat) : mName (aThat.mName), mActive (aThat.mActive),
-            mRemote (aThat.mRemote), mId (NULL)
+            mRemote (aThat.mRemote), mMaskedIfs (aThat.mMaskedIfs) , mId (aThat.mId)
         {
             USBFilterClone (&mUSBFilter, &aThat.mUSBFilter);
         }
@@ -90,11 +90,13 @@ public:
                     mProduct.string() == that. mProduct.string() &&
                     mSerialNumber.string() == that. mSerialNumber.string() &&
                     mPort.string() == that. mPort.string() &&
-                    mRemote.string() == that. mRemote.string());
+                    mRemote.string() == that. mRemote.string() &&
+                    mMaskedIfs == that. mMaskedIfs);
 #else /* VBOX_WITH_USBFILTER */
             return this == &that
                 || (    mName == that.mName
                     &&  mActive == that.mActive
+                    &&  mMaskedIfs == that.mMaskedIfs
                     &&  USBFilterIsIdentical (&mUSBFilter, &that.mUSBFilter));
 #endif /* VBOX_WITH_USBFILTER */
         }
@@ -114,6 +116,9 @@ public:
         USBFILTER mUSBFilter;
 #endif /* VBOX_WITH_USBFILTER */
         BOOLFilter mRemote;
+
+        /** Config value. */
+        ULONG mMaskedIfs;
 
         /** Arbitrary ID field (not used by the class itself) */
         void *mId;
@@ -144,7 +149,8 @@ public:
                   INPTR BSTR aRevision,
                   INPTR BSTR aManufacturer, INPTR BSTR aProduct,
                   INPTR BSTR aSerialNumber,
-                  INPTR BSTR aPort, INPTR BSTR aRemote);
+                  INPTR BSTR aPort, INPTR BSTR aRemote,
+                  ULONG aMaskedIfs);
     HRESULT init (USBController *aParent, INPTR BSTR aName);
     HRESULT init (USBController *aParent, USBDeviceFilter *aThat,
                   bool aReshare = false);
@@ -172,6 +178,8 @@ public:
     STDMETHOD(COMSETTER(Port)) (INPTR BSTR aPort);
     STDMETHOD(COMGETTER(Remote)) (BSTR *aRemote);
     STDMETHOD(COMSETTER(Remote)) (INPTR BSTR aRemote);
+    STDMETHOD(COMGETTER(MaskedInterfaces)) (ULONG *aMaskedIfs);
+    STDMETHOD(COMSETTER(MaskedInterfaces)) (ULONG aMaskedIfs);
 
     // public methods only for internal purposes
 
@@ -289,6 +297,8 @@ public:
     STDMETHOD(COMSETTER(Port)) (INPTR BSTR aPort);
     STDMETHOD(COMGETTER(Remote)) (BSTR *aRemote);
     STDMETHOD(COMSETTER(Remote)) (INPTR BSTR aRemote);
+    STDMETHOD(COMGETTER(MaskedInterfaces)) (ULONG *aMaskedIfs);
+    STDMETHOD(COMSETTER(MaskedInterfaces)) (ULONG aMaskedIfs);
 
     // IHostUSBDeviceFilter properties
     STDMETHOD(COMGETTER(Action)) (USBDeviceFilterAction_T *aAction);

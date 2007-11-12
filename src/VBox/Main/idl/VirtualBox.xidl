@@ -1901,7 +1901,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="f33740bf-53b2-4519-b950-104260c6a189"
+     uuid="1063893c-4c38-4304-aee9-73e072c181cc"
      internal="yes"
      wsmap="suppress"
      >
@@ -1933,7 +1933,8 @@
         </note>
       </desc>
       <param name="device" type="IUSBDevice" dir="in"/>
-      <param name="matched" type="boolean" dir="return"/>
+      <param name="matched" type="boolean" dir="out"/>
+      <param name="maskedInterfaces" type="unsigned long" dir="out"/>
     </method>
 
     <method name="captureUSBDevice">
@@ -7980,7 +7981,7 @@
 
   <enumerator
      name="IUSBDeviceFilterEnumerator" type="IUSBDeviceFilter"
-     uuid="8d066d8b-3576-4a22-a387-847840937453"
+     uuid="d5109c61-93e7-4726-926b-0dee1020da56"
      />
 
   <collection
@@ -8139,6 +8140,16 @@
           This filter makes sense only for machine USB filters,
           i.e. it is ignored by IHostUSBDeviceFilter objects.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="maskedInterfaces" type="unsigned long">
+      <desc>
+       This is an advanced option for hiding one or more USB interfaces
+       from the guest. The value is a bitmask where the bits that are set
+       means the corresponding USB interface should be hidden, masked off
+       if you like.
+       This feature only works on Linux hosts.
       </desc>
     </attribute>
 
@@ -8582,7 +8593,7 @@
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="e25a28b0-a58a-4582-b7c8-40abaa1f5d5b"
+     uuid="37838967-2430-4bb1-8acc-1b5b2c383d44"
      internal="yes"
      wsmap="suppress"
      >
@@ -8708,6 +8719,7 @@
       </desc>
       <param name="device" type="IUSBDevice" dir="in"/>
       <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
+      <param name="maskedInterfaces" type="unsigned long" dir="in"/>
     </method>
 
     <method name="onUSBDeviceDetach">

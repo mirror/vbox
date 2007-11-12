@@ -357,7 +357,7 @@ public:
         DECLARE_CLS_NEW_DELETE_NOOP (AutoStateDependency)
     };
 
-    /** 
+    /**
      *  Shortcut to AutoStateDependency <AnyStateDep>.
      *  See AutoStateDependency to get the usage pattern.
      *
@@ -370,7 +370,7 @@ public:
      */
     typedef AutoStateDependency <AnyStateDep> AutoAnyStateDependency;
 
-    /** 
+    /**
      *  Shortcut to AutoStateDependency <MutableStateDep>.
      *  See AutoStateDependency to get the usage pattern.
      *
@@ -387,7 +387,7 @@ public:
      */
     typedef AutoStateDependency <MutableStateDep> AutoMutableStateDependency;
 
-    /** 
+    /**
      *  Shortcut to AutoStateDependency <MutableOrSavedStateDep>.
      *  See AutoStateDependency to get the usage pattern.
      *
@@ -510,7 +510,7 @@ public:
 
     ComObjPtr <SessionMachine> sessionMachine();
 
-    /** 
+    /**
      *  Returns the VirtualBox object this machine belongs to.
      *
      *  @note This method doesn't check this object's readiness as it is
@@ -519,7 +519,7 @@ public:
      */
     const ComObjPtr <VirtualBox, ComWeakRef> &virtualBox() const { return mParent; }
 
-    /** 
+    /**
      *  Returns this machine's name.
      *
      *  @note This method doesn't check this object's readiness as it is
@@ -528,7 +528,7 @@ public:
      */
     const Guid &uuid() const { return mData->mUuid; }
 
-    /** 
+    /**
      *  Returns this machine's full settings file path.
      *
      *  @note This method doesn't lock this object or check its readiness as
@@ -537,7 +537,7 @@ public:
      */
     const Bstr &settingsFileFull() const { return mData->mConfigFileFull; }
 
-    /** 
+    /**
      *  Returns this machine's name.
      *
      *  @note This method doesn't lock this object or check its readiness as
@@ -770,7 +770,7 @@ public:
     // IInternalMachineControl methods
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
-    STDMETHOD(RunUSBDeviceFilters) (IUSBDevice *aUSBDevice, BOOL *aMatched);
+    STDMETHOD(RunUSBDeviceFilters) (IUSBDevice *aUSBDevice, BOOL *aMatched, ULONG *aMaskedIfs);
     STDMETHOD(CaptureUSBDevice) (INPTR GUIDPARAM aId);
     STDMETHOD(DetachUSBDevice) (INPTR GUIDPARAM aId, BOOL aDone);
     STDMETHOD(AutoCaptureUSBDevices)();
@@ -795,7 +795,7 @@ public:
 
     bool checkForDeath();
 
-#if defined (RT_OS_WINDOWS) 
+#if defined (RT_OS_WINDOWS)
     HANDLE ipcSem() { return mIPCSem; }
 #elif defined (RT_OS_OS2)
     HMTX ipcSem() { return mIPCSem; }
@@ -809,12 +809,13 @@ public:
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice,
-                               IVirtualBoxErrorInfo *aError);
+                               IVirtualBoxErrorInfo *aError,
+                               ULONG aMaskedIfs);
     HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId,
                                IVirtualBoxErrorInfo *aError);
     HRESULT onSharedFolderChange();
 
-    bool hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDevice);
+    bool hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 
 private:
 

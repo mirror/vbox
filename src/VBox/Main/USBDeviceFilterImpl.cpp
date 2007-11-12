@@ -173,7 +173,8 @@ HRESULT USBDeviceFilter::init (USBController *aParent,
                                INPTR BSTR aRevision,
                                INPTR BSTR aManufacturer, INPTR BSTR aProduct,
                                INPTR BSTR aSerialNumber,
-                               INPTR BSTR aPort, INPTR BSTR aRemote)
+                               INPTR BSTR aPort, INPTR BSTR aRemote,
+                               ULONG aMaskedIfs)
 {
     LogFlowThisFunc (("aParent=%p\n", aParent));
 
@@ -193,6 +194,7 @@ HRESULT USBDeviceFilter::init (USBController *aParent,
     mData.allocate();
     mData->mName = aName;
     mData->mActive = aActive;
+    mData->mMaskedIfs = 0;
 
     /* initialize all filters to any match using null string */
 #ifndef VBOX_WITH_USBFILTER
@@ -232,6 +234,8 @@ HRESULT USBDeviceFilter::init (USBController *aParent,
         CheckComRCBreakRC (rc);
         rc = COMSETTER(Remote) (aRemote);
         CheckComRCBreakRC (rc);
+        rc = COMSETTER(MaskedInterfaces) (aMaskedIfs);
+        CheckComRCBreakRC (rc);
     }
     while (0);
 
@@ -268,6 +272,7 @@ HRESULT USBDeviceFilter::init (USBController *aParent, INPTR BSTR aName)
 
     mData->mName = aName;
     mData->mActive = FALSE;
+    mData->mMaskedIfs = 0;
 
     /* initialize all filters to any match using null string */
 #ifndef VBOX_WITH_USBFILTER
@@ -968,6 +973,46 @@ STDMETHODIMP USBDeviceFilter::COMSETTER(Remote) (INPTR BSTR aRemote)
     return S_OK;
 }
 
+STDMETHODIMP USBDeviceFilter::COMGETTER(MaskedInterfaces) (ULONG *aMaskedIfs)
+{
+    if (!aMaskedIfs)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aMaskedIfs = mData->mMaskedIfs;
+
+    return S_OK;
+}
+
+STDMETHODIMP USBDeviceFilter::COMSETTER(MaskedInterfaces) (ULONG aMaskedIfs)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* the machine needs to be mutable */
+    Machine::AutoMutableStateDependency adep (mParent->parent());
+    CheckComRCReturnRC (adep.rc());
+
+    AutoLock alock (this);
+
+    if (mData->mMaskedIfs != aMaskedIfs)
+    {
+        mData.backup();
+        mData->mMaskedIfs = aMaskedIfs;
+
+        /* leave the lock before informing callbacks */
+        alock.unlock();
+
+        return mParent->onDeviceFilterChange (this);
+    }
+
+    return S_OK;
+}
+
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1191,6 +1236,7 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent,
     USBFilterInit (&mData->mUSBFilter, USBFILTERTYPE_IGNORE);
 #endif /* VBOX_WITH_USBFILTER */
     mData->mRemote = NULL;
+    mData->mMaskedIfs = 0;
 
     mInList = false;
 
@@ -1272,6 +1318,7 @@ HRESULT HostUSBDeviceFilter::init (Host *aParent, INPTR BSTR aName)
     USBFilterInit (&mData->mUSBFilter, USBFILTERTYPE_IGNORE);
 #endif /* VBOX_WITH_USBFILTER */
     mData->mRemote = NULL;
+    mData->mMaskedIfs = 0;
 
     /* Confirm successful initialization */
     autoInitSpan.setSucceeded();
@@ -1775,6 +1822,27 @@ STDMETHODIMP HostUSBDeviceFilter::COMSETTER(Remote) (INPTR BSTR aRemote)
     return setError (E_NOTIMPL,
         tr ("The remote state filter is not supported by "
             "IHostUSBDeviceFilter objects"));
+}
+
+STDMETHODIMP HostUSBDeviceFilter::COMGETTER(MaskedInterfaces) (ULONG *aMaskedIfs)
+{
+    if (!aMaskedIfs)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReaderLock alock (this);
+
+    *aMaskedIfs = mData->mMaskedIfs;
+
+    return S_OK;
+}
+
+STDMETHODIMP HostUSBDeviceFilter::COMSETTER(MaskedInterfaces) (INPTR ULONG aMaskedIfs)
+{
+    return setError (E_NOTIMPL,
+        tr ("The masked interfaces property is not applicable to IHostUSBDeviceFilter objects"));
 }
 
 // IHostUSBDeviceFilter properties

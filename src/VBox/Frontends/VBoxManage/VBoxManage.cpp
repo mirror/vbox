@@ -188,6 +188,7 @@ struct USBFilterCmd
         Bstr mProduct;
         Bstr mRemote;
         Bstr mSerialNumber;
+        Nullable <ULONG> mMaskedInterfaces;
         USBDeviceFilterAction_T mAction;
     };
 
@@ -555,6 +556,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-product <string>] (null)\n"
                  "                            [-remote yes|no] (null, VM filters only)\n"
                  "                            [-serialnumber <string>] (null)\n"
+                 "                            [-maskedinterfaces <XXXXXXXX>]\n"
                  "\n");
     }
 
@@ -572,6 +574,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-product <string>|\"\"]\n"
                  "                            [-remote yes|no] (null, VM filters only)\n"
                  "                            [-serialnumber <string>|\"\"]\n"
+                 "                            [-maskedinterfaces <XXXXXXXX>]\n"
                  "\n");
     }
 
@@ -1630,12 +1633,20 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             if (details == VMINFO_MACHINEREADABLE)
                 RTPrintf("USBFilterRemote%d=\"%lS\"\n", index + 1, bstr.raw());
             else
-                RTPrintf("Remote:           %lS\n\n", bstr.raw());
+                RTPrintf("Remote:           %lS\n", bstr.raw());
             CHECK_ERROR_RET (DevPtr, COMGETTER (SerialNumber) (bstr.asOutParam()), rc);
             if (details == VMINFO_MACHINEREADABLE)
                 RTPrintf("USBFilterSerialNumber%d=\"%lS\"\n", index + 1, bstr.raw());
             else
-                RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
+                RTPrintf("Serial Number:    %lS\n", bstr.raw());
+            if (details != VMINFO_MACHINEREADABLE)
+            {
+                ULONG fMaskedIfs;
+                CHECK_ERROR_RET (DevPtr, COMGETTER (MaskedInterfaces) (&fMaskedIfs), rc);
+                if (fMaskedIfs)
+                    RTPrintf("Masked Interfaces: 0x%08x\n", fMaskedIfs);
+                RTPrintf("\n");
+            }
 
             rc = Enum->HasMore (&fMore);
             ASSERT_RET (SUCCEEDED (rc), rc);
@@ -6575,10 +6586,7 @@ static int handleUSBFilter (int argc, char *argv[],
                 {
                     return errorSyntax(USAGE_USBFILTER_ADD, "Not enough parameters");
                 }
-                else
-                {
-                    return errorSyntax(USAGE_USBFILTER_MODIFY, "Not enough parameters");
-                }
+                return errorSyntax(USAGE_USBFILTER_MODIFY, "Not enough parameters");
             }
 
             // set Active to true by default
@@ -6696,6 +6704,21 @@ static int handleUSBFilter (int argc, char *argv[],
                     }
                     i++;
                     cmd.mFilter.mSerialNumber = argv [i];
+                }
+                else if (strcmp(argv [i], "-maskedinterfaces") == 0)
+                {
+                    if (argc <= i + 1)
+                    {
+                        return errorArgument("Missing argument to '%s'", argv[i]);
+                    }
+                    i++;
+                    uint32_t u32;
+                    rc = RTStrToUInt32Full(argv[i], 0, &u32);
+                    if (RT_FAILURE(rc))
+                    {
+                        return errorArgument("Failed to convert the -maskinterfaces value '%s' to a number, rc=%Rrc", argv[i], rc);
+                    }
+                    cmd.mFilter.mMaskedInterfaces = u32;
                 }
                 else if (strcmp(argv [i], "-action") == 0)
                 {
@@ -6819,6 +6842,8 @@ static int handleUSBFilter (int argc, char *argv[],
                     CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer.setNullIfEmpty()));
                 if (!f.mSerialNumber.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
+                if (!f.mMaskedInterfaces.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
                 if (f.mAction != USBDeviceFilterAction_InvalidUSBDeviceFilterAction)
                     CHECK_ERROR_BREAK (flt, COMSETTER(Action) (f.mAction));
@@ -6844,6 +6869,8 @@ static int handleUSBFilter (int argc, char *argv[],
                     CHECK_ERROR_BREAK (flt, COMSETTER(Remote) (f.mRemote.setNullIfEmpty()));
                 if (!f.mSerialNumber.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
+                if (!f.mMaskedInterfaces.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
                 CHECK_ERROR_BREAK (ctl, InsertDeviceFilter (cmd.mIndex, flt));
             }
@@ -6872,6 +6899,8 @@ static int handleUSBFilter (int argc, char *argv[],
                     CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer.setNullIfEmpty()));
                 if (!f.mSerialNumber.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
+                if (!f.mMaskedInterfaces.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
                 if (f.mAction != USBDeviceFilterAction_InvalidUSBDeviceFilterAction)
                     CHECK_ERROR_BREAK (flt, COMSETTER(Action) (f.mAction));
@@ -6900,6 +6929,8 @@ static int handleUSBFilter (int argc, char *argv[],
                     CHECK_ERROR_BREAK (flt, COMSETTER(Remote) (f.mRemote.setNullIfEmpty()));
                 if (!f.mSerialNumber.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
+                if (!f.mMaskedInterfaces.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
             }
             break;
         }

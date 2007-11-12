@@ -98,7 +98,7 @@ public:
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange) (BOOL aGlobal);
-    STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError);
+    STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     STDMETHOD(OnUSBDeviceDetach) (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
     STDMETHOD(OnShowWindow) (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
 

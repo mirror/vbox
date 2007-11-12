@@ -2192,12 +2192,13 @@ bool Host::applyMachineUSBFilters (SessionMachine *aMachine,
 
     AssertReturn (aDevice->isStatePending() == false, false);
 
-    bool hasMatch = aMachine->hasMatchingUSBFilter (aDevice);
+    ULONG maskedIfs;
+    bool hasMatch = aMachine->hasMatchingUSBFilter (aDevice, &maskedIfs);
 
     if (hasMatch)
     {
         /* try to capture the device */
-        return aDevice->requestCapture (aMachine);
+        return aDevice->requestCapture (aMachine, maskedIfs);
     }
 
     return hasMatch;
