@@ -82,6 +82,13 @@ int main()
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -172,6 +179,54 @@ RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBas
     if (ppszNext)
         *ppszNext = (char *)psz;
 
+    /*
+     * Warn about trailing chars/spaces.
+     */
+    if (    rc == VINF_SUCCESS
+        &&  *psz)
+    {
+        while (*psz == ' ' || *psz == '\t')
+            psz++;
+        rc = *psz ? VWRN_TRAILING_CHARS : VWRN_TRAILING_SPACES;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 64-bit unsigned number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_TRAILING_CHARS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pu64        Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToUInt64Full(const char *pszValue, unsigned uBase, uint64_t *pu64)
+{
+    char *psz;
+    int rc = RTStrToUInt64Ex(pszValue, &psz, uBase, pu64);
+    if (RT_SUCCESS(rc) && *psz)
+    {
+        if (rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES)
+            rc = -rc;
+        else
+        {
+            while (*psz == ' ' || *psz == '\t')
+                psz++;
+            rc = *psz ? VERR_TRAILING_CHARS : VERR_TRAILING_SPACES;
+        }
+    }
     return rc;
 }
 
@@ -199,6 +254,13 @@ RTDECL(uint64_t) RTStrToUInt64(const char *pszValue)
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -209,6 +271,39 @@ RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBas
 {
     uint64_t u64;
     int rc = RTStrToUInt64Ex(pszValue, ppszNext, uBase, &u64);
+    if (rc == VINF_SUCCESS)
+    {
+        if (u64 & ~0xffffffffULL)
+            rc = VWRN_NUMBER_TOO_BIG;
+    }
+    if (pu32)
+        *pu32 = (uint32_t)u64;
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 32-bit unsigned number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_TRAILING_CHARS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pu32        Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBase, uint32_t *pu32)
+{
+    uint64_t u64;
+    int rc = RTStrToUInt64Full(pszValue, uBase, &u64);
     if (rc == VINF_SUCCESS)
     {
         if (u64 & ~0xffffffffULL)
@@ -243,6 +338,13 @@ RTDECL(uint32_t) RTStrToUInt32(const char *pszValue)
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -253,6 +355,39 @@ RTDECL(int) RTStrToUInt16Ex(const char *pszValue, char **ppszNext, unsigned uBas
 {
     uint64_t u64;
     int rc = RTStrToUInt64Ex(pszValue, ppszNext, uBase, &u64);
+    if (rc == VINF_SUCCESS)
+    {
+        if (u64 & ~0xffffULL)
+            rc = VWRN_NUMBER_TOO_BIG;
+    }
+    if (pu16)
+        *pu16 = (uint16_t)u64;
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 16-bit unsigned number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_TRAILING_CHARS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pu16        Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToUInt16Full(const char *pszValue, unsigned uBase, uint16_t *pu16)
+{
+    uint64_t u64;
+    int rc = RTStrToUInt64Full(pszValue, uBase, &u64);
     if (rc == VINF_SUCCESS)
     {
         if (u64 & ~0xffffULL)
@@ -287,6 +422,13 @@ RTDECL(uint16_t) RTStrToUInt16(const char *pszValue)
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -297,6 +439,39 @@ RTDECL(int) RTStrToUInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase
 {
     uint64_t u64;
     int rc = RTStrToUInt64Ex(pszValue, ppszNext, uBase, &u64);
+    if (rc == VINF_SUCCESS)
+    {
+        if (u64 & ~0xffULL)
+            rc = VWRN_NUMBER_TOO_BIG;
+    }
+    if (pu8)
+        *pu8 = (uint8_t)u64;
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 8-bit unsigned number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_NEGATIVE_UNSIGNED
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_TRAILING_CHARS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pu8         Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToUInt8Full(const char *pszValue, unsigned uBase, uint8_t *pu8)
+{
+    uint64_t u64;
+    int rc = RTStrToUInt64Full(pszValue, uBase, &u64);
     if (rc == VINF_SUCCESS)
     {
         if (u64 & ~0xffULL)
@@ -336,6 +511,12 @@ RTDECL(uint8_t) RTStrToUInt8(const char *pszValue)
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -422,6 +603,53 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
     if (ppszNext)
         *ppszNext = (char *)psz;
 
+    /*
+     * Warn about trailing chars/spaces.
+     */
+    if (    rc == VINF_SUCCESS
+        &&  *psz)
+    {
+        while (*psz == ' ' || *psz == '\t')
+            psz++;
+        rc = *psz ? VWRN_TRAILING_CHARS : VWRN_TRAILING_SPACES;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 64-bit signed number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_TRAILING_CHARS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_NO_DIGITS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pi64        Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToInt64Full(const char *pszValue, unsigned uBase, int64_t *pi64)
+{
+    char *psz;
+    int rc = RTStrToInt64Ex(pszValue, &psz, uBase, pi64);
+    if (RT_SUCCESS(rc) && *psz)
+    {
+        if (rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES)
+            rc = -rc;
+        else
+        {
+            while (*psz == ' ' || *psz == '\t')
+                psz++;
+            rc = *psz ? VERR_TRAILING_CHARS : VERR_TRAILING_SPACES;
+        }
+    }
     return rc;
 }
 
@@ -449,6 +677,12 @@ RTDECL(int64_t) RTStrToInt64(const char *pszValue)
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -459,6 +693,39 @@ RTDECL(int) RTStrToInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase
 {
     int64_t i64;
     int rc = RTStrToInt64Ex(pszValue, ppszNext, uBase, &i64);
+    if (rc == VINF_SUCCESS)
+    {
+        int32_t i32 = (int32_t)i64;
+        if (i64 != (int64_t)i32)
+            rc = VWRN_NUMBER_TOO_BIG;
+    }
+    if (pi32)
+        *pi32 = (int32_t)i64;
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 32-bit signed number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_TRAILING_CHARS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_NO_DIGITS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pi32        Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToInt32Full(const char *pszValue, unsigned uBase, int32_t *pi32)
+{
+    int64_t i64;
+    int rc = RTStrToInt64Full(pszValue, uBase, &i64);
     if (rc == VINF_SUCCESS)
     {
         int32_t i32 = (int32_t)i64;
@@ -494,6 +761,12 @@ RTDECL(int32_t) RTStrToInt32(const char *pszValue)
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -504,6 +777,39 @@ RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBase
 {
     int64_t i64;
     int rc = RTStrToInt64Ex(pszValue, ppszNext, uBase, &i64);
+    if (rc == VINF_SUCCESS)
+    {
+        int16_t i16 = (int16_t)i64;
+        if (i64 != (int64_t)i16)
+            rc = VWRN_NUMBER_TOO_BIG;
+    }
+    if (pi16)
+        *pi16 = (int16_t)i64;
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 16-bit signed number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_TRAILING_CHARS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_NO_DIGITS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pi16        Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToInt16Full(const char *pszValue, unsigned uBase, int16_t *pi16)
+{
+    int64_t i64;
+    int rc = RTStrToInt64Full(pszValue, uBase, &i64);
     if (rc == VINF_SUCCESS)
     {
         int16_t i16 = (int16_t)i64;
@@ -539,6 +845,12 @@ RTDECL(int16_t) RTStrToInt16(const char *pszValue)
  *
  * @returns iprt status code.
  *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_DIGITS
+ *
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
@@ -549,6 +861,39 @@ RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase,
 {
     int64_t i64;
     int rc = RTStrToInt64Ex(pszValue, ppszNext, uBase, &i64);
+    if (rc == VINF_SUCCESS)
+    {
+        int8_t i8 = (int8_t)i64;
+        if (i64 != (int64_t)i8)
+            rc = VWRN_NUMBER_TOO_BIG;
+    }
+    if (pi8)
+        *pi8 = (int8_t)i64;
+    return rc;
+}
+
+
+/**
+ * Converts a string representation of a number to a 8-bit signed number,
+ * making sure the full string is converted.
+ *
+ * @returns iprt status code.
+ *          Warnings are used to indicate convertion problems.
+ * @retval  VWRN_NUMBER_TOO_BIG
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_TRAILING_CHARS
+ * @retval  VERR_TRAILING_SPACES
+ * @retval  VERR_NO_DIGITS
+ *
+ * @param   pszValue    Pointer to the string value.
+ * @param   uBase       The base of the representation used.
+ *                      If the function will look for known prefixes before defaulting to 10.
+ * @param   pi64        Where to store the converted number. (optional)
+ */
+RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8)
+{
+    int64_t i64;
+    int rc = RTStrToInt64Full(pszValue, uBase, &i64);
     if (rc == VINF_SUCCESS)
     {
         int8_t i8 = (int8_t)i64;
