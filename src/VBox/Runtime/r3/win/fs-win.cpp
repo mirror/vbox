@@ -332,6 +332,12 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
         Log(("RTFsQuerySizes(%s,): GetDiskFreeSpaceEx failed with lasterr %d (%Vrc)\n",
              pszFsPath, Err, rc));
     }
+
+#ifndef RT_DONT_CONVERT_FILENAMES
+    RTStrUcs2Free(puszFsRoot);
+#else
+    RTStrUcs2Free(pszFsRoot);
+#endif
     return rc;
 }
 
@@ -394,7 +400,6 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
 #else
     RTStrUcs2Free(pszFsRoot);
 #endif
-
     return rc;
 }
 
