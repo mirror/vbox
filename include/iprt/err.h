@@ -413,7 +413,7 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 /** Trailing spaces. */
 #define VERR_TRAILING_SPACES                (-77)
 /** Trailing spaces. */
-#define VINF_TRAILING_SPACES                77
+#define VWRN_TRAILING_SPACES                77
 /** @} */
 
 
