@@ -100,17 +100,17 @@ int main()
 {
     RTR3Init();
 
-    RTFileDelete("tstVdiBase.vdi");
-    RTFileDelete("tstVdiDiff.vdi");
+    RTFileDelete("tmpVdiBase.vdi");
+    RTFileDelete("tmpVdiDiff.vdi");
 
-    int rc = dotest("tstVdiBase.vdi", "tstVdiDiff.vdi");
+    int rc = dotest("tmpVdiBase.vdi", "tmpVdiDiff.vdi");
     if (!rc)
         RTPrintf("tstVDI: SUCCESS\n");
     else
         RTPrintf("tstVDI: FAILURE\n");
 
-    RTFileDelete("tstVdiBase.vdi");
-    RTFileDelete("tstVdiDiff.vdi");
+    RTFileDelete("tmpVdiBase.vdi");
+    RTFileDelete("tmpVdiDiff.vdi");
     return !!rc;
 }
 

@@ -27,6 +27,7 @@
 #include <iprt/stream.h>
 #include <iprt/thread.h>
 #include <iprt/err.h>
+#include <iprt/env.h>
 
 
 /*******************************************************************************
@@ -125,11 +126,17 @@ static bool IsTestcaseIncluded(const char *pszTestcase)
  */
 static void Process(const char *pszFilter, const char *pszDir)
 {
+    RTENV env;
+    int rc = RTEnvClone(&env, RTENV_DEFAULT);
+    if (RT_FAILURE(rc)) {
+        RTPrintf("tstRunTestcases: Failed to clone environment -> %Rrc\n", rc);
+        return;
+    }
     /*
      * Open and enumerate the directory.
      */
     PRTDIR pDir;
-    int rc = RTDirOpenFiltered(&pDir, pszFilter, RTDIRFILTER_WINNT);
+    rc = RTDirOpenFiltered(&pDir, pszFilter, RTDIRFILTER_WINNT);
     if (RT_SUCCESS(rc))
     {
         for (;;)
@@ -166,7 +173,7 @@ static void Process(const char *pszFilter, const char *pszDir)
                 papszArgs[0] = pszTestcase;
                 papszArgs[1] = NULL;
                 RTPROCESS Process;
-                rc = RTProcCreate(pszTestcase, papszArgs, NULL, 0, &Process);
+                rc = RTProcCreate(pszTestcase, papszArgs, env, 0, &Process);
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -236,6 +243,7 @@ static void Process(const char *pszFilter, const char *pszDir)
     }
     else
         RTPrintf("tstRunTestcases: opening '%s' -> %Rrc\n", pszDir, rc);
+    RTEnvDestroy(env);
 }
 
 
