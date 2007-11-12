@@ -223,6 +223,7 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
         RTStrUcs2Free(puszPath);
         return rc;
     }
+    RTStrUcs2Free(puszPath);
 #else
     if (!GetFileAttributesExA(pszPath, GetFileExInfoStandard, &Data))
         return RTErrConvertFromWin32(GetLastError());
