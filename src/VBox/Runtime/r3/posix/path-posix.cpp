@@ -661,6 +661,7 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
         }
         else
             rc = RTErrConvertFromErrno(errno);
+        rtPathFreeNative(pszNativePath);
     }
 
     LogFlow(("RTPathQueryInfo(%p:{%s}, pObjInfo=%p, %d): returns %Rrc\n",
@@ -738,6 +739,7 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
                 }
             }
         }
+        rtPathFreeNative(pszNativePath);
     }
 
     LogFlow(("RTPathSetTimes(%p:{%s}, %p:{%RDtimespec}, %p:{%RDtimespec}, %p:{%RDtimespec}, %p:{%RDtimespec}): return %Rrc\n",

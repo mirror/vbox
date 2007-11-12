@@ -388,6 +388,13 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
         Log(("RTFsQuerySizes(%s,): GetVolumeInformation failed with lasterr %d (%Vrc)\n",
              pszFsPath, Err, rc));
     }
+
+#ifndef RT_DONT_CONVERT_FILENAMES
+    RTStrUcs2Free(puszFsRoot);
+#else
+    RTStrUcs2Free(pszFsRoot);
+#endif
+
     return rc;
 }
 
