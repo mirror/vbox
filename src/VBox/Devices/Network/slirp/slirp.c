@@ -12,7 +12,8 @@ static const uint8_t special_ethaddr[6] = {
 
 #ifdef _WIN32
 
-static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
+static int get_dns_addr_domain(PNATState pData, bool fVerbose,
+                               struct in_addr *pdns_addr,
                                const char **ppszDomain)
 {
     int rc = 0;
@@ -25,6 +26,9 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
     FixedInfo = (FIXED_INFO *)GlobalAlloc(GPTR, sizeof(FIXED_INFO));
     BufLen = sizeof(FIXED_INFO);
 
+    /** @todo: this API returns all DNS servers, no matter whether the
+     * corresponding network adapter is disabled or not. Maybe replace
+     * this by GetAdapterAddresses(), which is XP/Vista only though. */
     if (ERROR_BUFFER_OVERFLOW == GetNetworkParams(FixedInfo, &BufLen)) {
         if (FixedInfo) {
             GlobalFree(FixedInfo);
@@ -45,14 +49,16 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
 
     pIPAddr = &(FixedInfo->DnsServerList);
     inet_aton(pIPAddr->IpAddress.String, &tmp_addr);
-    *pdns_addr = tmp_addr;
     Log(("nat: DNS Servers:\n"));
-    LogRel(("NAT: DNS address: %s\n", pIPAddr->IpAddress.String));
+    if (fVerbose || pdns_addr->s_addr != tmp_addr.s_addr)
+        LogRel(("NAT: DNS address: %s\n", pIPAddr->IpAddress.String));
+    *pdns_addr = tmp_addr;
 
     pIPAddr = FixedInfo -> DnsServerList.Next;
     while ( pIPAddr )
     {
-        LogRel(("NAT: ignored DNS address: %s\n", pIPAddr ->IpAddress.String));
+        if (fVerbose)
+            LogRel(("NAT: ignored DNS address: %s\n", pIPAddr ->IpAddress.String));
         pIPAddr = pIPAddr ->Next;
     }
     if (FixedInfo) {
@@ -61,12 +67,13 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
     }
 
 get_dns_prefix:
-    *ppszDomain = NULL;
+    if (ppszDomain)
     {
         OSVERSIONINFO ver;
         char szDnsDomain[256];
         DWORD dwSize = sizeof(szDnsDomain);
 
+        *ppszDomain = NULL;
         GetVersionEx(&ver);
         if (ver.dwMajorVersion >= 5)
         {
@@ -78,7 +85,10 @@ get_dns_prefix:
                     /* Just non-empty strings are valid. */
                     *ppszDomain = RTStrDup(szDnsDomain);
                     if (pData->fPassDomain)
-                        LogRel(("NAT: passing domain name %s\n", szDnsDomain));
+                    {
+                        if (fVerbose)
+                            LogRel(("NAT: passing domain name %s\n", szDnsDomain));
+                    }
                     else
                         Log(("nat: ignoring domain %s\n", szDnsDomain));
                 }
@@ -92,7 +102,8 @@ get_dns_prefix:
 
 #else
 
-static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
+static int get_dns_addr_domain(PNATState pData, bool fVerbose,
+                               struct in_addr *pdns_addr,
                                const char **ppszDomain)
 {
     char buff[512];
@@ -124,7 +135,8 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
     if (!f)
         return -1;
 
-    *ppszDomain = NULL;
+    if (ppszDomain)
+        *ppszDomain = NULL;
     Log(("nat: DNS Servers:\n"));
     while (fgets(buff, 512, f) != NULL) {
         if (sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1) {
@@ -135,25 +147,34 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
             /* If it's the first one, set it to dns_addr */
             if (!found)
             {
+                if (fVerbose || pdns_addr->s_addr != tmp_addr.s_addr)
+                    LogRel(("NAT: DNS address: %s\n", buff2));
                 *pdns_addr = tmp_addr;
-                LogRel(("NAT: DNS address: %s\n", buff2));
             }
             else
-                LogRel(("NAT: ignored DNS address: %s\n", buff2));
+            {
+                if (fVerbose)
+                    LogRel(("NAT: ignored DNS address: %s\n", buff2));
+            }
             found++;
         }
-        if (!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6))
+        if (   ppszDomain
+            && (!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6)))
         {
             /* Domain name/search list present. Pick first entry */
             if (*ppszDomain == NULL)
             {
                 char *tok;
-                tok = strtok(&buff[6], " \t\n");
+                char *saveptr;
+                tok = strtok_r(&buff[6], " \t\n", &saveptr);
                 if (tok)
                 {
                     *ppszDomain = RTStrDup(tok);
                     if (pData->fPassDomain)
-                        LogRel(("NAT: passing domain name %s\n", tok));
+                    {
+                        if (fVerbose)
+                            LogRel(("NAT: passing domain name %s\n", tok));
+                    }
                     else
                         Log(("nat: ignoring domain %s\n", tok));
                 }
@@ -167,6 +188,11 @@ static int get_dns_addr_domain(PNATState pData, struct in_addr *pdns_addr,
 }
 
 #endif
+
+int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
+{
+    return get_dns_addr_domain(pData, false, pdns_addr, NULL);
+}
 
 int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain,
                const char *pszTFTPPrefix, const char *pszBootFile,
@@ -206,7 +232,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, bool fPassDomain,
     inet_aton("127.0.0.1", &loopback_addr);
     inet_aton("127.0.0.1", &dns_addr);
 
-    if (get_dns_addr_domain(pData, &dns_addr, &pData->pszDomain) < 0)
+    if (get_dns_addr_domain(pData, true, &dns_addr, &pData->pszDomain) < 0)
         fNATfailed = 1;
 
     inet_aton(pszNetAddr, &special_addr);

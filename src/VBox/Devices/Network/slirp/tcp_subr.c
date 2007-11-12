@@ -394,7 +394,10 @@ int tcp_fconnect(PNATState pData, struct socket *so)
       /* It's an alias */
       switch(ntohl(so->so_faddr.s_addr) & 0xff) {
       case CTL_DNS:
-	addr.sin_addr = dns_addr;
+        if (!get_dns_addr(pData, &dns_addr))
+	    addr.sin_addr = dns_addr;
+        else
+            addr.sin_addr = loopback_addr;
 	break;
       case CTL_ALIAS:
       default:
