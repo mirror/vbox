@@ -2126,6 +2126,8 @@ static void vga_draw_blank(VGAState *s, int full_update)
     uint8_t *d;
     uint32_t cbScanline = s->pDrv->cbScanline;
 
+    if (s->pDrv->pu8Data == s->vram_ptrHC) /* Do not clear the VRAM itself. */
+        return;
     if (!full_update)
         return;
     if (s->last_scr_width <= 0 || s->last_scr_height <= 0)
