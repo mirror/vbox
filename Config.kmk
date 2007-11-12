@@ -244,6 +244,8 @@ IPRT_WITH_KSTUFF = 1
 endif
 # Enable Crossbow support for Solaris.
 #VBOX_WITH_CROSSBOW = 1
+# Enable setuid wrapper for Solaris.
+#VBOX_WITH_SUID_WRAPPER = 1
 
 
 #
