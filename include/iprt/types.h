@@ -58,8 +58,9 @@
     /*
      * Kludge for the linux kernel:
      *   1. sys/types.h doesn't mix with the kernel.
-     *   2. Starting with 2.6.19 linux/types.h typedefs bool and linux/stddef.h
+     *   2. Starting with 2.6.19, linux/types.h typedefs bool and linux/stddef.h
      *      declares false and true as enum values.
+     *   3. Starting with 2.6.24, linux/types.h typedefs uintptr_t.
      * We work around these issues here and nowhere else.
      */
 #  include <stddef.h>
@@ -69,8 +70,10 @@
 #  define bool linux_bool
 #  define true linux_true
 #  define false linux_false
+#  define uintptr_t linux_uintptr_t
 #  include <linux/types.h>
 #  include <linux/stddef.h>
+#  undef uintptr_t
 #  undef false
 #  undef true
 #  undef bool
