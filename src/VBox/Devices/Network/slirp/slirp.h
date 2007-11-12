@@ -316,6 +316,8 @@ extern void remque_32 _P((PNATState, void *));
 
 #define DEFAULT_BAUD 115200
 
+int get_dns_addr(PNATState pData, struct in_addr *pdns_addr);
+
 /* cksum.c */
 int cksum(struct mbuf *m, int len);
 
