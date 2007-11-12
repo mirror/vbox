@@ -524,8 +524,7 @@ Drivers_SOURCES.solaris = \
  ifdef VBOX_WITH_CROSSBOW
   Drivers_DEFS += VBOX_WITH_CROSSBOW
   Drivers_INCS += \
-	Network/solaris \
-	Network/solaris/sys #why sys?
+	Network/solaris
  endif
 endif
 
