@@ -410,6 +410,8 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 #define VERR_MAP_FAILED                     (-75)
 /** Trailing characters. */
 #define VERR_TRAILING_CHARS                 (-76)
+/** Trailing characters. */
+#define VWRN_TRAILING_CHARS                 76
 /** Trailing spaces. */
 #define VERR_TRAILING_SPACES                (-77)
 /** Trailing spaces. */
