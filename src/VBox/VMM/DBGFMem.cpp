@@ -83,7 +83,12 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINT
 /**
  * Scan guest memory for an exact byte string.
  *
- * @returns VBox status code.
+ * @returns VBox status codes:
+ * @retval  VINF_SUCCESS and *pGCPtrHit on success.
+ * @retval  VERR_DBGF_MEM_NOT_FOUND if not found.
+ * @retval  VERR_INVALID_POINTER if any of the pointer arguments are invalid.
+ * @retval  VERR_INVALID_ARGUMENT if any other arguments are invalid.
+ *
  * @param   pVM         The VM handle.
  * @param   pAddress    Where to store the mixed address.
  * @param   cbRange     The number of bytes to scan.

@@ -65,7 +65,13 @@ typedef enum DBGCVARCAT
     /** String. */
     DBGCVAR_CAT_STRING,
     /** Symbol. */
-    DBGCVAR_CAT_SYMBOL
+    DBGCVAR_CAT_SYMBOL,
+    /** Option. */
+    DBGCVAR_CAT_OPTION,
+    /** Option + string. */
+    DBGCVAR_CAT_OPTION_STRING,
+    /** Option + number. */
+    DBGCVAR_CAT_OPTION_NUMBER
 } DBGCVARCAT;
 
 
@@ -202,7 +208,7 @@ typedef DBGCVAR *PDBGCVAR;
 typedef const DBGCVAR *PCDBGCVAR;
 
 
-/** 
+/**
  * Macro for initializing a DBGC variable with defaults.
  * The result is an unknown variable type without any range.
  */

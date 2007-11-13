@@ -1259,6 +1259,8 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute
         if (!fNoExecute)
             rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[0], cArgs, NULL);
         pDbgc->rcCmd = rc;
+        if (rc == VERR_DBGC_COMMAND_FAILED)
+            rc = VINF_SUCCESS;
     }
     else
     {
@@ -1344,6 +1346,10 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute
                     "Error: Cannot get symbol, it's set only (argument %d).\n", cArgs);
                 break;
 
+            case VERR_DBGC_COMMAND_FAILED:
+                rc = VINF_SUCCESS;
+                break;
+
             default:
                 rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
                     "Error: Unknown error %d!\n", rc);
@@ -1354,7 +1360,7 @@ int dbgcProcessCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute
          * Parse errors are non fatal.
          */
         if (rc >= VERR_PARSE_FIRST && rc < VERR_PARSE_LAST)
-            rc = 0;
+            rc = VINF_SUCCESS;
     }
 
     return rc;
@@ -1940,6 +1946,13 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     //pDbgc->cVars            = 0;
     //pDbgc->paVars           = NULL;
     //pDbgc->pFirstBp         = NULL;
+    //pDbgc->abSearch         = {0};
+    //pDbgc->cbSearch         = 0;
+    pDbgc->cbSearchUnit       = 1;
+    pDbgc->cMaxSearchHits     = 1;
+    //pDbgc->SearchAddr       = {0};
+    //pDbgc->cbSearchRange    = 0;
+
     //pDbgc->uInputZero       = 0;
     //pDbgc->iRead            = 0;
     //pDbgc->iWrite           = 0;

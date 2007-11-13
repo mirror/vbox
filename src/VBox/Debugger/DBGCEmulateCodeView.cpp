@@ -67,6 +67,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
 static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
@@ -230,6 +231,22 @@ static const DBGCVARDESC    g_aArgReg[] =
 static const DBGCVARDESC    g_aArgSearchMem[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_OPTION,     0,                              "-b",           "Byte string." },
+    {  0,           1,          DBGCVAR_CAT_OPTION,     0,                              "-w",           "Word string." },
+    {  0,           1,          DBGCVAR_CAT_OPTION,     0,                              "-d",           "DWord string." },
+    {  0,           1,          DBGCVAR_CAT_OPTION,     0,                              "-q",           "QWord string." },
+    {  0,           1,          DBGCVAR_CAT_OPTION,     0,                              "-a",           "ASCII string." },
+    {  0,           1,          DBGCVAR_CAT_OPTION,     0,                              "-u",           "Unicode string." },
+    {  0,           1,          DBGCVAR_CAT_OPTION_NUMBER, 0,                           "-n <Hits>",    "Maximum number of hits." },
+    {  0,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "range",        "Register to show or set." },
+    {  0,           ~0,         DBGCVAR_CAT_ANY,        0,                              "pattern",      "Pattern to search for." },
+};
+
+
+/** 's?' arguments. */
+static const DBGCVARDESC    g_aArgSearchMemType[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  1,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "range",        "Register to show or set." },
     {  1,           ~0,         DBGCVAR_CAT_ANY,        0,                              "pattern",      "Pattern to search for." },
 };
@@ -293,13 +310,13 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "rg",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdRegGuest,    "[reg [newval]]",       "Show or set register(s) - guest reg set." },
     { "rh",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),        NULL,               0,       dbgcCmdRegHyper,    "[reg [newval]]",       "Show or set register(s) - hypervisor reg set." },
     { "rt",         0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
-    //{ "s",          2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Continue last search." },
-    { "sa",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for an ascii string." },
-    { "sb",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more bytes." },
-    { "sd",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more double words." },
-    { "sq",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more quad words." },
-    { "su",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for an unicode string." },
-    { "sw",         2,       ~0,        &g_aArgSearchMem[0],RT_ELEMENTS(g_aArgSearchMem),  NULL,               0,       dbgcCmdSearchMem,   "<range> <pattern>",    "Search memory for one or more words." },
+    { "s",          0,       ~0,        &g_aArgSearchMem[0], RT_ELEMENTS(g_aArgSearchMem),  NULL,              0,       dbgcCmdSearchMem,   "[options] <range> <pattern>",  "Continue last search." },
+    { "sa",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for an ascii string." },
+    { "sb",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for one or more bytes." },
+    { "sd",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for one or more double words." },
+    { "sq",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for one or more quad words." },
+    { "su",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for an unicode string." },
+    { "sw",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),  NULL,      0,       dbgcCmdSearchMemType,   "<range> <pattern>",    "Search memory for one or more words." },
     { "t",          0,        0,        NULL,               0,                             NULL,               0,       dbgcCmdTrace,       "",                     "Instruction trace (step into)." },
     { "u",          0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble),NULL,               0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble." },
 };
@@ -2808,6 +2825,320 @@ static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
+ * Converts one or more variables into a byte buffer for a
+ * given unit size.
+ *
+ * @returns VBox status codes:
+ * @retval  VERR_TOO_MUCH_DATA if the buffer is too small, bitched.
+ * @retval  VERR_INTERNAL_ERROR on bad variable type, bitched.
+ * @retval  VINF_SUCCESS on success.
+ *
+ * @param   pvBuf   The buffer to convert into.
+ * @param   pcbBuf  The buffer size on input. The size of the result on output.
+ * @param   cbUnit  The unit size to apply when converting.
+ * @param   paVars  The array of variables to convert.
+ * @param   cVars   The number of variables.
+ */
+int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t cbUnit, PCDBGCVAR paVars, unsigned cVars)
+{
+    union
+    {
+        uint8_t *pu8;
+        uint16_t *pu16;
+        uint32_t *pu32;
+        uint64_t *pu64;
+    } u, uEnd;
+    u.pu8 = (uint8_t *)pvBuf;
+    uEnd.pu8 = u.pu8 + *pcbBuf;
+
+    unsigned i;
+    for (i = 0; i < cVars && u.pu8 < uEnd.pu8; i++)
+    {
+        switch (paVars[i].enmType)
+        {
+            case DBGCVAR_TYPE_GC_FAR:
+            case DBGCVAR_TYPE_HC_FAR:
+            case DBGCVAR_TYPE_GC_FLAT:
+            case DBGCVAR_TYPE_GC_PHYS:
+            case DBGCVAR_TYPE_HC_FLAT:
+            case DBGCVAR_TYPE_HC_PHYS:
+            case DBGCVAR_TYPE_NUMBER:
+            {
+                uint64_t u64 = paVars[i].u.u64Number;
+                switch (cbUnit)
+                {
+                    case 1:
+                        do
+                        {
+                            *u.pu8++ = u64;
+                            u64 >>= 8;
+                        } while (u64);
+                        break;
+                    case 2:
+                        do
+                        {
+                            *u.pu16++ = u64;
+                            u64 >>= 16;
+                        } while (u64);
+                        break;
+                    case 4:
+                        *u.pu32++ = u64;
+                        u64 >>= 32;
+                        if (u64)
+                            *u.pu32++ = u64;
+                        break;
+                    case 8:
+                        *u.pu64++ = u64;
+                        break;
+                }
+                break;
+            }
+
+            case DBGCVAR_TYPE_STRING:
+            case DBGCVAR_TYPE_SYMBOL:
+            {
+                const char *psz = paVars[i].u.pszString;
+                size_t cbString = strlen(psz);
+                if (cbString > (uintptr_t)(uEnd.pu8 - u.pu8))
+                    cbString = uEnd.pu8 - u.pu8;
+
+                size_t cbCopy = cbString & ~(cbUnit - 1);
+                memcpy(u.pu8, psz, cbCopy);
+                u.pu8 += cbCopy;
+                psz += cbCopy;
+
+                size_t cbReminder = cbString & (cbUnit - 1);
+                if (cbReminder)
+                {
+                    memcpy(u.pu8, psz, cbString & (cbUnit - 1));
+                    memset(u.pu8 + cbReminder, 0, cbUnit - cbReminder);
+                    u.pu8 += cbUnit;
+                }
+                break;
+            }
+
+            default:
+                *pcbBuf = u.pu8 - (uint8_t *)pvBuf;
+                pCmdHlp->pfnVBoxError(pCmdHlp, VERR_INTERNAL_ERROR,
+                                      "i=%d enmType=%d\n", i, paVars[i].enmType);
+                return VERR_INTERNAL_ERROR;
+        }
+    }
+    *pcbBuf = u.pu8 - (uint8_t *)pvBuf;
+    if (i != cVars)
+    {
+        pCmdHlp->pfnVBoxError(pCmdHlp, VERR_TOO_MUCH_DATA, "Max %d bytes.\n", uEnd.pu8 - (uint8_t *)pvBuf);
+        return VERR_TOO_MUCH_DATA;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Executes the search.
+ *
+ * @returns VBox status code.
+ * @param   pCmdHlp     The command helpers.
+ * @param   pVM         The VM handle.
+ * @param   pAddress    The address to start searching from. (undefined on output)
+ * @param   cbRange     The address range to search. Must not wrap.
+ * @param   pabBytes    The byte pattern to search for.
+ * @param   cbBytes     The size of the pattern.
+ * @param   cbUnit      The search unit.
+ * @param   cMaxHits    The max number of hits.
+ * @param   pResult     Where to store the result if it's a function invocation.
+ */
+static int dbgcCmdWorkerSearchMemDoIt(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR cbRange,
+                                      const uint8_t *pabBytes, uint32_t cbBytes,
+                                      uint32_t cbUnit, uint64_t cMaxHits, PDBGCVAR pResult)
+{
+    /*
+     * Do the search.
+     */
+    uint64_t cHits = 0;
+    for (;;)
+    {
+        /* search */
+        DBGFADDRESS HitAddress;
+        int rc = DBGFR3MemScan(pVM, pAddress, cbRange, pabBytes, cbBytes, &HitAddress);
+        if (RT_FAILURE(rc))
+        {
+            if (rc != VERR_DBGF_MEM_NOT_FOUND)
+                return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3MemScan\n");
+
+            /* update the current address so we can save it (later). */
+            pAddress->off += cbRange;
+            pAddress->FlatPtr += cbRange;
+            cbRange = 0;
+            break;
+        }
+
+        /* report result */
+        DBGCVAR VarCur;
+        dbgcVarInit(&VarCur);
+        dbgcVarSetDbgfAddr(&VarCur, &HitAddress);
+        if (!pResult)
+            pCmdHlp->pfnExec(pCmdHlp, "db %DV LB 10", &VarCur);
+        else
+            dbgcVarSetDbgfAddr(pResult, &HitAddress);
+
+        /* advance */
+        cbRange -= HitAddress.FlatPtr - pAddress->FlatPtr;
+        *pAddress = HitAddress;
+        pAddress->FlatPtr += cbBytes;
+        pAddress->off += cbBytes;
+        if (cbRange <= cbBytes)
+        {
+            cbRange = 0;
+            break;
+        }
+        cbRange -= cbBytes;
+
+        if (++cHits >= cMaxHits)
+        {
+            /// @todo save the search.
+            break;
+        }
+    }
+
+    /*
+     * Save the search so we can resume it...
+     */
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    if (pDbgc->abSearch != pabBytes)
+    {
+        memcpy(pDbgc->abSearch, pabBytes, cbBytes);
+        pDbgc->cbSearch = cbBytes;
+        pDbgc->cbSearchUnit = cbUnit;
+    }
+    pDbgc->cMaxSearchHits = cMaxHits;
+    pDbgc->SearchAddr = *pAddress;
+    pDbgc->cbSearchRange = cbRange;
+
+    return cHits ? VINF_SUCCESS : VERR_DBGC_COMMAND_FAILED;
+}
+
+
+/**
+ * Resumes the previous search.
+ *
+ * @returns VBox status code.
+ * @param   pCmdHlp     Pointer to the command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   pResult     Where to store the result of a function invocation.
+ */
+static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGCVAR pResult)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /*
+     * Make sure there is a previous command.
+     */
+    if (!pDbgc->cbSearch)
+    {
+        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Error: No previous search\n");
+        return VERR_DBGC_COMMAND_FAILED;
+    }
+
+    /*
+     * Make range and address adjustments.
+     */
+    DBGFADDRESS Address = pDbgc->SearchAddr;
+    if (Address.FlatPtr == ~(RTGCUINTPTR)0)
+    {
+        Address.FlatPtr -= Address.off;
+        Address.off = 0;
+    }
+
+    RTGCUINTPTR cbRange = pDbgc->cbSearchRange;
+    if (!cbRange)
+        cbRange = ~(RTGCUINTPTR)0;
+    if (Address.FlatPtr + cbRange < pDbgc->SearchAddr.FlatPtr)
+        cbRange = ~(RTGCUINTPTR)0 - pDbgc->SearchAddr.FlatPtr + !!pDbgc->SearchAddr.FlatPtr;
+
+    return dbgcCmdWorkerSearchMemDoIt(pCmdHlp, pVM, &Address, cbRange, pDbgc->abSearch, pDbgc->cbSearch,
+                                      pDbgc->cbSearchUnit, pDbgc->cMaxSearchHits, pResult);
+}
+
+
+/**
+ * Search memory, worker for the 's' and 's?' functions.
+ *
+ * @returns VBox status.
+ * @param   pCmdHlp     Pointer to the command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   pAddress    Where to start searching. If no range, search till end of address space.
+ * @param   cMaxHits    The maximum number of hits.
+ * @param   chType      The search type.
+ * @param   paPatArgs   The pattern variable array.
+ * @param   cPatArgs    Number of pattern variables.
+ * @param   pResult     Where to store the result of a function invocation.
+ */
+static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pAddress, uint64_t cMaxHits, char chType,
+                                  PCDBGCVAR paPatArgs, unsigned cPatArgs, PDBGCVAR pResult)
+{
+    dbgcVarSetGCFlat(pResult, 0);
+
+    /*
+     * Convert the search pattern into bytes and DBGFR3MemScan can deal with.
+     */
+    uint32_t cbUnit;
+    switch (chType)
+    {
+        case 'a':
+        case 'b':   cbUnit = 1; break;
+        case 'u':
+        case 'w':   cbUnit = 2; break;
+        case 'd':   cbUnit = 4; break;
+        case 'q':   cbUnit = 8; break;
+        default:
+            return pCmdHlp->pfnVBoxError(pCmdHlp, VERR_INVALID_PARAMETER, "chType=%c\n", chType);
+    }
+    uint8_t abBytes[RT_SIZEOFMEMB(DBGC, abSearch)];
+    uint32_t cbBytes = sizeof(abBytes);
+    int rc = dbgcVarsToBytes(pCmdHlp, abBytes, &cbBytes, cbUnit, paPatArgs, cPatArgs);
+    if (RT_FAILURE(rc))
+        return VERR_DBGC_COMMAND_FAILED;
+
+    /*
+     * Make DBGF address and fix the range.
+     */
+    DBGFADDRESS Address;
+    rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, pAddress, &Address);
+    if (RT_FAILURE(rc))
+        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "VarToDbgfAddr(,%Dv,)\n", pAddress);
+
+    RTGCUINTPTR cbRange;
+    switch (pAddress->enmRangeType)
+    {
+        case DBGCVAR_RANGE_BYTES:
+            cbRange = pAddress->u64Range;
+            if (cbRange != pAddress->u64Range)
+                cbRange = ~(RTGCUINTPTR)0;
+            break;
+
+        case DBGCVAR_RANGE_ELEMENTS:
+            cbRange = (RTGCUINTPTR)(pAddress->u64Range * cbUnit);
+            if (    cbRange != pAddress->u64Range * cbUnit
+                ||  cbRange < pAddress->u64Range)
+                cbRange = ~(RTGCUINTPTR)0;
+            break;
+
+        default:
+            cbRange = ~(RTGCUINTPTR)0;
+            break;
+    }
+    if (Address.FlatPtr + cbRange < Address.FlatPtr)
+        cbRange = ~(RTGCUINTPTR)0 - Address.FlatPtr + !!Address.FlatPtr;
+
+    /*
+     * Ok, do it.
+     */
+    return dbgcCmdWorkerSearchMemDoIt(pCmdHlp, pVM, &Address, cbRange, abBytes, cbBytes, cbUnit, cMaxHits, pResult);
+}
+
+
+/**
  * The 's' command.
  *
  * @returns VBox status.
@@ -2820,10 +3151,41 @@ static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
     /* check that the parser did what it's supposed to do. */
-    if (    cArgs != 1
-        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
+    //if (    cArgs <= 2
+    //    &&  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
+    //    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
+
+    /*
+     * Repeate previous search?
+     */
+    if (cArgs == 0)
+        return dbgcCmdWorkerSearchMemResume(pCmdHlp, pVM, pResult);
+
+    /*
+     * Parse arguments.
+     */
+
     return -1;
+}
+
+
+/**
+ * The 's?' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /* check that the parser did what it's supposed to do. */
+    if (    cArgs < 2
+        ||  !DBGCVAR_ISGCPOINTER(paArgs[0].enmType))
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
+    return dbgcCmdWorkerSearchMem(pCmdHlp, pVM, &paArgs[0], pResult ? 1 : 80, pCmd->pszCmd[1], paArgs + 1, cArgs - 1, pResult);
 }
 
 

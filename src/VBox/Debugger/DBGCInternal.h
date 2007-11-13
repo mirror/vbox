@@ -63,6 +63,7 @@
 #define VERR_DBGC_BP_NOT_FOUND                  (-12003)
 #define VERR_DBGC_BP_EXISTS                     (-12004)
 #define VINF_DBGC_BP_NO_COMMAND                 12005
+#define VERR_DBGC_COMMAND_FAILED                (-12006)
 
 
 /*******************************************************************************
@@ -158,6 +159,19 @@ typedef struct DBGC
 
     /** The list of breakpoints. (singly linked) */
     PDBGCBP             pFirstBp;
+
+    /** Save search pattern. */
+    uint8_t             abSearch[256];
+    /** The length of the search pattern. */
+    uint32_t            cbSearch;
+    /** The search unit */
+    uint32_t            cbSearchUnit;
+    /** The max hits. */
+    uint64_t            cMaxSearchHits;
+    /** The address to resume searching from. */
+    DBGFADDRESS         SearchAddr;
+    /** What's left of the original search range. */
+    RTGCUINTPTR         cbSearchRange;
 
     /** @name Parsing and Execution
      * @{ */
@@ -336,9 +350,12 @@ int     dbgcBpDelete(PDBGC pDbgc, RTUINT iBp);
 PDBGCBP dbgcBpGet(PDBGC pDbgc, RTUINT iBp);
 int     dbgcBpExec(PDBGC pDbgc, RTUINT iBp);
 
+void    dbgcVarInit(PDBGCVAR pVar);
 void    dbgcVarSetGCFlat(PDBGCVAR pVar, RTGCPTR GCFlat);
 void    dbgcVarSetGCFlatByteRange(PDBGCVAR pVar, RTGCPTR GCFlat, uint64_t cb);
+void    dbgcVarSetU64(PDBGCVAR pVar, uint64_t u64);
 void    dbgcVarSetVar(PDBGCVAR pVar, PCDBGCVAR pVar2);
+void    dbgcVarSetDbgfAddr(PDBGCVAR pVar, PCDBGFADDRESS pAddress);
 void    dbgcVarSetNoRange(PDBGCVAR pVar);
 void    dbgcVarSetByteRange(PDBGCVAR pVar, uint64_t cb);
 int     dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress);
