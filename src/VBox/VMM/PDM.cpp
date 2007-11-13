@@ -308,6 +308,48 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
 
 /**
+ * Worker for pdmR3Term that terminates a LUN chain.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pLun        The head of the chain.
+ * @param   pszDevice   The name of the device (for logging).
+ * @param   iInstance   The device instance number (for logging).
+ */
+static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned iInstance)
+{
+    for (; pLun; pLun = pLun->pNext)
+    {
+        /* Find the bottom driver. */
+        /** @todo Add pBottom to PDMLUN, this might not be the only place we will have to work it from the bottom up. */
+        PPDMDRVINS pDrvIns = pLun->pTop;
+        while (pDrvIns && pDrvIns->Internal.s.pDown)
+            pDrvIns = pDrvIns->Internal.s.pDown;
+
+        /* And destroy them one at a time from the bottom up. */
+        while (pDrvIns)
+        {
+            PPDMDRVINS pDrvNext = pDrvIns->Internal.s.pUp;
+
+            if (pDrvIns->pDrvReg->pfnDestruct)
+            {
+                LogFlow(("pdmR3DevTerm: Destroying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
+                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pszDevice, iInstance));
+                pDrvIns->pDrvReg->pfnDestruct(pDrvIns);
+
+            }
+
+            TMR3TimerDestroyDriver(pVM, pDrvIns);
+            //PDMR3QueueDestroyDriver(pVM, pDrvIns);
+            //pdmR3ThreadDestroyDriver(pVM, pDrvIns);
+            SSMR3DeregisterDriver(pVM, pDrvIns, NULL, 0);
+
+            pDrvIns = pDrvNext;
+        }
+    }
+}
+
+
+/**
  * Terminates the PDM.
  *
  * Termination means cleaning up and freeing all resources,
@@ -322,46 +364,46 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
     AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
 
     /*
-     * Iterate the device instances.
-     * The attached drivers are processed first.
+     * Iterate the device instances and attach drivers, doing
+     * relevant destruction processing.
+     *
      * N.B. There is no need to mess around freeing memory allocated
      *      from any MM heap since MM will do that in its Term function.
      */
+    /* usb ones first. */
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        pdmR3TermLuns(pVM, pUsbIns->Internal.s.pLuns, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance);
+
+        if (pUsbIns->pUsbReg->pfnDestruct)
+        {
+            LogFlow(("pdmR3DevTerm: Destroying - device '%s'/%d\n",
+                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+            pUsbIns->pUsbReg->pfnDestruct(pUsbIns);
+        }
+
+        //TMR3TimerDestroyUsb(pVM, pUsbIns);
+        //SSMR3DeregisterUsb(pVM, pUsbIns, NULL, 0);
+        pdmR3ThreadDestroyUsb(pVM, pUsbIns);
+    }
+
+    /* then the 'normal' ones. */
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
-        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
-        {
-            /* Find the bottom driver. */
-            /** @todo Add pBottom to PDMLUN, this might not be the only place we will have to work it from the bottom up. */
-            PPDMDRVINS pDrvIns = pLun->pTop;
-            while (pDrvIns && pDrvIns->Internal.s.pDown)
-                pDrvIns = pDrvIns->Internal.s.pDown;
-
-            /* And destroy them one at a time from the bottom up. */
-            while (pDrvIns)
-            {
-                PPDMDRVINS pDrvNext = pDrvIns->Internal.s.pUp;
-
-                if (pDrvIns->pDrvReg->pfnDestruct)
-                {
-                    LogFlow(("pdmR3DevTerm: Destroying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-                    pDrvIns->pDrvReg->pfnDestruct(pDrvIns);
-                    TMR3TimerDestroyDriver(pVM, pDrvIns);
-                }
-
-                pDrvIns = pDrvNext;
-            }
-        }
+        pdmR3TermLuns(pVM, pDevIns->Internal.s.pLunsHC, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance);
 
         if (pDevIns->pDevReg->pfnDestruct)
         {
             LogFlow(("pdmR3DevTerm: Destroying - device '%s'/%d\n",
                      pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
             pDevIns->pDevReg->pfnDestruct(pDevIns);
-            TMR3TimerDestroyDevice(pVM, pDevIns);
-            pdmR3CritSectDeleteDevice(pVM, pDevIns);
         }
+
+        TMR3TimerDestroyDevice(pVM, pDevIns);
+        //SSMR3DeregisterDriver(pVM, pDevIns, NULL, 0);
+        pdmR3CritSectDeleteDevice(pVM, pDevIns);
+        //pdmR3ThreadDestroyDevice(pVM, pDevIns);
+        //PDMR3QueueDestroyDevice(pVM, pDevIns);
     }
 
     /*
