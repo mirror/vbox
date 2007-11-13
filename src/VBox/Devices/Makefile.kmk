@@ -137,7 +137,7 @@ endif
 ifeq ($(BUILD_TARGET),solaris)
  VBoxDD_LIBS           += adm
  ifdef VBOX_WITH_CROSSBOW
-  VBoxDD_LIBS          += dladm # or maybe try libdladm.so.1 ?
+  VBoxDD_LIBS          += dlpi
  endif
  ifdef VBOX_WITH_SUID_WRAPPER
   VBoxDD_LIBS          += secdb
@@ -529,8 +529,6 @@ Drivers_SOURCES.solaris = \
 	Storage/DrvHostDVD.cpp
  ifdef VBOX_WITH_CROSSBOW
   Drivers_DEFS += VBOX_WITH_CROSSBOW
-  Drivers_INCS += \
-	Network/solaris
  endif
  ifdef VBOX_WITH_SUID_WRAPPER
   Drivers_DEFS += VBOX_WITH_SUID_WRAPPER
