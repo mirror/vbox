@@ -97,7 +97,7 @@ VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call int-ge,$(KMK_REVISION),1191),1)
+ifneq ($(call int-ge,$(KMK_REVISION),1267),1)
  $(error You must update kBuild!)
 endif
 
@@ -1764,6 +1764,17 @@ ifeq ($(BUILD_TARGET),win)
   TEMPLATE_VBOXR3TSTEXE_POST_CMDS =
  endif
 endif
+
+#
+# Template for the CppUnit kind of testcases.
+#
+TEMPLATE_VBOXCPPUNITEXE  = VBox CppUnit Testcase Exe
+TEMPLATE_VBOXCPPUNITEXE_EXTENDS = VBOXR3TSTEXE
+## @todo make a CPPUNIT SDK and add cppunit tools packages for windows, mac, solaris and OS/2.
+#TEMPLATE_VBOXCPPUNITEXE_SDKS = CPPUNIT -
+TEMPLATE_VBOXCPPUNITEXE_LIBS = \
+	$(TEMPLATE_VBOXR3TSTEXE_LIBS) \
+	cppunit
 
 #
 # Template for building bad C/C++ style R3 executables (no -pedantic).
