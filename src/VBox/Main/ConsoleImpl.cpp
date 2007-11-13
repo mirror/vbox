@@ -3397,22 +3397,6 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
         return S_OK;
     }
 
-#ifndef VBOX_WITH_PDMUSB
-    /* Don't proceed unless we've found the usb controller. */
-    PPDMIBASE pBase = NULL;
-    int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
-    if (VBOX_FAILURE (vrc))
-    {
-        LogFlowThisFunc (("Attach request ignored (no USB controller).\n"));
-        return E_FAIL;
-    }
-
-    PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
-        pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-    ComAssertRet (pRhConfig, E_FAIL);
-
-    HRESULT rc = attachUSBDevice (aDevice, pRhConfig);
-#else /* PDMUsb */
     /* Don't proceed unless there's at least one USB hub. */
     if (!PDMR3USBHasHub (mpVM))
     {
@@ -3421,8 +3405,6 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
     }
 
     HRESULT rc = attachUSBDevice (aDevice, aMaskedIfs);
-#endif /* PDMUsb */
-
     if (FAILED (rc))
     {
         /* take the current error info */
@@ -4705,16 +4687,9 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
  *  @note Synchronously calls EMT.
  *  @note Must be called from under this object's lock.
  */
-#ifndef VBOX_WITH_PDMUSB
-HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig)
-{
-    AssertReturn (aHostDevice && aConfig, E_FAIL);
-#else /* PDMUsb */
 HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 {
     AssertReturn (aHostDevice, E_FAIL);
-#endif
-
     AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 
     /* still want a lock object because we need to leave it */
@@ -4737,10 +4712,6 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     ComAssertComRCRetRC (hrc);
 
     BOOL fRemote = FALSE;
-#ifndef VBOX_WITH_PDMUSB
-    void *pvRemote = NULL;
-#endif
-
     hrc = aHostDevice->COMGETTER (Remote) (&fRemote);
     ComAssertComRCRetRC (hrc);
 
@@ -4754,18 +4725,10 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
-#ifndef VBOX_WITH_PDMUSB
-    PVMREQ pReq = NULL;
-    int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
-                           (PFNRT) usbAttachCallback, 7,
-                           this, aHostDevice,
-                           aConfig, Uuid.ptr(), fRemote, Address.raw(), pvRemote);
-#else /* PDMUsb */
 /**@todo just do everything here */
     PVMREQ pReq = NULL;
     int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
                            (PFNRT) usbAttachCallback, 6, this, aHostDevice, Uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
-#endif /* PDMUsb */
     if (VBOX_SUCCESS (vrc))
         vrc = pReq->iStatus;
     VMR3ReqFree (pReq);
@@ -4809,59 +4772,6 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
  *  @thread EMT
  *  @note Locks the console object for writing.
  */
-#ifndef VBOX_WITH_PDMUSB
-DECLCALLBACK(int)
-Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
-                            PVUSBIRHCONFIG aConfig, PCRTUUID aUuid, bool aRemote,
-                            const char *aAddress, void *aRemoteBackend)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc (("that={%p}\n", that));
-
-    AssertReturn (that && aConfig && aUuid, VERR_INVALID_PARAMETER);
-
-    if (aRemote)
-    {
-        /* @todo aRemoteBackend input parameter is not needed. */
-        Assert (aRemoteBackend == NULL);
-
-        RemoteUSBDevice *pRemoteUSBDevice = static_cast <RemoteUSBDevice *> (aHostDevice);
-
-        Guid guid (*aUuid);
-
-        aRemoteBackend = that->consoleVRDPServer ()->USBBackendRequestPointer (pRemoteUSBDevice->clientId (), &guid);
-
-        if (aRemoteBackend == NULL)
-        {
-            /* The clientId is invalid then. */
-            return VERR_INVALID_PARAMETER;
-        }
-    }
-
-    int vrc = aConfig->pfnCreateProxyDevice (aConfig, aUuid, aRemote, aAddress,
-                                             aRemoteBackend);
-
-    if (VBOX_SUCCESS (vrc))
-    {
-        /* Create a OUSBDevice and add it to the device list */
-        ComObjPtr <OUSBDevice> device;
-        device.createObject();
-        HRESULT hrc = device->init (aHostDevice);
-        AssertComRC (hrc);
-
-        AutoLock alock (that);
-        that->mUSBDevices.push_back (device);
-        LogFlowFunc (("Attached device {%Vuuid}\n", device->id().raw()));
-
-        /* notify callbacks */
-        that->onUSBDeviceStateChange (device, true /* aAttached */, NULL);
-    }
-
-    LogFlowFunc (("vrc=%Vrc\n", vrc));
-    LogFlowFuncLeave();
-    return vrc;
-}
-#else /* PDMUsb */
 //static
 DECLCALLBACK(int)
 Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid, bool aRemote, const char *aAddress, ULONG aMaskedIfs)
@@ -4909,7 +4819,6 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUu
     LogFlowFuncLeave();
     return vrc;
 }
-#endif /* PDMUsb */
 
 /**
  *  Sends a request to VMM to detach the given host device.  After this method
@@ -4932,20 +4841,8 @@ HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
 
-#ifndef VBOX_WITH_PDMUSB
-    PPDMIBASE pBase = NULL;
-    int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
-
-    /* if the device is attached, then there must be a USB controller */
-    AssertRCReturn (vrc, E_FAIL);
-
-    PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG) pBase->
-        pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-    AssertReturn (pRhConfig, E_FAIL);
-#else
     /* if the device is attached, then there must at least one USB hub. */
     AssertReturn (PDMR3USBHasHub (mpVM), E_FAIL);
-#endif
 
     LogFlowThisFunc (("Detaching USB proxy device {%Vuuid}...\n",
                       (*aIt)->id().raw()));
@@ -4954,16 +4851,10 @@ HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
     alock.leave();
 
     PVMREQ pReq;
-#ifndef VBOX_WITH_PDMUSB
-    vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
-                       (PFNRT) usbDetachCallback, 5,
-                       this, &aIt, pRhConfig, (*aIt)->id().raw());
-#else
 /** @todo just do everything here */
     int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
                            (PFNRT) usbDetachCallback, 4,
                            this, &aIt, (*aIt)->id().raw());
-#endif
     if (VBOX_SUCCESS (vrc))
         vrc = pReq->iStatus;
     VMR3ReqFree (pReq);
@@ -4982,51 +4873,6 @@ HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
  *  @thread EMT
  *  @note Locks the console object for writing.
  */
-#ifndef VBOX_WITH_PDMUSB
-//static
-DECLCALLBACK(int)
-Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
-                            PVUSBIRHCONFIG aConfig, PCRTUUID aUuid)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc (("that={%p}\n", that));
-
-    AssertReturn (that && aConfig && aUuid, VERR_INVALID_PARAMETER);
-
-    /*
-     * If that was a remote device, release the backend pointer.
-     * The pointer was requested in usbAttachCallback.
-     */
-    BOOL fRemote = FALSE;
-
-    HRESULT hrc2 = (**aIt)->COMGETTER (Remote) (&fRemote);
-    ComAssertComRC (hrc2);
-
-    if (fRemote)
-    {
-        Guid guid (*aUuid);
-        that->consoleVRDPServer ()->USBBackendReleasePointer (&guid);
-    }
-
-    int vrc = aConfig->pfnDestroyProxyDevice (aConfig, aUuid);
-
-    if (VBOX_SUCCESS (vrc))
-    {
-        AutoLock alock (that);
-
-        /* Remove the device from the collection */
-        that->mUSBDevices.erase (*aIt);
-        LogFlowFunc (("Detached device {%Vuuid}\n", (**aIt)->id().raw()));
-
-        /* notify callbacks */
-        that->onUSBDeviceStateChange (**aIt, false /* aAttached */, NULL);
-    }
-
-    LogFlowFunc (("vrc=%Vrc\n", vrc));
-    LogFlowFuncLeave();
-    return vrc;
-}
-#else /* VBOX_WITH_PDMUSB */
 //static
 DECLCALLBACK(int)
 Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUID aUuid)
@@ -5069,7 +4915,6 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
     LogFlowFuncLeave();
     return vrc;
 }
-#endif /* VBOX_WITH_PDMUSB */
 
 /**
   * Call the initialisation script for a dynamic TAP interface.
