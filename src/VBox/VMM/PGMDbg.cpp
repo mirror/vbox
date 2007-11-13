@@ -288,6 +288,7 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
         if (cb <= 1)
             break;
         pb++;
+        cb--;
     }
 
     return false;
@@ -490,6 +491,10 @@ PDMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRan
         }
         else
             cbPrev = 0; /* ignore error. */
+
+        /* advance to the the next page. */
+        GCPtr |= PAGE_OFFSET_MASK;
+        GCPtr++;
     }
     return VERR_DBGF_MEM_NOT_FOUND;
 }
