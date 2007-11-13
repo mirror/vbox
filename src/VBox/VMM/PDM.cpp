@@ -319,13 +319,12 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
 {
     for (; pLun; pLun = pLun->pNext)
     {
-        /* Find the bottom driver. */
-        /** @todo Add pBottom to PDMLUN, this might not be the only place we will have to work it from the bottom up. */
-        PPDMDRVINS pDrvIns = pLun->pTop;
-        while (pDrvIns && pDrvIns->Internal.s.pDown)
-            pDrvIns = pDrvIns->Internal.s.pDown;
-
-        /* And destroy them one at a time from the bottom up. */
+        /*
+         * Destroy them one at a time from the bottom up.
+         * (The serial device/drivers depends on this - bad.)
+         */
+        PPDMDRVINS pDrvIns = pLun->pBottom;
+        pLun->pBottom = pLun->pTop = NULL;
         while (pDrvIns)
         {
             PPDMDRVINS pDrvNext = pDrvIns->Internal.s.pUp;
@@ -335,7 +334,6 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
                 LogFlow(("pdmR3DevTerm: Destroying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
                          pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pszDevice, iInstance));
                 pDrvIns->pDrvReg->pfnDestruct(pDrvIns);
-
             }
 
             TMR3TimerDestroyDriver(pVM, pDrvIns);
@@ -659,6 +657,27 @@ PDMR3DECL(void) PDMR3PowerOn(PVM pVM)
         }
     }
 
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->pDrvReg->pfnPowerOn)
+                {
+                    LogFlow(("PDMR3PowerOn: Notifying - driver '%s'/%d on LUN#%d of usb device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    pDrvIns->pDrvReg->pfnPowerOn(pDrvIns);
+                }
+
+        if (pUsbIns->pUsbReg->pfnVMPowerOn)
+        {
+            LogFlow(("PDMR3PowerOn: Notifying - device '%s'/%d\n",
+                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+            pUsbIns->pUsbReg->pfnVMPowerOn(pUsbIns);
+        }
+    }
+#endif
+
     /*
      * Resume all threads.
      */
@@ -711,6 +730,27 @@ PDMR3DECL(void) PDMR3Reset(PVM pVM)
         }
     }
 
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->pDrvReg->pfnReset)
+                {
+                    LogFlow(("PDMR3Reset: Notifying - driver '%s'/%d on LUN#%d of usb device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    pDrvIns->pDrvReg->pfnReset(pDrvIns);
+                }
+
+        if (pUsbIns->pUsbReg->pfnVMReset)
+        {
+            LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n",
+                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+            pUsbIns->pUsbReg->pfnVMReset(pUsbIns);
+        }
+    }
+#endif
+
     LogFlow(("PDMR3Reset: returns void\n"));
 }
 
@@ -732,7 +772,6 @@ PDMR3DECL(void) PDMR3Suspend(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
-            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnSuspend)
                 {
@@ -748,6 +787,27 @@ PDMR3DECL(void) PDMR3Suspend(PVM pVM)
             pDevIns->pDevReg->pfnSuspend(pDevIns);
         }
     }
+
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->pDrvReg->pfnSuspend)
+                {
+                    LogFlow(("PDMR3Suspend: Notifying - driver '%s'/%d on LUN#%d of usb device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    pDrvIns->pDrvReg->pfnSuspend(pDrvIns);
+                }
+
+        if (pUsbIns->pUsbReg->pfnVMSuspend)
+        {
+            LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n",
+                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+            pUsbIns->pUsbReg->pfnVMSuspend(pUsbIns);
+        }
+    }
+#endif
 
     /*
      * Suspend all threads.
@@ -775,7 +835,6 @@ PDMR3DECL(void) PDMR3Resume(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
-            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnResume)
                 {
@@ -791,6 +850,27 @@ PDMR3DECL(void) PDMR3Resume(PVM pVM)
             pDevIns->pDevReg->pfnResume(pDevIns);
         }
     }
+
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->pDrvReg->pfnResume)
+                {
+                    LogFlow(("PDMR3Resume: Notifying - driver '%s'/%d on LUN#%d of usb device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    pDrvIns->pDrvReg->pfnResume(pDrvIns);
+                }
+
+        if (pUsbIns->pUsbReg->pfnVMResume)
+        {
+            LogFlow(("PDMR3Resume: Notifying - device '%s'/%d\n",
+                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+            pUsbIns->pUsbReg->pfnVMResume(pUsbIns);
+        }
+    }
+#endif
 
     /*
      * Resume all threads.
@@ -818,7 +898,6 @@ PDMR3DECL(void) PDMR3PowerOff(PVM pVM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
-            /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnPowerOff)
                 {
@@ -834,6 +913,27 @@ PDMR3DECL(void) PDMR3PowerOff(PVM pVM)
             pDevIns->pDevReg->pfnPowerOff(pDevIns);
         }
     }
+
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->pDrvReg->pfnPowerOff)
+                {
+                    LogFlow(("PDMR3PowerOff: Notifying - driver '%s'/%d on LUN#%d of usb device '%s'/%d\n",
+                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    pDrvIns->pDrvReg->pfnPowerOff(pDrvIns);
+                }
+
+        if (pUsbIns->pUsbReg->pfnVMPowerOff)
+        {
+            LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n",
+                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+            pUsbIns->pUsbReg->pfnVMPowerOff(pUsbIns);
+        }
+    }
+#endif
 
     /*
      * Suspend all threads.

@@ -280,6 +280,8 @@ typedef struct PDMLUN
     PPDMLUN             pNext;
     /** Pointer to the top driver in the driver chain. */
     PPDMDRVINS          pTop;
+    /** Pointer to the bottom driver in the driver chain. */
+    PPDMDRVINS          pBottom;
     /** Pointer to the device instance which the LUN belongs to.
      * Either this is set or pUsbIns is set. Both is never set at the same time. */
     PPDMDEVINS          pDevIns;
@@ -878,13 +880,14 @@ int         pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, 
 
 int         pdmR3UsbLoadModules(PVM pVM);
 int         pdmR3UsbInstantiateDevices(PVM pVM);
-int         pdmR3UsbInitComplete(PVM pVM);
 PPDMUSB     pdmR3UsbLookup(PVM pVM, const char *pszName);
 int         pdmR3UsbFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
 int         pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp);
+int         pdmR3UsbVMInitComplete(PVM pVM);
 
 int         pdmR3DrvInit(PVM pVM);
 int         pdmR3DrvDetach(PPDMDRVINS pDrvIns);
+void        pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns);
 PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
 
 int         pdmR3LdrInit(PVM pVM);
