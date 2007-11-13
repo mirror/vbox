@@ -274,4 +274,10 @@ DBGFR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL p
 {
     return VERR_INTERNAL_ERROR;
 }
-
+DBGFR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
+{
+    return VERR_INTERNAL_ERROR;
+}
+DBGFR3DECL(void) DBGFR3AddrFromPhys(PVM pVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr)
+{
+}

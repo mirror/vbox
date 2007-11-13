@@ -263,7 +263,7 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
         if (!pb)
             break;
         cb = pbEnd - pb;
-        if (cb <= cbNeedle)
+        if (cb >= cbNeedle)
         {
             /* match? */
             if (!memcmp(pb + 1, &pabNeedle[1], cbNeedle - 1))
@@ -324,7 +324,7 @@ PDMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
         return VERR_INVALID_POINTER;
     if (!cbNeedle)
         return VERR_INVALID_PARAMETER;
-    if (cbRange > MAX_NEEDLE_SIZE)
+    if (cbNeedle > MAX_NEEDLE_SIZE)
         return VERR_INVALID_PARAMETER;
 
     if (!cbRange)
@@ -369,8 +369,8 @@ PDMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
             for (uint32_t iPage = off >> PAGE_SHIFT; iPage < cPages; iPage++)
             {
                 PPGMPAGE pPage = &pRam->aPages[iPage];
-                if (    !PGM_PAGE_IS_ZERO(pPage)
-                    &&  !PGM_PAGE_IS_MMIO(pPage))
+                if (    /** @todo !PGM_PAGE_IS_ZERO(pPage)
+                    &&*/  !PGM_PAGE_IS_MMIO(pPage))
                 {
                     void const *pvPage;
                     PGMPAGEMAPLOCK Lock;
@@ -436,7 +436,7 @@ PDMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRan
         return VERR_INVALID_POINTER;
     if (!cbNeedle)
         return VERR_INVALID_PARAMETER;
-    if (cbRange > MAX_NEEDLE_SIZE)
+    if (cbNeedle > MAX_NEEDLE_SIZE)
         return VERR_INVALID_PARAMETER;
 
     if (!cbRange)
@@ -455,19 +455,18 @@ PDMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRan
     RTGCUINTPTR         cPages = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
     while (cPages-- > 0)
     {
-        uint64_t fFlags;
         RTGCPHYS GCPhys;
-        int rc = PGMGstGetPage(pVM, GCPtr, &fFlags, &GCPhys);
+        int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
             if (    pPage
-                &&  !PGM_PAGE_IS_ZERO(pPage)
+///@todo                 &&  !PGM_PAGE_IS_ZERO(pPage)
                 &&  !PGM_PAGE_IS_MMIO(pPage))
             {
                 void const *pvPage;
                 PGMPAGEMAPLOCK Lock;
-                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPtr & ~(RTGCUINTPTR)PAGE_OFFSET_MASK, &pvPage, &Lock);
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys & ~(RTGCUINTPTR)PAGE_OFFSET_MASK, &pvPage, &Lock);
                 if (RT_SUCCESS(rc))
                 {
                     int32_t  offPage = (GCPtr & PAGE_OFFSET_MASK);

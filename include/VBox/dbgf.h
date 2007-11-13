@@ -1515,6 +1515,27 @@ DBGFR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
 # define DBGFR3DisasInstrLog(pVM, Sel, GCPtr) do { } while (0)
 #endif
 
+
+/**
+ * Scan guest memory for an exact byte string.
+ *
+ * @returns VBox status codes:
+ * @retval  VINF_SUCCESS and *pGCPtrHit on success.
+ * @retval  VERR_DBGF_MEM_NOT_FOUND if not found.
+ * @retval  VERR_INVALID_POINTER if any of the pointer arguments are invalid.
+ * @retval  VERR_INVALID_ARGUMENT if any other arguments are invalid.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pAddress    Where to store the mixed address.
+ * @param   cbRange     The number of bytes to scan.
+ * @param   pabNeedle   What to search for - exact search.
+ * @param   cbNeedle    Size of the search byte string.
+ * @param   pHitAddress Where to put the address of the first hit.
+ *
+ * @thread  Any thread.
+ */
+DBGFR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress);
+
 /** @} */
 
 __END_DECLS
