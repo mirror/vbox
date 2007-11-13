@@ -2836,6 +2836,7 @@ static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  * @param   pvBuf   The buffer to convert into.
  * @param   pcbBuf  The buffer size on input. The size of the result on output.
  * @param   cbUnit  The unit size to apply when converting.
+ *                  The high bit is used to indicate unicode string.
  * @param   paVars  The array of variables to convert.
  * @param   cVars   The number of variables.
  */
@@ -2865,7 +2866,7 @@ int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t c
             case DBGCVAR_TYPE_NUMBER:
             {
                 uint64_t u64 = paVars[i].u.u64Number;
-                switch (cbUnit)
+                switch (cbUnit & 0x1f)
                 {
                     case 1:
                         do
@@ -2897,22 +2898,50 @@ int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t c
             case DBGCVAR_TYPE_STRING:
             case DBGCVAR_TYPE_SYMBOL:
             {
+                bool fOverflow = false;
                 const char *psz = paVars[i].u.pszString;
                 size_t cbString = strlen(psz);
-                if (cbString > (uintptr_t)(uEnd.pu8 - u.pu8))
-                    cbString = uEnd.pu8 - u.pu8;
-
-                size_t cbCopy = cbString & ~(cbUnit - 1);
-                memcpy(u.pu8, psz, cbCopy);
-                u.pu8 += cbCopy;
-                psz += cbCopy;
-
-                size_t cbReminder = cbString & (cbUnit - 1);
-                if (cbReminder)
+                if (cbUnit & RT_BIT_32(31))
                 {
-                    memcpy(u.pu8, psz, cbString & (cbUnit - 1));
-                    memset(u.pu8 + cbReminder, 0, cbUnit - cbReminder);
-                    u.pu8 += cbUnit;
+                    /* Explode char to unit. */
+                    if (cbString > (uintptr_t)(uEnd.pu8 - u.pu8) * (cbUnit & 0x1f))
+                    {
+                        pCmdHlp->pfnVBoxError(pCmdHlp, VERR_TOO_MUCH_DATA, "Max %d bytes.\n", uEnd.pu8 - (uint8_t *)pvBuf);
+                        return VERR_TOO_MUCH_DATA;
+                    }
+                    while (*psz)
+                    {
+                        switch (cbUnit & 0x1f)
+                        {
+                            case 1: *u.pu8++ = *psz; break;
+                            case 2: *u.pu16++ = *psz; break;
+                            case 4: *u.pu32++ = *psz; break;
+                            case 8: *u.pu64++ = *psz; break;
+                        }
+                        psz++;
+                    }
+                }
+                else
+                {
+                    /* Raw copy with zero padding if the size isn't aligned. */
+                    if (cbString > (uintptr_t)(uEnd.pu8 - u.pu8))
+                    {
+                        pCmdHlp->pfnVBoxError(pCmdHlp, VERR_TOO_MUCH_DATA, "Max %d bytes.\n", uEnd.pu8 - (uint8_t *)pvBuf);
+                        return VERR_TOO_MUCH_DATA;
+                    }
+
+                    size_t cbCopy = cbString & ~(cbUnit - 1);
+                    memcpy(u.pu8, psz, cbCopy);
+                    u.pu8 += cbCopy;
+                    psz += cbCopy;
+
+                    size_t cbReminder = cbString & (cbUnit - 1);
+                    if (cbReminder)
+                    {
+                        memcpy(u.pu8, psz, cbString & (cbUnit - 1));
+                        memset(u.pu8 + cbReminder, 0, cbUnit - cbReminder);
+                        u.pu8 += cbUnit;
+                    }
                 }
                 break;
             }
@@ -3087,7 +3116,7 @@ static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pAddre
     {
         case 'a':
         case 'b':   cbUnit = 1; break;
-        case 'u':
+        case 'u':   cbUnit = 2 | RT_BIT_32(31); break;
         case 'w':   cbUnit = 2; break;
         case 'd':   cbUnit = 4; break;
         case 'q':   cbUnit = 8; break;
