@@ -212,7 +212,7 @@ DevicesR3_SOURCES       = \
 	Parallel/DevParallel.cpp
 
 ifndef VBOX_OSE
-DevicesR3Sources +=
+DevicesR3Sources += \
 	Network/DevE1000.cpp \
 	Network/DevEEPROM.cpp
 endif
