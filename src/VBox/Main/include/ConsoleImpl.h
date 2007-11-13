@@ -403,18 +403,6 @@ private:
                                           DriveState_T eState, DriveState_T *peState,
                                           const char *pszPath, bool fPassthrough);
 
-#ifndef VBOX_WITH_PDMUSB
-    HRESULT attachUSBDevice (IUSBDevice *aHostDevice, PVUSBIRHCONFIG aConfig);
-    HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
-
-    static DECLCALLBACK(int)
-    usbAttachCallback (Console *that, IUSBDevice *aHostDevice,
-                       PVUSBIRHCONFIG aConfig, PCRTUUID aUuid, bool aRemote,
-                       const char *aAddress, void *aRemoteBackend);
-    static DECLCALLBACK(int)
-    usbDetachCallback (Console *that, USBDeviceList::iterator *aIt,
-                       PVUSBIRHCONFIG aConfig, PCRTUUID aUuid);
-#else /* PDMUsb coding. */
     HRESULT attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs);
     HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
 
@@ -423,7 +411,6 @@ private:
                        bool aRemote, const char *aAddress, ULONG aMaskedIfs);
     static DECLCALLBACK(int)
     usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
-#endif /* PDMUsb coding. */
 
     static DECLCALLBACK (int)
     stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser);
