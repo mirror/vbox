@@ -306,6 +306,12 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
         if ((so->so_faddr.s_addr & htonl(0x000000ff)) == htonl(0xff))
             saddr.sin_addr.s_addr = alias_addr.s_addr;
     }
+    /* Any UDP packet to the loopback address must be translated to be from
+     * the forwarding address, i.e. 10.0.2.2. */
+    if (   (saddr.sin_addr.s_addr & htonl(IN_CLASSA_NET))
+        == htonl(INADDR_LOOPBACK & IN_CLASSA_NET))
+        saddr.sin_addr.s_addr = alias_addr.s_addr;
+
     daddr.sin_addr = so->so_laddr;
     daddr.sin_port = so->so_lport;
 
@@ -646,7 +652,10 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
 	getsockname(so->s,(struct sockaddr *)&addr,&addrlen);
 	so->so_fport = addr.sin_port;
-	if (addr.sin_addr.s_addr == 0 || addr.sin_addr.s_addr == loopback_addr.s_addr)
+        /* The original check was completely broken, as the commented out
+         * if statement was always true (INADDR_ANY=0). */
+	/* if (addr.sin_addr.s_addr == 0 || addr.sin_addr.s_addr == loopback_addr.s_addr) */
+        if (1 == 0)                 /* always use the else part */
 	   so->so_faddr = alias_addr;
 	else
 	   so->so_faddr = addr.sin_addr;
