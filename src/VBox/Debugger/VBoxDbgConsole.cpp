@@ -123,10 +123,11 @@ void VBoxDbgConsoleOutput::appendText(const QString &rStr)
 
 
 VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
-    : QComboBox(true, pParent, pszName)
+    : QComboBox(true, pParent, pszName), m_iBlankItem(0)
 {
-    insertItem("", 0);
-    setInsertionPolicy(AfterCurrent);
+    insertItem("", m_iBlankItem);
+    //setInsertionPolicy(AfterCurrent);
+    setInsertionPolicy(NoInsertion);
     setMaxCount(50);
     const QLineEdit *pEdit = lineEdit();
     if (pEdit)
@@ -146,10 +147,20 @@ void VBoxDbgConsoleInput::setLineEdit(QLineEdit *pEdit)
 
 void VBoxDbgConsoleInput::returnPressed()
 {
+    /* deal with the current command. */
     QString Str = currentText();
     emit commandSubmitted(Str);
+
+    /* update the history and clear the entry field */
+    if (text(m_iBlankItem - 1) != Str)
+    {
+        changeItem(Str, m_iBlankItem);
+        removeItem(m_iBlankItem - maxCount() - 1);
+        insertItem("", ++m_iBlankItem);
+    }
+
     clearEdit();
-    setCurrentItem(0);
+    setCurrentItem(m_iBlankItem);
 }
 
 

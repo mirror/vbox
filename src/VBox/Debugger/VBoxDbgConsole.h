@@ -109,6 +109,10 @@ private slots:
      * Will emit commandSubmitted().
      */
     void returnPressed();
+
+protected:
+    /** The current blank entry. */
+    int m_iBlankItem;
 };
 
 
