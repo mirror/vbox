@@ -954,7 +954,7 @@ int pdmR3DevInit(PVM pVM)
 
 #ifdef VBOX_WITH_USB
     /* ditto for USB Devices. */
-    rc = pdmR3UsbInitComplete(pVM);
+    rc = pdmR3UsbVMInitComplete(pVM);
     if (RT_FAILURE(rc))
         return rc;
 #endif
@@ -1964,6 +1964,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
         pLun->iLun      = iLun;
         pLun->pNext     = pLunPrev ? pLunPrev->pNext : NULL;
         pLun->pTop      = NULL;
+        pLun->pBottom   = NULL;
         pLun->pDevIns   = pDevIns;
         pLun->pszDesc   = pszDesc;
         pLun->pBase     = pBaseInterface;
@@ -2041,10 +2042,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                         /*
                          * Link with LUN and call the constructor.
                          */
+                        pLun->pTop = pLun->pBottom = pNew;
                         rc = pDrv->pDrvReg->pfnConstruct(pNew, pNew->pCfgHandle);
                         if (VBOX_SUCCESS(rc))
                         {
-                            pLun->pTop = pNew;
                             MMR3HeapFree(pszName);
                             *ppBaseInterface = &pNew->IBase;
                             Log(("PDM: Attached driver '%s'/%d to LUN#%d on device '%s'/%d.\n",
@@ -2058,7 +2059,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                         /*
                          * Free the driver.
                          */
-                        pLun->pTop = NULL;
+                        pLun->pTop = pLun->pBottom = NULL;
                         ASMMemFill32(pNew, cb, 0xdeadd0d0);
                         MMR3HeapFree(pNew);
                         pDrv->cInstances--;
@@ -4317,7 +4318,7 @@ PDMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInsta
 
 
 /**
- * Detaches a driver from an existing device instance.
+ * Detaches a driver chain from an existing device instance.
  *
  * This is used to change drivers and suchlike at runtime.
  *

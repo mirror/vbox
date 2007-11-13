@@ -78,18 +78,6 @@ typedef struct PDMUSBREG
     DECLR3CALLBACKMEMBER(int, pfnConstruct,(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal));
 
     /**
-     * Init complete notification.
-     *
-     * This can be done to do communication with other devices and other
-     * initialization which requires everything to be in place.
-     *
-     * @returns VBOX status code.
-     * @param   pUsbIns     The USB device instance data.
-     * @remarks Optional.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnInitComplete,(PPDMUSBINS pUsbIns));
-
-    /**
      * Destruct an USB device instance.
      *
      * Most VM resources are freed by the VM. This callback is provided so that any non-VM
@@ -103,51 +91,86 @@ typedef struct PDMUSBREG
      */
     DECLR3CALLBACKMEMBER(void, pfnDestruct,(PPDMUSBINS pUsbIns));
 
+
     /**
-     * Power On notification.
+     * Init complete notification.
+     *
+     * This can be done to do communication with other devices and other
+     * initialization which requires everything to be in place.
+     *
+     * @returns VBOX status code.
+     * @param   pUsbIns     The USB device instance data.
+     * @remarks Optional.
+     * @remarks Not called when hotplugged.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMInitComplete,(PPDMUSBINS pUsbIns));
+
+    /**
+     * VM Power On notification.
      *
      * @returns VBox status.
      * @param   pUsbIns     The USB device instance data.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(void, pfnPowerOn,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnVMPowerOn,(PPDMUSBINS pUsbIns));
 
     /**
-     * Reset notification.
+     * VM Reset notification.
      *
      * @returns VBox status.
      * @param   pUsbIns     The USB device instance data.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReset,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnVMReset,(PPDMUSBINS pUsbIns));
 
     /**
-     * Suspend notification.
+     * VM Suspend notification.
      *
      * @returns VBox status.
      * @param   pUsbIns     The USB device instance data.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSuspend,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnVMSuspend,(PPDMUSBINS pUsbIns));
 
     /**
-     * Resume notification.
+     * VM Resume notification.
      *
      * @returns VBox status.
      * @param   pUsbIns     The USB device instance data.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(void, pfnResume,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnVMResume,(PPDMUSBINS pUsbIns));
 
     /**
-     * Power Off notification.
+     * VM Power Off notification.
      *
      * @param   pUsbIns     The USB device instance data.
      */
-    DECLR3CALLBACKMEMBER(void, pfnPowerOff,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnVMPowerOff,(PPDMUSBINS pUsbIns));
 
     /**
-     * Attach command.
+     * Called after the constructor when attaching a device at run time.
+     *
+     * This can be used to do tasks normally assigned to pfnInitComplete and/or pfnVMPowerOn.
+     *
+     * @returns VBox status.
+     * @param   pUsbIns     The USB device instance data.
+     * @remarks Optional.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnHotPlugged,(PPDMUSBINS pUsbIns));
+
+    /**
+     * Called before the destructor when a device is unplugged at run time.
+     *
+     * This can be used to do tasks normally assigned to pfnVMSuspend and/or pfnVMPowerOff.
+     *
+     * @returns VBox status.
+     * @param   pUsbIns     The USB device instance data.
+     * @remarks Optional.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnHotUnplugged,(PPDMUSBINS pUsbIns));
+    /**
+     * Driver Attach command.
      *
      * This is called to let the USB device attach to a driver for a specified LUN
      * at runtime. This is not called during VM construction, the device constructor
@@ -158,10 +181,10 @@ typedef struct PDMUSBREG
      * @param   iLUN        The logical unit which is being detached.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAttach,(PPDMUSBINS pUsbIns, unsigned iLUN));
+    DECLR3CALLBACKMEMBER(int, pfnDriverAttach,(PPDMUSBINS pUsbIns, unsigned iLUN));
 
     /**
-     * Detach notification.
+     * Driver Detach notification.
      *
      * This is called when a driver is detaching itself from a LUN of the device.
      * The device should adjust it's state to reflect this.
@@ -170,7 +193,7 @@ typedef struct PDMUSBREG
      * @param   iLUN        The logical unit which is being detached.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(void, pfnDetach,(PPDMUSBINS pUsbIns, unsigned iLUN));
+    DECLR3CALLBACKMEMBER(void, pfnDriverDetach,(PPDMUSBINS pUsbIns, unsigned iLUN));
 
     /**
      * Query the base interface of a logical unit.

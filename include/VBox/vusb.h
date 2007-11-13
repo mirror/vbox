@@ -346,19 +346,9 @@ typedef enum VUSBDEVICESTATE
     VUSB_DEVICE_STATE_CONFIGURED,
     VUSB_DEVICE_STATE_SUSPENDED,
     /** The device is being reset. Don't mess with it.
-     * Next states: VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_RESET_DESTROY
+     * Next states: VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_DESTROYED
      */
     VUSB_DEVICE_STATE_RESET,
-    /** The device is being reset and should be destroyed. Don't mess with it.
-     * Prev state: VUSB_DEVICE_STATE_RESET
-     * Next state: VUSB_DEVICE_STATE_DESTROY
-     */
-    VUSB_DEVICE_STATE_RESET_DESTROY,
-    /** The device is being destroyed.
-     * Prev state: Any but VUSB_DEVICE_STATE_RESET
-     * Next state: VUSB_DEVICE_STATE_DESTROYED
-     */
-    VUSB_DEVICE_STATE_DESTROY,
     /** The device has been destroy. */
     VUSB_DEVICE_STATE_DESTROYED,
     /** The usual 32-bit hack. */

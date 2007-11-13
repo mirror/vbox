@@ -375,7 +375,7 @@ PDMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
 PDMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
 
 /**
- * Detaches a driver from an existing device instance.
+ * Detaches a driver chain from an existing device instance.
  *
  * This is used to change drivers and suchlike at runtime.
  *

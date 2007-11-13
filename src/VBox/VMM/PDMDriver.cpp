@@ -436,7 +436,7 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
 
     /*
      * Check that we actually can detach this instance.
-     * The requirement is that the driver/device above have a detach method.
+     * The requirement is that the driver/device above has a detach method.
      */
     if (pDrvIns->Internal.s.pUp
             ? !pDrvIns->Internal.s.pUp->pDrvReg->pfnDetach
@@ -447,7 +447,26 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
     }
 
     /*
-     * Detach the bottom most driver until we've detached pDrvIns.
+     * Join paths with pdmR3DrvDestroyChain.
+     */
+    pdmR3DrvDestroyChain(pDrvIns);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Destroys a driver chain starting with the specified driver.
+ *
+ * This is used when unplugging a device at run time.
+ *
+ * @param   pDrvIns     Pointer to the driver instance to start with.
+ */
+void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns)
+{
+    VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
+
+    /*
+     * Detach the bottommost driver until we've detached pDrvIns.
      */
     pDrvIns->Internal.s.fDetaching = true;
     PPDMDRVINS pCur;
@@ -463,6 +482,11 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
          * Unlink it and notify parent.
          */
         pCur->Internal.s.fDetaching = true;
+
+        PPDMLUN pLun = pCur->Internal.s.pLun;
+        Assert(pLun->pBottom == pCur);
+        pLun->pBottom = pCur->Internal.s.pUp;
+
         if (pCur->Internal.s.pUp)
         {
             /* driver parent */
@@ -478,7 +502,7 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
         else
         {
             /* device parent */
-            PPDMLUN pLun = pCur->Internal.s.pLun;
+            Assert(pLun->pTop == pCur);
             pLun->pTop = NULL;
             if (pLun->pDevIns->pDevReg->pfnDetach)
                 pLun->pDevIns->pDevReg->pfnDetach(pLun->pDevIns, pLun->iLun);
@@ -511,8 +535,6 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
         MMR3HeapFree(pCur);
 
     } while (pCur != pDrvIns);
-
-    return VINF_SUCCESS;
 }
 
 
@@ -530,10 +552,12 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
     int rc;
     if (!pDrvIns->Internal.s.pDown)
     {
+        Assert(pDrvIns->Internal.s.pLun->pBottom == pDrvIns);
+
         /*
          * Get the attached driver configuration.
          */
-        PCFGMNODE   pNode = CFGMR3GetChild(pDrvIns->Internal.s.pCfgHandle, "AttachedDriver");
+        PCFGMNODE pNode = CFGMR3GetChild(pDrvIns->Internal.s.pCfgHandle, "AttachedDriver");
         if (pNode)
         {
             char *pszName;
@@ -544,7 +568,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
                  * Find the driver and allocate instance data.
                  */
                 PVM pVM = pDrvIns->Internal.s.pVM;
-                PPDMDRV  pDrv = pdmR3DrvLookup(pVM, pszName);
+                PPDMDRV pDrv = pdmR3DrvLookup(pVM, pszName);
                 if (pDrv)
                 {
                     /* config node */
@@ -584,6 +608,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
                              * Hook it onto the chain and call the constructor.
                              */
                             pDrvIns->Internal.s.pDown = pNew;
+                            pDrvIns->Internal.s.pLun->pBottom = pNew;
+
                             Log(("PDM: Constructing driver '%s' instance %d...\n", pNew->pDrvReg->szDriverName, pNew->iInstance));
                             rc = pDrv->pDrvReg->pfnConstruct(pNew, pNew->pCfgHandle);
                             if (VBOX_SUCCESS(rc))
@@ -596,6 +622,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
                                 /*
                                  * Unlink and free the data.
                                  */
+                                Assert(pDrvIns->Internal.s.pLun->pBottom == pNew);
+                                pDrvIns->Internal.s.pLun->pBottom = pDrvIns;
                                 pDrvIns->Internal.s.pDown = NULL;
                                 ASMMemFill32(pNew, cb, 0xdeadd0d0);
                                 MMR3HeapFree(pNew);
