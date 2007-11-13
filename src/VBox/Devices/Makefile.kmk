@@ -632,11 +632,11 @@ endif
 #
 ifdef VBOX_WITH_CPPUNIT_TESTCASES
  PROGRAMS += tstDevEEPROM
- tstDevEEPROM_TEMPLATE    = VBOXR3TSTEXE
+ tstDevEEPROM_TEMPLATE    = VBOXCPPUNITEXE
  tstDevEEPROM_SOURCES     = \
 	Network/testcase/tstDevEEPROM.cpp
  tstDevEEPROM_LIBS        = \
-	$(PATH_LIB)/DevicesR3.a cppunit
+	$(TARGET_DevicesR3)
 endif
 
 include $(PATH_KBUILD)/subfooter.kmk
