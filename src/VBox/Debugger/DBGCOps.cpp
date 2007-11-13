@@ -1456,7 +1456,7 @@ static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCV
 
         case DBGCVAR_TYPE_STRING:
         {
-            int rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_NUMBER, pResult);
+            int rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, pResult);
             if (VBOX_FAILURE(rc))
                 return rc;
             pResult->u64Range = pArg2->u.u64Number;
