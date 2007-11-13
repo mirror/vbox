@@ -204,6 +204,7 @@ DevicesR3_SOURCES       = \
 	PC/DevPcArch.c \
 	VMMDev/VBoxDev.cpp \
 	VMMDev/VMMDevHGCM.cpp \
+	Network/DevE1000.cpp \
 	Network/DevEEPROM.cpp \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
