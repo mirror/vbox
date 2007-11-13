@@ -14,5 +14,7 @@ if [ -z "$1" ]; then
 fi
 
 /sbin/ifconfig $1 unplumb
+vnic_id=${1##*[a-z]}
+/usr/lib/vna ${vnic_id}
 exit $?
 

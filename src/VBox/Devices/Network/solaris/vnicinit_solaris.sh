@@ -1,21 +1,31 @@
 #!/bin/bash
 
 # VirtualBox VNIC setup script for Solaris hosts with Crossbow.
-# usage: ./vnicinit.sh vnicname
-#
-# format of VNIC interface names MUST be like [name][number]
-# example: vnic1, vnic2, vnic900 etc.
 
 if [ -z "$1" ]; then
-    echo "Missing VNIC interface name."
+    echo "Missing MAC address."
     echo
-    echo "Usage: $0 vnicname"
+    echo "Usage: $0 macaddress [vnicname]"
+    echo "       A new VNIC is created if no vnicname is provided."
     exit 1
 fi
 
-vnic_name=`echo $1 | /usr/xpg4/bin/tr -s [:upper:] [:lower:]`
-vnic_id=${vnic_name##*[a-z]}
-vnic_name=$1
+vnic_id=0
+vnic_name=""
+mac=$1
+
+# Create the VNIC if required
+if [ -z "$2" ]; then
+    vnic_id=`/usr/lib/vna iprb0 $mac`
+    if [ $? != 0 ]; then
+        exit 1
+    fi
+    vnic_name=vnic${vnic_id}
+else
+    vnic_name=$2
+    vnic_id=${vnic_name##*[a-z]}
+fi
+
 if [ ${vnic_id} -lt 10 ]; then
     host_ip="192.168.1.10${vnic_id}"
     guest_ip="192.168.1.20${vnic_id}"
@@ -34,10 +44,13 @@ fi
 
 netmask="255.255.255.0"
 
-/sbin/ifconfig $vnic_name plumb
-/sbin/ifconfig $vnic_name $host_ip destination $guest_ip netmask $netmask up
+if [ -z "$2" ]; then
+    /sbin/ifconfig $vnic_name plumb
+    /sbin/ifconfig $vnic_name $host_ip destination $guest_ip netmask $netmask up
+#else
+#   Do existing VNIC configuration here if needed...
+fi
 
-# Output the VNIC name though not used by VirtualBox
 echo "$vnic_name"
 exit $?
 
