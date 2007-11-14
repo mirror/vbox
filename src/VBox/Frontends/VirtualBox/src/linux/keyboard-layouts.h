@@ -945,7 +945,7 @@ static const char main_key_de_deadgraveacute[MAIN_LEN][2] =
 /* Germany, Eliminate dead keys */
 static const char main_key_de_nodeadkeys[MAIN_LEN][2] =
 {
-"^\xb0","1!","2\"","3\xa7","4$","5%","6&","7/","8(","9)","0=","\xdf?","\xb4`",
+"^\xb0","1!","2\"","3\xa7","4$","5%","6&","7/","8(","9)","0=","\xdf?","\x27`",
 "qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","\xfc\xdc","+*",
 "aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xf6\xd6","\xe4\xc4","#'",
 "yY","xX","cC","vV","bB","nN","mM",",;",".:","-_","<>","\x0\x0","\x0\x0"
