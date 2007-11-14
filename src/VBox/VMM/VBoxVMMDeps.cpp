@@ -38,6 +38,7 @@ PFNRT g_apfnDeps[] =
     (PFNRT)DBGFR3LogModifyFlags,
     (PFNRT)DBGFR3StackWalkEnd,
     (PFNRT)DBGFR3SymbolByAddr,
+    (PFNRT)DBGFR3MemScan,
     (PFNRT)EMInterpretInstruction,
     (PFNRT)IOMIOPortRead,
     (PFNRT)PDMQueueInsert,
