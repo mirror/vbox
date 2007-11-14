@@ -210,13 +210,27 @@ typedef struct PDMUSBREG
      * Requests the USB device to reset.
      *
      * @returns VBox stauts code.
-     * @param   pUsbInst        The USB device instance.
+     * @param   pUsbIns         The USB device instance.
      * @param   fResetOnLinux   A hint to the usb proxy.
      *                          Don't use this unless you're the linux proxy device.
      * @thread  Any thread.
      * @remarks Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnUsbReset,(PPDMUSBINS pUsbIns, bool fResetOnLinux));
+
+    /**
+     * SET_CONFIGURATION request.
+     *
+     * @returns VBox stauts code.
+     * @param   pUsbIns             The USB device instance.
+     * @param   bConfigurationValue The bConfigurationValue of the new configuration.
+     * @param   pvOldCfgDesc        Internal - for the device proxy.
+     * @param   pvOldIfState        Internal - for the device proxy.
+     * @param   pvNewCfgDesc        Internal - for the device proxy.
+     * @remarks Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUsbSetConfiguration,(PPDMUSBINS pUsbIns, uint8_t bConfigurationValue,
+                                                      const void *pvOldCfgDesc, const void *pvOldIfState, const void *pvNewCfgDesc));
 
 
     /** Just some init precaution. Must be set to PDM_USBREG_VERSION. */
