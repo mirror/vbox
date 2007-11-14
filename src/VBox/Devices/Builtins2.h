@@ -15,8 +15,8 @@
  * be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __Builtins2_h__
-#define __Builtins2_h__
+#ifndef ___Builtins2_h
+#define ___Builtins2_h
 
 #include <VBox/pdm.h>
 
