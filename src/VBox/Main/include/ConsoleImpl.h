@@ -403,6 +403,7 @@ private:
                                           DriveState_T eState, DriveState_T *peState,
                                           const char *pszPath, bool fPassthrough);
 
+#ifdef VBOX_WITH_USB
     HRESULT attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs);
     HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
 
@@ -411,6 +412,7 @@ private:
                        bool aRemote, const char *aAddress, ULONG aMaskedIfs);
     static DECLCALLBACK(int)
     usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
+#endif
 
     static DECLCALLBACK (int)
     stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser);

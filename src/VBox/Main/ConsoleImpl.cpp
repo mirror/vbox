@@ -3371,6 +3371,7 @@ HRESULT Console::onSharedFolderChange (BOOL aGlobal)
  */
 HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs)
 {
+#ifdef VBOX_WITH_USB
     LogFlowThisFunc (("aDevice=%p aError=%p\n", aDevice, aError));
 
     AutoCaller autoCaller (this);
@@ -3420,6 +3421,10 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
     }
 
     return rc;
+
+#else   /* !VBOX_WITH_USB */
+    return E_FAIL;
+#endif  /* !VBOX_WITH_USB */
 }
 
 /**
@@ -3431,6 +3436,7 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
 HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
                                     IVirtualBoxErrorInfo *aError)
 {
+#ifdef VBOX_WITH_USB
     Guid Uuid (aId);
     LogFlowThisFunc (("aId={%Vuuid} aError=%p\n", Uuid.raw(), aError));
 
@@ -3499,6 +3505,10 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
     }
 
     return rc;
+
+#else   /* !VBOX_WITH_USB */
+    return E_FAIL;
+#endif  /* !VBOX_WITH_USB */
 }
 
 /**
@@ -4677,6 +4687,8 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
     }
 }
 
+#ifdef VBOX_WITH_USB
+
 /**
  *  Sends a request to VMM to attach the given host device.
  *  After this method succeeds, the attached device will appear in the
@@ -4725,7 +4737,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
-/**@todo just do everything here */
+/** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     PVMREQ pReq = NULL;
     int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
                            (PFNRT) usbAttachCallback, 6, this, aHostDevice, Uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
@@ -4851,7 +4863,7 @@ HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
     alock.leave();
 
     PVMREQ pReq;
-/** @todo just do everything here */
+/** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
                            (PFNRT) usbDetachCallback, 4,
                            this, &aIt, (*aIt)->id().raw());
@@ -4915,6 +4927,8 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
     LogFlowFuncLeave();
     return vrc;
 }
+
+#endif /* VBOX_WITH_USB */
 
 /**
   * Call the initialisation script for a dynamic TAP interface.
