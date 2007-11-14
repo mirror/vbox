@@ -27,6 +27,7 @@
 #include <VBox/dbgf.h>
 #include <VBox/mm.h>
 #include <VBox/err.h>
+#include <VBox/vusb.h>
 #include <iprt/stdarg.h>
 
 __BEGIN_DECLS
@@ -255,6 +256,52 @@ typedef struct PDMUSBREG
      * @remarks Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnUsbClearHaltedEndpoint,(PPDMUSBINS pUsbIns, unsigned uEndpoint));
+
+    /**
+     * Allocates an URB.
+     *
+     * This can be used to make use of shared user/kernel mode buffers.
+     *
+     * @returns VBox stauts code.
+     * @param   pUsbIns             The USB device instance.
+     * @param   cbData              The size of the data buffer.
+     * @param   cTds                The number of TDs.
+     * @param   enmType             The type of URB.
+     * @param   ppUrb               Where to store the allocated URB.
+     * @remarks Optional.
+     * @remarks Not implemented yet.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUrbNew,(PPDMUSBINS pUsbIns, size_t cbData, size_t cTds, VUSBXFERTYPE enmType, PVUSBURB *ppUrb));
+
+    /**
+     * Queues an URB for processing.
+     *
+     * @returns VBox stauts code.
+     * @param   pUsbIns             The USB device instance.
+     * @param   pUrb                The URB to process.
+     * @remarks Mandatory.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUrbQueue,(PPDMUSBINS pUsbIns, PVUSBURB pUrb));
+
+    /**
+     * Cancels an URB.
+     *
+     * @returns VBox stauts code.
+     * @param   pUsbIns             The USB device instance.
+     * @param   pUrb                The URB to cancel.
+     * @remarks Mandatory.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUrbCancel,(PPDMUSBINS pUsbIns, PVUSBURB pUrb));
+
+    /**
+     * Reaps an URB.
+     *
+     * @returns A ripe URB, NULL if none.
+     * @param   pUsbIns             The USB device instance.
+     * @param   cMillies            How log to wait for an URB to become ripe.
+     * @remarks Mandatory.
+     */
+    DECLR3CALLBACKMEMBER(PVUSBURB, pfnUrbReap,(PPDMUSBINS pUsbIns, unsigned cMillies));
 
 
     /** Just some init precaution. Must be set to PDM_USBREG_VERSION. */
