@@ -90,7 +90,7 @@ start()
     if [ ! -f "$KDIR/$MODNAME.o" -a ! "$KDIR/$MODNAME.ko" ]; then
       failure "No suitable module for running kernel found."
     fi
-    if ! modprobe $MODNAME; then
+    if ! modprobe $MODNAME > /dev/null 2>&1; then
       failure "Modprobe $MODNAME failed. Please use 'dmesg' to find out why."
     fi
     sleep .2
@@ -110,7 +110,7 @@ start()
       rmmod $MODNAME
       failure "Cannot locate device major."
     fi
-    if ! mknod -m 0664 $DEVICE c $MAJOR $MINOR; then
+    if ! mknod -m 0660 $DEVICE c $MAJOR $MINOR; then
       rmmod $MODNAME
       failure "Cannot create device $DEVICE with major $MAJOR and minor $MINOR."
     fi
