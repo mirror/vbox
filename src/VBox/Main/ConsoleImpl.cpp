@@ -1925,6 +1925,7 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
 
 STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
 {
+#ifdef VBOX_WITH_USB
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -1973,10 +1974,16 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     CheckComRCReturnRC (rc);
 
     return rc;
+
+#else   /* !VBOX_WITH_USB */
+    return setError (E_FAIL,
+        tr ("The virtual machine does not have a USB controller"));
+#endif  /* !VBOX_WITH_USB */
 }
 
 STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice)
 {
+#ifdef VBOX_WITH_USB
     if (!aDevice)
         return E_POINTER;
 
@@ -2003,7 +2010,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
             Guid (aId).raw());
 
-#ifdef RT_OS_DARWIN
+# ifdef RT_OS_DARWIN
     /* Notify the USB Proxy that we're about to detach the device. Since
      * we don't dare do IPC when holding the console lock, so we'll have
      * to revalidate the device when we get back. */
@@ -2018,7 +2025,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
             break;
     if (it == mUSBDevices.end())
         return S_OK;
-#endif
+# endif
 
     /* First, request VMM to detach the device */
     HRESULT rc = detachUSBDevice (it);
@@ -2035,6 +2042,14 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
     }
 
     return rc;
+
+
+#else   /* !VBOX_WITH_USB */
+
+    return setError (E_INVALIDARG,
+        tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
+        Guid (aId).raw());
+#endif  /* !VBOX_WITH_USB */
 }
 
 STDMETHODIMP
