@@ -2045,7 +2045,6 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 
 
 #else   /* !VBOX_WITH_USB */
-
     return setError (E_INVALIDARG,
         tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
         Guid (aId).raw());
