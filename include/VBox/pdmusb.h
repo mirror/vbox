@@ -232,6 +232,17 @@ typedef struct PDMUSBREG
     DECLR3CALLBACKMEMBER(int, pfnUsbSetConfiguration,(PPDMUSBINS pUsbIns, uint8_t bConfigurationValue,
                                                       const void *pvOldCfgDesc, const void *pvOldIfState, const void *pvNewCfgDesc));
 
+    /**
+     * SET_INTERFACE request.
+     *
+     * @returns VBox stauts code.
+     * @param   pUsbIns             The USB device instance.
+     * @param   bInterfaceNumber    The interface number.
+     * @param   bAlternateSetting   The alternate setting.
+     * @remarks Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUsbSetInterface,(PPDMUSBINS pUsbIns, uint8_t bInterfaceNumber, uint8_t bAlternateSetting));
+
 
     /** Just some init precaution. Must be set to PDM_USBREG_VERSION. */
     uint32_t            u32TheEnd;
