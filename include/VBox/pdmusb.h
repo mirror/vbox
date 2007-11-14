@@ -243,6 +243,19 @@ typedef struct PDMUSBREG
      */
     DECLR3CALLBACKMEMBER(int, pfnUsbSetInterface,(PPDMUSBINS pUsbIns, uint8_t bInterfaceNumber, uint8_t bAlternateSetting));
 
+    /**
+     * Clears the halted state of an endpoint. (Optional)
+     *
+     * This called when VUSB sees a CLEAR_FEATURE(ENDPOINT_HALT) on request
+     * on the zero pipe.
+     *
+     * @returns VBox stauts code.
+     * @param   pUsbIns             The USB device instance.
+     * @param   uEndpoint           The endpoint to clear.
+     * @remarks Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUsbClearHaltedEndpoint,(PPDMUSBINS pUsbIns, unsigned uEndpoint));
+
 
     /** Just some init precaution. Must be set to PDM_USBREG_VERSION. */
     uint32_t            u32TheEnd;
