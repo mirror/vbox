@@ -206,6 +206,19 @@ typedef struct PDMUSBREG
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryInterface,(PPDMUSBINS pUsbIns, unsigned iLUN, PPDMIBASE *ppBase));
 
+    /**
+     * Requests the USB device to reset.
+     *
+     * @returns VBox stauts code.
+     * @param   pUsbInst        The USB device instance.
+     * @param   fResetOnLinux   A hint to the usb proxy.
+     *                          Don't use this unless you're the linux proxy device.
+     * @thread  Any thread.
+     * @remarks Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUsbReset,(PPDMUSBINS pUsbIns, bool fResetOnLinux));
+
+
     /** Just some init precaution. Must be set to PDM_USBREG_VERSION. */
     uint32_t            u32TheEnd;
 } PDMUSBREG;
@@ -463,8 +476,11 @@ typedef struct PDMUSBINS
      * The constructor sets this.
      * @todo Integrate VUSBDEV into this structure. */
     R3PTRTYPE(void *)           pvVUsbDev;
+    /** Device name for using when logging.
+     * The constructor sets this and the destructor frees it. */
+    R3PTRTYPE(char *)           pszName;
     /** Padding to make achInstanceData aligned at 32 byte boundrary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 6 : 4];
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 5 : 2];
     /** Device instance data. The size of this area is defined
      * in the PDMUSBREG::cbInstanceData field. */
     char                        achInstanceData[8];
