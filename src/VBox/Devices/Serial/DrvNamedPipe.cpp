@@ -69,7 +69,7 @@ typedef struct DRVNAMEDPIPE
     bool                fIsServer;
 #ifdef RT_OS_WINDOWS
     /* File handle of the named pipe. */
-    RTFILE              NamedPipe;
+    HANDLE              NamedPipe;
     /* Overlapped structure for writes. */
     OVERLAPPED          OverlappedWrite;
     /* Overlapped structure for reads. */
@@ -103,12 +103,12 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
 
     Assert(pvBuf);
 #ifdef RT_OS_WINDOWS
-    if (pData->NamedPipe != NIL_RTFILE)
+    if (pData->NamedPipe != INVALID_HANDLE_VALUE)
     {
         DWORD cbReallyRead;
         pData->OverlappedRead.Offset     = 0;
         pData->OverlappedRead.OffsetHigh = 0;
-        if (!ReadFile((HANDLE)pData->NamedPipe, pvBuf, *cbRead, &cbReallyRead, &pData->OverlappedRead))
+        if (!ReadFile(pData->NamedPipe, pvBuf, *cbRead, &cbReallyRead, &pData->OverlappedRead))
         {
             DWORD uError = GetLastError();
 
@@ -128,7 +128,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                     uError = 0;
 
                     /* Wait for incoming bytes. */
-                    if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedRead, &cbReallyRead, TRUE) == FALSE)
+                    if (GetOverlappedResult(pData->NamedPipe, &pData->OverlappedRead, &cbReallyRead, TRUE) == FALSE)
                         uError = GetLastError();
                 }
 
@@ -147,13 +147,12 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
                )
 
             {
-                RTFILE tmp = pData->NamedPipe;
-                FlushFileBuffers((HANDLE)tmp);
-                DisconnectNamedPipe((HANDLE)tmp);
+                FlushFileBuffers(pData->NamedPipe);
+                DisconnectNamedPipe(pData->NamedPipe);
                 if (!pData->fIsServer)
                 {
-                    pData->NamedPipe = NIL_RTFILE;
-                    RTFileClose(tmp);
+                    CloseHandle(pData->NamedPipe);
+                    pData->NamedPipe = INVALID_HANDLE_VALUE;
                 }
                 /* pretend success */
                 rc = VINF_SUCCESS;
@@ -201,12 +200,12 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
 
     Assert(pvBuf);
 #ifdef RT_OS_WINDOWS
-    if (pData->NamedPipe != NIL_RTFILE)
+    if (pData->NamedPipe != INVALID_HANDLE_VALUE)
     {
         unsigned cbWritten;
         pData->OverlappedWrite.Offset     = 0;
         pData->OverlappedWrite.OffsetHigh = 0;
-        if (!WriteFile((HANDLE)pData->NamedPipe, pvBuf, *cbWrite, NULL, &pData->OverlappedWrite))
+        if (!WriteFile(pData->NamedPipe, pvBuf, *cbWrite, NULL, &pData->OverlappedWrite))
         {
             DWORD uError = GetLastError();
 
@@ -225,7 +224,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             else
             {
                 /* Wait for the write to complete. */
-                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &pData->OverlappedWrite, (DWORD *)&cbWritten, TRUE) == FALSE)
+                if (GetOverlappedResult(pData->NamedPipe, &pData->OverlappedWrite, (DWORD *)&cbWritten, TRUE) == FALSE)
                     uError = GetLastError();
             }
         }
@@ -237,13 +236,12 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
             if (    rc == VERR_EOF
                 ||  rc == VERR_BROKEN_PIPE)
             {
-                RTFILE tmp = pData->NamedPipe;
-                FlushFileBuffers((HANDLE)tmp);
-                DisconnectNamedPipe((HANDLE)tmp);
+                FlushFileBuffers(pData->NamedPipe);
+                DisconnectNamedPipe(pData->NamedPipe);
                 if (!pData->fIsServer)
                 {
-                    pData->NamedPipe = NIL_RTFILE;
-                    RTFileClose(tmp);
+                    CloseHandle(pData->NamedPipe);
+                    pData->NamedPipe = INVALID_HANDLE_VALUE;
                 }
                 /* pretend success */
                 rc = VINF_SUCCESS;
@@ -316,7 +314,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
     PDRVNAMEDPIPE   pData = (PDRVNAMEDPIPE)pvUser;
     int             rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
-    RTFILE          NamedPipe = pData->NamedPipe;
+    HANDLE          NamedPipe = pData->NamedPipe;
     HANDLE          hEvent = CreateEvent(NULL, TRUE, FALSE, 0);
 #endif
 
@@ -328,7 +326,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
         memset(&overlapped, 0, sizeof(overlapped));
         overlapped.hEvent = hEvent;
 
-        BOOL fConnected = ConnectNamedPipe((HANDLE)NamedPipe, &overlapped);
+        BOOL fConnected = ConnectNamedPipe(NamedPipe, &overlapped);
         if (    !fConnected
             &&  !pData->fShutdown)
         {
@@ -339,7 +337,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
                 DWORD dummy;
 
                 hrc = 0;
-                if (GetOverlappedResult((HANDLE)pData->NamedPipe, &overlapped, &dummy, TRUE) == FALSE)
+                if (GetOverlappedResult(pData->NamedPipe, &overlapped, &dummy, TRUE) == FALSE)
                     hrc = GetLastError();
 
             }
@@ -416,7 +414,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     pData->pszLocation                  = NULL;
     pData->fIsServer                    = false;
 #ifdef RT_OS_WINDOWS
-    pData->NamedPipe                    = NIL_RTFILE;
+    pData->NamedPipe                    = INVALID_HANDLE_VALUE;
 #else /* !RT_OS_WINDOWS */
     pData->LocalSocketServer            = NIL_RTSOCKET;
     pData->LocalSocket                  = NIL_RTSOCKET;
@@ -463,7 +461,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
             LogRel(("NamedPipe%d: CreateNamedPipe failed rc=%Vrc\n", pData->pDrvIns->iInstance));
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to create named pipe %s"), pDrvIns->iInstance, pszLocation);
         }
-        pData->NamedPipe = (HFILE)hPipe;
+        pData->NamedPipe = hPipe;
 
         rc = RTThreadCreate(&pData->ListenThread, drvNamedPipeListenLoop, (void *)pData, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "NamedPipe");
         if VBOX_FAILURE(rc)
@@ -475,9 +473,14 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     else
     {
         /* Connect to the named pipe. */
-        rc = RTFileOpen(&pData->NamedPipe, pszLocation, RTFILE_O_READWRITE);
-        if (VBOX_FAILURE(rc))
+        HANDLE hPipe = CreateFile(pData->pszLocation, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+        if (hPipe == INVALID_HANDLE_VALUE)
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            LogRel(("NamedPipe%d: CreateFile failed rc=%Vrc\n", pData->pDrvIns->iInstance));
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NamedPipe#%d failed to connect to named pipe %s"), pDrvIns->iInstance, pszLocation);
+        }
+        pData->NamedPipe = hPipe;
     }
 
     memset(&pData->OverlappedWrite, 0, sizeof(pData->OverlappedWrite));
@@ -570,20 +573,25 @@ static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
     pData->fShutdown = true;
 
 #ifdef RT_OS_WINDOWS
-    if (pData->NamedPipe != NIL_RTFILE)
+    if (pData->NamedPipe != INVALID_HANDLE_VALUE)
     {
-        FlushFileBuffers((HANDLE)pData->NamedPipe);
-        if (!pData->fIsServer)
-            DisconnectNamedPipe((HANDLE)pData->NamedPipe);
+        if (pData->fIsServer) 
+        {
+            FlushFileBuffers(pData->NamedPipe);
+            DisconnectNamedPipe(pData->NamedPipe);
+        }
 
-        RTFileClose(pData->NamedPipe);
-        pData->NamedPipe = NIL_RTFILE;
+        CloseHandle(pData->NamedPipe);
+        pData->NamedPipe = INVALID_HANDLE_VALUE;
         CloseHandle(pData->OverlappedRead.hEvent);
         CloseHandle(pData->OverlappedWrite.hEvent);
     }
-    /* Wake up listen thread */
-    RTSemEventSignal(pData->ListenSem);
-    RTSemEventDestroy(pData->ListenSem);
+    if (pData->fIsServer)
+    {
+        /* Wake up listen thread */
+        RTSemEventSignal(pData->ListenSem);
+        RTSemEventDestroy(pData->ListenSem);
+    }
 #else /* !RT_OS_WINDOWS */
     if (pData->fIsServer)
     {
