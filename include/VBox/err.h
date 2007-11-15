@@ -1174,6 +1174,12 @@
  */
 /** Authentication failed (ISessionManager::logon()) */
 #define VERR_WEB_NOT_AUTHENTICATED                  (-6000)
+/** Invalid format of managed object reference */
+#define VERR_WEB_INVALID_MANAGED_OBJECT_REFERENCE   (-6001)
+/** Invalid session ID in managed object reference */
+#define VERR_WEB_INVALID_SESSION_ID                 (-6002)
+/** Invalid object ID in managed object reference */
+#define VERR_WEB_INVALID_OBJECT_ID                  (-6003)
 /** @} */
 
 /* SED-END */
