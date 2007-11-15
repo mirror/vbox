@@ -77,6 +77,9 @@ static struct audio_driver *drvtab[] = {
 #ifdef RT_OS_L4
     &oss_audio_driver,
 #endif
+#ifdef RT_OS_SOLARIS
+    &solaudio_audio_driver,
+#endif
     &no_audio_driver
 };
 

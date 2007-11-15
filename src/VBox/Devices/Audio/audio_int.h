@@ -214,6 +214,7 @@ extern struct audio_driver fmod_audio_driver;
 extern struct audio_driver alsa_audio_driver;
 extern struct audio_driver coreaudio_audio_driver;
 extern struct audio_driver dsound_audio_driver;
+extern struct audio_driver solaudio_audio_driver;
 extern volume_t nominal_volume;
 #ifdef VBOX
 extern volume_t pcm_out_volume;
