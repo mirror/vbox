@@ -134,7 +134,7 @@ private:
         KeyPrint = 0x08,
     };
 
-    void focusEvent (bool focus);
+    void focusEvent (bool aHasFocus);
     bool keyEvent (int aKey, uint8_t aScan, int aFlags,
                    wchar_t *aUniKey = NULL);
     bool mouseEvent (int aType, const QPoint &aPos, const QPoint &aGlobalPos,
@@ -142,11 +142,13 @@ private:
                      ButtonState aState, ButtonState aStateAfter,
                      int aWheelDelta, Orientation aWheelDir);
 
-    void emitKeyboardStateChanged() {
+    void emitKeyboardStateChanged()
+    {
         emit keyboardStateChanged (
             (kbd_captured ? KeyboardCaptured : 0) |
-            (hostkey_pressed ? HostKeyPressed : 0));
+            (mIsHostkeyPressed ? HostKeyPressed : 0));
     }
+
     void emitMouseStateChanged() {
         emit mouseStateChanged ((mouse_captured ? MouseCaptured : 0) |
                                 (mouse_absolute ? MouseAbsolute : 0) |
@@ -169,7 +171,7 @@ private:
     bool processHotKey (const QKeySequence &key, QMenuData *data);
     void updateModifiers (bool fNumLock, bool fCapsLock, bool fScrollLock);
 
-    void releaseAllKeysPressed (bool release_hostkey = true);
+    void releaseAllPressedKeys (bool aReleaseHostkey = true);
     void saveKeyStates();
     void sendChangedKeyStates();
     void updateMouseClipping();
@@ -206,11 +208,11 @@ private:
     QPoint captured_pos;
 
     enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
-    uint8_t keys_pressed[128];
-    uint8_t keys_pressed_copy[128];
+    uint8_t mPressedKeys [128];
+    uint8_t mPressedKeysCopy [128];
 
-    bool hostkey_pressed : 1;
-    bool hostkey_alone : 1;
+    bool mIsHostkeyPressed : 1;
+    bool mIsHostkeyAlone : 1;
     /** kbd_captured value during the the last host key press or release */
     bool hostkey_in_capture : 1;
 
@@ -219,9 +221,9 @@ private:
 
     bool mIsAdditionsActive : 1;
 
-    bool mfNumLock : 1;
-    bool mfScrollLock : 1;
-    bool mfCapsLock : 1;
+    bool mNumLock : 1;
+    bool mScrollLock : 1;
+    bool mCapsLock : 1;
     long muNumLockAdaptionCnt;
     long muCapsLockAdaptionCnt;
 
@@ -240,13 +242,13 @@ private:
 #if defined(Q_WS_MAC)
 # ifndef VBOX_WITH_HACKED_QT
     /** Event handler reference. NULL if the handler isn't installed. */
-    EventHandlerRef m_darwinEventHandlerRef;
+    EventHandlerRef mDarwinEventHandlerRef;
 # endif
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
-    UInt32 m_darwinKeyModifiers;
+    UInt32 mDarwinKeyModifiers;
     /** The darwin cursor handle (see DarwinCursor.h/.cpp). */
-    DARWINCURSOR m_darwinCursor;
+    DARWINCURSOR mDarwinCursor;
 #endif
 
 #if defined (VBOX_GUI_USE_REFRESH_TIMER)
