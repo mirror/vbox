@@ -830,8 +830,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Network adapters
      */
-    rc = CFGMR3InsertNode(pDevices, "pcnet", &pDev);                                RC_CHECK();
-    //rc = CFGMR3InsertNode(pDevices, "ne2000", &pDev);                               RC_CHECK();
+    PCFGMNODE pDevPCNet = NULL;          /* PCNet-type devices */
+    rc = CFGMR3InsertNode(pDevices, "pcnet", &pDevPCNet);                           RC_CHECK();
+#ifdef VBOX_WITH_E1000
+    PCFGMNODE pDevE1000 = NULL;          /* E1000-type devices */
+    rc = CFGMR3InsertNode(pDevices, "e1000", &pDevE1000);                           RC_CHECK();
+#endif
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::NetworkAdapterCount; ulInstance++)
     {
         ComPtr<INetworkAdapter> networkAdapter;
@@ -840,6 +844,28 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = networkAdapter->COMGETTER(Enabled)(&fEnabled);                        H();
         if (!fEnabled)
             continue;
+
+        /*
+        * The virtual hardware type. Create appropriate device first.
+        */
+        NetworkAdapterType_T adapterType;
+        hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                 H();
+        switch (adapterType)
+        {
+            case NetworkAdapterType_NetworkAdapterAm79C970A:
+            case NetworkAdapterType_NetworkAdapterAm79C973:
+                pDev = pDevPCNet;
+                break;
+#ifdef VBOX_WITH_E1000
+            case NetworkAdapterType_NetworkAdapter82540EM:
+                pDev = pDevE1000;
+                break;
+#endif
+            default:
+                AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'",
+                                 adapterType, ulInstance));
+                return VERR_GENERAL_FAILURE;
+        }
 
         char szInstance[4]; Assert(ulInstance <= 999);
         RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
@@ -854,10 +880,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
         /*
-         * The virtual hardware type.
-         */
-        NetworkAdapterType_T adapterType;
-        hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                 H();
+        * The virtual hardware type. PCNet supports two types.
+        */
         switch (adapterType)
         {
             case NetworkAdapterType_NetworkAdapterAm79C970A:
@@ -866,10 +890,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             case NetworkAdapterType_NetworkAdapterAm79C973:
                 rc = CFGMR3InsertInteger(pCfg, "Am79C973", 1);                      RC_CHECK();
                 break;
-            default:
-                AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'",
-                                 adapterType, ulInstance));
-                return VERR_GENERAL_FAILURE;
         }
 
         /*

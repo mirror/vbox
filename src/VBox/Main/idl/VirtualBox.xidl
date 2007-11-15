@@ -7370,6 +7370,7 @@
     <const name="InvalidNetworkAdapterType"      value="0"/>
     <const name="NetworkAdapterAm79C970A"        value="1"/>
     <const name="NetworkAdapterAm79C973"         value="2"/>
+    <const name="NetworkAdapter82540EM"          value="3"/>
   </enum>
 
   <interface
