@@ -150,6 +150,7 @@ RuntimeR3_SOURCES       = \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
 	common/misc/rand.cpp \
+	common/misc/getopt.cpp \
 	common/misc/req.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
