@@ -50,14 +50,20 @@ public:
     enum
     {
         NoButton = 0, Ok = 1, Cancel = 2, Yes = 3, No = 4, Abort = 5,
-        Retry = 6, Ignore = 7, YesAll = 8, NoAll = 9, ButtonMask = 0xff,
-        Default = 0x100, Escape = 0x200, FlagMask = 0x300
+        Retry = 6, Ignore = 7, YesAll = 8, NoAll = 9,
+        ButtonMask = 0xFF,
+
+        Default = 0x100, Escape = 0x200,
+        FlagMask = 0x300
     };
 
     QIMessageBox (const QString &aCaption, const QString &aText,
                   Icon aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
                   QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE,
                   WFlags aFlags = WStyle_DialogBorder);
+
+    QString buttonText (int aButton) const;
+    void setButtonText (int aButton, const QString &aText);
 
     QString flagText() const { return mFlagCB->isShown() ? mFlagCB->text() : QString::null; }
     void setFlagText (const QString &aText);

@@ -133,6 +133,43 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     setDetailsShown (false);
 }
 
+/** 
+ *  Returns the text of the given message box button.
+ *  See QMessageBox::buttonText() for details.
+ *
+ *  @param aButton Button index (0, 1 or 2).
+ */
+QString QIMessageBox::buttonText (int aButton) const
+{
+    switch (aButton)
+    {
+        case 0: if (mButton0PB) return mButton0PB->text(); break;
+        case 1: if (mButton1PB) return mButton1PB->text(); break;
+        case 2: if (mButton2PB) return mButton2PB->text(); break;
+        default: break;
+    }
+
+    return QString::null;
+}
+
+/** 
+ *  Sets the text of the given message box button.
+ *  See QMessageBox::setButtonText() for details.
+ *
+ *  @param aButton  Button index (0, 1 or 2).
+ *  @param aText    New button text.
+ */
+void QIMessageBox::setButtonText (int aButton, const QString &aText)
+{
+    switch (aButton)
+    {
+        case 0: if (mButton0PB) mButton0PB->setText (aText); break;
+        case 1: if (mButton1PB) mButton1PB->setText (aText); break;
+        case 2: if (mButton2PB) mButton2PB->setText (aText); break;
+        default: break;
+    }
+}
+
 /** @fn QIMessageBox::flagText() const
  *
  *  Returns the text of the optional message box flag. If the flag is hidden
