@@ -297,12 +297,12 @@ class ModifierKeyChangeEvent : public QEvent
 public:
     ModifierKeyChangeEvent (bool fNumLock, bool fCapsLock, bool fScrollLock) :
         QEvent ((QEvent::Type) VBoxDefs::ModifierKeyChangeEventType),
-        mfNumLock (fNumLock), mfCapsLock (fCapsLock), mfScrollLock (fScrollLock) {}
-    bool numLock()    const { return mfNumLock; }
-    bool capsLock()   const { return mfCapsLock; }
-    bool scrollLock() const { return mfScrollLock; }
+        mNumLock (fNumLock), mCapsLock (fCapsLock), mScrollLock (fScrollLock) {}
+    bool numLock()    const { return mNumLock; }
+    bool capsLock()   const { return mCapsLock; }
+    bool scrollLock() const { return mScrollLock; }
 private:
-    bool mfNumLock, mfCapsLock, mfScrollLock;
+    bool mNumLock, mCapsLock, mScrollLock;
 };
 
 /** Network adapter change event */
@@ -603,14 +603,14 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mouse_captured (false)
     , mouse_absolute (false)
     , mouse_integration (true)
-    , hostkey_pressed (false)
-    , hostkey_alone (false)
+    , mIsHostkeyPressed (false)
+    , mIsHostkeyAlone (false)
     , mIgnoreMainwndResize (true)
     , mAutoresizeGuest (false)
     , mIsAdditionsActive (false)
-    , mfNumLock (false)
-    , mfScrollLock (false)
-    , mfCapsLock (false)
+    , mNumLock (false)
+    , mScrollLock (false)
+    , mCapsLock (false)
     , muNumLockAdaptionCnt (2)
     , muCapsLockAdaptionCnt (2)
     , mode (rm)
@@ -619,9 +619,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 #if defined(Q_WS_MAC)
 # ifndef VBOX_WITH_HACKED_QT
-    , m_darwinEventHandlerRef (NULL)
+    , mDarwinEventHandlerRef (NULL)
 # endif
-    , m_darwinKeyModifiers (0)
+    , mDarwinKeyModifiers (0)
 #endif
 {
     Assert (!cconsole.isNull() &&
@@ -649,7 +649,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     initXKeyboard (this->x11Display());
 #endif
 
-    ::memset (keys_pressed, 0, SIZEOF_ARRAY (keys_pressed));
+    ::memset (mPressedKeys, 0, SIZEOF_ARRAY (mPressedKeys));
 
     resize_hint_timer = new QTimer (this);
     connect (resize_hint_timer, SIGNAL (timeout()),
@@ -744,7 +744,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 
 #ifdef Q_WS_MAC
-    DarwinCursorClearHandle (&m_darwinCursor);
+    DarwinCursorClearHandle (&mDarwinCursor);
 #endif
 }
 
@@ -1115,13 +1115,13 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::ModifierKeyChangeEventType:
             {
                 ModifierKeyChangeEvent *me = (ModifierKeyChangeEvent* )e;
-                if (me->numLock() != mfNumLock)
+                if (me->numLock() != mNumLock)
                     muNumLockAdaptionCnt = 2;
-                if (me->capsLock() != mfCapsLock)
+                if (me->capsLock() != mCapsLock)
                     muCapsLockAdaptionCnt = 2;
-                mfNumLock    = me->numLock();
-                mfCapsLock   = me->capsLock();
-                mfScrollLock = me->scrollLock();
+                mNumLock    = me->numLock();
+                mCapsLock   = me->capsLock();
+                mScrollLock = me->scrollLock();
                 return true;
             }
 
@@ -1233,7 +1233,7 @@ bool VBoxConsoleView::event (QEvent *e)
             case QEvent::KeyPress:
             {
                 QKeyEvent *ke = (QKeyEvent *) e;
-                if (hostkey_pressed)
+                if (mIsHostkeyPressed)
                 {
                     if (ke->key() >= Key_F1 && ke->key() <= Key_F12)
                     {
@@ -1486,7 +1486,7 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
                            : IsKeyPressed;
     if ((event.flags & 0x80) /* released */ &&
         ((event.vkCode == gs.hostKey() && !hostkey_in_capture) ||
-         (keys_pressed [event.scanCode] & (IsKbdCaptured | what_pressed)) == what_pressed))
+         (mPressedKeys [event.scanCode] & (IsKbdCaptured | what_pressed)) == what_pressed))
         return false;
 
     MSG message;
@@ -1825,7 +1825,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
         ::GetEventParameter (inEvent, kEventParamKeyModifiers, typeUInt32, NULL,
                              sizeof (newMask), NULL, &newMask);
         newMask = ::DarwinAdjustModifierMask (newMask);
-        UInt32 changed = newMask ^ m_darwinKeyModifiers;
+        UInt32 changed = newMask ^ mDarwinKeyModifiers;
         if (changed)
         {
             for (UInt32 bit = 0; bit < 32; bit++)
@@ -1858,7 +1858,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
             }
         }
 
-        m_darwinKeyModifiers = newMask;
+        mDarwinKeyModifiers = newMask;
 
         /* Always return true here because we'll otherwise getting a Qt event
            we don't want and that will only cause the Pause warning to pop up. */
@@ -1901,9 +1901,9 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
 
         EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxConsoleView::darwinEventHandlerProc);
 
-        m_darwinEventHandlerRef = NULL;
+        mDarwinEventHandlerRef = NULL;
         ::InstallApplicationEventHandler (eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
-                                          this, &m_darwinEventHandlerRef);
+                                          this, &mDarwinEventHandlerRef);
         ::DisposeEventHandlerUPP (eventHandler);
 
 #else /* VBOX_WITH_HACKED_QT */
@@ -1916,10 +1916,10 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
     {
         ::DarwinReleaseKeyboard ();
 #ifndef VBOX_WITH_HACKED_QT
-        if (m_darwinEventHandlerRef)
+        if (mDarwinEventHandlerRef)
         {
-            ::RemoveEventHandler (m_darwinEventHandlerRef);
-            m_darwinEventHandlerRef = NULL;
+            ::RemoveEventHandler (mDarwinEventHandlerRef);
+            mDarwinEventHandlerRef = NULL;
         }
 #else
         ((QIApplication *)qApp)->setEventFilter (NULL, NULL);
@@ -1938,11 +1938,11 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
  *  and also to forcibly capture/uncapture the input in situations similar
  *  to gaining or losing focus.
  *
- *  @focus true if the window got focus and false otherwise
+ *  @param aHasFocus True if the window got focus and false otherwise.
  */
-void VBoxConsoleView::focusEvent (bool focus)
+void VBoxConsoleView::focusEvent (bool aHasFocus)
 {
-    if (focus)
+    if (aHasFocus)
     {
 #ifdef RT_OS_WINDOWS
         if (   gs.autoCapture()
@@ -1965,7 +1965,7 @@ void VBoxConsoleView::focusEvent (bool focus)
     {
         captureMouse (false);
         captureKbd (false, false);
-        releaseAllKeysPressed (!hasFocus());
+        releaseAllPressedKeys (!aHasFocus);
     }
 }
 
@@ -2003,13 +2003,13 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
                   &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
     XFreeModifiermap(map);
 
-    if (muNumLockAdaptionCnt && (mfNumLock ^ !!(uMask & uKeyMaskNum)))
+    if (muNumLockAdaptionCnt && (mNumLock ^ !!(uMask & uKeyMaskNum)))
     {
         muNumLockAdaptionCnt--;
         codes[(*count)++] = 0x45;
         codes[(*count)++] = 0x45 | 0x80;
     }
-    if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(uMask & uKeyMaskCaps)))
+    if (muCapsLockAdaptionCnt && (mCapsLock ^ !!(uMask & uKeyMaskCaps)))
     {
         muCapsLockAdaptionCnt--;
         codes[(*count)++] = 0x3a;
@@ -2018,13 +2018,13 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 
 #elif defined(Q_WS_WIN32)
 
-    if (muNumLockAdaptionCnt && (mfNumLock ^ !!(GetKeyState(VK_NUMLOCK))))
+    if (muNumLockAdaptionCnt && (mNumLock ^ !!(GetKeyState(VK_NUMLOCK))))
     {
         muNumLockAdaptionCnt--;
         codes[(*count)++] = 0x45;
         codes[(*count)++] = 0x45 | 0x80;
     }
-    if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
+    if (muCapsLockAdaptionCnt && (mCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
     {
         muCapsLockAdaptionCnt--;
         codes[(*count)++] = 0x3a;
@@ -2034,7 +2034,7 @@ void VBoxConsoleView::fixModifierState(LONG *codes, uint *count)
 #elif defined(Q_WS_MAC)
 
     /* if (muNumLockAdaptionCnt) ... - NumLock isn't implemented by Mac OS X so ignore it. */
-    if (muCapsLockAdaptionCnt && (mfCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
+    if (muCapsLockAdaptionCnt && (mCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
     {
         muCapsLockAdaptionCnt--;
         codes[(*count)++] = 0x3a;
@@ -2152,22 +2152,22 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             if (aFlags & KeyPressed)
             {
                 codes [count++] = aScan;
-                keys_pressed [aScan] |= whatPressed;
+                mPressedKeys [aScan] |= whatPressed;
             }
             else
             {
                 /* if we haven't got this key's press message, we ignore its
                  * release */
-                if (!(keys_pressed [aScan] & whatPressed))
+                if (!(mPressedKeys [aScan] & whatPressed))
                     return true;
                 codes [count++] = aScan | 0x80;
-                keys_pressed [aScan] &= ~whatPressed;
+                mPressedKeys [aScan] &= ~whatPressed;
             }
 
             if (kbd_captured)
-                keys_pressed [aScan] |= IsKbdCaptured;
+                mPressedKeys [aScan] |= IsKbdCaptured;
             else
-                keys_pressed [aScan] &= ~IsKbdCaptured;
+                mPressedKeys [aScan] &= ~IsKbdCaptured;
         }
     }
     else
@@ -2176,7 +2176,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
         hostkey_in_capture = kbd_captured;
     }
 
-    bool emit_signal = false;
+    bool emitSignal = false;
     int hotkey = 0;
 
     /* process the host key */
@@ -2184,22 +2184,22 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     {
         if (isHostKey)
         {
-            if (!hostkey_pressed)
+            if (!mIsHostkeyPressed)
             {
-                hostkey_pressed = hostkey_alone = true;
+                mIsHostkeyPressed = mIsHostkeyAlone = true;
                 if (isRunning())
                     saveKeyStates();
-                emit_signal = true;
+                emitSignal = true;
             }
         }
         else
         {
-            if (hostkey_pressed)
+            if (mIsHostkeyPressed)
             {
-                if (hostkey_alone)
+                if (mIsHostkeyAlone)
                 {
                     hotkey = aKey;
-                    hostkey_alone = false;
+                    mIsHostkeyAlone = false;
                 }
             }
         }
@@ -2208,10 +2208,10 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     {
         if (isHostKey)
         {
-            if (hostkey_pressed)
+            if (mIsHostkeyPressed)
             {
-                hostkey_pressed = false;
-                if (hostkey_alone)
+                mIsHostkeyPressed = false;
+                if (mIsHostkeyAlone)
                 {
                     if (isPaused())
                     {
@@ -2230,18 +2230,18 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                 }
                 if (isRunning())
                     sendChangedKeyStates();
-                emit_signal = true;
+                emitSignal = true;
             }
         }
         else
         {
-            if (hostkey_pressed)
-                hostkey_alone = false;
+            if (mIsHostkeyPressed)
+                mIsHostkeyAlone = false;
         }
     }
 
     /* emit the keyboard state change signal */
-    if (emit_signal)
+    if (emitSignal)
         emitKeyboardStateChanged();
 
     /* process HOST+<key> shortcuts. currently, <key> is limited to
@@ -2295,7 +2295,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
 
         /* Don't consider the hot key as pressed since the guest never saw
          * it. (probably a generic thing) */
-        keys_pressed [aScan] &= ~whatPressed;
+        mPressedKeys [aScan] &= ~whatPressed;
 #endif
 
         /* grab the key from Qt if processed, or pass it to Qt otherwise
@@ -2305,7 +2305,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     }
 
     /* no more to do, if the host key is in action or the VM is paused */
-    if (hostkey_pressed || isHostKey || isPaused())
+    if (mIsHostkeyPressed || isHostKey || isPaused())
     {
         /* grab the key from Qt and from VM if it's a host key,
          * otherwise just pass it to Qt */
@@ -2482,8 +2482,8 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
     {
 #ifdef Q_WS_MAC
         /* Update the mouse cursor; this is a bit excessive really... */
-        if (!DarwinCursorIsNull (&m_darwinCursor))
-            DarwinCursorSet (&m_darwinCursor);
+        if (!DarwinCursorIsNull (&mDarwinCursor))
+            DarwinCursorSet (&mDarwinCursor);
 #endif
         if (mainwnd->isTrueFullscreen())
         {
@@ -2862,7 +2862,7 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &key,  QMenuData *data)
     return false;
 }
 
-void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
+void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostkey)
 {
     AssertMsg (attached, ("Console must be attached"));
 
@@ -2883,38 +2883,38 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
     //       on Linux guests (#1944). It might also be responsible for #1949. Don't
     //       send this command unless we really have to release any key modifier.
     //                                                                    --frank
-    for (uint i = 0; i < SIZEOF_ARRAY (keys_pressed); i++)
+    for (uint i = 0; i < SIZEOF_ARRAY (mPressedKeys); i++)
     {
-        if (keys_pressed [i] & IsKeyPressed)
+        if (mPressedKeys [i] & IsKeyPressed)
         {
-	    if (!fSentRESEND)
-	    {
-		keyboard.PutScancode (0xFE);
-		fSentRESEND = true;
-	    }
+            if (!fSentRESEND)
+            {
+                keyboard.PutScancode (0xFE);
+                fSentRESEND = true;
+            }
             keyboard.PutScancode (i | 0x80);
         }
-        else if (keys_pressed [i] & IsExtKeyPressed)
+        else if (mPressedKeys [i] & IsExtKeyPressed)
         {
-	    if (!fSentRESEND)
-	    {
-		keyboard.PutScancode (0xFE);
-		fSentRESEND = true;
-	    }
-	    LONG codes [2];
+            if (!fSentRESEND)
+            {
+                keyboard.PutScancode (0xFE);
+                fSentRESEND = true;
+            }
+            LONG codes [2];
             codes[0] = 0xE0;
             codes[1] = i | 0x80;
             keyboard.PutScancodes (codes, 2);
         }
-        keys_pressed [i] = 0;
+        mPressedKeys [i] = 0;
     }
 
-    if (release_hostkey)
-        hostkey_pressed = false;
+    if (aReleaseHostkey)
+        mIsHostkeyPressed = false;
 
 #ifdef Q_WS_MAC
     /* clear most of the modifiers. */
-    m_darwinKeyModifiers &=
+    mDarwinKeyModifiers &=
         alphaLock | kEventKeyModifierNumLockMask |
         (release_hostkey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
 #endif
@@ -2924,10 +2924,8 @@ void VBoxConsoleView::releaseAllKeysPressed (bool release_hostkey)
 
 void VBoxConsoleView::saveKeyStates()
 {
-    ::memcpy(
-        keys_pressed_copy, keys_pressed,
-        SIZEOF_ARRAY( keys_pressed )
-    );
+    ::memcpy (mPressedKeysCopy, mPressedKeys,
+              SIZEOF_ARRAY (mPressedKeys));
 }
 
 void VBoxConsoleView::sendChangedKeyStates()
@@ -2936,10 +2934,10 @@ void VBoxConsoleView::sendChangedKeyStates()
 
     LONG codes [2];
     CKeyboard keyboard = cconsole.GetKeyboard();
-    for (uint i = 0; i < SIZEOF_ARRAY (keys_pressed); ++ i)
+    for (uint i = 0; i < SIZEOF_ARRAY (mPressedKeys); ++ i)
     {
-        uint8_t os = keys_pressed_copy [i];
-        uint8_t ns = keys_pressed [i];
+        uint8_t os = mPressedKeysCopy [i];
+        uint8_t ns = mPressedKeys [i];
         if ((os & IsKeyPressed) != (ns & IsKeyPressed))
         {
             codes [0] = i;
@@ -3186,20 +3184,20 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         int rc;
 
         /* dispose of the old cursor. */
-        if (!DarwinCursorIsNull (&m_darwinCursor))
+        if (!DarwinCursorIsNull (&mDarwinCursor))
         {
-            rc = DarwinCursorDestroy (&m_darwinCursor);
+            rc = DarwinCursorDestroy (&mDarwinCursor);
             AssertRC (rc);
         }
 
         /* create the new cursor */
         rc = DarwinCursorCreate (me->width(), me->height(), me->xHot(), me->yHot(), me->hasAlpha(),
-                                 srcAndMaskPtr, srcShapePtr, &m_darwinCursor);
+                                 srcAndMaskPtr, srcShapePtr, &mDarwinCursor);
         AssertRC (rc);
         if (VBOX_SUCCESS (rc))
         {
             /** @todo check current mouse coordinates. */
-            rc = DarwinCursorSet (&m_darwinCursor);
+            rc = DarwinCursorSet (&mDarwinCursor);
             AssertRC (rc);
         }
         ok = VBOX_SUCCESS (rc);
