@@ -26,8 +26,277 @@ __BEGIN_DECLS
  * @{
  */
 
+/** @defgroup grp_vusb_std  Standard Stuff
+ * @{ */
+
 /** Frequency of USB bus (from spec). */
 #define VUSB_BUS_HZ                 12000000
+
+
+/** @name USB Descriptor types (from spec)
+ * @{ */
+#define VUSB_DT_DEVICE                  0x01
+#define VUSB_DT_CONFIG                  0x02
+#define VUSB_DT_STRING                  0x03
+#define VUSB_DT_INTERFACE               0x04
+#define VUSB_DT_ENDPOINT                0x05
+/** @} */
+
+/** @name USB Descriptor minimum sizes (from spec)
+ * @{ */
+#define VUSB_DT_DEVICE_MIN_LEN          18
+#define VUSB_DT_CONFIG_MIN_LEN          9
+#define VUSB_DT_CONFIG_STRING_MIN_LEN   2
+#define VUSB_DT_INTERFACE_MIN_LEN       9
+#define VUSB_DT_ENDPOINT_MIN_LEN        7
+/** @} */
+
+
+#pragma pack(1) /* ensure byte packing of the descriptors. */
+
+/**
+ * USB language id descriptor (from specs).
+ */
+typedef struct VUSBDESCLANGID
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+} VUSBDESCLANGID;
+/** Pointer to a USB language id descriptor. */
+typedef VUSBDESCLANGID *PVUSBDESCLANGID;
+/** Pointer to a const USB language id descriptor. */
+typedef const VUSBDESCLANGID *PCVUSBDESCLANGID;
+
+
+/**
+ * USB string descriptor (from specs).
+ */
+typedef struct VUSBDESCSTRING
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+} VUSBDESCSTRING;
+/** Pointer to a USB string descriptor. */
+typedef VUSBDESCSTRING *PVUSBDESCSTRING;
+/** Pointer to a const USB string descriptor. */
+typedef const VUSBDESCSTRING *PCVUSBDESCSTRING;
+
+
+/**
+ * USB device descriptor (from spec)
+ */
+typedef struct VUSBDESCDEVICE
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint16_t bcdUSB;
+    uint8_t  bDeviceClass;
+    uint8_t  bDeviceSubClass;
+    uint8_t  bDeviceProtocol;
+    uint8_t  bMaxPacketSize0;
+    uint16_t idVendor;
+    uint16_t idProduct;
+    uint16_t bcdDevice;
+    uint8_t  iManufacturer;
+    uint8_t  iProduct;
+    uint8_t  iSerialNumber;
+    uint8_t  bNumConfigurations;
+} VUSBDESCDEVICE;
+/** Pointer to a USB device descriptor. */
+typedef VUSBDESCDEVICE *PVUSBDESCDEVICE;
+/** Pointer to a const USB device descriptor. */
+typedef const VUSBDESCDEVICE *PCVUSBDESCDEVICE;
+
+
+/**
+ * USB configuration descriptor (from spec).
+ */
+typedef struct VUSBDESCCONFIG
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint16_t wTotalLength; /**< recalculated by VUSB when involved in URB. */
+    uint8_t  bNumInterfaces;
+    uint8_t  bConfigurationValue;
+    uint8_t  iConfiguration;
+    uint8_t  bmAttributes;
+    uint8_t  MaxPower;
+} VUSBDESCCONFIG;
+/** Pointer to a USB configuration descriptor. */
+typedef VUSBDESCCONFIG *PVUSBDESCCONFIG;
+/** Pointer to a readonly USB configuration descriptor. */
+typedef const VUSBDESCCONFIG *PCVUSBDESCCONFIG;
+
+
+/**
+ * USB interface descriptor (from spec)
+ */
+typedef struct VUSBDESCINTERFACE
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bInterfaceNumber;
+    uint8_t  bAlternateSetting;
+    uint8_t  bNumEndpoints;
+    uint8_t  bInterfaceClass;
+    uint8_t  bInterfaceSubClass;
+    uint8_t  bInterfaceProtocol;
+    uint8_t  iInterface;
+} VUSBDESCINTERFACE;
+/** Pointer to an USB interface descriptor. */
+typedef VUSBDESCINTERFACE *PVUSBDESCINTERFACE;
+/** Pointer to a const USB interface descriptor. */
+typedef const VUSBDESCINTERFACE *PCVUSBDESCINTERFACE;
+
+
+/**
+ * USB endpoint descriptor (from spec)
+ */
+typedef struct VUSBDESCENDPOINT
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bEndpointAddress;
+    uint8_t  bmAttributes;
+    uint16_t wMaxPacketSize;
+    uint8_t  bInterval;
+} VUSBDESCENDPOINT;
+/** Pointer to an USB endpoint descriptor. */
+typedef VUSBDESCENDPOINT *PVUSBDESCENDPOINT;
+/** Pointer to a const USB endpoint descriptor. */
+typedef const VUSBDESCENDPOINT *PCVUSBDESCENDPOINT;
+
+#pragma pack() /* end of the byte packing. */
+
+
+/**
+ * USB configuration descriptor, the parsed variant used by VUSB.
+ */
+typedef struct VUSBDESCCONFIGEX
+{
+    /** The USB descriptor data.
+     * @remark  The wTotalLength member is recalculated before the data is passed to the guest. */
+    VUSBDESCCONFIG Core;
+    /** Pointer to additional descriptor bytes following what's covered by VUSBDESCCONFIG. */
+    void *extra;
+    /** Pointer to an array of the interfaces referenced in the configuration.
+     * Core.bNumInterfaces in size. */
+    const struct VUSBINTERFACE *iface;
+} VUSBDESCCONFIGEX;
+/** Pointer to a parsed USB configuration descriptor. */
+typedef VUSBDESCCONFIGEX *PVUSBDESCCONFIGEX;
+/** Pointer to a const parsed USB configuration descriptor. */
+typedef const VUSBDESCCONFIGEX *PCVUSBDESCCONFIGEX;
+
+
+/**
+ * For tracking the alternate interface settings of a configuration.
+ */
+typedef struct VUSBINTERFACE
+{
+    /** Pointer to an array of interfaces. */
+    const struct VUSBDESCINTERFACEEX *setting;
+    /** The number of entries in the array. */
+    unsigned int num_settings;
+} VUSBINTERFACE;
+/** Pointer to a VUSBINTERFACE. */
+typedef VUSBINTERFACE *PVUSBINTERFACE;
+/** Pointer to a const VUSBINTERFACE. */
+typedef const VUSBINTERFACE *PCVUSBINTERFACE;
+
+
+/**
+ * USB interface descriptor, the parsed variant used by VUSB.
+ */
+typedef struct VUSBDESCINTERFACEEX
+{
+    /** The USB descriptor data. */
+    VUSBDESCINTERFACE Core;
+    /** Pointer to additional descriptor bytes following what's covered by VUSBDESCINTERFACE. */
+    void *extra;
+    /** Pointer to an array of the endpoints referenced by the interface.
+     * Core.bNumEndpoints in size. */
+    const struct VUSBDESCENDPOINTEX *endpoint;
+} VUSBDESCINTERFACEEX;
+/** Pointer to an prased USB interface descriptor. */
+typedef VUSBDESCINTERFACEEX *PVUSBDESCINTERFACEEX;
+/** Pointer to a const parsed USB interface descriptor. */
+typedef const VUSBDESCINTERFACEEX *PCVUSBDESCINTERFACEEX;
+
+
+/**
+ * USB endpoint descriptor, the parsed variant used by VUSB.
+ */
+typedef struct VUSBDESCENDPOINTEX
+{
+    /** The USB descriptor data.
+     * @remark The wMaxPacketSize member is converted to native endian. */
+    VUSBDESCENDPOINT Core;
+    /** Pointer to additional descriptor bytes following what's covered by VUSBDESCENDPOINT. */
+    void *extra;
+} VUSBDESCENDPOINTEX;
+/** Pointer to a parsed USB endpoint descriptor. */
+typedef VUSBDESCENDPOINTEX *PVUSBDESCENDPOINTEX;
+/** Pointer to a const parsed USB endpoint descriptor. */
+typedef const VUSBDESCENDPOINTEX *PCVUSBDESCENDPOINTEX;
+
+
+/** @name USB Control message recipient codes (from spec)
+ * @{ */
+#define VUSB_TO_DEVICE          0x0
+#define VUSB_TO_INTERFACE       0x1
+#define VUSB_TO_ENDPOINT        0x2
+#define VUSB_TO_OTHER           0x3
+#define VUSB_RECIP_MASK         0x1f
+/** @} */
+
+/** @name USB control pipe setup packet structure (from spec)
+ * @{ */
+#define VUSB_REQ_SHIFT          (5)
+#define VUSB_REQ_STANDARD       (0x0 << VUSB_REQ_SHIFT)
+#define VUSB_REQ_CLASS          (0x1 << VUSB_REQ_SHIFT)
+#define VUSB_REQ_VENDOR         (0x2 << VUSB_REQ_SHIFT)
+#define VUSB_REQ_RESERVED       (0x3 << VUSB_REQ_SHIFT)
+#define VUSB_REQ_MASK           (0x3 << VUSB_REQ_SHIFT)
+/** @} */
+
+#define VUSB_DIR_TO_HOST        0x80
+
+/**
+ * USB Setup request (from spec)
+ */
+typedef struct vusb_setup
+{
+    uint8_t  bmRequestType;
+    uint8_t  bRequest;
+    uint16_t wValue;
+    uint16_t wIndex;
+    uint16_t wLength;
+} VUSBSETUP;
+/** Pointer to a setup request. */
+typedef VUSBSETUP *PVUSBSETUP;
+/** Pointer to a const setup request. */
+typedef const VUSBSETUP *PCVUSBSETUP;
+
+/** @name USB Standard device requests (from spec)
+ * @{ */
+#define VUSB_REQ_GET_STATUS         0x00
+#define VUSB_REQ_CLEAR_FEATURE      0x01
+#define VUSB_REQ_SET_FEATURE        0x03
+#define VUSB_REQ_SET_ADDRESS        0x05
+#define VUSB_REQ_GET_DESCRIPTOR     0x06
+#define VUSB_REQ_SET_DESCRIPTOR     0x07
+#define VUSB_REQ_GET_CONFIGURATION  0x08
+#define VUSB_REQ_SET_CONFIGURATION  0x09
+#define VUSB_REQ_GET_INTERFACE      0x0a
+#define VUSB_REQ_SET_INTERFACE      0x0b
+#define VUSB_REQ_SYNCH_FRAME        0x0c
+#define VUSB_REQ_MAX                0x0d
+/** @} */
+
+/** @} */ /* end of grp_vusb_std */
+
+
 
 /** @name USB Standard version flags.
  * @{ */
@@ -36,7 +305,6 @@ __BEGIN_DECLS
 /** Indicates USB 2.0 support. */
 #define VUSB_STDVER_20              RT_BIT(2)
 /** @} */
-
 
 
 /** Pointer to a VBox USB device interface. */
@@ -62,9 +330,6 @@ typedef struct VUSBPORTBITMAP
 } VUSBPORTBITMAP;
 /** Pointer to a VBox USB port bitmap. */
 typedef VUSBPORTBITMAP *PVUSBPORTBITMAP;
-
-
-
 
 
 /**
