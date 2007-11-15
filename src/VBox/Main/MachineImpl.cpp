@@ -4689,6 +4689,10 @@ HRESULT Machine::loadHardware (CFGNODE aNode)
                 mNetworkAdapters [slot]->COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C970A);
             else if (adapterType.compare(Bstr("Am79C973")) == 0)
                 mNetworkAdapters [slot]->COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapterAm79C973);
+#ifdef VBOX_WITH_E1000
+            else if (adapterType.compare(Bstr("82540EM")) == 0)
+                mNetworkAdapters [slot]->COMSETTER(AdapterType)(NetworkAdapterType_NetworkAdapter82540EM);
+#endif
             else
                 ComAssertBreak (0, rc = E_FAIL);
 

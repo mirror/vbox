@@ -21,6 +21,7 @@ SUBDIRS_AFTER    = testcase
 
 ifndef VBOX_OSE
 SUBDIRS_AFTER += webservice
+DEFS	      += VBOX_WITH_E1000
 endif
 
 LIBRARIES        = VBoxCOM

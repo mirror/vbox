@@ -200,6 +200,9 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
     {
         case NetworkAdapterType_NetworkAdapterAm79C970A:
         case NetworkAdapterType_NetworkAdapterAm79C973:
+#ifdef VBOX_WITH_E1000
+        case NetworkAdapterType_NetworkAdapter82540EM:
+#endif
             break;
         default:
             return setError (E_FAIL,
