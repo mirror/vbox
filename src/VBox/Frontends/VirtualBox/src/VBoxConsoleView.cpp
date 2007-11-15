@@ -2916,7 +2916,7 @@ void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostkey)
     /* clear most of the modifiers. */
     mDarwinKeyModifiers &=
         alphaLock | kEventKeyModifierNumLockMask |
-        (release_hostkey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
+        (aReleaseHostkey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (gs.hostKey()));
 #endif
 
     emitKeyboardStateChanged ();
