@@ -903,6 +903,7 @@ static Bit32u         int19_function();
 static void           int1a_function();
 static void           int70_function();
 static void           int74_function();
+static void           dummy_isr_function();
 static Bit16u         get_CS();
 static Bit16u         get_SS();
 static unsigned int   enqueue_key();
@@ -8500,6 +8501,38 @@ ASM_START
 ASM_END
 }
 
+  void
+dummy_isr_function(regs, ds, iret_addr)
+  pusha_regs_t regs; // regs pushed from PUSHA instruction
+  Bit16u ds; // previous DS:, DS set to 0x0000 by asm wrapper
+  iret_addr_t  iret_addr; // CS,IP,Flags pushed from original INT call
+{
+  // Interrupt handler for unexpected hardware interrupts. We have to clear
+  // the PIC because if we don't, the next EOI will clear the wrong interrupt
+  // and all hell will break loose! This routine also masks the unexpected
+  // interrupt so it will generally be called only once for each unexpected
+  // interrupt level.
+  Bit8u isrA, isrB, imr, last_int = 0xFF;
+
+  outb( 0x20, 0x0B );
+  isrA = inb( 0x20 );
+  if (isrA) {
+    outb( 0xA0, 0x0B );
+    isrB = inb( 0xA0 );
+    if (isrB) {
+        imr = inb( 0xA1 );
+        outb( 0xA1, imr | isrB );       // Mask this interrupt
+        outb( 0xA0, 0x20 );             // Send EOI on slave PIC
+    } else {
+        imr = inb( 0x21 );
+        isrA &= 0xFB;                   // Never mask the cascade interrupt
+        outb( 0x21, imr | isrA);        // Mask this interrupt
+    }
+    outb( 0x20, 0x20 );                 // Send EOI on master PIC
+    last_int = isrA;
+  }
+  write_byte( 0x40, 0x6B, last_int );   // Write INTR_FLAG
+}
 
 ASM_START
 ;------------------------------------------
@@ -9206,7 +9239,14 @@ hd1_post_checksum_loop:
 ;- POST: EBDA segment
 ;--------------------
 ; relocated here because the primary POST area isnt big enough.
+; the SET_INT_VECTORs have nothing to do with EBDA but do not
+; fit into the primary POST area either
 ebda_post:
+  SET_INT_VECTOR(0x0D, #0xF000, #dummy_isr);    IRQ 5
+  SET_INT_VECTOR(0x0F, #0xF000, #dummy_isr);    IRQ 7
+  SET_INT_VECTOR(0x72, #0xF000, #dummy_isr);    IRQ 11
+  SET_INT_VECTOR(0x77, #0xF000, #dummy_isr);    IRQ 15
+
 #if BX_USE_EBDA
   mov ax, #EBDA_SEG
   mov ds, ax
@@ -11329,6 +11369,18 @@ dw 0x03ff  ;; limit 15:00
 dw 0x0000  ;; base  15:00
 db 0x00    ;; base  23:16
 
+;;
+;; Handler for unexpected hardware interrupts
+;;
+dummy_isr:
+  push ds
+  pushad
+  xor  ax, ax
+  mov  ds, ax
+  call _dummy_isr_function
+  popad
+  pop  ds
+  iret
 
 ;----------
 ;- INT1Ah -
