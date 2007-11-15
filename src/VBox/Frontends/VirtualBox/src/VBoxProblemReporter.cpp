@@ -232,7 +232,7 @@ bool VBoxProblemReporter::isValid()
  *
  *  When all button arguments are zero, a single 'Ok' button is shown.
  *
- *  If autoConfirmId is not null, then the message box will contain a
+ *  If aAutoConfirmId is not null, then the message box will contain a
  *  checkbox "Don't show this message again" below the message text and its
  *  state will be saved in the global config. When the checkbox is in the
  *  checked state, this method doesn't actually show the message box but
@@ -241,56 +241,65 @@ bool VBoxProblemReporter::isValid()
  *  AutoConfirmed bit set (AutoConfirmed alone is returned when no default
  *  button is defined in button arguments).
  *
- *  @param  parent
- *      parent widget or 0 to use the desktop as the parent. Also,
+ *  @param  aParent
+ *      Parent widget or 0 to use the desktop as the parent. Also,
  *      #mainWindowShown can be used to determine the currently shown VBox
- *      main window (Selector or Console)
- *  @param  type
- *      one of values of the Type enum, that defines the message box
- *      title and icon
- *  @param  msg
- *      message text to display (can contain sinmple Qt-html tags)
- *  @param  details
- *      detailed message description displayed under the main message text using
+ *      main window (Selector or Console).
+ *  @param  aType
+ *      One of values of the Type enum, that defines the message box
+ *      title and icon.
+ *  @param  aMessage
+ *      Message text to display (can contain sinmple Qt-html tags).
+ *  @param  aDetails
+ *      Detailed message description displayed under the main message text using
  *      QTextEdit (that provides rich text support and scrollbars when necessary).
- *      If equals to QString::null, no details text box is shown
- *  @param  autoConfirmId
+ *      If equals to QString::null, no details text box is shown.
+ *  @param  aAutoConfirmId
  *      ID used to save the auto confirmation state across calls. If null,
  *      the auto confirmation feature is turned off (and no checkbox is shown)
- *  @param  b1
- *      first button code or 0, see QIMessageBox
- *  @param  b2
- *      second button code or 0, see QIMessageBox
- *  @param  b3
- *      third button code or 0, see QIMessageBox
- *  @param  name
- *      name of the underlying QIMessageBox object. If NULL, a value of
- *      autoConfirmId is used.
+ *  @param  aButton1
+ *      First button code or 0, see QIMessageBox for a list of codes.
+ *  @param  aButton2
+ *      Second button code or 0, see QIMessageBox for a list of codes.
+ *  @param  aButton3
+ *      Third button code or 0, see QIMessageBox for a list of codes.
+ *  @param  aText1
+ *      Optional custom text for the first button.
+ *  @param  aText2
+ *      Optional custom text for the second button.
+ *  @param  aText3
+ *      Optional custom text for the third button.
  *
  *  @return
  *      code of the button pressed by the user
  */
-int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg,
-                                  const QString &details,
-                                  const char *autoConfirmId,
-                                  int b1, int b2, int b3,
-                                  const char *name)
+int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &aMessage,
+                                  const QString &aDetails /* = QString::null */,
+                                  const char *aAutoConfirmId /* = 0 */,
+                                  int aButton1 /* = 0 */, int aButton2 /* = 0 */,
+                                  int aButton3 /* = 0 */,
+                                  const QString &aText1 /* = QString::null */,
+                                  const QString &aText2 /* = QString::null */,
+                                  const QString &aText3 /* = QString::null */)
 {
-    if (b1 == 0 && b2 == 0 && b3 == 0)
-        b1 = QIMessageBox::Ok | QIMessageBox::Default;
+    if (aButton1 == 0 && aButton2 == 0 && aButton3 == 0)
+        aButton1 = QIMessageBox::Ok | QIMessageBox::Default;
 
     CVirtualBox vbox;
     QStringList msgs;
 
-    if (autoConfirmId)
+    if (aAutoConfirmId)
     {
         vbox = vboxGlobal().virtualBox();
         msgs = QStringList::split (',', vbox.GetExtraData (VBoxDefs::GUI_SuppressMessages));
-        if (msgs.findIndex (autoConfirmId) >= 0) {
+        if (msgs.findIndex (aAutoConfirmId) >= 0) {
             int rc = AutoConfirmed;
-            if (b1 & QIMessageBox::Default) rc |= (b1 & QIMessageBox::ButtonMask);
-            if (b2 & QIMessageBox::Default) rc |= (b2 & QIMessageBox::ButtonMask);
-            if (b3 & QIMessageBox::Default) rc |= (b3 & QIMessageBox::ButtonMask);
+            if (aButton1 & QIMessageBox::Default)
+                rc |= (aButton1 & QIMessageBox::ButtonMask);
+            if (aButton2 & QIMessageBox::Default)
+                rc |= (aButton2 & QIMessageBox::ButtonMask);
+            if (aButton3 & QIMessageBox::Default)
+                rc |= (aButton3 & QIMessageBox::ButtonMask);
             return rc;
         }
     }
@@ -298,7 +307,7 @@ int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg
     QString title;
     QIMessageBox::Icon icon;
 
-    switch (type)
+    switch (aType)
     {
         default:
         case Info:
@@ -327,17 +336,23 @@ int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg
             break;
     }
 
-    if (!name)
-        name = autoConfirmId;
-    QIMessageBox *box = new QIMessageBox (title, msg, icon, b1, b2, b3, parent, name);
+    QIMessageBox *box = new QIMessageBox (title, aMessage, icon, aButton1, aButton2,
+                                          aButton3, aParent, aAutoConfirmId);
 
-    if (details)
+    if (!aText1.isNull())
+        box->setButtonText (0, aText1);
+    if (!aText2.isNull())
+        box->setButtonText (1, aText2);
+    if (!aText3.isNull())
+        box->setButtonText (2, aText3);
+
+    if (aDetails)
     {
-        box->setDetailsText (details);
+        box->setDetailsText (aDetails);
         box->setDetailsShown (true);
     }
 
-    if (autoConfirmId)
+    if (aAutoConfirmId)
     {
         box->setFlagText (tr ("Do not show this message again", "msg box flag"));
         box->setFlagChecked (false);
@@ -345,11 +360,11 @@ int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg
 
     int rc = box->exec();
 
-    if (autoConfirmId)
+    if (aAutoConfirmId)
     {
         if (box->isFlagChecked())
         {
-            msgs << autoConfirmId;
+            msgs << aAutoConfirmId;
             vbox.SetExtraData (VBoxDefs::GUI_SuppressMessages, msgs.join (","));
         }
     }
@@ -359,30 +374,20 @@ int VBoxProblemReporter::message (QWidget *parent, Type type, const QString &msg
     return rc;
 }
 
-/** @fn message (QWidget *, Type, const QString &, const char *, int, int, int, const char *)
+/** @fn message (QWidget *, Type, const QString &, const char *, int, int,
+ *               int, const QString &, const QString &, const QString &)
  *
  *  A shortcut to #message() that doesn't require to specify the details
  *  text (QString::null is assumed).
  */
 
-/**
+/** @fn messageYesNo (QWidget *, Type, const QString &, const QString &, const char *)
+ *
  *  A shortcut to #message() that shows 'Yes' and 'No' buttons ('Yes' is the
  *  default) and returns true when the user selects Yes.
  */
-bool VBoxProblemReporter::messageYesNo (
-    QWidget *parent, Type type, const QString &msg,
-    const QString &details,
-    const char *autoConfirmId,
-    const char *name
-)
-{
-    return (message (parent, type, msg, details, autoConfirmId,
-                     QIMessageBox::Yes | QIMessageBox::Default,
-                     QIMessageBox::No | QIMessageBox::Escape,
-                     0, name) & QIMessageBox::ButtonMask) == QIMessageBox::Yes;
-}
 
-/** @fn messageYesNo (QWidget *, Type, const QString &, const char *, const char *)
+/** @fn messageYesNo (QWidget *, Type, const QString &, const char *)
  *
  *  A shortcut to #messageYesNo() that doesn't require to specify the details
  *  text (QString::null is assumed).
@@ -906,6 +911,7 @@ void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG aWidth,
 bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
 {
     QString msg;
+    QString button;
     QString name;
 
     if (machine.GetAccessible())
@@ -915,6 +921,7 @@ bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
                   "the virtual machine <b>%1</b>?</p>"
                   "<p>This operation cannot be undone.</p>")
                   .arg (name);
+        button = tr ("Delete", "machine");
     }
     else
     {
@@ -927,53 +934,47 @@ bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
                   "<p>You will no longer be able to register it back from "
                   "GUI.</p>")
                   .arg (name);
+        button = tr ("Unregister", "machine");
     }
 
-    return messageYesNo (&vboxGlobal().selectorWnd(), Question, msg);
+    return messageOkCancel (&vboxGlobal().selectorWnd(), Question, msg,
+                            0 /* aAutoConfirmId */, button);
 }
 
 bool VBoxProblemReporter::confirmDiscardSavedState (const CMachine &machine)
 {
-    return messageYesNo (
-        &vboxGlobal().selectorWnd(),
-        Question,
+    return messageOkCancel (&vboxGlobal().selectorWnd(), Question,
         tr ("<p>Are you sure you want to discard the saved state of "
             "the virtual machine <b>%1</b>?</p>"
             "<p>This operation is equivalent to resetting or powering off "
             "the machine without doing a proper shutdown by means of the "
             "guest OS.</p>")
-            .arg (machine.GetName())
-    );
+            .arg (machine.GetName()),
+        0 /* aAutoConfirmId */,
+        tr ("Discard", "saved state"));
 }
 
 bool VBoxProblemReporter::confirmReleaseImage (QWidget *parent,
                                                const QString &usage)
 {
-    return messageYesNo (
-        parent,
-        Question,
+    return messageOkCancel (parent, Question,
         tr ("<p>Releasing this media image will detach it from the "
             "following virtual machine(s): <b>%1</b>.</p>"
             "<p>Continue?</p>")
             .arg (usage),
-        "confirmReleaseImage"
-    );
+        "confirmReleaseImage",
+        tr ("Continue", "detach image"));
 }
 
 void VBoxProblemReporter::sayCannotOverwriteHardDiskImage (QWidget *parent,
                                                            const QString &src)
 {
-    message (
-        parent,
-        Info,
-        tr (
-            "<p>The image file <b>%1</b> already exists. "
+    message (parent, Info,
+        tr ("<p>The image file <b>%1</b> already exists. "
             "You cannot create a new virtual hard disk that uses this file, "
             "because it can be already used by another virtual hard disk.</p>"
-            "<p>Please specify a different image file name.</p>"
-        )
-            .arg (src)
-    );
+            "<p>Please specify a different image file name.</p>")
+            .arg (src));
 }
 
 int VBoxProblemReporter::confirmHardDiskImageDeletion (QWidget *parent,
@@ -982,17 +983,19 @@ int VBoxProblemReporter::confirmHardDiskImageDeletion (QWidget *parent,
     return message (parent, Question,
         tr ("<p>Do you want to delete this hard disk's image file "
             "<nobr><b>%1</b>?</nobr></p>"
-            "<p>If you select <b>No</b> then the virtual hard disk will be "
-            "unregistered and removed from the collection, but the image file "
-            "will be left on your physical disk.</p>"
-            "<p>If you select <b>Yes</b> then the image file will be permanently "
+            "<p>If you select <b>Delete</b> then the image file will be permanently "
             "deleted after unregistering the hard disk. This operation "
-            "cannot be undone.</p>")
+            "cannot be undone.</p>"
+            "<p>If you select <b>Unregister</b> then the virtual hard disk will be "
+            "unregistered and removed from the collection, but the image file "
+            "will be left on your physical disk.</p>")
             .arg (src),
-        0, /* autoConfirmId */
+        0, /* aAutoConfirmId */
         QIMessageBox::Yes,
         QIMessageBox::No | QIMessageBox::Default,
-        QIMessageBox::Cancel | QIMessageBox::Escape);
+        QIMessageBox::Cancel | QIMessageBox::Escape,
+        tr ("Delete", "hard disk"),
+        tr ("Unregister", "hard disk"));
 }
 
 void VBoxProblemReporter::cannotDeleteHardDiskImage (QWidget *parent,
@@ -1010,21 +1013,19 @@ void VBoxProblemReporter::cannotDeleteHardDiskImage (QWidget *parent,
 int VBoxProblemReporter::confirmHardDiskUnregister (QWidget *parent,
                                                     const QString &src)
 {
-    return message (parent, Question,
+    return messageOkCancel (parent, Question,
         tr ("<p>Do you want to remove (unregister) the virtual hard disk "
             "<nobr><b>%1</b>?</nobr></p>")
             .arg (src),
-        0, /* autoConfirmId */
-        QIMessageBox::Ok | QIMessageBox::Default,
-        QIMessageBox::Cancel | QIMessageBox::Escape);
+        0 /* aAutoConfirmId */,
+        tr ("Unregister", "hard disk"));
 }
-
 
 void VBoxProblemReporter::cannotCreateHardDiskImage (
     QWidget *parent, const CVirtualBox &vbox, const QString &src,
-    const CVirtualDiskImage &vdi, const CProgress &progress
-) {
-    message (parent,Error,
+    const CVirtualDiskImage &vdi, const CProgress &progress)
+{
+    message (parent, Error,
         tr ("Failed to create the virtual hard disk image <nobr><b>%1</b>.</nobr>")
             .arg (src),
         !vbox.isOk() ? formatErrorInfo (vbox) :
@@ -1323,7 +1324,7 @@ int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
                         "<nobr><b>%2</b>.</nobr></p><p>Do you want to "
                         "download this CD image from the Internet?</p>")
                         .arg (aSrc1).arg (aSrc2),
-                    0, /* autoConfirmId */
+                    0, /* aAutoConfirmId */
                     QIMessageBox::Yes | QIMessageBox::Default,
                     QIMessageBox::No | QIMessageBox::Escape);
 }
@@ -1340,30 +1341,28 @@ void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
 int VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
                                                    ulong aSize)
 {
-    return message (&vboxGlobal().consoleWnd(), Question,
-                    tr ("<p>Are you sure you want to download the VirtualBox "
-                        "Guest Additions CD image from "
-                        "<nobr><a href=\"%1\">%2</a></nobr> "
-                        "(size %3 bytes)?</p>").arg (aURL).arg (aURL).arg (aSize),
-                    0, /* autoConfirmId */
-                    QIMessageBox::Yes | QIMessageBox::Default,
-                    QIMessageBox::No | QIMessageBox::Escape);
+    return messageOkCancel (&vboxGlobal().consoleWnd(), Question,
+        tr ("<p>Are you sure you want to download the VirtualBox "
+            "Guest Additions CD image from "
+            "<nobr><a href=\"%1\">%2</a></nobr> "
+            "(size %3 bytes)?</p>").arg (aURL).arg (aURL).arg (aSize),
+        0, /* aAutoConfirmId */
+        tr ("Download", "additions"));
 }
 
 int VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
                                                 const QString &aSrc)
 {
-    return message (&vboxGlobal().consoleWnd(), Question,
-                    tr ("<p>The VirtualBox Guest Additions CD image has been "
-                        "successfully downloaded from "
-                        "<nobr><a href=\"%1\">%2</a></nobr> "
-                        "and saved locally as <nobr><b>%3</b>.</nobr></p>"
-                        "<p>Do you want to register this CD image and mount it "
-                        "on the virtual CD/DVD drive?</p>")
-                        .arg (aURL).arg (aURL).arg (aSrc),
-                    0, /* autoConfirmId */
-                    QIMessageBox::Yes | QIMessageBox::Default,
-                    QIMessageBox::No | QIMessageBox::Escape);
+    return messageOkCancel (&vboxGlobal().consoleWnd(), Question,
+        tr ("<p>The VirtualBox Guest Additions CD image has been "
+            "successfully downloaded from "
+            "<nobr><a href=\"%1\">%2</a></nobr> "
+            "and saved locally as <nobr><b>%3</b>.</nobr></p>"
+            "<p>Do you want to register this CD image and mount it "
+            "on the virtual CD/DVD drive?</p>")
+            .arg (aURL).arg (aURL).arg (aSrc),
+        0, /* aAutoConfirmId */
+        tr ("Mount", "additions"));
 }
 
 void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
@@ -1501,7 +1500,7 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
     };
 
     /* Close the previous (outdated) window if any. We use kName as
-     * autoConfirmId which is also used as the widget name by default. */
+     * aAutoConfirmId which is also used as the widget name by default. */
     {
         QWidget *outdated =
             VBoxGlobal::findWidget (NULL, kNames [int (!supportsAbsolute)],
@@ -1532,7 +1531,7 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
                 "the current session (and enable it again) by selecting the "
                 "corresponding action from the menu bar."
                 "</p>"),
-            kNames [1] /* autoConfirmId */);
+            kNames [1] /* aAutoConfirmId */);
 
         return !(rc & AutoConfirmed);
     }
@@ -1544,7 +1543,7 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
                 "mode. You need to capture the mouse (by clicking over the VM "
                 "display or pressing the host key) in order to use the "
                 "mouse inside the guest OS.</p>"),
-            kNames [0] /* autoConfirmId */);
+            kNames [0] /* aAutoConfirmId */);
 
         return !(rc & AutoConfirmed);
     }
@@ -1636,7 +1635,7 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
     const char *kName = "remindAboutWrongColorDepth";
 
     /* Close the previous (outdated) window if any. We use kName as
-     * autoConfirmId which is also used as the widget name by default. */
+     * aAutoConfirmId which is also used as the widget name by default. */
     {
         QWidget *outdated = VBoxGlobal::findWidget (NULL, kName, "QIMessageBox");
         if (outdated)
@@ -1690,7 +1689,7 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
             "Please note that debugging requires special knowledge and tools, so "
             "it is recommended to press <b>OK</b> now.</p>")
             .arg (aLogFolder),
-        0, /* autoConfirmId */
+        0, /* aAutoConfirmId */
         QIMessageBox::Ok | QIMessageBox::Default,
         QIMessageBox::Ignore | QIMessageBox::Escape);
 
@@ -1702,24 +1701,23 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
  */
 bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
 {
-    return messageYesNo (aParent, Question,
+    return messageOkCancel (aParent, Question,
         tr ("<p>Do you really want to reset the virtual machine?</p>"
             "<p>When the machine is reset, unsaved data of all applications "
             "running inside it will be lost.</p>"),
-        "confirmVMReset" /* autoConfirmId */);
+        "confirmVMReset" /* aAutoConfirmId */,
+        tr ("Reset", "machine"));
 }
 
 int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
 {
-    return message (
-        aParent,
-        Warning,
+    return message (aParent, Warning,
         tr ("<p>You didn't attach a hard disk to the new virtual machine. "
             "The machine will not be able to boot unless you attach "
             "a hard disk with a guest operating system or some other bootable "
             "media to it later using the machine settings dialog or the First "
             "Run Wizard.</p><p>Do you want to continue?</p>"),
-        0, /* autoConfirmId */
+        0, /* aAutoConfirmId */
         QIMessageBox::Yes,
         QIMessageBox::No | QIMessageBox::Default | QIMessageBox::Escape);
 }
@@ -1727,9 +1725,9 @@ int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
 void VBoxProblemReporter::cannotRunInSelectorMode()
 {
     message (mainWindowShown(), Critical,
-             tr ("<p>Cannot run VirtualBox in <i>VM Selector</i> "
-                 "mode due to local restrictions.</p>"
-                 "<p>The application will now terminate.</p>"));
+        tr ("<p>Cannot run VirtualBox in <i>VM Selector</i> "
+            "mode due to local restrictions.</p>"
+            "<p>The application will now terminate.</p>"));
 }
 
 void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal,

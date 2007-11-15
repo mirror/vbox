@@ -50,31 +50,69 @@ public:
 
     // helpers
 
-    int message (QWidget *parent, Type type, const QString &msg,
-                 const QString &details = QString::null,
-                 const char *autoConfirmId = NULL,
-                 int b1 = 0, int b2 = 0, int b3 = 0,
-                 const char *name = 0);
+    int message (QWidget *aParent, Type aType, const QString &aMessage,
+                 const QString &aDetails = QString::null,
+                 const char *aAutoConfirmId = 0,
+                 int aButton1 = 0, int aButton2 = 0, int aButton3 = 0,
+                 const QString &aText1 = QString::null,
+                 const QString &aText2 = QString::null,
+                 const QString &aText3 = QString::null);
 
-    int message (QWidget *parent, Type type, const QString &msg,
-                 const char *autoConfirmId,
-                 int b1 = 0, int b2 = 0, int b3 = 0,
-                 const char *name = 0)
+    int message (QWidget *aParent, Type aType, const QString &aMessage,
+                 const char *aAutoConfirmId,
+                 int aButton1 = 0, int aButton2 = 0, int aButton3 = 0,
+                 const QString &aText1 = QString::null,
+                 const QString &aText2 = QString::null,
+                 const QString &aText3 = QString::null)
     {
-        return message (parent, type, msg, QString::null, autoConfirmId,
-                        b1, b2, b3, name);
+        return message (aParent, aType, aMessage, QString::null, aAutoConfirmId,
+                        aButton1, aButton2, aButton3, aText1, aText2, aText3);
     }
 
-    bool messageYesNo (QWidget *parent, Type type, const QString &msg,
-                       const QString &details = QString::null,
-                       const char *autoConfirmId = 0,
-                       const char *name = 0);
-
-    bool messageYesNo (QWidget *parent, Type type, const QString &msg,
-                       const char *autoConfirmId,
-                       const char *name = 0)
+    bool messageYesNo (QWidget *aParent, Type aType, const QString &aMessage,
+                       const QString &aDetails = QString::null,
+                       const char *aAutoConfirmId = 0,
+                       const QString &aYesText = QString::null,
+                       const QString &aNoText = QString::null)
     {
-        return messageYesNo (parent, type, msg, QString::null, autoConfirmId, name);
+        return (message (aParent, aType, aMessage, aDetails, aAutoConfirmId,
+                         QIMessageBox::Yes | QIMessageBox::Default,
+                         QIMessageBox::No | QIMessageBox::Escape,
+                         0,
+                         aYesText, aNoText, QString::null) &
+                QIMessageBox::ButtonMask) == QIMessageBox::Yes;
+    }
+
+    bool messageYesNo (QWidget *aParent, Type aType, const QString &aMessage,
+                       const char *aAutoConfirmId,
+                       const QString &aYesText = QString::null,
+                       const QString &aNoText = QString::null)
+    {
+        return messageYesNo (aParent, aType, aMessage, QString::null,
+                             aAutoConfirmId, aYesText, aNoText);
+    }
+
+    bool messageOkCancel (QWidget *aParent, Type aType, const QString &aMessage,
+                          const QString &aDetails = QString::null,
+                          const char *aAutoConfirmId = 0,
+                          const QString &aOkText = QString::null,
+                          const QString &aCancelText = QString::null)
+    {
+        return (message (aParent, aType, aMessage, aDetails, aAutoConfirmId,
+                         QIMessageBox::Ok | QIMessageBox::Default,
+                         QIMessageBox::Cancel | QIMessageBox::Escape,
+                         0,
+                         aOkText, aCancelText, QString::null) &
+                QIMessageBox::ButtonMask) == QIMessageBox::Ok;
+    }
+
+    bool messageOkCancel (QWidget *aParent, Type aType, const QString &aMessage,
+                          const char *aAutoConfirmId,
+                          const QString &aOkText = QString::null,
+                          const QString &aCancelText = QString::null)
+    {
+        return messageOkCancel (aParent, aType, aMessage, QString::null,
+                                aAutoConfirmId, aOkText, aCancelText);
     }
 
     bool showModalProgressDialog (CProgress &aProgress, const QString &aTitle,
