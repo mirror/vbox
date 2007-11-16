@@ -185,7 +185,7 @@ public:
     int confirmHardDiskImageDeletion (QWidget *parent, const QString &src);
     void cannotDeleteHardDiskImage (QWidget *parent, const CVirtualDiskImage &vdi);
 
-    int confirmHardDiskUnregister (QWidget *parent, const QString &src);
+    bool confirmHardDiskUnregister (QWidget *parent, const QString &src);
 
     void cannotCreateHardDiskImage (
         QWidget *parent, const CVirtualBox &vbox, const QString &src,

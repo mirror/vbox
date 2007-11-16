@@ -1010,7 +1010,7 @@ void VBoxProblemReporter::cannotDeleteHardDiskImage (QWidget *parent,
         formatErrorInfo (vdi));
 }
 
-int VBoxProblemReporter::confirmHardDiskUnregister (QWidget *parent,
+bool VBoxProblemReporter::confirmHardDiskUnregister (QWidget *parent,
                                                     const QString &src)
 {
     return messageOkCancel (parent, Question,

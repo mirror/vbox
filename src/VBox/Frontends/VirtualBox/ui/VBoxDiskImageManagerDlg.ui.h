@@ -2016,20 +2016,30 @@ void VBoxDiskImageManagerDlg::removeImage()
     if (currentList == hdsView)
     {
         type = VBoxDefs::HD;
-        int deleteImage;
+        bool deleteImage = false;
+
         /// @todo When creation of VMDK is implemented, we should
         /// enable image deletion for  them as well (use
         /// GetStorageType() to define the correct cast).
         CHardDisk disk = item->getMedia().disk;
         if (disk.GetStorageType() == CEnums::VirtualDiskImage &&
             item->getStatus() == VBoxMedia::Ok)
-            deleteImage = vboxProblem().confirmHardDiskImageDeletion (this, src);
+        {
+            int rc = vboxProblem().confirmHardDiskImageDeletion (this, src);
+            if (rc == QIMessageBox::Cancel)
+                return;
+            deleteImage = rc == QIMessageBox::Yes;
+        }
         else
-            deleteImage = vboxProblem().confirmHardDiskUnregister (this, src);
-        if (deleteImage == QIMessageBox::Cancel)
-            return;
+        {
+            if (!vboxProblem().confirmHardDiskUnregister (this, src))
+                return;
+        }
+
         CHardDisk hd = vbox.UnregisterHardDisk (uuid);
-        if (vbox.isOk() && deleteImage == QIMessageBox::Yes)
+        if (!vbox.isOk())
+            vboxProblem().cannotUnregisterMedia (this, vbox, type, src);
+        else if (deleteImage)
         {
             /// @todo When creation of VMDK is implemented, we should
             /// enable image deletion for  them as well (use
