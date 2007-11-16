@@ -1,4 +1,4 @@
 /opt
 /etc/vbox
 /etc/init.d
-/usr/lib/virtualbox
+/usr/lib/virtualbox-ose
