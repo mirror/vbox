@@ -1065,11 +1065,19 @@
     </method>
 
     <method name="getMachine">
+      <desc>
+        Attempts to find a virtual machine given its UUID.
+        To look up a machine by name, use <link to="IVirtualBox::findMachine" /> instead.
+      </desc>
       <param name="id" type="uuid" dir="in"/>
       <param name="machine" type="IMachine" dir="return"/>
     </method>
 
     <method name="findMachine">
+      <desc>
+        Attempts to find a virtual machine given its name.
+        To look up a machine by UUID, use <link to="IVirtualBox::getMachine" /> instead.
+      </desc>
       <param name="name" type="wstring" dir="in"/>
       <param name="machine" type="IMachine" dir="return"/>
     </method>
