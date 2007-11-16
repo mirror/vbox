@@ -136,6 +136,7 @@ USA
  {"Germany, Dead acute", &main_key_de_deadacute},
  {"Germany, Dead grave acute", &main_key_de_deadgraveacute},
  {"Germany, Eliminate dead keys", &main_key_de_nodeadkeys},
+ {"Germany, Eliminate dead keys, acute replaced by apostrophe", &main_key_de_nodeadkeys_noacute},
  {"Germany, Dvorak", &main_key_de_dvorak},
  {"Germany, Neostyle", &main_key_de_neo},
  {"Greece", &main_key_gr},
