@@ -511,9 +511,11 @@
      wsmap="suppress"
      >
     <desc>
-      The IVirtualBoxErrorInfo interface represents extended error information
-      that can be set by components after unsuccessful method invocation and
-      returned to the client in addition to the result code.
+      Extended error information.
+
+      Such extended error information can be set by VirtualBox components
+      after unsuccessful method invocation. This can then be returned to the
+      client in addition to a plain result code.
 
       In MS COM, this interface extends the IErrorInfo interface,
       in XPCOM, it extends the nsIException interface. In both cases,
@@ -1158,7 +1160,7 @@
 
         This method tries to guess the
         <link to="HardDiskStorageType">hard disk storage type</link> from the
-        format of the location string and from the contens of the resource the
+        format of the location string and from the contents of the resource the
         location points to. Currently, a <i>file path</i> is the only
         supported format for the location string which must point to either a
         VDI file or to a VMDK file. On success, an IHardDisk object will be
@@ -2175,6 +2177,9 @@
      uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
      wsmap="struct"
      >
+    <desc>
+        BIOS settings in a virtual machine. Used in <link to="IMachine::BIOSSettings" />.
+    </desc>
     <attribute name="logoFadeIn" type="boolean">
       <desc>Fade in flag for BIOS logo animation.</desc>
     </attribute>
@@ -2238,6 +2243,27 @@
      uuid="2830ce8c-be5b-4660-b8d5-65d913005b4f"
      wsmap="managed"
      >
+    <desc>
+      A virtual machine, or guest, created in VirtualBox.
+
+      This is used in two contexts, mainly: A collection of these is in
+      <link to="IVirtualBox::machines" />, listing all the virtual machines
+      that are currently registered with this VirtualBox installation. Also,
+      once a remote session has been opened for this machine (i.e. the
+      virtual machine is running), a copy of the machine is in the console
+      object that represents the connection to the remote session; see
+      <link to="IConsole" /> for details.
+
+      All the settings and actions that are visible in VirtualBox's
+      front-ends are represented by attributes and methods of this interface.
+      However, in order to start a virtual machine, as indicated above,
+      call <link to="IVirtualBox::openRemoteSession" />; to change machine
+      settings, one needs to open a direct session, see
+      <link to="IVirtualBox::openSession" />.
+
+      <see>IConsole, ISession</see>
+    </desc>
+
     <attribute name="parent" type="IVirtualBox" readonly="yes">
       <desc>Associated parent obect.</desc>
     </attribute>
@@ -3501,6 +3527,16 @@
      uuid="d5a1cbda-f5d7-4824-9afe-d640c94c7dcf"
      wsmap="managed"
      >
+    <desc>
+      Connection to machine's remote session.
+
+      A console conceptually represents a connection to a remote session,
+      as opened by <link to="IVirtualBox::openRemoteSession" />. An
+      IConsole object lives in the local address space (and not remotely,
+      like IVirtualBox and IMachine do) and allows the owner to control
+      the virtual machine's state.
+    </desc>
+
     <attribute name="machine" type="IMachine" readonly="yes">
       <desc>
         Machine object this console is sessioned with.
@@ -3518,8 +3554,8 @@
         <note>
           This property always returns the same value as the corresponding
           property of the IMachine object this console is sessioned with.
-          For the process, that owns (executes) the VM, this is the
-          preferrable way of quierying the VM state, because no IPC
+          For the process that owns (executes) the VM, this is the
+          preferable way of querying the VM state, because no IPC
           calls are made.
         </note>
       </desc>
@@ -4038,6 +4074,10 @@
      uuid="21f86694-202d-4ce4-8b05-a63ff82dbf4c"
      wsmap="managed"
      >
+    <desc>
+      Physical CD/DVD drive hardware on the host. Used indirectly in <link to="IHost::DVDDrives" />.
+    </desc>
+
     <attribute name="name" type="wstring" readonly="yes">
       <desc>
         Returns the platform-specific device identifier.
@@ -4096,6 +4136,9 @@
      uuid="b6a4d1a9-4221-43c3-bd52-021a5daa9ed2"
      wsmap="managed"
      >
+    <desc>
+      Physical floppy drive hardware on the host. Used indirectly in <link to="IHost::floppyDrives" />.
+    </desc>
     <attribute name="name" type="wstring" readonly="yes">
       <desc>
         Returns the platform-specific device identifier.
@@ -4212,6 +4255,17 @@
      uuid="81729c26-1aec-46f5-b7c0-cc7364738fdb"
      wsmap="managed"
      >
+    <desc>
+      The physical machine that this VirtualBox installation runs on.
+
+      This is used in <link to="IVirtualBox::host" /> and contains both read-only
+      information about the host's physical hardware (such as what processors,
+      and disks are available, what the host operating system is, and so on).
+
+      This also allows for manipulating some of the host's hardware, such as
+      USB and host interface networking.
+
+    </desc>
     <attribute name="DVDDrives" type="IHostDVDDriveCollection" readonly="yes">
       <desc>List of DVD drives available on the host.</desc>
     </attribute>
@@ -4562,13 +4616,13 @@
         Library that provides authentication for webservice clients. The library
         is used if a virtual machine's authentication type is set to "external"
         in the VM RemoteDisplay configuration and will be called from
-        within the <link to="ISessionManager::logon" /> implementation.
+        within the <link to="IWebsessionManager::logon" /> implementation.
 
         As opposed to <link to="ISystemProperties::remoteDisplayAuthLibrary" />,
         there is no per-VM setting for this, as the webservice is a global
         resource (if it is running). Only for this setting (for the webservice),
         setting this value to a literal "null" string disables authentication,
-        meaning that <link to="ISessionManager::logon" /> will always succeed,
+        meaning that <link to="IWebsessionManager::logon" /> will always succeed,
         no matter what user name and password are supplied.
 
         The initial value of this property is <tt>VRDPAuth</tt>,
@@ -4647,11 +4701,10 @@
      wsmap="suppress"
      >
     <desc>
-      The IGuest interface represents a guest (virtual machine's) operating
-      system. It provides information about the Guest Additions and other
-      guest OS properties.
+      Operating system information of a virtual machine. Used in <link to="IConsole::guest" />.
 
-      <see>IConsole::guest</see>
+      IGuest provides information about the guest's operating system, whether
+      Guest Additions are installed and other OS-specific virtual machine properties.
     </desc>
 
     <attribute name="OSTypeId" type="wstring" readonly="yes">
@@ -5785,10 +5838,10 @@
      >
 
     <desc>
+      Specific type of <link to="IHardDisk" /> that uses VDI image files.
 
-      The IVirtualDiskImage interface represents <link to="IHardDisk">virtual
-      hard disks</link> that use virtual disk image files to store hard disk
-      data.
+      The Virtual Disk Image (VDI) format is VirtualBox's native format for
+      hard disk containers.
 
       Hard disks using virtual disk images can be either opened using
       <link to="IVirtualBox::openVirtualDiskImage()"/> or created from
@@ -5935,10 +5988,18 @@
      >
 
     <desc>
+      Specific type of <link to="IHardDisk" /> that uses iSCSI.
 
       The IISCSIHardDisk interface represents <link to="IHardDisk">virtual
       hard disks</link> that use the Internet SCSI (iSCSI) protocol to store
       hard disk data on remote machines.
+
+      Objects that support this interface also support the
+      <link to="IHardDisk"/> interface. In other words, in C++ terms,
+      one can consider this class to be derived from IHardDisk.
+
+      As with other hard disk objects, hard disks using custom hard disk
+      images can be opened using <link to="IVirtualBox::openHardDisk()"/>.
 
       iSCSI hard disks can be created using
       <link to="IVirtualBox::createHardDisk()"/>. When a new hard disk object
@@ -5947,9 +6008,6 @@
       calling <link to="IVirtualBox::registerHardDisk()"/> and
       then <link to="IMachine::attachHardDisk()">attached</link> to virtual
       machines.
-
-      Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
 
       The <link to="IHardDisk::description">description</link>
       of the iSCSI hard disk is stored in the VirtualBox
@@ -6034,10 +6092,11 @@
      wsmap="managed"
      >
     <desc>
+      Specific type of <link to="IHardDisk" /> that uses VMDK image files.
 
-      The IVMDKImage interface represents <link to="IHardDisk">virtual hard
-      disks</link> that use VMware Virtual Machine Disk image files to store
-      hard disk data.
+      The Virtual Machine Disk (VMDK) format is the industry standard format
+      for virtual hard disk image files, which VirtualBox supports besides its
+      own native VDI format.
 
       Hard disks using VMDK images can be either opened using
       <link to="IVirtualBox::openHardDisk()"/> or created from
@@ -6191,15 +6250,14 @@
      wsmap="managed"
      >
     <desc>
-
-      The ICustomHardDisk interface represents <link to="IHardDisk">virtual hard
-      disks</link> that are supported through third-party plugins.
-
-      Hard disks using custom hard disk images can be opened using
-      <link to="IVirtualBox::openHardDisk()"/>.
+      Specific type of <link to="IHardDisk" /> that is supported through a third-party plugin.
 
       Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
+      <link to="IHardDisk"/> interface. In other words, in C++ terms,
+      one can consider this class to be derived from IHardDisk.
+
+      As with other hard disk objects, hard disks using custom hard disk
+      images can be opened using <link to="IVirtualBox::openHardDisk()"/>.
 
       When a new hard disk object is created from scratch, an image file for it
       is not automatically created. To do it, you need to specify a
@@ -6465,6 +6523,9 @@
      uuid="d9bd101a-8079-4fb9-bad1-31bf32482b75"
      wsmap="managed"
      >
+    <desc>
+      Virtual CD/DVD drive in a virtual machine. Used in <link to="IMachine::DVDDrive" />.
+    </desc>
     <attribute name="state" type="DriveState" readonly="yes">
       <desc>Current drive state.</desc>
     </attribute>
@@ -6613,6 +6674,10 @@
      uuid="E9318F71-78D2-4b00-863C-B7CB0030A2D9"
      wsmap="managed"
      >
+    <desc>
+      Virtual floppy drive in a virtual machine. Used in <link to="IMachine::FloppyDrive" />.
+    </desc>
+
     <attribute name="enabled" type="boolean">
       <desc>
         Flag whether the floppy drive is enabled. If it is disabled,
@@ -6661,6 +6726,12 @@
      uuid="FD443EC1-000A-4F5B-9282-D72760A66916"
      wsmap="managed"
      >
+    <desc>
+      A virtual machine's keyboard within an <link to="IConsole" />. Used in <link to="IConsole:.keyboard" />.
+
+      Through this interface, the virtual machine's virtual keyboard can be controlled. One
+      can send keystrokes to the virtual machine and send the Ctrl-Alt-Del sequence to it.
+    </desc>
     <method name="putScancode">
       <desc>Sends a scancode to the keyboard.</desc>
       <param name="scancode" type="long" dir="in"/>
@@ -6703,7 +6774,9 @@
      wsmap="managed"
      >
     <desc>
-      The IMouse interface represents a virtual mouse device.
+      A virtual machine's mouse within an <link to="IConsole" />. Used in <link to="IConsole:.mouse" />.
+
+      Through this interface, the virtual machine's virtual mouse can be controlled.
     </desc>
 
     <attribute name="absoluteSupported" type="boolean" readonly="yes">
@@ -7240,6 +7313,14 @@
      uuid="09789f63-4525-48e5-a5e4-1080453b0eab"
      wsmap="suppress"
      >
+    <desc>
+      A virtual machine's display within an <link to="IConsole" />.
+
+      One display object is contained in each <link to="IConsole::display" />
+      attribute and represents the visual output of the virtual machine. This
+      can represent a window on the host (for a local display).
+
+    </desc>
     <attribute name="width" type="unsigned long" readonly="yes">
       <desc>Current display width.</desc>
     </attribute>
@@ -7934,9 +8015,12 @@
      wsmap="managed"
      >
     <desc>
-      The IUSBDevice interface represents a USB device captured by
-      (attached to) a running virtual machine's USB controller.
-      <see>IConsole::USBDevices</see>
+      Virtual USB device within an <link to="IConsole" />.
+
+      A collection of these is in <link to="IConsole::USBDevices" />.
+      Virtual USB devices can be attached to a running virtual machine's
+      USB controller.
+
     </desc>
 
     <attribute name="id" type="uuid" readonly="yes">
@@ -8327,8 +8411,7 @@
      wsmap="managed"
      >
     <desc>
-      The IHostUSBDevice interface represents a USB device attached to
-      the host computer.
+      Physical USB device attached to the host computer.
 
       Among with properties inherited from IUSBDevice,
       this interface adds the <link to="#state"/> property
@@ -8389,8 +8472,8 @@
      wsmap="managed"
      >
     <desc>
-      The IHostUSBDeviceFilter interface represents a USB device filter used
-      by the host computer.
+      Filter for a physical USB device used by the host computer. Used indirectly
+      in <link to="IHost::USBDeviceFilters" />.
 
       Using filters of this type, the host computer determines the initial
       state of the USB device after it is physically attached to the
@@ -8437,6 +8520,9 @@
      uuid="921873db-5f3f-4b69-91f9-7be9e535a2cb"
      wsmap="struct"
      >
+    <desc>
+        Virtual audio adapter in a virtual machine. Used in <link to="IMachine::audioAdapter" />.
+    </desc>
     <attribute name="enabled" type="boolean">
       <desc>
         Flag whether the audio adapter is present in the
@@ -8788,6 +8874,37 @@
      uuid="12F4DCDB-12B2-4ec1-B7CD-DDD9F6C5BF4D"
      wsmap="managed"
      >
+    <desc>
+      Serialization primitive for virtual machines.
+
+      Within VirtualBox, any time one wishes to manipulate a virtual machine,
+      an instance of ISession is required. One first creates a session
+      object locally and then passes it with the method call that initiates
+      the machine manipulation. The session serves several purposes: it
+      identifies to the inter-process VirtualBox code which process is currently
+      working with a virtual machine, and it ensures that there are no
+      incompatible requests from several processes for the same virtual machine.
+
+      For example, to start a virtual machine, one would call
+      <link to="IVirtualBox::openRemoteSession" />, which requires a session
+      object as its first parameter. This session then identifies the caller
+      and makes sure that no other process attempts to manipulate the virtual
+      machine's parameters while it is running.
+
+      As another example, to manipulate machine settings, one needs to
+      open a direct session on the machine first by calling
+      <link to="IVirtualBox::openSession" />. This prevents the machine from
+      being changed by other processes.
+
+      In regular COM C++ client code, one can simply create a session object,
+      for example by calling <tt>createLocalObject().</tt>
+
+      In the webservice, the session manager creates one session object during
+      <link to="IWebsessionManager::logon" /> automatically; a managed object
+      reference to that session object can be retrieved by calling
+      <link to="IWebsessionManager::getSessionObject" />.
+    </desc>
+
     <attribute name="state" type="SessionState" readonly="yes">
       <desc>Current state of this session.</desc>
     </attribute>
@@ -8839,6 +8956,26 @@
      wsmap="managed"
      wscpp="hardcoded"
      >
+    <desc>
+      Webservice only: Managed object reference.
+
+      Only within the webservice, a managed object reference (which is really
+      an opaque number) allows a webservice client to address an object
+      that lives in the address space of the webservice server.
+
+      Behind each managed object reference, there is a COM object that lives
+      in the webservice server's address space. The COM object is not freed
+      until the managed object reference is released, either by an explicit
+      call to  <link to="IManagedObjectRef::release" /> or by logging off from
+      the webservice (<link to="IWebsessionManager::logoff" />), which releases
+      all objects created during the webservice session.
+
+      Whenever a method call of the VirtualBox API returns a COM object, the
+      webservice representation of that method will instead return a
+      managed object reference, which can then be used to invoke methods
+      on that object.
+    </desc>
+
     <method name="getInterfaceName">
       <desc>
         Returns the name of the interface that this managed object represents,
@@ -8850,7 +8987,7 @@
     <method name="release">
       <desc>
         Releases this managed object reference and frees the resources that
-        were allocated for it in the web service server process. After calling
+        were allocated for it in the webservice server process. After calling
         this method, the identifier of the reference can no longer be used.
       </desc>
     </method>
@@ -8858,17 +8995,21 @@
   </interface>
 
   <!--
-  // ISessionManager
+  // IWebsessionManager
   /////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-     name="ISessionManager" extends="$unknown"
+     name="IWebsessionManager" extends="$unknown"
      uuid="dea1b4c7-2de3-418a-850d-7868617f7733"
      internal="yes"
      wsmap="global"
      wscpp="hardcoded"
      >
+    <desc>
+      Webservice only: Websession manager. This provides essential services
+      to webservice clients.
+    </desc>
     <method name="logon">
       <desc>
         Logs a new client onto the webservice and returns a managed object reference to
@@ -8884,10 +9025,9 @@
     <method name="getSessionObject">
       <desc>
         Returns a managed object reference to the internal ISession object that was created
-        for this web service session. On each successful logon, the web service server
-        creates such an ISession object, which serves multiple purposes within VirtualBox.
-        For example, it serves as an exclusive lock to disallow several processes from
-        manipulating a VM at the same time.
+        for this web service session when the client logged on.
+
+        <see>ISession</see>
       </desc>
       <param name="refIVirtualBox" type="wstring" dir="in"/>
       <param name="return" type="wstring" dir="return"/>
@@ -8895,7 +9035,7 @@
 
     <method name="logoff">
       <desc>
-        Logs off the client who has previously logged on with ISessionManager::logoff
+        Logs off the client who has previously logged on with <link to="IWebsessionManager::logoff" />
         and destroys all resources associated with the session (most importantly, all
         managed objects created in the server while the session was active).
       </desc>
