@@ -4536,22 +4536,48 @@
 
     <attribute name="remoteDisplayAuthLibrary" type="wstring">
       <desc>
-        Path to the library that provides authentication
-        for VRDP clients. The library is used if authentication
-        type is set to "external" in the VM RemoteDisplay
-        configuration.
+        Library that provides authentication for VRDP clients. The library
+        is used if a virtual machine's authentication type is set to "external"
+        in the VM RemoteDisplay configuration.
 
-        The initial value of this property is <tt>VRDPAuth</tt>.
-        That is library called VRDPAuth in one of default library
-        directories. A full path can be used as well.
+        The system library extension (".DLL" or ".so") must be omitted.
+        A full path can be specified; if not, then the library must reside on the
+        system's default library path.
 
-        <note>
-          The library name does not include the file extension.
-        </note>
+        The default value of this property is <tt>VRDPAuth</tt>. There is a library
+        of that name in one of the default VirtualBox library directories.
+
+        For details about VirtualBox authentication libraries and how to implement
+        them, please refer to the VirtualBox manual.
+
         <note>
           Setting this property to <tt>null</tt> will restore the
           initial value.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="webServiceAuthLibrary" type="wstring">
+      <desc>
+        Library that provides authentication for webservice clients. The library
+        is used if a virtual machine's authentication type is set to "external"
+        in the VM RemoteDisplay configuration and will be called from
+        within the <link to="ISessionManager::logon" /> implementation.
+
+        As opposed to <link to="ISystemProperties::remoteDisplayAuthLibrary" />,
+        there is no per-VM setting for this, as the webservice is a global
+        resource (if it is running). Only for this setting (for the webservice),
+        setting this value to a literal "null" string disables authentication,
+        meaning that <link to="ISessionManager::logon" /> will always succeed,
+        no matter what user name and password are supplied.
+
+        The initial value of this property is <tt>VRDPAuth</tt>,
+        meaning that the webservice will use the same authentication
+        library that is used by default for VBoxVRDP (again, see
+        <link to="ISystemProperties::remoteDisplayAuthLibrary" />).
+        The format and calling convetion of authentication libraries
+        is the same for the webservice as it is for VBoxVRDP.
+
       </desc>
     </attribute>
 
@@ -4561,7 +4587,7 @@
         extensions. If enabled, virtual machines will make use of
         hardware virtualization extensions such as Intel VT-x and
         AMD SVM by default. This value can be overridden by each VM
-        using their <link to="IMachine::HWVirtExEnabled"/> property.
+        using their <link to="IMachine::HWVirtExEnabled" /> property.
       </desc>
     </attribute>
 

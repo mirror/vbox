@@ -537,6 +537,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage setproperty      vdifolder default|<folder> |\n"
                  "                            machinefolder default|<folder> |\n"
                  "                            vrdpauthlibrary default|<library> |\n"
+                 "                            websrvauthlibrary default|null|<library> |\n"
                  "                            hwvirtexenabled yes|no\n"
                  "                            loghistorycount <value>\n"
                  "\n");
@@ -2820,6 +2821,8 @@ static int handleList(int argc, char *argv[],
         RTPrintf("Default machine folder:      %lS\n", str.raw());
         systemProperties->COMGETTER(RemoteDisplayAuthLibrary)(str.asOutParam());
         RTPrintf("VRDP authentication library: %lS\n", str.raw());
+        systemProperties->COMGETTER(WebServiceAuthLibrary)(str.asOutParam());
+        RTPrintf("Webservice auth. library:    %lS\n", str.raw());
         systemProperties->COMGETTER(HWVirtExEnabled)(&flag);
         RTPrintf("Hardware virt. extensions:   %s\n", flag ? "yes" : "no");
         systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
@@ -6518,6 +6521,14 @@ static int handleSetProperty(int argc, char *argv[],
             CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(NULL));
         else
             CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(Bstr(argv[1])));
+    }
+    else if (strcmp(argv[0], "websrvauthlibrary") == 0)
+    {
+        /* reset to default? */
+        if (strcmp(argv[1], "default") == 0)
+            CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(NULL));
+        else
+            CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(argv[1])));
     }
     else if (strcmp(argv[0], "hwvirtexenabled") == 0)
     {
