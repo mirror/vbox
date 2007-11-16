@@ -1599,7 +1599,8 @@ STDMETHODIMP Machine::AttachHardDisk (INPTR GUIDPARAM aId,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoLock alock (this);
+    /* VirtualBox::getHardDisk() need read lock */
+    AutoMultiLock <2> alock (mParent->rlock(), this->wlock());
 
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
