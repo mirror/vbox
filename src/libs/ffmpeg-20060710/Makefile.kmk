@@ -1,0 +1,303 @@
+# $Id$
+## @file
+# Makefile for ffmpeg.
+#
+
+#
+#  Copyright (C) 2006-2007 innotek GmbH
+# 
+#  innotek GmbH confidential
+#  All rights reserved
+
+DEPTH = ../../..
+include $(PATH_KBUILD)/header.kmk
+
+DLLS                       = VBoxFFmpeg
+
+ifeq ($(BUILD_TARGET),win)
+VBoxFFmpeg_TOOL.win.x86    = MINGW32
+#VBoxFFmpeg_TOOL.win.amd64  = MINGW64...
+VBoxFFmpeg_SDKS.win.x86    = W32API
+VBoxFFmpeg_DEFS.win        = CONFIG_WIN32=1
+VBoxFFmpeg_CFLAGS          = -O3 -Wall -Wno-long-long -Wno-trigraphs -pipe
+VBoxFFmpeg_CFLAGS.release  = -fno-omit-frame-pointer -fno-strict-aliasing
+VBoxFFmpeg_CFLAGS.profile  = $(VBoxFFmpeg_CFLAGS.release)
+VBoxFFmpeg_CFLAGS.kprofile = $(VBoxFFmpeg_CFLAGS.release) -finstrument-functions
+else
+VBoxFFmpeg_TEMPLATE        = VBOXR3NP
+VBoxFFmpeg_CFLAGS          = -O3
+VBoxFFmpeg_CFLAGS.darwin   = -mdynamic-no-pic -force_cpusubtype_ALL -fvisibility=default
+endif
+VBoxFFmpeg_CFLAGS         += -Wno-switch
+VBoxFFmpeg_DEFS            = HAVE_AV_CONFIG_H BUILD_AVUTIL _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _GNU_SOURCE
+VBoxFFmpeg_DEFS.darwin     = CONFIG_DARWIN=1
+VBoxFFmpeg_INCS            = \
+	. \
+	libavutil \
+	libavcodec
+
+VBoxFFmpeg_LDFLAGS.win.x86 = \
+	--export-all-symbols \
+	--output-def $(PATH_TARGET)/VBoxFFmpeg-new.def \
+	--exclude-symbols=console_main \
+	--exclude-symbols=WinMain@16
+VBoxFFmpeg_LDFLAGS.darwin  = \
+	-install_name @executable_path/VBoxFFmpeg.dylib \
+	-exported_symbols_list VBoxFFmpeg-darwin.def
+#VBoxFFmpeg_DEPS.darwin     = VBoxFFmpeg-darwin.def
+
+VBoxFFmpeg_LIBS.darwin     = z
+#VBoxFFmpeg_LIBS.linux      = z?
+
+libavcodec/i386/fft_sse.c_CFLAGS = -msse
+
+VBoxFFmpeg_SOURCES         = \
+	libavutil/mathematics.c \
+	libavutil/rational.c \
+	libavutil/intfloat_readwrite.c \
+	libavutil/crc.c \
+	libavutil/md5.c
+
+VBoxFFmpeg_SOURCES        += \
+	libavcodec/bitstream.c \
+	libavcodec/utils.c \
+	libavcodec/mem.c \
+	libavcodec/allcodecs.c \
+	libavcodec/mpegvideo.c \
+	libavcodec/jrevdct.c \
+	libavcodec/jfdctfst.c \
+	libavcodec/jfdctint.c \
+	libavcodec/mjpeg.c \
+	libavcodec/resample.c \
+	libavcodec/resample2.c \
+	libavcodec/dsputil.c \
+	libavcodec/motion_est.c \
+	libavcodec/imgconvert.c \
+	libavcodec/imgresample.c \
+	libavcodec/mpeg12.c \
+	libavcodec/mpegaudiodec.c \
+	libavcodec/simple_idct.c \
+	libavcodec/ratecontrol.c \
+	libavcodec/eval.c \
+	libavcodec/error_resilience.c \
+	libavcodec/fft.c \
+	libavcodec/mdct.c \
+	libavcodec/raw.c \
+	libavcodec/golomb.c \
+	libavcodec/cabac.c \
+	libavcodec/faandct.c \
+	libavcodec/parser.c \
+	libavcodec/vp3dsp.c \
+	libavcodec/h264idct.c \
+	libavcodec/rangecoder.c \
+	libavcodec/pnm.c \
+	libavcodec/h263.c \
+	libavcodec/msmpeg4.c \
+	libavcodec/h263dec.c \
+	libavcodec/opt.c \
+	libavcodec/bitstream_filter.c \
+	libavcodec/i386/fdct_mmx.c \
+	libavcodec/i386/cputest.c \
+	libavcodec/i386/dsputil_mmx.c \
+	libavcodec/i386/mpegvideo_mmx.c \
+	libavcodec/i386/idct_mmx.c \
+	libavcodec/i386/motion_est_mmx.c \
+	libavcodec/i386/simple_idct_mmx.c \
+	libavcodec/i386/fft_sse.c \
+	libavcodec/i386/vp3dsp_mmx.c \
+	libavcodec/i386/vp3dsp_sse2.c \
+	libavcodec/i386/fft_3dn.c \
+	libavcodec/i386/fft_3dn2.c \
+	libavcodec/i386/snowdsp_mmx.c \
+	libavcodec/aasc.c \
+	libavcodec/ac3enc.c \
+	libavcodec/alac.c \
+	libavcodec/asv1.c \
+	libavcodec/avs.c \
+	libavcodec/bmp.c \
+	libavcodec/cavs.c \
+	libavcodec/cavsdsp.c \
+	libavcodec/cinepak.c \
+	libavcodec/cljr.c \
+	libavcodec/cook.c \
+	libavcodec/cscd.c \
+	libavcodec/lzo.c \
+	libavcodec/cyuv.c \
+	libavcodec/dvbsubdec.c \
+	libavcodec/dvbsub.c \
+	libavcodec/dvdsub.c \
+	libavcodec/dvdsubenc.c \
+	libavcodec/dv.c \
+	libavcodec/8bps.c \
+	libavcodec/ffv1.c \
+	libavcodec/huffyuv.c \
+	libavcodec/flac.c \
+	libavcodec/flacenc.c \
+	libavcodec/flashsv.c \
+	libavcodec/flicvideo.c \
+	libavcodec/4xm.c \
+	libavcodec/fraps.c \
+	libavcodec/h261.c \
+	libavcodec/h264.c \
+	libavcodec/idcinvideo.c \
+	libavcodec/indeo2.c \
+	libavcodec/indeo3.c \
+	libavcodec/interplayvideo.c \
+	libavcodec/dpcm.c \
+	libavcodec/kmvc.c \
+	libavcodec/loco.c \
+	libavcodec/mace.c \
+	libavcodec/mmvideo.c \
+	libavcodec/mpegaudio.c \
+	libavcodec/msrle.c \
+	libavcodec/msvideo1.c \
+	libavcodec/lcl.c \
+	libavcodec/nuv.c \
+	libavcodec/rtjpeg.c \
+	libavcodec/png.c \
+	libavcodec/qdm2.c \
+	libavcodec/qdrw.c \
+	libavcodec/qpeg.c \
+	libavcodec/qtrle.c \
+	libavcodec/ra144.c \
+	libavcodec/ra288.c \
+	libavcodec/roqvideo.c \
+	libavcodec/rpza.c \
+	libavcodec/rv10.c \
+	libavcodec/shorten.c \
+	libavcodec/smacker.c \
+	libavcodec/smc.c \
+	libavcodec/snow.c \
+	libavcodec/sonic.c \
+	libavcodec/svq1.c \
+	libavcodec/vp3.c \
+	libavcodec/truemotion1.c \
+	libavcodec/truemotion2.c \
+	libavcodec/truespeech.c \
+	libavcodec/tscc.c \
+	libavcodec/tta.c \
+	libavcodec/ulti.c \
+	libavcodec/vc1.c \
+	libavcodec/vcr1.c \
+	libavcodec/vmdav.c \
+	libavcodec/vorbis.c \
+	libavcodec/vqavideo.c \
+	libavcodec/wmadec.c \
+	libavcodec/wnv1.c \
+	libavcodec/ws-snd1.c \
+	libavcodec/xan.c \
+	libavcodec/xl.c \
+	libavcodec/zmbv.c \
+	libavcodec/pcm.c \
+	libavcodec/adpcm.c \
+	libavcodec/adx.c \
+	libavcodec/g726.c
+
+VBoxFFmpeg_SOURCES        += \
+	libavformat/utils.c \
+	libavformat/cutils.c \
+	libavformat/os_support.c \
+	libavformat/allformats.c \
+	libavformat/mpeg.c \
+	libavformat/mpegts.c \
+	libavformat/mpegtsenc.c \
+	libavformat/ffm.c \
+	libavformat/crc.c \
+	libavformat/img.c \
+	libavformat/img2.c \
+	libavformat/raw.c \
+	libavformat/rm.c \
+	libavformat/avienc.c \
+	libavformat/avidec.c \
+	libavformat/wav.c \
+	libavformat/mmf.c \
+	libavformat/swf.c \
+	libavformat/au.c \
+	libavformat/gif.c \
+	libavformat/mov.c \
+	libavformat/mpjpeg.c \
+	libavformat/dv.c \
+	libavformat/yuv4mpeg.c \
+	libavformat/4xm.c \
+	libavformat/flvdec.c \
+	libavformat/psxstr.c \
+	libavformat/idroq.c \
+	libavformat/ipmovie.c \
+	libavformat/nut.c \
+	libavformat/wc3movie.c \
+	libavformat/mp3.c \
+	libavformat/westwood.c \
+	libavformat/segafilm.c \
+	libavformat/idcin.c \
+	libavformat/flic.c \
+	libavformat/sierravmd.c \
+	libavformat/matroska.c \
+	libavformat/sol.c \
+	libavformat/electronicarts.c \
+	libavformat/nsvdec.c \
+	libavformat/asf.c \
+	libavformat/ogg2.c \
+	libavformat/oggparsevorbis.c \
+	libavformat/oggparsetheora.c \
+	libavformat/oggparseflac.c \
+	libavformat/daud.c \
+	libavformat/aiff.c \
+	libavformat/voc.c \
+	libavformat/tta.c \
+	libavformat/mm.c \
+	libavformat/avs.c \
+	libavformat/smacker.c \
+	libavformat/nuv.c \
+	libavformat/gxf.c \
+	libavformat/oggparseogm.c \
+	libavformat/flvenc.c \
+	libavformat/movenc.c \
+	libavformat/asf-enc.c \
+	libavformat/adtsenc.c \
+	libavformat/pnm.c \
+	libavformat/yuv.c \
+	libavformat/png.c \
+	libavformat/jpeg.c \
+	libavformat/gifdec.c \
+	libavformat/sgi.c \
+	libavformat/framehook.c \
+	libavformat/avio.c \
+	libavformat/aviobuf.c \
+	libavformat/file.c
+VBoxFFmpeg_SOURCES.linux   += \
+	libavformat/grab.c \
+	libavformat/v4l2.c \
+	libavformat/dv1394.c \
+	libavformat/audio.c \
+	libavformat/udp.c \
+	libavformat/tcp.c \
+	libavformat/http.c \
+	libavformat/rtsp.c \
+	libavformat/rtp.c \
+	libavformat/rtpproto.c
+VBoxFFmpeg_SOURCES.darwin   += \
+	libavformat/udp.c \
+	libavformat/tcp.c \
+	libavformat/http.c \
+	libavformat/rtsp.c \
+	libavformat/rtp.c \
+	libavformat/rtpproto.c
+
+VBoxFFmpeg_SOURCES.win     += VBoxFFmpeg.def
+
+libavcodec/i386/fft_3dn2_CFLAGS.amd64 = -march=k8
+
+
+#
+# The import library for Windows builds.
+# The microsoft linker doesn't like the GNU import libraries from this MinGW version.
+# 
+ifeq ($(BUILD_TARGET),win)
+IMPORT_LIBS += VBoxFFmpegImp
+VBoxFFmpegImp_TEMPLATE = VBOXR3
+VBoxFFmpegImp_SOURCES = VBoxFFmpeg.def
+endif
+
+
+include $(PATH_KBUILD)/footer.kmk
+

@@ -1,0 +1,32 @@
+## @file
+#
+# VBoxFFmpeg Export File.
+#
+#  Copyright (C) 2006-2007 innotek GmbH
+# 
+#  innotek GmbH confidential
+#  All rights reserved
+	_av_free
+	_avcodec_alloc_frame
+	_av_malloc
+	_av_freep
+	_av_write_trailer
+	_avcodec_close
+	_avpicture_fill
+	_av_new_stream
+	_av_alloc_format_context
+	_av_register_all
+	_avcodec_register_all
+	_avcodec_init
+	_av_set_parameters
+	_guess_format
+	_avcodec_open
+	_avcodec_find_encoder
+	_av_write_header
+	_img_convert
+	_av_write_frame
+	_av_rescale_q
+	_avcodec_encode_video
+	_av_destruct_packet_nofree
+	_url_fopen
+	_url_fclose
