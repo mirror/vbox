@@ -732,6 +732,7 @@ typedef struct _VRDPFRAMEBUFFERINFO
 #define VRDP_INPUT_POINT    1
 #define VRDP_INPUT_CAD      2
 #define VRDP_INPUT_RESET    3
+#define VRDP_INPUT_SYNCH    4
 
 typedef struct _VRDPINPUTSCANCODE
 {
@@ -750,6 +751,15 @@ typedef struct _VRDPINPUTPOINT
     int y;
     unsigned uButtons;
 } VRDPINPUTPOINT;
+
+#define VRDP_INPUT_SYNCH_SCROLL   0x01
+#define VRDP_INPUT_SYNCH_NUMLOCK  0x02
+#define VRDP_INPUT_SYNCH_CAPITAL  0x04
+
+typedef struct _VRDPINPUTSYNCH
+{
+    unsigned uLockStatus;
+} VRDPINPUTSYNCH;
 #pragma pack()
 
 /** The VRDP server callbacks. Interface version 1. */
