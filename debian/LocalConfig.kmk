@@ -13,7 +13,7 @@ VBOX_DOCBOOK_WITH_LATEX := 1
 
 KBUILD_MSG_STYLE        := brief
 
-DEFS                    += RTPATH_APP_DOCS=\"/usr/share/doc/virtualbox-ose\"
+DEFS                    += RTPATH_APP_DOCS=\"$(VBOX_PATH_PACKAGE_DOCS)\"
 DEFS                    += RTPATH_APP_PRIVATE_ARCH=\"/usr/lib/virtualbox-ose\"
 DEFS                    += RTPATH_APP_PRIVATE=\"/usr/share/virtualbox-ose\"
 DEFS                    += RTPATH_SHARED_LIBS=\"/usr/lib\"
