@@ -38,12 +38,11 @@ static const unsigned char g_auchDigits[256] =
     255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
     255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
 };
-/** Approximated overflow shift checks.
- * @todo make the overflow stuff work for real. */
+/** Approximated overflow shift checks. */
 static const char g_auchShift[36] =
 {
   /*  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35 */
-     64, 64, 63, 63, 62, 62, 61, 61, 60, 60, 59, 59, 58, 58, 57, 57, 56, 56, 55, 55, 54, 54, 53, 53, 52, 52, 51, 51, 50, 50, 49, 49, 50, 50, 51, 51
+     64, 64, 63, 63, 62, 62, 62, 62, 61, 61, 61, 61, 61, 61, 61, 61, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 59, 59, 59, 59
 };
 
 /*
@@ -572,7 +571,7 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
      * Interpret the value.
      * Note: We only support ascii digits at this time... :-)
      */
-    //int             iShift = g_auchShift[uBase];
+    int             iShift = g_auchShift[uBase]; /** @todo test this, it's probably not 100% right yet. */
     pszValue = psz; /* (Prefix and sign doesn't count in the digit counting.) */
     int             rc = VINF_SUCCESS;
     int64_t         i64 = 0;
@@ -586,7 +585,7 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
         int64_t i64Prev = i64;
         i64 *= uBase;
         i64 += chDigit;
-        if (i64Prev > i64/* || (i64Prev >> iShift)*/)
+        if (i64Prev > i64 || (i64Prev >> iShift))
             rc = VWRN_NUMBER_TOO_BIG;
         psz++;
     }
