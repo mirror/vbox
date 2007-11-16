@@ -6,7 +6,7 @@
  *  generate the documentation using Doxygen.
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -188,7 +188,7 @@
     <xsl:if test="../@mod='ptr'">
         <xsl:text>
 
-@warning This attribute is non-scriptable. In particluar, this also means that an
+@warning This attribute is non-scriptable. In particular, this also means that an
 attempt to get or set it from a process other than the process that has created and
 owns the object will most likely fail or crash your application.
 </xsl:text>
@@ -210,7 +210,7 @@ owns the object will most likely fail or crash your application.
     <xsl:apply-templates select="../param/desc/note"/>
     <xsl:if test="../param/@mod='ptr'">
         <xsl:text>
-        
+
 @warning This method is non-scriptable. In particluar, this also means that an
 attempt to call it from a process other than the process that has created and
 owns the object will most likely fail or crash your application.
@@ -285,29 +285,41 @@ owns the object will most likely fail or crash your application.
 
 /** @mainpage
  *
- *  This documentation describes all public COM interfaces and components
- *  provided by the VirtualBox server and by the VirtualBox client library.
- *  Together, these interfaces and components comprise the so-called
- *  <i>VirtualBox Main API</i> intended to control both the VirtualBox server
- *  process and processes executing individual virtual machines using
- *  COM techniques.
+ *  Welcome to the <b>VirtualBox Main documentation.</b> This describes the
+ *  so-called VirtualBox "Main API", which comprises all public COM interfaces
+ *  and components provided by the VirtualBox server and by the VirtualBox client
+ *  library.
+ *
+ *  VirtualBox employs a client-server design, meaning that whenever any part of
+ *  VirtualBox is running -- be it the Qt GUI, the VBoxManage command-line
+ *  interface or any virtual machine --, a background server process named
+ *  VBoxSVC runs in the background. This allows multiple processes to cooperate
+ *  without conflicts. Some of the COM objects described by this Main documentation
+ *  "live" in that server process, others "live" in the local client process. In
+ *  any case, processes that use the Main API are using inter-process communication
+ *  to communicate with these objects, but the details of this are hidden by the COM API.
  *
  *  On Windows platforms, the VirtualBox Main API uses Microsoft COM, a native COM
  *  implementation. On all other platforms, Mozilla XPCOM, an open-source COM
  *  implementation, is used.
  *
- *  @note The source IDL file (VirtualBox.idl) this documentation refers to is
- *  automatically generated from the generic interface definition file (used
- *  to define all interfaces in a platform-independent way) and uses some generic
- *  OMG IDL-like syntax <b>solely</b> for the purpose of generating this
- *  platform-independent documentation. This generated file is not a syntactically
- *  valid IDL file and <b>must not</b> be used for programming.
+ *  All the parts that a typical VirtualBox user interacts with (the Qt GUI,
+ *  the VBoxManage command-line interface and the VBoxVRDP server) are technically
+ *  front-ends to the Main API and only use the interfaces that are documented
+ *  in this Main API documentation. This ensures that, with any given release
+ *  version of VirtualBox, all capabilities of the product that could be useful
+ *  to an external client program are always exposed by way of this API.
  *
- *  @todo Later, the documentation will contain platform-dependent IDL and C++
- *  prototypes of methods of all interfaces, for convenience.
+ *  The complete API is described in a source IDL file, called VirtualBox.idl.
+ *  This contains all public interfaces exposed by the Main API. Two interfaces
+ *  are of supreme importance and will be needed in order for any front-end program
+ *  to do anything useful: these are IVirtualBox and ISession. It is recommended
+ *  to read the documentation of these interfaces first.
  *
- *  @todo Some interfaces are completely platform-specific. This will be also
- *  mentioned in the documentation.
+ *  @note VirtualBox.idl is automatically generated from a generic internal file
+ *  to define all interfaces in a platform-independent way for documentation
+ *  purposes. This generated file is not a syntactically valid IDL file and
+ *  <i>must not</i> be used for programming.
  */
     <xsl:text>&#x0A;</xsl:text>
     <xsl:apply-templates/>
