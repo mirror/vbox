@@ -1,0 +1,36 @@
+;; @file
+;
+; VBoxFFmpeg Definition File.
+;
+;  Copyright (C) 2006-2007 innotek GmbH
+; 
+;  innotek GmbH confidential
+;  All rights reserved
+
+LIBRARY VBoxFFmpeg.dll
+
+EXPORTS
+    av_free
+	avcodec_alloc_frame
+	av_malloc
+	av_freep
+	av_write_trailer
+	avcodec_close
+	avpicture_fill
+	av_new_stream
+	av_alloc_format_context
+	av_register_all
+	avcodec_register_all
+	avcodec_init
+	av_set_parameters
+	guess_format
+	avcodec_open
+	avcodec_find_encoder
+	av_write_header
+	img_convert
+	av_write_frame
+	av_rescale_q
+	avcodec_encode_video
+	av_destruct_packet_nofree
+    url_fopen
+	url_fclose

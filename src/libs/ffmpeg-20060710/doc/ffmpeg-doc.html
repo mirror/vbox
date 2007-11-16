@@ -1,0 +1,2408 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on June, 30 2006 by texi2html 1.76 -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people <dev@texi2html.cvshome.org>
+Send bugs and suggestions to <users@texi2html.cvshome.org>
+
+-->
+<head>
+<title>FFmpeg Documentation: 1. Introduction</title>
+
+<meta name="description" content="FFmpeg Documentation: 1. Introduction">
+<meta name="keywords" content="FFmpeg Documentation: 1. Introduction">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.76">
+<meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="SEC1"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[ &lt; ]</td>
+<td valign="middle" align="left">[<a href="#SEC2" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[ &lt;&lt; ]</td>
+<td valign="middle" align="left">[ Up ]</td>
+<td valign="middle" align="left">[<a href="#SEC2" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="chapter"> 1. Introduction </h1>
+
+<p>FFmpeg is a very fast video and audio converter. It can also grab from
+a live audio/video source.
+</p>
+<p>The command line interface is designed to be intuitive, in the sense
+that FFmpeg tries to figure out all parameters that can possibly be
+derived automatically. You usually only have to specify the target
+bitrate you want.
+</p>
+<p>FFmpeg can also convert from any sample rate to any other, and resize
+video on the fly with a high quality polyphase filter.
+</p>
+<hr size="6">
+<a name="SEC2"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC1" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC3" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="chapter"> 2. Quick Start </h1>
+
+<hr size="6">
+<a name="SEC3"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC2" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC4" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC2" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC2" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 2.1 Video and Audio grabbing </h2>
+
+<p>FFmpeg can use a video4linux compatible video source and any Open Sound
+System audio source:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg /tmp/out.mpg
+</pre></td></tr></table>
+<p>Note that you must activate the right video source and channel before
+launching FFmpeg with any TV viewer such as xawtv
+(<a href="http://bytesex.org/xawtv/">http://bytesex.org/xawtv/</a>) by Gerd Knorr. You also
+have to set the audio recording levels correctly with a
+standard mixer.
+</p>
+<hr size="6">
+<a name="SEC4"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC3" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC2" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC2" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 2.2 Video and Audio file format conversion </h2>
+
+<p>* FFmpeg can use any supported file format and protocol as input:
+</p>
+<p>Examples:
+</p>
+<p>* You can use YUV files as input:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i /tmp/test%d.Y /tmp/out.mpg
+</pre></td></tr></table>
+<p>It will use the files:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">/tmp/test0.Y, /tmp/test0.U, /tmp/test0.V,
+/tmp/test1.Y, /tmp/test1.U, /tmp/test1.V, etc...
+</pre></td></tr></table>
+<p>The Y files use twice the resolution of the U and V files. They are
+raw files, without header. They can be generated by all decent video
+decoders. You must specify the size of the image with the <samp>`-s'</samp> option
+if FFmpeg cannot guess it.
+</p>
+<p>* You can input from a raw YUV420P file:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i /tmp/test.yuv /tmp/out.avi
+</pre></td></tr></table>
+<p>test.yuv is a file containing raw YUV planar data. Each frame is composed
+of the Y plane followed by the U and V planes at half vertical and
+horizontal resolution.
+</p>
+<p>* You can output to a raw YUV420P file:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i mydivx.avi hugefile.yuv
+</pre></td></tr></table>
+<p>* You can set several input files and output files:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i /tmp/a.wav -s 640x480 -i /tmp/a.yuv /tmp/a.mpg
+</pre></td></tr></table>
+<p>Converts the audio file a.wav and the raw YUV video file a.yuv
+to MPEG file a.mpg.
+</p>
+<p>* You can also do audio and video conversions at the same time:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i /tmp/a.wav -ar 22050 /tmp/a.mp2
+</pre></td></tr></table>
+<p>Converts a.wav to MPEG audio at 22050Hz sample rate.
+</p>
+<p>* You can encode to several formats at the same time and define a
+mapping from input stream to output streams:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i /tmp/a.wav -ab 64 /tmp/a.mp2 -ab 128 /tmp/b.mp2 -map 0:0 -map 0:0
+</pre></td></tr></table>
+<p>Converts a.wav to a.mp2 at 64 kbits and to b.mp2 at 128 kbits. '-map
+file:index' specifies which input stream is used for each output
+stream, in the order of the definition of output streams.
+</p>
+<p>* You can transcode decrypted VOBs
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i snatch_1.vob -f avi -vcodec mpeg4 -b 800 -g 300 -bf 2 -acodec mp3 -ab 128 snatch.avi
+</pre></td></tr></table>
+<p>This is a typical DVD ripping example; the input is a VOB file, the
+output an AVI file with MPEG-4 video and MP3 audio. Note that in this
+command we use B-frames so the MPEG-4 stream is DivX5 compatible, and
+GOP size is 300 which means one intra frame every 10 seconds for 29.97fps
+input video. Furthermore, the audio stream is MP3-encoded so you need
+to enable LAME support by passing <code>--enable-mp3lame</code> to configure.
+The mapping is particularly useful for DVD transcoding
+to get the desired audio language.
+</p>
+<p>NOTE: To see the supported input formats, use <code>ffmpeg -formats</code>.
+</p>
+<hr size="6">
+<a name="SEC5"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC4" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC6" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC2" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="chapter"> 3. Invocation </h1>
+
+<hr size="6">
+<a name="SEC6"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC5" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC7" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.1 Syntax </h2>
+
+<p>The generic syntax is:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg [[infile options][<samp>`-i'</samp> <var>infile</var>]]... {[outfile options] <var>outfile</var>}...
+</pre></td></tr></table><p>If no input file is given, audio/video grabbing is done.
+</p>
+<p>As a general rule, options are applied to the next specified
+file. For example, if you give the <samp>`-b 64'</samp> option, it sets the video
+bitrate of the next file. The format option may be needed for raw input
+files.
+</p>
+<p>By default, FFmpeg tries to convert as losslessly as possible: It
+uses the same audio and video parameters for the outputs as the one
+specified for the inputs.
+</p>
+<hr size="6">
+<a name="SEC7"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC6" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC8" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.2 Main options </h2>
+
+<dl compact="compact">
+<dt> <samp>`-L'</samp></dt>
+<dd><p>Show license.
+</p>
+</dd>
+<dt> <samp>`-h'</samp></dt>
+<dd><p>Show help.
+</p>
+</dd>
+<dt> <samp>`-formats'</samp></dt>
+<dd><p>Show available formats, codecs, protocols, ...
+</p>
+</dd>
+<dt> <samp>`-f fmt'</samp></dt>
+<dd><p>Force format.
+</p>
+</dd>
+<dt> <samp>`-i filename'</samp></dt>
+<dd><p>input filename
+</p>
+</dd>
+<dt> <samp>`-y'</samp></dt>
+<dd><p>Overwrite output files.
+</p>
+</dd>
+<dt> <samp>`-t duration'</samp></dt>
+<dd><p>Set the recording time in seconds.
+<code>hh:mm:ss[.xxx]</code> syntax is also supported.
+</p>
+</dd>
+<dt> <samp>`-ss position'</samp></dt>
+<dd><p>Seek to given time position in seconds.
+<code>hh:mm:ss[.xxx]</code> syntax is also supported.
+</p>
+</dd>
+<dt> <samp>`-title string'</samp></dt>
+<dd><p>Set the title.
+</p>
+</dd>
+<dt> <samp>`-author string'</samp></dt>
+<dd><p>Set the author.
+</p>
+</dd>
+<dt> <samp>`-copyright string'</samp></dt>
+<dd><p>Set the copyright.
+</p>
+</dd>
+<dt> <samp>`-comment string'</samp></dt>
+<dd><p>Set the comment.
+</p>
+</dd>
+<dt> <samp>`-target type'</samp></dt>
+<dd><p>Specify target file type (&quot;vcd&quot;, &quot;svcd&quot;, &quot;dvd&quot;, &quot;dv&quot;, &quot;pal-vcd&quot;,
+&quot;ntsc-svcd&quot;, ... ). All the format options (bitrate, codecs,
+buffer sizes) are then set automatically. You can just type:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i myfile.avi -target vcd /tmp/vcd.mpg
+</pre></td></tr></table>
+<p>Nevertheless you can specify additional options as long as you know
+they do not conflict with the standard, as in:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -i myfile.avi -target vcd -bf 2 /tmp/vcd.mpg
+</pre></td></tr></table>
+</dd>
+<dt> <samp>`-hq'</samp></dt>
+<dd><p>Activate high quality settings.
+</p>
+</dd>
+<dt> <samp>`-itsoffset offset'</samp></dt>
+<dd><p>Set the input time offset in seconds.
+<code>[-]hh:mm:ss[.xxx]</code> syntax is also supported.
+This option affects all the input files that follow it.
+The offset is added to the timestamps of the input files.
+Specifying a positive offset means that the corresponding
+streams are delayed by 'offset' seconds.
+</p>
+</dd>
+</dl>
+
+<hr size="6">
+<a name="SEC8"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC7" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC9" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.3 Video Options </h2>
+
+<dl compact="compact">
+<dt> <samp>`-b bitrate'</samp></dt>
+<dd><p>Set the video bitrate in kbit/s (default = 200 kb/s).
+</p></dd>
+<dt> <samp>`-r fps'</samp></dt>
+<dd><p>Set frame rate (default = 25).
+</p></dd>
+<dt> <samp>`-s size'</samp></dt>
+<dd><p>Set frame size. The format is <samp>`wxh'</samp> (default = 160x128).
+The following abbreviations are recognized:
+</p><dl compact="compact">
+<dt> <samp>`sqcif'</samp></dt>
+<dd><p>128x96
+</p></dd>
+<dt> <samp>`qcif'</samp></dt>
+<dd><p>176x144
+</p></dd>
+<dt> <samp>`cif'</samp></dt>
+<dd><p>352x288
+</p></dd>
+<dt> <samp>`4cif'</samp></dt>
+<dd><p>704x576
+</p></dd>
+</dl>
+
+</dd>
+<dt> <samp>`-aspect aspect'</samp></dt>
+<dd><p>Set aspect ratio (4:3, 16:9 or 1.3333, 1.7777).
+</p></dd>
+<dt> <samp>`-croptop size'</samp></dt>
+<dd><p>Set top crop band size (in pixels).
+</p></dd>
+<dt> <samp>`-cropbottom size'</samp></dt>
+<dd><p>Set bottom crop band size (in pixels).
+</p></dd>
+<dt> <samp>`-cropleft size'</samp></dt>
+<dd><p>Set left crop band size (in pixels).
+</p></dd>
+<dt> <samp>`-cropright size'</samp></dt>
+<dd><p>Set right crop band size (in pixels).
+</p></dd>
+<dt> <samp>`-padtop size'</samp></dt>
+<dd><p>Set top pad band size (in pixels).
+</p></dd>
+<dt> <samp>`-padbottom size'</samp></dt>
+<dd><p>Set bottom pad band size (in pixels).
+</p></dd>
+<dt> <samp>`-padleft size'</samp></dt>
+<dd><p>Set left pad band size (in pixels).
+</p></dd>
+<dt> <samp>`-padright size'</samp></dt>
+<dd><p>Set right pad band size (in pixels).
+</p></dd>
+<dt> <samp>`-padcolor (hex color)'</samp></dt>
+<dd><p>Set color of padded bands. The value for padcolor is expressed
+as a six digit hexadecimal number where the first two digits
+represent red, the middle two digits green and last two digits
+blue (default = 000000 (black)).
+</p></dd>
+<dt> <samp>`-vn'</samp></dt>
+<dd><p>Disable video recording.
+</p></dd>
+<dt> <samp>`-bt tolerance'</samp></dt>
+<dd><p>Set video bitrate tolerance (in kbit/s).
+</p></dd>
+<dt> <samp>`-maxrate bitrate'</samp></dt>
+<dd><p>Set max video bitrate tolerance (in kbit/s).
+</p></dd>
+<dt> <samp>`-minrate bitrate'</samp></dt>
+<dd><p>Set min video bitrate tolerance (in kbit/s).
+</p></dd>
+<dt> <samp>`-bufsize size'</samp></dt>
+<dd><p>Set rate control buffer size (in kbit).
+</p></dd>
+<dt> <samp>`-vcodec codec'</samp></dt>
+<dd><p>Force video codec to <var>codec</var>. Use the <code>copy</code> special value to
+tell that the raw codec data must be copied as is.
+</p></dd>
+<dt> <samp>`-sameq'</samp></dt>
+<dd><p>Use same video quality as source (implies VBR).
+</p>
+</dd>
+<dt> <samp>`-pass n'</samp></dt>
+<dd><p>Select the pass number (1 or 2). It is useful to do two pass
+encoding. The statistics of the video are recorded in the first
+pass and the video is generated at the exact requested bitrate
+in the second pass.
+</p>
+</dd>
+<dt> <samp>`-passlogfile file'</samp></dt>
+<dd><p>Set two pass logfile name to <var>file</var>.
+</p>
+</dd>
+</dl>
+
+<hr size="6">
+<a name="SEC9"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC8" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC10" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.4 Advanced Video Options </h2>
+
+<dl compact="compact">
+<dt> <samp>`-g gop_size'</samp></dt>
+<dd><p>Set the group of pictures size.
+</p></dd>
+<dt> <samp>`-intra'</samp></dt>
+<dd><p>Use only intra frames.
+</p></dd>
+<dt> <samp>`-qscale q'</samp></dt>
+<dd><p>Use fixed video quantiser scale (VBR).
+</p></dd>
+<dt> <samp>`-qmin q'</samp></dt>
+<dd><p>minimum video quantiser scale (VBR)
+</p></dd>
+<dt> <samp>`-qmax q'</samp></dt>
+<dd><p>maximum video quantiser scale (VBR)
+</p></dd>
+<dt> <samp>`-qdiff q'</samp></dt>
+<dd><p>maximum difference between the quantiser scales (VBR)
+</p></dd>
+<dt> <samp>`-qblur blur'</samp></dt>
+<dd><p>video quantiser scale blur (VBR)
+</p></dd>
+<dt> <samp>`-qcomp compression'</samp></dt>
+<dd><p>video quantiser scale compression (VBR)
+</p>
+</dd>
+<dt> <samp>`-rc_init_cplx complexity'</samp></dt>
+<dd><p>initial complexity for single pass encoding
+</p></dd>
+<dt> <samp>`-b_qfactor factor'</samp></dt>
+<dd><p>qp factor between P- and B-frames
+</p></dd>
+<dt> <samp>`-i_qfactor factor'</samp></dt>
+<dd><p>qp factor between P- and I-frames
+</p></dd>
+<dt> <samp>`-b_qoffset offset'</samp></dt>
+<dd><p>qp offset between P- and B-frames
+</p></dd>
+<dt> <samp>`-i_qoffset offset'</samp></dt>
+<dd><p>qp offset between P- and I-frames
+</p></dd>
+<dt> <samp>`-rc_eq equation'</samp></dt>
+<dd><p>Set rate control equation (see section <a href="#SEC13">FFmpeg formula evaluator</a>) (default = <code>tex^qComp</code>).
+</p></dd>
+<dt> <samp>`-rc_override override'</samp></dt>
+<dd><p>rate control override for specific intervals
+</p></dd>
+<dt> <samp>`-me method'</samp></dt>
+<dd><p>Set motion estimation method to <var>method</var>.
+Available methods are (from lowest to best quality):
+</p><dl compact="compact">
+<dt> <samp>`zero'</samp></dt>
+<dd><p>Try just the (0, 0) vector.
+</p></dd>
+<dt> <samp>`phods'</samp></dt>
+<dt> <samp>`log'</samp></dt>
+<dt> <samp>`x1'</samp></dt>
+<dt> <samp>`epzs'</samp></dt>
+<dd><p>(default method)
+</p></dd>
+<dt> <samp>`full'</samp></dt>
+<dd><p>exhaustive search (slow and marginally better than epzs)
+</p></dd>
+</dl>
+
+</dd>
+<dt> <samp>`-dct_algo algo'</samp></dt>
+<dd><p>Set DCT algorithm to <var>algo</var>. Available values are:
+</p><dl compact="compact">
+<dt> <samp>`0'</samp></dt>
+<dd><p>FF_DCT_AUTO (default)
+</p></dd>
+<dt> <samp>`1'</samp></dt>
+<dd><p>FF_DCT_FASTINT
+</p></dd>
+<dt> <samp>`2'</samp></dt>
+<dd><p>FF_DCT_INT
+</p></dd>
+<dt> <samp>`3'</samp></dt>
+<dd><p>FF_DCT_MMX
+</p></dd>
+<dt> <samp>`4'</samp></dt>
+<dd><p>FF_DCT_MLIB
+</p></dd>
+<dt> <samp>`5'</samp></dt>
+<dd><p>FF_DCT_ALTIVEC
+</p></dd>
+</dl>
+
+</dd>
+<dt> <samp>`-idct_algo algo'</samp></dt>
+<dd><p>Set IDCT algorithm to <var>algo</var>. Available values are:
+</p><dl compact="compact">
+<dt> <samp>`0'</samp></dt>
+<dd><p>FF_IDCT_AUTO (default)
+</p></dd>
+<dt> <samp>`1'</samp></dt>
+<dd><p>FF_IDCT_INT
+</p></dd>
+<dt> <samp>`2'</samp></dt>
+<dd><p>FF_IDCT_SIMPLE
+</p></dd>
+<dt> <samp>`3'</samp></dt>
+<dd><p>FF_IDCT_SIMPLEMMX
+</p></dd>
+<dt> <samp>`4'</samp></dt>
+<dd><p>FF_IDCT_LIBMPEG2MMX
+</p></dd>
+<dt> <samp>`5'</samp></dt>
+<dd><p>FF_IDCT_PS2
+</p></dd>
+<dt> <samp>`6'</samp></dt>
+<dd><p>FF_IDCT_MLIB
+</p></dd>
+<dt> <samp>`7'</samp></dt>
+<dd><p>FF_IDCT_ARM
+</p></dd>
+<dt> <samp>`8'</samp></dt>
+<dd><p>FF_IDCT_ALTIVEC
+</p></dd>
+<dt> <samp>`9'</samp></dt>
+<dd><p>FF_IDCT_SH4
+</p></dd>
+<dt> <samp>`10'</samp></dt>
+<dd><p>FF_IDCT_SIMPLEARM
+</p></dd>
+</dl>
+
+</dd>
+<dt> <samp>`-er n'</samp></dt>
+<dd><p>Set error resilience to <var>n</var>.
+</p><dl compact="compact">
+<dt> <samp>`1'</samp></dt>
+<dd><p>FF_ER_CAREFUL (default)
+</p></dd>
+<dt> <samp>`2'</samp></dt>
+<dd><p>FF_ER_COMPLIANT
+</p></dd>
+<dt> <samp>`3'</samp></dt>
+<dd><p>FF_ER_AGGRESSIVE
+</p></dd>
+<dt> <samp>`4'</samp></dt>
+<dd><p>FF_ER_VERY_AGGRESSIVE
+</p></dd>
+</dl>
+
+</dd>
+<dt> <samp>`-ec bit_mask'</samp></dt>
+<dd><p>Set error concealment to <var>bit_mask</var>. <var>bit_mask</var> is a bit mask of
+the following values:
+</p><dl compact="compact">
+<dt> <samp>`1'</samp></dt>
+<dd><p>FF_EC_GUESS_MVS (default = enabled)
+</p></dd>
+<dt> <samp>`2'</samp></dt>
+<dd><p>FF_EC_DEBLOCK (default = enabled)
+</p></dd>
+</dl>
+
+</dd>
+<dt> <samp>`-bf frames'</samp></dt>
+<dd><p>Use 'frames' B-frames (supported for MPEG-1, MPEG-2 and MPEG-4).
+</p></dd>
+<dt> <samp>`-mbd mode'</samp></dt>
+<dd><p>macroblock decision
+</p><dl compact="compact">
+<dt> <samp>`0'</samp></dt>
+<dd><p>FF_MB_DECISION_SIMPLE: Use mb_cmp (cannot change it yet in FFmpeg).
+</p></dd>
+<dt> <samp>`1'</samp></dt>
+<dd><p>FF_MB_DECISION_BITS: Choose the one which needs the fewest bits.
+</p></dd>
+<dt> <samp>`2'</samp></dt>
+<dd><p>FF_MB_DECISION_RD: rate distortion
+</p></dd>
+</dl>
+
+</dd>
+<dt> <samp>`-4mv'</samp></dt>
+<dd><p>Use four motion vector by macroblock (MPEG-4 only).
+</p></dd>
+<dt> <samp>`-part'</samp></dt>
+<dd><p>Use data partitioning (MPEG-4 only).
+</p></dd>
+<dt> <samp>`-bug param'</samp></dt>
+<dd><p>Work around encoder bugs that are not auto-detected.
+</p></dd>
+<dt> <samp>`-strict strictness'</samp></dt>
+<dd><p>How strictly to follow the standards.
+</p></dd>
+<dt> <samp>`-aic'</samp></dt>
+<dd><p>Enable Advanced intra coding (h263+).
+</p></dd>
+<dt> <samp>`-umv'</samp></dt>
+<dd><p>Enable Unlimited Motion Vector (h263+)
+</p>
+</dd>
+<dt> <samp>`-deinterlace'</samp></dt>
+<dd><p>Deinterlace pictures.
+</p></dd>
+<dt> <samp>`-interlace'</samp></dt>
+<dd><p>Force interlacing support in encoder (MPEG-2 and MPEG-4 only).
+Use this option if your input file is interlaced and you want
+to keep the interlaced format for minimum losses.
+The alternative is to deinterlace the input stream with
+<samp>`-deinterlace'</samp>, but deinterlacing introduces losses.
+</p></dd>
+<dt> <samp>`-psnr'</samp></dt>
+<dd><p>Calculate PSNR of compressed frames.
+</p></dd>
+<dt> <samp>`-vstats'</samp></dt>
+<dd><p>Dump video coding statistics to <tt>`vstats_HHMMSS.log'</tt>.
+</p></dd>
+<dt> <samp>`-vhook module'</samp></dt>
+<dd><p>Insert video processing <var>module</var>. <var>module</var> contains the module
+name and its parameters separated by spaces.
+</p></dd>
+</dl>
+
+<hr size="6">
+<a name="SEC10"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC9" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC11" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.5 Audio Options </h2>
+
+<dl compact="compact">
+<dt> <samp>`-ar freq'</samp></dt>
+<dd><p>Set the audio sampling frequency (default = 44100 Hz).
+</p></dd>
+<dt> <samp>`-ab bitrate'</samp></dt>
+<dd><p>Set the audio bitrate in kbit/s (default = 64).
+</p></dd>
+<dt> <samp>`-ac channels'</samp></dt>
+<dd><p>Set the number of audio channels (default = 1).
+</p></dd>
+<dt> <samp>`-an'</samp></dt>
+<dd><p>Disable audio recording.
+</p></dd>
+<dt> <samp>`-acodec codec'</samp></dt>
+<dd><p>Force audio codec to <var>codec</var>. Use the <code>copy</code> special value to
+specify that the raw codec data must be copied as is.
+</p></dd>
+</dl>
+
+<hr size="6">
+<a name="SEC11"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC10" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC12" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.6 Audio/Video grab options </h2>
+
+<dl compact="compact">
+<dt> <samp>`-vd device'</samp></dt>
+<dd><p>sEt video grab device (e.g. <tt>`/dev/video0'</tt>).
+</p></dd>
+<dt> <samp>`-vc channel'</samp></dt>
+<dd><p>Set video grab channel (DV1394 only).
+</p></dd>
+<dt> <samp>`-tvstd standard'</samp></dt>
+<dd><p>Set television standard (NTSC, PAL (SECAM)).
+</p></dd>
+<dt> <samp>`-dv1394'</samp></dt>
+<dd><p>Set DV1394 grab.
+</p></dd>
+<dt> <samp>`-ad device'</samp></dt>
+<dd><p>Set audio device (e.g. <tt>`/dev/dsp'</tt>).
+</p></dd>
+</dl>
+
+<hr size="6">
+<a name="SEC12"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC11" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC13" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.7 Advanced options </h2>
+
+<dl compact="compact">
+<dt> <samp>`-map file:stream'</samp></dt>
+<dd><p>Set input stream mapping.
+</p></dd>
+<dt> <samp>`-debug'</samp></dt>
+<dd><p>Print specific debug info.
+</p></dd>
+<dt> <samp>`-benchmark'</samp></dt>
+<dd><p>Add timings for benchmarking.
+</p></dd>
+<dt> <samp>`-hex'</samp></dt>
+<dd><p>Dump each input packet.
+</p></dd>
+<dt> <samp>`-bitexact'</samp></dt>
+<dd><p>Only use bit exact algorithms (for codec testing).
+</p></dd>
+<dt> <samp>`-ps size'</samp></dt>
+<dd><p>Set packet size in bits.
+</p></dd>
+<dt> <samp>`-re'</samp></dt>
+<dd><p>Read input at native frame rate. Mainly used to simulate a grab device.
+</p></dd>
+<dt> <samp>`-loop'</samp></dt>
+<dd><p>Loop over the input stream. Currently it works only for image
+streams. This option is used for automatic FFserver testing.
+</p></dd>
+<dt> <samp>`-loop_output number_of_times'</samp></dt>
+<dd><p>Repeatedly loop output for formats that support looping such as animated GIF
+(0 will loop the output infinitely).
+</p></dd>
+</dl>
+
+<hr size="6">
+<a name="FFmpeg-formula-evaluator"></a>
+<a name="SEC13"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC12" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC14" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.8 FFmpeg formula evaluator </h2>
+
+<p>When evaluating a rate control string, FFmpeg uses an internal formula
+evaluator.
+</p>
+<p>The following binary operators are available: <code>+</code>, <code>-</code>,
+<code>*</code>, <code>/</code>, <code>^</code>.
+</p>
+<p>The following unary operators are available: <code>+</code>, <code>-</code>,
+<code>(...)</code>.
+</p>
+<p>The following functions are available:
+</p><dl compact="compact">
+<dt> <var>sinh(x)</var></dt>
+<dt> <var>cosh(x)</var></dt>
+<dt> <var>tanh(x)</var></dt>
+<dt> <var>sin(x)</var></dt>
+<dt> <var>cos(x)</var></dt>
+<dt> <var>tan(x)</var></dt>
+<dt> <var>exp(x)</var></dt>
+<dt> <var>log(x)</var></dt>
+<dt> <var>squish(x)</var></dt>
+<dt> <var>gauss(x)</var></dt>
+<dt> <var>abs(x)</var></dt>
+<dt> <var>max(x, y)</var></dt>
+<dt> <var>min(x, y)</var></dt>
+<dt> <var>gt(x, y)</var></dt>
+<dt> <var>lt(x, y)</var></dt>
+<dt> <var>eq(x, y)</var></dt>
+<dt> <var>bits2qp(bits)</var></dt>
+<dt> <var>qp2bits(qp)</var></dt>
+</dl>
+
+<p>The following constants are available:
+</p><dl compact="compact">
+<dt> <var>PI</var></dt>
+<dt> <var>E</var></dt>
+<dt> <var>iTex</var></dt>
+<dt> <var>pTex</var></dt>
+<dt> <var>tex</var></dt>
+<dt> <var>mv</var></dt>
+<dt> <var>fCode</var></dt>
+<dt> <var>iCount</var></dt>
+<dt> <var>mcVar</var></dt>
+<dt> <var>var</var></dt>
+<dt> <var>isI</var></dt>
+<dt> <var>isP</var></dt>
+<dt> <var>isB</var></dt>
+<dt> <var>avgQP</var></dt>
+<dt> <var>qComp</var></dt>
+<dt> <var>avgIITex</var></dt>
+<dt> <var>avgPITex</var></dt>
+<dt> <var>avgPPTex</var></dt>
+<dt> <var>avgBPTex</var></dt>
+<dt> <var>avgTex</var></dt>
+</dl>
+
+
+
+<hr size="6">
+<a name="SEC14"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC13" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 3.9 Protocols </h2>
+
+<p>The filename can be <tt>`-'</tt> to read from standard input or to write
+to standard output.
+</p>
+<p>FFmpeg also handles many protocols specified with an URL syntax.
+</p>
+<p>Use 'ffmpeg -formats' to see a list of the supported protocols.
+</p>
+<p>The protocol <code>http:</code> is currently used only to communicate with
+FFserver (see the FFserver documentation). When FFmpeg will be a
+video player it will also be used for streaming :-)
+</p>
+<hr size="6">
+<a name="SEC15"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC14" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC5" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="chapter"> 4. Tips </h1>
+
+<ul class="toc">
+<li> For streaming at very low bitrate application, use a low frame rate
+and a small GOP size. This is especially true for RealVideo where
+the Linux player does not seem to be very fast, so it can miss
+frames. An example is:
+
+<table><tr><td>&nbsp;</td><td><pre class="example">ffmpeg -g 3 -r 3 -t 10 -b 50 -s qcif -f rv10 /tmp/b.rm
+</pre></td></tr></table>
+</li><li>  The parameter 'q' which is displayed while encoding is the current
+quantizer. The value 1 indicates that a very good quality could
+be achieved. The value 31 indicates the worst quality. If q=31 appears
+too often, it means that the encoder cannot compress enough to meet
+your bitrate. You must either increase the bitrate, decrease the
+frame rate or decrease the frame size.
+
+</li><li> If your computer is not fast enough, you can speed up the
+compression at the expense of the compression ratio. You can use
+'-me zero' to speed up motion estimation, and '-intra' to disable
+motion estimation completely (you have only I-frames, which means it
+is about as good as JPEG compression).
+
+</li><li> To have very low audio bitrates, reduce the sampling frequency
+(down to 22050 kHz for MPEG audio, 22050 or 11025 for AC3).
+
+</li><li> To have a constant quality (but a variable bitrate), use the option
+'-qscale n' when 'n' is between 1 (excellent quality) and 31 (worst
+quality).
+
+</li><li> When converting video files, you can use the '-sameq' option which
+uses the same quality factor in the encoder as in the decoder.
+It allows almost lossless encoding.
+
+</li></ul>
+
+<hr size="6">
+<a name="SEC16"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC15" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC17" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC15" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="chapter"> 5. Supported File Formats and Codecs </h1>
+
+<p>You can use the <code>-formats</code> option to have an exhaustive list.
+</p>
+<hr size="6">
+<a name="SEC17"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC16" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC18" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 5.1 File Formats </h2>
+
+<p>FFmpeg supports the following file formats through the <code>libavformat</code>
+library:
+</p>
+<table>
+<tr><td><p> Supported File Format </p></td><td><p> Encoding </p></td><td><p> Decoding </p></td><td><p> Comments
+</p></td></tr>
+<tr><td><p> MPEG audio </p></td><td><p> X </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> MPEG-1 systems </p></td><td><p> X  </p></td><td><p>  X
+</p></td><td><p> muxed audio and video
+</p></td></tr>
+<tr><td><p> MPEG-2 PS </p></td><td><p> X  </p></td><td><p>  X
+</p></td><td><p> also known as <code>VOB</code> file
+</p></td></tr>
+<tr><td><p> MPEG-2 TS </p></td><td>    </td><td><p>  X
+</p></td><td><p> also known as DVB Transport Stream
+</p></td></tr>
+<tr><td><p> ASF</p></td><td><p> X </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> AVI</p></td><td><p> X </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> WAV</p></td><td><p> X </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> Macromedia Flash</p></td><td><p> X </p></td><td><p> X
+</p></td><td><p> Only embedded audio is decoded.
+</p></td></tr>
+<tr><td><p> FLV              </p></td><td><p>  X </p></td><td><p> X
+</p></td><td><p> Macromedia Flash video files
+</p></td></tr>
+<tr><td><p> Real Audio and Video </p></td><td><p> X </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> Raw AC3 </p></td><td><p> X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> Raw MJPEG </p></td><td><p> X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> Raw MPEG video </p></td><td><p> X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> Raw PCM8/16 bits, mulaw/Alaw</p></td><td><p> X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> Raw CRI ADX audio </p></td><td><p> X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> Raw Shorten audio </p></td><td>    </td><td><p>  X
+</p></td></tr>
+<tr><td><p> SUN AU format </p></td><td><p> X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> NUT </p></td><td><p> X </p></td><td><p> X </p></td><td><p> NUT Open Container Format
+</p></td></tr>
+<tr><td><p> QuickTime        </p></td><td><p> X </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> MPEG-4           </p></td><td><p> X </p></td><td><p>  X
+</p></td><td><p> MPEG-4 is a variant of QuickTime.
+</p></td></tr>
+<tr><td><p> Raw MPEG4 video  </p></td><td><p>  X </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> DV               </p></td><td><p>  X </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> 4xm              </p></td><td>    </td><td><p> X
+</p></td><td><p> 4X Technologies format, used in some games.
+</p></td></tr>
+<tr><td><p> Playstation STR  </p></td><td>    </td><td><p> X
+</p></td></tr>
+<tr><td><p> Id RoQ           </p></td><td>    </td><td><p> X
+</p></td><td><p> Used in Quake III, Jedi Knight 2, other computer games.
+</p></td></tr>
+<tr><td><p> Interplay MVE    </p></td><td>    </td><td><p> X
+</p></td><td><p> Format used in various Interplay computer games.
+</p></td></tr>
+<tr><td><p> WC3 Movie        </p></td><td>    </td><td><p> X
+</p></td><td><p> Multimedia format used in Origin's Wing Commander III computer game.
+</p></td></tr>
+<tr><td><p> Sega FILM/CPK    </p></td><td>    </td><td><p> X
+</p></td><td><p> Used in many Sega Saturn console games.
+</p></td></tr>
+<tr><td><p> Westwood Studios VQA/AUD  </p></td><td>    </td><td><p> X
+</p></td><td><p> Multimedia formats used in Westwood Studios games.
+</p></td></tr>
+<tr><td><p> Id Cinematic (.cin) </p></td><td>    </td><td><p> X
+</p></td><td><p> Used in Quake II.
+</p></td></tr>
+<tr><td><p> FLIC format      </p></td><td>    </td><td><p> X
+</p></td><td><p> .fli/.flc files
+</p></td></tr>
+<tr><td><p> Sierra VMD       </p></td><td>    </td><td><p> X
+</p></td><td><p> Used in Sierra CD-ROM games.
+</p></td></tr>
+<tr><td><p> Sierra Online    </p></td><td>    </td><td><p> X
+</p></td><td><p> .sol files used in Sierra Online games.
+</p></td></tr>
+<tr><td><p> Matroska         </p></td><td>    </td><td><p> X
+</p></td></tr>
+<tr><td><p> Electronic Arts Multimedia    </p></td><td>    </td><td><p> X
+</p></td><td><p> Used in various EA games; files have extensions like WVE and UV2.
+</p></td></tr>
+<tr><td><p> Nullsoft Video (NSV) format </p></td><td>    </td><td><p> X
+</p></td></tr>
+<tr><td><p> ADTS AAC audio </p></td><td><p> X </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> Creative VOC </p></td><td><p> X </p></td><td><p> X </p></td><td><p> Created for the Sound Blaster Pro.
+</p></td></tr>
+<tr><td><p> American Laser Games MM  </p></td><td>    </td><td><p> X
+</p></td><td><p> Multimedia format used in games like Mad Dog McCree
+</p></td></tr>
+<tr><td><p> AVS </p></td><td>    </td><td><p> X
+</p></td><td><p> Multimedia format used by the Creature Shock game.
+</p></td></tr>
+<tr><td><p> Smacker </p></td><td>    </td><td><p> X
+</p></td><td><p> Multimedia format used by many games.
+</p></td></tr>
+</table>
+
+<p><code>X</code> means that encoding (resp. decoding) is supported.
+</p>
+<hr size="6">
+<a name="SEC18"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC17" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC19" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 5.2 Image Formats </h2>
+
+<p>FFmpeg can read and write images for each frame of a video sequence. The
+following image formats are supported:
+</p>
+<table>
+<tr><td><p> Supported Image Format </p></td><td><p> Encoding </p></td><td><p> Decoding </p></td><td><p> Comments
+</p></td></tr>
+<tr><td><p> PGM, PPM     </p></td><td><p> X </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> PAM          </p></td><td><p> X </p></td><td><p> X </p></td><td><p> PAM is a PNM extension with alpha support.
+</p></td></tr>
+<tr><td><p> PGMYUV       </p></td><td><p> X </p></td><td><p> X </p></td><td><p> PGM with U and V components in YUV 4:2:0
+</p></td></tr>
+<tr><td><p> JPEG         </p></td><td><p> X </p></td><td><p> X </p></td><td><p> Progressive JPEG is not supported.
+</p></td></tr>
+<tr><td><p> .Y.U.V       </p></td><td><p> X </p></td><td><p> X </p></td><td><p> one raw file per component
+</p></td></tr>
+<tr><td><p> animated GIF </p></td><td><p> X </p></td><td><p> X </p></td><td><p> Only uncompressed GIFs are generated.
+</p></td></tr>
+<tr><td><p> PNG          </p></td><td><p> X </p></td><td><p> X </p></td><td><p> 2 bit and 4 bit/pixel not supported yet.
+</p></td></tr>
+<tr><td><p> SGI          </p></td><td><p> X </p></td><td><p> X </p></td><td><p> SGI RGB image format
+</p></td></tr>
+</table>
+
+<p><code>X</code> means that encoding (resp. decoding) is supported.
+</p>
+<hr size="6">
+<a name="SEC19"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC18" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC20" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 5.3 Video Codecs </h2>
+
+<table>
+<tr><td><p> Supported Codec </p></td><td><p> Encoding </p></td><td><p> Decoding </p></td><td><p> Comments
+</p></td></tr>
+<tr><td><p> MPEG-1 video           </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> MPEG-2 video           </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> MPEG-4                 </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> also known as DivX4/5
+</p></td></tr>
+<tr><td><p> MSMPEG4 V1             </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> MSMPEG4 V2             </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> MSMPEG4 V3             </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> also known as DivX3
+</p></td></tr>
+<tr><td><p> WMV7                   </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> WMV8                   </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> not completely working
+</p></td></tr>
+<tr><td><p> H.261                  </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> H.263(+)               </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> also known as RealVideo 1.0
+</p></td></tr>
+<tr><td><p> H.264                  </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> RealVideo 1.0          </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> RealVideo 2.0          </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> MJPEG                  </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> lossless MJPEG         </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> JPEG-LS                </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> fourcc: MJLS, lossless and near-lossless is supported
+</p></td></tr>
+<tr><td><p> Apple MJPEG-B          </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> Sunplus MJPEG          </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: SP5X
+</p></td></tr>
+<tr><td><p> DV                     </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> HuffYUV                </p></td><td><p>  X  </p></td><td><p>  X
+</p></td></tr>
+<tr><td><p> FFmpeg Video 1         </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> experimental lossless codec (fourcc: FFV1)
+</p></td></tr>
+<tr><td><p> FFmpeg Snow            </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> experimental wavelet codec (fourcc: SNOW)
+</p></td></tr>
+<tr><td><p> Asus v1                </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> fourcc: ASV1
+</p></td></tr>
+<tr><td><p> Asus v2                </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> fourcc: ASV2
+</p></td></tr>
+<tr><td><p> Creative YUV           </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: CYUV
+</p></td></tr>
+<tr><td><p> Sorenson Video 1       </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> fourcc: SVQ1
+</p></td></tr>
+<tr><td><p> Sorenson Video 3       </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: SVQ3
+</p></td></tr>
+<tr><td><p> On2 VP3                </p></td><td>     </td><td><p>  X </p></td><td><p> still experimental
+</p></td></tr>
+<tr><td><p> Theora                 </p></td><td>     </td><td><p>  X </p></td><td><p> still experimental
+</p></td></tr>
+<tr><td><p> Intel Indeo 3          </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> FLV                    </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> Sorenson H.263 used in Flash
+</p></td></tr>
+<tr><td><p> Flash Screen Video     </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: FSV1
+</p></td></tr>
+<tr><td><p> ATI VCR1               </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: VCR1
+</p></td></tr>
+<tr><td><p> ATI VCR2               </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: VCR2
+</p></td></tr>
+<tr><td><p> Cirrus Logic AccuPak   </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: CLJR
+</p></td></tr>
+<tr><td><p> 4X Video               </p></td><td>     </td><td><p>  X </p></td><td><p> Used in certain computer games.
+</p></td></tr>
+<tr><td><p> Sony Playstation MDEC  </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> Id RoQ                 </p></td><td>     </td><td><p>  X </p></td><td><p> Used in Quake III, Jedi Knight 2, other computer games.
+</p></td></tr>
+<tr><td><p> Xan/WC3                </p></td><td>     </td><td><p>  X </p></td><td><p> Used in Wing Commander III .MVE files.
+</p></td></tr>
+<tr><td><p> Interplay Video        </p></td><td>     </td><td><p>  X </p></td><td><p> Used in Interplay .MVE files.
+</p></td></tr>
+<tr><td><p> Apple Animation        </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: 'rle '
+</p></td></tr>
+<tr><td><p> Apple Graphics         </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: 'smc '
+</p></td></tr>
+<tr><td><p> Apple Video            </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: rpza
+</p></td></tr>
+<tr><td><p> Apple QuickDraw        </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: qdrw
+</p></td></tr>
+<tr><td><p> Cinepak                </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> Microsoft RLE          </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> Microsoft Video-1      </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> Westwood VQA           </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> Id Cinematic Video     </p></td><td>     </td><td><p>  X </p></td><td><p> Used in Quake II.
+</p></td></tr>
+<tr><td><p> Planar RGB             </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: 8BPS
+</p></td></tr>
+<tr><td><p> FLIC video             </p></td><td>     </td><td><p>  X
+</p></td></tr>
+<tr><td><p> Duck TrueMotion v1     </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: DUCK
+</p></td></tr>
+<tr><td><p> Duck TrueMotion v2     </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: TM20
+</p></td></tr>
+<tr><td><p> VMD Video              </p></td><td>     </td><td><p>  X </p></td><td><p> Used in Sierra VMD files.
+</p></td></tr>
+<tr><td><p> MSZH                   </p></td><td>     </td><td><p>  X </p></td><td><p> Part of LCL
+</p></td></tr>
+<tr><td><p> ZLIB                   </p></td><td><p>  X  </p></td><td><p>  X </p></td><td><p> Part of LCL, encoder experimental
+</p></td></tr>
+<tr><td><p> TechSmith Camtasia     </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: TSCC
+</p></td></tr>
+<tr><td><p> IBM Ultimotion         </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: ULTI
+</p></td></tr>
+<tr><td><p> Miro VideoXL           </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: VIXL
+</p></td></tr>
+<tr><td><p> QPEG                   </p></td><td>     </td><td><p>  X </p></td><td><p> fourccs: QPEG, Q1.0, Q1.1
+</p></td></tr>
+<tr><td><p> LOCO                   </p></td><td>     </td><td><p>  X </p></td><td>
+</td></tr>
+<tr><td><p> Winnov WNV1            </p></td><td>     </td><td><p>  X </p></td><td>
+</td></tr>
+<tr><td><p> Autodesk Animator Studio Codec  </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: AASC
+</p></td></tr>
+<tr><td><p> Fraps FPS1             </p></td><td>     </td><td><p>  X </p></td><td>
+</td></tr>
+<tr><td><p> CamStudio              </p></td><td>     </td><td><p>  X </p></td><td><p> fourcc: CSCD
+</p></td></tr>
+<tr><td><p> American Laser Games Video  </p></td><td>    </td><td><p> X </p></td><td><p> Used in games like Mad Dog McCree
+</p></td></tr>
+<tr><td><p> ZMBV                   </p></td><td>     </td><td><p>  X </p></td><td>
+</td></tr>
+<tr><td><p> AVS Video              </p></td><td>     </td><td><p>  X </p></td><td><p> Video encoding used by the Creature Shock game.
+</p></td></tr>
+<tr><td><p> Smacker Video          </p></td><td>     </td><td><p>  X </p></td><td><p> Video encoding used in Smacker.
+</p></td></tr>
+<tr><td><p> RTjpeg                 </p></td><td>     </td><td><p>  X </p></td><td><p> Video encoding used in NuppelVideo files.
+</p></td></tr>
+<tr><td><p> KMVC                   </p></td><td>     </td><td><p>  X </p></td><td><p> Codec used in Worms games.
+</p></td></tr>
+</table>
+
+<p><code>X</code> means that encoding (resp. decoding) is supported.
+</p>
+<p>See <a href="http://mplayerhq.hu/~michael/codec-features.html">http://mplayerhq.hu/~michael/codec-features.html</a> to
+get a precise comparison of the FFmpeg MPEG-4 codec compared to
+other implementations.
+</p>
+<hr size="6">
+<a name="SEC20"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC19" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 5.4 Audio Codecs </h2>
+
+<table>
+<tr><td><p> Supported Codec </p></td><td><p> Encoding </p></td><td><p> Decoding </p></td><td><p> Comments
+</p></td></tr>
+<tr><td><p> MPEG audio layer 2     </p></td><td><p>  IX  </p></td><td><p>  IX
+</p></td></tr>
+<tr><td><p> MPEG audio layer 1/3   </p></td><td><p> IX   </p></td><td><p>  IX
+</p></td><td><p> MP3 encoding is supported through the external library LAME.
+</p></td></tr>
+<tr><td><p> AC3                    </p></td><td><p>  IX  </p></td><td><p>  IX
+</p></td><td><p> liba52 is used internally for decoding.
+</p></td></tr>
+<tr><td><p> Vorbis                 </p></td><td><p>  X   </p></td><td><p>  X
+</p></td><td><p> Supported through the external library libvorbis.
+</p></td></tr>
+<tr><td><p> WMA V1/V2              </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> AAC                    </p></td><td><p> X    </p></td><td><p> X
+</p></td><td><p> Supported through the external library libfaac/libfaad.
+</p></td></tr>
+<tr><td><p> Microsoft ADPCM        </p></td><td><p> X    </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> MS IMA ADPCM           </p></td><td><p> X    </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> QT IMA ADPCM           </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> 4X IMA ADPCM           </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> G.726  ADPCM           </p></td><td><p> X    </p></td><td><p> X
+</p></td></tr>
+<tr><td><p> Duck DK3 IMA ADPCM     </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in some Sega Saturn console games.
+</p></td></tr>
+<tr><td><p> Duck DK4 IMA ADPCM     </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in some Sega Saturn console games.
+</p></td></tr>
+<tr><td><p> Westwood Studios IMA ADPCM </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in Westwood Studios games like Command and Conquer.
+</p></td></tr>
+<tr><td><p> SMJPEG IMA ADPCM       </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in certain Loki game ports.
+</p></td></tr>
+<tr><td><p> CD-ROM XA ADPCM        </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> CRI ADX ADPCM          </p></td><td><p> X    </p></td><td><p> X
+</p></td><td><p> Used in Sega Dreamcast games.
+</p></td></tr>
+<tr><td><p> Electronic Arts ADPCM  </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in various EA titles.
+</p></td></tr>
+<tr><td><p> Creative ADPCM         </p></td><td>      </td><td><p> X
+</p></td><td><p> 16 -&gt; 4, 8 -&gt; 4, 8 -&gt; 3, 8 -&gt; 2
+</p></td></tr>
+<tr><td><p> RA144                  </p></td><td>      </td><td><p> X
+</p></td><td><p> Real 14400 bit/s codec
+</p></td></tr>
+<tr><td><p> RA288                  </p></td><td>      </td><td><p> X
+</p></td><td><p> Real 28800 bit/s codec
+</p></td></tr>
+<tr><td><p> RADnet                 </p></td><td><p> X    </p></td><td><p> IX
+</p></td><td><p> Real low bitrate AC3 codec, liba52 is used for decoding.
+</p></td></tr>
+<tr><td><p> AMR-NB                 </p></td><td><p> X    </p></td><td><p> X
+</p></td><td><p> Supported through an external library.
+</p></td></tr>
+<tr><td><p> AMR-WB                 </p></td><td><p> X    </p></td><td><p> X
+</p></td><td><p> Supported through an external library.
+</p></td></tr>
+<tr><td><p> DV audio               </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> Id RoQ DPCM            </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in Quake III, Jedi Knight 2, other computer games.
+</p></td></tr>
+<tr><td><p> Interplay MVE DPCM     </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in various Interplay computer games.
+</p></td></tr>
+<tr><td><p> Xan DPCM               </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in Origin's Wing Commander IV AVI files.
+</p></td></tr>
+<tr><td><p> Sierra Online DPCM     </p></td><td>      </td><td><p> X
+</p></td><td><p> Used in Sierra Online game audio files.
+</p></td></tr>
+<tr><td><p> Apple MACE 3           </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> Apple MACE 6           </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> FLAC lossless audio    </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> Shorten lossless audio </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> Apple lossless audio   </p></td><td>      </td><td><p> X
+</p></td><td><p> QuickTime fourcc 'alac'
+</p></td></tr>
+<tr><td><p> FFmpeg Sonic           </p></td><td><p> X    </p></td><td><p> X
+</p></td><td><p> experimental lossy/lossless codec
+</p></td></tr>
+<tr><td><p> Qdesign QDM2           </p></td><td>      </td><td><p> X
+</p></td><td><p> there are still some distortions
+</p></td></tr>
+<tr><td><p> Real COOK              </p></td><td>      </td><td><p> X
+</p></td><td><p> All versions except 5.1 are supported
+</p></td></tr>
+<tr><td><p> DSP Group TrueSpeech   </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> True Audio (TTA)       </p></td><td>      </td><td><p> X
+</p></td></tr>
+<tr><td><p> Smacker Audio          </p></td><td>      </td><td><p> X
+</p></td></tr>
+</table>
+
+<p><code>X</code> means that encoding (resp. decoding) is supported.
+</p>
+<p><code>I</code> means that an integer-only version is available, too (ensures high
+performance on systems without hardware floating point support).
+</p>
+<hr size="6">
+<a name="SEC21"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC20" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC22" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC16" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="chapter"> 6. Platform Specific information </h1>
+
+<hr size="6">
+<a name="SEC22"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC21" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC23" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 6.1 Linux </h2>
+
+<p>FFmpeg should be compiled with at least GCC 2.95.3. GCC 3.2 is the
+preferred compiler now for FFmpeg. All future optimizations will depend on
+features only found in GCC 3.2.
+</p>
+<hr size="6">
+<a name="SEC23"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC22" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC24" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 6.2 BSD </h2>
+
+<p>BSD make will not build FFmpeg, you need to install and use GNU Make
+(<tt>`gmake'</tt>).
+</p>
+<hr size="6">
+<a name="SEC24"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC23" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC25" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 6.3 Windows </h2>
+
+<hr size="6">
+<a name="SEC25"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC24" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC26" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC24" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection"> 6.3.1 Native Windows compilation </h3>
+
+<ul class="toc">
+<li> Install the current versions of MSYS and MinGW from
+<a href="http://www.mingw.org/">http://www.mingw.org/</a>. You can find detailed installation
+instructions in the download section and the FAQ.
+
+</li><li> If you want to test the FFplay, also download
+the MinGW development library of SDL 1.2.x
+(<tt>`SDL-devel-1.2.x-mingw32.tar.gz'</tt>) from
+<a href="http://www.libsdl.org">http://www.libsdl.org</a>. Unpack it in a temporary directory, and
+unpack the archive <tt>`i386-mingw32msvc.tar.gz'</tt> in the MinGW tool
+directory. Edit the <tt>`sdl-config'</tt> script so that it gives the
+correct SDL directory when invoked.
+
+</li><li> Extract the current version of FFmpeg.
+
+</li><li> Start the MSYS shell (file <tt>`msys.bat'</tt>).
+
+</li><li> Change to the FFmpeg directory and follow
+ the instructions of how to compile FFmpeg (file
+<tt>`INSTALL'</tt>). Usually, launching <tt>`./configure'</tt> and <tt>`make'</tt>
+suffices. If you have problems using SDL, verify that
+<tt>`sdl-config'</tt> can be launched from the MSYS command line.
+
+</li><li> You can install FFmpeg in <tt>`Program Files/FFmpeg'</tt> by typing
+<tt>`make install'</tt>. Don't forget to copy <tt>`SDL.dll'</tt> to the place
+you launch <tt>`ffplay'</tt> from.
+
+</li></ul>
+
+<p>Notes:
+</p><ul class="toc">
+<li> The target <tt>`make wininstaller'</tt> can be used to create a
+Nullsoft based Windows installer for FFmpeg and FFplay. <tt>`SDL.dll'</tt>
+must be copied to the FFmpeg directory in order to build the
+installer.
+
+</li><li> By using <code>./configure --enable-shared</code> when configuring FFmpeg,
+you can build <tt>`avcodec.dll'</tt> and <tt>`avformat.dll'</tt>. With
+<code>make install</code> you install the FFmpeg DLLs and the associated
+headers in <tt>`Program Files/FFmpeg'</tt>.
+
+</li><li> Visual C++ compatibility: If you used <code>./configure --enable-shared</code>
+when configuring FFmpeg, FFmpeg tries to use the Microsoft Visual
+C++ <code>lib</code> tool to build <code>avcodec.lib</code> and
+<code>avformat.lib</code>. With these libraries you can link your Visual C++
+code directly with the FFmpeg DLLs (see below).
+
+</li></ul>
+
+<hr size="6">
+<a name="SEC26"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC25" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC27" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC24" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection"> 6.3.2 Visual C++ compatibility </h3>
+
+<p>FFmpeg will not compile under Visual C++ - and it has too many
+dependencies on the GCC compiler to make a port viable. However,
+if you want to use the FFmpeg libraries in your own applications,
+you can still compile those applications using Visual C++. An
+important restriction to this is that you have to use the
+dynamically linked versions of the FFmpeg libraries (i.e. the
+DLLs), and you have to make sure that Visual-C++-compatible
+import libraries are created during the FFmpeg build process.
+</p>
+<p>This description of how to use the FFmpeg libraries with Visual C++ is
+based on Visual C++ 2005 Express Edition Beta 2. If you have a different
+version, you might have to modify the procedures slightly.
+</p>
+<p>Here are the step-by-step instructions for building the FFmpeg libraries
+so they can be used with Visual C++:
+</p>
+<ol>
+<li> Install Visual C++ (if you haven't done so already).
+
+</li><li> Install MinGW and MSYS as described above.
+
+</li><li> Add a call to <tt>`vcvars32.bat'</tt> (which sets up the environment
+variables for the Visual C++ tools) as the first line of
+<tt>`msys.bat'</tt>. The standard location for <tt>`vcvars32.bat'</tt> is
+<tt>`C:\Program Files\Microsoft Visual Studio 8\VC\bin\vcvars32.bat'</tt>,
+and the standard location for <tt>`msys.bat'</tt> is
+<tt>`C:\msys\1.0\msys.bat'</tt>. If this corresponds to your setup, add the
+following line as the first line of <tt>`msys.bat'</tt>:
+
+<p><code>call &quot;C:\Program Files\Microsoft Visual Studio 8\VC\bin\vcvars32.bat&quot;</code>
+</p>
+</li><li> Start the MSYS shell (file <tt>`msys.bat'</tt>) and type <code>link.exe</code>.
+If you get a help message with the command line options of <code>link.exe</code>,
+this means your environment variables are set up correctly, the
+Microsoft linker is on the path and will be used by FFmpeg to
+create Visual-C++-compatible import libraries.
+
+</li><li> Extract the current version of FFmpeg and change to the FFmpeg directory.
+
+</li><li> Type the command
+<code>./configure --enable-shared --disable-static --enable-memalign-hack</code>
+to configure and, if that didn't produce any errors,
+type <code>make</code> to build FFmpeg.
+
+</li><li> The subdirectories <tt>`libavformat'</tt>, <tt>`libavcodec'</tt>, and
+<tt>`libavutil'</tt> should now contain the files <tt>`avformat.dll'</tt>,
+<tt>`avformat.lib'</tt>, <tt>`avcodec.dll'</tt>, <tt>`avcodec.lib'</tt>,
+<tt>`avutil.dll'</tt>, and <tt>`avutil.lib'</tt>, respectively. Copy the three
+DLLs to your System32 directory (typically <tt>`C:\Windows\System32'</tt>).
+
+</li></ol>
+
+<p>And here is how to use these libraries with Visual C++:
+</p>
+<ol>
+<li> Create a new console application (&quot;File / New / Project&quot;) and then
+select &quot;Win32 Console Application&quot;. On the appropriate page of the
+Application Wizard, uncheck the &quot;Precompiled headers&quot; option.
+
+</li><li> Write the source code for your application, or, for testing, just
+copy the code from an existing sample application into the source file
+that Visual C++ has already created for you. (Note that your source
+filehas to have a <code>.cpp</code> extension; otherwise, Visual C++ won't
+compile the FFmpeg headers correctly because in C mode, it doesn't
+recognize the <code>inline</code> keyword.)  For example, you can copy
+<tt>`output_example.c'</tt> from the FFmpeg distribution (but you will
+have to make minor modifications so the code will compile under
+C++, see below).
+
+</li><li> Open the &quot;Project / Properties&quot; dialog box. In the &quot;Configuration&quot;
+combo box, select &quot;All Configurations&quot; so that the changes you make will
+affect both debug and release builds. In the tree view on the left hand
+side, select &quot;C/C++ / General&quot;, then edit the &quot;Additional Include
+Directories&quot; setting to contain the complete paths to the
+<tt>`libavformat'</tt>, <tt>`libavcodec'</tt>, and <tt>`libavutil'</tt>
+subdirectories of your FFmpeg directory. Note that the directories have
+to be separated using semicolons. Now select &quot;Linker / General&quot; from the
+tree view and edit the &quot;Additional Library Directories&quot; setting to
+contain the same three directories.
+
+</li><li> Still in the &quot;Project / Properties&quot; dialog box, select &quot;Linker / Input&quot;
+from the tree view, then add the files <tt>`avformat.lib'</tt>,
+<tt>`avcodec.lib'</tt>, and <tt>`avutil.lib'</tt> to the end of the &quot;Additional
+Dependencies&quot;. Note that the names of the libraries have to be separated
+using spaces.
+
+</li><li> Now, select &quot;C/C++ / Code Generation&quot; from the tree view. Select
+&quot;Debug&quot; in the &quot;Configuration&quot; combo box. Make sure that &quot;Runtime
+Library&quot; is set to &quot;Multi-threaded Debug DLL&quot;. Then, select &quot;Release&quot; in
+the &quot;Configuration&quot; combo box and make sure that &quot;Runtime Library&quot; is
+set to &quot;Multi-threaded DLL&quot;.
+
+</li><li> Click &quot;OK&quot; to close the &quot;Project / Properties&quot; dialog box and build
+the application. Hopefully, it should compile and run cleanly. If you
+used <tt>`output_example.c'</tt> as your sample application, you will get a
+few compiler errors, but they are easy to fix. The first type of error
+occurs because Visual C++ doesn't allow an <code>int</code> to be converted to
+an <code>enum</code> without a cast. To solve the problem, insert the required
+casts (this error occurs once for a <code>CodecID</code> and once for a
+<code>CodecType</code>).  The second type of error occurs because C++ requires
+the return value of <code>malloc</code> to be cast to the exact type of the
+pointer it is being assigned to. Visual C++ will complain that, for
+example, <code>(void *)</code> is being assigned to <code>(uint8_t *)</code> without
+an explicit cast. So insert an explicit cast in these places to silence
+the compiler. The third type of error occurs because the <code>snprintf</code>
+library function is called <code>_snprintf</code> under Visual C++.  So just
+add an underscore to fix the problem. With these changes,
+<tt>`output_example.c'</tt> should compile under Visual C++, and the
+resulting executable should produce valid video files.
+
+</li></ol>
+
+<hr size="6">
+<a name="SEC27"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC26" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC28" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC24" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection"> 6.3.3 Cross compilation for Windows with Linux </h3>
+
+<p>You must use the MinGW cross compilation tools available at
+<a href="http://www.mingw.org/">http://www.mingw.org/</a>.
+</p>
+<p>Then configure FFmpeg with the following options:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">./configure --enable-mingw32 --cross-prefix=i386-mingw32msvc-
+</pre></td></tr></table><p>(you can change the cross-prefix according to the prefix chosen for the
+MinGW tools).
+</p>
+<p>Then you can easily test FFmpeg with Wine
+(<a href="http://www.winehq.com/">http://www.winehq.com/</a>).
+</p>
+<hr size="6">
+<a name="SEC28"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC27" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC29" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 6.4 Mac OS X </h2>
+
+<hr size="6">
+<a name="SEC29"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC28" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 6.5 BeOS </h2>
+
+<p>The configure script should guess the configuration itself.
+Networking support is currently not finished.
+errno issues fixed by Andrew Bachmann.
+</p>
+<p>Old stuff:
+</p>
+<p>François Revol - revol at free dot fr - April 2002
+</p>
+<p>The configure script should guess the configuration itself,
+however I still didn't test building on the net_server version of BeOS.
+</p>
+<p>FFserver is broken (needs poll() implementation).
+</p>
+<p>There are still issues with errno codes, which are negative in BeOS, and
+that FFmpeg negates when returning. This ends up turning errors into
+valid results, then crashes.
+(To be fixed)
+</p>
+<hr size="6">
+<a name="SEC30"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC29" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC31" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC21" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="chapter"> 7. Developers Guide </h1>
+
+<hr size="6">
+<a name="SEC31"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC30" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC32" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 7.1 API </h2>
+<ul class="toc">
+<li> libavcodec is the library containing the codecs (both encoding and
+decoding). Look at <tt>`libavcodec/apiexample.c'</tt> to see how to use it.
+
+</li><li> libavformat is the library containing the file format handling (mux and
+demux code for several formats). Look at <tt>`ffplay.c'</tt> to use it in a
+player. See <tt>`output_example.c'</tt> to use it to generate audio or video
+streams.
+
+</li></ul>
+
+<hr size="6">
+<a name="SEC32"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC31" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC33" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 7.2 Integrating libavcodec or libavformat in your program </h2>
+
+<p>You can integrate all the source code of the libraries to link them
+statically to avoid any version problem. All you need is to provide a
+'config.mak' and a 'config.h' in the parent directory. See the defines
+generated by ./configure to understand what is needed.
+</p>
+<p>You can use libavcodec or libavformat in your commercial program, but
+<em>any patch you make must be published</em>. The best way to proceed is
+to send your patches to the FFmpeg mailing list.
+</p>
+<hr size="6">
+<a name="Coding-Rules"></a>
+<a name="SEC33"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC32" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC34" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 7.3 Coding Rules </h2>
+
+<p>FFmpeg is programmed in the ISO C90 language with a few additional
+features from ISO C99, namely:
+</p><ul>
+<li>
+the <samp>`inline'</samp> keyword;
+</li><li>
+<samp>`//'</samp> comments;
+</li><li>
+designated struct initializers (<samp>`struct s x = { .i = 17 };'</samp>)
+</li><li>
+compound literals (<samp>`x = (struct s) { 17, 23 };'</samp>)
+</li></ul>
+
+<p>These features are supported by all compilers we care about, so we won't
+accept patches to remove their use unless they absolutely don't impair
+clarity and performance.
+</p>
+<p>All code must compile with GCC 2.95 and GCC 3.3. Currently, FFmpeg also
+compiles with several other compilers, such as the Compaq ccc compiler
+or Sun Studio 9, and we would like to keep it that way unless it would
+be exceedingly involved. To ensure compatibility, please don't use any
+additional C99 features or GCC extensions. Especially watch out for:
+</p><ul>
+<li>
+mixing statements and declarations;
+</li><li>
+<samp>`long long'</samp> (use <samp>`int64_t'</samp> instead);
+</li><li>
+<samp>`__attribute__'</samp> not protected by <samp>`#ifdef __GNUC__'</samp> or similar;
+</li><li>
+GCC statement expressions (<samp>`(x = ({ int y = 4; y; })'</samp>).
+</li></ul>
+
+<p>Indent size is 4.
+The presentation is the one specified by 'indent -i4 -kr -nut'.
+The TAB character is forbidden outside of Makefiles as is any
+form of trailing whitespace. Commits containing either will be
+rejected by the Subversion repository.
+</p>
+<p>Main priority in FFmpeg is simplicity and small code size (=less
+bugs).
+</p>
+<p>Comments: Use the JavaDoc/Doxygen
+format (see examples below) so that code documentation
+can be generated automatically. All nontrivial functions should have a comment
+above them explaining what the function does, even if it's just one sentence.
+All structures and their member variables should be documented, too.
+</p><table><tr><td>&nbsp;</td><td><pre class="example">/**
+ * @file mpeg.c
+ * MPEG codec.
+ * @author ...
+ */
+
+/**
+ * Summary sentence.
+ * more text ...
+ * ...
+ */
+typedef struct Foobar{
+    int var1; /**&lt; var1 description */
+    int var2; ///&lt; var2 description
+    /** var3 description */
+    int var3;
+} Foobar;
+
+/**
+ * Summary sentence.
+ * more text ...
+ * ...
+ * @param my_parameter description of my_parameter
+ * @return return value description
+ */
+int myfunc(int my_parameter)
+...
+</pre></td></tr></table>
+<p>fprintf and printf are forbidden in libavformat and libavcodec,
+please use av_log() instead.
+</p>
+<hr size="6">
+<a name="Development-Policy"></a>
+<a name="SEC34"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC33" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC35" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 7.4 Development Policy </h2>
+
+<ol>
+<li>
+   You must not commit code which breaks FFmpeg! (Meaning unfinished but
+   enabled code which breaks compilation or compiles but does not work or
+   breaks the regression tests)
+   You can commit unfinished stuff (for testing etc), but it must be disabled
+   (#ifdef etc) by default so it does not interfere with other developers'
+   work.
+</li><li>
+   You don't have to over-test things. If it works for you, and you think it
+   should work for others, then commit. If your code has problems
+   (portability, triggers compiler bugs, unusual environment etc) they will be
+   reported and eventually fixed.
+</li><li>
+   Do not commit unrelated changes together, split them into self-contained
+   pieces.
+</li><li>
+   Do not change behavior of the program (renaming options etc) without
+   first discussing it on the ffmpeg-devel mailing list. Do not remove
+   functionality from the code. Just improve!
+
+<p>   Note: Redundant code can be removed.
+</p></li><li>
+   Do not commit changes to the build system (Makefiles, configure script)
+   which change behavior, defaults etc, without asking first. The same
+   applies to compiler warning fixes, trivial looking fixes and to code
+   maintained by other developers. We usually have a reason for doing things
+   the way we do. Send your changes as patches to the ffmpeg-devel mailing
+   list, and if the code maintainers say OK, you may commit. This does not
+   apply to files you wrote and/or maintain.
+</li><li>
+   We refuse source indentation and other cosmetic changes if they are mixed
+   with functional changes, such commits will be rejected and removed. Every
+   developer has his own indentation style, you should not change it. Of course
+   if you (re)write something, you can use your own style, even though we would
+   prefer if the indentation throughout FFmpeg was consistent (Many projects
+   force a given indentation style - we don't.). If you really need to make
+   indentation changes (try to avoid this), separate them strictly from real
+   changes.
+
+<p>   NOTE: If you had to put if(){ .. } over a large (&gt; 5 lines) chunk of code,
+   then either do NOT change the indentation of the inner part within (don't
+   move it to the right)! or do so in a separate commit
+</p></li><li>
+   Always fill out the commit log message. Describe in a few lines what you
+   changed and why. You can refer to mailing list postings if you fix a
+   particular bug. Comments such as &quot;fixed!&quot; or &quot;Changed it.&quot; are unacceptable.
+</li><li>
+   If you apply a patch by someone else, include the name and email address in
+   the log message. Since the ffmpeg-cvslog mailing list is publicly
+   archived you should add some SPAM protection to the email address. Send an
+   answer to ffmpeg-devel (or wherever you got the patch from) saying that
+   you applied the patch.
+</li><li>
+   Do NOT commit to code actively maintained by others without permission. Send
+   a patch to ffmpeg-devel instead.
+</li><li>
+    Subscribe to the ffmpeg-cvslog mailing list. The diffs of all commits
+    are sent there and reviewed by all the other developers. Bugs and possible
+    improvements or general questions regarding commits are discussed there. We
+    expect you to react if problems with your code are uncovered.
+</li><li>
+    Update the documentation if you change behavior or add features. If you are
+    unsure how best to do this, send a patch to ffmpeg-devel, the documentation
+    maintainer(s) will review and commit your stuff.
+</li><li>
+    Never write to unallocated memory, never write over the end of arrays,
+    always check values read from some untrusted source before using them
+    as array index or other risky things.
+</li><li>
+    Remember to check if you need to bump versions for the specific libav
+    parts (libavutil, libavcodec, libavformat) you are changing. You need
+    to change the version integer and the version string.
+    Incrementing the first component means no backward compatibility to
+    previous versions (e.g. removal of a function).
+    Incrementing the second component means backward compatible change
+    (e.g. addition of a function).
+    Incrementing the third component means a noteworthy binary compatible
+    change (e.g. encoder bug fix that matters for the decoder).
+</li><li>
+    If you add a new codec, remember to update the changelog, add it to
+    the supported codecs table in the documentation and bump the second
+    component of the <tt>`libavcodec'</tt> version number appropriately. If
+    it has a fourcc, add it to <tt>`libavformat/avienc.c'</tt>, even if it
+    is only a decoder.
+</li></ol>
+
+<p>We think our rules are not too hard. If you have comments, contact us.
+</p>
+<p>Note, these rules are mostly borrowed from the MPlayer project.
+</p>
+<hr size="6">
+<a name="SEC35"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC34" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC36" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC34" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection"> 7.4.1 Renaming/moving files or content of files </h3>
+<p>  You CANNOT do that. Post a request for such a change to the mailing list
+  Do NOT remove &amp; readd a file - it will kill the changelog!!!!
+</p>
+<hr size="6">
+<a name="SEC36"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC35" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC37" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 7.5 Submitting patches </h2>
+
+<p>First, (see section <a href="#SEC33">Coding Rules</a>) above if you didn't yet.
+</p>
+<p>When you submit your patch, try to send a unified diff (diff '-up'
+option). I cannot read other diffs :-)
+</p>
+<p>Also please do not submit patches which contain several unrelated changes.
+Split them into individual self-contained patches; this makes reviewing
+them much easier.
+</p>
+<p>Run the regression tests before submitting a patch so that you can
+verify that there are no big problems.
+</p>
+<p>Patches should be posted as base64 encoded attachments (or any other
+encoding which ensures that the patch won't be trashed during
+transmission) to the ffmpeg-devel mailing list, see
+<a href="http://lists.mplayerhq.hu/mailman/listinfo/ffmpeg-devel">http://lists.mplayerhq.hu/mailman/listinfo/ffmpeg-devel</a>
+</p>
+<p>It also helps quite a bit if you tell us what the patch does (for example
+'replaces lrint by lrintf'), and why (for example '*BSD isn't C99 compliant
+and has no lrint()')
+</p>
+<p>We reply to all submitted patches and either apply or reject with some
+explanation why, but sometimes we are quite busy so it can take a week or two.
+</p>
+<hr size="6">
+<a name="SEC37"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC36" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[ &gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SEC30" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section"> 7.6 Regression tests </h2>
+
+<p>Before submitting a patch (or committing to the repository), you should at least
+test that you did not break anything.
+</p>
+<p>The regression tests build a synthetic video stream and a synthetic
+audio stream. These are then encoded and decoded with all codecs or
+formats. The CRC (or MD5) of each generated file is recorded in a
+result file. A 'diff' is launched to compare the reference results and
+the result file.
+</p>
+<p>The regression tests then go on to test the FFserver code with a
+limited set of streams. It is important that this step runs correctly
+as well.
+</p>
+<p>Run 'make test' to test all the codecs and formats.
+</p>
+<p>Run 'make fulltest' to test all the codecs, formats and FFserver.
+</p>
+<p>[Of course, some patches may change the results of the regression tests. In
+this case, the reference results of the regression tests shall be modified
+accordingly].
+</p>
+<hr size="6">
+<a name="SEC_About"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC1" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[Contents]</td>
+<td valign="middle" align="left">[Index]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1>About This Document</h1>
+<p>
+  This document was generated on <i>June, 30 2006</i> using <a href="http://texi2html.cvshome.org/"><i>texi2html 1.76</i></a>.
+</p>
+<p>
+  The buttons in the navigation panels have the following meaning:
+</p>
+<table border="1">
+  <tr>
+    <th> Button </th>
+    <th> Name </th>
+    <th> Go to </th>
+    <th> From 1.2.3 go to</th>
+  </tr>
+  <tr>
+    <td align="center"> [ &lt; ] </td>
+    <td align="center">Back</td>
+    <td>previous section in reading order</td>
+    <td>1.2.2</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &gt; ] </td>
+    <td align="center">Forward</td>
+    <td>next section in reading order</td>
+    <td>1.2.4</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &lt;&lt; ] </td>
+    <td align="center">FastBack</td>
+    <td>beginning of this chapter or previous chapter</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td align="center"> [ Up ] </td>
+    <td align="center">Up</td>
+    <td>up section</td>
+    <td>1.2</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &gt;&gt; ] </td>
+    <td align="center">FastForward</td>
+    <td>next chapter</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td align="center"> [Top] </td>
+    <td align="center">Top</td>
+    <td>cover (top) of document</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [Contents] </td>
+    <td align="center">Contents</td>
+    <td>table of contents</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [Index] </td>
+    <td align="center">Index</td>
+    <td>index</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [ ? ] </td>
+    <td align="center">About</td>
+    <td>about (help)</td>
+    <td> &nbsp; </td>
+  </tr>
+</table>
+
+<p>
+  where the <strong> Example </strong> assumes that the current position is at <strong> Subsubsection One-Two-Three </strong> of a document of the following structure:
+</p>
+
+<ul>
+  <li> 1. Section One
+    <ul>
+      <li>1.1 Subsection One-One
+        <ul>
+          <li>...</li>
+        </ul>
+      </li>
+      <li>1.2 Subsection One-Two
+        <ul>
+          <li>1.2.1 Subsubsection One-Two-One</li>
+          <li>1.2.2 Subsubsection One-Two-Two</li>
+          <li>1.2.3 Subsubsection One-Two-Three &nbsp; &nbsp;
+            <strong>&lt;== Current Position </strong></li>
+          <li>1.2.4 Subsubsection One-Two-Four</li>
+        </ul>
+      </li>
+      <li>1.3 Subsection One-Three
+        <ul>
+          <li>...</li>
+        </ul>
+      </li>
+      <li>1.4 Subsection One-Four</li>
+    </ul>
+  </li>
+</ul>
+
+<hr size="1">
+<p>
+ <font size="-1">
+  This document was generated on <i>June, 30 2006</i> using <a href="http://texi2html.cvshome.org/"><i>texi2html 1.76</i></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>
