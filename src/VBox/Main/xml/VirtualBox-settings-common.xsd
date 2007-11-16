@@ -319,6 +319,7 @@
   <!--- @todo (dmik) remove defaultSavedStateFolder on next format change! -->
   <xsd:attribute name="defaultSavedStateFolder" type="TLocalFile"/>
   <xsd:attribute name="remoteDisplayAuthLibrary" type="TLocalFile"/>
+  <xsd:attribute name="webServiceAuthLibrary" type="TLocalFile"/>
   <xsd:attribute name="HWVirtExEnabled" type="xsd:boolean"/>
   <xsd:attribute name="LogHistoryCount" type="xsd:unsignedInt" default="3"/>
 </xsd:complexType>

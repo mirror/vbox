@@ -67,6 +67,8 @@ public:
     STDMETHOD(COMSETTER(DefaultMachineFolder)) (INPTR BSTR aDefaultMachineFolder);
     STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary)) (BSTR *aRemoteDisplayAuthLibrary);
     STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (INPTR BSTR aRemoteDisplayAuthLibrary);
+    STDMETHOD(COMGETTER(WebServiceAuthLibrary)) (BSTR *aWebServiceAuthLibrary);
+    STDMETHOD(COMSETTER(WebServiceAuthLibrary)) (INPTR BSTR aWebServiceAuthLibrary);
     STDMETHOD(COMGETTER(HWVirtExEnabled)) (BOOL *enabled);
     STDMETHOD(COMSETTER(HWVirtExEnabled)) (BOOL enabled);
     STDMETHOD(COMGETTER(LogHistoryCount)) (ULONG *count);
@@ -94,6 +96,7 @@ private:
     HRESULT setDefaultVDIFolder (const BSTR aPath);
     HRESULT setDefaultMachineFolder (const BSTR aPath);
     HRESULT setRemoteDisplayAuthLibrary (const BSTR aPath);
+    HRESULT setWebServiceAuthLibrary (const BSTR aPath);
 
     ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
@@ -102,6 +105,7 @@ private:
     Bstr mDefaultMachineFolder;
     Bstr mDefaultMachineFolderFull;
     Bstr mRemoteDisplayAuthLibrary;
+    Bstr mWebServiceAuthLibrary;
     BOOL mHWVirtExEnabled;
     ULONG mLogHistoryCount;
 };

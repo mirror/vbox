@@ -300,6 +300,32 @@ STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (INPTR BSTR a
     return mParent->saveSettings();
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServiceAuthLibrary)
+{
+    if (!aWebServiceAuthLibrary)
+        return E_POINTER;
+
+    AutoLock alock (this);
+    CHECK_READY();
+
+    mWebServiceAuthLibrary.cloneTo (aWebServiceAuthLibrary);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (INPTR BSTR aWebServiceAuthLibrary)
+{
+    AutoLock alock (this);
+    CHECK_READY();
+
+    HRESULT rc = setWebServiceAuthLibrary (aWebServiceAuthLibrary);
+    if (FAILED (rc))
+        return rc;
+
+    alock.unlock();
+    return mParent->saveSettings();
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(HWVirtExEnabled) (BOOL *enabled)
 {
     if (!enabled)
@@ -386,6 +412,12 @@ HRESULT SystemProperties::loadSettings (CFGNODE aGlobal)
         if (FAILED (rc))
             break;
 
+        CFGLDRQueryBSTR (properties, "webServiceAuthLibrary",
+                         bstr.asOutParam());
+        rc = setWebServiceAuthLibrary (bstr);
+        if (FAILED (rc))
+            break;
+
         CFGLDRQueryBool (properties, "HWVirtExEnabled", (bool*)&mHWVirtExEnabled);
 
         uint32_t u32Count = 3;
@@ -429,6 +461,10 @@ HRESULT SystemProperties::saveSettings (CFGNODE aGlobal)
     if (mRemoteDisplayAuthLibrary)
         CFGLDRSetBSTR (properties, "remoteDisplayAuthLibrary",
                        mRemoteDisplayAuthLibrary);
+
+    if (mWebServiceAuthLibrary)
+        CFGLDRSetBSTR (properties, "webServiceAuthLibrary",
+                       mWebServiceAuthLibrary);
 
     CFGLDRSetBool (properties, "HWVirtExEnabled", !!mHWVirtExEnabled);
 
@@ -497,3 +533,15 @@ HRESULT SystemProperties::setRemoteDisplayAuthLibrary (const BSTR aPath)
     return S_OK;
 }
 
+HRESULT SystemProperties::setWebServiceAuthLibrary (const BSTR aPath)
+{
+    Utf8Str path;
+    if (aPath && *aPath)
+        path = aPath;
+    else
+        path = "VRDPAuth";
+
+    mWebServiceAuthLibrary = path;
+
+    return S_OK;
+}
