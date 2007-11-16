@@ -50,6 +50,8 @@ debrel   := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell ls
 endif
 endif
 
+debdocs := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/virtualbox\""
+
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 configure: debian/configure-stamp
 debian/configure-stamp:
@@ -76,6 +78,7 @@ debian/build-stamp $(verfile):
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
+	    $(debdocs) \
 	    all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual.pdf $(builddir)/bin,)
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox.chm $(builddir)/bin,)
@@ -90,6 +93,7 @@ debian/build-stamp $(verfile):
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
+	    $(debdocs) \
 	    packing
 	touch debian/build-stamp
 

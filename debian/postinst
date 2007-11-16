@@ -20,10 +20,7 @@ fi
 
 # install udev rule
 if [ -d /etc/udev/rules.d ]; then
-  udev_out=`udevinfo -V` 2>&1 > /dev/null
-  if [ "$udev_out" = "" ]; then
-    udev_out=`udevinfo -V` 2>&1 > /dev/null  # New syntax
-  fi
+  udev_out=`udevinfo -V 2> /dev/null`
   udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
   if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
     echo 'KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"' \
