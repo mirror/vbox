@@ -32,6 +32,22 @@
 // ConsoleVRDPServer
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef VRDP_NO_COM
+typedef struct _VRDPInputSynch
+{
+    int cGuestNumLockAdaptions;
+    int cGuestCapsLockAdaptions;
+
+    bool fGuestNumLock;
+    bool fGuestCapsLock;
+    bool fGuestScrollLock;
+
+    bool fClientNumLock;
+    bool fClientCapsLock;
+    bool fClientScrollLock;
+} VRDPInputSynch;
+#endif /* VRDP_NO_COM */
+
 /* Member of Console. Helper class for VRDP server management. Not a COM class. */
 class ConsoleVRDPServer
 {
@@ -45,7 +61,29 @@ public:
     {
         m_fGuestWantsAbsolute = fGuestWantsAbsolute;
     }
-    
+
+    void NotifyKeyboardLedsChange (BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+    {
+        bool fGuestNumLock    = (fNumLock != FALSE);
+        bool fGuestCapsLock   = (fCapsLock != FALSE);
+        bool fGuestScrollLock = (fScrollLock != FALSE);
+
+        /* Might need to resynch in case the guest itself changed the LED status. */
+        if (m_InputSynch.fClientNumLock != fGuestNumLock)
+        {
+            m_InputSynch.cGuestNumLockAdaptions = 2;
+        }
+
+        if (m_InputSynch.fClientCapsLock != fGuestCapsLock)
+        {
+            m_InputSynch.cGuestCapsLockAdaptions = 2;
+        }
+
+        m_InputSynch.fGuestNumLock    = fGuestNumLock;
+        m_InputSynch.fGuestCapsLock   = fGuestCapsLock;
+        m_InputSynch.fGuestScrollLock = fGuestScrollLock;
+    }
+
     void EnableConnections (void);
     void MousePointerUpdate (const VRDPCOLORPOINTER *pPointer);
     void MousePointerHide (void);
@@ -144,6 +182,8 @@ private:
     IFramebuffer *maFramebuffers[SchemaDefs::MaxGuestMonitors];
     
     IConsoleCallback *mConsoleCallback;
+
+    VRDPInputSynch m_InputSynch;
 #else
     // VRDP API function pointers
     static int  (VBOXCALL *mpfnVRDPStartServer)     (IConsole *pConsole, IVRDPServer *pVRDPServer, HVRDPSERVER *phServer);

@@ -91,6 +91,10 @@ public:
 
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
+        if (m_server)
+        {
+            m_server->NotifyKeyboardLedsChange (fNumLock, fCapsLock, fScrollLock);
+        }
         return S_OK;
     }
 
@@ -862,6 +866,24 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackFramebufferUnlock (void *pvCal
     }
 }
 
+static void fixKbdLockStatus (VRDPInputSynch *pInputSynch, IKeyboard *pKeyboard)
+{
+    if (   pInputSynch->cGuestNumLockAdaptions
+        && (pInputSynch->fGuestNumLock != pInputSynch->fClientNumLock))
+    {
+        pInputSynch->cGuestNumLockAdaptions--;
+        pKeyboard->PutScancode(0x45);
+        pKeyboard->PutScancode(0x45 | 0x80);
+    }
+    if (   pInputSynch->cGuestCapsLockAdaptions
+        && (pInputSynch->fGuestCapsLock != pInputSynch->fClientCapsLock))
+    {
+        pInputSynch->cGuestCapsLockAdaptions--;
+        pKeyboard->PutScancode(0x3a);
+        pKeyboard->PutScancode(0x3a | 0x80);
+    }
+}
+
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int type, const void *pvInput, unsigned cbInput)
 {
     ConsoleVRDPServer *server = static_cast <ConsoleVRDPServer *> (pvCallback);
@@ -873,8 +895,30 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int t
         {
             if (cbInput == sizeof (VRDPINPUTSCANCODE))
             {
+                IKeyboard *pKeyboard = pConsole->getKeyboard ();
+
                 const VRDPINPUTSCANCODE *pInputScancode = (VRDPINPUTSCANCODE *)pvInput;
-                pConsole->getKeyboard ()->PutScancode((LONG)pInputScancode->uScancode);
+
+                /* Track lock keys. */
+                if (pInputScancode->uScancode == 0x45)
+                {
+                    server->m_InputSynch.fClientNumLock = !server->m_InputSynch.fClientNumLock;
+                }
+                else if (pInputScancode->uScancode == 0x3a)
+                {
+                    server->m_InputSynch.fClientCapsLock = !server->m_InputSynch.fClientCapsLock;
+                }
+                else if (pInputScancode->uScancode == 0x46)
+                {
+                    server->m_InputSynch.fClientScrollLock = !server->m_InputSynch.fClientScrollLock;
+                }
+                else if ((pInputScancode->uScancode & 0x80) == 0)
+                {
+                    /* Key pressed. */
+                    fixKbdLockStatus (&server->m_InputSynch, pKeyboard);
+                }
+
+                pKeyboard->PutScancode((LONG)pInputScancode->uScancode);
             }
         } break;
 
@@ -934,6 +978,36 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int t
             pConsole->Reset();
         } break;
 
+        case VRDP_INPUT_SYNCH:
+        {
+            if (cbInput == sizeof (VRDPINPUTSYNCH))
+            {
+                IKeyboard *pKeyboard = pConsole->getKeyboard ();
+
+                const VRDPINPUTSYNCH *pInputSynch = (VRDPINPUTSYNCH *)pvInput;
+
+                server->m_InputSynch.fClientNumLock    = (pInputSynch->uLockStatus & VRDP_INPUT_SYNCH_NUMLOCK) != 0;
+                server->m_InputSynch.fClientCapsLock   = (pInputSynch->uLockStatus & VRDP_INPUT_SYNCH_CAPITAL) != 0;
+                server->m_InputSynch.fClientScrollLock = (pInputSynch->uLockStatus & VRDP_INPUT_SYNCH_SCROLL) != 0;
+
+                /* The client initiated synchronization. Always make the guest to reflect the client state. 
+                 * Than means, when the guest changes the state itself, it is forced to return to the client
+                 * state.
+                 */
+                if (server->m_InputSynch.fClientNumLock != server->m_InputSynch.fGuestNumLock)
+                {
+                    server->m_InputSynch.cGuestNumLockAdaptions = 2;
+                }
+
+                if (server->m_InputSynch.fClientCapsLock != server->m_InputSynch.fGuestCapsLock)
+                {
+                    server->m_InputSynch.cGuestCapsLockAdaptions = 2;
+                }
+
+                fixKbdLockStatus (&server->m_InputSynch, pKeyboard);
+            }
+        } break;
+
         default:
             break;
     }
@@ -974,6 +1048,17 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     m_mousex = 0;
     m_mousey = 0;
 
+    m_InputSynch.cGuestNumLockAdaptions = 2;
+    m_InputSynch.cGuestCapsLockAdaptions = 2;
+
+    m_InputSynch.fGuestNumLock    = false;
+    m_InputSynch.fGuestCapsLock   = false;
+    m_InputSynch.fGuestScrollLock = false;
+    
+    m_InputSynch.fClientNumLock    = false;
+    m_InputSynch.fClientCapsLock   = false;
+    m_InputSynch.fClientScrollLock = false;
+    
     memset (maFramebuffers, 0, sizeof (maFramebuffers));
 
     mConsoleCallback = new VRDPConsoleCallback(this);
