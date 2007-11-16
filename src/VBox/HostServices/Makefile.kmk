@@ -29,6 +29,9 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
 include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
 endif
 endif
+ifdef VBOX_WITH_FFMPEG
+ SUBDIRS += VideoCapture
+endif
 
 include	$(PATH_KBUILD)/subfooter.kmk
 
