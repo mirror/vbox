@@ -65,3 +65,4 @@ VBox-kStuff_SOURCES = \
 #	kStuff/kErr/kErrName.c
 
 include $(PATH_KBUILD)/footer.kmk
+
