@@ -207,7 +207,11 @@ $(PATH_BIN)/VBoxAddIF.sh: VBoxAddIF.sh $(VBOX_VERSION_STAMP)
 
 $(PATH_BIN)/VirtualBox.desktop: VirtualBox.desktop $(VBOX_VERSION_STAMP)
 	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)$(SED) -e "s/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/" $< > $@
+ifdef VBOX_PATH_PACKAGE_DOCS
+	$(QUIET)$(SED) -e "s+\$$VBOX_DOC_PATH+$(VBOX_PATH_PACKAGE_DOCS)+" $< > $@
+else
+	$(QUIET)$(SED) -e "s+\$$VBOX_DOC_PATH+/opt/VirtualBox-$(VBOX_VERSION_STRING)+" $< > $@
+endif
 
 # Note: The -m <mode> feature of kmk_builtin_install does not work together with fakeroot!
 # Note: $(INSTALL) -s is currently not reliable when used in parallel builds. Fixed in 0.1.1.
