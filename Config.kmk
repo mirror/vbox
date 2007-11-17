@@ -1015,10 +1015,10 @@ ifdef VBOX_SIGNING_MODE
   VBOX_SIGNTOOL ?= $(VBOX_PATH_SELFSIGN)/SignTool.exe
   VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/Inf2Cat.exe
 
-  # There are two signing modes; 'self' and 'release'.
+  # There are three signing modes; 'self', 'development' and 'release'.
   ifeq ($(strip $(VBOX_SIGNING_MODE)),self)
-   ## @todo
-  else ifeq ($(strip $(VBOX_SIGNING_MODE)),release)
+   ## @todo Figure out selfsigning and put up some docs in the wiki.
+  else if1of ($(VBOX_SIGNING_MODE),release development)
    VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/MSCV-GlobalSign.cer
    VBOX_CROSS_CERTIFICATE_FILE_ARGS ?= /ac "$(VBOX_CROSS_CERTIFICATE_FILE)"
    VBOX_CERTIFICATE_SUBJECT_NAME ?= InnoTek Systemberatung GmbH
@@ -1029,8 +1029,6 @@ ifdef VBOX_SIGNING_MODE
    VBOX_TSA_URL_ARGS ?= /t "$(VBOX_TSA_URL)"
    ## Commands for signing a driver image after link.
    VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
-   ## Commands for signing an executable or a dll image after link.
-   VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
    ## Sign a file.
    # @param 1  The file to sign.
    VBOX_SIGN_FILE_FN     ?= $(VBOX_SIGNTOOL) sign \
@@ -1056,8 +1054,13 @@ ifdef VBOX_SIGNING_MODE
     VBOX_MAKE_CAT_FN    ?= $(call VBOX_MAKE_CAT64_FN,$(1),$(2))
    endif
 
-  # Enable signing of the additions.
-  VBOX_SIGN_ADDITIONS   ?= 1
+   # Go nuts, sign everything.
+   ifeq ($(strip $(VBOX_SIGNING_MODE)),release)
+    ## Commands for signing an executable or a dll image after link.
+    VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
+    ## Enable signing of the additions.
+    VBOX_SIGN_ADDITIONS   ?= 1
+   endif
 
   else
    $(error Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
