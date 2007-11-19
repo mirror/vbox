@@ -1266,8 +1266,8 @@ ifneq ($(filter linux,$(BUILD_TARGET)),)
    kernelpath := $(VBOX_LINUX_SRC)
   endif
   ifeq ($(BUILD_TARGET_ARCH),x86)
-    VBOX_LINUX_INCS                += $(kernelpath)/include/asm/mach-default \
-                                      $(kernelpath)/include2/asm/mach-default
+    VBOX_LINUX_INCS                += $(kernelpath)/include/asm-i386/mach-default \
+                                      $(kernelpath)/include/asm-x86/mach-default
   endif
  endif
 endif
