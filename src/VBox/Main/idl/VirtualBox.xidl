@@ -511,7 +511,7 @@
      wsmap="suppress"
      >
     <desc>
-      Extended error information.
+      The IVirtualBoxErrorInfo interface represent extended error information.
 
       Such extended error information can be set by VirtualBox components
       after unsuccessful method invocation. This can then be returned to the
@@ -2178,7 +2178,8 @@
      wsmap="struct"
      >
     <desc>
-        BIOS settings in a virtual machine. Used in <link to="IMachine::BIOSSettings" />.
+        The IBIOSSettings interface represents BIOS settings of the virtual
+        machine. Used in <link to="IMachine::BIOSSettings" />.
     </desc>
     <attribute name="logoFadeIn" type="boolean">
       <desc>Fade in flag for BIOS logo animation.</desc>
@@ -2244,24 +2245,41 @@
      wsmap="managed"
      >
     <desc>
-      A virtual machine, or guest, created in VirtualBox.
+      The IMachine interface represents a virtual machine, or guest, created
+      in VirtualBox.
 
-      This is used in two contexts, mainly: A collection of these is in
-      <link to="IVirtualBox::machines" />, listing all the virtual machines
-      that are currently registered with this VirtualBox installation. Also,
-      once a remote session has been opened for this machine (i.e. the
-      virtual machine is running), a copy of the machine is in the console
-      object that represents the connection to the remote session; see
-      <link to="IConsole" /> for details.
+      This interface is used in two contexts. First of all, a collection of
+      objects implementing this interface is stored in the
+      <link to="IVirtualBox::machines"/> attribute which lists all the virtual
+      machines that are currently registered with this VirtualBox
+      installation. Also, once a session has been opened for the given virtual
+      machine (e.g. the virtual machine is running), the machine object
+      associated with the open session can be queried from the session object;
+      see <link to="ISession"/> for details.
 
-      All the settings and actions that are visible in VirtualBox's
-      front-ends are represented by attributes and methods of this interface.
-      However, in order to start a virtual machine, as indicated above,
-      call <link to="IVirtualBox::openRemoteSession" />; to change machine
-      settings, one needs to open a direct session, see
-      <link to="IVirtualBox::openSession" />.
+      The main role of this interface is to expose the settings of the virtual
+      machine and provide methods to change various aspects of the virtual
+      machine's configuration. For machine objects stored in the
+      <link to="IVirtualBox::machines"/> collection, all attributes are
+      read-only unless explicitely stated otherwise in individual attribute
+      and method descriptions. In order to change a machine setting, a session
+      for this machine must be opened using one of
+      <link to="IVirtualBox::openSession"/>,
+      <link to="IVirtualBox::openRemoteSession"/> or
+      <link to="IVirtualBox::openExistingSession"/> methdods. After the
+      session has been successfully opened, a mutable machine object needs to
+      be queried from the session object and then the desired settings changes
+      can be applied to the returned object using IMachine attributes and
+      methods. See the ISession interface description for more information
+      about sessions.
 
-      <see>IConsole, ISession</see>
+      Note that the IMachine interface does not provide methods to control
+      virtual machine execution (such as start the machine, or power it
+      down) -- these methods are grouped in a separate IConsole
+      interface. Refer to the IConsole interface description to get more
+      information about this topic.
+
+      <see>ISession, IConsole</see>
     </desc>
 
     <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -2672,16 +2690,8 @@
         Puts the given device to the specified position in
         the boot order.
 
-        @todo [remove?]
-        If the machine can have more than one device of the given type
-        (such as hard disks), then a separate method should be used to
-        specify the boot order for individual devices. Using this method
-        in such cases will put the first device in the group
-        (for example, a hard disk attached as Master on the primary
-        IDE controller) to the given position.
-
-        To indicate that no any device is associated with the
-        given position, <link to="DeviceType::NoDevice"/> should be used.
+        To indicate that no device is associated with the given position,
+        <link to="DeviceType::NoDevice"/> should be used.
 
         @todo setHardDiskBootOrder(), setNetworkBootOrder()
       </desc>
@@ -3528,13 +3538,21 @@
      wsmap="managed"
      >
     <desc>
-      Connection to machine's remote session.
+      The IConsole interface represents an interface to control virtual
+      machine execution.
 
-      A console conceptually represents a connection to a remote session,
-      as opened by <link to="IVirtualBox::openRemoteSession" />. An
-      IConsole object lives in the local address space (and not remotely,
-      like IVirtualBox and IMachine do) and allows the owner to control
-      the virtual machine's state.
+      The console object that implements the IConsole interface is obtained
+      from a session object after the session for the given machine has been
+      opened using one of <link to="IVirtualBox::openSession"/>,
+      <link to="IVirtualBox::openRemoteSession"/> or
+      <link to="IVirtualBox::openExistingSession"/> methdods.
+
+      Methods of the IConsole interface allow the caller to query the current
+      virtual machine execution state, pause the machine or power it down, save
+      the machine state or take a snapshot, attach and detach removable media
+      and so on.
+
+      <see>ISession</see>
     </desc>
 
     <attribute name="machine" type="IMachine" readonly="yes">
@@ -4075,7 +4093,8 @@
      wsmap="managed"
      >
     <desc>
-      Physical CD/DVD drive hardware on the host. Used indirectly in <link to="IHost::DVDDrives" />.
+      The IHostDVDDrive interface represents the physical CD/DVD drive
+      hardware on the host. Used indirectly in <link to="IHost::DVDDrives"/>.
     </desc>
 
     <attribute name="name" type="wstring" readonly="yes">
@@ -4137,7 +4156,8 @@
      wsmap="managed"
      >
     <desc>
-      Physical floppy drive hardware on the host. Used indirectly in <link to="IHost::floppyDrives" />.
+      The IHostFloppyDrive interface represents the physical floppy drive
+      hardware on the host. Used indirectly in <link to="IHost::floppyDrives"/>.
     </desc>
     <attribute name="name" type="wstring" readonly="yes">
       <desc>
@@ -4256,14 +4276,15 @@
      wsmap="managed"
      >
     <desc>
-      The physical machine that this VirtualBox installation runs on.
+      The IHost interface represents the physical machine that this VirtualBox
+      installation runs on.
 
-      This is used in <link to="IVirtualBox::host" /> and contains both read-only
-      information about the host's physical hardware (such as what processors,
-      and disks are available, what the host operating system is, and so on).
-
-      This also allows for manipulating some of the host's hardware, such as
-      USB and host interface networking.
+      An object implementing this interface is returned by the
+      <link to="IVirtualBox::host" /> attribute. This interface contains
+      read-only information about the host's physical hardware (such as what
+      processors, and disks are available, what the host operating system is,
+      and so on) and also allows for manipulating some of the host's hardware,
+      such as global USB device filters and host interface networking.
 
     </desc>
     <attribute name="DVDDrives" type="IHostDVDDriveCollection" readonly="yes">
@@ -4701,10 +4722,13 @@
      wsmap="suppress"
      >
     <desc>
-      Operating system information of a virtual machine. Used in <link to="IConsole::guest" />.
+      The IGuest interface represents information about the operating system
+      running inside the virtual machine. Used in
+      <link to="IConsole::guest"/>.
 
-      IGuest provides information about the guest's operating system, whether
-      Guest Additions are installed and other OS-specific virtual machine properties.
+      IGuest provides information about the guest operating system, whether
+      Guest Additions are installed and other OS-specific virtual machine
+      properties.
     </desc>
 
     <attribute name="OSTypeId" type="wstring" readonly="yes">
@@ -5838,17 +5862,18 @@
      >
 
     <desc>
-      Specific type of <link to="IHardDisk" /> that uses VDI image files.
+      The IVirtualDiskImage interface represent a specific type of
+      <link to="IHardDisk" /> that uses VDI image files.
 
       The Virtual Disk Image (VDI) format is VirtualBox's native format for
       hard disk containers.
 
-      Hard disks using virtual disk images can be either opened using
-      <link to="IVirtualBox::openVirtualDiskImage()"/> or created from
-      scratch using <link to="IVirtualBox::createHardDisk()"/>.
-
       Objects that support this interface also support the
       <link to="IHardDisk"/> interface.
+
+      Hard disks using virtual disk images can be either opened using
+      <link to="IVirtualBox::openHardDisk()"/> or created from
+      scratch using <link to="IVirtualBox::createHardDisk()"/>.
 
       When a new hard disk object is created from scatch, an image file for it
       is not automatically created. To do it, you need to specify a
@@ -5988,18 +6013,15 @@
      >
 
     <desc>
-      Specific type of <link to="IHardDisk" /> that uses iSCSI.
+      THe IISCSIHardDisk interface represents a specific type of
+      <link to="IHardDisk"/> that uses iSCSI.
 
       The IISCSIHardDisk interface represents <link to="IHardDisk">virtual
       hard disks</link> that use the Internet SCSI (iSCSI) protocol to store
       hard disk data on remote machines.
 
       Objects that support this interface also support the
-      <link to="IHardDisk"/> interface. In other words, in C++ terms,
-      one can consider this class to be derived from IHardDisk.
-
-      As with other hard disk objects, hard disks using custom hard disk
-      images can be opened using <link to="IVirtualBox::openHardDisk()"/>.
+      <link to="IHardDisk"/> interface.
 
       iSCSI hard disks can be created using
       <link to="IVirtualBox::createHardDisk()"/>. When a new hard disk object
@@ -6092,18 +6114,19 @@
      wsmap="managed"
      >
     <desc>
-      Specific type of <link to="IHardDisk" /> that uses VMDK image files.
+      The IVMDKImage interface represents a specific type of
+      <link to="IHardDisk"/> that uses VMDK image files.
 
       The Virtual Machine Disk (VMDK) format is the industry standard format
       for virtual hard disk image files, which VirtualBox supports besides its
       own native VDI format.
 
+      Objects that support this interface also support the
+      <link to="IHardDisk"/> interface.
+
       Hard disks using VMDK images can be either opened using
       <link to="IVirtualBox::openHardDisk()"/> or created from
       scratch using <link to="IVirtualBox::createHardDisk()"/>.
-
-      Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
 
       When a new hard disk object is created from scatch, an image file for it
       is not automatically created. To do it, you need to specify a
@@ -6250,18 +6273,22 @@
      wsmap="managed"
      >
     <desc>
-      Specific type of <link to="IHardDisk" /> that is supported through a third-party plugin.
+      The ICustomHardDisk interface represents a specific type of
+      <link to="IHardDisk" /> that is supported through a third-party plugin.
+
+      This interface allows to add support for custom hard disk formats to
+      VirtualBox.
 
       Objects that support this interface also support the
-      <link to="IHardDisk"/> interface. In other words, in C++ terms,
-      one can consider this class to be derived from IHardDisk.
+      <link to="IHardDisk"/> interface.
 
-      As with other hard disk objects, hard disks using custom hard disk
-      images can be opened using <link to="IVirtualBox::openHardDisk()"/>.
+      Hard disks using custom hard disk formats can be either opened using
+      <link to="IVirtualBox::openHardDisk()"/> or created from scratch using
+      <link to="IVirtualBox::createHardDisk()"/>.
 
-      When a new hard disk object is created from scratch, an image file for it
-      is not automatically created. To do it, you need to specify a
-      valid <link to="#filePath">file path</link>, and call
+      When a new hard disk object is created from scratch, an image file for
+      it is not automatically created. To do it, you need to specify a
+      valid <link to="#location">location</link>, and call
       <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
       When it is done, the hard disk object can be registered by calling
       <link to="IVirtualBox::registerHardDisk()"/> and then
@@ -6524,7 +6551,8 @@
      wsmap="managed"
      >
     <desc>
-      Virtual CD/DVD drive in a virtual machine. Used in <link to="IMachine::DVDDrive" />.
+      The IDVDDrive interface represents the virtual CD/DVD drive of the
+      virtual machine. Used in <link to="IMachine::DVDDrive"/>.
     </desc>
     <attribute name="state" type="DriveState" readonly="yes">
       <desc>Current drive state.</desc>
@@ -6675,7 +6703,8 @@
      wsmap="managed"
      >
     <desc>
-      Virtual floppy drive in a virtual machine. Used in <link to="IMachine::FloppyDrive" />.
+      The IFloppyDrive interface represents the virtual floppy drive of the
+      virtual machine. Used in <link to="IMachine::FloppyDrive" />.
     </desc>
 
     <attribute name="enabled" type="boolean">
@@ -6727,7 +6756,8 @@
      wsmap="managed"
      >
     <desc>
-      A virtual machine's keyboard within an <link to="IConsole" />. Used in <link to="IConsole:.keyboard" />.
+      The IKeyboard interface represents the virtual machine's keyboard. Used
+      in <link to="IConsole::keyboard"/>.
 
       Through this interface, the virtual machine's virtual keyboard can be controlled. One
       can send keystrokes to the virtual machine and send the Ctrl-Alt-Del sequence to it.
@@ -6774,9 +6804,11 @@
      wsmap="managed"
      >
     <desc>
-      A virtual machine's mouse within an <link to="IConsole" />. Used in <link to="IConsole:.mouse" />.
+      The IMouse interface represents the virtual machine's mouse. Used in
+      <link to="IConsole::mouse"/>.
 
-      Through this interface, the virtual machine's virtual mouse can be controlled.
+      Through this interface, the virtual machine's virtual mouse can be
+      controlled.
     </desc>
 
     <attribute name="absoluteSupported" type="boolean" readonly="yes">
@@ -7269,13 +7301,14 @@
      wsmap="suppress"
      >
     <desc>
-      An alpha blended overlay for displaying status icons above an IFramebuffer.
-      It is always created not visible, so that it must be explicitly shown.  It
-      only covers a portion of the IFramebuffer, determined by its width, height
-      and co-ordinates.  It is always in packed pixel little-endian 32bit ARGB (in
-      that order) format, and may be written to directly.  Do re-read the width
-      though, after setting it, as it may be adjusted (increased) to make it more
-      suitable for the front end.
+      The IFramebufferOverlay interface represents an alpha blended overlay
+      for displaying status icons above an IFramebuffer.  It is always created
+      not visible, so that it must be explicitly shown.  It only covers a
+      portion of the IFramebuffer, determined by its width, height and
+      co-ordinates.  It is always in packed pixel little-endian 32bit ARGB (in
+      that order) format, and may be written to directly.  Do re-read the
+      width though, after setting it, as it may be adjusted (increased) to
+      make it more suitable for the front end.
     </desc>
     <attribute name="x" type="unsigned long" readonly="yes">
       <desc>X position of the overlay, relative to the framebuffer.</desc>
@@ -7314,12 +7347,15 @@
      wsmap="suppress"
      >
     <desc>
-      A virtual machine's display within an <link to="IConsole" />.
+      The IDisplay interface represents the virtual machine's display.
 
-      One display object is contained in each <link to="IConsole::display" />
-      attribute and represents the visual output of the virtual machine. This
-      can represent a window on the host (for a local display).
+      The object implementing this interface is contained in each
+      <link to="IConsole::display"/> attribute and represents the visual
+      output of the virtual machine.
 
+      The virtual display supports pluggable output targets represented by the
+      IFramebuffer interface. Examples of the output target are a window on
+      the host computer or an RDP sessoin's display on a remote computer.
     </desc>
     <attribute name="width" type="unsigned long" readonly="yes">
       <desc>Current display width.</desc>
@@ -7634,9 +7670,20 @@
      name="PortMode"
      uuid="b266f43c-2e93-46b3-812b-c20e600e867b"
      >
-    <const name="DisconnectedPort"        value="0"/>
-    <const name="HostPipePort"            value="1"/>
-    <const name="HostDevicePort"          value="2"/>
+    <desc>
+      The PortMode enumeration represents possible communicaton modes for
+      the virtual serial port device.
+    </desc>
+
+    <const name="DisconnectedPort"        value="0">
+      <desc>Virtual device is not attached to any real host device.</desc>
+    </const>
+    <const name="HostPipePort"            value="1">
+      <desc>Virtual device is attached to a host pipe.</desc>
+    </const>
+    <const name="HostDevicePort"          value="2">
+      <desc>Virtual device is attached to a host device.</desc>
+    </const>
   </enum>
 
   <interface
@@ -7644,6 +7691,30 @@
      uuid="937f6970-5103-4745-b78e-d28dcf1479a8"
      wsmap="managed"
      >
+
+    <desc>
+      The ISerialPort interface represents the virtual serial port device.
+
+      The virtual serial port device acts like an ordinary serial port
+      inside the virtual machine. This device communicates to the real
+      serial port hardware in one of two modes: host pipe or host device.
+
+      In host pipe mode, the #path attribute specifies the path to the pipe on
+      the host computer that represents a serial port. The #server attribute
+      determines if this pipe is created by the virtual machine process at
+      machine startup or it must already exist before starting machine
+      execution.
+
+      In host device mode, the #path attribute specifies the name of the
+      serial port device on the host computer.
+
+      There is also a third communication mode: the disconnected mode. In this
+      mode, the guest OS running inside the virtual machine will be able to
+      detect the serial port, but all port write operations will be discarded
+      and all port read operations will return no data.
+
+      <see>IMachine::getSerial</see>
+    </desc>
 
      <attribute name="slot" type="unsigned long" readonly="yes">
       <desc>
@@ -7661,11 +7732,11 @@
     </attribute>
 
     <attribute name="IOBase" type="unsigned long">
-      <desc>I/O base of the serial port.</desc>
+      <desc>Base I/O address of the serial port.</desc>
     </attribute>
 
     <attribute name="IRQ" type="unsigned long">
-      <desc>IRQ of the serial port.</desc>
+      <desc>IRQ number of the serial port.</desc>
     </attribute>
 
     <attribute name="hostMode" type="PortMode">
@@ -7676,15 +7747,17 @@
       <desc>
         Flag whether this serial port acts as a server (creates a new pipe on
         the host) or as a client (uses the existing pipe). This attribute is
-        used only when #hostMode is PortMode::HostPipe.
+        used only when #hostMode is PortMode::HostPipePort.
       </desc>
     </attribute>
 
     <attribute name="path" type="wstring">
       <desc>
         Path to the serial port's pipe on the host when #hostMode is
-        PortMode::HostPipe, or the host serial device name when #hostMode is
-        PortMode::HostDevice.
+        PortMode::HostPipePort, or the host serial device name when #hostMode
+        is PortMode::HostDevicePort. In either of the above cases, setting a
+        @c null or an empty string as the attribute's value will result into
+        an error.
       </desc>
     </attribute>
 
@@ -7700,6 +7773,21 @@
      uuid="0c925f06-dd10-4b77-8de8-294d738c3214"
      wsmap="managed"
      >
+
+    <desc>
+      The IParallelPort interface represents the virtual parallel port device.
+
+      The virtual parallel port device acts like an ordinary parallel port
+      inside the virtual machine. This device communicates to the real
+      parallel port hardware using the name of the parallel device on the host
+      computer specified in the #path attribute.
+
+      Each virtual parallel port device is assigned a base I/O address and an
+      IRQ number that will be reported to the guest operating system and used
+      to operate the given parallel port from within the virtual machine.
+
+      <see>IMachine::getParallelPort</see>
+    </desc>
 
      <attribute name="slot" type="unsigned long" readonly="yes">
       <desc>
@@ -7717,15 +7805,18 @@
     </attribute>
 
     <attribute name="IOBase" type="unsigned long">
-      <desc>I/O base of the parallel port.</desc>
+      <desc>Base I/O address of the parallel port.</desc>
     </attribute>
 
     <attribute name="IRQ" type="unsigned long">
-      <desc>IRQ of the parallel port.</desc>
+      <desc>IRQ number of the parallel port.</desc>
     </attribute>
 
     <attribute name="path" type="wstring">
-      <desc>Host parallel device name.</desc>
+      <desc>
+        Host parallel device name. Setting a null or an empty string as this
+        attribute's value will result into an error.
+      </desc>
     </attribute>
 
   </interface>
@@ -8015,12 +8106,12 @@
      wsmap="managed"
      >
     <desc>
-      Virtual USB device within an <link to="IConsole" />.
+      The IUSBDevice interface represents a virtual USB device attached to the
+      virtual machine.
 
-      A collection of these is in <link to="IConsole::USBDevices" />.
-      Virtual USB devices can be attached to a running virtual machine's
-      USB controller.
-
+      A collection of objects implementing this interface is stored in the
+      <link to="IConsole::USBDevices"/> attribute which lists all USB devices
+      attached to a running virtual machine's USB controller.
     </desc>
 
     <attribute name="id" type="uuid" readonly="yes">
@@ -8411,11 +8502,12 @@
      wsmap="managed"
      >
     <desc>
-      Physical USB device attached to the host computer.
+      The IHostUSBDevice interface represents a physical USB device attached
+      to the host computer.
 
-      Among with properties inherited from IUSBDevice,
-      this interface adds the <link to="#state"/> property
-      that holds the courrent state of the USB device.
+      Besides properties inherited from IUSBDevice, this interface adds the
+      <link to="#state"/> property that holds the courrent state of the USB
+      device.
 
       <see>IHost::USBDevices, IHost::USBDeviceFilters</see>
     </desc>
@@ -8472,8 +8564,9 @@
      wsmap="managed"
      >
     <desc>
-      Filter for a physical USB device used by the host computer. Used indirectly
-      in <link to="IHost::USBDeviceFilters" />.
+      The IHostUSBDeviceFilter interface represents a global filter for a
+      physical USB device used by the host computer. Used indirectly in
+      <link to="IHost::USBDeviceFilters"/>.
 
       Using filters of this type, the host computer determines the initial
       state of the USB device after it is physically attached to the
@@ -8521,7 +8614,8 @@
      wsmap="struct"
      >
     <desc>
-        Virtual audio adapter in a virtual machine. Used in <link to="IMachine::audioAdapter" />.
+        The IAudioAdapter interface represents the virtual audio adapter of
+        the virtual machine. Used in <link to="IMachine::audioAdapter"/>.
     </desc>
     <attribute name="enabled" type="boolean">
       <desc>
@@ -8875,34 +8969,65 @@
      wsmap="managed"
      >
     <desc>
-      Serialization primitive for virtual machines.
+      The ISession interface represents a serialization primitive for virtual
+      machines.
 
-      Within VirtualBox, any time one wishes to manipulate a virtual machine,
-      an instance of ISession is required. One first creates a session
-      object locally and then passes it with the method call that initiates
-      the machine manipulation. The session serves several purposes: it
-      identifies to the inter-process VirtualBox code which process is currently
-      working with a virtual machine, and it ensures that there are no
-      incompatible requests from several processes for the same virtual machine.
+      Within VirtualBox, every time one wishes to manipulate a virtual machine
+      (for example, change its settings or start execution), an instance of
+      the ISession interface is required. One first creates a local session
+      object that implements the ISession interface and then passes the
+      created object with the method call that opens the given session and
+      thus initiates the machine manipulation. The session serves several
+      purposes: it identifies to the inter-process VirtualBox code which
+      process is currently working with the virtual machine, and it ensures
+      that there are no incompatible requests from several processes for the
+      same virtual machine.
 
-      For example, to start a virtual machine, one would call
-      <link to="IVirtualBox::openRemoteSession" />, which requires a session
-      object as its first parameter. This session then identifies the caller
-      and makes sure that no other process attempts to manipulate the virtual
-      machine's parameters while it is running.
-
-      As another example, to manipulate machine settings, one needs to
-      open a direct session on the machine first by calling
-      <link to="IVirtualBox::openSession" />. This prevents the machine from
-      being changed by other processes.
-
-      In regular COM C++ client code, one can simply create a session object,
-      for example by calling <tt>createLocalObject().</tt>
+      When using the COM API directly, an object of the Session class from the
+      VirtualBox type library needs to be created. This object will then act
+      as a local session object in further calls to open a session.
 
       In the webservice, the session manager creates one session object during
       <link to="IWebsessionManager::logon" /> automatically; a managed object
       reference to that session object can be retrieved by calling
       <link to="IWebsessionManager::getSessionObject" />.
+
+      To start a virtual machine in a separate process, one would call
+      <link to="IVirtualBox::openRemoteSession"/>, which requires a session
+      object as its first parameter. This session then identifies the caller
+      and lets him control the started machine (for example, pause machine
+      execution or power it down) as well as be notified about machine
+      execution state changes.
+
+      To alter machine settings, or to start machine execution within its own
+      process, one needs to open a direct session for the machine first by
+      calling <link to="IVirtualBox::openSession"/>. Once the direct session
+      is successfully opened within one process, no any other process may open
+      a direct session for the same machine as long as the successful direct
+      session remains open. This prevents the machine from being changed by
+      other processes while it is running or while the machine is being
+      configured.
+
+      One also can attach to an existing direct session alreay opened by
+      another process (for example, in order to send a control request to the
+      virtual machine such as the pause or the reset request). This is done by
+      calling <link to="IVirtualBox::openExistingSession"/>.
+
+      In regular COM C++ client code, one can simply create a session object,
+      for example by calling <tt>createLocalObject().</tt>
+
+      <note>
+        Unless you are trying to write a new VirtualBox front-end that
+        performs direct machine execution (like the VirtualBox or VBoxSDL
+        frontends), don't call <link to="IConsole::powerUp"/> in a direct
+        session opened by <link to="IVirtualBox::openSession"/> and use this
+        session only to change virtual machine settings. If you simply want to
+        start virtual machine execution using one of the existing frontends
+        (for example the VirtualBox GUI frontend), use
+        <link to="IVirtualBox::openRemoteSession"/>. In the latter case, on
+        sucess, the machine will be powered up for you by the front-end so you
+        don't need to call <link to="IConsole::powerUp"/> too.
+      </note>
     </desc>
 
     <attribute name="state" type="SessionState" readonly="yes">
