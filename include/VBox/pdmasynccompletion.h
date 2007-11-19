@@ -86,9 +86,9 @@ typedef FNPDMASYNCCOMPLETEUSB *PFNPDMASYNCCOMPLETEUSB;
 
 
 /**
- * Completion callback for USB devices.
+ * Completion callback for internal.
  *
- * @param   pUsbIns     The USB device instance.
+ * @param   pVM         Pointer to the shared VM structure.
  * @param   pTask       Pointer to the completion task.
  *                      The task is at the time of the call setup to be resumed. So, the callback must
  *                      call PDMR3AsyncCompletionSuspend or PDMR3AsyncCompletionDestroy if any other
@@ -97,7 +97,7 @@ typedef FNPDMASYNCCOMPLETEUSB *PFNPDMASYNCCOMPLETEUSB;
  * @param   pvUser      User argument for the task.
  * @param   pvUser2     User argument for the template.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEINT(PVM, PPDMASYNCCOMPLETION pTask, void *pvCtx, void *pvUser, void *pvUser2);
+typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEINT(PVM pVM, PPDMASYNCCOMPLETION pTask, void *pvCtx, void *pvUser, void *pvUser2);
 /** Pointer to a FNPDMASYNCCOMPLETEINT(). */
 typedef FNPDMASYNCCOMPLETEINT *PFNPDMASYNCCOMPLETEINT;
 
@@ -251,7 +251,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionCreateSocket(PPPDMASYNCCOMPLETION ppTask, PPD
  * @param   fWriteable      Whether to callback when the socket becomes writable.
  * @param   fXcpt           Whether to callback on exception.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionModifySocket(PPDMASYNCCOMPLETIONTEMPLATE pTemplate, bool fReadable, bool fWriteable, bool fXcpt);
+PDMR3DECL(int) PDMR3AsyncCompletionModifySocket(PPDMASYNCCOMPLETION pTask, bool fReadable, bool fWriteable, bool fXcpt);
 
 
 #if defined(RT_OS_LINUX) && defined(_AIO_H)
@@ -319,7 +319,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionSetUserArg(PPDMASYNCCOMPLETION pTask, void *p
  * @retval  VERR_INVALID_HANDLE if pTask is invalid (asserts).
  * @param   pTask           The async completion task.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionSuspend(PPDMASYNCCOMPLETIONTEMPLATE pTemplate);
+PDMR3DECL(int) PDMR3AsyncCompletionSuspend(PPDMASYNCCOMPLETION pTask);
 
 /**
  * Suspends a async completion task.
@@ -330,7 +330,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionSuspend(PPDMASYNCCOMPLETIONTEMPLATE pTemplate
  * @retval  VERR_INVALID_HANDLE if pTask is invalid (asserts).
  * @param   pTask           The async completion task.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionResume(PPDMASYNCCOMPLETIONTEMPLATE pTemplate);
+PDMR3DECL(int) PDMR3AsyncCompletionResume(PPDMASYNCCOMPLETION pTask);
 
 /**
  * Destroys a async completion task.
@@ -342,7 +342,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionResume(PPDMASYNCCOMPLETIONTEMPLATE pTemplate)
  * @retval  VERR_INVALID_HANDLE if pTask is invalid but not NIL (asserts).
  * @param   pTask           The async completion task.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionDestroy(PPDMASYNCCOMPLETIONTEMPLATE pTemplate);
+PDMR3DECL(int) PDMR3AsyncCompletionDestroy(PPDMASYNCCOMPLETION pTask);
 
 /** @} */
 
