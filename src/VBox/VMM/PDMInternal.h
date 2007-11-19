@@ -30,6 +30,13 @@
 # include <iprt/thread.h>
 #endif
 
+/* For the async completion stuff */
+#if defined(RT_OS_WINDOWS)
+# include <windows.h>
+#elif defined(RT_OS_OS2)
+/** @todo */
+#endif
+
 __BEGIN_DECLS
 
 
@@ -761,12 +768,16 @@ typedef enum PDMASYNCCOMPLETIONTYPE
     PDMASYNCCOMPLETIONTYPE_HOST
 } PDMASYNCCOMPLETIONTYPE;
 
-typedef struct PDMASYNCCOMPPLETION
+typedef struct PDMASYNCCOMPLETION
 {
     /** Pointer to the next completion task in the list. */
     struct PDMASYNCCOMPLETION              *pNext;
+    /** Pointer to the previous completion task in the list. */
+    struct PDMASYNCCOMPLETION              *pPrev;
     /** The completion template for this task. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pTemplate;
+    /** The thread this task is assigned to. */
+    R3PTRTYPE(PPDMTHREAD)                  pThread;
     /** Completion task type. */
     PDMASYNCCOMPLETIONTYPE                 enmType;
     /** Type specific data. */
@@ -851,14 +862,43 @@ typedef struct PDMASYNCCOMPLETIONTEMPLATE
     /** Queue type. */
     PDMASYNCIOTYPE                          enmType;
     /** Pointer to the VM. */
-    R3R0PTRTYPE(PVM)                        pVMHC;
+    R3PTRTYPE(PVM)                          pVMHC;
     /** Use count of the template. */
     uint32_t                                cUsed;
-    /** Head of the tasks associated with this template. (singly linked) */
-    R3PTRTYPE(PPDMASYNCCOMPLETION)      pAsyncCompletionTasksHead;
-    /** Tail of the tasks associated with this template. */
-    R3PTRTYPE(PPDMASYNCCOMPLETION)      pAsyncCompletionTasksTail;
 } PDMASYNCCOMPLETIONTEMPLATE;
+
+/** Pointer to the main PDM Async completion structure. */
+typedef struct PDMASYNCCOMPLETIONMANAGER *PPDMASYNCCOMPLETIONMANAGER;
+
+/**
+ * Structure for managing one async task thread.
+ */
+typedef struct PDMASYNCCOMPLETIONMANAGER
+{
+    /** Next element in the list. (singly linked) */
+    R3PTRTYPE(struct PDMASYNCCOMPLETIONMANAGER) *pNext;
+    /** The type of the thread. */
+    PDMASYNCCOMPLETIONTYPE                      enmType;
+    /** The thread which manages tasks. */
+    R3PTRTYPE(PPDMTHREAD)                       pThread;
+    /** List of new tasks since last notification of the socket task thread. */
+    R3PTRTYPE(PPDMASYNCCOMPLETION)              pTasksNew;
+    /** Type specific data. */
+    union
+    {
+        /** Socket connection for waking up the thread. */
+        /** @todo */
+#if defined(RT_OS_LINUX) && defined(_AIO_H)
+        /** Pipe for waking up the thread on linux hosts. */
+        int                                     WakeupPipe[2];
+#elif defined(RT_OS_WINDOWS)
+        /** Handle for waking up the thread on windows hosts. */
+        HANDLE                                  WakeupHandle;
+#elif defined (RT_OS_OS2)
+        /** @todo */
+#endif
+    } u;
+} PDMASYNCCOMPLETIONMANAGER;
 
 /**
  * Converts a PDM pointer into a VM pointer.
@@ -933,13 +973,15 @@ typedef struct PDM
     uint32_t                        padding0;
 #endif
 
-    /** Head of the PDM async completion templates. (singly linked) */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
-
     /** Head of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreads;
     /** Tail of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
+
+    /** Head of the asychronous tasks managers. (singly linked) */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONMANAGER) pAsyncCompletionManagerHead;
+    /** Head of the templates. (singly linked) */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
 
     /** TEMPORARY HACKS FOR NETWORK POLLING.
      * @todo fix NAT and kill this!
