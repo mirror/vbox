@@ -473,10 +473,11 @@ void VBoxVMSettingsDlg::init()
 {
     polished = false;
 
-    mAllowResetFRF = false;
+    /* disallow resetting First Run Wizard flag until media enumeration
+     * process is finished and all data is finally loaded into ui */
+    mAllowResetFirstRunFlag = false;
     connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
-             this, SLOT (onMediaEnumDone()));
-    mResetFirstRunFlag = false;
+             this, SLOT (onMediaEnumerationDone()));
 
     setIcon (QPixmap::fromMimeSource ("settings_16px.png"));
 
@@ -828,6 +829,8 @@ void VBoxVMSettingsDlg::init()
 
     /* Boot-order table */
     tblBootOrder = new BootItemsList (groupBox12, "tblBootOrder");
+    connect (tblBootOrder, SIGNAL (bootSequenceChanged()),
+             this, SLOT (resetFirstRunFlag()));
 
     /* Fixing focus order for BootItemsList */
     setTabOrder (tbwGeneral, tblBootOrder);
@@ -1138,15 +1141,15 @@ void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 }
 
 
-void VBoxVMSettingsDlg::onMediaEnumDone()
+void VBoxVMSettingsDlg::onMediaEnumerationDone()
 {
-    mAllowResetFRF = true;
+    mAllowResetFirstRunFlag = true;
 }
 
 
 void VBoxVMSettingsDlg::resetFirstRunFlag()
 {
-    if (mAllowResetFRF)
+    if (mAllowResetFirstRunFlag)
         mResetFirstRunFlag = true;
 }
 
@@ -1578,8 +1581,6 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
 
     /* Boot-order */
     tblBootOrder->getFromMachine (machine);
-    connect (tblBootOrder, SIGNAL (bootSequenceChanged()),
-             this, SLOT (resetFirstRunFlag()));
 
     /* ACPI */
     chbEnableACPI->setChecked (biosSettings.GetACPIEnabled());
@@ -1913,6 +1914,11 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
     wvalDVD->revalidate();
     wvalFloppy->revalidate();
     wvalVRDP->revalidate();
+
+    /* finally set the reset First Run Wizard flag to "false" to make sure
+     * user will see this dialog if he hasn't change the boot-order
+     * and/or mounted images configuration */
+    mResetFirstRunFlag = false;
 }
 
 
