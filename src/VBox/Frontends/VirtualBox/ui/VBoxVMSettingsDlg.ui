@@ -3166,7 +3166,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <variable access="private">QIRichLabel *whatsThisLabel;</variable>
     <variable access="private">BootItemsList *tblBootOrder;</variable>
     <variable access="private">QString mNoInterfaces;</variable>
-    <variable access="private">bool mAllowResetFRF;</variable>
+    <variable access="private">bool mAllowResetFirstRunFlag;</variable>
     <variable access="private">bool mResetFirstRunFlag;</variable>
 </variables>
 <slots>
@@ -3207,7 +3207,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>networkPageUpdate( QWidget* )</slot>
     <slot>hostInterfaceAdd()</slot>
     <slot>hostInterfaceRemove()</slot>
-    <slot>onMediaEnumDone()</slot>
+    <slot>onMediaEnumerationDone()</slot>
     <slot>resetFirstRunFlag()</slot>
 </slots>
 <functions>
