@@ -24,6 +24,7 @@
 #include <VBox/cfgm.h>
 #include <VBox/stam.h>
 #include <VBox/vusb.h>
+#include <VBox/pdmasynccompletion.h>
 #include <iprt/critsect.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>
@@ -749,6 +750,115 @@ typedef struct PDMUSBHUB
 /** Pointer to a const USB HUB registration record. */
 typedef const PDMUSBHUB *PCPDMUSBHUB;
 
+/**
+ * Async completion task type
+ */
+typedef enum PDMASYNCCOMPLETIONTYPE
+{
+    /** Socket. */
+    PDMASYNCCOMPLETIONTYPE_SOCKET = 1,
+    /** Host OS specific. */
+    PDMASYNCCOMPLETIONTYPE_HOST
+} PDMASYNCCOMPLETIONTYPE;
+
+typedef struct PDMASYNCCOMPPLETION
+{
+    /** Pointer to the next completion task in the list. */
+    struct PDMASYNCCOMPLETION              *pNext;
+    /** The completion template for this task. */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pTemplate;
+    /** Completion task type. */
+    PDMASYNCCOMPLETIONTYPE                 enmType;
+    /** Type specific data. */
+    union
+    {
+        /* PDMASYCNCOMPLETIONTYPE_SOCKET */
+        PPDMASYNCCOMPLETIONSOCKET pSocketCompletion;
+        /* PDMASYNCCOMPLETIONTYPE_HOST */
+#if   defined(RT_OS_LINUX) && defined(_AIO_H)
+        const struct aiocb        *pAioCB;
+#elif defined(RT_OS_WINDOWS)
+        void                      *hObject;
+#elif defined(RT_OS_OS2)
+        unsigned long             hev;
+#endif
+    } u;
+    /** The user data for this task. */
+    R3PTRTYPE(void *)                      pvUser;
+} PDMASYNCCOMPPLETION;
+
+/**
+ * Async I/O type.
+ */
+typedef enum PDMASYNCIOTYPE
+{
+    /** Device . */
+    PDMASYNCIOTYPE_DEV = 1,
+    /** Driver consumer. */
+    PDMASYNCIOTYPE_DRV,
+    /** Internal consumer. */
+    PDMASYNCIOTYPE_INTERNAL,
+    /** Usb consumer. */
+    PDMASYNCIOTYPE_USB
+} PDMASYNCIOTYPE;
+
+/** Pointer to a PDM Async I/O template. */
+typedef struct PDMASYNCCOMPLETIONTEMPLATE *PPDMASYNCCOMPLETIONTEMPLATE;
+
+/**
+ * PDM Async I/O template.
+ */
+typedef struct PDMASYNCCOMPLETIONTEMPLATE
+{
+    /** Pointer to the next template in the list. */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE)    pNext;
+    /** Type specific data. */
+    union
+    {
+        /** PDMASYNCIOTYPE_DEV */
+        struct
+        {
+            /** Pointer to consumer function. */
+            R3PTRTYPE(PFNPDMASYNCCOMPLETEDEV)   pfnCompleted;
+            /** Pointer to the device instance owning the template. */
+            R3PTRTYPE(PPDMDEVINS)               pDevIns;
+        } Dev;
+        /** PDMASYNCIOTYPE_DRV */
+        struct
+        {
+            /** Pointer to consumer function. */
+            R3PTRTYPE(PFNPDMASYNCCOMPLETEDRV)   pfnCompleted;
+            /** Pointer to the driver instance owning the template. */
+            R3PTRTYPE(PPDMDRVINS)               pDrvIns;
+        } Drv;
+        /** PDMASYNCIOTYPE_INTERNAL */
+        struct
+        {
+            /** Pointer to consumer function. */
+            R3PTRTYPE(PFNPDMASYNCCOMPLETEINT)   pfnCompleted;
+            /** Pointer to user data. */
+            R3PTRTYPE(void *)                   pvUser;
+        } Int;
+        /** PDMASYNCIOTYPE_USB */
+        struct
+        {
+            /** Pointer to consumer function. */
+            R3PTRTYPE(PFNPDMASYNCCOMPLETEUSB)   pfnCompleted;
+            /** Pointer to the usb instance owning the template. */
+            R3PTRTYPE(PPDMUSBINS)               pUsbIns;
+        } Usb;
+    } u;
+    /** Queue type. */
+    PDMASYNCIOTYPE                          enmType;
+    /** Pointer to the VM. */
+    R3R0PTRTYPE(PVM)                        pVMHC;
+    /** Use count of the template. */
+    uint32_t                                cUsed;
+    /** Head of the tasks associated with this template. (singly linked) */
+    R3PTRTYPE(PPDMASYNCCOMPLETION)      pAsyncCompletionTasksHead;
+    /** Tail of the tasks associated with this template. */
+    R3PTRTYPE(PPDMASYNCCOMPLETION)      pAsyncCompletionTasksTail;
+} PDMASYNCCOMPLETIONTEMPLATE;
 
 /**
  * Converts a PDM pointer into a VM pointer.
@@ -822,6 +932,9 @@ typedef struct PDM
 #if HC_ARCH_BITS == 64
     uint32_t                        padding0;
 #endif
+
+    /** Head of the PDM async completion templates. (singly linked) */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
 
     /** Head of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreads;
