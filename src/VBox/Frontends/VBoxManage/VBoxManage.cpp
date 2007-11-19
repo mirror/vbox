@@ -6549,7 +6549,7 @@ static int handleSetProperty(int argc, char *argv[],
         CHECK_ERROR(systemProperties, COMSETTER(LogHistoryCount)(uVal));
     }
     else
-        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
+        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", argv[0]);
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -6574,7 +6574,7 @@ static int handleUSBFilter (int argc, char *argv[],
 
     if (cmd.mAction == USBFilterCmd::Invalid)
     {
-        return errorSyntax(USAGE_USBFILTER, "Invalid parameter '%s'", Utf8Str(argv[0]).raw());
+        return errorSyntax(USAGE_USBFILTER, "Invalid parameter '%s'", argv[0]);
     }
 
     /* which index? */
@@ -6650,7 +6650,7 @@ static int handleUSBFilter (int argc, char *argv[],
                         cmd.mFilter.mActive = false;
                     else
                     {
-                        return errorArgument("Invalid -active argument '%s'", Utf8Str(argv[i]).raw());
+                        return errorArgument("Invalid -active argument '%s'", argv[i]);
                     }
                 }
                 else if (strcmp(argv [i], "-vendorid") == 0)
@@ -6727,7 +6727,7 @@ static int handleUSBFilter (int argc, char *argv[],
                     rc = RTStrToUInt32Full(argv[i], 0, &u32);
                     if (RT_FAILURE(rc))
                     {
-                        return errorArgument("Failed to convert the -maskinterfaces value '%s' to a number, rc=%Rrc", argv[i], rc);
+                        return errorArgument("Failed to convert the -maskedinterfaces value '%s' to a number, rc=%Rrc", argv[i], rc);
                     }
                     cmd.mFilter.mMaskedInterfaces = u32;
                 }
@@ -6744,10 +6744,14 @@ static int handleUSBFilter (int argc, char *argv[],
                         cmd.mFilter.mAction = USBDeviceFilterAction_USBDeviceFilterHold;
                     else
                     {
-                        return errorArgument("Invalid USB filter action '%s'", Utf8Str(argv[i]).raw());
+                        return errorArgument("Invalid USB filter action '%s'", argv[i]);
                     }
                 }
-
+                else
+                {
+                    return errorSyntax(cmd.mAction == USBFilterCmd::Add ? USAGE_USBFILTER_ADD : USAGE_USBFILTER_MODIFY,
+                                       "Unknown option '%s'", argv[i]);
+                }
             }
 
             if (cmd.mAction == USBFilterCmd::Add)
