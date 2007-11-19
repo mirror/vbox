@@ -473,6 +473,9 @@ void VBoxVMSettingsDlg::init()
 {
     polished = false;
 
+    mAllowResetFRF = false;
+    connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
+             this, SLOT (onMediaEnumDone()));
     mResetFirstRunFlag = false;
 
     setIcon (QPixmap::fromMimeSource ("settings_16px.png"));
@@ -825,8 +828,7 @@ void VBoxVMSettingsDlg::init()
 
     /* Boot-order table */
     tblBootOrder = new BootItemsList (groupBox12, "tblBootOrder");
-    connect (tblBootOrder, SIGNAL (bootSequenceChanged()),
-             this, SLOT (resetFirstRunFlag()));
+
     /* Fixing focus order for BootItemsList */
     setTabOrder (tbwGeneral, tblBootOrder);
     setTabOrder (tblBootOrder->focusProxy(), chbEnableACPI);
@@ -1136,9 +1138,16 @@ void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 }
 
 
+void VBoxVMSettingsDlg::onMediaEnumDone()
+{
+    mAllowResetFRF = true;
+}
+
+
 void VBoxVMSettingsDlg::resetFirstRunFlag()
 {
-    mResetFirstRunFlag = true;
+    if (mAllowResetFRF)
+        mResetFirstRunFlag = true;
 }
 
 
@@ -1569,6 +1578,8 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
 
     /* Boot-order */
     tblBootOrder->getFromMachine (machine);
+    connect (tblBootOrder, SIGNAL (bootSequenceChanged()),
+             this, SLOT (resetFirstRunFlag()));
 
     /* ACPI */
     chbEnableACPI->setChecked (biosSettings.GetACPIEnabled());
