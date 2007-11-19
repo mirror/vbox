@@ -54,7 +54,7 @@ public:
     {
         /* should correlate with VBoxDiskImageManagerDlg::compose[Cd/Fd]Tooltip */
         return mSnapshotUsage.isNull() ? mUsage :
-            QString ("%1 (%2)").arg (mUsage, mSnapshotUsage); 
+            QString ("%1 (%2)").arg (mUsage, mSnapshotUsage);
     }
 
     void setSnapshotName (const QString &aSnapshotName) { mSnapshotName = aSnapshotName; }
@@ -354,7 +354,7 @@ void VBoxDiskImageManagerDlg::init()
     imRefreshAction->addTo (toolBar);
 #ifdef Q_WS_MAC
     toolBar->setMacStyle();
-#endif 
+#endif
 
 
     /* menu bar */
@@ -2090,7 +2090,11 @@ void VBoxDiskImageManagerDlg::releaseImage()
             vbox.GetMachine (machineId).GetName()))
         {
             releaseDisk (machineId, itemId, VBoxDefs::HD);
-            vboxGlobal().updateMedia (item->getMedia());
+            VBoxMedia media (item->getMedia());
+            media.status = hd.GetAccessible() ? VBoxMedia::Ok :
+                           hd.isOk() ? VBoxMedia::Inaccessible :
+                           VBoxMedia::Error;
+            vboxGlobal().updateMedia (media);
         }
     }
     /* if it is a cd/dvd sub-item: */
@@ -2107,7 +2111,11 @@ void VBoxDiskImageManagerDlg::releaseImage()
                 releaseDisk (QUuid (*it), itemId, VBoxDefs::CD);
 
             CDVDImage cd = vbox.GetDVDImage (itemId);
-            vboxGlobal().updateMedia (item->getMedia());
+            VBoxMedia media (item->getMedia());
+            media.status = cd.GetAccessible() ? VBoxMedia::Ok :
+                           cd.isOk() ? VBoxMedia::Inaccessible :
+                           VBoxMedia::Error;
+            vboxGlobal().updateMedia (media);
         }
     }
     /* if it is a floppy sub-item: */
@@ -2124,7 +2132,11 @@ void VBoxDiskImageManagerDlg::releaseImage()
                 releaseDisk (QUuid (*it), itemId, VBoxDefs::FD);
 
             CFloppyImage fd = vbox.GetFloppyImage (itemId);
-            vboxGlobal().updateMedia (item->getMedia());
+            VBoxMedia media (item->getMedia());
+            media.status = fd.GetAccessible() ? VBoxMedia::Ok :
+                           fd.isOk() ? VBoxMedia::Inaccessible :
+                           VBoxMedia::Error;
+            vboxGlobal().updateMedia (media);
         }
     }
 }
