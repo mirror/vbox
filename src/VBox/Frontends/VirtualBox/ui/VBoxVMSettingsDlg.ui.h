@@ -1514,11 +1514,8 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
             VBoxVMSerialPortSettings *page =
                 static_cast <VBoxVMSerialPortSettings *> (tab);
 
-            /* skip disabled ports */
-            if (!page->mSerialPortBox->isChecked())
-                continue;
             /* check the predefined port number unicity */
-            if (!page->isUserDefined())
+            if (page->mSerialPortBox->isChecked() && !page->isUserDefined())
             {
                 QString port = page->mPortNumCombo->currentText();
                 valid = !ports.contains (port);
@@ -1530,16 +1527,18 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
                 }
                 ports << port;
             }
-            /* check the port path unicity */
+            /* check the port path emptiness & unicity */
             CEnums::PortMode mode =
                 vboxGlobal().toPortMode (page->mHostModeCombo->currentText());
             if (mode != CEnums::DisconnectedPort)
             {
                 QString path = page->mPortPathLine->text();
-                valid = !paths.contains (path);
+                valid = !path.isEmpty() && !paths.contains (path);
                 if (!valid)
                 {
-                    warningText = tr ("Duplicate port path is entered ");
+                    warningText = path.isEmpty() ?
+                        tr ("Port path is not entered ") :
+                        tr ("Duplicate port path is entered ");
                     pageTitle += ": " + tbwSerialPorts->tabLabel (tab);
                     break;
                 }
