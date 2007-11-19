@@ -1589,7 +1589,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
             /* Query info. */
 
-            if (details == VMINFO_MACHINEREADABLE)
+            if (details != VMINFO_MACHINEREADABLE)
                 RTPrintf("Index:            %lu\n", index);
 
             BOOL bActive = FALSE;
