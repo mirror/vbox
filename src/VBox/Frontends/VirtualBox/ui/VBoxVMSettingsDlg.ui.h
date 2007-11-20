@@ -1537,7 +1537,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
                 if (!valid)
                 {
                     warningText = path.isEmpty() ?
-                        tr ("Port path is not entered ") :
+                        tr ("Port path is not specified ") :
                         tr ("Duplicate port path is entered ");
                     pageTitle += ": " + tbwSerialPorts->tabLabel (tab);
                     break;
