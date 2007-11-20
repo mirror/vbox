@@ -1050,6 +1050,7 @@ void vboxClipboardDestroy (void)
     ev.xclient.type = ClientMessage;
     ev.xclient.format = 8;
     XSendEvent(XtDisplay(g_ctx.widget), XtWindow(g_ctx.widget), false, 0, &ev);
+    XFlush(XtDisplay(g_ctx.widget));
     rc = RTThreadWait(g_ctx.thread, 2000, &rcThread);
     AssertRC(rc);
     AssertRC(rcThread);
