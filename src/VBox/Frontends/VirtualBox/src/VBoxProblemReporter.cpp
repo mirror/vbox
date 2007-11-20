@@ -1446,11 +1446,12 @@ void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
 
 /**
  *  @return @c true if the user has confirmed input capture (this is always
- *  the case if the dialog was autoconfirmed).
+ *  the case if the dialog was autoconfirmed). @a aAutoConfirmed, when not
+ *  NULL, will receive @c true if the dialog wasn't actually shown.
  */
-bool VBoxProblemReporter::confirmInputCapture()
+bool VBoxProblemReporter::confirmInputCapture (bool *aAutoConfirmed /* = NULL */)
 {
-    return messageOkCancel (&vboxGlobal().consoleWnd(), Info,
+    int rc = message (&vboxGlobal().consoleWnd(), Info,
         tr ("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display "
             "or pressed the <b>host key</b>. This will cause the Virtual Machine to "
             "<b>capture</b> the host mouse pointer (only if the mouse pointer "
@@ -1470,7 +1471,15 @@ bool VBoxProblemReporter::confirmInputCapture()
             "additional message box paragraph")
             .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
         "confirmInputCapture",
+        QIMessageBox::Ok | QIMessageBox::Default,
+        QIMessageBox::Cancel | QIMessageBox::Escape,
+        0,
         tr ("Capture", "do input capture"));
+
+    if (aAutoConfirmed)
+        *aAutoConfirmed = (rc & AutoConfirmed);
+
+    return (rc & QIMessageBox::ButtonMask) == QIMessageBox::Ok;
 }
 
 void VBoxProblemReporter::remindAboutAutoCapture()
@@ -1574,22 +1583,21 @@ bool VBoxProblemReporter::remindAboutPausedVMInput()
 /** @return true if the user has chosen to show the Disk Manager Window */
 bool VBoxProblemReporter::remindAboutInaccessibleMedia()
 {
-    int rc = message (
-        &vboxGlobal().selectorWnd(),
-        Warning,
+    int rc = message (&vboxGlobal().selectorWnd(), Warning,
         tr ("<p>One or more of the registered virtual hard disks, CD/DVD or "
             "floppy media are not currently accessible. As a result, you will "
             "not be able to operate virtual machines that use these media until "
             "they become accessible later.</p>"
-            "<p>Press <b>OK</b> to open the Virtual Disk Manager window and "
+            "<p>Press <b>Check</b> to open the Virtual Disk Manager window and "
             "see what media are inaccessible, or press <b>Ignore</b> to "
             "ignore this message.</p>"),
         "remindAboutInaccessibleMedia",
         QIMessageBox::Ok | QIMessageBox::Default,
-        QIMessageBox::Ignore | QIMessageBox::Escape
-    );
+        QIMessageBox::Ignore | QIMessageBox::Escape,
+        0,
+        tr ("Check", "inaccessible media message box"));
 
-    return rc == QIMessageBox::Ok && !(rc & AutoConfirmed);
+    return rc == QIMessageBox::Ok; /* implies !AutoConfirmed */
 }
 
 /**
