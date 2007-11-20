@@ -1960,6 +1960,10 @@ void VBoxConsoleView::focusEvent (bool aHasFocus)
 //            if (!(mouse_absolute && mouse_integration))
 //                captureMouse (true);
         }
+
+        /* reset the single-time disable capture flag */
+        if (mDisableAutoCapture)
+            mDisableAutoCapture = false;
     }
     else
     {
@@ -2230,9 +2234,16 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                              * the capture state is to be defined by the
                              * dialog result itself */
                             mDisableAutoCapture = true;
-                            ok = vboxProblem().confirmInputCapture();
-                            mDisableAutoCapture = false;
+                            bool autoConfirmed = false;
+                            ok = vboxProblem().confirmInputCapture (&autoConfirmed);
+                            if (autoConfirmed)
+                                mDisableAutoCapture = false;
+                            /* otherwise, the disable flag will be reset in
+                             * the next console view's foucs in event (since
+                             * may happen asynchronously on some platforms,
+                             * after we return from this code) */
                         }
+
                         if (ok)
                         {
                             captureKbd (!captured, false);
@@ -2571,8 +2582,15 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
                      * the capture state is to be defined by the
                      * dialog result itself */
                     mDisableAutoCapture = true;
-                    bool ok = vboxProblem().confirmInputCapture();
-                    mDisableAutoCapture = false;
+                    bool autoConfirmed = false;
+                    bool ok = vboxProblem().confirmInputCapture (&autoConfirmed);
+                    if (autoConfirmed)
+                        mDisableAutoCapture = false;
+                    /* otherwise, the disable flag will be reset in
+                     * the next console view's foucs in event (since
+                     * may happen asynchronously on some platforms,
+                     * after we return from this code) */
+
                     if (ok)
                     {
                         captureKbd (true);
