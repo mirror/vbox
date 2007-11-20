@@ -603,6 +603,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mouse_captured (false)
     , mouse_absolute (false)
     , mouse_integration (true)
+    , mDisableAutoCapture (false)
     , mIsHostkeyPressed (false)
     , mIsHostkeyAlone (false)
     , mIgnoreMainwndResize (true)
@@ -1934,9 +1935,8 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Called on every focus change
- *  and also to forcibly capture/uncapture the input in situations similar
- *  to gaining or losing focus.
+ *  Called on every focus change and also to forcibly capture/uncapture the
+ *  input in situations similar to gaining or losing focus.
  *
  *  @param aHasFocus True if the window got focus and false otherwise.
  */
@@ -1945,10 +1945,10 @@ void VBoxConsoleView::focusEvent (bool aHasFocus)
     if (aHasFocus)
     {
 #ifdef RT_OS_WINDOWS
-        if (   gs.autoCapture()
+        if (   !mDisableAutoCapture && gs.autoCapture()
             && GetAncestor (winId(), GA_ROOT) == GetForegroundWindow())
 #else
-        if (gs.autoCapture())
+        if (!mDisableAutoCapture && gs.autoCapture())
 #endif /* RT_OS_WINDOWS */
         {
             captureKbd (true);
@@ -2211,6 +2211,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
             if (mIsHostkeyPressed)
             {
                 mIsHostkeyPressed = false;
+
                 if (mIsHostkeyAlone)
                 {
                     if (isPaused())
@@ -2221,15 +2222,29 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                     if (isRunning())
                     {
                         bool captured = kbd_captured;
+                        bool ok = true;
                         if (!captured)
-                            vboxProblem().remindAboutInputCapture();
-                        captureKbd (!captured, false);
-                        if (!(mouse_absolute && mouse_integration))
-                            captureMouse (kbd_captured);
+                        {
+                            /* temporarily disable auto capture that will take
+                             * place after this dialog is dismissed because
+                             * the capture state is to be defined by the
+                             * dialog result itself */
+                            mDisableAutoCapture = true;
+                            ok = vboxProblem().confirmInputCapture();
+                            mDisableAutoCapture = false;
+                        }
+                        if (ok)
+                        {
+                            captureKbd (!captured, false);
+                            if (!(mouse_absolute && mouse_integration))
+                                captureMouse (kbd_captured);
+                        }
                     }
                 }
+
                 if (isRunning())
                     sendChangedKeyStates();
+
                 emitSignal = true;
             }
         }
@@ -2551,9 +2566,18 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos,
                 }
                 else if (isRunning())
                 {
-                    vboxProblem().remindAboutInputCapture();
-                    captureKbd (true);
-                    captureMouse (true);
+                    /* temporarily disable auto capture that will take
+                     * place after this dialog is dismissed because
+                     * the capture state is to be defined by the
+                     * dialog result itself */
+                    mDisableAutoCapture = true;
+                    bool ok = vboxProblem().confirmInputCapture();
+                    mDisableAutoCapture = false;
+                    if (ok)
+                    {
+                        captureKbd (true);
+                        captureMouse (true);
+                    }
                 }
             }
         }

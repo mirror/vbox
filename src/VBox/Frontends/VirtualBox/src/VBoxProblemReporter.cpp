@@ -24,6 +24,8 @@
 
 #include "VBoxAboutDlg.h"
 
+#include "QIHotKeyEdit.h"
+
 #include <qmessagebox.h>
 #include <qprogressdialog.h>
 #include <qcursor.h>
@@ -1338,7 +1340,7 @@ void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
                  .arg (aURL).arg (aURL).arg (aReason));
 }
 
-int VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
+bool VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
                                                    ulong aSize)
 {
     return messageOkCancel (&vboxGlobal().consoleWnd(), Question,
@@ -1350,7 +1352,7 @@ int VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
         tr ("Download", "additions"));
 }
 
-int VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
+bool VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
                                                 const QString &aSrc)
 {
     return messageOkCancel (&vboxGlobal().consoleWnd(), Question,
@@ -1442,10 +1444,13 @@ void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
                  .arg (aResult));
 }
 
-/** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
-bool VBoxProblemReporter::remindAboutInputCapture()
+/**
+ *  @return @c true if the user has confirmed input capture (this is always
+ *  the case if the dialog was autoconfirmed).
+ */
+bool VBoxProblemReporter::confirmInputCapture()
 {
-    int rc = message (&vboxGlobal().consoleWnd(), Info,
+    return messageOkCancel (&vboxGlobal().consoleWnd(), Info,
         tr ("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display "
             "or pressed the <b>host key</b>. This will cause the Virtual Machine to "
             "<b>capture</b> the host mouse pointer (only if the mouse pointer "
@@ -1460,16 +1465,17 @@ bool VBoxProblemReporter::remindAboutInputCapture()
             "<img src=hostkey_16px.png/>&nbsp;icon. This icon, together "
             "with the mouse icon placed nearby, indicate the current keyboard "
             "and mouse capture state."
-            "</p>"),
-        "remindAboutInputCapture");
-
-    return !(rc & AutoConfirmed);
+            "</p>") +
+        tr ("<p>The host key is currently defined as <b>%1</b>.</p>",
+            "additional message box paragraph")
+            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+        "confirmInputCapture",
+        tr ("Capture", "do input capture"));
 }
 
-/** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
-bool VBoxProblemReporter::remindAboutAutoCapture()
+void VBoxProblemReporter::remindAboutAutoCapture()
 {
-    int rc = message ( &vboxGlobal().consoleWnd(), Info,
+    message (&vboxGlobal().consoleWnd(), Info,
         tr ("<p>You have the <b>Auto capture keyboard</b> option turned on. "
             "This will cause the Virtual Machine to automatically <b>capture</b> "
             "the keyboard every time the VM window is activated and make it "
@@ -1484,14 +1490,14 @@ bool VBoxProblemReporter::remindAboutAutoCapture()
             "<img src=hostkey_16px.png/>&nbsp;icon. This icon, together "
             "with the mouse icon placed nearby, indicate the current keyboard "
             "and mouse capture state."
-            "</p>"),
+            "</p>") +
+        tr ("<p>The host key is currently defined as <b>%1</b>.</p>",
+            "additional message box paragraph")
+            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
         "remindAboutAutoCapture");
-
-    return !(rc & AutoConfirmed);
 }
 
-/** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
-bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
+void VBoxProblemReporter::remindAboutMouseIntegration (bool aSupportsAbsolute)
 {
     static const char *kNames [2] =
     {
@@ -1503,15 +1509,15 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
      * aAutoConfirmId which is also used as the widget name by default. */
     {
         QWidget *outdated =
-            VBoxGlobal::findWidget (NULL, kNames [int (!supportsAbsolute)],
+            VBoxGlobal::findWidget (NULL, kNames [int (!aSupportsAbsolute)],
                                     "QIMessageBox");
         if (outdated)
             outdated->close();
     }
 
-    if (supportsAbsolute)
+    if (aSupportsAbsolute)
     {
-        int rc = message (&vboxGlobal().consoleWnd(), Info,
+        message (&vboxGlobal().consoleWnd(), Info,
             tr ("<p>The Virtual Machine reports that the guest OS supports "
                 "<b>mouse pointer integration</b>. This means that you do not "
                 "need to <i>capture</i> the mouse pointer to be able to use it "
@@ -1532,24 +1538,23 @@ bool VBoxProblemReporter::remindAboutMouseIntegration (bool supportsAbsolute)
                 "corresponding action from the menu bar."
                 "</p>"),
             kNames [1] /* aAutoConfirmId */);
-
-        return !(rc & AutoConfirmed);
     }
     else
     {
-        int rc = message (&vboxGlobal().consoleWnd(), Info,
+        message (&vboxGlobal().consoleWnd(), Info,
             tr ("<p>The Virtual Machine reports that the guest OS does not "
                 "support <b>mouse pointer integration</b> in the current video "
                 "mode. You need to capture the mouse (by clicking over the VM "
                 "display or pressing the host key) in order to use the "
                 "mouse inside the guest OS.</p>"),
             kNames [0] /* aAutoConfirmId */);
-
-        return !(rc & AutoConfirmed);
     }
 }
 
-/** @return false if the dialog wasn't actually shown (i.e. it was autoconfirmed) */
+/**
+ * @return @c false if the dialog wasn't actually shown (i.e. it was
+ * autoconfirmed).
+ */
 bool VBoxProblemReporter::remindAboutPausedVMInput()
 {
     int rc = message (
@@ -1588,14 +1593,14 @@ bool VBoxProblemReporter::remindAboutInaccessibleMedia()
 }
 
 /**
- *  @param  fullscreen hot key as defined in the menu
- *  @param  current host key as in the global settings
- *  @return true if the user has chosen to go fullscreen.
+ *  @param aHotKey Fullscreen hot key as defined in the menu.
+ *
+ *  @return @c true if the user has chosen to go fullscreen (this is always
+ *  the case if the dialog was autoconfirmed).
  */
-void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
-                                                      const QString &hostKey)
+bool VBoxProblemReporter::confirmGoingFullscreen (const QString &aHotKey)
 {
-    int rc = message (&vboxGlobal().consoleWnd(), Info,
+    return messageOkCancel (&vboxGlobal().consoleWnd(), Info,
         tr ("<p>The virtual machine window will be now switched to "
             "<b>fullscreen</b> mode. "
             "You can go back to windowed mode at any time by pressing "
@@ -1603,20 +1608,21 @@ void VBoxProblemReporter::remindAboutGoingFullscreen (const QString &hotKey,
             "defined as <b>%1</b>.</p>"
             "<p>Note that the main menu bar is hidden in fullscreen mode. You "
             "can access it by pressing <b>Host+Home</b>.</p>")
-            .arg (hotKey).arg (hostKey),
-        "remindAboutGoingFullscreen");
-    NOREF(rc);
+            .arg (aHotKey)
+            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+        "confirmGoingFullscreen",
+        tr ("Switch", "fullscreen"));
 }
 
 /**
- *  @param  fullscreen hot key as defined in the menu
- *  @param  current host key as in the global settings
- *  @return true if the user has chosen to go fullscreen.
+ *  @param aHotKey Seamless hot key as defined in the menu.
+ *
+ *  @return @c true if the user has chosen to go seamless (this is always
+ *  the case if the dialog was autoconfirmed).
  */
-void VBoxProblemReporter::remindAboutGoingSeamless (const QString &hotKey,
-                                                    const QString &hostKey)
+bool VBoxProblemReporter::confirmGoingSeamless (const QString &aHotKey)
 {
-    int rc = message (&vboxGlobal().consoleWnd(), Info,
+    return messageOkCancel (&vboxGlobal().consoleWnd(), Info,
         tr ("<p>The virtual machine window will be now switched to "
             "<b>Seamless</b> mode. "
             "You can go back to windowed mode at any time by pressing "
@@ -1624,9 +1630,10 @@ void VBoxProblemReporter::remindAboutGoingSeamless (const QString &hotKey,
             "defined as <b>%1</b>.</p>"
             "<p>Note that the main menu bar is hidden in seamless mode. You "
             "can access it by pressing <b>Host+Home</b>.</p>")
-            .arg (hotKey).arg (hostKey),
-        "remindAboutGoingSeamless");
-    NOREF(rc);
+            .arg (aHotKey)
+            .arg (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey())),
+        "confirmGoingSeamless",
+        tr ("Switch", "seamless"));
 }
 
 void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
@@ -1697,7 +1704,7 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
 }
 
 /**
- *  Returns @c true if the user has selected to reset the machine.
+ *  @return @c true if the user has selected to reset the machine.
  */
 bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
 {
@@ -1709,7 +1716,11 @@ bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
         tr ("Reset", "machine"));
 }
 
-int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
+/**
+ *  @return @c true if the user has selected to continue without attaching a
+ *  hard disk.
+ */
+bool VBoxProblemReporter::confirmHardDisklessMachine (QWidget *aParent)
 {
     return message (aParent, Warning,
         tr ("<p>You didn't attach a hard disk to the new virtual machine. "
@@ -1718,8 +1729,11 @@ int VBoxProblemReporter::remindAboutUnsetHD (QWidget *aParent)
             "media to it later using the machine settings dialog or the First "
             "Run Wizard.</p><p>Do you want to continue?</p>"),
         0, /* aAutoConfirmId */
-        QIMessageBox::Yes,
-        QIMessageBox::No | QIMessageBox::Default | QIMessageBox::Escape);
+        QIMessageBox::Ok,
+        QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+        0,
+        tr ("Continue", "no hard disk attached"),
+        tr ("Go Back", "no hard disk attached")) == QIMessageBox::Ok;
 }
 
 void VBoxProblemReporter::cannotRunInSelectorMode()

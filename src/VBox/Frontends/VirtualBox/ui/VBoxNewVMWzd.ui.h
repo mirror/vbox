@@ -240,8 +240,7 @@ void VBoxNewVMWzd::showPage (QWidget *page)
     {
         if (!mediaCombo->currentItem())
         {
-            int result = vboxProblem().remindAboutUnsetHD (this);
-            if (result == QIMessageBox::No)
+            if (!vboxProblem().confirmHardDisklessMachine (this))
                 return;
         }
 

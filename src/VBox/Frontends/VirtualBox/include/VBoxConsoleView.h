@@ -207,12 +207,15 @@ private:
     QPoint last_pos;
     QPoint captured_pos;
 
+	bool mDisableAutoCapture : 1;
+
     enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
     uint8_t mPressedKeys [128];
     uint8_t mPressedKeysCopy [128];
 
     bool mIsHostkeyPressed : 1;
     bool mIsHostkeyAlone : 1;
+
     /** kbd_captured value during the the last host key press or release */
     bool hostkey_in_capture : 1;
 

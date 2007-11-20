@@ -248,9 +248,9 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
                     //  VBoxDownloaderWgt functionality, so this class should just
                     //  emit a signal when it is done saving the downloaded file
                     //  (succeeded or failed).
-                    int rc = vboxProblem().confirmMountAdditions (mUrl.toString(),
-                                               QDir::convertSeparators (mTarget));
-                    if (rc == QIMessageBox::Yes)
+                    if (vboxProblem()
+                            .confirmMountAdditions (mUrl.toString(),
+                                                    QDir::convertSeparators (mTarget)))
                         vboxGlobal().consoleWnd().installGuestAdditionsFrom (mTarget);
                     QTimer::singleShot (0, this, SLOT (suicide()));
                     break;
@@ -349,8 +349,7 @@ void VBoxDownloaderWgt::processFile (int aSize)
     //  emit a signal when it is done detecting the file size.
 
     /* Ask user about GA image downloading */
-    int rc = vboxProblem().confirmDownloadAdditions (mUrl.toString(), aSize);
-    if (rc == QIMessageBox::Yes)
+    if (vboxProblem().confirmDownloadAdditions (mUrl.toString(), aSize))
     {
         mIsChecking = false;
         mProgressBar->setTotalSteps (aSize);

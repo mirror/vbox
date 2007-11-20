@@ -116,7 +116,7 @@ private:
 
     void updateAppearanceOf (int element);
 
-    void toggleFullscreenMode (bool, bool);
+    bool toggleFullscreenMode (bool, bool);
 
 private slots:
 
