@@ -30,13 +30,6 @@
 # include <iprt/thread.h>
 #endif
 
-/* For the async completion stuff */
-#if defined(RT_OS_WINDOWS)
-# include <windows.h>
-#elif defined(RT_OS_OS2)
-/** @todo */
-#endif
-
 __BEGIN_DECLS
 
 
@@ -869,36 +862,6 @@ typedef struct PDMASYNCCOMPLETIONTEMPLATE
 
 /** Pointer to the main PDM Async completion structure. */
 typedef struct PDMASYNCCOMPLETIONMANAGER *PPDMASYNCCOMPLETIONMANAGER;
-
-/**
- * Structure for managing one async task thread.
- */
-typedef struct PDMASYNCCOMPLETIONMANAGER
-{
-    /** Next element in the list. (singly linked) */
-    R3PTRTYPE(struct PDMASYNCCOMPLETIONMANAGER) *pNext;
-    /** The type of the thread. */
-    PDMASYNCCOMPLETIONTYPE                      enmType;
-    /** The thread which manages tasks. */
-    R3PTRTYPE(PPDMTHREAD)                       pThread;
-    /** List of new tasks since last notification of the socket task thread. */
-    R3PTRTYPE(PPDMASYNCCOMPLETION)              pTasksNew;
-    /** Type specific data. */
-    union
-    {
-        /** Socket connection for waking up the thread. */
-        /** @todo */
-#if defined(RT_OS_LINUX) && defined(_AIO_H)
-        /** Pipe for waking up the thread on linux hosts. */
-        int                                     WakeupPipe[2];
-#elif defined(RT_OS_WINDOWS)
-        /** Handle for waking up the thread on windows hosts. */
-        HANDLE                                  WakeupHandle;
-#elif defined (RT_OS_OS2)
-        /** @todo */
-#endif
-    } u;
-} PDMASYNCCOMPLETIONMANAGER;
 
 /**
  * Converts a PDM pointer into a VM pointer.
