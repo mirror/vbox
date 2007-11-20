@@ -3577,11 +3577,11 @@ with UUID %2!</source>
         <translation>&lt;p&gt;VirtualBox 客端額外功能光碟映像檔已經成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載，並且儲存為本地的 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;。&lt;p&gt;您想要登記這個光碟映像檔並且將它掛載到虛擬光碟機？&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;虛擬機器視窗將被切換到&lt;b&gt;全螢幕&lt;/b&gt;模式。您可以利用按下 &lt;b&gt;%1&lt;/b&gt; 以隨時回到視窗模式。請注意，目前的&lt;i&gt;主端&lt;/i&gt;鍵已定義為 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;另外，主選單列在全螢幕模式中是隱藏的。您可以利用按下 &lt;b&gt;主端鍵+Home&lt;/b&gt; 去存取它。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;虛擬機器視窗將被切換到&lt;b&gt;無縫&lt;/b&gt;模式。您可以利用按下 &lt;b&gt;%1&lt;/b&gt; 以隨時回到視窗模式。請注意，目前的&lt;i&gt;主端&lt;/i&gt;鍵已定義為 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;另外，主選單列在無縫模式中是隱藏的。您可以利用按下 &lt;b&gt;主端鍵+Home&lt;/b&gt; 去存取它。&lt;/p&gt;</translation>
     </message>
     <message>
