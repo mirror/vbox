@@ -245,6 +245,8 @@ HRESULT SerialPort::loadSettings (CFGNODE aNode, ULONG aSlot)
 
     AutoLock alock (this);
 
+    HRESULT rc = S_OK;
+
     CFGNODE portNode = NULL;
     CFGLDRGetChildNode (aNode, "Port", aSlot, &portNode);
 
@@ -272,7 +274,7 @@ HRESULT SerialPort::loadSettings (CFGNODE aNode, ULONG aSlot)
         mData->mHostMode = PortMode_DisconnectedPort;
     /* pipe/device path */
     Bstr path;
-    CFGLDRQueryBSTR(portNode, "path", path.asOutParam());
+    CFGLDRQueryBSTR (portNode, "path", path.asOutParam());
     /* server mode */
     bool fServer = true;
     CFGLDRQueryBool (portNode, "server", &fServer);
@@ -281,12 +283,26 @@ HRESULT SerialPort::loadSettings (CFGNODE aNode, ULONG aSlot)
     mData->mSlot     = uSlot;
     mData->mIOBase   = uIOBase;
     mData->mIRQ      = uIRQ;
+
+    rc = checkSetPath (path);
+    CheckComRCReturnRC (rc);
+
     mData->mPath     = path;
     mData->mServer   = fServer;
 
-    return S_OK;
+    return rc;
 }
 
+/** 
+ *  Saves the port settings to the given <Port> node.
+ *
+ *  Note that the given node is always empty so it is not necessary to delete
+ *  old values.
+ * 
+ *  @param aNode Node to save the settings to.
+ * 
+ *  @return 
+ */
 HRESULT SerialPort::saveSettings (CFGNODE aNode)
 {
     AssertReturn (aNode, E_FAIL);
@@ -319,12 +335,14 @@ HRESULT SerialPort::saveSettings (CFGNODE aNode)
     CFGLDRSetUInt32Ex (portNode, "IOBase",   mData->mIOBase, 16);
     CFGLDRSetUInt32   (portNode, "IRQ",      mData->mIRQ);
     CFGLDRSetString   (portNode, "hostMode", mode);
-    if (mData->mHostMode != PortMode_DisconnectedPort)
-    {
-        CFGLDRSetBSTR (portNode, "path",    mData->mPath);
-        if (mData->mHostMode == PortMode_HostPipePort)
-            CFGLDRSetBool (portNode, "server",  !!mData->mServer);
-    }
+
+    /* Always save non-null mPath and mServer to preserve the user values for
+     * later use. Note that 'server' is false by default in XML so we don't
+     * save it when it's false. */
+    if (!mData->mPath.isEmpty())
+        CFGLDRSetBSTR (portNode, "path", mData->mPath);
+    if (mData->mServer)
+        CFGLDRSetBool (portNode, "server", !!mData->mServer);
 
     return S_OK;
 }
@@ -405,13 +423,29 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
 
     if (mData->mHostMode != aHostMode)
     {
+        switch (aHostMode)
+        {
+            case PortMode_HostPipePort:
+                if (mData->mPath.isEmpty())
+                    return setError (E_INVALIDARG,
+                        tr ("Cannot set the host pipe mode of the serial port %d "
+                            "because the pipe path is empty or null"),
+                        mData->mSlot);
+                break;
+            case PortMode_HostDevicePort:
+                if (mData->mPath.isEmpty())
+                    return setError (E_INVALIDARG,
+                        tr ("Cannot set the host device mode of the serial port %d "
+                            "because the device path is empty or null"),
+                        mData->mSlot);
+                break;
+            case PortMode_DisconnectedPort:
+                break;
+        }
+
         mData.backup();
         mData->mHostMode = aHostMode;
-        if (aHostMode == PortMode_DisconnectedPort)
-        {
-            mData->mPath.setNull();
-            mData->mServer = false;
-        }
+
         emitChangeEvent = true;
     }
 
@@ -462,8 +496,9 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
      * (when changing this, make sure it corresponds to XML schema */
     if (aIRQ > 255)
         return setError (E_INVALIDARG,
-            tr ("Invalid IRQ number: %lu (must be in range [0, %lu])"),
-                aIRQ, 255);
+            tr ("Invalid IRQ number of the serial port %d: "
+                "%lu (must be in range [0, %lu])"),
+            mData->mSlot, aIRQ, 255);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -516,8 +551,9 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
      * (when changing this, make sure it corresponds to XML schema */
     if (aIOBase > 0xFFFF)
         return setError (E_INVALIDARG,
-            tr ("Invalid I/O port base address: %lu (must be in range [0, 0x%X])"),
-                aIOBase, 0, 0xFFFF);
+            tr ("Invalid I/O port base address of the serial port %d: "
+                "%lu (must be in range [0, 0x%X])"),
+            mData->mSlot, aIOBase, 0, 0xFFFF);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -564,15 +600,28 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
     return S_OK;
 }
 
+/** 
+ *  Validates COMSETTER(Path) arguments.
+ */
+HRESULT SerialPort::checkSetPath (BSTR aPath)
+{
+    AssertReturn (isLockedOnCurrentThread(), E_FAIL);
+
+    if ((mData->mHostMode == PortMode_HostDevicePort ||
+         mData->mHostMode == PortMode_HostPipePort) &&
+        (aPath == NULL || *aPath == '\0'))
+        return setError (E_INVALIDARG,
+            tr ("Path of the serial port %d may not be empty or null in "
+                "host pipe or host device mode"),
+            mData->mSlot);
+
+    return S_OK;
+}
+
 STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 {
     if (!aPath)
         return E_POINTER;
-
-    if (!*aPath)
-        return setError (E_INVALIDARG,
-            tr ("Serial port path cannot be empty"));
-
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -585,6 +634,9 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 
     if (mData->mPath != aPath)
     {
+        HRESULT rc = checkSetPath (aPath);
+        CheckComRCReturnRC (rc);
+
         mData.backup();
         mData->mPath = aPath;
 
