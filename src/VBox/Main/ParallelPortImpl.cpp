@@ -274,6 +274,16 @@ HRESULT ParallelPort::loadSettings (CFGNODE aNode, ULONG aSlot)
     return S_OK;
 }
 
+/** 
+ *  Saves the port settings to the given <Port> node.
+ *
+ *  Note that the given node is always empty so it is not necessary to delete
+ *  old values.
+ * 
+ *  @param aNode Node to save the settings to.
+ * 
+ *  @return 
+ */
 HRESULT ParallelPort::saveSettings (CFGNODE aNode)
 {
     AssertReturn (aNode, E_FAIL);
@@ -291,7 +301,10 @@ HRESULT ParallelPort::saveSettings (CFGNODE aNode)
     CFGLDRSetBool     (portNode, "enabled", !!mData->mEnabled);
     CFGLDRSetUInt32Ex (portNode, "IOBase",  mData->mIOBase, 16);
     CFGLDRSetUInt32   (portNode, "IRQ",     mData->mIRQ);
-    CFGLDRSetBSTR     (portNode, "path",    mData->mPath);
+
+    /* 'path' is optional in XML */
+    if (!mData->mPath.isEmpty())
+        CFGLDRSetBSTR (portNode, "path", mData->mPath);
 
     return S_OK;
 }
@@ -377,8 +390,9 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
      * (when changing this, make sure it corresponds to XML schema */
     if (aIRQ > 255)
         return setError (E_INVALIDARG,
-            tr ("Invalid IRQ number: %lu (must be in range [0, %lu])"),
-                aIRQ, 255);
+            tr ("Invalid IRQ number of the parallel port %d: "
+                "%lu (must be in range [0, %lu])"),
+            mData->mSlot, aIRQ, 255);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -431,8 +445,9 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
      * (when changing this, make sure it corresponds to XML schema */
     if (aIOBase > 0xFFFF)
         return setError (E_INVALIDARG,
-            tr ("Invalid I/O port base address: %lu (must be in range [0, 0x%X])"),
-                aIOBase, 0, 0xFFFF);
+            tr ("Invalid I/O port base address of the parallel port %d: "
+                "%lu (must be in range [0, 0x%X])"),
+            mData->mSlot, aIOBase, 0, 0xFFFF);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -486,7 +501,8 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
 
     if (!*aPath)
         return setError (E_INVALIDARG,
-            tr ("Parallel port path cannot be empty"));
+            tr ("Path of the parallel port %d may not be empty"),
+            mData->mSlot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
