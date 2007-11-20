@@ -1901,14 +1901,21 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 #endif
 }
 
-void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
+/** 
+ * @return @c true if successfully performed the requested operation and false
+ * otherwise.
+ */
+bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
     if (aSeamless)
     {
-        /* Check if it is necessary to enter/leave seamless mode. */
-        if (aOn && (!mIsSeamlessSupported || mIsFullscreen) ||
-            !aOn && !mIsSeamless)
-            return;
+        /* Check if it is necessary to enter/leave seamless mode. We assert
+         * here because the corresponding actions must be properly disabled by
+         * the below code to give the user an adequate feedback and prevent
+         * from calling this method. */
+        AssertReturn (aOn && mIsSeamlessSupported && !mIsFullscreen ||
+                      !aOn && mIsSeamless,
+                      false);
 
         /* Check if the Guest Video RAM enough for the seamless mode. */
         QRect screen = QApplication::desktop()->screenGeometry (this);
@@ -1926,16 +1933,14 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             vboxProblem().cannotEnterSeamlessMode (screen.width(),
                 screen.height(), QColor::numBitPlanes());
             vmSeamlessAction->setOn (false);
-            return;
+            return false;
         }
     }
 
-    AssertReturnVoid (console);
-    AssertReturnVoid ((hidden_children.isEmpty() == aOn));
-    if (aSeamless)
-        AssertReturnVoid (mIsSeamless != aOn);
-    else
-        AssertReturnVoid (mIsFullscreen != aOn);
+    AssertReturn (console, false);
+    AssertReturn ((hidden_children.isEmpty() == aOn), false);
+    AssertReturn (aSeamless && mIsSeamless != aOn ||
+                  !aSeamless && mIsFullscreen != aOn, false);
 
     if (aOn)
     {
@@ -1944,12 +1949,13 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                                      vmFullscreenAction->menuText();
         hotKey = QStringList::split ('\t', hotKey) [1];
         Assert (!hotKey.isEmpty());
-        /* Get the host key name. */
-        QString hostKey = QIHotKeyEdit::keyName (vboxGlobal().settings()
-                                                             .hostKey());
+
         /* Show the info message. */
-        aSeamless ? vboxProblem().remindAboutGoingSeamless (hotKey, hostKey) :
-                    vboxProblem().remindAboutGoingFullscreen (hotKey, hostKey);
+        bool ok = aSeamless ?
+            vboxProblem().confirmGoingSeamless (hotKey) :
+            vboxProblem().confirmGoingFullscreen (hotKey);
+        if (!ok)
+            return false;
     }
 
     if (aSeamless)
@@ -2108,8 +2114,11 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         qApp->processEvents();
         console->toggleFSMode();
     }
+
     if (wasHidden)
         hide();
+
+    return true;
 }
 
 //
@@ -2118,12 +2127,26 @@ void VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
 void VBoxConsoleWnd::vmFullscreen (bool aOn)
 {
-    toggleFullscreenMode (aOn, false);
+    bool ok = toggleFullscreenMode (aOn, false /* aSeamless */);
+    if (!ok)
+    {
+        /* on failure, restore the previous button state */
+        vmFullscreenAction->blockSignals (true);
+        vmFullscreenAction->setOn (!aOn);
+        vmFullscreenAction->blockSignals (false);
+    }
 }
 
 void VBoxConsoleWnd::vmSeamless (bool aOn)
 {
-    toggleFullscreenMode (aOn, true);
+    bool ok = toggleFullscreenMode (aOn, true /* aSeamless */);
+    if (!ok)
+    {
+        /* on failure, restore the previous button state */
+        vmSeamlessAction->blockSignals (true);
+        vmSeamlessAction->setOn (!aOn);
+        vmSeamlessAction->blockSignals (false);
+    }
 }
 
 void VBoxConsoleWnd::vmAutoresizeGuest (bool on)
@@ -3073,7 +3096,7 @@ void VBoxConsoleWnd::updateNetworkAdarptersState()
  *  modal widget currently being executed, as it can cause uninitialization
  *  at the point of code where it is not expected at all (example:
  *  VBoxConsoleView::mouseEvent() calling
- *  VBoxProblemReporter::remindAboutInputCapture()). Instead, an attempt to
+ *  VBoxProblemReporter::confirmInputCapture()). Instead, an attempt to
  *  close the current modal widget is done and tryClose() is rescheduled for
  *  later execution using a single-shot zero timer.
  *

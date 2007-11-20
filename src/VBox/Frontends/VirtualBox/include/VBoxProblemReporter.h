@@ -241,8 +241,8 @@ public:
     int cannotFindGuestAdditions (const QString &aSrc1, const QString &aSrc2);
     void cannotDownloadGuestAdditions (const QString &aURL,
                                        const QString &aReason);
-    int confirmDownloadAdditions (const QString &aURL, ulong aSize);
-    int confirmMountAdditions (const QString &aURL, const QString &aSrc);
+    bool confirmDownloadAdditions (const QString &aURL, ulong aSize);
+    bool confirmMountAdditions (const QString &aURL, const QString &aSrc);
     void warnAboutTooOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutNewAdditions (QWidget *, const QString &, const QString &);
@@ -253,17 +253,15 @@ public:
     void showRegisterResult (QWidget *aParent,
                              const QString &aResult);
 
-    bool remindAboutInputCapture();
-    bool remindAboutAutoCapture();
-    bool remindAboutMouseIntegration (bool supportsAbsolute);
+    bool confirmInputCapture();
+    void remindAboutAutoCapture();
+    void remindAboutMouseIntegration (bool aSupportsAbsolute);
     bool remindAboutPausedVMInput();
 
     bool remindAboutInaccessibleMedia();
 
-    void remindAboutGoingFullscreen (const QString &hotKey,
-                                     const QString &hostKey);
-    void remindAboutGoingSeamless (const QString &hotKey,
-                                   const QString &hostKey);
+    bool confirmGoingFullscreen (const QString &aHotKey);
+    bool confirmGoingSeamless (const QString &aHotKey);
 
     void remindAboutWrongColorDepth (ulong aRealBPP, ulong aWantedBPP);
 
@@ -272,7 +270,7 @@ public:
 
     bool confirmVMReset (QWidget *aParent);
 
-    int remindAboutUnsetHD (QWidget *aParent);
+    bool confirmHardDisklessMachine (QWidget *aParent);
 
     void cannotRunInSelectorMode();
 
