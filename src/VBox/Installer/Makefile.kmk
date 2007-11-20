@@ -26,6 +26,9 @@ endif
 ifeq ($(BUILD_PLATFORM),darwin)
  SUBDIRS.darwin = darwin
 endif
+ifeq ($(BUILD_PLATFORM),solaris)
+ SUBDIRS.solaris = solaris
+endif
 
 include $(PATH_KBUILD)/footer.kmk
 
