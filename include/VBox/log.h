@@ -76,6 +76,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_AUDIO,
     /** DMA Controller group. */
     LOG_GROUP_DEV_DMA,
+    /** Gigabit Ethernet Device group. */
+    LOG_GROUP_DEV_E1000,
     /** Floppy Controller Device group. */
     LOG_GROUP_DEV_FDC,
     /** IDE Device group. */
@@ -298,6 +300,7 @@ typedef enum LOGGROUP
     "DEV_APIC",     \
     "DEV_AUDIO",    \
     "DEV_DMA",      \
+    "DEV_E1000",    \
     "DEV_FDC",      \
     "DEV_IDE",      \
     "DEV_KBD",      \
