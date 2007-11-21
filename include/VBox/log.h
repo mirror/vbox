@@ -206,6 +206,8 @@ typedef enum LOGGROUP
     LOG_GROUP_PATM,
     /** PDM group. */
     LOG_GROUP_PDM,
+    /** PDM Async completion group. */
+    LOG_GROUP_PDM_ASYNC_COMPLETION,
     /** PDM Device group. */
     LOG_GROUP_PDM_DEVICE,
     /** PDM Driver group. */
@@ -365,6 +367,7 @@ typedef enum LOGGROUP
     "MM_POOL",      \
     "PATM",         \
     "PDM",          \
+    "PDM_ASYNC_COMPLETION", \
     "PDM_DEVICE",   \
     "PDM_DRIVER",   \
     "PDM_LDR",      \
