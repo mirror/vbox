@@ -838,6 +838,12 @@
 /** The device is not a registered PCI device and thus cannot
  * perform any PCI operations. The device forgot to register it self. */
 #define VERR_PDM_NOT_PCI_DEVICE                     (-2834)
+/** The async completion template is still used. */
+#define VERR_PDM_ASYNC_TEMPLATE_BUSY                (-2835)
+/** The async completion task is already suspended. */
+#define VERR_PDM_ASYNC_COMPLETION_ALREADY_SUSPENDED (-2836)
+/** The async completion task is not suspended. */
+#define VERR_PDM_ASYNC_COMPLETION_NOT_SUSPENDED     (-2837)
 
 /** The version of the device registration structure is unknown
  * to this VBox version. Either mixing incompatible versions or
