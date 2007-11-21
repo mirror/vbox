@@ -65,7 +65,7 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
-QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3 /usr/X11R6"
+QTDIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
