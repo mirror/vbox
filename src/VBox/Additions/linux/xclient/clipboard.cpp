@@ -1561,11 +1561,12 @@ int vboxClipboardConnect (void)
     rc = ioctl(g_ctx.sendDevice, IOCTL_VBOXGUEST_HGCM_CONNECT, (void*)&info);
     if (rc >= 0)
     {
-        if (g_ctx.client == 0)
+        if (0 == info.u32ClientID)
         {
             cout << "We got an invalid client ID of 0!" << endl;
             return VERR_NOT_SUPPORTED;
         }
+        g_ctx.client = info.u32ClientID;
         g_ctx.eOwner = HOST;
     }
     else
