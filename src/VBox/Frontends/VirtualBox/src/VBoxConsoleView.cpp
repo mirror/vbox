@@ -1048,6 +1048,10 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* emit a signal about guest was resized */
                 emit resizeHintDone();
 
+                /* update geometry after entering fullscreen | seamless */
+                if (mainwnd->isTrueFullscreen() || mainwnd->isTrueSeamless())
+                    updateGeometry();
+
                 return true;
             }
 

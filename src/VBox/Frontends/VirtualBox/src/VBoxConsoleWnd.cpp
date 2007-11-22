@@ -654,6 +654,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     CMachine cmachine = csession.GetMachine();
 
+    show();
+
     /* restore the position of the window and some options */
     {
         QString str = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
@@ -811,8 +813,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     machine_state = cconsole.GetState();
 
     updateAppearanceOf (AllStuff);
-
-    show();
 
     if (vboxGlobal().settings().autoCapture())
         vboxProblem().remindAboutAutoCapture();
@@ -1008,8 +1008,6 @@ void VBoxConsoleWnd::onEnterFullscreen()
 
     vmSeamlessAction->setEnabled (mIsSeamless);
     vmFullscreenAction->setEnabled (mIsFullscreen);
-
-    console->updateGeometry();
 }
 
 /**
@@ -1077,7 +1075,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         {
             QResizeEvent *re = (QResizeEvent *) e;
 
-            if ((windowState() & WindowMaximized) == 0)
+            if (!isMaximized() && !isTrueFullscreen() && !isTrueSeamless())
             {
                 normal_size = re->size();
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1088,8 +1086,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         }
         case QEvent::Move:
         {
-            if ((windowState() & (WindowMaximized | WindowMinimized |
-                                  WindowFullScreen)) == 0)
+            if (!isMaximized() && !isTrueFullscreen() && !isTrueSeamless())
             {
                 normal_pos = pos();
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1901,7 +1898,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 #endif
 }
 
-/** 
+/**
  * @return @c true if successfully performed the requested operation and false
  * otherwise.
  */
@@ -1909,14 +1906,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
     if (aSeamless)
     {
-        /* Check if it is necessary to enter/leave seamless mode. We assert
-         * here because the corresponding actions must be properly disabled by
-         * the below code to give the user an adequate feedback and prevent
-         * from calling this method. */
-        AssertReturn (aOn && mIsSeamlessSupported && !mIsFullscreen ||
-                      !aOn && mIsSeamless,
-                      false);
-
         /* Check if the Guest Video RAM enough for the seamless mode. */
         QRect screen = QApplication::desktop()->screenGeometry (this);
         ULONG64 availBits = (csession.GetMachine().GetVRAMSize() /* vram */
@@ -2024,7 +2013,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                                      QSizePolicy::Preferred, QSizePolicy::Fixed);
 
 #ifdef Q_WS_WIN32
-        mPrevRegion = scrGeo;
+        mPrevRegion = dtw->screenGeometry (this);
 #endif
 
         /* Hide all but the central widget containing the console view. */
@@ -2054,6 +2043,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* Going fullscreen */
         setWindowState (windowState() ^ WindowFullScreen);
+        setMask (dtw->screenGeometry (this));
 
 #ifdef Q_WS_MAC
         if (!aSeamless)
@@ -2139,13 +2129,18 @@ void VBoxConsoleWnd::vmFullscreen (bool aOn)
 
 void VBoxConsoleWnd::vmSeamless (bool aOn)
 {
-    bool ok = toggleFullscreenMode (aOn, true /* aSeamless */);
-    if (!ok)
+    /* check if it is possible to enter/leave seamless mode */
+    if (aOn && mIsSeamlessSupported && !mIsFullscreen ||
+        !aOn && mIsSeamless)
     {
-        /* on failure, restore the previous button state */
-        vmSeamlessAction->blockSignals (true);
-        vmSeamlessAction->setOn (!aOn);
-        vmSeamlessAction->blockSignals (false);
+        bool ok = toggleFullscreenMode (aOn, true /* aSeamless */);
+        if (!ok)
+        {
+            /* on failure, restore the previous button state */
+            vmSeamlessAction->blockSignals (true);
+            vmSeamlessAction->setOn (!aOn);
+            vmSeamlessAction->blockSignals (false);
+        }
     }
 }
 
