@@ -603,7 +603,7 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
 /** 
  *  Validates COMSETTER(Path) arguments.
  */
-HRESULT SerialPort::checkSetPath (BSTR aPath)
+HRESULT SerialPort::checkSetPath (const BSTR aPath)
 {
     AssertReturn (isLockedOnCurrentThread(), E_FAIL);
 

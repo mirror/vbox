@@ -121,7 +121,7 @@ public:
 
 private:
 
-    HRESULT checkSetPath (BSTR aPath);
+    HRESULT checkSetPath (const BSTR aPath);
 
     const ComObjPtr <Machine, ComWeakRef> mParent;
     const ComObjPtr <SerialPort> mPeer;
