@@ -198,7 +198,7 @@ static SDL_SysWMinfo gSdlInfo;
 #ifdef RT_OS_WINDOWS
 #define LIBSDL_TTF_NAME "SDL_ttf"
 #else
-#define LIBSDL_TTF_NAME "libSDL_ttf"
+#define LIBSDL_TTF_NAME "libSDL_ttf-2.0.so.0"
 #endif
 RTLDRMOD gLibrarySDL_ttf = NIL_RTLDRMOD;
 #endif
