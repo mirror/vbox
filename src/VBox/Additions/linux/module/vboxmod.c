@@ -33,6 +33,57 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
 
+/*****************************************************************************
+* Macros                                                                     *
+*****************************************************************************/
+
+/* We need to define these ones here as they only exist in kernels 2.6 and up */
+
+#define __vbox_wait_event_interruptible_timeout(wq, condition, timeout, ret)   \
+do {                                                                      \
+        int __ret = 0;                                                    \
+        if (!(condition)) {                                               \
+          wait_queue_t __wait;                                            \
+          unsigned long expire;                                           \
+          init_waitqueue_entry(&__wait, current);                         \
+	                                                                  \
+          expire = timeout + jiffies;                                     \
+          add_wait_queue(&wq, &__wait);                                   \
+          for (;;) {                                                      \
+                  set_current_state(TASK_INTERRUPTIBLE);                  \
+                  if (condition)                                          \
+                          break;                                          \
+                  if (jiffies > expire) {                                 \
+                          ret = jiffies - expire;                         \
+                          break;                                          \
+                  }                                                       \
+                  if (!signal_pending(current)) {                         \
+                          schedule_timeout(timeout);                      \
+                          continue;                                       \
+                  }                                                       \
+                  ret = -ERESTARTSYS;                                     \
+                  break;                                                  \
+          }                                                               \
+          current->state = TASK_RUNNING;                                  \
+          remove_wait_queue(&wq, &__wait);                                \
+	}                                                                 \
+} while (0)
+
+/*
+   retval == 0; condition met; we're good.
+   retval < 0; interrupted by signal.
+   retval > 0; timed out.
+*/
+#define vbox_wait_event_interruptible_timeout(wq, condition, timeout)	\
+({									\
+	int __ret = 0;							\
+	if (!(condition))						\
+		__vbox_wait_event_interruptible_timeout(wq, condition,	\
+						timeout, __ret);	\
+	__ret;								\
+})
+
+
 /* This is called by our assert macros to find out whether we want
    to insert a breakpoint after the assertion. In kernel modules we
    do not of course. */
@@ -99,6 +150,10 @@ static int vboxadd_register_hgcm_connection(uint32_t client_id, struct file *fil
         for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
                 if (ASMAtomicCmpXchgU32(&hgcm_connections[i].client_id, client_id, 0)) {
                         hgcm_connections[i].filp = filp;
+#ifdef DEBUG
+                        LogRelFunc(("Registered client ID %d, file pointer %p at position %d in the table.\n",
+                                    client_id, filp, i));
+#endif
                         found = true;
                 }
         }
@@ -119,6 +174,11 @@ static int vboxadd_unregister_hgcm_connection_no_close(uint32_t client_id)
 
         for (i = 0; (i < MAX_HGCM_CONNECTIONS) && (false == found); ++i) {
                 if (hgcm_connections[i].client_id == client_id) {
+#ifdef DEBUG
+                        LogRelFunc(("Unregistered client ID %d, file pointer %p at position %d in the table.\n",
+                                    client_id, hgcm_connections[i].filp, i));
+#endif
+                        hgcm_connections[i].filp = NULL;
                         hgcm_connections[i].client_id = 0;
                         found = true;
                 }
@@ -143,6 +203,15 @@ static int vboxadd_unregister_all_hgcm_connections(struct file *filp)
 
         for (i = 0; i < MAX_HGCM_CONNECTIONS; ++i) {
                 if (hgcm_connections[i].filp == filp) {
+                        VBoxGuestHGCMDisconnectInfo infoDisconnect;
+#ifdef DEBUG
+                        LogRelFunc(("Unregistered client ID %d, file pointer %p at position %d in the table.\n",
+                                    hgcm_connections[i].client_id, filp, i));
+#endif
+                        infoDisconnect.u32ClientID = hgcm_connections[i].client_id;
+                        vboxadd_cmc_call(vboxDev, IOCTL_VBOXGUEST_HGCM_DISCONNECT,
+                                         &infoDisconnect);
+                        hgcm_connections[i].filp = NULL;
                         hgcm_connections[i].client_id = 0;
                 }
         }
@@ -170,28 +239,58 @@ static int vboxadd_release(struct inode *inode, struct file * filp)
         return 0;
 }
 
-/**
- * Wait for event
- *
- */
-static void
-vboxadd_wait_for_event_helper (VBoxDevice *dev, long timeout,
-                               uint32_t in_mask, uint32_t * out_mask)
-{
-    BUG ();
-}
-
 static void
 vboxadd_wait_for_event (VBoxGuestWaitEventInfo * info)
 {
-    long timeout;
+    long timeleft;
+    uint32_t cInterruptions = vboxDev->u32GuestInterruptions;
+    uint32_t in_mask = info->u32EventMaskIn;
 
-    timeout = msecs_to_jiffies (info->u32TimeoutIn);
-    vboxadd_wait_for_event_helper (vboxDev, timeout,
-                                   info->u32EventMaskIn,
-                                   &info->u32EventFlagsOut);
+    info->u32Result = VBOXGUEST_WAITEVENT_OK;
+    timeleft = vbox_wait_event_interruptible_timeout
+                            (vboxDev->eventq,
+                                (vboxDev->u32Events & in_mask)
+                             || (vboxDev->u32GuestInterruptions != cInterruptions),
+                             msecs_to_jiffies (info->u32TimeoutIn));
+    if (vboxDev->u32GuestInterruptions != cInterruptions) {
+            info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+    }
+    if (timeleft < 0) {
+            info->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+    }
+    if (timeleft == 0) {
+            info->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
+    }
+    info->u32EventFlagsOut = vboxDev->u32Events & in_mask;
+    vboxDev->u32Events &= ~in_mask;
 }
 
+/**
+ * IOCtl handler - wait for an event from the host.
+ *
+ * @returns Linux kernel return code
+ * @param ptr User space pointer to a structure describing the event
+ */
+static int vboxadd_wait_event(void *ptr)
+{
+        int rc = 0;
+        VBoxGuestWaitEventInfo info;
+
+        if (copy_from_user (&info, ptr, sizeof (info))) {
+                LogRelFunc (("IOCTL_VBOXGUEST_WAITEVENT: can not get event info\n"));
+                rc = -EFAULT;
+        }
+
+        if (0 == rc) {
+                vboxadd_wait_for_event (&info);
+
+                if (copy_to_user (ptr, &info, sizeof (info))) {
+                        LogRelFunc (("IOCTL_VBOXGUEST_WAITEVENT: can not put out_mask\n"));
+                        rc = -EFAULT;
+                }
+        }
+        return 0;
+}
 
 /**
  * IOCTL handler.  Initiate an HGCM connection for a user space application.  If the connection
@@ -221,6 +320,7 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
                                           : -RTErrConvertToErrno(info.result);
         } else {
                 /* Register that the connection is associated with this file pointer. */
+                LogRelFunc(("Connected, client ID %u\n", info.u32ClientID));
                 rc = vboxadd_register_hgcm_connection(info.u32ClientID, filp);
                 if (0 != rc) {
                         LogRelFunc(("IOCTL_VBOXGUEST_HGCM_CONNECT: failed to register the HGCM connection\n"));
@@ -250,44 +350,25 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
 static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                          unsigned int cmd, unsigned long arg)
 {
-    switch (cmd)
-    {
+        int rc = 0;
+
+        switch (cmd) {
         case IOCTL_VBOXGUEST_WAITEVENT:
-        {
-            VBoxGuestWaitEventInfo info;
-            char *ptr = (void *) arg;
+                rc = vboxadd_wait_event((void *) arg);
+                break;
 
-            if (copy_from_user (&info, ptr, sizeof (info)))
-            {
-                LogRelFunc (("IOCTL_VBOXGUEST_WAITEVENT: can not get event info\n"));
-                return -EFAULT;
-            }
+        case VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL:
+                ++vboxDev->u32GuestInterruptions;
+                break;
 
-            vboxadd_wait_for_event (&info);
-
-            ptr += offsetof (VBoxGuestWaitEventInfo, u32EventFlagsOut);
-            if (put_user (info.u32EventFlagsOut, (uint32_t*)ptr))
-            {
-                LogRelFunc (("IOCTL_VBOXGUEST_WAITEVENT: can not put out_mask\n"));
-                return -EFAULT;
-            }
-            return 0;
-        }
-
-        case IOCTL_VBOXGUEST_VMMREQUEST:
-        {
+        case IOCTL_VBOXGUEST_VMMREQUEST: {
             VMMDevRequestHeader reqHeader;
             VMMDevRequestHeader *reqFull = NULL;
             size_t cbRequestSize;
             size_t cbVanillaRequestSize;
             int rc;
 
-            if (_IOC_SIZE(cmd) != sizeof(VMMDevRequestHeader))
-            {
-                LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: invalid VMM request structure size: %d\n",
-                         _IOC_SIZE(cmd)));
-                return -EINVAL;
-            }
+            AssertCompileSize(VMMDevRequestHeader, _IOC_SIZE(cmd));
             if (copy_from_user(&reqHeader, (void*)arg, _IOC_SIZE(cmd)))
             {
                 LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: copy_from_user failed for vmm request!\n"));
@@ -360,7 +441,6 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
         }
 
         case IOCTL_VBOXGUEST_HGCM_CALL:
-        {
         /* This IOCTL allows the guest to make an HGCM call from user space.  The
            OS-independant part of the Guest Additions already contain code for making an
            HGCM call from the guest, but this code assumes that the call is made from the
@@ -368,21 +448,19 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
            to the HGCM call from user space to kernel space and reconstruct the structures
            passed to the call (which include pointers to other memory) inside the kernel's
            address space. */
-                return vbox_ioctl_hgcm_call(arg, vboxDev);
-        }
+                rc = vbox_ioctl_hgcm_call(arg, vboxDev);
+                break;
 
         case IOCTL_VBOXGUEST_HGCM_CONNECT:
-        {
-                return vboxadd_hgcm_connect(filp, arg);
-        }
+                rc = vboxadd_hgcm_connect(filp, arg);
+                break;
 
         default:
-        {
-            LogRelFunc(("unknown command: %x\n", cmd));
-            return -EINVAL;
+                LogRelFunc(("unknown command: %x\n", cmd));
+                rc = -EINVAL;
+                break;
         }
-    }
-    return 0;
+        return rc;
 }
 
 #ifdef DEBUG

@@ -50,6 +50,10 @@ struct VBoxDevice
     uint32_t hypervisorSize;
     /** event synchronization */
     wait_queue_head_t eventq;
+    /** number of times the guest has interrupted the event loop -
+        implemented as a counter to prevent one waiter swallowing the
+        event. */
+    uint32_t u32GuestInterruptions;
 };
 
 extern int vboxadd_verbosity;
