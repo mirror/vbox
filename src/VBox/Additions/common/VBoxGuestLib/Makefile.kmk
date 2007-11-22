@@ -34,6 +34,8 @@ ifdef VBOX_WITH_LINUX_ADDITIONS
  	VBoxGuestLibLinux \
  	VBoxGuestLibBaseLinux
  endif
+  LIBRARIES += \
+ 	VBoxGuestR3LibLinux
 endif
 ifdef VBOX_WITH_OS2_ADDITIONS
  LIBRARIES += \
@@ -103,6 +105,16 @@ VBoxGuestLibBaseLinux_TEMPLATE = VBOXLNX32GUESTR0
 VBoxGuestLibBaseLinux_SOURCES  = $(SOURCES_GUESTLIBBASE)
 VBoxGuestLibBaseLinux_INCS     = $(VBoxGuestLib_INCS)
 VBoxGuestLibBaseLinux_DEFS     = VBOX_HGCM VBGL_VBOXGUEST LOG_TO_BACKDOOR
+
+#
+# VBoxGuestR3LibBaseLinux
+#
+VBoxGuestR3LibLinux_TEMPLATE = VBOXLNX32GUESTR3LIB
+VBoxGuestR3LibLinux_SOURCES  = \
+	VBoxGuestR3Lib.cpp \
+	VBoxGuestR3LibClipboard.cpp \
+	VBoxGuestR3LibSeamless.cpp
+VBoxGuestR3LibLinux_DEFS     = VBOX_HGCM
 
 
 #
