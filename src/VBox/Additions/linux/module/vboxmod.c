@@ -368,7 +368,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             size_t cbVanillaRequestSize;
             int rc;
 
-            /* AssertCompile(sizeof(VMMDevRequestHeader) != _IOC_SIZE(cmd)); */
+            compiler_assert(sizeof(VMMDevRequestHeader) == _IOC_SIZE(IOCTL_VBOXGUEST_VMMREQUEST));
             if (copy_from_user(&reqHeader, (void*)arg, _IOC_SIZE(cmd)))
             {
                 LogRelFunc(("IOCTL_VBOXGUEST_VMMREQUEST: copy_from_user failed for vmm request!\n"));
