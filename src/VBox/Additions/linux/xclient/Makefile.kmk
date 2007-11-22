@@ -17,7 +17,6 @@
 DEPTH = ../../../../..
 include	$(PATH_KBUILD)/header.kmk
 
-
 ifneq ($(USERNAME),bird) # crap
 PROGRAMS = vboxadd-xclient
 endif
@@ -26,10 +25,24 @@ OTHER_CLEAN              = $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
 
 vboxadd-xclient_TEMPLATE = VBOXLNX32GUESTR3EXE
 vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
+ifdef LINUX_SEAMLESS_GUEST
+vboxadd-xclient_SOURCES += \
+                seamless-host.cpp \
+                seamless-x11.cpp
+endif
 vboxadd-xclient_LIBPATH  = $(PATH_TARGET)/vboxadd-xclient $(VBOX_LIBPATH32_X11)
 vboxadd-xclient_LIBS     = \
-    $(PATH_LIB)/RuntimeLnx32GuestR3.a pthread rt Xt X11
+                $(PATH_LIB)/VBoxGuestR3LibLinux.a \
+                $(PATH_LIB)/RuntimeLnx32GuestR3.a \
+                pthread \
+                rt \
+                Xt \
+                Xext \
+                X11
 vboxadd-xclient_DEFS     = _GNU_SOURCE VBOX_HGCM
+ifdef LINUX_SEAMLESS_GUEST
+vboxadd-xclient_DEFS     += LINUX_SEAMLESS
+endif
 
 # link agaginst libstdc++.a (http://www.trilithium.com/johan/2005/06/static-libstdc/)
 $(PATH_TARGET)/vboxadd-xclient/vboxadd-xclient: $(PATH_TARGET)/vboxadd-xclient/libstdc++.a
