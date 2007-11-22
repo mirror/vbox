@@ -133,7 +133,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         return VERR_INVALID_PARAMETER;
     }
 
-    dprintf (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
+    /* Anyone who needs this can re-enable it locally */
+    /* dprintf (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function)); */
 
     pHGCMCall = NULL;
 
@@ -142,7 +143,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
 
-    dprintf (("VbglHGCMCall Allocated gr %p, rc = %Vrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
+    /* Anyone who needs this can re-enable it locally */
+    /* dprintf (("VbglHGCMCall Allocated gr %p, rc = %Vrc, cbParms = %d\n", pHGCMCall, rc, cbParms)); */
 
     if (VBOX_SUCCESS(rc))
     {
@@ -202,12 +204,14 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         /* Check that the parameter locking was ok. */
         if (VBOX_SUCCESS(rc))
         {
-            dprintf (("calling VbglGRPerform\n"));
+            /* Anyone who needs this can re-enable it locally */
+            /* dprintf (("calling VbglGRPerform\n")); */
 
             /* Issue request */
             rc = VbglGRPerform (&pHGCMCall->header.header);
 
-            dprintf (("VbglGRPerform rc = %Vrc (header rc=%d)\n", rc, pHGCMCall->header.result));
+            /* Anyone who needs this can re-enable it locally */
+            /* dprintf (("VbglGRPerform rc = %Vrc (header rc=%d)\n", rc, pHGCMCall->header.result)); */
 
             /** If the call failed, but as a result of the request itself, then pretend success  
              *  Upper layers will interpret the result code in the packet.
