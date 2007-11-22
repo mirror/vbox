@@ -36,6 +36,10 @@ using std::endl;
 
 #include "clipboard.h"
 
+#ifdef SEAMLESS_LINUX
+# include "seamless.h"
+#endif
+
 static bool gbDaemonise = true;
 
 /**
@@ -92,6 +96,10 @@ int vboxClipboardXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 int main(int argc, char *argv[])
 {
     int rc;
+#ifdef SEAMLESS_LINUX
+    /** Our instance of the seamless class. */
+    VBoxGuestSeamless seamless;
+#endif
 
     /* Parse our option(s) */
     while (1)
@@ -135,20 +143,59 @@ int main(int argc, char *argv[])
     /* Set an X11 error handler, so that we don't die when we get BadAtom errors. */
     XSetErrorHandler(vboxClipboardXLibErrorHandler);
     /* Connect to the host clipboard. */
+    LogRel(("Starting clipboard Guest Additions...\n"));
     rc = vboxClipboardConnect();
     if (rc != VINF_SUCCESS)
     {
-        Log(("vboxClipboardConnect failed with rc = %d\n", rc));
+        LogRel(("vboxClipboardConnect failed with rc = %d\n", rc));
         cout << "Failed to connect to the host clipboard." << endl;
-        LogFlowFunc(("returning 1\n"));
-        return 1;
     }
+#ifdef SEAMLESS_LINUX
+    try
+    {
+        LogRel(("Starting seamless Guest Additions...\n"));
+        rc = seamless.init();
+        if (rc != VINF_SUCCESS)
+        {
+            LogRel(("Failed to initialise seamless Additions, rc = %d\n", rc));
+            cout << "Failed to initialise seamless Additions." << endl;
+        }
+    }
+    catch (std::exception e)
+    {
+        LogRel(("Failed to initialise seamless Additions - caught exception: %s\n", e.what()));
+        cout << "Failed to initialise seamless Additions\n" << endl;
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+    catch (...)
+    {
+        LogRel(("Failed to initialise seamless Additions - caught unknown exception.\n"));
+        cout << "Failed to initialise seamless Additions\n" << endl;
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+#endif /* SEAMLESS_LINUX defined */
     if (gbDaemonise)
     {
         vboxDaemonise();
     }
     vboxClipboardMain();
     vboxClipboardDisconnect();
-    LogFlowFunc(("returning 0\n"));
-    return 0;
+#ifdef SEAMLESS_LINUX
+    try
+    {
+        seamless.uninit();
+    }
+    catch (std::exception e)
+    {
+        LogRel(("Error shutting down seamless Additions - caught exception: %s\n", e.what()));
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+    catch (...)
+    {
+        LogRel(("Error shutting down seamless Additions - caught unknown exception.\n"));
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+#endif /* SEAMLESS_LINUX defined */
+    LogFlowFunc(("returning %Vrc\n", rc));
+    return rc;
 }
