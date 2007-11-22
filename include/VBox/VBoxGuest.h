@@ -1064,7 +1064,6 @@ typedef struct
 /** VRDP status changed. */
 #define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
 
-
 /** @} */
 
 
@@ -1113,6 +1112,14 @@ typedef struct
  * @remark  If adding interfaces that only has input or only has output, some new macros
  *          needs to be created so the most efficient IOCtl data buffering method can be
  *          used.
+ *
+ * @remark  On Linux (at least), things are not as grim as portrayed above.  The IOCtl
+ *          numbering system is pure convention designed in order to simplify error checking.
+ *          The numbers only have meaning to the driver which implements the IOCtl, and are
+ *          completely ignored by the system.  In fact, the oldest IOCtls still in use today
+ *          predate the current numbering system, and several of the ones implemented since
+ *          then implement it wrongly.  See 'man ioctl_list' for more information.
+ *            -Michael
  * 
  * @{
  */
@@ -1135,11 +1142,12 @@ typedef struct
 # define VBOXGUEST_IOCTL_CODE_FAST(Function)        ((unsigned char)(Function))
 
 #elif defined(RT_OS_LINUX)
-# define IOCTL_CODE(DeviceType, Function, Method_ignored, Access_ignored, DataSize) \
-    ( (3 << 30) | ((DeviceType) << 8) | (Function) | ((DataSize) << 16) )
-# define METHOD_BUFFERED        0
-# define FILE_WRITE_ACCESS      0x0002
-# define FILE_DEVICE_UNKNOWN    0x00000022
+/* Note that we can't use the Linux header IOCtl macros directly, as they expect a "type"
+   argument, whereas we provide "sizeof(type)". */
+/* VBOXGUEST_IOCTL_CODE(Function, sizeof(type)) == _IOWR('V', (Function) | VBOXGUEST_IOCTL_FLAG, (type)) */
+# define VBOXGUEST_IOCTL_CODE(Function, Size)   ( (3 << 30) | ('V' << 8) | (Function) | VBOXGUEST_IOCTL_FLAG | (Size << 16) )
+/* VBOXGUEST_IOCTL_CODE_FAST(Function) == _IO(  'V', (Function) | VBOXGUEST_IOCTL_FLAG) */
+# define VBOXGUEST_IOCTL_CODE_FAST(Function)    ( 'V' << 8 | (Function) | VBOXGUEST_IOCTL_FLAG)
 
 #elif 0 /* BSD style - needs some adjusting _IORW takes a type and not a size. */
 # include <sys/ioccom.h>
@@ -1169,8 +1177,15 @@ typedef struct _VBoxGuestPortInfo
 #ifdef VBOXGUEST_IOCTL_CODE
 # define VBOXGUEST_IOCTL_WAITEVENT      VBOXGUEST_IOCTL_CODE(2, sizeof(VBoxGuestWaitEventInfo))
 # define IOCTL_VBOXGUEST_WAITEVENT      VBOXGUEST_IOCTL_WAITEVENT
+# define VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL \
+                                        VBOXGUEST_IOCTL_CODE(5, 0)
+# define IOCTL_VBOXGUEST_WAITEVENT_INTERRUPT_ALL \
+                                        VBOXGUEST_IOCTL_WAITEVENT_INTERRUPT_ALL
 #else
 # define IOCTL_VBOXGUEST_WAITEVENT IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2049, METHOD_BUFFERED, FILE_WRITE_ACCESS, sizeof(VBoxGuestWaitEventInfo))
+# define IOCTL_VBOXGUEST_WAITEVENT_INTERRUPT_ALL \
+                                        IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2051, METHOD_BUFFERED, \
+                                        FILE_WRITE_ACCESS, 0)
 #endif 
 
 /**
@@ -1505,7 +1520,10 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 __BEGIN_DECLS
 VBGLR3DECL(int)     VbglR3Init(void);
 VBGLR3DECL(void)    VbglR3Term(void);
+VBGLR3DECL(int)     VbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cbSize,
+                                  VMMDevRequestType reqType);
 VBGLR3DECL(int)     VbglR3GRPerform(VMMDevRequestHeader *pReq);
+VBGLR3DECL(void)    VbglR3GRFree(VMMDevRequestHeader *pReq);
 # ifdef __iprt_time_h__
 VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
 # endif 
