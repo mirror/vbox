@@ -217,6 +217,7 @@ DevicesR3_SOURCES       = \
 ifndef VBOX_OSE
 DevicesR3_SOURCES      += \
 	Network/DevE1000.cpp \
+	Network/DevE1000Phy.cpp \
 	Network/DevEEPROM.cpp
 DevicesR3_DEFS	       += VBOX_WITH_E1000
 endif
