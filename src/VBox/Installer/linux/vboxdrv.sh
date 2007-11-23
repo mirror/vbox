@@ -122,7 +122,7 @@ fail() {
 }
 
 running() {
-    lsmod | grep -q $modname[^_-]
+    lsmod | grep -q "$modname[^_-]"
 }
 
 start() {
