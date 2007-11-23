@@ -1610,6 +1610,12 @@ bool VBoxConsoleView::winEvent (MSG *msg)
                        msg->wParam, msg->lParam | (0x1 << 25));
         return true;
     }
+
+    /* These special keys have to be handled by Windows as well to update the
+     * internal modifier state and to enable/disable the keyboard LED */
+    if (vkey == VK_NUMLOCK || vkey == VK_CAPITAL)
+        return false;
+
     return result;
 }
 
