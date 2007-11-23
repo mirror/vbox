@@ -35,6 +35,9 @@ endif
 ifdef VBOX_WITH_VRDP
 SUBDIRS += VBoxVRDP
 endif
+ifdef VBOX_WITH_HEADLESS
+SUBDIRS += VBoxHeadless
+endif
 
 include $(PATH_KBUILD)/footer.kmk
 
