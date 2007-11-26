@@ -1,0 +1,32 @@
+# $Id$
+## @file
+# Makefile for the headless frontend.
+#
+
+#
+#  Copyright (C) 2006-2007 innotek GmbH
+# 
+#  innotek GmbH confidential
+#  All rights reserved
+
+DEPTH = ../../../..
+include $(PATH_KBUILD)/header.kmk
+
+PROGRAMS                = VBoxHeadless
+SUBDIRS_AFTER           = testcase
+
+VBoxHeadless_TEMPLATE   = VBOXMAINCLIENTEXE
+VBoxHeadless_SOURCES    = VBoxHeadless.cpp
+VBoxHeadless_DEFS       = VBOX_FFMPEG
+
+ifdef VBOX_WITH_VRDP
+VBoxHeadless_SOURCES   += Framebuffer.cpp
+VBoxHeadless_DEFS      += VBOX_WITH_VRDP
+endif
+
+ifdef VBOX_WITH_FFMPEG
+ SUBDIRS += VideoCapture
+endif
+
+include $(PATH_KBUILD)/footer.kmk
+
