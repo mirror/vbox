@@ -1504,6 +1504,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
     }
     else if (pg == pageSerial)
     {
+        valid = true;
         QValueList <QString> ports;
         QValueList <QString> paths;
 
@@ -1540,6 +1541,49 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *wval)
                         tr ("Port path is not specified ") :
                         tr ("Duplicate port path is entered ");
                     pageTitle += ": " + tbwSerialPorts->tabLabel (tab);
+                    break;
+                }
+                paths << path;
+            }
+        }
+    }
+    else if (pg == pageParallel)
+    {
+        valid = true;
+        QValueList <QString> ports;
+        QValueList <QString> paths;
+
+        int index = 0;
+        for (; index < tbwParallelPorts->count(); ++ index)
+        {
+            QWidget *tab = tbwParallelPorts->page (index);
+            VBoxVMParallelPortSettings *page =
+                static_cast <VBoxVMParallelPortSettings *> (tab);
+
+            /* check the predefined port number unicity */
+            if (page->mParallelPortBox->isChecked() && !page->isUserDefined())
+            {
+                QString port = page->mPortNumCombo->currentText();
+                valid = !ports.contains (port);
+                if (!valid)
+                {
+                    warningText = tr ("Duplicate port number is selected ");
+                    pageTitle += ": " + tbwParallelPorts->tabLabel (tab);
+                    break;
+                }
+                ports << port;
+            }
+            /* check the port path emptiness & unicity */
+            if (page->mParallelPortBox->isChecked())
+            {
+                QString path = page->mPortPathLine->text();
+                valid = !path.isEmpty() && !paths.contains (path);
+                if (!valid)
+                {
+                    warningText = path.isEmpty() ?
+                        tr ("Port path is not specified ") :
+                        tr ("Duplicate port path is entered ");
+                    pageTitle += ": " + tbwParallelPorts->tabLabel (tab);
                     break;
                 }
                 paths << path;
@@ -1826,6 +1870,16 @@ void VBoxVMSettingsDlg::getFromMachine (const CMachine &machine)
         {
             CSerialPort port = machine.GetSerialPort (slot);
             addSerialPort (port);
+        }
+    }
+
+    /* parallel ports */
+    {
+        ulong count = vbox.GetSystemProperties().GetParallelPortCount();
+        for (ulong slot = 0; slot < count; ++ slot)
+        {
+            CParallelPort port = machine.GetParallelPort (slot);
+            addParallelPort (port);
         }
     }
 
@@ -2119,6 +2173,17 @@ COMResult VBoxVMSettingsDlg::putBackToMachine()
         }
     }
 
+    /* parallel ports */
+    {
+        for (int index = 0; index < tbwParallelPorts->count(); index++)
+        {
+            VBoxVMParallelPortSettings *page =
+                (VBoxVMParallelPortSettings *) tbwParallelPorts->page (index);
+            Assert (page);
+            page->putBackToPort();
+        }
+    }
+
     /* usb */
     {
         CUSBController ctl = cmachine.GetUSBController();
@@ -2296,6 +2361,38 @@ void VBoxVMSettingsDlg::addSerialPort (const CSerialPort &aPort)
     connect (page->mIOPortLine, SIGNAL (textChanged (const QString &)),
              wval, SLOT (revalidate()));
     connect (page->mHostModeCombo, SIGNAL (activated (const QString &)),
+             wval, SLOT (revalidate()));
+    connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
+             this, SLOT (enableOk (const QIWidgetValidator *)));
+    connect (wval, SIGNAL (isValidRequested (QIWidgetValidator *)),
+             this, SLOT (revalidate (QIWidgetValidator *)));
+
+    wval->revalidate();
+}
+
+void VBoxVMSettingsDlg::addParallelPort (const CParallelPort &aPort)
+{
+    VBoxVMParallelPortSettings *page = new VBoxVMParallelPortSettings();
+    page->getFromPort (aPort);
+    QString pageTitle = QString (tr ("Port %1", "parallel ports"))
+                                 .arg (aPort.GetSlot());
+    tbwParallelPorts->addTab (page, pageTitle);
+
+    /* fix the tab order so that main dialog's buttons are always the last */
+    setTabOrder (page->mPortPathLine, buttonHelp);
+    setTabOrder (buttonHelp, buttonOk);
+    setTabOrder (buttonOk, buttonCancel);
+
+    /* setup validation */
+    QIWidgetValidator *wval =
+        new QIWidgetValidator (QString ("%1: %2")
+                               .arg (pagePath (pageParallel), pageTitle),
+                               pageParallel, this);
+    connect (page->mParallelPortBox, SIGNAL (toggled (bool)),
+             wval, SLOT (revalidate()));
+    connect (page->mIRQLine, SIGNAL (textChanged (const QString &)),
+             wval, SLOT (revalidate()));
+    connect (page->mIOPortLine, SIGNAL (textChanged (const QString &)),
              wval, SLOT (revalidate()));
     connect (wval, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableOk (const QIWidgetValidator *)));

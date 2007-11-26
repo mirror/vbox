@@ -5,7 +5,7 @@
 :folding=explicit:collapseFolds=1:
 
      Copyright (C) 2006-2007 innotek GmbH
-    
+
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
@@ -229,7 +229,6 @@
     <include location="global" impldecl="in implementation">qdir.h</include>
     <include location="global" impldecl="in implementation">qvalidator.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
-    <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxVMSerialPortSettings.ui.h</include>
 </includes>
 <variables>

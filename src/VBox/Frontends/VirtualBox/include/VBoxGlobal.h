@@ -372,6 +372,10 @@ public:
     QString toCOMPortName (ulong aIRQ, ulong aIOBase) const;
     bool toCOMPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
 
+    QStringList LPTPortNames() const;
+    QString toLPTPortName (ulong aIRQ, ulong aIOBase) const;
+    bool toLPTPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
+
     QPixmap snapshotIcon (bool online) const
     {
         return online ? mOnlineSnapshotIcon : mOfflineSnapshotIcon;
@@ -604,7 +608,7 @@ private:
     QStringVector ideControllerTypes;
     QStringVector USBDeviceStates;
 
-    QString mUserDefinedCOMPortName;
+    QString mUserDefinedPortName;
 
     mutable bool detailReportTemplatesReady;
 

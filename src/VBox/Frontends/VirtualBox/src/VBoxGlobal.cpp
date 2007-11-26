@@ -956,13 +956,14 @@ QStringList VBoxGlobal::deviceTypeStrings() const
     return list;
 }
 
-static const struct PortConfig
+struct PortConfig
 {
     const char *name;
     const ulong IRQ;
     const ulong IOBase;
-}
-kKnownPorts[] =
+};
+
+static const PortConfig comKnownPorts[] =
 {
     { "COM1", 4, 0x3F8 },
     { "COM2", 3, 0x2F8 },
@@ -972,14 +973,35 @@ kKnownPorts[] =
      * toCOMPortName() to return the "User-defined" string for these values. */
 };
 
+static const PortConfig lptKnownPorts[] =
+{
+    { "LPT1", 7, 0x3BC },
+    { "LPT2", 5, 0x378 },
+    { "LPT3", 5, 0x278 },
+    /* must not contain an element with IRQ=0 and IOBase=0 used to cause
+     * toLPTPortName() to return the "User-defined" string for these values. */
+};
+
 /**
  *  Returns the list of the standard COM port names (i.e. "COMx").
  */
 QStringList VBoxGlobal::COMPortNames() const
 {
     QStringList list;
-    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
-        list << kKnownPorts [i].name;
+    for (size_t i = 0; i < ELEMENTS (comKnownPorts); ++ i)
+        list << comKnownPorts [i].name;
+
+    return list;
+}
+
+/**
+ *  Returns the list of the standard LPT port names (i.e. "LPTx").
+ */
+QStringList VBoxGlobal::LPTPortNames() const
+{
+    QStringList list;
+    for (size_t i = 0; i < ELEMENTS (lptKnownPorts); ++ i)
+        list << lptKnownPorts [i].name;
 
     return list;
 }
@@ -991,12 +1013,27 @@ QStringList VBoxGlobal::COMPortNames() const
  */
 QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
 {
-    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
-        if (kKnownPorts [i].IRQ == aIRQ &&
-            kKnownPorts [i].IOBase == aIOBase)
-            return kKnownPorts [i].name;
+    for (size_t i = 0; i < ELEMENTS (comKnownPorts); ++ i)
+        if (comKnownPorts [i].IRQ == aIRQ &&
+            comKnownPorts [i].IOBase == aIOBase)
+            return comKnownPorts [i].name;
 
-    return mUserDefinedCOMPortName;
+    return mUserDefinedPortName;
+}
+
+/**
+ *  Returns the name of the standard LPT port corresponding to the given
+ *  parameters, or "User-defined" (which is also returned when both
+ *  @a aIRQ and @a aIOBase are 0).
+ */
+QString VBoxGlobal::toLPTPortName (ulong aIRQ, ulong aIOBase) const
+{
+    for (size_t i = 0; i < ELEMENTS (lptKnownPorts); ++ i)
+        if (lptKnownPorts [i].IRQ == aIRQ &&
+            lptKnownPorts [i].IOBase == aIOBase)
+            return lptKnownPorts [i].name;
+
+    return mUserDefinedPortName;
 }
 
 /**
@@ -1007,11 +1044,30 @@ QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
 bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
-    for (size_t i = 0; i < ELEMENTS (kKnownPorts); ++ i)
-        if (strcmp (kKnownPorts [i].name, aName.utf8().data()) == 0)
+    for (size_t i = 0; i < ELEMENTS (comKnownPorts); ++ i)
+        if (strcmp (comKnownPorts [i].name, aName.utf8().data()) == 0)
         {
-            aIRQ = kKnownPorts [i].IRQ;
-            aIOBase = kKnownPorts [i].IOBase;
+            aIRQ = comKnownPorts [i].IRQ;
+            aIOBase = comKnownPorts [i].IOBase;
+            return true;
+        }
+
+    return false;
+}
+
+/**
+ *  Returns port parameters corresponding to the given standard LPT name.
+ *  Returns @c true on success, or @c false if the given port name is not one
+ *  of the standard names (i.e. "LPTx").
+ */
+bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
+                                   ulong &aIOBase) const
+{
+    for (size_t i = 0; i < ELEMENTS (lptKnownPorts); ++ i)
+        if (strcmp (lptKnownPorts [i].name, aName.utf8().data()) == 0)
+        {
+            aIRQ = lptKnownPorts [i].IRQ;
+            aIOBase = lptKnownPorts [i].IOBase;
             return true;
         }
 
@@ -1513,7 +1569,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                         toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
                     if (mode == CEnums::HostPipePort ||
                         mode == CEnums::HostDevicePort)
-                        data += QString ("%1 (<nobr>%1</nobr>)")
+                        data += QString ("%1 (<nobr>%2</nobr>)")
                             .arg (vboxGlobal().toString (mode))
                             .arg (QDir::convertSeparators (port.GetPath()));
                     else
@@ -1538,6 +1594,42 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 .arg ("serial_port_16px.png", /* icon */
                       "#serialPorts", /* link */
                       tr ("Serial Ports", "details report"), /* title */
+                      item); /* items */
+        }
+        /* parallel ports */
+        {
+            item = QString::null;
+            ulong count = mVBox.GetSystemProperties().GetParallelPortCount();
+            int rows = 2; /* including section header and footer */
+            for (ulong slot = 0; slot < count; slot ++)
+            {
+                CParallelPort port = m.GetParallelPort (slot);
+                if (port.GetEnabled())
+                {
+                    QString data =
+                        toLPTPortName (port.GetIRQ(), port.GetIOBase()) +
+                        QString (" (<nobr>%1</nobr>)")
+                        .arg (QDir::convertSeparators (port.GetPath()));
+
+                    item += QString (sSectionItemTpl)
+                        .arg (tr ("Port %1", "details report (parallel ports)")
+                              .arg (port.GetSlot()))
+                        .arg (data);
+                    ++ rows;
+                }
+            }
+            if (item.isNull())
+            {
+                item = QString (sSectionItemTpl)
+                    .arg (tr ("Disabled", "details report (parallel ports)"), "");
+                ++ rows;
+            }
+
+            detailsReport += sectionTpl
+                .arg (rows) /* rows */
+                .arg ("serial_port_16px.png", /* icon */
+                      "#parallelPorts", /* link */
+                      tr ("Parallel Ports", "details report"), /* title */
                       item); /* items */
         }
         /* USB */
@@ -2120,7 +2212,7 @@ void VBoxGlobal::languageChange()
     USBDeviceStates [CEnums::USBDeviceCaptured] =
         tr ("Captured", "USBDeviceState");
 
-    mUserDefinedCOMPortName = tr ("User-defined", "serial port");
+    mUserDefinedPortName = tr ("User-defined", "serial port");
 
     detailReportTemplatesReady = false;
 
