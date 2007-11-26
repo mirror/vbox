@@ -112,7 +112,7 @@ ifdef VBOX_WITH_ISCSI
  VBoxDD_DEFS           += VBOX_WITH_ISCSI
 endif
 ifndef VBOX_OSE
- VBoxDD_DEFS           +=VBOX_WITH_E1000
+ VBoxDD_DEFS           += VBOX_WITH_E1000
 endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
@@ -526,7 +526,7 @@ Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
 	, $(Drivers_SOURCES))
 Drivers_SOURCES.solaris = \
-    Audio/solaudio.c \
+	Audio/solaudio.c \
 	Network/DrvTAP.cpp \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp
