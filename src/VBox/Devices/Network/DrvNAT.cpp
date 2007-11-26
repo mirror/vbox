@@ -35,7 +35,7 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
- * Block driver instance data.
+ * NAT network transport driver instance data.
  */
 typedef struct DRVNAT
 {
