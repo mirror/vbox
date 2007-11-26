@@ -1901,7 +1901,7 @@
     <message>
         <source>Serial Ports</source>
         <comment>details report</comment>
-        <translation>INterfaces série</translation>
+        <translation>Interfaces séries</translation>
     </message>
     <message>
         <source>USB</source>
@@ -2342,11 +2342,11 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
     </message>
     <message>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Remet le fichier bibliothèque d&apos;authentication à la valeur par défaut. La bibliothèque  par défaut sera affichée aprés l&apos;acceptation des modifications et la réouverture de la boîte de dialogue.</translation>
+        <translation>Remet le fichier bibliothèque d&apos;authentication à la valeur par défaut. La bibliothèque  par défaut sera affichée après l&apos;acceptation des modifications et la réouverture de la boîte de dialogue.</translation>
     </message>
     <message>
         <source>&amp;Extended Features</source>
-        <translation>Caractéristiqu&amp;e avancées</translation>
+        <translation>Caractéristiqu&amp;e avancée</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -2490,7 +2490,7 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Chosir&lt;/b&gt; pour choisir l&apos;emplacement et le nom du fichier qui
+        <translation>&lt;p&gt;Activez le bouton &lt;b&gt;Choisir&lt;/b&gt; pour choisir l&apos;emplacement et le nom du fichier qui
 contiendra l&apos;image du disque dur, ou entrez le nom du fichier dans le champs d&apos;entrée.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2623,7 +2623,7 @@ button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisi l&apos;image de disque dur utilisé comme disque dur d&apos;amorçage de la machine virtuelle.
 Vous pouvez créer une nouvelle image de disque dur en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou choisir une image de disque dur existante sur le menu déroulant, ou encore activer le bouton &lt;b&gt;Existant&lt;/b&gt; afin de lancer l&apos;assistant de création de disque dur.&lt;/p&gt;
-&lt;p&gt;Si votre configuration est plus compliquée, vous pouvez sauter ce pas et attaché le disque dur plus tard, en utilisant la boîte de dialogue Préférences VM .&lt;/p&gt;
+&lt;p&gt;Si votre configuration est plus compliquée, vous pouvez sauter cette étape et attacher le disque dur plus tard, en utilisant la boîte de dialogue Préférences VM .&lt;/p&gt;
 </translation>
     </message>
     <message>
@@ -3081,11 +3081,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <translation>&lt;p&gt;L&apos;image CD Addittions client VirtualBox a été téléchargé a pertir du site  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; et enregistré sous &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez vous utiliser cette image CD et l&apos;attacher sous le lecteur virtuel CD/DVD ?&gt;/p&gt; </translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;La machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode &lt;i&gt;fenêtre&lt;/i&gt; en actionnant &lt;b&gt;%1&lt;/b&gt;. Notez que la &lt;i&gt;touche hôte&lt;/i&gt; est définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode plein écran. Vous pouvez y accéder &lt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;affichage intégré dans le bureau&lt;/b&gt;. Vous pouvez revenir au mode &lt;i&gt;fenêtre&lt;/i&gt; en actionnant &lt;b&gt;%1&lt;/b&gt;. Notez que la &lt;i&gt;touche hôte&lt;/i&gt; est définie comme &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode plein écran. Vous pouvez y accéder &lt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3094,7 +3094,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur critique est survenues pendant le fonctionnement de la machine virtuelle et cette dernière a été suspendue.&lt;/p&gt;&lt;p&gt;Pour toute aide  voir la section communauté sous &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;  ou votre contrat d&apos;aide. Veuillez fournir le fichier log &lt;tt&gt;VBox.log&lt;/tt&gt; et le fichier image   &lt;tt&gt;VBox.png&lt;/tt&gt; que vous pouvez trouver dans le répertoire  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ainsi qu&apos;une description de vos opèrations lors de l&apos;apparution de l&apos;erreur. Noter que vous pouvez accéder aux fichiers par l&apos;intermédiaire de &lt;b&gt;Afficher le log&lt;/b&gt; sous le menu &lt;b&gt;Machine&lt;/b&gt; de la bote de dialogue principale de VirtualBox.&lt;/p&gt;&lt;p&gt;Activer le bouton &lt;b&gt;OK&lt;/b&gt; si vous désirer arrêter la machine ou &lt;b&gt;Ignorer&lt;/b&gt; si vous désirer la laisser telle qu&apos;elle pour le déboguage. Notez que le déboguage nécessite des connaissances et des outils spécifiques. De ce faît nous vous recommandant de presse &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur critique est survenue pendant le fonctionnement de la machine virtuelle et cette dernière a été suspendue.&lt;/p&gt;&lt;p&gt;Pour toute aide  voir la section communauté du site &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;  ou votre contrat d&apos;aide. Veuillez fournir le fichier log &lt;tt&gt;VBox.log&lt;/tt&gt; et le fichier image   &lt;tt&gt;VBox.png&lt;/tt&gt; que vous pouvez trouver dans le répertoire  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ainsi qu&apos;une description de vos opérations lors de l&apos;apparution de l&apos;erreur. Noter que vous pouvez accéder aux fichiers par l&apos;intermédiaire de &lt;b&gt;Afficher le log&lt;/b&gt; dans le menu &lt;b&gt;Machine&lt;/b&gt; de la boîte de dialogue principale de VirtualBox.&lt;/p&gt;&lt;p&gt;Cliquer sur le bouton &lt;b&gt;OK&lt;/b&gt; si vous désirez arrêter la machine ou &lt;b&gt;Ignorer&lt;/b&gt; si vous désirer la laisser telle qu&apos;elle pour le déboguage. Notez que le déboguage nécessite des connaissances et des outils spécifiques. De ce faît nous vous recommandant de choisir &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
@@ -3133,7 +3133,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Veuillez bien remplir le formulaire d&apos;inscription qui nois informeras que vous utilisez VirtualBox et qui nous permettra de vous informer occasionnellement des nouveautés et des mises à jour.&lt;/p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse couriel dans les champs ci dessous. Notez que Innotek n&apos;utilise ces données que pour effectuer des statistiques et pour l&apos;envoi de bulletins d&apos;information. Innotek be communiquera jamais ces informations à des tiers. Des informations détaillées sur l&apos;utilisation de vos données personelles se trouvent sous la section &lt;b&gt;Privacy Policy&lt;/b&gt; du manuel d&apos;utilisation ainsi que sur la page  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site web VirtualBox.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Veuillez bien remplir le formulaire d&apos;inscription qui nous informeras que vous utilisez VirtualBox et qui nous permettra de vous informer occasionnellement des nouveautés et des mises à jour.&lt;/p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse couriel dans les champs ci dessous. Notez que Innotek n&apos;utilise ces données que pour effectuer des statistiques et pour l&apos;envoi de bulletins d&apos;information. Innotek be communiquera jamais ces informations à des tiers. Des informations détaillées sur l&apos;utilisation de vos données personelles se trouvent sous la section &lt;b&gt;Privacy Policy&lt;/b&gt; du manuel d&apos;utilisation ainsi que sur la page  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -3718,7 +3718,7 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Rejeter l&apos;instantané chosis de la machine virtuelle</translation>
+        <translation>Rejeter l&apos;instantané choisis de la machine virtuelle</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -4109,7 +4109,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation>Chosissez le média d&apos;installation</translation>
+        <translation>Choisissez le média d&apos;installation</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
@@ -4141,7 +4141,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez lancer une machine virtuelle nouvellement crée pour la première fois. Cet assistant vous aidera à configurer celle ci  afin de pouvoir amorcer un système d&apos;exploitation de votre choix dans cette machine virtuelle.&lt;/p&gt;&lt;p&gt;Notez que vous ne pourrez pas installer un système d&apos;exploitation car vous n&apos;avez pas encore affecté un disque à cette machine. Ci ce n&apos;est pas ce que vous désirez, vous pouvez interrompre cet assistant. Chosissez &lt;b&gt;Préférences&lt;/b&gt; à partir du menu &lt;b&gt;Machine&lt;/b&gt; de la boîte de dialogue principale pour accéder à la boîte de dialogue du paramétrage et modifier la configuration des disques durs.&lt;/p&gt;&lt;p&gt;Utilisez la touche &lt;b&gt;Suivant&gt;&lt;/b&gt; ou &lt;b&gt;Précédent&lt;/b&gt; pour accéder aux différentes pages de cet assistant. Vous povez également activer la touche &lt;b&gt;Annuler&lt;/b&gt; pour terminez cet assistant.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez lancer une machine virtuelle nouvellement crée pour la première fois. Cet assistant vous aidera à configurer celle ci  afin de pouvoir amorcer un système d&apos;exploitation de votre choix dans cette machine virtuelle.&lt;/p&gt;&lt;p&gt;Notez que vous ne pourrez pas installer un système d&apos;exploitation car vous n&apos;avez pas encore affecté un disque à cette machine. Ci ce n&apos;est pas ce que vous désirez, vous pouvez interrompre cet assistant. Choisissez &lt;b&gt;Préférences&lt;/b&gt; à partir du menu &lt;b&gt;Machine&lt;/b&gt; de la boîte de dialogue principale pour accéder à la boîte de dialogue du paramétrage et modifier la configuration des disques durs.&lt;/p&gt;&lt;p&gt;Utilisez la touche &lt;b&gt;Suivant&gt;&lt;/b&gt; ou &lt;b&gt;Précédent&lt;/b&gt; pour accéder aux différentes pages de cet assistant. Vous pouvez également activer la touche &lt;b&gt;Annuler&lt;/b&gt; pour terminer cet assistant.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -4383,11 +4383,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Select TAP setup application</source>
-        <translation>Chosir l&apos;application d&apos;installation de l&apos;interface TAP</translation>
+        <translation>Choisir l&apos;application d&apos;installation de l&apos;interface TAP</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation>Chosir l&apos;application de désinstallation de l&apos;interface TAP</translation>
+        <translation>Choisir l&apos;application de désinstallation de l&apos;interface TAP</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
@@ -4470,7 +4470,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Afiche le numéro de l&apos;interface série. Vous pouvez chosir une des interfaces série ou choisir&lt;b&gt;Définit par l&apos;utilisateur&lt;/b&gt; et spécifié manuellement les paramètres de l&apos;interface.</translation>
+        <translation>Afiche le numéro de l&apos;interface série. Vous pouvez choisir une des interfaces série ou choisir&lt;b&gt;Définit par l&apos;utilisateur&lt;/b&gt; et spécifié manuellement les paramètres de l&apos;interface.</translation>
     </message>
     <message>
         <source>&amp;IRQ</source>
@@ -4478,7 +4478,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation>Affiche le numéro du IRQ de cettre interface série. Les valeurs légales sont comprises entre &lt;tt&gt;0&lt;/tt&gt; et &lt;tt&gt;255&lt;/tt&gt;. Les valeurs supèrieures à &lt;tt&gt;15&lt;/tt&gt; ne peuvent être utilsée que si &lt;b&gt;IO APIC&lt;/b&gt; est activé por cette machine.</translation>
+        <translation>Affiche le numéro du IRQ de cettre interface série. Les valeurs légales sont comprises entre &lt;tt&gt;0&lt;/tt&gt; et &lt;tt&gt;255&lt;/tt&gt;. Les valeurs supèrieures à &lt;tt&gt;15&lt;/tt&gt; ne peuvent être utilsées que si &lt;b&gt;IO APIC&lt;/b&gt; est actif pour cette machine.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -4494,7 +4494,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>Contrôle le mode de fonctionnement de cette interface série. Si vous chosissez &lt;b&gt;Déconnecté&lt;/b&gt;, le système d´exploitation client détectera cette interface série mais ne sera pas en mesure de l&apos;utiliser.</translation>
+        <translation>Contrôle le mode de fonctionnement de cette interface série. Si vous choisissez &lt;b&gt;Déconnecté&lt;/b&gt;, le système d´exploitation client détectera cette interface série mais ne sera pas en mesure de l&apos;utiliser.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -4541,7 +4541,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation>&lt;i&gt;Choisissez une catégorie de préférences dans la liste située à gauche et déplacé la souris au dessus d&apos;un élément afin d&apos;avoir plus d&apos;informations&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Choisissez une catégorie de préférences dans la liste située à gauche et placez la souris au dessus d&apos;un élément afin d&apos;avoir plus d&apos;informations&lt;/i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
@@ -5039,7 +5039,7 @@ Timeout d&apos;authentification </translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation>Si la case est cochée, le disque dur virtuel sera attaché sur l&apos;emplacement esclave du conrtôleur IDE secondaire.</translation>
+        <translation>Si la case est cochée, le disque dur virtuel sera attaché sur l&apos;emplacement esclave du contrôleur IDE secondaire.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
@@ -5209,11 +5209,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisés avec des chaînes de caractères vierges. Notez qu&apos;un telle filtre correspond à  toutes les périphériques USB raccordées.</translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisés avec des chaînes de caractères vierges. Notez qu&apos;un tel filtre correspond à  tout les périphériques USB raccordées.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Ajoute un nouveau filtre USB avec tous les champs mis à la valeur de la périphérique raccordée à l&apos;ordinateur.</translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs mis à la valeur du périphérique raccordé à l&apos;ordinateur.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -5278,8 +5278,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
-        <translation>Si la case est cochée, la machine virtuelle essaiera d&apos;utiliser les extensions matérielles de virtualisation telles que Intel VT-x et AMD-V. Si la case a cocher est
-grisée, cela signifie que le paramètrage à été effectué d&apos;après la valeur des prérences globales.</translation>
+        <translation>Si la case est cochée, la machine virtuelle essaiera d&apos;utiliser les extensions matérielles de virtualisation telles que Intel VT-x et AMD-V. Si la case est grisée, cela signifie que le paramètrage à été effectué d&apos;après la valeur des préférences globales.</translation>
     </message>
     <message>
         <source>Other &amp;Settings</source>
@@ -5303,7 +5302,7 @@ grisée, cela signifie que le paramètrage à été effectué d&apos;après la v
     </message>
     <message>
         <source>&amp;Enable Passthrough</source>
-        <translation>Avtiver le mode dir&amp;ect</translation>
+        <translation>Activer le mode dir&amp;ect</translation>
     </message>
     <message>
         <source>Alt+E</source>
@@ -5311,7 +5310,7 @@ grisée, cela signifie que le paramètrage à été effectué d&apos;après la v
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Si la case est cochée, le client pourra envoyer directement des commandes ATAPI sur le disque hôte et de ce faît il est possible d&apos;utiliser des graveurs CD/DVD a partier de la machine virtuelle. Notez que le gravage de CD audio n&apos;est pas possible actuellement.</translation>
+        <translation>Si la case est cochée, le client pourra envoyer directement des commandes ATAPI sur le disque hôte et de ce faît il est possible d&apos;utiliser des graveurs CD/DVD a partir de la machine virtuelle. Notez que le gravage de CD audio n&apos;est pas possible actuellement.</translation>
     </message>
     <message>
         <source>&amp;Server Port </source>
@@ -5327,7 +5326,7 @@ grisée, cela signifie que le paramètrage à été effectué d&apos;après la v
     </message>
     <message>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Affiche le numéro du port du serveur VRDP. Vous pouvez spécifié &lt;tt&gt;0&lt;/tt&gt; (zéro) pour affecté le numéro dur port à sa valeur par défaut.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Affiche le numéro du port du serveur VRDP. Vous pouvez spécifier &lt;tt&gt;0&lt;/tt&gt; (zéro) pour affecter le numéro du port à sa valeur par défaut.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Primary Master hard disk is not selected</source>
@@ -5339,7 +5338,7 @@ grisée, cela signifie que le paramètrage à été effectué d&apos;après la v
     </message>
     <message>
         <source>Primary Slave hard disk is already attached to a different slot</source>
-        <translation></translation>
+        <translation>Le disque dur esclave primaire est déja attaché à un autre emplacement</translation>
     </message>
     <message>
         <source>Secondary Slave hard disk is not selected</source>
