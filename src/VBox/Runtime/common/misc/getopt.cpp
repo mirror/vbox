@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * innotek Portable Runtime - Command Line Parsing
  */
@@ -20,82 +21,82 @@
 #include <iprt/getopt.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/assert.h>
 
-#include <string.h>
 
-/*******************************************************************************
-*   Code                                                                       *
-*******************************************************************************/
-int RTGetOpt(int argc,
-             char *argv[],
-             const RTOPTIONDEF *paOptions,
-             int cOptions,
-             int *piThis,
-             RTOPTIONUNION *pValueUnion)
+
+RTDECL(int) RTGetOpt(int argc, char *argv[], PCRTOPTIONDEF paOptions, size_t cOptions, int *piThis, PRTOPTIONUNION pValueUnion)
 {
-    if (    (!piThis)
-         || (*piThis >= argc)
+    pValueUnion->pDef = NULL;
+
+    if (    !piThis
+         || *piThis >= argc
        )
         return 0;
 
     int iThis = (*piThis)++;
-    const char *pcszArgThis = argv[iThis];
+    const char *pszArgThis = argv[iThis];
 
-    if (*pcszArgThis == '-')
+    if (*pszArgThis == '-')
     {
-        int i;
-        for (i = 0;
-             i < cOptions;
-             ++i)
+        for (size_t i = 0; i < cOptions; i++)
         {
             bool fShort = false;
-            if (    (!strcmp(pcszArgThis, paOptions[i].pcszLong))
-                 || (    ((fShort = (pcszArgThis[1] == paOptions[i].cShort)))
-                      && (pcszArgThis[2] == '\0')
+            if (    (   paOptions[i].pszLong
+                     && !strcmp(pszArgThis, paOptions[i].pszLong))
+                ||  (   (fShort = (pszArgThis[1] == paOptions[i].iShort))
+                     && pszArgThis[2] == '\0'
                     )
                )
             {
-                if (paOptions[i].fl & RTGETOPT_REQUIRES_ARGUMENT)
+                Assert(!(paOptions[i].fFlags & ~RTGETOPT_REQ_MASK));
+                pValueUnion->pDef = &paOptions[i];
+
+                if ((paOptions[i].fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
                 {
                     if (iThis >= argc - 1)
-                    {
-                        pValueUnion->pcsz = paOptions[i].pcszLong;
                         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
-                    }
-                    else
+
+                    int iNext = (*piThis)++;
+                    switch (paOptions[i].fFlags & RTGETOPT_REQ_MASK)
                     {
-                        int iNext = (*piThis)++;
-                        if (paOptions[i].fl & RTGETOPT_ARG_FORMAT_INT32)
-                        {
-                            int32_t i;
-                            if (RTStrToInt32Full(argv[iNext], 10, &i))
-                            {
-                                pValueUnion->pcsz = paOptions[i].pcszLong;
-                                return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-                            }
+                        case RTGETOPT_REQ_STRING:
+                            pValueUnion->psz = argv[iNext];
+                            break;
 
-                            pValueUnion->i = i;
-                        }
-                        else if (paOptions[i].fl & RTGETOPT_ARG_FORMAT_UINT32)
+                        case RTGETOPT_REQ_INT32:
                         {
-                            uint32_t u;
-                            if (RTStrToUInt32Full(argv[iNext], 10, &u))
-                            {
-                                pValueUnion->pcsz = paOptions[i].pcszLong;
+                            int32_t i32;
+                            if (RTStrToInt32Full(argv[iNext], 10, &i32))
                                 return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-                            }
 
-                            pValueUnion->u = u;
+                            pValueUnion->i32 = i32;
+                            break;
                         }
-                        else
-                            pValueUnion->pcsz = argv[iNext];
+
+                        case RTGETOPT_REQ_UINT32:
+                        {
+                            uint32_t u32;
+                            if (RTStrToUInt32Full(argv[iNext], 10, &u32))
+                                return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+    
+                            pValueUnion->u32 = u32;
+                            break;
+                        }
+
+                        default:
+                            AssertMsgFailed(("i=%d f=%#x\n", i, paOptions[i].fFlags));
+                            return VERR_INTERNAL_ERROR;
                     }
                 }
 
-                return paOptions[i].cShort;
+                return paOptions[i].iShort;
             }
         }
     }
+
+    /** @todo Sort options and arguments (i.e. stuff that doesn't start with '-'), stop when 
+     * encountering the first argument. */
 
     return VERR_GETOPT_UNKNOWN_OPTION;
 }
