@@ -212,7 +212,7 @@
                 <string> USB </string>
             </property>
             <property name="text">
-                <string>7</string>
+                <string>8</string>
             </property>
             <property name="text">
                 <string>#usb</string>
@@ -232,7 +232,7 @@
                 <string> Remote Display </string>
             </property>
             <property name="text">
-                <string>9</string>
+                <string>10</string>
             </property>
             <property name="text">
                 <string>#vrdp</string>
@@ -252,7 +252,7 @@
                 <string> Shared Folders </string>
             </property>
             <property name="text">
-                <string>8</string>
+                <string>9</string>
             </property>
             <property name="text">
                 <string>#sfolders</string>
@@ -276,6 +276,26 @@
             </property>
             <property name="text">
                 <string>#serialPorts</string>
+            </property>
+            <property name="pixmap">
+                <pixmap>serial_port_16px.png</pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+            <property name="pixmap">
+                <pixmap></pixmap>
+            </property>
+        </item>
+        <item>
+            <property name="text">
+                <string> Parallel Ports </string>
+            </property>
+            <property name="text">
+                <string>7</string>
+            </property>
+            <property name="text">
+                <string>#parallelPorts</string>
             </property>
             <property name="pixmap">
                 <pixmap>serial_port_16px.png</pixmap>
@@ -2275,7 +2295,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <cstring>pageUSB</cstring>
                 </property>
                 <attribute name="id">
-                    <number>7</number>
+                    <number>8</number>
                 </attribute>
                 <vbox>
                     <property name="name">
@@ -2535,7 +2555,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <cstring>pageVRDP</cstring>
                 </property>
                 <attribute name="id">
-                    <number>9</number>
+                    <number>10</number>
                 </attribute>
                 <vbox>
                     <property name="name">
@@ -2749,7 +2769,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <cstring>pageFolders</cstring>
                 </property>
                 <attribute name="id">
-                    <number>8</number>
+                    <number>9</number>
                 </attribute>
             </widget>
             <widget class="QWidget">
@@ -2769,6 +2789,35 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                     <widget class="QTabWidget">
                         <property name="name">
                             <cstring>tbwSerialPorts</cstring>
+                        </property>
+                        <property name="sizePolicy">
+                            <sizepolicy>
+                                <hsizetype>1</hsizetype>
+                                <vsizetype>1</vsizetype>
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                            </sizepolicy>
+                        </property>
+                    </widget>
+                </vbox>
+            </widget>
+            <widget class="QWidget">
+                <property name="name">
+                    <cstring>pageParallel</cstring>
+                </property>
+                <attribute name="id">
+                    <number>7</number>
+                </attribute>
+                <vbox>
+                    <property name="name">
+                        <cstring>unnamed</cstring>
+                    </property>
+                    <property name="margin">
+                        <number>0</number>
+                    </property>
+                    <widget class="QTabWidget">
+                        <property name="name">
+                            <cstring>tbwParallelPorts</cstring>
                         </property>
                         <property name="sizePolicy">
                             <sizepolicy>
@@ -3120,6 +3169,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <include location="local" impldecl="in declaration">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxVMNetworkSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxVMSerialPortSettings.h</include>
+    <include location="local" impldecl="in implementation">VBoxVMParallelPortSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxUSBFilterSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxSharedFoldersSettings.h</include>
     <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
@@ -3182,6 +3232,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <slot>showVDImageManager( QUuid *id, VBoxMediaComboBox *le, QLabel *tx = NULL )</slot>
     <slot>addNetworkAdapter( const CNetworkAdapter &amp; )</slot>
     <slot>addSerialPort( const CSerialPort &amp; )</slot>
+    <slot>addParallelPort( const CParallelPort &amp; )</slot>
     <slot>slRAM_valueChanged( int val )</slot>
     <slot>leRAM_textChanged( const QString &amp; text )</slot>
     <slot>slVRAM_valueChanged( int val )</slot>

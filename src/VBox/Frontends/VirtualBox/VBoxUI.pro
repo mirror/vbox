@@ -7,7 +7,7 @@
 
 #
 #  Copyright (C) 2006-2007 innotek GmbH
-# 
+#
 #  This file is part of VirtualBox Open Source Edition (OSE), as
 #  available from http://www.virtualbox.org. This file is free software;
 #  you can redistribute it and/or modify it under the terms of the GNU
@@ -22,6 +22,7 @@ LANGUAGE	= C++
 FORMS	= ui/VBoxDiskImageManagerDlg.ui \
 	ui/VBoxVMNetworkSettings.ui \
 	ui/VBoxVMSerialPortSettings.ui \
+	ui/VBoxVMParallelPortSettings.ui \
 	ui/VBoxUSBFilterSettings.ui \
 	ui/VBoxSharedFoldersSettings.ui \
 	ui/VBoxNewVMWzd.ui \

@@ -82,11 +82,10 @@ void VBoxVMSerialPortSettings::putBackToPort()
     mPort.SetIRQ (mIRQLine->text().toULong (NULL, 0));
     mPort.SetIOBase (mIOPortLine->text().toULong (NULL, 0));
 
-    CEnums::PortMode mode = vboxGlobal().toPortMode (mHostModeCombo->currentText());
-    mPort.SetHostMode (mode);
-
-    mPort.SetServer (mServerCheck->isChecked());
     mPort.SetPath (QDir::convertSeparators (mPortPathLine->text()));
+
+    mPort.SetHostMode (vboxGlobal().toPortMode (mHostModeCombo->currentText()));
+    mPort.SetServer (mServerCheck->isChecked());
 }
 
 bool VBoxVMSerialPortSettings::isUserDefined()
