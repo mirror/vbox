@@ -1,0 +1,23 @@
+# $Id$
+## @file
+# Makefile for the VRDP (headless RDP server) frontend testcase.
+#
+
+#
+#  Copyright (C) 2006-2007 innotek GmbH
+# 
+#  innotek GmbH confidential
+#  All rights reserved
+
+DEPTH = ../../../../..
+include $(PATH_KBUILD)/header.kmk
+
+ifdef VBOX_WITH_TESTCASES
+PROGRAMS = tstHeadless
+endif
+
+tstHeadless_TEMPLATE = VBOXMAINCLIENTEXE
+tstHeadless_SOURCES  = tstHeadless.cpp
+
+include $(PATH_KBUILD)/footer.kmk
+
