@@ -41,7 +41,9 @@ using namespace com;
 #include <iprt/process.h>
 #endif
 
-#include "Framebuffer.h"
+#ifdef VBOX_WITH_VRDP
+# include "Framebuffer.h"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
