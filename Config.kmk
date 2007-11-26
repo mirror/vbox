@@ -188,6 +188,8 @@ VBOX_WITH_VBOXSDL = 1
 VBOX_WITH_VBOXBFE = 1
 # the Qt GUI
 VBOX_WITH_QTGUI = 1
+# the headless frontend
+VBOX_WITH_HEADLESS = 1
 ## the Direct Framebuffer GUI
 #VBOX_WITH_VBOXFB = 1
 # Enable the debugger.
