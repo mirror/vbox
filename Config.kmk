@@ -390,7 +390,7 @@ endif
 #
 # Disable components for headless
 #
-ifdef VBOX_WITH_HEADLESS
+ifdef VBOX_HEADLESS
  VBOX_WITH_QTGUI=
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_VBOXBFE=
