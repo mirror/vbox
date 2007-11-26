@@ -1151,7 +1151,7 @@
 #define VERR_GMM_CHUNK_NOT_MAPPED                   (-4163)
 /** The reservation or reservation update was declined - too many VMs, too
  * little memory, and/or too low GMM configuration. */
-#define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-4161)
+#define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-4164)
 /** @} */
 
 /** @name VBox GVM Status Codes
