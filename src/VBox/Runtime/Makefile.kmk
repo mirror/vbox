@@ -207,11 +207,11 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/tcp.cpp
 
-#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
-# RuntimeR3_SOURCES += common/time/timesupA.asm
-#else
+if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+ RuntimeR3_SOURCES += common/time/timesupA.asm
+else
  RuntimeR3_SOURCES += common/time/timesupref.cpp
-#endif
+endif
 
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_SOURCES += \
@@ -665,11 +665,11 @@ RuntimeR0_SOURCES       = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp
 
-#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
-# RuntimeR0_SOURCES += common/time/timesupA.asm
-#else
+if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+ RuntimeR0_SOURCES += common/time/timesupA.asm
+else
  RuntimeR0_SOURCES += common/time/timesupref.cpp
-#endif
+endif
 
 RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 RuntimeR0_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
@@ -996,11 +996,11 @@ RuntimeGC_SOURCES       = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	VBox/strformat-vbox.cpp \
 
-#if1of ($(BUILD_TARGET_ARCH),amd64 x86)
-# RuntimeGC_SOURCES += common/time/timesupA.asm
-#else
+if1of ($(BUILD_TARGET_ARCH),amd64 x86)
+ RuntimeGC_SOURCES += common/time/timesupA.asm
+else
  RuntimeGC_SOURCES += common/time/timesupref.cpp
-#endif
+endif
 
 RuntimeGC_SOURCES.win.x86 = $(RuntimeWin32ASM_SOURCES)
 

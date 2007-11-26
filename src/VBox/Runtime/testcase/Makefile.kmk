@@ -29,6 +29,7 @@ PROGRAMS = \
 	tstErrUnique \
 	tstFile \
 	tstFileLock \
+	tstGetOpt \
 	tstHeapSimple \
 	tstInlineAsm \
 	tstLdr \
@@ -232,6 +233,8 @@ tstErrUnique_SOURCES = tstErrUnique.cpp
 tstErrUnique_INCS    = $(PATH_TARGET)/..
 ## tstErrUnique.cpp depends on a generated header.
 tstErrUnique.cpp_DEPS = $(PATH_TARGET)/../errmsgdata.h
+
+tstGetOpt_SOURCES = tstGetOpt.cpp
 
 tstHeapSimple_SOURCES = tstHeapSimple.cpp
 
