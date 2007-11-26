@@ -1,0 +1,204 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>VBoxVMParallelPortSettings</class>
+<comment>
+:mode=html:tabSize=4:indentSize=4:noTabs=true:
+:folding=explicit:collapseFolds=1:
+
+     Copyright (C) 2006-2007 innotek GmbH
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License as published by the Free Software Foundation,
+     in version 2 as it comes in the "COPYING" file of the VirtualBox OSE
+     distribution. VirtualBox OSE is distributed in the hope that it will
+     be useful, but WITHOUT ANY WARRANTY of any kind.
+</comment>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>VBoxVMParallelPortSettings</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>493</width>
+            <height>279</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>VBoxVMParallelPortSettings</string>
+    </property>
+    <grid>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <property name="spacing">
+            <number>10</number>
+        </property>
+        <widget class="QGroupBox" row="0" column="0">
+            <property name="name">
+                <cstring>mParallelPortBox</cstring>
+            </property>
+            <property name="title">
+                <string>&amp;Enable Parallel Port</string>
+            </property>
+            <property name="checkable">
+                <bool>true</bool>
+            </property>
+            <property name="whatsThis" stdset="0">
+                <string>When checked, enables the given parallel port of the virtual machine.</string>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QLabel" row="0" column="0">
+                    <property name="name">
+                        <cstring>mPortNumLabel</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Port &amp;Number</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>mPortNumCombo</cstring>
+                    </property>
+                </widget>
+                <widget class="QLayoutWidget" row="0" column="1">
+                    <property name="name">
+                        <cstring>layout9</cstring>
+                    </property>
+                    <hbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QComboBox">
+                            <property name="name">
+                                <cstring>mPortNumCombo</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>3</hsizetype>
+                                    <vsizetype>0</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</string>
+                            </property>
+                        </widget>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>mIROLabel</cstring>
+                            </property>
+                            <property name="text">
+                                <string>&amp;IRQ</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>mIRQLine</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QLineEdit">
+                            <property name="name">
+                                <cstring>mIRQLine</cstring>
+                            </property>
+                            <property name="frameShape">
+                                <enum>LineEditPanel</enum>
+                            </property>
+                            <property name="frameShadow">
+                                <enum>Sunken</enum>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</string>
+                            </property>
+                        </widget>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>mIOPortLabel</cstring>
+                            </property>
+                            <property name="text">
+                                <string>I/O Po&amp;rt</string>
+                            </property>
+                            <property name="buddy" stdset="0">
+                                <cstring>mIOPortLine</cstring>
+                            </property>
+                        </widget>
+                        <widget class="QLineEdit">
+                            <property name="name">
+                                <cstring>mIOPortLine</cstring>
+                            </property>
+                            <property name="whatsThis" stdset="0">
+                                <string>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</string>
+                            </property>
+                        </widget>
+                    </hbox>
+                </widget>
+                <widget class="QLabel" row="2" column="0">
+                    <property name="name">
+                        <cstring>mPortPathLabel</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Port &amp;Path</string>
+                    </property>
+                    <property name="buddy" stdset="0">
+                        <cstring>mPortPathLine</cstring>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="2" column="1">
+                    <property name="name">
+                        <cstring>mPortPathLine</cstring>
+                    </property>
+                    <property name="frameShape">
+                        <enum>LineEditPanel</enum>
+                    </property>
+                    <property name="frameShadow">
+                        <enum>Sunken</enum>
+                    </property>
+                    <property name="whatsThis" stdset="0">
+                        <string>Displays the host parallel device name.</string>
+                    </property>
+                </widget>
+            </grid>
+        </widget>
+    </grid>
+</widget>
+<connections>
+    <connection>
+        <sender>mPortNumCombo</sender>
+        <signal>activated(const QString&amp;)</signal>
+        <receiver>VBoxVMParallelPortSettings</receiver>
+        <slot>mPortNumCombo_activated(const QString&amp;)</slot>
+    </connection>
+    <connection>
+        <sender>mParallelPortBox</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>VBoxVMParallelPortSettings</receiver>
+        <slot>mParallelPortBox_toggled(bool)</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="local" impldecl="in declaration">COMDefs.h</include>
+    <include location="local" impldecl="in declaration">QIWidgetValidator.h</include>
+    <include location="global" impldecl="in implementation">qdir.h</include>
+    <include location="global" impldecl="in implementation">qvalidator.h</include>
+    <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
+    <include location="local" impldecl="in implementation">VBoxVMParallelPortSettings.ui.h</include>
+</includes>
+<variables>
+    <variable access="private">CParallelPort mPort;</variable>
+    <variable access="private">QIWidgetValidator *mWalidator;</variable>
+</variables>
+<slots>
+    <slot>mParallelPortBox_toggled( bool )</slot>
+    <slot>mPortNumCombo_activated( const QString &amp; aText )</slot>
+</slots>
+<functions>
+    <function access="private" specifier="non virtual">init()</function>
+    <function>getFromPort( const CParallelPort &amp; )</function>
+    <function>putBackToPort()</function>
+    <function returnType="bool">isUserDefined()</function>
+</functions>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
