@@ -927,7 +927,7 @@ void VBoxConsoleWnd::finalizeOpenView()
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if seamless is supported */
     if (vmSeamlessAction->isOn() && mIsSeamlessSupported)
-        vmSeamless (true);
+        toggleFullscreenMode (true, true);
     mIsOpenViewFinished = true;
     LogFlowFuncLeave();
 
@@ -1921,7 +1921,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         {
             vboxProblem().cannotEnterSeamlessMode (screen.width(),
                 screen.height(), QColor::numBitPlanes());
-            vmSeamlessAction->setOn (false);
             return false;
         }
     }
@@ -1930,6 +1929,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     AssertReturn ((hidden_children.isEmpty() == aOn), false);
     AssertReturn (aSeamless && mIsSeamless != aOn ||
                   !aSeamless && mIsFullscreen != aOn, false);
+    if (aOn)
+        AssertReturn (aSeamless && !mIsFullscreen ||
+                      !aSeamless && !mIsSeamless, false);
 
     if (aOn)
     {
@@ -2130,8 +2132,7 @@ void VBoxConsoleWnd::vmFullscreen (bool aOn)
 void VBoxConsoleWnd::vmSeamless (bool aOn)
 {
     /* check if it is possible to enter/leave seamless mode */
-    if (aOn && mIsSeamlessSupported && !mIsFullscreen ||
-        !aOn && mIsSeamless)
+    if (mIsSeamlessSupported || !aOn)
     {
         bool ok = toggleFullscreenMode (aOn, true /* aSeamless */);
         if (!ok)
@@ -3032,8 +3033,8 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     mIsSeamlessSupported = aSeamlessSupported;
     /* If seamless mode should be enabled then check if it is enabled
      * currently and re-enable it if open-view procedure is finished */
-    if (vmSeamlessAction->isOn() && mIsOpenViewFinished)
-        aSeamlessSupported ? vmSeamless (true) : vmSeamless (false);
+    if (vmSeamlessAction->isOn() && mIsOpenViewFinished && aSeamlessSupported)
+        toggleFullscreenMode (true, true);
 
     /* Check the GA version only in case of additions are active */
     if (!aActive)
