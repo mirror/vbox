@@ -417,11 +417,11 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
 /** Trailing spaces. */
 #define VWRN_TRAILING_SPACES                77
 /** RTGetOpt: command line option not recognized. */
-#define VERR_GETOPT_UNKNOWN_OPTION          -78
+#define VERR_GETOPT_UNKNOWN_OPTION          (-78)
 /** RTGetOpt: command line option needs argument. */
-#define VERR_GETOPT_REQUIRED_ARGUMENT_MISSING  -79
+#define VERR_GETOPT_REQUIRED_ARGUMENT_MISSING  (-79)
 /** RTGetOpt: command line option has argument with bad format. */
-#define VERR_GETOPT_INVALID_ARGUMENT_FORMAT -80
+#define VERR_GETOPT_INVALID_ARGUMENT_FORMAT (-80)
 
 /** @} */
 
