@@ -113,6 +113,7 @@ ifdef VBOX_WITH_ISCSI
 endif
 ifndef VBOX_OSE
  VBoxDD_DEFS           += VBOX_WITH_E1000
+ VBoxDD_DEFS           += VBOX_WITH_INIP
 endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
@@ -193,7 +194,10 @@ VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
 DevicesR3_INCS         := \
-	$(PATH_SUB_CURRENT)
+	$(PATH_SUB_CURRENT) \
+	Network/lwip/src/include \
+	Network/lwip/src/include/ipv4 \
+	Network/lwip/vbox/include
 DevicesR3_SOURCES       = \
 	Input/DevPS2.cpp \
 	Bus/DevPCI.cpp \
@@ -218,8 +222,34 @@ ifndef VBOX_OSE
 DevicesR3_SOURCES      += \
 	Network/DevE1000.cpp \
 	Network/DevE1000Phy.cpp \
-	Network/DevEEPROM.cpp
+	Network/DevEEPROM.cpp \
+	Network/lwip/src/api/api_lib.c \
+	Network/lwip/src/api/api_msg.c \
+	Network/lwip/src/api/err.c \
+	Network/lwip/src/api/sockets.c \
+	Network/lwip/src/api/tcpip.c \
+	Network/lwip/src/core/tcp_in.c \
+	Network/lwip/src/core/dhcp.c \
+	Network/lwip/src/core/inet.c \
+	Network/lwip/src/core/mem.c \
+	Network/lwip/src/core/memp.c \
+	Network/lwip/src/core/netif.c \
+	Network/lwip/src/core/pbuf.c \
+	Network/lwip/src/core/raw.c \
+	Network/lwip/src/core/stats.c \
+	Network/lwip/src/core/sys.c \
+	Network/lwip/src/core/tcp.c \
+	Network/lwip/src/core/ipv4/ip_addr.c \
+	Network/lwip/src/core/ipv4/icmp.c \
+	Network/lwip/src/core/ipv4/ip.c \
+	Network/lwip/src/core/ipv4/ip_frag.c \
+	Network/lwip/src/core/tcp_out.c \
+	Network/lwip/src/core/udp.c \
+	Network/lwip/src/netif/etharp.c \
+	Network/lwip/vbox/sys_arch.c \
+	Network/DevINIP.cpp
 DevicesR3_DEFS	       += VBOX_WITH_E1000
+DevicesR3_DEFS	       += VBOX_WITH_INIP
 endif
 
 ifdef VBOX_WITH_AHCI
