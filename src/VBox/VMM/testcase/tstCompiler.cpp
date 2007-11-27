@@ -25,6 +25,7 @@
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 #include <iprt/stream.h>
+#include <iprt/err.h>
 #include <VBox/x86.h>
 
 #if 1
