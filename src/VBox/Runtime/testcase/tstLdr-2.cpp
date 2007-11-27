@@ -36,7 +36,7 @@ bool MyDisBlock(PDISCPUSTATE pCpu, RTHCUINTPTR pvCodeBlock, int32_t cbMax, RTUIN
     {
         char        szOutput[256];
         uint32_t    cbInstr;
-        if (!DISInstr(pCpu, pvCodeBlock + i, off, &cbInstr, szOutput))
+        if (RT_FAILURE(DISInstr(pCpu, pvCodeBlock + i, off, &cbInstr, szOutput)))
             return false;
 
         RTPrintf("%s", szOutput);
