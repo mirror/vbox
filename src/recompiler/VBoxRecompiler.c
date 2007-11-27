@@ -3282,7 +3282,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     {
         char szOutput[256];
         uint32_t    cbOp;
-        if (!DISInstr(&Cpu, (uintptr_t)pvPC, off, &cbOp, &szOutput[0]))
+        if (RT_FAILURE(DISInstr(&Cpu, (uintptr_t)pvPC, off, &cbOp, &szOutput[0])))
             return false;
         if (pszPrefix)
             Log(("%s: %s", pszPrefix, szOutput));
@@ -3371,7 +3371,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     //Cpu.dwUserData[2] = GCPtrPC;
     char szOutput[256];
     uint32_t    cbOp;
-    if (!DISInstr(&Cpu, (uintptr_t)pvPC, off, &cbOp, &szOutput[0]))
+    if (RT_FAILURE(DISInstr(&Cpu, (uintptr_t)pvPC, off, &cbOp, &szOutput[0])))
         return false;
 
     if (!f32BitCode)
@@ -3450,7 +3450,7 @@ void disas(FILE *phFileIgnored, void *pvCode, unsigned long cb)
         while (off < cb)
         {
             uint32_t cbInstr;
-            if (DISInstr(&Cpu, (uintptr_t)pvCode + off, 0, &cbInstr, szOutput))
+            if (RT_SUCCESS(DISInstr(&Cpu, (uintptr_t)pvCode + off, 0, &cbInstr, szOutput)))
                 RTLogPrintf("%s", szOutput);
             else
             {
