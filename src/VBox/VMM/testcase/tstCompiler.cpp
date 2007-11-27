@@ -202,7 +202,7 @@ static void DisasFunction(const char *pszName, PFNRT pv)
     {
         char        sz[256];
         uint32_t    cbInstr = 0;
-        if (DISInstr(&Cpu, uCur, 0, &cbInstr, sz))
+        if (RT_SUCCESS(DISInstr(&Cpu, uCur, 0, &cbInstr, sz)))
         {
             RTPrintf("tstBitFields: %s", sz);
             uCur += cbInstr;
