@@ -1200,7 +1200,7 @@ void helper_external_event(void)
     uintptr_t uESP;
     __asm__ __volatile__("movl %%esp, %0" : "=r" (uESP));
     AssertMsg(!(uESP & 15), ("esp=%#p\n", uESP));
-#endif 
+#endif
     if (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD)
     {
         ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_EXTERNAL_HARD);
@@ -4418,12 +4418,15 @@ l_failure:
 
 int emulate_single_instr(CPUX86State *env1)
 {
+#if 1 /* single stepping is broken when using a static tb... feel free to figure out why. :-) */
     /* This has to be static because it needs to be addressible 
        using 32-bit immediate addresses on 64-bit machines. This
        is dictated by the gcc code model used when building this
        module / op.o. Using a static here pushes the problem 
        onto the module loader. */
     static TranslationBlock tb_temp; 
+#endif
+    TranslationBlock *tb;
     TranslationBlock *current;
     int csize;
     void (*gen_func)(void);
@@ -4436,34 +4439,48 @@ int emulate_single_instr(CPUX86State *env1)
     
     RAWEx_ProfileStart(env, STATS_EMULATE_SINGLE_INSTR);
 
+#if 1 /* see above */
     tc_ptr = env->pvCodeBuffer;
+#else
+    tc_ptr = code_gen_ptr;
+#endif
 
     /*
      * Setup temporary translation block.
      */
     /* tb_alloc: */
-    tb_temp.pc = env->segs[R_CS].base + env->eip;
-    tb_temp.cflags = 0;
+#if 1 /* see above */
+    tb = &tb_temp;
+    tb->pc = env->segs[R_CS].base + env->eip;
+    tb->cflags = 0;
+#else
+    tb = tb_alloc(env->segs[R_CS].base + env->eip);
+    if (!tb) 
+    {
+        tb_flush(env);
+        tb = tb_alloc(env->segs[R_CS].base + env->eip);
+    }
+#endif
 
     /* tb_find_slow: */
-    tb_temp.tc_ptr = tc_ptr;
-    tb_temp.cs_base = env->segs[R_CS].base;
-    tb_temp.flags = env->hflags | (env->eflags & (IOPL_MASK | TF_MASK | VM_MASK));
+    tb->tc_ptr = tc_ptr;
+    tb->cs_base = env->segs[R_CS].base;
+    tb->flags = env->hflags | (env->eflags & (IOPL_MASK | TF_MASK | VM_MASK));
 
     /* Initialize the rest with sensible values. */
-    tb_temp.size = 0;
-    tb_temp.phys_hash_next = NULL;
-    tb_temp.page_next[0] = NULL;
-    tb_temp.page_next[1] = NULL;
-    tb_temp.page_addr[0] = 0;
-    tb_temp.page_addr[1] = 0;
-    tb_temp.tb_next_offset[0] = 0xffff;
-    tb_temp.tb_next_offset[1] = 0xffff;
-    tb_temp.tb_next[0] = 0xffff;
-    tb_temp.tb_next[1] = 0xffff;
-    tb_temp.jmp_next[0] = NULL;
-    tb_temp.jmp_next[1] = NULL;
-    tb_temp.jmp_first = NULL;
+    tb->size = 0;
+    tb->phys_hash_next = NULL;
+    tb->page_next[0] = NULL;
+    tb->page_next[1] = NULL;
+    tb->page_addr[0] = 0;
+    tb->page_addr[1] = 0;
+    tb->tb_next_offset[0] = 0xffff;
+    tb->tb_next_offset[1] = 0xffff;
+    tb->tb_next[0] = 0xffff;
+    tb->tb_next[1] = 0xffff;
+    tb->jmp_next[0] = NULL;
+    tb->jmp_next[1] = NULL;
+    tb->jmp_first = NULL;
 
     current = env->current_tb;
     env->current_tb = NULL;
@@ -4472,7 +4489,7 @@ int emulate_single_instr(CPUX86State *env1)
      * Translate only one instruction.
      */
     ASMAtomicOrU32(&env->state, CPU_EMULATE_SINGLE_INSTR);
-    if (cpu_gen_code(env, &tb_temp, env->cbCodeBuffer, &csize) < 0)
+    if (cpu_gen_code(env, tb, env->cbCodeBuffer, &csize) < 0)
     {
         AssertFailed();
         RAWEx_ProfileStop(env, STATS_EMULATE_SINGLE_INSTR);
@@ -4489,7 +4506,7 @@ int emulate_single_instr(CPUX86State *env1)
         env = savedenv;
         return -1;
     }
-    if (tb_temp.tc_ptr != tc_ptr)
+    if (tb->tc_ptr != tc_ptr)
     {
         RAWEx_ProfileStop(env, STATS_EMULATE_SINGLE_INSTR);
         AssertFailed();
@@ -4501,19 +4518,19 @@ int emulate_single_instr(CPUX86State *env1)
     ASMAtomicAndU32(&env->state, ~CPU_EMULATE_SINGLE_INSTR);
 
     /* tb_link_phys: */
-    tb_temp.jmp_first = (TranslationBlock *)((intptr_t)&tb_temp | 2);
-    Assert(tb_temp.jmp_next[0] == NULL); Assert(tb_temp.jmp_next[1] == NULL);
-    if (tb_temp.tb_next_offset[0] != 0xffff)
-        tb_set_jmp_target(&tb_temp, 0, (uintptr_t)(tb_temp.tc_ptr + tb_temp.tb_next_offset[0]));
-    if (tb_temp.tb_next_offset[1] != 0xffff)
-        tb_set_jmp_target(&tb_temp, 1, (uintptr_t)(tb_temp.tc_ptr + tb_temp.tb_next_offset[1]));
+    tb->jmp_first = (TranslationBlock *)((intptr_t)tb | 2);
+    Assert(tb->jmp_next[0] == NULL); Assert(tb->jmp_next[1] == NULL);
+    if (tb->tb_next_offset[0] != 0xffff)
+        tb_set_jmp_target(tb, 0, (uintptr_t)(tb->tc_ptr + tb->tb_next_offset[0]));
+    if (tb->tb_next_offset[1] != 0xffff)
+        tb_set_jmp_target(tb, 1, (uintptr_t)(tb->tc_ptr + tb->tb_next_offset[1]));
 
     /*
      * Execute it using emulation
      */
     old_eip = env->eip;
-    gen_func = (void *)tb_temp.tc_ptr;
-    env->current_tb = &tb_temp;
+    gen_func = (void *)tb->tc_ptr;
+    env->current_tb = tb;
 
     // eip remains the same for repeated instructions; no idea why qemu doesn't do a jump inside the generated code 
     // perhaps not a very safe hack
@@ -4533,19 +4550,19 @@ int emulate_single_instr(CPUX86State *env1)
     }
     env->current_tb = current;
 
-    Assert(tb_temp.phys_hash_next == NULL);
-    Assert(tb_temp.page_next[0] == NULL);
-    Assert(tb_temp.page_next[1] == NULL);
-    Assert(tb_temp.page_addr[0] == 0);
-    Assert(tb_temp.page_addr[1] == 0);
+    Assert(tb->phys_hash_next == NULL);
+    Assert(tb->page_next[0] == NULL);
+    Assert(tb->page_next[1] == NULL);
+    Assert(tb->page_addr[0] == 0);
+    Assert(tb->page_addr[1] == 0);
 /*
-    Assert(tb_temp.tb_next_offset[0] == 0xffff);
-    Assert(tb_temp.tb_next_offset[1] == 0xffff);
-    Assert(tb_temp.tb_next[0] == 0xffff);
-    Assert(tb_temp.tb_next[1] == 0xffff);
-    Assert(tb_temp.jmp_next[0] == NULL);
-    Assert(tb_temp.jmp_next[1] == NULL);
-    Assert(tb_temp.jmp_first == NULL); */
+    Assert(tb->tb_next_offset[0] == 0xffff);
+    Assert(tb->tb_next_offset[1] == 0xffff);
+    Assert(tb->tb_next[0] == 0xffff);
+    Assert(tb->tb_next[1] == 0xffff);
+    Assert(tb->jmp_next[0] == NULL);
+    Assert(tb->jmp_next[1] == NULL);
+    Assert(tb->jmp_first == NULL); */
     
     RAWEx_ProfileStop(env, STATS_EMULATE_SINGLE_INSTR);
 
