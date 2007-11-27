@@ -82,6 +82,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_FDC,
     /** IDE Device group. */
     LOG_GROUP_DEV_IDE,
+    /** The internal networking IP stack Device group. */
+    LOG_GROUP_DEV_INIP,
     /** KeyBoard Controller Device group. */
     LOG_GROUP_DEV_KBD,
     /** NE2000 Device group. */
@@ -150,6 +152,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_ISO,
     /** Keyboard Queue driver group. */
     LOG_GROUP_DRV_KBD_QUEUE,
+    /** lwIP IP stack driver group. */
+    LOG_GROUP_DRV_LWIP,
     /** Mouse Queue driver group. */
     LOG_GROUP_DRV_MOUSE_QUEUE,
     /** Named Pipe stream driver group. */
@@ -305,6 +309,7 @@ typedef enum LOGGROUP
     "DEV_E1000",    \
     "DEV_FDC",      \
     "DEV_IDE",      \
+    "DEV_INIP",     \
     "DEV_KBD",      \
     "DEV_NE2000",   \
     "DEV_PARALLEL", \
@@ -339,6 +344,7 @@ typedef enum LOGGROUP
     "DRV_ISCSI_TRANSPORT_TCP", \
     "DRV_ISO",      \
     "DRV_KBD_QUEUE", \
+    "DRV_LWIP",     \
     "DRV_MOUSE_QUEUE", \
     "DRV_NAMEDPIPE", \
     "DRV_NAT",      \
