@@ -18,3 +18,4 @@ fi
 cs
 sk
 eu
+ca
