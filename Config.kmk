@@ -1707,7 +1707,7 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	-T$(L4_LIBDIR)/../main_dyn.ld -nostdlib \
 	-Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
 	-Wl,--rpath-link,$(L4_LIBDIR)
-TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack
+TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack $(VBOX_LD_as_needed)
  ifeq ($(BUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
  else ifeq ($(BUILD_TARGET),l4)
@@ -1964,6 +1964,7 @@ TEMPLATE_VBOXMAINEXE_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXMAINEXE_LDFLAGS.amd64       = -m64
  ifeq ($(BUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME)
+TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = $(VBOX_LD_as_needed)
  else ifeq ($(BUILD_TARGET),l4)
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 # no libs as yet in l4 target - must be added later
@@ -2151,7 +2152,9 @@ else # the gcc guys:
 	$(VBOX_PATH_QT)/lib
  endif
 
- ifeq ($(BUILD_TARGET),darwin)
+ ifeq ($(BUILD_TARGET),linux)
+  TEMPLATE_VBOXQTGUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
+ else ifeq ($(BUILD_TARGET),darwin)
   TEMPLATE_VBOXQTGUIEXE_INCS += $(VBOX_PATH_MACOSX_SDK_INCS)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
   TEMPLATE_VBOXQTGUIEXE_LIBS +=
