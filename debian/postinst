@@ -69,6 +69,11 @@ EOF
   fi
 fi
 
+# There might be an old module active (e.g. manually loaded)
+if lsmod | grep -q "vboxdrv[^_-]"; then
+  /etc/init.d/vboxdrv stop || true
+fi
+
 #DEBHELPER#
 
 exit 0
