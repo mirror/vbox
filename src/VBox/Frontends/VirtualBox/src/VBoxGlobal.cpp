@@ -1627,7 +1627,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
             detailsReport += sectionTpl
                 .arg (rows) /* rows */
-                .arg ("serial_port_16px.png", /* icon */
+                .arg ("parallel_port_16px.png", /* icon */
                       "#parallelPorts", /* link */
                       tr ("Parallel Ports", "details report"), /* title */
                       item); /* items */
