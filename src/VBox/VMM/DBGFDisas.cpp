@@ -296,6 +296,22 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         SelInfo.Raw.Gen.u4Type      = pHiddenSel->Attr.n.u4Type;
         fRealModeAddress            = SelInfo.fRealMode;
     }
+    else if (Sel == DBGF_SEL_FLAT)
+    {
+        SelInfo.GCPtrBase           = 0;
+        SelInfo.cbLimit             = ~0;
+        SelInfo.fHyper              = false;
+        SelInfo.fRealMode           = false;
+        SelInfo.Raw.au32[0]         = 0;
+        SelInfo.Raw.au32[1]         = 0;
+        SelInfo.Raw.Gen.u16LimitLow = ~0;
+        SelInfo.Raw.Gen.u4LimitHigh = ~0;
+        SelInfo.Raw.Gen.u1Present   = 1;
+        SelInfo.Raw.Gen.u1Granularity = 1;
+        SelInfo.Raw.Gen.u1DefBig    = 1;
+        SelInfo.Raw.Gen.u1DescType  = 1;
+        SelInfo.Raw.Gen.u4Type      = X86_SEL_TYPE_EO;
+    }
     else if (   !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
              && (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
                  || enmMode == PGMMODE_REAL) )
@@ -314,22 +330,6 @@ DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned f
         SelInfo.Raw.Gen.u1DescType  = 1;
         SelInfo.Raw.Gen.u4Type      = X86_SEL_TYPE_EO;
         fRealModeAddress            = true;
-    }
-    else if (Sel == DBGF_SEL_FLAT)
-    {
-        SelInfo.GCPtrBase           = 0;
-        SelInfo.cbLimit             = ~0;
-        SelInfo.fHyper              = false;
-        SelInfo.fRealMode           = false;
-        SelInfo.Raw.au32[0]         = 0;
-        SelInfo.Raw.au32[1]         = 0;
-        SelInfo.Raw.Gen.u16LimitLow = ~0;
-        SelInfo.Raw.Gen.u4LimitHigh = ~0;
-        SelInfo.Raw.Gen.u1Present   = 1;
-        SelInfo.Raw.Gen.u1Granularity = 1;
-        SelInfo.Raw.Gen.u1DefBig    = 1;
-        SelInfo.Raw.Gen.u1DescType  = 1;
-        SelInfo.Raw.Gen.u4Type      = X86_SEL_TYPE_EO;
     }
     else
     {
