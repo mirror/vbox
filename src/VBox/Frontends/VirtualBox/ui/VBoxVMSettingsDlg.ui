@@ -298,7 +298,7 @@
                 <string>#parallelPorts</string>
             </property>
             <property name="pixmap">
-                <pixmap>serial_port_16px.png</pixmap>
+                <pixmap>parallel_port_16px.png</pixmap>
             </property>
             <property name="pixmap">
                 <pixmap></pixmap>
