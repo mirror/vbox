@@ -128,7 +128,7 @@ stop()
   log_daemon_msg "Stopping VirtualBox kernel module" "$MODNAME";
   killall -q VBoxSVC
   if running; then
-    if ! rmmod $MODNAME; then
+    if ! rmmod $MODNAME 2>/dev/null; then
       failure "Cannot unload module $MODNAME."
     fi
     if ! rm -f $DEVICE; then

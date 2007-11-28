@@ -1,4 +1,4 @@
-virtualbox-ose (1.5.51+svn+OSE-1) unstable; urgency=low
+virtualbox-ose (1.5.51~svn-1) unstable; urgency=low
 
   * rebuild Debian package
 

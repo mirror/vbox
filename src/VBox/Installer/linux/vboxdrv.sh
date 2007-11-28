@@ -174,7 +174,7 @@ start() {
 stop() {
     begin "Stopping VirtualBox kernel module "
     if running; then
-        rmmod $modname || fail "Cannot unload module $modname"
+        rmmod $modname 2>/dev/null || fail "Cannot unload module $modname"
         rm -f $dev || fail "Cannot unlink $dev"
     fi
     succ_msg
