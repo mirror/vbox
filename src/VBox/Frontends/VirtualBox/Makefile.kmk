@@ -63,6 +63,8 @@ INSTALLS = VirtualBox.nls
 VBoxKeyboard_TEMPLATE = VBOXR3
 VBoxKeyboard_SOURCES  = \
 	src/linux/keyboard-new.c
+VBoxKeyboard_LIBS     = X11
+VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
 
 
 #
