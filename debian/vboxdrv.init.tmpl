@@ -79,7 +79,7 @@ failure()
 
 running()
 {
-  lsmod | grep -q $MODNAME[^_-]
+  lsmod | grep -q "$MODNAME[^_-]"
 }
 
 start()
@@ -151,6 +151,11 @@ case "$1" in
     ;;
   setup)
     stop
+    if find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
+      log_action_begin_msg "Removing old VirtualBox kernel module"
+      find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+      log_action_end_msg 0
+    fi
     log_daemon_msg "Recompiling VirtualBox kernel module" "$MODNAME"
     if ! /usr/share/virtualbox-ose/src/build_in_tmp install > $LOG 2>&1; then
       failure "Look at $LOG to find out what went wrong"
