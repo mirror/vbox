@@ -21,8 +21,10 @@ ifneq ($(BUILD_PLATFORM),linux)
 $(error "The Linux installer can only be built on Linux!") # yeah, right.
 endif
 
+VBOX_NO_LINUX_RUN_INSTALLER ?= $(VBOX_OSE)
+
 PROGRAMS       = VBoxTunctl
-PACKING        = $(if $(VBOX_OSE),,$(PATH_BIN)/VirtualBox.run)
+PACKING        = $(if $(VBOX_NO_LINUX_RUN_INSTALLER),,$(PATH_BIN)/VirtualBox.run)
 PACKING       += $(PATH_BIN)/VirtualBox.tar.bz2
 OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
 	         install.sh deffiles routines.sh \
