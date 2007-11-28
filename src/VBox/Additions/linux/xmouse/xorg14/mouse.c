@@ -59,6 +59,12 @@
  * and to help limited dexterity persons
  */
 
+#ifdef VBOX
+/* this is necessary to prevent redirecting sscanf to isoc99_sscanf which is
+ * glibc 2.7++ only */
+#define _GNU_SOURCE
+#endif
+
 #ifdef XFree86LOADER
 # include "xorg-server.h"
 #else
