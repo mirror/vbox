@@ -189,6 +189,11 @@ restart() {
 setup() {
     . "$CONFIG"
     stop
+    if find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
+      begin "Removing old VirtualBox kernel module "
+      find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+      succ_msg
+    fi
     begin "Recompiling VirtualBox kernel module "
     if ! $INSTALL_DIR/src/build_in_tmp install > /var/log/vbox-install.log 2>&1; then
         fail "Look at /var/log/vbox-install.log to find out what went wrong"

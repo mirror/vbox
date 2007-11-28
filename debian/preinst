@@ -5,14 +5,14 @@ db_version 2.0
 db_capb backup
 
 # check for old vboxdrv modules
-if find /lib/modules -name vboxdrv\* 2>/dev/null|grep -q vboxdrv; then
+if find /lib/modules -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
   # old modules found
   db_get virtualbox-ose/delete-old-modules
   if [ "$RET" = "false" ]; then
     cat << EOF
 Old vboxdrv kernel modules found in
 EOF
-    find /lib/modules -name vboxdrv\* 2>/dev/null|sed "s+\(.*\)+  \1+g"
+    find /lib/modules -name "vboxdrv\.*" 2>/dev/null|sed "s+\(.*\)+  \1+g"
     cat << EOF
 Removing of these modules denied by debconf setting
 EOF
@@ -21,7 +21,7 @@ EOF
     db_go || true
     db_get virtualbox-ose/delete-old-modules
     if [ "$RET" = "true" ]; then
-      find /lib/modules -name vboxdrv\* 2>/dev/null|xargs rm -f 2>/dev/null
+      find /lib/modules -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
     fi
   fi
 fi
