@@ -210,7 +210,7 @@ int dbgcVarToDbgfAddr(PDBGC pDbgc, PCDBGCVAR pVar, PDBGFADDRESS pAddress)
             return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_GC_FAR:
-            return DBGFR3AddrFromSelOff(pDbgc->pVM, pAddress, pVar->u.GCFar.sel, pVar->u.GCFar.sel);
+            return DBGFR3AddrFromSelOff(pDbgc->pVM, pAddress, pVar->u.GCFar.sel, pVar->u.GCFar.off);
 
         case DBGCVAR_TYPE_GC_PHYS:
             DBGFR3AddrFromPhys(pDbgc->pVM, pAddress, pVar->u.GCPhys);
