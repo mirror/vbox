@@ -24,7 +24,7 @@ moddir   := $(current)/debian/modules
 prefix   := $(current)/debian/$(package)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
-ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/Devices/USB),,1))
+ose      := 1
 NOMODS   ?= $(ose)
 
 ifneq ($(wildcard $(verfile)),)
