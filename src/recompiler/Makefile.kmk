@@ -190,6 +190,7 @@ else # !REM_USE_NOCRT
 
  $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -install_name @executable_path/$(REM_MOD).dylib -multiple_defined warning
  $(REM_MOD)_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib -Wl,--no-undefined
+ $(REM_MOD)_LDFLAGS.linux   = -Wl,--as-needed
  $(REM_MOD)_LDFLAGS.os2     = -Zomf
  $(REM_MOD)_LDFLAGS.debug   = -g
  $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
