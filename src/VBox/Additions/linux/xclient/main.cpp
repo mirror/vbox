@@ -28,8 +28,13 @@ using std::cout;
 using std::endl;
 
 #include <sys/types.h>
+#include <sys/stat.h>     /* For umask */
+#include <fcntl.h>        /* For open */
 #include <unistd.h>
 #include <getopt.h>
+
+#include <sys/time.h>     /* For getrlimit */
+#include <sys/resource.h> /* For getrlimit */
 
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>
@@ -43,23 +48,47 @@ using std::endl;
 static bool gbDaemonise = true;
 
 /**
- * Become a daemon process
+ * Go through the long Un*x ritual required to become a daemon process.
  */
 void vboxDaemonise(void)
 {
-    /* First fork and exit the parent process, so that we are sure we are not session leader. */
+    /** rlimit structure for finding out how many open files we may have. */
+    struct rlimit rlim;
+
+    /* To make sure that we are not currently a session leader, we must first fork and let
+       the parent process exit, as a newly created child is never session leader.  This will
+       allow us to call setsid() later. */
     if (fork() != 0)
     {
         exit(0);
     }
-    /* Detach from the controlling terminal by creating our own session. */
-    setsid();
-    /* And change to the root directory to avoid holding the one we were started in open. */
+    /* Find the maximum number of files we can have open and close them all. */
+    if (0 != getrlimit(RLIMIT_NOFILE, &rlim))
+    {
+        /* For some reason the call failed.  In that case we will just close the three
+           standard files and hope. */
+        rlim.rlim_cur = 3;
+    }
+    for (int i = 0; i < rlim.rlim_cur; ++i)
+    {
+        close(i);
+    }
+    /* Change to the root directory to avoid keeping the one we were started in open. */
     chdir("/");
-    /* Close the standard files. */
-    close(0);
-    close(1);
-    close(2);
+    /* Set our umask to zero. */
+    umask(0);
+    /* And open /dev/null on stdin/out/err. */
+    open("/dev/null", O_RDONLY);
+    open("/dev/null", O_WRONLY);
+    dup(1);
+    /* Detach from the controlling terminal by creating our own session, to avoid receiving
+       signals from the old session. */
+    setsid();
+    /* And fork again, letting the parent exit, to make us a child of init and avoid zombies. */
+    if (fork() != 0)
+    {
+        exit(0);
+    }
 }
 
 /**
@@ -130,6 +159,10 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
+    if (gbDaemonise)
+    {
+        vboxDaemonise();
+    }
     /* Initialise our runtime before all else. */
     RTR3Init(false);
     LogFlowFunc(("\n"));
@@ -174,10 +207,6 @@ int main(int argc, char *argv[])
         rc = VERR_UNRESOLVED_ERROR;
     }
 #endif /* SEAMLESS_LINUX defined */
-    if (gbDaemonise)
-    {
-        vboxDaemonise();
-    }
     vboxClipboardMain();
     vboxClipboardDisconnect();
 #ifdef SEAMLESS_LINUX
