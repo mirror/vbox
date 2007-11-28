@@ -55,6 +55,7 @@ VBGLR3DECL(int) VbglR3SeamlessSetCap(bool bState)
         LogRel(("Failed to enabled seamless mode on the host, rc = %Vrc.\n", rc));
     }
 #endif
+    return rc;
 }
 
 /**
