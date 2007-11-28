@@ -235,6 +235,9 @@ static int vboxadd_open(struct inode *inode, struct file *filp)
  */
 static int vboxadd_release(struct inode *inode, struct file * filp)
 {
+#ifdef DEBUG
+        LogRelFunc(("Cleaning up HGCM connections for file pointer %p\n", filp));
+#endif
         vboxadd_unregister_all_hgcm_connections(filp);
         return 0;
 }
