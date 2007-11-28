@@ -18,6 +18,7 @@
 
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxDev.h>
+#include <VBox/log.h>
 
 #include <string.h>
 
@@ -39,10 +40,21 @@ extern int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
 VBGLR3DECL(int) VbglR3SeamlessSetCap(bool bState)
 {
     VMMDevReqGuestCapabilities vmmreqGuestCaps = { {0} };
+    int rc = VINF_SUCCESS;
 
     vmmdevInitRequest(&vmmreqGuestCaps.header, VMMDevReq_ReportGuestCapabilities);
     vmmreqGuestCaps.caps = bState ? VMMDEV_GUEST_SUPPORTS_SEAMLESS : 0;
-    return VbglR3GRPerform(&vmmreqGuestCaps.header);
+    rc = VbglR3GRPerform(&vmmreqGuestCaps.header);
+#ifdef DEBUG
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("Successfully enabled seamless mode on the host.\n"));
+    }
+    else
+    {
+        LogRel(("Failed to enabled seamless mode on the host, rc = %Vrc.\n", rc));
+    }
+#endif
 }
 
 /**
