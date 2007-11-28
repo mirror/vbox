@@ -1306,18 +1306,18 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         vboxClipboardEmptyGuestBuffer();
         return rc;
     }
-    /* Allocate as much space as the Utf16 string takes up, as RTUtf16ToUtf8Ex may fail if the
+    /* Allocate enough space, as RTUtf16ToUtf8Ex may fail if the
        space is too tightly calculated. */
-    pu8DestText = XtMalloc(cwDestLen * 2);
+    pu8DestText = XtMalloc(cwDestLen * 4);
     if (pu8DestText == 0)
     {
-        LogRel (("vboxClipboardConvertUtf8: failed to allocate %d bytes\n", cwDestLen * 2));
+        LogRel (("vboxClipboardConvertUtf8: failed to allocate %d bytes\n", cwDestLen * 4));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
     /* Convert the Utf16 string to Utf8. */
-    rc = RTUtf16ToUtf8Ex(pu16DestText + 1, cwDestLen - 1, &pu8DestText, cwDestLen * 2,
+    rc = RTUtf16ToUtf8Ex(pu16DestText + 1, cwDestLen - 1, &pu8DestText, cwDestLen * 4,
                          &cbDestLen);
     RTMemFree(reinterpret_cast<void *>(pu16DestText));
     if (RT_FAILURE(rc))
