@@ -28,7 +28,8 @@ vboxadd-xclient_SOURCES  = clipboard.cpp main.cpp
 ifdef LINUX_SEAMLESS_GUEST
 vboxadd-xclient_SOURCES += \
                 seamless-host.cpp \
-                seamless-x11.cpp
+                seamless-x11.cpp \
+                thread.cpp
 endif
 vboxadd-xclient_LIBPATH  = $(PATH_TARGET)/vboxadd-xclient $(VBOX_LIBPATH32_X11)
 vboxadd-xclient_LIBS     = \
