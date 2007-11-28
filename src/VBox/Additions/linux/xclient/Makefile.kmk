@@ -52,4 +52,15 @@ $(PATH_TARGET)/vboxadd-xclient/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
 	$(QUIET)ln -sf `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@ || cp `$(TOOL_$(VBOX_GCC32_TOOL)_CXX) -print-file-name=libstdc++.a` $@
 
+ifdef LINUX_SEAMLESS_GUEST
+ifdef VBOX_WITH_CPPUNIT_TESTCASES
+ PROGRAMS                  += tstSeamlessX11
+ tstSeamlessX11_TEMPLATE    = VBOXCPPUNITEXE
+ tstSeamlessX11_SOURCES     = \
+         testcase/tstSeamlessX11.cpp \
+         seamless-x11.cpp
+ tstSeamlessX11_INST        = $(INST_TESTCASE)
+endif
+endif
+
 include	$(PATH_KBUILD)/footer.kmk
