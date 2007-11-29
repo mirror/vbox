@@ -719,6 +719,10 @@ void VBoxVMSettingsDlg::init()
 
     /* Serial Port Page */
 
+    /* Parallel Port Page (currently disabled) */
+    QListViewItem *item = listView->findItem ("#parallelPorts", listView_Link);
+    if (item) item->setVisible (false);
+
     /* USB Page */
 
     connect (cbEnableUSBController, SIGNAL (toggled (bool)),
