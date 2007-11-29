@@ -944,11 +944,6 @@ VBOX_GCC_CHECK_CXX = $(shell \
    then echo "$(1)"; \
    else echo "$(2)"; fi; )
 
-VBOX_GCC_CHECK_LD =$(shell \
-   if $(TOOL_$(VBOX_GCC_TOOL)_LD) -Wl,--help 2>&1 | grep -q -- $(1); \
-   then echo "-Wl,$(1)"; \
-   else echo "$(2)"; fi; )
-
 VBOX_GCC32_CHECK_CXX = $(shell \
    if $(TOOL_$(VBOX_GCC32_TOOL)_CXX) $(1) -S -o /dev/null -xc++ /dev/null > /dev/null 2>&1; \
    then echo "$(1)"; \
@@ -976,7 +971,6 @@ $(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
 	$(APPEND) "$@" "VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)"
 	@# Produce code optimized for the most common IA32/AMD64/EM64T processors. Introduced with gcc version 4.2.
 	$(APPEND) "$@" "VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)"
-	$(APPEND) "$@" "VBOX_LD_as_needed              ?= $(call VBOX_GCC_CHECK_LD,--as-needed,)"
 ifneq ($(BUILD_TARGET),l4)
 	@# Set default attribute for ELF and MACH-O symbols to ``hidden'' to reduce the number
 	@# of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
