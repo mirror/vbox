@@ -81,6 +81,7 @@ TEMPLATE = VBOXR3TSTEXE
 tstTimer_SOURCES = tstTimer.cpp
 
 tstTSC_SOURCES = tstTSC.cpp
+tstTSC_CXXFLAGS.linux += -O3
 
 tstTime_SOURCES = tstTime.cpp
 
