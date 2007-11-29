@@ -1625,7 +1625,8 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 ++ rows;
             }
 
-            detailsReport += sectionTpl
+            /* Temporary disabled */
+            QString dummy = sectionTpl /* detailsReport += sectionTpl */
                 .arg (rows) /* rows */
                 .arg ("parallel_port_16px.png", /* icon */
                       "#parallelPorts", /* link */
